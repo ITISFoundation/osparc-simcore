@@ -9,7 +9,6 @@ import tenacity
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
-from pydantic import BaseModel, PrivateAttr
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from settings_library.rabbit import RabbitSettings
 
@@ -42,15 +41,12 @@ async def _wait_till_rabbit_responsive(url: str) -> bool:
     return True
 
 
-class RabbitMQ(BaseModel):
-    rabbit_settings: RabbitSettings
-    _connection: aio_pika.Connection = PrivateAttr()
-    _channel: aio_pika.Channel = PrivateAttr()
-    _logs_exchange: aio_pika.Exchange = PrivateAttr()
-
-    class Config:
-        # see https://pydantic-docs.helpmanual.io/usage/types/#arbitrary-types-allowed
-        arbitrary_types_allowed = True
+class RabbitMQ:
+    def __init__(self, rabbit_settings: RabbitSettings) -> None:
+        self.rabbit_settings: RabbitSettings = rabbit_settings
+        self._connection: Optional[aio_pika.Connection] = None
+        self._channel: Optional[aio_pika.Channel] = None
+        self._logs_exchange: Optional[aio_pika.Exchange] = None
 
     async def connect(self) -> None:
         url = self.rabbit_settings.dsn
@@ -74,8 +70,10 @@ class RabbitMQ(BaseModel):
         )
 
     async def close(self) -> None:
-        await self._channel.close()
-        await self._connection.close()
+        if self._channel is not None:
+            await self._channel.close()
+        if self._connection is not None:
+            await self._connection.close()
 
     @staticmethod
     async def _post_message(
@@ -95,10 +93,10 @@ class RabbitMQ(BaseModel):
         await self._post_message(
             self._logs_exchange,
             data={
-                "Channel": "Log",
-                "Node": f"{node_id}",
+                "channel": "Log",
+                "node": f"{node_id}",
                 "user_id": f"{user_id}",
                 "project_id": f"{project_id}",
-                "Messages": log_msg if isinstance(log_msg, list) else [log_msg],
+                "messages": log_msg if isinstance(log_msg, list) else [log_msg],
             },
         )
