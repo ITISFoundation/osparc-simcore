@@ -52,8 +52,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   events: {
-    "collapseNavBar": "qx.event.type.Event",
-    "expandNavBar": "qx.event.type.Event"
+    "backToDashboardPressed": "qx.event.type.Event"
   },
 
   properties: {
@@ -350,27 +349,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__addTopBarSpacer(topBar);
 
 
-      const collapseExpandNavBarStack = new qx.ui.container.Stack();
-
-      const collapseNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-up/14").set({
-        backgroundColor: "contrasted-background+"
-      });
-      collapseExpandNavBarStack.add(collapseNavBarBtn);
-      collapseNavBarBtn.addListener("execute", () => {
-        collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[1]]);
-        this.fireEvent("collapseNavBar");
-      });
-
-      const expandNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-down/14").set({
-        backgroundColor: "contrasted-background+"
-      });
-      collapseExpandNavBarStack.add(expandNavBarBtn);
-      expandNavBarBtn.addListener("execute", () => {
-        collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[0]]);
-        this.fireEvent("expandNavBar");
-      });
-
-      topBar.add(collapseExpandNavBarStack);
+      topBar.add(this.__createCloseStudyAndPreferencesButton());
     },
 
     __removePages: function(tabView) {
@@ -399,6 +378,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         height: this.self().TAB_BUTTON_HEIGHT
       });
       return spacer;
+    },
+
+    __createCloseStudyAndPreferencesButton: function() {
+      const closeStudyAndPreferencesButton = new osparc.navigation.CloseStudyAndPreferencesButton().set({
+        height: this.self().TAB_BUTTON_HEIGHT,
+        alignX: "center",
+        alignY: "middle",
+        backgroundColor: "background-main"
+      });
+      closeStudyAndPreferencesButton.addListener("execute", () => this.fireEvent("backToDashboardPressed"));
+      return closeStudyAndPreferencesButton;
     },
 
     __connectEvents: function() {

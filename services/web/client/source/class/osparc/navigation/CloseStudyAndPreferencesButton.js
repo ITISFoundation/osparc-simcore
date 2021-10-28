@@ -5,7 +5,7 @@
    https://osparc.io
 
    Copyright:
-     2018 IT'IS Foundation, https://itis.swiss
+     2021 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
@@ -15,60 +15,23 @@
 
 ************************************************************************ */
 
-/**
- * Widget containing:
- * - LogoOnOff
- * - Dashboard (button)
- * - List of buttons for node navigation (only study editing)
- * - User menu
- *   - Preferences
- *   - Help
- *   - About
- *   - Logout
- *
- * *Example*
- *
- * Here is a little example of how to use the widget.
- *
- * <pre class='javascript'>
- *   let navBar = new osparc.navigation.NavigationBar();
- *   this.getRoot().add(navBar);
- * </pre>
- */
-
-qx.Class.define("osparc.navigation.NavigationBar", {
-  extend: qx.ui.core.Widget,
+qx.Class.define("osparc.navigation.CloseStudyAndPreferencesButton", {
+  extend: qx.ui.toolbar.SplitButton,
 
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(10).set({
-      alignY: "middle"
-    }));
+    this.setIcon("@FontAwesome5Solid/door-open/24");
 
-    osparc.data.Resources.get("statics")
-      .then(statics => {
-        this.__serverStatics = statics;
-        this.buildLayout();
-      });
-
-    this.set({
-      paddingLeft: 10,
-      paddingRight: 10,
-      height: this.self().HEIGHT,
-      maxHeight: this.self().HEIGHT,
-      backgroundColor: "background-main-lighter"
+    this.getChildControl("button").set({
+      toolTipText: this.tr("Close Study")
     });
-  },
 
-  events: {
-    "backToDashboardPressed": "qx.event.type.Event",
-    "slidesGuidedStart": "qx.event.type.Event",
-    "slidesAppStart": "qx.event.type.Event",
-    "slidesStop": "qx.event.type.Event",
-    "slidesEdit": "qx.event.type.Event",
-    "takeSnapshot": "qx.event.type.Event",
-    "showSnapshots": "qx.event.type.Event"
+    this.getChildControl("arrow").set({
+      toolTipText: this.tr("Preferences")
+    });
+
+    // this.__initMenu();
   },
 
   properties: {
@@ -84,102 +47,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       apply: "_applyPageContext"
     }
   },
-
-  statics: {
-    HEIGHT: 50,
-
-    BUTTON_OPTIONS: {
-      font: "text-14",
-      allowGrowY: false,
-      minWidth: 32,
-      minHeight: 32
-    },
-
-    PAGE_CONTEXT: {
-      0: "dashboard",
-      1: "workbench",
-      2: "guided",
-      3: "app"
-    }
-  },
-
   members: {
     __serverStatics: null,
-
-    buildLayout: function() {
-      this.getChildControl("logo");
-
-      this._add(new qx.ui.core.Spacer(30));
-
-      this.getChildControl("dashboard-button");
-      this.getChildControl("dashboard-label");
-
-      this._add(new qx.ui.core.Spacer(30));
-
-      this.getChildControl("study-options-menu");
-      this.getChildControl("read-only-icon");
-
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
-      this.getChildControl("tasks-button");
-      this.getChildControl("manual");
-      this.getChildControl("feedback");
-      this.getChildControl("theme-switch");
-      this.getChildControl("user-menu");
-
-      this.setPageContext("dashboard");
-    },
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "logo":
-          control = osparc.component.widget.LogoOnOff.getInstance();
-          this._add(control);
-          break;
-        case "dashboard-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16").set({
-            ...this.self().BUTTON_OPTIONS,
-            font: "title-14"
-          });
-          osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
-          control.addListener("execute", () => this.fireEvent("backToDashboardPressed"), this);
-          this._add(control);
-          break;
-        case "dashboard-label":
-          control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
-            font: "text-16"
-          });
-          this._add(control);
-          break;
-        case "study-options-menu":
-          control = new osparc.navigation.StudyMenu();
-          [
-            "slidesGuidedStart",
-            "slidesAppStart",
-            "slidesStop",
-            "slidesEdit",
-            "takeSnapshot",
-            "showSnapshots"
-          ].forEach(signalName => {
-            control.addListener(signalName, () => this.fireEvent(signalName));
-          });
-          this._add(control);
-          break;
-        case "read-only-icon":
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/eye/22").set({
-            visibility: "excluded",
-            paddingRight: 10,
-            toolTipText: "Read Only"
-          });
-          this._add(control);
-          break;
-        case "tasks-button":
-          control = new osparc.component.task.TasksButton();
-          this._add(control);
-          break;
         case "manual":
           control = this.__createManualMenuBtn();
           control.set(this.self().BUTTON_OPTIONS);
@@ -201,6 +74,35 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    __initMenu: function() {
+      osparc.data.Resources.get("statics")
+        .then(statics => {
+          this.__serverStatics = statics;
+          this.__populateMenu();
+        });
+    },
+
+    __populateMenu: function() {
+      this.getChildControl("dashboard-label");
+
+      this._add(new qx.ui.core.Spacer(30));
+
+      this.getChildControl("study-options-menu");
+      this.getChildControl("read-only-icon");
+
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      this.getChildControl("tasks-button");
+      this.getChildControl("manual");
+      this.getChildControl("feedback");
+      this.getChildControl("theme-switch");
+      this.getChildControl("user-menu");
+
+      this.setPageContext("dashboard");
     },
 
     _applyPageContext: function(newCtxt) {
