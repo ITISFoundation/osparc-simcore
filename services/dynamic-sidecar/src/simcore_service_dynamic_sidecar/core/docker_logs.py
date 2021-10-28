@@ -39,7 +39,8 @@ class BackgroundLogFetcher:
         self._log_processor_tasks: Dict[str, Task[None]] = {}
 
         self.rabbit_mq: RabbitMQ = RabbitMQ(
-            rabbit_settings=self._settings.RABBIT_SETTINGS
+            node_id=self._settings.DY_SIDECAR_NODE_ID,
+            rabbit_settings=self._settings.RABBIT_SETTINGS,
         )
 
     async def start_fetcher(self) -> None:

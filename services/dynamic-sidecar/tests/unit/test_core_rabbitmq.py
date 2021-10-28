@@ -72,7 +72,7 @@ async def test_rabbitmq(
     project_id: ProjectID,
     node_id: NodeID,
 ):
-    rabbit = RabbitMQ(rabbit_settings=RabbitSettings())
+    rabbit = RabbitMQ(node_id=node_id, rabbit_settings=RabbitSettings())
     assert rabbit
 
     mock_close_connection_cb = mocker.patch(

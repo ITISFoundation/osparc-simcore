@@ -42,7 +42,8 @@ async def _wait_till_rabbit_responsive(url: str) -> bool:
 
 
 class RabbitMQ:
-    def __init__(self, rabbit_settings: RabbitSettings) -> None:
+    def __init__(self, node_id: NodeID, rabbit_settings: RabbitSettings) -> None:
+        self.node_id: NodeID = node_id
         self.rabbit_settings: RabbitSettings = rabbit_settings
         self._connection: Optional[aio_pika.Connection] = None
         self._channel: Optional[aio_pika.Channel] = None
@@ -54,9 +55,12 @@ class RabbitMQ:
         await _wait_till_rabbit_responsive(url)
 
         # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
+        hostname = socket.gethostname()
         self._connection = await aio_pika.connect(
-            url + f"?name={__name__}_{id(socket.gethostname())}",
-            client_properties={"connection_name": "sidecar connection"},
+            url + f"?name={__name__}_{id(hostname)}",
+            client_properties={
+                "connection_name": f"dynamic-sidecar_{self.node_id} {hostname}"
+            },
         )
         self._connection.add_close_callback(_close_callback)
 
