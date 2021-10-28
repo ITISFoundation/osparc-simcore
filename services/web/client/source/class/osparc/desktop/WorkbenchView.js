@@ -787,21 +787,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         });
       }
 
+      this.__outputsPage.getChildControl("button").show();
       if (node.hasOutputs()) {
-        this.__outputsPage.getChildControl("button").show();
-
         const portTree = new osparc.component.widget.inputs.NodeOutputTree(node, node.getMetaData().outputs).set({
           allowGrowY: false
         });
         this.__outputsPage.add(portTree);
-
-        const outputFilesBtn = new qx.ui.form.Button(this.tr("Artifacts"), "@FontAwesome5Solid/folder-open/14").set({
-          allowGrowX: false
-        });
-        osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
-        outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
-        this.__outputsPage.add(outputFilesBtn);
       }
+
+      const outputFilesBtn = new qx.ui.form.Button(this.tr("Artifacts"), "@FontAwesome5Solid/folder-open/14").set({
+        allowGrowX: false
+      });
+      osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
+      outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(node));
+      this.__outputsPage.add(outputFilesBtn);
     },
 
     getLogger: function() {
