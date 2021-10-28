@@ -30,7 +30,7 @@ def test_io_models_examples(model_cls, model_cls_examples):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
 
-        model_instance = model_cls(**example)
+        model_instance = model_cls.parse_obj(example)
 
         assert model_instance, f"Failed with {name}"
         print(name, ":", model_instance)
