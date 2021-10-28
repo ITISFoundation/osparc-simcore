@@ -374,7 +374,9 @@ qx.Class.define("osparc.Application", {
       doc.add(view, options);
       this.__current = view;
       if (!(view instanceof osparc.desktop.MainPage)) {
-        this.__themeSwitcher = new osparc.ui.switch.ThemeSwitcher();
+        this.__themeSwitcher = new osparc.ui.switch.ThemeSwitcherFormBtn().set({
+          backgroundColor: "transparent"
+        });
         doc.add(this.__themeSwitcher, {
           top: 10,
           right: 15

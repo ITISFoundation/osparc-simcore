@@ -10,26 +10,7 @@
  */
 
 qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
-  extend: osparc.ui.basic.Switch,
-
-  construct: function() {
-    this.base(arguments);
-
-    const validThemes = this.__validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
-    if (validThemes.length !== 2) {
-      this.setVisibility("excluded");
-      return;
-    }
-
-    this.set({
-      checked: qx.theme.manager.Meta.getInstance().getTheme().name === validThemes[1].name,
-      toolTipText: this.tr("Switch theme")
-    });
-
-    this.addListener("changeChecked", () => {
-      osparc.ui.switch.ThemeSwitcher.switchTheme();
-    });
-  },
+  type: "static",
 
   statics: {
     getValidThemes: function() {
@@ -49,6 +30,14 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
         qx.theme.manager.Meta.getInstance().setTheme(theme);
         window.localStorage.setItem("themeName", theme.name);
       }
+    },
+
+    bindIconToTheme: function(widget, buttonImageSize) {
+      const themeManager = qx.theme.manager.Meta.getInstance();
+      themeManager.addListener("changeTheme", () => {
+        osparc.ui.switch.ThemeSwitcher.updateIcon(widget, buttonImageSize);
+      }, this);
+      osparc.ui.switch.ThemeSwitcher.updateIcon(widget, buttonImageSize);
     },
 
     updateIcon: function(widget, buttonImageSize) {
