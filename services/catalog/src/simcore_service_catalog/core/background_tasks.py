@@ -211,7 +211,9 @@ async def sync_registry_task(app: FastAPI) -> None:
                 "Unexpected error while syncing registry entries, restarting now..."
             )
             # wait a bit before retrying, so it does not block everything until the director is up
-            await asyncio.sleep(app.state.settings.BACKGROUND_TASK_WAIT_AFTER_FAILURE)
+            await asyncio.sleep(
+                app.state.settings.CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE
+            )
 
 
 async def start_registry_sync_task(app: FastAPI) -> None:
