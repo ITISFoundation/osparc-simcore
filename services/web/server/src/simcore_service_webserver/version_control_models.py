@@ -28,9 +28,11 @@ CommitID = int
 BranchID = int
 RefID = Union[CommitID, str]
 
+CheckpointID = PositiveInt
+
 
 class Checkpoint(BaseModel):
-    id: PositiveInt
+    id: CheckpointID
     checksum: SHA1Str
     created_at: datetime
     tags: Tuple[str, ...]

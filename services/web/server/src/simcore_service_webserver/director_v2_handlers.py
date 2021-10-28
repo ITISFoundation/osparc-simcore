@@ -23,9 +23,6 @@ log = logging.getLogger(__file__)
 # TODO: connect routes
 routes = web.RouteTableDef()
 
-# TODO: connect routes
-routes = web.RouteTableDef()
-
 
 @routes.post(f"/{VTAG}/computation/pipeline/{{project_id}}:start")
 @login_required
