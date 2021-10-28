@@ -103,9 +103,6 @@ def test_create_complete_dag_graph(
                 "415fefd1-d08b-53c1-adb0-16bed3a687ef",  # sleeper 2
             ],
             {
-                "3a710d8b-565c-5f46-870b-b45ebe195fc7": [
-                    "415fefd1-d08b-53c1-adb0-16bed3a687ef"
-                ],
                 "415fefd1-d08b-53c1-adb0-16bed3a687ef": [],
             },
             {
@@ -119,9 +116,6 @@ def test_create_complete_dag_graph(
                 "6ede1209-b459-5735-91fc-761aa584808d",  # sleeper 4
             ],
             {
-                "3a710d8b-565c-5f46-870b-b45ebe195fc7": [
-                    "415fefd1-d08b-53c1-adb0-16bed3a687ef"
-                ],
                 "415fefd1-d08b-53c1-adb0-16bed3a687ef": [
                     "6ede1209-b459-5735-91fc-761aa584808d"
                 ],
