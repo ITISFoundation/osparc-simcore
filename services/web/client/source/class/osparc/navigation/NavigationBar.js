@@ -256,7 +256,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this._add(control);
           break;
         case "theme-switch":
-          control = new osparc.ui.switch.ThemeSwitcher();
+          control = new osparc.ui.switch.ThemeSwitcherFormBtn();
+          control.set(this.self().BUTTON_OPTIONS);
           this._add(control);
           break;
         case "user-menu":

@@ -15,7 +15,7 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
   construct: function() {
     this.base(arguments);
 
-    const validThemes = this.__validThemes = Object.values(qx.Theme.getAll()).filter(theme => theme.type === "meta");
+    const validThemes = this.__validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
     if (validThemes.length !== 2) {
       this.setVisibility("excluded");
       return;
@@ -27,25 +27,36 @@ qx.Class.define("osparc.ui.switch.ThemeSwitcher", {
     });
 
     this.addListener("changeChecked", () => {
-      this.__switchTheme();
+      osparc.ui.switch.ThemeSwitcher.switchTheme();
     });
   },
 
-  members: {
-    __validThemes: null,
+  statics: {
+    getValidThemes: function() {
+      return Object.values(qx.Theme.getAll()).filter(theme => theme.type === "meta");
+    },
 
-    __switchTheme: function() {
-      if (this.__validThemes.length !== 2) {
+    switchTheme: function() {
+      const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
+      if (validThemes.length !== 2) {
         return;
       }
 
       const currentTheme = qx.theme.manager.Meta.getInstance().getTheme();
-      const idx = this.__validThemes.findIndex(validTheme => validTheme.name === currentTheme.name);
+      const idx = validThemes.findIndex(validTheme => validTheme.name === currentTheme.name);
       if (idx !== -1) {
-        const theme = this.__validThemes[1-idx];
+        const theme = validThemes[1-idx];
         qx.theme.manager.Meta.getInstance().setTheme(theme);
         window.localStorage.setItem("themeName", theme.name);
       }
+    },
+
+    updateIcon: function(widget, buttonImageSize) {
+      const themeManager = qx.theme.manager.Meta.getInstance();
+      const theme = themeManager.getTheme();
+      const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
+      const idx = validThemes.findIndex(validTheme => validTheme.name === theme.name);
+      widget.setIcon(idx === 0 ? "@FontAwesome5Solid/toggle-on/"+buttonImageSize : "@FontAwesome5Solid/toggle-off/"+buttonImageSize);
     }
   }
 });
