@@ -117,7 +117,6 @@ class DaskScheduler(BaseCompScheduler):
         )
 
     async def _task_progress_change_handler(self, event: str) -> None:
-        # FIXME: this must go to the rabbitMQ, and also maybe only construct to save time?
         task_progress_event = TaskProgressEvent.parse_raw(event)
         logger.debug("received task progress update: %s", task_progress_event)
         *_, user_id, project_id, node_id = parse_dask_job_id(task_progress_event.job_id)
@@ -133,7 +132,6 @@ class DaskScheduler(BaseCompScheduler):
         )
 
     async def _task_log_change_handler(self, event: str) -> None:
-        # FIXME: this must go to the rabbitMQ, and also maybe only construct to save time?
         task_log_event = TaskLogEvent.parse_raw(event)
         logger.debug("received task log update: %s", task_log_event)
         *_, user_id, project_id, node_id = parse_dask_job_id(task_log_event.job_id)
