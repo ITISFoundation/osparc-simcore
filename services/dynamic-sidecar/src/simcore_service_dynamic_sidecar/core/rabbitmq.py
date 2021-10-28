@@ -93,10 +93,10 @@ class RabbitMQ:
         await self._post_message(
             self._logs_exchange,
             data={
-                "channel": "Log",
-                "node": f"{node_id}",
+                "Channel": "Log",
+                "Node": f"{node_id}",
                 "user_id": f"{user_id}",
                 "project_id": f"{project_id}",
-                "messages": log_msg if isinstance(log_msg, list) else [log_msg],
+                "Messages": log_msg if isinstance(log_msg, list) else [log_msg],
             },
         )
