@@ -895,9 +895,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __attachEventHandlers: function() {
-      // const blocker = this.getBlocker();
-      // blocker.addListener("tap", this.getChildControl("side-panels").toggleCollapsed.bind(this.getChildControl("side-panels")));
-
       const maximizeIframeCb = msg => {
         this.__maximizeIframe(msg.getData());
       };
@@ -993,6 +990,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           return;
         }
       }
+      this.__maximizeIframe(false);
       this.nodeSelected(this.getStudy().getUuid());
     }
   }
