@@ -5,7 +5,7 @@
 
 
 import asyncio
-from typing import Dict, Iterator
+from typing import Dict, Iterable, Iterator
 
 import pytest
 import respx
@@ -28,10 +28,15 @@ def minimal_app(
 
     app = init_app()
 
+    yield app
+
+
+@pytest.fixture()
+def client(minimal_app: FastAPI) -> Iterable[TestClient]:
     # NOTE: this way we ensure the events are run in the application
     # since it starts the app on a test server
-    with TestClient(app):
-        yield app
+    with TestClient(minimal_app) as client:
+        yield client
 
 
 @pytest.fixture
@@ -41,6 +46,7 @@ def mocked_director_service_api(minimal_app: FastAPI) -> MockRouter:
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:
+        respx_mock.head("/", name="healthcheck").respond(200, json={"health": "OK"})
         respx_mock.get("/services", name="list_services").respond(
             200, json={"data": ["one", "two"]}
         )
@@ -50,8 +56,9 @@ def mocked_director_service_api(minimal_app: FastAPI) -> MockRouter:
 
 async def test_director_client_setup(
     loop: asyncio.AbstractEventLoop,
-    minimal_app: FastAPI,
     mocked_director_service_api: MockRouter,
+    minimal_app: FastAPI,
+    client: TestClient,
 ):
 
     # gets director client as used in handlers
