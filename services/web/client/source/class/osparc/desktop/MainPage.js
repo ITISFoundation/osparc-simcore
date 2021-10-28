@@ -66,31 +66,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     __createNavigationBar: function() {
       const navBar = new osparc.navigation.NavigationBar();
 
-      navBar.addListener("dashboardPressed", () => {
-        if (!osparc.data.Permissions.getInstance().canDo("studies.user.create", true)) {
-          return;
-        }
-        if (this.__studyEditor) {
-          const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-          if (preferencesSettings.getConfirmBackToDashboard()) {
-            const msg = this.tr("Do you really want to close the study?");
-            const win = new osparc.ui.window.Confirmation(msg);
-            const confirmButton = win.getConfirmButton();
-            osparc.utils.Utils.setIdToWidget(confirmButton, "confirmDashboardBtn");
-            win.center();
-            win.open();
-            win.addListener("close", () => {
-              if (win.getConfirmed()) {
-                this.__backToDashboard();
-              }
-            }, this);
-          } else {
-            this.__backToDashboard();
-          }
-        } else {
-          this.__showDashboard();
-        }
-      }, this);
+      navBar.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
 
       navBar.addListener("slidesGuidedStart", () => {
         if (this.__studyEditor) {
@@ -132,6 +108,32 @@ qx.Class.define("osparc.desktop.MainPage", {
       }, this);
 
       return navBar;
+    },
+
+    __backToDashboardPressed: function() {
+      if (!osparc.data.Permissions.getInstance().canDo("studies.user.create", true)) {
+        return;
+      }
+      if (this.__studyEditor) {
+        const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+        if (preferencesSettings.getConfirmBackToDashboard()) {
+          const msg = this.tr("Do you really want to close the study?");
+          const win = new osparc.ui.window.Confirmation(msg);
+          const confirmButton = win.getConfirmButton();
+          osparc.utils.Utils.setIdToWidget(confirmButton, "confirmDashboardBtn");
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              this.__backToDashboard();
+            }
+          }, this);
+        } else {
+          this.__backToDashboard();
+        }
+      } else {
+        this.__showDashboard();
+      }
     },
 
     __backToDashboard: function() {
