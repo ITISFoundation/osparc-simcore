@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import json
 import re
 from contextlib import asynccontextmanager
@@ -435,6 +436,8 @@ async def managed_monitor_container_log_task(
     finally:
         if monitoring_task:
             monitoring_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await monitoring_task
 
 
 LogPublishingCB = Callable[[str], Awaitable[None]]
