@@ -6,6 +6,8 @@
 
 dask[distributed]
 pydantic[email]
+# for the Annotated type
+typing_extensions; python_version < '3.9'
 
 #There are incompatible versions in the resolved dependencies:
 #  idna==3.1 (from -c requirements/_base.txt (line 13))
