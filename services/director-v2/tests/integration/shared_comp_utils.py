@@ -1,3 +1,4 @@
+from pprint import pformat
 from typing import List
 from uuid import UUID
 
@@ -56,7 +57,9 @@ def assert_computation_task_out_obj(
         else None
     )
     # check pipeline details contents
-    assert task_out.pipeline_details == exp_pipeline_details
+    assert (
+        task_out.pipeline_details == exp_pipeline_details
+    ), f"received pipeline {pformat(task_out.pipeline_details.dict())} vs expected {pformat(exp_pipeline_details.dict())}"
 
 
 def assert_pipeline_status(

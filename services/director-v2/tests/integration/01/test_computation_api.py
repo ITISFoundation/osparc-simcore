@@ -189,12 +189,12 @@ def test_start_empty_computation(
 
 PartialComputationParams = namedtuple(
     "PartialComputationParams",
-    "subgraph_elements, exp_pipeline_adj_list, exp_node_states, exp_node_states_after_run",
+    "subgraph_elements, exp_pipeline_adj_list, exp_node_states, exp_node_states_after_run, exp_node_states_after_force_run",
 )
 
 
 @pytest.mark.parametrize(
-    "subgraph_elements,exp_pipeline_adj_list, exp_node_states, exp_node_states_after_run",
+    "subgraph_elements,exp_pipeline_adj_list, exp_node_states, exp_node_states_after_run, exp_node_states_after_force_run",
     [
         pytest.param(
             *PartialComputationParams(
@@ -228,6 +228,25 @@ PartialComputationParams = namedtuple(
                     2: {
                         "modified": True,
                         "dependencies": [],
+                    },
+                    3: {
+                        "modified": True,
+                        "dependencies": [],
+                    },
+                    4: {
+                        "modified": True,
+                        "dependencies": [2, 3],
+                    },
+                },
+                exp_node_states_after_force_run={
+                    1: {
+                        "modified": True,
+                        "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                    2: {
+                        "modified": True,
+                        "dependencies": [1],
                     },
                     3: {
                         "modified": True,
@@ -289,6 +308,28 @@ PartialComputationParams = namedtuple(
                         "currentStatus": RunningState.SUCCESS,
                     },
                 },
+                exp_node_states_after_force_run={
+                    1: {
+                        "modified": True,
+                        "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                    2: {
+                        "modified": True,
+                        "dependencies": [1],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                    3: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
+                    },
+                    4: {
+                        "modified": True,
+                        "dependencies": [2, 3],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                },
             ),
             id="element 1,2,4",
         ),
@@ -305,6 +346,7 @@ def test_run_partial_computation(
     exp_pipeline_adj_list: Dict[int, List[str]],
     exp_node_states: Dict[int, Dict[str, Any]],
     exp_node_states_after_run: Dict[int, Dict[str, Any]],
+    exp_node_states_after_force_run: Dict[int, Dict[str, Any]],
 ):
     sleepers_project: ProjectAtDB = project(workbench=fake_workbench_without_outputs)
 
@@ -395,11 +437,14 @@ def test_run_partial_computation(
 
     # force run it this time.
     # the task are up-to-date but we force run them
-    expected_pipeline_details_forced = deepcopy(expected_pipeline_details_after_run)
-    for node_id, node_data in expected_pipeline_details_forced.node_states.items():
-        node_data.current_status = expected_pipeline_details.node_states[
-            node_id
-        ].current_status
+    expected_pipeline_details_forced = _convert_to_pipeline_details(
+        sleepers_project, exp_pipeline_adj_list, exp_node_states_after_force_run
+    )
+    # deepcopy(expected_pipeline_details_after_run)
+    # for node_id, node_data in expected_pipeline_details_forced.node_states.items():
+    #     node_data.current_status = expected_pipeline_details.node_states[
+    #         node_id
+    #     ].current_status
     response = create_pipeline(
         client,
         project=sleepers_project,
