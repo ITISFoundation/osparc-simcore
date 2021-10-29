@@ -27,6 +27,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       font: "text-14"
     });
     this.set({
+      font: "text-14",
       icon: osparc.utils.Avatar.getUrl(userEmail, 32),
       label: userName,
       menu
@@ -106,6 +107,8 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
   },
 
   members: {
+    __serverStatics: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -144,12 +147,66 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     },
 
     populateExtendedMenu: function() {
-      this.getChildControl("theme-switcher");
-      this.getChildControl("preferences");
-      this.getMenu().addSeparator();
-      this.getChildControl("about");
-      this.getMenu().addSeparator();
-      this.getChildControl("logout");
+      osparc.data.Resources.get("statics")
+        .then(statics => {
+          this.__serverStatics = statics;
+          this.getChildControl("theme-switcher");
+          this.getChildControl("preferences");
+          this.getMenu().addSeparator();
+          this.__addManualsToMenu();
+          this.__addFeedbacksToMenu();
+          this.getMenu().addSeparator();
+          this.getChildControl("about");
+          this.getMenu().addSeparator();
+          this.getChildControl("logout");
+        });
+    },
+
+    __addManualsToMenu: function() {
+      const menu = this.getMenu();
+      const manuals = [];
+      if (this.__serverStatics && this.__serverStatics.manualMainUrl) {
+        manuals.push({
+          label: this.tr("User Manual"),
+          icon: "@FontAwesome5Solid/book/22",
+          url: this.__serverStatics.manualMainUrl
+        });
+      }
+
+      if (osparc.utils.Utils.isInZ43() && this.__serverStatics && this.__serverStatics.manualExtraUrl) {
+        manuals.push({
+          label: this.tr("Z43 Manual"),
+          icon: "@FontAwesome5Solid/book-medical/22",
+          url: this.__serverStatics.manualExtraUrl
+        });
+      }
+
+      manuals.forEach(manual => {
+        const manualBtn = new qx.ui.menu.Button(manual.label);
+        manualBtn.addListener("execute", () => window.open(manual.url), this);
+        menu.add(manualBtn);
+      });
+    },
+
+    __addFeedbacksToMenu: function() {
+      const menu = this.getMenu();
+      const newGHIssueBtn = new qx.ui.menu.Button(this.tr("Issue in GitHub"));
+      newGHIssueBtn.addListener("execute", osparc.navigation.NavigationBar.openGithubIssueInfoDialog, this);
+      menu.add(newGHIssueBtn);
+
+      if (osparc.utils.Utils.isInZ43()) {
+        const newFogbugzIssueBtn = new qx.ui.menu.Button(this.tr("Issue in Fogbugz"));
+        newFogbugzIssueBtn.addListener("execute", osparc.navigation.NavigationBar.openFogbugzIssueInfoDialog, this);
+        menu.add(newFogbugzIssueBtn);
+      }
+
+      const feedbackAnonBtn = new qx.ui.menu.Button(this.tr("Anonymous feedback"));
+      feedbackAnonBtn.addListener("execute", () => {
+        if (this.__serverStatics.feedbackFormUrl) {
+          window.open(this.__serverStatics.feedbackFormUrl);
+        }
+      });
+      menu.add(feedbackAnonBtn);
     }
   }
 });

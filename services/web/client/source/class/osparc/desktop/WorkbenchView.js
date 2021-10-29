@@ -406,9 +406,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       separator.exclude();
       topBar.add(separator);
-      const closeStudyAndPreferencesButton = this.__createCloseStudyAndPreferencesButton();
-      closeStudyAndPreferencesButton.exclude();
-      topBar.add(closeStudyAndPreferencesButton);
+
+      const closeStudyButton = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16").set({
+        backgroundColor: "contrasted-background+"
+      });
+      osparc.utils.Utils.setIdToWidget(closeStudyButton, "dashboardBtn");
+      closeStudyButton.addListener("execute", () => this.fireEvent("backToDashboardPressed"));
+      closeStudyButton.exclude();
+      topBar.add(closeStudyButton);
+      const userMenuButton = new osparc.navigation.UserMenuButton().set({
+        backgroundColor: "contrasted-background+"
+      });
+      userMenuButton.populateExtendedMenu();
+      userMenuButton.exclude();
+      topBar.add(userMenuButton);
 
 
       const collapseExpandNavBarStack = new qx.ui.container.Stack();
@@ -419,7 +430,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       collapseExpandNavBarStack.add(collapseNavBarBtn);
       collapseNavBarBtn.addListener("execute", () => {
         separator.show();
-        closeStudyAndPreferencesButton.show();
+        closeStudyButton.show();
+        userMenuButton.show();
         collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[1]]);
         this.fireEvent("collapseNavBar");
       });
@@ -430,7 +442,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       collapseExpandNavBarStack.add(expandNavBarBtn);
       expandNavBarBtn.addListener("execute", () => {
         separator.exclude();
-        closeStudyAndPreferencesButton.exclude();
+        closeStudyButton.exclude();
+        userMenuButton.exclude();
         collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[0]]);
         this.fireEvent("expandNavBar");
       });
@@ -464,14 +477,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         height: this.self().TAB_BUTTON_HEIGHT
       });
       return spacer;
-    },
-
-    __createCloseStudyAndPreferencesButton: function() {
-      const closeStudyAndPreferencesButton = new osparc.navigation.CloseStudyAndPreferencesButton().set({
-        backgroundColor: "contrasted-background+"
-      });
-      closeStudyAndPreferencesButton.addListener("execute", () => this.fireEvent("backToDashboardPressed"));
-      return closeStudyAndPreferencesButton;
     },
 
     __connectEvents: function() {
