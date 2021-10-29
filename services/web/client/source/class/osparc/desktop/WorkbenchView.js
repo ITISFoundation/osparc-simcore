@@ -66,9 +66,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     "collapseNavBar": "qx.event.type.Event",
     "expandNavBar": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event",
+    "slidesEdit": "qx.event.type.Event",
     "slidesGuidedStart": "qx.event.type.Event",
-    "slidesAppStart": "qx.event.type.Event",
-    "slidesEdit": "qx.event.type.Event"
+    "slidesAppStart": "qx.event.type.Event"
   },
 
   properties: {
@@ -110,7 +110,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         case "collapsible-view-left": {
           const sidePanels = this.getChildControl("side-panels");
           control = new osparc.component.widget.CollapsibleViewLight().set({
-            minWidth: 15,
+            minWidth: 20,
             width: Math.min(parseInt(window.innerWidth * 0.16), 240)
           });
           const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
@@ -331,7 +331,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__addTopBarSpacer(topBar);
 
       const studyOptionsPage = this.__studyOptionsPage = this.__createTabPage("@FontAwesome5Solid/book", this.tr("Study options"));
-      studyOptionsPage.getLayout().setSeparator("separator-vertical");
+      studyOptionsPage.getLayout().set({
+        separator: "separator-vertical",
+        spacing: 15
+      });
       studyOptionsPage.exclude();
       tabViewSecondary.add(studyOptionsPage);
 
@@ -772,23 +775,38 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __getSlideshowSection: function() {
-      const slideshowSection = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      const slideshowSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       slideshowSection.add(new qx.ui.basic.Label(this.tr("Slideshow")).set({
         font: "title-14"
       }));
 
-      const slideshowButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const slideshowButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       slideshowSection.add(slideshowButtons);
 
-      const editSlidesBtn = new qx.ui.form.Button(this.tr("Edit Slideshow"));
+      const buttonsHeight = 28;
+      const editSlidesBtn = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/edit/14",
+        toolTipText: this.tr("Edit slideshow"),
+        height: buttonsHeight
+      });
       editSlidesBtn.addListener("execute", () => this.fireEvent("slidesEdit"), this);
       slideshowButtons.add(editSlidesBtn);
 
-      const startGuidedBtn = new qx.ui.form.Button(this.tr("Start Guided Mode"));
+      const startGuidedBtn = new qx.ui.form.Button().set({
+        label: this.tr("Guided Mode"),
+        icon: "@FontAwesome5Solid/play/14",
+        toolTipText: this.tr("Start Guided Mode"),
+        height: buttonsHeight
+      });
       startGuidedBtn.addListener("execute", () => this.fireEvent("slidesGuidedStart"), this);
       slideshowButtons.add(startGuidedBtn);
 
-      const startAppBtn = new qx.ui.form.Button(this.tr("Start App Mode"));
+      const startAppBtn = new qx.ui.form.Button(this.tr("Start App Mode")).set({
+        label: this.tr("App Mode"),
+        icon: "@FontAwesome5Solid/play/14",
+        toolTipText: this.tr("Start App Mode"),
+        height: buttonsHeight
+      });
       startAppBtn.addListener("execute", () => this.fireEvent("slidesAppStart"), this);
       slideshowButtons.add(startAppBtn);
 

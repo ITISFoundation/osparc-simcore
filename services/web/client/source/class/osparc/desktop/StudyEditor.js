@@ -29,7 +29,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     [
       "collapseNavBar",
       "expandNavBar",
-      "backToDashboardPressed"
+      "backToDashboardPressed",
+      "slidesEdit",
+      "slidesGuidedStart",
+      "slidesAppStart"
     ].forEach(singalName => workbenchView.addListener(singalName, () => this.fireEvent(singalName)));
     viewsStack.add(workbenchView);
 
@@ -66,7 +69,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     "startSnapshot": "qx.event.type.Data",
     "collapseNavBar": "qx.event.type.Event",
     "expandNavBar": "qx.event.type.Event",
-    "backToDashboardPressed": "qx.event.type.Event"
+    "backToDashboardPressed": "qx.event.type.Event",
+    "slidesEdit": "qx.event.type.Event",
+    "slidesGuidedStart": "qx.event.type.Event",
+    "slidesAppStart": "qx.event.type.Event"
   },
 
   properties: {
