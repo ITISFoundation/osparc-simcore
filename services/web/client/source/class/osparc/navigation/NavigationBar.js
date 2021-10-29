@@ -63,10 +63,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
   events: {
     "backToDashboardPressed": "qx.event.type.Event",
-    "slidesGuidedStart": "qx.event.type.Event",
-    "slidesAppStart": "qx.event.type.Event",
-    "slidesStop": "qx.event.type.Event",
-    "slidesEdit": "qx.event.type.Event"
+    "slidesStop": "qx.event.type.Event"
   },
 
   properties: {
@@ -114,7 +111,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
       this._add(new qx.ui.core.Spacer(30));
 
-      this.getChildControl("study-options-menu");
+      this.getChildControl("stop-slideshow");
       this.getChildControl("read-only-icon");
 
       this._add(new qx.ui.core.Spacer(), {
@@ -152,16 +149,9 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           this._add(control);
           break;
-        case "study-options-menu":
+        case "stop-slideshow":
           control = new osparc.navigation.StopSlideshow();
-          [
-            "slidesGuidedStart",
-            "slidesAppStart",
-            "slidesStop",
-            "slidesEdit"
-          ].forEach(signalName => {
-            control.addListener(signalName, () => this.fireEvent(signalName));
-          });
+          control.addListener("slidesStop", () => this.fireEvent("slidesStop"));
           this._add(control);
           break;
         case "read-only-icon":
@@ -206,7 +196,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "dashboard":
           this.getChildControl("dashboard-label").show();
           this.getChildControl("dashboard-button").exclude();
-          this.getChildControl("study-options-menu").exclude();
           this.getChildControl("read-only-icon").exclude();
           break;
         case "workbench":
@@ -214,7 +203,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "app":
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
-          this.getChildControl("study-options-menu").show();
           break;
       }
     },
@@ -297,7 +285,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.bind("readOnly", this.getChildControl("read-only-icon"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
-        this.getChildControl("study-options-menu").setStudy(study);
+        this.getChildControl("stop-slideshow").setStudy(study);
       }
     }
   }

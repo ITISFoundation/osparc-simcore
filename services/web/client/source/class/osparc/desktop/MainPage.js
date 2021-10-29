@@ -68,30 +68,10 @@ qx.Class.define("osparc.desktop.MainPage", {
 
       navBar.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
 
-      navBar.addListener("slidesGuidedStart", () => {
-        if (this.__studyEditor) {
-          navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]);
-          this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]);
-        }
-      }, this);
-
-      navBar.addListener("slidesAppStart", () => {
-        if (this.__studyEditor) {
-          navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[3]);
-          this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[3]);
-        }
-      }, this);
-
       navBar.addListener("slidesStop", () => {
         if (this.__studyEditor) {
           navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
           this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
-        }
-      }, this);
-
-      navBar.addListener("slidesEdit", () => {
-        if (this.__studyEditor) {
-          this.__studyEditor.editSlides();
         }
       }, this);
 

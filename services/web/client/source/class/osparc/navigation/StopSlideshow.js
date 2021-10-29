@@ -43,7 +43,6 @@ qx.Class.define("osparc.navigation.StopSlideshow", {
   members: {
     _applyStudy: function(study) {
       if (study) {
-        study.getWorkbench().addListener("pipelineChanged", () => this.__evalSlidesStopButton());
         study.getUi().getSlideshow().addListener("changeSlideshow", () => this.__evalSlidesStopButton());
         study.getUi().addListener("changeMode", () => this.__evalSlidesStopButton());
         this.__evalSlidesStopButton();
