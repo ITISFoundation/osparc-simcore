@@ -235,7 +235,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__evalSlidesButtons();
         this.__evalSnapshotsButtons();
       }
-      this.__workbenchPanel.getToolbar().setStudy(null);
+      this.__workbenchPanel.getToolbar().setStudy(study);
     },
 
     __createTabPage: function(icon, tooltip, widget, backgroundColor = "background-main") {
