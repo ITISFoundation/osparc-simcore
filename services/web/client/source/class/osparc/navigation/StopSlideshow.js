@@ -22,7 +22,8 @@ qx.Class.define("osparc.navigation.StopSlideshow", {
     this.base(arguments, this.tr("Stop Slideshow"));
 
     this.set({
-      ...osparc.navigation.NavigationBar.BUTTON_OPTIONS
+      ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
+      visibility: "excluded"
     });
     this.addListener("execute", () => this.fireEvent("slidesStop"), this);
   },
@@ -42,14 +43,14 @@ qx.Class.define("osparc.navigation.StopSlideshow", {
   members: {
     _applyStudy: function(study) {
       if (study) {
-        study.getWorkbench().addListener("pipelineChanged", () => this.__evalSlidesButtons());
-        study.getUi().getSlideshow().addListener("changeSlideshow", () => this.__evalSlidesButtons());
-        study.getUi().addListener("changeMode", () => this.__evalSlidesButtons());
-        this.__evalSlidesButtons();
+        study.getWorkbench().addListener("pipelineChanged", () => this.__evalSlidesStopButton());
+        study.getUi().getSlideshow().addListener("changeSlideshow", () => this.__evalSlidesStopButton());
+        study.getUi().addListener("changeMode", () => this.__evalSlidesStopButton());
+        this.__evalSlidesStopButton();
       }
     },
 
-    __evalSlidesButtons: function() {
+    __evalSlidesStopButton: function() {
       const study = this.getStudy();
       if (study) {
         const editorContext = this.getStudy().getUi().getMode();

@@ -825,7 +825,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       startAppBtn.addListener("execute", () => this.fireEvent("slidesAppStart"), this);
       slideshowButtons.add(startAppBtn);
 
+      this.__evalSlidesButtons();
+
       return slideshowSection;
+    },
+
+    __evalSlidesButtons: function() {
+      const study = this.getStudy();
+      if (study && this.__editSlidesButton) {
+        const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
+        const isOwner = osparc.data.model.Study.isOwner(study);
+        this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
+        this.__startSlidesButton.setEnabled(study.hasSlideshow());
+        this.__startAppButton.setEnabled(study.getWorkbench().isPipelineLinear());
+      }
     },
 
     __getSnapshotsSection: function() {
@@ -852,23 +865,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       showSnapshotsBtn.addListener("execute", () => this.fireEvent("showSnapshots"), this);
       snapshotButtons.add(showSnapshotsBtn);
 
-      return snapshotSection;
-    },
+      this.__evalSnapshotsButtons();
 
-    __evalSlidesButtons: function() {
-      const study = this.getStudy();
-      if (study) {
-        const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
-        const isOwner = osparc.data.model.Study.isOwner(study);
-        this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
-        this.__startSlidesButton.setEnabled(study.hasSlideshow());
-        this.__startAppButton.setEnabled(study.getWorkbench().isPipelineLinear());
-      }
+      return snapshotSection;
     },
 
     __evalSnapshotsButtons: async function() {
       const study = this.getStudy();
-      if (study) {
+      if (study && this.__takeSnapshotButton) {
         this.__takeSnapshotButton.setEnabled(osparc.data.Permissions.getInstance().canDo("study.snapshot.create"));
 
         const hasSnapshots = await study.hasSnapshots();
