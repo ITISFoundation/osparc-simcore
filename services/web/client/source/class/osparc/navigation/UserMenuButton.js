@@ -191,12 +191,12 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     __addFeedbacksToMenu: function() {
       const menu = this.getMenu();
       const newGHIssueBtn = new qx.ui.menu.Button(this.tr("Issue in GitHub"));
-      newGHIssueBtn.addListener("execute", osparc.navigation.NavigationBar.openGithubIssueInfoDialog, this);
+      newGHIssueBtn.addListener("execute", () => osparc.navigation.UserMenuButton.openGithubIssueInfoDialog(), this);
       menu.add(newGHIssueBtn);
 
       if (osparc.utils.Utils.isInZ43()) {
         const newFogbugzIssueBtn = new qx.ui.menu.Button(this.tr("Issue in Fogbugz"));
-        newFogbugzIssueBtn.addListener("execute", osparc.navigation.NavigationBar.openFogbugzIssueInfoDialog, this);
+        newFogbugzIssueBtn.addListener("execute", () => osparc.navigation.UserMenuButton.openFogbugzIssueInfoDialog(), this);
         menu.add(newFogbugzIssueBtn);
       }
 
