@@ -352,7 +352,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
 
       const separator = new qx.ui.toolbar.Separator().set({
-        // height: 50,
+        padding: 0,
+        margin: 0,
         backgroundColor: "contrasted-background++"
       });
       separator.exclude();
@@ -419,9 +420,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __createCloseStudyAndPreferencesButton: function() {
       const closeStudyAndPreferencesButton = new osparc.navigation.CloseStudyAndPreferencesButton().set({
-        allowGrowY: true,
-        alignX: "center",
-        alignY: "middle",
         backgroundColor: "contrasted-background+"
       });
       closeStudyAndPreferencesButton.addListener("execute", () => this.fireEvent("backToDashboardPressed"));
