@@ -27,6 +27,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     this.setOffset(2);
     osparc.desktop.WorkbenchView.decorateSplitter(this.getChildControl("splitter"));
+    osparc.desktop.WorkbenchView.decorateSlider(this.getChildControl("slider"));
 
     this.__sidePanels = this.getChildControl("side-panels");
     this.getChildControl("main-panel-tabs");
@@ -40,14 +41,24 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     TAB_BUTTON_HEIGHT: 50,
 
     decorateSplitter: function(splitter) {
-      splitter.setWidth(2);
       const colorManager = qx.theme.manager.Color.getInstance();
       const binaryColor = osparc.utils.Utils.getRoundedBinaryColor(colorManager.resolve("background-main"));
-      splitter.setBackgroundColor(binaryColor);
+      splitter.set({
+        width: 2,
+        backgroundColor: binaryColor
+      });
       colorManager.addListener("changeTheme", () => {
         const newBinaryColor = osparc.utils.Utils.getRoundedBinaryColor(colorManager.resolve("background-main"));
         splitter.setBackgroundColor(newBinaryColor);
       }, this);
+    },
+
+    decorateSlider: function(slider) {
+      slider.set({
+        width: 2,
+        backgroundColor: "#007fd4", // Visual Studio blue
+        opacity: 1
+      });
     }
   },
 
@@ -89,6 +100,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             width: Math.min(parseInt(window.innerWidth * (0.16+0.24)), 550)
           });
           osparc.desktop.WorkbenchView.decorateSplitter(control.getChildControl("splitter"));
+          osparc.desktop.WorkbenchView.decorateSlider(control.getChildControl("slider"));
           this.add(control, 0); // flex 0
           break;
         }
@@ -261,7 +273,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const topBar = tabViewPrimary.getChildControl("bar");
       this.__addTopBarSpacer(topBar);
 
-      const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(0)).set({
+      const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
         backgroundColor: primaryColumnBGColor
       });
 
@@ -269,20 +281,30 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         alignY: "middle",
         minHeight: 32,
         maxHeight: 32,
-        backgroundColor: primaryColumnBGColor,
-        marginBottom: 5
+        backgroundColor: primaryColumnBGColor
       });
       studyTreeItem.setStudy(study);
       homeAndNodesTree.add(studyTreeItem);
 
       const nodesTree = this.__nodesTree = new osparc.component.widget.NodesTree().set({
         backgroundColor: primaryColumnBGColor,
-        hideRoot: true
+        hideRoot: true,
+        allowGrowY: true,
+        minHeight: 5
       });
       nodesTree.setStudy(study);
-      homeAndNodesTree.add(nodesTree, {
-        flex: 1
+      homeAndNodesTree.add(nodesTree);
+
+      const addNewNodeBtn = new qx.ui.form.Button().set({
+        label: this.tr("Add new node"),
+        icon: "@FontAwesome5Solid/plus/14",
+        allowGrowX: false,
+        alignX: "left",
+        marginLeft: 14
       });
+      addNewNodeBtn.addListener("execute", () => this.__workbenchUI.openServiceCatalog());
+      homeAndNodesTree.add(addNewNodeBtn);
+
       const nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, primaryColumnBGColor);
       tabViewPrimary.add(nodesPage);
 
@@ -304,6 +326,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const topBar = tabViewSecondary.getChildControl("bar");
       this.__addTopBarSpacer(topBar);
+
+      const studyOptionsPage = this.__studyOptionsPage = this.__createTabPage("@FontAwesome5Solid/book", this.tr("Study options"));
+      studyOptionsPage.exclude();
+      tabViewSecondary.add(studyOptionsPage);
 
       const infoPage = this.__infoPage = this.__createTabPage("@FontAwesome5Solid/info", this.tr("Information"));
       infoPage.exclude();
@@ -705,12 +731,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __populateSecondPanel: function(node) {
-      this.__infoPage.removeAll();
-      this.__settingsPage.removeAll();
-      this.__outputsPage.removeAll();
-      this.__infoPage.getChildControl("button").exclude();
-      this.__settingsPage.getChildControl("button").exclude();
-      this.__outputsPage.getChildControl("button").exclude();
+      [
+        this.__studyOptionsPage,
+        this.__infoPage,
+        this.__settingsPage,
+        this.__outputsPage
+      ].forEach(page => {
+        page.removeAll();
+        page.getChildControl("button").exclude();
+      });
 
       if (node instanceof osparc.data.model.Study) {
         this.__populateSecondPanelStudy(node);
@@ -724,10 +753,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __populateSecondPanelStudy: function(study) {
-      this.__infoPage.getChildControl("button").show();
-      this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
+      this.__studyOptionsPage.getChildControl("button").show();
+      this.getChildControl("side-panel-right-tabs").setSelection([this.__studyOptionsPage]);
 
-      this.__infoPage.add(new osparc.studycard.Medium(study), {
+      this.__studyOptionsPage.add(new osparc.studycard.Medium(study), {
         flex: 1
       });
     },
@@ -890,9 +919,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __attachEventHandlers: function() {
-      // const blocker = this.getBlocker();
-      // blocker.addListener("tap", this.getChildControl("side-panels").toggleCollapsed.bind(this.getChildControl("side-panels")));
-
       const maximizeIframeCb = msg => {
         this.__maximizeIframe(msg.getData());
       };
@@ -988,6 +1014,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           return;
         }
       }
+      this.__maximizeIframe(false);
       this.nodeSelected(this.getStudy().getUuid());
     }
   }
