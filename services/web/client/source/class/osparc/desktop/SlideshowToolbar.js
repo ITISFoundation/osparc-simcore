@@ -112,6 +112,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
             icon: "@FontAwesome5Solid/stop/14"
           });
           control.addListener("execute", () => this.fireEvent("slidesStop"));
+          this._add(control);
           break;
       }
       return control || this.base(arguments, id);
@@ -162,20 +163,20 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
 
         this.getChildControl("breadcrumb-navigation").populateButtons(nodeIds);
         this.getChildControl("breadcrumb-navigation-edit").populateButtons(study);
-        const currentModeBtn = editSlideshowButtons.getSelection()[0];
-        if ("editing" in currentModeBtn && currentModeBtn["editing"]) {
-          this.getChildControl("prev-next-btns").exclude();
-          this.getChildControl("breadcrumbs-scroll").exclude();
-          this.getChildControl("breadcrumbs-scroll-edit").show();
-          this.getChildControl("start-stop-btns").exclude();
-        } else {
-          this.getChildControl("prev-next-btns").show();
-          this.getChildControl("breadcrumbs-scroll").show();
-          this.getChildControl("breadcrumbs-scroll-edit").exclude();
-          this.getChildControl("start-stop-btns").show();
-        }
-
         this.getChildControl("prev-next-btns").populateButtons(nodeIds);
+        this.__evalButtonsIfEditing();
+      }
+    },
+
+    __evalButtonsIfEditing: function() {
+      const editSlideshowButtons = this.getChildControl("edit-slideshow-buttons");
+      const currentModeBtn = editSlideshowButtons.getSelection()[0];
+      if ("editing" in currentModeBtn && currentModeBtn["editing"]) {
+        this.getChildControl("breadcrumbs-scroll").exclude();
+        this.getChildControl("breadcrumbs-scroll-edit").show();
+      } else {
+        this.getChildControl("breadcrumbs-scroll").show();
+        this.getChildControl("breadcrumbs-scroll-edit").exclude();
       }
     }
   }
