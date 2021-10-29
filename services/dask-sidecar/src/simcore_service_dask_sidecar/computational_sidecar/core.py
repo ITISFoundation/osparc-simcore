@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import socket
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -210,7 +211,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                         "Running"
                     ]:
                         await asyncio.sleep(CONTAINER_WAIT_TIME_SECS)
-                    if container_data["State"]["ExitCode"] > 0:
+                    if container_data["State"]["ExitCode"] > os.EX_OK:
                         await self._publish_sidecar_state(
                             RunningState.FAILED,
                             msg=f"error while running container '{container.id}' for '{self.service_key}:{self.service_version}'",
@@ -245,4 +246,5 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
     ) -> Awaitable[Optional[bool]]:
-        ...
+        """NOTE: this is empty but this is intended. the ComputationSidecar
+        is meant to be used as context manager"""
