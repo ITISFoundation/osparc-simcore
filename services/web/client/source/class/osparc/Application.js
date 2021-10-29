@@ -67,8 +67,8 @@ qx.Class.define("osparc.Application", {
       }
 
       const webSocket = osparc.wrapper.WebSocket.getInstance();
-      webSocket.addListener("connect", () => osparc.io.WatchDog.getInstance().setOnLine(true));
-      webSocket.addListener("disconnect", () => osparc.io.WatchDog.getInstance().setOnLine(false));
+      webSocket.addListener("connect", () => osparc.io.WatchDog.getInstance().setOnline(true));
+      webSocket.addListener("disconnect", () => osparc.io.WatchDog.getInstance().setOnline(false));
       webSocket.addListener("logout", () => this.logout());
       // alert the users that they are about to navigate away
       // from osparc. unfortunately it is not possible

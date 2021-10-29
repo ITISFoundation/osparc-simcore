@@ -418,7 +418,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const userMenuButton = new osparc.navigation.UserMenuButton().set({
         backgroundColor: "contrasted-background+"
       });
+      osparc.io.WatchDog.getInstance().bind("online", userMenuButton, "backgroundColor", {
+        converter: on => on ? "contrasted-background+" : "red"
+      });
       userMenuButton.getChildControl("label").exclude();
+      userMenuButton.getMenu().set({
+        backgroundColor: "contrasted-background+"
+      });
       userMenuButton.populateExtendedMenu();
       userMenuButton.exclude();
       topBar.add(userMenuButton);
