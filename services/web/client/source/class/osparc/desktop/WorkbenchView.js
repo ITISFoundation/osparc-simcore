@@ -408,6 +408,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       topBar.add(separator);
 
       const closeStudyButton = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16").set({
+        font: "text-14",
         backgroundColor: "contrasted-background+"
       });
       osparc.utils.Utils.setIdToWidget(closeStudyButton, "dashboardBtn");
@@ -417,6 +418,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const userMenuButton = new osparc.navigation.UserMenuButton().set({
         backgroundColor: "contrasted-background+"
       });
+      userMenuButton.getChildControl("label").exclude();
       userMenuButton.populateExtendedMenu();
       userMenuButton.exclude();
       topBar.add(userMenuButton);
