@@ -3,13 +3,15 @@ from typing import Dict
 from uuid import UUID
 
 from _pytest.monkeypatch import MonkeyPatch
-from settings_library.docker_registry import RegistrySettings
-from settings_library.rabbit import RabbitSettings
+from simcore_service_director_v2.core.settings import (
+    AppSettings,
+    DynamicSidecarSettings,
+)
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     SchedulerData,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.env import (
-    get_dynamic_sidecar_env_vars,
+from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.spec_dynamic_sidecar import (
+    _get_dy_sidecar_env_vars,
 )
 
 MOCKED_PASSWORD = "pwd"
@@ -19,9 +21,27 @@ MOCKED_BASE_REGISTRY_ENV_VARS: Dict[str, str] = {
     "REGISTRY_USER": "usr",
     "REGISTRY_PW": MOCKED_PASSWORD,
     "REGISTRY_SSL": "False",
+    "DYNAMIC_SIDECAR_IMAGE": "itisfoundation/dynamic-sidecar:MOCK",
+    "POSTGRES_HOST": "test",
+    "POSTGRES_USER": "test",
+    "POSTGRES_PASSWORD": "test",
+    "POSTGRES_DB": "test",
 }
 
 EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
+    "DY_SIDECAR_PATH_INPUTS",
+    "DY_SIDECAR_PATH_OUTPUTS",
+    "DY_SIDECAR_STATE_PATHS",
+    "DY_SIDECAR_USER_ID",
+    "DY_SIDECAR_PROJECT_ID",
+    "DY_SIDECAR_NODE_ID",
+    "POSTGRES_HOST",
+    "POSTGRES_ENDPOINT",
+    "POSTGRES_PASSWORD",
+    "POSTGRES_PORT",
+    "POSTGRES_USER",
+    "POSTGRES_DB",
+    "STORAGE_ENDPOINT",
     "REGISTRY_AUTH",
     "REGISTRY_PATH",
     "REGISTRY_URL",
@@ -45,12 +65,14 @@ def test_dynamic_sidecar_env_vars(
     for key, value in MOCKED_BASE_REGISTRY_ENV_VARS.items():
         monkeypatch.setenv(key, value)
 
-    registry_settings = RegistrySettings()
-    rabbit_settings = RabbitSettings()
+    app_settings = AppSettings.create_from_envs()
+    dynamic_sidecar_settings = DynamicSidecarSettings.create_from_envs()
 
-    dynamic_sidecar_env_vars = get_dynamic_sidecar_env_vars(
-        scheduler_data_from_http_request, registry_settings, rabbit_settings
+    dynamic_sidecar_env_vars = _get_dy_sidecar_env_vars(
+        scheduler_data_from_http_request, app_settings, dynamic_sidecar_settings
     )
+    registry_settings = dynamic_sidecar_settings.REGISTRY
+    rabbit_settings = dynamic_sidecar_settings.RABBIT_SETTINGS
     print("dynamic_sidecar_env_vars:", dynamic_sidecar_env_vars)
 
     assert len(dynamic_sidecar_env_vars) == len(EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES)
@@ -91,3 +113,7 @@ def test_dynamic_sidecar_env_vars(
     assert int(dynamic_sidecar_env_vars["USER_ID"]) >= 0
     assert UUID(dynamic_sidecar_env_vars["PROJECT_ID"])
     assert UUID(dynamic_sidecar_env_vars["NODE_ID"])
+
+    assert int(dynamic_sidecar_env_vars["DY_SIDECAR_USER_ID"]) >= 0
+    assert UUID(dynamic_sidecar_env_vars["DY_SIDECAR_PROJECT_ID"])
+    assert UUID(dynamic_sidecar_env_vars["DY_SIDECAR_NODE_ID"])
