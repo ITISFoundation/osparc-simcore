@@ -97,31 +97,6 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
         self._keep_running = True
         self._queues_worker = asyncio.create_task(self._dispatch_messages_worker())
 
-    async def close(self) -> None:
-        if self._channel is not None:
-            await self._channel.close()
-        if self._connection is not None:
-            await self._connection.close()
-
-        # wait for queues to be empty before sending the last messages
-        self._keep_running = False
-        if self._queues_worker is not None:
-            await self._queues_worker
-
-    async def _publish_messages(self, channel: str, messages: List[str]) -> None:
-        data = {
-            "Channel": channel,
-            "Node": f"{self._node_id}",
-            "user_id": f"{self._user_id}",
-            "project_id": f"{self._project_id}",
-            "Messages": messages,
-        }
-
-        assert self._logs_exchange  # nosec
-        await self._logs_exchange.publish(
-            aio_pika.Message(body=json.dumps(data).encode()), routing_key=""
-        )
-
     async def _dispatch_messages_worker(self) -> None:
         while self._keep_running:
             for channel, queue in self._channel_queues.items():
@@ -140,12 +115,37 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
 
             await asyncio.sleep(SLEEP_BETWEEN_SENDS)
 
+    async def _publish_messages(self, channel: str, messages: List[str]) -> None:
+        data = {
+            "Channel": channel,
+            "Node": f"{self._node_id}",
+            "user_id": f"{self._user_id}",
+            "project_id": f"{self._project_id}",
+            "Messages": messages,
+        }
+
+        assert self._logs_exchange  # nosec
+        await self._logs_exchange.publish(
+            aio_pika.Message(body=json.dumps(data).encode()), routing_key=""
+        )
+
     async def post_log_message(self, log_msg: Union[str, List[str]]) -> None:
         if isinstance(log_msg, str):
             log_msg = [log_msg]
 
         for message in log_msg:
             await self._channel_queues[self.CHANNEL_LOG].put(message)
+
+    async def close(self) -> None:
+        if self._channel is not None:
+            await self._channel.close()
+        if self._connection is not None:
+            await self._connection.close()
+
+        # wait for queues to be empty before sending the last messages
+        self._keep_running = False
+        if self._queues_worker is not None:
+            await self._queues_worker
 
 
 def setup_rabbitmq(app: FastAPI) -> None:
