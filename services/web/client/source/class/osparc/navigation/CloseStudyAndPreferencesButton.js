@@ -21,18 +21,22 @@ qx.Class.define("osparc.navigation.CloseStudyAndPreferencesButton", {
   construct: function() {
     this.base(arguments);
 
-    // this.setIcon("@FontAwesome5Solid/door-open/24");
-    this.setIcon("@FontAwesome5Solid/desktop/24");
+    this.set({
+      // icon: "@FontAwesome5Solid/door-open/26",
+      icon: "@FontAwesome5Solid/times/26",
+      menu: new qx.ui.menu.Menu()
+    });
 
     this.getChildControl("button").set({
+      width: 35,
       toolTipText: this.tr("Close Study")
     });
 
     this.getChildControl("arrow").set({
+      width: 25,
       toolTipText: this.tr("Preferences")
     });
 
-    this.setMenu(new qx.ui.menu.Menu());
     osparc.data.Resources.get("statics")
       .then(statics => {
         this.__serverStatics = statics;

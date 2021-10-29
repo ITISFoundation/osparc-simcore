@@ -52,6 +52,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   },
 
   events: {
+    "collapseNavBar": "qx.event.type.Event",
+    "expandNavBar": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event"
   },
 
@@ -349,7 +351,34 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__addTopBarSpacer(topBar);
 
 
-      topBar.add(this.__createCloseStudyAndPreferencesButton());
+      const closeStudyAndPreferencesButton = this.__createCloseStudyAndPreferencesButton();
+      closeStudyAndPreferencesButton.exclude();
+      topBar.add(closeStudyAndPreferencesButton);
+
+
+      const collapseExpandNavBarStack = new qx.ui.container.Stack();
+
+      const collapseNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-up/14").set({
+        backgroundColor: "contrasted-background+"
+      });
+      collapseExpandNavBarStack.add(collapseNavBarBtn);
+      collapseNavBarBtn.addListener("execute", () => {
+        closeStudyAndPreferencesButton.show();
+        collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[1]]);
+        this.fireEvent("collapseNavBar");
+      });
+
+      const expandNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-down/14").set({
+        backgroundColor: "contrasted-background+"
+      });
+      collapseExpandNavBarStack.add(expandNavBarBtn);
+      expandNavBarBtn.addListener("execute", () => {
+        closeStudyAndPreferencesButton.exclude();
+        collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[0]]);
+        this.fireEvent("expandNavBar");
+      });
+
+      topBar.add(collapseExpandNavBarStack);
     },
 
     __removePages: function(tabView) {
@@ -382,10 +411,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __createCloseStudyAndPreferencesButton: function() {
       const closeStudyAndPreferencesButton = new osparc.navigation.CloseStudyAndPreferencesButton().set({
+        padding: 0,
         height: this.self().TAB_BUTTON_HEIGHT,
+        allowGrowY: true,
         alignX: "center",
         alignY: "middle",
-        backgroundColor: "background-main"
+        backgroundColor: "contrasted-background+"
       });
       closeStudyAndPreferencesButton.addListener("execute", () => this.fireEvent("backToDashboardPressed"));
       return closeStudyAndPreferencesButton;

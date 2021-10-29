@@ -384,8 +384,10 @@ qx.Class.define("osparc.desktop.MainPage", {
         const snapshotId = e.getData();
         this.__startSnapshot(this.__studyEditor.getStudy().getUuid(), snapshotId);
       }, this);
-      studyEditor.addListener("forceBackToDashboard", () => this.__showDashboard(), this);
+      studyEditor.addListener("expandNavBar", () => this.__navBar.show());
+      studyEditor.addListener("collapseNavBar", () => this.__navBar.exclude());
       studyEditor.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
+      studyEditor.addListener("forceBackToDashboard", () => this.__showDashboard(), this);
       return studyEditor;
     },
 
