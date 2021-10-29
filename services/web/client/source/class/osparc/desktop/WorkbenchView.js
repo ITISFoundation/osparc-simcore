@@ -65,7 +65,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   events: {
     "collapseNavBar": "qx.event.type.Event",
     "expandNavBar": "qx.event.type.Event",
-    "backToDashboardPressed": "qx.event.type.Event"
+    "backToDashboardPressed": "qx.event.type.Event",
+    "slidesGuidedStart": "qx.event.type.Event",
+    "slidesAppStart": "qx.event.type.Event",
+    "slidesEdit": "qx.event.type.Event"
   },
 
   properties: {
@@ -328,6 +331,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__addTopBarSpacer(topBar);
 
       const studyOptionsPage = this.__studyOptionsPage = this.__createTabPage("@FontAwesome5Solid/book", this.tr("Study options"));
+      studyOptionsPage.getLayout().setSeparator("separator-vertical");
       studyOptionsPage.exclude();
       tabViewSecondary.add(studyOptionsPage);
 
@@ -759,6 +763,45 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__studyOptionsPage.add(new osparc.studycard.Medium(study), {
         flex: 1
       });
+
+      this.__studyOptionsPage.add(this.__getSlideshowSection());
+
+      this.__studyOptionsPage.add(this.__getSnapshotsSection(), {
+        flex: 1
+      });
+    },
+
+    __getSlideshowSection: function() {
+      const slideshowSection = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      slideshowSection.add(new qx.ui.basic.Label(this.tr("Slideshow")).set({
+        font: "title-14"
+      }));
+
+      const slideshowButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      slideshowSection.add(slideshowButtons);
+
+      const editSlidesBtn = new qx.ui.form.Button(this.tr("Edit Slideshow"));
+      editSlidesBtn.addListener("execute", () => this.fireEvent("slidesEdit"), this);
+      slideshowButtons.add(editSlidesBtn);
+
+      const startGuidedBtn = new qx.ui.form.Button(this.tr("Start Guided Mode"));
+      startGuidedBtn.addListener("execute", () => this.fireEvent("slidesGuidedStart"), this);
+      slideshowButtons.add(startGuidedBtn);
+
+      const startAppBtn = new qx.ui.form.Button(this.tr("Start App Mode"));
+      startAppBtn.addListener("execute", () => this.fireEvent("slidesAppStart"), this);
+      slideshowButtons.add(startAppBtn);
+
+      return slideshowSection;
+    },
+
+    __getSnapshotsSection: function() {
+      const snapshotSection = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      snapshotSection.add(new qx.ui.basic.Label(this.tr("Snapshots")).set({
+        font: "title-14"
+      }));
+
+      return snapshotSection;
     },
 
     __populateSecondPanelFilePicker: function(filePicker) {
