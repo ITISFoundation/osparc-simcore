@@ -19,7 +19,7 @@ from models_library.projects_nodes import NodeID
 from models_library.settings.rabbit import RabbitConfig
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
-from simcore_service_dynamic_sidecar.core.rabbitmq import RabbitMQ
+from simcore_service_dynamic_sidecar.core.rabbitmq import SLEEP_BETWEEN_SENDS, RabbitMQ
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
 pytestmark = pytest.mark.asyncio
@@ -130,9 +130,6 @@ async def test_rabbitmq(
         "simcore_service_dynamic_sidecar.core.rabbitmq._channel_close_callback"
     )
 
-    log_msg: str = "I am logging"
-    log_messages: List[str] = ["I", "am a logger", "man..."]
-
     incoming_data = []
 
     async def rabbit_message_handler(message: aio_pika.IncomingMessage):
@@ -144,32 +141,43 @@ async def test_rabbitmq(
     await rabbit.connect()
     assert rabbit._connection.ready  # pylint: disable=protected-access
 
+    log_msg: str = "I am logging"
+    log_messages: List[str] = ["I", "am a logger", "man..."]
+    log_more_messages: List[str] = [f"msg{1}" for i in range(10)]
+
     await rabbit.post_log_message(log_msg)
     await rabbit.post_log_message(log_messages)
 
-    await rabbit.close()
+    # make sure the first 2 messages are
+    # sent in the same chunk
+    await asyncio.sleep(SLEEP_BETWEEN_SENDS * 1.1)
+    await rabbit.post_log_message(log_more_messages)
 
     # wait for all the messages to be delivered,
-    # the next assert sometimes fails in the CI
-    await asyncio.sleep(1)
-
-    mock_close_channel_cb.assert_called_once()
-    mock_close_connection_cb.assert_called_once()
+    # need to make sure all messages are delivered
+    await asyncio.sleep(SLEEP_BETWEEN_SENDS * 1.1)
 
     # if this fails the above sleep did not work
+
     assert len(incoming_data) == 2, f"missing incoming data: {pformat(incoming_data)}"
 
     assert incoming_data[0] == {
         "Channel": "Log",
-        "Messages": [log_msg],
+        "Messages": [log_msg] + log_messages,
         "Node": f"{node_id}",
         "project_id": f"{project_id}",
         "user_id": f"{user_id}",
     }
+
     assert incoming_data[1] == {
         "Channel": "Log",
-        "Messages": log_messages,
+        "Messages": log_more_messages,
         "Node": f"{node_id}",
         "project_id": f"{project_id}",
         "user_id": f"{user_id}",
     }
+
+    # ensure closes correctly
+    await rabbit.close()
+    mock_close_connection_cb.assert_called_once()
+    mock_close_channel_cb.assert_called_once()
