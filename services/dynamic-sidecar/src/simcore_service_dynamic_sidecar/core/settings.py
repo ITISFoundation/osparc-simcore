@@ -1,7 +1,7 @@
 import logging
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import List, Optional, cast
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.projects import ProjectID
@@ -14,11 +14,6 @@ from settings_library.rabbit import RabbitSettings
 
 
 class DynamicSidecarSettings(BaseCustomSettings):
-    @classmethod
-    def create(cls, **settings_kwargs: Any) -> "DynamicSidecarSettings":
-        return cls.create_from_envs(
-            **settings_kwargs,
-        )
 
     SC_BOOT_MODE: Optional[BootModeEnum] = Field(
         ...,
@@ -109,4 +104,4 @@ class DynamicSidecarSettings(BaseCustomSettings):
 @lru_cache
 def get_settings() -> DynamicSidecarSettings:
     """used outside the context of a request"""
-    return DynamicSidecarSettings.create()
+    return cast(DynamicSidecarSettings, DynamicSidecarSettings.create_from_envs())

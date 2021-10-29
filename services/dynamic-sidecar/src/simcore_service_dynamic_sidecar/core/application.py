@@ -41,7 +41,7 @@ def assemble_application() -> FastAPI:
     needed in other requests and used to share data.
     """
 
-    dynamic_sidecar_settings = DynamicSidecarSettings.create()
+    dynamic_sidecar_settings = DynamicSidecarSettings.create_from_envs()
 
     logging.basicConfig(level=dynamic_sidecar_settings.loglevel)
     logging.root.setLevel(dynamic_sidecar_settings.loglevel)

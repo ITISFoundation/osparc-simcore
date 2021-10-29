@@ -39,7 +39,7 @@ def mocked_non_request_settings(tmp_dir: Path, monkeypatch: MonkeyPatch) -> None
 def test_non_request_dynamic_sidecar_settings(
     mocked_non_request_settings: None,
 ) -> None:
-    assert DynamicSidecarSettings.create()
+    assert DynamicSidecarSettings.create_from_envs()
 
 
 def test_cached_settings_is_same_object(mocked_non_request_settings: None) -> None:
