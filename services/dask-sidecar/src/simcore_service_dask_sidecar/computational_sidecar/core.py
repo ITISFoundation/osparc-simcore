@@ -87,7 +87,9 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 await self._publish_sidecar_log(
                     f"Downloading '{input_params.url.path.strip('/')}' into local file '{destination_path.name}'..."
                 )
-                await pull_file_from_remote(input_params.url, destination_path)
+                await pull_file_from_remote(
+                    input_params.url, destination_path, self._publish_sidecar_log
+                )
                 await self._publish_sidecar_log(
                     f"Download of '{destination_path.name}' complete."
                 )

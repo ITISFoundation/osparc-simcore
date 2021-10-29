@@ -1,9 +1,10 @@
 import asyncio
+import functools
 import mimetypes
 import zipfile
 from pathlib import Path
 from pprint import pformat
-from typing import Final
+from typing import Awaitable, Callable, Final
 
 import aiofiles
 import fsspec
@@ -17,7 +18,12 @@ logger = create_dask_worker_logger(__name__)
 HTTP_FILE_SYSTEM_SCHEMES: Final = ["http", "https"]
 
 
-async def pull_file_from_remote(src_url: AnyUrl, dst_path: Path) -> None:
+LogPublishingCB = Callable[[str], Awaitable[None]]
+
+
+async def pull_file_from_remote(
+    src_url: AnyUrl, dst_path: Path, log_publishing_cb: LogPublishingCB
+) -> None:
     logger.debug("pulling '%s' to local destination '%s'", src_url, dst_path)
     src_mime_type, _ = mimetypes.guess_type(f"{src_url.path}")
     dst_mime_type, _ = mimetypes.guess_type(dst_path)
@@ -32,14 +38,40 @@ async def pull_file_from_remote(src_url: AnyUrl, dst_path: Path) -> None:
         filesystem_cfg["port"] = int(src_url.port)
     logger.debug("file system configuration is %s", pformat(filesystem_cfg))
     fs = fsspec.filesystem(**filesystem_cfg)
+    main_loop = asyncio.get_event_loop()
+
+    await log_publishing_cb(
+        f"Downloading '{src_url.path.strip('/')}' into local file '{dst_path.name}'..."
+    )
+
+    def file_progress_cb(size, value, **kwargs):
+        download_progress = f"download progress '{src_url.path.strip('/')}': {100.0 * float(value)/float(size):.1f}"
+        asyncio.run_coroutine_threadsafe(
+            log_publishing_cb(download_progress), main_loop
+        )
+
     await asyncio.get_event_loop().run_in_executor(
         None,
-        fs.get_file,
-        f"{src_url.path}"
-        if src_url.scheme not in HTTP_FILE_SYSTEM_SCHEMES
-        else src_url,
-        dst_path,
+        functools.partial(
+            fs.get_file,
+            f"{src_url.path}"
+            if src_url.scheme not in HTTP_FILE_SYSTEM_SCHEMES
+            else src_url,
+            dst_path,
+            callback=fsspec.Callback(hooks={"progress": file_progress_cb}),
+        ),
     )
+
+    # fsspec.Callback(hooks={"progress": file_progress_cb}),
+    # await asyncio.get_event_loop().run_in_executor(
+    #     None,
+    #     fs.get_file,
+    #     f"{src_url.path}"
+    #     if src_url.scheme not in HTTP_FILE_SYSTEM_SCHEMES
+    #     else src_url,
+    #     dst_path,
+    #     fsspec.Callback(hooks={"progress": file_progress_cb}),
+    # )
     if src_mime_type == "application/zip" and dst_mime_type != "application/zip":
         logger.debug("%s is a zip file and will be now uncompressed", dst_path)
         with zipfile.ZipFile(dst_path, "r") as zip_obj:

@@ -2,6 +2,7 @@ import asyncio
 import contextlib
 import json
 import re
+import socket
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
@@ -459,10 +460,12 @@ async def pull_image(
             "password": docker_auth.password.get_secret_value(),
         },
     ):
-        log_publishing_cb(
+        await log_publishing_cb(
             f"Pulling {service_key}:{service_version}: {pull_progress}..."
         )
-    log_publishing_cb(f"{service_key}:{service_version} pulled")
+    await log_publishing_cb(
+        f"Docker image for {service_key}:{service_version} ready  on {socket.gethostname()}."
+    )
 
 
 async def get_integration_version(
