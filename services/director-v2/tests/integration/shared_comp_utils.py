@@ -93,7 +93,9 @@ def assert_pipeline_status(
         assert task_out.id == project_uuid
         assert task_out.url == f"{client.base_url}/v2/computations/{project_uuid}"
         print("Pipeline is in ", task_out.state)
-        assert task_out.state in wait_for_states
+        assert (
+            task_out.state in wait_for_states
+        ), f"current task state is '{task_out.state}', not in any of {wait_for_states}"
         return task_out
 
     task_out = check_pipeline_state()
