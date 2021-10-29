@@ -65,21 +65,29 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   },
 
   statics: {
+    getSortingValue: function(node) {
+      if (node.isFilePicker()) {
+        return osparc.utils.Services.getSorting("file");
+      } else if (node.isParameter()) {
+        return osparc.utils.Services.getSorting("parameter");
+      }
+      return osparc.utils.Services.getSorting(node.getMetaData().type);
+    },
+
     convertModel: function(nodes) {
-      let children = [];
+      const children = [];
       for (let nodeId in nodes) {
         const node = nodes[nodeId];
-        let nodeInTree = {
-          label: "",
-          nodeId: node.getNodeId()
+        const nodeInTree = {
+          label: node.getLabel(),
+          children: node.isContainer() ? this.convertModel(node.getInnerNodes()) : [],
+          isContainer: node.isContainer(),
+          nodeId: node.getNodeId(),
+          sortingValue: this.self().getSortingValue(node)
         };
-        nodeInTree.label = node.getLabel();
-        nodeInTree.isContainer = node.isContainer();
-        if (node.isContainer()) {
-          nodeInTree.children = this.convertModel(node.getInnerNodes());
-        }
         children.push(nodeInTree);
       }
+      // children.sort((firstEl, secondEl) => firstEl.sortingValue - secondEl.sortingValue);
       return children;
     }
   },
@@ -111,11 +119,12 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     populateTree: function() {
       const study = this.getStudy();
       const topLevelNodes = study.getWorkbench().getNodes();
-      let data = {
+      const data = {
         label: study.getName(),
         children: this.self().convertModel(topLevelNodes),
+        isContainer: true,
         nodeId: study.getUuid(),
-        isContainer: true
+        sortingValue: 0
       };
       let newModel = qx.data.marshal.Json.createModel(data, true);
       let oldModel = this.getModel();
@@ -134,19 +143,15 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           bindItem: (c, item, id) => {
             c.bindDefaultProperties(item, id);
             c.bindProperty("nodeId", "nodeId", null, item, id);
-            const node = study.getWorkbench().getNode(item.getModel().getNodeId());
-            if (node) {
-              node.bind("label", item.getModel(), "label");
-            }
             c.bindProperty("label", "label", null, item, id);
+            const node = study.getWorkbench().getNode(item.getModel().getNodeId());
             if (item.getModel().getNodeId() === study.getUuid()) {
               item.setIcon("@FontAwesome5Solid/home/14");
               item.getChildControl("options-delete-button").exclude();
-            }
-            if (node) {
-              if (node.isDynamic()) {
-                item.getChildControl("fullscreen-button").show();
-              }
+            } else if (node) {
+              node.bind("label", item.getModel(), "label");
+
+              // set icon
               if (node.isFilePicker()) {
                 const icon = osparc.utils.Services.getIcon("file");
                 item.setIcon(icon+"14");
@@ -159,6 +164,22 @@ qx.Class.define("osparc.component.widget.NodesTree", {
                   item.setIcon(icon+"14");
                 }
               }
+
+              // bind running/interactive status to icon color
+              if (node.isDynamic()) {
+                node.getStatus().bind("interactive", item.getChildControl("icon"), "textColor", {
+                  converter: status => osparc.utils.StatusUI.getColor(status)
+                }, this);
+              } else if (node.isComputational()) {
+                node.getStatus().bind("running", item.getChildControl("icon"), "textColor", {
+                  converter: status => osparc.utils.StatusUI.getColor(status)
+                }, this);
+              }
+
+              // add fullscreen
+              if (node.isDynamic()) {
+                item.getChildControl("fullscreen-button").show();
+              }
             }
           },
           configureItem: item => {
@@ -166,8 +187,12 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               this.__openItem(item.getModel().getNodeId());
               this.nodeSelected(item.getModel().getNodeId());
             }, this);
-          }
+          },
+          sorter: (itemA, itemB) => itemA.getSortingValue() - itemB.getSortingValue()
         });
+        const nChildren = newModel.getChildren().length;
+        console.log(nChildren);
+        this.setHeight(nChildren*21 + 12);
       }
     },
 
