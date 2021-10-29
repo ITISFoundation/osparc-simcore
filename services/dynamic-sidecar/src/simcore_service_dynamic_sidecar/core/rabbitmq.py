@@ -1,7 +1,8 @@
+import asyncio
 import json
 import logging
 import socket
-from asyncio import CancelledError
+from asyncio import CancelledError, Queue, Task
 from typing import Any, Dict, List, Optional, Union
 
 import aio_pika
@@ -16,6 +17,8 @@ from settings_library.rabbit import RabbitSettings
 from ..core.settings import DynamicSidecarSettings
 
 log = logging.getLogger(__file__)
+
+SLEEP_BETWEEN_SENDS: float = 1.0
 
 
 def _close_callback(sender: Any, exc: Optional[BaseException]) -> None:
@@ -44,8 +47,10 @@ async def _wait_till_rabbit_responsive(url: str) -> bool:
     return True
 
 
-class RabbitMQ:
-    def __init__(self, app: FastAPI) -> None:
+class RabbitMQ:  # pylint: disable = too-many-instance-attributes
+    CHANNEL_LOG = "Log"
+
+    def __init__(self, app: FastAPI, max_messages_to_send: int = 100) -> None:
         settings: DynamicSidecarSettings = app.state.settings
 
         assert settings.RABBIT_SETTINGS  # nosec
@@ -57,6 +62,11 @@ class RabbitMQ:
         self._connection: Optional[aio_pika.Connection] = None
         self._channel: Optional[aio_pika.Channel] = None
         self._logs_exchange: Optional[aio_pika.Exchange] = None
+
+        self.max_messages_to_send: int = max_messages_to_send
+        self._channel_queues: Dict[str, Queue] = {}
+        self._keep_running: bool = True
+        self._queues_worker: Optional[Task] = None
 
     async def connect(self) -> None:
         url = self._rabbit_settings.dsn
@@ -81,6 +91,11 @@ class RabbitMQ:
         self._logs_exchange = await self._channel.declare_exchange(
             self._rabbit_settings.RABBIT_CHANNELS["log"], aio_pika.ExchangeType.FANOUT
         )
+        self._channel_queues[self.CHANNEL_LOG] = Queue()
+
+        # start background worker to dispatch messages
+        self._keep_running = True
+        self._queues_worker = asyncio.create_task(self._dispatch_messages_worker())
 
     async def close(self) -> None:
         if self._channel is not None:
@@ -88,25 +103,49 @@ class RabbitMQ:
         if self._connection is not None:
             await self._connection.close()
 
-    async def _post_message(self, data: Dict[str, Union[str, Any]]) -> None:
-        assert self._logs_exchange  # nosec
+        # wait for queues to be empty before sending the last messages
+        self._keep_running = False
+        if self._queues_worker is not None:
+            await self._queues_worker
 
-        # TODO: accumulate messages by `Channel` name and push them forward
-        # in at set intervals, ensures webserver will not get overwhelmed
+    async def _publish_messages(self, channel: str, messages: List[str]) -> None:
+        data = {
+            "Channel": channel,
+            "Node": f"{self._node_id}",
+            "user_id": f"{self._user_id}",
+            "project_id": f"{self._project_id}",
+            "Messages": messages,
+        }
+
+        assert self._logs_exchange  # nosec
         await self._logs_exchange.publish(
             aio_pika.Message(body=json.dumps(data).encode()), routing_key=""
         )
 
+    async def _dispatch_messages_worker(self) -> None:
+        while self._keep_running:
+            for channel, queue in self._channel_queues.items():
+                # in order to avoid blocking when dispatching messages
+                # it is important to fetch them an at most the existing
+                # messages in the queue
+                messages_to_fetch = min(self.max_messages_to_send, queue.qsize())
+                messages = [await queue.get() for _ in range(messages_to_fetch)]
+
+                # currently there are no messages do not broardcast
+                # an empty payload
+                if not messages:
+                    continue
+
+                await self._publish_messages(channel, messages)
+
+            await asyncio.sleep(SLEEP_BETWEEN_SENDS)
+
     async def post_log_message(self, log_msg: Union[str, List[str]]) -> None:
-        await self._post_message(
-            data={
-                "Channel": "Log",
-                "Node": f"{self._node_id}",
-                "user_id": f"{self._user_id}",
-                "project_id": f"{self._project_id}",
-                "Messages": log_msg if isinstance(log_msg, list) else [log_msg],
-            },
-        )
+        if isinstance(log_msg, str):
+            log_msg = [log_msg]
+
+        for message in log_msg:
+            await self._channel_queues[self.CHANNEL_LOG].put(message)
 
 
 def setup_rabbitmq(app: FastAPI) -> None:
