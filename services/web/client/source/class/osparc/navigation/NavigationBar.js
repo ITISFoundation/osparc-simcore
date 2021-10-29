@@ -218,7 +218,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this._add(control);
           break;
         case "study-options-menu":
-          control = new osparc.navigation.StudyMenu();
+          control = new osparc.navigation.StopSlideshow();
           [
             "slidesGuidedStart",
             "slidesAppStart",

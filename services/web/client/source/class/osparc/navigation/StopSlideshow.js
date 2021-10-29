@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.navigation.StudyMenu", {
+qx.Class.define("osparc.navigation.StopSlideshow", {
   extend: qx.ui.form.Button,
 
   construct: function() {
