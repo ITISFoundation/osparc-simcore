@@ -34,6 +34,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       "slidesGuidedStart",
       "slidesAppStart"
     ].forEach(singalName => workbenchView.addListener(singalName, () => this.fireEvent(singalName)));
+    workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot, this);
+    workbenchView.addListener("showSnapshots", () => this.__showSnapshots, this);
     viewsStack.add(workbenchView);
 
     const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
@@ -403,7 +405,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    takeSnapshot: function() {
+    __takeSnapshot: function() {
       const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
       const tagCtrl = editSnapshotView.getChildControl("tags");
       const study = this.getStudy();
@@ -434,7 +436,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       editSnapshotView.addListener("cancel", () => win.close(), this);
     },
 
-    showSnapshots: function() {
+    __showSnapshots: function() {
       const study = this.getStudy();
       const snapshots = new osparc.component.snapshots.SnapshotsView(study);
       const title = this.tr("Snapshots");

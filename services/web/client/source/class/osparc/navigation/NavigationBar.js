@@ -66,9 +66,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     "slidesGuidedStart": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
     "slidesStop": "qx.event.type.Event",
-    "slidesEdit": "qx.event.type.Event",
-    "takeSnapshot": "qx.event.type.Event",
-    "showSnapshots": "qx.event.type.Event"
+    "slidesEdit": "qx.event.type.Event"
   },
 
   properties: {
@@ -225,9 +223,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             "slidesGuidedStart",
             "slidesAppStart",
             "slidesStop",
-            "slidesEdit",
-            "takeSnapshot",
-            "showSnapshots"
+            "slidesEdit"
           ].forEach(signalName => {
             control.addListener(signalName, () => this.fireEvent(signalName));
           });

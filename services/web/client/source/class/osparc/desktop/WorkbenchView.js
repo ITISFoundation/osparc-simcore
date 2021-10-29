@@ -68,7 +68,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     "backToDashboardPressed": "qx.event.type.Event",
     "slidesEdit": "qx.event.type.Event",
     "slidesGuidedStart": "qx.event.type.Event",
-    "slidesAppStart": "qx.event.type.Event"
+    "slidesAppStart": "qx.event.type.Event",
+    "takeSnapshot": "qx.event.type.Event",
+    "showSnapshots": "qx.event.type.Event"
   },
 
   properties: {
@@ -85,6 +87,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __nodesTree: null,
     __filesTree: null,
     __storagePage: null,
+    __studyOptionsPage: null,
+    __infoPage: null,
     __settingsPage: null,
     __outputsPage: null,
     __workbenchPanel: null,
@@ -93,6 +97,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __iframePage: null,
     __loggerView: null,
     __currentNodeId: null,
+    __startSlidesButton: null,
+    __startAppButton: null,
+    __editSlidesButton: null,
+    __takeSnapshotButton: null,
+    __showSnapshotsButton: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -219,8 +228,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__initViews();
         this.__connectEvents();
         this.__attachSocketEventHandlers();
+
+        study.getWorkbench().addListener("pipelineChanged", () => this.__evalSlidesButtons());
+        study.getUi().getSlideshow().addListener("changeSlideshow", () => this.__evalSlidesButtons());
+        study.getUi().addListener("changeMode", () => this.__evalSlidesButtons());
+        this.__evalSlidesButtons();
+        this.__evalSnapshotsButtons();
       }
-      this.__workbenchPanel.getToolbar().setStudy(study);
+      this.__workbenchPanel.getToolbar().setStudy(null);
     },
 
     __createTabPage: function(icon, tooltip, widget, backgroundColor = "background-main") {
@@ -784,7 +799,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       slideshowSection.add(slideshowButtons);
 
       const buttonsHeight = 28;
-      const editSlidesBtn = new qx.ui.form.Button().set({
+      const editSlidesBtn = this.__editSlidesButton = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/edit/14",
         toolTipText: this.tr("Edit slideshow"),
         height: buttonsHeight
@@ -792,7 +807,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       editSlidesBtn.addListener("execute", () => this.fireEvent("slidesEdit"), this);
       slideshowButtons.add(editSlidesBtn);
 
-      const startGuidedBtn = new qx.ui.form.Button().set({
+      const startGuidedBtn = this.__startSlidesButton = new qx.ui.form.Button().set({
         label: this.tr("Guided Mode"),
         icon: "@FontAwesome5Solid/play/14",
         toolTipText: this.tr("Start Guided Mode"),
@@ -801,7 +816,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       startGuidedBtn.addListener("execute", () => this.fireEvent("slidesGuidedStart"), this);
       slideshowButtons.add(startGuidedBtn);
 
-      const startAppBtn = new qx.ui.form.Button(this.tr("Start App Mode")).set({
+      const startAppBtn = this.__startAppButton = new qx.ui.form.Button().set({
         label: this.tr("App Mode"),
         icon: "@FontAwesome5Solid/play/14",
         toolTipText: this.tr("Start App Mode"),
@@ -814,12 +829,51 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __getSnapshotsSection: function() {
-      const snapshotSection = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      const snapshotSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       snapshotSection.add(new qx.ui.basic.Label(this.tr("Snapshots")).set({
         font: "title-14"
       }));
 
+      const snapshotButtons = this.__takeSnapshotButton = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      snapshotSection.add(snapshotButtons);
+
+      const buttonsHeight = 28;
+      const takeSnapshotBtn = new qx.ui.form.Button().set({
+        label: this.tr("New"),
+        height: buttonsHeight
+      });
+      takeSnapshotBtn.addListener("execute", () => this.fireEvent("takeSnapshot"), this);
+      snapshotButtons.add(takeSnapshotBtn);
+
+      const showSnapshotsBtn = this.__showSnapshotsButton = new qx.ui.form.Button().set({
+        label: this.tr("Show Snapshots"),
+        height: buttonsHeight
+      });
+      showSnapshotsBtn.addListener("execute", () => this.fireEvent("showSnapshots"), this);
+      snapshotButtons.add(showSnapshotsBtn);
+
       return snapshotSection;
+    },
+
+    __evalSlidesButtons: function() {
+      const study = this.getStudy();
+      if (study) {
+        const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
+        const isOwner = osparc.data.model.Study.isOwner(study);
+        this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
+        this.__startSlidesButton.setEnabled(study.hasSlideshow());
+        this.__startAppButton.setEnabled(study.getWorkbench().isPipelineLinear());
+      }
+    },
+
+    __evalSnapshotsButtons: async function() {
+      const study = this.getStudy();
+      if (study) {
+        this.__takeSnapshotButton.setEnabled(osparc.data.Permissions.getInstance().canDo("study.snapshot.create"));
+
+        const hasSnapshots = await study.hasSnapshots();
+        this.__showSnapshotsButton.setEnabled(hasSnapshots);
+      }
     },
 
     __populateSecondPanelFilePicker: function(filePicker) {
