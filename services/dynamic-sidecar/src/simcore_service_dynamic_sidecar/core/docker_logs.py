@@ -4,9 +4,6 @@ from contextlib import suppress
 from typing import Any, Callable, Coroutine, Dict, Optional, cast
 
 from fastapi import FastAPI
-from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
-from models_library.users import UserID
 
 from .rabbitmq import RabbitMQ
 from .utils import docker_client
@@ -42,10 +39,6 @@ class BackgroundLogFetcher:
 
         self._app: FastAPI = app
 
-        self._user_id: UserID = app.state.settings.DY_SIDECAR_USER_ID
-        self._project_id: ProjectID = app.state.settings.DY_SIDECAR_PROJECT_ID
-        self._node_id: NodeID = app.state.settings.DY_SIDECAR_NODE_ID
-
         self._log_processor_tasks: Dict[str, Task[None]] = {}
 
     @property
@@ -60,12 +53,7 @@ class BackgroundLogFetcher:
 
         # sending the logs to the UI to facilitate the
         # user debugging process
-        await self.rabbitmq.post_log_message(
-            user_id=self._user_id,
-            project_id=self._project_id,
-            node_id=self._node_id,
-            log_msg=f"[{container_name}] {message}",
-        )
+        await self.rabbitmq.post_log_message(f"[{container_name}] {message}")
 
     async def start_log_feching(self, container_name: str) -> None:
         self._log_processor_tasks[container_name] = create_task(

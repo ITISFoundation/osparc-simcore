@@ -2,21 +2,25 @@
 # pylint: disable=redefined-outer-name
 import asyncio
 import json
+import os
+import uuid
 from asyncio import AbstractEventLoop
+from pathlib import Path
 from pprint import pformat
 from typing import Iterator, List
-from uuid import uuid4
+from unittest import mock
 
 import aio_pika
 import pytest
 from _pytest.fixtures import FixtureRequest
+from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.settings.rabbit import RabbitConfig
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
-from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar.core.rabbitmq import RabbitMQ
+from simcore_service_dynamic_sidecar.modules import mounted_fs
 
 pytestmark = pytest.mark.asyncio
 
@@ -41,38 +45,82 @@ def event_loop(request: FixtureRequest) -> Iterator[AbstractEventLoop]:
     loop.close()
 
 
-@pytest.fixture
-def setup(event_loop: AbstractEventLoop, rabbit_service: RabbitConfig) -> None:
-    pass
-
-
-@pytest.fixture
+@pytest.fixture(scope="module")
 def user_id() -> UserID:
     return 1
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def project_id() -> ProjectID:
-    return uuid4()
+    return uuid.uuid4()
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def node_id() -> NodeID:
-    return uuid4()
+    return uuid.uuid4()
+
+
+@pytest.fixture(scope="module")
+def mock_environment(
+    event_loop: AbstractEventLoop,
+    mock_dy_volumes: Path,
+    compose_namespace: str,
+    inputs_dir: Path,
+    outputs_dir: Path,
+    state_paths_dirs: List[Path],
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+) -> Iterator[None]:
+    with mock.patch.dict(
+        os.environ,
+        {
+            "SC_BOOT_MODE": "production",
+            "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
+            "REGISTRY_AUTH": "false",
+            "REGISTRY_USER": "test",
+            "REGISTRY_PW": "test",
+            "REGISTRY_SSL": "false",
+            "DY_SIDECAR_PATH_INPUTS": str(inputs_dir),
+            "DY_SIDECAR_PATH_OUTPUTS": str(outputs_dir),
+            "DY_SIDECAR_STATE_PATHS": json.dumps([str(x) for x in state_paths_dirs]),
+            "DY_SIDECAR_USER_ID": f"{user_id}",
+            "DY_SIDECAR_PROJECT_ID": f"{project_id}",
+            "DY_SIDECAR_NODE_ID": f"{node_id}",
+        },
+    ), mock.patch.object(mounted_fs, "DY_VOLUMES", mock_dy_volumes):
+        print(os.environ)
+        yield
+
+
+# UTILS
+
+
+def _patch_settings_with_rabbit(app: FastAPI, rabbit_service: RabbitConfig) -> None:
+    app.state.settings.RABBIT_SETTINGS.__config__.allow_mutation = True
+    app.state.settings.RABBIT_SETTINGS.__config__.frozen = False
+
+    app.state.settings.RABBIT_SETTINGS.RABBIT_HOST = rabbit_service.host
+    app.state.settings.RABBIT_SETTINGS.RABBIT_PORT = rabbit_service.port
+    app.state.settings.RABBIT_SETTINGS.RABBIT_USER = rabbit_service.user
+    app.state.settings.RABBIT_SETTINGS.RABBIT_PASSWORD = rabbit_service.password
 
 
 # TESTS
 
 
 async def test_rabbitmq(
-    setup: None,
+    rabbit_service: RabbitConfig,
     rabbit_queue: aio_pika.Queue,
     mocker: MockerFixture,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    app: FastAPI,
 ):
-    rabbit = RabbitMQ(node_id=node_id, rabbit_settings=RabbitSettings())
+    _patch_settings_with_rabbit(app, rabbit_service)
+
+    rabbit = RabbitMQ(app)
     assert rabbit
 
     mock_close_connection_cb = mocker.patch(
@@ -96,8 +144,8 @@ async def test_rabbitmq(
     await rabbit.connect()
     assert rabbit._connection.ready  # pylint: disable=protected-access
 
-    await rabbit.post_log_message(user_id, project_id, node_id, log_msg)
-    await rabbit.post_log_message(user_id, project_id, node_id, log_messages)
+    await rabbit.post_log_message(log_msg)
+    await rabbit.post_log_message(log_messages)
 
     await rabbit.close()
 

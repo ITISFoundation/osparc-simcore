@@ -45,15 +45,21 @@ async def _wait_till_rabbit_responsive(url: str) -> bool:
 
 
 class RabbitMQ:
-    def __init__(self, node_id: NodeID, rabbit_settings: RabbitSettings) -> None:
-        self.node_id: NodeID = node_id
-        self.rabbit_settings: RabbitSettings = rabbit_settings
+    def __init__(self, app: FastAPI) -> None:
+        settings: DynamicSidecarSettings = app.state.settings
+
+        assert settings.RABBIT_SETTINGS  # nosec
+        self._rabbit_settings: RabbitSettings = settings.RABBIT_SETTINGS
+        self._user_id: UserID = settings.DY_SIDECAR_USER_ID
+        self._project_id: ProjectID = settings.DY_SIDECAR_PROJECT_ID
+        self._node_id: NodeID = settings.DY_SIDECAR_NODE_ID
+
         self._connection: Optional[aio_pika.Connection] = None
         self._channel: Optional[aio_pika.Channel] = None
         self._logs_exchange: Optional[aio_pika.Exchange] = None
 
     async def connect(self) -> None:
-        url = self.rabbit_settings.dsn
+        url = self._rabbit_settings.dsn
         log.debug("Connecting to %s", url)
         await _wait_till_rabbit_responsive(url)
 
@@ -62,7 +68,7 @@ class RabbitMQ:
         self._connection = await aio_pika.connect(
             url + f"?name={__name__}_{id(hostname)}",
             client_properties={
-                "connection_name": f"dynamic-sidecar_{self.node_id} {hostname}"
+                "connection_name": f"dynamic-sidecar_{self._node_id} {hostname}"
             },
         )
         self._connection.add_close_callback(_close_callback)
@@ -71,9 +77,9 @@ class RabbitMQ:
         self._channel = await self._connection.channel(publisher_confirms=False)
         self._channel.add_close_callback(_channel_close_callback)
 
-        log.debug("Declaring %s exchange", self.rabbit_settings.RABBIT_CHANNELS["log"])
+        log.debug("Declaring %s exchange", self._rabbit_settings.RABBIT_CHANNELS["log"])
         self._logs_exchange = await self._channel.declare_exchange(
-            self.rabbit_settings.RABBIT_CHANNELS["log"], aio_pika.ExchangeType.FANOUT
+            self._rabbit_settings.RABBIT_CHANNELS["log"], aio_pika.ExchangeType.FANOUT
         )
 
     async def close(self) -> None:
@@ -82,28 +88,22 @@ class RabbitMQ:
         if self._connection is not None:
             await self._connection.close()
 
-    @staticmethod
-    async def _post_message(
-        exchange: aio_pika.Exchange, data: Dict[str, Union[str, Any]]
-    ) -> None:
-        await exchange.publish(
+    async def _post_message(self, data: Dict[str, Union[str, Any]]) -> None:
+        assert self._logs_exchange  # nosec
+
+        # TODO: accumulate messages by `Channel` name and push them forward
+        # in at set intervals, ensures webserver will not get overwhelmed
+        await self._logs_exchange.publish(
             aio_pika.Message(body=json.dumps(data).encode()), routing_key=""
         )
 
-    async def post_log_message(
-        self,
-        user_id: UserID,
-        project_id: ProjectID,
-        node_id: NodeID,
-        log_msg: Union[str, List[str]],
-    ) -> None:
+    async def post_log_message(self, log_msg: Union[str, List[str]]) -> None:
         await self._post_message(
-            self._logs_exchange,
             data={
                 "Channel": "Log",
-                "Node": f"{node_id}",
-                "user_id": f"{user_id}",
-                "project_id": f"{project_id}",
+                "Node": f"{self._node_id}",
+                "user_id": f"{self._user_id}",
+                "project_id": f"{self._project_id}",
                 "Messages": log_msg if isinstance(log_msg, list) else [log_msg],
             },
         )
@@ -111,11 +111,7 @@ class RabbitMQ:
 
 def setup_rabbitmq(app: FastAPI) -> None:
     async def on_startup() -> None:
-        settings: DynamicSidecarSettings = app.state.settings
-
-        app.state.rabbitmq = RabbitMQ(
-            settings.DY_SIDECAR_NODE_ID, settings.RABBIT_SETTINGS
-        )
+        app.state.rabbitmq = RabbitMQ(app)
 
         log.info("Connecting to rabbitmq")
         await app.state.rabbitmq.connect()
