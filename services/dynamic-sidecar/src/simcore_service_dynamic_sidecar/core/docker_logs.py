@@ -43,7 +43,7 @@ class BackgroundLogFetcher:
 
     @property
     def rabbitmq(self) -> RabbitMQ:
-        return self._app.state.rabbitmq
+        return self._app.state.rabbitmq  # type: ignore
 
     async def _dispatch_logs(self, container_name: str, message: str) -> None:
         # logs from the containers will be logged at warning level to

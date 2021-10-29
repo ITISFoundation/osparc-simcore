@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
@@ -17,6 +19,7 @@ from settings_library.rabbit import RabbitSettings
 from ..core.settings import DynamicSidecarSettings
 
 log = logging.getLogger(__file__)
+
 
 SLEEP_BETWEEN_SENDS: float = 1.0
 
@@ -64,9 +67,10 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
         self._logs_exchange: Optional[aio_pika.Exchange] = None
 
         self.max_messages_to_send: int = max_messages_to_send
-        self._channel_queues: Dict[str, Queue] = {}
+        # pylint: disable=unsubscriptable-object
+        self._channel_queues: Dict[str, Queue[str]] = {}
         self._keep_running: bool = True
-        self._queues_worker: Optional[Task] = None
+        self._queues_worker: Optional[Task[Any]] = None
 
     async def connect(self) -> None:
         url = self._rabbit_settings.dsn
