@@ -4,9 +4,11 @@ from contextlib import suppress
 from typing import Any, Callable, Coroutine, Dict, Optional, cast
 
 from fastapi import FastAPI
+from models_library.projects import ProjectID
+from models_library.projects_nodes import NodeID
+from models_library.users import UserID
 
 from .rabbitmq import RabbitMQ
-from .settings import DynamicSidecarSettings
 from .utils import docker_client
 
 logger = logging.getLogger(__name__)
@@ -35,16 +37,20 @@ def _setup_logger(container_name: str) -> None:
 
 class BackgroundLogFetcher:
     def __init__(self, app: FastAPI) -> None:
-        self._settings: DynamicSidecarSettings = app.state.settings
+        # requires rabbitmq to be in place
+        assert app.state.rabbitmq  # nosec
+
+        self._app: FastAPI = app
+
+        self._user_id: UserID = app.state.settings.DY_SIDECAR_USER_ID
+        self._project_id: ProjectID = app.state.settings.DY_SIDECAR_PROJECT_ID
+        self._node_id: NodeID = app.state.settings.DY_SIDECAR_NODE_ID
+
         self._log_processor_tasks: Dict[str, Task[None]] = {}
 
-        self.rabbit_mq: RabbitMQ = RabbitMQ(
-            node_id=self._settings.DY_SIDECAR_NODE_ID,
-            rabbit_settings=self._settings.RABBIT_SETTINGS,
-        )
-
-    async def start_fetcher(self) -> None:
-        await self.rabbit_mq.connect()
+    @property
+    def rabbitmq(self) -> RabbitMQ:
+        return self._app.state.rabbitmq
 
     async def _dispatch_logs(self, container_name: str, message: str) -> None:
         # logs from the containers will be logged at warning level to
@@ -54,10 +60,10 @@ class BackgroundLogFetcher:
 
         # sending the logs to the UI to facilitate the
         # user debugging process
-        await self.rabbit_mq.post_log_message(
-            user_id=self._settings.DY_SIDECAR_USER_ID,
-            project_id=self._settings.DY_SIDECAR_PROJECT_ID,
-            node_id=self._settings.DY_SIDECAR_NODE_ID,
+        await self.rabbitmq.post_log_message(
+            user_id=self._user_id,
+            project_id=self._project_id,
+            node_id=self._node_id,
             log_msg=f"[{container_name}] {message}",
         )
 
@@ -83,7 +89,6 @@ class BackgroundLogFetcher:
     async def stop_fetcher(self) -> None:
         for container_name in list(self._log_processor_tasks.keys()):
             await self.stop_log_fetching(container_name)
-        await self.rabbit_mq.close()
 
 
 def _get_background_log_fetcher(app: FastAPI) -> Optional[BackgroundLogFetcher]:
@@ -110,7 +115,6 @@ def setup_background_log_fetcher(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.background_log_fetcher = BackgroundLogFetcher(app)
 
-        await app.state.background_log_fetcher.start_fetcher()
         logger.info("Started background container log fetcher")
 
     async def on_shutdown() -> None:

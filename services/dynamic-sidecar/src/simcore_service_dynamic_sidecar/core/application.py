@@ -9,6 +9,7 @@ from ..core.docker_logs import setup_background_log_fetcher
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
 from ..modules.directory_watcher import setup_directory_watcher
+from .rabbitmq import setup_rabbitmq
 from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
 from .shared_handlers import on_shutdown_handler
@@ -65,6 +66,8 @@ def assemble_application() -> FastAPI:
         remote_debug_setup(application)
 
     if dynamic_sidecar_settings.RABBIT_SETTINGS:
+        setup_rabbitmq(application)
+        # requires rabbitmq to be in place
         setup_background_log_fetcher(application)
 
     # add routing paths

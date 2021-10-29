@@ -6,11 +6,14 @@ from typing import Any, Dict, List, Optional, Union
 
 import aio_pika
 import tenacity
+from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from settings_library.rabbit import RabbitSettings
+
+from ..core.settings import DynamicSidecarSettings
 
 log = logging.getLogger(__file__)
 
@@ -104,3 +107,27 @@ class RabbitMQ:
                 "Messages": log_msg if isinstance(log_msg, list) else [log_msg],
             },
         )
+
+
+def setup_rabbitmq(app: FastAPI) -> None:
+    async def on_startup() -> None:
+        settings: DynamicSidecarSettings = app.state.settings
+
+        app.state.rabbitmq = RabbitMQ(
+            settings.DY_SIDECAR_NODE_ID, settings.RABBIT_SETTINGS
+        )
+
+        log.info("Connecting to rabbitmq")
+        await app.state.rabbitmq.connect()
+        log.info("Connected to rabbitmq")
+
+    async def on_shutdown() -> None:
+        if app.state.background_log_fetcher is None:
+            log.warning("No rabbitmq to close")
+            return
+
+        await app.state.rabbitmq.close()
+        log.info("stopped rabbitmq")
+
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)
