@@ -351,6 +351,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__addTopBarSpacer(topBar);
 
 
+      const separator = new qx.ui.toolbar.Separator().set({
+        // height: 50,
+        backgroundColor: "contrasted-background++"
+      });
+      separator.exclude();
+      topBar.add(separator);
       const closeStudyAndPreferencesButton = this.__createCloseStudyAndPreferencesButton();
       closeStudyAndPreferencesButton.exclude();
       topBar.add(closeStudyAndPreferencesButton);
@@ -363,6 +369,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       collapseExpandNavBarStack.add(collapseNavBarBtn);
       collapseNavBarBtn.addListener("execute", () => {
+        separator.show();
         closeStudyAndPreferencesButton.show();
         collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[1]]);
         this.fireEvent("collapseNavBar");
@@ -373,6 +380,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       collapseExpandNavBarStack.add(expandNavBarBtn);
       expandNavBarBtn.addListener("execute", () => {
+        separator.exclude();
         closeStudyAndPreferencesButton.exclude();
         collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[0]]);
         this.fireEvent("expandNavBar");
@@ -411,8 +419,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __createCloseStudyAndPreferencesButton: function() {
       const closeStudyAndPreferencesButton = new osparc.navigation.CloseStudyAndPreferencesButton().set({
-        padding: 0,
-        height: this.self().TAB_BUTTON_HEIGHT,
         allowGrowY: true,
         alignX: "center",
         alignY: "middle",

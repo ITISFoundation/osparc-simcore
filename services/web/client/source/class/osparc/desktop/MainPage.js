@@ -223,6 +223,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
 
       this.__mainStack.setSelection([this.__dashboardLayout]);
+      this.__navBar.show();
       this.__navBar.setStudy(null);
       this.__navBar.setPageContext("dashboard");
       if (this.__studyEditor) {
