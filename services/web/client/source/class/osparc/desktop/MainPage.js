@@ -368,7 +368,6 @@ qx.Class.define("osparc.desktop.MainPage", {
         return this.__studyEditor;
       }
       const studyEditor = new osparc.desktop.StudyEditor();
-      studyEditor.addListener("snapshotTaken", () => this.__navBar.getChildControl("study-options-menu").evalSnapshotsButtons(), this);
       studyEditor.addListener("startSnapshot", e => {
         const snapshotId = e.getData();
         this.__startSnapshot(this.__studyEditor.getStudy().getUuid(), snapshotId);

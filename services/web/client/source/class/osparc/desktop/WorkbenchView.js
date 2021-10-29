@@ -233,7 +233,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         study.getUi().getSlideshow().addListener("changeSlideshow", () => this.__evalSlidesButtons());
         study.getUi().addListener("changeMode", () => this.__evalSlidesButtons());
         this.__evalSlidesButtons();
-        this.__evalSnapshotsButtons();
+        this.evalSnapshotsButtons();
       }
       this.__workbenchPanel.getToolbar().setStudy(study);
     },
@@ -865,12 +865,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       showSnapshotsBtn.addListener("execute", () => this.fireEvent("showSnapshots"), this);
       snapshotButtons.add(showSnapshotsBtn);
 
-      this.__evalSnapshotsButtons();
+      this.evalSnapshotsButtons();
 
       return snapshotSection;
     },
 
-    __evalSnapshotsButtons: async function() {
+    evalSnapshotsButtons: async function() {
       const study = this.getStudy();
       if (study && this.__takeSnapshotButton) {
         this.__takeSnapshotButton.setEnabled(osparc.data.Permissions.getInstance().canDo("study.snapshot.create"));
