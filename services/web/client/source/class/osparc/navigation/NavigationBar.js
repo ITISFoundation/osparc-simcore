@@ -62,8 +62,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   },
 
   events: {
-    "backToDashboardPressed": "qx.event.type.Event",
-    "slidesStop": "qx.event.type.Event"
+    "backToDashboardPressed": "qx.event.type.Event"
   },
 
   properties: {
@@ -111,7 +110,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
       this._add(new qx.ui.core.Spacer(30));
 
-      this.getChildControl("stop-slideshow");
       this.getChildControl("read-only-icon");
 
       this._add(new qx.ui.core.Spacer(), {
@@ -147,11 +145,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
             font: "text-16"
           });
-          this._add(control);
-          break;
-        case "stop-slideshow":
-          control = new osparc.navigation.StopSlideshow();
-          control.addListener("slidesStop", () => this.fireEvent("slidesStop"));
           this._add(control);
           break;
         case "read-only-icon":
@@ -285,7 +278,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         study.bind("readOnly", this.getChildControl("read-only-icon"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
-        this.getChildControl("stop-slideshow").setStudy(study);
       }
     }
   }

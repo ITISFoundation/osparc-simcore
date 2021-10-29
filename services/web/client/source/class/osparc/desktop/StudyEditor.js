@@ -43,6 +43,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     viewsStack.add(workbenchView);
 
     const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
+    slideshowView.addListener("slidesStop", () => this.fireEvent("slidesStop"));
     viewsStack.add(slideshowView);
 
     slideshowView.addListener("startPartialPipeline", e => {
@@ -77,7 +78,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     "backToDashboardPressed": "qx.event.type.Event",
     "slidesEdit": "qx.event.type.Event",
     "slidesGuidedStart": "qx.event.type.Event",
-    "slidesAppStart": "qx.event.type.Event"
+    "slidesAppStart": "qx.event.type.Event",
+    "slidesStop": "qx.event.type.Event"
   },
 
   properties: {

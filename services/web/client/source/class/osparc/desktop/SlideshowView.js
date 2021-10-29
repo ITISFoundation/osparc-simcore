@@ -60,10 +60,12 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const nodeId = e.getData();
       this.__hideNode(nodeId);
     }, this);
+    slideshowToolbar.addListener("slidesStop", () => this.fireEvent("slidesStop"), this);
     this._add(slideshowToolbar);
   },
 
   events: {
+    "slidesStop": "qx.event.type.Event",
     "startPartialPipeline": "qx.event.type.Data"
   },
 

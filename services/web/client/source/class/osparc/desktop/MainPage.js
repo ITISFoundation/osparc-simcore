@@ -65,16 +65,7 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __createNavigationBar: function() {
       const navBar = new osparc.navigation.NavigationBar();
-
       navBar.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
-
-      navBar.addListener("slidesStop", () => {
-        if (this.__studyEditor) {
-          navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
-          this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
-        }
-      }, this);
-
       return navBar;
     },
 
@@ -366,6 +357,10 @@ qx.Class.define("osparc.desktop.MainPage", {
       studyEditor.addListener("slidesAppStart", () => {
         this.__navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[3]);
         studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[3]);
+      }, this);
+      studyEditor.addListener("slidesStop", () => {
+        this.__navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
+        this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
       }, this);
       return studyEditor;
     },
