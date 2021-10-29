@@ -8,8 +8,8 @@ import yaml
 
 def get_compose_file(compose_file: Path) -> Dict:
     # TODO: auto-generate minimal: catch FileNotFoundError and deduce minimal from model
-    with compose_file.open() as filep:
-        return yaml.safe_load(filep)
+    with compose_file.open() as fp:
+        return yaml.safe_load(fp)
 
 
 def get_metadata_file(metadata_file: Path) -> Dict:
@@ -21,7 +21,7 @@ def stringify_metadata(metadata: Dict) -> Dict[str, str]:
     jsons = {}
     for key, value in metadata.items():
         # TODO: connect this with models
-        jsons[f"io.simcore.{key}"] = json.dumps({key: value})
+        jsons[f"io.simcore.{key}"] = json.dumps({key: value}, sort_keys=False)
     return jsons
 
 
@@ -78,7 +78,7 @@ def main(compose_file_path: Path, metadata_file_path: Path):
         )
         # write the file back
         with compose_file_path.open("w") as fp:
-            yaml.safe_dump(compose_cfg, fp, default_flow_style=False)
+            yaml.safe_dump(compose_cfg, fp, default_flow_style=False, sort_keys=False)
             click.echo("Update completed")
     else:
         click.echo("No update necessary")
