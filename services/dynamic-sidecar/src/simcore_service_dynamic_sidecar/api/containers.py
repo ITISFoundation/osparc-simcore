@@ -1,5 +1,6 @@
 # pylint: disable=redefined-builtin
 
+import functools
 import json
 import logging
 import traceback
@@ -23,10 +24,12 @@ from servicelib.utils import logged_gather
 from ..core.dependencies import (
     get_application,
     get_application_health,
+    get_rabbitmq,
     get_settings,
     get_shared_store,
 )
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
+from ..core.rabbitmq import RabbitMQ
 from ..core.settings import DynamicSidecarSettings
 from ..core.shared_handlers import remove_the_compose_spec, write_file_and_run_command
 from ..core.utils import assemble_container_names, docker_client
@@ -46,13 +49,22 @@ logger = logging.getLogger(__name__)
 containers_router = APIRouter(tags=["containers"])
 
 
+async def _send_message(rabbitmq: RabbitMQ, message: str) -> None:
+    # ANE, SAN is below tag adequate in the name of the mssage
+    logger.debug(message)
+    formatted_message = f"[dy-sidecar] {message}"
+    await rabbitmq.post_log_message(formatted_message)
+
+
 async def _task_docker_compose_up(
     settings: DynamicSidecarSettings,
     shared_store: SharedStore,
     app: FastAPI,
     application_health: ApplicationHealth,
+    rabbitmq: RabbitMQ,
 ) -> None:
     # building is a security risk hence is disabled via "--no-build" parameter
+    await _send_message(rabbitmq, "starting service containers")
     command = (
         "docker-compose --project-name {project} --file {file_path} "
         "up --no-build --detach"
@@ -66,6 +78,7 @@ async def _task_docker_compose_up(
     message = f"Finished {command} with output\n{stdout}"
 
     if finished_without_errors:
+        await _send_message(rabbitmq, "service containers started")
         logger.info(message)
         for container_name in shared_store.container_names:
             await start_log_fetching(app, container_name)
@@ -73,6 +86,7 @@ async def _task_docker_compose_up(
         application_health.is_healthy = False
         application_health.error_message = message
         logger.error("Marked sidecar as unhealthy, see below for details\n:%s", message)
+        await _send_message(rabbitmq, "could not start service containers")
 
     return None
 
@@ -102,6 +116,7 @@ async def runs_docker_compose_up(
     shared_store: SharedStore = Depends(get_shared_store),
     app: FastAPI = Depends(get_application),
     application_health: ApplicationHealth = Depends(get_application_health),
+    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
 ) -> Union[List[str], Dict[str, Any]]:
     """Expects the docker-compose spec as raw-body utf-8 encoded text"""
 
@@ -121,11 +136,14 @@ async def runs_docker_compose_up(
 
     # run docker-compose in a background queue and return early
     background_tasks.add_task(
-        _task_docker_compose_up,
-        settings,
-        shared_store,
-        app,
-        application_health,
+        functools.partial(
+            _task_docker_compose_up,
+            settings=settings,
+            shared_store=shared_store,
+            app=app,
+            application_health=application_health,
+            rabbitmq=rabbitmq,
+        )
     )
 
     return shared_store.container_names
@@ -346,7 +364,7 @@ async def inspect_container(
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def restore_state() -> Response:
+async def restore_state(rabbitmq: RabbitMQ = Depends(get_rabbitmq)) -> Response:
     """
     When restoring the state:
     - pull inputs via nodeports
@@ -357,10 +375,13 @@ async def restore_state() -> Response:
     awaitables: Deque[Awaitable[Optional[Any]]] = deque()
 
     for state_path in mounted_volumes.disk_state_paths():
-        logger.debug("Downloading state %s", state_path)
+        await _send_message(rabbitmq, f"Downloading state for {state_path}")
+
         awaitables.append(pull_path_if_exists(state_path))
 
     await logged_gather(*awaitables)
+
+    await _send_message(rabbitmq, "Finished state downloading")
 
     # SEE https://github.com/tiangolo/fastapi/issues/2253
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -372,16 +393,18 @@ async def restore_state() -> Response:
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def save_state() -> Response:
+async def save_state(rabbitmq: RabbitMQ = Depends(get_rabbitmq)) -> Response:
     mounted_volumes: MountedVolumes = get_mounted_volumes()
 
     awaitables: Deque[Awaitable[Optional[Any]]] = deque()
 
     for state_path in mounted_volumes.disk_state_paths():
-        logger.debug("Saving state %s", state_path)
+        await _send_message(rabbitmq, f"Saving state for {state_path}")
         awaitables.append(upload_path_if_exists(state_path))
 
     await logged_gather(*awaitables)
+
+    await _send_message(rabbitmq, "Finished state saving")
 
     # SEE https://github.com/tiangolo/fastapi/issues/2253
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -393,13 +416,17 @@ async def save_state() -> Response:
     response_model=None,
     status_code=status.HTTP_200_OK,
 )
-async def pull_input_ports(port_keys: Optional[List[str]] = None) -> int:
+async def pull_input_ports(
+    port_keys: Optional[List[str]] = None, rabbitmq: RabbitMQ = Depends(get_rabbitmq)
+) -> int:
     port_keys = [] if port_keys is None else port_keys
     mounted_volumes: MountedVolumes = get_mounted_volumes()
 
+    await _send_message(rabbitmq, f"Pulling inputs for {port_keys}")
     transferred_bytes = await nodeports.download_inputs(
         mounted_volumes.disk_inputs_path, port_keys=port_keys
     )
+    await _send_message(rabbitmq, "Finished pulling inputs")
     return transferred_bytes
 
 
@@ -409,13 +436,17 @@ async def pull_input_ports(port_keys: Optional[List[str]] = None) -> int:
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def push_output_ports(port_keys: Optional[List[str]] = None) -> Response:
+async def push_output_ports(
+    port_keys: Optional[List[str]] = None, rabbitmq: RabbitMQ = Depends(get_rabbitmq)
+) -> Response:
     port_keys = [] if port_keys is None else port_keys
     mounted_volumes: MountedVolumes = get_mounted_volumes()
 
+    await _send_message(rabbitmq, f"Pushing outputs for {port_keys}")
     await nodeports.upload_outputs(
         mounted_volumes.disk_outputs_path, port_keys=port_keys
     )
+    await _send_message(rabbitmq, "Finished pulling outputs")
 
     # SEE https://github.com/tiangolo/fastapi/issues/2253
     return Response(status_code=status.HTTP_204_NO_CONTENT)
