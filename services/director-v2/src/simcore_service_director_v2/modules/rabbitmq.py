@@ -82,3 +82,7 @@ class RabbitMQClient:
             await self.exchanges["log"].publish(
                 aio_pika.Message(message.encode(encoding="utf-8")), routing_key=""
             )
+        elif topic == "instrumentation":
+            await self.exchanges[topic].publish(
+                aio_pika.Message(message.encode(encoding="utf-8")), routing_key=""
+            )

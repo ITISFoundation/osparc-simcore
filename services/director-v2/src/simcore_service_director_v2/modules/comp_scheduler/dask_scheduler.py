@@ -81,7 +81,9 @@ class DaskScheduler(BaseCompScheduler):
             "received task compeltion: %s",
             event,
         )
-        *_, project_id, node_id = parse_dask_job_id(event.job_id)
+        service_key, service_version, user_id, project_id, node_id = parse_dask_job_id(
+            event.job_id
+        )
 
         assert event.state in COMPLETED_STATES  # no sec
 
@@ -102,6 +104,20 @@ class DaskScheduler(BaseCompScheduler):
         await CompTasksRepository(self.db_engine).set_project_tasks_state(
             project_id, [node_id], event.state
         )
+        # instrumentation
+        message = {
+            "metrics": "service_stopped",
+            "user_id": user_id,
+            "project_id": f"{project_id}",
+            "service_uuid": f"{node_id}",
+            "service_type": "COMPUTATIONAL",
+            "service_key": service_key,
+            "service_tag": service_version,
+            "result": "SUCCESS" if event.state == RunningState.SUCCESS else "FAILURE",
+        }
+        await self.rabbitmq_client.publish_message(
+            "instrumentation", json.dumps(message)
+        )
         self._wake_up_scheduler_now()
 
     async def _task_state_change_handler(self, event: str) -> None:
@@ -110,8 +126,24 @@ class DaskScheduler(BaseCompScheduler):
             "received task state update: %s",
             task_state_event,
         )
+        service_key, service_version, user_id, project_id, node_id = parse_dask_job_id(
+            task_state_event.job_id
+        )
 
-        *_, project_id, node_id = parse_dask_job_id(task_state_event.job_id)
+        if task_state_event.state == RunningState.STARTED:
+            message = {
+                "metrics": "service_started",
+                "user_id": user_id,
+                "project_id": f"{project_id}",
+                "service_uuid": f"{node_id}",
+                "service_type": "COMPUTATIONAL",
+                "service_key": service_key,
+                "service_tag": service_version,
+            }
+            await self.rabbitmq_client.publish_message(
+                "instrumentation", json.dumps(message)
+            )
+
         await CompTasksRepository(self.db_engine).set_project_tasks_state(
             project_id, [node_id], task_state_event.state
         )
