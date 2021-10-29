@@ -8,6 +8,7 @@ from typing import Awaitable, Callable, Final
 
 import aiofiles
 import fsspec
+from pydantic import ByteSize
 from pydantic.networks import AnyUrl
 from yarl import URL
 
@@ -21,10 +22,30 @@ HTTP_FILE_SYSTEM_SCHEMES: Final = ["http", "https"]
 LogPublishingCB = Callable[[str], Awaitable[None]]
 
 
+def _file_progress_cb(
+    size,
+    value,
+    log_publishing_cb: LogPublishingCB,
+    text_prefix: str,
+    main_loop: asyncio.AbstractEventLoop,
+    **kwargs,
+):
+    asyncio.run_coroutine_threadsafe(
+        log_publishing_cb(
+            f"{text_prefix}"
+            f" {100.0 * float(value)/float(size):.1f}%"
+            f" ({ByteSize(value).human_readable()} / {ByteSize(size).human_readable()})"
+        ),
+        main_loop,
+    )
+
+
 async def pull_file_from_remote(
     src_url: AnyUrl, dst_path: Path, log_publishing_cb: LogPublishingCB
 ) -> None:
-    logger.debug("pulling '%s' to local destination '%s'", src_url, dst_path)
+    await log_publishing_cb(
+        f"Downloading '{src_url.path.strip('/')}' into local file '{dst_path.name}'..."
+    )
     src_mime_type, _ = mimetypes.guess_type(f"{src_url.path}")
     dst_mime_type, _ = mimetypes.guess_type(dst_path)
 
@@ -38,17 +59,6 @@ async def pull_file_from_remote(
         filesystem_cfg["port"] = int(src_url.port)
     logger.debug("file system configuration is %s", pformat(filesystem_cfg))
     fs = fsspec.filesystem(**filesystem_cfg)
-    main_loop = asyncio.get_event_loop()
-
-    await log_publishing_cb(
-        f"Downloading '{src_url.path.strip('/')}' into local file '{dst_path.name}'..."
-    )
-
-    def file_progress_cb(size, value, **kwargs):
-        download_progress = f"download progress '{src_url.path.strip('/')}': {100.0 * float(value)/float(size):.1f}"
-        asyncio.run_coroutine_threadsafe(
-            log_publishing_cb(download_progress), main_loop
-        )
 
     await asyncio.get_event_loop().run_in_executor(
         None,
@@ -58,33 +68,38 @@ async def pull_file_from_remote(
             if src_url.scheme not in HTTP_FILE_SYSTEM_SCHEMES
             else src_url,
             dst_path,
-            callback=fsspec.Callback(hooks={"progress": file_progress_cb}),
+            callback=fsspec.Callback(
+                hooks={
+                    "progress": functools.partial(
+                        _file_progress_cb,
+                        log_publishing_cb=log_publishing_cb,
+                        text_prefix=f"Downloading '{src_url.path.strip('/')}':",
+                        main_loop=asyncio.get_event_loop(),
+                    )
+                }
+            ),
         ),
     )
+    await log_publishing_cb(
+        f"Download of '{src_url.path.strip('/')}' into local file '{dst_path.name}' complete."
+    )
 
-    # fsspec.Callback(hooks={"progress": file_progress_cb}),
-    # await asyncio.get_event_loop().run_in_executor(
-    #     None,
-    #     fs.get_file,
-    #     f"{src_url.path}"
-    #     if src_url.scheme not in HTTP_FILE_SYSTEM_SCHEMES
-    #     else src_url,
-    #     dst_path,
-    #     fsspec.Callback(hooks={"progress": file_progress_cb}),
-    # )
     if src_mime_type == "application/zip" and dst_mime_type != "application/zip":
+        await log_publishing_cb(f"Uncompressing '{dst_path.name}'...")
         logger.debug("%s is a zip file and will be now uncompressed", dst_path)
         with zipfile.ZipFile(dst_path, "r") as zip_obj:
             await asyncio.get_event_loop().run_in_executor(
                 None, zip_obj.extractall, dst_path.parents[0]
             )
         # finally remove the zip archive
-        logger.debug("%s uncompressed", dst_path)
+        await log_publishing_cb(f"Uncompressing '{dst_path.name}' complete.")
         dst_path.unlink()
 
 
-async def push_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
-    logger.debug("copying '%s' to remote in '%s'", src_path, dst_url)
+async def push_file_to_remote(
+    src_path: Path, dst_url: AnyUrl, log_publishing_cb: LogPublishingCB
+) -> None:
+
     async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
         file_to_upload = src_path
 
@@ -93,7 +108,9 @@ async def push_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
 
         if dst_mime_type == "application/zip" and src_mime_type != "application/zip":
             archive_file_path = Path(tmp_dir) / Path(URL(dst_url).path).name
-            logger.debug("src %s shall be zipped into %s", src_path, archive_file_path)
+            await log_publishing_cb(
+                f"Compressing '{src_path.name}' to '{archive_file_path.name}'..."
+            )
             with zipfile.ZipFile(
                 archive_file_path, mode="w", compression=zipfile.ZIP_DEFLATED
             ) as zfp:
@@ -103,7 +120,13 @@ async def push_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
             logger.debug("%s created.", archive_file_path)
             assert archive_file_path.exists()  # no sec
             file_to_upload = archive_file_path
+            await log_publishing_cb(
+                f"Compression of '{src_path.name}' to '{archive_file_path.name}' complete."
+            )
 
+        await log_publishing_cb(
+            f"Uploading '{file_to_upload.name}' to '{dst_url.path.strip('/')}'..."
+        )
         if dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
             logger.debug("destination is a http presigned link")
             # NOTE: special case for http scheme when uploading. this is typically a S3 put presigned link.
@@ -117,7 +140,19 @@ async def push_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
                 asynchronous=True,
             )
             await fs._put_file(  # pylint: disable=protected-access
-                file_to_upload, f"{dst_url}", method="PUT"
+                file_to_upload,
+                f"{dst_url}",
+                method="PUT",
+                callback=fsspec.Callback(
+                    hooks={
+                        "progress": functools.partial(
+                            _file_progress_cb,
+                            log_publishing_cb=log_publishing_cb,
+                            text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
+                            main_loop=asyncio.get_event_loop(),
+                        )
+                    }
+                ),
             )
         else:
             logger.debug("Uploading %s to %s...", file_to_upload, dst_url)
@@ -129,7 +164,24 @@ async def push_file_to_remote(src_path: Path, dst_url: AnyUrl) -> None:
                 host=dst_url.host,
             )
             await asyncio.get_event_loop().run_in_executor(
-                None, fs.put_file, file_to_upload, dst_url.path
+                None,
+                functools.partial(
+                    fs.put_file,
+                    file_to_upload,
+                    dst_url.path,
+                    callback=fsspec.Callback(
+                        hooks={
+                            "progress": functools.partial(
+                                _file_progress_cb,
+                                log_publishing_cb=log_publishing_cb,
+                                text_prefix=f"Uploading '{dst_url.path.strip('/')}':",
+                                main_loop=asyncio.get_event_loop(),
+                            )
+                        }
+                    ),
+                ),
             )
 
-    logger.debug("Upload complete")
+    await log_publishing_cb(
+        f"Upload of '{src_path.name}' to '{dst_url.path.strip('/')}' complete"
+    )

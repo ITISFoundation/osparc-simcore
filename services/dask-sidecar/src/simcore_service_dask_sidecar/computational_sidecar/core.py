@@ -84,20 +84,14 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 destination_path = task_volumes.inputs_folder / (
                     input_params.file_mapping or URL(input_params.url).path.strip("/")
                 )
-                await self._publish_sidecar_log(
-                    f"Downloading '{input_params.url.path.strip('/')}' into local file '{destination_path.name}'..."
-                )
                 await pull_file_from_remote(
                     input_params.url, destination_path, self._publish_sidecar_log
-                )
-                await self._publish_sidecar_log(
-                    f"Download of '{destination_path.name}' complete."
                 )
             else:
                 input_data[input_key] = input_params
         input_data_file.write_text(json.dumps(input_data))
 
-        await self._publish_sidecar_log("All the input data was downloaded.")
+        await self._publish_sidecar_log("All the input data were downloaded.")
 
     async def _retrieve_output_data(
         self,
@@ -128,10 +122,10 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                         output_params.file_mapping
                         or URL(output_params.url).path.strip("/")
                     )
-                    await self._publish_sidecar_log(f"Uploading {src_path}...")
-                    await push_file_to_remote(src_path, output_params.url)
-                    await self._publish_sidecar_log(f"Upload of {src_path} complete.")
-            await self._publish_sidecar_log("All the output data was uploaded.")
+                    await push_file_to_remote(
+                        src_path, output_params.url, self._publish_sidecar_log
+                    )
+            await self._publish_sidecar_log("All the output data were uploaded.")
             logger.info("retrieved outputs data:\n%s", pformat(output_data.dict()))
             return output_data
 
@@ -203,6 +197,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     integration_version=integration_version,
                     task_volumes=task_volumes,
                     log_file_url=self.log_file_url,
+                    log_publishing_cb=self._publish_sidecar_log,
                 ):
                     await container.start()
                     await self._publish_sidecar_log(

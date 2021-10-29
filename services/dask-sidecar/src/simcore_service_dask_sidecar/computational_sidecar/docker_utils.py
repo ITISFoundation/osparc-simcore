@@ -31,6 +31,7 @@ from .models import (
 from .task_shared_volume import TaskSharedVolumes
 
 logger = create_dask_worker_logger(__name__)
+LogPublishingCB = Callable[[str], Awaitable[None]]
 
 
 async def create_container_config(
@@ -192,6 +193,7 @@ async def _parse_container_log_file(
     logs_pub: Pub,
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
+    log_publishing_cb: LogPublishingCB,
 ) -> None:
     log_file = task_volumes.logs_folder / LEGACY_SERVICE_LOG_FILE_NAME
     logger.debug("monitoring legacy-style container log file in %s", log_file)
@@ -237,7 +239,7 @@ async def _parse_container_log_file(
         )
         # copy the log file to the log_file_url
         file_to_upload = log_file
-        await push_file_to_remote(file_to_upload, log_file_url)
+        await push_file_to_remote(file_to_upload, log_file_url, log_publishing_cb)
 
         logger.debug(
             "monitoring legacy-style container log file: copying log file from %s to %s completed",
@@ -254,6 +256,7 @@ async def _parse_container_docker_logs(
     progress_pub: Pub,
     logs_pub: Pub,
     log_file_url: AnyUrl,
+    log_publishing_cb: LogPublishingCB,
 ) -> None:
     latest_log_timestamp = DEFAULT_TIME_STAMP
     logger.debug(
@@ -326,7 +329,7 @@ async def _parse_container_docker_logs(
         )
 
         # copy the log file to the log_file_url
-        await push_file_to_remote(log_file_path, log_file_url)
+        await push_file_to_remote(log_file_path, log_file_url, log_publishing_cb)
 
     logger.debug(
         "monitoring 1.0+ container logs from container %s:%s: copying log file to %s completed",
@@ -345,6 +348,7 @@ async def monitor_container_logs(
     integration_version: version.Version,
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
+    log_publishing_cb: LogPublishingCB,
 ) -> None:
     """Services running with integration version 0.0.0 are logging into a file
     that must be available in task_volumes.log / log.dat
@@ -371,6 +375,7 @@ async def monitor_container_logs(
                 progress_pub,
                 logs_pub,
                 log_file_url,
+                log_publishing_cb,
             )
         else:
             await _parse_container_log_file(
@@ -382,6 +387,7 @@ async def monitor_container_logs(
                 logs_pub,
                 task_volumes,
                 log_file_url,
+                log_publishing_cb,
             )
 
         logger.info(
@@ -411,6 +417,7 @@ async def managed_monitor_container_log_task(
     integration_version: version.Version,
     task_volumes: TaskSharedVolumes,
     log_file_url: AnyUrl,
+    log_publishing_cb: LogPublishingCB,
 ) -> AsyncIterator[Awaitable[None]]:
     monitoring_task = None
     try:
@@ -428,6 +435,7 @@ async def managed_monitor_container_log_task(
                 integration_version,
                 task_volumes,
                 log_file_url,
+                log_publishing_cb,
             ),
             name=f"{service_key}:{service_version}_{container.id}_monitoring_task",
         )
@@ -439,9 +447,6 @@ async def managed_monitor_container_log_task(
             monitoring_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await monitoring_task
-
-
-LogPublishingCB = Callable[[str], Awaitable[None]]
 
 
 async def pull_image(
