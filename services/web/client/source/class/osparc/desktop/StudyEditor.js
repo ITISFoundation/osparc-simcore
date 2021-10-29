@@ -34,8 +34,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       "slidesGuidedStart",
       "slidesAppStart"
     ].forEach(singalName => workbenchView.addListener(singalName, () => this.fireEvent(singalName)));
-    workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot, this);
-    workbenchView.addListener("showSnapshots", () => this.__showSnapshots, this);
+    workbenchView.addListener("takeSnapshot", () => {
+      this.__takeSnapshot();
+    }, this);
+    workbenchView.addListener("showSnapshots", () => {
+      this.__showSnapshots();
+    }, this);
     viewsStack.add(workbenchView);
 
     const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
