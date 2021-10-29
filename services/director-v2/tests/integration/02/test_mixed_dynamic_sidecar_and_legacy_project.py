@@ -16,6 +16,7 @@ from asgi_lifespan import LifespanManager
 from models_library.projects import ProjectAtDB
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
+from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from utils import (
@@ -45,7 +46,6 @@ pytest_simcore_ops_services_selection = [
 
 logger = logging.getLogger(__name__)
 
-
 # FIXTURES
 
 
@@ -61,7 +61,9 @@ def minimal_configuration(
     simcore_services_ready: None,
     ensure_swarm_and_networks: None,
 ):
-    pass
+    node_ports_config.STORAGE_ENDPOINT = (
+        f"{storage_endpoint.host}:{storage_endpoint.port}"
+    )
 
 
 def _str_uuid() -> str:
