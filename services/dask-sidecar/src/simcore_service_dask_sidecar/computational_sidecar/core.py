@@ -79,16 +79,20 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             / f"{'inputs' if integration_version > LEGACY_INTEGRATION_VERSION else 'input'}.json"
         )
         input_data = {}
+        download_tasks = []
         for input_key, input_params in self.input_data.items():
             if isinstance(input_params, FileUrl):
                 destination_path = task_volumes.inputs_folder / (
                     input_params.file_mapping or URL(input_params.url).path.strip("/")
                 )
-                await pull_file_from_remote(
-                    input_params.url, destination_path, self._publish_sidecar_log
+                download_tasks.append(
+                    pull_file_from_remote(
+                        input_params.url, destination_path, self._publish_sidecar_log
+                    )
                 )
             else:
                 input_data[input_key] = input_params
+        await asyncio.gather(*download_tasks)
         input_data_file.write_text(json.dumps(input_data))
 
         await self._publish_sidecar_log("All the input data were downloaded.")
@@ -116,15 +120,19 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 if integration_version > LEGACY_INTEGRATION_VERSION
                 else "output.json",
             )
+            upload_tasks = []
             for output_params in output_data.values():
                 if isinstance(output_params, FileUrl):
                     src_path = task_volumes.outputs_folder / (
                         output_params.file_mapping
                         or URL(output_params.url).path.strip("/")
                     )
-                    await push_file_to_remote(
-                        src_path, output_params.url, self._publish_sidecar_log
+                    upload_tasks.append(
+                        push_file_to_remote(
+                            src_path, output_params.url, self._publish_sidecar_log
+                        )
                     )
+            await asyncio.gather(*upload_tasks)
             await self._publish_sidecar_log("All the output data were uploaded.")
             logger.info("retrieved outputs data:\n%s", pformat(output_data.dict()))
             return output_data
