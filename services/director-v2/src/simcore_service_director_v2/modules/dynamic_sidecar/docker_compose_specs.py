@@ -1,5 +1,4 @@
 import json
-from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
 import yaml
@@ -10,10 +9,6 @@ from settings_library.docker_registry import RegistrySettings
 from .docker_service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
 
 CONTAINER_NAME = "container"
-BASE_SERVICE_SPEC: Dict[str, Any] = {
-    "version": "3.8",
-    "services": {CONTAINER_NAME: {}},
-}
 
 
 def _inject_proxy_network_configuration(
@@ -44,29 +39,20 @@ def _inject_proxy_network_configuration(
 def _inject_paths_mappings(
     service_spec: Dict[str, Any], path_mappings: PathMappingsLabel
 ) -> None:
+    """Updates services.${service_name}.environment list in a compose specs"""
     for service_name in service_spec["services"]:
         service_content = service_spec["services"][service_name]
 
+        # FIXME: is it guaranteed that these env vars are not already defined?
+        # which overrides which? Suggest to: load as dict[str, str],
+        # set new env and dump back
         environment_vars: List[str] = service_content.get("environment", [])
         environment_vars.append(f"DY_SIDECAR_PATH_INPUTS={path_mappings.inputs_path}")
         environment_vars.append(f"DY_SIDECAR_PATH_OUTPUTS={path_mappings.outputs_path}")
-        str_path_mappings = json.dumps([str(x) for x in path_mappings.state_paths])
-        environment_vars.append(f"DY_SIDECAR_STATE_PATHS={str_path_mappings}")
-
+        environment_vars.append(
+            f"DY_SIDECAR_STATE_PATHS={json.dumps([str(x) for x in path_mappings.state_paths])}"
+        )
         service_content["environment"] = environment_vars
-
-
-def _assemble_from_service_key_and_tag(
-    resolved_registry_url: str,
-    service_key: str,
-    service_tag: str,
-):
-    service_spec = deepcopy(BASE_SERVICE_SPEC)
-    service_spec["services"][CONTAINER_NAME] = {
-        "image": f"{resolved_registry_url}/{service_key}:{service_tag}"
-    }
-
-    return service_spec
 
 
 def _replace_env_vars_in_compose_spec(
@@ -81,12 +67,12 @@ def _replace_env_vars_in_compose_spec(
     return stringified_service_spec
 
 
-async def assemble_spec(
+def assemble_spec(
     app: FastAPI,
     service_key: str,
     service_tag: str,
     paths_mapping: PathMappingsLabel,
-    compose_spec: ComposeSpecLabel,
+    compose_spec: Optional[ComposeSpecLabel],
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
 ) -> str:
@@ -99,18 +85,22 @@ async def assemble_spec(
         app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
     )
 
-    container_name = container_http_entry
-    service_spec = compose_spec
-
     # when no compose yaml file was provided
-    if service_spec is None:
-        service_spec = _assemble_from_service_key_and_tag(
-            resolved_registry_url=docker_registry_settings.resolved_registry_url,
-            service_key=service_key,
-            service_tag=service_tag,
-        )
+    if compose_spec is None:
+        service_spec: Dict[str, Any] = {
+            "version": "3.8",
+            "services": {
+                CONTAINER_NAME: {
+                    "image": f"{settings.REGISTRY.resolved_registry_url}/{service_key}:{service_tag}"
+                }
+            },
+        }
         container_name = CONTAINER_NAME
+    else:
+        service_spec = compose_spec
+        container_name = container_http_entry
 
+    assert service_spec is not None  # nosec
     assert container_name is not None  # nosec
 
     _inject_proxy_network_configuration(

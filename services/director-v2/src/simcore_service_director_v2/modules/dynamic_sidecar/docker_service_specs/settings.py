@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import deque
-from typing import Any, Deque, Dict, List, cast
+from typing import Any, Deque, Dict, List, Optional, cast
 
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
@@ -173,7 +173,9 @@ async def _extract_osparc_involved_service_labels(
     docker_image_name_by_services: Dict[str, SimcoreServiceLabels] = {
         _assemble_key(service_key=service_key, service_tag=service_tag): service_labels
     }
-    compose_spec: ComposeSpecLabel = cast(ComposeSpecLabel, service_labels.compose_spec)
+    compose_spec: Optional[ComposeSpecLabel] = cast(
+        ComposeSpecLabel, service_labels.compose_spec
+    )
     if compose_spec is None:
         return docker_image_name_by_services
 

@@ -119,7 +119,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         swarm_network_name: str = swarm_network["Name"]
 
         # start dynamic-sidecar and run the proxy on the same node
-        dynamic_sidecar_create_service_params = await get_dynamic_sidecar_spec(
+        dynamic_sidecar_create_service_params = get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
             dynamic_sidecar_network_id=dynamic_sidecar_network_id,
@@ -247,7 +247,7 @@ class CreateUserServices(DynamicSchedulerEvent):
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
         # creates a docker compose spec given the service key and tag
-        compose_spec = await assemble_spec(
+        compose_spec = assemble_spec(
             app=app,
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
