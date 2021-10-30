@@ -1,5 +1,6 @@
 import json
-from typing import Any, Dict, List, Optional
+from copy import deepcopy
+from typing import Any, Dict, List, Optional, Union
 
 import yaml
 from fastapi.applications import FastAPI
@@ -36,23 +37,58 @@ def _inject_proxy_network_configuration(
     target_container_spec["networks"] = container_networks
 
 
+EnvKeyEqValueList = List[str]
+EnvVarsMap = Dict[str, Optional[str]]
+
+
+class _environment_section:
+    """helpers to deal with different formats of the environment section in a docker-compose specs file
+
+    SEE https://docs.docker.com/compose/compose-file/compose-file-v3/#environment
+    """
+
+    @staticmethod
+    def parse(environment: Union[EnvVarsMap, EnvKeyEqValueList]) -> EnvVarsMap:
+        envs = {}
+        if isinstance(environment, list):
+            for key_eq_value in environment:
+                assert isinstance(key_eq_value, str)  # nosec
+                key, value, *_ = key_eq_value.split("=") + [
+                    None,
+                ]  # type: ignore
+                envs[key] = value
+        else:
+            assert isinstance(environment, dict)  # nosec
+            envs = deepcopy(environment)
+        return envs
+
+    @staticmethod
+    def export_as_list(environment: EnvVarsMap) -> EnvKeyEqValueList:
+        envs = []
+        for key, value in environment.items():
+            if value is None:
+                envs.append(f"{key}")
+            else:
+                envs.append(f"{key}={value}")
+        return envs
+
+
 def _inject_paths_mappings(
     service_spec: Dict[str, Any], path_mappings: PathMappingsLabel
 ) -> None:
-    """Updates services.${service_name}.environment list in a compose specs"""
     for service_name in service_spec["services"]:
         service_content = service_spec["services"][service_name]
 
-        # FIXME: is it guaranteed that these env vars are not already defined?
-        # which overrides which? Suggest to: load as dict[str, str],
-        # set new env and dump back
-        environment_vars: List[str] = service_content.get("environment", [])
-        environment_vars.append(f"DY_SIDECAR_PATH_INPUTS={path_mappings.inputs_path}")
-        environment_vars.append(f"DY_SIDECAR_PATH_OUTPUTS={path_mappings.outputs_path}")
-        environment_vars.append(
-            f"DY_SIDECAR_STATE_PATHS={json.dumps([str(x) for x in path_mappings.state_paths])}"
+        env_vars: EnvVarsMap = _environment_section.parse(
+            service_content.get("environment", {})
         )
-        service_content["environment"] = environment_vars
+        env_vars["DY_SIDECAR_PATH_INPUTS"] = f"{path_mappings.inputs_path}"
+        env_vars["DY_SIDECAR_PATH_OUTPUTS"] = f"{path_mappings.outputs_path}"
+        env_vars[
+            "DY_SIDECAR_STATE_PATHS"
+        ] = f"{json.dumps([f'{p}' for p in path_mappings.state_paths])}"
+
+        service_content["environment"] = _environment_section.export_as_list(env_vars)
 
 
 def _replace_env_vars_in_compose_spec(
