@@ -34,7 +34,7 @@ def _file_progress_cb(
         log_publishing_cb(
             f"{text_prefix}"
             f" {100.0 * float(value)/float(size):.1f}%"
-            f" ({ByteSize(value).human_readable()} / {ByteSize(size).human_readable()})"
+            f" ({ByteSize(value).human_readable()} / {ByteSize(size).human_readable() if size != 0 else 'NaN'})"
         ),
         main_loop,
     )

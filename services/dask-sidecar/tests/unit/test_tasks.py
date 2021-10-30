@@ -45,6 +45,7 @@ from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     LEGACY_SERVICE_LOG_FILE_NAME,
 )
+from simcore_service_dask_sidecar.computational_sidecar.errors import ServiceRunError
 from simcore_service_dask_sidecar.computational_sidecar.models import (
     LEGACY_INTEGRATION_VERSION,
 )
@@ -263,6 +264,12 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
 
 
 @pytest.fixture()
+def ubuntu_task_fail(ubuntu_task: ServiceExampleParam) -> ServiceExampleParam:
+    ubuntu_task.command = ["/bin/bash", "-c", "some stupid failing command"]
+    return ubuntu_task
+
+
+@pytest.fixture()
 def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
     with caplog.at_level(
         logging.INFO,
@@ -399,14 +406,33 @@ def test_run_computational_sidecar_dask(
                 assert fp.details.get("size") > 0
 
 
-async def test_uploading_withfsspec(ftpserver: ProcessFTPServer):
-    ftp_server_base_url = ftpserver.get_login_data(style="url")
-    open_file = fsspec.open(
-        f"{ftp_server_base_url}/test_file.txt",
-        "wt",
+@pytest.mark.parametrize(
+    "task",
+    [
+        pytest.lazy_fixture("ubuntu_task_fail"),  # type: ignore
+    ],
+)
+def test_failing_service_raises_exception(
+    caplog_info_level: LogCaptureFixture,
+    loop: asyncio.AbstractEventLoop,
+    mock_service_envs: None,
+    dask_subsystem_mock: Dict[str, MockerFixture],
+    task: ServiceExampleParam,
+    mocker: MockerFixture,
+):
+    mocked_get_integration_version = mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
+        autospec=True,
+        return_value=task.integration_version,
     )
-    with open_file as dst:
-        dst.write("some test")
-    uploaded_file_path = Path(ftpserver.server_home, "test_file.txt")
-    with uploaded_file_path.open() as uploaded:
-        assert uploaded.read() == "some test"
+
+    with pytest.raises(ServiceRunError):
+        run_computational_sidecar(
+            task.docker_basic_auth,
+            task.service_key,
+            task.service_version,
+            task.input_data,
+            task.output_data_keys,
+            task.log_file_url,
+            task.command,
+        )
