@@ -79,7 +79,6 @@ class _environment_section:
 def _inject_paths_mappings(
     service_spec: Dict[str, Any], path_mappings: PathMappingsLabel
 ) -> None:
-    """Updates services.${service_name}.environment list in a compose specs"""
     for service_name in service_spec["services"]:
         service_content = service_spec["services"][service_name]
 
