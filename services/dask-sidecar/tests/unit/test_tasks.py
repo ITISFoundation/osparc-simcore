@@ -11,7 +11,6 @@ import re
 
 # copied out from dask
 from dataclasses import dataclass
-from pathlib import Path
 from pprint import pformat
 from typing import Dict, Iterable, List
 from unittest import mock
@@ -40,7 +39,6 @@ from models_library.users import UserID
 from packaging import version
 from pydantic import AnyUrl
 from pydantic.tools import parse_obj_as
-from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     LEGACY_SERVICE_LOG_FILE_NAME,
