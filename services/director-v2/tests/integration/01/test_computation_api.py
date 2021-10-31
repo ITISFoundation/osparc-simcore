@@ -84,11 +84,11 @@ def minimal_configuration(
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
     simcore_services_ready: None,
-    storage_endpoint: URL,
+    storage_service: URL,
     mocker,
 ) -> None:
     node_ports_config.STORAGE_ENDPOINT = (
-        f"{storage_endpoint.host}:{storage_endpoint.port}"
+        f"{storage_service.host}:{storage_service.port}"
     )
 
 

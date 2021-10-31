@@ -114,13 +114,13 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
     simcore_services_ready: None,
-    storage_endpoint: URL,
+    storage_service: URL,
     dask_scheduler_service: None,
     dask_sidecar_service: None,
     ensure_swarm_and_networks: None,
 ) -> Iterator[None]:
     node_ports_config.STORAGE_ENDPOINT = (
-        f"{storage_endpoint.host}:{storage_endpoint.port}"
+        f"{storage_service.host}:{storage_service.port}"
     )
     with postgres_db.connect() as conn:
         conn.execute(comp_tasks.delete())
