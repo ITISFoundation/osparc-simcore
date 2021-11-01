@@ -191,7 +191,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           sorter: (itemA, itemB) => itemA.getSortingValue() - itemB.getSortingValue()
         });
         const nChildren = newModel.getChildren().length;
-        console.log(nChildren);
         this.setHeight(nChildren*21 + 12);
       }
     },

@@ -23,7 +23,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    const slideshowToolbar = this.__slideshowToolbar = new osparc.desktop.SlideshowToolbar();
+    const slideshowToolbar = this.__slideshowToolbar = new osparc.desktop.SlideshowToolbar().set({
+      backgroundColor: "contrasted-background+"
+    });
     slideshowToolbar.addListener("saveSlideshow", () => {
       if (this.__currentNodeId) {
         const slideshow = this.getStudy().getUi().getSlideshow();
@@ -60,10 +62,12 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const nodeId = e.getData();
       this.__hideNode(nodeId);
     }, this);
+    slideshowToolbar.addListener("slidesStop", () => this.fireEvent("slidesStop"), this);
     this._add(slideshowToolbar);
   },
 
   events: {
+    "slidesStop": "qx.event.type.Event",
     "startPartialPipeline": "qx.event.type.Data"
   },
 

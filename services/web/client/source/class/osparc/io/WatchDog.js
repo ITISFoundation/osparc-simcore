@@ -57,11 +57,12 @@ qx.Class.define("osparc.io.WatchDog", {
   },
 
   properties: {
-    onLine: {
+    online: {
       check: "Boolean",
       init: false,
       nullable: false,
-      apply: "_applyOnLine"
+      event: "changeOnline",
+      apply: "_applyOnline"
     },
 
     heartbeatInterval: {
@@ -75,10 +76,10 @@ qx.Class.define("osparc.io.WatchDog", {
   members: {
     __clientHeartbeatWWPinger: null,
 
-    _applyOnLine: function(value) {
+    _applyOnline: function(value) {
       let logo = osparc.component.widget.LogoOnOff.getInstance();
       if (logo) {
-        logo.setOnLine(value);
+        logo.setOnline(value);
       }
 
       if (value) {
