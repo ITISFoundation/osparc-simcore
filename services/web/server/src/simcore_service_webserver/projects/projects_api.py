@@ -144,6 +144,7 @@ async def start_project_interactive_services(
     )
     log.debug("Running services %s", running_services)
 
+    # TODO: move this filter logic to director-v2?
     running_service_uuids = [x["service_uuid"] for x in running_services]
     # now start them if needed
     project_needed_services = {
@@ -171,14 +172,15 @@ async def start_project_interactive_services(
     result = await logged_gather(*start_service_tasks, reraise=True)
     log.debug("Services start result %s", result)
     for entry in result:
-        # if the status is present in the results fo the start_service
-        # it means that the API call failed
-        # also it is enforced that the status is different from 200 OK
-        if "status" not in entry:
-            continue
+        if entry:
+            # if the status is present in the results fo the start_service
+            # it means that the API call failed
+            # also it is enforced that the status is different from 200 OK
+            if "status" not in entry:
+                continue
 
-        if entry["status"] != 200:
-            log.error("Error while starting dynamic service %s", entry)
+            if entry["status"] != 200:
+                log.error("Error while starting dynamic service %s", entry)
 
 
 async def delete_project(app: web.Application, project_uuid: str, user_id: int) -> None:

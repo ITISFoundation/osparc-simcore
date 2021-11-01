@@ -97,11 +97,14 @@ async def create_dynamic_service(
     ),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> Union[DynamicServiceOut, RedirectResponse]:
+
     simcore_service_labels: SimcoreServiceLabels = (
         await director_v0_client.get_service_labels(
             service=ServiceKeyVersion(key=service.key, version=service.version)
         )
     )
+
+    # LEGACY (backwards compatibility)
     if not simcore_service_labels.needs_dynamic_sidecar:
         # forward to director-v0
         redirect_url_with_query = director_v0_client.client.base_url.copy_with(
@@ -118,6 +121,7 @@ async def create_dynamic_service(
         logger.debug("Redirecting %s", redirect_url_with_query)
         return RedirectResponse(str(redirect_url_with_query))
 
+    #
     if not await is_dynamic_service_running(
         service.node_uuid, dynamic_services_settings.DYNAMIC_SIDECAR
     ):
