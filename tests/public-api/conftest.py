@@ -13,7 +13,10 @@ import httpx
 import osparc
 import pytest
 from osparc.configuration import Configuration
-from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
+from tenacity.before_sleep import before_sleep_log
+from tenacity.wait import wait_fixed
+from tenacity.stop import stop_after_attempt
+from tenacity import Retrying
 
 log = logging.getLogger(__name__)
 
