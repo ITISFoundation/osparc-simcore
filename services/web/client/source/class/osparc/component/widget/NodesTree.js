@@ -121,10 +121,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       let newModel = qx.data.marshal.Json.createModel(data, true);
       let oldModel = this.getModel();
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
-        // Hack: Set empty model first, this will force to recreate all the items.
-        // Without it, after sorting the children, icon-status binding goes nuts.
-        // set empty tree
-        this.setModel(qx.data.marshal.Json.createModel(this.__getRootModelData(), true));
         const study = this.getStudy();
         study.bind("name", newModel, "label");
         this.setModel(newModel);
@@ -138,7 +134,6 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             return nodeTreeItem;
           },
           bindItem: (c, item, id) => {
-            console.log("binding", item.getModel());
             c.bindDefaultProperties(item, id);
             c.bindProperty("nodeId", "nodeId", null, item, id);
             c.bindProperty("label", "label", null, item, id);
