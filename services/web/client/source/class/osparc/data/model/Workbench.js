@@ -305,7 +305,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         node.addListener("showInLogger", e => this.fireDataEvent("showInLogger", e.getData()), this);
         node.addListener("retrieveInputs", e => this.fireDataEvent("retrieveInputs", e.getData()), this);
         node.addListener("fileRequested", e => this.fireDataEvent("fileRequested", e.getData()), this);
-        node.addListener("parameterNodeRequested", e => {
+        node.addListener("parameterRequested", e => {
           const {
             portId,
             nodeId
