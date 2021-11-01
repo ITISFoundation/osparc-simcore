@@ -13,7 +13,6 @@ import osparc
 import pytest
 from osparc.configuration import Configuration
 from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
-from yarl import URL
 
 log = logging.getLogger(__name__)
 
@@ -22,6 +21,7 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
     "pytest_simcore.simcore_services",
