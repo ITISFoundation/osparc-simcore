@@ -76,7 +76,7 @@ def mock_service_envs(
 
 
 @pytest.fixture
-def dask_client(mock_service_envs: None) -> distributed.Client:
+def dask_client(mock_service_envs: None) -> Iterable[distributed.Client]:
     print(pformat(dask.config.get("distributed")))
     with distributed.LocalCluster(
         worker_class=distributed.Worker,
@@ -90,7 +90,7 @@ def dask_client(mock_service_envs: None) -> distributed.Client:
 
 
 @pytest.fixture(scope="module")
-def loop() -> asyncio.AbstractEventLoop:
+def loop() -> Iterable[asyncio.AbstractEventLoop]:
     with loop_context() as loop:
         yield loop
 
