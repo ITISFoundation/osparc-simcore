@@ -234,7 +234,11 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __getSelectFileButton: function(portId) {
       const selectFileButton = new qx.ui.menu.Button(this.tr("Select File"));
-      selectFileButton.addListener("execute", () => this.fireDataEvent("fileRequested", portId), this);
+      // selectFileButton.addListener("execute", () => this.fireDataEvent("fileRequested", portId), this);
+      selectFileButton.addListener("execute", () => this.fireDataEvent("filePickerRequested", {
+        portId,
+        file: null
+      }), this);
       return selectFileButton;
     },
 

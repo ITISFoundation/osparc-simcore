@@ -318,16 +318,18 @@ qx.Class.define("osparc.data.model.Workbench", {
             nodeId,
             file
           } = e.getData();
-          this.connectFilePicker(nodeId, portId)
+          this.__connectFilePicker(nodeId, portId)
             .then(filePicker => {
-              const fileObj = file.data;
-              osparc.file.FilePicker.setOutputValueFromStore(
-                filePicker,
-                fileObj.getLocation(),
-                fileObj.getDatasetId(),
-                fileObj.getFileId(),
-                fileObj.getLabel()
-              );
+              if (file) {
+                const fileObj = file.data;
+                osparc.file.FilePicker.setOutputValueFromStore(
+                  filePicker,
+                  fileObj.getLocation(),
+                  fileObj.getDatasetId(),
+                  fileObj.getFileId(),
+                  fileObj.getLabel()
+                );
+              }
               this.fireEvent("reloadModel");
             });
         }, this);
@@ -362,7 +364,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       };
     },
 
-    connectFilePicker: function(nodeId, portId) {
+    __connectFilePicker: function(nodeId, portId) {
       return new Promise((resolve, reject) => {
         const requesterNode = this.getNode(nodeId);
         const freePos = this.getFreePosition(requesterNode);
