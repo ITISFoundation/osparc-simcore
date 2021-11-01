@@ -31,10 +31,11 @@ def test_publish_event(dask_client: distributed.Client):
 
     event_to_publish = TaskLogEvent(job_id="some_fake_job_id", log="the log")
     publish_event(dask_pub=dask_pub, event=event_to_publish)
+    time.sleep(2)
     # NOTE: this tests runs a sync dask client,
     # and the CI seems to have sometimes difficulties having this run in a reasonable time
     # hence the long time out
-    message = dask_sub.get(timeout=25)
+    message = dask_sub.get(timeout=1)
     assert message is not None
     received_task_log_event = TaskLogEvent.parse_raw(message)  # type: ignore
     assert received_task_log_event == event_to_publish
