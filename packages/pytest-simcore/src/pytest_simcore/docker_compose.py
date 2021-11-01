@@ -13,7 +13,7 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Dict, Iterator, List, Union
+from typing import Any, Dict, Iterator, List
 
 import pytest
 import yaml

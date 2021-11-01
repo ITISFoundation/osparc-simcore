@@ -5,7 +5,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 import aiohttp
 import pytest
