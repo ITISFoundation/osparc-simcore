@@ -45,7 +45,7 @@ def update_compose_labels(
     "compose_file_path",
     help="The compose file where labels shall be updated",
     type=Path,
-    required=True,
+    default=Path("docker-compose-meta.yml"),
 )
 @click.option(
     "--metadata",
