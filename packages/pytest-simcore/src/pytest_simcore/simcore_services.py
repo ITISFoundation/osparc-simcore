@@ -119,12 +119,12 @@ async def simcore_services_ready(
 # HELPERS --
 @tenacity.retry(
     wait=wait_fixed(5),
-    stop=stop_after_attempt(15),
-    before_sleep=before_sleep_log(log, logging.INFO),
+    stop=stop_after_attempt(30),
+    before_sleep=before_sleep_log(log, logging.WARNING),
     reraise=True,
 )
 async def wait_till_service_responsive(service_name: str, endpoint: URL):
-    async with aiohttp.ClientSession(timeout=ClientTimeout(total=2)) as session:
+    async with aiohttp.ClientSession(timeout=ClientTimeout(total=1)) as session:
         async with session.get(endpoint) as resp:
             # NOTE: Health-check endpoint require only a
             # status code 200 (see e.g. services/web/server/docker/healthcheck.py)
