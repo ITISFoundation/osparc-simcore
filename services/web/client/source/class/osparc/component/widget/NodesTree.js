@@ -165,14 +165,10 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
               // "bind" running/interactive status to icon color
               if (node.isDynamic()) {
-                node.getStatus().addListener("changeInteractive", e => {
-                  this.__updateColor(node.getNodeId(), e.getData());
-                });
+                node.getStatus().addListener("changeInteractive", e => this.__updateColor(node.getNodeId(), e.getData()));
                 this.__updateColor(node.getNodeId(), node.getStatus().getInteractive());
               } else if (node.isComputational()) {
-                node.getStatus().addListener("changeRunning", e => {
-                  this.__updateColor(node.getNodeId(), e.getData());
-                });
+                node.getStatus().addListener("changeRunning", e => this.__updateColor(node.getNodeId(), e.getData()));
                 this.__updateColor(node.getNodeId(), node.getStatus().getRunning());
               }
               c.bindProperty("statusColor", "textColor", {
