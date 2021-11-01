@@ -1,11 +1,11 @@
 import logging
 from collections import deque
-from pprint import pformat
 from typing import Any, Deque, Dict, List, Optional, Type
 
 import httpx
 from fastapi import FastAPI
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -129,7 +129,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
         logger.debug(
             "dynamic-sidecar create_service_params %s",
-            pformat(dynamic_sidecar_create_service_params),
+            json_dumps(dynamic_sidecar_create_service_params),
         )
 
         dynamic_sidecar_id = await create_service_and_get_id(
@@ -314,7 +314,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             scheduler_data.dynamic_sidecar.dynamic_sidecar_id, dynamic_sidecar_settings
         )
 
-        dynamic_sidecar_proxy_create_service_params = await get_dynamic_proxy_spec(
+        dynamic_sidecar_proxy_create_service_params = get_dynamic_proxy_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
             dynamic_sidecar_network_id=scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id,
@@ -324,9 +324,10 @@ class CreateUserServices(DynamicSchedulerEvent):
             entrypoint_container_name=entrypoint_container,
             service_port=scheduler_data.service_port,
         )
+
         logger.debug(
             "dynamic-sidecar-proxy create_service_params %s",
-            pformat(dynamic_sidecar_proxy_create_service_params),
+            json_dumps(dynamic_sidecar_proxy_create_service_params),
         )
 
         # no need for the id any longer
