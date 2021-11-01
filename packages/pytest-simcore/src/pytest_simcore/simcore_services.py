@@ -5,13 +5,14 @@
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, Final, List
 
 import aiohttp
 import pytest
 import tenacity
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.client import ClientTimeout
+from tenacity.after import after_log
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
@@ -116,11 +117,13 @@ async def simcore_services_ready(
         monkeypatch_module.setenv(f"{env_prefix}_PORT", str(endpoint.port))
 
 
+_MINUTE: Final[int] = 60
 # HELPERS --
 @tenacity.retry(
-    wait=wait_random(1, 5),
-    stop=stop_after_delay(120),
+    wait=wait_random(2, 15),
+    stop=stop_after_delay(5 * _MINUTE),
     before_sleep=before_sleep_log(log, logging.WARNING),
+    after_sleep=after_log(log, logging.ERROR),
     reraise=True,
 )
 async def wait_till_service_responsive(service_name: str, endpoint: URL):
