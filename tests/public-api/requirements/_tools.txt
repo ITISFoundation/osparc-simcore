@@ -60,7 +60,9 @@ tomli==1.2.1
     #   black
     #   pep517
 typing-extensions==3.10.0.2
-    # via black
+    # via
+    #   -c requirements/_test.txt
+    #   black
 virtualenv==20.8.0
     # via pre-commit
 wheel==0.37.0
