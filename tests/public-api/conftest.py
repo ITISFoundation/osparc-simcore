@@ -56,23 +56,8 @@ def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
 
 @pytest.fixture(scope="module")
 def simcore_docker_stack_and_registry_ready(
-    docker_stack: Dict,
-    docker_registry,
-    services_endpoint: Dict[str, URL],
-    core_services_selection: List[str],
+    docker_stack: Dict, docker_registry, simcore_services: None
 ) -> Dict:
-
-    for service in core_services_selection:
-        for attempt in Retrying(
-            wait=wait_fixed(5),
-            stop=stop_after_attempt(60),
-            reraise=True,
-            before_sleep=before_sleep_log(log, logging.INFO),
-        ):
-            with attempt:
-                resp = httpx.get(f"{services_endpoint[service]}")
-                resp.raise_for_status()
-
     for attempt in Retrying(
         wait=wait_fixed(5),
         stop=stop_after_attempt(60),

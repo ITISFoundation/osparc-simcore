@@ -9,6 +9,10 @@ from typing import Dict, List
 import aiohttp
 import pytest
 import tenacity
+from _pytest.monkeypatch import MonkeyPatch
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 from yarl import URL
 
 from .helpers.utils_docker import get_ip, get_service_published_port
@@ -53,8 +57,10 @@ def services_endpoint(
     return services_endpoint
 
 
-@pytest.fixture(scope="function")
-async def simcore_services(services_endpoint: Dict[str, URL], monkeypatch) -> None:
+@pytest.fixture(scope="module")
+async def simcore_services(
+    services_endpoint: Dict[str, URL], monkeypatch_module: MonkeyPatch
+) -> None:
 
     # waits for all services to be responsive
     wait_tasks = [
@@ -68,15 +74,16 @@ async def simcore_services(services_endpoint: Dict[str, URL], monkeypatch) -> No
     # patches environment variables with host/port per service
     for service, endpoint in services_endpoint.items():
         env_prefix = service.upper().replace("-", "_")
-        monkeypatch.setenv(f"{env_prefix}_HOST", endpoint.host)
-        monkeypatch.setenv(f"{env_prefix}_PORT", str(endpoint.port))
+        assert endpoint.host
+        monkeypatch_module.setenv(f"{env_prefix}_HOST", endpoint.host)
+        monkeypatch_module.setenv(f"{env_prefix}_PORT", str(endpoint.port))
 
 
 # HELPERS --
 @tenacity.retry(
-    wait=tenacity.wait_fixed(5),
-    stop=tenacity.stop_after_attempt(60),
-    before_sleep=tenacity.before_sleep_log(log, logging.INFO),
+    wait=wait_fixed(5),
+    stop=stop_after_attempt(60),
+    before_sleep=before_sleep_log(log, logging.INFO),
     reraise=True,
 )
 async def wait_till_service_responsive(endpoint: URL):
