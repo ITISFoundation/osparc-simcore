@@ -199,7 +199,7 @@ async def _request_delete(client, pid):
 async def test_workflow(
     postgres_db: sa.engine.Engine,
     docker_registry: str,
-    simcore_services,
+    simcore_services_ready,
     fake_project_data,
     catalog_subsystem_mock,
     client,
@@ -288,7 +288,7 @@ async def test_get_invalid_project(
     client,
     postgres_db: sa.engine.Engine,
     docker_registry: str,
-    simcore_services,
+    simcore_services_ready,
     logged_user,
 ):
     url = client.app.router["get_project"].url_for(project_id="some-fake-id")
@@ -302,7 +302,7 @@ async def test_update_invalid_project(
     client,
     postgres_db: sa.engine.Engine,
     docker_registry: str,
-    simcore_services,
+    simcore_services_ready,
     logged_user,
 ):
     url = client.app.router["replace_project"].url_for(project_id="some-fake-id")
@@ -316,7 +316,7 @@ async def test_delete_invalid_project(
     client,
     postgres_db: sa.engine.Engine,
     docker_registry: str,
-    simcore_services,
+    simcore_services_ready,
     logged_user,
 ):
     url = client.app.router["delete_project"].url_for(project_id="some-fake-id")

@@ -1,0 +1,63 @@
+activity:
+  enabled: true
+  prometheus_api_version: ${WEBSERVER_PROMETHEUS_API_VERSION}
+  prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}
+  prometheus_port: ${WEBSERVER_PROMETHEUS_PORT}
+catalog:
+  host: ${CATALOG_HOST}
+  port: ${CATALOG_PORT}
+  version: v0
+db:
+  postgres:
+    database: ${POSTGRES_DB}
+    endpoint: ${POSTGRES_ENDPOINT}
+    host: ${POSTGRES_HOST}
+    maxsize: 50
+    minsize: 1
+    password: ${POSTGRES_PASSWORD}
+    port: ${POSTGRES_PORT}
+    user: ${POSTGRES_USER}
+director:
+  host: ${DIRECTOR_HOST}
+  port: ${DIRECTOR_PORT}
+  version: v0
+login:
+  enabled: true
+  registration_confirmation_required: false
+  registration_invitation_required: false
+main:
+  host: 127.0.0.1
+  log_level: ${WEBSERVER_LOGLEVEL}
+  port: 8080
+  studies_access_enabled: true
+  testing: true
+projects:
+  enabled: true
+resource_manager:
+  enabled: true
+  garbage_collection_interval_seconds: ${WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS}
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
+  resource_deletion_timeout_seconds: ${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}
+rest:
+  version: v0
+session:
+  secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
+smtp:
+  host: ${SMTP_HOST}
+  password: null
+  port: ${SMTP_PORT}
+  sender: OSPARC support <support@osparc.io>
+  tls: false
+  username: null
+socketio:
+  enabled: true
+storage:
+  host: ${STORAGE_HOST}
+  port: ${STORAGE_PORT}
+  version: v0
+tracing:
+  enabled: true
+  zipkin_endpoint: ${TRACING_ZIPKIN_ENDPOINT}
+version: '1.0'

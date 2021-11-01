@@ -33,7 +33,6 @@ from shared_comp_utils import (
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from starlette import status
 from starlette.testclient import TestClient
-from yarl import URL
 
 pytest_simcore_core_services_selection = [
     "director",
@@ -82,7 +81,7 @@ def minimal_configuration(
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
-    simcore_services: Dict[str, URL],
+    simcore_services_ready: None,
 ) -> None:
     pass
 
