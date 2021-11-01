@@ -907,12 +907,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         const filePickerView = new osparc.file.FilePicker(filePicker);
         filePickerView.buildLayout();
+        filePickerView.getChildControl("reload-button").exclude();
         filePickerView.getChildControl("files-tree").set({
           hideRoot: true,
           showLeafs: true
         });
         filePickerView.getChildControl("folder-viewer").exclude();
-        filePickerView.getChildControl("files-add").exclude();
         filePickerView.getChildControl("selected-file-layout").getChildControl("download-button").exclude();
         filePickerView.addListener("itemSelected", () => this.__populateSecondPanel(filePicker));
         this.__settingsPage.add(filePickerView, {

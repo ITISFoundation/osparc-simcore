@@ -255,6 +255,14 @@ qx.Class.define("osparc.file.FilePicker", {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._addAt(control, this.self().POS.TOOLBAR);
           break;
+        case "files-add": {
+          control = new osparc.file.FilesAdd().set({
+            node: this.getNode()
+          });
+          const mainButtons = this.getChildControl("toolbar");
+          mainButtons.add(control);
+          break;
+        }
         case "selected-file-layout": {
           control = new osparc.file.FileLabelWithActions().set({
             alignY: "middle"
@@ -263,14 +271,6 @@ qx.Class.define("osparc.file.FilePicker", {
           mainButtons.add(control, {
             flex: 1
           });
-          break;
-        }
-        case "files-add": {
-          control = new osparc.file.FilesAdd().set({
-            node: this.getNode()
-          });
-          const mainButtons = this.getChildControl("toolbar");
-          mainButtons.add(control);
           break;
         }
         case "select-button": {
@@ -359,9 +359,6 @@ qx.Class.define("osparc.file.FilePicker", {
       }, this);
 
 
-      const selectedFileLayout = this.__selectedFileLayout = this.getChildControl("selected-file-layout");
-      selectedFileLayout.getChildControl("delete-button").exclude();
-
       const filesAdd = this.getChildControl("files-add");
       filesAdd.addListener("fileAdded", e => {
         const fileMetadata = e.getData();
@@ -371,6 +368,9 @@ qx.Class.define("osparc.file.FilePicker", {
         this.__reloadFilesTree();
         filesTree.loadFilePath(this.__getOutputFile()["value"]);
       }, this);
+
+      const selectedFileLayout = this.__selectedFileLayout = this.getChildControl("selected-file-layout");
+      selectedFileLayout.getChildControl("delete-button").exclude();
 
       const selectBtn = this.getChildControl("select-button");
       selectBtn.setEnabled(false);
