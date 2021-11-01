@@ -48,7 +48,10 @@ setup(
     extras_require={},
     zip_safe=False,
     entry_points={
-        "console_scripts": ["simcore-service-integrator=service_integration.cli:main"],
-        "pytest11": ["simcore_service_integration = service_integration.pytest_plugin"],
+        "console_scripts": [
+            "simcore-service-integrator=service_integration.cli:main",
+            "ossi=service_integration.cli:main",
+        ],
+        "pytest11": ["simcore_service_integration=service_integration.pytest_plugin"],
     },
 )
