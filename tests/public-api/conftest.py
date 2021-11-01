@@ -2,11 +2,12 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
 import logging
 import os
 import time
 from pprint import pformat
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, Iterable, List
 
 import httpx
 import osparc
@@ -55,8 +56,18 @@ def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
 
 
 @pytest.fixture(scope="module")
+def loop(request) -> Iterable[asyncio.AbstractEventLoop]:
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture(scope="module")
 def simcore_docker_stack_and_registry_ready(
-    docker_stack: Dict, docker_registry, simcore_services_ready: None
+    loop: asyncio.AbstractEventLoop,
+    docker_stack: Dict,
+    docker_registry,
+    simcore_services_ready: None,
 ) -> Dict:
     for attempt in Retrying(
         wait=wait_fixed(5),
