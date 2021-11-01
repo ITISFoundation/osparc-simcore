@@ -13,8 +13,8 @@ import tenacity
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.client import ClientTimeout
 from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_fixed
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random
 from yarl import URL
 
 from .helpers.utils_docker import get_ip, get_service_published_port
@@ -118,12 +118,13 @@ async def simcore_services_ready(
 
 # HELPERS --
 @tenacity.retry(
-    wait=wait_fixed(5),
-    stop=stop_after_attempt(30),
+    wait=wait_random(1, 5),
+    stop=stop_after_delay(120),
     before_sleep=before_sleep_log(log, logging.WARNING),
     reraise=True,
 )
 async def wait_till_service_responsive(service_name: str, endpoint: URL):
+    print(f"trying to connect with '{service_name}' through '{endpoint}'")
     async with aiohttp.ClientSession(timeout=ClientTimeout(total=1)) as session:
         async with session.get(endpoint) as resp:
             # NOTE: Health-check endpoint require only a
