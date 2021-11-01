@@ -86,12 +86,12 @@ def client(
 
 
 def _create_rabbit_message(
-    message_name: str, node_uuid: str, user_id: str, project_id: str, param: Any
+    message_name: str, node_uuid: str, user_id: int, project_id: str, param: Any
 ) -> Dict[str, Any]:
     message = {
         "channel": message_name,
         "node_id": node_uuid,
-        "user_id": user_id,
+        "user_id": f"{user_id}",
         "project_id": project_id,
     }
 
@@ -110,7 +110,7 @@ def client_session_id() -> str:
 async def _publish_messages(
     num_messages: int,
     node_uuid: str,
-    user_id: str,
+    user_id: int,
     project_id: str,
     rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
@@ -132,7 +132,7 @@ async def _publish_messages(
     # indicate container is started
     instrumentation_start_message = instrumentation_stop_message = {
         "metrics": "service_started",
-        "user_id": user_id,
+        "user_id": f"{user_id}",
         "project_id": project_id,
         "service_uuid": node_uuid,
         "service_type": "COMPUTATIONAL",
@@ -207,7 +207,7 @@ async def test_rabbit_websocket_computation(
     mocker: MockerFixture,
     rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
     node_uuid: str,
-    user_id: str,
+    user_id: int,
     project_id: str,
 ):
 
