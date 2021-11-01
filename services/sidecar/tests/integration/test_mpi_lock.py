@@ -19,7 +19,7 @@ def redis_service_config(redis_service) -> None:
     mpi_lock.config.CELERY_CONFIG.redis = old_config
 
 
-async def test_mpi_locking(loop, simcore_services, redis_service_config) -> None:
+async def test_mpi_locking(loop, simcore_services_ready, redis_service_config) -> None:
     cpu_count = 2
 
     assert mpi_lock.acquire_mpi_lock(cpu_count) is True
@@ -28,7 +28,7 @@ async def test_mpi_locking(loop, simcore_services, redis_service_config) -> None
 
 @pytest.mark.parametrize("process_count, cpu_count", [(1, 3), (32, 4)])
 async def test_multiple_parallel_locking(
-    loop, simcore_services, redis_service_config, process_count, cpu_count
+    loop, simcore_services_ready, redis_service_config, process_count, cpu_count
 ) -> None:
     def worker(reply_queue: multiprocessing.Queue, cpu_count: int) -> None:
         mpi_lock_acquisition = mpi_lock.acquire_mpi_lock(cpu_count)

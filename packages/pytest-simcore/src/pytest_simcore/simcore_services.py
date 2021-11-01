@@ -58,7 +58,7 @@ def services_endpoint(
 
 
 @pytest.fixture(scope="module")
-async def simcore_services(
+async def simcore_services_ready(
     services_endpoint: Dict[str, URL], monkeypatch_module: MonkeyPatch
 ) -> None:
 
