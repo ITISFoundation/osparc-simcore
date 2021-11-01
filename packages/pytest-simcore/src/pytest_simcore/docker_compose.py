@@ -13,7 +13,7 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Iterator, List, Union
 
 import pytest
 import yaml
@@ -25,10 +25,11 @@ from .helpers import (
     FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
 )
 from .helpers.utils_docker import get_ip, run_docker_compose_config, save_docker_infos
+from .helpers.utils_environs import EnvVarsDict
 
 
 @pytest.fixture(scope="session")
-def testing_environ_vars(env_devel_file: Path) -> Dict[str, Union[str, None]]:
+def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
     """
     Loads and extends .env-devel returning
     all environment variables key=value
@@ -36,7 +37,7 @@ def testing_environ_vars(env_devel_file: Path) -> Dict[str, Union[str, None]]:
     env_devel_unresolved = dotenv_values(env_devel_file, verbose=True, interpolate=True)
 
     # get from environ if applicable
-    env_devel = {
+    env_devel: EnvVarsDict = {
         key: os.environ.get(key, value) for key, value in env_devel_unresolved.items()
     }
 
@@ -77,7 +78,7 @@ def env_file_for_testing(
     testing_environ_vars: Dict[str, str],
     temp_folder: Path,
     osparc_simcore_root_dir: Path,
-) -> Path:
+) -> Iterator[Path]:
     """Dumps all the environment variables into an $(temp_folder)/.env.test file
 
     Pass path as argument in 'docker-compose --env-file ... '
