@@ -6,6 +6,7 @@
 # pylint:disable=too-many-statements
 
 
+import json
 import random
 from typing import Any, AsyncIterable, Callable, Coroutine, Dict, Iterable
 
@@ -57,13 +58,22 @@ def cluster(
                 "owner": gid,
                 "access_rights": cluster_access_rights or {},
                 "endpoint": faker.uri(),
-                "authentication": faker.json(),
+                "authentication": {
+                    random.choice(["simple", "kerberos", "jupyterhub"]): faker.pydict(
+                        value_types=str
+                    )
+                },
             }
         )
 
         result = postgres_db.execute(
             clusters.insert()
-            .values(new_cluster.dict(by_alias=True, exclude={"id", "access_rights"}))
+            .values(
+                new_cluster.dict(
+                    by_alias=True, exclude={"id", "access_rights", "authentication"}
+                ),
+                authentication=json.dumps(new_cluster.authentication),
+            )
             .returning(literal_column("*"))
         )
         cluster_in_db = result.first()
