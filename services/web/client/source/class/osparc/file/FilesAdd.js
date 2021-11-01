@@ -87,7 +87,7 @@ qx.Class.define("osparc.file.FilesAdd", {
           this._addAt(control, 0);
           break;
         case "addButton":
-          control = new qx.ui.toolbar.Button(this.tr("Upload"), "@FontAwesome5Solid/cloud-upload-alt/16");
+          control = new qx.ui.toolbar.Button(this.tr("Add"), "@FontAwesome5Solid/cloud-upload-alt/16");
           this._add(control);
           break;
       }
