@@ -56,7 +56,7 @@ def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
 
 @pytest.fixture(scope="module")
 def simcore_docker_stack_and_registry_ready(
-    docker_stack: Dict, docker_registry, simcore_services: None
+    docker_stack: Dict, docker_registry, simcore_services_ready: None
 ) -> Dict:
     for attempt in Retrying(
         wait=wait_fixed(5),
