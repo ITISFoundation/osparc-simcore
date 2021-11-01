@@ -69,10 +69,7 @@ def cluster(
         result = postgres_db.execute(
             clusters.insert()
             .values(
-                new_cluster.dict(
-                    by_alias=True, exclude={"id", "access_rights", "authentication"}
-                ),
-                authentication=json.dumps(new_cluster.authentication),
+                new_cluster.dict(by_alias=True, exclude={"id", "access_rights"}),
             )
             .returning(literal_column("*"))
         )

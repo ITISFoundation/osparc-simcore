@@ -1,4 +1,3 @@
-import json
 from typing import Dict, List, Optional, Set
 
 import sqlalchemy as sa
@@ -167,10 +166,7 @@ class ClustersRepository(BaseRepository):
                 # pylint: disable=no-value-for-parameter
                 clusters.insert()
                 .values(
-                    new_cluster.dict(
-                        by_alias=True, exclude={"id", "access_rights", "authentication"}
-                    ),
-                    authentication=json.dumps(new_cluster.authentication),
+                    new_cluster.dict(by_alias=True, exclude={"id", "access_rights"}),
                 )
                 .returning(clusters.c.id)
             )
@@ -325,9 +321,8 @@ class ClustersRepository(BaseRepository):
                         by_alias=True,
                         exclude_unset=True,
                         exclude_none=True,
-                        exclude={"access_rights", "authentication"},
+                        exclude={"access_rights"},
                     ),
-                    authentication=json.dumps(updated_cluster.authentication),
                 )
             )
             # upsert the rights
