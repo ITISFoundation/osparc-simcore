@@ -442,8 +442,6 @@ rm-registry: ## remove the registry and changes to host/file
 	-docker rm --force $(LOCAL_REGISTRY_HOSTNAME)
 	-docker volume rm $(LOCAL_REGISTRY_VOLUME)
 
-
-
 local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
 	@$(if $(shell grep "127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME)" /etc/hosts),,\
 					echo configuring host file to redirect $(LOCAL_REGISTRY_HOSTNAME) to 127.0.0.1; \
