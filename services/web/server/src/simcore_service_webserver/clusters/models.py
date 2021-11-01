@@ -1,8 +1,8 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from models_library.users import GroupID
 from pydantic import BaseModel, Extra, Field, validator
-from pydantic.networks import HttpUrl
+from pydantic.networks import AnyUrl, HttpUrl
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.clusters import ClusterType
 
@@ -32,6 +32,10 @@ class ClusterBase(BaseModel):
         description="url to the image describing this cluster",
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
+    endpoint: AnyUrl
+    authentication: Dict[str, Any] = Field(
+        description="For now it is undefined how the authentication is going to be used"
+    )
     access_rights: Dict[GroupID, ClusterAccessRights] = Field(default_factory=dict)
 
     class Config:
@@ -50,6 +54,10 @@ class Cluster(ClusterBase):
                     "name": "My awesome cluster",
                     "type": ClusterType.ON_PREMISE,
                     "owner": 12,
+                    "endpoint": "registry.osparc-development.fake.dev",
+                    "authentication": {
+                        "simple": {"username": "someuser", "password": "somepassword"}
+                    },
                 },
                 {
                     "id": 432546,
@@ -57,6 +65,10 @@ class Cluster(ClusterBase):
                     "description": "a AWS cluster administered by me",
                     "type": ClusterType.AWS,
                     "owner": 154,
+                    "endpoint": "registry.osparc-development.fake.dev",
+                    "authentication": {
+                        "simple": {"username": "someuser", "password": "somepassword"}
+                    },
                     "access_rights": {
                         154: CLUSTER_ADMIN_RIGHTS,
                         12: CLUSTER_MANAGER_RIGHTS,
@@ -77,6 +89,25 @@ class Cluster(ClusterBase):
         if v[owner_gid] != CLUSTER_ADMIN_RIGHTS:
             raise ValueError("the cluster owner access rights are incorrectly set")
         return v
+
+    @validator("authentication", always=True)
+    @classmethod
+    def authentication_is_one_of_gateway_authorized_ones(cls, v):
+        if not isinstance(v, dict):
+            raise ValueError(
+                "the authentication value is not following simple, kerberos or jupyterhub authentication schemes"
+            )
+        POSSIBLE_KEYS = ["simple", "kerberos", "jupyterhub"]
+        for authentication_type in POSSIBLE_KEYS:
+            if authentication_type in v:
+                if not isinstance(v[authentication_type], dict):
+                    raise ValueError(
+                        f"{authentication_type} authentication requires a dictionary"
+                    )
+                return v
+        raise ValueError(
+            "the authentication value is not following simple, kerberos or jupyterhub authentication schemes"
+        )
 
 
 class ClusterCreate(ClusterBase):

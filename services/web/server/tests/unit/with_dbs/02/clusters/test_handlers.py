@@ -7,7 +7,7 @@
 
 
 import random
-from typing import Any, Callable, Coroutine, Dict, Iterable
+from typing import Any, AsyncIterable, Callable, Coroutine, Dict, Iterable
 
 import pytest
 import sqlalchemy as sa
@@ -56,6 +56,8 @@ def cluster(
                 "type": random.choice(list(ClusterType)),
                 "owner": gid,
                 "access_rights": cluster_access_rights or {},
+                "endpoint": faker.uri(),
+                "authentication": faker.json(),
             }
         )
 
@@ -98,7 +100,9 @@ def cluster(
 
 
 @pytest.fixture(scope="function")
-async def second_user(client: TestClient) -> Callable[..., Dict[str, Any]]:
+async def second_user(
+    client: TestClient,
+) -> AsyncIterable[Dict[str, Any]]:
     async with NewUser({"name": "Second User", "role": "USER"}, client.app) as user:
         yield user
 
