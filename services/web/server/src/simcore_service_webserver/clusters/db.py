@@ -1,3 +1,4 @@
+import json
 from typing import Dict, List, Optional, Set
 
 import sqlalchemy as sa
@@ -91,6 +92,8 @@ class ClustersRepository(BaseRepository):
                     description=row[clusters.c.description],
                     type=row[clusters.c.type],
                     owner=row[clusters.c.owner],
+                    endpoint=row[clusters.c.endpoint],
+                    authentication=row[clusters.c.authentication],
                     thumbnail=row[clusters.c.thumbnail],
                     access_rights=cluster_access_rights,
                 )
@@ -164,7 +167,10 @@ class ClustersRepository(BaseRepository):
                 # pylint: disable=no-value-for-parameter
                 clusters.insert()
                 .values(
-                    new_cluster.dict(by_alias=True, exclude={"id", "access_rights"})
+                    new_cluster.dict(
+                        by_alias=True, exclude={"id", "access_rights", "authentication"}
+                    ),
+                    authentication=json.dumps(new_cluster.authentication),
                 )
                 .returning(clusters.c.id)
             )
@@ -198,6 +204,8 @@ class ClustersRepository(BaseRepository):
                 description=row[clusters.c.description],
                 type=row[clusters.c.type],
                 owner=row[clusters.c.owner],
+                endpoint=row[clusters.c.endpoint],
+                authentication=row[clusters.c.authentication],
                 access_rights={
                     row[clusters.c.owner]: {
                         "read": row[cluster_to_groups.c.read],
@@ -317,8 +325,9 @@ class ClustersRepository(BaseRepository):
                         by_alias=True,
                         exclude_unset=True,
                         exclude_none=True,
-                        exclude={"access_rights"},
-                    )
+                        exclude={"access_rights", "authentication"},
+                    ),
+                    authentication=json.dumps(updated_cluster.authentication),
                 )
             )
             # upsert the rights
