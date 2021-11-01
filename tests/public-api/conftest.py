@@ -56,7 +56,8 @@ def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
 
 
 @pytest.fixture(scope="module")
-def loop(request) -> Iterable[asyncio.AbstractEventLoop]:
+def event_loop(request) -> Iterable[asyncio.AbstractEventLoop]:
+    """Overrides pytest_asyncio.event_loop and extends to module scope"""
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
@@ -64,11 +65,12 @@ def loop(request) -> Iterable[asyncio.AbstractEventLoop]:
 
 @pytest.fixture(scope="module")
 def simcore_docker_stack_and_registry_ready(
-    loop: asyncio.AbstractEventLoop,
+    event_loop: asyncio.AbstractEventLoop,
     docker_stack: Dict,
     docker_registry,
     simcore_services_ready: None,
 ) -> Dict:
+
     for attempt in Retrying(
         wait=wait_fixed(5),
         stop=stop_after_attempt(60),

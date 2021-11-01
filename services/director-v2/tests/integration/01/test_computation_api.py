@@ -82,7 +82,7 @@ def minimal_configuration(
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
-    simcore_services_ready: Dict[str, URL],
+    simcore_services_ready: None,
 ) -> None:
     pass
 
