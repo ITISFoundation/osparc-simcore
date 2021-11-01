@@ -13,6 +13,7 @@ import osparc
 import pytest
 from osparc.configuration import Configuration
 from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
+from yarl import URL
 
 log = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ pytest_plugins = [
     "pytest_simcore.docker_swarm",
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
+    "pytest_simcore.simcore_services",
     "pytest_simcore.tmp_path_extra",
 ]
 
@@ -56,7 +58,20 @@ def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
 def simcore_docker_stack_and_registry_ready(
     docker_stack: Dict,
     docker_registry,
+    services_endpoint: Dict[str, URL],
+    core_services_selection: List[str],
 ) -> Dict:
+
+    for service in core_services_selection:
+        for attempt in Retrying(
+            wait=wait_fixed(5),
+            stop=stop_after_attempt(60),
+            reraise=True,
+            before_sleep=before_sleep_log(log, logging.INFO),
+        ):
+            with attempt:
+                resp = httpx.get(f"{services_endpoint[service]}")
+                resp.raise_for_status()
 
     for attempt in Retrying(
         wait=wait_fixed(5),

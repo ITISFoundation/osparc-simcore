@@ -11,11 +11,20 @@ import pytest
 import tenacity
 from yarl import URL
 
-from .helpers.utils_docker import get_service_published_port
+from .helpers.utils_docker import get_ip, get_service_published_port
 
 log = logging.getLogger(__name__)
 
-SERVICES_TO_SKIP = ["dask-sidecar", "postgres", "redis", "rabbit"]
+SERVICES_TO_SKIP = [
+    "dask-sidecar",
+    "migration",
+    "postgres",
+    "redis",
+    "rabbit",
+    "static-webserver",
+    "whoami",
+    "traefik",
+]
 SERVICE_PUBLISHED_PORT = {}
 SERVICE_HEALTHCHECK_ENTRYPOINT = {
     "director-v2": "/",
@@ -35,9 +44,10 @@ def services_endpoint(
     stack_name = testing_environ_vars["SWARM_STACK_NAME"]
     for service in core_services_selection:
         assert f"{stack_name}_{service}" in docker_stack["services"]
+        full_service_name = f"{stack_name}_{service}"
         if service not in SERVICES_TO_SKIP:
             endpoint = URL(
-                f"http://127.0.0.1:{get_service_published_port(service, [AIOHTTP_BASED_SERVICE_PORT, FASTAPI_BASED_SERVICE_PORT, DASK_SCHEDULER_SERVICE_PORT])}"
+                f"http://{get_ip()}:{get_service_published_port(full_service_name, [AIOHTTP_BASED_SERVICE_PORT, FASTAPI_BASED_SERVICE_PORT, DASK_SCHEDULER_SERVICE_PORT])}"
             )
             services_endpoint[service] = endpoint
     return services_endpoint
