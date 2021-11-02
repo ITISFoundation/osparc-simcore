@@ -5,7 +5,7 @@
 import asyncio
 import logging
 import os
-from typing import Callable, Dict
+from typing import AsyncIterable, Callable, Dict
 from uuid import uuid4
 
 import aiodocker
@@ -176,7 +176,7 @@ async def director_v2_client(
 @pytest.fixture
 async def ensure_services_stopped(
     dy_static_file_server_project: ProjectAtDB, director_v2_client: httpx.AsyncClient
-) -> None:
+) -> AsyncIterable[None]:
     yield
     # ensure service cleanup when done testing
     async with aiodocker.Docker() as docker_client:
