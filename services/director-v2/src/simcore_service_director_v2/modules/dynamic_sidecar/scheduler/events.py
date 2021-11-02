@@ -11,6 +11,7 @@ from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential, wait_fixed
+from settings_library.docker_registry import RegistrySettings
 
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.dynamic_services import (
@@ -83,6 +84,9 @@ class CreateSidecars(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        docker_registry_settings: RegistrySettings = (
+            app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
+        )
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
@@ -121,6 +125,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         # start dynamic-sidecar and run the proxy on the same node
         dynamic_sidecar_create_service_params = await get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
+            docker_registry_settings=docker_registry_settings,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
             dynamic_sidecar_network_id=dynamic_sidecar_network_id,
             swarm_network_id=swarm_network_id,

@@ -229,7 +229,7 @@ async def test_start_pipeline(
     postgres_session: sa.orm.session.Session,
     rabbit_service: RabbitConfig,
     redis_service: RedisConfig,
-    simcore_services: Dict[str, URL],
+    simcore_services_ready: Dict[str, URL],
     client,
     socketio_client_factory: Callable,
     logged_user: LoggedUser,

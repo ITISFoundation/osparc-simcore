@@ -382,7 +382,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
 
 async def test_t2_cleanup_resources_after_browser_is_closed(
     mock_garbage_collector_task,
-    simcore_services,
+    simcore_services_ready,
     client,
     socketio_client_factory: Callable,
     aiopg_engine,
@@ -422,7 +422,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 
 
 async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
-    simcore_services, client, socketio_client_factory: Callable, aiopg_engine
+    simcore_services_ready, client, socketio_client_factory: Callable, aiopg_engine
 ):
     """after a USER disconnects the GC will remove none of its projects or templates nor the user itself"""
     number_of_projects = 5
@@ -463,7 +463,7 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
 
 
 async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owner_removal(
-    simcore_services, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -502,7 +502,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
 
 
 async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
-    simcore_services, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -541,7 +541,7 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
 
 
 async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on_owner_removal(
-    simcore_services, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -608,7 +608,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
 
 
 async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_last_and_all_is_removed(
-    simcore_services, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -688,7 +688,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
 
 
 async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_until_one_user_remains(
-    simcore_services, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -757,7 +757,7 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
 
 
 async def test_t9_project_shared_with_other_users_transferred_between_them_and_then_removed(
-    simcore_services, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -839,7 +839,7 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
 
 
 async def test_t10_owner_and_all_shared_users_marked_as_guests(
-    simcore_services, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -879,7 +879,7 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
 
 
 async def test_t11_owner_and_all_users_in_group_marked_as_guests(
-    simcore_services, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine
 ):
     """
     USER "u1" creates a group and invites "u2" and "u3";

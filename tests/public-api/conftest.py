@@ -2,17 +2,21 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
 import logging
 import os
 import time
 from pprint import pformat
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, Iterable, List
 
 import httpx
 import osparc
 import pytest
 from osparc.configuration import Configuration
-from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
+from tenacity.before_sleep import before_sleep_log
+from tenacity.wait import wait_fixed
+from tenacity.stop import stop_after_attempt
+from tenacity import Retrying
 
 log = logging.getLogger(__name__)
 
@@ -21,8 +25,10 @@ pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
+    "pytest_simcore.simcore_services",
     "pytest_simcore.tmp_path_extra",
 ]
 
@@ -53,11 +59,20 @@ def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
 
 
 @pytest.fixture(scope="module")
+def event_loop(request) -> Iterable[asyncio.AbstractEventLoop]:
+    """Overrides pytest_asyncio.event_loop and extends to module scope"""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture(scope="module")
 def simcore_docker_stack_and_registry_ready(
+    event_loop: asyncio.AbstractEventLoop,
     docker_stack: Dict,
     docker_registry,
+    simcore_services_ready: None,
 ) -> Dict:
-
     for attempt in Retrying(
         wait=wait_fixed(5),
         stop=stop_after_attempt(60),

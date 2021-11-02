@@ -17,16 +17,16 @@ cloudpickle==1.6.0
     #   -c requirements/./_base.txt
     #   dask
     #   distributed
-dask==2021.06.1
+dask==2021.10.0
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-complete.in
     #   distributed
-distributed==2021.06.1
+distributed==2021.10.0
     # via
     #   -c requirements/./_base.txt
     #   dask
-fsspec==2021.6.0
+fsspec==2021.10.1
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -34,10 +34,12 @@ heapdict==1.0.1
     # via
     #   -c requirements/./_base.txt
     #   zict
-jinja2==3.0.1
+jinja2==2.11.3
     # via
     #   -c requirements/./_base.txt
     #   bokeh
+    #   dask
+    #   distributed
 locket==0.2.1
     # via
     #   -c requirements/./_base.txt
@@ -60,6 +62,7 @@ packaging==20.4
     # via
     #   -c requirements/./_base.txt
     #   bokeh
+    #   dask
 pandas==1.2.4
     # via
     #   -c requirements/./_base.txt
@@ -119,7 +122,7 @@ tornado==6.1
     #   -c requirements/./_base.txt
     #   bokeh
     #   distributed
-typing-extensions==3.10.0.2
+typing-extensions==3.10.0.2 ; python_version < "3.9"
     # via
     #   -c requirements/./_base.txt
     #   bokeh

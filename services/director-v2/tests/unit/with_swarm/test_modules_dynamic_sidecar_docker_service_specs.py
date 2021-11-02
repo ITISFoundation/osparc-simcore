@@ -15,6 +15,7 @@ from simcore_service_director_v2.core.settings import (
     AppSettings,
     DynamicSidecarSettings,
 )
+from settings_library.docker_registry import RegistrySettings
 from simcore_service_director_v2.models.schemas.dynamic_services import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs import (
     get_dynamic_sidecar_spec,
@@ -38,6 +39,11 @@ def mocked_env(monkeypatch: MonkeyPatch) -> Iterator[Dict[str, str]]:
             m.setenv(key, value)
 
         yield env_vars
+
+
+@pytest.fixture
+def docker_registry_settings(mocked_env: Dict[str, str]) -> RegistrySettings:
+    return RegistrySettings.create_from_envs()
 
 
 @pytest.fixture
@@ -75,6 +81,7 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 )
 async def test_get_dynamic_proxy_spec(
     scheduler_data: SchedulerData,
+    docker_registry_settings: RegistrySettings,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
@@ -82,6 +89,7 @@ async def test_get_dynamic_proxy_spec(
 ) -> None:
     dynamic_sidecar_spec = await get_dynamic_sidecar_spec(
         scheduler_data=scheduler_data,
+        docker_registry_settings=docker_registry_settings,
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         dynamic_sidecar_network_id=dynamic_sidecar_network_id,
         swarm_network_id=swarm_network_id,
