@@ -10,10 +10,10 @@ import tempfile
 import uuid
 from pathlib import Path
 from typing import Any, AsyncGenerator, AsyncIterable, Iterator, List
-from unittest import mock
 
 import aiodocker
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
@@ -61,32 +61,30 @@ def state_paths_dirs(io_temp_dir: Path) -> List[Path]:
 
 @pytest.fixture(scope="module")
 def mock_environment(
+    monkeypatch_module: MonkeyPatch,
     mock_dy_volumes: Path,
     compose_namespace: str,
     inputs_dir: Path,
     outputs_dir: Path,
     state_paths_dirs: List[Path],
-) -> Iterator[None]:
-    with mock.patch.dict(
-        os.environ,
-        {
-            "SC_BOOT_MODE": "production",
-            "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-            "REGISTRY_AUTH": "false",
-            "REGISTRY_USER": "test",
-            "REGISTRY_PW": "test",
-            "REGISTRY_SSL": "false",
-            "DY_SIDECAR_PATH_INPUTS": str(inputs_dir),
-            "DY_SIDECAR_PATH_OUTPUTS": str(outputs_dir),
-            "DY_SIDECAR_STATE_PATHS": json.dumps([str(x) for x in state_paths_dirs]),
-            "DY_SIDECAR_USER_ID": "1",
-            "DY_SIDECAR_PROJECT_ID": f"{uuid.uuid4()}",
-            "DY_SIDECAR_NODE_ID": f"{uuid.uuid4()}",
-            "RABBIT_SETTINGS": "null",
-        },
-    ), mock.patch.object(mounted_fs, "DY_VOLUMES", mock_dy_volumes):
-        print(os.environ)
-        yield
+) -> None:
+    monkeypatch_module.setenv("SC_BOOT_MODE", "production")
+    monkeypatch_module.setenv("DYNAMIC_SIDECAR_compose_namespace", compose_namespace)
+    monkeypatch_module.setenv("REGISTRY_AUTH", "false")
+    monkeypatch_module.setenv("REGISTRY_USER", "test")
+    monkeypatch_module.setenv("REGISTRY_PW", "test")
+    monkeypatch_module.setenv("REGISTRY_SSL", "false")
+    monkeypatch_module.setenv("DY_SIDECAR_USER_ID", "1")
+    monkeypatch_module.setenv("DY_SIDECAR_PROJECT_ID", f"{uuid.uuid4()}")
+    monkeypatch_module.setenv("DY_SIDECAR_NODE_ID", f"{uuid.uuid4()}")
+    monkeypatch_module.setenv("DY_SIDECAR_PATH_INPUTS", str(inputs_dir))
+    monkeypatch_module.setenv("DY_SIDECAR_PATH_OUTPUTS", str(outputs_dir))
+    monkeypatch_module.setenv(
+        "DY_SIDECAR_STATE_PATHS", json.dumps([str(x) for x in state_paths_dirs])
+    )
+    monkeypatch_module.setenv("RABBIT_SETTINGS", "null")
+
+    monkeypatch_module.setattr(mounted_fs, "DY_VOLUMES", mock_dy_volumes)
 
 
 @pytest.fixture(scope="module")
