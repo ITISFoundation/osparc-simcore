@@ -4,10 +4,19 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
+aiohttp==3.8.0
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
+aiosignal==1.2.0
+    # via aiohttp
 anyio==3.3.1
     # via httpcore
+async-timeout==4.0.0a3
+    # via aiohttp
 attrs==21.2.0
     # via
+    #   aiohttp
     #   jsonschema
     #   pytest
 certifi==2021.5.30
@@ -16,6 +25,7 @@ certifi==2021.5.30
     #   requests
 charset-normalizer==2.0.6
     # via
+    #   aiohttp
     #   httpx
     #   requests
 coverage==5.5
@@ -24,6 +34,10 @@ docker==5.0.2
     # via -r requirements/_test.in
 faker==8.13.2
     # via -r requirements/_test.in
+frozenlist==1.2.0
+    # via
+    #   aiohttp
+    #   aiosignal
 h11==0.12.0
     # via httpcore
 httpcore==0.13.7
@@ -35,10 +49,15 @@ idna==3.2
     #   anyio
     #   requests
     #   rfc3986
+    #   yarl
 iniconfig==1.1.1
     # via pytest
 jsonschema==3.2.0
     # via -r requirements/_test.in
+multidict==5.2.0
+    # via
+    #   aiohttp
+    #   yarl
 packaging==21.0
     # via pytest
 pluggy==1.0.0
@@ -87,12 +106,16 @@ toml==0.10.2
     # via
     #   pytest
     #   pytest-cov
+typing-extensions==3.10.0.2
+    # via async-timeout
 urllib3==1.26.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
 websocket-client==1.2.1
     # via docker
+yarl==1.7.0
+    # via aiohttp
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

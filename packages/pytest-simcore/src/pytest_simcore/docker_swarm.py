@@ -21,6 +21,7 @@ from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_exponential, wait_fixed
 
 from .helpers.utils_docker import get_ip
+from .helpers.utils_environs import EnvVarsDict
 
 log = logging.getLogger(__name__)
 
@@ -140,13 +141,14 @@ def docker_stack(
     core_docker_compose_file: Path,
     ops_docker_compose_file: Path,
     keep_docker_up: bool,
-    testing_environ_vars: Dict,
+    testing_environ_vars: EnvVarsDict,
 ) -> Iterator[Dict]:
 
     # WARNING: keep prefix "pytest-" in stack names
     core_stack_name = testing_environ_vars["SWARM_STACK_NAME"]
     ops_stack_name = "pytest-ops"
 
+    assert core_stack_name
     assert core_stack_name.startswith("pytest-")
     stacks = [
         (

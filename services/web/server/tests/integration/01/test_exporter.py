@@ -490,7 +490,7 @@ async def test_import_export_import_duplicate(
     aiopg_engine,
     redis_client,
     export_version,
-    simcore_services,
+    simcore_services_ready,
     monkey_patch_aiohttp_request_url,
     grant_access_rights,
 ):

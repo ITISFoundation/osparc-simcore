@@ -28,7 +28,12 @@ install() {
 }
 
 test() {
-  pytest --color=yes --cov-report=term-missing -v --keep-docker-up tests/public-api --log-level=DEBUG
+  pytest \
+    --color=yes \
+    --cov-report=term-missing \
+    --keep-docker-up \
+    -v \
+    tests/public-api
 }
 
 clean_up() {

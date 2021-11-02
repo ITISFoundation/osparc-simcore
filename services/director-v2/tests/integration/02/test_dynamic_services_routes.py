@@ -27,7 +27,7 @@ pytest_simcore_core_services_selection = ["director"]
 @pytest.fixture
 def minimal_configuration(
     dy_static_file_server_dynamic_sidecar_service: Dict,
-    simcore_services: None,
+    simcore_services_ready: None,
 ):
     pass
 
