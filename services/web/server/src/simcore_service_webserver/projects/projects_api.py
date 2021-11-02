@@ -690,7 +690,7 @@ async def try_close_project_for_user(
             PROJECT_ID_KEY, project_uuid
         )
         # first check we have it opened now
-        if (user_id, client_session_id) not in user_to_session_ids:
+        if UserSessionID(user_id, client_session_id) not in user_to_session_ids:
             # nothing to do the project is already closed
             log.warning(
                 "project [%s] is already closed for user [%s].",
