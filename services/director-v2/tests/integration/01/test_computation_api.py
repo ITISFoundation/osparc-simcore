@@ -7,8 +7,8 @@
 
 import asyncio
 import json
+from collections import namedtuple
 from copy import deepcopy
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List
 
@@ -30,11 +30,9 @@ from shared_comp_utils import (
     assert_pipeline_status,
     create_pipeline,
 )
-from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from starlette import status
 from starlette.testclient import TestClient
-from yarl import URL
 
 pytest_simcore_core_services_selection = [
     "director",
@@ -84,12 +82,8 @@ def minimal_configuration(
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
     simcore_services_ready: None,
-    storage_service: URL,
-    mocker,
 ) -> None:
-    node_ports_config.STORAGE_ENDPOINT = (
-        f"{storage_service.host}:{storage_service.port}"
-    )
+    pass
 
 
 @pytest.fixture(scope="session")
@@ -187,21 +181,17 @@ def test_start_empty_computation(
     )
 
 
-@dataclass
-class PartialComputationParams:
-    subgraph_elements: List[int]
-    exp_pipeline_adj_list: Dict[int, List[int]]
-    exp_node_states: Dict[int, Dict[str, Any]]
-    exp_node_states_after_run: Dict[int, Dict[str, Any]]
-    exp_pipeline_adj_list_after_force_run: Dict[int, List[int]]
-    exp_node_states_after_force_run: Dict[int, Dict[str, Any]]
+PartialComputationParams = namedtuple(
+    "PartialComputationParams",
+    "subgraph_elements, exp_pipeline_adj_list, exp_node_states, exp_node_states_after_run",
+)
 
 
 @pytest.mark.parametrize(
-    "params",
+    "subgraph_elements,exp_pipeline_adj_list, exp_node_states, exp_node_states_after_run",
     [
         pytest.param(
-            PartialComputationParams(
+            *PartialComputationParams(
                 subgraph_elements=[0, 1],
                 exp_pipeline_adj_list={1: []},
                 exp_node_states={
@@ -242,34 +232,11 @@ class PartialComputationParams:
                         "dependencies": [2, 3],
                     },
                 },
-                exp_pipeline_adj_list_after_force_run={1: []},
-                exp_node_states_after_force_run={
-                    1: {
-                        "modified": False,
-                        "dependencies": [],
-                        "currentStatus": RunningState.PUBLISHED,
-                    },
-                    2: {
-                        "modified": True,
-                        "dependencies": [],
-                        "currentStatus": RunningState.NOT_STARTED,
-                    },
-                    3: {
-                        "modified": True,
-                        "dependencies": [],
-                        "currentStatus": RunningState.NOT_STARTED,
-                    },
-                    4: {
-                        "modified": True,
-                        "dependencies": [2, 3],
-                        "currentStatus": RunningState.NOT_STARTED,
-                    },
-                },
             ),
             id="element 0,1",
         ),
         pytest.param(
-            PartialComputationParams(
+            *PartialComputationParams(
                 subgraph_elements=[1, 2, 4],
                 exp_pipeline_adj_list={1: [2], 2: [4], 3: [4], 4: []},
                 exp_node_states={
@@ -316,29 +283,6 @@ class PartialComputationParams:
                         "currentStatus": RunningState.SUCCESS,
                     },
                 },
-                exp_pipeline_adj_list_after_force_run={1: [2], 2: [4], 4: []},
-                exp_node_states_after_force_run={
-                    1: {
-                        "modified": False,
-                        "dependencies": [],
-                        "currentStatus": RunningState.PUBLISHED,
-                    },
-                    2: {
-                        "modified": False,
-                        "dependencies": [],
-                        "currentStatus": RunningState.PUBLISHED,
-                    },
-                    3: {
-                        "modified": False,
-                        "dependencies": [],
-                        "currentStatus": RunningState.SUCCESS,
-                    },
-                    4: {
-                        "modified": False,
-                        "dependencies": [],
-                        "currentStatus": RunningState.PUBLISHED,
-                    },
-                },
             ),
             id="element 1,2,4",
         ),
@@ -351,17 +295,20 @@ def test_run_partial_computation(
     project: Callable,
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
-    params: PartialComputationParams,
+    subgraph_elements: List[int],
+    exp_pipeline_adj_list: Dict[int, List[str]],
+    exp_node_states: Dict[int, Dict[str, Any]],
+    exp_node_states_after_run: Dict[int, Dict[str, Any]],
 ):
     sleepers_project: ProjectAtDB = project(workbench=fake_workbench_without_outputs)
 
     def _convert_to_pipeline_details(
         project: ProjectAtDB,
-        exp_pipeline_adj_list: Dict[int, List[int]],
+        exp_pipeline_adj_list: Dict[int, List[str]],
         exp_node_states: Dict[int, Dict[str, Any]],
     ) -> PipelineDetails:
         workbench_node_uuids = list(project.workbench.keys())
-        converted_adj_list: Dict[NodeID, List[NodeID]] = {}
+        converted_adj_list: Dict[NodeID, Dict[NodeID, List[NodeID]]] = {}
         for node_key, next_nodes in exp_pipeline_adj_list.items():
             converted_adj_list[NodeID(workbench_node_uuids[node_key])] = [
                 NodeID(workbench_node_uuids[n]) for n in next_nodes
@@ -382,7 +329,7 @@ def test_run_partial_computation(
 
     # convert the ids to the node uuids from the project
     expected_pipeline_details = _convert_to_pipeline_details(
-        sleepers_project, params.exp_pipeline_adj_list, params.exp_node_states
+        sleepers_project, exp_pipeline_adj_list, exp_node_states
     )
 
     # send a valid project with sleepers
@@ -395,7 +342,7 @@ def test_run_partial_computation(
         subgraph=[
             str(node_id)
             for index, node_id in enumerate(sleepers_project.workbench)
-            if index in params.subgraph_elements
+            if index in subgraph_elements
         ],
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
@@ -413,7 +360,7 @@ def test_run_partial_computation(
         client, task_out.url, user_id, sleepers_project.uuid
     )
     expected_pipeline_details_after_run = _convert_to_pipeline_details(
-        sleepers_project, params.exp_pipeline_adj_list, params.exp_node_states_after_run
+        sleepers_project, exp_pipeline_adj_list, exp_node_states_after_run
     )
     assert_computation_task_out_obj(
         client,
@@ -436,17 +383,17 @@ def test_run_partial_computation(
         subgraph=[
             str(node_id)
             for index, node_id in enumerate(sleepers_project.workbench)
-            if index in params.subgraph_elements
+            if index in subgraph_elements
         ],
     )
 
     # force run it this time.
     # the task are up-to-date but we force run them
-    expected_pipeline_details_forced = _convert_to_pipeline_details(
-        sleepers_project,
-        params.exp_pipeline_adj_list_after_force_run,
-        params.exp_node_states_after_force_run,
-    )
+    expected_pipeline_details_forced = deepcopy(expected_pipeline_details_after_run)
+    for node_id, node_data in expected_pipeline_details_forced.node_states.items():
+        node_data.current_status = expected_pipeline_details.node_states[
+            node_id
+        ].current_status
     response = create_pipeline(
         client,
         project=sleepers_project,
@@ -456,7 +403,7 @@ def test_run_partial_computation(
         subgraph=[
             str(node_id)
             for index, node_id in enumerate(sleepers_project.workbench)
-            if index in params.subgraph_elements
+            if index in subgraph_elements
         ],
         force_restart=True,
     )

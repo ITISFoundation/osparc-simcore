@@ -23,7 +23,7 @@ def extract_service_port_from_compose_start_spec(
 def _get_environment_variables(
     compose_namespace: str, scheduler_data: SchedulerData, app_settings: AppSettings
 ) -> Dict[str, str]:
-    registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
+    registry_settings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.REGISTRY
     rabbit_settings = app_settings.CELERY.CELERY_RABBIT
     return {
         "SIMCORE_HOST_NAME": scheduler_data.service_name,

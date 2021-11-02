@@ -8,7 +8,6 @@ from typing import Dict, Iterator
 
 import pytest
 import tenacity
-from _pytest.monkeypatch import MonkeyPatch
 from minio import Minio
 from minio.datatypes import Object
 from minio.deleteobjects import DeleteError, DeleteObject
@@ -41,7 +40,7 @@ def _ensure_remove_bucket(client: Minio, bucket_name: str):
 
 @pytest.fixture(scope="module")
 def minio_config(
-    docker_stack: Dict, testing_environ_vars: Dict, monkeypatch_module: MonkeyPatch
+    docker_stack: Dict, testing_environ_vars: Dict, monkeypatch_module
 ) -> Dict[str, str]:
     assert "pytest-ops_minio" in docker_stack["services"]
 

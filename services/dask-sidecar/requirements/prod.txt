@@ -11,10 +11,12 @@
 --requirement _packages.txt
 
 # installs this repo's packages
-../../packages/dask-task-models-library/
 ../../packages/models-library/
+../../packages/postgres-database/
 ../../packages/service-library/
 ../../packages/settings-library/
+../../packages/simcore-sdk/
+../../services/sidecar
 
 # installs current package
 .
