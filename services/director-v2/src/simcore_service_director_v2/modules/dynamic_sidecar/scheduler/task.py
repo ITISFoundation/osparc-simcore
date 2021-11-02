@@ -363,9 +363,12 @@ class DynamicSidecarsScheduler:
         # run as a background task
         logger.info("Starting dynamic-sidecar scheduler")
         self._keep_running = True
-        self._scheduler_task = asyncio.create_task(self._run_scheduler_task())
+        self._scheduler_task = asyncio.create_task(
+            self._run_scheduler_task(), name="dynamic-scheduler"
+        )
         self._trigger_observation_queue_task = asyncio.create_task(
-            self._run_trigger_observation_queue_task()
+            self._run_trigger_observation_queue_task(),
+            name="dynamic-scheduler-trigger-obs-queue",
         )
 
         await self._discover_running_services()
