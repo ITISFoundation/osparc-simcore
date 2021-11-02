@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 import json
+import logging
 import time
 from asyncio import sleep
 from typing import Any, Callable, Dict, List, Tuple
@@ -31,6 +32,11 @@ from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.module_setup import setup_socketio
+from tenacity import before_sleep
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 API_VERSION = "v0"
 
@@ -180,13 +186,23 @@ async def _publish_messages(
     return (log_messages, progress_messages, instrumentation_messages)
 
 
+logger = logging.getLogger(__name__)
+
+
 async def _wait_until(pred: Callable, timeout: int):
-    max_wait_time = time.time() + timeout
-    while time.time() < max_wait_time:
-        if pred():
-            return
-        await sleep(1)
-    pytest.fail("waited too long for getting websockets events")
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(timeout),
+        wait=wait_fixed(1),
+        before_sleep=before_sleep_log(logger, log_level=logging.WARNING),
+        reraise=True,
+    ):
+        with attempt:
+            print(
+                f"attempt {attempt.retry_state.attempt_number}, waiting for predicate to become true"
+            )
+            if pred():
+                return
+            raise AssertionError("waited too long!")
 
 
 @pytest.mark.parametrize(
@@ -224,7 +240,6 @@ async def test_rabbit_websocket_computation(
     # publish messages with wrong user id
     NUMBER_OF_MESSAGES = 1
     TIMEOUT_S = 20
-
     await _publish_messages(
         NUMBER_OF_MESSAGES, node_uuid, user_id, project_id, rabbit_exchange
     )
