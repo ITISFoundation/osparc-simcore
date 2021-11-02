@@ -33,10 +33,6 @@ def is_legacy(node_data: Node) -> bool:
     return node_data.label == "LEGACY"
 
 
-def get_director_v0_patched_url(url: URL) -> URL:
-    return URL(str(url).replace("127.0.0.1", "172.17.0.1"))
-
-
 async def ensure_network_cleanup(
     docker_client: aiodocker.Docker, project_id: str
 ) -> None:

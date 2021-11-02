@@ -66,7 +66,6 @@ from utils import (
     assert_start_service,
     assert_stop_service,
     ensure_network_cleanup,
-    get_director_v0_patched_url,
     is_legacy,
     patch_dynamic_service_url,
 )
@@ -794,7 +793,6 @@ async def test_nodeports_integration(
         `docker` for both dynamic services
     7. finally check that all states for both dynamic services match
     """
-    director_v0_url = get_director_v0_patched_url(services_endpoint["director"])
 
     # STEP 1
 
@@ -804,7 +802,7 @@ async def test_nodeports_integration(
         str, str
     ] = await _wait_for_dynamic_services_to_be_running(
         director_v2_client=director_v2_client,
-        director_v0_url=director_v0_url,
+        director_v0_url=services_endpoint["director"],
         user_id=user_db["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,

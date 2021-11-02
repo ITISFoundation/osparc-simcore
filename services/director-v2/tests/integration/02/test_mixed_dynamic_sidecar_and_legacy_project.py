@@ -24,7 +24,6 @@ from utils import (
     assert_start_service,
     assert_stop_service,
     ensure_network_cleanup,
-    get_director_v0_patched_url,
     is_legacy,
     patch_dynamic_service_url,
 )
@@ -87,10 +86,6 @@ def uuid_dynamic_sidecar_compose() -> str:
 async def dy_static_file_server_project(
     minimal_configuration: None,
     project: Callable,
-    redis_service: RedisConfig,
-    postgres_db: sa.engine.Engine,
-    postgres_host_config: Dict[str, str],
-    rabbit_service: RabbitConfig,
     dy_static_file_server_service: Dict,
     dy_static_file_server_dynamic_sidecar_service: Dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
@@ -126,10 +121,9 @@ async def dy_static_file_server_project(
 @pytest.fixture
 async def director_v2_client(
     minimal_configuration: None,
-    loop: asyncio.BaseEventLoop,
     network_name: str,
     monkeypatch,
-) -> httpx.AsyncClient:
+) -> AsyncIterable[httpx.AsyncClient]:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
@@ -221,13 +215,12 @@ async def test_legacy_and_dynamic_sidecar_run(
     - dy-static-file-server-dynamic-sidecar
     - dy-static-file-server-dynamic-sidecar-compose
     """
-    director_v0_url = get_director_v0_patched_url(services_endpoint["director"])
 
     await asyncio.gather(
         *(
             assert_start_service(
                 director_v2_client=director_v2_client,
-                director_v0_url=director_v0_url,
+                director_v0_url=services_endpoint["director"],
                 user_id=user_db["id"],
                 project_id=str(dy_static_file_server_project.uuid),
                 service_key=node.key,
