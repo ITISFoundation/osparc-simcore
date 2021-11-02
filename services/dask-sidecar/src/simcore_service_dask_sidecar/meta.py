@@ -29,17 +29,15 @@ summary: str = get_summary()
 
 
 # https://patorjk.com/software/taag/#p=display&f=Standard&t=dask%20sidecar
-BANNER_MESSAGE = r"""
+BANNER_MESSAGE = rf"""
       _           _          _     _
    __| | __ _ ___| | __  ___(_) __| | ___  ___ __ _ _ __
   / _` |/ _` / __| |/ / / __| |/ _` |/ _ \/ __/ _` | '__|
  | (_| | (_| \__ \   <  \__ \ | (_| |  __/ (_| (_| | |
-  \__,_|\__,_|___/_|\_\ |___/_|\__,_|\___|\___\__,_|_|    {0} with {1}
+  \__,_|\__,_|___/_|\_\ |___/_|\__,_|\___|\___\__,_|_|    v{__version__} with dask=={dask.__version__}
 
-""".format(
-    f"v{__version__}", f"dask=={dask.__version__}"
-)
+"""
 
 
-def print_banner():
+def print_banner() -> None:
     print(BANNER_MESSAGE, flush=True)
