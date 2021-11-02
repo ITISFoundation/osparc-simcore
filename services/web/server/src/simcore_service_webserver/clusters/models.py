@@ -54,7 +54,7 @@ class Cluster(ClusterBase):
                     "name": "My awesome cluster",
                     "type": ClusterType.ON_PREMISE,
                     "owner": 12,
-                    "endpoint": "registry.osparc-development.fake.dev",
+                    "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
                         "simple": {"username": "someuser", "password": "somepassword"}
                     },
@@ -65,7 +65,7 @@ class Cluster(ClusterBase):
                     "description": "a AWS cluster administered by me",
                     "type": ClusterType.AWS,
                     "owner": 154,
-                    "endpoint": "registry.osparc-development.fake.dev",
+                    "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
                         "simple": {"username": "someuser", "password": "somepassword"}
                     },
@@ -131,12 +131,20 @@ class ClusterCreate(ClusterBase):
                 {
                     "name": "My awesome cluster",
                     "type": ClusterType.ON_PREMISE,
+                    "endpoint": "https://registry.osparc-development.fake.dev",
+                    "authentication": {
+                        "simple": {"username": "someuser", "password": "somepassword"}
+                    },
                 },
                 {
                     "name": "My AWS cluster",
                     "description": "a AWS cluster administered by me",
                     "type": ClusterType.AWS,
                     "owner": 154,
+                    "endpoint": "https://registry.osparc-development.fake.dev",
+                    "authentication": {
+                        "simple": {"username": "someuser", "password": "somepassword"}
+                    },
                     "access_rights": {
                         154: CLUSTER_ADMIN_RIGHTS,
                         12: CLUSTER_MANAGER_RIGHTS,
