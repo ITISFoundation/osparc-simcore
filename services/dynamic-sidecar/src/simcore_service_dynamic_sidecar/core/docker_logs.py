@@ -18,18 +18,15 @@ async def _logs_fetcher_worker(
     async with docker_client() as docker:
         container = await docker.containers.get(container_name)
 
-        logger.debug("Streaming logs from %s", container_name)
+        # extact image to display in logs, Eg: from
+        # registry:5000/simcore/services/dynamic/dy-static-file-server-dynamic-sidecar:2.0.2
+        # "dy-static-file-server-dynamic-sidecar:2.0.2"
+        container_inspect = await container.show()
+        image_name = container_inspect["Config"]["Image"].split("/")[-1]
+
+        logger.debug("Streaming logs from %s, image %s", container_name, image_name)
         async for line in container.log(stdout=True, stderr=True, follow=True):
-            await dispatch_log(container_name=container_name, message=line)
-
-
-def _setup_logger(container_name: str) -> None:
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(
-        logging.Formatter("[%(levelname)-4s:%(name)-20s] %(message)s")
-    )
-    container_logger = logging.getLogger(container_name)
-    container_logger.addHandler(stream_handler)
+            await dispatch_log(image_name=image_name, message=line)
 
 
 class BackgroundLogFetcher:
@@ -45,15 +42,10 @@ class BackgroundLogFetcher:
     def rabbitmq(self) -> RabbitMQ:
         return self._app.state.rabbitmq  # type: ignore
 
-    async def _dispatch_logs(self, container_name: str, message: str) -> None:
-        # logs from the containers will be logged at warning level to
-        # make sure they are not lost in production environments
-        # as these are very important to debug issues from users
-        logging.getLogger(container_name).warning(message)
-
+    async def _dispatch_logs(self, image_name: str, message: str) -> None:
         # sending the logs to the UI to facilitate the
         # user debugging process
-        await self.rabbitmq.post_log_message(f"[{container_name}] {message}")
+        await self.rabbitmq.post_log_message(f"[{image_name}] {message}")
 
     async def start_log_feching(self, container_name: str) -> None:
         self._log_processor_tasks[container_name] = create_task(
@@ -61,9 +53,8 @@ class BackgroundLogFetcher:
                 container_name=container_name, dispatch_log=self._dispatch_logs
             )
         )
-        _setup_logger(container_name)
 
-        logger.debug("Subscribed to fetch logs from '%s'", container_name)
+        logger.info("Subscribed to fetch logs from '%s'", container_name)
 
     async def stop_log_fetching(self, container_name: str) -> None:
         logger.debug("Stopping logs fetching from container '%s'", container_name)
