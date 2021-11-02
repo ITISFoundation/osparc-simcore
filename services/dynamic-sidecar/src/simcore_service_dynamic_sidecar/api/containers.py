@@ -50,7 +50,7 @@ containers_router = APIRouter(tags=["containers"])
 
 
 async def _send_message(rabbitmq: RabbitMQ, message: str) -> None:
-    logger.debug(message)
+    logger.info(message)
     await rabbitmq.post_log_message(message)
 
 
