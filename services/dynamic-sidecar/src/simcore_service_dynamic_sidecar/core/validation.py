@@ -203,6 +203,11 @@ async def validate_compose_spec(
             settings_env_vars=service_settings_env_vars,
         )
 
+        # FIXME: tmp to comply with
+        #  https://github.com/linuxserver/docker-baseimage-ubuntu/blob/bionic/root/etc/cont-init.d/10-adduser
+        service_content["environment"].append(f"PUID={os.getuid()}")
+        service_content["environment"].append(f"PGID={os.getgid()}")
+
         # inject paths to be mounted
         service_volumes = service_content.get("volumes", [])
 
