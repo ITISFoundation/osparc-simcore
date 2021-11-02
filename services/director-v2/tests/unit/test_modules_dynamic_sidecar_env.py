@@ -10,7 +10,7 @@ from simcore_service_director_v2.core.settings import (
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     SchedulerData,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.spec_dynamic_sidecar import (
+from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.sidecar import (
     _get_dy_sidecar_env_vars,
 )
 
@@ -72,7 +72,7 @@ def test_dynamic_sidecar_env_vars(
         scheduler_data_from_http_request, app_settings, dynamic_sidecar_settings
     )
     registry_settings = dynamic_sidecar_settings.REGISTRY
-    rabbit_settings = dynamic_sidecar_settings.RABBIT_SETTINGS
+    rabbit_settings = app_settings.CELERY.CELERY_RABBIT
     print("dynamic_sidecar_env_vars:", dynamic_sidecar_env_vars)
 
     assert len(dynamic_sidecar_env_vars) == len(EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES)
