@@ -246,6 +246,7 @@ class CreateUserServices(DynamicSchedulerEvent):
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
+        # Starts dynamic SIDECAR -------------------------------------
         # creates a docker compose spec given the service key and tag
         compose_spec = assemble_spec(
             app=app,
@@ -261,6 +262,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             dynamic_sidecar_endpoint, compose_spec
         )
 
+        # Starts PROXY -----------------------------------------------
         # The entrypoint container name was now computed
         # continue starting the proxy
 
