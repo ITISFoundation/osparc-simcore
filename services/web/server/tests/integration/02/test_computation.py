@@ -256,14 +256,14 @@ async def test_start_pipeline(
     )
 
     # POST /v0/computation/pipeline/{project_id}:start
-    resp = await client.post(url_start)
+    resp = await client.post(f"{url_start}")
     data, error = await assert_status(
         resp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
     )
 
     if not error:
         # starting again should be disallowed, since it's already running
-        resp = await client.post(url_start)
+        resp = await client.post(f"{url_start}")
         assert (
             resp.status == web.HTTPForbidden.status_code
             if user_role == UserRole.GUEST
@@ -285,7 +285,7 @@ async def test_start_pipeline(
             project_id, postgres_session, StateType.SUCCESS, mock_workbench_payload
         )
         # restart the computation
-        resp = await client.post(url_start)
+        resp = await client.post(f"{url_start}")
         data, error = await assert_status(
             resp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
         )
@@ -297,7 +297,7 @@ async def test_start_pipeline(
         API_PREFIX + "/computation/pipeline/{}:stop".format(project_id)
     )
     await asyncio.sleep(2)
-    resp = await client.post(url_stop)
+    resp = await client.post(f"{url_stop}")
     data, error = await assert_status(
         resp, web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content
     )
