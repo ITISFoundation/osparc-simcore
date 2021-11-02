@@ -117,6 +117,7 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     ensure_swarm_and_networks: None,
 ) -> Iterator[None]:
     with postgres_db.connect() as conn:
+        # pylint: disable=no-value-for-parameter
         conn.execute(comp_tasks.delete())
         conn.execute(comp_pipeline.delete())
         yield
@@ -864,14 +865,14 @@ async def test_nodeports_integration(
 
     await _assert_retrieve_completed(
         director_v2_client=director_v2_client,
-        director_v0_url=director_v0_url,
+        director_v0_url=services_endpoint["director"],
         service_uuid=services_node_uuids.dy,
         dynamic_services_urls=dynamic_services_urls,
     )
 
     await _assert_retrieve_completed(
         director_v2_client=director_v2_client,
-        director_v0_url=director_v0_url,
+        director_v0_url=services_endpoint["director"],
         service_uuid=services_node_uuids.dy_compose_spec,
         dynamic_services_urls=dynamic_services_urls,
     )
@@ -909,7 +910,7 @@ async def test_nodeports_integration(
         *(
             assert_stop_service(
                 director_v2_client=director_v2_client,
-                director_v0_url=director_v0_url,
+                director_v0_url=services_endpoint["director"],
                 service_uuid=service_uuid,
             )
             for service_uuid in workbench_dynamic_services
@@ -938,7 +939,7 @@ async def test_nodeports_integration(
 
     await _wait_for_dynamic_services_to_be_running(
         director_v2_client=director_v2_client,
-        director_v0_url=director_v0_url,
+        director_v0_url=services_endpoint["director"],
         user_id=user_db["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
