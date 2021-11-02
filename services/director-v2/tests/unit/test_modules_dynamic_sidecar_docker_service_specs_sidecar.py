@@ -1,10 +1,7 @@
 from typing import Dict
 
 from _pytest.monkeypatch import MonkeyPatch
-from simcore_service_director_v2.core.settings import (
-    AppSettings,
-    DynamicSidecarSettings,
-)
+from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     SchedulerData,
 )
@@ -64,10 +61,9 @@ def test_dynamic_sidecar_env_vars(
         monkeypatch.setenv(key, value)
 
     app_settings = AppSettings.create_from_envs()
-    dynamic_sidecar_settings = DynamicSidecarSettings.create_from_envs()
 
     dynamic_sidecar_env_vars = _get_dy_sidecar_env_vars(
-        scheduler_data_from_http_request, app_settings, dynamic_sidecar_settings
+        scheduler_data_from_http_request, app_settings
     )
     print("dynamic_sidecar_env_vars:", dynamic_sidecar_env_vars)
 
