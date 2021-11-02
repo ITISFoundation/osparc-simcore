@@ -50,6 +50,9 @@ from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_data import data_manager
+
+# FIXTURES
+from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
@@ -101,8 +104,6 @@ POSSIBLE_ISSUE_WORKAROUND = 10
 
 logger = logging.getLogger(__name__)
 
-# FIXTURES
-
 
 @pytest.fixture
 def minimal_configuration(  # pylint:disable=too-many-arguments
@@ -114,10 +115,14 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
     simcore_services_ready: None,
+    storage_service: URL,
     dask_scheduler_service: None,
     dask_sidecar_service: None,
     ensure_swarm_and_networks: None,
 ) -> Iterator[None]:
+    node_ports_config.STORAGE_ENDPOINT = (
+        f"{storage_service.host}:{storage_service.port}"
+    )
     with postgres_db.connect() as conn:
         conn.execute(comp_tasks.delete())
         conn.execute(comp_pipeline.delete())

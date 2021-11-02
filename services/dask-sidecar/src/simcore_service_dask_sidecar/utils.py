@@ -2,7 +2,7 @@ import asyncio
 import logging
 import uuid
 from pprint import pformat
-from typing import Awaitable, Optional
+from typing import Any, Awaitable, Optional, cast
 
 import aiodocker
 from aiodocker.containers import DockerContainer
@@ -12,7 +12,7 @@ from .settings import Settings
 logger = logging.getLogger(__name__)
 
 
-def wrap_async_call(fct: Awaitable) -> ...:
+def wrap_async_call(fct: Awaitable[Any]) -> Any:
     return asyncio.get_event_loop().run_until_complete(fct)
 
 
@@ -37,7 +37,7 @@ def cluster_id() -> Optional[str]:
                 )
         return f"{app_settings.DASK_CLUSTER_ID_PREFIX}{app_settings.DASK_DEFAULT_CLUSTER_ID}"
 
-    return wrap_async_call(async_get_engine_cluster_id())
+    return cast(Optional[str], wrap_async_call(async_get_engine_cluster_id()))
 
 
 def num_available_gpus() -> int:
@@ -97,4 +97,4 @@ def num_available_gpus() -> int:
 
             return num_gpus
 
-    return wrap_async_call(async_num_available_gpus())
+    return cast(int, wrap_async_call(async_num_available_gpus()))

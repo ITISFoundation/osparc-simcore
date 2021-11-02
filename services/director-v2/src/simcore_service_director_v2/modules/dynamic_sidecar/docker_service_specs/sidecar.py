@@ -21,11 +21,9 @@ def extract_service_port_from_compose_start_spec(
 
 
 def _get_dy_sidecar_env_vars(
-    scheduler_data: SchedulerData,
-    app_settings: AppSettings,
-    dynamic_sidecar_settings: DynamicSidecarSettings,
+    scheduler_data: SchedulerData, app_settings: AppSettings
 ) -> Dict[str, str]:
-    registry_settings = dynamic_sidecar_settings.REGISTRY
+    registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.CELERY.CELERY_RABBIT
     return {
         "DY_SIDECAR_PATH_INPUTS": f"{scheduler_data.paths_mapping.inputs_path}",
@@ -54,6 +52,9 @@ def _get_dy_sidecar_env_vars(
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
         "RABBIT_CHANNELS": json.dumps(rabbit_settings.RABBIT_CHANNELS),
+        # TODO: why removing these values makes everything break?!?!?
+        # TODO: retry start the stack without these below and check what is happening
+        # TODO: also check the CI to see if there are errors!
         "USER_ID": f"{scheduler_data.user_id}",
         "PROJECT_ID": f"{scheduler_data.project_id}",
         "NODE_ID": f"{scheduler_data.node_uuid}",
@@ -179,11 +180,10 @@ async def get_dynamic_sidecar_spec(
         "task_template": {
             "ContainerSpec": {
                 "Env": {
+                    # TODO: move these inside as well?
                     "SIMCORE_HOST_NAME": scheduler_data.service_name,
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-                    **_get_dy_sidecar_env_vars(
-                        scheduler_data, app_settings, dynamic_sidecar_settings
-                    ),
+                    **_get_dy_sidecar_env_vars(scheduler_data, app_settings),
                 },
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
