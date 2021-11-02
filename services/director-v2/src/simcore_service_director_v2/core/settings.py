@@ -20,7 +20,6 @@ from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
-from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 
 from ..meta import API_VTAG
@@ -161,8 +160,6 @@ class DynamicSidecarSettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings
 
     REGISTRY: RegistrySettings
-
-    RABBIT_SETTINGS: RabbitSettings
 
     @validator("DYNAMIC_SIDECAR_IMAGE", pre=True)
     @classmethod
