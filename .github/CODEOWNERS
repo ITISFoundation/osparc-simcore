@@ -18,6 +18,7 @@ Makefile                                  @pcrespov, @sanderegg
 /packages/service-integration/            @pcrespov, @sanderegg, @KZzizzle
 /packages/service-library/                @pcrespov
 /packages/settings-library/               @pcrespov, @sanderegg
+/packages/dask-task-models-library/       @sanderegg
 /requirements/                            @pcrespov
 /scripts/demo/                            @odeimaiz, @pcrespov
 /scripts/json-schema-to-openapi-schema    @sanderegg
@@ -27,7 +28,7 @@ Makefile                                  @pcrespov, @sanderegg
 /services/director*/                      @sanderegg, @pcrespov
 /services/dynamic-sidecar/                @GitHK
 /services/migration/                      @pcrespov
-/services/sidecar/                        @pcrespov, @mguidon
+/services/dask-sidecar/                   @sanderegg
 /services/storage/                        @mguidon, @pcrespov
 /services/static-webserver                @GitHK
 /services/web/client/                     @odeimaiz, @ignapas
