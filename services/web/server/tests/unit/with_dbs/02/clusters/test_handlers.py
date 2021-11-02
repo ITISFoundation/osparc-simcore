@@ -183,6 +183,9 @@ async def test_list_clusters(
 
 
 @pytest.mark.parametrize(
+    "authentication", [{"simple": {"username": "fake", "password": "sldfkjsl"}}]
+)
+@pytest.mark.parametrize(
     *standard_role_response(),
 )
 async def test_create_cluster(
@@ -192,12 +195,16 @@ async def test_create_cluster(
     logged_user: Dict[str, Any],
     faker: Faker,
     user_role: UserRole,
+    authentication: Dict[str, Any],
     expected: ExpectedResponse,
 ):
     # check we can create a cluster
     url = client.app.router["create_cluster_handler"].url_for()
     cluster_data = ClusterCreate(
-        name=faker.name(), type=random.choice(list(ClusterType))
+        endpoint=faker.uri(),
+        authentication=authentication,
+        name=faker.name(),
+        type=random.choice(list(ClusterType)),
     ).dict(by_alias=True, exclude_unset=True)
     rsp = await client.post(f"{url}", json=cluster_data)
     data, error = await assert_status(
