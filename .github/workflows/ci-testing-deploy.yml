@@ -2452,7 +2452,6 @@ jobs:
         unit-test-datcore-adapter,
         unit-test-director,
         unit-test-director-v2,
-        unit-test-sidecar,
         unit-test-dynamic-sidecar,
         unit-test-dask-task-models-library,
         unit-test-dask-sidecar,
@@ -2477,7 +2476,6 @@ jobs:
         integration-test-webserver-02,
         integration-test-director-v2-01,
         integration-test-director-v2-02,
-        integration-test-sidecar,
         integration-test-simcore-sdk,
       ]
     name: coverage
@@ -2512,7 +2510,6 @@ jobs:
         unit-test-datcore-adapter,
         unit-test-director,
         unit-test-director-v2,
-        unit-test-sidecar,
         unit-test-dynamic-sidecar,
         unit-test-dask-task-models-library,
         unit-test-dask-sidecar,
@@ -2539,7 +2536,6 @@ jobs:
         integration-test-webserver-02,
         integration-test-director-v2-01,
         integration-test-director-v2-02,
-        integration-test-sidecar,
         integration-test-simcore-sdk,
         system-test-public-api,
         system-test-swarm-deploy,
