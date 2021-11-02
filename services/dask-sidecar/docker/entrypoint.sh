@@ -20,6 +20,9 @@ echo   Workdir :"$(pwd)"
 echo   scuUser :"$(id scu)"
 
 
+USERNAME=scu
+GROUPNAME=scu
+
 if [ "${SC_BUILD_TARGET}" = "development" ]
 then
     echo "$INFO" "development mode detected..."
@@ -97,15 +100,19 @@ else
       adduser "$SC_USER_NAME" "$GROUPNAME"
   fi
 
-  echo "$INFO ensuring write rights on computational shared folder ..."
-  mkdir --parents "${SIDECAR_COMP_SERVICES_SHARED_FOLDER}"
-  chown --recursive "$SC_USER_NAME":"$GROUPNAME" "${SIDECAR_COMP_SERVICES_SHARED_FOLDER}"
+  echo "$INFO ensuring write rights on folders ..."
+  mkdir --parents "${SIDECAR_INPUT_FOLDER}" "${SIDECAR_OUTPUT_FOLDER}" "${SIDECAR_LOG_FOLDER}"
+  chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_INPUT_FOLDER}"
+  chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_OUTPUT_FOLDER}"
+  chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_LOG_FOLDER}"
 
 
   echo "$INFO Starting $* as WORKER ..."
   echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
   echo "  local dir : $(ls -al)"
-  echo "  computational shared data dir : $(ls -al "${SIDECAR_COMP_SERVICES_SHARED_FOLDER}")"
+  echo "  input dir : $(ls -al "${SIDECAR_INPUT_FOLDER}")"
+  echo "  output dir : $(ls -al "${SIDECAR_OUTPUT_FOLDER}")"
+  echo "  log dir : $(ls -al "${SIDECAR_LOG_FOLDER}")"
 fi
 
 exec gosu "$SC_USER_NAME" "$@"

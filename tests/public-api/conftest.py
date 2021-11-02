@@ -73,6 +73,7 @@ def simcore_docker_stack_and_registry_ready(
     docker_registry,
     simcore_services_ready: None,
 ) -> Dict:
+
     for attempt in Retrying(
         wait=wait_fixed(5),
         stop=stop_after_attempt(60),

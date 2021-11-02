@@ -12,14 +12,12 @@
 --requirement _test.txt
 
 # installs this repo's packages
-../../packages/dask-task-models-library/
 ../../packages/models-library
 ../../packages/postgres-database
 ../../packages/pytest-simcore/
 ../../packages/service-library[fastapi]
 ../../packages/settings-library/
-../../packages/simcore-sdk/
-
+../../packages/simcore-sdk  # Needed ONLY for testing
 
 # installs current package
 .

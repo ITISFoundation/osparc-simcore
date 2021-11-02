@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, Dict
 
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
-from settings_library.docker_registry import RegistrySettings
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
@@ -46,7 +45,6 @@ def _get_dy_sidecar_env_vars(
 
 async def get_dynamic_sidecar_spec(
     scheduler_data: SchedulerData,
-    docker_registry_settings: RegistrySettings,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
@@ -166,7 +164,7 @@ async def get_dynamic_sidecar_spec(
                 "Env": {
                     "SIMCORE_HOST_NAME": scheduler_data.service_name,
                     "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-                    **get_dynamic_sidecar_env_vars(docker_registry_settings),
+                    **get_dynamic_sidecar_env_vars(dynamic_sidecar_settings.REGISTRY),
                     **_get_dy_sidecar_env_vars(scheduler_data, app_settings),
                 },
                 "Hosts": [],
