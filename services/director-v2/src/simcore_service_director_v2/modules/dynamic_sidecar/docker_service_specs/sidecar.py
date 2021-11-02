@@ -20,12 +20,14 @@ def extract_service_port_from_compose_start_spec(
     return create_service_params["labels"]["service_port"]
 
 
-def _get_dy_sidecar_env_vars(
-    scheduler_data: SchedulerData, app_settings: AppSettings
+def _get_environment_variables(
+    compose_namespace: str, scheduler_data: SchedulerData, app_settings: AppSettings
 ) -> Dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.CELERY.CELERY_RABBIT
     return {
+        "SIMCORE_HOST_NAME": scheduler_data.service_name,
+        "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
         "DY_SIDECAR_PATH_INPUTS": f"{scheduler_data.paths_mapping.inputs_path}",
         "DY_SIDECAR_PATH_OUTPUTS": f"{scheduler_data.paths_mapping.outputs_path}",
         "DY_SIDECAR_STATE_PATHS": json.dumps(
@@ -179,12 +181,9 @@ async def get_dynamic_sidecar_spec(
         "networks": [swarm_network_id, dynamic_sidecar_network_id],
         "task_template": {
             "ContainerSpec": {
-                "Env": {
-                    # TODO: move these inside as well?
-                    "SIMCORE_HOST_NAME": scheduler_data.service_name,
-                    "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-                    **_get_dy_sidecar_env_vars(scheduler_data, app_settings),
-                },
+                "Env": _get_environment_variables(
+                    compose_namespace, scheduler_data, app_settings
+                ),
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
                 "Init": True,

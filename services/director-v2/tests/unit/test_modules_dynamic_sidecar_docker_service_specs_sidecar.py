@@ -6,15 +6,13 @@ from simcore_service_director_v2.models.schemas.dynamic_services.scheduler impor
     SchedulerData,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.sidecar import (
-    _get_dy_sidecar_env_vars,
+    _get_environment_variables,
 )
-
-MOCKED_PASSWORD = "pwd"
 
 MOCKED_BASE_REGISTRY_ENV_VARS: Dict[str, str] = {
     "REGISTRY_AUTH": "False",
     "REGISTRY_USER": "usr",
-    "REGISTRY_PW": MOCKED_PASSWORD,
+    "REGISTRY_PW": "pwd",
     "REGISTRY_SSL": "False",
     "DYNAMIC_SIDECAR_IMAGE": "itisfoundation/dynamic-sidecar:MOCK",
     "POSTGRES_HOST": "test",
@@ -24,33 +22,35 @@ MOCKED_BASE_REGISTRY_ENV_VARS: Dict[str, str] = {
 }
 
 EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES = {
+    "DY_SIDECAR_NODE_ID",
     "DY_SIDECAR_PATH_INPUTS",
     "DY_SIDECAR_PATH_OUTPUTS",
+    "DY_SIDECAR_PROJECT_ID",
     "DY_SIDECAR_STATE_PATHS",
     "DY_SIDECAR_USER_ID",
-    "DY_SIDECAR_PROJECT_ID",
-    "DY_SIDECAR_NODE_ID",
-    "POSTGRES_HOST",
+    "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE",
+    "NODE_ID",
+    "POSTGRES_DB",
     "POSTGRES_ENDPOINT",
+    "POSTGRES_HOST",
     "POSTGRES_PASSWORD",
     "POSTGRES_PORT",
     "POSTGRES_USER",
-    "POSTGRES_DB",
-    "STORAGE_ENDPOINT",
-    "REGISTRY_AUTH",
-    "REGISTRY_PATH",
-    "REGISTRY_URL",
-    "REGISTRY_USER",
-    "REGISTRY_PW",
-    "REGISTRY_SSL",
+    "PROJECT_ID",
+    "RABBIT_CHANNELS",
     "RABBIT_HOST",
+    "RABBIT_PASSWORD",
     "RABBIT_PORT",
     "RABBIT_USER",
-    "RABBIT_PASSWORD",
-    "RABBIT_CHANNELS",
+    "REGISTRY_AUTH",
+    "REGISTRY_PATH",
+    "REGISTRY_PW",
+    "REGISTRY_SSL",
+    "REGISTRY_URL",
+    "REGISTRY_USER",
+    "SIMCORE_HOST_NAME",
+    "STORAGE_ENDPOINT",
     "USER_ID",
-    "PROJECT_ID",
-    "NODE_ID",
 }
 
 
@@ -62,8 +62,8 @@ def test_dynamic_sidecar_env_vars(
 
     app_settings = AppSettings.create_from_envs()
 
-    dynamic_sidecar_env_vars = _get_dy_sidecar_env_vars(
-        scheduler_data_from_http_request, app_settings
+    dynamic_sidecar_env_vars = _get_environment_variables(
+        "compose_namespace", scheduler_data_from_http_request, app_settings
     )
     print("dynamic_sidecar_env_vars:", dynamic_sidecar_env_vars)
 
