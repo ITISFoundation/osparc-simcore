@@ -3,26 +3,38 @@
 #
 # NOTE: ALL version constraints MUST be commented
 --constraint ../../../requirements/constraints.txt
-
---requirement ../../../packages/dask-task-models-library/requirements/_base.in
---requirement ../../../packages/models-library/requirements/_base.in
---requirement ../../../packages/postgres-database/requirements/_base.in
---requirement ../../../packages/settings-library/requirements/_base.in
---requirement ../../../packages/simcore-sdk/requirements/_base.in
+# we need EXACTLY the same dask libraries in the client/scheduler/workers
 --requirement ../../../services/dask-sidecar/requirements/_dask-distributed.txt
 
+--requirement ../../../packages/models-library/requirements/_base.in
+--requirement ../../../packages/settings-library/requirements/_base.in
+--requirement ../../../packages/postgres-database/requirements/_base.in
 # service-library[fastapi]
 --requirement ../../../packages/service-library/requirements/_base.in
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
 
-aio-pika
-aiodocker
-aiopg[sa]
-celery[redis]
+# fastapi and extensions
 fastapi[all]
-httpx
-networkx
-orjson
+
+# data models
 pydantic[dotenv]
+
+# database
+aiopg[sa]
+
+# docker daemon
+aiodocker
+
+# DAGs
+networkx
+
+# celery
+celery[redis]
+
+# other
 tenacity
+orjson
+
+# clients
+httpx

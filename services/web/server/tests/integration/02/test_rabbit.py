@@ -5,20 +5,18 @@
 import json
 import time
 from asyncio import sleep
-from typing import Any, Callable, Dict, List, Tuple
-from unittest import mock
+from typing import Any, Callable, Dict, Tuple
 from unittest.mock import call
 from uuid import uuid4
 
 import aio_pika
-import aioresponses
 import pytest
 import sqlalchemy as sa
 from models_library.settings.rabbit import RabbitConfig
-from pytest_mock import MockerFixture
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.computation import setup_computation
+from simcore_service_webserver.computation_config import CONFIG_SECTION_NAME
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.module_setup import setup_login
@@ -86,19 +84,19 @@ def client(
 
 
 def _create_rabbit_message(
-    message_name: str, node_uuid: str, user_id: int, project_id: str, param: Any
-) -> Dict[str, Any]:
+    message_name: str, node_uuid: str, user_id: str, project_id: str, param: Any
+) -> Dict:
     message = {
-        "channel": message_name,
-        "node_id": node_uuid,
-        "user_id": f"{user_id}",
+        "Channel": message_name.title(),
+        "Node": node_uuid,
+        "user_id": user_id,
         "project_id": project_id,
     }
 
     if message_name == "log":
-        message["messages"] = param
+        message["Messages"] = param
     if message_name == "progress":
-        message["progress"] = param
+        message["Progress"] = param
     return message
 
 
@@ -110,14 +108,12 @@ def client_session_id() -> str:
 async def _publish_messages(
     num_messages: int,
     node_uuid: str,
-    user_id: int,
+    user_id: str,
     project_id: str,
     rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
-) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
+) -> Tuple[Dict, Dict, Dict]:
     log_messages = [
-        _create_rabbit_message(
-            "logger", node_uuid, user_id, project_id, f"log number {n}"
-        )
+        _create_rabbit_message("log", node_uuid, user_id, project_id, f"log number {n}")
         for n in range(num_messages)
     ]
     progress_messages = [
@@ -132,7 +128,7 @@ async def _publish_messages(
     # indicate container is started
     instrumentation_start_message = instrumentation_stop_message = {
         "metrics": "service_started",
-        "user_id": f"{user_id}",
+        "user_id": user_id,
         "project_id": project_id,
         "service_uuid": node_uuid,
         "service_type": "COMPUTATIONAL",
@@ -198,16 +194,16 @@ async def _wait_until(pred: Callable, timeout: int):
     ],
 )
 async def test_rabbit_websocket_computation(
-    director_v2_service_mock: aioresponses.aioresponses,
-    mock_orphaned_services: mock.Mock,
-    logged_user: Dict[str, Any],
-    user_project: Dict[str, Any],
+    director_v2_service_mock,
+    mock_orphaned_services,
+    logged_user,
+    user_project,
     socketio_client_factory: Callable,
     client_session_id: str,
-    mocker: MockerFixture,
+    mocker,
     rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
     node_uuid: str,
-    user_id: int,
+    user_id: str,
     project_id: str,
 ):
 
