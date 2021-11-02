@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 import traceback
 from asyncio import Lock, Queue, Task, sleep
@@ -376,12 +377,16 @@ class DynamicSidecarsScheduler:
         self._to_observe = {}
 
         if self._scheduler_task is not None:
-            await self._scheduler_task
+            self._scheduler_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._scheduler_task
             self._scheduler_task = None
 
         if self._trigger_observation_queue_task is not None:
             await self._trigger_observation_queue.put(None)
-            await self._trigger_observation_queue_task
+            self._trigger_observation_queue_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._trigger_observation_queue_task
             self._trigger_observation_queue_task = None
             self._trigger_observation_queue = Queue()
 
