@@ -315,7 +315,10 @@ class DynamicSidecarsScheduler:
             )
             if resource_marked_as_locked:
                 # fire and forget about the task
-                asyncio.create_task(observing_single_service(service_name))
+                asyncio.create_task(
+                    observing_single_service(service_name),
+                    name=f"observe {service_name}",
+                )
 
         logger.info("Scheduler 'trigger observation queue task' was shut down")
 

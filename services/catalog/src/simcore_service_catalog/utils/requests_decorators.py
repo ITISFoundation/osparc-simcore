@@ -30,10 +30,11 @@ def cancellable_request(handler: Callable[[Any], Coroutine[Any, Any, Response]])
     @wraps(handler)
     async def decorator(request: Request, *args, **kwargs) -> Response:
         handler_task = asyncio.get_event_loop().create_task(
-            handler(request, *args, **kwargs)
+            handler(request, *args, **kwargs), name=f"cancellable_request_{request.url}"
         )
         auto_cancel_task = asyncio.get_event_loop().create_task(
-            _cancel_task_if_client_disconnected(request, handler_task)
+            _cancel_task_if_client_disconnected(request, handler_task),
+            name=f"task_cancellation_monitor_{request.url}",
         )
         try:
             return await handler_task
