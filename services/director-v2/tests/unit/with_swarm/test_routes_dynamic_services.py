@@ -273,7 +273,7 @@ async def test_create_dynamic_services(
         assert redirect_url.params["project_id"] == service["project_id"]
         assert redirect_url.params["service_uuid"] == service["node_uuid"]
         assert redirect_url.params["service_key"] == service["key"]
-        assert redirect_url.params["service_version"] == service["version"]
+        assert redirect_url.params["service_tag"] == service["version"]
         assert redirect_url.params["service_basepath"] == service["basepath"]
 
     if exp_status_code == status.HTTP_201_CREATED:
