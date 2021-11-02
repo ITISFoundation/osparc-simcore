@@ -8,6 +8,8 @@
 --constraint _base.txt
 --constraint _packages.txt
 
+alembic
+
 # testing
 coverage
 pytest
@@ -18,9 +20,9 @@ pytest-instafail
 pytest-lazy-fixture
 pytest-mock
 pytest-sugar
-pytest-localftpserver
 
 # fixtures
+aiopg
 docker
 python-dotenv
 faker

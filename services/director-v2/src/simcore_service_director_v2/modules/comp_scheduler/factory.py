@@ -5,7 +5,6 @@ from fastapi import FastAPI
 
 from ...core.errors import ConfigurationError
 from ...models.domains.comp_runs import CompRunsAtDB
-from ...modules.rabbitmq import RabbitMQClient
 from ...utils.scheduler import SCHEDULED_STATES, get_repository
 from ..celery import CeleryClient
 from ..dask_client import DaskClient
@@ -63,7 +62,6 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
     return DaskScheduler(
         settings=app.state.settings.DASK_SCHEDULER,
         dask_client=DaskClient.instance(app),
-        rabbitmq_client=RabbitMQClient.instance(app),
         db_engine=db_engine,
         default_cluster_id=app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
         scheduled_pipelines={

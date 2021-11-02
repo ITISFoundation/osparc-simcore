@@ -29,7 +29,6 @@ README = (CURRENT_DIR / "README.md").read_text()
 PROD_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
     | {
-        "simcore-dask-task-models-library",
         "simcore-models-library",
         "simcore-postgres-database",
         "simcore-service-library[fastapi]",

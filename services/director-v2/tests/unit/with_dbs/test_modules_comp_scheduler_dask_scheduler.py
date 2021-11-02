@@ -7,8 +7,8 @@
 
 
 import asyncio
-import unittest.mock
 from typing import Any, Callable, Dict, Iterator, List
+from unittest.mock import call
 
 import aiopg
 import pytest
@@ -18,7 +18,6 @@ from fastapi.applications import FastAPI
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
-from pytest_mock.plugin import MockerFixture
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import comp_tasks
@@ -42,20 +41,11 @@ pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
-@pytest.fixture()
-def mocked_rabbit_mq_client(mocker: MockerFixture):
-    mocker.patch(
-        "simcore_service_director_v2.core.application.rabbitmq.RabbitMQClient",
-        autospec=True,
-    )
-
-
 @pytest.fixture
 def minimal_dask_scheduler_config(
     mock_env: None,
     postgres_host_config: Dict[str, str],
     monkeypatch: MonkeyPatch,
-    mocked_rabbit_mq_client: None,
 ) -> None:
     """set a minimal configuration for testing the dask connection only"""
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
@@ -295,12 +285,12 @@ async def test_proper_pipeline_is_scheduled(
     # check the dask client was properly called
     mocked_dask_client.assert_has_calls(
         calls=[
-            unittest.mock.call(
+            call(
                 user_id=user_id,
                 project_id=sleepers_project.uuid,
                 cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
                 tasks={k: v},
-                callback=unittest.mock.ANY,
+                callback=scheduler._wake_up_scheduler_now,
             )
             for k, v in {
                 f"{sleeper_tasks[1].node_id}": sleeper_tasks[1].image,
@@ -354,7 +344,7 @@ async def test_proper_pipeline_is_scheduled(
         tasks={
             f"{sleeper_tasks[2].node_id}": sleeper_tasks[2].image,
         },
-        callback=unittest.mock.ANY,
+        callback=scheduler._wake_up_scheduler_now,
     )
     mocked_dask_client.reset_mock()
 
