@@ -111,7 +111,7 @@ async def create_dynamic_service(
                 "project_id": f"{service.project_id}",
                 "service_uuid": f"{service.node_uuid}",
                 "service_key": f"{service.key}",
-                "service_version": f"{service.version}",
+                "service_tag": f"{service.version}",
                 "service_basepath": f"{service.basepath}",
             },
         )
