@@ -1326,35 +1326,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __allowDrag: function(pointerEvent) {
-      console.log("allowDrag", pointerEvent.target);
       const allow = pointerEvent.target instanceof SVGElement;
       return allow;
     },
 
-    __drop: function(pointerEvent) {
-      this.__dragging(pointerEvent, false);
-
-      const files = pointerEvent.dataTransfer.files;
-      if (files.length === 1) {
-        const pos = {
-          x: pointerEvent.offsetX,
-          y: pointerEvent.offsetY
-        };
-        const fileList = pointerEvent.dataTransfer.files;
-        if (fileList.length) {
-          const service = qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker());
-          const nodeUI = this.__addNode(service, pos);
-          const filePicker = new osparc.file.FilePicker(nodeUI.getNode());
-          filePicker.buildLayout();
-          filePicker.uploadPendingFiles(fileList);
-        }
-      } else {
-        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
-      }
-    },
-
     __dragging: function(pointerEvent, dragging) {
-      console.log("dragging", pointerEvent, dragging);
       if (this.__allowDrag(pointerEvent)) {
         pointerEvent.preventDefault();
         pointerEvent.stopPropagation();
@@ -1389,6 +1365,28 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         osparc.component.workbench.SvgWidget.updateRect(this.__dropHint.rect, posX, posY);
       } else {
         this.__removeDropHint();
+      }
+    },
+
+    __drop: function(pointerEvent) {
+      this.__dragging(pointerEvent, false);
+
+      const files = pointerEvent.dataTransfer.files;
+      if (files.length === 1) {
+        const pos = {
+          x: pointerEvent.offsetX,
+          y: pointerEvent.offsetY
+        };
+        const fileList = pointerEvent.dataTransfer.files;
+        if (fileList.length) {
+          const service = qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker());
+          const nodeUI = this.__addNode(service, pos);
+          const filePicker = new osparc.file.FilePicker(nodeUI.getNode());
+          filePicker.buildLayout();
+          filePicker.uploadPendingFiles(fileList);
+        }
+      } else {
+        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
       }
     },
 
