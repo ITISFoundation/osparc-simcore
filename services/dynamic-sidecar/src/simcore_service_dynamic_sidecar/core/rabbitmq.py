@@ -44,10 +44,9 @@ def _channel_close_callback(sender: Any, exc: Optional[BaseException]) -> None:
 
 
 @tenacity.retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
-async def _wait_till_rabbit_responsive(url: str) -> bool:
-    connection = await aio_pika.connect(url)
+async def _wait_till_rabbit_responsive(url: str) -> None:
+    connection = await aio_pika.connect(url, timeout=1.0)
     await connection.close()
-    return True
 
 
 class RabbitMQ:  # pylint: disable = too-many-instance-attributes
