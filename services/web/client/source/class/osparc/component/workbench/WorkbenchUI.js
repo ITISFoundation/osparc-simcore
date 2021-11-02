@@ -1278,9 +1278,16 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       this.addListenerOnce("appear", () => {
         const domEl = this.getContentElement().getDomElement();
-        domEl.addEventListener("dragenter", this.__dragEnter.bind(this), false);
-        domEl.addEventListener("dragover", this.__dragOver.bind(this), false);
-        domEl.addEventListener("dragleave", this.__dragLeave.bind(this), false);
+        [
+          "dragenter",
+          "dragover",
+          "dragleave"
+        ].forEach(signalName => {
+          domEl.addEventListener(signalName, e => {
+            const dragging = signalName !== "dragleave";
+            this.__dragging(e, dragging);
+          }, this);
+        });
         domEl.addEventListener("drop", this.__drop.bind(this), false);
 
         this.addListener("mousewheel", this.__mouseWheel, this);
@@ -1319,30 +1326,16 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __allowDrag: function(pointerEvent) {
-      return (pointerEvent.target instanceof SVGElement);
-    },
-
-    __allowDropFile: function(pointerEvent) {
-      const files = pointerEvent.dataTransfer.files;
-      return files.length === 1;
-    },
-
-    __dragEnter: function(pointerEvent) {
-      this.__dragging(pointerEvent, true);
-    },
-
-    __dragOver: function(pointerEvent) {
-      this.__dragging(pointerEvent, true);
-    },
-
-    __dragLeave: function(pointerEvent) {
-      this.__dragging(pointerEvent, false);
+      console.log("allowDrag", pointerEvent.target);
+      const allow = pointerEvent.target instanceof SVGElement;
+      return allow;
     },
 
     __drop: function(pointerEvent) {
       this.__dragging(pointerEvent, false);
 
-      if (this.__allowDropFile(pointerEvent)) {
+      const files = pointerEvent.dataTransfer.files;
+      if (files.length === 1) {
         const pos = {
           x: pointerEvent.offsetX,
           y: pointerEvent.offsetY
@@ -1361,6 +1354,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __dragging: function(pointerEvent, dragging) {
+      console.log("dragging", pointerEvent, dragging);
       if (this.__allowDrag(pointerEvent)) {
         pointerEvent.preventDefault();
         pointerEvent.stopPropagation();
@@ -1394,9 +1388,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         });
         osparc.component.workbench.SvgWidget.updateRect(this.__dropHint.rect, posX, posY);
       } else {
-        this.__dropHint.setVisibility("excluded");
-        osparc.component.workbench.SvgWidget.removeRect(this.__dropHint.rect);
-        this.__dropHint = null;
+        this.__removeDropHint();
       }
     },
 
@@ -1417,6 +1409,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           left: Math.round((width - hintBounds.width) / 2)
         });
       }
+    },
+
+    __removeDropHint: function() {
+      this.__dropHint.setVisibility("excluded");
+      osparc.component.workbench.SvgWidget.removeRect(this.__dropHint.rect);
+      this.__dropHint = null;
     }
   }
 });
