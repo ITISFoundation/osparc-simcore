@@ -318,20 +318,7 @@ qx.Class.define("osparc.data.model.Workbench", {
             nodeId,
             file
           } = e.getData();
-          this.__connectFilePicker(nodeId, portId)
-            .then(filePicker => {
-              if (file) {
-                const fileObj = file.data;
-                osparc.file.FilePicker.setOutputValueFromStore(
-                  filePicker,
-                  fileObj.getLocation(),
-                  fileObj.getDatasetId(),
-                  fileObj.getFileId(),
-                  fileObj.getLabel()
-                );
-              }
-              this.fireEvent("reloadModel");
-            });
+          this.__filePickerNodeRequested(nodeId, portId, file);
         }, this);
       }
     },
@@ -391,6 +378,24 @@ qx.Class.define("osparc.data.model.Workbench", {
             }
           });
       });
+    },
+
+    __filePickerNodeRequested: function(nodeId, portId, file) {
+      this.__connectFilePicker(nodeId, portId)
+        .then(filePicker => {
+          if (file) {
+            const fileObj = file.data;
+            osparc.file.FilePicker.setOutputValueFromStore(
+              filePicker,
+              fileObj.getLocation(),
+              fileObj.getDatasetId(),
+              fileObj.getFileId(),
+              fileObj.getLabel()
+            );
+          }
+          this.fireDataEvent("openNode", filePicker.getNodeId());
+          this.fireEvent("reloadModel");
+        });
     },
 
     __parameterNodeRequested: function(nodeId, portId) {
