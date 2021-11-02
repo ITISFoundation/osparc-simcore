@@ -208,6 +208,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     dy_static_file_server_project: ProjectAtDB,
     user_db: Dict,
     services_endpoint: Dict[str, URL],
+    simcore_services_ready: None,
     director_v2_client: httpx.AsyncClient,
     ensure_services_stopped: None,
 ):
