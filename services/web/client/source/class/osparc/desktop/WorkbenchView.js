@@ -935,7 +935,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __populateSecondPanelNode: function(node) {
       this.__settingsPage.getChildControl("button").show();
-      this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
+      this.__outputsPage.getChildControl("button").show();
+      if (![this.__settingsPage, this.__outputsPage].includes(this.getChildControl("side-panel-right-tabs").getSelection()[0])) {
+        this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
+      }
 
       if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
         const scrollContariner = new qx.ui.container.Scroll();
@@ -945,7 +948,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         });
       }
 
-      this.__outputsPage.getChildControl("button").show();
       if (node.hasOutputs()) {
         const portTree = new osparc.component.widget.inputs.NodeOutputTree(node, node.getMetaData().outputs).set({
           allowGrowY: false
