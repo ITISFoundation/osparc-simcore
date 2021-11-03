@@ -1,9 +1,9 @@
-import json
 import logging
 from pathlib import Path
 from typing import Any, Dict
 
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from servicelib.json_serialization import json_dumps
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
@@ -30,7 +30,7 @@ def _get_environment_variables(
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
         "DY_SIDECAR_PATH_INPUTS": f"{scheduler_data.paths_mapping.inputs_path}",
         "DY_SIDECAR_PATH_OUTPUTS": f"{scheduler_data.paths_mapping.outputs_path}",
-        "DY_SIDECAR_STATE_PATHS": json.dumps(
+        "DY_SIDECAR_STATE_PATHS": json_dumps(
             [f"{x}" for x in scheduler_data.paths_mapping.state_paths]
         ),
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
@@ -53,10 +53,7 @@ def _get_environment_variables(
         "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
-        "RABBIT_CHANNELS": json.dumps(rabbit_settings.RABBIT_CHANNELS),
-        # TODO: why removing these values makes everything break?!?!?
-        # TODO: retry start the stack without these below and check what is happening
-        # TODO: also check the CI to see if there are errors!
+        "RABBIT_CHANNELS": json_dumps(rabbit_settings.RABBIT_CHANNELS),
         "USER_ID": f"{scheduler_data.user_id}",
         "PROJECT_ID": f"{scheduler_data.project_id}",
         "NODE_ID": f"{scheduler_data.node_uuid}",
@@ -174,7 +171,7 @@ async def get_dynamic_sidecar_spec(
             "service_key": scheduler_data.key,
             "service_tag": scheduler_data.version,
             "paths_mapping": scheduler_data.paths_mapping.json(),
-            "compose_spec": json.dumps(scheduler_data.compose_spec),
+            "compose_spec": json_dumps(scheduler_data.compose_spec),
             "container_http_entry": scheduler_data.container_http_entry,
         },
         "name": scheduler_data.service_name,
