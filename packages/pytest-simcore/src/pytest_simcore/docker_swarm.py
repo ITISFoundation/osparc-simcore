@@ -2,13 +2,16 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+#
+# NOTE this file must be py3.6 compatible because it is used by the director
+#
 import json
 import logging
 import subprocess
 from datetime import datetime
 from pathlib import Path
 from pprint import pprint
-from typing import Dict, Final, Iterator
+from typing import Dict, Iterator
 
 import docker
 import pytest
@@ -25,7 +28,7 @@ from .helpers.utils_environs import EnvVarsDict
 
 log = logging.getLogger(__name__)
 
-_MINUTE: Final[int] = 60  # secs
+_MINUTE: int = 60  # secs
 
 
 DEFAULT_RETRY_POLICY = dict(
