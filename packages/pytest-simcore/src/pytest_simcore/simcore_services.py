@@ -118,12 +118,12 @@ async def simcore_services_ready(
 
 
 _MINUTE: Final[int] = 60
+
 # HELPERS --
 @tenacity.retry(
     wait=wait_random(2, 15),
     stop=stop_after_delay(5 * _MINUTE),
     before_sleep=before_sleep_log(log, logging.WARNING),
-    after=after_log(log, logging.ERROR),
     reraise=True,
 )
 async def wait_till_service_responsive(service_name: str, endpoint: URL):

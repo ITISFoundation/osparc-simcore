@@ -239,22 +239,25 @@ def docker_stack(
                 err.stderr.decode("utf8") if err.stderr else "",
             )
 
-        # All resources should be removed
-        for resource_name in ("services", "networks", "containers", "volumes"):
+        # All resources should be removed.
+        # Intentionally added networks the last
+        for resource_name in ("services", "containers", "volumes", "networks"):
             resource_client = getattr(docker_client, resource_name)
 
             for attempt in Retrying(
-                wait=wait_exponential(), stop=stop_after_delay(3 * _MINUTE)
+                wait=wait_exponential(),
+                stop=stop_after_delay(3 * _MINUTE),
+                reraise=True,
             ):
                 with attempt:
                     pending = resource_client.list(
                         filters={"label": f"com.docker.stack.namespace={stack}"}
                     )
                     if pending:
-                        msg = f"Waiting for {len(pending)} {resource_name} to shutdown [{pending[:3]} ... ]."
+                        msg = f"Waiting for {len(pending)} {resource_name} to shutdown: {pending}."
                         log.warning(msg)
 
-                        if resource_name == "volumes":
+                        if resource_name in ("volumes", "containers"):
                             for resource in pending:
                                 resource.remove(force=True)
 
