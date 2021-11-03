@@ -54,9 +54,6 @@ def _get_environment_variables(
         "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
         "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
         "RABBIT_CHANNELS": json_dumps(rabbit_settings.RABBIT_CHANNELS),
-        "USER_ID": f"{scheduler_data.user_id}",
-        "PROJECT_ID": f"{scheduler_data.project_id}",
-        "NODE_ID": f"{scheduler_data.node_uuid}",
     }
 
 
