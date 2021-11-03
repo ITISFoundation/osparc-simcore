@@ -8,7 +8,7 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 from pprint import pprint
-from typing import Dict, Iterator
+from typing import Dict, Final, Iterator
 
 import docker
 import pytest
@@ -25,7 +25,7 @@ from .helpers.utils_environs import EnvVarsDict
 
 log = logging.getLogger(__name__)
 
-_MINUTES = 60  # secs
+_MINUTE: Final[int] = 60  # secs
 
 
 DEFAULT_RETRY_POLICY = dict(
@@ -236,27 +236,25 @@ def docker_stack(
                 err.stderr.decode("utf8") if err.stderr else "",
             )
 
-        for resource_name in ("services", "networks", "containers"):
-            resource = getattr(docker_client, resource_name)
+        # All resources should be removed
+        for resource_name in ("services", "networks", "containers", "volumes"):
+            resource_client = getattr(docker_client, resource_name)
 
             for attempt in Retrying(
-                wait=wait_exponential(), stop=stop_after_delay(3 * _MINUTES)
+                wait=wait_exponential(), stop=stop_after_delay(3 * _MINUTE)
             ):
                 with attempt:
-                    pending = resource.list(
+                    pending = resource_client.list(
                         filters={"label": f"com.docker.stack.namespace={stack}"}
                     )
                     if pending:
                         msg = f"Waiting for {len(pending)} {resource_name} to shutdown [{pending[:3]} ... ]."
                         log.warning(msg)
-                        raise _ResourcesPending(msg)
 
-        for attempt in Retrying(retry_error_cls=APIError, **DEFAULT_RETRY_POLICY):
-            with attempt:
-                list_of_volumes = docker_client.volumes.list(
-                    filters={"label": f"com.docker.stack.namespace={stack}"}
-                )
-                for volume in list_of_volumes:
-                    volume.remove(force=True)
+                        if resource_name == "volumes":
+                            for resource in pending:
+                                resource.remove(force=True)
+
+                        raise _ResourcesPending(msg)
 
     _print_services(docker_client, "[AFTER REMOVED]")
