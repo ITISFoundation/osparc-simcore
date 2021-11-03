@@ -256,7 +256,9 @@ def docker_stack(
                         filters={"label": f"com.docker.stack.namespace={stack}"}
                     )
                     if pending:
-                        if resource_name in ("volumes", "containers"):
+                        if resource_name in ("volumes",):
+                            # WARNING: rm volumes on this stack migh be a problem when shared between different stacks
+                            # NOTE: volumes are removed to avoid mixing configs (e.g. postgres db credentials)
                             for resource in pending:
                                 resource.remove(force=True)
 
