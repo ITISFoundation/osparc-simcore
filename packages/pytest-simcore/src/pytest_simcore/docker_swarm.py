@@ -29,6 +29,7 @@ from .helpers.utils_environs import EnvVarsDict
 log = logging.getLogger(__name__)
 
 _MINUTE: int = 60  # secs
+HEADER: str = "{:-^50}"
 
 
 DEFAULT_RETRY_POLICY = dict(
@@ -45,7 +46,7 @@ class _StillInSwarmException(Exception):
     pass
 
 
-class _ResourcesPending(Exception):
+class _ResourceStillNotRemoved(Exception):
     pass
 
 
@@ -217,7 +218,6 @@ def docker_stack(
     # make down
     # NOTE: remove them in reverse order since stacks share common networks
 
-    HEADER = "{:-^20}"
     stacks.reverse()
     for _, stack, _ in stacks:
 
@@ -239,14 +239,16 @@ def docker_stack(
                 err.stderr.decode("utf8") if err.stderr else "",
             )
 
-        # All resources should be removed.
-        # Intentionally added networks the last
+        # Waits that all resources get removed or force them
+        # The check order is intentional because some resources depend on others to be removed
+        # e.g. cannot remove networks/volumes used by running containers
         for resource_name in ("services", "containers", "volumes", "networks"):
             resource_client = getattr(docker_client, resource_name)
 
             for attempt in Retrying(
                 wait=wait_exponential(),
                 stop=stop_after_delay(3 * _MINUTE),
+                before_sleep=before_sleep_log(log, logging.WARNING),
                 reraise=True,
             ):
                 with attempt:
@@ -254,13 +256,12 @@ def docker_stack(
                         filters={"label": f"com.docker.stack.namespace={stack}"}
                     )
                     if pending:
-                        msg = f"Waiting for {len(pending)} {resource_name} to shutdown: {pending}."
-                        log.warning(msg)
-
                         if resource_name in ("volumes", "containers"):
                             for resource in pending:
                                 resource.remove(force=True)
 
-                        raise _ResourcesPending(msg)
+                        raise _ResourceStillNotRemoved(
+                            f"Waiting for {len(pending)} {resource_name} to shutdown: {pending}."
+                        )
 
     _print_services(docker_client, "[AFTER REMOVED]")
