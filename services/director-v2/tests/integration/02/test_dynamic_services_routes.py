@@ -14,6 +14,7 @@ from async_timeout import timeout
 from models_library.settings.rabbit import RabbitConfig
 from pydantic import PositiveInt
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.utils_docker import get_ip
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from utils import ensure_network_cleanup, patch_dynamic_service_url
@@ -99,7 +100,7 @@ async def test_client(
 
     # patch host for dynamic-sidecar, not reachable via
     # docker container to container networking otherwise
-    monkeypatch.setenv("RABBIT_HOST", "172.17.0.1")
+    monkeypatch.setenv("RABBIT_HOST", f"{get_ip()}")
 
     settings = AppSettings.create_from_envs()
 
