@@ -5,7 +5,6 @@
 import json
 import logging
 import subprocess
-import time
 from datetime import datetime
 from pathlib import Path
 from pprint import pprint
@@ -244,9 +243,10 @@ def docker_stack(
                 wait=wait_exponential(), stop=stop_after_delay(3 * _MINUTES)
             ):
                 with attempt:
-                    if pending := resource.list(
+                    pending = resource.list(
                         filters={"label": f"com.docker.stack.namespace={stack}"}
-                    ):
+                    )
+                    if pending:
                         msg = f"Waiting for {len(pending)} {resource_name} to shutdown [{pending[:3]} ... ]."
                         log.warning(msg)
                         raise _ResourcesPending(msg)
