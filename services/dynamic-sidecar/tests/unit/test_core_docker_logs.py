@@ -24,10 +24,6 @@ from simcore_service_dynamic_sidecar.modules import mounted_fs
 pytestmark = pytest.mark.asyncio
 
 
-pytest_plugins = [
-    "pytest_simcore.monkeypatch_extra",
-]
-
 # FIXTURES
 
 

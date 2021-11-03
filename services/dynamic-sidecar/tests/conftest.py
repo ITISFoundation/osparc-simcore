@@ -26,6 +26,10 @@ from simcore_service_dynamic_sidecar.core.utils import docker_client
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
+pytest_plugins = [
+    "pytest_simcore.monkeypatch_extra",
+]
+
 
 @pytest.fixture(scope="session")
 def mock_dy_volumes() -> Iterator[Path]:
