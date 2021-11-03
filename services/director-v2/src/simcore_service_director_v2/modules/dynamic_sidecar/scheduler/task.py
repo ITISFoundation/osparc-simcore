@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 import traceback
 from asyncio import Lock, Queue, Task, sleep
@@ -314,7 +315,10 @@ class DynamicSidecarsScheduler:
             )
             if resource_marked_as_locked:
                 # fire and forget about the task
-                asyncio.create_task(observing_single_service(service_name))
+                asyncio.create_task(
+                    observing_single_service(service_name),
+                    name=f"observe {service_name}",
+                )
 
         logger.info("Scheduler 'trigger observation queue task' was shut down")
 
@@ -362,9 +366,12 @@ class DynamicSidecarsScheduler:
         # run as a background task
         logger.info("Starting dynamic-sidecar scheduler")
         self._keep_running = True
-        self._scheduler_task = asyncio.create_task(self._run_scheduler_task())
+        self._scheduler_task = asyncio.create_task(
+            self._run_scheduler_task(), name="dynamic-scheduler"
+        )
         self._trigger_observation_queue_task = asyncio.create_task(
-            self._run_trigger_observation_queue_task()
+            self._run_trigger_observation_queue_task(),
+            name="dynamic-scheduler-trigger-obs-queue",
         )
 
         await self._discover_running_services()
@@ -376,12 +383,16 @@ class DynamicSidecarsScheduler:
         self._to_observe = {}
 
         if self._scheduler_task is not None:
-            await self._scheduler_task
+            self._scheduler_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._scheduler_task
             self._scheduler_task = None
 
         if self._trigger_observation_queue_task is not None:
             await self._trigger_observation_queue.put(None)
-            await self._trigger_observation_queue_task
+            self._trigger_observation_queue_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._trigger_observation_queue_task
             self._trigger_observation_queue_task = None
             self._trigger_observation_queue = Queue()
 
