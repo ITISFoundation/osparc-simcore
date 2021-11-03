@@ -194,10 +194,10 @@ async def assert_start_service(
     }
 
     resp = await director_v2_client.post(
-        "/dynamic_services", json=data, headers=headers, allow_redirects=False
+        "/dynamic_services", json=data, headers=headers, allow_redirects=True
     )
-    result = await handle_307_if_required(director_v2_client, director_v0_url, resp)
-    assert result.status_code == 201, result.text
+    # result = await handle_307_if_required(director_v2_client, director_v0_url, resp)
+    assert resp.status_code == 201, resp.text
 
 
 async def get_service_data(
@@ -207,9 +207,9 @@ async def get_service_data(
     node_data: Node,
 ) -> Dict[str, Any]:
     result = await director_v2_client.get(
-        f"/dynamic_services/{service_uuid}", allow_redirects=False
+        f"/dynamic_services/{service_uuid}", allow_redirects=True
     )
-    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
+    # result = await handle_307_if_required(director_v2_client, director_v0_url, result)
     assert result.status_code == 200, result.text
 
     payload = result.json()
@@ -273,9 +273,9 @@ async def assert_retrieve_service(
         f"/dynamic_services/{service_uuid}:retrieve",
         json=dict(port_keys=[]),
         headers=headers,
-        allow_redirects=False,
+        allow_redirects=True,
     )
-    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
+    # result = await handle_307_if_required(director_v2_client, director_v0_url, result)
 
     assert result.status_code == 200, result.text
     json_result = result.json()
@@ -290,9 +290,9 @@ async def assert_stop_service(
     director_v2_client: httpx.AsyncClient, director_v0_url: URL, service_uuid: str
 ) -> None:
     result = await director_v2_client.delete(
-        f"/dynamic_services/{service_uuid}", allow_redirects=False
+        f"/dynamic_services/{service_uuid}", allow_redirects=True
     )
-    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
+    # result = await handle_307_if_required(director_v2_client, director_v0_url, result)
     assert result.status_code == 204
     assert result.text == ""
 
