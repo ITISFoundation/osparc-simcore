@@ -38,7 +38,7 @@ pytest_simcore_core_services_selection = ["rabbit"]
 # FIXTURE
 
 
-@pytest.yield_fixture(scope="module")
+@pytest.fixture(scope="module")
 def event_loop(request: FixtureRequest) -> Iterator[AbstractEventLoop]:
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
