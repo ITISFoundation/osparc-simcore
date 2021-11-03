@@ -41,6 +41,7 @@ from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.utils_docker import get_ip
 from shared_comp_utils import (
     assert_computation_task_out_obj,
     assert_pipeline_status,
@@ -259,7 +260,7 @@ async def fast_api_app(
     monkeypatch.setenv("DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL", "debug")
     # patch host for dynamic-sidecar, not reachable via
     # docker container to container networking otherwise
-    monkeypatch.setenv("RABBIT_HOST", "172.17.0.1")
+    monkeypatch.setenv("RABBIT_HOST", f"{get_ip()}")
 
     settings = AppSettings.create_from_envs()
 
