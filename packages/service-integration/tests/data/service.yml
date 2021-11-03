@@ -1,0 +1,20 @@
+# compose-spec: !include ./compose-spec.yml
+container-http-entrypoint: null
+paths-mapping:
+  inputs_path: "/config/workspace/inputs"
+  outputs_path: "/config/workspace/outputs"
+  state_paths:
+    - "/config"
+settings:
+  - name: resources
+    type: Resources
+    value:
+      mem_limit: 17179869184
+      cpu_limit: 1000000000
+  - name: ports
+    type: int
+    value: 8443
+  - name: constraints
+    type: string
+    value:
+      - node.platform.os == linux
