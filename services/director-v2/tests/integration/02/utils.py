@@ -197,10 +197,10 @@ async def assert_start_service(
         "x-dynamic-sidecar-request-scheme": director_v2_client.base_url.scheme,
     }
 
-    result = await director_v2_client.post(
+    resp = await director_v2_client.post(
         "/dynamic_services", json=data, headers=headers, allow_redirects=False
     )
-    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
+    result = await handle_307_if_required(director_v2_client, director_v0_url, resp)
     assert result.status_code == 201, result.text
 
 
