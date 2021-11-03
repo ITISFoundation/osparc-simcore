@@ -128,6 +128,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __startHint: null,
     __dropHint: null,
     __panning: null,
+    __draggingFileLink: null,
 
     __applyStudy: function(study) {
       study.getWorkbench().addListener("reloadModel", () => {
@@ -1151,6 +1152,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.set({
           cursor: "move"
         });
+      } else if (this.__draggingFileLink) {
+        this.__dragging(e, true);
       }
     },
 
@@ -1290,6 +1293,21 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         });
         domEl.addEventListener("drop", this.__drop.bind(this), false);
 
+        this.setDroppable(true);
+        [
+          "dragover", // on target (pointer over)
+          "dragleave" // on target (pointer out)
+        ].forEach(signalName => {
+          this.addListener(signalName, e => {
+            const dragging = signalName !== "dragleave";
+            if (dragging === false) {
+              this.__draggingFileLink = dragging;
+            }
+            this.__dragging(e, dragging);
+          }, this);
+        });
+        this.addListener("drop", this.__drop.bind(this), false);
+
         this.addListener("mousewheel", this.__mouseWheel, this);
         this.addListener("mousedown", this.__mouseDown, this);
         this.addListener("mousemove", this.__mouseMove, this);
@@ -1326,14 +1344,23 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __allowDrag: function(pointerEvent) {
-      const allow = pointerEvent.target instanceof SVGElement;
+      let allow = false;
+      if ("supportsType" in pointerEvent) {
+        // item dragging from osparc's file tree
+        this.__draggingFileLink = pointerEvent.supportsType("osparc-file-link");
+      } else if (this.__draggingFileLink) {
+        allow = true;
+      } else {
+        // item dragging from the outside world
+        allow = pointerEvent.target instanceof SVGElement;
+      }
       return allow;
     },
 
-    __dragging: function(pointerEvent, dragging) {
-      if (this.__allowDrag(pointerEvent)) {
-        pointerEvent.preventDefault();
-        pointerEvent.stopPropagation();
+    __dragging: function(e, dragging) {
+      if (this.__allowDrag(e)) {
+        e.preventDefault();
+        e.stopPropagation();
       } else {
         dragging = false;
       }
@@ -1343,8 +1370,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
       const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
       const nodeHeight = osparc.component.workbench.NodeUI.NODE_HEIGHT;
-      const posX = pointerEvent.offsetX - 1;
-      const posY = pointerEvent.offsetY - 1;
+      const posX = "offsetX" in e ? e.offsetX - 1 : this.__pointerEventToWorkbenchPos(e, false).x;
+      const posY = "offsetY" in e ? e.offsetY - 1 : this.__pointerEventToWorkbenchPos(e, false).y;
 
       if (this.__dropHint === null) {
         this.__dropHint = new qx.ui.basic.Label(this.tr("Drop me")).set({
@@ -1368,25 +1395,37 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    __drop: function(pointerEvent) {
-      this.__dragging(pointerEvent, false);
+    __drop: function(e) {
+      this.__dragging(e, false);
 
-      const files = pointerEvent.dataTransfer.files;
-      if (files.length === 1) {
-        const pos = {
-          x: pointerEvent.offsetX,
-          y: pointerEvent.offsetY
-        };
-        const fileList = pointerEvent.dataTransfer.files;
-        if (fileList.length) {
-          const service = qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker());
-          const nodeUI = this.__addNode(service, pos);
-          const filePicker = new osparc.file.FilePicker(nodeUI.getNode());
-          filePicker.buildLayout();
-          filePicker.uploadPendingFiles(fileList);
+      if ("dataTransfer" in e) {
+        const files = e.dataTransfer.files;
+        if (files.length === 1) {
+          const pos = {
+            x: e.offsetX,
+            y: e.offsetY
+          };
+          const fileList = e.dataTransfer.files;
+          if (fileList.length) {
+            const service = qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker());
+            const nodeUI = this.__addNode(service, pos);
+            const filePicker = new osparc.file.FilePicker(nodeUI.getNode());
+            filePicker.buildLayout();
+            filePicker.uploadPendingFiles(fileList);
+          }
+        } else {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
         }
-      } else {
-        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
+      } else if ("supportsType" in e && e.supportsType("osparc-file-link")) {
+        this.__draggingFileLink = false;
+        const data = e.getData("osparc-file-link")["dragData"];
+        const pos = this.__pointerEventToWorkbenchPos(e, false);
+        const service = qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker());
+        const nodeUI = this.__addNode(service, pos);
+        const node = nodeUI.getNode();
+        const filePicker = new osparc.file.FilePicker(node);
+        filePicker.buildLayout();
+        osparc.file.FilePicker.setOutputValueFromStore(node, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
       }
     },
 
