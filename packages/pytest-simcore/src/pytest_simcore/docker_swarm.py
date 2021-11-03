@@ -9,13 +9,14 @@ import time
 from datetime import datetime
 from pathlib import Path
 from pprint import pprint
-from typing import Dict, Iterator, Type
+from typing import Dict, Iterator
 
 import docker
 import pytest
 import tenacity
 import yaml
 from docker.errors import APIError
+from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_exponential, wait_fixed
@@ -25,12 +26,24 @@ from .helpers.utils_environs import EnvVarsDict
 
 log = logging.getLogger(__name__)
 
+_MINUTES = 60  # secs
+
+
+DEFAULT_RETRY_POLICY = dict(
+    wait=wait_exponential(),
+    stop=stop_after_delay(15),
+)
+
 
 class _NotInSwarmException(Exception):
     pass
 
 
 class _StillInSwarmException(Exception):
+    pass
+
+
+class _ResourcesPending(Exception):
     pass
 
 
@@ -48,14 +61,6 @@ def _in_docker_swarm(
     return True
 
 
-def _attempt_for(retry_error_cls: Type[Exception]) -> tenacity.Retrying:
-    return tenacity.Retrying(
-        wait=wait_exponential(),
-        stop=stop_after_delay(15),
-        retry_error_cls=retry_error_cls,
-    )
-
-
 @pytest.fixture(scope="session")
 def docker_client() -> Iterator[docker.client.DockerClient]:
     client = docker.from_env()
@@ -71,7 +76,9 @@ def keep_docker_up(request) -> bool:
 def docker_swarm(
     docker_client: docker.client.DockerClient, keep_docker_up: Iterator[bool]
 ) -> Iterator[None]:
-    for attempt in _attempt_for(retry_error_cls=_NotInSwarmException):
+    for attempt in Retrying(
+        retry_error_cls=_NotInSwarmException, **DEFAULT_RETRY_POLICY
+    ):
         with attempt:
             if not _in_docker_swarm(docker_client):
                 docker_client.swarm.init(advertise_addr=get_ip())
@@ -185,6 +192,8 @@ def docker_stack(
         "services": [service.name for service in docker_client.services.list()],
     }
 
+    ## TEAR DOWN ----------------------
+
     _print_services(docker_client, "[AFTER TEST]")
 
     if keep_docker_up:
@@ -205,41 +214,44 @@ def docker_stack(
 
     # make down
     # NOTE: remove them in reverse order since stacks share common networks
-    WAIT_BEFORE_RETRY_SECS = 1
 
     HEADER = "{:-^20}"
     stacks.reverse()
     for _, stack, _ in stacks:
 
         try:
-            subprocess.run(f"docker stack remove {stack}", shell=True, check=True)
+            subprocess.run(
+                f"docker stack remove {stack}",
+                shell=True,
+                check=True,
+                capture_output=True,
+            )
         except subprocess.CalledProcessError as err:
             log.warning(
                 "Ignoring failure while executing '%s' (returned code %d):\n%s\n%s\n%s\n%s\n",
                 err.cmd,
                 err.returncode,
                 HEADER.format("stdout"),
-                err.stdout,
+                err.stdout.decode("utf8") if err.stdout else "",
                 HEADER.format("stderr"),
-                err.stderr,
+                err.stderr.decode("utf8") if err.stderr else "",
             )
 
-        while docker_client.services.list(
-            filters={"label": f"com.docker.stack.namespace={stack}"}
-        ):
-            time.sleep(WAIT_BEFORE_RETRY_SECS)
+        for resource_name in ("services", "networks", "containers"):
+            resource = getattr(docker_client, resource_name)
 
-        while docker_client.networks.list(
-            filters={"label": f"com.docker.stack.namespace={stack}"}
-        ):
-            time.sleep(WAIT_BEFORE_RETRY_SECS)
+            for attempt in Retrying(
+                wait=wait_exponential(), stop=stop_after_delay(3 * _MINUTES)
+            ):
+                with attempt:
+                    if pending := resource.list(
+                        filters={"label": f"com.docker.stack.namespace={stack}"}
+                    ):
+                        msg = f"Waiting for {len(pending)} {resource_name} to shutdown [{pending[:3]} ... ]."
+                        log.warning(msg)
+                        raise _ResourcesPending(msg)
 
-        while docker_client.containers.list(
-            filters={"label": f"com.docker.stack.namespace={stack}"}
-        ):
-            time.sleep(WAIT_BEFORE_RETRY_SECS)
-
-        for attempt in _attempt_for(retry_error_cls=APIError):
+        for attempt in Retrying(retry_error_cls=APIError, **DEFAULT_RETRY_POLICY):
             with attempt:
                 list_of_volumes = docker_client.volumes.list(
                     filters={"label": f"com.docker.stack.namespace={stack}"}
