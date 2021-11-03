@@ -149,10 +149,10 @@ async def assert_start_service(
         "x-dynamic-sidecar-request-scheme": director_v2_client.base_url.scheme,
     }
 
-    resp = await director_v2_client.post(
-        "/dynamic_services", json=data, headers=headers, allow_redirects=True
+    result = await director_v2_client.post(
+        "/dynamic_services", json=data, headers=headers, allow_redirects=False
     )
-    assert resp.status_code == httpx.codes.CREATED, resp.text
+    assert result.status_code == httpx.codes.CREATED, result.text
 
 
 async def get_service_data(
@@ -229,7 +229,7 @@ async def assert_retrieve_service(
         f"/dynamic_services/{service_uuid}:retrieve",
         json=dict(port_keys=[]),
         headers=headers,
-        allow_redirects=True,
+        allow_redirects=False,
     )
     assert result.status_code == httpx.codes.OK, result.text
     json_result = result.json()
@@ -244,7 +244,7 @@ async def assert_stop_service(
     director_v2_client: httpx.AsyncClient, service_uuid: str
 ) -> None:
     result = await director_v2_client.delete(
-        f"/dynamic_services/{service_uuid}", allow_redirects=True
+        f"/dynamic_services/{service_uuid}", allow_redirects=False
     )
     assert result.status_code == httpx.codes.NO_CONTENT
     assert result.text == ""
