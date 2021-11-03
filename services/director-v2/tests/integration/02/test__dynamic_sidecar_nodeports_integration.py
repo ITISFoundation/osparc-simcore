@@ -530,7 +530,6 @@ async def _wait_for_dynamic_services_to_be_running(
         *(
             assert_start_service(
                 director_v2_client=director_v2_client,
-                director_v0_url=director_v0_url,
                 user_id=user_id,
                 project_id=str(current_study.uuid),
                 service_key=node.key,
@@ -553,12 +552,11 @@ async def _wait_for_dynamic_services_to_be_running(
         dynamic_services_urls[service_uuid] = dynamic_service_url
 
     await assert_all_services_running(
-        director_v2_client, director_v0_url, workbench=workbench_dynamic_services
+        director_v2_client, workbench=workbench_dynamic_services
     )
 
     await assert_services_reply_200(
         director_v2_client=director_v2_client,
-        director_v0_url=director_v0_url,
         workbench=workbench_dynamic_services,
     )
 
@@ -693,7 +691,6 @@ async def _assert_retrieve_completed(
 ) -> None:
     await assert_retrieve_service(
         director_v2_client=director_v2_client,
-        director_v0_url=director_v0_url,
         service_uuid=service_uuid,
     )
 
@@ -910,7 +907,6 @@ async def test_nodeports_integration(
         *(
             assert_stop_service(
                 director_v2_client=director_v2_client,
-                director_v0_url=services_endpoint["director"],
                 service_uuid=service_uuid,
             )
             for service_uuid in workbench_dynamic_services

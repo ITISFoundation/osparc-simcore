@@ -215,12 +215,13 @@ async def test_legacy_and_dynamic_sidecar_run(
     - dy-static-file-server-dynamic-sidecar
     - dy-static-file-server-dynamic-sidecar-compose
     """
+    # FIXME: ANE can you instead parametrize this test?
+    # why do we need to run all these services at the same time? it would be simpler one by one
 
     await asyncio.gather(
         *(
             assert_start_service(
                 director_v2_client=director_v2_client,
-                director_v0_url=services_endpoint["director"],
                 user_id=user_db["id"],
                 project_id=str(dy_static_file_server_project.uuid),
                 service_key=node.key,
@@ -246,14 +247,12 @@ async def test_legacy_and_dynamic_sidecar_run(
 
     await assert_all_services_running(
         director_v2_client,
-        services_endpoint["director"],
         workbench=dy_static_file_server_project.workbench,
     )
 
     # query the service directly and check if it responding accordingly
     await assert_services_reply_200(
         director_v2_client=director_v2_client,
-        director_v0_url=services_endpoint["director"],
         workbench=dy_static_file_server_project.workbench,
     )
 
@@ -262,7 +261,6 @@ async def test_legacy_and_dynamic_sidecar_run(
         *(
             assert_stop_service(
                 director_v2_client=director_v2_client,
-                director_v0_url=services_endpoint["director"],
                 service_uuid=service_uuid,
             )
             for service_uuid in dy_static_file_server_project.workbench
