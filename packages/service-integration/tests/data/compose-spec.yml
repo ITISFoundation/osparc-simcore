@@ -1,0 +1,19 @@
+version: "3.7"
+services:
+  myservice:
+    init: true
+    # - SIMCORE_REGISTRY will be replaced by the url of the simcore docker registry
+    # deployed inside the platform
+    # - SERVICE_VERSION will be replaced by the version of the service
+    # to which this compos spec is attached
+    image: ${SIMCORE_REGISTRY}/simcore/services/dynamic/myservice-web:${SERVICE_VERSION}
+    environment:
+    # app specific
+      - TZ=Europe/Zurich
+    # app specific BUT from a framework configuration
+      - EMAIL=%%OSPARC_SETTINGS.USER_EMAIL%%
+  myservice-backend:
+    init: true
+    image: ${SIMCORE_REGISTRY}/simcore/services/dynamic/myservice-backend:${SERVICE_VERSION}
+    environment:
+      - MOCK_VALUE=${POSTGRES_PASSWORD}
