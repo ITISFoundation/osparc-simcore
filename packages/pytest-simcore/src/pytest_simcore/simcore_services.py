@@ -14,7 +14,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.client import ClientTimeout
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_exponential
+from tenacity.wait import wait_random
 from yarl import URL
 
 from .helpers.utils_docker import get_ip, get_service_published_port
@@ -120,7 +120,7 @@ _MINUTE: Final[int] = 60
 
 # HELPERS --
 @tenacity.retry(
-    wait=wait_exponential(),
+    wait=wait_random(max=20),
     stop=stop_after_delay(5 * _MINUTE),
     before_sleep=before_sleep_log(log, logging.WARNING),
     reraise=True,
