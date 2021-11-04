@@ -8,9 +8,9 @@
   NOTE: services/web/server/tests/conftest.py is pre-loaded
 
 """
+# pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-# pylint: disable=bare-except
-# pylint:disable=redefined-outer-name
+# pylint: disable=unused-variable
 
 import logging
 import sys
@@ -25,7 +25,7 @@ import trafaret_config
 import yaml
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
-from pytest_simcore.helpers.utils_docker import get_service_published_port
+from pytest_simcore.helpers.utils_docker import get_ip, get_service_published_port
 from pytest_simcore.helpers.utils_login import NewUser
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
@@ -37,7 +37,7 @@ from simcore_service_webserver.groups_api import (
 )
 from simcore_service_webserver.resources import resources as app_resources
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 # imports the fixtures for the integration tests
 pytest_plugins = [
@@ -107,7 +107,7 @@ def webserver_environ(
 
         # to swarm boundary since webserver is installed in the host and therefore outside the swarm's network
         published_port = get_service_published_port(name, int(environ.get(port_key)))
-        environ[host_key] = "127.0.0.1"
+        environ[host_key] = get_ip()
         environ[port_key] = published_port
 
     pprint(environ)  # NOTE: displayed only if error
@@ -123,13 +123,13 @@ def _webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
 
     NOTE: Prefer using 'app_config' below instead of this as a function-scoped fixture
     """
-    config_file_path = current_dir / "webserver_dev_config.yaml"
+    config_file_path = CURRENT_DIR / "webserver_dev_config.ignore.yaml"
 
     # recreate config-file
     with app_resources.stream("config/server-docker-dev.yaml") as f:
         cfg = yaml.safe_load(f)
         # test webserver works in host
-        cfg["main"]["host"] = "127.0.0.1"
+        cfg["main"]["host"] = get_ip()
 
     with config_file_path.open("wt") as f:
         yaml.dump(cfg, f, default_flow_style=False)
