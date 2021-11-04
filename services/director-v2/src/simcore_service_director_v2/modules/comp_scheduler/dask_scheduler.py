@@ -77,7 +77,7 @@ class DaskScheduler(BaseCompScheduler):
         await self.dask_client.reconnect_client()
 
     async def _on_task_completed(self, event: TaskStateEvent) -> None:
-        logger.warning(
+        logger.debug(
             "received task completion: %s",
             event,
         )
