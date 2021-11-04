@@ -107,6 +107,10 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
         if archiving_tasks:
             await logged_gather(*archiving_tasks)
         await PORTS.set_multiple(ports_values)
+
+        elapsed_time = time.perf_counter() - start_time
+        total_bytes = sum([_get_size_of_value(x) for x in ports_values.values()])
+        logger.info("Uploaded %s bytes in %s seconds", total_bytes, elapsed_time)
     finally:
         # clean up possible compressed files
         for file_path in temp_files:
@@ -114,10 +118,6 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
                 # pylint: disable=cell-var-from-loop
                 lambda: shutil.rmtree(file_path.parent, ignore_errors=True)
             )
-
-    elapsed_time = time.perf_counter() - start_time
-    total_bytes = sum([_get_size_of_value(x) for x in ports_values.values()])
-    logger.info("Uploaded %s bytes in %s seconds", total_bytes, elapsed_time)
 
 
 async def dispatch_update_for_directory(directory_path: Path) -> None:
