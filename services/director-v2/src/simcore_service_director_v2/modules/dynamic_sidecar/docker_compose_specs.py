@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional
 import yaml
 from fastapi.applications import FastAPI
 from models_library.service_settings_labels import ComposeSpecLabel, PathMappingsLabel
+from settings_library.docker_registry import RegistrySettings
 
-from ...core.settings import DynamicSidecarSettings
 from .docker_service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
 
 CONTAINER_NAME = "container"
@@ -94,8 +94,9 @@ async def assemble_spec(
     returns a docker-compose spec used by
     the dynamic-sidecar to start the service
     """
-    settings: DynamicSidecarSettings = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+
+    docker_registry_settings: RegistrySettings = (
+        app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
     )
 
     container_name = container_http_entry
@@ -104,7 +105,7 @@ async def assemble_spec(
     # when no compose yaml file was provided
     if service_spec is None:
         service_spec = _assemble_from_service_key_and_tag(
-            resolved_registry_url=settings.REGISTRY.resolved_registry_url,
+            resolved_registry_url=docker_registry_settings.resolved_registry_url,
             service_key=service_key,
             service_tag=service_tag,
         )
@@ -123,7 +124,7 @@ async def assemble_spec(
     stringified_service_spec = yaml.safe_dump(service_spec)
     stringified_service_spec = _replace_env_vars_in_compose_spec(
         stringified_service_spec=stringified_service_spec,
-        resolved_registry_url=settings.REGISTRY.resolved_registry_url,
+        resolved_registry_url=docker_registry_settings.resolved_registry_url,
         service_tag=service_tag,
     )
 

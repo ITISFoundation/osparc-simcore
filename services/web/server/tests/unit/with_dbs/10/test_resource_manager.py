@@ -239,6 +239,9 @@ async def test_websocket_resource_management(
     # NOTE: the socket.io client needs the websockets package in order to upgrade to websocket transport
     await sio.disconnect()
     assert not sio.sid
+    # NOTE: let the disconnection propagate
+    await asyncio.sleep(1)
+    # now the entries should be removed
     assert not await socket_registry.find_keys(("socket_id", sio.sid))
     assert not sid in await socket_registry.find_resources(resource_key, "socket_id")
     assert not await socket_registry.find_resources(resource_key, "socket_id")

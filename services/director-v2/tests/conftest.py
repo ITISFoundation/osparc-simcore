@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from pprint import pformat
 from random import randint
-from typing import Any, Callable, Dict, Iterator, List
+from typing import Any, AsyncIterable, Callable, Dict, Iterable, List
 from uuid import uuid4
 
 import dotenv
@@ -48,6 +48,7 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.minio_service",
     "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
@@ -57,6 +58,7 @@ pytest_plugins = [
     "pytest_simcore.schemas",
     "pytest_simcore.simcore_dask_service",
     "pytest_simcore.simcore_services",
+    "pytest_simcore.simcore_storage_service",
     "pytest_simcore.tmp_path_extra",
 ]
 
@@ -97,7 +99,7 @@ def project_env_devel_environment(
 
 
 @pytest.fixture(scope="module")
-def loop() -> asyncio.AbstractEventLoop:
+def loop() -> Iterable[asyncio.AbstractEventLoop]:
     with loop_context() as loop:
         yield loop
 
@@ -110,11 +112,9 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
     registry = os.environ.get("DOCKER_REGISTRY", "local")
     image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
 
-    image_name = f"{registry}/dynamic-sidecar:{image_tag}"
-
-    logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
-
+    monkeypatch.setenv(
+        "DYNAMIC_SIDECAR_IMAGE", f"{registry}/dynamic-sidecar:{image_tag}"
+    )
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
@@ -133,7 +133,7 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
 
 
 @pytest.fixture(scope="function")
-def client(loop: asyncio.AbstractEventLoop, mock_env: None) -> TestClient:
+def client(loop: asyncio.AbstractEventLoop, mock_env: None) -> Iterable[TestClient]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     print("Application settings\n", pformat(settings))
@@ -144,7 +144,7 @@ def client(loop: asyncio.AbstractEventLoop, mock_env: None) -> TestClient:
 
 
 @pytest.fixture(scope="function")
-async def initialized_app(monkeypatch: MonkeyPatch) -> Iterator[FastAPI]:
+async def initialized_app(monkeypatch: MonkeyPatch) -> AsyncIterable[FastAPI]:
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCK")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
@@ -159,7 +159,7 @@ async def initialized_app(monkeypatch: MonkeyPatch) -> Iterator[FastAPI]:
 
 
 @pytest.fixture(scope="function")
-async def async_client(initialized_app: FastAPI) -> httpx.AsyncClient:
+async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncClient]:
 
     async with httpx.AsyncClient(
         app=initialized_app,
@@ -283,7 +283,9 @@ def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
 
 
 @pytest.fixture
-def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable[..., ProjectAtDB]:
+def project(
+    postgres_db: sa.engine.Engine, user_db: Dict
+) -> Iterable[Callable[..., ProjectAtDB]]:
     created_project_ids: List[str] = []
 
     def creator(**overrides) -> ProjectAtDB:
@@ -317,7 +319,9 @@ def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable[..., Proje
 
 
 @pytest.fixture
-def pipeline(postgres_db: sa.engine.Engine) -> Callable[..., CompPipelineAtDB]:
+def pipeline(
+    postgres_db: sa.engine.Engine,
+) -> Iterable[Callable[..., CompPipelineAtDB]]:
     created_pipeline_ids: List[str] = []
 
     def creator(**overrides) -> CompPipelineAtDB:
@@ -349,7 +353,7 @@ def pipeline(postgres_db: sa.engine.Engine) -> Callable[..., CompPipelineAtDB]:
 
 
 @pytest.fixture
-def tasks(postgres_db: sa.engine.Engine) -> Callable[..., List[CompTaskAtDB]]:
+def tasks(postgres_db: sa.engine.Engine) -> Iterable[Callable[..., List[CompTaskAtDB]]]:
     created_task_ids: List[int] = []
 
     def creator(project: ProjectAtDB, **overrides) -> List[CompTaskAtDB]:
