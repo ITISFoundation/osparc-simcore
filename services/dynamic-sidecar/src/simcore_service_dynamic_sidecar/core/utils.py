@@ -62,7 +62,7 @@ async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
     try:
         yield docker
     except aiodocker.exceptions.DockerError as error:
-        logger.exception("An unexpected Docker error occurred")
+        logger.debug("An unexpected Docker error occurred", stack_info=True)
         raise HTTPException(error.status, detail=error.message) from error
     finally:
         await docker.close()
