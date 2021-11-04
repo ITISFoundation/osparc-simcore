@@ -617,8 +617,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (!socket.slotExists(slotName2)) {
         socket.on(slotName2, function(data) {
           const d = JSON.parse(data);
-          const nodeId = d["Node"];
-          const progress = Number.parseFloat(d["Progress"]).toFixed(4);
+          const nodeId = d["node_id"];
+          const progress = Number.parseFloat(d["progress"]).toFixed(4);
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);
           if (node) {
@@ -634,7 +634,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (!socket.slotExists(slotName3)) {
         socket.on(slotName3, data => {
           const d = JSON.parse(data);
-          const nodeId = d["Node"];
+          const nodeId = d["node_id"];
           const nodeData = d["data"];
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);

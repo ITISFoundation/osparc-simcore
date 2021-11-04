@@ -9,7 +9,6 @@ from simcore_service_director_v2.core.settings import (
     BootModeEnum,
     DynamicSidecarProxySettings,
     DynamicSidecarSettings,
-    RegistrySettings,
 )
 
 
@@ -50,13 +49,6 @@ def test_dynamic_sidecar_settings(image: str) -> None:
         TRAEFIK_SIMCORE_ZONE="",
         SWARM_STACK_NAME="",
         DYNAMIC_SIDECAR_PROXY_SETTINGS=DynamicSidecarProxySettings(),
-        REGISTRY=RegistrySettings(
-            REGISTRY_URL="http://te.st",
-            REGISTRY_AUTH=True,
-            REGISTRY_USER="test",
-            REGISTRY_PW="test",
-            REGISTRY_SSL=False,
-        ),
     )
     settings = DynamicSidecarSettings(**required_kwards)
 

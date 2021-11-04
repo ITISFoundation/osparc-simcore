@@ -38,8 +38,10 @@ from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.module_setup import setup_socketio
 from simcore_service_webserver.users import setup_users
 from socketio.exceptions import ConnectionError as SocketConnectionError
-from tenacity import retry, retry_if_exception_type, wait_fixed
+from tenacity import retry
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 from yarl import URL
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -65,9 +67,9 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 @pytest.fixture
 def client(
     loop: asyncio.AbstractEventLoop,
-    aiohttp_client: TestClient,
+    aiohttp_client: Callable,
     app_config: Dict[str, Any],  ## waits until swarm with *_services are up
-):
+) -> TestClient:
     assert app_config["rest"]["version"] == API_VERSION
 
     app_config["storage"]["enabled"] = False
@@ -88,7 +90,7 @@ def client(
     setup_director_v2(app)
     setup_resource_manager(app)
 
-    yield loop.run_until_complete(
+    return loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={
@@ -229,7 +231,7 @@ async def test_start_pipeline(
     postgres_session: sa.orm.session.Session,
     rabbit_service: RabbitConfig,
     redis_service: RedisConfig,
-    simcore_services_ready: Dict[str, URL],
+    simcore_services_ready: None,
     client: TestClient,
     socketio_client_factory: Callable[
         [Optional[str], Optional[TestClient]], Awaitable[socketio.AsyncClient]
