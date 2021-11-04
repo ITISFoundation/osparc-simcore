@@ -20,6 +20,8 @@ from ..core.settings import DynamicSidecarSettings
 
 log = logging.getLogger(__file__)
 
+# limit logs displayed
+logging.getLogger("aio_pika").setLevel(logging.WARNING)
 
 SLEEP_BETWEEN_SENDS: float = 1.0
 
