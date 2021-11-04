@@ -269,15 +269,6 @@ def publish_some_messages_in_rabbit(
     return _do
 
 
-def test_it(client, socketio_subscriber_handlers):
-    print("foo")
-    import pdb
-
-    pdb.set_trace()
-    mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
-    assert True
-
-
 # TESTS ------------------------------------------------------------------------------------
 #
 #   publisher ---> (rabbitMQ)  ---> webserver --- (socketio) ---> front-end pages
