@@ -200,6 +200,7 @@ services:
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
     init: true
+    hostname: "{{.Node.Hostname}}-{{.Service.Name}}"
     deploy:
       mode: global
       endpoint_mode: dnsrr
