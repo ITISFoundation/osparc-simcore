@@ -33,8 +33,8 @@ def _file_progress_cb(
     asyncio.run_coroutine_threadsafe(
         log_publishing_cb(
             f"{text_prefix}"
-            f" {100.0 * float(value)/float(size):.1f}%"
-            f" ({ByteSize(value).human_readable()} / {ByteSize(size).human_readable() if size != 0 else 'NaN'})"
+            f" {100.0 * float(value)/float(size):.1f if value and size else 'NaN'}%"
+            f" ({ByteSize(value).human_readable() if value else 'NaN'} / {ByteSize(size).human_readable() if size else 'NaN'})"
         ),
         main_loop,
     )
