@@ -78,7 +78,7 @@ class DaskScheduler(BaseCompScheduler):
 
     async def _on_task_completed(self, event: TaskStateEvent) -> None:
         logger.warning(
-            "received task compeltion: %s",
+            "received task completion: %s",
             event,
         )
         service_key, service_version, user_id, project_id, node_id = parse_dask_job_id(
