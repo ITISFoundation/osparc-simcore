@@ -151,7 +151,9 @@ class DirectoryWatcherObservers:
 
     def start(self) -> None:
         if self._blocking_task is None:
-            self._blocking_task = asyncio.create_task(self._runner())
+            self._blocking_task = asyncio.create_task(
+                self._runner(), name="blocking task"
+            )
         else:
             logger.warning("Already started, will not start again")
 

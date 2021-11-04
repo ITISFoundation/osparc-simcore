@@ -68,7 +68,6 @@ from utils import (
     assert_start_service,
     assert_stop_service,
     ensure_network_cleanup,
-    get_director_v0_patched_url,
     is_legacy,
     patch_dynamic_service_url,
 )
@@ -120,6 +119,7 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     ensure_swarm_and_networks: None,
 ) -> Iterator[None]:
     with postgres_db.connect() as conn:
+        # pylint: disable=no-value-for-parameter
         conn.execute(comp_tasks.delete())
         conn.execute(comp_pipeline.delete())
         yield
@@ -535,7 +535,6 @@ async def _wait_for_dynamic_services_to_be_running(
         *(
             assert_start_service(
                 director_v2_client=director_v2_client,
-                director_v0_url=director_v0_url,
                 user_id=user_id,
                 project_id=str(current_study.uuid),
                 service_key=node.key,
@@ -558,12 +557,11 @@ async def _wait_for_dynamic_services_to_be_running(
         dynamic_services_urls[service_uuid] = dynamic_service_url
 
     await assert_all_services_running(
-        director_v2_client, director_v0_url, workbench=workbench_dynamic_services
+        director_v2_client, workbench=workbench_dynamic_services
     )
 
     await assert_services_reply_200(
         director_v2_client=director_v2_client,
-        director_v0_url=director_v0_url,
         workbench=workbench_dynamic_services,
     )
 
@@ -698,7 +696,6 @@ async def _assert_retrieve_completed(
 ) -> None:
     await assert_retrieve_service(
         director_v2_client=director_v2_client,
-        director_v0_url=director_v0_url,
         service_uuid=service_uuid,
     )
 
@@ -799,7 +796,6 @@ async def test_nodeports_integration(
         `docker` for both dynamic services
     7. finally check that all states for both dynamic services match
     """
-    director_v0_url = get_director_v0_patched_url(services_endpoint["director"])
 
     # STEP 1
 
@@ -809,7 +805,7 @@ async def test_nodeports_integration(
         str, str
     ] = await _wait_for_dynamic_services_to_be_running(
         director_v2_client=director_v2_client,
-        director_v0_url=director_v0_url,
+        director_v0_url=services_endpoint["director"],
         user_id=user_db["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
@@ -871,14 +867,14 @@ async def test_nodeports_integration(
 
     await _assert_retrieve_completed(
         director_v2_client=director_v2_client,
-        director_v0_url=director_v0_url,
+        director_v0_url=services_endpoint["director"],
         service_uuid=services_node_uuids.dy,
         dynamic_services_urls=dynamic_services_urls,
     )
 
     await _assert_retrieve_completed(
         director_v2_client=director_v2_client,
-        director_v0_url=director_v0_url,
+        director_v0_url=services_endpoint["director"],
         service_uuid=services_node_uuids.dy_compose_spec,
         dynamic_services_urls=dynamic_services_urls,
     )
@@ -916,7 +912,6 @@ async def test_nodeports_integration(
         *(
             assert_stop_service(
                 director_v2_client=director_v2_client,
-                director_v0_url=director_v0_url,
                 service_uuid=service_uuid,
             )
             for service_uuid in workbench_dynamic_services
@@ -945,7 +940,7 @@ async def test_nodeports_integration(
 
     await _wait_for_dynamic_services_to_be_running(
         director_v2_client=director_v2_client,
-        director_v0_url=director_v0_url,
+        director_v0_url=services_endpoint["director"],
         user_id=user_db["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,

@@ -3,11 +3,10 @@
 import asyncio
 import json
 import os
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 import aiodocker
 import httpx
-import requests
 from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects import Node
@@ -23,7 +22,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
-from yarl import URL
 
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
 SERVICES_ARE_READY_TIMEOUT = 10 * 60
@@ -32,10 +30,6 @@ SEPARATOR = "=" * 50
 
 def is_legacy(node_data: Node) -> bool:
     return node_data.label == "LEGACY"
-
-
-def get_director_v0_patched_url(url: URL) -> URL:
-    return URL(str(url).replace("127.0.0.1", f"{get_ip()}"))
 
 
 async def ensure_network_cleanup(
@@ -134,50 +128,8 @@ async def _get_proxy_port(node_uuid: str) -> PositiveInt:
     return port
 
 
-async def handle_307_if_required(
-    director_v2_client: httpx.AsyncClient, director_v0_url: URL, result: httpx.Response
-) -> Union[httpx.Response, requests.Response]:
-    def _debug_print(
-        result: Union[httpx.Response, requests.Response], heading_text: str
-    ) -> None:
-        print(
-            (
-                f"{heading_text}\n>>>\n{result.request.method}\n"
-                f"{result.request.url}\n{result.request.headers}\n"
-                f"<<<\n{result.status_code}\n{result.headers}\n{result.text}\n"
-            )
-        )
-
-    if result.next_request is not None:
-        _debug_print(result, "REDIRECTING[1/2] DV2")
-
-        # replace url endpoint for director-v0 in redirect
-        result.next_request.url = httpx.URL(
-            str(result.next_request.url).replace(
-                "http://director:8080", str(director_v0_url)
-            )
-        )
-
-        # when both director-v0 and director-v2 were running in containers
-        # it was possible to use httpx for GET requests as well
-        # since director-v2 is now started on the host directly,
-        # a 405 Method Not Allowed is returned
-        # using requests is workaround for the issue
-        if result.request.method == "GET":
-            redirect_result = requests.get(str(result.next_request.url))
-        else:
-            redirect_result = await director_v2_client.send(result.next_request)
-
-        _debug_print(redirect_result, "REDIRECTING[2/2] DV0")
-
-        return redirect_result
-
-    return result
-
-
 async def assert_start_service(
     director_v2_client: httpx.AsyncClient,
-    director_v0_url: URL,
     user_id: int,
     project_id: str,
     service_key: str,
@@ -199,45 +151,46 @@ async def assert_start_service(
     }
 
     result = await director_v2_client.post(
-        "/dynamic_services", json=data, headers=headers, allow_redirects=False
+        "/dynamic_services", json=data, headers=headers, allow_redirects=True
     )
-    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
-    assert result.status_code == 201, result.text
+    assert result.status_code == httpx.codes.CREATED, result.text
 
 
 async def get_service_data(
     director_v2_client: httpx.AsyncClient,
-    director_v0_url: URL,
     service_uuid: str,
     node_data: Node,
 ) -> Dict[str, Any]:
-    result = await director_v2_client.get(
+
+    # result =
+    response = await director_v2_client.get(
         f"/dynamic_services/{service_uuid}", allow_redirects=False
     )
-    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
-    assert result.status_code == 200, result.text
-
-    payload = result.json()
+    if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
+        # NOTE: so we have a redirect, and it seems the director_v2_client does not like it at all
+        #  moving from the testserver to the director in this GET call
+        # which is why we use a DIFFERENT httpx client for this... (sic).
+        # This actually works well when running inside the swarm... WTF???
+        assert response.next_request
+        response = httpx.get(f"{response.next_request.url}")
+    assert response.status_code == httpx.codes.OK, response.text
+    payload = response.json()
     data = payload["data"] if is_legacy(node_data) else payload
     return data
 
 
 async def _get_service_state(
     director_v2_client: httpx.AsyncClient,
-    director_v0_url: URL,
     service_uuid: str,
     node_data: Node,
 ) -> str:
-    data = await get_service_data(
-        director_v2_client, director_v0_url, service_uuid, node_data
-    )
+    data = await get_service_data(director_v2_client, service_uuid, node_data)
     print("STATUS_RESULT", node_data.label, data["service_state"])
     return data["service_state"]
 
 
 async def assert_all_services_running(
     director_v2_client: httpx.AsyncClient,
-    director_v0_url: URL,
     workbench: Dict[str, Node],
 ) -> None:
     async with timeout(SERVICES_ARE_READY_TIMEOUT):
@@ -248,7 +201,6 @@ async def assert_all_services_running(
                 *(
                     _get_service_state(
                         director_v2_client=director_v2_client,
-                        director_v0_url=director_v0_url,
                         service_uuid=dynamic_service_uuid,
                         node_data=node_data,
                     )
@@ -267,7 +219,7 @@ async def assert_all_services_running(
 
 
 async def assert_retrieve_service(
-    director_v2_client: httpx.AsyncClient, director_v0_url: URL, service_uuid: str
+    director_v2_client: httpx.AsyncClient, service_uuid: str
 ) -> None:
     headers = {
         "x-dynamic-sidecar-request-dns": director_v2_client.base_url.host,
@@ -278,11 +230,9 @@ async def assert_retrieve_service(
         f"/dynamic_services/{service_uuid}:retrieve",
         json=dict(port_keys=[]),
         headers=headers,
-        allow_redirects=False,
+        allow_redirects=True,
     )
-    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
-
-    assert result.status_code == 200, result.text
+    assert result.status_code == httpx.codes.OK, result.text
     json_result = result.json()
     print(f"{service_uuid}:retrieve result ", json_result)
 
@@ -292,13 +242,12 @@ async def assert_retrieve_service(
 
 
 async def assert_stop_service(
-    director_v2_client: httpx.AsyncClient, director_v0_url: URL, service_uuid: str
+    director_v2_client: httpx.AsyncClient, service_uuid: str
 ) -> None:
     result = await director_v2_client.delete(
-        f"/dynamic_services/{service_uuid}", allow_redirects=False
+        f"/dynamic_services/{service_uuid}", allow_redirects=True
     )
-    result = await handle_307_if_required(director_v2_client, director_v0_url, result)
-    assert result.status_code == 204
+    assert result.status_code == httpx.codes.NO_CONTENT
     assert result.text == ""
 
 
@@ -396,18 +345,16 @@ async def assert_service_is_available(  # pylint: disable=redefined-outer-name
                 print(
                     f"Body:\n{response.text}\nHeaders={response.headers}\n{SEPARATOR}"
                 )
-                assert response.status_code == 200, response.text
+                assert response.status_code == httpx.codes.OK, response.text
 
 
 async def assert_services_reply_200(
     director_v2_client: httpx.AsyncClient,
-    director_v0_url: URL,
     workbench: Dict[str, Node],
 ) -> None:
     for service_uuid, node_data in workbench.items():
         service_data = await get_service_data(
             director_v2_client=director_v2_client,
-            director_v0_url=director_v0_url,
             service_uuid=service_uuid,
             node_data=node_data,
         )
