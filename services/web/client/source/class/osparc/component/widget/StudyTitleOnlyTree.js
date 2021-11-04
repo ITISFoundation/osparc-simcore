@@ -29,10 +29,6 @@ qx.Class.define("osparc.component.widget.StudyTitleOnlyTree", {
           nodeTreeItem.addListener("renameNode", e => this.__openItemRenamer(e.getData()));
           nodeTreeItem.addListener("showInfo", e => this.__openStudyInfo());
           return nodeTreeItem;
-        },
-        configureItem: item => {
-          // This is needed to keep the label flexible
-          item.addListener("resize", e => item.setMaxWidth(100), this);
         }
       });
     },

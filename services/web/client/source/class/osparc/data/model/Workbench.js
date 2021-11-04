@@ -522,6 +522,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (rightNodeId) {
         this.createEdge(null, node.getNodeId(), rightNodeId);
       }
+      this.fireEvent("reloadModel");
 
       return node;
     },
