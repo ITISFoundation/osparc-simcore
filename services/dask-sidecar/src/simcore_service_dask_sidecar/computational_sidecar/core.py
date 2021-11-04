@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import Any, Awaitable, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 from uuid import uuid4
 
 from aiodocker import Docker
