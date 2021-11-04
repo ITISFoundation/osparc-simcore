@@ -181,6 +181,8 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               this.__openItem(item.getModel().getNodeId());
               this.nodeSelected(item.getModel().getNodeId());
             }, this);
+            // This is needed to keep the label flexible
+            item.addListener("resize", e => item.setMaxWidth(100), this);
           },
           sorter: (itemA, itemB) => itemA.getSortingValue() - itemB.getSortingValue()
         });
