@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 import time
 from random import randint
-from typing import Dict, List, Tuple
+from typing import Dict, Iterable, List
 from uuid import uuid4
 
 import pytest
@@ -19,6 +19,7 @@ from simcore_service_webserver.resource_manager.registry import (
     RedisResourceRegistry,
 )
 from simcore_service_webserver.resource_manager.websocket_manager import (
+    UserSessionID,
     managed_resource,
 )
 
@@ -34,7 +35,7 @@ def redis_enabled_app(redis_client) -> Dict:
 
 
 @pytest.fixture
-def redis_registry(redis_enabled_app) -> RedisResourceRegistry:
+def redis_registry(redis_enabled_app) -> Iterable[RedisResourceRegistry]:
     registry = RedisResourceRegistry(redis_enabled_app)
     redis_enabled_app[APP_CLIENT_SOCKET_REGISTRY_KEY] = registry
     yield registry
@@ -42,7 +43,7 @@ def redis_registry(redis_enabled_app) -> RedisResourceRegistry:
 
 @pytest.fixture
 def user_ids():
-    def create_user_id(number: int) -> List[str]:
+    def create_user_id(number: int) -> List[int]:
         return [i for i in range(number)]
 
     return create_user_id
@@ -209,10 +210,13 @@ async def test_websocket_manager(loop, redis_enabled_app, redis_registry, user_i
                 # resource key shall be filled
                 assert await rt.find(res_key) == [res_value]
                 list_of_same_resource_users: List[
-                    Tuple[int, str]
+                    UserSessionID
                 ] = await rt.find_users_of_resource(res_key, res_value)
                 assert list_user_ids[: (list_user_ids.index(user_id) + 1)] == sorted(
-                    {uid for uid, _ in list_of_same_resource_users}
+                    {
+                        user_session.user_id
+                        for user_session in list_of_same_resource_users
+                    }
                 )
 
     # remove sockets

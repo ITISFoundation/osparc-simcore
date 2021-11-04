@@ -608,23 +608,27 @@ async def _user_has_another_client_open(
     user_session_id_list: List[UserSessionID], app: web.Application
 ) -> bool:
     # NOTE if there is an active socket in use, that means the client is active
-    for user_id, client_session_id in user_session_id_list:
-        with managed_resource(user_id, client_session_id, app) as rt:
+    for user_session in user_session_id_list:
+        with managed_resource(
+            user_session.user_id, user_session.client_session_id, app
+        ) as rt:
             if await rt.get_socket_id() is not None:
                 return True
     return False
 
 
 async def _clean_user_disconnected_clients(
-    user_session_id_list: List[Tuple[int, str]], app: web.Application
+    user_session_id_list: List[UserSessionID], app: web.Application
 ):
-    for user_id, client_session_id in user_session_id_list:
-        with managed_resource(user_id, client_session_id, app) as rt:
+    for user_session in user_session_id_list:
+        with managed_resource(
+            user_session.user_id, user_session.client_session_id, app
+        ) as rt:
             if await rt.get_socket_id() is None:
                 log.debug(
                     "removing disconnected project of user %s/%s",
-                    user_id,
-                    client_session_id,
+                    user_session.user_id,
+                    user_session.client_session_id,
                 )
                 await rt.remove(PROJECT_ID_KEY)
 
@@ -646,7 +650,7 @@ async def try_open_project_for_user(
             )
             with managed_resource(user_id, client_session_id, app) as rt:
                 user_session_id_list: List[
-                    Tuple[int, str]
+                    UserSessionID
                 ] = await rt.find_users_of_resource(PROJECT_ID_KEY, project_uuid)
 
                 if not user_session_id_list:
@@ -654,7 +658,9 @@ async def try_open_project_for_user(
                     await rt.add(PROJECT_ID_KEY, project_uuid)
                     return True
 
-                set_user_ids = {uid for uid, _ in user_session_id_list}
+                set_user_ids = {
+                    user_session.user_id for user_session in user_session_id_list
+                }
                 if set_user_ids.issubset({user_id}):
                     # we are the only user
                     if not await _user_has_another_client_open(
@@ -684,7 +690,7 @@ async def try_close_project_for_user(
             PROJECT_ID_KEY, project_uuid
         )
         # first check we have it opened now
-        if (user_id, client_session_id) not in user_to_session_ids:
+        if UserSessionID(user_id, client_session_id) not in user_to_session_ids:
             # nothing to do the project is already closed
             log.warning(
                 "project [%s] is already closed for user [%s].",
@@ -709,7 +715,7 @@ async def try_close_project_for_user(
         log.warning(
             "project [%s] is used by other users: [%s]. This should not be possible",
             project_uuid,
-            {uid for uid, _ in user_to_session_ids},
+            {user_session.user_id for user_session in user_to_session_ids},
         )
 
 
@@ -737,7 +743,7 @@ async def _get_project_lock_state(
         user_session_id_list: List[UserSessionID] = await rt.find_users_of_resource(
             PROJECT_ID_KEY, project_uuid
         )
-    set_user_ids = {x for x, _ in user_session_id_list}
+    set_user_ids = {user_session.user_id for user_session in user_session_id_list}
 
     assert (  # nosec
         len(set_user_ids) <= 1

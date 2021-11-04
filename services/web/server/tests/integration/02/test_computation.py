@@ -5,17 +5,17 @@ import asyncio
 import json
 import sys
 from pathlib import Path
-from typing import Callable, Dict
+from typing import Any, Awaitable, Callable, Dict, Optional
 
 import pytest
+import socketio
 import sqlalchemy as sa
 from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser
-from pytest_simcore.helpers.utils_projects import NewProject
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.webserver_models import (
     NodeClass,
@@ -64,9 +64,9 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 @pytest.fixture
 def client(
-    loop,
-    aiohttp_client,
-    app_config,  ## waits until swarm with *_services are up
+    loop: asyncio.AbstractEventLoop,
+    aiohttp_client: TestClient,
+    app_config: Dict[str, Any],  ## waits until swarm with *_services are up
 ):
     assert app_config["rest"]["version"] == API_VERSION
 
@@ -100,7 +100,7 @@ def client(
 
 
 @pytest.fixture(scope="session")
-def mock_workbench_adjacency_list() -> Dict:
+def mock_workbench_adjacency_list() -> Dict[str, Any]:
     file_path = current_dir / "workbench_sleeper_dag_adjacency_list.json"
     with file_path.open() as fp:
         return json.load(fp)
@@ -108,10 +108,10 @@ def mock_workbench_adjacency_list() -> Dict:
 
 # HELPERS ----------------------------------
 def _assert_db_contents(
-    project_id,
-    postgres_session,
-    mock_workbench_payload,
-    mock_workbench_adjacency_list,
+    project_id: str,
+    postgres_session: sa.orm.session.Session,
+    mock_workbench_payload: Dict[str, Any],
+    mock_workbench_adjacency_list: Dict[str, Any],
     check_outputs: bool,
 ):
     # pylint: disable=no-member
@@ -150,7 +150,7 @@ def _assert_sleeper_services_completed(
     project_id: str,
     postgres_session: sa.orm.session.Session,
     expected_state: StateType,
-    mock_workbench_payload,
+    mock_workbench_payload: Dict[str, Any],
 ):
     # pylint: disable=no-member
     TIMEOUT_SECONDS = 60
@@ -230,11 +230,13 @@ async def test_start_pipeline(
     rabbit_service: RabbitConfig,
     redis_service: RedisConfig,
     simcore_services_ready: Dict[str, URL],
-    client,
-    socketio_client_factory: Callable,
-    logged_user: LoggedUser,
-    user_project: NewProject,
-    mock_workbench_adjacency_list: Dict,
+    client: TestClient,
+    socketio_client_factory: Callable[
+        [Optional[str], Optional[TestClient]], Awaitable[socketio.AsyncClient]
+    ],
+    logged_user: Dict[str, Any],
+    user_project: Dict[str, Any],
+    mock_workbench_adjacency_list: Dict[str, Any],
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
@@ -242,7 +244,7 @@ async def test_start_pipeline(
     mock_workbench_payload = user_project["workbench"]
     # connect websocket (to prevent the GC to remove the project)
     try:
-        sio = await socketio_client_factory()
+        sio = await socketio_client_factory(None, None)
         assert sio.sid
     except SocketConnectionError:
         if expected.created == web.HTTPCreated:
@@ -254,14 +256,14 @@ async def test_start_pipeline(
     )
 
     # POST /v0/computation/pipeline/{project_id}:start
-    resp = await client.post(url_start)
+    resp = await client.post(f"{url_start}")
     data, error = await assert_status(
         resp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
     )
 
     if not error:
         # starting again should be disallowed, since it's already running
-        resp = await client.post(url_start)
+        resp = await client.post(f"{url_start}")
         assert (
             resp.status == web.HTTPForbidden.status_code
             if user_role == UserRole.GUEST
@@ -283,7 +285,7 @@ async def test_start_pipeline(
             project_id, postgres_session, StateType.SUCCESS, mock_workbench_payload
         )
         # restart the computation
-        resp = await client.post(url_start)
+        resp = await client.post(f"{url_start}")
         data, error = await assert_status(
             resp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
         )
@@ -295,7 +297,7 @@ async def test_start_pipeline(
         API_PREFIX + "/computation/pipeline/{}:stop".format(project_id)
     )
     await asyncio.sleep(2)
-    resp = await client.post(url_stop)
+    resp = await client.post(f"{url_stop}")
     data, error = await assert_status(
         resp, web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content
     )
