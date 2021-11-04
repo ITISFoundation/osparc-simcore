@@ -193,7 +193,9 @@ async def comp_tasks_listening_task(app: web.Application) -> None:
 
 
 async def setup_comp_tasks_listening_task(app: web.Application):
-    task = asyncio.create_task(comp_tasks_listening_task(app))
+    task = asyncio.create_task(
+        comp_tasks_listening_task(app), name="computation db listener"
+    )
     yield
     task.cancel()
     await task
