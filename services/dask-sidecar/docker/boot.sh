@@ -111,19 +111,23 @@ else
       --preload simcore_service_dask_sidecar.tasks \
       --reconnect \
       --no-nanny \
+      --nprocs 1 \
       --nthreads "$num_cpus" \
       --dashboard-address 8787 \
       --memory-limit "$ram" \
-      --resources "$resources"
+      --resources "$resources" \
+      --name "$(hostname)"
   else
     exec dask-worker "${DASK_SCHEDULER_ADDRESS}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
       --reconnect \
       --no-nanny \
+      --nprocs 1 \
       --nthreads "$num_cpus" \
       --dashboard-address 8787 \
       --memory-limit "$ram" \
-      --resources "$resources"
+      --resources "$resources" \
+      --name "$(hostname)"
   fi
 fi
