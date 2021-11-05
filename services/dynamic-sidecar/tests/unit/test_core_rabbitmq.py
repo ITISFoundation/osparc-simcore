@@ -10,6 +10,7 @@ from pprint import pformat
 from typing import Iterator, List
 
 import aio_pika
+from simcore_service_dynamic_sidecar.core.application import assemble_application
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from _pytest.fixtures import FixtureRequest
@@ -60,7 +61,7 @@ def node_id() -> NodeID:
     return uuid.uuid4()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def mock_environment(
     event_loop: AbstractEventLoop,
     monkeypatch_module: MonkeyPatch,
@@ -72,6 +73,7 @@ def mock_environment(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
+    rabbit_service: RabbitConfig,
 ) -> None:
     monkeypatch_module.setenv("SC_BOOT_MODE", "production")
     monkeypatch_module.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", compose_namespace)
@@ -87,21 +89,22 @@ def mock_environment(
     monkeypatch_module.setenv(
         "DY_SIDECAR_STATE_PATHS", json.dumps([str(x) for x in state_paths_dirs])
     )
+    monkeypatch_module.setenv("RABBIT_HOST", rabbit_service.host)
+    monkeypatch_module.setenv("RABBIT_PORT", f"{rabbit_service.port}")
+    monkeypatch_module.setenv("RABBIT_USER", rabbit_service.user)
+    monkeypatch_module.setenv(
+        "RABBIT_PASSWORD", rabbit_service.password.get_secret_value()
+    )
 
     monkeypatch_module.setattr(mounted_fs, "DY_VOLUMES", mock_dy_volumes)
 
 
+@pytest.fixture
+def app(mock_environment: None) -> FastAPI:
+    return assemble_application()
+
+
 # UTILS
-
-
-def _patch_settings_with_rabbit(app: FastAPI, rabbit_service: RabbitConfig) -> None:
-    app.state.settings.RABBIT_SETTINGS.__config__.allow_mutation = True
-    app.state.settings.RABBIT_SETTINGS.__config__.frozen = False
-
-    app.state.settings.RABBIT_SETTINGS.RABBIT_HOST = rabbit_service.host
-    app.state.settings.RABBIT_SETTINGS.RABBIT_PORT = rabbit_service.port
-    app.state.settings.RABBIT_SETTINGS.RABBIT_USER = rabbit_service.user
-    app.state.settings.RABBIT_SETTINGS.RABBIT_PASSWORD = rabbit_service.password
 
 
 # TESTS
@@ -116,8 +119,6 @@ async def test_rabbitmq(
     node_id: NodeID,
     app: FastAPI,
 ):
-    _patch_settings_with_rabbit(app, rabbit_service)
-
     rabbit = RabbitMQ(app)
     assert rabbit
 
