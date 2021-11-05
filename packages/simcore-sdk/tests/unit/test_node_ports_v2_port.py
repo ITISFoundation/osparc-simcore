@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, Optional, Type, Union
 
 import pytest
-from aiohttp.client import ClientSession, request
+from aiohttp.client import ClientSession
 from attr import dataclass
 from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
