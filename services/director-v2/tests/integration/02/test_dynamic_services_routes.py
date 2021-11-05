@@ -98,8 +98,9 @@ async def test_client(
     monkeypatch.setenv("POSTGRES_DB", "mocked_db")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
 
-    # patch host for dynamic-sidecar, not reachable via
-    # docker container to container networking otherwise
+    # patch host for dynamic-sidecar, not reachable via localhost
+    # the dynamic-sidecar (running inside a container) will use
+    # this address to reach the rabbit service
     monkeypatch.setenv("RABBIT_HOST", f"{get_ip()}")
 
     settings = AppSettings.create_from_envs()
