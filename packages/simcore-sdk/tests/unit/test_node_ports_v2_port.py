@@ -6,13 +6,14 @@
 # pylint:disable=too-many-arguments
 
 
+import os
 import re
 import shutil
 import tempfile
 import threading
 from collections import namedtuple
 from pathlib import Path
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Iterator, Optional, Type, Union
 
 import pytest
 from aiohttp.client import ClientSession
@@ -77,18 +78,47 @@ def e_tag() -> str:
 ##################### FIXTURES
 
 
-@pytest.fixture
-def this_node_file(tmp_path: Path) -> Path:
-    file_path = this_node_file_name()
-    file_path.write_text("some dummy data")
+@pytest.fixture(
+    params=[
+        True,
+        False,
+    ]
+)
+def this_node_file(request, tmp_path: Path) -> Iterator[Path]:
+    """return either a symlink or a file with the same name"""
+    is_symlink = request.param
+
+    file_name = this_node_file_name()
+
+    symlink_path: Optional[Path] = None
+    return_path: Optional[Path] = None
+
+    if is_symlink:
+        symlink_path = file_name
+        file_path = file_name.parent / f"source_{file_name.name}"
+        file_path.write_text("some dummy data")
+        if not symlink_path.exists():
+            os.symlink(file_path, symlink_path)
+        assert symlink_path.exists()
+        return_path = symlink_path
+    else:
+        file_path = file_name
+        file_path.write_text("some dummy data")
+        return_path = file_path
+
     assert file_path.exists()
-    yield file_path
+
+    assert return_path
+    yield return_path
+
     if file_path.exists():
         file_path.unlink()
+    if symlink_path and symlink_path.exists():
+        symlink_path.unlink()
 
 
 @pytest.fixture
-def another_node_file() -> Path:
+def another_node_file() -> Iterator[Path]:
     file_path = another_node_file_name()
     file_path.write_text("some dummy data")
     assert file_path.exists()
@@ -98,7 +128,7 @@ def another_node_file() -> Path:
 
 
 @pytest.fixture
-def download_file_folder() -> Path:
+def download_file_folder() -> Iterator[Path]:
     destination_path = download_file_folder_name()
     destination_path.mkdir(parents=True, exist_ok=True)
     yield destination_path
