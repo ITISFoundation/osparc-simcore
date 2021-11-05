@@ -8,10 +8,10 @@ from asyncio import AbstractEventLoop
 from pathlib import Path
 from pprint import pformat
 from typing import Iterator, List
-from unittest import mock
 
 import aio_pika
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from _pytest.fixtures import FixtureRequest
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
@@ -63,6 +63,7 @@ def node_id() -> NodeID:
 @pytest.fixture(scope="module")
 def mock_environment(
     event_loop: AbstractEventLoop,
+    monkeypatch_module: MonkeyPatch,
     mock_dy_volumes: Path,
     compose_namespace: str,
     inputs_dir: Path,
@@ -71,26 +72,23 @@ def mock_environment(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-) -> Iterator[None]:
-    with mock.patch.dict(
-        os.environ,
-        {
-            "SC_BOOT_MODE": "production",
-            "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-            "REGISTRY_AUTH": "false",
-            "REGISTRY_USER": "test",
-            "REGISTRY_PW": "test",
-            "REGISTRY_SSL": "false",
-            "DY_SIDECAR_PATH_INPUTS": str(inputs_dir),
-            "DY_SIDECAR_PATH_OUTPUTS": str(outputs_dir),
-            "DY_SIDECAR_STATE_PATHS": json.dumps([str(x) for x in state_paths_dirs]),
-            "DY_SIDECAR_USER_ID": f"{user_id}",
-            "DY_SIDECAR_PROJECT_ID": f"{project_id}",
-            "DY_SIDECAR_NODE_ID": f"{node_id}",
-        },
-    ), mock.patch.object(mounted_fs, "DY_VOLUMES", mock_dy_volumes):
-        print(os.environ)
-        yield
+) -> None:
+    monkeypatch_module.setenv("SC_BOOT_MODE", "production")
+    monkeypatch_module.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", compose_namespace)
+    monkeypatch_module.setenv("REGISTRY_AUTH", "false")
+    monkeypatch_module.setenv("REGISTRY_USER", "test")
+    monkeypatch_module.setenv("REGISTRY_PW", "test")
+    monkeypatch_module.setenv("REGISTRY_SSL", "false")
+    monkeypatch_module.setenv("DY_SIDECAR_USER_ID", f"{user_id}")
+    monkeypatch_module.setenv("DY_SIDECAR_PROJECT_ID", f"{project_id}")
+    monkeypatch_module.setenv("DY_SIDECAR_NODE_ID", f"{node_id}")
+    monkeypatch_module.setenv("DY_SIDECAR_PATH_INPUTS", str(inputs_dir))
+    monkeypatch_module.setenv("DY_SIDECAR_PATH_OUTPUTS", str(outputs_dir))
+    monkeypatch_module.setenv(
+        "DY_SIDECAR_STATE_PATHS", json.dumps([str(x) for x in state_paths_dirs])
+    )
+
+    monkeypatch_module.setattr(mounted_fs, "DY_VOLUMES", mock_dy_volumes)
 
 
 # UTILS
