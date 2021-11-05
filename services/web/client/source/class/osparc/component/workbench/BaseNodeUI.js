@@ -42,6 +42,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
 
     this.getChildControl("captionbar").set({
       cursor: "move",
+      paddingRight: 0,
       paddingLeft: this.self().PORT_WIDTH
     });
 
@@ -150,8 +151,10 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       const menuBtn = new qx.ui.form.MenuButton().set({
         menu: optionsMenu,
         icon: "@FontAwesome5Solid/ellipsis-v/9",
+        height: 18,
+        width: 18,
         allowGrowX: false,
-        alignY: "middle"
+        allowGrowY: false
       });
       return menuBtn;
     },
