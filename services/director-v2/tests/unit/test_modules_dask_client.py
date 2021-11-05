@@ -4,7 +4,9 @@
 # pylint:disable=protected-access
 # pylint:disable=too-many-arguments
 
+import functools
 import random
+from dataclasses import dataclass
 from typing import Any, Dict, List, Tuple
 from uuid import uuid4
 
@@ -25,6 +27,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic import AnyUrl
 from pydantic.tools import parse_obj_as
+from pytest_lazyfixture import lazy_fixture
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
@@ -100,7 +103,7 @@ def dask_client(
 ) -> DaskClient:
     client = DaskClient.instance(minimal_app)
     assert client
-    yield client
+    return client
 
 
 async def test_dask_cluster():
@@ -132,37 +135,73 @@ def node_id() -> NodeID:
     return uuid4()
 
 
-def _image_to_req_params() -> List[Tuple[Image, Dict[str, Any]]]:
-    return [
-        (
-            Image(
-                name="simcore/services/comp/pytest",
-                tag="1.4.5",
-                node_requirements=NodeRequirements(CPU=1, RAM="128 MiB"),
-            ),
-            {"resources": {"CPU": 1.0, "RAM": 128 * 1024 * 1024}},
-        ),
-        (
-            Image(
-                name="simcore/services/comp/pytest",
-                tag="1.4.5",
-                node_requirements=NodeRequirements(CPU=1, GPU=1, RAM="256 MiB"),
-            ),
-            {
-                "resources": {"CPU": 1.0, "GPU": 1.0, "RAM": 256 * 1024 * 1024},
+@dataclass
+class ImageParams:
+    image: Image
+    expected_annotations: Dict[str, Any]
+    fake_task: Dict[NodeID, Image]
+
+
+@pytest.fixture
+def cpu_image(node_id: NodeID, cluster_id_resource_name: str) -> ImageParams:
+    image = Image(
+        name="simcore/services/comp/pytest/cpu_image",
+        tag="1.5.5",
+        node_requirements=NodeRequirements(CPU=1, RAM="128 MiB"),
+    )
+    return ImageParams(
+        image=image,
+        expected_annotations={
+            "resources": {
+                "CPU": 1.0,
+                "RAM": 128 * 1024 * 1024,
+                cluster_id_resource_name: CLUSTER_RESOURCE_MOCK_USAGE,
+            }
+        },
+        fake_task={node_id: image},
+    )
+
+
+@pytest.fixture
+def gpu_image(node_id: NodeID, cluster_id_resource_name: str) -> ImageParams:
+    image = Image(
+        name="simcore/services/comp/pytest/gpu_image",
+        tag="1.4.7",
+        node_requirements=NodeRequirements(CPU=1, GPU=1, RAM="256 MiB"),
+    )
+    return ImageParams(
+        image=image,
+        expected_annotations={
+            "resources": {
+                "CPU": 1.0,
+                "GPU": 1.0,
+                "RAM": 256 * 1024 * 1024,
+                cluster_id_resource_name: CLUSTER_RESOURCE_MOCK_USAGE,
             },
-        ),
-        (
-            Image(
-                name="simcore/services/comp/pytest",
-                tag="1.4.5",
-                node_requirements=NodeRequirements(CPU=2, RAM="128 MiB", MPI=1),
-            ),
-            {
-                "resources": {"CPU": 2.0, "MPI": 1.0, "RAM": 128 * 1024 * 1024},
+        },
+        fake_task={node_id: image},
+    )
+
+
+@pytest.fixture
+def mpi_image(node_id: NodeID, cluster_id_resource_name: str) -> ImageParams:
+    image = Image(
+        name="simcore/services/comp/pytest/mpi_image",
+        tag="1.4.5123",
+        node_requirements=NodeRequirements(CPU=2, RAM="128 MiB", MPI=1),
+    )
+    return ImageParams(
+        image=image,
+        expected_annotations={
+            "resources": {
+                "CPU": 2.0,
+                "MPI": 1.0,
+                "RAM": 128 * 1024 * 1024,
+                cluster_id_resource_name: CLUSTER_RESOURCE_MOCK_USAGE,
             },
-        ),
-    ]
+        },
+        fake_task={node_id: image},
+    )
 
 
 @pytest.fixture()
@@ -181,53 +220,58 @@ def mock_node_ports(mocker: MockerFixture):
     )
 
 
-@pytest.mark.parametrize("image, expected_annotations", _image_to_req_params())
+def _fake_sidecar_fct(
+    docker_auth: DockerBasicAuth,
+    service_key: str,
+    service_version: str,
+    input_data: TaskInputData,
+    output_data_keys: TaskOutputDataSchema,
+    log_file_url: AnyUrl,
+    command: List[str],
+    expected_annotations: Dict[str, Any],
+) -> TaskOutputData:
+    from dask.distributed import get_worker
+
+    # get the task data
+    worker = get_worker()
+    task = worker.tasks.get(worker.get_current_task())
+    assert task is not None
+    assert task.annotations == expected_annotations
+
+    return TaskOutputData.parse_obj({"some_output_key": 123})
+
+
+@pytest.mark.parametrize(
+    "image_params",
+    [
+        (lazy_fixture("cpu_image")),
+        (lazy_fixture("gpu_image")),
+        (lazy_fixture("mpi_image")),
+    ],
+)
 async def test_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
     cluster_id: ClusterID,
-    cluster_id_resource: str,
-    image: Image,
-    expected_annotations: Dict[str, Any],
+    cluster_id_resource_name: str,
+    image_params: ImageParams,
     mocker: MockerFixture,
     mock_node_ports: None,
 ):
-    # INIT
-    expected_annotations["resources"].update(
-        {cluster_id_resource: CLUSTER_RESOURCE_MOCK_USAGE}
-    )
-    fake_task = {node_id: image}
     mocked_done_callback_fct = mocker.Mock()
 
     # NOTE: We pass another fct so it can run in our localy created dask cluster
-    def fake_sidecar_fct(
-        docker_auth: DockerBasicAuth,
-        service_key: str,
-        service_version: str,
-        input_data: TaskInputData,
-        output_data_keys: TaskOutputDataSchema,
-        log_file_url: AnyUrl,
-        command: List[str],
-    ) -> TaskOutputData:
-        from dask.distributed import get_worker
-
-        worker = get_worker()
-        task: TaskState = worker.tasks.get(worker.get_current_task())
-        assert task is not None
-        assert task.annotations == expected_annotations
-
-        return TaskOutputData.parse_obj({"some_output_key": 123})
-
-    # TEST COMPUTATION RUNS THROUGH
     await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
         cluster_id=cluster_id,
-        tasks=fake_task,
+        tasks=image_params.fake_task,
         callback=mocked_done_callback_fct,
-        remote_fct=fake_sidecar_fct,
+        remote_fct=functools.partial(
+            _fake_sidecar_fct, expected_annotations=image_params.expected_annotations
+        ),
     )
     assert (
         len(dask_client._taskid_to_future_map) == 1
@@ -246,28 +290,30 @@ async def test_send_computation_task(
     ), "the list of futures was not cleaned correctly"
 
 
-@pytest.mark.parametrize("image, expected_annotations", _image_to_req_params())
+@pytest.mark.parametrize(
+    "image_params",
+    [
+        (lazy_fixture("cpu_image")),
+        (lazy_fixture("gpu_image")),
+        (lazy_fixture("mpi_image")),
+    ],
+)
 async def test_abort_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
     cluster_id: ClusterID,
-    cluster_id_resource: str,
-    image: Image,
-    expected_annotations: Dict[str, Any],
+    cluster_id_resource_name: str,
+    image_params: ImageParams,
     mocker: MockerFixture,
     mock_node_ports: None,
 ):
     # INIT
-    expected_annotations["resources"].update(
-        {cluster_id_resource: CLUSTER_RESOURCE_MOCK_USAGE}
-    )
-    fake_task = {node_id: image}
     mocked_done_callback_fct = mocker.Mock()
 
     # NOTE: We pass another fct so it can run in our localy created dask cluster
-    def fake_sidecar_fct(
+    def _fake_sidecar_fct(
         docker_auth: DockerBasicAuth,
         service_key: str,
         service_version: str,
@@ -278,9 +324,9 @@ async def test_abort_send_computation_task(
         from dask.distributed import get_worker
 
         worker = get_worker()
-        task: TaskState = worker.tasks.get(worker.get_current_task())
+        task = worker.tasks.get(worker.get_current_task())
         assert task is not None
-        assert task.annotations == expected_annotations
+        assert task.annotations == image_params.expected_annotations
 
         return TaskOutputData.parse_obj({"some_output_key": 123})
 
@@ -288,9 +334,9 @@ async def test_abort_send_computation_task(
         user_id=user_id,
         project_id=project_id,
         cluster_id=cluster_id,
-        tasks=fake_task,
+        tasks=image_params.fake_task,
         callback=mocked_done_callback_fct,
-        remote_fct=fake_sidecar_fct,
+        remote_fct=_fake_sidecar_fct,
     )
     assert (
         len(dask_client._taskid_to_future_map) == 1
@@ -309,24 +355,26 @@ async def test_abort_send_computation_task(
     ), "the list of futures was not cleaned correctly"
 
 
-@pytest.mark.parametrize("image, expected_annotations", _image_to_req_params())
+@pytest.mark.parametrize(
+    "image_params",
+    [
+        (lazy_fixture("cpu_image")),
+        (lazy_fixture("gpu_image")),
+        (lazy_fixture("mpi_image")),
+    ],
+)
 async def test_invalid_cluster_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
     cluster_id: ClusterID,
-    cluster_id_resource: str,
-    image: Image,
-    expected_annotations: Dict[str, Any],
+    cluster_id_resource_name: str,
+    image_params: ImageParams,
     mocker: MockerFixture,
     mock_node_ports: None,
 ):
     # INIT
-    expected_annotations["resources"].update(
-        {cluster_id_resource: CLUSTER_RESOURCE_MOCK_USAGE}
-    )
-    fake_task = {node_id: image}
     mocked_done_callback_fct = mocker.Mock()
 
     with pytest.raises(MissingComputationalResourcesError):
@@ -334,7 +382,7 @@ async def test_invalid_cluster_send_computation_task(
             user_id=user_id,
             project_id=project_id,
             cluster_id=random.randint(cluster_id + 1, 100),
-            tasks=fake_task,
+            tasks=image_params.fake_task,
             callback=mocked_done_callback_fct,
             remote_fct=None,
         )
@@ -364,7 +412,7 @@ async def test_too_many_resource_send_computation_task(
     project_id: ProjectID,
     node_id: NodeID,
     cluster_id: ClusterID,
-    cluster_id_resource: str,
+    cluster_id_resource_name: str,
     image: Image,
     expected_annotations: Dict[str, Any],
     mocker: MockerFixture,
@@ -372,7 +420,7 @@ async def test_too_many_resource_send_computation_task(
 ):
     # INIT
     expected_annotations["resources"].update(
-        {cluster_id_resource: CLUSTER_RESOURCE_MOCK_USAGE}
+        {cluster_id_resource_name: CLUSTER_RESOURCE_MOCK_USAGE}
     )
 
     fake_task = {node_id: image}
@@ -413,7 +461,7 @@ async def test_disconnected_backend_send_computation_task(
     project_id: ProjectID,
     node_id: NodeID,
     cluster_id: ClusterID,
-    cluster_id_resource: str,
+    cluster_id_resource_name: str,
     image: Image,
     expected_annotations: Dict[str, Any],
     mocker: MockerFixture,
@@ -421,7 +469,7 @@ async def test_disconnected_backend_send_computation_task(
 ):
     # INIT
     expected_annotations["resources"].update(
-        {cluster_id_resource: CLUSTER_RESOURCE_MOCK_USAGE}
+        {cluster_id_resource_name: CLUSTER_RESOURCE_MOCK_USAGE}
     )
 
     fake_task = {node_id: image}

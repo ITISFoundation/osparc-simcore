@@ -87,8 +87,11 @@ class DaskScheduler(BaseCompScheduler):
 
         assert event.state in COMPLETED_STATES  # no sec
 
+        logger.info(
+            "task %s completed %s", event.job_id, f"{event.state.value}".lower()
+        )
         if event.state == RunningState.SUCCESS:
-            logger.info("task %s completed successfully", event.job_id)
+
             # we need to parse the results
             assert event.msg  # no sec
             await parse_output_data(
@@ -97,8 +100,12 @@ class DaskScheduler(BaseCompScheduler):
                 TaskOutputData.parse_raw(event.msg),
             )
         elif event.state == RunningState.ABORTED:
+            # TODO: we need to remove the output files if they are invalid
+            # TODO: we need to remove the log files if they are invali
             logger.info("task %s was aborted", event.job_id)
         else:
+            # TODO: we need to remove the output files if they are invalid
+            # TODO: we need to remove the log files if they are invali
             logger.info("task %s failed", event.job_id)
 
         await CompTasksRepository(self.db_engine).set_project_tasks_state(
