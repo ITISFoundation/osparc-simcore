@@ -7,8 +7,9 @@
 
 
 import asyncio
-import unittest.mock
-from typing import Any, Callable, Dict, Iterator, List
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, Iterator, List, cast
+from unittest import mock
 
 import aiopg
 import pytest
@@ -16,8 +17,10 @@ from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import LocalCluster, SpecCluster
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
+from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_runs import comp_runs
@@ -35,6 +38,9 @@ from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.models.schemas.constants import UserID
 from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
     BaseCompScheduler,
+)
+from simcore_service_director_v2.modules.comp_scheduler.dask_scheduler import (
+    DaskScheduler,
 )
 from starlette.testclient import TestClient
 
@@ -213,7 +219,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
 
 
 async def _assert_comp_run_state(
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],
+    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
     user_id: UserID,
     project_uuid: ProjectID,
     exp_state: RunningState,
@@ -228,6 +234,26 @@ async def _assert_comp_run_state(
         )
         run_entry = CompRunsAtDB.parse_obj(await result.first())
     assert run_entry.result == exp_state
+
+
+async def _assert_comp_tasks_state(
+    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    project_uuid: ProjectID,
+    task_ids: List[NodeID],
+    exp_state: RunningState,
+):
+    # check the database is correctly updated, the run is published
+    async with aiopg_engine.acquire() as conn:  # type: ignore
+        result = await conn.execute(
+            comp_tasks.select().where(
+                (comp_tasks.c.project_id == f"{project_uuid}")
+                & (comp_tasks.c.node_id.in_([f"{n}" for n in task_ids]))
+            )  # there is only one entry
+        )
+        tasks = parse_obj_as(List[CompTaskAtDB], await result.fetchall())
+    assert all(  # pylint: disable=use-a-generator
+        [t.state == exp_state for t in tasks]
+    ), f"expected state: {exp_state}, found: {[t.state for t in tasks]}"
 
 
 async def _trigger_scheduler(scheduler: BaseCompScheduler):
@@ -247,160 +273,229 @@ async def _set_task_state(
         )
 
 
-async def test_proper_pipeline_is_scheduled(
-    scheduler: BaseCompScheduler,
-    minimal_app: FastAPI,
-    user_id: PositiveInt,
+@pytest.fixture
+def mocked_dask_client_send_task(mocker: MockerFixture) -> mock.MagicMock:
+    mocked_dask_client_send_task = mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.send_computation_tasks"
+    )
+    return mocked_dask_client_send_task
+
+
+@dataclass
+class PublishedProject:
+    project: ProjectAtDB
+    pipeline: CompPipelineAtDB
+    tasks: List[CompTaskAtDB]
+
+
+@pytest.fixture
+def published_project(
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., List[CompTaskAtDB]],
     fake_workbench_without_outputs: Dict[str, Any],
     fake_workbench_adjacency: Dict[str, Any],
+) -> PublishedProject:
+    created_project = project(workbench=fake_workbench_without_outputs)
+    return PublishedProject(
+        project=created_project,
+        pipeline=pipeline(
+            project_id=f"{created_project.uuid}",
+            dag_adjacency_list=fake_workbench_adjacency,
+        ),
+        tasks=tasks(project=created_project, state=RunningState.PUBLISHED),
+    )
+
+
+async def test_proper_pipeline_is_scheduled(
+    scheduler: BaseCompScheduler,
+    minimal_app: FastAPI,
+    user_id: PositiveInt,
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    mocker,
+    mocked_dask_client_send_task: mock.MagicMock,
+    published_project: PublishedProject,
 ):
-
-    mocked_dask_client = mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.send_computation_tasks"
-    )
-
-    sleepers_project = project(workbench=fake_workbench_without_outputs)
-    sleepers_pipeline = pipeline(
-        project_id=f"{sleepers_project.uuid}",
-        dag_adjacency_list=fake_workbench_adjacency,
-    )
-    sleeper_tasks = tasks(project=sleepers_project, state=RunningState.PUBLISHED)
-    # check the pipeline is correctly added to the scheduled pipelines
+    # This calls adds starts the scheduling of a pipeline
     await scheduler.run_new_pipeline(
         user_id=user_id,
-        project_id=sleepers_project.uuid,
+        project_id=published_project.project.uuid,
         cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
     )
-    assert len(scheduler.scheduled_pipelines) == 1
+    assert len(scheduler.scheduled_pipelines) == 1, "the pipeline is not scheduled!"
     assert (
         scheduler.wake_up_event.is_set() == True
     ), "the scheduler was NOT woken up on the scheduled pipeline!"
     for (u_id, p_id, it), params in scheduler.scheduled_pipelines.items():
         assert u_id == user_id
-        assert p_id == sleepers_project.uuid
+        assert p_id == published_project.project.uuid
         assert it > 0
         assert params.mark_for_cancellation == False
-    # let the scheduler kick in, it should start the 2 first comp tasks
+    # the scheduler automatically kicks in, it should start the 2 first comp tasks
     await asyncio.sleep(1)
 
     # check the database is correctly updated, the run is published
     await _assert_comp_run_state(
-        aiopg_engine, user_id, sleepers_project.uuid, RunningState.PUBLISHED
+        aiopg_engine,
+        user_id,
+        published_project.project.uuid,
+        exp_state=RunningState.PUBLISHED,
     )
-    # check the dask client was properly called
-    mocked_dask_client.assert_has_calls(
+    published_tasks = [
+        published_project.tasks[1],
+        published_project.tasks[3],
+    ]
+    # the tasks are set to pending, so they are ready to be taken, and the dask client is triggered
+    await _assert_comp_tasks_state(
+        aiopg_engine,
+        published_project.project.uuid,
+        [p.node_id for p in published_tasks],
+        exp_state=RunningState.PENDING,
+    )
+    mocked_dask_client_send_task.assert_has_calls(
         calls=[
-            unittest.mock.call(
+            mock.call(
                 user_id=user_id,
-                project_id=sleepers_project.uuid,
+                project_id=published_project.project.uuid,
                 cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
-                tasks={k: v},
-                callback=unittest.mock.ANY,
+                tasks={f"{p.node_id}": p.image},
+                callback=cast(DaskScheduler, scheduler)._on_task_completed,
             )
-            for k, v in {
-                f"{sleeper_tasks[1].node_id}": sleeper_tasks[1].image,
-                f"{sleeper_tasks[3].node_id}": sleeper_tasks[3].image,
-            }.items()
+            for p in published_tasks
         ],
         any_order=True,
     )
-    mocked_dask_client.reset_mock()
+    mocked_dask_client_send_task.reset_mock()
+
     # trigger the scheduler
     await _trigger_scheduler(scheduler)
-    # let the scheduler kick in, it should switch to PENDING state
+    # let the scheduler kick in, it should switch to the run state to PENDING state, to reflect the tasks states
     await _assert_comp_run_state(
-        aiopg_engine, user_id, sleepers_project.uuid, RunningState.PENDING
+        aiopg_engine,
+        user_id,
+        published_project.project.uuid,
+        exp_state=RunningState.PENDING,
     )
-    # there should be no new call here
-    mocked_dask_client.assert_not_called()
+    # no change here
+    await _assert_comp_tasks_state(
+        aiopg_engine,
+        published_project.project.uuid,
+        [p.node_id for p in published_tasks],
+        exp_state=RunningState.PENDING,
+    )
+    mocked_dask_client_send_task.assert_not_called()
 
     # change 1 task to RUNNING
+    running_task_id = published_tasks[0].node_id
     await _set_task_state(
         aiopg_engine,
-        node_id="3a710d8b-565c-5f46-870b-b45ebe195fc7",
+        node_id=f"{running_task_id}",
         state=StateType.RUNNING,
     )
-    # trigger the scheduler
+    # trigger the scheduler, comp_run is now STARTED, as is the task
     await _trigger_scheduler(scheduler)
-    # let the scheduler kick in, it should switch to STARTED state
     await _assert_comp_run_state(
-        aiopg_engine, user_id, sleepers_project.uuid, RunningState.STARTED
+        aiopg_engine, user_id, published_project.project.uuid, RunningState.STARTED
     )
-    # there should be no new call here
-    mocked_dask_client.assert_not_called()
+    await _assert_comp_tasks_state(
+        aiopg_engine,
+        published_project.project.uuid,
+        [running_task_id],
+        exp_state=RunningState.STARTED,
+    )
+    mocked_dask_client_send_task.assert_not_called()
+
     # change the task to SUCCESS
     await _set_task_state(
         aiopg_engine,
-        node_id="3a710d8b-565c-5f46-870b-b45ebe195fc7",
+        node_id=f"{running_task_id}",
         state=StateType.SUCCESS,
     )
-    # trigger the scheduler
+    # trigger the scheduler, the run state is still STARTED, the task is completed
     await _trigger_scheduler(scheduler)
-    await asyncio.sleep(1)
-    # let the scheduler kick in, it should keep to STARTED state
     await _assert_comp_run_state(
-        aiopg_engine, user_id, sleepers_project.uuid, RunningState.STARTED
+        aiopg_engine, user_id, published_project.project.uuid, RunningState.STARTED
     )
-    # there should be a new call here
-    mocked_dask_client.assert_called_once_with(
+    await _assert_comp_tasks_state(
+        aiopg_engine,
+        published_project.project.uuid,
+        [running_task_id],
+        exp_state=RunningState.SUCCESS,
+    )
+    next_published_task = published_project.tasks[2]
+    await _assert_comp_tasks_state(
+        aiopg_engine,
+        published_project.project.uuid,
+        [next_published_task.node_id],
+        exp_state=RunningState.PENDING,
+    )
+    mocked_dask_client_send_task.assert_called_once_with(
         user_id=user_id,
-        project_id=sleepers_project.uuid,
+        project_id=published_project.project.uuid,
         cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
         tasks={
-            f"{sleeper_tasks[2].node_id}": sleeper_tasks[2].image,
+            f"{next_published_task.node_id}": next_published_task.image,
         },
-        callback=unittest.mock.ANY,
+        callback=cast(DaskScheduler, scheduler)._on_task_completed,
     )
-    mocked_dask_client.reset_mock()
+    mocked_dask_client_send_task.reset_mock()
 
     # change 1 task to RUNNING
     await _set_task_state(
         aiopg_engine,
-        node_id="415fefd1-d08b-53c1-adb0-16bed3a687ef",
+        node_id=f"{next_published_task.node_id}",
         state=StateType.RUNNING,
     )
-    # trigger the scheduler
+    # trigger the scheduler, run state should keep to STARTED, task should be as well
     await _trigger_scheduler(scheduler)
-    # let the scheduler kick in, it should keep to STARTED state
     await _assert_comp_run_state(
-        aiopg_engine, user_id, sleepers_project.uuid, RunningState.STARTED
+        aiopg_engine, user_id, published_project.project.uuid, RunningState.STARTED
     )
-    # there should be no new call here
-    mocked_dask_client.assert_not_called()
+    await _assert_comp_tasks_state(
+        aiopg_engine,
+        published_project.project.uuid,
+        [next_published_task.node_id],
+        exp_state=RunningState.STARTED,
+    )
+    mocked_dask_client_send_task.assert_not_called()
 
     # now change the task to FAILED
     await _set_task_state(
         aiopg_engine,
-        node_id="415fefd1-d08b-53c1-adb0-16bed3a687ef",
+        node_id=f"{next_published_task.node_id}",
         state=StateType.FAILED,
     )
-    # trigger the scheduler
+    # trigger the scheduler, it should keep to STARTED state until it finishes
     await _trigger_scheduler(scheduler)
-    # let the scheduler kick in, it should keep to STARTED state until it finishes
     await _assert_comp_run_state(
-        aiopg_engine, user_id, sleepers_project.uuid, RunningState.STARTED
+        aiopg_engine, user_id, published_project.project.uuid, RunningState.STARTED
     )
-    # there should be no new call here
-    mocked_dask_client.assert_not_called()
+    await _assert_comp_tasks_state(
+        aiopg_engine,
+        published_project.project.uuid,
+        [next_published_task.node_id],
+        exp_state=RunningState.FAILED,
+    )
+    mocked_dask_client_send_task.assert_not_called()
+
     # now change the other task to SUCCESS
+    other_task = published_tasks[1]
     await _set_task_state(
         aiopg_engine,
-        node_id="e1e2ea96-ce8f-5abc-8712-b8ed312a782c",
+        node_id=f"{other_task.node_id}",
         state=StateType.SUCCESS,
     )
-    # trigger the scheduler
+    # trigger the scheduler, it should switch to FAILED, as we are done
     await _trigger_scheduler(scheduler)
-    # let the scheduler kick in, it should switch to FAILED, because everything is completed
     await _assert_comp_run_state(
-        aiopg_engine, user_id, sleepers_project.uuid, RunningState.FAILED
+        aiopg_engine, user_id, published_project.project.uuid, RunningState.FAILED
     )
-    # there should be no new call here
-    mocked_dask_client.assert_not_called()
+    await _assert_comp_tasks_state(
+        aiopg_engine,
+        published_project.project.uuid,
+        [other_task.node_id],
+        exp_state=RunningState.SUCCESS,
+    )
+    mocked_dask_client_send_task.assert_not_called()
     # the scheduled pipeline shall be removed
     assert scheduler.scheduled_pipelines == {}
 
@@ -410,42 +505,66 @@ async def test_handling_of_disconnected_dask_scheduler(
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,
     user_id: PositiveInt,
-    project: Callable[..., ProjectAtDB],
-    pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., List[CompTaskAtDB]],
-    fake_workbench_without_outputs: Dict[str, Any],
-    fake_workbench_adjacency: Dict[str, Any],
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    mocker,
+    mocker: MockerFixture,
+    published_project: PublishedProject,
 ):
     # this will crate a non connected backend issue that will trigger re-connection
-    mocked_dask_client = mocker.patch(
+    mocked_dask_client_send_task = mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.send_computation_tasks",
         side_effect=ComputationalBackendNotConnectedError(
             msg="faked disconnected backend"
         ),
     )
-    mocked_reconnect_client = mocker.patch(
+    mocked_reconnect_client_fct = mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.reconnect_client"
     )
 
-    sleepers_project = project(workbench=fake_workbench_without_outputs)
-    sleepers_pipeline = pipeline(
-        project_id=f"{sleepers_project.uuid}",
-        dag_adjacency_list=fake_workbench_adjacency,
-    )
-    sleeper_tasks = tasks(project=sleepers_project, state=RunningState.PUBLISHED)
     # check the pipeline is correctly added to the scheduled pipelines
     await scheduler.run_new_pipeline(
         user_id=user_id,
-        project_id=sleepers_project.uuid,
+        project_id=published_project.project.uuid,
         cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
     )
     await _trigger_scheduler(scheduler)
     # since there is no cluster, there is no dask-scheduler,
     # the tasks shall all still be in PUBLISHED state now
     await _assert_comp_run_state(
-        aiopg_engine, user_id, sleepers_project.uuid, RunningState.PUBLISHED
+        aiopg_engine, user_id, published_project.project.uuid, RunningState.PUBLISHED
     )
     # the exception risen should trigger calls to reconnect the client
-    mocked_reconnect_client.assert_called()
+    mocked_reconnect_client_fct.assert_called()
+
+    # now try to abort the tasks since we are wondering what is happening
+    await scheduler.stop_pipeline(
+        user_id=user_id, project_id=published_project.project.uuid
+    )
+    await _trigger_scheduler(scheduler)
+    await asyncio.sleep(2)  # to be on the safe side
+    await _assert_comp_run_state(
+        aiopg_engine, user_id, published_project.project.uuid, RunningState.ABORTED
+    )
+
+
+async def test_completed_task_properly_updates_state(
+    scheduler: BaseCompScheduler,
+    minimal_app: FastAPI,
+    user_id: PositiveInt,
+    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    mocked_dask_client_send_task: mock.MagicMock,
+    published_project: PublishedProject,
+):
+    # we do have a published project where the comp services are in PUBLISHED state
+    # here we will
+    ...
+
+
+async def test_failed_task_cleans_output_files(
+    scheduler: BaseCompScheduler,
+    minimal_app: FastAPI,
+    user_id: PositiveInt,
+    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    mocked_dask_client_send_task: mock.MagicMock,
+    published_project: PublishedProject,
+):
+    ...
