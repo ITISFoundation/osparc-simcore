@@ -51,7 +51,8 @@ class BackgroundLogFetcher:
         self._log_processor_tasks[container_name] = create_task(
             _logs_fetcher_worker(
                 container_name=container_name, dispatch_log=self._dispatch_logs
-            )
+            ),
+            name="rabbitmq_log_processor_tasks",
         )
 
         logger.info("Subscribed to fetch logs from '%s'", container_name)
@@ -59,8 +60,8 @@ class BackgroundLogFetcher:
     async def stop_log_fetching(self, container_name: str) -> None:
         logger.debug("Stopping logs fetching from container '%s'", container_name)
         task = self._log_processor_tasks[container_name]
+        task.cancel()
         with suppress(CancelledError):
-            task.cancel()
             await task
         del self._log_processor_tasks[container_name]
         logger.debug("Logs fetching stopped for container '%s'", container_name)
