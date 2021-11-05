@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, Optional, Type, Union
 
 import pytest
-from aiohttp.client import ClientSession
+from aiohttp.client import ClientSession, request
 from attr import dataclass
 from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
@@ -84,9 +84,13 @@ def e_tag() -> str:
         False,
     ]
 )
-def this_node_file(request, tmp_path: Path) -> Iterator[Path]:
+def is_symlink(request) -> bool:
+    return request.param
+
+
+@pytest.fixture()
+def this_node_file(is_symlink: bool, tmp_path: Path) -> Iterator[Path]:
     """return either a symlink or a file with the same name"""
-    is_symlink = request.param
 
     file_name = this_node_file_name()
 
