@@ -4,7 +4,6 @@ from typing import Any, Dict
 
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from servicelib.json_serialization import json_dumps
-from settings_library.docker_registry import RegistrySettings
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
@@ -24,7 +23,7 @@ def extract_service_port_from_compose_start_spec(
 def _get_environment_variables(
     compose_namespace: str, scheduler_data: SchedulerData, app_settings: AppSettings
 ) -> Dict[str, str]:
-    registry_settings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.REGISTRY
+    registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.CELERY.CELERY_RABBIT
     return {
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
@@ -60,7 +59,6 @@ def _get_environment_variables(
 
 async def get_dynamic_sidecar_spec(
     scheduler_data: SchedulerData,
-    docker_registry_settings: RegistrySettings,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
