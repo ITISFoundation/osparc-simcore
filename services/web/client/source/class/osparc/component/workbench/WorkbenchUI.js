@@ -1266,18 +1266,19 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.addListener("resize", () => this.__updateAllEdges(), this);
       });
 
-      const commandDel = new qx.ui.command.Command("Delete");
-      commandDel.addListener("execute", () => {
+      this.addListener("keypress", keyEvent => {
         const selectedNodeIDs = this.getSelectedNodeIDs();
         if (selectedNodeIDs.length === 1) {
-          this.fireDataEvent("removeNode", selectedNodeIDs[0]);
+          switch (keyEvent.getKeyIdentifier()) {
+            case "Delete":
+              this.fireDataEvent("removeNode", selectedNodeIDs[0]);
+              break;
+            case "Escape":
+              this.resetSelectedNodes();
+              break;
+          }
         }
-      });
-
-      const commandEsc = new qx.ui.command.Command("Esc");
-      commandEsc.addListener("execute", () => {
-        this.resetSelectedNodes();
-      });
+      }, this);
 
       this.addListenerOnce("appear", () => {
         const domEl = this.getContentElement().getDomElement();
