@@ -1255,6 +1255,33 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
+    __openItemRenamer: function(nodeId) {
+      const node = this.getStudy().getWorkbench().getNode(nodeId);
+      const treeItemRenamer = new osparc.component.widget.Renamer(node.getLabel());
+      treeItemRenamer.addListener("labelChanged", e => {
+        const {
+          newLabel
+        } = e.getData();
+        if (node) {
+          node.renameNode(newLabel);
+        }
+        treeItemRenamer.close();
+      }, this);
+      treeItemRenamer.center();
+      treeItemRenamer.open();
+    },
+
+    __openNodeInfo: function(nodeId) {
+      if (nodeId) {
+        const node = this.getStudy().getWorkbench().getNode(nodeId);
+        const serviceDetails = new osparc.servicecard.Large(node.getMetaData());
+        const title = this.tr("Service information");
+        const width = 600;
+        const height = 700;
+        osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+      }
+    },
+
     _addEventListeners: function() {
       this.addListener("appear", () => {
         // Reset filters and sidebars
@@ -1270,6 +1297,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const selectedNodeIDs = this.getSelectedNodeIDs();
         if (selectedNodeIDs.length === 1) {
           switch (keyEvent.getKeyIdentifier()) {
+            case "F2":
+              this.__openItemRenamer(selectedNodeIDs[0]);
+              break;
+            case "I":
+              this.__openNodeInfo(selectedNodeIDs[0]);
+              break;
             case "Delete":
               this.fireDataEvent("removeNode", selectedNodeIDs[0]);
               break;
@@ -1313,18 +1346,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.addListener("mousedown", this.__mouseDown, this);
         this.addListener("mousemove", this.__mouseMove, this);
         this.addListener("mouseup", this.__mouseUp, this);
-
-        commandDel.setEnabled(true);
-        commandEsc.setEnabled(true);
       });
 
       this.addListener("disappear", () => {
         // Reset filters
         // osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
         // osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
-
-        commandDel.setEnabled(false);
-        commandEsc.setEnabled(false);
       });
 
       this.__workbenchLayout.addListener("tap", () => {

@@ -317,11 +317,14 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     __attachEventHandlers: function() {
       this.addListener("keypress", keyEvent => {
         switch (keyEvent.getKeyIdentifier()) {
-          case "Delete":
-            this.__deleteNode();
-            break;
           case "F2":
             this.__openItemRenamer();
+            break;
+          case "I":
+            this.__openNodeInfo();
+            break;
+          case "Delete":
+            this.__deleteNode();
             break;
         }
       }, this);
