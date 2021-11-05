@@ -25,7 +25,7 @@ import trafaret_config
 import yaml
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
-from pytest_simcore.helpers.utils_docker import get_ip, get_service_published_port
+from pytest_simcore.helpers.utils_docker import get_service_published_port
 from pytest_simcore.helpers.utils_login import NewUser
 from simcore_service_webserver.application_config import app_schema
 from simcore_service_webserver.cli import create_environ
@@ -106,8 +106,8 @@ def webserver_environ(
         assert port_key in environ
 
         # to swarm boundary since webserver is installed in the host and therefore outside the swarm's network
-        published_port = get_service_published_port(name, int(environ.get(port_key)))
-        environ[host_key] = get_ip()
+        published_port = get_service_published_port(name, int(environ[port_key]))
+        environ[host_key] = "127.0.0.1"
         environ[port_key] = published_port
 
     pprint(environ)  # NOTE: displayed only if error
@@ -129,7 +129,7 @@ def _webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
     with app_resources.stream("config/server-docker-dev.yaml") as f:
         cfg = yaml.safe_load(f)
         # test webserver works in host
-        cfg["main"]["host"] = get_ip()
+        cfg["main"]["host"] = "127.0.0.1"
 
     with config_file_path.open("wt") as f:
         yaml.dump(cfg, f, default_flow_style=False)
