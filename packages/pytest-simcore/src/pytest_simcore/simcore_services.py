@@ -75,9 +75,15 @@ def services_endpoint(
         full_service_name = f"{stack_name}_{service}"
 
         # TODO: unify healthcheck policies see  https://github.com/ITISFoundation/osparc-simcore/pull/2281
+        # TODO: get health-check cmd from Dockerfile or docker-compose (e.g. postgres?)
         if service not in SERVICES_TO_SKIP:
+            target_ports = [
+                AIOHTTP_BASED_SERVICE_PORT,
+                FASTAPI_BASED_SERVICE_PORT,
+                DASK_SCHEDULER_SERVICE_PORT,
+            ]
             endpoint = URL(
-                f"http://{get_ip()}:{get_service_published_port(full_service_name, [AIOHTTP_BASED_SERVICE_PORT, FASTAPI_BASED_SERVICE_PORT, DASK_SCHEDULER_SERVICE_PORT])}"
+                f"http://{get_ip()}:{get_service_published_port(full_service_name, target_ports)}"
             )
             services_endpoint[service] = endpoint
         else:
@@ -90,7 +96,12 @@ def services_endpoint(
 async def simcore_services_ready(
     services_endpoint: Dict[str, URL], monkeypatch_module: MonkeyPatch
 ) -> None:
+    """
+    - Waits for services in `core_services_selection` to be responsive
+    - Sets environment with these (host:port) endpoitns
 
+    WARNING: not all services in the selection can be health-checked (see services_endpoint)
+    """
     # Compose and log healthcheck url entpoints
 
     health_endpoints = [
