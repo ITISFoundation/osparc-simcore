@@ -5,6 +5,7 @@
 # pylint:disable=too-many-arguments
 
 import functools
+import json
 import random
 from dataclasses import dataclass
 from typing import Any, Dict, List
@@ -14,6 +15,7 @@ from uuid import uuid4
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.events import TaskStateEvent
 from dask_task_models_library.container_tasks.io import (
     TaskInputData,
     TaskOutputData,
@@ -25,6 +27,7 @@ from distributed.deploy.spec import SpecCluster
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.projects_state import RunningState
 from pydantic import AnyUrl
 from pydantic.tools import parse_obj_as
 from pytest_lazyfixture import lazy_fixture
@@ -235,7 +238,12 @@ def _fake_sidecar_fct(
     command: List[str],
     expected_annotations: Dict[str, Any],
 ) -> TaskOutputData:
+    import time
+
     from dask.distributed import get_worker
+
+    # sleep a bit in case someone is aborting us
+    time.sleep(1)
 
     # get the task data
     worker = get_worker()
@@ -244,6 +252,19 @@ def _fake_sidecar_fct(
     assert task.annotations == expected_annotations
 
     return TaskOutputData.parse_obj({"some_output_key": 123})
+
+
+def _fake_failing_sidecar_fct(
+    docker_auth: DockerBasicAuth,
+    service_key: str,
+    service_version: str,
+    input_data: TaskInputData,
+    output_data_keys: TaskOutputDataSchema,
+    log_file_url: AnyUrl,
+    command: List[str],
+) -> TaskOutputData:
+
+    raise ValueError("sadly we are failing to execute anything cause we are dumb...")
 
 
 @pytest.mark.parametrize(
@@ -285,7 +306,13 @@ async def test_send_computation_task(
     assert future.key == job_id
     await _wait_for_call(mocked_user_completed_cb)
     mocked_user_completed_cb.assert_called_once()
-    mocked_user_completed_cb.reset_mock()
+    mocked_user_completed_cb.assert_called_with(
+        TaskStateEvent(
+            job_id=job_id,
+            msg=json.dumps({"some_output_key": 123}),
+            state=RunningState.SUCCESS,
+        )
+    )
     assert (
         len(dask_client._taskid_to_future_map) == 0
     ), "the list of futures was not cleaned correctly"
@@ -314,7 +341,9 @@ async def test_abort_send_computation_task(
         cluster_id=cluster_id,
         tasks=image_params.fake_task,
         callback=mocked_user_completed_cb,
-        remote_fct=_fake_sidecar_fct,
+        remote_fct=functools.partial(
+            _fake_sidecar_fct, expected_annotations=image_params.expected_annotations
+        ),
     )
     assert (
         len(dask_client._taskid_to_future_map) == 1
@@ -327,10 +356,52 @@ async def test_abort_send_computation_task(
     assert future.cancelled() == True
     await _wait_for_call(mocked_user_completed_cb)
     mocked_user_completed_cb.assert_called_once()
-    mocked_user_completed_cb.reset_mock()
+    mocked_user_completed_cb.assert_called_with(
+        TaskStateEvent(
+            job_id=job_id,
+            msg=None,
+            state=RunningState.ABORTED,
+        )
+    )
     assert (
         len(dask_client._taskid_to_future_map) == 0
     ), "the list of futures was not cleaned correctly"
+
+
+async def test_failed_task_returns_exceptions(
+    dask_client: DaskClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    cluster_id: ClusterID,
+    gpu_image: ImageParams,
+    mocked_node_ports: None,
+    mocked_user_completed_cb: mock.Mock,
+):
+    await dask_client.send_computation_tasks(
+        user_id=user_id,
+        project_id=project_id,
+        cluster_id=cluster_id,
+        tasks=gpu_image.fake_task,
+        callback=mocked_user_completed_cb,
+        remote_fct=_fake_failing_sidecar_fct,
+    )
+    assert (
+        len(dask_client._taskid_to_future_map) == 1
+    ), "dask client did not store the future of the task sent"
+
+    job_id, future = list(dask_client._taskid_to_future_map.items())[0]
+    # this waits for the computation to run
+    with pytest.raises(ValueError):
+        task_result = await future.result(timeout=2)
+    await _wait_for_call(mocked_user_completed_cb)
+    mocked_user_completed_cb.assert_called_once()
+    mocked_user_completed_cb.assert_called_with(
+        TaskStateEvent(
+            job_id=job_id,
+            msg="sadly we are failing to execute anything cause we are dumb...",
+            state=RunningState.FAILED,
+        )
+    )
 
 
 @pytest.mark.parametrize(
@@ -409,7 +480,7 @@ async def test_disconnected_backend_send_computation_task(
     mocked_user_completed_cb: mock.Mock,
 ):
     # DISCONNECT THE CLUSTER
-    await dask_spec_local_cluster.close()
+    await dask_spec_local_cluster.close()  # type: ignore
     #
     with pytest.raises(ComputationalBackendNotConnectedError):
         await dask_client.send_computation_tasks(
