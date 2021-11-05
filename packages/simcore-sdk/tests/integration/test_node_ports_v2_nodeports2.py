@@ -7,9 +7,10 @@
 import filecmp
 import tempfile
 import threading
+import os
 from asyncio import gather
 from pathlib import Path
-from typing import Any, Callable, Dict, Type, Union
+from typing import Any, Callable, Dict, Type, Union, Iterator
 from uuid import uuid4
 
 import np_helpers  # pylint: disable=no-name-in-module
@@ -20,6 +21,10 @@ from simcore_sdk.node_ports_common.exceptions import UnboundPortError
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
+
+SYMLINK_PATH = Path(tempfile.gettempdir()) / f"symlink_{Path(__file__).name}"
+if not SYMLINK_PATH.exists():
+    os.symlink(__file__, SYMLINK_PATH)
 
 pytest_simcore_core_services_selection = ["postgres", "storage"]
 
@@ -188,6 +193,7 @@ async def test_port_value_accessors(
         ("data:*/*", __file__, Path, {"store": "0", "path": __file__}),
         ("data:text/*", __file__, Path, {"store": "0", "path": __file__}),
         ("data:text/py", __file__, Path, {"store": "0", "path": __file__}),
+        ("data:text/py", SYMLINK_PATH, Path, {"store": "0", "path": SYMLINK_PATH}),
     ],
 )
 async def test_port_file_accessors(
