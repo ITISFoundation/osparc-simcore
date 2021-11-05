@@ -351,6 +351,13 @@ async def test_proper_pipeline_is_scheduled(
         [p.node_id for p in published_tasks],
         exp_state=RunningState.PENDING,
     )
+    # the other tasks are published
+    await _assert_comp_tasks_state(
+        aiopg_engine,
+        published_project.project.uuid,
+        [p.node_id for p in published_project.tasks if p not in published_tasks],
+        exp_state=RunningState.PUBLISHED,
+    )
     mocked_dask_client_send_task.assert_has_calls(
         calls=[
             mock.call(
@@ -531,6 +538,12 @@ async def test_handling_of_disconnected_dask_scheduler(
     # the tasks shall all still be in PUBLISHED state now
     await _assert_comp_run_state(
         aiopg_engine, user_id, published_project.project.uuid, RunningState.PUBLISHED
+    )
+    await _assert_comp_tasks_state(
+        aiopg_engine,
+        published_project.project.uuid,
+        [t.node_id for t in published_project.tasks],
+        exp_state=RunningState.SUCCESS,
     )
     # the exception risen should trigger calls to reconnect the client
     mocked_reconnect_client_fct.assert_called()
