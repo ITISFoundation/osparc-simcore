@@ -15,6 +15,8 @@ import aiopg
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import LocalCluster, SpecCluster
+from dask_task_models_library.container_tasks.events import TaskStateEvent
+from dask_task_models_library.container_tasks.io import TaskOutputData
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -42,6 +44,8 @@ from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
 from simcore_service_director_v2.modules.comp_scheduler.dask_scheduler import (
     DaskScheduler,
 )
+from simcore_service_director_v2.utils.dask import generate_dask_job_id
+from simcore_service_director_v2.utils.scheduler import COMPLETED_STATES
 from starlette.testclient import TestClient
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -559,20 +563,49 @@ async def test_handling_of_disconnected_dask_scheduler(
     )
 
 
+@pytest.fixture
+def mocked_node_ports(mocker: MockerFixture):
+    mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.parse_output_data",
+        return_value=None,
+    )
+
+
+@pytest.mark.parametrize("state", COMPLETED_STATES)
 async def test_completed_task_properly_updates_state(
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,
     user_id: PositiveInt,
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    mocked_dask_client_send_task: mock.MagicMock,
     published_project: PublishedProject,
+    mocked_node_ports: None,
+    state: RunningState,
 ):
     # we do have a published project where the comp services are in PUBLISHED state
-    # here we will
-    ...
+    # here we will artifically call the completion handler in the scheduler
+    dask_scheduler = cast(DaskScheduler, scheduler)
+    job_id = generate_dask_job_id(
+        "simcore/service/comp/pytest/fake",
+        "12.34.55",
+        user_id,
+        published_project.project.uuid,
+        published_project.tasks[0].node_id,
+    )
+    state_event = TaskStateEvent(
+        job_id=job_id,
+        msg=TaskOutputData.parse_obj({"output_1": "some fake data"}).json(),
+        state=state,
+    )
+    await dask_scheduler._on_task_completed(state_event)
+    await _assert_comp_tasks_state(
+        aiopg_engine,
+        published_project.project.uuid,
+        [published_project.tasks[0].node_id],
+        exp_state=state,
+    )
 
 
-async def test_failed_task_cleans_output_files(
+async def test_failed_or_aborted_task_cleans_output_files(
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,
     user_id: PositiveInt,
