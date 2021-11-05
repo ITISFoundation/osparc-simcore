@@ -222,3 +222,13 @@ def done_dask_callback(
             asyncio.run_coroutine_threadsafe(user_callback(event_data), main_loop)
         except Exception:  # pylint: disable=broad-except
             logger.exception("Unexpected issue while transmitting state to main thread")
+
+
+async def clean_task_output_and_log_files_if_invalid(
+    user_id: UserID, project_id: ProjectID, node_id: NodeID
+) -> None:
+    ...
+    # node_ports = await _create_node_ports(app, user_id, project_id, node_id)
+    # for port in (await node_ports.outputs).values():
+    #     if port.property_type.startswith("data:"):
+    #         if not await port.has_value():
