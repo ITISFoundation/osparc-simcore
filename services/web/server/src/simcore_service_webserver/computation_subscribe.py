@@ -1,12 +1,13 @@
 import asyncio
+import functools
 import json
 import logging
-from functools import wraps
 from pprint import pformat
-from typing import Callable, Coroutine, Dict
+from typing import AsyncIterator, Awaitable, Callable, Dict
 
 import aio_pika
 from aiohttp import web
+from aiohttp.web_app import Application
 from servicelib.aiohttp.monitor_services import (
     SERVICE_STARTED_LABELS,
     SERVICE_STOPPED_LABELS,
@@ -16,10 +17,7 @@ from servicelib.aiohttp.monitor_services import (
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from tenacity import retry
 
-from .computation_config import (
-    APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY,
-    ComputationSettings,
-)
+from .computation_config import ComputationSettings
 from .computation_config import get_settings as get_computation_settings
 from .projects import projects_api
 from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
@@ -28,41 +26,26 @@ from .socketio.events import post_messages
 log = logging.getLogger(__file__)
 
 
-def rabbit_adapter(app: web.Application) -> Callable:
-    """this decorator allows passing additional paramters to python-socketio compatible handlers.
-    I.e. aiopika handler expect functions of type `async def function(message)`
-    This allows to create a function of type `async def function(message, app: web.Application)
-    """
-
-    def decorator(func) -> Coroutine:
-        @wraps(func)
-        async def wrapped(*args, **kwargs) -> Coroutine:
-            return await func(*args, **kwargs, app=app)
-
-        return wrapped
-
-    return decorator
-
-
 async def parse_rabbit_message_data(app: web.Application, data: Dict) -> None:
     log.debug("parsing message data:\n%s", pformat(data, depth=3))
     # get common data
     user_id = data["user_id"]
     project_id = data["project_id"]
-    node_id = data["Node"]
+    node_id = data["node_id"]
 
     try:
         messages = {}
-        if data["Channel"] == "Progress":
+        if data["channel"] == "progress":
             # update corresponding project, node, progress value
             project = await projects_api.update_project_node_progress(
-                app, user_id, project_id, node_id, progress=data["Progress"]
+                app, user_id, project_id, node_id, progress=data["progress"]
             )
-            messages["nodeUpdated"] = {
-                "Node": node_id,
-                "data": project["workbench"][node_id],
-            }
-        elif data["Channel"] == "Log":
+            if project:
+                messages["nodeUpdated"] = {
+                    "node_id": node_id,
+                    "data": project["workbench"][node_id],
+                }
+        elif data["channel"] == "logger":
             messages["logger"] = data
         if messages:
             await post_messages(app, user_id, messages)
@@ -72,7 +55,7 @@ async def parse_rabbit_message_data(app: web.Application, data: Dict) -> None:
         log.exception("parsed rabbit message invalid")
 
 
-async def rabbit_message_handler(
+async def rabbit_logs_handler(
     message: aio_pika.IncomingMessage, app: web.Application
 ) -> None:
     data = json.loads(message.body)
@@ -93,7 +76,7 @@ async def instrumentation_message_handler(
     await message.ack()
 
 
-async def subscribe(app: web.Application) -> None:
+async def rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     # TODO: catch and deal with missing connections:
     # e.g. CRITICAL:pika.adapters.base_connection:Could not get addresses to use: [Errno -2] Name or service not known (rabbit)
     # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
@@ -102,62 +85,59 @@ async def subscribe(app: web.Application) -> None:
     rabbit_broker = comp_settings.broker_url
 
     log.info("Creating pika connection for %s", rabbit_broker)
-    await wait_till_rabbitmq_responsive(rabbit_broker)
+    await wait_till_rabbitmq_responsive(f"{rabbit_broker}")
     # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
     connection = await aio_pika.connect_robust(
-        rabbit_broker + f"?name={__name__}_{id(app)}",
+        f"{rabbit_broker}" + f"?name={__name__}_{id(app)}",
         client_properties={"connection_name": "webserver read connection"},
     )
 
     channel = await connection.channel()
     await channel.set_qos(prefetch_count=1)
 
-    pika_log_channel = comp_settings.rabbit.channels["log"]
-    logs_exchange = await channel.declare_exchange(
-        pika_log_channel, aio_pika.ExchangeType.FANOUT
-    )
+    async def _connect_to_queue(
+        name: str,
+        handler: Callable[[aio_pika.IncomingMessage, Application], Awaitable[None]],
+        no_ack: bool,
+    ):
+        exchange = await channel.declare_exchange(name, aio_pika.ExchangeType.FANOUT)
+        # Declaring queue
+        queue = await channel.declare_queue(
+            f"webserver_{id(app)}_{name}",
+            exclusive=True,
+            arguments={"x-message-ttl": 60000},
+        )
+        # Binding the queue to the exchange
+        await queue.bind(exchange)
+        # pass the handler
+        await queue.consume(
+            functools.partial(handler, app=app),
+            exclusive=True,
+            no_ack=no_ack,
+        )
 
-    # Declaring queue
-    logs_progress_queue = await channel.declare_queue(
-        f"webserver_{id(app)}_logs_progress",
-        exclusive=True,
-        arguments={"x-message-ttl": 60000},
+    await _connect_to_queue(
+        comp_settings.rabbit.channels["log"], rabbit_logs_handler, no_ack=True
     )
+    await _connect_to_queue(
+        comp_settings.rabbit.channels["progress"], rabbit_logs_handler, no_ack=True
+    )
+    await _connect_to_queue(
+        comp_settings.rabbit.channels["instrumentation"],
+        instrumentation_message_handler,
+        no_ack=False,
+    )
+    log.info("Connected to rabbitMQ exchanges")
 
-    # Binding the queue to the exchange
-    await logs_progress_queue.bind(logs_exchange)
+    yield
 
-    # Start listening the queue with name 'task_queue'
-    partial_rabbit_message_handler = rabbit_adapter(app)(rabbit_message_handler)
-    # TODO: Why are we saving this in the app??
-    app[APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY] = [partial_rabbit_message_handler]
-    await logs_progress_queue.consume(
-        partial_rabbit_message_handler, exclusive=True, no_ack=True
-    )
-
-    # instrumentation
-    pika_instrumentation_channel = comp_settings.rabbit.channels["instrumentation"]
-    instrumentation_exchange = await channel.declare_exchange(
-        pika_instrumentation_channel, aio_pika.ExchangeType.FANOUT
-    )
-    instrumentation_queue = await channel.declare_queue(
-        f"webserver_{id(app)}_instrumentation", exclusive=True
-    )
-    await instrumentation_queue.bind(instrumentation_exchange)
-    partial_rabbit__instrumentation_handler = rabbit_adapter(app)(
-        instrumentation_message_handler
-    )
-    app[APP_CLIENT_RABBIT_DECORATED_HANDLERS_KEY].extend(
-        [partial_rabbit__instrumentation_handler]
-    )
-    await instrumentation_queue.consume(
-        partial_rabbit__instrumentation_handler, exclusive=True, no_ack=False
-    )
+    # cleanup
+    await connection.close()
 
 
 @retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
 async def wait_till_rabbitmq_responsive(url: str) -> bool:
-    """Check if something responds to ``url`` """
+    """Check if something responds to ``url``"""
     connection = await aio_pika.connect(url)
     await connection.close()
     return True

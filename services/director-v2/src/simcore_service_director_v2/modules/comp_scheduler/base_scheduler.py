@@ -234,6 +234,7 @@ class BaseCompScheduler(ABC):
         pipeline_dag = nx.DiGraph()
         pipeline_tasks: Dict[str, CompTaskAtDB] = {}
         pipeline_result: RunningState = RunningState.UNKNOWN
+        # 1. Update the run states
         try:
             pipeline_dag = await self._get_pipeline_dag(project_id)
             pipeline_tasks: Dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(
@@ -262,18 +263,20 @@ class BaseCompScheduler(ABC):
                     )  # do not mark the failed one as aborted
 
                 if pipeline_tasks[str(node_id)].state == RunningState.PUBLISHED:
+                    # the nodes that are published shall be started
                     tasks_to_start.add(node_id)
 
             comp_tasks_repo: CompTasksRepository = cast(
                 CompTasksRepository, get_repository(self.db_engine, CompTasksRepository)
             )
 
-            await comp_tasks_repo.set_project_tasks_state(
-                project_id, list(tasks_to_mark_as_aborted), RunningState.ABORTED
-            )
+            if tasks_to_mark_as_aborted:
+                await comp_tasks_repo.set_project_tasks_state(
+                    project_id, list(tasks_to_mark_as_aborted), RunningState.ABORTED
+                )
             # update the current states
             for node_id in tasks_to_mark_as_aborted:
-                pipeline_tasks[str(node_id)].state = RunningState.ABORTED
+                pipeline_tasks[f"{node_id}"].state = RunningState.ABORTED
 
             # compute and update the current status of the run
             pipeline_result = await self._update_run_result_from_tasks(
@@ -295,6 +298,7 @@ class BaseCompScheduler(ABC):
             pipeline_result = RunningState.ABORTED
             await self._set_run_result(user_id, project_id, iteration, pipeline_result)
 
+        # 2. Are we finished??
         if not pipeline_dag.nodes() or pipeline_result in COMPLETED_STATES:
             # there is nothing left, the run is completed, we're done here
             self.scheduled_pipelines.pop((user_id, project_id, iteration))
@@ -305,6 +309,7 @@ class BaseCompScheduler(ABC):
             )
             return
 
+        # 3. Are we stopping??
         if marked_for_stopping:
             # get any running task and stop them
             comp_tasks_repo: CompTasksRepository = get_repository(
@@ -318,11 +323,16 @@ class BaseCompScheduler(ABC):
                 if t.state in [RunningState.STARTED, RunningState.RETRY]
             ]
             await self._stop_tasks(running_tasks)
+            logger.debug(
+                "pipeline '%s' is marked for cancellation. stopping tasks for [%s]",
+                project_id,
+                running_tasks,
+            )
             # the scheduled pipeline will be removed in the next iteration
             return
 
-        # find the next tasks that should be run now,
-        # this tasks are in PUBLISHED state and all their dependents are completed
+        # 4. Schedule the next tasks,
+        # these tasks are in PUBLISHED state and all their preceeding tasks are completed
         next_tasks: List[NodeID] = [
             node_id
             for node_id, degree in pipeline_dag.in_degree()  # type: ignore
@@ -365,14 +375,14 @@ class BaseCompScheduler(ABC):
                     user_id,
                     project_id,
                     cluster_id,
-                    {t: r},
-                    self._wake_up_scheduler_now,
+                    scheduled_tasks={t: r},
+                    callback=self._wake_up_scheduler_now,
                 )
                 for t, r in tasks_to_reqs.items()
             ],
             return_exceptions=True,
         )
-        for r in results:
+        for r, t in zip(results, tasks_to_reqs):
             if isinstance(
                 r,
                 (
@@ -402,6 +412,14 @@ class BaseCompScheduler(ABC):
                     ),
                 )
                 raise ComputationalBackendNotConnectedError(f"{r}") from r
+            if isinstance(r, Exception):
+                logger.error(
+                    "Unexpected error happened when scheduling task due to following error %s",
+                    f"{r}",
+                )
+                await comp_tasks_repo.set_project_tasks_state(
+                    project_id, [t], RunningState.FAILED
+                )
 
     def _wake_up_scheduler_now(self) -> None:
         self.wake_up_event.set()

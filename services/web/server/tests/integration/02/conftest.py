@@ -53,5 +53,5 @@ def node_uuid() -> str:
 
 
 @pytest.fixture(scope="session")
-def user_id() -> str:
-    return "some_id"
+def user_id() -> int:
+    return 123

@@ -1,0 +1,27 @@
+#
+# Specifies dependencies required to run 'models-library'
+#
+--constraint ../../../requirements/constraints.txt
+
+# Adds base AS CONSTRAINT specs, not requirement.
+#  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
+#
+--constraint _base.txt
+
+# testing
+
+pytest
+pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-icdiff
+pytest-instafail
+pytest-runner
+pytest-mock
+pytest-sugar
+pytest-cov
+coveralls
+coverage
+
+pylint  # NOTE: The version in pylint at _text.txt is used as a reference for ci/helpers/install_pylint.bash
+pyyaml
+pint
+faker

@@ -4,6 +4,7 @@ from typing import Any, Dict
 
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from servicelib.json_serialization import json_dumps
+from settings_library.docker_registry import RegistrySettings
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
@@ -59,6 +60,7 @@ def _get_environment_variables(
 
 async def get_dynamic_sidecar_spec(
     scheduler_data: SchedulerData,
+    docker_registry_settings: RegistrySettings,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
