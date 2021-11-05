@@ -9,9 +9,9 @@ from typing import Dict, Final, List
 
 import aiohttp
 import pytest
-import tenacity
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.client import ClientTimeout
+from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
@@ -130,22 +130,28 @@ async def simcore_services_ready(
 _MINUTE: Final[int] = 60
 
 # HELPERS --
-@tenacity.retry(
-    wait=wait_random(max=20),
-    stop=stop_after_delay(5 * _MINUTE),
-    before_sleep=before_sleep_log(log, logging.WARNING),
-    reraise=True,
-)
+
+
 async def wait_till_service_responsive(service_name: str, endpoint: URL):
     FAST = ClientTimeout(total=1)  # type: ignore
 
     print(f"Trying to connect with '{service_name}' through '{endpoint}'")
-    async with aiohttp.ClientSession(timeout=FAST) as session:
-        async with session.get(endpoint) as resp:
-            # NOTE: Health-check endpoint require only a
-            # status code 200 (see e.g. services/web/server/docker/healthcheck.py)
-            # regardless of the payload content
-            assert (
-                resp.status == 200
-            ), f"{service_name} NOT responsive on {endpoint}. Details: {resp}"
-            print(f"connection with {service_name} successful")
+    async for attempt in AsyncRetrying(
+        wait=wait_random(max=20),
+        stop=stop_after_delay(5 * _MINUTE),
+        before_sleep=before_sleep_log(log, logging.WARNING),
+        reraise=True,
+    ):
+        with attempt:
+            print(
+                f"Connecting with '{service_name}' through '{endpoint}': attempt={attempt.retry_state.attempt_number}"
+            )
+            async with aiohttp.ClientSession(timeout=FAST) as session:
+                async with session.get(endpoint) as resp:
+                    # NOTE: Health-check endpoint require only a
+                    # status code 200 (see e.g. services/web/server/docker/healthcheck.py)
+                    # regardless of the payload content
+                    assert (
+                        resp.status == 200
+                    ), f"{service_name} NOT responsive on {endpoint}. Details: {resp}"
+                    print(f"connection with {service_name} successful")
