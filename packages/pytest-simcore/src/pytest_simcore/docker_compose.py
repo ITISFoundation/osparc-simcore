@@ -7,12 +7,12 @@
     Basically runs `docker-compose config
 """
 
+import json
 import os
 import shutil
 import sys
 from copy import deepcopy
 from pathlib import Path
-from pprint import pformat
 from typing import Any, Dict, Iterator, List
 
 import pytest
@@ -143,7 +143,7 @@ def simcore_docker_compose(
         env_file_path=env_file_for_testing,
         destination_path=temp_folder / "simcore_docker_compose.yml",
     )
-    print("simcore docker-compose:\n%s", pformat(config))
+    print("simcore docker-compose:\n%s", json.dumps(config))
     return config
 
 
@@ -170,7 +170,7 @@ def ops_docker_compose(
         env_file_path=env_file_for_testing,
         destination_path=temp_folder / "ops_docker_compose.yml",
     )
-    print("ops docker-compose:\n%s", pformat(config))
+    print("ops docker-compose:\n%s", json.dumps(config))
     return config
 
 

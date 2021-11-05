@@ -148,4 +148,4 @@ async def wait_till_service_responsive(service_name: str, endpoint: URL):
             assert (
                 resp.status == 200
             ), f"{service_name} NOT responsive on {endpoint}. Details: {resp}"
-            print(f"connection with {service_name} successful")
+            print(f"connection with {service_name} successful @{endpoint}")

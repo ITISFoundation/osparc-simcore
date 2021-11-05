@@ -10,7 +10,6 @@ import logging
 import subprocess
 from datetime import datetime
 from pathlib import Path
-from pprint import pprint
 from typing import Dict, Iterator
 
 import docker
@@ -139,8 +138,11 @@ def _wait_for_services(docker_client: docker.client.DockerClient) -> None:
 
 def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None:
     print("{:*^100}".format("docker services running " + msg))
-    for service in docker_client.services.list():
-        pprint(service.attrs)
+    services = {
+        s.name: {"attrs": s.attrs, "tasks": [t for t in s.tasks()]}
+        for s in docker_client.services.list()
+    }
+    print(json.dumps(services, indent=1, sort_keys=True))
     print("-" * 100)
 
 
