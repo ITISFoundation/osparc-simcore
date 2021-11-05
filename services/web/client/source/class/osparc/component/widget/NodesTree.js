@@ -254,26 +254,22 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     __openItemRenamer: function(nodeId) {
-      const renameItem = nodeId === undefined ? this.__getSelection() : this.__getNodeModel(this.getModel(), nodeId);
-      if (renameItem) {
-        const treeItemRenamer = new osparc.component.widget.Renamer(renameItem.getLabel());
+      if (nodeId === undefined && this.__getSelection()) {
+        nodeId = this.__getSelection().getNodeId();
+      }
+      if (nodeId) {
+        const study = this.getStudy();
+        const node = study.getWorkbench().getNode(nodeId);
+        const oldLabel = nodeId === study.getUuid() ? study.getName() : node.getLabel();
+        const treeItemRenamer = new osparc.component.widget.Renamer(oldLabel);
         treeItemRenamer.addListener("labelChanged", e => {
           const {
             newLabel
           } = e.getData();
-          const selectedNodeId = renameItem.getNodeId();
-          const study = this.getStudy();
-          if (selectedNodeId === study.getUuid() && osparc.data.Permissions.getInstance().canDo("study.update", true)) {
-            const params = {
-              name: newLabel
-            };
-            study.updateStudy(params);
-          } else if (osparc.data.Permissions.getInstance().canDo("study.node.rename", true)) {
-            renameItem.setLabel(newLabel);
-            const node = study.getWorkbench().getNode(selectedNodeId);
-            if (node) {
-              node.renameNode(newLabel);
-            }
+          if (nodeId === study.getUuid() && osparc.data.Permissions.getInstance().canDo("study.update", true)) {
+            study.setName(newLabel);
+          } else if (node && osparc.data.Permissions.getInstance().canDo("study.node.rename", true)) {
+            node.setLabel(newLabel);
           }
           treeItemRenamer.close();
         }, this);
@@ -284,24 +280,33 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     __openNodeInfo: function(nodeId) {
+      if (nodeId === undefined && this.__getSelection()) {
+        nodeId = this.__getSelection().getNodeId();
+      }
       if (nodeId) {
-        const node = this.getStudy().getWorkbench().getNode(nodeId);
-        const serviceDetails = new osparc.servicecard.Large(node.getMetaData());
-        const title = this.tr("Service information");
-        const width = 600;
-        const height = 700;
-        osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+        const study = this.getStudy();
+        if (nodeId === study.getUuid()) {
+          const studyDetails = new osparc.studycard.Large(study);
+          const title = this.tr("Study Details");
+          const width = 500;
+          const height = 500;
+          osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
+        } else {
+          const node = study.getWorkbench().getNode(nodeId);
+          const serviceDetails = new osparc.servicecard.Large(node.getMetaData());
+          const title = this.tr("Service information");
+          const width = 600;
+          const height = 700;
+          osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+        }
       }
     },
 
     __deleteNode: function(nodeId) {
-      if (nodeId === undefined) {
-        const selectedItem = this.__getSelection();
-        if (selectedItem === null) {
-          return;
-        }
-        this.fireDataEvent("removeNode", selectedItem.getNodeId());
-      } else {
+      if (nodeId === undefined && this.__getSelection()) {
+        nodeId = this.__getSelection().getNodeId();
+      }
+      if (nodeId) {
         this.fireDataEvent("removeNode", nodeId);
       }
     },
