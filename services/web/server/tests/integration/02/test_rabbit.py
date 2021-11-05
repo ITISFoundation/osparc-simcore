@@ -12,6 +12,7 @@ from uuid import uuid4
 
 import aio_pika
 import pytest
+import socketio
 import sqlalchemy as sa
 from models_library.settings.rabbit import RabbitConfig
 from pytest_mock import MockerFixture
@@ -223,7 +224,7 @@ def other_node_uuid(node_uuid, user_project):
 
 
 @pytest.fixture
-async def socketio_subscriber(
+async def socketio_subscriber_handlers(
     socketio_client_factory: Callable,
     client_session_id: UUIDStr,
     mocker: MockerFixture,
@@ -237,7 +238,9 @@ async def socketio_subscriber(
     when a message is received
     """
     # connect to websocket session
-    sio = await socketio_client_factory(client_session_id)
+    # NOTE: will raise socketio.exceptions.ConnectionError: Unexpected status code 401 in server response
+    # if client does not hold an authentication token
+    sio: socketio.AsyncClient = await socketio_client_factory(client_session_id)
 
     WEBSOCKET_LOG_EVENTNAME = "logger"
     # called when log messages are received
@@ -249,7 +252,7 @@ async def socketio_subscriber(
     mock_node_update_handler = mocker.Mock()
     sio.on(WEBSOCKET_NODE_UPDATE_EVENTNAME, handler=mock_node_update_handler)
 
-    return namedtuple("_Handlers", "mock_log_handler mock_node_update_handler")(
+    return namedtuple("_MockHandlers", "log_handler node_update_handler")(
         mock_log_handler, mock_node_update_handler
     )
 
@@ -261,7 +264,6 @@ def publish_some_messages_in_rabbit(
     """rabbitMQ PUBLISHER"""
 
     async def go(
-        self,
         user_id: int,
         project_id: str,
         node_uuid: str,
@@ -274,11 +276,10 @@ def publish_some_messages_in_rabbit(
     return go
 
 
-def test_it(client, socketio_subscriber):
-    socketio_subscriber.mock_log_handler.assert_not_called()
-    socketio_subscriber.mock_node_update_handler.assert_not_called()
-
-    assert True
+@pytest.fixture
+def user_role():
+    """provides a default when not override by paramtrization"""
+    return UserRole.USER
 
 
 # TESTS ------------------------------------------------------------------------------------
@@ -313,10 +314,10 @@ async def test_publish_to_other_user(
     other_project_id,
     other_node_uuid,
     #
-    socketio_subscriber,
+    socketio_subscriber_handlers,
     publish_some_messages_in_rabbit,
 ):
-    mock_log_handler, mock_node_update_handler = socketio_subscriber
+    mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
 
     # Some other client publishes messages with wrong user id
     await publish_some_messages_in_rabbit(
@@ -337,10 +338,10 @@ async def test_publish_to_user(
     other_project_id,
     other_node_uuid,
     #
-    socketio_subscriber,
+    socketio_subscriber_handlers,
     publish_some_messages_in_rabbit,
 ):
-    mock_log_handler, mock_node_update_handler = socketio_subscriber
+    mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
 
     # publish messages with correct user id, but no project
     log_messages, _, _ = await publish_some_messages_in_rabbit(
@@ -365,10 +366,10 @@ async def test_publish_about_users_project(
     user_project: Dict[str, Any],
     other_node_uuid,
     #
-    socketio_subscriber,
+    socketio_subscriber_handlers,
     publish_some_messages_in_rabbit,
 ):
-    mock_log_handler, mock_node_update_handler = socketio_subscriber
+    mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
 
     # publish message with correct user id, project but not node
     log_messages, _, _ = await publish_some_messages_in_rabbit(
@@ -392,10 +393,10 @@ async def test_publish_about_users_projects_node(
     logged_user: Dict[str, Any],
     user_project: Dict[str, Any],
     #
-    socketio_subscriber,
+    socketio_subscriber_handlers,
     publish_some_messages_in_rabbit,
 ):
-    mock_log_handler, mock_node_update_handler = socketio_subscriber
+    mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
 
     # publish message with correct user id, project node
     node_uuid = list(user_project["workbench"])[0]
@@ -415,3 +416,21 @@ async def test_publish_about_users_projects_node(
     mock_log_handler.assert_has_calls(log_calls, any_order=True)
     mock_node_update_handler.assert_called()
     assert mock_node_update_handler.call_count == (NUMBER_OF_MESSAGES)
+
+
+@pytest.mark.skip(reason="DEV")
+def test_engineio_pending_tasks(logged_user, socketio_subscriber_handlers):
+    #
+    # This tests passes but reproduces these logs at the end
+    #
+    #
+    # ERROR: asyncio:Task was destroyed but it is pending!
+    # task: <Task pending name='Task-90' coro=<AsyncServer._service_task() running at engineio/asyncio_server.py:491>
+    # wait_for=<Future pending cb=[<TaskWakeupMethWrapper object >()]>>
+    #  ...
+    #
+    # FIXME: AsyncServer does not exit cleanly
+    # SEE https://github.com/miguelgrinberg/python-socketio/issues/378
+
+    socketio_subscriber_handlers.mock_log_handler.assert_not_called()
+    socketio_subscriber_handlers.mock_node_update_handler.assert_not_called()

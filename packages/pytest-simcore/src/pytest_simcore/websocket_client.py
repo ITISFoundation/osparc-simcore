@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import logging
-from typing import AsyncIterable, Awaitable, Callable, Optional
+from typing import AsyncIterable, Awaitable, Callable, List, Optional
 from uuid import uuid4
 
 import pytest
@@ -62,7 +62,7 @@ async def socketio_client_factory(
 ) -> AsyncIterable[
     Callable[[Optional[str], Optional[TestClient]], Awaitable[socketio.AsyncClient]]
 ]:
-    clients = []
+    clients: List[socketio.AsyncClient] = []
 
     async def _connect(
         client_session_id: Optional[str] = None, client: Optional[TestClient] = None
@@ -98,4 +98,6 @@ async def socketio_client_factory(
         if sio.connected:
             logger.debug("Disconnecting socketio client %s", sio)
             await sio.disconnect()
+            await sio.wait()
+
         assert not sio.sid
