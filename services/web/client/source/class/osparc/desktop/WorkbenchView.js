@@ -119,7 +119,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         case "collapsible-view-left": {
           const sidePanels = this.getChildControl("side-panels");
           control = new osparc.component.widget.CollapsibleViewLight().set({
-            minWidth: 20,
+            minWidth: 15,
             width: Math.min(parseInt(window.innerWidth * 0.16), 240)
           });
           const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
