@@ -51,7 +51,7 @@ containers_router = APIRouter(tags=["containers"])
 
 async def _send_message(rabbitmq: RabbitMQ, message: str) -> None:
     logger.info(message)
-    await rabbitmq.post_log_message(message)
+    await rabbitmq.post_log_message(f"[sidecar] {message}")
 
 
 async def _task_docker_compose_up(
