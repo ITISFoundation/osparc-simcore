@@ -45,6 +45,12 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       paddingLeft: this.self().PORT_WIDTH
     });
 
+    const menuBtn = this.__getMenuButton();
+    this.getChildControl("captionbar").add(menuBtn, {
+      row: 0,
+      column: 2
+    });
+
     const captionTitle = this.getChildControl("title");
     captionTitle.set({
       rich: true,
@@ -91,6 +97,9 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
   },
 
   events: {
+    "renameNode": "qx.event.type.Data",
+    "infoNode": "qx.event.type.Data",
+    "removeNode": "qx.event.type.Data",
     "edgeDragStart": "qx.event.type.Data",
     "edgeDragOver": "qx.event.type.Data",
     "edgeDrop": "qx.event.type.Data",
@@ -110,6 +119,41 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       */
     _createWindowLayout: function() {
       throw new Error("Abstract method called!");
+    },
+
+    __getMenuButton: function() {
+      const optionsMenu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
+
+      const renameBtn = new qx.ui.menu.Button().set({
+        label: this.tr("Rename"),
+        icon: "@FontAwesome5Solid/i-cursor/10"
+      });
+      renameBtn.addListener("execute", () => this.fireDataEvent("renameNode", this.getNodeId()));
+      optionsMenu.add(renameBtn);
+
+      const infoBtn = new qx.ui.menu.Button().set({
+        label: this.tr("Information"),
+        icon: "@FontAwesome5Solid/info/10"
+      });
+      infoBtn.addListener("execute", () => this.fireDataEvent("infoNode", this.getNodeId()));
+      optionsMenu.add(infoBtn);
+
+      const deleteBtn = new qx.ui.menu.Button().set({
+        label: this.tr("Delete"),
+        icon: "@FontAwesome5Solid/trash/10"
+      });
+      deleteBtn.addListener("execute", () => this.fireDataEvent("removeNode", this.getNodeId()));
+      optionsMenu.add(deleteBtn);
+
+      const menuBtn = new qx.ui.form.MenuButton().set({
+        menu: optionsMenu,
+        icon: "@FontAwesome5Solid/ellipsis-v/9",
+        allowGrowX: false,
+        alignY: "middle"
+      });
+      return menuBtn;
     },
 
     getInputPort: function() {

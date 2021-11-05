@@ -129,7 +129,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             const nodeTreeItem = new osparc.component.widget.NodeTreeItem();
             nodeTreeItem.addListener("fullscreenNode", e => this.__openFullscreen(e.getData()));
             nodeTreeItem.addListener("renameNode", e => this.__openItemRenamer(e.getData()));
-            nodeTreeItem.addListener("showInfo", e => this.__openNodeInfo(e.getData()));
+            nodeTreeItem.addListener("infoNode", e => this.__openNodeInfo(e.getData()));
             nodeTreeItem.addListener("deleteNode", e => this.__deleteNode(e.getData()));
             return nodeTreeItem;
           },

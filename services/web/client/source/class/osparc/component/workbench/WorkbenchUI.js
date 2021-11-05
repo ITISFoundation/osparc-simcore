@@ -542,6 +542,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const nodeUI = new osparc.component.workbench.NodeUI(node);
       this.bind("scale", nodeUI, "scale");
       nodeUI.populateNodeLayout();
+      nodeUI.addListener("renameNode", e => this.__openNodeRenamer(e.getData()), this);
+      nodeUI.addListener("infoNode", e => this.__openNodeInfo(e.getData()), this);
+      nodeUI.addListener("removeNode", e => this.fireDataEvent("removeNode", e.getData()), this);
 
       return nodeUI;
     },
@@ -1255,7 +1258,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    __openItemRenamer: function(nodeId) {
+    __openNodeRenamer: function(nodeId) {
       const node = this.getStudy().getWorkbench().getNode(nodeId);
       const treeItemRenamer = new osparc.component.widget.Renamer(node.getLabel());
       treeItemRenamer.addListener("labelChanged", e => {
@@ -1298,7 +1301,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         if (selectedNodeIDs.length === 1) {
           switch (keyEvent.getKeyIdentifier()) {
             case "F2":
-              this.__openItemRenamer(selectedNodeIDs[0]);
+              this.__openNodeRenamer(selectedNodeIDs[0]);
               break;
             case "I":
               this.__openNodeInfo(selectedNodeIDs[0]);
