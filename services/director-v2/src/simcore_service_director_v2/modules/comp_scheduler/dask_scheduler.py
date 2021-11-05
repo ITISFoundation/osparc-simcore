@@ -107,7 +107,7 @@ class DaskScheduler(BaseCompScheduler):
         else:
             # we need to remove any invalid files in the storage
             await clean_task_output_and_log_files_if_invalid(
-                user_id, project_id, node_id
+                self.db_engine, user_id, project_id, node_id
             )
 
         await CompTasksRepository(self.db_engine).set_project_tasks_state(

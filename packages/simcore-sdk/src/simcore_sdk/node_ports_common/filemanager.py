@@ -318,3 +318,14 @@ async def get_file_metadata(
         raise exceptions.StorageInvalidCall(f"The file '{s3_object}' cannot be found")
     log.debug("Result for metadata s3_object=%s, result=%s", s3_object, result)
     return (f"{result.get('location_id', '')}", result.get("entity_tag", ""))
+
+
+async def delete_file(
+    user_id: int,
+    store_id: str,
+    s3_object: str,
+    client_session: Optional[ClientSession] = None,
+) -> None:
+    async with ClientSessionContextManager(client_session) as session:
+        log.debug("Will delete file for s3_object=%s", s3_object)
+        await storage_client.delete_file(session, s3_object, store_id, user_id)
