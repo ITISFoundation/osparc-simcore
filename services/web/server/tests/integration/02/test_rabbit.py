@@ -5,7 +5,8 @@
 import json
 import logging
 from asyncio import sleep
-from typing import Any, Callable, Dict, List, Tuple
+from collections import namedtuple
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 from unittest.mock import call
 from uuid import uuid4
 
@@ -222,11 +223,12 @@ def other_node_uuid(node_uuid, user_project):
 
 
 @pytest.fixture
-async def socketio_subscriber_handlers(
+async def socketio_subscriber(
     socketio_client_factory: Callable,
     client_session_id: UUIDStr,
     mocker: MockerFixture,
-):
+) -> NamedTuple:
+
     """socketio SUBSCRIBER
 
     Somehow this emulates the logic of the front-end:
@@ -247,16 +249,19 @@ async def socketio_subscriber_handlers(
     mock_node_update_handler = mocker.Mock()
     sio.on(WEBSOCKET_NODE_UPDATE_EVENTNAME, handler=mock_node_update_handler)
 
-    return mock_log_handler, mock_node_update_handler
+    return namedtuple("_Handlers", "mock_log_handler mock_node_update_handler")(
+        mock_log_handler, mock_node_update_handler
+    )
 
 
 @pytest.fixture
 def publish_some_messages_in_rabbit(
     rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
-):
+) -> Callable:
     """rabbitMQ PUBLISHER"""
 
-    async def _do(
+    async def go(
+        self,
         user_id: int,
         project_id: str,
         node_uuid: str,
@@ -266,7 +271,14 @@ def publish_some_messages_in_rabbit(
             user_id, project_id, node_uuid, num_messages, rabbit_exchange
         )
 
-    return _do
+    return go
+
+
+def test_it(client, socketio_subscriber):
+    socketio_subscriber.mock_log_handler.assert_not_called()
+    socketio_subscriber.mock_node_update_handler.assert_not_called()
+
+    assert True
 
 
 # TESTS ------------------------------------------------------------------------------------
@@ -301,10 +313,10 @@ async def test_publish_to_other_user(
     other_project_id,
     other_node_uuid,
     #
-    socketio_subscriber_handlers,
+    socketio_subscriber,
     publish_some_messages_in_rabbit,
 ):
-    mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
+    mock_log_handler, mock_node_update_handler = socketio_subscriber
 
     # Some other client publishes messages with wrong user id
     await publish_some_messages_in_rabbit(
@@ -325,10 +337,10 @@ async def test_publish_to_user(
     other_project_id,
     other_node_uuid,
     #
-    socketio_subscriber_handlers,
+    socketio_subscriber,
     publish_some_messages_in_rabbit,
 ):
-    mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
+    mock_log_handler, mock_node_update_handler = socketio_subscriber
 
     # publish messages with correct user id, but no project
     log_messages, _, _ = await publish_some_messages_in_rabbit(
@@ -353,10 +365,10 @@ async def test_publish_about_users_project(
     user_project: Dict[str, Any],
     other_node_uuid,
     #
-    socketio_subscriber_handlers,
+    socketio_subscriber,
     publish_some_messages_in_rabbit,
 ):
-    mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
+    mock_log_handler, mock_node_update_handler = socketio_subscriber
 
     # publish message with correct user id, project but not node
     log_messages, _, _ = await publish_some_messages_in_rabbit(
@@ -380,10 +392,10 @@ async def test_publish_about_users_projects_node(
     logged_user: Dict[str, Any],
     user_project: Dict[str, Any],
     #
-    socketio_subscriber_handlers,
+    socketio_subscriber,
     publish_some_messages_in_rabbit,
 ):
-    mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
+    mock_log_handler, mock_node_update_handler = socketio_subscriber
 
     # publish message with correct user id, project node
     node_uuid = list(user_project["workbench"])[0]

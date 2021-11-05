@@ -25,10 +25,10 @@ def setup_socketio(app: web.Application):
     # ---------------------------------------------
 
     # SEE https://github.com/miguelgrinberg/python-socketio/blob/v4.6.1/docs/server.rst#aiohttp
-    sio = AsyncServer(async_mode="aiohttp", client_manager=None, logging=log)
+    # TODO: ujson to speed up?
+    # TODO: client_manager= to socketio.AsyncRedisManager/AsyncAioPikaManager for horizontal scaling (shared sessions)
+    sio = AsyncServer(async_mode="aiohttp", logger=log, engineio_logger=False)
     sio.attach(app)
-
-    # FIXME: cleanup sio??
 
     app[APP_CLIENT_SOCKET_SERVER_KEY] = sio
     handlers_utils.register_handlers(app, handlers)
