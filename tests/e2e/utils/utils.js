@@ -298,21 +298,27 @@ async function isServiceConnected(page, studyId, nodeId) {
   return connected;
 }
 
-async function isStudyDone(page, studyId) {
+async function getStudyState(page, studyId) {
   const endPoint = "/projects/" + studyId + "/state";
-  console.log("-- Is study done", endPoint);
+  console.log("-- Get study state", endPoint);
   const resp = await makeRequest(page, endPoint);
 
   if (resp !== null && "state" in resp && "value" in resp["state"]) {
-    const pipelineStatus = resp["state"]["value"];
-    console.log("Pipeline Status:", studyId, pipelineStatus);
+    return resp["state"]["value"];
+  }
+  console.log("Unable to parse Pipeline Status:", JSON.stringify(resp));
+  return null;
+}
+
+async function isStudyDone(page, studyId) {
+  const state = await getStudyState(page, studyId);
+  if (state) {
     const stopListening = [
       "SUCCESS",
       "FAILED"
     ];
-    return stopListening.includes(pipelineStatus);
+    return stopListening.includes(state);
   }
-  console.log("Unable to parse Pipeline Status:", JSON.stringify(resp));
   return false;
 }
 
@@ -478,6 +484,7 @@ module.exports = {
   waitForResponse,
   isServiceReady,
   isServiceConnected,
+  getStudyState,
   isStudyDone,
   isStudyUnlocked,
   waitForValidOutputFile,
