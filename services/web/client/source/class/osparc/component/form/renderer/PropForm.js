@@ -39,7 +39,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     "linkFieldModified": "qx.event.type.Data",
     "fileRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
-    "parameterNodeRequested": "qx.event.type.Data",
+    "parameterRequested": "qx.event.type.Data",
     "changeChildVisibility": "qx.event.type.Event"
   },
 
@@ -234,13 +234,17 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     __getSelectFileButton: function(portId) {
       const selectFileButton = new qx.ui.menu.Button(this.tr("Select File"));
-      selectFileButton.addListener("execute", () => this.fireDataEvent("fileRequested", portId), this);
+      // selectFileButton.addListener("execute", () => this.fireDataEvent("fileRequested", portId), this);
+      selectFileButton.addListener("execute", () => this.fireDataEvent("filePickerRequested", {
+        portId,
+        file: null
+      }), this);
       return selectFileButton;
     },
 
     __getNewParamButton: function(portId) {
       const newParamBtn = new qx.ui.menu.Button(this.tr("Set new parameter"));
-      newParamBtn.addListener("execute", () => this.fireDataEvent("parameterNodeRequested", portId), this);
+      newParamBtn.addListener("execute", () => this.fireDataEvent("parameterRequested", portId), this);
       return newParamBtn;
     },
 

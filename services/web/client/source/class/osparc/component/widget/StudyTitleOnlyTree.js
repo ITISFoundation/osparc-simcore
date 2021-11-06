@@ -27,7 +27,7 @@ qx.Class.define("osparc.component.widget.StudyTitleOnlyTree", {
         createItem: () => {
           const nodeTreeItem = new osparc.component.widget.NodeTreeItem();
           nodeTreeItem.addListener("renameNode", e => this.__openItemRenamer(e.getData()));
-          nodeTreeItem.addListener("showInfo", e => this.__openStudyInfo());
+          nodeTreeItem.addListener("infoNode", e => this.__openStudyInfo());
           return nodeTreeItem;
         }
       });

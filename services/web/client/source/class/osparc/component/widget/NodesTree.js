@@ -83,11 +83,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
           children: node.isContainer() ? this.convertModel(node.getInnerNodes()) : [],
           isContainer: node.isContainer(),
           nodeId: node.getNodeId(),
-          sortingValue: this.self().getSortingValue(node)
+          sortingValue: this.self().getSortingValue(node),
+          statusColor: null
         };
         children.push(nodeInTree);
       }
-      // children.sort((firstEl, secondEl) => firstEl.sortingValue - secondEl.sortingValue);
       return children;
     }
   },
@@ -117,18 +117,11 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     populateTree: function() {
-      const study = this.getStudy();
-      const topLevelNodes = study.getWorkbench().getNodes();
-      const data = {
-        label: study.getName(),
-        children: this.self().convertModel(topLevelNodes),
-        isContainer: true,
-        nodeId: study.getUuid(),
-        sortingValue: 0
-      };
+      const data = this.__getModelData();
       let newModel = qx.data.marshal.Json.createModel(data, true);
       let oldModel = this.getModel();
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
+        const study = this.getStudy();
         study.bind("name", newModel, "label");
         this.setModel(newModel);
         this.setDelegate({
@@ -136,7 +129,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
             const nodeTreeItem = new osparc.component.widget.NodeTreeItem();
             nodeTreeItem.addListener("fullscreenNode", e => this.__openFullscreen(e.getData()));
             nodeTreeItem.addListener("renameNode", e => this.__openItemRenamer(e.getData()));
-            nodeTreeItem.addListener("showInfo", e => this.__openNodeInfo(e.getData()));
+            nodeTreeItem.addListener("infoNode", e => this.__openNodeInfo(e.getData()));
             nodeTreeItem.addListener("deleteNode", e => this.__deleteNode(e.getData()));
             return nodeTreeItem;
           },
@@ -165,16 +158,17 @@ qx.Class.define("osparc.component.widget.NodesTree", {
                 }
               }
 
-              // bind running/interactive status to icon color
+              // "bind" running/interactive status to icon color
               if (node.isDynamic()) {
-                node.getStatus().bind("interactive", item.getChildControl("icon"), "textColor", {
-                  converter: status => osparc.utils.StatusUI.getColor(status)
-                }, this);
+                node.getStatus().addListener("changeInteractive", e => this.__updateColor(node.getNodeId(), e.getData()));
+                this.__updateColor(node.getNodeId(), node.getStatus().getInteractive());
               } else if (node.isComputational()) {
-                node.getStatus().bind("running", item.getChildControl("icon"), "textColor", {
-                  converter: status => osparc.utils.StatusUI.getColor(status)
-                }, this);
+                node.getStatus().addListener("changeRunning", e => this.__updateColor(node.getNodeId(), e.getData()));
+                this.__updateColor(node.getNodeId(), node.getStatus().getRunning());
               }
+              c.bindProperty("statusColor", "textColor", {
+                converter: statusColor => osparc.utils.StatusUI.getColor(statusColor)
+              }, item.getChildControl("icon"), id);
 
               // add fullscreen
               if (node.isDynamic()) {
@@ -187,6 +181,8 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               this.__openItem(item.getModel().getNodeId());
               this.nodeSelected(item.getModel().getNodeId());
             }, this);
+            // This is needed to keep the label flexible
+            item.addListener("resize", e => item.setMaxWidth(100), this);
           },
           sorter: (itemA, itemB) => itemA.getSortingValue() - itemB.getSortingValue()
         });
@@ -195,14 +191,41 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       }
     },
 
-    __getNodeInTree: function(model, nodeId) {
+    __getModelData: function() {
+      const study = this.getStudy();
+      const topLevelNodes = study.getWorkbench().getNodes();
+      const data = this.__getRootModelData();
+      data.children = this.self().convertModel(topLevelNodes);
+      return data;
+    },
+
+    __getRootModelData: function() {
+      const study = this.getStudy();
+      const data = {
+        label: study.getName(),
+        children: [],
+        isContainer: true,
+        nodeId: study.getUuid(),
+        sortingValue: 0
+      };
+      return data;
+    },
+
+    __updateColor: function(nodeId, status) {
+      const nodeInTree = this.__getNodeModel(this.getModel(), nodeId);
+      if (nodeInTree) {
+        nodeInTree.setStatusColor(status);
+      }
+    },
+
+    __getNodeModel: function(model, nodeId) {
       if (model.getNodeId() === nodeId) {
         return model;
       } else if (model.getIsContainer() && model.getChildren() !== null) {
         let node = null;
         let children = model.getChildren().toArray();
         for (let i = 0; node === null && i < children.length; i++) {
-          node = this.__getNodeInTree(children[i], nodeId);
+          node = this.__getNodeModel(children[i], nodeId);
         }
         return node;
       }
@@ -231,26 +254,22 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     __openItemRenamer: function(nodeId) {
-      const renameItem = nodeId === undefined ? this.__getSelection() : this.__getNodeInTree(this.getModel(), nodeId);
-      if (renameItem) {
-        const treeItemRenamer = new osparc.component.widget.Renamer(renameItem.getLabel());
+      if (nodeId === undefined && this.__getSelection()) {
+        nodeId = this.__getSelection().getNodeId();
+      }
+      if (nodeId) {
+        const study = this.getStudy();
+        const node = study.getWorkbench().getNode(nodeId);
+        const oldLabel = nodeId === study.getUuid() ? study.getName() : node.getLabel();
+        const treeItemRenamer = new osparc.component.widget.Renamer(oldLabel);
         treeItemRenamer.addListener("labelChanged", e => {
           const {
             newLabel
           } = e.getData();
-          const selectedNodeId = renameItem.getNodeId();
-          const study = this.getStudy();
-          if (selectedNodeId === study.getUuid() && osparc.data.Permissions.getInstance().canDo("study.update", true)) {
-            const params = {
-              name: newLabel
-            };
-            study.updateStudy(params);
-          } else if (osparc.data.Permissions.getInstance().canDo("study.node.rename", true)) {
-            renameItem.setLabel(newLabel);
-            const node = study.getWorkbench().getNode(selectedNodeId);
-            if (node) {
-              node.renameNode(newLabel);
-            }
+          if (nodeId === study.getUuid() && osparc.data.Permissions.getInstance().canDo("study.update", true)) {
+            study.setName(newLabel);
+          } else if (node && osparc.data.Permissions.getInstance().canDo("study.node.rename", true)) {
+            node.setLabel(newLabel);
           }
           treeItemRenamer.close();
         }, this);
@@ -261,31 +280,39 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     __openNodeInfo: function(nodeId) {
+      if (nodeId === undefined && this.__getSelection()) {
+        nodeId = this.__getSelection().getNodeId();
+      }
       if (nodeId) {
-        const node = this.getStudy().getWorkbench().getNode(nodeId);
-        const serviceDetails = new osparc.servicecard.Large(node.getMetaData());
-        const title = this.tr("Service information");
-        const width = 600;
-        const height = 700;
-        osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+        const study = this.getStudy();
+        if (nodeId === study.getUuid()) {
+          const studyDetails = new osparc.studycard.Large(study);
+          const title = this.tr("Study Details");
+          const width = 500;
+          const height = 500;
+          osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
+        } else {
+          const node = study.getWorkbench().getNode(nodeId);
+          const serviceDetails = new osparc.servicecard.Large(node.getMetaData());
+          const title = this.tr("Service information");
+          const width = 600;
+          const height = 700;
+          osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
+        }
       }
     },
 
     __deleteNode: function(nodeId) {
-      if (nodeId === undefined) {
-        const selectedItem = this.__getSelection();
-        if (selectedItem === null) {
-          return;
-        }
-        this.fireDataEvent("removeNode", selectedItem.getNodeId());
-      } else {
+      if (nodeId === undefined && this.__getSelection()) {
+        nodeId = this.__getSelection().getNodeId();
+      }
+      if (nodeId) {
         this.fireDataEvent("removeNode", nodeId);
       }
     },
 
     nodeSelected: function(nodeId) {
-      const dataModel = this.getModel();
-      const item = this.__getNodeInTree(dataModel, nodeId);
+      const item = this.__getNodeModel(this.getModel(), nodeId);
       if (item) {
         this.openNodeAndParents(item);
         this.setSelection(new qx.data.Array([item]));
@@ -294,14 +321,16 @@ qx.Class.define("osparc.component.widget.NodesTree", {
 
     __attachEventHandlers: function() {
       this.addListener("keypress", keyEvent => {
-        if (keyEvent.getKeyIdentifier() === "Delete") {
-          this.__deleteNode();
-        }
-      }, this);
-
-      this.addListener("keypress", keyEvent => {
-        if (keyEvent.getKeyIdentifier() === "F2") {
-          this.__openItemRenamer();
+        switch (keyEvent.getKeyIdentifier()) {
+          case "F2":
+            this.__openItemRenamer();
+            break;
+          case "I":
+            this.__openNodeInfo();
+            break;
+          case "Delete":
+            this.__deleteNode();
+            break;
         }
       }, this);
     }
