@@ -13,7 +13,7 @@ from pytest_simcore.docker_swarm import assert_deployed_services_are_ready
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_random
+from tenacity.wait import wait_fixed
 
 pytest_plugins = [
     "pytest_simcore.docker_compose",
@@ -96,7 +96,7 @@ def deployed_simcore_stack(
     # the fixture will fail
     try:
         for attempt in Retrying(
-            wait=wait_random(min=5, max=10),
+            wait=wait_fixed(5),
             stop=stop_after_delay(4 * _MINUTE),
             before_sleep=before_sleep_log(log, logging.INFO),
             reraise=True,

@@ -16,7 +16,7 @@ from docker.errors import APIError
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_random
+from tenacity.wait import wait_fixed
 
 from .helpers.utils_docker import get_ip
 from .helpers.utils_environs import EnvVarsDict
@@ -140,7 +140,7 @@ def docker_swarm(
     docker_client: docker.client.DockerClient, keep_docker_up: Iterator[bool]
 ) -> Iterator[None]:
     for attempt in Retrying(
-        wait=wait_random(5), stop=stop_after_delay(15), reraise=True
+        wait=wait_fixed(2), stop=stop_after_delay(15), reraise=True
     ):
         with attempt:
             if not _in_docker_swarm(docker_client):
@@ -201,11 +201,11 @@ def docker_stack(
             "compose": yaml.safe_load(compose_file.read_text()),
         }
 
-    # all services ready
+    # all SELECTED services ready
     try:
         for attempt in Retrying(
-            wait=wait_random(min=1, max=10),
-            stop=stop_after_delay(6 * _MINUTE),
+            wait=wait_fixed(5),
+            stop=stop_after_delay(8 * _MINUTE),
             before_sleep=before_sleep_log(log, logging.INFO),
             reraise=True,
         ):
@@ -270,7 +270,7 @@ def docker_stack(
             resource_client = getattr(docker_client, resource_name)
 
             for attempt in Retrying(
-                wait=wait_random(max=20),
+                wait=wait_fixed(2),
                 stop=stop_after_delay(3 * _MINUTE),
                 before_sleep=before_sleep_log(log, logging.WARNING),
                 reraise=True,
