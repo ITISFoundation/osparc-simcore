@@ -61,7 +61,6 @@ def mock_service_envs(
 
     monkeypatch.setenv("SWARM_STACK_NAME", "simcore")
     monkeypatch.setenv("SIDECAR_LOGLEVEL", "DEBUG")
-    monkeypatch.setenv("SIDECAR_HOST_HOSTNAME_PATH", "/home/scu/hostname")
     monkeypatch.setenv(
         "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME", "simcore_computational_shared_data"
     )
