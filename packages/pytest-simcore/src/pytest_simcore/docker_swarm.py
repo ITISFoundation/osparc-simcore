@@ -11,7 +11,6 @@ from typing import Dict, Iterator
 
 import docker
 import pytest
-import tenacity
 import yaml
 from docker.errors import APIError
 from tenacity import Retrying
@@ -110,8 +109,10 @@ def assert_deployed_services_are_ready(
             )
 
 
-def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None:
-    print("{:*^100}".format("docker services running " + msg))
+def _fetch_and_print_services(
+    docker_client: docker.client.DockerClient, extra_title: str
+) -> None:
+    print("{:*^100}".format(f"docker services running {extra_title}"))
     services = {
         s.name: {"service": s.attrs, "tasks": list(s.tasks())}
         for s in docker_client.services.list()
@@ -211,7 +212,7 @@ def docker_stack(
             with attempt:
                 assert_deployed_services_are_ready(docker_client)
     finally:
-        _print_services(docker_client, "[BEFORE TEST]")
+        _fetch_and_print_services(docker_client, "[BEFORE TEST]")
 
     yield {
         "stacks": stacks_deployed,
@@ -220,7 +221,7 @@ def docker_stack(
 
     ## TEAR DOWN ----------------------
 
-    _print_services(docker_client, "[AFTER TEST]")
+    _fetch_and_print_services(docker_client, "[AFTER TEST]")
 
     if keep_docker_up:
         # skip bringing the stack down
@@ -289,4 +290,4 @@ def docker_stack(
                             f"Waiting for {len(pending)} {resource_name} to shutdown: {pending}."
                         )
 
-    _print_services(docker_client, "[AFTER REMOVED]")
+    _fetch_and_print_services(docker_client, "[AFTER REMOVED]")
