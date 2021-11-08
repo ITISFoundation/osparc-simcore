@@ -21,13 +21,7 @@ log = logging.getLogger(__name__)
 
 THIS_SERVICE_NAME = "redis"
 DSN = "redis://{host}:{port}"
-
-retry_upon_init_policy = dict(
-    stop=stop_after_delay(60),
-    wait=wait_random(1, 10),
-    before=before_sleep_log(log, logging.WARNING),
-    reraise=True,
-)
+_MINUTE = 60
 
 
 async def redis_client(app: web.Application):
@@ -37,7 +31,12 @@ async def redis_client(app: web.Application):
     async def create_client(url) -> aioredis.Redis:
         # create redis client
         client: Optional[aioredis.Redis] = None
-        async for attempt in AsyncRetrying(**retry_upon_init_policy):
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(1 * _MINUTE),
+            wait=wait_random(max=10),
+            before_sleep=before_sleep_log(log, logging.WARNING),
+            reraise=True,
+        ):
             with attempt:
                 client = await aioredis.create_redis_pool(url, encoding="utf-8")
                 if not client:
