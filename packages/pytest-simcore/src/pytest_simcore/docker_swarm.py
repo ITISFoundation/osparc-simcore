@@ -16,8 +16,8 @@ import yaml
 from docker.errors import APIError
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_attempt, stop_after_delay
-from tenacity.wait import wait_fixed, wait_random
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random
 
 from .helpers.utils_docker import get_ip
 from .helpers.utils_environs import EnvVarsDict
@@ -33,11 +33,6 @@ log = logging.getLogger(__name__)
 
 _MINUTE: int = 60  # secs
 _HEADER: str = "{:-^50}"
-
-_DEFAULT_RETRY_POLICY = dict(
-    wait=wait_random(5),
-    stop=stop_after_delay(15),
-)
 
 
 class _NotInSwarmException(Exception):
@@ -63,12 +58,14 @@ def _in_docker_swarm(
 
 
 @tenacity.retry(
-    wait=wait_fixed(5),
-    stop=stop_after_attempt(20),
+    wait=wait_random(min=5, max=10),
+    stop=stop_after_delay(4 * _MINUTE),
     before_sleep=before_sleep_log(log, logging.INFO),
     reraise=True,
 )
-def assert_services_are_ready(docker_client: docker.client.DockerClient) -> None:
+def assert_deployed_services_are_ready(
+    docker_client: docker.client.DockerClient,
+) -> None:
     def _get(obj, name, default=None):
         parts = name.split(".")
         value = obj
@@ -112,7 +109,7 @@ def assert_services_are_ready(docker_client: docker.client.DockerClient) -> None
 
             assert num_ready == num_replicas_specified, (
                 f"service_name='{service_name}' not ready: tasks_current_state={tasks_current_state} "
-                "but tasks_desired_state={tasks_desired_state}."
+                f"but tasks_desired_state={tasks_desired_state}."
             )
 
 
@@ -145,7 +142,7 @@ def docker_swarm(
     docker_client: docker.client.DockerClient, keep_docker_up: Iterator[bool]
 ) -> Iterator[None]:
     for attempt in Retrying(
-        retry_error_cls=_NotInSwarmException, **_DEFAULT_RETRY_POLICY
+        wait=wait_random(5), stop=stop_after_delay(15), reraise=True
     ):
         with attempt:
             if not _in_docker_swarm(docker_client):
@@ -206,7 +203,7 @@ def docker_stack(
             "compose": yaml.safe_load(compose_file.read_text()),
         }
 
-    assert_services_are_ready(docker_client)
+    assert_deployed_services_are_ready(docker_client)
     _print_services(docker_client, "[BEFORE TEST]")
 
     yield {
