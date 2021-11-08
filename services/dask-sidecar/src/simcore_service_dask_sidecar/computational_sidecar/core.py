@@ -246,7 +246,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         exc_type: Optional[Type[BaseException]],
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
-    ) -> Optional[bool]:
+    ) -> None:
         if exc:
             await self._publish_sidecar_log(f"Task error:\n{exc}")
             await self._publish_sidecar_log(
