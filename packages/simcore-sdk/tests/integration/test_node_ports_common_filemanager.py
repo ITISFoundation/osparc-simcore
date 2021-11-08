@@ -203,7 +203,10 @@ async def test_valid_metadata(
     assert is_metadata_present is True
 
 
-@pytest.mark.parametrize("fct", [filemanager.entry_exists, filemanager.delete_file])
+@pytest.mark.parametrize(
+    "fct",
+    [filemanager.entry_exists, filemanager.delete_file, filemanager.get_file_metadata],
+)
 async def test_invalid_call_raises_exception(
     tmpdir: Path,
     bucket: str,
