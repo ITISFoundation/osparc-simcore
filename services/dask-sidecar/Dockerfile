@@ -126,7 +126,7 @@ COPY --chown=scu:scu services/dask-sidecar/docker services/dask-sidecar/docker
 # Otherwise the worker will take random ports to serve the /health entrypoint.
 HEALTHCHECK \
   --interval=30s \
-  --timeout=25s \
+  --timeout=15s \
   --start-period=5s \
   --retries=3 \
   CMD ["curl", "-Lf", "http://127.0.0.1:8787/health"]
