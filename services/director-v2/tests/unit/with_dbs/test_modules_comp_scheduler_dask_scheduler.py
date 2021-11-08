@@ -4,6 +4,7 @@
 # pylint:disable=no-value-for-parameter
 # pylint:disable=protected-access
 # pylint:disable=too-many-arguments
+# pylint:disable=no-name-in-module
 
 from typing import Any, Callable, Dict, Iterator, cast
 from unittest import mock
