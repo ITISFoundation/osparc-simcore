@@ -133,9 +133,6 @@ class BaseCompScheduler(ABC):
         )
 
     async def reconnect_backend(self) -> None:
-        import pdb
-
-        pdb.set_trace()
         await self._reconnect_backend()
 
     async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
