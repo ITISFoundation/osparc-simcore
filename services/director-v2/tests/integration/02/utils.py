@@ -24,7 +24,7 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
-SERVICES_ARE_READY_TIMEOUT = 10 * 60
+SERVICES_ARE_READY_TIMEOUT = 2 * 60
 SEPARATOR = "=" * 50
 
 
