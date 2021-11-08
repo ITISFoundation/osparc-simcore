@@ -3,7 +3,9 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
+import json
 import logging
+import time
 from dataclasses import dataclass
 from typing import Dict, Final, List
 
@@ -21,6 +23,9 @@ from .helpers.utils_docker import get_ip, get_service_published_port
 from .helpers.utils_environs import EnvVarsDict
 
 log = logging.getLogger(__name__)
+
+# HELPERS --------------------------------------------------------------------------------
+
 
 SERVICES_TO_SKIP = [
     "dask-sidecar",
@@ -44,6 +49,41 @@ FASTAPI_BASED_SERVICE_PORT: int = 8000
 DASK_SCHEDULER_SERVICE_PORT: int = 8787
 
 
+_MINUTE: Final[int] = 60
+
+
+@tenacity.retry(
+    wait=wait_random(max=20),
+    stop=stop_after_delay(5 * _MINUTE),
+    before_sleep=before_sleep_log(log, logging.WARNING),
+    reraise=True,
+)
+async def assert_service_is_responsive(service_name: str, endpoint: URL):
+    FAST = ClientTimeout(total=1)  # type: ignore
+    print(f"Trying to connect with '{service_name}' through '{endpoint}'")
+
+    async with aiohttp.ClientSession(timeout=FAST) as session:
+        async with session.get(endpoint) as resp:
+            # NOTE: Health-check endpoint require only a status code 200
+            # (see e.g. services/web/server/docker/healthcheck.py)
+            # regardless of the payload content
+            assert (
+                resp.status == 200
+            ), f"{service_name=} NOT responsive on {endpoint=}. Details: {resp=}"
+
+            print(f"connection with {service_name=} successful on {endpoint=}")
+
+
+async def wait_till_service_ready(service_name: str, endpoint: URL):
+    t0 = time.time()
+    await assert_service_is_responsive(service_name, endpoint)
+    elapsed_time = time.time() - t0
+    print(
+        f"{service_name=} is ready [{elapsed_time=}]: Retry stats: "
+        f"{json.dumps(assert_service_is_responsive.retry.statistics, indent=1)}"
+    )
+
+
 @dataclass
 class ServiceHealthcheckEndpoint:
     name: str
@@ -59,6 +99,9 @@ class ServiceHealthcheckEndpoint:
             ),
         )
         return obj
+
+
+# FIXTURES --------------------------------------------------------------------------------
 
 
 @pytest.fixture(scope="module")
@@ -115,7 +158,7 @@ async def simcore_services_ready(
 
     # check ready
     await asyncio.gather(
-        *[wait_till_service_responsive(h.name, h.url) for h in health_endpoints],
+        *[wait_till_service_ready(h.name, h.url) for h in health_endpoints],
         return_exceptions=False,
     )
 
@@ -125,27 +168,3 @@ async def simcore_services_ready(
         assert endpoint.host
         monkeypatch_module.setenv(f"{env_prefix}_HOST", endpoint.host)
         monkeypatch_module.setenv(f"{env_prefix}_PORT", str(endpoint.port))
-
-
-_MINUTE: Final[int] = 60
-
-# HELPERS --
-@tenacity.retry(
-    wait=wait_random(max=20),
-    stop=stop_after_delay(5 * _MINUTE),
-    before_sleep=before_sleep_log(log, logging.WARNING),
-    reraise=True,
-)
-async def wait_till_service_responsive(service_name: str, endpoint: URL):
-    FAST = ClientTimeout(total=1)  # type: ignore
-
-    print(f"Trying to connect with '{service_name}' through '{endpoint}'")
-    async with aiohttp.ClientSession(timeout=FAST) as session:
-        async with session.get(endpoint) as resp:
-            # NOTE: Health-check endpoint require only a
-            # status code 200 (see e.g. services/web/server/docker/healthcheck.py)
-            # regardless of the payload content
-            assert (
-                resp.status == 200
-            ), f"{service_name} NOT responsive on {endpoint}. Details: {resp}"
-            print(f"connection with {service_name} successful @{endpoint}")

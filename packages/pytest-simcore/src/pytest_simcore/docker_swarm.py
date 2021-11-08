@@ -41,10 +41,6 @@ class _NotInSwarmException(Exception):
     pass
 
 
-class _StillInSwarmException(Exception):
-    pass
-
-
 class _ResourceStillNotRemoved(Exception):
     pass
 
@@ -119,27 +115,52 @@ def by_task_update(task: Dict) -> datetime:
     before_sleep=before_sleep_log(log, logging.INFO),
     reraise=True,
 )
-def _wait_for_services(docker_client: docker.client.DockerClient) -> None:
-    pre_states = ["NEW", "PENDING", "ASSIGNED", "PREPARING", "STARTING"]
-    services = docker_client.services.list()
-    for service in services:
-        print(f"Waiting for {service.name}...")
-        if service.tasks():
-            sorted_tasks = sorted(service.tasks(), key=by_task_update)
-            task = sorted_tasks[-1]
-            task_state = task["Status"]["State"].upper()
-            if task_state not in pre_states:
-                if not task_state == "RUNNING":
-                    raise ValueError(
-                        f"service {service.name} not running [task_state={task_state} instead]. "
-                        f"Details: \n{json.dumps(task, indent=2)}"
+def _wait_for_services_ready(docker_client: docker.client.DockerClient) -> None:
+    """
+    :raises ValueError: if the desired number of replicas do not match the desired state
+    """
+    for service in docker_client.services.list():
+        service_name = service.name
+        num_replicas = service.attrs["Mode"]["Replicated"]["Replicas"]
+
+        print(f"Waiting for {service_name=} to have {num_replicas=} ...")
+        tasks = list(service.tasks())
+
+        if tasks:
+            #
+            # WARNING:
+            #  we have noticed using the 'last updated' task is not necessarily
+            #  the most actual of the tasks. It dependends e.g. on the restart policy.
+            #  For that reason, the readiness condition has been redefined as state in which
+            #  the specified number of replicas reach their desired state.
+            #  We still wonder if there is a transition point in which that condition
+            #  is met while still the service is not ready.
+            #
+
+            tasks_desired_state = [
+                task["Status"]["DesiredState"].upper() for task in tasks
+            ]
+            tasks_current_state = [task["Status"]["State"].upper() for task in tasks]
+
+            num_ready = sum(
+                [
+                    desired == current
+                    for desired, current in zip(
+                        tasks_desired_state, tasks_current_state
                     )
+                ]
+            )
+
+            if num_ready != num_replicas:
+                msg = f"{service_name=} not ready: got {num_ready=} but expected {num_replicas=}"
+                print(msg)
+                raise ValueError(f"{msg}. Details: \n{json.dumps(tasks, indent=1)}")
 
 
 def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None:
     print("{:*^100}".format("docker services running " + msg))
     services = {
-        s.name: {"attrs": s.attrs, "tasks": [t for t in s.tasks()]}
+        s.name: {"service": s.attrs, "tasks": list(s.tasks())}
         for s in docker_client.services.list()
     }
     print(json.dumps(services, indent=1, sort_keys=True))
@@ -189,7 +210,7 @@ def docker_stack(
             "compose": yaml.safe_load(compose_file.read_text()),
         }
 
-    _wait_for_services(docker_client)
+    _wait_for_services_ready(docker_client)
     _print_services(docker_client, "[BEFORE TEST]")
 
     yield {
