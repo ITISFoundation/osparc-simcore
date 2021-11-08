@@ -1,8 +1,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 import asyncio
 import json
-import os
 import uuid
 from asyncio import AbstractEventLoop
 from pathlib import Path
@@ -10,16 +10,16 @@ from pprint import pformat
 from typing import Iterator, List
 
 import aio_pika
-from simcore_service_dynamic_sidecar.core.application import assemble_application
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
 from _pytest.fixtures import FixtureRequest
+from _pytest.monkeypatch import MonkeyPatch
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.settings.rabbit import RabbitConfig
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
+from simcore_service_dynamic_sidecar.core.application import assemble_application
 from simcore_service_dynamic_sidecar.core.rabbitmq import SLEEP_BETWEEN_SENDS, RabbitMQ
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
