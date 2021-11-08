@@ -11,7 +11,7 @@ from typing import Any, Dict, List
 import pytest
 from docker import DockerClient
 from docker.models.services import Service
-from pytest_simcore.docker_swarm import by_task_update
+from pytest_simcore.docker_swarm import assert_deployed_services_are_ready
 from tenacity import Retrying
 from tenacity.before import before_log
 from tenacity.stop import stop_after_attempt
@@ -118,25 +118,27 @@ def deployed_simcore_stack(
         "running": ["running"],
     }
     try:
-        for attempt in Retrying(
-            wait=wait_fixed(WAIT_TIME_BETWEEN_RETRIES_SECS),
-            stop=stop_after_attempt(NUMBER_OF_ATTEMPTS),
-            before=before_log(log, logging.WARNING),
-        ):
-            with attempt:
-                for service in docker_client.services.list():
-                    print(f"Waiting for {service.name}...")
-                    for task in sorted(service.tasks(), key=by_task_update):
-                        # NOTE: Could have been restarted from latest test parameter, accept as well complete
-                        assert (
-                            task["Status"]["State"]
-                            in desired_state_to_state_map[task["DesiredState"]]
-                        ), (
-                            f"{service.name} still not ready or complete. Expected "
-                            f"desired_state[{task['DesiredState']}] but got "
-                            f"status_state[{task['Status']['State']}]). Details:"
-                            f"\n{pformat(task)}"
-                        )
+        assert_deployed_services_are_ready(docker_client)
+
+        # for attempt in Retrying(
+        #     wait=wait_fixed(WAIT_TIME_BETWEEN_RETRIES_SECS),
+        #     stop=stop_after_attempt(NUMBER_OF_ATTEMPTS),
+        #     before=before_log(log, logging.WARNING),
+        # ):
+        #     with attempt:
+        #         for service in docker_client.services.list():
+        #             print(f"Waiting for {service.name}...")
+        #             for task in sorted(service.tasks(), key=by_task_update):
+        #                 # NOTE: Could have been restarted from latest test parameter, accept as well complete
+        #                 assert (
+        #                     task["Status"]["State"]
+        #                     in desired_state_to_state_map[task["DesiredState"]]
+        #                 ), (
+        #                     f"{service.name} still not ready or complete. Expected "
+        #                     f"desired_state[{task['DesiredState']}] but got "
+        #                     f"status_state[{task['Status']['State']}]). Details:"
+        #                     f"\n{pformat(task)}"
+        #                 )
 
     finally:
         subprocess.run(f"docker stack ps {core_stack_name}", shell=True, check=False)
