@@ -161,6 +161,8 @@ class ClusterPatch(ClusterBase):
     type: Optional[ClusterType]
     owner: Optional[GroupID]
     thumbnail: Optional[HttpUrl]
+    endpoint: Optional[AnyUrl]
+    authentication: Optional[Dict[str, Any]]
     access_rights: Optional[Dict[GroupID, ClusterAccessRights]] = Field(
         alias="accessRights"
     )
