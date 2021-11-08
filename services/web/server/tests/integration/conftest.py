@@ -100,7 +100,7 @@ def webserver_environ(
 
 @pytest.fixture(scope="module")
 def _webserver_dev_config(
-    webserver_environ: Dict, docker_stack: Dict, tmp_path: Path
+    webserver_environ: Dict, docker_stack: Dict, temp_folder: Path
 ) -> Dict:
     """
     Swarm with integration stack already started
@@ -109,7 +109,7 @@ def _webserver_dev_config(
 
     NOTE: Prefer using 'app_config' below instead of this as a function-scoped fixture
     """
-    config_file_path = tmp_path / "webserver_dev_config.yaml"
+    config_file_path = temp_folder / "webserver_dev_config.yaml"
 
     # recreate config-file
     with app_resources.stream("config/server-docker-dev.yaml") as f:
