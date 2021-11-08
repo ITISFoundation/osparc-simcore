@@ -63,9 +63,9 @@ RUN python -m venv ${VIRTUAL_ENV}
 RUN mkdir -p ${DY_VOLUMES}
 
 RUN pip install --upgrade --no-cache-dir \
-    pip~=21.3  \
-    wheel \
-    setuptools
+  pip~=21.3  \
+  wheel \
+  setuptools
 
 WORKDIR /build
 
@@ -118,10 +118,10 @@ COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/do
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
 # more agressive checking helps with detecting the searvice is ready
-HEALTHCHECK --interval=1s \
+HEALTHCHECK --interval=30s \
   --timeout=1s \
-  --start-period=1s \
-  --retries=120 \
+  --start-period=5s \
+  --retries=3 \
   CMD ["python3", "services/dynamic-sidecar/docker/healthcheck.py", "http://localhost:8000/health"]
 
 EXPOSE 8000
