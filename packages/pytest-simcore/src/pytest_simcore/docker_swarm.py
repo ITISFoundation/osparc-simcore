@@ -109,6 +109,14 @@ def by_task_update(task: Dict) -> datetime:
     return to_datetime(datetime_str)
 
 
+def _get(obj, name, default=None):
+    parts = name.split(".")
+    value = obj
+    for part in parts[:-1]:
+        value = value.get(part, {})
+    return value.get(parts[-1], default)
+
+
 @tenacity.retry(
     wait=wait_fixed(5),
     stop=stop_after_attempt(20),
@@ -121,9 +129,11 @@ def _wait_for_services_ready(docker_client: docker.client.DockerClient) -> None:
     """
     for service in docker_client.services.list():
         service_name = service.name
-        num_replicas = service.attrs["Mode"]["Replicated"]["Replicas"]
+        num_replicas_specified = _get(
+            service.attrs, "Spec.Mode.Replicated.Replicas", default=1
+        )
 
-        print(f"Waiting for {service_name=} to have {num_replicas=} ...")
+        print(f"Waiting for {service_name=} to have {num_replicas_specified=} ...")
         tasks = list(service.tasks())
 
         if tasks:
@@ -134,13 +144,11 @@ def _wait_for_services_ready(docker_client: docker.client.DockerClient) -> None:
             #  For that reason, the readiness condition has been redefined as state in which
             #  the specified number of replicas reach their desired state.
             #  We still wonder if there is a transition point in which that condition
-            #  is met while still the service is not ready.
+            #  is met while still the service is not ready. This needs to be reviewed...
             #
 
-            tasks_desired_state = [
-                task["Status"]["DesiredState"].upper() for task in tasks
-            ]
-            tasks_current_state = [task["Status"]["State"].upper() for task in tasks]
+            tasks_desired_state = [task["DesiredState"] for task in tasks]
+            tasks_current_state = [task["Status"]["State"] for task in tasks]
 
             num_ready = sum(
                 [
@@ -151,10 +159,10 @@ def _wait_for_services_ready(docker_client: docker.client.DockerClient) -> None:
                 ]
             )
 
-            if num_ready != num_replicas:
-                msg = f"{service_name=} not ready: got {num_ready=} but expected {num_replicas=}"
-                print(msg)
-                raise ValueError(f"{msg}. Details: \n{json.dumps(tasks, indent=1)}")
+            if num_ready != num_replicas_specified:
+                raise ValueError(
+                    f"{service_name=} not ready: got {num_ready=} but {num_replicas_specified=}."
+                )
 
 
 def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None:
