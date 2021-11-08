@@ -319,8 +319,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const srvCat = new osparc.component.workbench.ServiceCatalog();
       const maxLeft = this.getBounds().width - osparc.component.workbench.ServiceCatalog.Width;
       const maxHeight = this.getBounds().height - osparc.component.workbench.ServiceCatalog.Height;
-      const posX = winPos ? Math.min(winPos.x, maxLeft) : 100;
-      const posY = winPos ? Math.min(winPos.y, maxHeight) : 100;
+      const posX = Math.min(winPos.x, maxLeft);
+      const posY = Math.min(winPos.y, maxHeight);
       srvCat.moveTo(posX + this.__getLeftOffset(), posY + this.__getTopOffset());
       srvCat.addListener("addService", e => {
         const {
@@ -828,7 +828,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __getTopOffset: function() {
-      // const topOffset = osparc.navigation.NavigationBar.HEIGHT + osparc.desktop.WorkbenchView.TAB_BUTTON_HEIGHT + 53;
       const topOffset = window.innerHeight - this.getInnerSize().height;
       return topOffset;
     },
