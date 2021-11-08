@@ -22,8 +22,9 @@ pytest_simcore_ops_services_selection = ["adminer"]
 @pytest.fixture
 async def mocked_node_ports_storage_client(mocker: MockerFixture):
     mocker.patch(
-        "simcore_service_director_v2.utils.dask.port_utils.filemanager.storage_client",
+        "simcore_service_director_v2.utils.dask.port_utils.filemanager.entry_exists",
         autospec=True,
+        return_value=False,
     )
 
 
