@@ -16538,6 +16538,10 @@ paths:
                           enum:
                             - ON_PREMISE
                             - AWS
+                        endpoint:
+                          type: string
+                        authentication:
+                          type: object
                         owner:
                           description: the cluster owner group
                           type: integer
@@ -16567,6 +16571,8 @@ paths:
                         - id
                         - name
                         - accessRights
+                        - endpoint
+                        - authentication
                       example:
                         - id: 1
                           name: AWS cluster
@@ -16688,9 +16694,15 @@ paths:
                   enum:
                     - ON_PREMISE
                     - AWS
+                endpoint:
+                  type: string
+                authentication:
+                  type: object
               required:
                 - name
                 - type
+                - endpoint
+                - authentication
       responses:
         '201':
           description: cluster created
@@ -16720,6 +16732,10 @@ paths:
                         enum:
                           - ON_PREMISE
                           - AWS
+                      endpoint:
+                        type: string
+                      authentication:
+                        type: object
                       owner:
                         description: the cluster owner group
                         type: integer
@@ -16749,6 +16765,8 @@ paths:
                       - id
                       - name
                       - accessRights
+                      - endpoint
+                      - authentication
                     example:
                       - id: 1
                         name: AWS cluster
@@ -16886,6 +16904,10 @@ paths:
                         enum:
                           - ON_PREMISE
                           - AWS
+                      endpoint:
+                        type: string
+                      authentication:
+                        type: object
                       owner:
                         description: the cluster owner group
                         type: integer
@@ -16915,6 +16937,8 @@ paths:
                       - id
                       - name
                       - accessRights
+                      - endpoint
+                      - authentication
                     example:
                       - id: 1
                         name: AWS cluster
@@ -17036,6 +17060,10 @@ paths:
                   enum:
                     - ON_PREMISE
                     - AWS
+                endpoint:
+                  type: string
+                authentication:
+                  type: object
                 owner:
                   description: the cluster owner group
                   type: integer
@@ -17090,6 +17118,10 @@ paths:
                         enum:
                           - ON_PREMISE
                           - AWS
+                      endpoint:
+                        type: string
+                      authentication:
+                        type: object
                       owner:
                         description: the cluster owner group
                         type: integer
@@ -17119,6 +17151,8 @@ paths:
                       - id
                       - name
                       - accessRights
+                      - endpoint
+                      - authentication
                     example:
                       - id: 1
                         name: AWS cluster

@@ -200,12 +200,14 @@ async def test_create_cluster(
 ):
     # check we can create a cluster
     url = client.app.router["create_cluster_handler"].url_for()
-    cluster_data = ClusterCreate(
-        endpoint=faker.uri(),
-        authentication=authentication,
-        name=faker.name(),
-        type=random.choice(list(ClusterType)),
-    ).dict(by_alias=True, exclude_unset=True)
+    cluster_data = json.loads(
+        ClusterCreate(
+            endpoint=faker.uri(),
+            authentication=authentication,
+            name=faker.name(),
+            type=random.choice(list(ClusterType)),
+        ).json(by_alias=True, exclude_unset=True)
+    )
     rsp = await client.post(f"{url}", json=cluster_data)
     data, error = await assert_status(
         rsp,
@@ -234,6 +236,8 @@ async def test_create_cluster(
             id=row[clusters.c.id],
             name=cluster_data["name"],
             type=row[clusters.c.type],
+            endpoint=row[clusters.c.endpoint],
+            authentication=row[clusters.c.authentication],
             owner=logged_user["primary_gid"],
             access_rights={logged_user["primary_gid"]: CLUSTER_ADMIN_RIGHTS},
         )
