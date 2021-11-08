@@ -40,11 +40,11 @@ from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.module_setup import setup_socketio
 from simcore_service_webserver.users import setup_users
-from utils import get_fake_project
 
 log = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = [
+    "migration",
     "postgres",
     "redis",
     "storage",
@@ -170,12 +170,11 @@ async def new_project(client, user, access_rights=None):
     return await create_project(client.app, project_data, user["id"])
 
 
-async def get_template_project(client, user, access_rights=None):
+async def get_template_project(client, user, project_data: Dict, access_rights=None):
     """returns a tempalte shared with all"""
     _, _, all_group = await list_user_groups(client.app, user["id"])
 
     # the information comes from a file, randomize it
-    project_data = get_fake_project()
     project_data["name"] = "Fake template" + str(uuid4())
     project_data["uuid"] = str(uuid4())
     project_data["accessRights"] = {
@@ -422,7 +421,11 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 
 
 async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
-    simcore_services_ready, client, socketio_client_factory: Callable, aiopg_engine
+    simcore_services_ready,
+    client,
+    socketio_client_factory: Callable,
+    aiopg_engine,
+    fake_project: Dict,
 ):
     """after a USER disconnects the GC will remove none of its projects or templates nor the user itself"""
     number_of_projects = 5
@@ -432,7 +435,7 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
         await new_project(client, logged_user) for _ in range(number_of_projects)
     ]
     user_template_projects = [
-        await get_template_project(client, logged_user)
+        await get_template_project(client, logged_user, fake_project)
         for _ in range(number_of_templates)
     ]
 
