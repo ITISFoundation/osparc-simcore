@@ -8,13 +8,13 @@ from asyncio import CancelledError, Queue, Task
 from typing import Any, Dict, List, Optional, Union
 
 import aio_pika
-import tenacity
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from settings_library.rabbit import RabbitSettings
+from tenacity._asyncio import AsyncRetrying
 
 from ..core.settings import DynamicSidecarSettings
 
@@ -45,10 +45,13 @@ def _channel_close_callback(sender: Any, exc: Optional[BaseException]) -> None:
         )
 
 
-@tenacity.retry(**RabbitMQRetryPolicyUponInitialization().kwargs)
 async def _wait_till_rabbit_responsive(url: str) -> None:
-    connection = await aio_pika.connect(url, timeout=1.0)
-    await connection.close()
+    async for attempt in AsyncRetrying(
+        **RabbitMQRetryPolicyUponInitialization().kwargs
+    ):
+        with attempt:
+            connection = await aio_pika.connect(url, timeout=1.0)
+            await connection.close()
 
 
 class RabbitMQ:  # pylint: disable = too-many-instance-attributes
