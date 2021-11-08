@@ -11,7 +11,7 @@ from unittest import mock
 
 import aiopg
 import pytest
-from _helpers import PublishedProject, set_comp_task_outputs
+from _helpers import PublishedProject, set_comp_task_outputs  # type: ignore
 from models_library.projects_nodes_io import SimCoreFileLink
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.models.schemas.constants import UserID

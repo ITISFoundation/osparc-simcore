@@ -10,13 +10,11 @@ from unittest import mock
 
 import aiopg
 import pytest
-from _helpers import (
-    PublishedProject,
-    assert_comp_run_state,
-    assert_comp_tasks_state,
-    manually_run_comp_scheduler,
-    set_comp_task_state,
-)
+from _helpers import PublishedProject  # type: ignore
+from _helpers import assert_comp_run_state  # type: ignore
+from _helpers import assert_comp_tasks_state  # type: ignore
+from _helpers import manually_run_comp_scheduler  # type: ignore
+from _helpers import set_comp_task_state  # type: ignore
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import LocalCluster, SpecCluster
 from dask_task_models_library.container_tasks.events import TaskStateEvent
