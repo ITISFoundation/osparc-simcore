@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 
 import random
+from typing import AsyncIterable
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
@@ -86,7 +87,7 @@ def scheduler_data_from_service_labels_stored_data(
 
 
 @pytest.fixture
-async def dask_local_cluster(monkeypatch: MonkeyPatch) -> LocalCluster:
+async def dask_local_cluster(monkeypatch: MonkeyPatch) -> AsyncIterable[SpecCluster]:
     async with LocalCluster(
         n_workers=2, threads_per_worker=1, asynchronous=True
     ) as cluster:
@@ -102,42 +103,57 @@ def cluster_id() -> NonNegativeInt:
 
 
 @pytest.fixture
-def cluster_id_resource(cluster_id: NonNegativeInt) -> str:
+def cluster_id_resource_name(cluster_id: NonNegativeInt) -> str:
     return f"CLUSTER_{cluster_id}"
 
 
 @pytest.fixture
 async def dask_spec_local_cluster(
-    monkeypatch: MonkeyPatch, cluster_id_resource: str
-) -> SpecCluster:
+    monkeypatch: MonkeyPatch, cluster_id_resource_name: str
+) -> AsyncIterable[SpecCluster]:
     # in this mode we can precisely create a specific cluster
     workers = {
         "cpu-worker": {
             "cls": Worker,
             "options": {
                 "nthreads": 2,
-                "resources": {"CPU": 2, "RAM": 48e9, cluster_id_resource: 1},
+                "resources": {"CPU": 2, "RAM": 48e9, cluster_id_resource_name: 1},
             },
         },
         "gpu-worker": {
             "cls": Worker,
             "options": {
                 "nthreads": 1,
-                "resources": {"CPU": 1, "GPU": 1, "RAM": 48e9, cluster_id_resource: 1},
+                "resources": {
+                    "CPU": 1,
+                    "GPU": 1,
+                    "RAM": 48e9,
+                    cluster_id_resource_name: 1,
+                },
             },
         },
         "mpi-worker": {
             "cls": Worker,
             "options": {
                 "nthreads": 1,
-                "resources": {"CPU": 8, "MPI": 1, "RAM": 768e9, cluster_id_resource: 1},
+                "resources": {
+                    "CPU": 8,
+                    "MPI": 1,
+                    "RAM": 768e9,
+                    cluster_id_resource_name: 1,
+                },
             },
         },
         "gpu-mpi-worker": {
             "cls": Worker,
             "options": {
                 "nthreads": 1,
-                "resources": {"GPU": 1, "MPI": 1, "RAM": 768e9, cluster_id_resource: 1},
+                "resources": {
+                    "GPU": 1,
+                    "MPI": 1,
+                    "RAM": 768e9,
+                    cluster_id_resource_name: 1,
+                },
             },
         },
     }

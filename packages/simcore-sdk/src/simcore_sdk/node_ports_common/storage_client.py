@@ -149,3 +149,26 @@ async def get_file_metadata(
         if file_metadata_enveloped.data is None:
             raise exceptions.S3InvalidPathError(file_id)
         return file_metadata_enveloped.data.dict(by_alias=True)
+
+
+@handle_client_exception
+async def delete_file(
+    session: ClientSession, file_id: str, location_id: str, user_id: UserID
+) -> None:
+    if (
+        not isinstance(file_id, str)
+        or not isinstance(location_id, str)
+        or not isinstance(user_id, int)
+    ):
+        raise exceptions.StorageInvalidCall(
+            f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are invalid",
+        )
+    if file_id is None or location_id is None or user_id is None:
+        raise exceptions.StorageInvalidCall(
+            f"invalid call: user_id '{user_id}', location_id '{location_id}', file_id '{file_id}' are not allowed to be empty",
+        )
+    async with session.delete(
+        f"{_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
+        params={"user_id": f"{user_id}"},
+    ) as response:
+        response.raise_for_status()
