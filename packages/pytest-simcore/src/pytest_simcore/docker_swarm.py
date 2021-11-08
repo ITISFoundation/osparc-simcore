@@ -57,15 +57,12 @@ def _in_docker_swarm(
     return True
 
 
-@tenacity.retry(
-    wait=wait_random(min=5, max=10),
-    stop=stop_after_delay(4 * _MINUTE),
-    before_sleep=before_sleep_log(log, logging.INFO),
-    reraise=True,
-)
 def assert_deployed_services_are_ready(
     docker_client: docker.client.DockerClient,
 ) -> None:
+    #
+    # NOTE: could use aiodocker gather checks per service in parallel (currently not possible since used in director)
+    #
     def _get(obj, name, default=None):
         parts = name.split(".")
         value = obj
@@ -108,7 +105,7 @@ def assert_deployed_services_are_ready(
             )
 
             assert num_ready == num_replicas_specified, (
-                f"service_name='{service_name}' not ready: tasks_current_state={tasks_current_state} "
+                f"service_name='{service_name}' NOT ready: tasks_current_state={tasks_current_state} "
                 f"but tasks_desired_state={tasks_desired_state}."
             )
 
@@ -203,8 +200,18 @@ def docker_stack(
             "compose": yaml.safe_load(compose_file.read_text()),
         }
 
-    assert_deployed_services_are_ready(docker_client)
-    _print_services(docker_client, "[BEFORE TEST]")
+    # all services ready
+    try:
+        for attempt in Retrying(
+            wait=wait_random(min=5, max=10),
+            stop=stop_after_delay(4 * _MINUTE),
+            before_sleep=before_sleep_log(log, logging.INFO),
+            reraise=True,
+        ):
+            with attempt:
+                assert_deployed_services_are_ready(docker_client)
+    finally:
+        _print_services(docker_client, "[BEFORE TEST]")
 
     yield {
         "stacks": stacks_deployed,

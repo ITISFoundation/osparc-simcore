@@ -4,8 +4,6 @@
 
 import logging
 import subprocess
-from datetime import datetime
-from pprint import pformat
 from typing import Any, Dict, List
 
 import pytest
@@ -13,9 +11,9 @@ from docker import DockerClient
 from docker.models.services import Service
 from pytest_simcore.docker_swarm import assert_deployed_services_are_ready
 from tenacity import Retrying
-from tenacity.before import before_log
-from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_fixed
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random
 
 pytest_plugins = [
     "pytest_simcore.docker_compose",
@@ -29,7 +27,10 @@ pytest_plugins = [
     "pytest_simcore.tmp_path_extra",
     "pytest_simcore.traefik_service",
 ]
+
 log = logging.getLogger(__name__)
+
+_MINUTE: int = 60  # secs
 
 
 # CORE stack
@@ -81,26 +82,6 @@ def ops_stack_compose(docker_stack: Dict, ops_docker_compose: Dict):
     return docker_stack["stacks"]["core"]["compose"]
 
 
-WAIT_TIME_BETWEEN_RETRIES_SECS = 30
-NUMBER_OF_ATTEMPTS = 10
-
-
-def to_datetime(datetime_str: str) -> datetime:
-    # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
-    #  - The T separates the date portion from the time-of-day portion
-    #  - The Z on the end means UTC, that is, an offset-from-UTC
-    # The 099 before the Z is not clear, therefore we will truncate the last part
-    N = len("2020-10-09T12:28:14.7710")
-    if len(datetime_str) > N:
-        datetime_str = datetime_str[:N]
-    return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
-
-
-def by_task_update(task: Dict) -> datetime:
-    datetime_str = task["Status"]["Timestamp"]
-    return to_datetime(datetime_str)
-
-
 @pytest.fixture(scope="module")
 def deployed_simcore_stack(
     docker_registry: str,
@@ -113,32 +94,15 @@ def deployed_simcore_stack(
     # rather guaranteing that the framework is fully deployed before starting
     # tests. Obviously in a critical state in which the frameworks has a problem
     # the fixture will fail
-    desired_state_to_state_map = {
-        "shutdown": ["failed", "shutdown", "complete"],
-        "running": ["running"],
-    }
     try:
-        assert_deployed_services_are_ready(docker_client)
-
-        # for attempt in Retrying(
-        #     wait=wait_fixed(WAIT_TIME_BETWEEN_RETRIES_SECS),
-        #     stop=stop_after_attempt(NUMBER_OF_ATTEMPTS),
-        #     before=before_log(log, logging.WARNING),
-        # ):
-        #     with attempt:
-        #         for service in docker_client.services.list():
-        #             print(f"Waiting for {service.name}...")
-        #             for task in sorted(service.tasks(), key=by_task_update):
-        #                 # NOTE: Could have been restarted from latest test parameter, accept as well complete
-        #                 assert (
-        #                     task["Status"]["State"]
-        #                     in desired_state_to_state_map[task["DesiredState"]]
-        #                 ), (
-        #                     f"{service.name} still not ready or complete. Expected "
-        #                     f"desired_state[{task['DesiredState']}] but got "
-        #                     f"status_state[{task['Status']['State']}]). Details:"
-        #                     f"\n{pformat(task)}"
-        #                 )
+        for attempt in Retrying(
+            wait=wait_random(min=5, max=10),
+            stop=stop_after_delay(4 * _MINUTE),
+            before_sleep=before_sleep_log(log, logging.INFO),
+            reraise=True,
+        ):
+            with attempt:
+                assert_deployed_services_are_ready(docker_client)
 
     finally:
         subprocess.run(f"docker stack ps {core_stack_name}", shell=True, check=False)
