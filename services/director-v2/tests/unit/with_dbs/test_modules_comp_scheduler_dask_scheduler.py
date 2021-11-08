@@ -7,13 +7,13 @@
 
 
 import asyncio
-from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterator, List, cast
 from unittest import mock
 
 import aiopg
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
+from conftest import PublishedProject
 from dask.distributed import LocalCluster, SpecCluster
 from dask_task_models_library.container_tasks.events import TaskStateEvent
 from dask_task_models_library.container_tasks.io import TaskOutputData
@@ -52,6 +52,61 @@ pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
+async def _assert_comp_run_state(
+    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    user_id: UserID,
+    project_uuid: ProjectID,
+    exp_state: RunningState,
+):
+    # check the database is correctly updated, the run is published
+    async with aiopg_engine.acquire() as conn:  # type: ignore
+        result = await conn.execute(
+            comp_runs.select().where(
+                (comp_runs.c.user_id == user_id)
+                & (comp_runs.c.project_uuid == f"{project_uuid}")
+            )  # there is only one entry
+        )
+        run_entry = CompRunsAtDB.parse_obj(await result.first())
+    assert run_entry.result == exp_state
+
+
+async def _assert_comp_tasks_state(
+    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    project_uuid: ProjectID,
+    task_ids: List[NodeID],
+    exp_state: RunningState,
+):
+    # check the database is correctly updated, the run is published
+    async with aiopg_engine.acquire() as conn:  # type: ignore
+        result = await conn.execute(
+            comp_tasks.select().where(
+                (comp_tasks.c.project_id == f"{project_uuid}")
+                & (comp_tasks.c.node_id.in_([f"{n}" for n in task_ids]))
+            )  # there is only one entry
+        )
+        tasks = parse_obj_as(List[CompTaskAtDB], await result.fetchall())
+    assert all(  # pylint: disable=use-a-generator
+        [t.state == exp_state for t in tasks]
+    ), f"expected state: {exp_state}, found: {[t.state for t in tasks]}"
+
+
+async def _trigger_scheduler(scheduler: BaseCompScheduler):
+    # trigger the scheduler
+    scheduler._wake_up_scheduler_now()
+    await asyncio.sleep(1)
+
+
+async def _set_task_state(
+    aiopg_engine: Iterator[aiopg.sa.engine.Engine], node_id: str, state: StateType  # type: ignore
+):
+    async with aiopg_engine.acquire() as conn:  # type: ignore
+        await conn.execute(
+            comp_tasks.update()
+            .where(comp_tasks.c.node_id == node_id)
+            .values(state=state)
+        )
+
+
 @pytest.fixture()
 def mocked_rabbit_mq_client(mocker: MockerFixture):
     mocker.patch(
@@ -75,6 +130,41 @@ def minimal_dask_scheduler_config(
     monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "1")
+
+
+@pytest.fixture
+def scheduler(
+    minimal_dask_scheduler_config: None,
+    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    dask_spec_local_cluster: SpecCluster,
+    minimal_app: FastAPI,
+) -> BaseCompScheduler:
+    assert minimal_app.state.scheduler is not None
+    return minimal_app.state.scheduler
+
+
+@pytest.fixture
+def mocked_dask_client_send_task(mocker: MockerFixture) -> mock.MagicMock:
+    mocked_dask_client_send_task = mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.send_computation_tasks"
+    )
+    return mocked_dask_client_send_task
+
+
+@pytest.fixture
+def mocked_node_ports(mocker: MockerFixture):
+    mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.parse_output_data",
+        return_value=None,
+    )
+
+
+@pytest.fixture
+def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
+    return mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.clean_task_output_and_log_files_if_invalid",
+        return_value=None,
+    )
 
 
 async def test_scheduler_gracefully_starts_and_stops(
@@ -110,17 +200,6 @@ def test_scheduler_raises_exception_for_missing_dependencies(
     with pytest.raises(ConfigurationError):
         with TestClient(app, raise_server_exceptions=True) as _:
             pass
-
-
-@pytest.fixture
-def scheduler(
-    minimal_dask_scheduler_config: None,
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    dask_spec_local_cluster: SpecCluster,
-    minimal_app: FastAPI,
-) -> BaseCompScheduler:
-    assert minimal_app.state.scheduler is not None
-    return minimal_app.state.scheduler
 
 
 async def test_empty_pipeline_is_not_scheduled(
@@ -220,95 +299,6 @@ async def test_misconfigured_pipeline_is_not_scheduled(
         )
         run_entry = CompRunsAtDB.parse_obj(await result.first())
     assert run_entry.result == RunningState.ABORTED
-
-
-async def _assert_comp_run_state(
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    user_id: UserID,
-    project_uuid: ProjectID,
-    exp_state: RunningState,
-):
-    # check the database is correctly updated, the run is published
-    async with aiopg_engine.acquire() as conn:  # type: ignore
-        result = await conn.execute(
-            comp_runs.select().where(
-                (comp_runs.c.user_id == user_id)
-                & (comp_runs.c.project_uuid == f"{project_uuid}")
-            )  # there is only one entry
-        )
-        run_entry = CompRunsAtDB.parse_obj(await result.first())
-    assert run_entry.result == exp_state
-
-
-async def _assert_comp_tasks_state(
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    project_uuid: ProjectID,
-    task_ids: List[NodeID],
-    exp_state: RunningState,
-):
-    # check the database is correctly updated, the run is published
-    async with aiopg_engine.acquire() as conn:  # type: ignore
-        result = await conn.execute(
-            comp_tasks.select().where(
-                (comp_tasks.c.project_id == f"{project_uuid}")
-                & (comp_tasks.c.node_id.in_([f"{n}" for n in task_ids]))
-            )  # there is only one entry
-        )
-        tasks = parse_obj_as(List[CompTaskAtDB], await result.fetchall())
-    assert all(  # pylint: disable=use-a-generator
-        [t.state == exp_state for t in tasks]
-    ), f"expected state: {exp_state}, found: {[t.state for t in tasks]}"
-
-
-async def _trigger_scheduler(scheduler: BaseCompScheduler):
-    # trigger the scheduler
-    scheduler._wake_up_scheduler_now()
-    await asyncio.sleep(1)
-
-
-async def _set_task_state(
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine], node_id: str, state: StateType  # type: ignore
-):
-    async with aiopg_engine.acquire() as conn:  # type: ignore
-        await conn.execute(
-            comp_tasks.update()
-            .where(comp_tasks.c.node_id == node_id)
-            .values(state=state)
-        )
-
-
-@pytest.fixture
-def mocked_dask_client_send_task(mocker: MockerFixture) -> mock.MagicMock:
-    mocked_dask_client_send_task = mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.send_computation_tasks"
-    )
-    return mocked_dask_client_send_task
-
-
-@dataclass
-class PublishedProject:
-    project: ProjectAtDB
-    pipeline: CompPipelineAtDB
-    tasks: List[CompTaskAtDB]
-
-
-@pytest.fixture
-def published_project(
-    project: Callable[..., ProjectAtDB],
-    pipeline: Callable[..., CompPipelineAtDB],
-    tasks: Callable[..., List[CompTaskAtDB]],
-    fake_workbench_without_outputs: Dict[str, Any],
-    fake_workbench_adjacency: Dict[str, Any],
-) -> PublishedProject:
-    created_project = project(workbench=fake_workbench_without_outputs)
-    return PublishedProject(
-        project=created_project,
-        pipeline=pipeline(
-            project_id=f"{created_project.uuid}",
-            dag_adjacency_list=fake_workbench_adjacency,
-        ),
-        tasks=tasks(project=created_project, state=RunningState.PUBLISHED),
-    )
 
 
 async def test_proper_pipeline_is_scheduled(
@@ -563,14 +553,6 @@ async def test_handling_of_disconnected_dask_scheduler(
     )
 
 
-@pytest.fixture
-def mocked_node_ports(mocker: MockerFixture):
-    mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.parse_output_data",
-        return_value=None,
-    )
-
-
 @pytest.mark.parametrize("state", COMPLETED_STATES)
 async def test_completed_task_properly_updates_state(
     scheduler: BaseCompScheduler,
@@ -602,14 +584,6 @@ async def test_completed_task_properly_updates_state(
         published_project.project.uuid,
         [published_project.tasks[0].node_id],
         exp_state=state,
-    )
-
-
-@pytest.fixture
-def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
-    return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.clean_task_output_and_log_files_if_invalid",
-        return_value=None,
     )
 
 
