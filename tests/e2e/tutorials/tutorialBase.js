@@ -255,6 +255,9 @@ class TutorialBase {
       await this.waitFor(5000);
       if (await utils.isStudyDone(this.__page, studyId)) {
         await utils.takeScreenshot(this.__page, 'run_pipeline_done');
+        if (await utils.getStudyState(this.__page, studyId) === "FAILED") {
+          throw new Error("Pipeline failed");
+        }
         return;
       }
     }

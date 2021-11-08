@@ -212,7 +212,7 @@ qx.Class.define("osparc.data.model.Node", {
   events: {
     "retrieveInputs": "qx.event.type.Data",
     "fileRequested": "qx.event.type.Data",
-    "parameterNodeRequested": "qx.event.type.Data",
+    "parameterRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event",
@@ -552,7 +552,7 @@ qx.Class.define("osparc.data.model.Node", {
 
       [
         "fileRequested",
-        "parameterNodeRequested"
+        "parameterRequested"
       ].forEach(nodeRequestSignal => {
         propsForm.addListener(nodeRequestSignal, e => {
           const portId = e.getData();
