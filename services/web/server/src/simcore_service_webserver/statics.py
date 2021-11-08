@@ -184,7 +184,7 @@ async def get_statics_json(request: web.Request):  # pylint: disable=unused-argu
 def setup_statics(app: web.Application) -> None:
     settings: StaticWebserverModuleSettings = assemble_settings(app)
     if not settings.enabled:
-        log.warning("Static webserver module is disbaled")
+        log.warning("Static webserver module is disabled")
         return
 
     # serves information composed by making 3 http requests (once for each product)
