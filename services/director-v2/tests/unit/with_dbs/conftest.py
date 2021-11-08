@@ -1,18 +1,11 @@
-from dataclasses import dataclass
 from typing import Any, Callable, Dict, List
 
 import pytest
+from _helpers import PublishedProject  # type: ignore
 from models_library.projects import ProjectAtDB
 from models_library.projects_state import RunningState
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
-
-
-@dataclass
-class PublishedProject:
-    project: ProjectAtDB
-    pipeline: CompPipelineAtDB
-    tasks: List[CompTaskAtDB]
 
 
 @pytest.fixture

@@ -6,15 +6,14 @@
 # pylint:disable=too-many-arguments
 
 
-from typing import Any, Dict
+from typing import Dict
 from unittest import mock
 
 import aiopg
 import pytest
-from conftest import PublishedProject
-from models_library.projects_nodes_io import NodeID, SimCoreFileLink
+from _helpers import PublishedProject, set_comp_task_outputs
+from models_library.projects_nodes_io import SimCoreFileLink
 from pytest_mock.plugin import MockerFixture
-from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_service_director_v2.models.schemas.constants import UserID
 from simcore_service_director_v2.utils.dask import (
     _LOGS_FILE_NAME,
@@ -41,17 +40,6 @@ async def mocked_node_ports_filemanager_fcts(
             return_value=None,
         ),
     }
-
-
-async def _set_task_outputs(
-    aiopg_engine: aiopg.sa.engine.Engine, node_id: NodeID, outputs_schema: Dict[str, Any], outputs: Dict[str, Any]  # type: ignore
-):
-    async with aiopg_engine.acquire() as conn:  # type: ignore
-        await conn.execute(
-            comp_tasks.update()
-            .where(comp_tasks.c.node_id == f"{node_id}")
-            .values(outputs=outputs, schema={"outputs": outputs_schema, "inputs": {}})
-        )
 
 
 @pytest.mark.parametrize("entry_exists_returns", [True, False])
@@ -92,7 +80,9 @@ async def test_clean_task_output_and_log_files_if_invalid(
             by_alias=True, exclude_unset=True
         ),
     }
-    await _set_task_outputs(aiopg_engine, sleeper_task.node_id, outputs_schema, outputs)
+    await set_comp_task_outputs(
+        aiopg_engine, sleeper_task.node_id, outputs_schema, outputs
+    )
     # this should ask for the 2 files + the log file
     await clean_task_output_and_log_files_if_invalid(
         aiopg_engine,
