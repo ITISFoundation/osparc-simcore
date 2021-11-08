@@ -45,8 +45,6 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
 
@@ -172,8 +170,8 @@ def client(
 
 
 @pytest.fixture(scope="session")
-def mock_workbench_adjacency_list() -> Dict[str, Any]:
-    file_path = current_dir / "workbench_sleeper_dag_adjacency_list.json"
+def mock_workbench_adjacency_list(tests_data_dir: Path) -> Dict[str, Any]:
+    file_path = tests_data_dir / "workbench_sleeper_dag_adjacency_list.json"
     with file_path.open() as fp:
         return json.load(fp)
 

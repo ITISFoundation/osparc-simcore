@@ -68,15 +68,21 @@ def api_specs_dir(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture(scope="session")
-def fake_data_dir(project_tests_dir: Path) -> Path:
+def tests_data_dir(project_tests_dir: Path) -> Path:
     data_dir = project_tests_dir / "data"
     assert data_dir.exists()
     return data_dir
 
 
+@pytest.fixture(scope="session")
+def fake_data_dir(tests_data_dir: Path) -> Path:
+    # legacy
+    return tests_data_dir
+
+
 @pytest.fixture
-def fake_project(fake_data_dir: Path) -> Dict:
-    fpath = fake_data_dir / "fake-project.json"
+def fake_project(tests_data_dir: Path) -> Dict:
+    fpath = tests_data_dir / "fake-project.json"
     assert fpath.exists()
     return json.loads(fpath.read_text())
 
