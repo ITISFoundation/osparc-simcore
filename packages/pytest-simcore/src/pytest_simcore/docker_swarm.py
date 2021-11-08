@@ -6,7 +6,6 @@
 import json
 import logging
 import subprocess
-from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterator
 
@@ -27,7 +26,7 @@ log = logging.getLogger(__name__)
 
 
 #
-# NOTE this file must be py 3.6 compatible because it is used by the director
+# NOTE this file must be PYTHON >=3.6 COMPATIBLE because it is used by the director service
 #
 
 # HELPERS --------------------------------------------------------------------------------
