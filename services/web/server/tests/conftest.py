@@ -54,10 +54,10 @@ def package_dir() -> Path:
 
 @pytest.fixture(scope="session")
 def project_slug_dir(osparc_simcore_root_dir) -> Path:
-    service_folder = osparc_simcore_root_dir / "services" / "web" / "server"
-    assert service_folder.exists()
-    assert any(service_folder.glob("src/simcore_service_server"))
-    return service_folder
+    service_dir = osparc_simcore_root_dir / "services" / "web" / "server"
+    assert service_dir.exists()
+    assert any(service_dir.glob("src/simcore_service_webserver"))
+    return service_dir
 
 
 @pytest.fixture(scope="session")
