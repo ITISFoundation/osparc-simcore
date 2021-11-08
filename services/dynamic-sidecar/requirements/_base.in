@@ -17,6 +17,7 @@
 fastapi
 pydantic
 uvicorn
+httpx
 
 docker-compose
 aiodocker

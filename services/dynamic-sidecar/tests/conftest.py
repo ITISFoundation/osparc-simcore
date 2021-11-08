@@ -10,6 +10,7 @@ import tempfile
 import uuid
 from pathlib import Path
 from typing import Any, AsyncGenerator, AsyncIterable, Iterator, List
+from unittest.mock import AsyncMock
 
 import aiodocker
 import pytest
@@ -17,6 +18,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
+from simcore_service_dynamic_sidecar.core import utils
 from simcore_service_dynamic_sidecar.core.application import assemble_application
 from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.core.shared_handlers import (
@@ -92,8 +94,20 @@ def mock_environment(
 
 
 @pytest.fixture(scope="module")
-def app(mock_environment: None) -> FastAPI:
-    return assemble_application()
+def disable_registry_check(monkeypatch_module: MockerFixture) -> None:
+    async def _mock_is_registry_reachable(*args, **kwargs) -> None:
+        pass
+
+    monkeypatch_module.setattr(
+        utils, "_is_registry_reachable", _mock_is_registry_reachable
+    )
+
+
+@pytest.fixture(scope="module")
+def app(mock_environment: None, disable_registry_check: None) -> FastAPI:
+    app = assemble_application()
+    app.state.rabbitmq = AsyncMock()
+    return app
 
 
 @pytest.fixture

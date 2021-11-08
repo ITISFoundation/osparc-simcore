@@ -10,17 +10,61 @@ from typing import AsyncGenerator, List, Tuple
 
 import aiodocker
 import aiofiles
+import httpx
 import yaml
 from async_timeout import timeout
 from fastapi import HTTPException
 from settings_library.docker_registry import RegistrySettings
+from starlette import status
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
 logger = logging.getLogger(__name__)
 
 
+class _RegistryNotReachableException(Exception):
+    pass
+
+
+async def _is_registry_reachable(registry_settings: RegistrySettings) -> None:
+    async for attempt in AsyncRetrying(
+        wait=wait_fixed(1),
+        stop=stop_after_attempt(1),
+        before_sleep=before_sleep_log(logger, logging.INFO),
+        reraise=True,
+    ):
+        with attempt:
+            async with httpx.AsyncClient() as client:
+                params = {}
+                if registry_settings.REGISTRY_AUTH:
+                    params["auth"] = (
+                        registry_settings.REGISTRY_USER,
+                        registry_settings.REGISTRY_PW.get_secret_value(),
+                    )
+
+                protocol = "https" if registry_settings.REGISTRY_SSL else "http"
+                url = f"{protocol}://{registry_settings.api_url}/"
+                logging.info("Registry test url ='%s'", url)
+                response = await client.get(url, timeout=1, **params)
+                reachable = (
+                    response.status_code == status.HTTP_200_OK and response.json() == {}
+                )
+                if not reachable:
+                    logger.error("Response: %s", response)
+                    error_message = (
+                        f"Could not reach registry {registry_settings.api_url} "
+                        f"auth={registry_settings.REGISTRY_AUTH}"
+                    )
+                    raise _RegistryNotReachableException(error_message)
+
+
 async def login_registry(registry_settings: RegistrySettings) -> None:
+    await _is_registry_reachable(registry_settings)
+
     def create_docker_config_file(registry_settings: RegistrySettings) -> None:
         user = registry_settings.REGISTRY_USER
         password = registry_settings.REGISTRY_PW.get_secret_value()

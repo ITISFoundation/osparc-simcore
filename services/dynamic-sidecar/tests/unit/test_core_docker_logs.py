@@ -34,6 +34,7 @@ def app(
     inputs_dir: Path,
     outputs_dir: Path,
     state_paths_dirs: List[Path],
+    disable_registry_check: None,
 ) -> Iterable[FastAPI]:
     monkeypatch_module.setenv("SC_BOOT_MODE", "production")
     monkeypatch_module.setenv("DYNAMIC_SIDECAR_compose_namespace", "test-space")
