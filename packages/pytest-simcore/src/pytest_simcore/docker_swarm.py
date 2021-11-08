@@ -111,8 +111,8 @@ def assert_services_are_ready(docker_client: docker.client.DockerClient) -> None
             )
 
             assert num_ready == num_replicas_specified, (
-                f"service_name='{service_name}' not ready: got num_ready={num_ready} "
-                "but num_replicas_specified={num_replicas_specified}."
+                f"service_name='{service_name}' not ready: tasks_current_state={tasks_current_state} "
+                "but tasks_desired_state={tasks_desired_state}."
             )
 
 

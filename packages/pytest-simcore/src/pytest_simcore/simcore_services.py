@@ -59,7 +59,7 @@ _FAST = ClientTimeout(total=1)  # type: ignore
     before_sleep=before_sleep_log(log, logging.WARNING),
     reraise=True,
 )
-async def _assert_service_is_responsive(service_name: str, endpoint: URL):
+async def _assert_service_is_healthy(service_name: str, endpoint: URL):
     print(f"Trying to connect with '{service_name}' through '{endpoint}'")
 
     async with aiohttp.ClientSession(timeout=_FAST) as session:
@@ -74,13 +74,13 @@ async def _assert_service_is_responsive(service_name: str, endpoint: URL):
             print(f"connection with {service_name=} successful on {endpoint=}")
 
 
-async def wait_till_service_ready(service_name: str, endpoint: URL):
-    t0 = time.time()
-    await _assert_service_is_responsive(service_name, endpoint)
-    elapsed_time = time.time() - t0
+async def wait_till_service_healthy(service_name: str, endpoint: URL):
+    started = time.time()
+    await _assert_service_is_healthy(service_name, endpoint)
+    elapsed_time = time.time() - started
     print(
         f"{service_name=} is ready [{elapsed_time=}]: Retry stats: "
-        f"{json.dumps(_assert_service_is_responsive.retry.statistics, indent=1)}"
+        f"{json.dumps(_assert_service_is_healthy.retry.statistics, indent=1)}"
     )
 
 
@@ -140,7 +140,7 @@ async def simcore_services_ready(
     services_endpoint: Dict[str, URL], monkeypatch_module: MonkeyPatch
 ) -> None:
     """
-    - Waits for services in `core_services_selection` to be responsive
+    - Waits for services in `core_services_selection` to be healthy
     - Sets environment with these (host:port) endpoitns
 
     WARNING: not all services in the selection can be health-checked (see services_endpoint)
@@ -158,7 +158,7 @@ async def simcore_services_ready(
 
     # check ready
     await asyncio.gather(
-        *[wait_till_service_ready(h.name, h.url) for h in health_endpoints],
+        *[wait_till_service_healthy(h.name, h.url) for h in health_endpoints],
         return_exceptions=False,
     )
 
