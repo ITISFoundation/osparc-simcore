@@ -2,9 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-#
-# NOTE this file must be py3.6 compatible because it is used by the director
-#
+
 import json
 import logging
 import subprocess
@@ -20,19 +18,25 @@ from docker.errors import APIError
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt, stop_after_delay
-from tenacity.wait import wait_exponential, wait_fixed
+from tenacity.wait import wait_fixed, wait_random
 
 from .helpers.utils_docker import get_ip
 from .helpers.utils_environs import EnvVarsDict
 
 log = logging.getLogger(__name__)
 
+
+#
+# NOTE this file must be py 3.6 compatible because it is used by the director
+#
+
+# HELPERS --------------------------------------------------------------------------------
+
 _MINUTE: int = 60  # secs
-HEADER: str = "{:-^50}"
+_HEADER: str = "{:-^50}"
 
-
-DEFAULT_RETRY_POLICY = dict(
-    wait=wait_exponential(),
+_DEFAULT_RETRY_POLICY = dict(
+    wait=wait_random(5),
     stop=stop_after_delay(15),
 )
 
@@ -59,81 +63,29 @@ def _in_docker_swarm(
     return True
 
 
-@pytest.fixture(scope="session")
-def docker_client() -> Iterator[docker.client.DockerClient]:
-    client = docker.from_env()
-    yield client
-
-
-@pytest.fixture(scope="session")
-def keep_docker_up(request) -> bool:
-    return request.config.getoption("--keep-docker-up")
-
-
-@pytest.fixture(scope="module")
-def docker_swarm(
-    docker_client: docker.client.DockerClient, keep_docker_up: Iterator[bool]
-) -> Iterator[None]:
-    for attempt in Retrying(
-        retry_error_cls=_NotInSwarmException, **DEFAULT_RETRY_POLICY
-    ):
-        with attempt:
-            if not _in_docker_swarm(docker_client):
-                docker_client.swarm.init(advertise_addr=get_ip())
-            # if still not in swarm, raise an error to try and initialize again
-            _in_docker_swarm(docker_client, raise_error=True)
-
-    assert _in_docker_swarm(docker_client) is True
-
-    yield
-
-    if not keep_docker_up:
-        assert docker_client.swarm.leave(force=True)
-
-    assert _in_docker_swarm(docker_client) is keep_docker_up
-
-
-def to_datetime(datetime_str: str) -> datetime:
-    # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
-    #  - The T separates the date portion from the time-of-day portion
-    #  - The Z on the end means UTC, that is, an offset-from-UTC
-    # The 099 before the Z is not clear, therefore we will truncate the last part
-    N = len("2020-10-09T12:28:14.7710")
-    if len(datetime_str) > N:
-        datetime_str = datetime_str[:N]
-    return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
-
-
-def by_task_update(task: Dict) -> datetime:
-    datetime_str = task["Status"]["Timestamp"]
-    return to_datetime(datetime_str)
-
-
-def _get(obj, name, default=None):
-    parts = name.split(".")
-    value = obj
-    for part in parts[:-1]:
-        value = value.get(part, {})
-    return value.get(parts[-1], default)
-
-
 @tenacity.retry(
     wait=wait_fixed(5),
     stop=stop_after_attempt(20),
     before_sleep=before_sleep_log(log, logging.INFO),
     reraise=True,
 )
-def _wait_for_services_ready(docker_client: docker.client.DockerClient) -> None:
-    """
-    :raises ValueError: if the desired number of replicas do not match the desired state
-    """
+def assert_services_are_ready(docker_client: docker.client.DockerClient) -> None:
+    def _get(obj, name, default=None):
+        parts = name.split(".")
+        value = obj
+        for part in parts[:-1]:
+            value = value.get(part, {})
+        return value.get(parts[-1], default)
+
     for service in docker_client.services.list():
         service_name = service.name
         num_replicas_specified = _get(
             service.attrs, "Spec.Mode.Replicated.Replicas", default=1
         )
 
-        print(f"Waiting for {service_name=} to have {num_replicas_specified=} ...")
+        print(
+            f"Waiting for service_name='{service_name}' to have num_replicas_specified={num_replicas_specified} ..."
+        )
         tasks = list(service.tasks())
 
         if tasks:
@@ -159,10 +111,10 @@ def _wait_for_services_ready(docker_client: docker.client.DockerClient) -> None:
                 ]
             )
 
-            if num_ready != num_replicas_specified:
-                raise ValueError(
-                    f"{service_name=} not ready: got {num_ready=} but {num_replicas_specified=}."
-                )
+            assert num_ready == num_replicas_specified, (
+                f"service_name='{service_name}' not ready: got num_ready={num_ready} "
+                "but num_replicas_specified={num_replicas_specified}."
+            )
 
 
 def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None:
@@ -173,6 +125,43 @@ def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None
     }
     print(json.dumps(services, indent=1, sort_keys=True))
     print("-" * 100)
+
+
+# FIXTURES --------------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="session")
+def docker_client() -> Iterator[docker.client.DockerClient]:
+    client = docker.from_env()
+    yield client
+
+
+@pytest.fixture(scope="session")
+def keep_docker_up(request) -> bool:
+    return request.config.getoption("--keep-docker-up")
+
+
+@pytest.fixture(scope="module")
+def docker_swarm(
+    docker_client: docker.client.DockerClient, keep_docker_up: Iterator[bool]
+) -> Iterator[None]:
+    for attempt in Retrying(
+        retry_error_cls=_NotInSwarmException, **_DEFAULT_RETRY_POLICY
+    ):
+        with attempt:
+            if not _in_docker_swarm(docker_client):
+                docker_client.swarm.init(advertise_addr=get_ip())
+            # if still not in swarm, raise an error to try and initialize again
+            _in_docker_swarm(docker_client, raise_error=True)
+
+    assert _in_docker_swarm(docker_client) is True
+
+    yield
+
+    if not keep_docker_up:
+        assert docker_client.swarm.leave(force=True)
+
+    assert _in_docker_swarm(docker_client) is keep_docker_up
 
 
 @pytest.fixture(scope="module")
@@ -218,7 +207,7 @@ def docker_stack(
             "compose": yaml.safe_load(compose_file.read_text()),
         }
 
-    _wait_for_services_ready(docker_client)
+    assert_services_are_ready(docker_client)
     _print_services(docker_client, "[BEFORE TEST]")
 
     yield {
@@ -264,9 +253,9 @@ def docker_stack(
                 "Ignoring failure while executing '%s' (returned code %d):\n%s\n%s\n%s\n%s\n",
                 err.cmd,
                 err.returncode,
-                HEADER.format("stdout"),
+                _HEADER.format("stdout"),
                 err.stdout.decode("utf8") if err.stdout else "",
-                HEADER.format("stderr"),
+                _HEADER.format("stderr"),
                 err.stderr.decode("utf8") if err.stderr else "",
             )
 
@@ -277,7 +266,7 @@ def docker_stack(
             resource_client = getattr(docker_client, resource_name)
 
             for attempt in Retrying(
-                wait=wait_exponential(),
+                wait=wait_random(max=20),
                 stop=stop_after_delay(3 * _MINUTE),
                 before_sleep=before_sleep_log(log, logging.WARNING),
                 reraise=True,
