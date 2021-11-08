@@ -179,4 +179,5 @@ def save_docker_infos(destination_path: Path):
                 cont.logs(timestamps=True, stdout=True, stderr=True).decode(), width=200
             ),
         )
-    print("\n\twrote docker log files in ", destination_path)
+    if all_containers:
+        print("\n\twrote docker log files in ", destination_path)

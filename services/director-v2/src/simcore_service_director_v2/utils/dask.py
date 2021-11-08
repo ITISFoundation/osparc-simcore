@@ -54,9 +54,9 @@ def parse_dask_job_id(job_id: str) -> Tuple[str, str, UserID, ProjectID, NodeID]
 
 
 async def _create_node_ports(
-    app: FastAPI, user_id: UserID, project_id: ProjectID, node_id: NodeID
+    db_engine: Engine, user_id: UserID, project_id: ProjectID, node_id: NodeID
 ) -> node_ports_v2.Nodeports:
-    db_manager = node_ports_v2.DBManager(db_engine=app.state.engine)
+    db_manager = node_ports_v2.DBManager(db_engine)
     return await node_ports_v2.ports(
         user_id=user_id,
         project_id=f"{project_id}",
@@ -85,12 +85,11 @@ async def parse_output_data(
         node_id,
     )
 
-    db_manager = node_ports_v2.DBManager(db_engine=db_engine)
-    ports = await node_ports_v2.ports(
+    ports = await _create_node_ports(
+        db_engine=db_engine,
         user_id=user_id,
-        project_id=f"{project_id}",
-        node_uuid=f"{node_id}",
-        db_manager=db_manager,
+        project_id=project_id,
+        node_id=node_id,
     )
     for port_key, port_value in data.items():
         value_to_transfer: Optional[links.ItemValue] = None
@@ -108,7 +107,10 @@ async def compute_input_data(
     node_id: NodeID,
 ) -> TaskInputData:
     ports = await _create_node_ports(
-        app=app, user_id=user_id, project_id=project_id, node_id=node_id
+        db_engine=app.state.engine,
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
     )
     input_data = {}
     for port in (await ports.inputs).values():
@@ -132,13 +134,16 @@ async def compute_output_data_schema(
     node_id: NodeID,
 ) -> TaskOutputDataSchema:
     ports = await _create_node_ports(
-        app=app, user_id=user_id, project_id=project_id, node_id=node_id
+        db_engine=app.state.engine,
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_id,
     )
     output_data_schema = {}
     for port in (await ports.outputs).values():
         output_data_schema[port.key] = {"required": port.default_value is None}
 
-        if port.property_type.startswith("data:"):
+        if port_utils.is_file_type(port.property_type):
             value_link = await port_utils.get_upload_link_from_storage(
                 user_id=user_id,
                 project_id=f"{project_id}",
@@ -159,17 +164,20 @@ async def compute_output_data_schema(
     return TaskOutputDataSchema.parse_obj(output_data_schema)
 
 
+_LOGS_FILE_NAME = "logs.zip"
+
+
 async def compute_service_log_file_upload_link(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
 ) -> AnyUrl:
-    LOGS_FILE_NAME = "logs.zip"
+
     value_link = await port_utils.get_upload_link_from_storage(
         user_id=user_id,
         project_id=f"{project_id}",
         node_id=f"{node_id}",
-        file_name=LOGS_FILE_NAME,
+        file_name=_LOGS_FILE_NAME,
     )
     return value_link
 
@@ -222,3 +230,34 @@ def done_dask_callback(
             asyncio.run_coroutine_threadsafe(user_callback(event_data), main_loop)
         except Exception:  # pylint: disable=broad-except
             logger.exception("Unexpected issue while transmitting state to main thread")
+
+
+async def clean_task_output_and_log_files_if_invalid(
+    db_engine: Engine, user_id: UserID, project_id: ProjectID, node_id: NodeID
+) -> None:
+    # check outputs
+    node_ports = await _create_node_ports(db_engine, user_id, project_id, node_id)
+    for port in (await node_ports.outputs).values():
+        if not port_utils.is_file_type(port.property_type):
+            continue
+        file_name = (
+            next(iter(port.file_to_key_map)) if port.file_to_key_map else port.key
+        )
+        if await port_utils.target_link_exists(
+            user_id, f"{project_id}", f"{node_id}", file_name
+        ):
+            continue
+        logger.debug("entry %s is invalid, cleaning...", port.key)
+        await port_utils.delete_target_link(
+            user_id, f"{project_id}", f"{node_id}", file_name
+        )
+    # check log file
+    if not await port_utils.target_link_exists(
+        user_id=user_id,
+        project_id=f"{project_id}",
+        node_id=f"{node_id}",
+        file_name=_LOGS_FILE_NAME,
+    ):
+        await port_utils.delete_target_link(
+            user_id, f"{project_id}", f"{node_id}", _LOGS_FILE_NAME
+        )
