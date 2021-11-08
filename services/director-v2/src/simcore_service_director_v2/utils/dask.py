@@ -252,7 +252,7 @@ async def clean_task_output_and_log_files_if_invalid(
             user_id, f"{project_id}", f"{node_id}", file_name
         )
     # check log file
-    if await port_utils.target_link_exists(
+    if not await port_utils.target_link_exists(
         user_id=user_id,
         project_id=f"{project_id}",
         node_id=f"{node_id}",
