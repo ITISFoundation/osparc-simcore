@@ -13,12 +13,13 @@ import httpx
 import osparc
 import pytest
 from osparc.configuration import Configuration
-from tenacity.before_sleep import before_sleep_log
-from tenacity.wait import wait_fixed
-from tenacity.stop import stop_after_attempt
 from tenacity import Retrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random
 
 log = logging.getLogger(__name__)
+_MINUTE: int = 60  # secs
 
 
 pytest_plugins = [
@@ -74,8 +75,8 @@ def simcore_docker_stack_and_registry_ready(
     simcore_services_ready: None,
 ) -> Dict:
     for attempt in Retrying(
-        wait=wait_fixed(5),
-        stop=stop_after_attempt(60),
+        wait=wait_random(2, 10),
+        stop=stop_after_delay(5 * _MINUTE),
         reraise=True,
         before_sleep=before_sleep_log(log, logging.INFO),
     ):

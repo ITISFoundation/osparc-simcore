@@ -204,8 +204,8 @@ def docker_stack(
     # all services ready
     try:
         for attempt in Retrying(
-            wait=wait_random(min=5, max=10),
-            stop=stop_after_delay(4 * _MINUTE),
+            wait=wait_random(min=1, max=10),
+            stop=stop_after_delay(6 * _MINUTE),
             before_sleep=before_sleep_log(log, logging.INFO),
             reraise=True,
         ):

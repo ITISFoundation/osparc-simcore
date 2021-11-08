@@ -54,8 +54,8 @@ _FAST = ClientTimeout(total=1)  # type: ignore
 
 
 @tenacity.retry(
-    wait=wait_random(max=20),
-    stop=stop_after_delay(5 * _MINUTE),
+    wait=wait_random(min=1, max=10),
+    stop=stop_after_delay(6 * _MINUTE),
     before_sleep=before_sleep_log(log, logging.WARNING),
     reraise=True,
 )
