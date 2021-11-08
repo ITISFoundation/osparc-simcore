@@ -49,10 +49,15 @@ async def create_cluster_handler(request: web.Request) -> web.Response:
     user_id: UserID = request[RQT_USERID_KEY]
     primary_group, _, _ = await list_user_groups(request.app, user_id)
 
+    body = await request.json()
+
+    assert body  # no sec
     new_cluster = ClusterCreate(
-        name=body.name if hasattr(body, "name") else None,
-        description=body.description if hasattr(body, "description") else None,
-        type=body.type if hasattr(body, "type") else None,
+        name=body.get("name"),
+        description=body.get("description"),
+        type=body.get("type"),
+        endpoint=body.get("endpoint"),
+        authentication=body.get("authentication"),
         owner=primary_group["gid"],
     )
 

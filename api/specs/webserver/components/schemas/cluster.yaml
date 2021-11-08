@@ -31,10 +31,16 @@ ClusterCreate:
       enum:
         - ON_PREMISE
         - AWS
+    endpoint:
+      type: string
+    authentication:
+      type: object
 
   required:
     - name
     - type
+    - endpoint
+    - authentication
 
 ClusterPatch:
   type: object
@@ -51,6 +57,10 @@ ClusterPatch:
       enum:
         - ON_PREMISE
         - AWS
+    endpoint:
+      type: string
+    authentication:
+      type: object
     owner:
       description: the cluster owner group
       type: integer
@@ -83,6 +93,10 @@ Cluster:
       enum:
         - ON_PREMISE
         - AWS
+    endpoint:
+      type: string
+    authentication:
+      type: object
     owner:
       description: the cluster owner group
       type: integer
@@ -99,6 +113,8 @@ Cluster:
     - id
     - name
     - accessRights
+    - endpoint
+    - authentication
   example:
     - id: 1
       name: AWS cluster
