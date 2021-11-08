@@ -605,6 +605,15 @@ async def test_completed_task_properly_updates_state(
     )
 
 
+@pytest.fixture
+def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
+    return mocker.patch(
+        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.clean_task_output_and_log_files_if_invalid",
+        return_value=None,
+    )
+
+
+@pytest.mark.parametrize("state", [RunningState.ABORTED, RunningState.FAILED])
 async def test_failed_or_aborted_task_cleans_output_files(
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,
@@ -612,5 +621,30 @@ async def test_failed_or_aborted_task_cleans_output_files(
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
     mocked_dask_client_send_task: mock.MagicMock,
     published_project: PublishedProject,
+    state: RunningState,
+    mocked_clean_task_output_fct: mock.MagicMock,
 ):
-    ...
+    # we do have a published project where the comp services are in PUBLISHED state
+    # here we will artifically call the completion handler in the scheduler
+    dask_scheduler = cast(DaskScheduler, scheduler)
+    job_id = generate_dask_job_id(
+        "simcore/service/comp/pytest/fake",
+        "12.34.55",
+        user_id,
+        published_project.project.uuid,
+        published_project.tasks[0].node_id,
+    )
+    state_event = TaskStateEvent(
+        job_id=job_id,
+        msg=TaskOutputData.parse_obj({"output_1": "some fake data"}).json(),
+        state=state,
+    )
+    await dask_scheduler._on_task_completed(state_event)
+    await _assert_comp_tasks_state(
+        aiopg_engine,
+        published_project.project.uuid,
+        [published_project.tasks[0].node_id],
+        exp_state=state,
+    )
+
+    mocked_clean_task_output_fct.assert_called_once()
