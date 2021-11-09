@@ -40,7 +40,7 @@ def test_cluster_access_rights_correctly_created_when_owner_access_rights_not_pr
             example.get("access_rights", {}).pop(owner_gid)
 
         instance = model_cls(**example)
-        assert instance.access_rights[owner_gid] == CLUSTER_ADMIN_RIGHTS
+        instance.access_rights[owner_gid] == CLUSTER_ADMIN_RIGHTS
 
 
 @pytest.mark.parametrize(
