@@ -1,6 +1,7 @@
 from enum import Enum
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 
 from .base import metadata
@@ -48,6 +49,14 @@ clusters = sa.Table(
         sa.String,
         nullable=True,
         doc="Link to image as to cluster thumbnail",
+    ),
+    sa.Column("endpoint", sa.String, nullable=False, doc="URL to access the cluster"),
+    sa.Column(
+        "authentication",
+        JSONB,
+        nullable=False,
+        doc="Authentication options (can be any of simple password, kerberos or jupyterhub"
+        ", for details see https://gateway.dask.org/authentication.html#",
     ),
     sa.Column(
         "created",

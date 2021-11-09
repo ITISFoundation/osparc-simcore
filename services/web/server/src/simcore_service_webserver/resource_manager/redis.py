@@ -4,9 +4,11 @@ from typing import Optional
 import aioredis
 from aiohttp import web
 from aioredlock import Aioredlock
-from tenacity import AsyncRetrying, before_log, stop_after_attempt, wait_fixed
-
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random
 
 from .config import (
     APP_CLIENT_REDIS_CLIENT_KEY,
@@ -19,13 +21,7 @@ log = logging.getLogger(__name__)
 
 THIS_SERVICE_NAME = "redis"
 DSN = "redis://{host}:{port}"
-
-retry_upon_init_policy = dict(
-    stop=stop_after_attempt(4),
-    wait=wait_fixed(1.5),
-    before=before_log(log, logging.WARNING),
-    reraise=True,
-)
+_MINUTE = 60
 
 
 async def redis_client(app: web.Application):
@@ -35,11 +31,17 @@ async def redis_client(app: web.Application):
     async def create_client(url) -> aioredis.Redis:
         # create redis client
         client: Optional[aioredis.Redis] = None
-        async for attempt in AsyncRetrying(**retry_upon_init_policy):
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(1 * _MINUTE),
+            wait=wait_random(max=10),
+            before_sleep=before_sleep_log(log, logging.WARNING),
+            reraise=True,
+        ):
             with attempt:
                 client = await aioredis.create_redis_pool(url, encoding="utf-8")
                 if not client:
                     raise ValueError("Expected aioredis client instance, got {client}")
+        assert client  # no sec
         return client
 
     app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await create_client(url)
@@ -52,7 +54,7 @@ async def redis_client(app: web.Application):
         APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY
     ] = client_lock_db = await create_client(lock_db_url)
     assert client_lock_db  # nosec
-    app[APP_CLIENT_REDIS_LOCK_MANAGER_KEY] = lock_manager = Aioredlock([lock_db_url])
+    app[APP_CLIENT_REDIS_LOCK_MANAGER_KEY] = lock_manager = Aioredlock([lock_db_url])  # type: ignore
     assert lock_manager  # nosec
 
     yield

@@ -18,15 +18,17 @@
 qx.Class.define("osparc.component.editor.ClusterEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(newCluster = true) {
+  construct: function (newCluster = true) {
     this.base(arguments);
-
     this._setLayout(new qx.ui.layout.VBox(8));
 
     const manager = this.__validator = new qx.ui.form.validation.Manager();
     const title = this.getChildControl("title");
     title.setRequired(true);
     manager.add(title);
+    this.getChildControl("endpoint");
+    this.getChildControl("simpleAuthenticationUsername");
+    this.getChildControl("simpleAuthenticationPassword");
     this.getChildControl("description");
     newCluster ? this.getChildControl("create") : this.getChildControl("save");
   },
@@ -46,12 +48,34 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
       event: "changeLabel"
     },
 
+    endpoint: {
+      check: "String",
+      init: "",
+      nullable: false,
+      event: "changeEndpoint"
+    },
+
+    simpleAuthenticationUsername: {
+      check: "String",
+      init: "",
+      nullable: false,
+      event: "changesimpleAuthenticationUsername"
+    },
+
+    simpleAuthenticationPassword: {
+      check: "String",
+      init: "",
+      nullable: false,
+      event: "changesimpleAuthenticationPassword"
+    },
+
     description: {
       check: "String",
       init: "",
       nullable: false,
       event: "changeDescription"
     }
+
   },
 
   events: {
@@ -61,7 +85,7 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
   },
 
   members: {
-    _createChildControlImpl: function(id) {
+    _createChildControlImpl: function (id) {
       let control;
       switch (id) {
         case "title": {
@@ -87,6 +111,49 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
           this.bind("description", control, "value");
           control.bind("value", this, "description");
           this._add(control);
+          break;
+        }
+        case "endpoint": {
+          const endpointLayout = this.getChildControl("endpointLayout");
+          control = new qx.ui.form.TextField().set({
+            font: "text-14",
+            backgroundColor: "background-main",
+            placeholder: this.tr("Endpoint"),
+            height: 35
+            
+          });
+          this.bind("endpoint", control, "value");
+          control.bind("value", this, "endpoint");
+          control.setRequired(true);
+          endpointLayout.addAt(control, 0, {flex: 1});
+          break;
+        }
+        case "simpleAuthenticationUsername": {
+          const endpointLayout = this.getChildControl("endpointLayout");
+          control = new qx.ui.form.TextField().set({
+            font: "text-14",
+            backgroundColor: "background-main",
+            placeholder: this.tr("Username"),
+            height: 35
+          });
+          this.bind("simpleAuthenticationUsername", control, "value");
+          control.bind("value", this, "simpleAuthenticationUsername");
+          control.setRequired(true);
+          endpointLayout.addAt(control, 1);
+          break;
+        }
+        case "simpleAuthenticationPassword": {
+          const endpointLayout = this.getChildControl("endpointLayout");
+          control = new qx.ui.form.PasswordField().set({
+            font: "text-14",
+            backgroundColor: "background-main",
+            placeholder: this.tr("Password"),
+            height: 35
+          });
+          this.bind("simpleAuthenticationPassword", control, "value");
+          control.bind("value", this, "simpleAuthenticationPassword");
+          control.setRequired(true);
+          endpointLayout.addAt(control, 2);
           break;
         }
         case "create": {
@@ -120,6 +187,11 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
           const cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
           cancelButton.addListener("execute", () => this.fireEvent("cancel"), this);
           control.add(cancelButton);
+          this._add(control);
+          break;
+        }
+        case "endpointLayout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._add(control);
           break;
         }
