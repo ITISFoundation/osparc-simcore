@@ -176,7 +176,7 @@ class DynamicSidecarClient:
                 logging.warning(message)
                 raise DynamicSchedulerException(message)
         except httpx.HTTPError as e:
-            log_httpx_http_error(url, "PUT", traceback.format_exc())
+            log_httpx_http_error(url, "POST", traceback.format_exc())
             raise e
 
     async def service_restore_state(self, dynamic_sidecar_endpoint: str) -> None:
@@ -192,7 +192,7 @@ class DynamicSidecarClient:
                 logging.warning(message)
                 raise DynamicSchedulerException(message)
         except httpx.HTTPError as e:
-            log_httpx_http_error(url, "PUT", traceback.format_exc())
+            log_httpx_http_error(url, "POST", traceback.format_exc())
             raise e
 
     async def service_pull_input_ports(
@@ -212,7 +212,7 @@ class DynamicSidecarClient:
                 raise DynamicSchedulerException(message)
             return int(response.text)
         except httpx.HTTPError as e:
-            log_httpx_http_error(url, "PUT", traceback.format_exc())
+            log_httpx_http_error(url, "POST", traceback.format_exc())
             raise e
 
     async def service_push_output_ports(
@@ -231,7 +231,7 @@ class DynamicSidecarClient:
                 logging.warning(message)
                 raise DynamicSchedulerException(message)
         except httpx.HTTPError as e:
-            log_httpx_http_error(url, "PUT", traceback.format_exc())
+            log_httpx_http_error(url, "POST", traceback.format_exc())
             raise e
 
     async def get_entrypoint_container_name(
@@ -258,6 +258,31 @@ class DynamicSidecarClient:
         except httpx.HTTPError:
             log_httpx_http_error(url, "GET", traceback.format_exc())
             raise
+
+    async def attach_container_to_network(
+        self,
+        dynamic_sidecar_endpoint: str,
+        container_id: str,
+        network_id: str,
+        network_aliases: List[str],
+    ) -> None:
+        url = get_url(
+            dynamic_sidecar_endpoint, f"/v1/containers/{container_id}/networks:attach"
+        )
+        data = dict(network_id=network_id, network_aliases=network_aliases)
+        try:
+            async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
+                response = await client.post(url, json=data)
+            if response.status_code != status.HTTP_204_NO_CONTENT:
+                message = (
+                    f"ERROR while attaching network to container: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise DynamicSchedulerException(message)
+        except httpx.HTTPError as e:
+            log_httpx_http_error(url, "POST", traceback.format_exc())
+            raise e
 
 
 async def setup_api_client(app: FastAPI) -> None:

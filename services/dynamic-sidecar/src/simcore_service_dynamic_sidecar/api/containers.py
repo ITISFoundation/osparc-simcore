@@ -4,7 +4,7 @@ import json
 import logging
 import traceback
 from collections import deque
-from typing import Any, Awaitable, Deque, Dict, List, Optional, Union
+from typing import Any, Awaitable, Deque, Dict, List, Optional, Union, Set
 
 from fastapi import (
     APIRouter,
@@ -17,6 +17,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import PlainTextResponse
+from pydantic.main import BaseModel
 from servicelib.utils import logged_gather
 
 from ..core.dependencies import get_application_health, get_settings, get_shared_store
@@ -394,6 +395,49 @@ async def push_output_ports(port_keys: Optional[List[str]] = None) -> Response:
     await nodeports.upload_outputs(
         mounted_volumes.disk_outputs_path, port_keys=port_keys
     )
+
+    # SEE https://github.com/tiangolo/fastapi/issues/2253
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+class DataIn(BaseModel):
+    network_id: str
+    network_aliases: List[str]
+
+
+@containers_router.post(
+    "/containers/{id}/networks:attach",
+    summary="Attach to a network if not already attached",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def attach_container_to_network(id: str, data_id: DataIn) -> Response:
+    async with docker_client() as docker:
+        container_instance = await docker.containers.get(id)
+        container_inspect = await container_instance.show()
+
+        attached_network_ids: Set[str] = {
+            x["NetworkID"]
+            for x in container_inspect["NetworkSettings"]["Networks"].values()
+        }
+        logger.debug(
+            "NETWORKS network_id=%s: %s", data_id.network_id, attached_network_ids
+        )
+
+        if data_id.network_id not in attached_network_ids:
+            network = await docker.networks.get(data_id.network_id)
+            await network.connect(
+                {
+                    "Container": id,
+                    "EndpointConfig": {"Aliases": data_id.network_aliases},
+                }
+            )
+
+            logger.debug(
+                "After attach, network_id=%s inspect=%s",
+                data_id.network_id,
+                await container_instance.show(),
+            )
 
     # SEE https://github.com/tiangolo/fastapi/issues/2253
     return Response(status_code=status.HTTP_204_NO_CONTENT)

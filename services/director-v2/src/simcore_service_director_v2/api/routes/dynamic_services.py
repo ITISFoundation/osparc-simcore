@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Coroutine, List, Optional, Union, cast
+from typing import Coroutine, List, Optional, Union, cast, Dict
 from uuid import UUID
 
 import httpx
@@ -10,6 +10,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
+from models_library.sharing_networks import SharingNetworks
 from starlette import status
 from starlette.datastructures import URL
 
@@ -25,6 +26,7 @@ from ...models.schemas.dynamic_services import SchedulerData
 from ...modules.dynamic_sidecar.docker_api import (
     is_dynamic_service_running,
     list_dynamic_sidecar_services,
+    get_networks_ids,
 )
 from ...modules.dynamic_sidecar.errors import DynamicSidecarNotFoundError
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
@@ -226,3 +228,35 @@ async def service_retrieve_data_on_ports(
 
         # validate and return
         return RetrieveDataOutEnveloped.parse_obj(response.json())
+
+
+from pydantic import BaseModel
+
+
+class Item(BaseModel):
+    project_id: ProjectID
+    sharing_networks: SharingNetworks
+
+
+@router.post(
+    # PC help me with the endpoint name
+    # I want to send a batch of networks to the director-v2 from the
+    # webserver (all relative to the same project) and I would like for
+    # the director-v2 to dispatch updates to the relative dynamic-sidecars
+    # instructing them the update their connected networks.
+    "/networks/{project_id}:attach",
+    summary="Adds sharing networks for involved services based on the state",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+@log_decorator(logger=logger)
+async def service_attach_networks_to_containers(
+    item: Item,
+    scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
+) -> None:
+    network_names_to_ids: Dict[str, str] = await get_networks_ids(
+        list(item.sharing_networks.keys()), item.project_id
+    )
+    await scheduler.attach_networks_to_containers(
+        network_names_to_ids, item.sharing_networks
+    )

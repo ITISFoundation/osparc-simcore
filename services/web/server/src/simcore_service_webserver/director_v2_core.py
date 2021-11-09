@@ -8,6 +8,7 @@ from aiohttp import ClientTimeout, web
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.settings.services_common import ServicesCommonSettings
+from models_library.sharing_networks import SharingNetworks
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
@@ -368,3 +369,24 @@ async def retrieve(
 
     assert isinstance(retry_result, dict)  # nosec
     return retry_result
+
+
+@log_decorator(logger=log)
+async def attach_networks_to_containers(
+    app: web.Application,
+    project_id: ProjectID,
+    sharing_networks: Dict[str, Dict[str, str]],
+) -> None:
+    timeout = ServicesCommonSettings().storage_service_upload_download_timeout
+
+    director2_settings: Directorv2Settings = get_settings(app)
+    backend_url = (
+        URL(director2_settings.endpoint)
+        / "dynamic_services"
+        / f"networks/{project_id}:attach"
+    )
+    body = dict(project_id=f"{project_id}", sharing_networks=sharing_networks)
+    log.debug("Request body %s", body)
+    await _request_director_v2(
+        app, "POST", backend_url, expected_status=web.HTTPOk, data=body, timeout=timeout
+    )

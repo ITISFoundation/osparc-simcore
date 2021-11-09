@@ -10,6 +10,7 @@ from models_library.users import UserID
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseSettings
 from settings_library.docker_registry import RegistrySettings
+from settings_library.postgres import PostgresSettings
 
 
 class DynamicSidecarSettings(BaseSettings):
@@ -93,6 +94,9 @@ class DynamicSidecarSettings(BaseSettings):
     DY_SIDECAR_NODE_ID: NodeID
 
     REGISTRY_SETTINGS: RegistrySettings
+
+    #TODO: change this when merging https://github.com/ITISFoundation/osparc-simcore/pull/2602
+    POSTGRES: Optional[PostgresSettings]
 
     @property
     def is_development_mode(self) -> bool:

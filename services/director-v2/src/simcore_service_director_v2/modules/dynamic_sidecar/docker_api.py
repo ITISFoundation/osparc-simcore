@@ -11,6 +11,7 @@ from typing import Any, AsyncIterator, Deque, Dict, List, Optional, Set, Tuple
 import aiodocker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from servicelib.utils import logged_gather
 
 from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX, UserID
@@ -419,3 +420,37 @@ async def is_dynamic_service_running(
         )
 
         return len(dynamic_sidecar_services) == 1
+
+
+async def get_networks_ids(
+    networks: List[str], project_id: ProjectID
+) -> Dict[str, str]:
+    async def _get_id_from_name(client, network_name: str) -> str:
+        network = await client.networks.get(network_name)
+        network_inspect = await network.show()
+        return network_inspect["Id"]
+
+    async with docker_client() as client:
+        existing_networks_names = {x["Name"] for x in await client.networks.list()}
+        log.debug("existing_networks_names=%s", existing_networks_names)
+
+        # create networks if missing
+        for network in networks:
+            if network not in existing_networks_names:
+                network_config = {
+                    "Name": network,
+                    "Driver": "overlay",
+                    "Labels": {
+                        "com.simcore.description": "internal network for service to service communication",
+                        "project_id": f"{project_id}",  # TODO: remove this when project is closing
+                    },
+                    "Attachable": True,
+                    "Internal": True,  # no internet access
+                }
+                await client.networks.create(network_config)
+
+        ids = await logged_gather(
+            *[_get_id_from_name(client, network) for network in networks]
+        )
+
+    return {k: v for k, v in zip(networks, ids)}

@@ -13,6 +13,7 @@ from .director_v2_core import (
     start_service,
     stop_service,
     stop_services,
+    attach_networks_to_containers
 )
 
 # director-v2 module internal API
