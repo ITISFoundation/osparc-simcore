@@ -28,14 +28,20 @@ def stringify_metadata(metadata: Dict) -> Dict[str, str]:
 def update_compose_labels(
     compose_cfg: Dict[str, Any], metadata: Dict[str, Any], service_name: str
 ) -> bool:
-    compose_labels = compose_cfg["services"][service_name]["build"]["labels"]
-    changed = False
+    labels: Dict[str, str] = compose_cfg["services"][service_name]["build"]["labels"]
+    sorted_labels = {key: labels[key] for key in sorted(labels.keys())}
+
+    changed: bool = list(labels.keys()) != list(sorted_labels.keys())
     for key, value in metadata.items():
-        if key in compose_labels:
-            if compose_labels[key] == value:
+        if key in sorted_labels:
+            if sorted_labels[key] == value:
                 continue
-        compose_labels[key] = value
+        sorted_labels[key] = value
         changed = True
+
+    if changed:
+        compose_cfg["services"][service_name]["build"]["labels"] = sorted_labels
+
     return changed
 
 
