@@ -404,8 +404,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         data: {
           "name": name,
           "endpoint": endpoint,
-          "authentication":
-          {
+          "authentication": {
             "type": authenticationType,
             "username": simpleAuthenticationUsername,
             "password": simpleAuthenticationPassword
