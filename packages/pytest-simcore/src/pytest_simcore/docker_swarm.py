@@ -56,12 +56,7 @@ def _in_docker_swarm(
     return True
 
 
-def assert_deployed_services_are_ready(
-    docker_client: docker.client.DockerClient,
-) -> None:
-    #
-    # NOTE: could use aiodocker gather checks per service in parallel (currently not possible since used in director)
-    #
+def assert_service_is_ready(service):
     def _get(obj, name, default=None):
         parts = name.split(".")
         value = obj
@@ -69,44 +64,45 @@ def assert_deployed_services_are_ready(
             value = value.get(part, {})
         return value.get(parts[-1], default)
 
-    for service in docker_client.services.list():
-        service_name = service.name
-        num_replicas_specified = _get(
-            service.attrs, "Spec.Mode.Replicated.Replicas", default=1
+    #
+    service_name = service.name
+    num_replicas_specified = _get(
+        service.attrs, "Spec.Mode.Replicated.Replicas", default=1
+    )
+
+    log.info(
+        "Waiting for service_name='%s' to have num_replicas_specified=%s ...",
+        service_name,
+        num_replicas_specified,
+    )
+
+    tasks = list(service.tasks())
+
+    if tasks:
+        #
+        # WARNING:
+        #  we have noticed using the 'last updated' task is not necessarily
+        #  the most actual of the tasks. It dependends e.g. on the restart policy.
+        #  For that reason, the readiness condition has been redefined as state in which
+        #  the specified number of replicas reach their desired state.
+        #  We still wonder if there is a transition point in which that condition
+        #  is met while still the service is not ready. This needs to be reviewed...
+        #
+
+        tasks_desired_state = [task["DesiredState"] for task in tasks]
+        tasks_current_state = [task["Status"]["State"] for task in tasks]
+
+        num_ready = sum(
+            [
+                desired == current
+                for desired, current in zip(tasks_desired_state, tasks_current_state)
+            ]
         )
 
-        print(
-            f"Waiting for service_name='{service_name}' to have num_replicas_specified={num_replicas_specified} ..."
+        assert num_ready == num_replicas_specified, (
+            f"service_name='{service_name}' NOT ready: tasks_current_state={tasks_current_state} "
+            f"but tasks_desired_state={tasks_desired_state}."
         )
-        tasks = list(service.tasks())
-
-        if tasks:
-            #
-            # WARNING:
-            #  we have noticed using the 'last updated' task is not necessarily
-            #  the most actual of the tasks. It dependends e.g. on the restart policy.
-            #  For that reason, the readiness condition has been redefined as state in which
-            #  the specified number of replicas reach their desired state.
-            #  We still wonder if there is a transition point in which that condition
-            #  is met while still the service is not ready. This needs to be reviewed...
-            #
-
-            tasks_desired_state = [task["DesiredState"] for task in tasks]
-            tasks_current_state = [task["Status"]["State"] for task in tasks]
-
-            num_ready = sum(
-                [
-                    desired == current
-                    for desired, current in zip(
-                        tasks_desired_state, tasks_current_state
-                    )
-                ]
-            )
-
-            assert num_ready == num_replicas_specified, (
-                f"service_name='{service_name}' NOT ready: tasks_current_state={tasks_current_state} "
-                f"but tasks_desired_state={tasks_desired_state}."
-            )
 
 
 def _fetch_and_print_services(
@@ -139,6 +135,8 @@ def keep_docker_up(request) -> bool:
 def docker_swarm(
     docker_client: docker.client.DockerClient, keep_docker_up: Iterator[bool]
 ) -> Iterator[None]:
+    """inits docker swarm"""
+
     for attempt in Retrying(
         wait=wait_fixed(2), stop=stop_after_delay(15), reraise=True
     ):
@@ -160,13 +158,14 @@ def docker_swarm(
 
 @pytest.fixture(scope="module")
 def docker_stack(
-    docker_swarm,
+    docker_swarm: None,
     docker_client: docker.client.DockerClient,
     core_docker_compose_file: Path,
     ops_docker_compose_file: Path,
     keep_docker_up: bool,
     testing_environ_vars: EnvVarsDict,
 ) -> Iterator[Dict]:
+    """deploys core and ops stacks ()"""
 
     # WARNING: keep prefix "pytest-" in stack names
     core_stack_name = testing_environ_vars["SWARM_STACK_NAME"]
@@ -201,7 +200,9 @@ def docker_stack(
             "compose": yaml.safe_load(compose_file.read_text()),
         }
 
-    # all SELECTED services ready
+    # All SELECTED services ready
+    # - notice that the timeout is set for all services in both stacks
+    # - TODO: the time to deploy will depend on the number of services selected
     try:
         for attempt in Retrying(
             wait=wait_fixed(5),
@@ -210,7 +211,9 @@ def docker_stack(
             reraise=True,
         ):
             with attempt:
-                assert_deployed_services_are_ready(docker_client)
+                for service in docker_client.services.list():
+                    assert_service_is_ready(service)
+
     finally:
         _fetch_and_print_services(docker_client, "[BEFORE TEST]")
 

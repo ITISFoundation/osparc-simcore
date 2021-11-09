@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 import pytest
 from docker import DockerClient
 from docker.models.services import Service
-from pytest_simcore.docker_swarm import assert_deployed_services_are_ready
+from pytest_simcore.docker_swarm import assert_service_is_ready
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -102,7 +102,8 @@ def deployed_simcore_stack(
             reraise=True,
         ):
             with attempt:
-                assert_deployed_services_are_ready(docker_client)
+                for service in docker_client.services.list():
+                    assert_service_is_ready(service)
 
     finally:
         subprocess.run(f"docker stack ps {core_stack_name}", shell=True, check=False)

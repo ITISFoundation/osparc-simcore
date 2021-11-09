@@ -2,9 +2,10 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-""" Fixtures to create docker-compose.yaml configururation files (as in Makefile)
+""" Fixtures to create docker-compose.yaml configuration files (as in Makefile)
 
-    Basically runs `docker-compose config
+    - Basically runs `docker-compose config
+    - Services in stack can be selected using 'core_services_selection', 'ops_services_selection' fixtures
 """
 
 import json
@@ -246,6 +247,8 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: ExitCode) -> None:
 
 
 # HELPERS ---------------------------------------------
+
+
 def _minio_fix(service_environs: Dict) -> Dict:
     """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work."""
     if "S3_ENDPOINT" in service_environs:
