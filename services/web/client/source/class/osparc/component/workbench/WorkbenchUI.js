@@ -1224,7 +1224,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const scaledWidth = parseInt(nodesWidth * scale);
         const scaledHeight = parseInt(nodesHeight * scale);
         console.log("Fit to nodes size", scale, scaledWidth, scaledHeight);
-        /*
         this.__workbenchLayout.set({
           minWidth: scale > 1 ? scaledWidth : nodesWidth,
           minHeight: scale > 1 ? scaledHeight : nodesHeight
@@ -1237,22 +1236,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           maxWidth: scale > 1 ? scaledWidth : nodesWidth,
           maxHeight: scale > 1 ? scaledHeight : nodesHeight
         });
-        */
-        this.__workbenchLayout.set({
-          // minWidth: scaledWidth,
-          // minHeight: scaledHeight
-          minWidth: nodesWidth,
-          minHeight: nodesHeight
-        });
-        this.__workbenchLayout.set({
-          // width: scaledWidth,
-          // height: scaledHeight
-          width: nodesWidth,
-          height: nodesHeight
-        });
       }
 
-      // this.__fillScreen();
+      this.__fillScreen();
 
       const pane = this._workbenchLayoutScroll.getChildControl("pane");
       const innerSize = this._workbenchLayoutScroll.getInnerSize();
@@ -1262,9 +1248,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       console.log("paneSize", paneSize);
       console.log("scrollSize", scrollSize);
       console.log("getBounds", this.__workbenchLayout.getBounds());
-
       console.log("----------------------------------");
 
+      /*
       setTimeout(() => {
         const pane2 = this._workbenchLayoutScroll.getChildControl("pane");
         const innerSize2 = this._workbenchLayoutScroll.getInnerSize();
@@ -1277,6 +1263,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         // eslint-disable-next-line no-underscore-dangle
         this._workbenchLayoutScroll._computeScrollbars();
       }, 500);
+      */
     },
 
     __fillScreen: function() {
