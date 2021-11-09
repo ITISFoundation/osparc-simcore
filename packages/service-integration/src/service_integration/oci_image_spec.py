@@ -1,6 +1,5 @@
 """ Support for Open Container Initiative (OCI)
 
-
 SEE https://opencontainers.org
 SEE https://github.com/opencontainers
 SEE https://github.com/opencontainers/image-spec/blob/main/annotations.md
@@ -15,6 +14,11 @@ from pydantic import BaseModel, Field
 from pydantic.main import Extra
 from pydantic.networks import AnyUrl
 
+#
+# Prefix added to docker image labels using reverse DNS notations of a domain they own
+# SEE https://docs.docker.com/config/labels-custom-metadata/#key-format-recommendations
+#
+DOCKER_LABEL_PREFIXES = ("com.docker", "io.docker", "org.dockerproject")
 LS_LABEL_PREFIX = "org.label-schema"
 OCI_LABEL_PREFIX = "org.opencontainers.image"
 
@@ -108,6 +112,9 @@ class OCIImageSpecAnnotations(BaseModel):
                 exclude_unset=True, by_alias=True, exclude_none=True
             ).items()
         }
+
+    def from_labels_annotations(self, annotations: Dict[str, str]):
+        raise NotImplementedError
 
 
 def convert_from_label_schema_annotations():
