@@ -3,7 +3,7 @@ from typing import Any, Dict, Literal, Optional, Union
 from models_library.users import GroupID
 from pydantic import BaseModel, Extra, Field, validator
 from pydantic.networks import AnyUrl, HttpUrl
-from pydantic.types import PositiveInt, SecretStr
+from pydantic.types import PositiveInt
 from simcore_postgres_database.models.clusters import ClusterType
 
 
@@ -32,7 +32,7 @@ class Authentication(BaseModel):
 class SimpleAuthentication(Authentication):
     type: Literal["simple"] = "simple"
     username: str
-    password: SecretStr
+    password: str
 
 
 class KerberosAuthentication(Authentication):
@@ -75,10 +75,6 @@ class ClusterBase(BaseModel):
             exclude_unset=only_update,
             exclude_none=only_update,
         )
-        if isinstance(self.authentication, SimpleAuthentication):
-            db_model["authentication"][
-                "password"
-            ] = self.authentication.password.get_secret_value()
         return db_model
 
 
