@@ -1,9 +1,9 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Literal, Optional, Union
 
 from models_library.users import GroupID
 from pydantic import BaseModel, Extra, Field, validator
 from pydantic.networks import AnyUrl, HttpUrl
-from pydantic.types import PositiveInt
+from pydantic.types import PositiveInt, SecretStr
 from simcore_postgres_database.models.clusters import ClusterType
 
 
@@ -22,6 +22,32 @@ CLUSTER_USER_RIGHTS = ClusterAccessRights(read=True, write=False, delete=False)
 CLUSTER_NO_RIGHTS = ClusterAccessRights(read=False, write=False, delete=False)
 
 
+class Authentication(BaseModel):
+    type: str
+
+    class Config:
+        extra = Extra.forbid
+
+
+class SimpleAuthentication(Authentication):
+    type: Literal["simple"] = "simple"
+    username: str
+    password: SecretStr
+
+
+class KerberosAuthentication(Authentication):
+    type: Literal["kerberos"] = "kerberos"
+
+
+class JupyterHubTokenAuthentication(Authentication):
+    type: Literal["jupyterhub"] = "jupyterhub"
+
+
+ClusterAuthentication = Union[
+    SimpleAuthentication, KerberosAuthentication, JupyterHubTokenAuthentication
+]
+
+
 class ClusterBase(BaseModel):
     name: str = Field(..., description="The human readable name of the cluster")
     description: Optional[str] = None
@@ -33,14 +59,27 @@ class ClusterBase(BaseModel):
         examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
     )
     endpoint: AnyUrl
-    authentication: Dict[str, Any] = Field(
-        description="For now it is undefined how the authentication is going to be used"
+    authentication: ClusterAuthentication = Field(
+        ..., description="Dask gateway authentication"
     )
     access_rights: Dict[GroupID, ClusterAccessRights] = Field(default_factory=dict)
 
     class Config:
         extra = Extra.forbid
         use_enum_values = True
+
+    def to_clusters_db(self, only_update: bool) -> Dict[str, Any]:
+        db_model = self.dict(
+            by_alias=True,
+            exclude={"id", "access_rights"},
+            exclude_unset=only_update,
+            exclude_none=only_update,
+        )
+        if isinstance(self.authentication, SimpleAuthentication):
+            db_model["authentication"][
+                "password"
+            ] = self.authentication.password.get_secret_value()
+        return db_model
 
 
 class Cluster(ClusterBase):
@@ -56,7 +95,9 @@ class Cluster(ClusterBase):
                     "owner": 12,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
-                        "simple": {"username": "someuser", "password": "somepassword"}
+                        "type": "simple",
+                        "username": "someuser",
+                        "password": "somepassword",
                     },
                 },
                 {
@@ -66,9 +107,21 @@ class Cluster(ClusterBase):
                     "type": ClusterType.AWS,
                     "owner": 154,
                     "endpoint": "https://registry.osparc-development.fake.dev",
-                    "authentication": {
-                        "simple": {"username": "someuser", "password": "somepassword"}
+                    "authentication": {"type": "kerberos"},
+                    "access_rights": {
+                        154: CLUSTER_ADMIN_RIGHTS,
+                        12: CLUSTER_MANAGER_RIGHTS,
+                        7899: CLUSTER_USER_RIGHTS,
                     },
+                },
+                {
+                    "id": 325436,
+                    "name": "My AWS cluster",
+                    "description": "a AWS cluster administered by me",
+                    "type": ClusterType.AWS,
+                    "owner": 2321,
+                    "endpoint": "https://registry.osparc-development.fake2.dev",
+                    "authentication": {"type": "jupyterhub"},
                     "access_rights": {
                         154: CLUSTER_ADMIN_RIGHTS,
                         12: CLUSTER_MANAGER_RIGHTS,
@@ -89,25 +142,6 @@ class Cluster(ClusterBase):
         if v[owner_gid] != CLUSTER_ADMIN_RIGHTS:
             raise ValueError("the cluster owner access rights are incorrectly set")
         return v
-
-    @validator("authentication", always=True)
-    @classmethod
-    def authentication_is_one_of_gateway_authorized_ones(cls, v):
-        if not isinstance(v, dict):
-            raise ValueError(
-                "the authentication value is not following simple, kerberos or jupyterhub authentication schemes"
-            )
-        POSSIBLE_KEYS = ["simple", "kerberos", "jupyterhub"]
-        for authentication_type in POSSIBLE_KEYS:
-            if authentication_type in v:
-                if not isinstance(v[authentication_type], dict):
-                    raise ValueError(
-                        f"{authentication_type} authentication requires a dictionary"
-                    )
-                return v
-        raise ValueError(
-            "the authentication value is not following simple, kerberos or jupyterhub authentication schemes"
-        )
 
 
 class ClusterCreate(ClusterBase):
@@ -133,7 +167,9 @@ class ClusterCreate(ClusterBase):
                     "type": ClusterType.ON_PREMISE,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
-                        "simple": {"username": "someuser", "password": "somepassword"}
+                        "type": "simple",
+                        "username": "someuser",
+                        "password": "somepassword",
                     },
                 },
                 {
@@ -143,7 +179,9 @@ class ClusterCreate(ClusterBase):
                     "owner": 154,
                     "endpoint": "https://registry.osparc-development.fake.dev",
                     "authentication": {
-                        "simple": {"username": "someuser", "password": "somepassword"}
+                        "type": "simple",
+                        "username": "someuser",
+                        "password": "somepassword",
                     },
                     "access_rights": {
                         154: CLUSTER_ADMIN_RIGHTS,
@@ -162,7 +200,7 @@ class ClusterPatch(ClusterBase):
     owner: Optional[GroupID]
     thumbnail: Optional[HttpUrl]
     endpoint: Optional[AnyUrl]
-    authentication: Optional[Dict[str, Any]]
+    authentication: Optional[ClusterAuthentication]
     access_rights: Optional[Dict[GroupID, ClusterAccessRights]] = Field(
         alias="accessRights"
     )

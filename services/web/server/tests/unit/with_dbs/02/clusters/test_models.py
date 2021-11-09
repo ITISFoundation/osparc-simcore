@@ -10,6 +10,7 @@ from simcore_service_webserver.clusters.models import (
     CLUSTER_USER_RIGHTS,
     Cluster,
     ClusterCreate,
+    ClusterPatch,
 )
 
 

@@ -38,8 +38,25 @@ from sqlalchemy.sql.elements import literal_column
 
 
 @pytest.fixture
+def cluster_authentication(faker: Faker) -> Iterable[Callable[[], Dict[str, Any]]]:
+    def creator() -> Dict[str, Any]:
+        simple_auth = {
+            "type": "simple",
+            "username": faker.user_name(),
+            "password": faker.password(),
+        }
+        kerberos_auth = {"type": "kerberos"}
+        jupyterhub_auth = {"type": "jupyterhub"}
+        return random.choice([simple_auth, kerberos_auth, jupyterhub_auth])
+
+    yield creator
+
+
+@pytest.fixture
 def cluster(
-    postgres_db: sa.engine.Engine, faker: Faker
+    postgres_db: sa.engine.Engine,
+    faker: Faker,
+    cluster_authentication: Callable[[], Dict[str, Any]],
 ) -> Iterable[
     Callable[
         [GroupID, Dict[GroupID, ClusterAccessRights]], Coroutine[Any, Any, Cluster]
@@ -58,19 +75,13 @@ def cluster(
                 "owner": gid,
                 "access_rights": cluster_access_rights or {},
                 "endpoint": faker.uri(),
-                "authentication": {
-                    random.choice(["simple", "kerberos", "jupyterhub"]): faker.pydict(
-                        value_types=str
-                    )
-                },
+                "authentication": cluster_authentication(),
             }
         )
 
         result = postgres_db.execute(
             clusters.insert()
-            .values(
-                new_cluster.dict(by_alias=True, exclude={"id", "access_rights"}),
-            )
+            .values(new_cluster.to_clusters_db())
             .returning(literal_column("*"))
         )
         cluster_in_db = result.first()
@@ -183,7 +194,12 @@ async def test_list_clusters(
 
 
 @pytest.mark.parametrize(
-    "authentication", [{"simple": {"username": "fake", "password": "sldfkjsl"}}]
+    "authentication",
+    [
+        {"type": "simple", "username": "fake", "password": "sldfkjsl"},
+        {"type": "kerberos"},
+        {"type": "jupyterhub"},
+    ],
 )
 @pytest.mark.parametrize(
     *standard_role_response(),

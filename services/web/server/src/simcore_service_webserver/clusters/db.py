@@ -165,9 +165,7 @@ class ClustersRepository(BaseRepository):
             created_cluser_id: int = await conn.scalar(
                 # pylint: disable=no-value-for-parameter
                 clusters.insert()
-                .values(
-                    new_cluster.dict(by_alias=True, exclude={"id", "access_rights"}),
-                )
+                .values(new_cluster.to_clusters_db())
                 .returning(clusters.c.id)
             )
 
