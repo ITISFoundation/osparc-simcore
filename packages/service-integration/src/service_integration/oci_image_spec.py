@@ -10,7 +10,7 @@ import os
 from datetime import datetime
 from typing import Dict
 
-from models_library.basic_types import VersionStr
+from models_library.basic_types import SHA1Str, VersionStr
 from pydantic import BaseModel, Field
 from pydantic.main import Extra
 from pydantic.networks import AnyUrl
@@ -77,21 +77,21 @@ class OCIImageSpecAnnotations(BaseModel):
         ..., description="Name of the distributing entity, organization or individual."
     )
     # SEE https://spdx.dev/spdx-specification-21-web-version/#h.jxpfx0ykyb60
-    licenses = Field(
+    licenses: str = Field(
         "MIT",
         description="License(s) under which contained software is distributed as an SPDX License Expression.",
     )
-    ref_name = Field(
+    ref_name: str = Field(
         None,
         description="Name of the reference for a target (string).",
     )
 
-    title = Field(..., description="Human-readable title of the image (string)")
-    description = Field(
+    title: str = Field(..., description="Human-readable title of the image (string)")
+    description: str = Field(
         ...,
         description="Human-readable description of the software packaged in the image (string)",
     )
-    base_digest = Field(
+    base_digest: SHA1Str = Field(
         ...,
         description="Digest of the image this image is based on (string)",
     )
