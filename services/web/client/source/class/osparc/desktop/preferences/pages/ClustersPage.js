@@ -393,7 +393,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       const clusterId = clusterEditor.getCid();
       const name = clusterEditor.getLabel();
       const endpoint = clusterEditor.getEndpoint();
-      const authenticationType = "simple"
+      const authenticationType = "simple";
       const simpleAuthenticationUsername = clusterEditor.getSimpleAuthenticationUsername();
       const simpleAuthenticationPassword = clusterEditor.getSimpleAuthenticationPassword();
       const description = clusterEditor.getDescription();
