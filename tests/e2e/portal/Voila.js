@@ -1,7 +1,6 @@
 // node Voila.js [url_prefix] [template_uuid] [--demo]
 
 const tutorialBase = require('../tutorials/tutorialBase');
-const auto = require('../utils/auto');
 const utils = require('../utils/utils');
 
 const args = process.argv.slice(2);
@@ -25,10 +24,11 @@ async function runTutorial () {
     console.log("Study ID:", studyId);
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
+    console.log("Workbench Data:", workbenchData);
     const voilaIdViewer = workbenchData["nodeIds"][0];
     await tutorial.waitForServices(workbenchData["studyId"], [voilaIdViewer]);
 
-    await tutorial.waitFor(20000, 'Some time for starting the service');
+    await tutorial.waitFor(40000, 'Some time for starting the service');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
     const iframeHandles = await page.$$("iframe");
@@ -40,13 +40,11 @@ async function runTutorial () {
     // url/x/voilaIdViewer
     const frame = iframes.find(iframe => iframe._url.includes(voilaIdViewer));
 
-    // check the title says "VISUALIZATION"
+    // check title says "VISUALIZATION"
     const titleSelector = '#VISUALIZATION';
-    await frame.waitForSelector(titleSelector);
-    const titleText = await page.evaluate(() => {
-      const element = document.querySelector(titleSelector);
-      return element ? element.innerText : null;
-    });
+    const element = await frame.$(titleSelector);
+    const titleText = await frame.evaluate(el => el.innerText, element);
+    console.log("titleText", titleText);
     if (titleText !== "VISUALIZATION") {
       throw new Error("Voila page title doesn't match the expected");
     }
