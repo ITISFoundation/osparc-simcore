@@ -1218,47 +1218,84 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       console.log("updateWorkbenchBounds", nodeBounds);
       if (nodeBounds) {
         // Fit to nodes size
+        const scale = this.getScale();
         const nodesWidth = nodeBounds.right + osparc.component.workbench.NodeUI.NODE_WIDTH;
         const nodesHeight = nodeBounds.bottom + osparc.component.workbench.NodeUI.NODE_HEIGHT;
-        const scaledWidth = parseInt(nodesWidth * this.getScale());
-        const scaledHeight = parseInt(nodesHeight * this.getScale());
-        console.log("Fit to nodes size", scaledWidth, scaledHeight);
+        const scaledWidth = parseInt(nodesWidth * scale);
+        const scaledHeight = parseInt(nodesHeight * scale);
+        console.log("Fit to nodes size", scale, scaledWidth, scaledHeight);
+        /*
         this.__workbenchLayout.set({
-          minWidth: scaledWidth,
-          minHeight: scaledHeight
+          minWidth: scale > 1 ? scaledWidth : nodesWidth,
+          minHeight: scale > 1 ? scaledHeight : nodesHeight
         });
         this.__workbenchLayout.set({
-          width: scaledWidth,
-          height: scaledHeight
+          width: scale > 1 ? scaledWidth : nodesWidth,
+          height: scale > 1 ? scaledHeight : nodesHeight
+        });
+        this.__workbenchLayout.set({
+          maxWidth: scale > 1 ? scaledWidth : nodesWidth,
+          maxHeight: scale > 1 ? scaledHeight : nodesHeight
+        });
+        */
+        this.__workbenchLayout.set({
+          // minWidth: scaledWidth,
+          // minHeight: scaledHeight
+          minWidth: nodesWidth,
+          minHeight: nodesHeight
+        });
+        this.__workbenchLayout.set({
+          // width: scaledWidth,
+          // height: scaledHeight
+          width: nodesWidth,
+          height: nodesHeight
         });
       }
 
-      this.__fillScreen();
+      // this.__fillScreen();
+
+      const pane = this._workbenchLayoutScroll.getChildControl("pane");
+      const innerSize = this._workbenchLayoutScroll.getInnerSize();
+      const paneSize = pane.getInnerSize();
+      const scrollSize = pane.getScrollSize();
+      console.log("innerSize", innerSize);
+      console.log("paneSize", paneSize);
+      console.log("scrollSize", scrollSize);
+      console.log("getBounds", this.__workbenchLayout.getBounds());
 
       console.log("----------------------------------");
 
-      // eslint-disable-next-line no-underscore-dangle
-      this._workbenchLayoutScroll._computeScrollbars();
+      setTimeout(() => {
+        const pane2 = this._workbenchLayoutScroll.getChildControl("pane");
+        const innerSize2 = this._workbenchLayoutScroll.getInnerSize();
+        const paneSize2 = pane2.getInnerSize();
+        const scrollSize2 = pane2.getScrollSize();
+        console.log("innerSize", innerSize2);
+        console.log("paneSize", paneSize2);
+        console.log("scrollSize", scrollSize2);
+        console.log("getBounds", this.__workbenchLayout.getBounds());
+        // eslint-disable-next-line no-underscore-dangle
+        this._workbenchLayoutScroll._computeScrollbars();
+      }, 500);
     },
 
     __fillScreen: function() {
       const scale = this.getScale();
       const screenWidth = this.getBounds().width - 10; // scrollbar
       const screenHeight = this.getBounds().height - 10; // scrollbar
-      const scaledMinWidth = parseInt(screenWidth/scale);
-      const scaledMinHeight = parseInt(screenHeight/scale);
-      if (this.__workbenchLayout.getMinWidth() < scaledMinWidth) {
+      const scaledWidth = parseInt(screenWidth/scale);
+      const scaledHeight = parseInt(screenHeight/scale);
+      if (this.__workbenchLayout.getMinWidth() < scaledWidth) {
         console.log("Fill width");
         this.__workbenchLayout.set({
-          minWidth: scaledMinWidth,
-          width: scaledMinWidth
+          width: scaledWidth
         });
-        this.__workbenchLayout.setWidth(scaledMinWidth);
       }
-      if (this.__workbenchLayout.getMinHeight() < scaledMinHeight) {
+      if (this.__workbenchLayout.getMinHeight() < scaledHeight) {
         console.log("Fill height");
-        this.__workbenchLayout.setMinHeight(scaledMinHeight);
-        this.__workbenchLayout.setHeight(scaledMinHeight);
+        this.__workbenchLayout.set({
+          height: scaledHeight
+        });
       }
     },
 
