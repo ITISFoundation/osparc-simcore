@@ -18,7 +18,11 @@ from ...core.settings import DaskSchedulerSettings
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
 from ...models.schemas.constants import ClusterID, UserID
 from ...modules.dask_client import DaskClient
-from ...utils.dask import parse_dask_job_id, parse_output_data
+from ...utils.dask import (
+    clean_task_output_and_log_files_if_invalid,
+    parse_dask_job_id,
+    parse_output_data,
+)
 from ...utils.scheduler import COMPLETED_STATES, get_repository
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ..rabbitmq import RabbitMQClient
@@ -77,8 +81,8 @@ class DaskScheduler(BaseCompScheduler):
         await self.dask_client.reconnect_client()
 
     async def _on_task_completed(self, event: TaskStateEvent) -> None:
-        logger.warning(
-            "received task compeltion: %s",
+        logger.debug(
+            "received task completion: %s",
             event,
         )
         service_key, service_version, user_id, project_id, node_id = parse_dask_job_id(
@@ -87,8 +91,12 @@ class DaskScheduler(BaseCompScheduler):
 
         assert event.state in COMPLETED_STATES  # no sec
 
+        logger.info(
+            "task %s completed with state: %s",
+            event.job_id,
+            f"{event.state.value}".lower(),
+        )
         if event.state == RunningState.SUCCESS:
-            logger.info("task %s completed successfully", event.job_id)
             # we need to parse the results
             assert event.msg  # no sec
             await parse_output_data(
@@ -96,10 +104,11 @@ class DaskScheduler(BaseCompScheduler):
                 event.job_id,
                 TaskOutputData.parse_raw(event.msg),
             )
-        elif event.state == RunningState.ABORTED:
-            logger.info("task %s was aborted", event.job_id)
         else:
-            logger.info("task %s failed", event.job_id)
+            # we need to remove any invalid files in the storage
+            await clean_task_output_and_log_files_if_invalid(
+                self.db_engine, user_id, project_id, node_id
+            )
 
         await CompTasksRepository(self.db_engine).set_project_tasks_state(
             project_id, [node_id], event.state

@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
-from typing import Any, Awaitable, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type
 from uuid import uuid4
 
 from aiodocker import Docker
@@ -160,7 +160,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     async def run(self, command: List[str]) -> TaskOutputData:
         await self._publish_sidecar_state(RunningState.STARTED)
         await self._publish_sidecar_log(
-            f"Starting task for {self.service_key}:{self.service_version}..."
+            f"Starting task for {self.service_key}:{self.service_version} on {socket.gethostname()}..."
         )
 
         settings = Settings.create_from_envs()
@@ -222,10 +222,6 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                             msg=f"error while running container '{container.id}' for '{self.service_key}:{self.service_version}'",
                         )
 
-                        await self._publish_sidecar_log(
-                            f"Error while running container: task FAILED with exit code '{container_data['State']['ExitCode']}'"
-                        )
-
                         raise ServiceRunError(
                             self.service_key,
                             self.service_version,
@@ -250,6 +246,9 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         exc_type: Optional[Type[BaseException]],
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
-    ) -> Awaitable[Optional[bool]]:
-        """NOTE: this is empty but this is intended. the ComputationSidecar
-        is meant to be used as context manager"""
+    ) -> None:
+        if exc:
+            await self._publish_sidecar_log(f"Task error:\n{exc}")
+            await self._publish_sidecar_log(
+                "There might be more information in the service log file"
+            )
