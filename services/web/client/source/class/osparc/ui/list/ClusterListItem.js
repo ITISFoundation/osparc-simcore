@@ -55,7 +55,7 @@ qx.Class.define("osparc.ui.list.ClusterListItem", {
       init: "",
       nullable: false,
       event: "changesimpleAuthenticationPassword"
-    },
+    }
   },
 
   events: {
