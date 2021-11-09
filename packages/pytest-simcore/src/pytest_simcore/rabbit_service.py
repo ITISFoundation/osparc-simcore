@@ -6,7 +6,7 @@ import asyncio
 import json
 import logging
 import socket
-from typing import Any, Dict, Iterable, Optional, Tuple
+from typing import Any, AsyncIterator, Dict, Iterator, Optional, Tuple
 
 import aio_pika
 import pytest
@@ -18,11 +18,27 @@ from tenacity.wait import wait_fixed
 
 from .helpers.utils_docker import get_service_published_port
 
+# HELPERS ------------------------------------------------------------------------------------
+
 log = logging.getLogger(__name__)
 
 
+@tenacity.retry(
+    wait=wait_fixed(5),
+    stop=stop_after_attempt(60),
+    before_sleep=before_sleep_log(log, logging.INFO),
+    reraise=True,
+)
+async def wait_till_rabbit_responsive(url: str) -> None:
+    connection = await aio_pika.connect(url)
+    await connection.close()
+
+
+# FIXTURES ------------------------------------------------------------------------------------
+
+
 @pytest.fixture(scope="module")
-def loop(request) -> asyncio.AbstractEventLoop:
+def loop(request) -> Iterator[asyncio.AbstractEventLoop]:
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
@@ -45,7 +61,7 @@ async def rabbit_config(
     url = rabbit_config.dsn
     await wait_till_rabbit_responsive(url)
 
-    yield rabbit_config
+    return rabbit_config
 
 
 @pytest.fixture(scope="function")
@@ -60,8 +76,10 @@ async def rabbit_service(rabbit_config: RabbitConfig, monkeypatch) -> RabbitConf
 
 
 @pytest.fixture(scope="function")
-async def rabbit_connection(rabbit_config: RabbitConfig) -> aio_pika.RobustConnection:
-    def reconnect_callback():
+async def rabbit_connection(
+    rabbit_config: RabbitConfig,
+) -> AsyncIterator[aio_pika.RobustConnection]:
+    def _reconnect_callback():
         pytest.fail("rabbit reconnected")
 
     # create connection
@@ -73,7 +91,7 @@ async def rabbit_connection(rabbit_config: RabbitConfig) -> aio_pika.RobustConne
     )
     assert connection
     assert not connection.is_closed
-    connection.add_reconnect_callback(reconnect_callback)
+    connection.add_reconnect_callback(_reconnect_callback)
 
     yield connection
     # close connection
@@ -84,8 +102,8 @@ async def rabbit_connection(rabbit_config: RabbitConfig) -> aio_pika.RobustConne
 @pytest.fixture(scope="function")
 async def rabbit_channel(
     rabbit_connection: aio_pika.RobustConnection,
-) -> aio_pika.Channel:
-    def channel_close_callback(sender: Any, exc: Optional[BaseException] = None):
+) -> AsyncIterator[aio_pika.Channel]:
+    def _channel_close_callback(sender: Any, exc: Optional[BaseException] = None):
         if exc:
             pytest.fail("rabbit channel closed!")
         else:
@@ -94,7 +112,7 @@ async def rabbit_channel(
     # create channel
     channel = await rabbit_connection.channel(publisher_confirms=False)
     assert channel
-    channel.add_close_callback(channel_close_callback)
+    channel.add_close_callback(_channel_close_callback)
     yield channel
     # close channel
     await channel.close()
@@ -105,6 +123,9 @@ async def rabbit_exchange(
     rabbit_config: RabbitConfig,
     rabbit_channel: aio_pika.Channel,
 ) -> Tuple[aio_pika.Exchange, aio_pika.Exchange]:
+    """
+    Declares and returns 'log' and 'instrumentation' exchange channels with rabbit
+    """
 
     # declare log exchange
     LOG_EXCHANGE_NAME: str = rabbit_config.channels["log"]
@@ -112,12 +133,14 @@ async def rabbit_exchange(
         LOG_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
     )
     assert logs_exchange
+
     # declare instrumentation exchange
     INSTRUMENTATION_EXCHANGE_NAME: str = rabbit_config.channels["instrumentation"]
     instrumentation_exchange = await rabbit_channel.declare_exchange(
         INSTRUMENTATION_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
     )
     assert instrumentation_exchange
+
     return logs_exchange, instrumentation_exchange
 
 
@@ -125,26 +148,13 @@ async def rabbit_exchange(
 async def rabbit_queue(
     rabbit_channel: aio_pika.Channel,
     rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
-) -> Iterable[aio_pika.Queue]:
-    (logs_exchange, instrumentation_exchange) = rabbit_exchange
-    # declare queue
+) -> AsyncIterator[aio_pika.Queue]:
+    logs_exchange, instrumentation_exchange = rabbit_exchange
+
     queue = await rabbit_channel.declare_queue(exclusive=True)
     assert queue
+
     # Binding queue to exchange
     await queue.bind(logs_exchange)
     await queue.bind(instrumentation_exchange)
     yield queue
-
-
-# HELPERS --
-
-
-@tenacity.retry(
-    wait=wait_fixed(5),
-    stop=stop_after_attempt(60),
-    before_sleep=before_sleep_log(log, logging.INFO),
-    reraise=True,
-)
-async def wait_till_rabbit_responsive(url: str) -> None:
-    connection = await aio_pika.connect(url)
-    await connection.close()

@@ -73,7 +73,7 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
 
       const prvsBtn = this.__prvsBtn = new qx.ui.form.Button().set({
         toolTipText: this.tr("Previous"),
-        icon: "@FontAwesome5Solid/arrow-left/24",
+        icon: "@FontAwesome5Solid/arrow-left/14",
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
         allowGrowX: false
       });
@@ -81,7 +81,7 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
 
       const nextBtn = this.__nextBtn = new qx.ui.form.Button().set({
         toolTipText: this.tr("Next"),
-        icon: "@FontAwesome5Solid/arrow-right/24",
+        icon: "@FontAwesome5Solid/arrow-right/14",
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
         allowGrowX: false
       });

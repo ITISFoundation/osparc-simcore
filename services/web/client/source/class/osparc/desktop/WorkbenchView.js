@@ -119,7 +119,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         case "collapsible-view-left": {
           const sidePanels = this.getChildControl("side-panels");
           control = new osparc.component.widget.CollapsibleViewLight().set({
-            minWidth: 20,
+            minWidth: 15,
             width: Math.min(parseInt(window.innerWidth * 0.16), 240)
           });
           const caretExpandedLayout = control.getChildControl("caret-expanded-layout");
@@ -497,8 +497,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__populateSecondPanel(this.getStudy());
         this.__evalIframe();
         this.__openWorkbenchTab();
+        this.__loggerView.setCurrentNodeId(null);
       });
-
       nodesTree.addListener("nodeSelected", e => {
         studyTreeItem.resetSelection();
         const nodeId = e.getData();
@@ -506,12 +506,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const node = workbench.getNode(nodeId);
         if (node) {
           this.__populateSecondPanel(node);
-          if (node.isDynamic()) {
-            this.__openIframeTab(node);
-          } else {
-            this.__openWorkbenchTab();
-          }
+          this.__openIframeTab(node);
         }
+        this.__loggerView.setCurrentNodeId(nodeId);
         const nodeUI = workbenchUI.getNodeUI(nodeId);
         if (nodeUI) {
           if (nodeUI.classname.includes("NodeUI")) {
@@ -519,6 +516,27 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           }
         }
       });
+      workbenchUI.addListener("changeSelectedNode", e => {
+        studyTreeItem.resetSelection();
+        const nodeId = e.getData();
+        this.__nodesTree.nodeSelected(nodeId);
+        const workbench = this.getStudy().getWorkbench();
+        const node = workbench.getNode(nodeId);
+        this.__populateSecondPanel(node);
+        this.__evalIframe(node);
+        this.__loggerView.setCurrentNodeId(nodeId);
+      });
+      workbenchUI.addListener("nodeSelected", e => {
+        studyTreeItem.resetSelection();
+        const nodeId = e.getData();
+        this.__nodesTree.nodeSelected(nodeId);
+        const workbench = this.getStudy().getWorkbench();
+        const node = workbench.getNode(nodeId);
+        this.__populateSecondPanel(node);
+        this.__openIframeTab(node);
+        this.__loggerView.setCurrentNodeId(nodeId);
+      }, this);
+
       nodesTree.addListener("fullscreenNode", e => {
         studyTreeItem.resetSelection();
         const nodeId = e.getData();
@@ -530,6 +548,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           node.getLoadingPage().maximizeIFrame(true);
           node.getIFrame().maximizeIFrame(true);
         }
+        this.__loggerView.setCurrentNodeId(nodeId);
         const nodeUI = workbenchUI.getNodeUI(nodeId);
         if (nodeUI) {
           if (nodeUI.classname.includes("NodeUI")) {
@@ -550,24 +569,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const edgeId = e.getData();
         this.__removeEdge(edgeId);
       }, this);
-      workbenchUI.addListener("changeSelectedNode", e => {
-        studyTreeItem.resetSelection();
-        const nodeId = e.getData();
-        this.__nodesTree.nodeSelected(nodeId);
-        const workbench = this.getStudy().getWorkbench();
-        const node = workbench.getNode(nodeId);
-        this.__populateSecondPanel(node);
-        this.__evalIframe(node);
-      });
-      workbenchUI.addListener("nodeSelected", e => {
-        studyTreeItem.resetSelection();
-        const nodeId = e.getData();
-        this.__nodesTree.nodeSelected(nodeId);
-        const workbench = this.getStudy().getWorkbench();
-        const node = workbench.getNode(nodeId);
-        this.__populateSecondPanel(node);
-        this.__openIframeTab(node);
-      }, this);
 
       const workbench = this.getStudy().getWorkbench();
       workbench.addListener("pipelineChanged", this.__workbenchChanged, this);
@@ -576,7 +577,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const data = e.getData();
         const nodeId = data.nodeId;
         const msg = data.msg;
-        this.getLogger().info(nodeId, msg);
+        this.__loggerView.info(nodeId, msg);
       }, this);
 
       workbench.addListener("fileRequested", () => {
@@ -602,7 +603,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           }
           const nodeId = data["node_id"];
           const messages = data["messages"];
-          this.getLogger().infos(nodeId, messages);
+          this.__loggerView.infos(nodeId, messages);
           const nodeLogger = this.__getNodeLogger(nodeId);
           if (nodeLogger) {
             nodeLogger.infos(nodeId, messages);
@@ -907,12 +908,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         const filePickerView = new osparc.file.FilePicker(filePicker);
         filePickerView.buildLayout();
+        filePickerView.getChildControl("reload-button").exclude();
         filePickerView.getChildControl("files-tree").set({
           hideRoot: true,
           showLeafs: true
         });
         filePickerView.getChildControl("folder-viewer").exclude();
-        filePickerView.getChildControl("files-add").exclude();
         filePickerView.getChildControl("selected-file-layout").getChildControl("download-button").exclude();
         filePickerView.addListener("itemSelected", () => this.__populateSecondPanel(filePicker));
         this.__settingsPage.add(filePickerView, {
@@ -934,7 +935,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __populateSecondPanelNode: function(node) {
       this.__settingsPage.getChildControl("button").show();
-      this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
+      this.__outputsPage.getChildControl("button").show();
+      if (![this.__settingsPage, this.__outputsPage].includes(this.getChildControl("side-panel-right-tabs").getSelection()[0])) {
+        this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
+      }
 
       if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
         const scrollContariner = new qx.ui.container.Scroll();
@@ -944,7 +948,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         });
       }
 
-      this.__outputsPage.getChildControl("button").show();
       if (node.hasOutputs()) {
         const portTree = new osparc.component.widget.inputs.NodeOutputTree(node, node.getMetaData().outputs).set({
           allowGrowY: false

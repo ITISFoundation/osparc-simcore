@@ -224,11 +224,16 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 query = sa.select([file_meta_data]).where(has_read_access)
 
                 async for row in conn.execute(query):
-                    d = FileMetaData(**dict(row))
-                    dex = FileMetaDataEx(
-                        fmd=d, parent_id=str(Path(d.object_name).parent)
-                    )
-                    data.append(dex)
+                    dex = to_meta_data_extended(row)
+                    if dex.fmd.entity_tag is None:
+                        # we need to update from S3 here since the database is not up-to-date
+                        dex = await self.update_database_from_storage(
+                            dex.fmd.file_uuid,
+                            dex.fmd.bucket_name,
+                            dex.fmd.object_name,
+                        )
+                    if dex and dex.fmd.entity_tag:
+                        data.append(dex)
 
             if self.has_project_db:
                 uuid_name_dict = {}
