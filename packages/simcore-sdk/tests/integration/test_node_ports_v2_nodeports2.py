@@ -10,7 +10,7 @@ import threading
 import os
 from asyncio import gather
 from pathlib import Path
-from typing import Any, Callable, Dict, Type, Union, Iterator
+from typing import Any, Callable, Dict, Type, Union
 from uuid import uuid4
 
 import np_helpers  # pylint: disable=no-name-in-module
