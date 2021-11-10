@@ -70,6 +70,7 @@ async def assert_service_is_running(
             is_running: bool = num_replicas == num_running
 
             logs: str = ""
+            tasks_info: str = ""
             if not is_running:
                 logs_list = await docker.services.logs(
                     service_id,
@@ -80,23 +81,23 @@ async def assert_service_is_running(
                 for line in logs_list:
                     logs += line
 
-            tasks_info = [
-                json.dumps(
-                    copy_from_dict(
-                        task,
-                        include={
-                            "ID": ...,
-                            "CreatedAt": ...,
-                            "UpdatedAt": ...,
-                            "Spec": {"ContainerSpec": {"Image"}},
-                            "Status": {"Timestamp", "State", "ContainerStatus"},
-                            "DesiredState": ...,
-                        },
-                    ),
+                tasks_info = json.dumps(
+                    [
+                        copy_from_dict(
+                            task,
+                            include={
+                                "ID": ...,
+                                "CreatedAt": ...,
+                                "UpdatedAt": ...,
+                                "Spec": {"ContainerSpec": {"Image"}},
+                                "Status": {"Timestamp", "State", "ContainerStatus"},
+                                "DesiredState": ...,
+                            },
+                        )
+                        for task in tasks
+                    ],
                     indent=1,
                 )
-                for task in tasks
-            ]
 
             assert is_running, (
                 f"{service_name=} has {tasks_current_state=}, but expected at least {num_replicas=} running. "
@@ -193,7 +194,7 @@ async def test_core_services_running(
     results = await asyncio.gather(
         *(
             assert_service_is_running(
-                service["ID"], docker, max_running_delay=1 * MINUTE
+                service["ID"], docker, max_running_delay=3 * MINUTE
             )
             for service in core_services
         ),
