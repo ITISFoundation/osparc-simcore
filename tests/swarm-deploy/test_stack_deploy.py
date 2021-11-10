@@ -78,10 +78,14 @@ async def assert_service_is_running(
 
             logs: str = ""
             if not is_running:
-                slogs: List[str] = await docker.services.logs(
-                    service_id, details=True, stdout=True, stderr=True
+                logs_list = await docker.services.logs(
+                    service_id,
+                    follow=False,
+                    stdout=True,
+                    stderr=True,
                 )
-                logs = "".join(slogs)
+                for line in logs_list:
+                    logs += line
 
             assert is_running, (
                 f"{num_replicas=}  has {tasks_current_state=}, but expected at least {num_replicas=} running. "
@@ -127,7 +131,7 @@ def core_stack_services_names(
 
 @pytest.fixture(scope="module")
 def docker_stack_core_and_ops(
-    docker_registry: UrlStr,
+    # docker_registry: UrlStr,
     docker_swarm: None,
     docker_client: docker.client.DockerClient,
     core_docker_compose_file: Path,
@@ -198,4 +202,7 @@ async def test_core_services_running(
 
 
 if __name__ == "__main__":
-    sys.exit(pytest.main(["-vv", "-s", "--log-cli-level=WARNING", sys.argv[0]]))
+    # for development
+    sys.exit(
+        pytest.main(["-vv", "-s", "--pdb", "--log-cli-level=WARNING", sys.argv[0]])
+    )
