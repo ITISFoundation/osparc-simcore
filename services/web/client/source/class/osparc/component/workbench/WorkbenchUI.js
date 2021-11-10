@@ -1215,7 +1215,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __updateWorkbenchBounds: function() {
       const nodeBounds = this.__getNodesBounds();
-      console.log("updateWorkbenchBounds", nodeBounds);
 
       // Fit to nodes size
       let scale = this.getScale();
@@ -1223,7 +1222,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const nodesHeight = nodeBounds.bottom + osparc.component.workbench.NodeUI.NODE_HEIGHT;
       const scaledWidth = parseInt(nodesWidth * scale);
       const scaledHeight = parseInt(nodesHeight * scale);
-      console.log("Fit to nodes size", scale, scaledWidth, scaledHeight);
       let wbWidth = scaledWidth;
       let wbHeight = scaledHeight;
       this.__workbenchLayout.set({
@@ -1238,17 +1236,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       // Fill Screen
       const screenWidth = this.getBounds().width - 10; // scrollbar
       const screenHeight = this.getBounds().height - 10; // scrollbar
-      const scaledScreenWidth = parseInt(screenWidth/scale);
-      const scaledScreenHeight = parseInt(screenHeight/scale);
+      const scaledScreenWidth = parseInt(screenWidth / scale);
+      const scaledScreenHeight = parseInt(screenHeight / scale);
       if (this.__workbenchLayout.getWidth() < scaledScreenWidth) {
-        console.log("Fill width", scaledScreenWidth);
         wbWidth = 0;
         this.__workbenchLayout.set({
           minWidth: scaledScreenWidth
         });
       }
       if (this.__workbenchLayout.getHeight() < scaledScreenHeight) {
-        console.log("Fill height", scaledScreenHeight);
         wbHeight = 0;
         this.__workbenchLayout.set({
           minHeight: scaledScreenHeight
@@ -1259,30 +1255,31 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         // eslint-disable-next-line no-underscore-dangle
         this._workbenchLayoutScroll._computeScrollbars();
 
-        const pane2 = this._workbenchLayoutScroll.getChildControl("pane");
-        const paneSize2 = pane2.getInnerSize();
-        const scrollSize2 = pane2.getScrollSize();
-        console.log("paneSize", paneSize2);
-        console.log("scrollSize", scrollSize2);
-        console.log("getBounds", this.__workbenchLayout.getBounds());
+        const paneSize = this._workbenchLayoutScroll.getChildControl("pane").getInnerSize();
 
         const barX = this._workbenchLayoutScroll.getChildControl("scrollbar-x");
-        if (wbWidth > 0) {
-          this._workbenchLayoutScroll.setScrollbarX("auto");
-          console.log("barX.setMaximum", barX.setMaximum(wbWidth-paneSize2.width));
-          console.log("barX.setKnobFactor", barX.setKnobFactor(paneSize2.width/wbWidth));
+        const barY = this._workbenchLayoutScroll.getChildControl("scrollbar-y");
+
+        if (wbWidth > paneSize.width) {
+          barX.setMaximum(wbWidth - paneSize.width);
+          barX.setKnobFactor(paneSize.width / wbWidth);
+          barX.resetBackgroundColor();
         } else {
-          this._workbenchLayoutScroll.setScrollbarX("off");
+          barX.setMaximum(0);
+          barX.setKnobFactor(1);
+          // changing visiblity instead of backgroundColor triggers _computeScrollbars, this will undo the "hack"
+          barX.setBackgroundColor("transparent");
         }
-        if (wbHeight > 0) {
-          this._workbenchLayoutScroll.setScrollbarY("auto");
-          const barY = this._workbenchLayoutScroll.getChildControl("scrollbar-y");
-          console.log("barY.setMaximum", barY.setMaximum(wbHeight-paneSize2.height));
-          console.log("barY.setKnobFactor", barY.setKnobFactor(paneSize2.height/wbHeight));
+        if (wbHeight > paneSize.height) {
+          barY.setMaximum(wbHeight - paneSize.height);
+          barY.setKnobFactor(paneSize.height / wbHeight);
+          barY.resetBackgroundColor();
         } else {
-          this._workbenchLayoutScroll.setScrollbarY("off");
+          barY.setMaximum(0);
+          barY.setKnobFactor(1);
+          // changing visiblity instead of backgroundColor triggers _computeScrollbars, this will undo the "hack"
+          barY.setBackgroundColor("transparent");
         }
-        console.log("----------------------------------");
       }, 50);
     },
 
