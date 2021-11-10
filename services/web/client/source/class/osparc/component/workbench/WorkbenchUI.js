@@ -158,7 +158,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const workbenchLayoutScroll = this._workbenchLayoutScroll = new qx.ui.container.Scroll();
       osparc.utils.Utils.setIdToWidget(workbenchLayoutScroll, "WorkbenchUI-scroll");
       const workbenchLayout = this.__workbenchLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      workbenchLayout.setBackgroundColor("red");
       workbenchLayoutScroll.add(workbenchLayout);
       workbenchLayer.add(workbenchLayoutScroll, {
         left: 0,
@@ -1273,7 +1272,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           barY.setMaximum(0);
           barY.setKnobFactor(1);
         }
-      }, 50);
+      }, 20);
     },
 
     __fillScreen: function() {
