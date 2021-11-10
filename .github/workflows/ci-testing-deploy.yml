@@ -2301,6 +2301,12 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash install
       - name: test
         run: ./ci/github/system-testing/swarm-deploy.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: .tests/swarm-deploy/test_failures
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
