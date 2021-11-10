@@ -1224,6 +1224,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const scaledWidth = parseInt(nodesWidth * scale);
       const scaledHeight = parseInt(nodesHeight * scale);
       console.log("Fit to nodes size", scale, scaledWidth, scaledHeight);
+      let wbWidth = scaledWidth;
+      let wbHeight = scaledHeight;
       this.__workbenchLayout.set({
         minWidth: scale > 1 ? scaledWidth : nodesWidth,
         minHeight: scale > 1 ? scaledHeight : nodesHeight
@@ -1233,23 +1235,25 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         height: scale > 1 ? scaledHeight : nodesHeight
       });
 
-      // this.__fillScreen();
-
-      /*
-      const pane = this._workbenchLayoutScroll.getChildControl("pane");
-      const paneSize = pane.getInnerSize();
-      const scrollSize = pane.getScrollSize();
-      console.log("paneSize", paneSize);
-      console.log("scrollSize", scrollSize);
-      console.log("getBounds", this.__workbenchLayout.getBounds());
-
-      const barX = this._workbenchLayoutScroll.getChildControl("scrollbar-x");
-      // barX.setMaximum(Math.max(0, scrollSize.width - paneSize.width));
-      // barX.setKnobFactor((scrollSize.width === 0) ? 0 : paneSize.width / scrollSize.width);
-      console.log("barX.getMaximum", barX.getMaximum());
-      console.log("barX.getKnobFactor", barX.getKnobFactor());
-      console.log("----------------------------------");
-      */
+      // Fill Screen
+      const screenWidth = this.getBounds().width - 10; // scrollbar
+      const screenHeight = this.getBounds().height - 10; // scrollbar
+      const scaledScreenWidth = parseInt(screenWidth/scale);
+      const scaledScreenHeight = parseInt(screenHeight/scale);
+      if (this.__workbenchLayout.getWidth() < scaledScreenWidth) {
+        console.log("Fill width", scaledScreenWidth);
+        wbWidth = 0;
+        this.__workbenchLayout.set({
+          minWidth: scaledScreenWidth
+        });
+      }
+      if (this.__workbenchLayout.getHeight() < scaledScreenHeight) {
+        console.log("Fill height", scaledScreenHeight);
+        wbHeight = 0;
+        this.__workbenchLayout.set({
+          minHeight: scaledScreenHeight
+        });
+      }
 
       setTimeout(() => {
         // eslint-disable-next-line no-underscore-dangle
@@ -1263,17 +1267,21 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         console.log("getBounds", this.__workbenchLayout.getBounds());
 
         const barX = this._workbenchLayoutScroll.getChildControl("scrollbar-x");
-        const barY = this._workbenchLayoutScroll.getChildControl("scrollbar-y");
-        // barX.setMaximum(Math.max(0, scrollSize.width - paneSize.width));
-        // barX.setKnobFactor((scrollSize.width === 0) ? 0 : paneSize.width / scrollSize.width);
-        console.log("barX.getMaximum", barX.getMaximum());
-        console.log("barX.getKnobFactor", barX.getKnobFactor());
-        console.log("barY.getMaximum", barY.getMaximum());
-        console.log("barY.getKnobFactor", barY.getKnobFactor());
-        console.log("barX.setMaximum", barX.setMaximum(scaledWidth-paneSize2.width));
-        console.log("barX.setKnobFactor", barX.setKnobFactor(paneSize2.width/scaledWidth));
-        console.log("barY.setMaximum", barY.setMaximum(scaledHeight-paneSize2.height));
-        console.log("barY.setKnobFactor", barY.setKnobFactor(paneSize2.height/scaledHeight));
+        if (wbWidth > 0) {
+          this._workbenchLayoutScroll.setScrollbarX("auto");
+          console.log("barX.setMaximum", barX.setMaximum(wbWidth-paneSize2.width));
+          console.log("barX.setKnobFactor", barX.setKnobFactor(paneSize2.width/wbWidth));
+        } else {
+          this._workbenchLayoutScroll.setScrollbarX("off");
+        }
+        if (wbHeight > 0) {
+          this._workbenchLayoutScroll.setScrollbarY("auto");
+          const barY = this._workbenchLayoutScroll.getChildControl("scrollbar-y");
+          console.log("barY.setMaximum", barY.setMaximum(wbHeight-paneSize2.height));
+          console.log("barY.setKnobFactor", barY.setKnobFactor(paneSize2.height/wbHeight));
+        } else {
+          this._workbenchLayoutScroll.setScrollbarY("off");
+        }
         console.log("----------------------------------");
       }, 50);
     },
@@ -1282,18 +1290,18 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const scale = this.getScale();
       const screenWidth = this.getBounds().width - 10; // scrollbar
       const screenHeight = this.getBounds().height - 10; // scrollbar
-      const scaledWidth = parseInt(screenWidth/scale);
-      const scaledHeight = parseInt(screenHeight/scale);
-      if (this.__workbenchLayout.getMinWidth() < scaledWidth) {
+      const scaledScreenWidth = parseInt(screenWidth/scale);
+      const scaledScreenHeight = parseInt(screenHeight/scale);
+      if (this.__workbenchLayout.getWidth() < scaledScreenWidth) {
         console.log("Fill width");
         this.__workbenchLayout.set({
-          width: scaledWidth
+          width: scaledScreenWidth
         });
       }
-      if (this.__workbenchLayout.getMinHeight() < scaledHeight) {
+      if (this.__workbenchLayout.getHeight() < scaledScreenHeight) {
         console.log("Fill height");
         this.__workbenchLayout.set({
-          height: scaledHeight
+          height: scaledScreenHeight
         });
       }
     },
