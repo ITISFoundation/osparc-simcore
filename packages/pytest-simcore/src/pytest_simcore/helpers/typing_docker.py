@@ -46,21 +46,35 @@ class TaskSpecDict(TypedDict):
 
 
 class StatusDict(TypedDict):
+    Timestamp: str
     State: str
+    Message: str
+    ContainerStatus: Dict
+    PortStatus: Dict
+
+
+class VersionDict(TypedDict):
+    Index: int
 
 
 class TaskDict(TypedDict):
+    """
+    docker inspect $(docker service ps $(id) -q)
+    """
+
     ID: str
-    Version: str
+    Version: VersionDict
     CreatedAt: DateTimeStr
     UpdatedAt: DateTimeStr
     Labels: str
     Spec: TaskSpecDict
     ServiceID: str
+    NodeID: str
     Slot: int
     Status: Dict
     DesiredState: str
     NetworkAttachments: List[Dict]
+    # ...
 
 
 UrlStr = str
