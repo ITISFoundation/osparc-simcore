@@ -1216,54 +1216,66 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __updateWorkbenchBounds: function() {
       const nodeBounds = this.__getNodesBounds();
       console.log("updateWorkbenchBounds", nodeBounds);
-      if (nodeBounds) {
-        // Fit to nodes size
-        const scale = this.getScale();
-        const nodesWidth = nodeBounds.right + osparc.component.workbench.NodeUI.NODE_WIDTH;
-        const nodesHeight = nodeBounds.bottom + osparc.component.workbench.NodeUI.NODE_HEIGHT;
-        const scaledWidth = parseInt(nodesWidth * scale);
-        const scaledHeight = parseInt(nodesHeight * scale);
-        console.log("Fit to nodes size", scale, scaledWidth, scaledHeight);
-        this.__workbenchLayout.set({
-          minWidth: scale > 1 ? scaledWidth : nodesWidth,
-          minHeight: scale > 1 ? scaledHeight : nodesHeight
-        });
-        this.__workbenchLayout.set({
-          width: scale > 1 ? scaledWidth : nodesWidth,
-          height: scale > 1 ? scaledHeight : nodesHeight
-        });
-        this.__workbenchLayout.set({
-          maxWidth: scale > 1 ? scaledWidth : nodesWidth,
-          maxHeight: scale > 1 ? scaledHeight : nodesHeight
-        });
-      }
 
-      this.__fillScreen();
+      // Fit to nodes size
+      let scale = this.getScale();
+      const nodesWidth = nodeBounds.right + osparc.component.workbench.NodeUI.NODE_WIDTH;
+      const nodesHeight = nodeBounds.bottom + osparc.component.workbench.NodeUI.NODE_HEIGHT;
+      const scaledWidth = parseInt(nodesWidth * scale);
+      const scaledHeight = parseInt(nodesHeight * scale);
+      console.log("Fit to nodes size", scale, scaledWidth, scaledHeight);
+      this.__workbenchLayout.set({
+        minWidth: scale > 1 ? scaledWidth : nodesWidth,
+        minHeight: scale > 1 ? scaledHeight : nodesHeight
+      });
+      this.__workbenchLayout.set({
+        width: scale > 1 ? scaledWidth : nodesWidth,
+        height: scale > 1 ? scaledHeight : nodesHeight
+      });
 
+      // this.__fillScreen();
+
+      /*
       const pane = this._workbenchLayoutScroll.getChildControl("pane");
-      const innerSize = this._workbenchLayoutScroll.getInnerSize();
       const paneSize = pane.getInnerSize();
       const scrollSize = pane.getScrollSize();
-      console.log("innerSize", innerSize);
       console.log("paneSize", paneSize);
       console.log("scrollSize", scrollSize);
       console.log("getBounds", this.__workbenchLayout.getBounds());
-      console.log("----------------------------------");
 
-      /*
+      const barX = this._workbenchLayoutScroll.getChildControl("scrollbar-x");
+      // barX.setMaximum(Math.max(0, scrollSize.width - paneSize.width));
+      // barX.setKnobFactor((scrollSize.width === 0) ? 0 : paneSize.width / scrollSize.width);
+      console.log("barX.getMaximum", barX.getMaximum());
+      console.log("barX.getKnobFactor", barX.getKnobFactor());
+      console.log("----------------------------------");
+      */
+
       setTimeout(() => {
+        // eslint-disable-next-line no-underscore-dangle
+        this._workbenchLayoutScroll._computeScrollbars();
+
         const pane2 = this._workbenchLayoutScroll.getChildControl("pane");
-        const innerSize2 = this._workbenchLayoutScroll.getInnerSize();
         const paneSize2 = pane2.getInnerSize();
         const scrollSize2 = pane2.getScrollSize();
-        console.log("innerSize", innerSize2);
         console.log("paneSize", paneSize2);
         console.log("scrollSize", scrollSize2);
         console.log("getBounds", this.__workbenchLayout.getBounds());
-        // eslint-disable-next-line no-underscore-dangle
-        this._workbenchLayoutScroll._computeScrollbars();
-      }, 500);
-      */
+
+        const barX = this._workbenchLayoutScroll.getChildControl("scrollbar-x");
+        const barY = this._workbenchLayoutScroll.getChildControl("scrollbar-y");
+        // barX.setMaximum(Math.max(0, scrollSize.width - paneSize.width));
+        // barX.setKnobFactor((scrollSize.width === 0) ? 0 : paneSize.width / scrollSize.width);
+        console.log("barX.getMaximum", barX.getMaximum());
+        console.log("barX.getKnobFactor", barX.getKnobFactor());
+        console.log("barY.getMaximum", barY.getMaximum());
+        console.log("barY.getKnobFactor", barY.getKnobFactor());
+        console.log("barX.setMaximum", barX.setMaximum(scaledWidth-paneSize2.width));
+        console.log("barX.setKnobFactor", barX.setKnobFactor(paneSize2.width/scaledWidth));
+        console.log("barY.setMaximum", barY.setMaximum(scaledHeight-paneSize2.height));
+        console.log("barY.setKnobFactor", barY.setKnobFactor(paneSize2.height/scaledHeight));
+        console.log("----------------------------------");
+      }, 50);
     },
 
     __fillScreen: function() {
