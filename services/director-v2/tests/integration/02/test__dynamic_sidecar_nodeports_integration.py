@@ -30,6 +30,7 @@ import aiopg.sa
 import httpx
 import pytest
 import sqlalchemy as sa
+from _pytest.monkeypatch import MonkeyPatch
 from aiodocker.containers import DockerContainer
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
@@ -40,6 +41,7 @@ from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.utils_docker import get_ip
 from shared_comp_utils import (
     assert_computation_task_out_obj,
     assert_pipeline_status,
@@ -237,7 +239,7 @@ async def db_manager(postgres_dsn: Dict[str, str]) -> AsyncIterable[DBManager]:
 
 @pytest.fixture
 async def fast_api_app(
-    minimal_configuration: None, network_name: str, monkeypatch
+    minimal_configuration: None, network_name: str, monkeypatch: MonkeyPatch
 ) -> FastAPI:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -261,6 +263,10 @@ async def fast_api_app(
     monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("DYNAMIC_SIDECAR_TRAEFIK_ACCESS_LOG", "true")
     monkeypatch.setenv("DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL", "debug")
+    # patch host for dynamic-sidecar, not reachable via localhost
+    # the dynamic-sidecar (running inside a container) will use
+    # this address to reach the rabbit service
+    monkeypatch.setenv("RABBIT_HOST", f"{get_ip()}")
 
     settings = AppSettings.create_from_envs()
 

@@ -1,15 +1,13 @@
-import json
 import logging
 from pathlib import Path
 from typing import Any, Dict
 
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
-from settings_library.docker_registry import RegistrySettings
+from servicelib.json_serialization import json_dumps
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
-from ....utils.registry import get_dynamic_sidecar_env_vars
 from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
 from .settings import inject_settings_to_create_service_params
 
@@ -22,13 +20,17 @@ def extract_service_port_from_compose_start_spec(
     return create_service_params["labels"]["service_port"]
 
 
-def _get_dy_sidecar_env_vars(
-    scheduler_data: SchedulerData, app_settings: AppSettings
+def _get_environment_variables(
+    compose_namespace: str, scheduler_data: SchedulerData, app_settings: AppSettings
 ) -> Dict[str, str]:
+    registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
+    rabbit_settings = app_settings.CELERY.CELERY_RABBIT
     return {
+        "SIMCORE_HOST_NAME": scheduler_data.service_name,
+        "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
         "DY_SIDECAR_PATH_INPUTS": f"{scheduler_data.paths_mapping.inputs_path}",
         "DY_SIDECAR_PATH_OUTPUTS": f"{scheduler_data.paths_mapping.outputs_path}",
-        "DY_SIDECAR_STATE_PATHS": json.dumps(
+        "DY_SIDECAR_STATE_PATHS": json_dumps(
             [f"{x}" for x in scheduler_data.paths_mapping.state_paths]
         ),
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
@@ -41,12 +43,22 @@ def _get_dy_sidecar_env_vars(
         "POSTGRES_USER": f"{app_settings.POSTGRES.POSTGRES_USER}",
         "POSTGRES_DB": f"{app_settings.POSTGRES.POSTGRES_DB}",
         "STORAGE_ENDPOINT": app_settings.STORAGE_ENDPOINT,
+        "REGISTRY_AUTH": f"{registry_settings.REGISTRY_AUTH}",
+        "REGISTRY_PATH": f"{registry_settings.REGISTRY_PATH}",
+        "REGISTRY_URL": f"{registry_settings.REGISTRY_URL}",
+        "REGISTRY_USER": f"{registry_settings.REGISTRY_USER}",
+        "REGISTRY_PW": f"{registry_settings.REGISTRY_PW.get_secret_value()}",
+        "REGISTRY_SSL": f"{registry_settings.REGISTRY_SSL}",
+        "RABBIT_HOST": f"{rabbit_settings.RABBIT_HOST}",
+        "RABBIT_PORT": f"{rabbit_settings.RABBIT_PORT}",
+        "RABBIT_USER": f"{rabbit_settings.RABBIT_USER}",
+        "RABBIT_PASSWORD": f"{rabbit_settings.RABBIT_PASSWORD.get_secret_value()}",
+        "RABBIT_CHANNELS": json_dumps(rabbit_settings.RABBIT_CHANNELS),
     }
 
 
 async def get_dynamic_sidecar_spec(
     scheduler_data: SchedulerData,
-    docker_registry_settings: RegistrySettings,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
@@ -156,19 +168,16 @@ async def get_dynamic_sidecar_spec(
             "service_key": scheduler_data.key,
             "service_tag": scheduler_data.version,
             "paths_mapping": scheduler_data.paths_mapping.json(),
-            "compose_spec": json.dumps(scheduler_data.compose_spec),
+            "compose_spec": json_dumps(scheduler_data.compose_spec),
             "container_http_entry": scheduler_data.container_http_entry,
         },
         "name": scheduler_data.service_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],
         "task_template": {
             "ContainerSpec": {
-                "Env": {
-                    "SIMCORE_HOST_NAME": scheduler_data.service_name,
-                    "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-                    **get_dynamic_sidecar_env_vars(docker_registry_settings),
-                    **_get_dy_sidecar_env_vars(scheduler_data, app_settings),
-                },
+                "Env": _get_environment_variables(
+                    compose_namespace, scheduler_data, app_settings
+                ),
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
                 "Init": True,

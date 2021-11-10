@@ -17,6 +17,7 @@
 fastapi
 pydantic
 uvicorn
+httpx
 
 docker-compose
 aiodocker
@@ -24,4 +25,5 @@ aiofiles
 PyYAML
 async-timeout
 async_generator
+aio-pika
 watchdog

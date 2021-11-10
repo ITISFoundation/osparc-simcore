@@ -1,24 +1,19 @@
 import logging
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import List, Optional, cast
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
 from pydantic import Field, PositiveInt, validator
-from settings_library.base import BaseSettings
+from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
+from settings_library.rabbit import RabbitSettings
 
 
-class DynamicSidecarSettings(BaseSettings):
-    @classmethod
-    def create(cls, **settings_kwargs: Any) -> "DynamicSidecarSettings":
-        return cls(
-            REGISTRY_SETTINGS=RegistrySettings(),
-            **settings_kwargs,
-        )
+class DynamicSidecarSettings(BaseCustomSettings):
 
     SC_BOOT_MODE: Optional[BootModeEnum] = Field(
         ...,
@@ -94,6 +89,8 @@ class DynamicSidecarSettings(BaseSettings):
 
     REGISTRY_SETTINGS: RegistrySettings
 
+    RABBIT_SETTINGS: Optional[RabbitSettings]
+
     @property
     def is_development_mode(self) -> bool:
         """If in development mode this will be True"""
@@ -107,4 +104,4 @@ class DynamicSidecarSettings(BaseSettings):
 @lru_cache
 def get_settings() -> DynamicSidecarSettings:
     """used outside the context of a request"""
-    return DynamicSidecarSettings.create()
+    return cast(DynamicSidecarSettings, DynamicSidecarSettings.create_from_envs())
