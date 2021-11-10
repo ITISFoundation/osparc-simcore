@@ -17,6 +17,7 @@ import yaml
 from pytest_simcore.helpers.constants import MINUTE
 from pytest_simcore.helpers.typing_docker import ServiceDict, TaskDict, UrlStr
 from pytest_simcore.helpers.typing_tenacity import TenacityStatsDict
+from pytest_simcore.helpers.utils_dict import copy_from_dict, get_from_dict
 from pytest_simcore.helpers.utils_environs import EnvVarsDict
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -26,14 +27,6 @@ from tenacity.wait import wait_random
 ## HELPERS ----------------------------------------------------------------------
 
 log = logging.getLogger(__name__)
-
-
-def get_nested_value(obj: Mapping[str, Any], dotted_key: str, default=None) -> Any:
-    keys = dotted_key.split(".")
-    value = obj
-    for key in keys[:-1]:
-        value = value.get(key, {})
-    return value.get(keys[-1], default)
 
 
 async def assert_service_is_running(
@@ -64,7 +57,7 @@ async def assert_service_is_running(
 
             service_name = service["Spec"]["Name"]
             num_replicas = int(
-                get_nested_value(service, "Spec.Mode.Replicated.Replicas", default=1)
+                get_from_dict(service, "Spec.Mode.Replicated.Replicas", default=1)
             )
 
             tasks: List[TaskDict] = await docker.tasks.list(
@@ -87,10 +80,28 @@ async def assert_service_is_running(
                 for line in logs_list:
                     logs += line
 
+            tasks_info = [
+                json.dumps(
+                    copy_from_dict(
+                        task,
+                        include={
+                            "ID": ...,
+                            "CreatedAt": ...,
+                            "UpdatedAt": ...,
+                            "Spec": {"ContainerSpec": {"Image"}},
+                            "Status": {"Timestamp", "State", "ContainerStatus"},
+                            "DesiredState": ...,
+                        },
+                    ),
+                    indent=1,
+                )
+                for task in tasks
+            ]
+
             assert is_running, (
-                f"{num_replicas=}  has {tasks_current_state=}, but expected at least {num_replicas=} running. "
+                f"{service_name=} has {tasks_current_state=}, but expected at least {num_replicas=} running. "
                 f"Details:\n"
-                f"{tasks=}\n"
+                f"{tasks_info=}\n"
                 f"{logs=}\n"
             )
 
@@ -202,7 +213,7 @@ async def test_core_services_running(
 
 
 if __name__ == "__main__":
-    # for development
+    # NOTE: use in vscode "Run and Debug" -> select 'Python: Current File'
     sys.exit(
         pytest.main(["-vv", "-s", "--pdb", "--log-cli-level=WARNING", sys.argv[0]])
     )
