@@ -111,7 +111,7 @@ def simcore_stack_deployed_services(
     core_stack_services: List[Service] = [
         service
         for service in docker_client.services.list(
-            filters={"filter": "{core_stack_name}_"}
+            filters={"label": "{core_stack_name}_"}
         )
     ]  # type: ignore
 
