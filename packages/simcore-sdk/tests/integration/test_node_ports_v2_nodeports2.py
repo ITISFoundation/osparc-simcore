@@ -22,9 +22,9 @@ from simcore_sdk.node_ports_v2.links import ItemConcreteValue
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 
 pytest_simcore_core_services_selection = [
+    "migration",
     "postgres",
     "storage",
-    "migration",
 ]
 
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
