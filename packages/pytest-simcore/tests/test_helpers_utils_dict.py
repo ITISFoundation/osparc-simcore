@@ -5,7 +5,6 @@
 
 import json
 import sys
-from typing import Dict
 
 import pytest
 from pytest_simcore.helpers.typing_docker import TaskDict

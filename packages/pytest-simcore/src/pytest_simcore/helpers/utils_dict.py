@@ -12,6 +12,10 @@ def get_from_dict(obj: Mapping[str, Any], dotted_key: str, default=None) -> Any:
 
 
 def copy_from_dict(data: Dict[str, Any], *, include: Optional[Union[Set, Dict]] = None):
+    #
+    # Analogous to advanced includes from pydantic exports
+    #   https://pydantic-docs.helpmanual.io/usage/exporting_models/#advanced-include-and-exclude
+    #
 
     if include is None:
         return data.copy()

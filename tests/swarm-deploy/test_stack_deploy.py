@@ -32,8 +32,8 @@ log = logging.getLogger(__name__)
 async def assert_service_is_running(
     service_id: str, docker, *, max_running_delay=1 * MINUTE
 ) -> Tuple[List[TaskDict], TenacityStatsDict]:
-
-    assert max_running_delay > 0.5 * MINUTE
+    MAX_WAIT = 5
+    assert max_running_delay > 3 * MAX_WAIT
 
     #
     # The retry-policy constraints in this test
@@ -42,15 +42,16 @@ async def assert_service_is_running(
     #
     retry_policy = dict(
         # instead of wait_fix in order to help parallel execution in asyncio.gather
-        wait=wait_random(1, 2),
-        # notice that the precision of stop is determined by wait
-        stop=stop_after_delay(max_running_delay + 2),
+        wait=wait_random(1, MAX_WAIT),
+        stop=stop_after_delay(max_running_delay),
         before_sleep=before_sleep_log(log, logging.INFO),
         reraise=True,
     )
 
     async for attempt in AsyncRetrying(**retry_policy):
         with attempt:
+
+            # service
             service: ServiceDict = await docker.services.inspect(service_id)
 
             assert service_id == service["ID"]
@@ -60,6 +61,7 @@ async def assert_service_is_running(
                 get_from_dict(service, "Spec.Mode.Replicated.Replicas", default=1)
             )
 
+            # tasks in a service
             tasks: List[TaskDict] = await docker.tasks.list(
                 filters={"service": service_name}
             )
@@ -67,21 +69,22 @@ async def assert_service_is_running(
             tasks_current_state = [task["Status"]["State"] for task in tasks]
             num_running = sum(current == "running" for current in tasks_current_state)
 
+            # assert condition
             is_running: bool = num_replicas == num_running
 
-            logs: str = ""
-            tasks_info: str = ""
+            error_msg = ""
             if not is_running:
-                logs_list = await docker.services.logs(
+                # lazy composes error msg
+                logs_lines = await docker.services.logs(
                     service_id,
                     follow=False,
                     stdout=True,
                     stderr=True,
+                    timestamps=True,
+                    tail=50,  # SEE *_docker_logs artifacts for details
                 )
-                for line in logs_list:
-                    logs += line
-
-                tasks_info = json.dumps(
+                log_str = " ".join(logs_lines)
+                tasks_json = json.dumps(
                     [
                         copy_from_dict(
                             task,
@@ -98,13 +101,14 @@ async def assert_service_is_running(
                     ],
                     indent=1,
                 )
+                error_msg = (
+                    f"{service_name=} has {tasks_current_state=}, but expected at least {num_replicas=} running. "
+                    f"Details:\n"
+                    f"tasks={tasks_json}\n"
+                    f"logs={log_str}\n"
+                )
 
-            assert is_running, (
-                f"{service_name=} has {tasks_current_state=}, but expected at least {num_replicas=} running. "
-                f"Details:\n"
-                f"{tasks_info=}\n"
-                f"{logs=}\n"
-            )
+            assert is_running, error_msg
 
             return tasks, attempt.retry_state.retry_object.statistics
     assert False  # never reached
@@ -185,20 +189,23 @@ async def test_core_services_running(
 ):
     docker = docker_async_client
 
+    # check expected services deployed
     core_services: List[ServiceDict] = await docker.services.list(
         filters={"label": f"com.docker.stack.namespace={core_stack_namespace}"}
     )
     assert core_services
     assert sorted(s["Spec"]["Name"] for s in core_services) == core_stack_services_names
 
+    # check every service is running
     results = await asyncio.gather(
         *(
             assert_service_is_running(
-                service["ID"], docker, max_running_delay=3 * MINUTE
+                service["ID"], docker, max_running_delay=5 * MINUTE
             )
             for service in core_services
         ),
-        return_exceptions=False,
+        # otherwise, the first service failing will stop
+        return_exceptions=True,
     )
 
     try:

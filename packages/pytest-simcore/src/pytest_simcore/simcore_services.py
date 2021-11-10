@@ -19,6 +19,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
+from .helpers.constants import MINUTE
 from .helpers.utils_docker import get_ip, get_service_published_port
 from .helpers.utils_environs import EnvVarsDict
 
@@ -49,13 +50,12 @@ FASTAPI_BASED_SERVICE_PORT: int = 8000
 DASK_SCHEDULER_SERVICE_PORT: int = 8787
 
 
-_MINUTE: Final[int] = 60
 _FAST = ClientTimeout(total=1)  # type: ignore
 
 
 @tenacity.retry(
     wait=wait_fixed(2),
-    stop=stop_after_delay(3 * _MINUTE),
+    stop=stop_after_delay(3 * MINUTE),
     before_sleep=before_sleep_log(log, logging.WARNING),
     reraise=True,
 )

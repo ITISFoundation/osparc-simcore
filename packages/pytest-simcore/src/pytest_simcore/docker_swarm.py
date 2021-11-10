@@ -18,6 +18,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+from .helpers.constants import HEADER_STR, MINUTE
 from .helpers.utils_docker import get_ip
 from .helpers.utils_environs import EnvVarsDict
 
@@ -29,9 +30,6 @@ log = logging.getLogger(__name__)
 #
 
 # HELPERS --------------------------------------------------------------------------------
-
-_MINUTE: int = 60  # secs
-_HEADER: str = "{:-^50}"
 
 
 class _NotInSwarmException(Exception):
@@ -95,8 +93,8 @@ def assert_service_is_running(service):
     num_running = sum(current == "running" for current in tasks_current_state)
 
     assert num_running == num_replicas_specified, (
-        f"service_name='{service_name}'  has tasks_current_state={tasks_current_state}, but"
-        f"expected at least num_replicas_specified='{num_replicas_specified}' running"
+        f"service_name='{service_name}'  has tasks_current_state={tasks_current_state}, "
+        f"but expected at least num_replicas_specified='{num_replicas_specified}' running"
     )
 
 
@@ -201,7 +199,7 @@ def docker_stack(
     try:
         for attempt in Retrying(
             wait=wait_fixed(5),
-            stop=stop_after_delay(8 * _MINUTE),
+            stop=stop_after_delay(8 * MINUTE),
             before_sleep=before_sleep_log(log, logging.INFO),
             reraise=True,
         ):
@@ -255,9 +253,9 @@ def docker_stack(
                 "Ignoring failure while executing '%s' (returned code %d):\n%s\n%s\n%s\n%s\n",
                 err.cmd,
                 err.returncode,
-                _HEADER.format("stdout"),
+                HEADER_STR.format("stdout"),
                 err.stdout.decode("utf8") if err.stdout else "",
-                _HEADER.format("stderr"),
+                HEADER_STR.format("stderr"),
                 err.stderr.decode("utf8") if err.stderr else "",
             )
 
@@ -269,7 +267,7 @@ def docker_stack(
 
             for attempt in Retrying(
                 wait=wait_fixed(2),
-                stop=stop_after_delay(3 * _MINUTE),
+                stop=stop_after_delay(3 * MINUTE),
                 before_sleep=before_sleep_log(log, logging.WARNING),
                 reraise=True,
             ):
