@@ -12,3 +12,4 @@ faker
 types-pkg_resources
 types-aiofiles
 types-PyYAML
+pytest-asyncio

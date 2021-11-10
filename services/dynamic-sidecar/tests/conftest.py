@@ -9,14 +9,16 @@ import sys
 import tempfile
 import uuid
 from pathlib import Path
-from typing import Any, AsyncGenerator, Iterator, List
-from unittest import mock
+from typing import Any, AsyncGenerator, AsyncIterable, Iterator, List
+from unittest.mock import AsyncMock
 
 import aiodocker
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
+from simcore_service_dynamic_sidecar.core import utils
 from simcore_service_dynamic_sidecar.core.application import assemble_application
 from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.core.shared_handlers import (
@@ -26,8 +28,12 @@ from simcore_service_dynamic_sidecar.core.utils import docker_client
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
+pytest_plugins = [
+    "pytest_simcore.monkeypatch_extra",
+]
 
-@pytest.fixture(scope="module")
+
+@pytest.fixture(scope="session")
 def mock_dy_volumes() -> Iterator[Path]:
     with tempfile.TemporaryDirectory() as temp_dir:
         yield Path(temp_dir)
@@ -61,36 +67,47 @@ def state_paths_dirs(io_temp_dir: Path) -> List[Path]:
 
 @pytest.fixture(scope="module")
 def mock_environment(
+    monkeypatch_module: MonkeyPatch,
     mock_dy_volumes: Path,
     compose_namespace: str,
     inputs_dir: Path,
     outputs_dir: Path,
     state_paths_dirs: List[Path],
-) -> Iterator[None]:
-    with mock.patch.dict(
-        os.environ,
-        {
-            "SC_BOOT_MODE": "production",
-            "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
-            "REGISTRY_AUTH": "false",
-            "REGISTRY_USER": "test",
-            "REGISTRY_PW": "test",
-            "REGISTRY_SSL": "false",
-            "DY_SIDECAR_PATH_INPUTS": str(inputs_dir),
-            "DY_SIDECAR_PATH_OUTPUTS": str(outputs_dir),
-            "DY_SIDECAR_STATE_PATHS": json.dumps([str(x) for x in state_paths_dirs]),
-            "DY_SIDECAR_USER_ID": "1",
-            "DY_SIDECAR_PROJECT_ID": f"{uuid.uuid4()}",
-            "DY_SIDECAR_NODE_ID": f"{uuid.uuid4()}",
-        },
-    ), mock.patch.object(mounted_fs, "DY_VOLUMES", mock_dy_volumes):
-        print(os.environ)
-        yield
+) -> None:
+    monkeypatch_module.setenv("SC_BOOT_MODE", "production")
+    monkeypatch_module.setenv("DYNAMIC_SIDECAR_compose_namespace", compose_namespace)
+    monkeypatch_module.setenv("REGISTRY_AUTH", "false")
+    monkeypatch_module.setenv("REGISTRY_USER", "test")
+    monkeypatch_module.setenv("REGISTRY_PW", "test")
+    monkeypatch_module.setenv("REGISTRY_SSL", "false")
+    monkeypatch_module.setenv("DY_SIDECAR_USER_ID", "1")
+    monkeypatch_module.setenv("DY_SIDECAR_PROJECT_ID", f"{uuid.uuid4()}")
+    monkeypatch_module.setenv("DY_SIDECAR_NODE_ID", f"{uuid.uuid4()}")
+    monkeypatch_module.setenv("DY_SIDECAR_PATH_INPUTS", str(inputs_dir))
+    monkeypatch_module.setenv("DY_SIDECAR_PATH_OUTPUTS", str(outputs_dir))
+    monkeypatch_module.setenv(
+        "DY_SIDECAR_STATE_PATHS", json.dumps([str(x) for x in state_paths_dirs])
+    )
+    monkeypatch_module.setenv("RABBIT_SETTINGS", "null")
+
+    monkeypatch_module.setattr(mounted_fs, "DY_VOLUMES", mock_dy_volumes)
 
 
 @pytest.fixture(scope="module")
-def app(mock_environment: None) -> FastAPI:
-    return assemble_application()
+def disable_registry_check(monkeypatch_module: MockerFixture) -> None:
+    async def _mock_is_registry_reachable(*args, **kwargs) -> None:
+        pass
+
+    monkeypatch_module.setattr(
+        utils, "_is_registry_reachable", _mock_is_registry_reachable
+    )
+
+
+@pytest.fixture(scope="module")
+def app(mock_environment: None, disable_registry_check: None) -> FastAPI:
+    app = assemble_application()
+    app.state.rabbitmq = AsyncMock()
+    return app
 
 
 @pytest.fixture
@@ -118,7 +135,7 @@ async def ensure_external_volumes(
 
 
 @pytest.fixture
-async def test_client(app: FastAPI) -> TestClient:
+async def test_client(app: FastAPI) -> AsyncIterable[TestClient]:
     async with TestClient(app) as client:
         yield client
 

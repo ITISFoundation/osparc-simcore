@@ -4,13 +4,13 @@
 
 import importlib
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterable, List
 
 import faker
 import pytest
 import yaml
 from async_asgi_testclient import TestClient
-from fastapi import status
+from fastapi import FastAPI, status
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
@@ -145,6 +145,21 @@ def mock_port_keys() -> List[str]:
     return ["first_port", "second_port"]
 
 
+@pytest.fixture
+def mutable_settings(test_client: TestClient) -> DynamicSidecarSettings:
+    settings: DynamicSidecarSettings = test_client.application.state.settings
+    # disable mutability for this test
+    settings.__config__.allow_mutation = True
+    settings.__config__.frozen = False
+    return settings
+
+
+@pytest.fixture
+def rabbitmq_mock(mocker, app: FastAPI) -> Iterable[None]:
+    app.state.rabbitmq = mocker.AsyncMock()
+    yield
+
+
 # TESTS
 
 
@@ -152,7 +167,9 @@ def test_ensure_api_vtag_is_v1() -> None:
     assert API_VTAG == "v1"
 
 
-async def test_start_containers_wrong_spec(test_client: TestClient) -> None:
+async def test_start_containers_wrong_spec(
+    test_client: TestClient, rabbitmq_mock: None
+) -> None:
     response = await test_client.post(
         f"/{API_VTAG}/containers", data={"opsie": "shame on me"}
     )
@@ -161,14 +178,13 @@ async def test_start_containers_wrong_spec(test_client: TestClient) -> None:
 
 
 async def test_start_same_space_twice(
-    test_client: TestClient, compose_spec: str
+    compose_spec: str, mutable_settings: DynamicSidecarSettings
 ) -> None:
-    settings: DynamicSidecarSettings = test_client.application.state.settings
-    settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_1"
-    await assert_compose_spec_pulled(compose_spec, settings)
+    mutable_settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_1"
+    await assert_compose_spec_pulled(compose_spec, mutable_settings)
 
-    settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_2"
-    await assert_compose_spec_pulled(compose_spec, settings)
+    mutable_settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_2"
+    await assert_compose_spec_pulled(compose_spec, mutable_settings)
 
 
 async def test_compose_up(

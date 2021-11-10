@@ -16,6 +16,7 @@ from asgi_lifespan import LifespanManager
 from models_library.projects import ProjectAtDB
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
+from pytest_simcore.helpers.utils_docker import get_ip
 from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
@@ -155,6 +156,10 @@ async def director_v2_client(
     monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
     monkeypatch.setenv("POSTGRES_DB", "mocked_db")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
+    # patch host for dynamic-sidecar, not reachable via localhost
+    # the dynamic-sidecar (running inside a container) will use
+    # this address to reach the rabbit service
+    monkeypatch.setenv("RABBIT_HOST", f"{get_ip()}")
 
     settings = AppSettings.create_from_envs()
 

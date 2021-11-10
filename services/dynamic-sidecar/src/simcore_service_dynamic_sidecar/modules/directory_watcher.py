@@ -8,6 +8,7 @@ from os import name
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Deque, Optional
 
+from fastapi import FastAPI
 from servicelib.utils import logged_gather
 from simcore_service_dynamic_sidecar.modules.nodeports import (
     dispatch_update_for_directory,
@@ -176,19 +177,22 @@ class DirectoryWatcherObservers:
             await logged_gather(*tasks_to_await)
 
 
-async def setup_directory_watcher() -> None:
-    global _dir_watcher  # pylint: disable=global-statement
+def setup_directory_watcher(app: FastAPI) -> None:
+    async def on_startup() -> None:
+        global _dir_watcher  # pylint: disable=global-statement
 
-    mounted_volumes: MountedVolumes = setup_mounted_fs()
+        mounted_volumes: MountedVolumes = setup_mounted_fs()
 
-    _dir_watcher = DirectoryWatcherObservers()
-    _dir_watcher.observe_directory(mounted_volumes.disk_outputs_path)
-    _dir_watcher.start()
+        _dir_watcher = DirectoryWatcherObservers()
+        _dir_watcher.observe_directory(mounted_volumes.disk_outputs_path)
+        _dir_watcher.start()
+
+    async def on_shutdown() -> None:
+        if _dir_watcher is not None:
+            await _dir_watcher.stop()
+
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)
 
 
-async def teardown_directory_watcher() -> None:
-    if _dir_watcher is not None:
-        await _dir_watcher.stop()
-
-
-__all__ = ["setup_directory_watcher", "teardown_directory_watcher"]
+__all__ = ["setup_directory_watcher"]

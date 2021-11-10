@@ -3,7 +3,7 @@
 
 import asyncio
 import logging
-from typing import Any, Dict
+from typing import Any, AsyncIterable, Dict
 from uuid import uuid4
 
 import aiodocker
@@ -11,8 +11,10 @@ import pytest
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 from async_timeout import timeout
+from models_library.settings.rabbit import RabbitConfig
 from pydantic import PositiveInt
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.utils_docker import get_ip
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from utils import ensure_network_cleanup, patch_dynamic_service_url
@@ -21,13 +23,17 @@ SERVICE_IS_READY_TIMEOUT = 2 * 60
 
 logger = logging.getLogger(__name__)
 
-pytest_simcore_core_services_selection = ["director"]
+pytest_simcore_core_services_selection = [
+    "director",
+    "rabbit",
+]
 
 
 @pytest.fixture
 def minimal_configuration(
     dy_static_file_server_dynamic_sidecar_service: Dict,
     simcore_services_ready: None,
+    rabbit_service: RabbitConfig,
 ):
     pass
 
@@ -76,7 +82,7 @@ async def test_client(
     mock_env: None,
     network_name: str,
     monkeypatch,
-) -> TestClient:
+) -> AsyncIterable[TestClient]:
     monkeypatch.setenv("SC_BOOT_MODE", "production")
     monkeypatch.setenv("DYNAMIC_SIDECAR_EXPOSE_PORT", "true")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", network_name)
@@ -91,6 +97,11 @@ async def test_client(
     monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
     monkeypatch.setenv("POSTGRES_DB", "mocked_db")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
+
+    # patch host for dynamic-sidecar, not reachable via localhost
+    # the dynamic-sidecar (running inside a container) will use
+    # this address to reach the rabbit service
+    monkeypatch.setenv("RABBIT_HOST", f"{get_ip()}")
 
     settings = AppSettings.create_from_envs()
 
