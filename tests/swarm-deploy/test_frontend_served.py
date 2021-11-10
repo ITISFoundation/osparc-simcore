@@ -1,8 +1,7 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
-import logging
 from typing import List
 
 import pytest
@@ -13,8 +12,6 @@ from pytest_simcore.helpers.constants import MINUTE
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
-
-logger = logging.getLogger(__name__)
 
 
 @pytest.mark.parametrize(

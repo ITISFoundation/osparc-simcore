@@ -8,7 +8,7 @@ import logging
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, List, Mapping, Tuple
+from typing import List, Tuple
 
 import aiodocker
 import docker
@@ -18,7 +18,6 @@ from pytest_simcore.helpers.constants import MINUTE
 from pytest_simcore.helpers.typing_docker import ServiceDict, TaskDict, UrlStr
 from pytest_simcore.helpers.typing_tenacity import TenacityStatsDict
 from pytest_simcore.helpers.utils_dict import copy_from_dict, get_from_dict
-from pytest_simcore.helpers.utils_environs import EnvVarsDict
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -133,14 +132,6 @@ async def docker_async_client():
 
 
 @pytest.fixture(scope="module")
-def core_stack_namespace(testing_environ_vars: EnvVarsDict) -> str:
-    """returns 'com.docker.stack.namespace' service label expected core stack"""
-    stack_name = testing_environ_vars["SWARM_STACK_NAME"]
-    assert stack_name is not None
-    return stack_name
-
-
-@pytest.fixture(scope="module")
 def core_stack_services_names(
     core_docker_compose_file: Path, core_stack_namespace: str
 ) -> List[str]:
@@ -159,6 +150,7 @@ def docker_stack_core_and_ops(
     core_docker_compose_file: Path,
     ops_docker_compose_file: Path,
     core_stack_namespace: str,
+    ops_stack_namespace: str,
 ):
 
     for key, stack_name, compose_file in [
@@ -169,7 +161,7 @@ def docker_stack_core_and_ops(
         ),
         (
             "ops",
-            "pytest-ops",
+            ops_stack_namespace,
             ops_docker_compose_file,
         ),
     ]:
@@ -218,7 +210,7 @@ async def test_core_services_running(
     )
 
     try:
-        assert not any([isinstance(r, Exception) for r in results])
+        assert not any(isinstance(r, Exception) for r in results)
 
     finally:
         print("test_core_services_running stats", "-" * 10)

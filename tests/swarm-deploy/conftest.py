@@ -10,6 +10,7 @@ import pytest
 from docker import DockerClient
 from docker.models.services import Service
 from pytest_simcore.docker_swarm import assert_service_is_running
+from pytest_simcore.helpers.utils_environs import EnvVarsDict
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -59,8 +60,11 @@ def core_services_selection(simcore_docker_compose: Dict) -> List[ServiceNameStr
 
 
 @pytest.fixture(scope="module")
-def core_stack_name(docker_stack: DockerStackInfo) -> str:
-    return docker_stack["stacks"]["core"]["name"]
+def core_stack_namespace(testing_environ_vars: EnvVarsDict) -> str:
+    """returns 'com.docker.stack.namespace' service label core stack"""
+    stack_name = testing_environ_vars["SWARM_STACK_NAME"]
+    assert stack_name is not None
+    return stack_name
 
 
 @pytest.fixture(scope="module")
@@ -77,7 +81,8 @@ def core_stack_compose_specs(
 @pytest.fixture(scope="module")
 def simcore_stack_deployed_services(
     docker_registry: UrlStr,
-    core_stack_name: str,
+    core_stack_namespace: str,
+    ops_stack_namespace: str,
     core_stack_compose_specs: ComposeSpec,
     docker_client: DockerClient,
 ) -> List[Service]:
@@ -98,7 +103,11 @@ def simcore_stack_deployed_services(
                     assert_service_is_running(service)
 
     finally:
-        subprocess.run(f"docker stack ps {core_stack_name}", shell=True, check=False)
+        for stack_namespace in (core_stack_namespace, ops_stack_namespace):
+            subprocess.run(
+                f"docker stack ps {stack_namespace}", shell=True, check=False
+            )
+
         # logs table like
         #  ID                  NAME                  IMAGE                                      NODE                DESIRED STATE       CURRENT STATE                ERROR
         # xbrhmaygtb76        simcore_sidecar.1     itisfoundation/sidecar:latest              crespo-wkstn        Running             Running 53 seconds ago
@@ -111,13 +120,13 @@ def simcore_stack_deployed_services(
     core_stack_services: List[Service] = [
         service
         for service in docker_client.services.list(
-            filters={"label": f"com.docker.stack.namespace={core_stack_name}"}
+            filters={"label": f"com.docker.stack.namespace={core_stack_namespace}"}
         )
     ]  # type: ignore
 
     assert (
         core_stack_services
-    ), f"Expected some services in core stack '{core_stack_name}'"
+    ), f"Expected some services in core stack '{core_stack_namespace}'"
 
     assert len(core_stack_compose_specs["services"].keys()) == len(core_stack_services)
 
@@ -135,8 +144,10 @@ def ops_services_selection(ops_docker_compose: ComposeSpec) -> List[ServiceNameS
 
 
 @pytest.fixture(scope="module")
-def ops_stack_name(docker_stack: DockerStackInfo) -> str:
-    return docker_stack["stacks"]["ops"]["name"]
+def ops_stack_namespace(testing_environ_vars: EnvVarsDict) -> str:
+    """returns 'com.docker.stack.namespace' service label operations stack"""
+    # TODO: set in environment
+    return "pytest-ops"
 
 
 @pytest.fixture(scope="module")
