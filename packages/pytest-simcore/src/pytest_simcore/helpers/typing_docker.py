@@ -2,10 +2,16 @@
 Adds type hints to data structures in responses from docker daemon (typically included in docker sdk and aiodocker libraries)
 """
 
-from typing import Dict, List, TypedDict
+from typing import Dict, List, Optional, TypedDict
 
 UrlStr = str
 DateTimeStr = str
+
+
+#
+# Docker API JSON bodies
+#  NOTE: These are incomplete but we are building them upon need
+#
 
 
 class ServiceSpecDict(TypedDict):
@@ -49,7 +55,13 @@ class StatusDict(TypedDict):
     Timestamp: str
     State: str
     Message: str
-    ContainerStatus: Dict
+
+    # TODO: represent each state of StatusDict as
+    # class TaskDict:
+    #    Status: Union[ StatusDict0, StatusDict1, etc]?
+    # e.g. in StatusDict1 we add
+    # ContainerStatus:
+
     PortStatus: Dict
 
 
@@ -59,7 +71,7 @@ class VersionDict(TypedDict):
 
 class TaskDict(TypedDict):
     """
-    docker inspect $(docker service ps $(id) -q)
+    docker inspect $(docker service ps $(docker service ls --filter="name=pytest-simcore_storage" -q) -q)
     """
 
     ID: str

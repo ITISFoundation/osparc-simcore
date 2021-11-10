@@ -93,7 +93,7 @@ async def assert_service_is_running(
                                 "CreatedAt": ...,
                                 "UpdatedAt": ...,
                                 "Spec": {"ContainerSpec": {"Image"}},
-                                "Status": {"Timestamp", "State", "ContainerStatus"},
+                                "Status": {"Timestamp", "State"},
                                 "DesiredState": ...,
                             },
                         )
@@ -109,6 +109,12 @@ async def assert_service_is_running(
                 )
 
             assert is_running, error_msg
+
+            log.info(
+                "Connection to %s succeded [%s]",
+                service_name,
+                json.dumps(attempt.retry_state.retry_object.statistics),
+            )
 
             return tasks, attempt.retry_state.retry_object.statistics
     assert False  # never reached
@@ -147,7 +153,7 @@ def core_stack_services_names(
 
 @pytest.fixture(scope="module")
 def docker_stack_core_and_ops(
-    # docker_registry: UrlStr,
+    docker_registry: UrlStr,
     docker_swarm: None,
     docker_client: docker.client.DockerClient,
     core_docker_compose_file: Path,
@@ -220,7 +226,7 @@ async def test_core_services_running(
         for res, service in zip(results, core_services):
             print(f"{service['Spec']['Name']:-^50}")
             print(
-                res if isinstance(res, Exception) else json.dumps(res),
+                res if isinstance(res, Exception) else json.dumps(res[1]),
             )
 
 
