@@ -7,7 +7,7 @@ import json
 import logging
 import time
 from dataclasses import dataclass
-from typing import Dict, Final, List
+from typing import Dict, List
 
 import aiohttp
 import pytest
