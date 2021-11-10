@@ -127,7 +127,7 @@ def core_stack_services_names(
 
 @pytest.fixture(scope="module")
 def docker_stack_core_and_ops(
-    # docker_registry: UrlStr,
+    docker_registry: UrlStr,
     docker_swarm: None,
     docker_client: docker.client.DockerClient,
     core_docker_compose_file: Path,

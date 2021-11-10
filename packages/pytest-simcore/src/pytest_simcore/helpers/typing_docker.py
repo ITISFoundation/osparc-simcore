@@ -2,7 +2,7 @@
 Adds type hints to data structures in responses from docker daemon (typically included in docker sdk and aiodocker libraries)
 """
 
-from typing import Any, Dict, List, TypedDict
+from typing import Dict, List, TypedDict
 
 UrlStr = str
 DateTimeStr = str
