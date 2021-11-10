@@ -200,7 +200,10 @@ async def test_core_services_running(
     results = await asyncio.gather(
         *(
             assert_service_is_running(
-                service["ID"], docker, max_running_delay=5 * MINUTE
+                service["ID"],
+                docker,
+                # delay adjusted for github-actions runners
+                max_running_delay=10 * MINUTE,
             )
             for service in core_services
         ),
@@ -209,10 +212,11 @@ async def test_core_services_running(
     )
 
     try:
-        assert not any(isinstance(r, Exception) for r in results)
+        assert not any([isinstance(r, Exception) for r in results])
 
     finally:
         print("test_core_services_running stats", "-" * 10)
+        # TODO: dump stats in artifacts to monitor startup performance
         for res, service in zip(results, core_services):
             print(f"{service['Spec']['Name']:-^50}")
             print(
