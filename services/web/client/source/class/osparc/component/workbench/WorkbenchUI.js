@@ -1251,34 +1251,27 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         });
       }
 
+      // Hack/Workaround: recalculate sliders
       setTimeout(() => {
         // eslint-disable-next-line no-underscore-dangle
         this._workbenchLayoutScroll._computeScrollbars();
 
         const paneSize = this._workbenchLayoutScroll.getChildControl("pane").getInnerSize();
-
         const barX = this._workbenchLayoutScroll.getChildControl("scrollbar-x");
         const barY = this._workbenchLayoutScroll.getChildControl("scrollbar-y");
-
         if (wbWidth > paneSize.width) {
           barX.setMaximum(wbWidth - paneSize.width);
           barX.setKnobFactor(paneSize.width / wbWidth);
-          barX.resetBackgroundColor();
         } else {
           barX.setMaximum(0);
           barX.setKnobFactor(1);
-          // changing visiblity instead of backgroundColor triggers _computeScrollbars, this will undo the "hack"
-          barX.setBackgroundColor("transparent");
         }
         if (wbHeight > paneSize.height) {
           barY.setMaximum(wbHeight - paneSize.height);
           barY.setKnobFactor(paneSize.height / wbHeight);
-          barY.resetBackgroundColor();
         } else {
           barY.setMaximum(0);
           barY.setKnobFactor(1);
-          // changing visiblity instead of backgroundColor triggers _computeScrollbars, this will undo the "hack"
-          barY.setBackgroundColor("transparent");
         }
       }, 50);
     },
