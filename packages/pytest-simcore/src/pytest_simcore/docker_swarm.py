@@ -7,7 +7,7 @@ import json
 import logging
 import subprocess
 from pathlib import Path
-from typing import Dict, Iterator
+from typing import Any, Dict, Iterator
 
 import docker
 import pytest
@@ -56,15 +56,16 @@ def _in_docker_swarm(
     return True
 
 
-def assert_service_is_ready(service):
-    def _get(obj, name, default=None):
-        parts = name.split(".")
-        value = obj
-        for part in parts[:-1]:
-            value = value.get(part, {})
-        return value.get(parts[-1], default)
+def assert_service_is_running(service):
+    """Checks that a number of tasks of this service are in running state"""
 
-    #
+    def _get(obj: Dict[str, Any], dotted_key: str, default=None) -> Any:
+        keys = dotted_key.split(".")
+        value = obj
+        for key in keys[:-1]:
+            value = value.get(key, {})
+        return value.get(keys[-1], default)
+
     service_name = service.name
     num_replicas_specified = _get(
         service.attrs, "Spec.Mode.Replicated.Replicas", default=1
@@ -77,32 +78,26 @@ def assert_service_is_ready(service):
     )
 
     tasks = list(service.tasks())
+    assert tasks
 
-    if tasks:
-        #
-        # WARNING:
-        #  we have noticed using the 'last updated' task is not necessarily
-        #  the most actual of the tasks. It dependends e.g. on the restart policy.
-        #  For that reason, the readiness condition has been redefined as state in which
-        #  the specified number of replicas reach their desired state.
-        #  We still wonder if there is a transition point in which that condition
-        #  is met while still the service is not ready. This needs to be reviewed...
-        #
+    #
+    # NOTE: We have noticed using the 'last updated' task is not necessarily
+    # the most actual of the tasks. It dependends e.g. on the restart policy.
+    # We explored the possibility of determining success by using the condition
+    # "DesiredState" == "Status.State" but realized that "DesiredState" is not
+    # part of the specs but can be updated by the swarm at runtime.
+    # Finally, the decision was to use the state 'running' understanding that
+    # the swarms flags this state to the service when it is up and healthy.
+    #
+    # SEE https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
 
-        tasks_desired_state = [task["DesiredState"] for task in tasks]
-        tasks_current_state = [task["Status"]["State"] for task in tasks]
+    tasks_current_state = [_get(task, "Status.State") for task in tasks]
+    num_running = sum(current == "running" for current in tasks_current_state)
 
-        num_ready = sum(
-            [
-                desired == current
-                for desired, current in zip(tasks_desired_state, tasks_current_state)
-            ]
-        )
-
-        assert num_ready == num_replicas_specified, (
-            f"service_name='{service_name}' NOT ready: tasks_current_state={tasks_current_state} "
-            f"but tasks_desired_state={tasks_desired_state}."
-        )
+    assert num_running == num_replicas_specified, (
+        f"service_name='{service_name}'  has tasks_current_state={tasks_current_state}, but"
+        f"expected at least num_replicas_specified='{num_replicas_specified}' running"
+    )
 
 
 def _fetch_and_print_services(
@@ -165,7 +160,7 @@ def docker_stack(
     keep_docker_up: bool,
     testing_environ_vars: EnvVarsDict,
 ) -> Iterator[Dict]:
-    """deploys core and ops stacks ()"""
+    """deploys core and ops stacks and returns as soon as all are running"""
 
     # WARNING: keep prefix "pytest-" in stack names
     core_stack_name = testing_environ_vars["SWARM_STACK_NAME"]
@@ -212,7 +207,7 @@ def docker_stack(
         ):
             with attempt:
                 for service in docker_client.services.list():
-                    assert_service_is_ready(service)
+                    assert_service_is_running(service)
 
     finally:
         _fetch_and_print_services(docker_client, "[BEFORE TEST]")

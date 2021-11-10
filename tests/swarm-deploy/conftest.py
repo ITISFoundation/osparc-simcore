@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 import pytest
 from docker import DockerClient
 from docker.models.services import Service
-from pytest_simcore.docker_swarm import assert_service_is_ready
+from pytest_simcore.docker_swarm import assert_service_is_running
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -49,7 +49,7 @@ def core_stack_name(docker_stack: Dict) -> str:
 
 
 @pytest.fixture(scope="module")
-def core_stack_compose(
+def core_stack_compose_specs(
     docker_stack: Dict, simcore_docker_compose: Dict
 ) -> Dict[str, Any]:
     # verifies core_services_selection
@@ -64,6 +64,7 @@ def core_stack_compose(
 
 @pytest.fixture(scope="module")
 def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
+    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection
     # select ALL services for these tests
     return list(ops_docker_compose["services"].keys())
 
@@ -74,7 +75,7 @@ def ops_stack_name(docker_stack: Dict) -> str:
 
 
 @pytest.fixture(scope="module")
-def ops_stack_compose(docker_stack: Dict, ops_docker_compose: Dict):
+def ops_stack_compose_specs(docker_stack: Dict, ops_docker_compose: Dict):
     # verifies ops_services_selection
     assert set(docker_stack["stacks"]["ops"]["compose"]["services"]) == set(
         ops_docker_compose["services"]
@@ -86,7 +87,7 @@ def ops_stack_compose(docker_stack: Dict, ops_docker_compose: Dict):
 def deployed_simcore_stack(
     docker_registry: str,
     core_stack_name: str,
-    core_stack_compose: Dict,
+    core_stack_compose_specs: Dict,
     docker_client: DockerClient,
 ) -> List[Service]:
 
@@ -103,7 +104,7 @@ def deployed_simcore_stack(
         ):
             with attempt:
                 for service in docker_client.services.list():
-                    assert_service_is_ready(service)
+                    assert_service_is_running(service)
 
     finally:
         subprocess.run(f"docker stack ps {core_stack_name}", shell=True, check=False)
@@ -126,6 +127,6 @@ def deployed_simcore_stack(
         core_stack_services
     ), f"Expected some services in core stack '{core_stack_name}'"
 
-    assert len(core_stack_compose["services"].keys()) == len(core_stack_services)
+    assert len(core_stack_compose_specs["services"].keys()) == len(core_stack_services)
 
     return core_stack_services

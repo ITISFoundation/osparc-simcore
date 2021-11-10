@@ -68,13 +68,13 @@ def test_all_services_up(
     docker_registry: str,
     core_services_running: List[Service],
     core_stack_name: str,
-    core_stack_compose: Dict[str, Any],
+    core_stack_compose_specs: Dict[str, Any],
 ):
     running_services_names = set(service.name for service in core_services_running)
 
     expected_services_names = {
         f"{core_stack_name}_{service_name}"
-        for service_name in core_stack_compose["services"].keys()
+        for service_name in core_stack_compose_specs["services"].keys()
     }
     assert running_services_names == expected_services_names
 
@@ -107,11 +107,11 @@ def test_core_service_running(
     docker_compose_service_key: str,
     core_stack_name: str,
     core_services_running: List[Service],
-    core_stack_compose: Dict[str, Any],
+    core_stack_compose_specs: Dict[str, Any],
     docker_client: DockerClient,
 ):
     service_name = f"{core_stack_name}_{docker_compose_service_key}"
-    service_config = core_stack_compose["services"][docker_compose_service_key]
+    service_config = core_stack_compose_specs["services"][docker_compose_service_key]
 
     assert any(s.name == service_name for s in core_services_running)
 
