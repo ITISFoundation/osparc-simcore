@@ -4,7 +4,7 @@
 
 import logging
 import subprocess
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Literal, TypedDict
 
 import pytest
 from docker import DockerClient
@@ -33,25 +33,40 @@ log = logging.getLogger(__name__)
 _MINUTE: int = 60  # secs
 
 
-# CORE stack
+ServiceNameStr = str
+ComposeSpec = Dict[str, Any]
+UrlStr = str
+
+
+class StackInfo(TypedDict):
+    name: str
+    compose: ComposeSpec
+
+
+class DockerStackInfo(TypedDict):
+    stacks: Dict[Literal["core", "ops"], StackInfo]
+    services: List[ServiceNameStr]
+
+
+# CORE stack -----------------------------------
 
 
 @pytest.fixture(scope="module")
-def core_services_selection(simcore_docker_compose: Dict) -> List[str]:
+def core_services_selection(simcore_docker_compose: Dict) -> List[ServiceNameStr]:
     ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection
     # select ALL services for these tests
     return list(simcore_docker_compose["services"].keys())
 
 
 @pytest.fixture(scope="module")
-def core_stack_name(docker_stack: Dict) -> str:
+def core_stack_name(docker_stack: DockerStackInfo) -> str:
     return docker_stack["stacks"]["core"]["name"]
 
 
 @pytest.fixture(scope="module")
 def core_stack_compose_specs(
-    docker_stack: Dict, simcore_docker_compose: Dict
-) -> Dict[str, Any]:
+    docker_stack: DockerStackInfo, simcore_docker_compose: Dict
+) -> ComposeSpec:
     # verifies core_services_selection
     assert set(docker_stack["stacks"]["core"]["compose"]["services"]) == set(
         simcore_docker_compose["services"]
@@ -59,35 +74,11 @@ def core_stack_compose_specs(
     return docker_stack["stacks"]["core"]["compose"]
 
 
-# OPS stack
-
-
 @pytest.fixture(scope="module")
-def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
-    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection
-    # select ALL services for these tests
-    return list(ops_docker_compose["services"].keys())
-
-
-@pytest.fixture(scope="module")
-def ops_stack_name(docker_stack: Dict) -> str:
-    return docker_stack["stacks"]["ops"]["name"]
-
-
-@pytest.fixture(scope="module")
-def ops_stack_compose_specs(docker_stack: Dict, ops_docker_compose: Dict):
-    # verifies ops_services_selection
-    assert set(docker_stack["stacks"]["ops"]["compose"]["services"]) == set(
-        ops_docker_compose["services"]
-    )
-    return docker_stack["stacks"]["core"]["compose"]
-
-
-@pytest.fixture(scope="module")
-def deployed_simcore_stack(
-    docker_registry: str,
+def simcore_stack_deployed_services(
+    docker_registry: UrlStr,
     core_stack_name: str,
-    core_stack_compose_specs: Dict,
+    core_stack_compose_specs: ComposeSpec,
     docker_client: DockerClient,
 ) -> List[Service]:
 
@@ -119,8 +110,9 @@ def deployed_simcore_stack(
     # TODO: find a more reliable way to list services in a stack
     core_stack_services: List[Service] = [
         service
-        for service in docker_client.services.list()
-        if service.name.startswith(f"{core_stack_name}_")
+        for service in docker_client.services.list(
+            filters={"filter": "{core_stack_name}_"}
+        )
     ]  # type: ignore
 
     assert (
@@ -130,3 +122,29 @@ def deployed_simcore_stack(
     assert len(core_stack_compose_specs["services"].keys()) == len(core_stack_services)
 
     return core_stack_services
+
+
+# OPS stack -----------------------------------
+
+
+@pytest.fixture(scope="module")
+def ops_services_selection(ops_docker_compose: ComposeSpec) -> List[ServiceNameStr]:
+    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection
+    # select ALL services for these tests
+    return list(ops_docker_compose["services"].keys())
+
+
+@pytest.fixture(scope="module")
+def ops_stack_name(docker_stack: DockerStackInfo) -> str:
+    return docker_stack["stacks"]["ops"]["name"]
+
+
+@pytest.fixture(scope="module")
+def ops_stack_compose_specs(
+    docker_stack: DockerStackInfo, ops_docker_compose: ComposeSpec
+) -> ComposeSpec:
+    # verifies ops_services_selection
+    assert set(docker_stack["stacks"]["ops"]["compose"]["services"]) == set(
+        ops_docker_compose["services"]
+    )
+    return docker_stack["stacks"]["core"]["compose"]

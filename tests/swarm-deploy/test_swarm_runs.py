@@ -165,7 +165,7 @@ def test_core_service_running(
     ],
 )
 def test_product_frontend_app_served(
-    deployed_simcore_stack: List[Service],
+    simcore_stack_deployed_services: List[Service],
     traefik_service: URL,
     test_url: str,
     expected_in_content: str,
