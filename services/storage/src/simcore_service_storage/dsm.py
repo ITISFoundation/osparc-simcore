@@ -212,18 +212,14 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 accesible_projects_ids = await get_readable_project_ids(
                     conn, int(user_id)
                 )
-                has_read_access = (
+                where_statement = (
                     file_meta_data.c.user_id == user_id
                 ) | file_meta_data.c.project_id.in_(accesible_projects_ids)
                 if uuid_filter:
-                    accesible_projects_ids = list(
-                        filter(
-                            lambda p_id: uuid_filter in f"{p_id}",
-                            accesible_projects_ids,
-                        )
+                    where_statement &= file_meta_data.c.file_uuid.ilike(
+                        f"%{uuid_filter}%"
                     )
-
-                query = sa.select([file_meta_data]).where(has_read_access)
+                query = sa.select([file_meta_data]).where(where_statement)
 
                 async for row in conn.execute(query):
                     dex = to_meta_data_extended(row)
