@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import socket
@@ -179,10 +180,15 @@ def save_docker_infos(destination_path: Path):
 
         # get the services logs
         for container in all_containers:
+
             (destination_path / f"{container.name}.log").write_text(
                 container.logs(
                     timestamps=True, stdout=True, stderr=True, stream=False
                 ).decode()
+            )
+
+            (destination_path / f"{container.name}.json").write_text(
+                json.dumps(container.attrs, indent=2)
             )
 
         print(
