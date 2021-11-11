@@ -2198,7 +2198,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   system-test-public-api:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[sys] public api"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
