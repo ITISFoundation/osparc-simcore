@@ -5,18 +5,17 @@
 import asyncio
 import json
 import logging
-import time
 from dataclasses import dataclass
 from typing import Dict, List
 
 import aiohttp
 import pytest
-import tenacity
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.client import ClientTimeout
+from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
+from tenacity.wait import wait_random
 from yarl import URL
 
 from .helpers.constants import MINUTE
@@ -50,38 +49,39 @@ FASTAPI_BASED_SERVICE_PORT: int = 8000
 DASK_SCHEDULER_SERVICE_PORT: int = 8787
 
 
-_FAST = ClientTimeout(total=1)  # type: ignore
-
-
-@tenacity.retry(
-    wait=wait_fixed(2),
-    stop=stop_after_delay(3 * MINUTE),
-    before_sleep=before_sleep_log(log, logging.WARNING),
-    reraise=True,
-)
-async def _assert_service_is_healthy(service_name: str, endpoint: URL):
-    print(f"Trying to connect with '{service_name}' through '{endpoint}'")
-
-    async with aiohttp.ClientSession(timeout=_FAST) as session:
-        async with session.get(endpoint) as resp:
-            # NOTE: Health-check endpoint require only a status code 200
-            # (see e.g. services/web/server/docker/healthcheck.py)
-            # regardless of the payload content
-            assert (
-                resp.status == 200
-            ), f"{service_name=} NOT responsive on {endpoint=}. Details: {resp=}"
-
-            print(f"connection with {service_name=} successful on {endpoint=}")
+_ONE_SEC_TIMEOUT = ClientTimeout(total=1)  # type: ignore
 
 
 async def wait_till_service_healthy(service_name: str, endpoint: URL):
-    started = time.time()
-    await _assert_service_is_healthy(service_name, endpoint)
-    elapsed_time = time.time() - started
-    print(
-        f"{service_name=} is ready [{elapsed_time=}]: Retry stats: "
-        f"{json.dumps(_assert_service_is_healthy.retry.statistics, indent=1)}"
+
+    log.info(
+        "Connecting to %s",
+        f"{service_name=} at {endpoint=}",
     )
+
+    async for attempt in AsyncRetrying(
+        # randomizing healthchecks sampling helps parallel execution
+        wait=wait_random(1, 2),
+        # sets the timeout for a service to become healthy
+        stop=stop_after_delay(2 * MINUTE),
+        before_sleep=before_sleep_log(log, logging.WARNING),
+        reraise=True,
+    ):
+        with attempt:
+            async with aiohttp.ClientSession(timeout=_ONE_SEC_TIMEOUT) as session:
+                async with session.get(endpoint) as response:
+                    # NOTE: Health-check endpoint require only a status code 200
+                    # (see e.g. services/web/server/docker/healthcheck.py)
+                    # regardless of the payload content
+                    assert (
+                        response.status == 200
+                    ), f"Connection to {service_name=} at {endpoint=} failed with {response=}"
+
+        log.info(
+            "Connection to %s succeeded [%s]",
+            f"{service_name=} at {endpoint=}",
+            json.dumps(attempt.retry_state.retry_object.statistics),
+        )
 
 
 @dataclass
@@ -162,7 +162,7 @@ async def simcore_services_ready(
         return_exceptions=False,
     )
 
-    # patches environment variables with host/port per service
+    # patches environment variables with right host/port per service
     for service, endpoint in services_endpoint.items():
         env_prefix = service.upper().replace("-", "_")
         assert endpoint.host
