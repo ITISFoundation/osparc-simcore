@@ -298,7 +298,7 @@ def user_role() -> UserRole:
 #
 
 POLLING_TIME = 0.2
-TIMEOUT_S = 1
+TIMEOUT_S = 5
 RETRY_POLICY = dict(
     wait=wait_fixed(POLLING_TIME),
     stop=stop_after_delay(TIMEOUT_S),
