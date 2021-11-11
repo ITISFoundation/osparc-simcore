@@ -62,7 +62,7 @@ from .models import (
 )
 from .s3wrapper.s3_client import MinioClientWrapper
 from .settings import Settings
-from .utils import download_to_file_or_raise, to_meta_data_extended
+from .utils import download_to_file_or_raise, is_file_entry_valid, to_meta_data_extended
 
 logger = logging.getLogger(__name__)
 
@@ -216,18 +216,17 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
                 async for row in conn.execute(query):
                     dex = to_meta_data_extended(row)
-                    if dex.fmd.entity_tag is None:
-                        # NOTE: the file is not updated with the information from S3 backend.
-                        # 1. Either the file exists, but was never updated in the database
-                        # 2. Or the file does not exist or was never completed, and the file_meta_data entry is old and faulty
-                        # we need to update from S3 here since the database is not up-to-date
-                        dex = await self.update_database_from_storage(
-                            dex.fmd.file_uuid,
-                            dex.fmd.bucket_name,
-                            dex.fmd.object_name,
-                        )
-                    if dex and dex.fmd.entity_tag:
+                    if is_file_entry_valid(dex.fmd):
                         data.append(dex)
+                    # NOTE: the file is not updated with the information from S3 backend.
+                    # 1. Either the file exists, but was never updated in the database
+                    # 2. Or the file does not exist or was never completed, and the file_meta_data entry is old and faulty
+                    # we need to update from S3 here since the database is not up-to-date
+                    dex = await self.update_database_from_storage(
+                        dex.fmd.file_uuid,
+                        dex.fmd.bucket_name,
+                        dex.fmd.object_name,
+                    )
 
             if self.has_project_db:
                 uuid_name_dict = {}
@@ -394,13 +393,14 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                     if not row:
                         return None
                     file_metadata = to_meta_data_extended(row)
-                    if file_metadata.fmd.entity_tag is None:
-                        # we need to update from S3 here since the database is not up-to-date
-                        file_metadata = await self.update_database_from_storage(
-                            file_metadata.fmd.file_uuid,
-                            file_metadata.fmd.bucket_name,
-                            file_metadata.fmd.object_name,
-                        )
+                    if is_file_entry_valid(file_metadata.fmd):
+                        return file_metadata
+                    # we need to update from S3 here since the database is not up-to-date
+                    file_metadata = await self.update_database_from_storage(
+                        file_metadata.fmd.file_uuid,
+                        file_metadata.fmd.bucket_name,
+                        file_metadata.fmd.object_name,
+                    )
                     return file_metadata
                 # FIXME: returns None in both cases: file does not exist or use has no access
                 logger.debug("User %s cannot read file %s", user_id, file_uuid)

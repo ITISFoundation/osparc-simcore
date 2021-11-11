@@ -105,3 +105,11 @@ def to_meta_data_extended(row: Union[ResultProxy, RowProxy]) -> FileMetaDataEx:
         parent_id=str(Path(meta.object_name).parent),
     )  # type: ignore
     return meta_extended
+
+
+def is_file_entry_valid(file_metadata: FileMetaData) -> bool:
+    return (
+        file_metadata.entity_tag is not None
+        and file_metadata.file_size is not None
+        and file_metadata.file_size > 0
+    )
