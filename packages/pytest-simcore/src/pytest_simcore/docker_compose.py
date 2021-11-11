@@ -144,7 +144,8 @@ def simcore_docker_compose(
         env_file_path=env_file_for_testing,
         destination_path=temp_folder / "simcore_docker_compose.yml",
     )
-    print("simcore docker-compose:\n%s", json.dumps(config, indent=1))
+    # NOTE: do not add indent. Copy&Paste log into editor instead
+    print("simcore docker-compose: ", json.dumps(config))
     return config
 
 
@@ -171,7 +172,8 @@ def ops_docker_compose(
         env_file_path=env_file_for_testing,
         destination_path=temp_folder / "ops_docker_compose.yml",
     )
-    print("ops docker-compose:\n%s", json.dumps(config, indent=1))
+    # NOTE: do not add indent. Copy&Paste log into editor instead
+    print("ops docker-compose: ", json.dumps(config))
     return config
 
 

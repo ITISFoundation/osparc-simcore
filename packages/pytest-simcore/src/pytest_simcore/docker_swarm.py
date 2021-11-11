@@ -6,6 +6,7 @@
 import json
 import logging
 import subprocess
+from contextlib import suppress
 from pathlib import Path
 from typing import Any, Dict, Iterator
 
@@ -19,6 +20,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from .helpers.constants import HEADER_STR, MINUTE
+from .helpers.utils_dict import copy_from_dict
 from .helpers.utils_docker import get_ip
 from .helpers.utils_environs import EnvVarsDict
 
@@ -102,12 +104,40 @@ def _fetch_and_print_services(
     docker_client: docker.client.DockerClient, extra_title: str
 ) -> None:
     print("{:*^100}".format(f"docker services running {extra_title}"))
-    services = {
-        s.name: {"service": s.attrs, "tasks": list(s.tasks())}
-        for s in docker_client.services.list()
-    }
-    print(json.dumps(services, indent=1, sort_keys=True))
-    print("-" * 100)
+
+    for service_obj in docker_client.services.list():
+
+        tasks = {}
+        service = {}
+        with suppress(Exception):
+            # trims dicts (more info in dumps)
+            service = copy_from_dict(
+                service_obj.attrs,
+                include={
+                    "ID": ...,
+                    "CreatedAt": ...,
+                    "UpdatedAt": ...,
+                    "Spec": {"Name", "Labels", "Mode"},
+                },
+            )
+
+            tasks = [
+                copy_from_dict(
+                    task,
+                    include={
+                        "ID": ...,
+                        "CreatedAt": ...,
+                        "UpdatedAt": ...,
+                        "Spec": {"ContainerSpec": {"Image"}},
+                        "Status": {"Timestamp", "State"},
+                        "DesiredState": ...,
+                    },
+                )
+                for task in service_obj.tasks()
+            ]
+
+        print(f"{service_obj.name:-^10}")
+        print(json.dumps({"service": service, "tasks": tasks}, indent=1))
 
 
 # FIXTURES --------------------------------------------------------------------------------
