@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
+aio-pika==6.8.0
+    # via -r requirements/_base.in
 aiodebug==1.1.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
@@ -31,8 +33,16 @@ aiohttp==3.7.4.post0
     #   aiodocker
 aiopg==1.3.1
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+aiormq==3.3.1
+    # via aio-pika
 alembic==1.7.4
-    # via -r requirements/../../../packages/postgres-database/requirements/_base.in
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_migration.in
+anyio==3.3.4
+    # via httpcore
 async-generator==1.10
     # via -r requirements/_base.in
 async-timeout==3.0.1
@@ -51,7 +61,9 @@ attrs==20.3.0
 bcrypt==3.2.0
     # via paramiko
 certifi==2021.5.30
-    # via requests
+    # via
+    #   httpx
+    #   requests
 cffi==1.14.5
     # via
     #   bcrypt
@@ -61,6 +73,8 @@ chardet==4.0.0
     # via
     #   aiohttp
     #   requests
+charset-normalizer==2.0.7
+    # via httpx
 click==7.1.2
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_migration.in
@@ -114,7 +128,13 @@ fastapi==0.68.1
 fastapi-contrib==0.2.11
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 h11==0.12.0
-    # via uvicorn
+    # via
+    #   httpcore
+    #   uvicorn
+httpcore==0.13.7
+    # via httpx
+httpx==0.20.0
+    # via -r requirements/_base.in
 idna==2.10
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
@@ -125,11 +145,15 @@ idna==2.10
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+    #   anyio
     #   email-validator
     #   requests
+    #   rfc3986
     #   yarl
 importlib-metadata==4.8.1
-    # via alembic
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   alembic
 importlib-resources==5.3.0 ; python_version < "3.9"
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -139,6 +163,7 @@ importlib-resources==5.3.0 ; python_version < "3.9"
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -148,9 +173,13 @@ jaeger-client==4.8.0
 jsonschema==3.2.0
     # via docker-compose
 mako==1.1.5
-    # via alembic
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   alembic
 markupsafe==2.0.1
-    # via mako
+    # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
+    #   mako
 multidict==5.1.0
     # via
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
@@ -164,6 +193,8 @@ opentracing==2.4.0
     #   jaeger-client
 packaging==21.0
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+pamqp==2.3.0
+    # via aiormq
 paramiko==2.7.2
     # via docker
 psycopg2-binary==2.9.1
@@ -230,6 +261,8 @@ requests==2.25.1
     # via
     #   docker
     #   docker-compose
+rfc3986==1.5.0
+    # via httpx
 six==1.16.0
     # via
     #   bcrypt
@@ -238,6 +271,11 @@ six==1.16.0
     #   pynacl
     #   thrift
     #   websocket-client
+sniffio==1.2.0
+    # via
+    #   anyio
+    #   httpcore
+    #   httpx
 sqlalchemy==1.3.24
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -326,10 +364,12 @@ yarl==1.6.3
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+    #   aio-pika
     #   aiohttp
+    #   aiormq
 zipp==3.6.0
-    # via importlib-resources
     # via
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.txt
     #   importlib-metadata
     #   importlib-resources
 
