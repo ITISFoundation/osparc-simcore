@@ -197,8 +197,8 @@ def save_docker_infos(destination_path: Path):
                 (destination_path / f"{container.name}.json").write_text(
                     json.dumps(container.attrs, indent=2)
                 )
-            except Exception as err:
-                print(f"Unexpected failure while dumping {container}." "Details {err}")
+            except Exception as err:  # pylint: disable=broad-except
+                print(f"Unexpected failure while dumping {container}." f"Details {err}")
 
         print(
             "\n\t",

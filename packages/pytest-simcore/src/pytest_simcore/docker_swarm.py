@@ -128,9 +128,12 @@ def _fetch_and_print_services(
                         "ID": ...,
                         "CreatedAt": ...,
                         "UpdatedAt": ...,
-                        "Spec": {"ContainerSpec": {"Image"}},
+                        "Spec": {"ContainerSpec": {"Image", "Labels", "Env"}},
                         "Status": {"Timestamp", "State"},
                         "DesiredState": ...,
+                        "ServiceID": ...,
+                        "NodeID": ...,
+                        "Slot": ...,
                     },
                 )
                 for task in service_obj.tasks()
