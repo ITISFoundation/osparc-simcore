@@ -10,9 +10,9 @@ import re
 import tempfile
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Final, List, Optional, Tuple, Union
 
 import aiobotocore
 import attr
@@ -63,6 +63,10 @@ from .models import (
 from .s3wrapper.s3_client import MinioClientWrapper
 from .settings import Settings
 from .utils import download_to_file_or_raise, is_file_entry_valid, to_meta_data_extended
+
+_MINUTE: Final[int] = 60
+_HOUR: Final[int] = 60 * _MINUTE
+
 
 logger = logging.getLogger(__name__)
 
@@ -145,8 +149,8 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     pool: ThreadPoolExecutor
     simcore_bucket_name: str
     has_project_db: bool
-    session: AioSession = attr.Factory(aiobotocore.get_session)
-    datcore_tokens: Dict[str, DatCoreApiToken] = attr.Factory(dict)
+    session: AioSession = field(default_factory=aiobotocore.get_session)
+    datcore_tokens: Dict[str, DatCoreApiToken] = field(default_factory=dict)
     app: Optional[web.Application] = None
 
     def _create_aiobotocore_client_context(self) -> ClientCreatorContext:
@@ -211,6 +215,13 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 has_read_access = (
                     file_meta_data.c.user_id == user_id
                 ) | file_meta_data.c.project_id.in_(accesible_projects_ids)
+                if uuid_filter:
+                    accesible_projects_ids = list(
+                        filter(
+                            lambda p_id: uuid_filter in f"{p_id}",
+                            accesible_projects_ids,
+                        )
+                    )
 
                 query = sa.select([file_meta_data]).where(has_read_access)
 
@@ -218,11 +229,12 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                     dex = to_meta_data_extended(row)
                     if is_file_entry_valid(dex.fmd):
                         data.append(dex)
+                        continue
                     # NOTE: the file is not updated with the information from S3 backend.
                     # 1. Either the file exists, but was never updated in the database
                     # 2. Or the file does not exist or was never completed, and the file_meta_data entry is old and faulty
                     # we need to update from S3 here since the database is not up-to-date
-                    dex = await self.update_database_from_storage(
+                    dex = await self.try_update_database_from_storage(
                         dex.fmd.file_uuid,
                         dex.fmd.bucket_name,
                         dex.fmd.object_name,
@@ -396,7 +408,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                     if is_file_entry_valid(file_metadata.fmd):
                         return file_metadata
                     # we need to update from S3 here since the database is not up-to-date
-                    file_metadata = await self.update_database_from_storage(
+                    file_metadata = await self.try_update_database_from_storage(
                         file_metadata.fmd.file_uuid,
                         file_metadata.fmd.bucket_name,
                         file_metadata.fmd.object_name,
@@ -426,7 +438,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         # api_token, api_secret = self._get_datcore_tokens(user_id)
         # await dcw.upload_file_to_id(destination_id, local_file_path)
 
-    async def update_database_from_storage(
+    async def try_update_database_from_storage(
         self,
         file_uuid: str,
         bucket_name: str,
@@ -472,7 +484,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
             return None
 
     @retry(
-        stop=stop_after_delay(3600),
+        stop=stop_after_delay(1 * _HOUR),
         wait=wait_exponential(multiplier=0.1, exp_base=1.2, max=30),
         retry=(
             retry_if_exception_type() | retry_if_result(lambda result: result is None)
@@ -482,7 +494,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     async def auto_update_database_from_storage_task(
         self, file_uuid: str, bucket_name: str, object_name: str
     ):
-        return await self.update_database_from_storage(
+        return await self.try_update_database_from_storage(
             file_uuid, bucket_name, object_name, silence_exception=True
         )
 
