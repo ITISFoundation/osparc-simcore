@@ -2,11 +2,12 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import json
 import logging
 from asyncio import sleep
 from collections import namedtuple
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple
+from typing import Any, Awaitable, Callable, Dict, List, NamedTuple, Tuple
 from unittest.mock import call
 from uuid import uuid4
 
@@ -14,6 +15,8 @@ import aio_pika
 import pytest
 import socketio
 import sqlalchemy as sa
+from aiohttp import web
+from aiohttp.test_utils import TestClient
 from models_library.settings.rabbit import RabbitConfig
 from pytest_mock import MockerFixture
 from servicelib.aiohttp.application import create_safe_application
@@ -152,12 +155,12 @@ async def _publish_in_rabbit(
 
 @pytest.fixture
 def client(
-    loop,
-    aiohttp_client,
-    app_config,  ## waits until swarm with *_services are up
+    loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable,
+    app_config: Dict[str, Any],  ## waits until swarm with *_services are up
     rabbit_service: RabbitConfig,  ## waits until rabbit is responsive and set env vars
     postgres_db: sa.engine.Engine,
-    mocker,
+    mocker: MockerFixture,
 ):
     app_config["storage"]["enabled"] = False
 
@@ -186,7 +189,7 @@ def client(
     )
     setup_resource_manager(app)
 
-    yield loop.run_until_complete(
+    return loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={
@@ -203,21 +206,21 @@ def client_session_id() -> UUIDStr:
 
 
 @pytest.fixture
-def other_user_id(user_id, logged_user):
+def other_user_id(user_id: int, logged_user: Dict[str, Any]) -> int:
     other = user_id
     assert logged_user["id"] != other
     return other
 
 
 @pytest.fixture
-def other_project_id(project_id, user_project):
+def other_project_id(project_id: UUIDStr, user_project: Dict[str, Any]) -> UUIDStr:
     other = project_id
     assert user_project["uuid"] != other
     return other
 
 
 @pytest.fixture
-def other_node_uuid(node_uuid, user_project):
+def other_node_uuid(node_uuid: str, user_project: Dict[str, Any]) -> str:
     other = node_uuid
     node_uuid = list(user_project["workbench"])[0]
     assert node_uuid != other
@@ -261,7 +264,10 @@ async def socketio_subscriber_handlers(
 @pytest.fixture
 def publish_some_messages_in_rabbit(
     rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
-) -> Callable:
+) -> Callable[
+    [int, str, str, int],
+    Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
+]:
     """rabbitMQ PUBLISHER"""
 
     async def go(
@@ -278,7 +284,7 @@ def publish_some_messages_in_rabbit(
 
 
 @pytest.fixture
-def user_role():
+def user_role() -> UserRole:
     """provides a default when not override by paramtrization"""
     return UserRole.USER
 
@@ -311,12 +317,15 @@ USER_ROLES = [
 
 @pytest.mark.parametrize("user_role", USER_ROLES)
 async def test_publish_to_other_user(
-    other_user_id,
-    other_project_id,
-    other_node_uuid,
+    other_user_id: int,
+    other_project_id: UUIDStr,
+    other_node_uuid: str,
     #
-    socketio_subscriber_handlers,
-    publish_some_messages_in_rabbit,
+    socketio_subscriber_handlers: NamedTuple,
+    publish_some_messages_in_rabbit: Callable[
+        [int, str, str, int],
+        Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
+    ],
 ):
     mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
 
@@ -336,11 +345,14 @@ async def test_publish_to_other_user(
 @pytest.mark.parametrize("user_role", USER_ROLES)
 async def test_publish_to_user(
     logged_user: Dict[str, Any],
-    other_project_id,
-    other_node_uuid,
+    other_project_id: UUIDStr,
+    other_node_uuid: str,
     #
-    socketio_subscriber_handlers,
-    publish_some_messages_in_rabbit,
+    socketio_subscriber_handlers: NamedTuple,
+    publish_some_messages_in_rabbit: Callable[
+        [int, str, str, int],
+        Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
+    ],
 ):
     mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
 
@@ -365,10 +377,13 @@ async def test_publish_to_user(
 async def test_publish_about_users_project(
     logged_user: Dict[str, Any],
     user_project: Dict[str, Any],
-    other_node_uuid,
+    other_node_uuid: str,
     #
-    socketio_subscriber_handlers,
-    publish_some_messages_in_rabbit,
+    socketio_subscriber_handlers: NamedTuple,
+    publish_some_messages_in_rabbit: Callable[
+        [int, str, str, int],
+        Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
+    ],
 ):
     mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
 
@@ -394,8 +409,11 @@ async def test_publish_about_users_projects_node(
     logged_user: Dict[str, Any],
     user_project: Dict[str, Any],
     #
-    socketio_subscriber_handlers,
-    publish_some_messages_in_rabbit,
+    socketio_subscriber_handlers: NamedTuple,
+    publish_some_messages_in_rabbit: Callable[
+        [int, str, str, int],
+        Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
+    ],
 ):
     mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
 
@@ -420,7 +438,10 @@ async def test_publish_about_users_projects_node(
 
 
 @pytest.mark.skip(reason="DEV")
-def test_engineio_pending_tasks(logged_user, socketio_subscriber_handlers):
+def test_engineio_pending_tasks(
+    logged_user: Dict[str, Any],
+    socketio_subscriber_handlers: NamedTuple,
+):
     #
     # This tests passes but reproduces these logs at the end
     #
