@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
+import json
 import logging
 import os
 import time
@@ -16,9 +17,11 @@ from osparc.configuration import Configuration
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_random
+from tenacity.wait import wait_fixed
 
 log = logging.getLogger(__name__)
+
+
 _MINUTE: int = 60  # secs
 
 
@@ -74,15 +77,22 @@ def simcore_docker_stack_and_registry_ready(
     docker_registry,
     simcore_services_ready: None,
 ) -> Dict:
+    # At this point `simcore_services_ready` waited until all services
+    # are running. Let's make one more check on the web-api
     for attempt in Retrying(
-        wait=wait_random(2, 10),
-        stop=stop_after_delay(5 * _MINUTE),
+        wait=wait_fixed(1),
+        stop=stop_after_delay(0.5 * _MINUTE),
         reraise=True,
         before_sleep=before_sleep_log(log, logging.INFO),
     ):
         with attempt:
             resp = httpx.get("http://127.0.0.1:9081/v0/")
             resp.raise_for_status()
+
+        log.info(
+            "Connection to osparc-simcore web API succeeded [%s]",
+            json.dumps(attempt.retry_state.retry_object.statistics),
+        )
 
     return docker_stack
 
