@@ -354,27 +354,23 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
 
       const bounds = {
-        left: null,
-        top: null,
-        right: null,
-        bottom: null
+        left: 0,
+        top: 0,
+        right: 0,
+        bottom: 0
       };
       this.__nodesUI.forEach(nodeUI => {
         const nodeBounds = nodeUI.getBounds();
-        if (bounds.left === null || bounds.left > nodeBounds.left) {
-          bounds.left = nodeBounds.left;
-        }
-        if (bounds.top === null || bounds.top > nodeBounds.top) {
-          bounds.top = nodeBounds.top;
-        }
-        const leftPos = nodeBounds.left + nodeBounds.width;
-        if (bounds.right === null || bounds.right < leftPos) {
-          bounds.right = leftPos;
-        }
-        const topPos = nodeBounds.top + nodeBounds.height;
-        if (bounds.bottom === null || bounds.bottom < topPos) {
-          bounds.bottom = topPos;
-        }
+        bounds.left = Math.max(bounds.left, nodeBounds.left);
+        bounds.top = Math.max(bounds.top, nodeBounds.top);
+        bounds.right = Math.max(bounds.right, nodeBounds.left + nodeBounds.width);
+        bounds.bottom = Math.max(bounds.bottom, nodeBounds.top + nodeBounds.height);
+
+        const nodePos = nodeUI.getNode().getPosition();
+        bounds.left = Math.max(bounds.left, nodePos.x);
+        bounds.top = Math.max(bounds.top, nodePos.y);
+        bounds.right = Math.max(bounds.right, nodePos.x + nodeBounds.width);
+        bounds.bottom = Math.max(bounds.bottom, nodePos.y + nodeBounds.height);
       });
       return bounds;
     },
@@ -981,7 +977,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    clearAll: function() {
+    _clearAll: function() {
       this.__clearAllNodes();
       this.__clearAllEdges();
     },
@@ -1003,7 +999,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     _loadModel: async function(model) {
-      this.clearAll();
+      this._clearAll();
       this.resetSelectedNodes();
       this._currentModel = model;
       if (model) {
