@@ -3,12 +3,14 @@ import os
 import socket
 import subprocess
 from pathlib import Path
-from pprint import pformat
 from typing import Any, Dict, List, Optional, Union
 
 import docker
 import yaml
-from tenacity import after_log, retry, stop_after_attempt, wait_fixed
+from tenacity import retry
+from tenacity.after import after_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +29,9 @@ def get_ip() -> str:
 
 
 @retry(
-    wait=wait_fixed(2), stop=stop_after_attempt(10), after=after_log(log, logging.WARN)
+    wait=wait_fixed(2),
+    stop=stop_after_attempt(10),
+    after=after_log(log, logging.WARNING),
 )
 def get_service_published_port(
     service_name: str, target_ports: Optional[Union[List[int], int]] = None
@@ -38,7 +42,7 @@ def get_service_published_port(
     # NOTE: retries since services can take some time to start
     client = docker.from_env()
 
-    services = [x for x in client.services.list() if str(x.name).endswith(service_name)]
+    services = [s for s in client.services.list() if str(s.name).endswith(service_name)]
     if not services:
         raise RuntimeError(
             f"Cannot find published port for service '{service_name}'."
