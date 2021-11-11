@@ -122,7 +122,7 @@ async def rabbit_channel(
 async def rabbit_exchange(
     rabbit_config: RabbitConfig,
     rabbit_channel: aio_pika.Channel,
-) -> Tuple[aio_pika.Exchange, aio_pika.Exchange]:
+) -> Tuple[aio_pika.Exchange, aio_pika.Exchange, aio_pika.Exchange]:
     """
     Declares and returns 'log' and 'instrumentation' exchange channels with rabbit
     """
@@ -134,6 +134,13 @@ async def rabbit_exchange(
     )
     assert logs_exchange
 
+    # declare progress exchange
+    PROGRESS_EXCHANGE_NAME: str = rabbit_config.channels["progress"]
+    progress_exchange = await rabbit_channel.declare_exchange(
+        PROGRESS_EXCHANGE_NAME, aio_pika.ExchangeType.FANOUT
+    )
+    assert progress_exchange
+
     # declare instrumentation exchange
     INSTRUMENTATION_EXCHANGE_NAME: str = rabbit_config.channels["instrumentation"]
     instrumentation_exchange = await rabbit_channel.declare_exchange(
@@ -141,20 +148,21 @@ async def rabbit_exchange(
     )
     assert instrumentation_exchange
 
-    return logs_exchange, instrumentation_exchange
+    return logs_exchange, progress_exchange, instrumentation_exchange
 
 
 @pytest.fixture(scope="function")
 async def rabbit_queue(
     rabbit_channel: aio_pika.Channel,
-    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
+    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange, aio_pika.Exchange],
 ) -> AsyncIterator[aio_pika.Queue]:
-    logs_exchange, instrumentation_exchange = rabbit_exchange
+    logs_exchange, progress_exchange, instrumentation_exchange = rabbit_exchange
 
     queue = await rabbit_channel.declare_queue(exclusive=True)
     assert queue
 
     # Binding queue to exchange
     await queue.bind(logs_exchange)
+    await queue.bind(progress_exchange)
     await queue.bind(instrumentation_exchange)
     yield queue

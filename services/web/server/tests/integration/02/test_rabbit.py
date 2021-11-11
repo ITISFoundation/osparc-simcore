@@ -15,8 +15,6 @@ import aio_pika
 import pytest
 import socketio
 import sqlalchemy as sa
-from aiohttp import web
-from aiohttp.test_utils import TestClient
 from models_library.settings.rabbit import RabbitConfig
 from pytest_mock import MockerFixture
 from servicelib.aiohttp.application import create_safe_application
@@ -67,7 +65,7 @@ async def _publish_in_rabbit(
     project_id: UUIDStr,
     node_uuid: UUIDStr,
     num_messages: int,
-    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
+    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange, aio_pika.Exchange],
 ) -> Tuple[LogMessages, ProgressMessages, InstrumMessages]:
     def _msg(
         message_name: str, node_uuid: str, user_id: int, project_id: str, param: Any
@@ -79,7 +77,7 @@ async def _publish_in_rabbit(
             "project_id": project_id,
         }
 
-        if message_name == "log":
+        if message_name == "logger":
             message["messages"] = param
         if message_name == "progress":
             message["progress"] = param
@@ -97,7 +95,7 @@ async def _publish_in_rabbit(
         for n in range(num_messages)
     ]
     # send the messages over rabbit
-    logs_exchange, instrumentation_exchange = rabbit_exchange
+    logs_exchange, progress_exchange, instrumentation_exchange = rabbit_exchange
 
     # indicate container is started
     instrumentation_start_message = instrumentation_stop_message = {
@@ -131,7 +129,7 @@ async def _publish_in_rabbit(
             routing_key="",
         )
 
-        await logs_exchange.publish(
+        await progress_exchange.publish(
             aio_pika.Message(
                 body=json.dumps(progress_messages[n]).encode(), content_type="text/json"
             ),
@@ -263,7 +261,7 @@ async def socketio_subscriber_handlers(
 
 @pytest.fixture
 def publish_some_messages_in_rabbit(
-    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
+    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange, aio_pika.Exchange],
 ) -> Callable[
     [int, str, str, int],
     Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
