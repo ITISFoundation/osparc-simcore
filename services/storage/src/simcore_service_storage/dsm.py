@@ -227,18 +227,18 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
                 async for row in conn.execute(query):
                     dex = to_meta_data_extended(row)
-                    if is_file_entry_valid(dex.fmd):
+                    if not is_file_entry_valid(dex.fmd):
+                        # NOTE: the file is not updated with the information from S3 backend.
+                        # 1. Either the file exists, but was never updated in the database
+                        # 2. Or the file does not exist or was never completed, and the file_meta_data entry is old and faulty
+                        # we need to update from S3 here since the database is not up-to-date
+                        dex = await self.try_update_database_from_storage(
+                            dex.fmd.file_uuid,
+                            dex.fmd.bucket_name,
+                            dex.fmd.object_name,
+                        )
+                    if dex:
                         data.append(dex)
-                        continue
-                    # NOTE: the file is not updated with the information from S3 backend.
-                    # 1. Either the file exists, but was never updated in the database
-                    # 2. Or the file does not exist or was never completed, and the file_meta_data entry is old and faulty
-                    # we need to update from S3 here since the database is not up-to-date
-                    dex = await self.try_update_database_from_storage(
-                        dex.fmd.file_uuid,
-                        dex.fmd.bucket_name,
-                        dex.fmd.object_name,
-                    )
 
             if self.has_project_db:
                 uuid_name_dict = {}
