@@ -14,6 +14,7 @@ import httpx
 import osparc
 import pytest
 from osparc.configuration import Configuration
+from pytest_simcore.helpers.typing_docker import UrlStr
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -73,8 +74,8 @@ def event_loop(request) -> Iterable[asyncio.AbstractEventLoop]:
 @pytest.fixture(scope="module")
 def simcore_docker_stack_and_registry_ready(
     event_loop: asyncio.AbstractEventLoop,
+    docker_registry: UrlStr,
     docker_stack: Dict,
-    docker_registry,
     simcore_services_ready: None,
 ) -> Dict:
     # At this point `simcore_services_ready` waited until all services
@@ -88,11 +89,10 @@ def simcore_docker_stack_and_registry_ready(
         with attempt:
             resp = httpx.get("http://127.0.0.1:9081/v0/")
             resp.raise_for_status()
-
-        log.info(
-            "Connection to osparc-simcore web API succeeded [%s]",
-            json.dumps(attempt.retry_state.retry_object.statistics),
-        )
+            log.info(
+                "Connection to osparc-simcore web API succeeded [%s]",
+                json.dumps(attempt.retry_state.retry_object.statistics),
+            )
 
     return docker_stack
 

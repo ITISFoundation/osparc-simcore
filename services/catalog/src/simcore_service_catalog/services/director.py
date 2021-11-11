@@ -20,7 +20,7 @@ director_startup_retry_policy = dict(
     # Random service startup order in swarm.
     # wait_random prevents saturating other services while startup
     #
-    wait=wait_random(2, 10),
+    wait=wait_random(2, 5),
     stop=stop_after_delay(2 * MINUTE),
     before_sleep=before_sleep_log(logger, logging.WARNING),
     reraise=True,
@@ -39,10 +39,10 @@ async def setup_director(app: FastAPI) -> None:
                 if not await director_client.is_responsive():
                     raise ValueError("Director-v0 is not responsive")
 
-            logger.info(
-                "Connection to director-v0 succeded [%s]",
-                json_dumps(attempt.retry_state.retry_object.statistics),
-            )
+                logger.info(
+                    "Connection to director-v0 succeded [%s]",
+                    json_dumps(attempt.retry_state.retry_object.statistics),
+                )
 
         app.state.director_api = director_client
 

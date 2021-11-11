@@ -58,7 +58,6 @@ async def wait_till_service_healthy(service_name: str, endpoint: URL):
         "Connecting to %s",
         f"{service_name=} at {endpoint=}",
     )
-
     async for attempt in AsyncRetrying(
         # randomizing healthchecks sampling helps parallel execution
         wait=wait_random(1, 2),
@@ -77,11 +76,11 @@ async def wait_till_service_healthy(service_name: str, endpoint: URL):
                         response.status == 200
                     ), f"Connection to {service_name=} at {endpoint=} failed with {response=}"
 
-        log.info(
-            "Connection to %s succeeded [%s]",
-            f"{service_name=} at {endpoint=}",
-            json.dumps(attempt.retry_state.retry_object.statistics),
-        )
+            log.info(
+                "Connection to %s succeeded [%s]",
+                f"{service_name=} at {endpoint=}",
+                json.dumps(attempt.retry_state.retry_object.statistics),
+            )
 
 
 @dataclass
