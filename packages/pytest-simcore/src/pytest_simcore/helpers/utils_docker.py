@@ -186,9 +186,7 @@ def save_docker_infos(destination_path: Path):
 
             try:
                 # logs w/o coloring characters
-                logs: str = container.logs(
-                    timestamps=True, stdout=True, stderr=True, stream=False
-                ).decode()
+                logs: str = container.logs(timestamps=True, tail=1000).decode()
                 (destination_path / f"{container.name}.log").write_text(
                     COLOR_ENCODING_RE.sub("", logs)
                 )

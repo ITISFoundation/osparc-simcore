@@ -279,9 +279,7 @@ async def _inspect_service_and_print_logs(
             print(f"Container inspect: {container_name}")
             print(f"{formatted_container_inspect}\n{SEPARATOR}")
 
-        logs = await docker_client.services.logs(
-            service_details["ID"], stdout=True, stderr=True
-        )
+        logs = await docker_client.services.logs(service_details["ID"], tail=50)
         formatted_logs = "".join(logs)
         print(f"{formatted_logs}\n{SEPARATOR} - {tag}")
 

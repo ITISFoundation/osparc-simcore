@@ -77,8 +77,6 @@ async def assert_service_is_running(
                 logs_lines = await docker.services.logs(
                     service_id,
                     follow=False,
-                    stdout=True,
-                    stderr=True,
                     timestamps=True,
                     tail=50,  # SEE *_docker_logs artifacts for details
                 )
