@@ -141,37 +141,6 @@ def test_sub_folders(s3_client, bucket, text_files_factory):
         counter += 1
 
 
-def test_search(s3_client, bucket, text_files_factory):
-    metadata = [{"User": "alpha"}, {"User": "beta"}, {"User": "gamma"}]
-
-    for i in range(3):
-        bucket_sub_folder = "Folder" + str(i + 1)
-
-        filepaths = text_files_factory(3)
-        counter = 0
-        for f in filepaths:
-            object_name = bucket_sub_folder + "/" + "Data" + str(counter)
-            assert s3_client.upload_file(
-                bucket, object_name, f, metadata=metadata[counter]
-            )
-            counter += 1
-
-    query = "DATA1"
-    results = s3_client.search(bucket, query, recursive=False, include_metadata=False)
-    assert not results
-
-    results = s3_client.search(bucket, query, recursive=True, include_metadata=False)
-    assert len(results) == 3
-
-    query = "alpha"
-    results = s3_client.search(bucket, query, recursive=True, include_metadata=True)
-    assert len(results) == 3
-
-    query = "dat*"
-    results = s3_client.search(bucket, query, recursive=True, include_metadata=False)
-    assert len(results) == 9
-
-
 def test_presigned_put(s3_client, bucket, text_files_factory):
     filepath = text_files_factory(1)[0]
     object_name = "my_file"
