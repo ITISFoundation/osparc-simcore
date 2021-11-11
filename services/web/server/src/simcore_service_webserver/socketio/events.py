@@ -5,7 +5,7 @@ This module takes care of sending events to the connected webclient through the 
 import json
 import logging
 from collections import deque
-from typing import Any, Deque, Dict, List
+from typing import Any, Dict, List
 
 from aiohttp.web import Application
 from servicelib.utils import fire_and_forget_task, logged_gather
