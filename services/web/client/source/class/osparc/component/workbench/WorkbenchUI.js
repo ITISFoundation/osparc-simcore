@@ -1214,6 +1214,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __updateWorkbenchBounds: function() {
       const nodeBounds = this.__getNodesBounds();
+      if (nodeBounds === null) {
+        this.__updateHint();
+        return;
+      }
 
       // Fit to nodes size
       let scale = this.getScale();
