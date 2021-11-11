@@ -32,8 +32,8 @@ async def managed_docker_compose(
     compose_file = Path.cwd() / "consistency" / "docker-compose.yml"
     try:
         subprocess.run(
-            f"docker-compose --file {compose_file} up --detach",
-            shell=True,
+            ["docker-compose", "--file", compose_file, "up", "--detach"],
+            shell=False,
             check=True,
             cwd=compose_file.parent,
             env={**os.environ, **{"POSTGRES_DATA_VOLUME": postgres_volume_name}},
@@ -59,8 +59,8 @@ async def managed_docker_compose(
         yield
     finally:
         subprocess.run(
-            f"docker-compose --file {compose_file} down",
-            shell=True,
+            ["docker-compose", "--file", compose_file, "down"],
+            shell=False,
             check=True,
             cwd=compose_file.parent,
         )
