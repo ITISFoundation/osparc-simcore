@@ -10,6 +10,7 @@ import re
 import tempfile
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -61,7 +62,7 @@ from .models import (
 )
 from .s3wrapper.s3_client import MinioClientWrapper
 from .settings import Settings
-from .utils import download_to_file_or_raise
+from .utils import download_to_file_or_raise, to_meta_data_extended
 
 logger = logging.getLogger(__name__)
 
@@ -96,17 +97,7 @@ def setup_dsm(app: web.Application):
     app.cleanup_ctx.append(_cleanup_context)
 
 
-def to_meta_data_extended(row: RowProxy) -> FileMetaDataEx:
-    assert row
-    meta = FileMetaData(**dict(row))  # type: ignore
-    meta_extended = FileMetaDataEx(
-        fmd=meta,
-        parent_id=str(Path(meta.object_name).parent),
-    )  # type: ignore
-    return meta_extended
-
-
-@attr.s(auto_attribs=True)
+@dataclass
 class DatCoreApiToken:
     api_token: Optional[str] = None
     api_secret: Optional[str] = None
@@ -115,7 +106,7 @@ class DatCoreApiToken:
         return (self.api_token, self.api_secret)
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class DataStorageManager:  # pylint: disable=too-many-public-methods
     """Data storage manager
 
@@ -226,6 +217,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 async for row in conn.execute(query):
                     dex = to_meta_data_extended(row)
                     if dex.fmd.entity_tag is None:
+                        # NOTE: the file is not updated with the information from S3 backend.
+                        # 1. Either the file exists, but was never updated in the database
+                        # 2. Or the file does not exist or was never completed, and the file_meta_data entry is old and faulty
                         # we need to update from S3 here since the database is not up-to-date
                         dex = await self.update_database_from_storage(
                             dex.fmd.file_uuid,
@@ -288,6 +282,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
+            assert self.app  # no sec
+            assert api_secret  # no sec
+            assert api_token  # no sec
             return await datcore_adapter.list_all_datasets_files_metadatas(
                 self.app, api_token, api_secret
             )
@@ -330,6 +327,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
             # lists all the files inside the dataset
+            assert self.app  # no sec
+            assert api_secret  # no sec
+            assert api_token  # no sec
             return await datcore_adapter.list_all_files_metadatas_in_dataset(
                 self.app, api_token, api_secret, dataset_id
             )
@@ -368,6 +368,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
+            assert self.app  # no sec
+            assert api_secret  # no sec
+            assert api_token  # no sec
             return await datcore_adapter.list_datasets(self.app, api_token, api_secret)
 
         return data
@@ -573,6 +576,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
     async def download_link_datcore(self, user_id: str, file_id: str) -> URL:
         api_token, api_secret = self._get_datcore_tokens(user_id)
+        assert self.app  # no sec
+        assert api_secret  # no sec
+        assert api_token  # no sec
         return await datcore_adapter.get_file_download_presigned_link(
             self.app, api_token, api_secret, file_id
         )
@@ -928,6 +934,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
             api_token, api_secret = self._get_datcore_tokens(user_id)
+            assert self.app  # no sec
+            assert api_secret  # no sec
+            assert api_token  # no sec
             await datcore_adapter.delete_file(
                 self.app, api_token, api_secret, file_uuid
             )
