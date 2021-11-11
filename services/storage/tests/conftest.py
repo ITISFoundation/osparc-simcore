@@ -6,6 +6,7 @@
 # pylint: disable=unused-variable
 
 
+import asyncio
 import datetime
 import os
 import sys
@@ -13,7 +14,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
-from typing import Any, Callable, Dict, Iterator, List, Tuple
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Tuple
 
 import dotenv
 import pytest
@@ -228,16 +229,12 @@ def s3_client(minio_service: Dict[str, Any]) -> MinioClientWrapper:
 
 
 @pytest.fixture(scope="function")
-def mock_files_factory(tmpdir_factory) -> Callable[[int], List[str]]:
-    def _create_files(count: int) -> List[str]:
+def mock_files_factory(tmpdir_factory) -> Callable[[int], List[Path]]:
+    def _create_files(count: int) -> List[Path]:
         filepaths = []
         for _i in range(count):
-            name = str(uuid.uuid4())
-            filepath = os.path.normpath(
-                str(tmpdir_factory.mktemp("data").join(name + ".txt"))
-            )
-            with open(filepath, "w") as fout:
-                fout.write("Hello world\n")
+            filepath = Path(tmpdir_factory.mktemp("data")) / f"{uuid.uuid4()}.txt"
+            filepath.write_text("Hello world\n")
             filepaths.append(filepath)
 
         return filepaths
@@ -276,7 +273,9 @@ def dsm_mockup_complete_db(
 
 @pytest.fixture(scope="function")
 def dsm_mockup_db(
-    postgres_service_url, s3_client, mock_files_factory
+    postgres_service_url,
+    s3_client: MinioClientWrapper,
+    mock_files_factory: Callable[[int], List[Path]],
 ) -> Dict[str, FileMetaData]:
 
     # s3 client
@@ -300,7 +299,7 @@ def dsm_mockup_db(
     nodes = ["alpha", "beta", "gamma", "delta"]
 
     N = 100
-    files = mock_files_factory(count=N)
+    files = mock_files_factory(N)
     counter = 0
     data = {}
     for _file in files:
@@ -318,10 +317,13 @@ def dsm_mockup_db(
         file_uuid = Path(object_name).as_posix()
         raw_file_path = file_uuid
         display_file_path = str(Path(project_name) / Path(node) / Path(file_name))
-        created_at = str(datetime.datetime.now())
-        file_size = 1234
-        entity_tag = f"{uuid.uuid4()}"
+        created_at = str(datetime.datetime.utcnow())
+        file_size = _file.stat().st_size
+
         assert s3_client.upload_file(bucket_name, object_name, _file)
+        s3_meta_data = s3_client.get_metadata(bucket_name, object_name)
+        assert "ETag" in s3_meta_data
+        entity_tag = s3_meta_data["ETag"].strip('"')
 
         d = {
             "file_uuid": file_uuid,
@@ -374,7 +376,9 @@ def moduleless_app(loop, aiohttp_server) -> web.Application:
 
 
 @pytest.fixture(scope="function")
-def dsm_fixture(s3_client, postgres_engine, loop, moduleless_app):
+def dsm_fixture(
+    s3_client, postgres_engine, loop, moduleless_app
+) -> Iterable[DataStorageManager]:
 
     with ThreadPoolExecutor(3) as pool:
         dsm_fixture = DataStorageManager(
@@ -395,7 +399,11 @@ def dsm_fixture(s3_client, postgres_engine, loop, moduleless_app):
 
 
 @pytest.fixture(scope="function")
-async def datcore_structured_testbucket(loop, mock_files_factory, moduleless_app):
+async def datcore_structured_testbucket(
+    loop: asyncio.AbstractEventLoop,
+    mock_files_factory: Callable[[int], List[Path]],
+    moduleless_app,
+):
     api_token = os.environ.get("BF_API_KEY")
     api_secret = os.environ.get("BF_API_SECRET")
 
