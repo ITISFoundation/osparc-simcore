@@ -217,7 +217,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
       zoomToolbar.add(this.__getZoomOutButton());
       zoomToolbar.add(this.__getZoomResetButton());
-      zoomToolbar.add(this.__getZoomAllButton());
       zoomToolbar.add(this.__getZoomInButton());
 
       this.__workbenchLayer.add(zoomToolbar, {
@@ -281,15 +280,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const btn = this.__getZoomBtn("@MaterialIcons/find_replace", this.tr("Reset Zoom"));
       btn.addListener("execute", () => {
         this.setScale(1);
-      }, this);
-      return btn;
-    },
-
-    __getZoomAllButton: function() {
-      const btn = this.__getZoomBtn("@MaterialIcons/zoom_out_map", this.tr("Zoom All"));
-      btn.setVisibility("excluded");
-      btn.addListener("execute", () => {
-        this.__zoomAll();
       }, this);
       return btn;
     },
