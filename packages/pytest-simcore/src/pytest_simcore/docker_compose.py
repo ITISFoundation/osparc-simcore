@@ -250,10 +250,7 @@ def pytest_exception_interact(node, call, report):
 
 @pytest.hookimpl()
 def pytest_sessionfinish(session: pytest.Session, exitstatus: ExitCode) -> None:
-    import pdb
-
-    pdb.set_trace()
-    if True:  # exitstatus == ExitCode.TESTS_FAILED:
+    if exitstatus == ExitCode.TESTS_FAILED:
         # get the node root dir (guaranteed to exist)
         root_directory: Path = Path(session.fspath)
         failed_test_directory = root_directory / "test_failures" / session.name
