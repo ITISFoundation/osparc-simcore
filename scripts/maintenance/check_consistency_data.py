@@ -116,6 +116,23 @@ async def _get_files_from_project_nodes(
             }
 
 
+async def _get_all_invalid_files_from_file_meta_data(
+    pool,
+) -> Set[Tuple[str, int, datetime]]:
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cursor:
+            await cursor.execute(
+                'SELECT file_uuid, file_size, last_modified FROM "file_meta_data" '
+                "WHERE file_meta_data.file_size < 1 OR file_meta_data.entity_tag IS NULL"
+            )
+            # here we got all the files for that project uuid/node_ids combination
+            file_rows = await cursor.fetchall()
+            return {
+                (file_uuid, file_size, parser.parse(last_modified or "2000-01-01"))
+                for file_uuid, file_size, last_modified in file_rows
+            }
+
+
 POWER_LABELS = {0: "B", 1: "KiB", 2: "MiB", 3: "GiB"}
 LABELS_POWER = {v: k for k, v in POWER_LABELS.items()}
 
@@ -208,7 +225,7 @@ async def main_async(
     s3_bucket: str,
 ):
 
-    # ---------------------- GET FILE ENTRIES FROM DB ---------------------------------------------------------------------
+    # ---------------------- GET FILE ENTRIES FROM DB PROKECT TABLE -------------------------------------------------------------
     async with managed_docker_compose(
         postgres_volume_name, postgres_username, postgres_password
     ):
@@ -225,6 +242,9 @@ async def main_async(
                     for project_uuid, prj_data in project_nodes.items()
                 ]
             )
+            all_invalid_files_in_file_meta_data = (
+                await _get_all_invalid_files_from_file_meta_data(pool)
+            )
     db_file_entries: Set[Tuple[str, int, datetime]] = set().union(
         *all_sets_of_file_entries
     )
@@ -236,6 +256,20 @@ async def main_async(
         f"processed {len(project_nodes)} projects, found {len(db_file_entries)} file entries, saved in {db_file_entries_path}",
         fg=typer.colors.YELLOW,
     )
+
+    if all_invalid_files_in_file_meta_data:
+        db_file_meta_data_invalid_entries_path = (
+            Path.cwd() / f"{s3_endpoint}_db_file_meta_data_invalid_entries.csv"
+        )
+        write_file(
+            db_file_meta_data_invalid_entries_path,
+            all_invalid_files_in_file_meta_data,
+            ["file_uuid", "size", "last modified"],
+        )
+        typer.secho(
+            f"processed {len(all_invalid_files_in_file_meta_data)} INVALID file entries, saved in {db_file_meta_data_invalid_entries_path}",
+            fg=typer.colors.YELLOW,
+        )
 
     # ---------------------- GET FILE ENTRIES FROM S3 ---------------------------------------------------------------------
     # let's proceed with S3 backend: files are saved in BUCKET_NAME/projectID/nodeID/fileA.ext
