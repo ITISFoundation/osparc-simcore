@@ -2372,16 +2372,16 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash install
       - name: test
         run: ./ci/github/system-testing/e2e.bash test
-      - name: recover docker logs
-        id: logs_recovery
-        if: always()
+      - name: dump docker logs
+        id: docker_logs_dump
+        if: failure()
         run: ./ci/github/system-testing/e2e.bash dump_docker_logs
       - name: upload docker logs
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.job }}_docker_logs
-          path: simcore_logs
+          path: ./tests/e2e/test_failures
       - name: upload screenshots
         if: always()
         uses: actions/upload-artifact@v2
@@ -2389,7 +2389,7 @@ jobs:
           name: ${{ github.job }}_screenshots
           path: tests/e2e/screenshots
       - name: upload e2e logs
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.job }}_logs
