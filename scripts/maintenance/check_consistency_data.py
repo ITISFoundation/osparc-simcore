@@ -1,15 +1,6 @@
 #! /usr/bin/env python3
 
-"""Script to check consistency of the file storage backend in oSparc.
 
-
-
-    1. From an osparc database, go over all projects, get the project IDs and Node IDs
-    2. From the same database, now get all the files listed like projectID/nodeID from 1.
-    3. We get a list of files that are needed for the current projects
-    4. connect to the S3 backend, check that these files exist
-    5. generate a report with: project uuid, owner, files missing in S3
-"""
 import asyncio
 import csv
 import logging
@@ -336,6 +327,21 @@ def main(
     s3_secret: str,
     s3_bucket: str,
 ):
+    """Script to check consistency of the file storage backend in oSparc.
+
+    requirements:
+    - local docker volume containing a database from a deployment (see make import-db-from-docker-volume in /packages/postgres-database)
+
+    1. From an osparc database, go over all projects, get the project IDs and Node IDs
+
+    2. From the same database, now get all the files listed like projectID/nodeID from 1.
+
+    3. We get a list of files that are needed for the current projects
+
+    4. connect to the S3 backend, check that these files exist
+
+    5. generate a report with: project uuid, owner, files missing in S3"""
+
     asyncio.run(
         main_async(
             postgres_volume_name,
