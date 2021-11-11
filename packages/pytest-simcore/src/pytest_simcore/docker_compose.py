@@ -25,6 +25,7 @@ from .helpers import (
     FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
     FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
 )
+from .helpers.constants import HEADER_STR
 from .helpers.utils_docker import get_ip, run_docker_compose_config, save_docker_infos
 from .helpers.utils_environs import EnvVarsDict
 
@@ -145,7 +146,11 @@ def simcore_docker_compose(
         destination_path=temp_folder / "simcore_docker_compose.yml",
     )
     # NOTE: do not add indent. Copy&Paste log into editor instead
-    print("simcore docker-compose: ", json.dumps(config))
+    print(
+        HEADER_STR.format("simcore docker-compose"),
+        json.dumps(config),
+        HEADER_STR.format("-"),
+    )
     return config
 
 
@@ -173,7 +178,11 @@ def ops_docker_compose(
         destination_path=temp_folder / "ops_docker_compose.yml",
     )
     # NOTE: do not add indent. Copy&Paste log into editor instead
-    print("ops docker-compose: ", json.dumps(config))
+    print(
+        HEADER_STR.format("ops docker-compose"),
+        json.dumps(config),
+        HEADER_STR.format("-"),
+    )
     return config
 
 
@@ -241,7 +250,10 @@ def pytest_exception_interact(node, call, report):
 
 @pytest.hookimpl()
 def pytest_sessionfinish(session: pytest.Session, exitstatus: ExitCode) -> None:
-    if exitstatus == ExitCode.TESTS_FAILED:
+    import pdb
+
+    pdb.set_trace()
+    if True:  # exitstatus == ExitCode.TESTS_FAILED:
         # get the node root dir (guaranteed to exist)
         root_directory: Path = Path(session.fspath)
         failed_test_directory = root_directory / "test_failures" / session.name

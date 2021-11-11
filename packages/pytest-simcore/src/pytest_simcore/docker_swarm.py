@@ -103,7 +103,7 @@ def assert_service_is_running(service):
 def _fetch_and_print_services(
     docker_client: docker.client.DockerClient, extra_title: str
 ) -> None:
-    print("{:*^100}".format(f"docker services running {extra_title}"))
+    print(HEADER_STR.format(f"docker services running {extra_title}"))
 
     for service_obj in docker_client.services.list():
 
@@ -136,7 +136,7 @@ def _fetch_and_print_services(
                 for task in service_obj.tasks()
             ]
 
-        print(f"{service_obj.name:-^10}")
+        print(HEADER_STR.format(service_obj.name))
         print(json.dumps({"service": service, "tasks": tasks}, indent=1))
 
 
