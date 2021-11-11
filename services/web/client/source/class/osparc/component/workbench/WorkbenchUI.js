@@ -1258,19 +1258,27 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const paneSize = this._workbenchLayoutScroll.getChildControl("pane").getInnerSize();
         const barX = this._workbenchLayoutScroll.getChildControl("scrollbar-x");
         const barY = this._workbenchLayoutScroll.getChildControl("scrollbar-y");
+        const sliderKnobX = barX.getChildControl("slider").getChildControl("knob");
+        const sliderKnobY = barY.getChildControl("slider").getChildControl("knob");
         if (wbWidth > paneSize.width) {
           barX.setMaximum(wbWidth - paneSize.width);
           barX.setKnobFactor(paneSize.width / wbWidth);
+          sliderKnobX.resetBackgroundColor();
         } else {
           barX.setMaximum(0);
           barX.setKnobFactor(1);
+          // changing visibility triggers _computeScrollbars, which undoes the workaround
+          sliderKnobX.setBackgroundColor("transparent");
         }
         if (wbHeight > paneSize.height) {
           barY.setMaximum(wbHeight - paneSize.height);
           barY.setKnobFactor(paneSize.height / wbHeight);
+          sliderKnobY.resetBackgroundColor();
         } else {
           barY.setMaximum(0);
           barY.setKnobFactor(1);
+          // changing visibility triggers _computeScrollbars, which undoes the workaround
+          sliderKnobY.setBackgroundColor("transparent");
         }
       }, 20);
     },
