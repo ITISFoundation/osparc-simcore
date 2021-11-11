@@ -33,7 +33,7 @@ async def _get_project_owner(
     conn: SAConnection, project_uuid: ProjectID
 ) -> PositiveInt:
     the_project_owner = await conn.scalar(
-        select([projects.c.prj_owner]).where(projects.c.uuid == project_uuid)
+        select([projects.c.prj_owner]).where(projects.c.uuid == f"{project_uuid}")
     )
     if not the_project_owner:
         raise projects_exceptions.ProjectOwnerNotFoundError(project_uuid)
@@ -49,9 +49,9 @@ async def _update_project_state(
     new_state: RunningState,
 ) -> None:
     project = await projects_api.update_project_node_state(
-        app, user_id, project_uuid, node_uuid, new_state
+        app, user_id, f"{project_uuid}", f"{node_uuid}", new_state
     )
-    await projects_api.notify_project_node_update(app, project, node_uuid)
+    await projects_api.notify_project_node_update(app, project, f"{node_uuid}")
     await projects_api.notify_project_state_update(app, project)
 
 
@@ -68,15 +68,15 @@ async def _update_project_outputs(
     project, changed_keys = await projects_api.update_project_node_outputs(
         app,
         user_id,
-        project_uuid,
-        node_uuid,
+        f"{project_uuid}",
+        f"{node_uuid}",
         new_outputs=outputs,
         new_run_hash=run_hash,
     )
 
-    await projects_api.notify_project_node_update(app, project, node_uuid)
+    await projects_api.notify_project_node_update(app, project, f"{node_uuid}")
     # get depending node and notify for these ones as well
-    depending_node_uuids = await project_get_depending_nodes(project, node_uuid)
+    depending_node_uuids = await project_get_depending_nodes(project, f"{node_uuid}")
     await logged_gather(
         *[
             projects_api.notify_project_node_update(app, project, n)
@@ -123,8 +123,8 @@ async def listen(app: web.Application, db_engine: Engine):
                 log.error("no changes but still triggered: %s", pformat(payload))
                 continue
 
-            project_uuid = task_data.get("project_id", None)
-            node_uuid = task_data.get("node_id", None)
+            project_uuid = ProjectID(task_data.get("project_id", "undefined"))
+            node_uuid = NodeID(task_data.get("node_id", "undefined"))
 
             # FIXME: we do not know who triggered these changes. we assume the user had the rights to do so
             # therefore we'll use the prj_owner user id. This should be fixed when the new sidecar comes in

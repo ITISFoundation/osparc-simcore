@@ -104,11 +104,11 @@ class RabbitMQ(BaseModel):
         await self._post_message(
             self._logs_exchange,
             data={
-                "Channel": "Log",
-                "Node": node_id,
+                "channel": "logger",
+                "node_id": node_id,
                 "user_id": user_id,
                 "project_id": project_id,
-                "Messages": log_msg if isinstance(log_msg, list) else [log_msg],
+                "messages": log_msg if isinstance(log_msg, list) else [log_msg],
             },
         )
 
@@ -118,11 +118,11 @@ class RabbitMQ(BaseModel):
         await self._post_message(
             self._logs_exchange,
             data={
-                "Channel": "Progress",
-                "Node": node_id,
+                "channel": "progress",
+                "node_id": node_id,
                 "user_id": user_id,
                 "project_id": project_id,
-                "Progress": progress_msg,
+                "progress": progress_msg,
             },
         )
 

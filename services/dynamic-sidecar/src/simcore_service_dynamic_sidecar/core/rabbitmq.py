@@ -55,7 +55,7 @@ async def _wait_till_rabbit_responsive(url: str) -> None:
 
 
 class RabbitMQ:  # pylint: disable = too-many-instance-attributes
-    CHANNEL_LOG = "Log"
+    CHANNEL_LOG = "logger"
 
     def __init__(self, app: FastAPI, max_messages_to_send: int = 100) -> None:
         settings: DynamicSidecarSettings = app.state.settings
@@ -125,11 +125,11 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
 
     async def _publish_messages(self, channel: str, messages: List[str]) -> None:
         data = {
-            "Channel": channel,
-            "Node": f"{self._node_id}",
+            "channel": channel,
+            "node_id": f"{self._node_id}",
             "user_id": f"{self._user_id}",
             "project_id": f"{self._project_id}",
-            "Messages": messages,
+            "messages": messages,
         }
 
         assert self._logs_exchange  # nosec

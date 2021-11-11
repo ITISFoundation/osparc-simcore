@@ -161,17 +161,17 @@ async def test_rabbitmq(
     assert len(incoming_data) == 2, f"missing incoming data: {pformat(incoming_data)}"
 
     assert incoming_data[0] == {
-        "Channel": "Log",
-        "Messages": [log_msg] + log_messages,
-        "Node": f"{node_id}",
+        "channel": "logger",
+        "messages": [log_msg] + log_messages,
+        "node_id": f"{node_id}",
         "project_id": f"{project_id}",
         "user_id": f"{user_id}",
     }
 
     assert incoming_data[1] == {
-        "Channel": "Log",
-        "Messages": log_more_messages,
-        "Node": f"{node_id}",
+        "channel": "logger",
+        "messages": log_more_messages,
+        "node_id": f"{node_id}",
         "project_id": f"{project_id}",
         "user_id": f"{user_id}",
     }

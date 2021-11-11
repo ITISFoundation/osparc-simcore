@@ -4,11 +4,11 @@ This module takes care of sending events to the connected webclient through the 
 
 import json
 import logging
-from typing import Any, Dict, List
+from collections import deque
+from typing import Any, Deque, Dict, List
 
 from aiohttp.web import Application
-
-from servicelib.utils import fire_and_forget_task
+from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..resource_manager.websocket_manager import managed_resource
 from .config import AsyncServer, get_socket_server
@@ -17,6 +17,23 @@ log = logging.getLogger(__name__)
 
 SOCKET_IO_PROJECT_UPDATED_EVENT: str = "projectStateUpdated"
 SOCKET_IO_NODE_UPDATED_EVENT: str = "nodeUpdated"
+SOCKET_IO_LOG_EVENT: str = "logger"
+
+
+async def send_messages(
+    app: Application, user_id: str, messages: Dict[str, Any]
+) -> None:
+    sio: AsyncServer = get_socket_server(app)
+
+    socket_ids: List[str] = []
+    with managed_resource(user_id, None, app) as rt:
+        socket_ids = await rt.find_socket_ids()
+
+    send_tasks = deque()
+    for sid in socket_ids:
+        for event_name, data in messages.items():
+            send_tasks.append(sio.emit(event_name, json.dumps(data), room=sid))
+    await logged_gather(*send_tasks, reraise=False, log=log, max_concurrency=10)
 
 
 async def post_messages(
