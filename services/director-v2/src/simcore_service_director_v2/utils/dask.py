@@ -225,7 +225,7 @@ def done_dask_callback(
         # remove the future from the dict to remove any handle to the future, so the worker can free the memory
         task_to_future_map.pop(job_id)
         logger.debug("dispatching callback to finish task '%s'", job_id)
-        assert event_data  # no sec
+        assert event_data  # nosec
         try:
             asyncio.run_coroutine_threadsafe(user_callback(event_data), main_loop)
         except Exception:  # pylint: disable=broad-except

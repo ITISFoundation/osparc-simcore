@@ -42,6 +42,7 @@ async def output_file(
         f"{project_id}/{node_id}/filename.txt", bucket_name="master-simcore"
     )
     file.entity_tag = "df9d868b94e53d18009066ca5cd90e9f"
+    file.file_size = 12
     file.user_name = "test"
     file.user_id = str(user_id)
 

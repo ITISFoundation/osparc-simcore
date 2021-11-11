@@ -118,7 +118,7 @@ async def push_file_to_remote(
                     None, zfp.write, src_path, src_path.name
                 )
             logger.debug("%s created.", archive_file_path)
-            assert archive_file_path.exists()  # no sec
+            assert archive_file_path.exists()  # nosec
             file_to_upload = archive_file_path
             await log_publishing_cb(
                 f"Compression of '{src_path.name}' to '{archive_file_path.name}' complete."
