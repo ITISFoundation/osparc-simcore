@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import socket
 import subprocess
 from pathlib import Path
@@ -169,6 +170,9 @@ def run_docker_compose_config(
     return compose_file
 
 
+COLOR_ENCODING_RE = re.compile(r"\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]")
+
+
 def save_docker_infos(destination_path: Path):
     client = docker.from_env()
 
@@ -178,21 +182,26 @@ def save_docker_infos(destination_path: Path):
     if all_containers:
         destination_path.mkdir(parents=True, exist_ok=True)
 
-        # get the services logs
         for container in all_containers:
 
-            (destination_path / f"{container.name}.log").write_text(
-                container.logs(
+            try:
+                # logs w/o coloring characters
+                logs: str = container.logs(
                     timestamps=True, stdout=True, stderr=True, stream=False
                 ).decode()
-            )
+                (destination_path / f"{container.name}.log").write_text(
+                    COLOR_ENCODING_RE.sub("", logs)
+                )
 
-            (destination_path / f"{container.name}.json").write_text(
-                json.dumps(container.attrs, indent=2)
-            )
+                # inspect attrs
+                (destination_path / f"{container.name}.json").write_text(
+                    json.dumps(container.attrs, indent=2)
+                )
+            except Exception as err:
+                print(f"Unexpected failure while dumping {container}." "Details {err}")
 
         print(
             "\n\t",
-            f"wrote docker log files for {len(all_containers)} containers in ",
+            f"wrote docker log and json files for {len(all_containers)} containers in ",
             destination_path,
         )
