@@ -165,23 +165,22 @@ def run_docker_compose_config(
 
 
 def save_docker_infos(destination_path: Path):
-
     client = docker.from_env()
+
     # Includes stop containers, which might be e.g. failing tasks
     all_containers = client.containers.list(all=True)
 
-    # ensure the parent dir exists
-    destination_path.mkdir(parents=True, exist_ok=True)
-    # get the services logs
-    for container in all_containers:
-        service_file = destination_path / f"{container.name}.logs"
-        service_file.write_text(
-            pformat(
-                container.logs(timestamps=True, stdout=True, stderr=True).decode(),
-                width=200,
-            ),
-        )
     if all_containers:
+        destination_path.mkdir(parents=True, exist_ok=True)
+
+        # get the services logs
+        for container in all_containers:
+            (destination_path / f"{container.name}.log").write_text(
+                container.logs(
+                    timestamps=True, stdout=True, stderr=True, stream=False
+                ).decode()
+            )
+
         print(
             "\n\t",
             f"wrote docker log files for {len(all_containers)} containers in ",
