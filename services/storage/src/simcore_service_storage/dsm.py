@@ -154,7 +154,7 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
     app: Optional[web.Application] = None
 
     def _create_aiobotocore_client_context(self) -> ClientCreatorContext:
-        assert hasattr(self.session, "create_client")
+        assert hasattr(self.session, "create_client")  # nosec
         # pylint: disable=no-member
 
         # SEE API in https://botocore.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html
@@ -289,9 +289,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            assert self.app  # no sec
-            assert api_secret  # no sec
-            assert api_token  # no sec
+            assert self.app  # nosec
+            assert api_secret  # nosec
+            assert api_token  # nosec
             return await datcore_adapter.list_all_datasets_files_metadatas(
                 self.app, api_token, api_secret
             )
@@ -334,9 +334,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
             # lists all the files inside the dataset
-            assert self.app  # no sec
-            assert api_secret  # no sec
-            assert api_token  # no sec
+            assert self.app  # nosec
+            assert api_secret  # nosec
+            assert api_token  # nosec
             return await datcore_adapter.list_all_files_metadatas_in_dataset(
                 self.app, api_token, api_secret, dataset_id
             )
@@ -375,9 +375,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            assert self.app  # no sec
-            assert api_secret  # no sec
-            assert api_token  # no sec
+            assert self.app  # nosec
+            assert api_secret  # nosec
+            assert api_token  # nosec
             return await datcore_adapter.list_datasets(self.app, api_token, api_secret)
 
         return data
@@ -584,9 +584,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
     async def download_link_datcore(self, user_id: str, file_id: str) -> URL:
         api_token, api_secret = self._get_datcore_tokens(user_id)
-        assert self.app  # no sec
-        assert api_secret  # no sec
-        assert api_token  # no sec
+        assert self.app  # nosec
+        assert api_secret  # nosec
+        assert api_token  # nosec
         return await datcore_adapter.get_file_download_presigned_link(
             self.app, api_token, api_secret, file_id
         )
@@ -942,9 +942,9 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
             api_token, api_secret = self._get_datcore_tokens(user_id)
-            assert self.app  # no sec
-            assert api_secret  # no sec
-            assert api_token  # no sec
+            assert self.app  # nosec
+            assert api_secret  # nosec
+            assert api_token  # nosec
             await datcore_adapter.delete_file(
                 self.app, api_token, api_secret, file_uuid
             )

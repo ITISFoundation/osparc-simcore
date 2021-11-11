@@ -114,7 +114,7 @@ class MinioClientWrapper:
     def get_metadata(self, bucket_name, object_name):
         try:
             obj = self._minio.stat_object(bucket_name, object_name)
-            assert obj.metadata  # no sec
+            assert obj.metadata  # nosec
             return dict(obj.metadata)
 
         except MinioException:

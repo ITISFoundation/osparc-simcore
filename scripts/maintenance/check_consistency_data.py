@@ -16,7 +16,10 @@ from typing import Any, Dict, List, Set, Tuple
 import aiopg
 import typer
 from dateutil import parser
-from tenacity import after_log, retry, stop_after_attempt, wait_random
+from tenacity import retry
+from tenacity.after import after_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_random
 
 log = logging.getLogger(__name__)
 
