@@ -126,9 +126,9 @@ def test_file_upload_meta_data(s3_client, bucket, text_files_factory):
 
     metadata2 = s3_client.get_metadata(bucket, object_name)
 
-    assert metadata2["user"] == "guidon"
-    assert metadata2["node_id"] == str(_id)
-    assert metadata2["boom-boom"] == str(42.0)
+    assert metadata2["X-Amz-Meta-User"] == "guidon"
+    assert metadata2["X-Amz-Meta-Node_id"] == str(_id)
+    assert metadata2["X-Amz-Meta-Boom-Boom"] == str(42.0)
 
 
 def test_sub_folders(s3_client, bucket, text_files_factory):
