@@ -5,13 +5,13 @@
 
 import asyncio
 import json
+from dataclasses import dataclass
 
-import attr
 from aiohttp import web
 from servicelib.json_serialization import json_dumps
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class Data:
     x: int = 3
     y: str = "foo"
