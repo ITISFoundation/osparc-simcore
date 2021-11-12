@@ -4,8 +4,7 @@ from typing import Dict
 
 import aio_pika
 from fastapi import FastAPI
-from servicelib.json_serialization import json_dumps
-from servicelib.rabbitmq_utils import (
+from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessage,
@@ -97,7 +96,7 @@ class RabbitMQClient:
 
         try:
             await get_exchange(message).publish(
-                aio_pika.Message(json_dumps(message).encode(encoding="utf-8")),
+                aio_pika.Message(message.json().encode(encoding="utf-8")),
                 routing_key="",
             )
         except ValueError:

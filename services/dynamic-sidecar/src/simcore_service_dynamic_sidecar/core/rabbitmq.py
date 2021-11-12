@@ -10,12 +10,9 @@ import aio_pika
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
+from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
-from servicelib.json_serialization import json_dumps
-from servicelib.rabbitmq_utils import (
-    LoggerRabbitMessage,
-    RabbitMQRetryPolicyUponInitialization,
-)
+from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from settings_library.rabbit import RabbitSettings
 from tenacity._asyncio import AsyncRetrying
 
@@ -135,7 +132,7 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
 
         assert self._logs_exchange  # nosec
         await self._logs_exchange.publish(
-            aio_pika.Message(body=json_dumps(data).encode()), routing_key=""
+            aio_pika.Message(body=data.json().encode()), routing_key=""
         )
 
     async def post_log_message(self, log_msg: Union[str, List[str]]) -> None:

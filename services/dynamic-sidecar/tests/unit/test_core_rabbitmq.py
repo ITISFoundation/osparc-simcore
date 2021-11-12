@@ -16,10 +16,10 @@ from _pytest.monkeypatch import MonkeyPatch
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
+from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.settings.rabbit import RabbitConfig
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
-from servicelib.rabbitmq_utils import LoggerRabbitMessage
 from simcore_service_dynamic_sidecar.core.application import assemble_application
 from simcore_service_dynamic_sidecar.core.rabbitmq import SLEEP_BETWEEN_SENDS, RabbitMQ
 from simcore_service_dynamic_sidecar.modules import mounted_fs
@@ -133,7 +133,7 @@ async def test_rabbitmq(
     incoming_data: List[LoggerRabbitMessage] = []
 
     async def rabbit_message_handler(message: aio_pika.IncomingMessage):
-        incoming_data.append(LoggerRabbitMessage.from_message(message.body))
+        incoming_data.append(LoggerRabbitMessage.parse_raw(message.body))
 
     await rabbit_queue.consume(rabbit_message_handler, exclusive=True, no_ack=True)
 

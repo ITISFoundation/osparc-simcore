@@ -2,11 +2,15 @@ import asyncio
 import contextlib
 import logging
 import socket
-from dataclasses import asdict
 from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List
 
 import aio_pika
 from aiohttp import web
+from models_library.rabbitmq_messages import (
+    InstrumentationRabbitMessage,
+    LoggerRabbitMessage,
+    ProgressRabbitMessage,
+)
 from servicelib.aiohttp.monitor_services import (
     SERVICE_STARTED_LABELS,
     SERVICE_STOPPED_LABELS,
@@ -14,12 +18,7 @@ from servicelib.aiohttp.monitor_services import (
     service_stopped,
 )
 from servicelib.json_serialization import json_dumps
-from servicelib.rabbitmq_utils import (
-    InstrumentationRabbitMessage,
-    LoggerRabbitMessage,
-    ProgressRabbitMessage,
-    RabbitMQRetryPolicyUponInitialization,
-)
+from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from tenacity import retry
 
 from .computation_config import ComputationSettings
@@ -38,7 +37,7 @@ log = logging.getLogger(__file__)
 
 async def progress_message_parser(app: web.Application, data: bytes) -> None:
     # update corresponding project, node, progress value
-    rabbit_message = ProgressRabbitMessage.from_message(data)
+    rabbit_message = ProgressRabbitMessage.parse_raw(data)
     try:
         project = await projects_api.update_project_node_progress(
             app,
@@ -71,7 +70,7 @@ async def progress_message_parser(app: web.Application, data: bytes) -> None:
 
 
 async def log_message_parser(app: web.Application, data: bytes) -> None:
-    rabbit_message = LoggerRabbitMessage.from_message(data)
+    rabbit_message = LoggerRabbitMessage.parse_raw(data)
     socket_messages: List[SocketMessageDict] = [
         {
             "event_type": SOCKET_IO_LOG_EVENT,
@@ -82,14 +81,14 @@ async def log_message_parser(app: web.Application, data: bytes) -> None:
 
 
 async def instrumentation_message_parser(app: web.Application, data: bytes) -> None:
-    rabbit_message = InstrumentationRabbitMessage.from_message(data)
+    rabbit_message = InstrumentationRabbitMessage.parse_raw(data)
     if rabbit_message.metrics == "service_started":
         service_started(
-            app, **{key: asdict(rabbit_message)[key] for key in SERVICE_STARTED_LABELS}
+            app, **{key: rabbit_message.dict()[key] for key in SERVICE_STARTED_LABELS}
         )
     elif rabbit_message.metrics == "service_stopped":
         service_stopped(
-            app, **{key: asdict(rabbit_message)[key] for key in SERVICE_STOPPED_LABELS}
+            app, **{key: rabbit_message.dict()[key] for key in SERVICE_STOPPED_LABELS}
         )
 
 
