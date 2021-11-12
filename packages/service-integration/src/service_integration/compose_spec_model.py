@@ -9,6 +9,12 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Extra, Field, conint, constr
 
+# port number range
+# "format": "ports"
+PortInt = conint(gt=0, lt=65535)
+# TODO: format "duration" https://schema.org/Duration
+# TODO: format "expose"
+
 
 class Config1(BaseModel):
     class Config:
@@ -509,7 +515,7 @@ class Service(BaseModel):
     pid: Optional[Optional[str]] = None
     pids_limit: Optional[Union[float, str]] = None
     platform: Optional[str] = None
-    ports: Optional[List[Union[float, str, Port]]] = None
+    ports: Optional[List[Union[PortInt, str, Port]]] = None
     privileged: Optional[bool] = None
     profiles: Optional[ListOfStrings] = None
     pull_policy: Optional[PullPolicy] = None

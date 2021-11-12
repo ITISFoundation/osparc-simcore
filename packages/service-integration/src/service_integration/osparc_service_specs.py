@@ -49,7 +49,7 @@ class PathsMapping(BaseModel):
 
 class SettingsItem(BaseModel):
     name: str = Field(..., description="The name of the service setting")
-    stype: str = Field(
+    type_: str = Field(
         ...,
         description="The type of the service setting (follows Docker REST API naming scheme)",
         alias="type",
