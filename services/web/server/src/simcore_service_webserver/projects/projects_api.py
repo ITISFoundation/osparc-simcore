@@ -43,8 +43,8 @@ from ..socketio.events import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
     SocketMessageDict,
-    post_group_messages,
-    post_messages,
+    send_group_messages,
+    send_messages,
 )
 from ..storage_api import (
     delete_data_folders_of_project,
@@ -539,7 +539,7 @@ async def notify_project_state_update(
     ]
 
     if notify_only_user:
-        await post_messages(app, user_id=str(notify_only_user), messages=messages)
+        await send_messages(app, user_id=str(notify_only_user), messages=messages)
     else:
         rooms_to_notify = [
             f"{gid}"
@@ -547,7 +547,7 @@ async def notify_project_state_update(
             if rights["read"]
         ]
         for room in rooms_to_notify:
-            await post_group_messages(app, room, messages)
+            await send_group_messages(app, room, messages)
 
 
 async def notify_project_node_update(
@@ -568,7 +568,7 @@ async def notify_project_node_update(
     ]
 
     for room in rooms_to_notify:
-        await post_group_messages(app, room, messages)
+        await send_group_messages(app, room, messages)
 
 
 async def post_trigger_connected_service_retrieve(**kwargs) -> None:
