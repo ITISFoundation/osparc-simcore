@@ -5,7 +5,6 @@ import asyncio
 import json
 import uuid
 from asyncio import AbstractEventLoop
-from logging import Logger
 from pathlib import Path
 from pprint import pformat
 from typing import Iterator, List
