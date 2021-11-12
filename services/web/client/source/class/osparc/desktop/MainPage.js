@@ -136,13 +136,24 @@ qx.Class.define("osparc.desktop.MainPage", {
     __createDashboardStack: function() {
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard();
       const minNStudyItemsPerRow = 5;
-      dashboard.set({
-        minWidth: minNStudyItemsPerRow * (osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING) + 8 // padding + scrollbar
-      });
+      const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
+      dashboard.setMinWidth(minNStudyItemsPerRow * itemWidth + 8);
       const sideSearch = new osparc.dashboard.SideSearch().set({
         maxWidth: 330,
         minWidth: 220
       });
+      const fitResourceCards = () => {
+        const w = document.documentElement.clientWidth;
+        const nStudies = Math.floor((w - 2*sideSearch.getSizeHint().width - 8) / itemWidth);
+        const newWidth = nStudies * itemWidth + 8;
+        if (newWidth > dashboard.getMinWidth()) {
+          dashboard.setWidth(newWidth);
+        } else {
+          dashboard.setWidth(dashboard.getMinWidth());
+        }
+      };
+      fitResourceCards();
+      window.addEventListener("resize", () => fitResourceCards());
       dashboard.bind("selection", sideSearch, "visibility", {
         converter: value => {
           const tabIndex = dashboard.getChildren().indexOf(value[0]);
