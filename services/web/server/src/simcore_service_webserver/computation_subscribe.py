@@ -173,6 +173,7 @@ async def rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
         for task in consumer_tasks:
             await task
     log.info("Closing connections...")
+    await channel_pool.close()
     await connection_pool.close()
     log.info("closed.")
 
