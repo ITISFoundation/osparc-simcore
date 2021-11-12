@@ -361,11 +361,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       };
       this.__nodesUI.forEach(nodeUI => {
         const nodeBounds = nodeUI.getBounds();
+        /*
+        // nodeBounds postion might be wrong
         bounds.left = Math.max(bounds.left, nodeBounds.left);
         bounds.top = Math.max(bounds.top, nodeBounds.top);
         bounds.right = Math.max(bounds.right, nodeBounds.left + nodeBounds.width);
         bounds.bottom = Math.max(bounds.bottom, nodeBounds.top + nodeBounds.height);
-
+        */
         const nodePos = nodeUI.getNode().getPosition();
         bounds.left = Math.max(bounds.left, nodePos.x);
         bounds.top = Math.max(bounds.top, nodePos.y);
