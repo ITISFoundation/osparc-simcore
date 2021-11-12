@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Final, List, Optional, Type, TypedDict
+from typing import Final, List, Optional
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
