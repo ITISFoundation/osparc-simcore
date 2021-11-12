@@ -11,7 +11,9 @@ from models_library.settings.services_common import ServicesCommonSettings
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
-from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
+from tenacity import AsyncRetrying
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_exponential
 from yarl import URL
 
 from .director_v2_settings import Directorv2Settings, get_client_session, get_settings
@@ -23,6 +25,10 @@ SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)  # type:ignore
 SERVICE_RETRIEVE_HTTP_TIMEOUT = ClientTimeout(
     total=60 * 60, connect=None, sock_connect=5  # type:ignore
 )
+DEFAULT_RETRY_POLICY = dict(
+    wait=wait_exponential(), stop=stop_after_attempt(3), reraise=True
+)
+
 
 DataType = Dict[str, Any]
 DataBody = Union[DataType, List[DataType]]
@@ -320,10 +326,6 @@ async def stop_services(
     await logged_gather(*services_to_stop)
 
 
-def _retry_parameters() -> Dict[str, Any]:
-    return dict(stop=stop_after_attempt(3), wait=wait_exponential(), reraise=True)
-
-
 @log_decorator(logger=log)
 async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
     settings: Directorv2Settings = get_settings(app)
@@ -331,7 +333,7 @@ async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
 
     # sometimes the director-v2 cannot be reached causing the service to fail
     # retrying 3 times before giving up for good
-    async for attempt in AsyncRetrying(**_retry_parameters()):
+    async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
         with attempt:
             service_state = await _request_director_v2(
                 app, "GET", backend_url, expected_status=web.HTTPOk
@@ -355,7 +357,7 @@ async def retrieve(
     )
     body = dict(port_keys=port_keys)
 
-    async for attempt in AsyncRetrying(**_retry_parameters()):
+    async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
         with attempt:
             retry_result = await _request_director_v2(
                 app,

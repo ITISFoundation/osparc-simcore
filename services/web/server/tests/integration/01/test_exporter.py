@@ -11,7 +11,7 @@ from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Dict, List, Set, Tuple
+from typing import Any, Callable, Coroutine, Dict, Iterable, List, Set, Tuple
 
 import aiofiles
 import aiohttp
@@ -58,13 +58,14 @@ from yarl import URL
 log = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = [
-    "redis",
-    "rabbit",
     "catalog",
     "dask-scheduler",
-    "director",
     "director-v2",
+    "director",
+    "migration",
     "postgres",
+    "rabbit",
+    "redis",
     "storage",
 ]
 pytest_simcore_ops_services_selection = ["minio"]
@@ -110,7 +111,7 @@ async def __delete_all_redis_keys__(redis_service: RedisConfig):
 
 
 @pytest.fixture
-async def monkey_patch_aiohttp_request_url() -> None:
+async def monkey_patch_aiohttp_request_url():
     old_request = aiohttp.ClientSession._request
 
     async def new_request(*args, **kwargs):
@@ -271,7 +272,7 @@ def push_services_to_registry(docker_registry: str, node_meta_schema: Dict) -> N
 
 
 @contextmanager
-def assemble_tmp_file_path(file_name: str) -> Path:
+def assemble_tmp_file_path(file_name: str) -> Iterable[Path]:
     # pylint: disable=protected-access
     # let us all thank codeclimate for this beautiful piece of code
     tmp_store_dir = Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"

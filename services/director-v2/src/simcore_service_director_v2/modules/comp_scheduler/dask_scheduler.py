@@ -89,7 +89,7 @@ class DaskScheduler(BaseCompScheduler):
             event.job_id
         )
 
-        assert event.state in COMPLETED_STATES  # no sec
+        assert event.state in COMPLETED_STATES  # nosec
 
         logger.info(
             "task %s completed with state: %s",
@@ -98,7 +98,7 @@ class DaskScheduler(BaseCompScheduler):
         )
         if event.state == RunningState.SUCCESS:
             # we need to parse the results
-            assert event.msg  # no sec
+            assert event.msg  # nosec
             await parse_output_data(
                 self.db_engine,
                 event.job_id,

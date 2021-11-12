@@ -1905,7 +1905,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   integration-test-director-v2-01:
-    timeout-minutes: 30 # if this timeout gets too small, then split the tests
+    timeout-minutes: 35 # FIXME: temporary up (PC). if this timeout gets too small, then split the tests
     name: "[int] director-v2 01"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -2198,7 +2198,7 @@ jobs:
           path: codeclimate.${{ github.job }}_coverage.json
 
   system-test-public-api:
-    timeout-minutes: 20 # if this timeout gets too small, then split the tests
+    timeout-minutes: 25 # if this timeout gets too small, then split the tests
     name: "[sys] public api"
     needs: [build-test-images]
     runs-on: ${{ matrix.os }}
@@ -2301,6 +2301,12 @@ jobs:
         run: ./ci/github/system-testing/swarm-deploy.bash install
       - name: test
         run: ./ci/github/system-testing/swarm-deploy.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./tests/swarm-deploy/test_failures
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
@@ -2366,16 +2372,16 @@ jobs:
         run: ./ci/github/system-testing/e2e.bash install
       - name: test
         run: ./ci/github/system-testing/e2e.bash test
-      - name: recover docker logs
-        id: logs_recovery
-        if: always()
+      - name: dump docker logs
+        id: docker_logs_dump
+        if: failure()
         run: ./ci/github/system-testing/e2e.bash dump_docker_logs
       - name: upload docker logs
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.job }}_docker_logs
-          path: simcore_logs
+          path: ./tests/e2e/test_failures
       - name: upload screenshots
         if: always()
         uses: actions/upload-artifact@v2
@@ -2383,7 +2389,7 @@ jobs:
           name: ${{ github.job }}_screenshots
           path: tests/e2e/screenshots
       - name: upload e2e logs
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.job }}_logs

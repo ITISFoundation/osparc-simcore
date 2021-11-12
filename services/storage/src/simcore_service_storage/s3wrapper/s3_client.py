@@ -2,7 +2,6 @@
 # SEE https://docs.min.io/docs/python-client-api-reference.html
 #
 import logging
-import re
 from datetime import timedelta
 from typing import Iterator, List, Optional
 
@@ -78,14 +77,6 @@ class MinioClientWrapper:
 
         return False
 
-    def list_buckets(self):
-        try:
-            return self._minio.list_buckets()
-        except MinioException:
-            logging.exception("Could not list bucket")
-
-        return []
-
     def upload_file(self, bucket_name, object_name, filepath, metadata=None):
         """Note
 
@@ -123,12 +114,8 @@ class MinioClientWrapper:
     def get_metadata(self, bucket_name, object_name):
         try:
             obj = self._minio.stat_object(bucket_name, object_name)
-            _metadata = obj.metadata
-            metadata = {}
-            for key in _metadata.keys():
-                _key = key[len(self.__metadata_prefix) :]
-                metadata[_key] = _metadata[key]
-            return metadata
+            assert obj.metadata  # nosec
+            return dict(obj.metadata)
 
         except MinioException:
             logging.exception("Could not get metadata")
@@ -177,28 +164,6 @@ class MinioClientWrapper:
             logging.exception("Could check object for existence")
             return False
         return False
-
-    def search(self, bucket_name, query, recursive=True, include_metadata=False):
-        results = []
-
-        _query = re.compile(query, re.IGNORECASE)
-
-        for obj in self.list_objects(bucket_name, recursive=recursive):
-            if _query.search(obj.object_name):
-                results.append(obj)
-            if include_metadata:
-                metadata = self.get_metadata(bucket_name, obj.object_name)
-                for key in metadata.keys():
-                    if _query.search(key) or _query.search(metadata[key]):
-                        results.append(obj)
-
-        for r in results:
-            msg = "Object {} in bucket {} matches query {}".format(
-                r.object_name, r.bucket_name, query
-            )
-            log.debug(msg)
-
-        return results
 
     def create_presigned_put_url(self, bucket_name, object_name, dt=timedelta(days=3)):
         try:

@@ -2,47 +2,39 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-#
-# NOTE this file must be py3.6 compatible because it is used by the director
-#
+
 import json
 import logging
 import subprocess
-from datetime import datetime
+from contextlib import suppress
 from pathlib import Path
-from pprint import pprint
-from typing import Dict, Iterator
+from typing import Any, Dict, Iterator
 
 import docker
 import pytest
-import tenacity
 import yaml
 from docker.errors import APIError
 from tenacity import Retrying
 from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_attempt, stop_after_delay
-from tenacity.wait import wait_exponential, wait_fixed
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
+from .helpers.constants import HEADER_STR, MINUTE
+from .helpers.utils_dict import copy_from_dict
 from .helpers.utils_docker import get_ip
 from .helpers.utils_environs import EnvVarsDict
 
 log = logging.getLogger(__name__)
 
-_MINUTE: int = 60  # secs
-HEADER: str = "{:-^50}"
 
+#
+# NOTE this file must be PYTHON >=3.6 COMPATIBLE because it is used by the director service
+#
 
-DEFAULT_RETRY_POLICY = dict(
-    wait=wait_exponential(),
-    stop=stop_after_delay(15),
-)
+# HELPERS --------------------------------------------------------------------------------
 
 
 class _NotInSwarmException(Exception):
-    pass
-
-
-class _StillInSwarmException(Exception):
     pass
 
 
@@ -64,6 +56,96 @@ def _in_docker_swarm(
     return True
 
 
+def assert_service_is_running(service):
+    """Checks that a number of tasks of this service are in running state"""
+
+    def _get(obj: Dict[str, Any], dotted_key: str, default=None) -> Any:
+        keys = dotted_key.split(".")
+        value = obj
+        for key in keys[:-1]:
+            value = value.get(key, {})
+        return value.get(keys[-1], default)
+
+    service_name = service.name
+    num_replicas_specified = _get(
+        service.attrs, "Spec.Mode.Replicated.Replicas", default=1
+    )
+
+    log.info(
+        "Waiting for service_name='%s' to have num_replicas_specified=%s ...",
+        service_name,
+        num_replicas_specified,
+    )
+
+    tasks = list(service.tasks())
+    assert tasks
+
+    #
+    # NOTE: We have noticed using the 'last updated' task is not necessarily
+    # the most actual of the tasks. It dependends e.g. on the restart policy.
+    # We explored the possibility of determining success by using the condition
+    # "DesiredState" == "Status.State" but realized that "DesiredState" is not
+    # part of the specs but can be updated by the swarm at runtime.
+    # Finally, the decision was to use the state 'running' understanding that
+    # the swarms flags this state to the service when it is up and healthy.
+    #
+    # SEE https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
+
+    tasks_current_state = [_get(task, "Status.State") for task in tasks]
+    num_running = sum(current == "running" for current in tasks_current_state)
+
+    assert num_running == num_replicas_specified, (
+        f"service_name='{service_name}'  has tasks_current_state={tasks_current_state}, "
+        f"but expected at least num_replicas_specified='{num_replicas_specified}' running"
+    )
+
+
+def _fetch_and_print_services(
+    docker_client: docker.client.DockerClient, extra_title: str
+) -> None:
+    print(HEADER_STR.format(f"docker services running {extra_title}"))
+
+    for service_obj in docker_client.services.list():
+
+        tasks = {}
+        service = {}
+        with suppress(Exception):
+            # trims dicts (more info in dumps)
+            service = copy_from_dict(
+                service_obj.attrs,
+                include={
+                    "ID": ...,
+                    "CreatedAt": ...,
+                    "UpdatedAt": ...,
+                    "Spec": {"Name", "Labels", "Mode"},
+                },
+            )
+
+            tasks = [
+                copy_from_dict(
+                    task,
+                    include={
+                        "ID": ...,
+                        "CreatedAt": ...,
+                        "UpdatedAt": ...,
+                        "Spec": {"ContainerSpec": {"Image", "Labels", "Env"}},
+                        "Status": {"Timestamp", "State"},
+                        "DesiredState": ...,
+                        "ServiceID": ...,
+                        "NodeID": ...,
+                        "Slot": ...,
+                    },
+                )
+                for task in service_obj.tasks()
+            ]
+
+        print(HEADER_STR.format(service_obj.name))
+        print(json.dumps({"service": service, "tasks": tasks}, indent=1))
+
+
+# FIXTURES --------------------------------------------------------------------------------
+
+
 @pytest.fixture(scope="session")
 def docker_client() -> Iterator[docker.client.DockerClient]:
     client = docker.from_env()
@@ -79,8 +161,10 @@ def keep_docker_up(request) -> bool:
 def docker_swarm(
     docker_client: docker.client.DockerClient, keep_docker_up: Iterator[bool]
 ) -> Iterator[None]:
+    """inits docker swarm"""
+
     for attempt in Retrying(
-        retry_error_cls=_NotInSwarmException, **DEFAULT_RETRY_POLICY
+        wait=wait_fixed(2), stop=stop_after_delay(15), reraise=True
     ):
         with attempt:
             if not _in_docker_swarm(docker_client):
@@ -98,61 +182,16 @@ def docker_swarm(
     assert _in_docker_swarm(docker_client) is keep_docker_up
 
 
-def to_datetime(datetime_str: str) -> datetime:
-    # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
-    #  - The T separates the date portion from the time-of-day portion
-    #  - The Z on the end means UTC, that is, an offset-from-UTC
-    # The 099 before the Z is not clear, therefore we will truncate the last part
-    N = len("2020-10-09T12:28:14.7710")
-    if len(datetime_str) > N:
-        datetime_str = datetime_str[:N]
-    return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
-
-
-def by_task_update(task: Dict) -> datetime:
-    datetime_str = task["Status"]["Timestamp"]
-    return to_datetime(datetime_str)
-
-
-@tenacity.retry(
-    wait=wait_fixed(5),
-    stop=stop_after_attempt(20),
-    before_sleep=before_sleep_log(log, logging.INFO),
-    reraise=True,
-)
-def _wait_for_services(docker_client: docker.client.DockerClient) -> None:
-    pre_states = ["NEW", "PENDING", "ASSIGNED", "PREPARING", "STARTING"]
-    services = docker_client.services.list()
-    for service in services:
-        print(f"Waiting for {service.name}...")
-        if service.tasks():
-            sorted_tasks = sorted(service.tasks(), key=by_task_update)
-            task = sorted_tasks[-1]
-            task_state = task["Status"]["State"].upper()
-            if task_state not in pre_states:
-                if not task_state == "RUNNING":
-                    raise ValueError(
-                        f"service {service.name} not running [task_state={task_state} instead]. "
-                        f"Details: \n{json.dumps(task, indent=2)}"
-                    )
-
-
-def _print_services(docker_client: docker.client.DockerClient, msg: str) -> None:
-    print("{:*^100}".format("docker services running " + msg))
-    for service in docker_client.services.list():
-        pprint(service.attrs)
-    print("-" * 100)
-
-
 @pytest.fixture(scope="module")
 def docker_stack(
-    docker_swarm,
+    docker_swarm: None,
     docker_client: docker.client.DockerClient,
     core_docker_compose_file: Path,
     ops_docker_compose_file: Path,
     keep_docker_up: bool,
     testing_environ_vars: EnvVarsDict,
 ) -> Iterator[Dict]:
+    """deploys core and ops stacks and returns as soon as all are running"""
 
     # WARNING: keep prefix "pytest-" in stack names
     core_stack_name = testing_environ_vars["SWARM_STACK_NAME"]
@@ -187,8 +226,22 @@ def docker_stack(
             "compose": yaml.safe_load(compose_file.read_text()),
         }
 
-    _wait_for_services(docker_client)
-    _print_services(docker_client, "[BEFORE TEST]")
+    # All SELECTED services ready
+    # - notice that the timeout is set for all services in both stacks
+    # - TODO: the time to deploy will depend on the number of services selected
+    try:
+        for attempt in Retrying(
+            wait=wait_fixed(5),
+            stop=stop_after_delay(8 * MINUTE),
+            before_sleep=before_sleep_log(log, logging.INFO),
+            reraise=True,
+        ):
+            with attempt:
+                for service in docker_client.services.list():
+                    assert_service_is_running(service)
+
+    finally:
+        _fetch_and_print_services(docker_client, "[BEFORE TEST]")
 
     yield {
         "stacks": stacks_deployed,
@@ -197,7 +250,7 @@ def docker_stack(
 
     ## TEAR DOWN ----------------------
 
-    _print_services(docker_client, "[AFTER TEST]")
+    _fetch_and_print_services(docker_client, "[AFTER TEST]")
 
     if keep_docker_up:
         # skip bringing the stack down
@@ -233,9 +286,9 @@ def docker_stack(
                 "Ignoring failure while executing '%s' (returned code %d):\n%s\n%s\n%s\n%s\n",
                 err.cmd,
                 err.returncode,
-                HEADER.format("stdout"),
+                HEADER_STR.format("stdout"),
                 err.stdout.decode("utf8") if err.stdout else "",
-                HEADER.format("stderr"),
+                HEADER_STR.format("stderr"),
                 err.stderr.decode("utf8") if err.stderr else "",
             )
 
@@ -246,8 +299,8 @@ def docker_stack(
             resource_client = getattr(docker_client, resource_name)
 
             for attempt in Retrying(
-                wait=wait_exponential(),
-                stop=stop_after_delay(3 * _MINUTE),
+                wait=wait_fixed(2),
+                stop=stop_after_delay(3 * MINUTE),
                 before_sleep=before_sleep_log(log, logging.WARNING),
                 reraise=True,
             ):
@@ -266,4 +319,4 @@ def docker_stack(
                             f"Waiting for {len(pending)} {resource_name} to shutdown: {pending}."
                         )
 
-    _print_services(docker_client, "[AFTER REMOVED]")
+    _fetch_and_print_services(docker_client, "[AFTER REMOVED]")
