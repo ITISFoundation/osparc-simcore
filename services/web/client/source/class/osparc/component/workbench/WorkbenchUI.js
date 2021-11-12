@@ -810,18 +810,29 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return topOffset;
     },
 
-    __pointerEventToWorkbenchPos: function(pointerEvent, scale = false) {
+    __pointerEventToWinPos: function(e) {
       const leftOffset = this.__getLeftOffset();
       const inputNodesLayoutWidth = this.__inputNodesLayout && this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
-      const x = pointerEvent.getDocumentLeft() - leftOffset - inputNodesLayoutWidth;
-      const y = pointerEvent.getDocumentTop() - this.__getTopOffset();
-      if (scale) {
-        return this.__scaleCoordinates(x, y);
-      }
+      let x = e.getDocumentLeft() - leftOffset - inputNodesLayoutWidth;
+      let y = e.getDocumentTop() - this.__getTopOffset();
       return {
         x,
         y
       };
+    },
+
+    __pointerEventToWorkbenchPos: function(e) {
+      let {
+        x,
+        y
+      } = this.__pointerEventToWinPos(e);
+      let scaledPos = this.__scaleCoordinates(x, y);
+      const scrollX = this._workbenchLayoutScroll.getScrollX();
+      const scrollY = this._workbenchLayoutScroll.getScrollY();
+      const scaledScroll = this.__scaleCoordinates(scrollX, scrollY);
+      scaledPos.x += scaledScroll.x;
+      scaledPos.y += scaledScroll.y;
+      return scaledPos;
     },
 
     __updateTempEdge: function(pointerEvent) {
@@ -842,13 +853,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         return;
       }
 
-      const scaledPos = this.__pointerEventToWorkbenchPos(pointerEvent, true);
-      const scrollX = this._workbenchLayoutScroll.getScrollX();
-      const scrollY = this._workbenchLayoutScroll.getScrollY();
-      const scaledScroll = this.__scaleCoordinates(scrollX, scrollY);
+      const scaledPos = this.__pointerEventToWorkbenchPos(pointerEvent);
       this.__pointerPos = {
-        x: scaledPos.x + scaledScroll.x,
-        y: scaledPos.y + scaledScroll.y
+        x: scaledPos.x,
+        y: scaledPos.y
       };
 
       let portPos = nodeUI.getEdgePoint(port);
@@ -1114,7 +1122,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __mouseDown: function(e) {
       if (e.isMiddlePressed()) {
         this.__panning = true;
-        this.__pointerPos = this.__pointerEventToWorkbenchPos(e, true);
+        this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
         this.set({
           cursor: "move"
         });
@@ -1124,7 +1132,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __mouseMove: function(e) {
       if (this.__panning && e.isMiddlePressed()) {
         const oldPos = this.__pointerPos;
-        const newPos = this.__pointerPos = this.__pointerEventToWorkbenchPos(e, true);
+        const newPos = this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
         const moveX = parseInt((oldPos.x-newPos.x) * this.getScale());
         const moveY = parseInt((oldPos.y-newPos.y) * this.getScale());
         this._workbenchLayoutScroll.scrollToX(this._workbenchLayoutScroll.getScrollX() + moveX);
@@ -1147,7 +1155,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __mouseWheel: function(e) {
-      this.__pointerPos = this.__pointerEventToWorkbenchPos(e, false);
+      this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
       const zoomIn = e.getWheelDelta() < 0;
       this.__zoom(zoomIn);
     },
@@ -1403,8 +1411,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         if (this.getStudy().isReadOnly()) {
           return;
         }
-        const winPos = this.__pointerEventToWorkbenchPos(pointerEvent, false);
-        const nodePos = this.__pointerEventToWorkbenchPos(pointerEvent, true);
+        const winPos = this.__pointerEventToWinPos(pointerEvent);
+        const nodePos = this.__pointerEventToWorkbenchPos(pointerEvent);
         this.openServiceCatalog(winPos, nodePos);
       }, this);
 
@@ -1444,7 +1452,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         posX = e.offsetX - 1;
         posY = e.offsetY - 1;
       } else {
-        const pos = this.__pointerEventToWorkbenchPos(e, false);
+        const pos = this.__pointerEventToWinPos(e);
         posX = pos.x;
         posY = pos.y;
       }
