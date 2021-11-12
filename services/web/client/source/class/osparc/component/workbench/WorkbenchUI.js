@@ -129,7 +129,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __startHint: null,
     __dropHint: null,
     __panning: null,
-    __draggingFileLink: null,
+    __draggingFile: null,
 
     __applyStudy: function(study) {
       study.getWorkbench().addListener("reloadModel", () => {
@@ -1139,7 +1139,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.set({
           cursor: "move"
         });
-      } else if (this.__draggingFileLink) {
+      } else if (this.__draggingFile) {
         this.__dragging(e, true);
       }
     },
@@ -1382,7 +1382,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.addListener(signalName, e => {
             const dragging = signalName !== "dragleave";
             if (dragging === false) {
-              this.__draggingFileLink = dragging;
+              this.__draggingFile = dragging;
             }
             this.__dragging(e, dragging);
           }, this);
@@ -1420,14 +1420,17 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __allowDrag: function(pointerEvent) {
       let allow = false;
-      if ("supportsType" in pointerEvent) {
-        // item dragging from osparc's file tree
-        this.__draggingFileLink = pointerEvent.supportsType("osparc-file-link");
-      } else if (this.__draggingFileLink) {
+      if (this.__draggingFile) {
+        // item still being dragged
         allow = true;
+      } else if ("supportsType" in pointerEvent) {
+        // item drag from osparc's file tree
+        allow = pointerEvent.supportsType("osparc-file-link");
+        this.__draggingFile = allow;
       } else {
-        // item dragging from the outside world
+        // item drag from the outside world
         allow = pointerEvent.target instanceof SVGElement;
+        this.__draggingFile = allow;
       }
       return allow;
     },
@@ -1448,8 +1451,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       let posX = 0;
       let posY = 0;
       if ("offsetX" in e && "offsetY" in e) {
-        posX = e.offsetX - 1;
-        posY = e.offsetY - 1;
+        posX = e.offsetX + 2;
+        posY = e.offsetY + 2;
       } else {
         const pos = this.__pointerEventToWorkbenchPos(e);
         posX = pos.x;
@@ -1481,6 +1484,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__dragging(e, false);
 
       if ("dataTransfer" in e) {
+        this.__draggingFile = false;
         const files = e.dataTransfer.files;
         if (files.length === 1) {
           const pos = {
@@ -1499,7 +1503,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
         }
       } else if ("supportsType" in e && e.supportsType("osparc-file-link")) {
-        this.__draggingFileLink = false;
+        this.__draggingFile = false;
         const data = e.getData("osparc-file-link")["dragData"];
         const pos = this.__pointerEventToWorkbenchPos(e, false);
         const service = qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker());
