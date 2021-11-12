@@ -17,7 +17,7 @@ pytest_plugins = [
     "pytest_simcore.schemas",
 ]
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture(scope="session")
@@ -29,7 +29,7 @@ def package_dir() -> Path:
 
 @pytest.fixture(scope="session")
 def tests_data_dir() -> Path:
-    pdir = current_dir / "data"
+    pdir = CURRENT_DIR / "data"
     assert pdir.exists()
     return pdir
 
@@ -49,6 +49,7 @@ def run_simcore_service_integrator() -> Callable:
 
     def _invoke(*cmd):
         print("RUNNING", "simcore-service-integrator", cmd)
+        print(runner.make_env())
         return runner.invoke(main, list(cmd))
 
     return _invoke
