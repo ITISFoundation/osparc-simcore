@@ -26,7 +26,6 @@ SYMLINK_PATH = Path(tempfile.gettempdir()) / f"symlink_{Path(__file__).name}"
 if not SYMLINK_PATH.exists():
     os.symlink(__file__, SYMLINK_PATH)
 
-pytest_simcore_core_services_selection = ["postgres", "storage"]
 pytest_simcore_core_services_selection = [
     "migration",
     "postgres",
