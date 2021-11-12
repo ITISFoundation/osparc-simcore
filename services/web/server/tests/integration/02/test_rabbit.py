@@ -16,6 +16,7 @@ import pytest
 import socketio
 import sqlalchemy as sa
 from models_library.settings.rabbit import RabbitConfig
+from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.rabbit_service import RabbitExchanges
 from servicelib.aiohttp.application import create_safe_application
@@ -262,7 +263,7 @@ async def socketio_subscriber_handlers(
 def publish_some_messages_in_rabbit(
     rabbit_exchanges: RabbitExchanges,
 ) -> Callable[
-    [int, str, str, int],
+    [UserID, UUIDStr, UUIDStr, int],
     Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
 ]:
     """rabbitMQ PUBLISHER"""
@@ -320,7 +321,7 @@ async def test_publish_to_other_user(
     #
     socketio_subscriber_handlers: NamedTuple,
     publish_some_messages_in_rabbit: Callable[
-        [int, str, str, int],
+        [UserID, UUIDStr, UUIDStr, int],
         Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
     ],
 ):
@@ -347,7 +348,7 @@ async def test_publish_to_user(
     #
     socketio_subscriber_handlers: NamedTuple,
     publish_some_messages_in_rabbit: Callable[
-        [int, str, str, int],
+        [UserID, UUIDStr, UUIDStr, int],
         Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
     ],
 ):
@@ -378,7 +379,7 @@ async def test_publish_about_users_project(
     #
     socketio_subscriber_handlers: NamedTuple,
     publish_some_messages_in_rabbit: Callable[
-        [int, str, str, int],
+        [UserID, UUIDStr, UUIDStr, int],
         Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
     ],
 ):
@@ -408,7 +409,7 @@ async def test_publish_about_users_projects_node(
     #
     socketio_subscriber_handlers: NamedTuple,
     publish_some_messages_in_rabbit: Callable[
-        [int, str, str, int],
+        [UserID, UUIDStr, UUIDStr, int],
         Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
     ],
 ):
