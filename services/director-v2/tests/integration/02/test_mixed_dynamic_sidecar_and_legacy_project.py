@@ -202,11 +202,21 @@ async def ensure_services_stopped(
         await ensure_network_cleanup(docker_client, project_id)
 
 
+@pytest.fixture(scope="module")
+def simcore_services_ready_and_change_director_env(
+    simcore_services_ready: None, monkeypatch_module
+):
+    # FIXME: PC: this is trial fix for a nasty bug with environs in simcore_services_ready!!!!
+    monkeypatch_module.setenv("DIRECTOR_HOST", "director")
+    monkeypatch_module.setenv("DIRECTOR_PORT", "8080")
+
+
 # TESTS ----------------------------------------------------------------------------------------
 
 
-def test_it(simcore_services_ready, dy_static_file_server_project):
-    print("ready")
+def test_all_stack_services_running(
+    simcore_services_ready_and_change_director_env, dy_static_file_server_project
+):
     assert True
 
 
@@ -214,7 +224,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     dy_static_file_server_project: ProjectAtDB,
     user_db: Dict,
     services_endpoint: Dict[str, URL],
-    simcore_services_ready: None,
+    simcore_services_ready_and_change_director_env: None,
     director_v2_client: httpx.AsyncClient,
     ensure_services_stopped: None,
 ):

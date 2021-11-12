@@ -165,10 +165,7 @@ async def simcore_services_ready(
     for service, endpoint in services_endpoint.items():
         env_prefix = service.upper().replace("-", "_")
 
-        if env_prefix == "DIRECTOR":
-            # FIXME: this gets into docker-compose!!
-            continue
-
         assert endpoint.host
+
         monkeypatch_module.setenv(f"{env_prefix}_HOST", endpoint.host)
         monkeypatch_module.setenv(f"{env_prefix}_PORT", str(endpoint.port))
