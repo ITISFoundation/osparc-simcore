@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import json
 import logging
-from typing import Any, AsyncIterator, Awaitable, Callable, Dict
+from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List
 
 import aio_pika
 from aiohttp import web
@@ -22,6 +22,7 @@ from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundErro
 from .socketio.events import (
     SOCKET_IO_LOG_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
+    SocketMessageDict,
     send_messages,
 )
 
@@ -38,12 +39,15 @@ async def progress_message_parser(app: web.Application, data: Dict[str, Any]) ->
             app, user_id, project_id, node_id, progress=data["progress"]
         )
         if project:
-            messages = {
-                SOCKET_IO_NODE_UPDATED_EVENT: {
-                    "node_id": node_id,
-                    "data": project["workbench"][node_id],
+            messages: List[SocketMessageDict] = [
+                {
+                    "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
+                    "data": {
+                        "node_id": node_id,
+                        "data": project["workbench"][node_id],
+                    },
                 }
-            }
+            ]
             await send_messages(app, user_id, messages)
     except ProjectNotFoundError:
         log.warning(
@@ -58,7 +62,9 @@ async def progress_message_parser(app: web.Application, data: Dict[str, Any]) ->
 
 
 async def log_message_parser(app: web.Application, data: Dict[str, Any]) -> None:
-    messages = {SOCKET_IO_LOG_EVENT: data}
+    messages: List[SocketMessageDict] = [
+        {"event_type": SOCKET_IO_LOG_EVENT, "data": data}
+    ]
     await send_messages(app, data["user_id"], messages)
 
 
