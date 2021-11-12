@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, Optional, Tuple, Type
 from models_library.services import PROPERTY_KEY_RE, ServiceProperty
 from pydantic import AnyUrl, Field, PrivateAttr, validator
 
-from ..node_ports_common.exceptions import InvalidItemTypeError
+from ..node_ports_common.exceptions import InvalidItemTypeError, SymlinksNotAllowedError
 from . import port_utils
 from .links import (
     DataItemValue,
@@ -167,6 +167,8 @@ class Port(ServiceProperty):
 
             if isinstance(converted_value, Path):
                 if converted_value.is_symlink():
+                    if not self._node_ports.follow_symlinks:
+                        raise SymlinksNotAllowedError()
                     symlink_target_path = Path(os.readlink(converted_value))
                     if not symlink_target_path.is_absolute():
                         # in the case of a relative symlink
