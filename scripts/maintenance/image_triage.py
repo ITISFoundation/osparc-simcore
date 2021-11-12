@@ -40,7 +40,9 @@ async def _compile_registry_report(
 
     tasks = [_get_tag(repo) for repo in repositories]
     responses = deque()
-    for f in tqdm.tqdm(asyncio.as_completed(tasks), total=len(tasks), ncols=80, desc="Fetching tags"):
+    for f in tqdm.tqdm(
+        asyncio.as_completed(tasks), total=len(tasks), ncols=80, desc="Fetching tags"
+    ):
         responses.append(await f)
 
     repository_tags = {r["name"]: r["tags"] for r in responses}
@@ -95,10 +97,11 @@ async def triage_registry(registry: str, user: str, password: str) -> None:
     _format_repositories(repository_tags)
 
 
-def main(registry: str):
-    user: str = typer.prompt("Registry user?", default="")
-    password: str = typer.prompt("Registry password?", default="", hide_input=True)
-
+def main(
+    registry: str,
+    user: str = typer.prompt("Registry user?", default=""),
+    password: str = typer.prompt("Registry password?", default="", hide_input=True),
+):
     asyncio.run(triage_registry(registry=registry, user=user, password=password))
 
 
