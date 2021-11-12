@@ -29,14 +29,14 @@ def test_make_docker_compose_meta(
     """
     docker-compose-meta.yml: $(metatada)
         # Injects metadata from $< as labels
-        simcore-service-integrator update-compose-labels --compose $@ --metadata $<
+        simcore-service-integrator compose --spec-file $@ --metadata $<
     """
 
     result = run_simcore_service_integrator(
-        "update-compose-labels",
+        "compose",
         "--metadata",
         str(metadata_file_path),
-        "--compose",
+        "--spec-file",
         compose_file_path,
     )
     assert result.exit_code == os.EX_OK
