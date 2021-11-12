@@ -93,7 +93,10 @@ async def instrumentation_message_parser(app: web.Application, data: bytes) -> N
         )
 
 
-async def rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
+APP_RABBITMQ_POOL_KEY = f"{__name__}.pool"
+
+
+async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     # TODO: catch and deal with missing connections:
     # e.g. CRITICAL:pika.adapters.base_connection:Could not get addresses to use: [Errno -2] Name or service not known (rabbit)
     # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
@@ -109,7 +112,9 @@ async def rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
             client_properties={"connection_name": "webserver read connection"},
         )
 
-    connection_pool = aio_pika.pool.Pool(get_connection, max_size=2)
+    app[APP_RABBITMQ_POOL_KEY] = connection_pool = aio_pika.pool.Pool(
+        get_connection, max_size=2
+    )
 
     async def get_channel() -> aio_pika.Channel:
         async with connection_pool.acquire() as connection:
@@ -128,12 +133,14 @@ async def rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
 
     channel_pool = aio_pika.pool.Pool(get_channel, max_size=10)
 
+    consumer_running = True
+
     async def exchange_consumer(
         exchange_name: str,
         parse_handler: Callable[[web.Application, bytes], Awaitable[None]],
         consumer_kwargs: Dict[str, Any],
     ):
-        while True:
+        while consumer_running:
             try:
                 async with channel_pool.acquire() as channel:
                     exchange = await channel.declare_exchange(
@@ -197,6 +204,7 @@ async def rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
 
     # cleanup
     log.info("Disconnecting from rabbitMQ exchanges...")
+    consumer_running = False
     for task in consumer_tasks:
         task.cancel()
     with contextlib.suppress(asyncio.CancelledError):
