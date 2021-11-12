@@ -2,6 +2,7 @@
 
 """
 import inspect
+import json
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 import attr
@@ -123,7 +124,7 @@ def create_error_response(
     payload = wrap_as_envelope(error=attr.asdict(error))
 
     response = http_error_cls(
-        reason=reason, text=jsonify(payload), content_type=JSON_CONTENT_TYPE
+        reason=reason, text=json_dumps(payload), content_type=JSON_CONTENT_TYPE
     )
 
     return response
