@@ -4,6 +4,7 @@ from typing import List
 from aiohttp import web
 from models_library.users import GroupID, UserID
 from servicelib.aiohttp.rest_utils import extract_and_validate
+from servicelib.json_serialization import json_dumps
 
 from .._meta import api_version_prefix
 from ..groups_api import list_user_groups
@@ -38,7 +39,7 @@ async def list_clusters_handler(request: web.Request) -> web.Response:
 
     data = [d.dict(by_alias=True) for d in clusters_list]
 
-    return web.json_response(data={"data": data})
+    return web.json_response(data={"data": data}, dumps=json_dumps)
 
 
 @routes.post(f"/{api_version_prefix}/clusters", name="create_cluster_handler")
@@ -60,7 +61,9 @@ async def create_cluster_handler(request: web.Request) -> web.Response:
     new_cluster = await clusters_repo.create_cluster(new_cluster)
 
     data = new_cluster.dict(by_alias=True)
-    return web.json_response(data={"data": data}, status=web.HTTPCreated.status_code)
+    return web.json_response(
+        data={"data": data}, status=web.HTTPCreated.status_code, dumps=json_dumps
+    )
 
 
 @routes.get(
@@ -82,7 +85,7 @@ async def get_cluster_handler(request: web.Request) -> web.Response:
             path["cluster_id"],
         )
         data = cluster.dict(by_alias=True)
-        return web.json_response(data={"data": data})
+        return web.json_response(data={"data": data}, dumps=json_dumps)
     except ClusterNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"{exc}")
     except ClusterAccessForbidden as exc:
@@ -113,7 +116,7 @@ async def update_cluster_handler(request: web.Request) -> web.Response:
             updated_cluster,
         )
         data = cluster.dict(by_alias=True)
-        return web.json_response(data={"data": data})
+        return web.json_response(data={"data": data}, dumps=json_dumps)
     except ClusterNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"{exc}")
     except ClusterAccessForbidden as exc:
@@ -137,7 +140,7 @@ async def delete_cluster_handler(request: web.Request) -> web.Response:
             GroupID(all_group["gid"]),
             path["cluster_id"],
         )
-        return web.json_response(status=web.HTTPNoContent.status_code)
+        return web.json_response(status=web.HTTPNoContent.status_code, dumps=json_dumps)
     except ClusterNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"{exc}")
     except ClusterAccessForbidden as exc:

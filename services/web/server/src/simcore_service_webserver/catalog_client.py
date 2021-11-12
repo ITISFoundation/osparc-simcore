@@ -4,6 +4,7 @@
 import asyncio
 import logging
 import urllib.parse
+from json import dump
 from typing import Any, Dict, List, Optional
 
 from aiohttp import ClientSession, ClientTimeout, web
@@ -14,6 +15,7 @@ from aiohttp.client_exceptions import (
 )
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.rest_responses import wrap_as_envelope
+from servicelib.json_serialization import json_dumps
 from yarl import URL
 
 from ._meta import api_version_prefix
@@ -24,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 async def is_service_responsive(app: web.Application):
-    """ Returns true if catalog is ready """
+    """Returns true if catalog is ready"""
     try:
         origin: Optional[URL] = app.get(KCATALOG_ORIGIN)
         if not origin:
@@ -85,7 +87,7 @@ async def make_request_and_envelope_response(
                     raise err
                 resp_data = wrap_as_envelope(error=payload["errors"])
 
-            return web.json_response(resp_data, status=resp.status)
+            return web.json_response(resp_data, status=resp.status, dumps=json_dumps)
 
     except (asyncio.TimeoutError, ClientConnectionError, ClientResponseError) as err:
         logger.warning(

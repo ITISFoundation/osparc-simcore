@@ -136,7 +136,9 @@ def create_log_response(msg: str, level: str) -> web.Response:
     """
     # TODO: DEPRECATE
     msg = LogMessageType(msg, level)
-    response = web.json_response(data={"data": attr.asdict(msg), "error": None})
+    response = web.json_response(
+        data={"data": attr.asdict(msg), "error": None}, dumps=json_dumps
+    )
     return response
 
 
