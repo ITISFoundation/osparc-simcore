@@ -7,7 +7,7 @@ from models_library.service_settings_labels import (
 from models_library.services import ServiceDockerData
 from pydantic.main import BaseModel, Extra
 
-from .models import ComposeSpecDict
+from .compose_spec import ComposeSpecification
 
 # pydantic.json.ENCODERS_BY_TYPE[pathlib.PosixPath] = str
 # pydantic.json.ENCODERS_BY_TYPE[pathlib.WindowsPath] = str
@@ -18,7 +18,7 @@ OSPARC_LABEL_PREFIXES = ("io.simcore", "simcore.service", "io.osparc", "swiss.z4
 
 
 class OsparcServiceSpec(ServiceDockerData):
-    compose_spec: Optional[ComposeSpecDict]
+    compose_spec: Optional[ComposeSpecification]
     container_http_entrypoint: Optional[str]
 
     paths_mapping: PathMappingsLabel

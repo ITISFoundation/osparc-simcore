@@ -22,10 +22,10 @@ tests: ## runs unit tests
 
 
 
-
 compose-spec.json:
+	# Downloading schema from https://github.com/compose-spec/compose-spec
 	wget https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/$@
 
-compose_spec_model.py: compose-spec.json
+compose_spec_model.py: compose-spec.json ## auto-generates pydantic model for compose-specification
 	# auto-generates $@ from $<
 	datamodel-codegen  --input $< --input-file-type jsonschema --output $@
