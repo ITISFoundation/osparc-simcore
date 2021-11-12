@@ -62,7 +62,7 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
     heart_beat_messages: List[SocketMessageDict] = [
         {
             "event_type": SOCKET_IO_HEARTBEAT_EVENT,
-            "data": {"set_heartbeat_emit_interval": emit_interval},
+            "data": {"interval": emit_interval},
         }
     ]
     await send_messages(
