@@ -5,6 +5,7 @@
 
 import os
 from pathlib import Path
+from typing import Callable
 
 import pytest
 import yaml
@@ -24,7 +25,9 @@ def compose_file_path(metadata_file_path: Path) -> Path:
 
 
 def test_make_docker_compose_meta(
-    run_simcore_service_integrator, metadata_file_path: Path, compose_file_path: Path
+    run_simcore_service_integrator: Callable,
+    metadata_file_path: Path,
+    compose_file_path: Path,
 ):
     """
     docker-compose-meta.yml: $(metatada)

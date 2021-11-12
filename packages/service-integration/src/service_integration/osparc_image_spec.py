@@ -1,13 +1,13 @@
-import pathlib
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
-import pydantic.json
 from models_library.service_settings_labels import (
     PathMappingsLabel,
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceDockerData
 from pydantic.main import BaseModel, Extra
+
+from .models import ComposeSpecDict
 
 # pydantic.json.ENCODERS_BY_TYPE[pathlib.PosixPath] = str
 # pydantic.json.ENCODERS_BY_TYPE[pathlib.WindowsPath] = str
@@ -17,12 +17,8 @@ OSPARC_LABEL_PREFIXES = ("io.simcore", "simcore.service", "io.osparc", "swiss.z4
 # FIXME: all to swiss.z43 or to io.osparc
 
 
-# https://github.com/compose-spec/compose-spec/blob/master/spec.md
-ComposeSpec = Dict[str, Any]
-
-
-class OsparcServiceSpecs(ServiceDockerData):
-    compose_spec: Optional[ComposeSpec]
+class OsparcServiceSpec(ServiceDockerData):
+    compose_spec: Optional[ComposeSpecDict]
     container_http_entrypoint: Optional[str]
 
     paths_mapping: PathMappingsLabel
@@ -42,10 +38,9 @@ class OsparcServiceSpecs(ServiceDockerData):
 
             if isinstance(value, BaseModel):
                 if key == "paths-mapping":
-                    import pdb
-
-                    pdb.set_trace()
-                value = value.json(exclude_unset=True, by_alias=True, exclude_none=True)
+                    value = value.json(
+                        exclude_unset=True, by_alias=True, exclude_none=True
+                    )
 
             if key in ServiceDockerData.__fields__:
                 labels[f"{OSPARC_LABEL_PREFIXES[0]}.{key}"] = f"{value}"
@@ -55,5 +50,5 @@ class OsparcServiceSpecs(ServiceDockerData):
         return labels
 
     @classmethod
-    def from_labels_annotations(cls, labels: Dict[str, str]) -> "OsparcServiceSpecs":
+    def from_labels_annotations(cls, labels: Dict[str, str]) -> "OsparcServiceSpec":
         raise NotImplementedError
