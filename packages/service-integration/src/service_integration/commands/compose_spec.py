@@ -1,4 +1,5 @@
 import json
+from contextlib import suppress
 from pathlib import Path
 from typing import Dict
 
@@ -6,6 +7,7 @@ import click
 import yaml
 
 from ..models import ComposeSpecDict
+from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
 
 
 def load_compose_spec(compose_file: Path) -> ComposeSpecDict:
@@ -16,7 +18,7 @@ def load_compose_spec(compose_file: Path) -> ComposeSpecDict:
 
 
 def to_labels(
-    data: Dict, *, prefix_key: str = "io.simcore", trim_key_head: bool = False
+    data: Dict, *, prefix_key: str = "io.simcore", trim_key_head: bool = True
 ) -> Dict[str, str]:
     # TODO: connect this with models
     # FIXME: null is loaded as 'null' string value? is that correct? json -> None upon deserialization?
@@ -83,15 +85,36 @@ def main(compose_spec_path: Path, io_specs_path: Path, service_specs_path: Path)
     click.echo("Updating component labels")
 
     # specs
-    io_spec = yaml.safe_load(io_specs_path.read_text())
     service_spec = yaml.safe_load(service_specs_path.read_text())
+    io_spec = yaml.safe_load(io_specs_path.read_text())
 
     # specs -> labels
     io_labels = to_labels(io_spec, prefix_key="io.simcore", trim_key_head=False)
     service_labels = to_labels(
-        service_spec, prefix_key="simcore.service", trim_key_head=True
+        service_spec,
+        prefix_key="simcore.service",
     )
+
     compose_labels = {**io_labels, **service_labels}
+
+    try:
+        oci_spec = yaml.safe_load(
+            (io_specs_path.parent / f"{OCI_LABEL_PREFIX}.yml").read_text()
+        )
+        if not oci_spec:
+            raise ValueError("Undefined OCI image spec")
+
+        oci_labels = to_labels(oci_spec, prefix_key=OCI_LABEL_PREFIX)
+        compose_labels.update(oci_labels)
+    except (FileNotFoundError, ValueError):
+
+        # if not OCI, try label-schema
+        with suppress(FileNotFoundError):
+            ls_spec = yaml.safe_load(
+                (io_specs_path.parent / f"{LS_LABEL_PREFIX}.yml").read_text()
+            )
+            ls_labels = to_labels(ls_spec, prefix_key=LS_LABEL_PREFIX)
+            compose_labels.update(ls_labels)
 
     # load if exists
     compose_spec = {"version": "3.7"}
