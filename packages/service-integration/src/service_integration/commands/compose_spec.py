@@ -25,7 +25,11 @@ def to_labels(
     labels = {}
     for key, value in data.items():
         if trim_key_head:
-            label = json.dumps(value, sort_keys=False)
+            if isinstance(value, str):
+                # TODO: Q&D for ${} variables
+                label = value
+            else:
+                label = json.dumps(value, sort_keys=False)
         else:
             label = json.dumps({key: value}, sort_keys=False)
 
@@ -84,19 +88,28 @@ def main(compose_spec_path: Path, io_specs_path: Path, service_specs_path: Path)
 
     click.echo("Updating component labels")
 
-    # specs
-    service_spec = yaml.safe_load(service_specs_path.read_text())
-    io_spec = yaml.safe_load(io_specs_path.read_text())
+    compose_labels = {}
 
     # specs -> labels
+
+    # i/o specs (required)
+    io_spec = yaml.safe_load(io_specs_path.read_text())
     io_labels = to_labels(io_spec, prefix_key="io.simcore", trim_key_head=False)
-    service_labels = to_labels(
-        service_spec,
-        prefix_key="simcore.service",
-    )
+    compose_labels.update(io_labels)
 
-    compose_labels = {**io_labels, **service_labels}
+    # service specs (not required)
+    try:
+        # TODO: should include default?
+        service_spec = yaml.safe_load(service_specs_path.read_text())
+        service_labels = to_labels(
+            service_spec,
+            prefix_key="simcore.service",
+        )
+        compose_labels.update(service_labels)
+    except FileNotFoundError:
+        pass
 
+    # OCI annotations (not required)
     try:
         oci_spec = yaml.safe_load(
             (io_specs_path.parent / f"{OCI_LABEL_PREFIX}.yml").read_text()
