@@ -2,12 +2,12 @@
 This module takes care of sending events to the connected webclient through the socket.io interface
 """
 
-import json
 import logging
 from collections import deque
 from typing import Any, Dict, List, Sequence, TypedDict
 
 from aiohttp.web import Application
+from servicelib.json_serialization import json_dumps
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..resource_manager.websocket_manager import managed_resource
@@ -39,7 +39,7 @@ async def send_messages(
     for sid in socket_ids:
         for message in messages:
             send_tasks.append(
-                sio.emit(message["event_type"], json.dumps(message["data"]), room=sid)
+                sio.emit(message["event_type"], json_dumps(message["data"]), room=sid)
             )
     await logged_gather(*send_tasks, reraise=False, log=log, max_concurrency=10)
 
@@ -61,7 +61,7 @@ async def send_group_messages(
 ) -> None:
     sio: AsyncServer = get_socket_server(app)
     send_tasks = [
-        sio.emit(message["event_type"], json.dumps(message["data"]), room=room)
+        sio.emit(message["event_type"], json_dumps(message["data"]), room=room)
         for message in messages
     ]
 
