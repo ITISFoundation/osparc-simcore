@@ -1,4 +1,3 @@
-import json
 from contextlib import suppress
 from pathlib import Path
 from typing import Dict
@@ -6,6 +5,7 @@ from typing import Dict
 import click
 import yaml
 
+from ..labels_annotations import to_labels
 from ..models import ComposeSpecDict
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
 
@@ -15,27 +15,6 @@ def load_compose_spec(compose_file: Path) -> ComposeSpecDict:
     with compose_file.open() as fp:
         # TODO: validate with docker-compose config?
         return yaml.safe_load(fp)
-
-
-def to_labels(
-    data: Dict, *, prefix_key: str = "io.simcore", trim_key_head: bool = True
-) -> Dict[str, str]:
-    # TODO: connect this with models
-    # FIXME: null is loaded as 'null' string value? is that correct? json -> None upon deserialization?
-    labels = {}
-    for key, value in data.items():
-        if trim_key_head:
-            if isinstance(value, str):
-                # TODO: Q&D for ${} variables
-                label = value
-            else:
-                label = json.dumps(value, sort_keys=False)
-        else:
-            label = json.dumps({key: value}, sort_keys=False)
-
-        labels[f"{prefix_key}.{key}"] = label
-
-    return labels
 
 
 def update_compose_labels(
