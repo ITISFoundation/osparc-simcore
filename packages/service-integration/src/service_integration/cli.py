@@ -2,8 +2,8 @@
 
 import click
 
+from . import __version__
 from .commands import metadata, run_creator, update_compose_labels
-from .meta import __version__
 
 
 @click.group()
