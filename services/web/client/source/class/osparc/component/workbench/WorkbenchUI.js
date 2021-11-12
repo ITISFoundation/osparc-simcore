@@ -1438,8 +1438,16 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
       const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
       const nodeHeight = osparc.component.workbench.NodeUI.NODE_HEIGHT;
-      const posX = "offsetX" in e ? e.offsetX - 1 : this.__pointerEventToWorkbenchPos(e, false).x;
-      const posY = "offsetY" in e ? e.offsetY - 1 : this.__pointerEventToWorkbenchPos(e, false).y;
+      let posX = 0;
+      let posY = 0;
+      if ("offsetX" in e && "offsetY" in e) {
+        posX = e.offsetX - 1;
+        posY = e.offsetY - 1;
+      } else {
+        const pos = this.__pointerEventToWorkbenchPos(e, false);
+        posX = pos.x;
+        posY = pos.y;
+      }
 
       if (this.__dropHint === null) {
         this.__dropHint = new qx.ui.basic.Label(this.tr("Drop me")).set({
