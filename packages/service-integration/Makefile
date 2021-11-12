@@ -19,3 +19,13 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 tests: ## runs unit tests
 	# running unit tests
 	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests
+
+
+
+
+compose-spec.json:
+	wget https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/$@
+
+compose_spec_model.py: compose-spec.json
+	# auto-generates $@ from $<
+	datamodel-codegen  --input $< --input-file-type jsonschema --output $@
