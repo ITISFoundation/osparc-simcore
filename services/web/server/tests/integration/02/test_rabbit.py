@@ -15,6 +15,12 @@ import aio_pika
 import pytest
 import socketio
 import sqlalchemy as sa
+from models_library.projects_state import RunningState
+from models_library.rabbitmq_messages import (
+    InstrumentationRabbitMessage,
+    LoggerRabbitMessage,
+    ProgressRabbitMessage,
+)
 from models_library.settings.rabbit import RabbitConfig
 from models_library.users import UserID
 from pytest_mock import MockerFixture
@@ -55,11 +61,10 @@ pytest_simcore_ops_services_selection = []
 logger = logging.getLogger(__name__)
 
 UUIDStr = str
-
 RabbitMessage = Dict[str, Any]
-LogMessages = List[RabbitMessage]
-InstrumMessages = List[RabbitMessage]
-ProgressMessages = List[RabbitMessage]
+LogMessages = List[LoggerRabbitMessage]
+InstrumMessages = List[InstrumentationRabbitMessage]
+ProgressMessages = List[ProgressRabbitMessage]
 
 
 async def _publish_in_rabbit(
@@ -69,53 +74,48 @@ async def _publish_in_rabbit(
     num_messages: int,
     rabbit_exchanges: RabbitExchanges,
 ) -> Tuple[LogMessages, ProgressMessages, InstrumMessages]:
-    def _msg(
-        message_name: str, node_uuid: str, user_id: int, project_id: str, param: Any
-    ) -> RabbitMessage:
-        message = {
-            "channel": message_name,
-            "node_id": node_uuid,
-            "user_id": f"{user_id}",
-            "project_id": project_id,
-        }
-
-        if message_name == "logger":
-            message["messages"] = param
-        if message_name == "progress":
-            message["progress"] = param
-
-        return message
-
-    # -----
 
     log_messages = [
-        _msg("logger", node_uuid, user_id, project_id, f"log number {n}")
+        LoggerRabbitMessage(
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_uuid,
+            messages=[f"log number {n}"],
+        )
         for n in range(num_messages)
     ]
     progress_messages = [
-        _msg("progress", node_uuid, user_id, project_id, n / num_messages)
+        ProgressRabbitMessage(
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_uuid,
+            progress=float(n) / float(num_messages),
+        )
         for n in range(num_messages)
     ]
 
     # indicate container is started
-    instrumentation_start_message = instrumentation_stop_message = {
-        "metrics": "service_started",
-        "user_id": f"{user_id}",
-        "project_id": project_id,
-        "service_uuid": node_uuid,
-        "service_type": "COMPUTATIONAL",
-        "service_key": "some/service/awesome/key",
-        "service_tag": "some-awesome-tag",
-    }
-    instrumentation_stop_message["metrics"] = "service_stopped"
-    instrumentation_stop_message["result"] = "SUCCESS"
+    instrumentation_start_message = (
+        instrumentation_stop_message
+    ) = InstrumentationRabbitMessage(
+        metrics="service_started",
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_uuid,
+        service_uuid=node_uuid,
+        service_type="COMPUTATIONAL",
+        service_key="some/service/awesome/key",
+        service_tag="some-awesome-tag",
+    )
+    instrumentation_stop_message.metrics = "service_stopped"
+    instrumentation_stop_message.result = RunningState.SUCCESS
     instrumentation_messages = [
         instrumentation_start_message,
         instrumentation_stop_message,
     ]
     await rabbit_exchanges.instrumentation.publish(
         aio_pika.Message(
-            body=json.dumps(instrumentation_start_message).encode(),
+            body=instrumentation_start_message.json().encode(),
             content_type="text/json",
         ),
         routing_key="",
@@ -124,14 +124,14 @@ async def _publish_in_rabbit(
     for n in range(num_messages):
         await rabbit_exchanges.logs.publish(
             aio_pika.Message(
-                body=json.dumps(log_messages[n]).encode(), content_type="text/json"
+                body=log_messages[n].json().encode(), content_type="text/json"
             ),
             routing_key="",
         )
 
         await rabbit_exchanges.progress.publish(
             aio_pika.Message(
-                body=json.dumps(progress_messages[n]).encode(), content_type="text/json"
+                body=progress_messages[n].json().encode(), content_type="text/json"
             ),
             routing_key="",
         )
@@ -139,7 +139,7 @@ async def _publish_in_rabbit(
     # indicate container is stopped
     await rabbit_exchanges.instrumentation.publish(
         aio_pika.Message(
-            body=json.dumps(instrumentation_stop_message).encode(),
+            body=instrumentation_stop_message.json().encode(),
             content_type="text/json",
         ),
         routing_key="",
@@ -218,7 +218,7 @@ def other_project_id(project_id: UUIDStr, user_project: Dict[str, Any]) -> UUIDS
 
 
 @pytest.fixture
-def other_node_uuid(node_uuid: str, user_project: Dict[str, Any]) -> str:
+def other_node_uuid(node_uuid: UUIDStr, user_project: Dict[str, Any]) -> UUIDStr:
     other = node_uuid
     node_uuid = list(user_project["workbench"])[0]
     assert node_uuid != other
