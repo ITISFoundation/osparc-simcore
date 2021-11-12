@@ -1,7 +1,7 @@
 import json
 import logging
 from dataclasses import dataclass
-from typing import Dict, Union
+from typing import Dict
 
 import aio_pika
 from fastapi import FastAPI
@@ -9,6 +9,7 @@ from servicelib.rabbitmq_utils import (
     InstrumentationRabbitMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessage,
+    RabbitMessageTypes,
 )
 from settings_library.rabbit import RabbitSettings
 from tenacity import retry
@@ -77,9 +78,7 @@ class RabbitMQClient:
 
     async def publish_message(
         self,
-        message: Union[
-            LoggerRabbitMessage, ProgressRabbitMessage, InstrumentationRabbitMessage
-        ],
+        message: RabbitMessageTypes,
     ) -> None:
         def get_exchange(message) -> aio_pika.Exchange:
             if isinstance(message, ProgressRabbitMessage):

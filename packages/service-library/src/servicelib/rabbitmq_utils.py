@@ -2,7 +2,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Final, List, Optional
+from typing import Final, List, Optional, Union
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
@@ -59,3 +59,8 @@ class InstrumentationRabbitMessage(RabbitMessageBase):
     service_key: str
     service_tag: str
     result: Optional[RunningState] = None
+
+
+RabbitMessageTypes = Union[
+    LoggerRabbitMessage, ProgressRabbitMessage, InstrumentationRabbitMessage
+]
