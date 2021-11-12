@@ -5,9 +5,9 @@
 # pylint:disable=pointless-statement
 
 import filecmp
+import os
 import tempfile
 import threading
-import os
 from asyncio import gather
 from pathlib import Path
 from typing import Any, Callable, Dict, Type, Union

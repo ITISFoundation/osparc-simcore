@@ -580,6 +580,7 @@ async def test_valid_port(
         user_id: int
         project_id: str
         node_uuid: str
+        follow_symlinks: bool = True
 
         @staticmethod
         async def get(key):
