@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
+from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq_utils import (
     LoggerRabbitMessage,
     RabbitMQRetryPolicyUponInitialization,
@@ -121,7 +122,6 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
                 # an empty payload
                 if not messages:
                     continue
-
                 await self._publish_messages(messages)
 
             await asyncio.sleep(SLEEP_BETWEEN_SENDS)
@@ -136,7 +136,7 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
 
         assert self._logs_exchange  # nosec
         await self._logs_exchange.publish(
-            aio_pika.Message(body=json.dumps(data).encode()), routing_key=""
+            aio_pika.Message(body=json_dumps(data).encode()), routing_key=""
         )
 
     async def post_log_message(self, log_msg: Union[str, List[str]]) -> None:

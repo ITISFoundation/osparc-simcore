@@ -1,6 +1,5 @@
 import asyncio
 import contextlib
-import json
 import logging
 import socket
 from dataclasses import asdict
@@ -14,11 +13,11 @@ from servicelib.aiohttp.monitor_services import (
     service_started,
     service_stopped,
 )
+from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq_utils import (
     InstrumentationRabbitMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessage,
-    RabbitMessageTypes,
     RabbitMQRetryPolicyUponInitialization,
 )
 from tenacity import retry
@@ -37,58 +36,60 @@ from .socketio.events import (
 log = logging.getLogger(__file__)
 
 
-async def progress_message_parser(
-    app: web.Application, data: ProgressRabbitMessage
-) -> None:
+async def progress_message_parser(app: web.Application, data: bytes) -> None:
     # update corresponding project, node, progress value
+    rabbit_message = ProgressRabbitMessage.from_message(data)
     try:
         project = await projects_api.update_project_node_progress(
             app,
-            data.user_id,
-            f"{data.project_id}",
-            f"{data.node_id}",
-            progress=data.progress,
+            rabbit_message.user_id,
+            f"{rabbit_message.project_id}",
+            f"{rabbit_message.node_id}",
+            progress=rabbit_message.progress,
         )
         if project:
             messages: List[SocketMessageDict] = [
                 {
                     "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
                     "data": {
-                        "node_id": data.node_id,
-                        "data": project["workbench"][f"{data.node_id}"],
+                        "node_id": rabbit_message.node_id,
+                        "data": project["workbench"][f"{rabbit_message.node_id}"],
                     },
                 }
             ]
-            await send_messages(app, f"{data.user_id}", messages)
+            await send_messages(app, f"{rabbit_message.user_id}", messages)
     except ProjectNotFoundError:
         log.warning(
             "project related to received rabbitMQ progress message not found: '%s'",
-            json.dumps(data, indent=2),
+            json_dumps(rabbit_message, indent=2),
         )
     except NodeNotFoundError:
         log.warning(
             "node related to received rabbitMQ progress message not found: '%s'",
-            json.dumps(data, indent=2),
+            json_dumps(rabbit_message, indent=2),
         )
 
 
-async def log_message_parser(app: web.Application, data: LoggerRabbitMessage) -> None:
-    messages: List[SocketMessageDict] = [
-        {"event_type": SOCKET_IO_LOG_EVENT, "data": {"messages": data.messages}}
+async def log_message_parser(app: web.Application, data: bytes) -> None:
+    rabbit_message = LoggerRabbitMessage.from_message(data)
+    socket_messages: List[SocketMessageDict] = [
+        {
+            "event_type": SOCKET_IO_LOG_EVENT,
+            "data": {"messages": rabbit_message.messages},
+        }
     ]
-    await send_messages(app, f"{data.user_id}", messages)
+    await send_messages(app, f"{rabbit_message.user_id}", socket_messages)
 
 
-async def instrumentation_message_parser(
-    app: web.Application, data: InstrumentationRabbitMessage
-) -> None:
-    if data.metrics == "service_started":
+async def instrumentation_message_parser(app: web.Application, data: bytes) -> None:
+    rabbit_message = InstrumentationRabbitMessage.from_message(data)
+    if rabbit_message.metrics == "service_started":
         service_started(
-            app, **{key: asdict(data)[key] for key in SERVICE_STARTED_LABELS}
+            app, **{key: asdict(rabbit_message)[key] for key in SERVICE_STARTED_LABELS}
         )
-    elif data.metrics == "service_stopped":
+    elif rabbit_message.metrics == "service_stopped":
         service_stopped(
-            app, **{key: asdict(data)[key] for key in SERVICE_STOPPED_LABELS}
+            app, **{key: asdict(rabbit_message)[key] for key in SERVICE_STOPPED_LABELS}
         )
 
 
@@ -129,7 +130,7 @@ async def rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
 
     async def exchange_consumer(
         exchange_name: str,
-        parse_handler: Callable[[web.Application, RabbitMessageTypes], Awaitable[None]],
+        parse_handler: Callable[[web.Application, bytes], Awaitable[None]],
         consumer_kwargs: Dict[str, Any],
     ):
         while True:
@@ -154,8 +155,8 @@ async def rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
                             log.debug(
                                 "Received message from exchange %s", exchange_name
                             )
-                            data = json.loads(message.body)
-                            await parse_handler(app, data)
+
+                            await parse_handler(app, message.body)
                             log.debug("message parsed")
             except asyncio.CancelledError:
                 log.info("stopping rabbitMQ consumer for %s", exchange_name)

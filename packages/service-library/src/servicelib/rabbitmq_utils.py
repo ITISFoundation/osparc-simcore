@@ -1,7 +1,8 @@
 # FIXME: move to settings-library or refactor
 
+import json
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from typing import Final, List, Optional, Union
 
 from models_library.projects import ProjectID
@@ -39,6 +40,20 @@ class RabbitMessageBase:
     node_id: NodeID
     user_id: UserID
     project_id: ProjectID
+
+    @classmethod
+    def from_message(cls, message: Union[str, bytes]):
+        decoded_message = json.loads(message)
+
+        converted_message = {}
+        for field in fields(cls):
+            if isinstance(decoded_message[field.name], (tuple, list)):
+                conv = [field.type.__args__[0](e) for e in decoded_message[field.name]]
+                converted_message[field.name] = conv
+            else:
+                converted_message[field.name] = field.type(decoded_message[field.name])
+
+        return cls(**converted_message)
 
 
 @dataclass
