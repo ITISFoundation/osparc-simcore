@@ -1,14 +1,18 @@
+import json
 import logging
 import os
+import re
 import socket
 import subprocess
 from pathlib import Path
-from pprint import pformat
 from typing import Any, Dict, List, Optional, Union
 
 import docker
 import yaml
-from tenacity import after_log, retry, stop_after_attempt, wait_fixed
+from tenacity import retry
+from tenacity.after import after_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +31,9 @@ def get_ip() -> str:
 
 
 @retry(
-    wait=wait_fixed(2), stop=stop_after_attempt(10), after=after_log(log, logging.WARN)
+    wait=wait_fixed(2),
+    stop=stop_after_attempt(10),
+    after=after_log(log, logging.WARNING),
 )
 def get_service_published_port(
     service_name: str, target_ports: Optional[Union[List[int], int]] = None
@@ -38,7 +44,7 @@ def get_service_published_port(
     # NOTE: retries since services can take some time to start
     client = docker.from_env()
 
-    services = [x for x in client.services.list() if str(x.name).endswith(service_name)]
+    services = [s for s in client.services.list() if str(s.name).endswith(service_name)]
     if not services:
         raise RuntimeError(
             f"Cannot find published port for service '{service_name}'."
@@ -164,20 +170,36 @@ def run_docker_compose_config(
     return compose_file
 
 
+COLOR_ENCODING_RE = re.compile(r"\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]")
+
+
 def save_docker_infos(destination_path: Path):
-
     client = docker.from_env()
-    all_containers = client.containers.list()
 
-    # ensure the parent dir exists
-    destination_path.mkdir(parents=True, exist_ok=True)
-    # get the services logs
-    for cont in all_containers:
-        service_file = destination_path / f"{cont.name}.logs"
-        service_file.write_text(
-            pformat(
-                cont.logs(timestamps=True, stdout=True, stderr=True).decode(), width=200
-            ),
-        )
+    # Includes stop containers, which might be e.g. failing tasks
+    all_containers = client.containers.list(all=True)
+
     if all_containers:
-        print("\n\twrote docker log files in ", destination_path)
+        destination_path.mkdir(parents=True, exist_ok=True)
+
+        for container in all_containers:
+
+            try:
+                # logs w/o coloring characters
+                logs: str = container.logs(timestamps=True, tail=1000).decode()
+                (destination_path / f"{container.name}.log").write_text(
+                    COLOR_ENCODING_RE.sub("", logs)
+                )
+
+                # inspect attrs
+                (destination_path / f"{container.name}.json").write_text(
+                    json.dumps(container.attrs, indent=2)
+                )
+            except Exception as err:  # pylint: disable=broad-except
+                print(f"Unexpected failure while dumping {container}." f"Details {err}")
+
+        print(
+            "\n\t",
+            f"wrote docker log and json files for {len(all_containers)} containers in ",
+            destination_path,
+        )

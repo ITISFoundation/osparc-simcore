@@ -10,6 +10,8 @@ aiodebug==1.1.2
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+aiodocker==0.21.0
+    # via -r requirements/_test.in
 aiofiles==0.7.0
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiohttp==3.7.4.post0
@@ -22,6 +24,7 @@ aiohttp==3.7.4.post0
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   aiodocker
     #   pytest-aiohttp
 aiopg==1.3.1
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
@@ -255,6 +258,7 @@ trafaret-config==2.0.2
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 typing-extensions==3.10.0.2
     # via
+    #   aiodocker
     #   aiohttp
     #   pydantic
 urllib3==1.26.6

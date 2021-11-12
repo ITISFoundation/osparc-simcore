@@ -48,17 +48,14 @@ clean_up() {
 dump_docker_logs() {
   # get docker logs
   # NOTE: Timeout avoids issue with dumping logs that hang!
-  mkdir --parents simcore_logs
-  (timeout 30 docker service logs --timestamps --tail=300 --details "${SWARM_STACK_NAME:-test}"_webserver >simcore_logs/webserver.log 2>&1) || true
-  # then the rest (alphabetically)
-  (timeout 30 docker service logs --timestamps --tail=100 --details "${SWARM_STACK_NAME:-test}"_api-server >simcore_logs/api-server.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details "${SWARM_STACK_NAME:-test}"_catalog >simcore_logs/catalog.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details "${SWARM_STACK_NAME:-test}"_director >simcore_logs/director.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details "${SWARM_STACK_NAME:-test}"_director-v2 >simcore_logs/director-v2.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details "${SWARM_STACK_NAME:-test}"_sidecar >simcore_logs/sidecar.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details "${SWARM_STACK_NAME:-test}"_storage >simcore_logs/storage.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details "${SWARM_STACK_NAME:-test}"_migration >simcore_logs/migration.log 2>&1) || true
-  (timeout 30 docker service logs --timestamps --tail=200 --details "${SWARM_STACK_NAME:-test}"_postgres >simcore_logs/postgres.log 2>&1) || true
+  out_dir=tests/e2e/test_failures
+  mkdir --parents "$out_dir"
+
+  for service_id in $(docker service ls -q); do
+    service_name=$(docker service inspect "$service_id" --format="{{.Spec.Name}}")
+    echo "Dumping logs for $service_name"
+    (timeout 30 docker service logs --timestamps --tail=400 --details "$service_id" >"$out_dir/$service_name.log" 2>&1) || true
+  done
 }
 
 # Check if the function exists (bash specific)
