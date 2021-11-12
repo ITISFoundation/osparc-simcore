@@ -8,7 +8,6 @@ import attr
 from aiohttp import web, web_exceptions
 from aiohttp.web_exceptions import HTTPError, HTTPException
 
-from ..json_serialization import json_dumps
 from .rest_codecs import json, jsonify
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 
@@ -78,7 +77,7 @@ def create_data_response(
         else:
             payload = data
 
-        response = web.json_response(payload, dumps=json_dumps)
+        response = web.json_response(payload, dumps=jsonify)
     except (TypeError, ValueError) as err:
         response = create_error_response(
             [
