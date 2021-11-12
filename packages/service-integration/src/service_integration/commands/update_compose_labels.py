@@ -1,20 +1,24 @@
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Dict
 
 import click
 import yaml
 
+from ..models import ComposeSpecDict
 
-def get_compose_file(compose_file: Path) -> Dict:
+
+def get_compose_file(compose_file: Path) -> ComposeSpecDict:
     # TODO: auto-generate minimal: catch FileNotFoundError and deduce minimal from model
     with compose_file.open() as fp:
+        # TODO: validate with docker-compose config?
         return yaml.safe_load(fp)
 
 
 def get_metadata_file(metadata_file: Path) -> Dict:
     with metadata_file.open() as fp:
         return yaml.safe_load(fp)
+        # TODO: validate using pydantic model
 
 
 def stringify_metadata(metadata: Dict) -> Dict[str, str]:
@@ -26,21 +30,21 @@ def stringify_metadata(metadata: Dict) -> Dict[str, str]:
 
 
 def update_compose_labels(
-    compose_cfg: Dict[str, Any], metadata: Dict[str, Any], service_name: str
+    compose_spec: ComposeSpecDict, labels: Dict[str, str], service_name: str
 ) -> bool:
-    labels: Dict[str, str] = compose_cfg["services"][service_name]["build"]["labels"]
-    sorted_labels = {key: labels[key] for key in sorted(labels.keys())}
+    current_labels = compose_spec["services"][service_name]["build"]["labels"]
+    updated_labels = {key: current_labels[key] for key in sorted(current_labels.keys())}
 
-    changed: bool = list(labels.keys()) != list(sorted_labels.keys())
-    for key, value in metadata.items():
-        if key in sorted_labels:
-            if sorted_labels[key] == value:
+    changed: bool = list(current_labels.keys()) != list(updated_labels.keys())
+    for key, value in labels.items():
+        if key in updated_labels:
+            if updated_labels[key] == value:
                 continue
-        sorted_labels[key] = value
+        updated_labels[key] = value
         changed = True
 
     if changed:
-        compose_cfg["services"][service_name]["build"]["labels"] = sorted_labels
+        compose_spec["services"][service_name]["build"]["labels"] = updated_labels
 
     return changed
 
@@ -71,20 +75,20 @@ def main(compose_file_path: Path, metadata_file_path: Path):
 
     click.echo("Updating component labels")
     # get available jsons
-    compose_cfg = get_compose_file(compose_file_path)
+    compose_spec = get_compose_file(compose_file_path)
     metadata = get_metadata_file(metadata_file_path)
     json_metadata = stringify_metadata(metadata)
 
     # TODO: require key ends with service-name, i.e. the one listed in docker-compose.yml::services
     service_name = metadata["key"].split("/")[-1]
 
-    if update_compose_labels(compose_cfg, json_metadata, service_name):
+    if update_compose_labels(compose_spec, json_metadata, service_name):
         click.echo(
             f"Updating {compose_file_path} using labels in {metadata_file_path}",
         )
         # write the file back
         with compose_file_path.open("w") as fp:
-            yaml.safe_dump(compose_cfg, fp, default_flow_style=False, sort_keys=False)
+            yaml.safe_dump(compose_spec, fp, default_flow_style=False, sort_keys=False)
             click.echo("Update completed")
     else:
         click.echo("No update necessary")
