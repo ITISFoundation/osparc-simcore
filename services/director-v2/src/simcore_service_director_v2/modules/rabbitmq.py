@@ -42,6 +42,13 @@ def setup(app: FastAPI) -> None:
     app.add_event_handler("shutdown", on_shutdown)
 
 
+_MESSAGE_TO_EXCHANGE_MAP = {
+    LoggerRabbitMessage: "log",
+    ProgressRabbitMessage: "progress",
+    InstrumentationRabbitMessage: "instrumentation",
+}
+
+
 @dataclass
 class RabbitMQClient:
     app: FastAPI
@@ -81,12 +88,10 @@ class RabbitMQClient:
         message: RabbitMessageTypes,
     ) -> None:
         def get_exchange(message) -> aio_pika.Exchange:
-            if isinstance(message, ProgressRabbitMessage):
-                return self.exchanges["progress"]
-            if isinstance(message, LoggerRabbitMessage):
-                return self.exchanges["log"]
-            if isinstance(message, InstrumentationRabbitMessage):
-                return self.exchanges["instrumentation"]
+            for message_type, exchange_name in _MESSAGE_TO_EXCHANGE_MAP.items():
+                if isinstance(message, message_type):
+                    assert exchange_name in self.exchanges  # nosec
+                    return self.exchanges[exchange_name]
 
             raise ValueError(f"message '{message}' type is of incorrect type")
 
