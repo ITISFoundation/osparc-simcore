@@ -12,7 +12,7 @@ from dask_task_models_library.container_tasks.io import TaskOutputData
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from servicelib.rabbitmq_utils import (
+from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessage,
