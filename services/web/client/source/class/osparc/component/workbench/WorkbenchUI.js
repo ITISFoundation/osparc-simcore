@@ -813,26 +813,25 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __pointerEventToWinPos: function(e) {
       const leftOffset = this.__getLeftOffset();
       const inputNodesLayoutWidth = this.__inputNodesLayout && this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
-      let x = e.getDocumentLeft() - leftOffset - inputNodesLayoutWidth;
-      let y = e.getDocumentTop() - this.__getTopOffset();
       return {
-        x,
-        y
+        x: e.getDocumentLeft() - leftOffset - inputNodesLayoutWidth,
+        y: e.getDocumentTop() - this.__getTopOffset()
       };
     },
 
     __pointerEventToWorkbenchPos: function(e) {
-      let {
+      const {
         x,
         y
       } = this.__pointerEventToWinPos(e);
-      let scaledPos = this.__scaleCoordinates(x, y);
+      const scaledPos = this.__scaleCoordinates(x, y);
       const scrollX = this._workbenchLayoutScroll.getScrollX();
       const scrollY = this._workbenchLayoutScroll.getScrollY();
       const scaledScroll = this.__scaleCoordinates(scrollX, scrollY);
-      scaledPos.x += scaledScroll.x;
-      scaledPos.y += scaledScroll.y;
-      return scaledPos;
+      return {
+        x: scaledPos.x + scaledScroll.x,
+        y: scaledPos.y + scaledScroll.y
+      };
     },
 
     __updateTempEdge: function(pointerEvent) {
@@ -1452,26 +1451,25 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         posX = e.offsetX - 1;
         posY = e.offsetY - 1;
       } else {
-        const pos = this.__pointerEventToWinPos(e);
+        const pos = this.__pointerEventToWorkbenchPos(e);
         posX = pos.x;
         posY = pos.y;
       }
 
       if (this.__dropHint === null) {
-        this.__dropHint = new qx.ui.basic.Label(this.tr("Drop me")).set({
+        const dropHint = this.__dropHint = new qx.ui.basic.Label(this.tr("Drop me")).set({
           font: "workbench-start-hint",
-          textColor: "workbench-start-hint",
-          visibility: "excluded"
+          textColor: "workbench-start-hint"
         });
-        this.__workbenchLayout.add(this.__dropHint);
-        this.__dropHint.rect = this.__svgLayer.drawDashedRect(nodeWidth, nodeHeight, posX, posY);
+        dropHint.exclude();
+        this.__workbenchLayout.add(dropHint);
+        dropHint.rect = this.__svgLayer.drawDashedRect(nodeWidth, nodeHeight, posX, posY);
       }
       if (dragging) {
-        this.__dropHint.setVisibility("visible");
-        const dropBounds = this.__dropHint.getBounds() || this.__dropHint.getSizeHint();
+        this.__dropHint.show();
         this.__dropHint.setLayoutProperties({
-          left: posX + parseInt(nodeWidth/2) - parseInt(dropBounds.width/2),
-          top: posY + parseInt(nodeHeight/2) - parseInt(dropBounds.height/2)
+          left: posX,
+          top: posY
         });
         osparc.component.workbench.SvgWidget.updateRect(this.__dropHint.rect, posX, posY);
       } else {
