@@ -834,7 +834,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       };
     },
 
-    __updateTempEdge: function(pointerEvent) {
+    __updateTempEdge: function(e) {
       let nodeUI = null;
       if (this.__tempEdgeNodeId !== null) {
         nodeUI = this.getNodeUI(this.__tempEdgeNodeId);
@@ -852,7 +852,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         return;
       }
 
-      const scaledPos = this.__pointerEventToWorkbenchPos(pointerEvent);
+      const scaledPos = this.__pointerEventToWorkbenchPos(e);
       this.__pointerPos = {
         x: scaledPos.x,
         y: scaledPos.y
@@ -1406,30 +1406,30 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__selectedItemChanged(null);
       }, this);
 
-      this.__workbenchLayout.addListener("dbltap", pointerEvent => {
+      this.__workbenchLayout.addListener("dbltap", e => {
         if (this.getStudy().isReadOnly()) {
           return;
         }
-        const winPos = this.__pointerEventToWinPos(pointerEvent);
-        const nodePos = this.__pointerEventToWorkbenchPos(pointerEvent);
+        const winPos = this.__pointerEventToWinPos(e);
+        const nodePos = this.__pointerEventToWorkbenchPos(e);
         this.openServiceCatalog(winPos, nodePos);
       }, this);
 
       this.__workbenchLayout.addListener("resize", () => this.__updateHint(), this);
     },
 
-    __allowDrag: function(pointerEvent) {
+    __allowDrag: function(e) {
       let allow = false;
       if (this.__draggingFile) {
         // item still being dragged
         allow = true;
-      } else if ("supportsType" in pointerEvent) {
+      } else if ("supportsType" in e) {
         // item drag from osparc's file tree
-        allow = pointerEvent.supportsType("osparc-file-link");
+        allow = e.supportsType("osparc-file-link");
         this.__draggingFile = allow;
       } else {
         // item drag from the outside world
-        allow = pointerEvent.target instanceof SVGElement;
+        allow = e.target instanceof SVGElement;
         this.__draggingFile = allow;
       }
       return allow;
@@ -1446,8 +1446,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (!this.isPropertyInitialized("study") || this.getStudy().isReadOnly()) {
         return;
       }
-      const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
-      const nodeHeight = osparc.component.workbench.NodeUI.NODE_HEIGHT;
       let posX = 0;
       let posY = 0;
       if ("offsetX" in e && "offsetY" in e) {
@@ -1466,6 +1464,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         });
         dropHint.exclude();
         this.__workbenchLayout.add(dropHint);
+        const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
+        const nodeHeight = osparc.component.workbench.NodeUI.NODE_HEIGHT;
         dropHint.rect = this.__svgLayer.drawDashedRect(nodeWidth, nodeHeight, posX, posY);
       }
       if (dragging) {
