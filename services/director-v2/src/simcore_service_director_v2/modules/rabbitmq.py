@@ -4,10 +4,6 @@ from dataclasses import dataclass
 from typing import Dict, Union
 
 import aio_pika
-from dask_task_models_library.container_tasks.events import (
-    TaskLogEvent,
-    TaskProgressEvent,
-)
 from fastapi import FastAPI
 from servicelib.rabbitmq_utils import (
     InstrumentationRabbitMessage,

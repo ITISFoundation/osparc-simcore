@@ -7,7 +7,7 @@ import json
 import logging
 import socket
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Dict, Iterator, Optional, Tuple
+from typing import Any, AsyncIterator, Dict, Iterator, Optional
 
 import aio_pika
 import pytest
