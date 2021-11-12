@@ -2,6 +2,7 @@ import asyncio
 import contextlib
 import json
 import logging
+import socket
 from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List
 
 import aio_pika
@@ -81,7 +82,6 @@ async def rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     # TODO: catch and deal with missing connections:
     # e.g. CRITICAL:pika.adapters.base_connection:Could not get addresses to use: [Errno -2] Name or service not known (rabbit)
     # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
-
     comp_settings: ComputationSettings = get_computation_settings(app)
     rabbit_broker = comp_settings.broker_url
 
@@ -90,7 +90,7 @@ async def rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
     async def get_connection() -> aio_pika.Connection:
         return await aio_pika.connect_robust(
-            f"{rabbit_broker}" + f"?name={__name__}_{id(app)}",
+            f"{rabbit_broker}" + f"?name={__name__}_{socket.gethostname()}_{id(app)}",
             client_properties={"connection_name": "webserver read connection"},
         )
 
@@ -118,25 +118,40 @@ async def rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
         parse_handler: Callable[[web.Application, Dict[str, Any]], Awaitable[None]],
         consumer_kwargs: Dict[str, Any],
     ):
-        async with channel_pool.acquire() as channel:
-            exchange = await channel.declare_exchange(
-                exchange_name, aio_pika.ExchangeType.FANOUT
-            )
-            # Declaring queue
-            queue = await channel.declare_queue(
-                f"webserver_{id(app)}_{exchange_name}",
-                exclusive=True,
-                arguments={"x-message-ttl": 60000},
-            )
-            # Binding the queue to the exchange
-            await queue.bind(exchange)
-            # process
-            async with queue.iterator(exclusive=True, **consumer_kwargs) as queue_iter:
-                async for message in queue_iter:
-                    log.debug("Received message from exchange %s", exchange_name)
-                    data = json.loads(message.body)
-                    await parse_handler(app, data)
-                    log.debug("message parsed")
+        while True:
+            try:
+                async with channel_pool.acquire() as channel:
+                    exchange = await channel.declare_exchange(
+                        exchange_name, aio_pika.ExchangeType.FANOUT
+                    )
+                    # Declaring queue
+                    queue = await channel.declare_queue(
+                        f"webserver_{socket.gethostname()}_{id(app)}_{exchange_name}",
+                        exclusive=True,
+                        arguments={"x-message-ttl": 60000},
+                    )
+                    # Binding the queue to the exchange
+                    await queue.bind(exchange)
+                    # process
+                    async with queue.iterator(
+                        exclusive=True, **consumer_kwargs
+                    ) as queue_iter:
+                        async for message in queue_iter:
+                            log.debug(
+                                "Received message from exchange %s", exchange_name
+                            )
+                            data = json.loads(message.body)
+                            await parse_handler(app, data)
+                            log.debug("message parsed")
+            except asyncio.CancelledError:
+                log.info("stopping rabbitMQ consumer for %s", exchange_name)
+                raise
+            except Exception:  # pylint: disable=broad-except
+                log.warning(
+                    "unexpected error in consumer for %s, restarting",
+                    exchange_name,
+                    exc_info=True,
+                )
 
     consumer_tasks = []
     for exchange_name, message_parser, consumer_kwargs in [
