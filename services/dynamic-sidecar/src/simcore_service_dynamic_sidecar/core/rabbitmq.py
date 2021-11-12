@@ -12,7 +12,10 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.users import UserID
-from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
+from servicelib.rabbitmq_utils import (
+    LoggerRabbitMessage,
+    RabbitMQRetryPolicyUponInitialization,
+)
 from settings_library.rabbit import RabbitSettings
 from tenacity._asyncio import AsyncRetrying
 
@@ -107,7 +110,7 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
 
     async def _dispatch_messages_worker(self) -> None:
         while self._keep_running:
-            for channel, queue in self._channel_queues.items():
+            for queue in self._channel_queues.values():
                 # in order to avoid blocking when dispatching messages
                 # it is important to fetch them an at most the existing
                 # messages in the queue
@@ -119,18 +122,17 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
                 if not messages:
                     continue
 
-                await self._publish_messages(channel, messages)
+                await self._publish_messages(messages)
 
             await asyncio.sleep(SLEEP_BETWEEN_SENDS)
 
-    async def _publish_messages(self, channel: str, messages: List[str]) -> None:
-        data = {
-            "channel": channel,
-            "node_id": f"{self._node_id}",
-            "user_id": f"{self._user_id}",
-            "project_id": f"{self._project_id}",
-            "messages": messages,
-        }
+    async def _publish_messages(self, messages: List[str]) -> None:
+        data = LoggerRabbitMessage(
+            node_id=self._node_id,
+            user_id=self._user_id,
+            project_id=self._project_id,
+            messages=messages,
+        )
 
         assert self._logs_exchange  # nosec
         await self._logs_exchange.publish(
