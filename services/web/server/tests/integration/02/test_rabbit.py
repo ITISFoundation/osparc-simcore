@@ -17,6 +17,7 @@ import socketio
 import sqlalchemy as sa
 from models_library.settings.rabbit import RabbitConfig
 from pytest_mock import MockerFixture
+from pytest_simcore.rabbit_service import RabbitExchanges
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.computation import setup_computation
@@ -65,7 +66,7 @@ async def _publish_in_rabbit(
     project_id: UUIDStr,
     node_uuid: UUIDStr,
     num_messages: int,
-    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange, aio_pika.Exchange],
+    rabbit_exchanges: RabbitExchanges,
 ) -> Tuple[LogMessages, ProgressMessages, InstrumMessages]:
     def _msg(
         message_name: str, node_uuid: str, user_id: int, project_id: str, param: Any
@@ -94,8 +95,6 @@ async def _publish_in_rabbit(
         _msg("progress", node_uuid, user_id, project_id, n / num_messages)
         for n in range(num_messages)
     ]
-    # send the messages over rabbit
-    logs_exchange, progress_exchange, instrumentation_exchange = rabbit_exchange
 
     # indicate container is started
     instrumentation_start_message = instrumentation_stop_message = {
@@ -113,7 +112,7 @@ async def _publish_in_rabbit(
         instrumentation_start_message,
         instrumentation_stop_message,
     ]
-    await instrumentation_exchange.publish(
+    await rabbit_exchanges.instrumentation.publish(
         aio_pika.Message(
             body=json.dumps(instrumentation_start_message).encode(),
             content_type="text/json",
@@ -122,14 +121,14 @@ async def _publish_in_rabbit(
     )
 
     for n in range(num_messages):
-        await logs_exchange.publish(
+        await rabbit_exchanges.logs.publish(
             aio_pika.Message(
                 body=json.dumps(log_messages[n]).encode(), content_type="text/json"
             ),
             routing_key="",
         )
 
-        await progress_exchange.publish(
+        await rabbit_exchanges.progress.publish(
             aio_pika.Message(
                 body=json.dumps(progress_messages[n]).encode(), content_type="text/json"
             ),
@@ -137,7 +136,7 @@ async def _publish_in_rabbit(
         )
 
     # indicate container is stopped
-    await instrumentation_exchange.publish(
+    await rabbit_exchanges.instrumentation.publish(
         aio_pika.Message(
             body=json.dumps(instrumentation_stop_message).encode(),
             content_type="text/json",
@@ -261,7 +260,7 @@ async def socketio_subscriber_handlers(
 
 @pytest.fixture
 def publish_some_messages_in_rabbit(
-    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange, aio_pika.Exchange],
+    rabbit_exchanges: RabbitExchanges,
 ) -> Callable[
     [int, str, str, int],
     Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
@@ -275,7 +274,7 @@ def publish_some_messages_in_rabbit(
         num_messages: int,
     ):
         return await _publish_in_rabbit(
-            user_id, project_id, node_uuid, num_messages, rabbit_exchange
+            user_id, project_id, node_uuid, num_messages, rabbit_exchanges
         )
 
     return go

@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 import socket
+from dataclasses import dataclass
 from typing import Any, AsyncIterator, Dict, Iterator, Optional, Tuple
 
 import aio_pika
@@ -118,11 +119,18 @@ async def rabbit_channel(
     await channel.close()
 
 
+@dataclass
+class RabbitExchanges:
+    logs: aio_pika.Exchange
+    progress: aio_pika.Exchange
+    instrumentation: aio_pika.Exchange
+
+
 @pytest.fixture(scope="function")
-async def rabbit_exchange(
+async def rabbit_exchanges(
     rabbit_config: RabbitConfig,
     rabbit_channel: aio_pika.Channel,
-) -> Tuple[aio_pika.Exchange, aio_pika.Exchange, aio_pika.Exchange]:
+) -> RabbitExchanges:
     """
     Declares and returns 'log' and 'instrumentation' exchange channels with rabbit
     """
@@ -148,21 +156,19 @@ async def rabbit_exchange(
     )
     assert instrumentation_exchange
 
-    return logs_exchange, progress_exchange, instrumentation_exchange
+    return RabbitExchanges(logs_exchange, progress_exchange, instrumentation_exchange)
 
 
 @pytest.fixture(scope="function")
 async def rabbit_queue(
     rabbit_channel: aio_pika.Channel,
-    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange, aio_pika.Exchange],
+    rabbit_exchanges: RabbitExchanges,
 ) -> AsyncIterator[aio_pika.Queue]:
-    logs_exchange, progress_exchange, instrumentation_exchange = rabbit_exchange
-
     queue = await rabbit_channel.declare_queue(exclusive=True)
     assert queue
 
     # Binding queue to exchange
-    await queue.bind(logs_exchange)
-    await queue.bind(progress_exchange)
-    await queue.bind(instrumentation_exchange)
+    await queue.bind(rabbit_exchanges.logs)
+    await queue.bind(rabbit_exchanges.progress)
+    await queue.bind(rabbit_exchanges.instrumentation)
     yield queue
