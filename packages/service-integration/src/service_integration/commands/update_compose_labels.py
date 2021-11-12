@@ -15,12 +15,6 @@ def load_compose_spec(compose_file: Path) -> ComposeSpecDict:
         return yaml.safe_load(fp)
 
 
-def load_io_specs(metadata_file: Path) -> Dict:
-    with metadata_file.open() as fp:
-        return yaml.safe_load(fp)
-        # TODO: validate using pydantic model
-
-
 def to_labels(
     data: Dict, *, prefix_key: str = "io.simcore", trim_key_head: bool = False
 ) -> Dict[str, str]:
@@ -61,22 +55,29 @@ def update_compose_labels(
 @click.command()
 @click.option(
     "--compose",
-    "compose_file_path",
+    "--compose-spec",
+    "compose_spec_path",
     help="The compose file where labels shall be updated",
     type=Path,
-    default=Path("docker-compose-meta.yml"),
+    default=Path("docker-compose.yml"),
 )
 @click.option(
     "--metadata",
-    "--metadata-file",
+    "--io-specs",
     "io_specs_path",
-    help="The metadata yaml file",
+    help="info and i/o specs",
     type=Path,
     required=False,
-    default="metadata/metadata.yml",
+    default=".osparc/labels/metadata.yml",
 )
-@click.option("--service-specs", "service_specs_path", type=Path)
-def main(compose_file_path: Path, io_specs_path: Path, service_specs_path: Path):
+@click.option(
+    "--service-specs",
+    "service_specs_path",
+    help="specs for the sidecar",
+    type=Path,
+    default=".osparc/labels/simcore.service.yml",
+)
+def main(compose_spec_path: Path, io_specs_path: Path, service_specs_path: Path):
     """Update a docker-compose file with json files in a path
 
     Usage: python update_compose_labels --c docker-compose.yml -f folder/path
@@ -85,13 +86,8 @@ def main(compose_file_path: Path, io_specs_path: Path, service_specs_path: Path)
 
     click.echo("Updating component labels")
 
-    # load if exists
-    compose_spec = {}
-    if compose_file_path.exists():
-        compose_spec = load_compose_spec(compose_file_path)
-
     # specs
-    io_spec = load_io_specs(io_specs_path)
+    io_spec = yaml.safe_load(io_specs_path.read_text())
     service_spec = yaml.safe_load(service_specs_path.read_text())
 
     # specs -> labels
@@ -99,18 +95,24 @@ def main(compose_file_path: Path, io_specs_path: Path, service_specs_path: Path)
     service_labels = to_labels(
         service_spec, prefix_key="simcore.service", trim_key_head=True
     )
-
     compose_labels = {**io_labels, **service_labels}
 
-    # TODO: require key ends with service-name, i.e. the one listed in docker-compose.yml::services
-    service_name = io_spec["key"].split("/")[-1]
+    # load if exists
+    compose_spec = {"version": "3.7"}
+    if compose_spec_path.exists():
+        compose_spec = load_compose_spec(compose_spec_path)
 
+    service_name = io_spec["key"].split("/")[-1]
+    compose_spec.setdefault("services", {service_name: {"build": {"labels": {}}}})
+
+    # TODO: update_compose_labels should only update section of it
+    # TODO: require key ends with service-name, i.e. the one listed in docker-compose.yml::services
     if update_compose_labels(compose_spec, compose_labels, service_name):
         click.echo(
-            f"Updating {compose_file_path} using labels in {io_specs_path}",
+            f"Updating {compose_spec_path} using labels in {io_specs_path}",
         )
         # write the file back
-        with compose_file_path.open("w") as fp:
+        with compose_spec_path.open("w") as fp:
             yaml.safe_dump(compose_spec, fp, default_flow_style=False, sort_keys=False)
             click.echo("Update completed")
     else:
