@@ -9,8 +9,8 @@ from models_library.service_settings_labels import (
 from models_library.services import ServiceDockerData
 from pydantic.main import BaseModel, Extra
 
-pydantic.json.ENCODERS_BY_TYPE[pathlib.PosixPath] = str
-pydantic.json.ENCODERS_BY_TYPE[pathlib.WindowsPath] = str
+# pydantic.json.ENCODERS_BY_TYPE[pathlib.PosixPath] = str
+# pydantic.json.ENCODERS_BY_TYPE[pathlib.WindowsPath] = str
 
 
 OSPARC_LABEL_PREFIXES = ("io.simcore", "simcore.service", "io.osparc", "swiss.z43")
