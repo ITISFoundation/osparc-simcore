@@ -366,7 +366,7 @@ async def test_publish_to_user(
         with attempt:
             assert mock_log_handler.call_count == (NUMBER_OF_MESSAGES)
 
-    log_calls = [call(json.dumps(message)) for message in log_messages]
+    log_calls = [call(message.json()) for message in log_messages]
     mock_log_handler.assert_has_calls(log_calls, any_order=True)
     mock_node_update_handler.assert_not_called()
 
