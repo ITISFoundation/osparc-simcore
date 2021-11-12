@@ -1,3 +1,9 @@
+#
+# osparc user's service specifications
+#
+# TODO: distinguish betweeen image_spec and run_spec
+#
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -54,7 +60,7 @@ class SettingsItem(BaseModel):
     )
 
 
-class ServiceSpecification(MetaSpecification):
+class OsparcServiceSpecification(MetaSpecification):
     compose_spec: Optional[ComposeSpecification] = None
     container_http_entrypoint: Optional[str] = None
 
