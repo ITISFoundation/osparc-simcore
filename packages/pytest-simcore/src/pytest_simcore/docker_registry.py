@@ -21,6 +21,7 @@ log = logging.getLogger(__name__)
 
 @pytest.fixture(scope="session")
 def docker_registry(keep_docker_up: bool) -> str:
+    """sets up and runs a docker registry container locally and returns its URL"""
     # run the registry outside of the stack
     docker_client = docker.from_env()
     # try to login to private registry

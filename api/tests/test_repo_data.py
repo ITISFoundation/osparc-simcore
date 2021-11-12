@@ -23,7 +23,7 @@ SYNCED_VERSIONS_SUFFIX = [
 # TODO: find json files under services with the word project or similar wildcard??
 PROJECTS_PATHS = [
     "services/web/server/tests/data/fake-project.json",
-    "services/web/server/tests/integration/02/workbench_sleeper_payload.json",
+    "services/web/server/tests/data/workbench_sleeper_payload.json",
     "services/web/server/src/simcore_service_webserver/data/fake-template-projects.isan.json",
     "services/web/server/src/simcore_service_webserver/data/fake-template-projects.osparc.json",
     "services/web/server/src/simcore_service_webserver/data/fake-template-projects.json",

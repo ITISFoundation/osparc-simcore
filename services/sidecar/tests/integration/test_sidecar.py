@@ -30,7 +30,12 @@ SIMCORE_S3_ID = 0
 #
 # SEE packages/pytest-simcore/src/pytest_simcore/docker_compose.py
 #
-pytest_simcore_core_services_selection = ["postgres", "rabbit", "storage"]
+pytest_simcore_core_services_selection = [
+    "migration",
+    "postgres",
+    "rabbit",
+    "storage",
+]
 
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
