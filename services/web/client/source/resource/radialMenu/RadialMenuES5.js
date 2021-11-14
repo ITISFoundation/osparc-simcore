@@ -425,6 +425,7 @@
 
 		});
 
+		/*
 		document.oncontextmenu = e => {
 
 			e.preventDefault();
@@ -434,6 +435,7 @@
 			this.show();
 
 		};
+		*/
 
 		const iOS = !!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform);
 
