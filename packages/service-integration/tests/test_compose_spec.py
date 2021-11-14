@@ -1,3 +1,7 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import random
 from pathlib import Path
 from typing import Dict, Optional, Type
@@ -15,7 +19,9 @@ from service_integration.osparc_config import (
 from service_integration.osparc_image_specs import create_image_spec
 
 
-def auto_map_to_service(settings: Dict):
+def _auto_map_to_service(settings: Dict):
+    """Prototype"""
+
     def find_field_path(
         field_name, type_name, model_cls: Type[BaseModel], path=""
     ) -> Optional[str]:
@@ -25,7 +31,7 @@ def auto_map_to_service(settings: Dict):
                 and model_field.type_.__name__ == type_name
             ):
                 return f"{path}.{field_name}"
-            elif issubclass(model_field.type_, BaseModel):
+            if issubclass(model_field.type_, BaseModel):
                 return find_field_path(
                     field_name, type_name, model_field.type_, f"{path}.{name}"
                 )
@@ -128,7 +134,7 @@ def test_compose_spec_run(tests_data_dir: Path):
 
     print(Service(volumes=volumes).json(exclude_unset=True, indent=2))
 
-    # TODO: auto_map_to_service(osparc_spec["settings"])
+    # TODO: _auto_map_to_service(osparc_spec["settings"])
     data = {}
     for obj in osparc_spec["settings"]:
         item = SettingsItem.parse_obj(obj)
