@@ -20,7 +20,7 @@ from ..groups_api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from .config import get_socket_server
-from .events import post_messages
+from .events import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
 from .handlers_utils import register_socketio_handler
 
 ANONYMOUS_USER_ID = -1
@@ -59,7 +59,17 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
     log.info("Sending set_heartbeat_emit_interval with %s", emit_interval)
 
     user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
-    await post_messages(app, user_id, {"set_heartbeat_emit_interval": emit_interval})
+    heart_beat_messages: List[SocketMessageDict] = [
+        {
+            "event_type": SOCKET_IO_HEARTBEAT_EVENT,
+            "data": {"interval": emit_interval},
+        }
+    ]
+    await send_messages(
+        app,
+        user_id,
+        heart_beat_messages,
+    )
 
     return True
 

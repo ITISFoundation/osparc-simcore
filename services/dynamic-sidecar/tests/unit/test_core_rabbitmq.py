@@ -16,6 +16,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
+from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.settings.rabbit import RabbitConfig
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
@@ -129,11 +130,10 @@ async def test_rabbitmq(
         "simcore_service_dynamic_sidecar.core.rabbitmq._channel_close_callback"
     )
 
-    incoming_data = []
+    incoming_data: List[LoggerRabbitMessage] = []
 
     async def rabbit_message_handler(message: aio_pika.IncomingMessage):
-        data = json.loads(message.body)
-        incoming_data.append(data)
+        incoming_data.append(LoggerRabbitMessage.parse_raw(message.body))
 
     await rabbit_queue.consume(rabbit_message_handler, exclusive=True, no_ack=True)
 
@@ -151,7 +151,6 @@ async def test_rabbitmq(
     # sent in the same chunk
     await asyncio.sleep(SLEEP_BETWEEN_SENDS * 1.1)
     await rabbit.post_log_message(log_more_messages)
-
     # wait for all the messages to be delivered,
     # need to make sure all messages are delivered
     await asyncio.sleep(SLEEP_BETWEEN_SENDS * 1.1)
@@ -160,21 +159,19 @@ async def test_rabbitmq(
 
     assert len(incoming_data) == 2, f"missing incoming data: {pformat(incoming_data)}"
 
-    assert incoming_data[0] == {
-        "Channel": "Log",
-        "Messages": [log_msg] + log_messages,
-        "Node": f"{node_id}",
-        "project_id": f"{project_id}",
-        "user_id": f"{user_id}",
-    }
+    assert incoming_data[0] == LoggerRabbitMessage(
+        messages=[log_msg] + log_messages,
+        node_id=node_id,
+        project_id=project_id,
+        user_id=user_id,
+    )
 
-    assert incoming_data[1] == {
-        "Channel": "Log",
-        "Messages": log_more_messages,
-        "Node": f"{node_id}",
-        "project_id": f"{project_id}",
-        "user_id": f"{user_id}",
-    }
+    assert incoming_data[1] == LoggerRabbitMessage(
+        messages=log_more_messages,
+        node_id=node_id,
+        project_id=project_id,
+        user_id=user_id,
+    )
 
     # ensure closes correctly
     await rabbit.close()
