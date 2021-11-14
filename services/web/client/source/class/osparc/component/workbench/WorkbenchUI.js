@@ -1119,17 +1119,31 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __openContextMenu: function(e) {
-      const radialMenuWrapper = new osparc.wrapper.RadialMenu();
-      radialMenuWrapper.init()
-        .then(loaded => {
-          if (loaded) {
-            const radialMenu = radialMenuWrapper.createMenu();
-            const buttons = osparc.wrapper.RadialMenu.getButtons();
-            radialMenu.addButtons(buttons);
-            radialMenu.setPos(e.getDocumentLeft() - radialMenu.w2, e.getDocumentTop() - radialMenu.h2);
-            radialMenu.show();
-          }
-        });
+      const radialMenuWrapper = osparc.wrapper.RadialMenu.getInstance();
+      if (radialMenuWrapper.getLibReady()) {
+        this.__doOpenContextMenu(e);
+      } else {
+        radialMenuWrapper.init()
+          .then(loaded => {
+            if (loaded) {
+              this.__doOpenContextMenu(e);
+            }
+          });
+      }
+    },
+
+    __doOpenContextMenu: function(e) {
+      const radialMenuWrapper = osparc.wrapper.RadialMenu.getInstance();
+      const radialMenu = radialMenuWrapper.createMenu();
+      const buttons = osparc.wrapper.RadialMenu.getButtons();
+      radialMenu.addButtons(buttons);
+      radialMenu.setPos(e.getDocumentLeft() - radialMenu.w2, e.getDocumentTop() - radialMenu.h2);
+      radialMenu.show();
+      const tapListener = ev => {
+        radialMenu.hide();
+        document.removeEventListener("click", tapListener);
+      };
+      document.addEventListener("click", tapListener);
     },
 
     __mouseDown: function(e) {

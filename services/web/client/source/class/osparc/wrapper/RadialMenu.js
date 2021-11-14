@@ -29,6 +29,7 @@
 
 qx.Class.define("osparc.wrapper.RadialMenu", {
   extend: qx.core.Object,
+  type: "singleton",
 
   statics: {
     NAME: "RadialMenu",
@@ -99,11 +100,12 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
         textColor: qx.theme.manager.Color.getInstance().resolve("text"),
         backgroundColor: qx.theme.manager.Color.getInstance().resolve("background-main-lighter+"),
         hoverBackgroundColor: qx.theme.manager.Color.getInstance().resolve("contrasted-background+"),
+        borderColor: "transparent",
         innerCircle: 20,
         outerCircle: 60,
-        borderColor: "transparent",
-        buttonGap: 0.01, // radians
-        rotation: Math.PI / 2 // radians
+        rotation: Math.PI / 2, // radians
+        buttonGap: 0.01 // radians
+        // isFixed: true // we will handle the events
       };
     }
   }
