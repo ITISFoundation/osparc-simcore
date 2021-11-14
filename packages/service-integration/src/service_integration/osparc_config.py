@@ -18,7 +18,7 @@ from pydantic.fields import Field
 from pydantic.main import BaseModel, Extra
 
 from .compose_spec_model import ComposeSpecification
-from .labels_annotations import to_labels
+from .labels_annotations import from_labels, to_labels
 from .yaml_utils import yaml_safe_load
 
 CONFIG_FOLDER_NAME = ".osparc"
@@ -52,6 +52,13 @@ class IOSpecification(ServiceDockerData):
     def from_yaml(cls, path: Path) -> "IOSpecification":
         with path.open() as fh:
             data = yaml_safe_load(fh)
+        return cls.parse_obj(data)
+
+    @classmethod
+    def from_labels_annotations(cls, labels: Dict[str, str]) -> "IOSpecification":
+        data = from_labels(
+            labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
+        )
         return cls.parse_obj(data)
 
     def to_labels_annotations(self) -> Dict[str, str]:
@@ -131,14 +138,14 @@ class ServiceSpecification(BaseModel):
             data = yaml_safe_load(fh)
         return cls.parse_obj(data)
 
-    # NOTE: data is load/dump from/to image labels annotations
+    @classmethod
+    def from_labels_annotations(cls, labels: Dict[str, str]) -> "ServiceSpecification":
+        data = from_labels(labels, prefix_key=OSPARC_LABEL_PREFIXES[1])
+        return cls.parse_obj(data)
+
     def to_labels_annotations(self) -> Dict[str, str]:
         service_labels = to_labels(
             self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
             prefix_key=OSPARC_LABEL_PREFIXES[1],
         )
         return service_labels
-
-    @classmethod
-    def from_labels_annotations(cls, labels: Dict[str, str]) -> "ServiceSpecification":
-        raise NotImplementedError
