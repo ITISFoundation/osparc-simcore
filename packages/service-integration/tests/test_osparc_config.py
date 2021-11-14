@@ -3,7 +3,7 @@ import pathlib
 from pathlib import Path
 
 import pydantic.json
-from service_integration.osparc_service_specs import ServiceSpecification
+from service_integration.osparc_config import ServiceSpecification
 from service_integration.yaml_utils import yaml_safe_load
 
 pydantic.json.ENCODERS_BY_TYPE[pathlib.PosixPath] = str
