@@ -127,7 +127,7 @@ def assemble_spec(
             "version": "3.8",
             "services": {
                 CONTAINER_NAME: {
-                    "image": f"{settings.REGISTRY.resolved_registry_url}/{service_key}:{service_tag}"
+                    "image": f"{docker_registry_settings.resolved_registry_url}/{service_key}:{service_tag}"
                 }
             },
         }
