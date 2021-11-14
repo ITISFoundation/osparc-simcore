@@ -1140,10 +1140,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       radialMenu.setPos(e.getDocumentLeft() - radialMenu.w2, e.getDocumentTop() - radialMenu.h2);
       radialMenu.show();
       const tapListener = ev => {
+        if (osparc.utils.Utils.isMouseOnElement(radialMenu, ev)) {
+          return;
+        }
         radialMenu.hide();
-        document.removeEventListener("click", tapListener);
+        document.removeEventListener("mousedown", tapListener);
       };
-      document.addEventListener("click", tapListener);
+      document.addEventListener("mousedown", tapListener);
     },
 
     __mouseDown: function(e) {

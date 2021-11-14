@@ -67,6 +67,15 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
   members: {
     init: function() {
       return new Promise((resolve, reject) => {
+        /*
+        // fetch icons
+        fetch("/v0/publications/service-submission", {
+          method: "POST",
+          headers,
+          body
+        })
+        */
+
         // initialize the script loading
         const radialMenuPath = "radialMenu/RadialMenuES5.js";
         const dynLoader = new qx.util.DynamicScriptLoader([
@@ -91,6 +100,7 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
     createMenu: function() {
       const settings = this.__getSettings();
       const radialMenu = new RadialMenu(settings);
+      // give id to canvas
       return radialMenu;
     },
 
