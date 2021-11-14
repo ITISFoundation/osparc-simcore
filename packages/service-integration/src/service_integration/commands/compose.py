@@ -69,23 +69,21 @@ def main(compose_spec_path: Path, io_specs_path: Path, service_specs_path: Path)
 
     click.echo("Updating component labels")
 
-    compose_labels = {}
-
     # specs -> labels
 
     # i/o specs (required)
     io_spec = IOSpecification.from_yaml(io_specs_path)
-    compose_labels.update(io_spec.to_labels_annotations())
 
     # service specs (not required)
+    service_spec = None
     try:
         # TODO: should include default?
         service_spec = ServiceSpecification.from_yaml(service_specs_path)
-        compose_labels.update(service_spec.to_labels_annotations())
     except FileNotFoundError:
         pass
 
     # OCI annotations (not required)
+    extra_labels = {}
     try:
         oci_spec = yaml.safe_load(
             (io_specs_path.parent / f"{OCI_LABEL_PREFIX}.yml").read_text()
@@ -94,7 +92,7 @@ def main(compose_spec_path: Path, io_specs_path: Path, service_specs_path: Path)
             raise ValueError("Undefined OCI image spec")
 
         oci_labels = to_labels(oci_spec, prefix_key=OCI_LABEL_PREFIX)
-        compose_labels.update(oci_labels)
+        extra_labels.update(oci_labels)
     except (FileNotFoundError, ValueError):
 
         # if not OCI, try label-schema
@@ -103,10 +101,22 @@ def main(compose_spec_path: Path, io_specs_path: Path, service_specs_path: Path)
                 (io_specs_path.parent / f"{LS_LABEL_PREFIX}.yml").read_text()
             )
             ls_labels = to_labels(ls_spec, prefix_key=LS_LABEL_PREFIX)
-            compose_labels.update(ls_labels)
+            extra_labels.update(ls_labels)
 
+    compose_spec = create_image_spec(io_spec, service_spec, extra_labels=extra_labels)
+
+    with compose_spec_path.open("w") as fh:
+        yaml.safe_dump(
+            compose_spec.dict(exclude_unset=True),
+            fh,
+            default_flow_style=False,
+            sort_keys=False,
+        )
+        click.echo("Update completed")
+
+
+def _tmp(compose_spec_path, io_spec, service_name, compose_labels, io_specs_path):
     # load if exists
-    compose_spec = {"version": "3.7"}
     if compose_spec_path.exists():
         compose_spec = load_compose_spec(compose_spec_path)
 

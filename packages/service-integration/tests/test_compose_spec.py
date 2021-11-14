@@ -5,12 +5,7 @@ from uuid import uuid4
 
 import yaml
 from pydantic import BaseModel
-from service_integration.compose_spec_model import (
-    BuildItem,
-    ComposeSpecification,
-    Service,
-    Volume1,
-)
+from service_integration.compose_spec_model import BuildItem, Service, Volume1
 from service_integration.osparc_config import (
     IOSpecification,
     PathsMapping,
@@ -18,8 +13,6 @@ from service_integration.osparc_config import (
     SettingsItem,
 )
 from service_integration.osparc_image_specs import create_image_spec
-from service_integration.yaml_utils import yaml_safe_load
-from simcore_service_director_v2.models.schemas.dynamic_services import service
 
 
 def auto_map_to_service(settings: Dict):
@@ -73,11 +66,12 @@ def test_create_compose_spec_build(tests_data_dir: Path):
     compose_spec = create_image_spec(io_spec, service_spec)
     assert compose_spec.services
 
-    build_spec = compose_spec.services[io_spec.image_name()].build
+    service_name = next(iter(compose_spec.services.keys()))
+    build_spec = compose_spec.services[service_name].build
+    assert build_spec
     assert isinstance(build_spec, BaseModel)
 
     print(build_spec.json(exclude_unset=True, indent=2))
-
     print(yaml.safe_dump(compose_spec.dict(exclude_unset=True), sort_keys=False))
 
 

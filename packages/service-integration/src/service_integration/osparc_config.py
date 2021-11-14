@@ -25,9 +25,10 @@ CONFIG_FOLDER_NAME = ".osparc"
 
 
 REGISTRY_PREFIX = {
-    "local": "local",
-    "public": "ITISFoundation",
+    "local": "registry:5000",
+    "dockerhub": "itisfoundation",
 }
+# TODO: read from config all available registries
 
 SERVICE_KEY_FORMATS = {
     ServiceType.COMPUTATIONAL: COMPUTATIONAL_SERVICE_KEY_FORMAT,
@@ -64,6 +65,11 @@ class IOSpecification(ServiceDockerData):
     def image_name(self, registry="local") -> str:
         registry_prefix = REGISTRY_PREFIX[registry]
         mid_name = SERVICE_KEY_FORMATS[self.service_type].format(service_name=self.name)
+        if registry in "dockerhub":
+            # dockerhub allows only one-level names -> dot it
+            # TODO: check thisname is compatible with REGEX
+            mid_name = mid_name.replace("/", ".")
+
         tag = self.version
         return f"{registry_prefix}/{mid_name}:{tag}"
 
