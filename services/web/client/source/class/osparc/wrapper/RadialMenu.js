@@ -28,7 +28,7 @@
  */
 
 qx.Class.define("osparc.wrapper.RadialMenu", {
-  extend: qx.ui.core.Widget,
+  extend: qx.core.Object,
 
   statics: {
     NAME: "RadialMenu",
