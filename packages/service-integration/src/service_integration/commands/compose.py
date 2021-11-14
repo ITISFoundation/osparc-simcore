@@ -1,6 +1,6 @@
 from contextlib import suppress
 from pathlib import Path
-from typing import Dict
+from typing import IO, Dict
 
 import click
 import yaml
@@ -8,6 +8,8 @@ import yaml
 from ..labels_annotations import to_labels
 from ..models import ComposeSpecDict
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
+from ..osparc_config import IOSpecification, ServiceSpecification
+from ..osparc_image_specs import create_image_spec
 
 
 def load_compose_spec(compose_file: Path) -> ComposeSpecDict:
@@ -72,19 +74,14 @@ def main(compose_spec_path: Path, io_specs_path: Path, service_specs_path: Path)
     # specs -> labels
 
     # i/o specs (required)
-    io_spec = yaml.safe_load(io_specs_path.read_text())
-    io_labels = to_labels(io_spec, prefix_key="io.simcore", trim_key_head=False)
-    compose_labels.update(io_labels)
+    io_spec = IOSpecification.from_yaml(io_specs_path)
+    compose_labels.update(io_spec.to_labels_annotations())
 
     # service specs (not required)
     try:
         # TODO: should include default?
-        service_spec = yaml.safe_load(service_specs_path.read_text())
-        service_labels = to_labels(
-            service_spec,
-            prefix_key="simcore.service",
-        )
-        compose_labels.update(service_labels)
+        service_spec = ServiceSpecification.from_yaml(service_specs_path)
+        compose_labels.update(service_spec.to_labels_annotations())
     except FileNotFoundError:
         pass
 
@@ -113,8 +110,7 @@ def main(compose_spec_path: Path, io_specs_path: Path, service_specs_path: Path)
     if compose_spec_path.exists():
         compose_spec = load_compose_spec(compose_spec_path)
 
-    service_name = io_spec["key"].split("/")[-1]
-    compose_spec.setdefault("services", {service_name: {"build": {"labels": {}}}})
+    compose_spec.setdefault("services", {io_spec.name: {"build": {"labels": {}}}})
 
     # TODO: update_compose_labels should only update section of it
     # TODO: require key ends with service-name, i.e. the one listed in docker-compose.yml::services

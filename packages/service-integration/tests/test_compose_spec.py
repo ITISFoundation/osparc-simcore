@@ -11,13 +11,15 @@ from service_integration.compose_spec_model import (
     Service,
     Volume1,
 )
-from service_integration.osparc_service_specs import (
+from service_integration.osparc_config import (
     IOSpecification,
     PathsMapping,
     ServiceSpecification,
     SettingsItem,
 )
+from service_integration.osparc_image_specs import create_image_spec
 from service_integration.yaml_utils import yaml_safe_load
+from simcore_service_director_v2.models.schemas.dynamic_services import service
 
 
 def auto_map_to_service(settings: Dict):
@@ -55,13 +57,8 @@ def auto_map_to_service(settings: Dict):
 def test_create_compose_spec_build(tests_data_dir: Path):
 
     # load & parse osparc configs
-    data: Dict = yaml.safe_load((tests_data_dir / "metadata-dynamic.yml").read_text())
-    io_spec = IOSpecification.parse_obj(data)
-
-    data = {}
-    with open(tests_data_dir / "service.yml") as fh:
-        data = yaml_safe_load(fh)
-    service_spec = ServiceSpecification.parse_obj(data)
+    io_spec = IOSpecification.from_yaml(tests_data_dir / "metadata-dynamic.yml")
+    service_spec = ServiceSpecification.from_yaml(tests_data_dir / "service.yml")
 
     # assemble docker-compose
     build_spec = BuildItem(
@@ -73,12 +70,13 @@ def test_create_compose_spec_build(tests_data_dir: Path):
         },
     )
 
-    print(build_spec.json(exclude_unset=True, indent=2))
+    compose_spec = create_image_spec(io_spec, service_spec)
+    assert compose_spec.services
 
-    compose_spec = ComposeSpecification(
-        version="3.7",
-        services={io_spec.name: Service(image=io_spec.image_name(), build=build_spec)},
-    )
+    build_spec = compose_spec.services[io_spec.image_name()].build
+    assert isinstance(build_spec, BaseModel)
+
+    print(build_spec.json(exclude_unset=True, indent=2))
 
     print(yaml.safe_dump(compose_spec.dict(exclude_unset=True), sort_keys=False))
 

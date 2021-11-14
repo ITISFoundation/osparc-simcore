@@ -1,8 +1,9 @@
-#
-# osparc user's service specifications
-#
-# TODO: distinguish betweeen image_spec and run_spec
-#
+""" Defines the configuration of a user service stored in '.osparc/' folder
+
+    - models for config sections
+        - load/dump from/to yaml
+        - load/save from label annotations
+"""
 
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -11,40 +12,46 @@ from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
     ServiceDockerData,
-    ServiceKeyVersion,
     ServiceType,
 )
 from pydantic.fields import Field
 from pydantic.main import BaseModel, Extra
 
-from .compose_spec_model import ComposeSpecification, Service
+from .compose_spec_model import ComposeSpecification
 from .labels_annotations import to_labels
+from .yaml_utils import yaml_safe_load
 
-# pydantic.json.ENCODERS_BY_TYPE[pathlib.PosixPath] = str
-# pydantic.json.ENCODERS_BY_TYPE[pathlib.WindowsPath] = str
+CONFIG_FOLDER_NAME = ".osparc"
 
-
-OSPARC_LABEL_PREFIXES = ("io.simcore", "simcore.service", "io.osparc", "swiss.z43")
-# FIXME: all to swiss.z43 or to io.osparc
-
-
-SERVICE_KEY_FORMATS = {
-    ServiceType.COMPUTATIONAL: COMPUTATIONAL_SERVICE_KEY_FORMAT,
-    ServiceType.DYNAMIC: DYNAMIC_SERVICE_KEY_FORMAT,
-}
 
 REGISTRY_PREFIX = {
     "local": "local",
     "public": "ITISFoundation",
 }
 
+SERVICE_KEY_FORMATS = {
+    ServiceType.COMPUTATIONAL: COMPUTATIONAL_SERVICE_KEY_FORMAT,
+    ServiceType.DYNAMIC: DYNAMIC_SERVICE_KEY_FORMAT,
+}
+
+OSPARC_LABEL_PREFIXES = ("io.simcore", "simcore.service", "io.osparc", "swiss.z43")
+# FIXME: all to swiss.z43 or to io.osparc
+
+
+## MODELS -------------------------
+
 
 class IOSpecification(ServiceDockerData):
-    def image_name(self, registry="local") -> str:
-        registry_prefix = "local"
-        mid_name = SERVICE_KEY_FORMATS[self.service_type].format(service_name=self.name)
-        tag = self.version
-        return f"{registry_prefix}/{mid_name}:{tag}"
+    """General info + I/O specs
+
+    Include both image and runtime specs
+    """
+
+    @classmethod
+    def from_yaml(cls, path: Path) -> "IOSpecification":
+        with path.open() as fh:
+            data = yaml_safe_load(fh)
+        return cls.parse_obj(data)
 
     def to_labels_annotations(self) -> Dict[str, str]:
         io_labels = to_labels(
@@ -54,8 +61,13 @@ class IOSpecification(ServiceDockerData):
         )
         return io_labels
 
+    def image_name(self, registry="local") -> str:
+        registry_prefix = REGISTRY_PREFIX[registry]
+        mid_name = SERVICE_KEY_FORMATS[self.service_type].format(service_name=self.name)
+        tag = self.version
+        return f"{registry_prefix}/{mid_name}:{tag}"
 
-#####
+
 class PathsMapping(BaseModel):
     inputs_path: Path = Field(
         ..., description="folder path where the service expects all the inputs"
@@ -93,6 +105,8 @@ class SettingsItem(BaseModel):
 
 
 class ServiceSpecification(BaseModel):
+    """Runtime specs"""
+
     compose_spec: Optional[ComposeSpecification] = None
     container_http_entrypoint: Optional[str] = None
 
@@ -104,6 +118,12 @@ class ServiceSpecification(BaseModel):
         alias_generator = lambda field_name: field_name.replace("_", "-")
         allow_population_by_field_name = True
         extra = Extra.forbid
+
+    @classmethod
+    def from_yaml(cls, path: Path) -> "ServiceSpecification":
+        with path.open() as fh:
+            data = yaml_safe_load(fh)
+        return cls.parse_obj(data)
 
     # NOTE: data is load/dump from/to image labels annotations
     def to_labels_annotations(self) -> Dict[str, str]:
