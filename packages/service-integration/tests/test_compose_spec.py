@@ -5,8 +5,19 @@ from uuid import uuid4
 
 import yaml
 from pydantic import BaseModel
-from service_integration.compose_spec_model import Service, Volume1
-from service_integration.osparc_service_specs import PathsMapping, SettingsItem
+from service_integration.compose_spec_model import (
+    BuildItem,
+    ComposeSpecification,
+    Service,
+    Volume1,
+)
+from service_integration.osparc_service_specs import (
+    IOSpecification,
+    PathsMapping,
+    ServiceSpecification,
+    SettingsItem,
+)
+from service_integration.yaml_utils import yaml_safe_load
 
 
 def auto_map_to_service(settings: Dict):
@@ -39,6 +50,37 @@ def auto_map_to_service(settings: Dict):
             data.update(*dikt)
 
     return Service.parse_obj(data)
+
+
+def test_create_compose_spec_build(tests_data_dir: Path):
+
+    # load & parse osparc configs
+    data: Dict = yaml.safe_load((tests_data_dir / "metadata-dynamic.yml").read_text())
+    io_spec = IOSpecification.parse_obj(data)
+
+    data = {}
+    with open(tests_data_dir / "service.yml") as fh:
+        data = yaml_safe_load(fh)
+    service_spec = ServiceSpecification.parse_obj(data)
+
+    # assemble docker-compose
+    build_spec = BuildItem(
+        context=".",
+        dockerfile="Dockerfile",
+        labels={
+            **io_spec.to_labels_annotations(),
+            **service_spec.to_labels_annotations(),
+        },
+    )
+
+    print(build_spec.json(exclude_unset=True, indent=2))
+
+    compose_spec = ComposeSpecification(
+        version="3.7",
+        services={io_spec.name: Service(image=io_spec.image_name(), build=build_spec)},
+    )
+
+    print(yaml.safe_dump(compose_spec.dict(exclude_unset=True), sort_keys=False))
 
 
 def test_compose_spec_run(tests_data_dir: Path):

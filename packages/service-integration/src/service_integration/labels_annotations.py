@@ -1,5 +1,11 @@
 import json
-from typing import Dict
+from typing import Any, Dict
+
+from pydantic.json import pydantic_encoder
+
+
+def json_dumps(obj: Any, **kwargs):
+    return json.dumps(obj, default=pydantic_encoder, **kwargs)
 
 
 def to_labels(
@@ -14,9 +20,9 @@ def to_labels(
                 # TODO: Q&D for ${} variables
                 label = value
             else:
-                label = json.dumps(value, sort_keys=False)
+                label = json_dumps(value, sort_keys=False)
         else:
-            label = json.dumps({key: value}, sort_keys=False)
+            label = json_dumps({key: value}, sort_keys=False)
 
         labels[f"{prefix_key}.{key}"] = label
 

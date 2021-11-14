@@ -7,11 +7,18 @@
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from models_library.services import ServiceDockerData
+from models_library.services import (
+    COMPUTATIONAL_SERVICE_KEY_FORMAT,
+    DYNAMIC_SERVICE_KEY_FORMAT,
+    ServiceDockerData,
+    ServiceKeyVersion,
+    ServiceType,
+)
 from pydantic.fields import Field
 from pydantic.main import BaseModel, Extra
 
-from .compose_spec_model import ComposeSpecification
+from .compose_spec_model import ComposeSpecification, Service
+from .labels_annotations import to_labels
 
 # pydantic.json.ENCODERS_BY_TYPE[pathlib.PosixPath] = str
 # pydantic.json.ENCODERS_BY_TYPE[pathlib.WindowsPath] = str
@@ -21,9 +28,34 @@ OSPARC_LABEL_PREFIXES = ("io.simcore", "simcore.service", "io.osparc", "swiss.z4
 # FIXME: all to swiss.z43 or to io.osparc
 
 
-MetaSpecification = ServiceDockerData
+SERVICE_KEY_FORMATS = {
+    ServiceType.COMPUTATIONAL: COMPUTATIONAL_SERVICE_KEY_FORMAT,
+    ServiceType.DYNAMIC: DYNAMIC_SERVICE_KEY_FORMAT,
+}
+
+REGISTRY_PREFIX = {
+    "local": "local",
+    "public": "ITISFoundation",
+}
 
 
+class IOSpecification(ServiceDockerData):
+    def image_name(self, registry="local") -> str:
+        registry_prefix = "local"
+        mid_name = SERVICE_KEY_FORMATS[self.service_type].format(service_name=self.name)
+        tag = self.version
+        return f"{registry_prefix}/{mid_name}:{tag}"
+
+    def to_labels_annotations(self) -> Dict[str, str]:
+        io_labels = to_labels(
+            self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
+            prefix_key=OSPARC_LABEL_PREFIXES[0],
+            trim_key_head=False,
+        )
+        return io_labels
+
+
+#####
 class PathsMapping(BaseModel):
     inputs_path: Path = Field(
         ..., description="folder path where the service expects all the inputs"
@@ -60,7 +92,7 @@ class SettingsItem(BaseModel):
     )
 
 
-class OsparcServiceSpecification(MetaSpecification):
+class ServiceSpecification(BaseModel):
     compose_spec: Optional[ComposeSpecification] = None
     container_http_entrypoint: Optional[str] = None
 
@@ -75,23 +107,11 @@ class OsparcServiceSpecification(MetaSpecification):
 
     # NOTE: data is load/dump from/to image labels annotations
     def to_labels_annotations(self) -> Dict[str, str]:
-        labels = {}
-        for key, value in self.dict(
-            exclude_unset=True, by_alias=True, exclude_none=True
-        ).items():
-
-            if isinstance(value, BaseModel):
-                if key == "paths-mapping":
-                    value = value.json(
-                        exclude_unset=True, by_alias=True, exclude_none=True
-                    )
-
-            if key in MetaSpecification.__fields__:
-                labels[f"{OSPARC_LABEL_PREFIXES[0]}.{key}"] = f"{value}"
-            else:
-                labels[f"{OSPARC_LABEL_PREFIXES[1]}.{key}"] = f"{value}"
-
-        return labels
+        service_labels = to_labels(
+            self.dict(exclude_unset=True, by_alias=True, exclude_none=True),
+            prefix_key=OSPARC_LABEL_PREFIXES[1],
+        )
+        return service_labels
 
     @classmethod
     def from_labels_annotations(cls, labels: Dict[str, str]) -> "ServiceSpecification":
