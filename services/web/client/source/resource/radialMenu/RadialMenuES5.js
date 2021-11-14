@@ -68,6 +68,7 @@
 	'use strict';
 
 
+
 	/** @type {ShadowStyle} */
 	const NO_SHADOW = { color: 'transparent', blur: 0 };
 
@@ -588,7 +589,7 @@
 	 * @param {number} yPixel The y coordinate of the pixel mouse event.
 	 * @return {any} The button concerne by the event or undefined if no button.
 	 */
-	 RadialMenu.prototype.getButton = function(xPixel, yPixel) {
+	RadialMenu.prototype.getButton = function(xPixel, yPixel) {
 
 		const rect = this.canvas.getBoundingClientRect();
 
@@ -649,7 +650,7 @@
 	 * @param {CanvasRenderingContext2D} context The canvas context.
 	 * @param {ShadowStyle} shadowStyle The shadow style to set in the context.
 	 */
-	 function setContextShadowStyle (context, shadowStyle) {
+	function setContextShadowStyle(context, shadowStyle) {
 		context.shadowColor = shadowStyle.color;
 		context.shadowBlur = shadowStyle.blur;
 		context.shadowOffsetX = shadowStyle.offsetX;
