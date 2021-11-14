@@ -1,5 +1,3 @@
-# compose-spec: !include ./compose-spec.yml
-container-http-entrypoint: null
 paths-mapping:
   inputs_path: "/config/workspace/inputs"
   outputs_path: "/config/workspace/outputs"
