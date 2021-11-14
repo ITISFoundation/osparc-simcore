@@ -18,7 +18,7 @@
 /* global RadialMenu */
 
 /**
- * @asset(radialMenu/RadialMenu.js)
+ * @asset(radialMenu/RadialMenuES5.js)
  * @ignore(RadialMenu)
  */
 
@@ -65,7 +65,7 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
     init: function() {
       return new Promise((resolve, reject) => {
         // initialize the script loading
-        const radialMenuPath = "radialMenu/RadialMenu.js";
+        const radialMenuPath = "radialMenu/RadialMenuES5.js";
         const dynLoader = new qx.util.DynamicScriptLoader([
           radialMenuPath
         ]);
