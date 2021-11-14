@@ -95,14 +95,15 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
 
     __getSettings: function() {
       return {
-        fontSize: 12,
+        fontSize: 14,
         textColor: qx.theme.manager.Color.getInstance().resolve("text"),
         backgroundColor: qx.theme.manager.Color.getInstance().resolve("background-main-lighter+"),
         hoverBackgroundColor: qx.theme.manager.Color.getInstance().resolve("contrasted-background+"),
         innerCircle: 20,
         outerCircle: 60,
         borderColor: "transparent",
-        buttonGap: 0.01, //radians
+        buttonGap: 0.01, // radians
+        rotation: Math.PI / 2 // radians
       };
     }
   }
