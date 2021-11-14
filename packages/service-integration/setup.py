@@ -31,7 +31,7 @@ TEST_REQUIREMENTS = tuple(
 
 SETUP = dict(
     name="simcore-service-integration",
-    version="1.0.0",
+    version="1.0.1",
     author="Pedro Crespo (pcrespov), Sylvain Anderegg (sanderegg), Katie Zhuang (KZzizzle)",
     description="Toolkit for service integration",
     classifiers=[
