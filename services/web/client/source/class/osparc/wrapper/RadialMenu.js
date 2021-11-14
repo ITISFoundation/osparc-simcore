@@ -36,20 +36,27 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
     URL: "https://github.com/victorqribeiro/radialMenu",
 
     getButtons: function() {
-      return {
-        textColor: "red",
-        buttons: [{
-          "text": "\uf053",
-          "action": () => {
-            history.go(-1); // create a button that goes back on history
-          }
-        }, {
-          "text": "\uf054",
-          "action": () => {
-            history.go(1); // create a button tha goes forward on history
-          }
-        }]
-      };
+      return [{
+        "text": "\uf053", // plus
+        "action": () => {
+          console.log("add");
+        }
+      }, {
+        "text": "\uf00e", // search-plus
+        "action": () => {
+          console.log("in");
+        }
+      }, {
+        "text": "\uf010", // search-minus
+        "action": () => {
+          console.log("out");
+        }
+      }];
+    },
+
+    show: function(menu, x, y) {
+      menu.setPos(x, y);
+      setTimeout(() => menu.show(), 20);
     }
   },
 
@@ -94,15 +101,14 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
 
     __getSettings: function() {
       return {
-        fontFamily: "Roboto",
-        fontSize: 14,
-        textColor: "red",
-        backgroundColor: "blue",
-        hoverBackgroundColor: "green",
-        innerCircle: 50,
-        outerCircle: 100,
-        buttonGap: 0,
-        borderColor: "white"
+        fontSize: 12,
+        textColor: qx.theme.manager.Color.getInstance().resolve("text"),
+        backgroundColor: qx.theme.manager.Color.getInstance().resolve("background-main-lighter+"),
+        hoverBackgroundColor: qx.theme.manager.Color.getInstance().resolve("contrasted-background+"),
+        innerCircle: 20,
+        outerCircle: 60,
+        borderColor: "transparent",
+        buttonGap: 0.01, //radians
       };
     }
   }

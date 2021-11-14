@@ -1121,15 +1121,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __openContextMenu: function(e) {
       const winPos = this.__pointerEventToScreenPos(e);
       // const nodePos = this.__pointerEventToWorkbenchPos(e);
-      const radialMenuWrapeer = new osparc.wrapper.RadialMenu();
-      radialMenuWrapeer.init()
+      const radialMenuWrapper = new osparc.wrapper.RadialMenu();
+      radialMenuWrapper.init()
         .then(loaded => {
           if (loaded) {
-            const radialMenu = radialMenuWrapeer.createMenu();
+            const radialMenu = radialMenuWrapper.createMenu();
             const buttons = osparc.wrapper.RadialMenu.getButtons();
             radialMenu.addButtons(buttons);
-            radialMenu.setPos(winPos.x, winPos.y);
-            radialMenu.show();
+            osparc.wrapper.RadialMenu.show(radialMenu, winPos.x, winPos.y);
           }
         });
     },
