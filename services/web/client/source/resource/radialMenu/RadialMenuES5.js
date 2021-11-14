@@ -425,17 +425,15 @@
 
 		});
 
-		/*
 		document.oncontextmenu = e => {
 
 			e.preventDefault();
 
-			this.setPos(e.clientX - this.w2, e.clientY - this.h2);
+			// this.setPos(e.clientX - this.w2, e.clientY - this.h2);
 
-			this.show();
+			// this.show();
 
 		};
-		*/
 
 		const iOS = !!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform);
 

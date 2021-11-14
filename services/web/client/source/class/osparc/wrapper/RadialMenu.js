@@ -52,11 +52,6 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
           console.log("out");
         }
       }];
-    },
-
-    show: function(menu, x, y) {
-      menu.setPos(x, y);
-      setTimeout(() => menu.show(), 20);
     }
   },
 
@@ -78,7 +73,6 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
         ]);
 
         dynLoader.addListenerOnce("ready", e => {
-          console.log(radialMenuPath + " loaded");
           this.setLibReady(true);
           resolve(true);
         }, this);
