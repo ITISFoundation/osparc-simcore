@@ -4,7 +4,7 @@
 
 import pytest
 from pkg_resources import parse_version
-from service_integration.version_utils import bump_version_string
+from service_integration.versioning import bump_version_string
 
 # TESTS ------------------------------------------
 

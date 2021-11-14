@@ -5,7 +5,7 @@ import click
 import yaml
 from models_library.services import ServiceDockerData
 
-from ..version_utils import bump_version_string
+from ..versioning import bump_version_string
 from ..yaml_utils import ordered_safe_dump, ordered_safe_load
 
 TARGET_VERSION_CHOICES = ["integration-version", "version"]
