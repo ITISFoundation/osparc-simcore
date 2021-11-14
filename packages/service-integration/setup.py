@@ -1,3 +1,17 @@
+"""
+
+TIP: to preview setup options w/o installation
+
+use constant SETUP
+
+    python -c "from setup import SETUP; import json; print(json.dumps(SETUP, indent=1))"
+
+or use setuptools.setup API
+    python setup.py --name
+    python setup.py --version
+    ...
+"""
+
 import re
 import sys
 from pathlib import Path
@@ -32,10 +46,16 @@ TEST_REQUIREMENTS = tuple(
 SETUP = dict(
     name="simcore-service-integration",
     version="1.0.1",
-    author="Pedro Crespo (pcrespov), Sylvain Anderegg (sanderegg), Katie Zhuang (KZzizzle)",
+    author=", ".join(
+        (
+            "Pedro Crespo-Valero (pcrespov)",
+            "Sylvain Anderegg (sanderegg)",
+            "Katie Zhuang (KZzizzle)",
+        )
+    ),
     description="Toolkit for service integration",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
