@@ -810,7 +810,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return topOffset;
     },
 
-    __pointerEventToWinPos: function(e) {
+    __pointerEventToScreenPos: function(e) {
       const leftOffset = this.__getLeftOffset();
       const inputNodesLayoutWidth = this.__inputNodesLayout && this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
       return {
@@ -823,7 +823,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const {
         x,
         y
-      } = this.__pointerEventToWinPos(e);
+      } = this.__pointerEventToScreenPos(e);
       const scaledPos = this.__scaleCoordinates(x, y);
       const scrollX = this._workbenchLayoutScroll.getScrollX();
       const scrollY = this._workbenchLayoutScroll.getScrollY();
@@ -1118,10 +1118,28 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       };
     },
 
+    __openContextMenu: function(e) {
+      const winPos = this.__pointerEventToScreenPos(e);
+      // const nodePos = this.__pointerEventToWorkbenchPos(e);
+      const radialMenuWrapeer = new osparc.wrapper.RadialMenu();
+      radialMenuWrapeer.init()
+        .then(loaded => {
+          if (loaded) {
+            const radialMenu = radialMenuWrapeer.createMenu();
+            const buttons = osparc.wrapper.RadialMenu.getButtons();
+            radialMenu.addButtons(buttons);
+            radialMenu.setPos(winPos.x, winPos.y);
+            radialMenu.show();
+          }
+        });
+    },
+
     __mouseDown: function(e) {
-      if (e.isMiddlePressed()) {
-        this.__panning = true;
+      if (e.isRightPressed()) {
+        this.__openContextMenu(e);
+      } else if (e.isMiddlePressed()) {
         this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
+        this.__panning = true;
         this.set({
           cursor: "move"
         });
@@ -1410,7 +1428,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         if (this.getStudy().isReadOnly()) {
           return;
         }
-        const winPos = this.__pointerEventToWinPos(e);
+        const winPos = this.__pointerEventToScreenPos(e);
         const nodePos = this.__pointerEventToWorkbenchPos(e);
         this.openServiceCatalog(winPos, nodePos);
       }, this);
