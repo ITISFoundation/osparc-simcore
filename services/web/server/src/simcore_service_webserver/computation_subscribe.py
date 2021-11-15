@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import logging
+import os
 import socket
 from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List
 
@@ -107,7 +108,8 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
     async def get_connection() -> aio_pika.Connection:
         return await aio_pika.connect_robust(
-            f"{rabbit_broker}" + f"?name={__name__}_{socket.gethostname()}_{id(app)}",
+            f"{rabbit_broker}"
+            + f"?name={__name__}_{socket.gethostname()}_{os.getpid()}",
             client_properties={"connection_name": "webserver read connection"},
         )
 
@@ -147,7 +149,7 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
                     )
                     # Declaring queue
                     queue = await channel.declare_queue(
-                        f"webserver_{socket.gethostname()}_{id(app)}_{exchange_name}",
+                        f"webserver_{exchange_name}_{socket.gethostname()}_{os.getpid()}",
                         exclusive=True,
                         arguments={"x-message-ttl": 60000},
                     )
