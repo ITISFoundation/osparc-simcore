@@ -3,7 +3,7 @@
 import click
 
 from . import __version__
-from .commands import compose, metadata, run_creator
+from .commands import compose, config, metadata, run_creator
 
 
 @click.group()
@@ -12,7 +12,9 @@ def main():
     pass
 
 
-main.add_command(run_creator.main, "run-creator")
 main.add_command(compose.main, "compose")
+main.add_command(config.main, "config")
+# previous version
+main.add_command(run_creator.main, "run-creator")
 main.add_command(metadata.bump_version, "bump-version")
 main.add_command(metadata.get_version, "get-version")

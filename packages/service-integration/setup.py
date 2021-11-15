@@ -76,7 +76,7 @@ SETUP = dict(
     entry_points={
         "console_scripts": [
             "simcore-service-integrator=service_integration.cli:main",
-            "oint=service_integration.cli:main",
+            "ssi=service_integration.cli:main",
         ],
         "pytest11": ["simcore_service_integration=service_integration.pytest_plugin"],
     },
