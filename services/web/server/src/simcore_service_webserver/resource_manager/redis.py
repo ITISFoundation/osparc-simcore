@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Optional
 
@@ -8,7 +9,7 @@ from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_random
+from tenacity.wait import wait_fixed
 
 from .config import (
     APP_CLIENT_REDIS_CLIENT_KEY,
@@ -22,18 +23,19 @@ log = logging.getLogger(__name__)
 THIS_SERVICE_NAME = "redis"
 DSN = "redis://{host}:{port}"
 _MINUTE = 60
+_WAIT_SECS = 2
 
 
 async def redis_client(app: web.Application):
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    url = DSN.format(**cfg["redis"])
+    endpoint = DSN.format(**cfg["redis"])
 
     async def create_client(url) -> aioredis.Redis:
         # create redis client
         client: Optional[aioredis.Redis] = None
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(1 * _MINUTE),
-            wait=wait_random(max=10),
+            wait=wait_fixed(_WAIT_SECS),
             before_sleep=before_sleep_log(log, logging.WARNING),
             reraise=True,
         ):
@@ -41,14 +43,23 @@ async def redis_client(app: web.Application):
                 client = await aioredis.create_redis_pool(url, encoding="utf-8")
                 if not client:
                     raise ValueError("Expected aioredis client instance, got {client}")
+                log.info(
+                    "Connection to %s succeeded [%s]",
+                    f"redis at {endpoint=}",
+                    json.dumps(attempt.retry_state.retry_object.statistics),
+                )
         assert client  # no sec
         return client
 
-    app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await create_client(url)
+    log.info(
+        "Connecting to %s",
+        f"redis at {endpoint=}",
+    )
+    app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await create_client(endpoint)
     assert client  # nosec
 
     # create lock manager but use DB 1
-    lock_db_url = url + "/1"
+    lock_db_url = endpoint + "/1"
     # create a client for it as well
     app[
         APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY
