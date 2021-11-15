@@ -22,24 +22,24 @@ CLUSTER_USER_RIGHTS = ClusterAccessRights(read=True, write=False, delete=False)
 CLUSTER_NO_RIGHTS = ClusterAccessRights(read=False, write=False, delete=False)
 
 
-class Authentication(BaseModel):
+class BaseAuthentication(BaseModel):
     type: str
 
     class Config:
         extra = Extra.forbid
 
 
-class SimpleAuthentication(Authentication):
+class SimpleAuthentication(BaseAuthentication):
     type: Literal["simple"] = "simple"
     username: str
     password: str
 
 
-class KerberosAuthentication(Authentication):
+class KerberosAuthentication(BaseAuthentication):
     type: Literal["kerberos"] = "kerberos"
 
 
-class JupyterHubTokenAuthentication(Authentication):
+class JupyterHubTokenAuthentication(BaseAuthentication):
     type: Literal["jupyterhub"] = "jupyterhub"
 
 
