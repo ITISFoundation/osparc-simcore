@@ -17,7 +17,7 @@ def test_create_image_spec_impl(tests_data_dir: Path):
 
     # load & parse osparc configs
     io_spec = IoOsparcConfig.from_yaml(tests_data_dir / "metadata-dynamic.yml")
-    service_spec = ServiceOsparcConfig.from_yaml(tests_data_dir / "service.yml")
+    service_spec = ServiceOsparcConfig.from_yaml(tests_data_dir / "runtime.yml")
 
     # assemble docker-compose
     build_spec = BuildItem(

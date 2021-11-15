@@ -17,7 +17,7 @@ def test_create_runtime_spec_impl(tests_data_dir: Path):
     # have spec on how to run -> assemble mounts, network etc of the compose -> ready to run with `docker-compose up`
     # run-spec for devel, prod, etc ...
 
-    osparc_spec: Dict = yaml.safe_load((tests_data_dir / "service.yml").read_text())
+    osparc_spec: Dict = yaml.safe_load((tests_data_dir / "runtime.yml").read_text())
 
     pm_spec1 = PathsMapping.parse_obj(osparc_spec["paths-mapping"])
     pm_spec2 = PathsMapping.parse_obj(
