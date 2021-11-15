@@ -1157,6 +1157,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.__zoom(true);
         }
       }, {
+        "text": "\uf002", // search
+        "action": () => {
+          this.setScale(1);
+        }
+      }, {
         "text": "\uf010", // search-minus
         "action": () => {
           this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
