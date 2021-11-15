@@ -173,7 +173,9 @@ def test_service_key_regex_patterns(service_key: str, regex_pattern: str):
     # tests formatters
     new_service_key = None
     service_type = match.group(3)
-    service_name = match.group(4)
+    service_name = match.group(4).strip(
+        "/"
+    )  # FIXME: SERVICE_KEY_RE MUST eliminate / in the last capture!!!
     if service_type == "comp":
         new_service_key = COMPUTATIONAL_SERVICE_KEY_FORMAT.format(
             service_name=service_name
