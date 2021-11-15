@@ -11,9 +11,9 @@ import yaml
 from pydantic import BaseModel
 from service_integration.compose_spec_model import BuildItem, Service, Volume1
 from service_integration.osparc_config import (
-    IOSpecification,
+    IoOsparcConfig,
     PathsMapping,
-    ServiceSpecification,
+    ServiceOsparcConfig,
     SettingsItem,
 )
 from service_integration.osparc_image_specs import create_image_spec
@@ -56,8 +56,8 @@ def _auto_map_to_service(settings: Dict):
 def test_create_compose_spec_build(tests_data_dir: Path):
 
     # load & parse osparc configs
-    io_spec = IOSpecification.from_yaml(tests_data_dir / "metadata-dynamic.yml")
-    service_spec = ServiceSpecification.from_yaml(tests_data_dir / "service.yml")
+    io_spec = IoOsparcConfig.from_yaml(tests_data_dir / "metadata-dynamic.yml")
+    service_spec = ServiceOsparcConfig.from_yaml(tests_data_dir / "service.yml")
 
     # assemble docker-compose
     build_spec = BuildItem(

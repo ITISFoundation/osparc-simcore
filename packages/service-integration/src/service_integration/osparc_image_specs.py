@@ -11,12 +11,12 @@ from service_integration.compose_spec_model import (
     Service,
 )
 
-from .osparc_config import IOSpecification, ServiceSpecification
+from .osparc_config import IoOsparcConfig, ServiceOsparcConfig
 
 
 def create_image_spec(
-    io_spec: IOSpecification,
-    service_spec: Optional[ServiceSpecification] = None,
+    io_spec: IoOsparcConfig,
+    service_spec: Optional[ServiceOsparcConfig] = None,
     *,
     extra_labels: Dict[str, str] = {}
 ) -> ComposeSpecification:

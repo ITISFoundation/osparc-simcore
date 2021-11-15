@@ -8,7 +8,7 @@ from service_integration.oci_image_spec import (
     LabelSchemaAnnotations,
     OCIImageSpecAnnotations,
 )
-from service_integration.osparc_config import IOSpecification
+from service_integration.osparc_config import IoOsparcConfig
 
 
 def test_create_annotations_from_metadata(tests_data_dir: Path):
@@ -17,7 +17,7 @@ def test_create_annotations_from_metadata(tests_data_dir: Path):
     # recover from docker labels
     #
 
-    io_spec = IOSpecification.from_yaml(tests_data_dir / "metadata.yml")
+    io_spec = IoOsparcConfig.from_yaml(tests_data_dir / "metadata.yml")
 
     # map io_spec to OCI image-spec
     oic_image_spec = OCIImageSpecAnnotations(
