@@ -19,6 +19,9 @@
 
 /**
  * @asset(radialMenu/RadialMenuES5.js)
+ * @asset(radialMenu/font-awesome.css)
+ * @asset(radialMenu/fontawesome.*)
+ * @asset(radialMenu/FontAwesome.otf)
  * @ignore(RadialMenu)
  */
 
@@ -67,17 +70,11 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
   members: {
     init: function() {
       return new Promise((resolve, reject) => {
-        /*
-        // fetch icons
-        fetch("/v0/publications/service-submission", {
-          method: "POST",
-          headers,
-          body
-        })
-        */
-
         // initialize the script loading
         const radialMenuPath = "radialMenu/RadialMenuES5.js";
+        const radialMenuFontsCss = "radialMenu/font-awesome.css";
+        const radialMenuFontsCssUri = qx.util.ResourceManager.getInstance().toUri(radialMenuFontsCss);
+        qx.module.Css.includeStylesheet(radialMenuFontsCssUri);
         const dynLoader = new qx.util.DynamicScriptLoader([
           radialMenuPath
         ]);
