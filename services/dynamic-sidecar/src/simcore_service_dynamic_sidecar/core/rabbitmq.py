@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import socket
 from asyncio import CancelledError, Queue, Task
@@ -11,6 +10,7 @@ import aio_pika
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
+from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from settings_library.rabbit import RabbitSettings
@@ -55,7 +55,7 @@ async def _wait_till_rabbit_responsive(url: str) -> None:
 
 
 class RabbitMQ:  # pylint: disable = too-many-instance-attributes
-    CHANNEL_LOG = "Log"
+    CHANNEL_LOG = "logger"
 
     def __init__(self, app: FastAPI, max_messages_to_send: int = 100) -> None:
         settings: DynamicSidecarSettings = app.state.settings
@@ -107,7 +107,7 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
 
     async def _dispatch_messages_worker(self) -> None:
         while self._keep_running:
-            for channel, queue in self._channel_queues.items():
+            for queue in self._channel_queues.values():
                 # in order to avoid blocking when dispatching messages
                 # it is important to fetch them an at most the existing
                 # messages in the queue
@@ -118,23 +118,21 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
                 # an empty payload
                 if not messages:
                     continue
-
-                await self._publish_messages(channel, messages)
+                await self._publish_messages(messages)
 
             await asyncio.sleep(SLEEP_BETWEEN_SENDS)
 
-    async def _publish_messages(self, channel: str, messages: List[str]) -> None:
-        data = {
-            "Channel": channel,
-            "Node": f"{self._node_id}",
-            "user_id": f"{self._user_id}",
-            "project_id": f"{self._project_id}",
-            "Messages": messages,
-        }
+    async def _publish_messages(self, messages: List[str]) -> None:
+        data = LoggerRabbitMessage(
+            node_id=self._node_id,
+            user_id=self._user_id,
+            project_id=self._project_id,
+            messages=messages,
+        )
 
         assert self._logs_exchange  # nosec
         await self._logs_exchange.publish(
-            aio_pika.Message(body=json.dumps(data).encode()), routing_key=""
+            aio_pika.Message(body=data.json().encode()), routing_key=""
         )
 
     async def post_log_message(self, log_msg: Union[str, List[str]]) -> None:

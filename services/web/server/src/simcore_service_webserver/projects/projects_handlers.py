@@ -10,6 +10,7 @@ from aiohttp import web
 from jsonschema import ValidationError
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectState
+from servicelib.json_serialization import json_dumps
 from servicelib.rest_pagination_utils import PageResponseLimitOffset
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
@@ -271,7 +272,6 @@ async def get_active_project(request: web.Request) -> web.Response:
 
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
-
     try:
         project = None
         user_active_projects = []
@@ -288,7 +288,7 @@ async def get_active_project(request: web.Request) -> web.Response:
                 include_state=True,
             )
 
-        return web.json_response({"data": project})
+        return web.json_response({"data": project}, dumps=json_dumps)
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason="Project not found") from exc
@@ -480,7 +480,7 @@ async def open_project(request: web.Request) -> web.Response:
 
         await projects_api.notify_project_state_update(request.app, project)
 
-        return web.json_response({"data": project})
+        return web.json_response({"data": project}, dumps=json_dumps)
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
@@ -537,4 +537,4 @@ async def state_project(request: web.Request) -> web.Response:
         include_state=True,
     )
     project_state = ProjectState(**validated_project["state"])
-    return web.json_response({"data": project_state.dict()})
+    return web.json_response({"data": project_state.dict()}, dumps=json_dumps)

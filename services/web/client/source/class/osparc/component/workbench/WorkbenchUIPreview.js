@@ -51,8 +51,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
       });
     },
 
+    // overriden
     _loadModel: function(model) {
-      this.clearAll();
+      this._clearAll();
       this.resetSelectedNodes();
       this._currentModel = model;
       if (model) {
