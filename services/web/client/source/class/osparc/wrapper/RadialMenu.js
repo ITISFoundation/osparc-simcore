@@ -95,15 +95,15 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
     },
 
     createMenu: function() {
-      const settings = this.__getSettings();
+      const settings = this.__getDefaultSettings();
       const radialMenu = new RadialMenu(settings);
       // give id to canvas
       return radialMenu;
     },
 
-    __getSettings: function() {
+    __getDefaultSettings: function() {
       return {
-        fontSize: 14,
+        fontSize: 16,
         textColor: qx.theme.manager.Color.getInstance().resolve("text"),
         backgroundColor: qx.theme.manager.Color.getInstance().resolve("background-main-lighter+"),
         hoverBackgroundColor: qx.theme.manager.Color.getInstance().resolve("contrasted-background+"),
