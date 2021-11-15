@@ -6,7 +6,7 @@ import yaml
 
 from ..labels_annotations import to_labels
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
-from ..osparc_config import IOSpecification, ServiceSpecification
+from ..osparc_config import IoOsparcConfig, ServiceOsparcConfig
 from ..osparc_image_specs import create_image_spec
 
 
@@ -20,13 +20,13 @@ def create_docker_compose_image_spec(
     click.echo(f"Creating image-spec -> {compose_spec_path}")
 
     # i/o specs (required)
-    io_spec = IOSpecification.from_yaml(io_specs_path)
+    io_spec = IoOsparcConfig.from_yaml(io_specs_path)
 
     # service specs (not required)
     service_spec = None
     try:
         # TODO: should include default?
-        service_spec = ServiceSpecification.from_yaml(service_specs_path)
+        service_spec = ServiceOsparcConfig.from_yaml(service_specs_path)
     except FileNotFoundError:
         pass
 

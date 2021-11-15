@@ -8,7 +8,7 @@ from typing import Dict
 
 import pytest
 import yaml
-from service_integration.osparc_config import IOSpecification, ServiceSpecification
+from service_integration.osparc_config import IoOsparcConfig, ServiceOsparcConfig
 
 
 @pytest.fixture
@@ -40,8 +40,8 @@ def labels(tests_data_dir: Path, labels_fixture_name: str) -> Dict[str, str]:
 def test_load_from_labels(
     labels: Dict[str, str], labels_fixture_name: str, tmp_path: Path
 ):
-    io_spec = IOSpecification.from_labels_annotations(labels)
-    service_spec = ServiceSpecification.from_labels_annotations(labels)
+    io_spec = IoOsparcConfig.from_labels_annotations(labels)
+    service_spec = ServiceOsparcConfig.from_labels_annotations(labels)
 
     print(io_spec.json(exclude_unset=True, indent=2))
     print(service_spec.json(exclude_unset=True, indent=2))

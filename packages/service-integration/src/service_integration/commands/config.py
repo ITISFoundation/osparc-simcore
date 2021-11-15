@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from pydantic.main import BaseModel
 
 from ..compose_spec_model import ComposeSpecification
-from ..osparc_config import IOSpecification, ServiceSpecification
+from ..osparc_config import IoOsparcConfig, ServiceOsparcConfig
 
 
 def create_osparc_specs(
@@ -51,14 +51,14 @@ def create_osparc_specs(
                     assert isinstance(labels.__root__, dict)
                     labels = labels.__root__
 
-                io_spec = IOSpecification.from_labels_annotations(labels)
+                io_spec = IoOsparcConfig.from_labels_annotations(labels)
                 _save(
                     service_name,
                     io_specs_path,
                     io_spec,
                 )
 
-                service_spec = ServiceSpecification.from_labels_annotations(labels)
+                service_spec = ServiceOsparcConfig.from_labels_annotations(labels)
                 _save(
                     service_name,
                     service_specs_path,

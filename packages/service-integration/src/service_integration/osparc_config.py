@@ -42,20 +42,20 @@ OSPARC_LABEL_PREFIXES = ("io.simcore", "simcore.service", "io.osparc", "swiss.z4
 ## MODELS -------------------------
 
 
-class IOSpecification(ServiceDockerData):
-    """General info + I/O specs
+class IoOsparcConfig(ServiceDockerData):
+    """General info + I/O configuration
 
     Include both image and runtime specs
     """
 
     @classmethod
-    def from_yaml(cls, path: Path) -> "IOSpecification":
+    def from_yaml(cls, path: Path) -> "IoOsparcConfig":
         with path.open() as fh:
             data = yaml_safe_load(fh)
         return cls.parse_obj(data)
 
     @classmethod
-    def from_labels_annotations(cls, labels: Dict[str, str]) -> "IOSpecification":
+    def from_labels_annotations(cls, labels: Dict[str, str]) -> "IoOsparcConfig":
         data = from_labels(
             labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
         )
@@ -117,7 +117,7 @@ class SettingsItem(BaseModel):
     )
 
 
-class ServiceSpecification(BaseModel):
+class ServiceOsparcConfig(BaseModel):
     """Runtime specs"""
 
     compose_spec: Optional[ComposeSpecification] = None
@@ -133,13 +133,13 @@ class ServiceSpecification(BaseModel):
         extra = Extra.forbid
 
     @classmethod
-    def from_yaml(cls, path: Path) -> "ServiceSpecification":
+    def from_yaml(cls, path: Path) -> "ServiceOsparcConfig":
         with path.open() as fh:
             data = yaml_safe_load(fh)
         return cls.parse_obj(data)
 
     @classmethod
-    def from_labels_annotations(cls, labels: Dict[str, str]) -> "ServiceSpecification":
+    def from_labels_annotations(cls, labels: Dict[str, str]) -> "ServiceOsparcConfig":
         data = from_labels(labels, prefix_key=OSPARC_LABEL_PREFIXES[1])
         return cls.parse_obj(data)
 
