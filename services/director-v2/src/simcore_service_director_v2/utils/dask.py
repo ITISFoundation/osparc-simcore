@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from pprint import pformat
-from typing import Awaitable, Callable, Dict, Optional, Tuple
+from typing import Awaitable, Callable, Dict, Final, Optional, Tuple, cast
 from uuid import uuid4
 
 import dask.distributed
@@ -184,6 +184,8 @@ async def compute_service_log_file_upload_link(
 
 UserCompleteCB = Callable[[TaskStateEvent], Awaitable[None]]
 
+_DASK_FUTURE_TIMEOUT_S: Final[int] = 5
+
 
 def done_dask_callback(
     dask_future: dask.distributed.Future,
@@ -197,18 +199,23 @@ def done_dask_callback(
     logger.debug("task '%s' completed with status %s", job_id, dask_future.status)
     try:
         if dask_future.status == "error":
+            task_exception = dask_future.exception(timeout=_DASK_FUTURE_TIMEOUT_S)
             event_data = TaskStateEvent(
                 job_id=job_id,
                 state=RunningState.FAILED,
-                msg=f"{dask_future.exception(timeout=5)}",
+                msg=f"{task_exception}",
             )
         elif dask_future.cancelled():
             event_data = TaskStateEvent(job_id=job_id, state=RunningState.ABORTED)
         else:
+            task_result = cast(
+                TaskOutputData, dask_future.result(timeout=_DASK_FUTURE_TIMEOUT_S)
+            )
+            assert task_result  # no sec
             event_data = TaskStateEvent(
                 job_id=job_id,
                 state=RunningState.SUCCESS,
-                msg=dask_future.result(timeout=5).json(),
+                msg=task_result.json(),
             )
     except dask.distributed.TimeoutError:
         event_data = TaskStateEvent(
