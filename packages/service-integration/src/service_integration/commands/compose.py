@@ -101,20 +101,25 @@ def main(
             ]
 
             # find pair (not required)
-            service_config = io_config.parent / "runtime-spec.yml"
+            service_config = io_config.parent / "runtime.yml"
             if service_config.exists():
                 config_filenames[config_name].append(service_config)
 
     # output
-    # TODO: use streams as inputs instead of paths
     compose_spec_dict = {}
-    for config_name in config_filenames:
-        compose_spec = create_docker_compose_image_spec(*config_filenames[config_name])
-        # each update will append new services
-        compose_spec_dict.update(compose_spec.dict(exclude_unset=True))
+    for n, config_name in enumerate(config_filenames):
+        nth_compose_spec = create_docker_compose_image_spec(
+            *config_filenames[config_name]
+        ).dict(exclude_unset=True)
+
+        # FIXME: shaky! why first decides ??
+        if n == 0:
+            compose_spec_dict = nth_compose_spec
+        else:
+            # appends only services section!
+            compose_spec_dict["services"].update(nth_compose_spec["services"])
 
     compose_spec_path.parent.mkdir(parents=True, exist_ok=True)
-
     with compose_spec_path.open("wt") as fh:
         yaml.safe_dump(
             compose_spec_dict,

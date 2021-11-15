@@ -83,32 +83,15 @@ def create_osparc_specs(
     required=True,
     default=Path("docker-compose.yml"),
 )
-@click.option(
-    "-m",
-    "--metadata",
-    "--io-specs",
-    "io_specs_path",
-    help="osparc config: info and i/o image specs",
-    type=Path,
-    required=False,
-    default=".osparc/metadata.yml",
-)
-@click.option(
-    "-s",
-    "--service-specs",
-    "service_specs_path",
-    help="osparc config: runtime specs",
-    type=Path,
-    required=False,
-    default=".osparc/runtime-spec.yml",
-)
 def main(
     compose_spec_path: Path,
-    io_specs_path: Path,
-    service_specs_path: Path,
 ):
     """Creates osparc config from complete docker compose-spec"""
-    # TODO: use streams as inputs instead of paths
+
+    # TODO: sync defaults among CLI commands
+    config_basedir = compose_spec_path.parent / ".osparc"
+    io_specs_path = config_basedir / "metadata.yml"
+    service_specs_path = config_basedir / "runtime.yml"
 
     io_specs_path.parent.mkdir(parents=True, exist_ok=True)
     service_specs_path.parent.mkdir(parents=True, exist_ok=True)
