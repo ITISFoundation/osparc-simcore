@@ -39,6 +39,10 @@ qx.Class.define("osparc.component.widget.StudyTitleOnlyTree", {
       const width = 500;
       const height = 500;
       osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
+    },
+
+    selectStudyItem: function() {
+      console.log("selectStudyItem");
     }
   }
 });

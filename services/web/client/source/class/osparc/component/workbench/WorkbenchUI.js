@@ -1100,7 +1100,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__isSelectedItemAnEdge()) {
         const edge = this.__getEdgeUI(newID);
         edge.setSelected(true);
-      } else if (newID) {
+      } else {
         this.fireDataEvent("changeSelectedNode", newID);
       }
 

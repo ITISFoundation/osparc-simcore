@@ -523,14 +523,19 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
       });
       workbenchUI.addListener("changeSelectedNode", e => {
-        studyTreeItem.resetSelection();
         const nodeId = e.getData();
-        this.__nodesTree.nodeSelected(nodeId);
-        const workbench = this.getStudy().getWorkbench();
-        const node = workbench.getNode(nodeId);
-        this.__populateSecondPanel(node);
-        this.__evalIframe(node);
-        this.__loggerView.setCurrentNodeId(nodeId);
+        if (nodeId) {
+          studyTreeItem.resetSelection();
+          this.__nodesTree.nodeSelected(nodeId);
+          const workbench = this.getStudy().getWorkbench();
+          const node = workbench.getNode(nodeId);
+          this.__populateSecondPanel(node);
+          this.__evalIframe(node);
+          this.__loggerView.setCurrentNodeId(nodeId);
+        } else {
+          // empty selection
+          this.__studyTreeItem.selectStudyItem();
+        }
       });
       workbenchUI.addListener("nodeSelected", e => {
         studyTreeItem.resetSelection();
