@@ -305,6 +305,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return inputOutputNodesLayout;
     },
 
+    __openServiceCatalog: function(e) {
+      if (this.getStudy().isReadOnly()) {
+        return;
+      }
+      const winPos = this.__pointerEventToScreenPos(e);
+      const nodePos = this.__pointerEventToWorkbenchPos(e);
+      this.openServiceCatalog(winPos, nodePos);
+    },
+
     openServiceCatalog: function(winPos, nodePos) {
       const srvCat = new osparc.component.workbench.ServiceCatalog();
       const maxLeft = this.getBounds().width - osparc.component.workbench.ServiceCatalog.Width;
@@ -1133,20 +1142,42 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __doOpenContextMenu: function(e) {
+      if (this.__contextMenu) {
+        this.__contextMenu.hide();
+      }
       const radialMenuWrapper = osparc.wrapper.RadialMenu.getInstance();
-      const radialMenu = radialMenuWrapper.createMenu();
-      const buttons = osparc.wrapper.RadialMenu.getButtons();
-      radialMenu.addButtons(buttons);
-      radialMenu.setPos(e.getDocumentLeft() - radialMenu.w2, e.getDocumentTop() - radialMenu.h2);
-      radialMenu.show();
+      const contextMenu = this.__contextMenu = radialMenuWrapper.createMenu();
+      const buttons = [{
+        "text": "\uf067", // plus
+        "action": () => {
+          this.__openServiceCatalog(e);
+        }
+      }, {
+        "text": "\uf00e", // search-plus
+        "action": () => {
+          this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
+          this.__zoom(true);
+        }
+      }, {
+        "text": "\uf010", // search-minus
+        "action": () => {
+          this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
+          this.__zoom(false);
+        }
+      }];
+      contextMenu.addButtons(buttons);
+      contextMenu.setPos(e.getDocumentLeft() - contextMenu.w2, e.getDocumentTop() - contextMenu.h2);
+      contextMenu.show();
+      /*
       const tapListener = ev => {
-        if (osparc.utils.Utils.isMouseOnElement(radialMenu, ev)) {
+        if (osparc.utils.Utils.isMouseOnElement(contextMenu, ev)) {
           return;
         }
-        radialMenu.hide();
+        contextMenu.hide();
         document.removeEventListener("mousedown", tapListener);
       };
       document.addEventListener("mousedown", tapListener);
+      */
     },
 
     __mouseDown: function(e) {
@@ -1440,12 +1471,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
 
       this.__workbenchLayout.addListener("dbltap", e => {
-        if (this.getStudy().isReadOnly()) {
-          return;
-        }
-        const winPos = this.__pointerEventToScreenPos(e);
-        const nodePos = this.__pointerEventToWorkbenchPos(e);
-        this.openServiceCatalog(winPos, nodePos);
+        this.__openServiceCatalog(e);
       }, this);
 
       this.__workbenchLayout.addListener("resize", () => this.__updateHint(), this);

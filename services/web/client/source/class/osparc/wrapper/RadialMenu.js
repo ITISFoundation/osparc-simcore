@@ -37,26 +37,7 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
   statics: {
     NAME: "RadialMenu",
     VERSION: "1.2.0",
-    URL: "https://github.com/victorqribeiro/radialMenu",
-
-    getButtons: function() {
-      return [{
-        "text": "\uf053", // plus
-        "action": () => {
-          console.log("add");
-        }
-      }, {
-        "text": "\uf00e", // search-plus
-        "action": () => {
-          console.log("in");
-        }
-      }, {
-        "text": "\uf010", // search-minus
-        "action": () => {
-          console.log("out");
-        }
-      }];
-    }
+    URL: "https://github.com/victorqribeiro/radialMenu"
   },
 
   properties: {
