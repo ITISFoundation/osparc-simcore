@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import socket
 from typing import Optional
 
@@ -66,7 +67,7 @@ class DBContextManager:
     @staticmethod
     async def _create_db_engine() -> aiopg.sa.Engine:
         dsn = DataSourceName(
-            application_name=f"{__name__}_{id(socket.gethostname())}",
+            application_name=f"{__name__}_{socket.gethostname()}_{os.getpid()}",
             database=config.POSTGRES_DB,
             user=config.POSTGRES_USER,
             password=config.POSTGRES_PW,
