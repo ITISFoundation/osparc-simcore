@@ -42,7 +42,10 @@ EnvVarsMap = Dict[str, Optional[str]]
 
 
 class _environment_section:
-    """helpers to deal with different formats of the environment section in a docker-compose specs file
+    """the 'environment' field in a docker-compose can be either a dict (EnvVarsMap)
+    or a list of "key=value" (EnvKeyEqValueList)
+
+    These helpers can resolve parsing and exporting between these formats
 
     SEE https://docs.docker.com/compose/compose-file/compose-file-v3/#environment
     """
