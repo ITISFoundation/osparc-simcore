@@ -73,15 +73,15 @@ def test_expected_paths_and_volumes(
     # check location on disk
     assert (
         mounted_volumes.disk_outputs_path
-        == mounted_fs.DY_VOLUMES / f"{outputs_dir}".strip("/")
+        == mounted_fs.DY_VOLUMES / outputs_dir.relative_to("/")
     )
     assert (
         mounted_volumes.disk_inputs_path
-        == mounted_fs.DY_VOLUMES / f"{inputs_dir}".strip("/")
+        == mounted_fs.DY_VOLUMES / inputs_dir.relative_to("/")
     )
 
     assert set(mounted_volumes.disk_state_paths()) == {
-        mounted_fs.DY_VOLUMES / f"{x}".strip("/") for x in state_paths_dirs
+        mounted_fs.DY_VOLUMES / x.relative_to("/") for x in state_paths_dirs
     }
 
     # check volume mount point

@@ -62,15 +62,15 @@ class MountedVolumes:
 
     @cached_property
     def disk_inputs_path(self) -> Path:
-        return _ensure_path(DY_VOLUMES / f"{self.inputs_path}".strip("/"))
+        return _ensure_path(DY_VOLUMES / self.inputs_path.relative_to("/"))
 
     @cached_property
     def disk_outputs_path(self) -> Path:
-        return _ensure_path(DY_VOLUMES / f"{self.outputs_path}".strip("/"))
+        return _ensure_path(DY_VOLUMES / self.outputs_path.relative_to("/"))
 
     def disk_state_paths(self) -> Generator[Path, None, None]:
         for state_path in self.state_paths:
-            yield _ensure_path(DY_VOLUMES / f"{state_path}".strip("/"))
+            yield _ensure_path(DY_VOLUMES / state_path.relative_to("/"))
 
     def _ensure_directories(self) -> None:
         """

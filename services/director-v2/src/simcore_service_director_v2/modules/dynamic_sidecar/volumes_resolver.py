@@ -8,7 +8,7 @@ class DynamicSidecarVolumesPathsResolver:
 
     @classmethod
     def _target(cls, state_path: Path) -> str:
-        target_path = cls.BASE_PATH / f"{state_path}".strip("/")
+        target_path = cls.BASE_PATH / state_path.relative_to("/")
         return f"{target_path}"
 
     @classmethod

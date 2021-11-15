@@ -57,7 +57,7 @@ def test_expected_paths(
         compose_namespace, inputs_path, node_uuid
     ) == expect(
         source=f"{compose_namespace}_tmp_some_inputs",
-        target=str(Path("/dy-volumes") / f"{inputs_path}".strip("/")),
+        target=str(Path("/dy-volumes") / inputs_path.relative_to("/")),
     )
 
     outputs_path = Path("/tmp/some/outputs")
@@ -65,7 +65,7 @@ def test_expected_paths(
         compose_namespace, outputs_path, node_uuid
     ) == expect(
         source=f"{compose_namespace}_tmp_some_outputs",
-        target=str(Path("/dy-volumes") / f"{outputs_path}".strip("/")),
+        target=str(Path("/dy-volumes") / outputs_path.relative_to("/")),
     )
 
     for path in state_paths:
@@ -74,5 +74,5 @@ def test_expected_paths(
             compose_namespace, path, node_uuid
         ) == expect(
             source=f"{compose_namespace}{name_from_path}",
-            target=str(Path("/dy-volumes/") / f"{path}".strip("/")),
+            target=str(Path("/dy-volumes/") / path.relative_to("/")),
         )
