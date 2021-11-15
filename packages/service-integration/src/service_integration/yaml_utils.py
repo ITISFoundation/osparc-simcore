@@ -38,7 +38,8 @@ def ordered_safe_dump(data, stream=None, **kwds):
     return yaml.dump(data, stream, OrderedDumper, **kwds)
 
 
-class LoaderWithInclude(yaml.SafeLoader):
+# pylint: disable=too-many-ancestors
+class _LoaderWithInclude(yaml.SafeLoader):
     # Taken from https://stackoverflow.com/questions/528281/how-can-i-include-a-yaml-file-inside-another
 
     def __init__(self, stream):
@@ -58,11 +59,11 @@ class LoaderWithInclude(yaml.SafeLoader):
     def include(self, node):
         fpath = os.path.join(self._basepath, f"{self.construct_scalar(node)}")
         with open(fpath, "r") as f:
-            return yaml.load(f, LoaderWithInclude)
+            return yaml.load(f, _LoaderWithInclude)
 
 
-LoaderWithInclude.add_constructor("!include", LoaderWithInclude.include)
+_LoaderWithInclude.add_constructor("!include", _LoaderWithInclude.include)
 
 
 def yaml_safe_load(stream):
-    return yaml.load(stream, LoaderWithInclude)
+    return yaml.load(stream, _LoaderWithInclude)
