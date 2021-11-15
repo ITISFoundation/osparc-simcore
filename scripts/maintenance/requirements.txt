@@ -5,6 +5,5 @@ psycopg2-binary
 pydantic[email,dotenv]
 pylint
 python-dateutil
-tdqm
 tenacity
 typer[all]

@@ -3,8 +3,6 @@ import asyncio
 import httpx
 from httpx import Response
 from typing import Dict, List
-import tqdm.asyncio
-import tqdm
 from collections import deque
 
 
@@ -32,18 +30,18 @@ async def _compile_registry_report(
     response = await _httpx_request(registry, user, password, "_catalog")
     repositories = response.json()["repositories"]
 
+    progressbar = typer.progressbar(length=len(repositories), label="fetching tags")
+
     async def _get_tag(repository: str) -> Dict:
         response = await _httpx_request(
             registry, user, password, f"{repository}/tags/list"
         )
+        progressbar.update(1)
         return response.json()
 
-    tasks = [_get_tag(repo) for repo in repositories]
-    responses = deque()
-    for f in tqdm.tqdm(
-        asyncio.as_completed(tasks), total=len(tasks), ncols=80, desc="Fetching tags"
-    ):
-        responses.append(await f)
+    responses = await asyncio.gather(*[_get_tag(repo) for repo in repositories])
+
+    progressbar.render_finish()
 
     repository_tags = {r["name"]: r["tags"] for r in responses}
     return repository_tags
