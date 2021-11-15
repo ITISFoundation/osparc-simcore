@@ -2,6 +2,7 @@
 
 """
 import logging
+import os
 import socket
 from typing import Optional
 
@@ -40,7 +41,7 @@ class DBContextManager:
 
     async def __aenter__(self):
         dsn = DataSourceName(
-            application_name=f"{__name__}_{id(socket.gethostname())}",
+            application_name=f"{__name__}_{socket.gethostname()}_{os.getpid()}",
             database=POSTGRES_DB,
             user=POSTGRES_USER,
             password=POSTGRES_PW,

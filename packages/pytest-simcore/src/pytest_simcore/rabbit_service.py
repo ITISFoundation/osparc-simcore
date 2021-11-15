@@ -5,6 +5,7 @@
 import asyncio
 import json
 import logging
+import os
 import socket
 from dataclasses import dataclass
 from typing import Any, AsyncIterator, Dict, Iterator, Optional
@@ -87,7 +88,7 @@ async def rabbit_connection(
     # NOTE: to show the connection name in the rabbitMQ UI see there
     # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
     connection = await aio_pika.connect_robust(
-        rabbit_config.dsn + f"?name={__name__}_{id(socket.gethostname())}",
+        rabbit_config.dsn + f"?name={__name__}_{socket.gethostname()}_{os.getpid()}",
         client_properties={"connection_name": "pytest read connection"},
     )
     assert connection
