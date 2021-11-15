@@ -91,12 +91,12 @@ async def get_dynamic_sidecar_spec(
     #
     # Two separate volumes are required to achieve the following on the spawned
     # dynamic-sidecar containers:
-    #   `volume_name_inputs:/target_folder/inputs`
-    #   `volume_name_outputs:/target_folder/outputs`
-    #   `volume_name_path_to_sate_01:/target_folder/path_to_sate_01`
+    #   `volume_name_path_to_inputs:/target_folder/path/to/inputs`
+    #   `volume_name_path_to_outputs:/target_folder/path/to/outputs`
+    #   `volume_name_path_to_sate_01:/target_folder/path/to/sate/01`
     for path_to_mount in [
-        Path("/inputs"),
-        Path("/outputs"),
+        scheduler_data.paths_mapping.inputs_path,
+        scheduler_data.paths_mapping.outputs_path,
     ] + scheduler_data.paths_mapping.state_paths:
         mounts.append(
             DynamicSidecarVolumesPathsResolver.mount_entry(
