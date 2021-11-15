@@ -97,7 +97,7 @@ pytest_simcore_ops_services_selection = [
 ServicesNodeUUIDs = namedtuple("ServicesNodeUUIDs", "sleeper, dy, dy_compose_spec")
 InputsOutputs = namedtuple("InputsOutputs", "inputs, outputs")
 
-DY_SERVICES_STATE_PATH: Path = Path("/dy-volumes/workdir_generated-data")
+DY_SERVICES_STATE_PATH: Path = Path("/dy-volumes/workdir/generated-data")
 TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED = 60
 TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED = 60
 POSSIBLE_ISSUE_WORKAROUND = 10
