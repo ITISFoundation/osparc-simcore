@@ -5,10 +5,10 @@
 import json
 import logging
 import os
-import urllib
+import urllib.parse
 from argparse import Namespace
 from collections import namedtuple
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, AsyncIterator, Dict, Optional
 from uuid import UUID
 
 import pytest
@@ -115,7 +115,7 @@ async def mock_retrieve_features(
     service: Dict[str, Any],
     is_legacy: bool,
     scheduler_data_from_http_request: SchedulerData,
-) -> Iterator[Optional[MockRouter]]:
+) -> AsyncIterator[Optional[MockRouter]]:
     with respx.mock(
         assert_all_called=False,
         assert_all_mocked=True,
