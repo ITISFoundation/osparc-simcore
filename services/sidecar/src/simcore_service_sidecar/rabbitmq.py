@@ -59,7 +59,7 @@ class RabbitMQ(BaseModel):
 
         # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
         self._connection = await aio_pika.connect(
-            url + f"?name={__name__}_{id(socket.gethostname())}",
+            url + f"?name={__name__}_{socket.gethostname()}_{id(socket.gethostname())}",
             client_properties={"connection_name": "sidecar connection"},
         )
         self._connection.add_close_callback(_close_callback)
