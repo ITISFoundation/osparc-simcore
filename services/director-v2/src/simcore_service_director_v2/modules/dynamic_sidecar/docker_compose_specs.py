@@ -56,7 +56,7 @@ class _environment_section:
         if isinstance(environment, list):
             for key_eq_value in environment:
                 assert isinstance(key_eq_value, str)  # nosec
-                key, value, *_ = key_eq_value.split("=") + [
+                key, value, *_ = key_eq_value.split("=", maxsplit=1) + [
                     None,
                 ]  # type: ignore
                 envs[key] = value
