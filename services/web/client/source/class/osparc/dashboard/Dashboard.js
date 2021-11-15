@@ -47,6 +47,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     osparc.wrapper.JsonDiffPatch.getInstance().init();
     osparc.wrapper.JsonTreeViewer.getInstance().init();
     osparc.wrapper.DOMPurify.getInstance().init();
+    osparc.wrapper.RadialMenu.getInstance().init();
     this.__createMainViewLayout();
   },
 

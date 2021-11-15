@@ -75,9 +75,9 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
       });
     },
 
-    createMenu: function() {
-      const settings = this.__getDefaultSettings();
-      const radialMenu = new RadialMenu(settings);
+    createMenu: function(settings = {}) {
+      const defSettings = this.__getDefaultSettings();
+      const radialMenu = new RadialMenu(Object.assign(defSettings, settings));
       // give id to canvas
       return radialMenu;
     },
@@ -91,7 +91,7 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
         borderColor: "transparent",
         innerCircle: 20,
         outerCircle: 60,
-        rotation: Math.PI / 2, // radians
+        rotation: 0, // radians
         buttonGap: 0.01 // radians
         // isFixed: true // we will handle the events
       };

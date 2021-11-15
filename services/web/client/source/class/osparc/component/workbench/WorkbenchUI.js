@@ -1145,8 +1145,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__contextMenu) {
         this.__contextMenu.hide();
       }
-      const radialMenuWrapper = osparc.wrapper.RadialMenu.getInstance();
-      const contextMenu = this.__contextMenu = radialMenuWrapper.createMenu();
       const buttons = [{
         "text": "\uf067", // plus
         "action": () => {
@@ -1165,6 +1163,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.__zoom(false);
         }
       }];
+      let rotation = 3 * Math.PI / 2;
+      rotation -= (2/buttons.length) * (Math.PI / 2);
+      const radialMenuWrapper = osparc.wrapper.RadialMenu.getInstance();
+      const contextMenu = this.__contextMenu = radialMenuWrapper.createMenu({rotation});
       contextMenu.addButtons(buttons);
       contextMenu.setPos(e.getDocumentLeft() - contextMenu.w2, e.getDocumentTop() - contextMenu.h2);
       contextMenu.show();
