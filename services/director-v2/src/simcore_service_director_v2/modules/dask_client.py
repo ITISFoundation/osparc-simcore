@@ -151,10 +151,9 @@ class DaskClient:
         async def _dask_sub_handler(
             dask_sub_topic_name: str, handler: Callable[[str], Awaitable[None]]
         ):
-            dask_sub = distributed.Sub(dask_sub_topic_name)
-
             while True:
                 try:
+                    dask_sub = distributed.Sub(dask_sub_topic_name)
                     async for event in dask_sub:
                         logger.debug("received event %s", event)
                         await handler(event)
