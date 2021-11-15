@@ -60,6 +60,7 @@ def minimal_config(project_env_devel_environment, monkeypatch: MonkeyPatch) -> N
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
 
 
 @pytest.fixture(scope="session")
@@ -90,6 +91,7 @@ def mock_env(monkeypatch: MonkeyPatch, docker_swarm: None) -> None:
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
+    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
 
     monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
     monkeypatch.setenv("POSTGRES_USER", "mocked_user")
