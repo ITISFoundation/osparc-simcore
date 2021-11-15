@@ -124,10 +124,15 @@ def assemble_spec(
         app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
     )
 
+    docker_compose_version = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
+    )
+
     # when no compose yaml file was provided
     if compose_spec is None:
         service_spec: Dict[str, Any] = {
-            "version": "3.8",
+            # NOTE: latest version does NOT require
+            "version": docker_compose_version,
             "services": {
                 CONTAINER_NAME: {
                     "image": f"{docker_registry_settings.resolved_registry_url}/{service_key}:{service_tag}"
