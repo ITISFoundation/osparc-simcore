@@ -320,7 +320,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         alignX: "left",
         marginLeft: 14
       });
-      addNewNodeBtn.addListener("execute", () => this.__workbenchUI.openServiceCatalog());
+      addNewNodeBtn.addListener("execute", () => this.__workbenchUI.openServiceCatalog({
+        x: 50,
+        y: 50
+      }, {
+        x: 50,
+        y: 50
+      }));
       homeAndNodesTree.add(addNewNodeBtn);
 
       const nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, primaryColumnBGColor);

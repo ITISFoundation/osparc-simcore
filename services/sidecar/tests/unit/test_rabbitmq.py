@@ -70,23 +70,23 @@ async def test_rabbitmq(
     assert len(incoming_data) == 3, f"missing incoming data: {pformat(incoming_data)}"
 
     assert incoming_data[0] == {
-        "Channel": "Log",
-        "Messages": [log_msg],
-        "Node": node_id,
+        "channel": "logger",
+        "messages": [log_msg],
+        "node_id": node_id,
         "project_id": project_id,
         "user_id": user_id,
     }
     assert incoming_data[1] == {
-        "Channel": "Log",
-        "Messages": ["I", "am a logger", "man..."],
-        "Node": "some node id",
+        "channel": "logger",
+        "messages": ["I", "am a logger", "man..."],
+        "node_id": "some node id",
         "project_id": "some project id",
         "user_id": "some user id",
     }
     assert incoming_data[2] == {
-        "Channel": "Progress",
-        "Node": "some node id",
-        "Progress": "I progressed a lot since last time",
+        "channel": "progress",
+        "node_id": "some node id",
+        "progress": "I progressed a lot since last time",
         "project_id": "some project id",
         "user_id": "some user id",
     }

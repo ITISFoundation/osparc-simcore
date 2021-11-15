@@ -154,7 +154,7 @@ async def _assert_incoming_data_logs(
     service_tag: str,
 ) -> Tuple[Dict[str, List[str]], Dict[str, List[float]], Dict[str, List[str]]]:
     # check message contents
-    fields = ["Channel", "Node", "project_id", "user_id"]
+    fields = ["channel", "node_id", "project_id", "user_id"]
     sidecar_logs = {task: [] for task in tasks}
     tasks_logs = {task: [] for task in tasks}
     progress_logs = {task: [] for task in tasks}
@@ -165,19 +165,19 @@ async def _assert_incoming_data_logs(
             instrumentation_messages[message["service_uuid"]].append(message)
         else:
             assert all(field in message for field in fields)
-            assert message["Channel"] == "Log" or message["Channel"] == "Progress"
+            assert message["channel"] == "logger" or message["channel"] == "progress"
             assert message["user_id"] == user_id
             assert message["project_id"] == project_id
-            if message["Channel"] == "Log":
-                assert "Messages" in message
-                for log in message["Messages"]:
+            if message["channel"] == "logger":
+                assert "messages" in message
+                for log in message["messages"]:
                     if log.startswith("[sidecar]"):
-                        sidecar_logs[message["Node"]].append(log)
+                        sidecar_logs[message["node_id"]].append(log)
                     else:
-                        tasks_logs[message["Node"]].append(log)
-            elif message["Channel"] == "Progress":
-                assert "Progress" in message
-                progress_logs[message["Node"]].append(float(message["Progress"]))
+                        tasks_logs[message["node_id"]].append(log)
+            elif message["channel"] == "progress":
+                assert "progress" in message
+                progress_logs[message["node_id"]].append(float(message["progress"]))
 
     for task in tasks:
         # the instrumentation should have 2 messages, start and stop

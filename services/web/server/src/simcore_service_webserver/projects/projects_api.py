@@ -29,6 +29,7 @@ from models_library.projects_state import (
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.aiohttp.jsonschema_validation import validate_instance
+from servicelib.json_serialization import json_dumps
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
@@ -41,8 +42,9 @@ from ..resource_manager.websocket_manager import (
 from ..socketio.events import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
-    post_group_messages,
-    post_messages,
+    SocketMessageDict,
+    send_group_messages,
+    send_messages,
 )
 from ..storage_api import (
     delete_data_folders_of_project,
@@ -473,10 +475,10 @@ async def update_project_node_outputs(
         node_id,
         project_id,
         user_id,
-        pformat(new_outputs),
+        json_dumps(new_outputs),
         new_run_hash,
     )
-    new_outputs: Dict[str, Any] = new_outputs or {}
+    new_outputs = new_outputs or {}
 
     partial_workbench_data = {
         node_id: {"outputs": new_outputs, "runHash": new_run_hash},
@@ -526,15 +528,18 @@ async def notify_project_state_update(
     project: Dict,
     notify_only_user: Optional[int] = None,
 ) -> None:
-    messages = {
-        SOCKET_IO_PROJECT_UPDATED_EVENT: {
-            "project_uuid": project["uuid"],
-            "data": project["state"],
+    messages: List[SocketMessageDict] = [
+        {
+            "event_type": SOCKET_IO_PROJECT_UPDATED_EVENT,
+            "data": {
+                "project_uuid": project["uuid"],
+                "data": project["state"],
+            },
         }
-    }
+    ]
 
     if notify_only_user:
-        await post_messages(app, user_id=str(notify_only_user), messages=messages)
+        await send_messages(app, user_id=str(notify_only_user), messages=messages)
     else:
         rooms_to_notify = [
             f"{gid}"
@@ -542,7 +547,7 @@ async def notify_project_state_update(
             if rights["read"]
         ]
         for room in rooms_to_notify:
-            await post_group_messages(app, room, messages)
+            await send_group_messages(app, room, messages)
 
 
 async def notify_project_node_update(
@@ -552,15 +557,18 @@ async def notify_project_node_update(
         f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
     ]
 
-    messages = {
-        SOCKET_IO_NODE_UPDATED_EVENT: {
-            "node_id": node_id,
-            "data": project["workbench"][node_id],
+    messages: List[SocketMessageDict] = [
+        {
+            "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
+            "data": {
+                "node_id": node_id,
+                "data": project["workbench"][node_id],
+            },
         }
-    }
+    ]
 
     for room in rooms_to_notify:
-        await post_group_messages(app, room, messages)
+        await send_group_messages(app, room, messages)
 
 
 async def post_trigger_connected_service_retrieve(**kwargs) -> None:
