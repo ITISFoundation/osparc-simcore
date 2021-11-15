@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Tuple
@@ -13,6 +12,12 @@ from dask_task_models_library.container_tasks.io import TaskOutputData
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.rabbitmq_messages import (
+    InstrumentationRabbitMessage,
+    LoggerRabbitMessage,
+    ProgressRabbitMessage,
+)
+from simcore_postgres_database.models.comp_tasks import NodeClass
 
 from ...core.settings import DaskSchedulerSettings
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
@@ -114,19 +119,18 @@ class DaskScheduler(BaseCompScheduler):
             project_id, [node_id], event.state
         )
         # instrumentation
-        message = {
-            "metrics": "service_stopped",
-            "user_id": user_id,
-            "project_id": f"{project_id}",
-            "service_uuid": f"{node_id}",
-            "service_type": "COMPUTATIONAL",
-            "service_key": service_key,
-            "service_tag": service_version,
-            "result": "SUCCESS" if event.state == RunningState.SUCCESS else "FAILURE",
-        }
-        await self.rabbitmq_client.publish_message(
-            "instrumentation", json.dumps(message)
+        message = InstrumentationRabbitMessage(
+            metrics="service_stopped",
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_id,
+            service_uuid=node_id,
+            service_type=NodeClass.COMPUTATIONAL,
+            service_key=service_key,
+            service_tag=service_version,
+            result=event.state,
         )
+        await self.rabbitmq_client.publish_message(message)
         self._wake_up_scheduler_now()
 
     async def _task_state_change_handler(self, event: str) -> None:
@@ -140,18 +144,17 @@ class DaskScheduler(BaseCompScheduler):
         )
 
         if task_state_event.state == RunningState.STARTED:
-            message = {
-                "metrics": "service_started",
-                "user_id": user_id,
-                "project_id": f"{project_id}",
-                "service_uuid": f"{node_id}",
-                "service_type": "COMPUTATIONAL",
-                "service_key": service_key,
-                "service_tag": service_version,
-            }
-            await self.rabbitmq_client.publish_message(
-                "instrumentation", json.dumps(message)
+            message = InstrumentationRabbitMessage(
+                metrics="service_started",
+                user_id=user_id,
+                project_id=project_id,
+                node_id=node_id,
+                service_uuid=node_id,
+                service_type=NodeClass.COMPUTATIONAL,
+                service_key=service_key,
+                service_tag=service_version,
             )
+            await self.rabbitmq_client.publish_message(message)
 
         await CompTasksRepository(self.db_engine).set_project_tasks_state(
             project_id, [node_id], task_state_event.state
@@ -161,28 +164,23 @@ class DaskScheduler(BaseCompScheduler):
         task_progress_event = TaskProgressEvent.parse_raw(event)
         logger.debug("received task progress update: %s", task_progress_event)
         *_, user_id, project_id, node_id = parse_dask_job_id(task_progress_event.job_id)
-        message = {
-            "user_id": user_id,
-            "project_id": f"{project_id}",
-            "node_id": f"{node_id}",
-            "progress": task_progress_event.progress,
-            "channel": "progress",
-        }
-        await self.rabbitmq_client.publish_message(
-            task_progress_event.topic_name(), json.dumps(message)
+        message = ProgressRabbitMessage(
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_id,
+            progress=task_progress_event.progress,
         )
+        await self.rabbitmq_client.publish_message(message)
 
     async def _task_log_change_handler(self, event: str) -> None:
         task_log_event = TaskLogEvent.parse_raw(event)
         logger.debug("received task log update: %s", task_log_event)
         *_, user_id, project_id, node_id = parse_dask_job_id(task_log_event.job_id)
-        message = {
-            "user_id": user_id,
-            "project_id": f"{project_id}",
-            "node_id": f"{node_id}",
-            "messages": [task_log_event.log],
-            "channel": "logger",
-        }
-        await self.rabbitmq_client.publish_message(
-            task_log_event.topic_name(), json.dumps(message)
+        message = LoggerRabbitMessage(
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_id,
+            messages=[task_log_event.log],
         )
+
+        await self.rabbitmq_client.publish_message(message)

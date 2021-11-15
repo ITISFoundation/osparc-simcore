@@ -116,7 +116,7 @@ else
       --dashboard-address 8787 \
       --memory-limit "$ram" \
       --resources "$resources" \
-      --name "$(hostname)"
+      --name "dask-sidecar_$(hostname)_$(date +'%Y-%m-%d_%T')_$$"
   else
     exec dask-worker "${DASK_SCHEDULER_ADDRESS}" \
       --local-directory /tmp/dask-sidecar \
@@ -128,6 +128,6 @@ else
       --dashboard-address 8787 \
       --memory-limit "$ram" \
       --resources "$resources" \
-      --name "$(hostname)"
+      --name "dask-sidecar_$(hostname)_$(date +'%Y-%m-%d_%T')_$$"
   fi
 fi

@@ -44,7 +44,7 @@ def project_id() -> str:
 
 @pytest.fixture(scope="session")
 def node_uuid() -> str:
-    return "some_node_id"
+    return f"{uuid.uuid4()}"
 
 
 @pytest.fixture(scope="session")
