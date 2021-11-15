@@ -4,87 +4,15 @@
 
 import random
 from pathlib import Path
-from typing import Dict, Optional, Type
+from typing import Dict
 from uuid import uuid4
 
 import yaml
-from pydantic import BaseModel
-from service_integration.compose_spec_model import BuildItem, Service, Volume1
-from service_integration.osparc_config import (
-    IoOsparcConfig,
-    PathsMapping,
-    ServiceOsparcConfig,
-    SettingsItem,
-)
-from service_integration.osparc_image_specs import create_image_spec
+from service_integration.compose_spec_model import Service, Volume1
+from service_integration.osparc_config import PathsMapping, SettingsItem
 
 
-def _auto_map_to_service(settings: Dict):
-    """Prototype"""
-
-    def find_field_path(
-        field_name, type_name, model_cls: Type[BaseModel], path=""
-    ) -> Optional[str]:
-        for name, model_field in model_cls.__fields__.items():
-            if (
-                model_field.name == field_name
-                and model_field.type_.__name__ == type_name
-            ):
-                return f"{path}.{field_name}"
-            if issubclass(model_field.type_, BaseModel):
-                return find_field_path(
-                    field_name, type_name, model_field.type_, f"{path}.{name}"
-                )
-
-    data = {}
-    for obj in settings:
-        item = SettingsItem.parse_obj(obj)
-
-        parts = []
-        if path := find_field_path(item.name, item.type_, Service):
-            parts = path.lstrip().split(".")
-            dikt = {}
-            for key in parts[:-1]:
-                dikt = {key: dikt}
-            dikt[parts[-1]] = item.value
-
-            data.update(*dikt)
-
-    return Service.parse_obj(data)
-
-
-def test_create_compose_spec_build(tests_data_dir: Path):
-
-    # load & parse osparc configs
-    io_spec = IoOsparcConfig.from_yaml(tests_data_dir / "metadata-dynamic.yml")
-    service_spec = ServiceOsparcConfig.from_yaml(tests_data_dir / "service.yml")
-
-    # assemble docker-compose
-    build_spec = BuildItem(
-        context=".",
-        dockerfile="Dockerfile",
-        labels={
-            **io_spec.to_labels_annotations(),
-            **service_spec.to_labels_annotations(),
-        },
-    )
-
-    compose_spec = create_image_spec(io_spec, service_spec)
-    assert compose_spec.services
-
-    service_name = next(iter(compose_spec.services.keys()))
-    build_spec = compose_spec.services[service_name].build
-    assert build_spec
-    assert isinstance(build_spec, BaseModel)
-
-    print(build_spec.json(exclude_unset=True, indent=2))
-    print(yaml.safe_dump(compose_spec.dict(exclude_unset=True), sort_keys=False))
-
-
-def test_compose_spec_run(tests_data_dir: Path):
-
-    # have image spec  -> assemble build part of the compose-spec -> ready to build with `docker-compose build`
-    # image-spec for devel, prod, ...
+def test_create_runtime_spec_impl(tests_data_dir: Path):
 
     # have spec on how to run -> assemble mounts, network etc of the compose -> ready to run with `docker-compose up`
     # run-spec for devel, prod, etc ...
