@@ -52,21 +52,27 @@ def test_expected_paths(
     state_paths: List[Path],
     expect: Callable[[str, str], Dict[str, Any]],
 ) -> None:
-    path = Path("/inputs")
+    inputs_path = Path("/tmp/some/inputs")
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
-        compose_namespace, path, node_uuid
-    ) == expect(source=f"{compose_namespace}_inputs", target="/dy-volumes/inputs")
+        compose_namespace, inputs_path, node_uuid
+    ) == expect(
+        source=f"{compose_namespace}_tmp_some_inputs",
+        target=str(Path("/dy-volumes") / f"{inputs_path}".strip("/")),
+    )
 
-    path = Path("/outputs")
+    outputs_path = Path("/tmp/some/outputs")
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
-        compose_namespace, path, node_uuid
-    ) == expect(source=f"{compose_namespace}_outputs", target="/dy-volumes/outputs")
+        compose_namespace, outputs_path, node_uuid
+    ) == expect(
+        source=f"{compose_namespace}_tmp_some_outputs",
+        target=str(Path("/dy-volumes") / f"{outputs_path}".strip("/")),
+    )
 
     for path in state_paths:
-        name_from_path = str(path).replace(os.sep, "_")
+        name_from_path = f"{path}".replace(os.sep, "_")
         assert DynamicSidecarVolumesPathsResolver.mount_entry(
             compose_namespace, path, node_uuid
         ) == expect(
             source=f"{compose_namespace}{name_from_path}",
-            target=f"/dy-volumes/{name_from_path.strip('_')}",
+            target=str(Path("/dy-volumes/") / f"{path}".strip("/")),
         )
