@@ -35,7 +35,7 @@ def labels(tests_data_dir: Path, labels_fixture_name: str) -> Dict[str, str]:
 
 
 @pytest.mark.parametrize(
-    "labels_setup_name", ["legacy", "service-sidecared", "compose-sidecared"]
+    "labels_fixture_name", ["legacy", "service-sidecared", "compose-sidecared"]
 )
 def test_load_from_labels(
     labels: Dict[str, str], labels_fixture_name: str, tmp_path: Path
