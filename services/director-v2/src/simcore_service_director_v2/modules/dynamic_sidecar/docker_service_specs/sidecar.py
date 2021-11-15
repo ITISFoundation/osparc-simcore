@@ -86,13 +86,13 @@ async def get_dynamic_sidecar_spec(
     # Docker does not allow mounting of subfolders from volumes as the following:
     #   `volume_name/inputs:/target_folder/inputs`
     #   `volume_name/outputs:/target_folder/inputs`
-    #   `volume_name/path/to/sate/01:/target_folder/path_to_sate_01`
+    #   `volume_name/path/to/state/01:/target_folder/path_to_state_01`
     #
     # Two separate volumes are required to achieve the following on the spawned
     # dynamic-sidecar containers:
     #   `volume_name_path_to_inputs:/target_folder/path/to/inputs`
     #   `volume_name_path_to_outputs:/target_folder/path/to/outputs`
-    #   `volume_name_path_to_sate_01:/target_folder/path/to/sate/01`
+    #   `volume_name_path_to_state_01:/target_folder/path/to/state/01`
     for path_to_mount in [
         scheduler_data.paths_mapping.inputs_path,
         scheduler_data.paths_mapping.outputs_path,
