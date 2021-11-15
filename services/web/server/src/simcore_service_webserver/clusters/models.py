@@ -37,10 +37,12 @@ class SimpleAuthentication(BaseAuthentication):
 
 class KerberosAuthentication(BaseAuthentication):
     type: Literal["kerberos"] = "kerberos"
+    # NOTE: the entries here still need to be defined
 
 
 class JupyterHubTokenAuthentication(BaseAuthentication):
     type: Literal["jupyterhub"] = "jupyterhub"
+    # NOTE: the entries here still need to be defined
 
 
 ClusterAuthentication = Union[
