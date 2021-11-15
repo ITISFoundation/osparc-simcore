@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 from typing import Any, Dict
 
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
