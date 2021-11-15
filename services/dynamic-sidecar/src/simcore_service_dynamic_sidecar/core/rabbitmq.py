@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import socket
 from asyncio import CancelledError, Queue, Task
 from typing import Any, Dict, List, Optional, Union
@@ -84,7 +85,7 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
         # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
         hostname = socket.gethostname()
         self._connection = await aio_pika.connect(
-            url + f"?name={__name__}_{id(hostname)}",
+            url + f"?name={__name__}_{id(hostname)}_{os.getpid()}",
             client_properties={
                 "connection_name": f"dynamic-sidecar_{self._node_id} {hostname}"
             },
