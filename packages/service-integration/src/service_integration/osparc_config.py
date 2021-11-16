@@ -13,7 +13,7 @@ integrates with osparc.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
@@ -32,7 +32,6 @@ from .labels_annotations import from_labels, to_labels
 from .yaml_utils import yaml_safe_load
 
 CONFIG_FOLDER_NAME = ".osparc"
-
 
 REGISTRY_PREFIX = {
     "local": "registry:5000",
@@ -55,8 +54,7 @@ OSPARC_LABEL_PREFIXES = (
 # FIXME: review and define a z43-wide inverse DNS e.g. swiss.z43
 
 
-## MODELS -------------------------
-
+## SETTINGS ---------------------------------------------------------------------------------
 #
 # User settings -> stored in ~/.osparc
 #
@@ -73,6 +71,7 @@ class UserSettings(BaseSettings):
     default_registry: str = "local"
 
 
+## MODELS ---------------------------------------------------------------------------------
 #
 # Project config -> stored in repo's basedir/.osparc
 #
@@ -192,9 +191,7 @@ class RuntimeConfig(BaseModel):
         return service_labels
 
 
-## FOLDER STRUCTURE -------------------------
-
-
+## FILES -----------------------------------------------------------
 class ConfigFilesStructure:
     """
     Defines config file structure and how they
@@ -206,8 +203,17 @@ class ConfigFilesStructure:
         RuntimeConfig.__name__: "runtime.y*ml",
     }
 
-    def search(self, start_dir: Path):
-        """tries to match of any standard config layouts"""
+    @staticmethod
+    def config_file_path(scope: Literal["user", "project"]) -> Path:
+        basedir = Path.cwd()  # assumes project is in CWD
+        if scope == "user":
+            basedir = Path.home()
+        return basedir / ".osparc" / "service-integration.json"
+
+    def search(self, start_dir: Path) -> Dict[str, Path]:
+        """Tries to match of any of file layouts
+        and returns associated config files
+        """
         found = {
             configtype: list(start_dir.rglob(pattern))
             for configtype, pattern in self.FILES_GLOBS.items()
@@ -216,7 +222,7 @@ class ConfigFilesStructure:
         if not found:
             raise ConfigNotFound(basedir=start_dir)
 
-        raise NotImplemented
+        raise NotImplementedError("TODO")
 
         # TODO:
         # scenarios:
