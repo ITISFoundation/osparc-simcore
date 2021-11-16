@@ -31,8 +31,10 @@ def test_create_image_spec_impl(tests_data_dir: Path):
 
     compose_spec = create_image_spec(meta_cfg, runtime_cfg)
     assert compose_spec.services is not None
+    assert isinstance(compose_spec.services, dict)
 
-    service_name = next(iter(compose_spec.services.keys()))
+    service_name = list(compose_spec.services.keys())[0]
+    # pylint: disable=unsubscriptable-object
     assert isinstance(compose_spec.services[service_name], Service)
     build_spec = compose_spec.services[service_name].build
     assert build_spec

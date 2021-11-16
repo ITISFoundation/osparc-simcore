@@ -42,7 +42,7 @@ def test_make_docker_compose_meta(
         "--to-spec-file",
         compose_file_path,
     )
-    assert result.exit_code == os.EX_OK
+    assert result.exit_code == os.EX_OK, f"with {result.output=}"
 
     assert compose_file_path.exists()
 
