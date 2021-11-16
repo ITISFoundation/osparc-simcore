@@ -268,7 +268,7 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
           break;
       }
       if (polylineControls) {
-        const polyline = osparc.wrapper.Svg.drawPolyline(this.__canvas, strokeControls);
+        const polyline = osparc.wrapper.Svg.drawPolyline(this.__canvas, polylineControls);
         const color = this.__getTextColor();
         osparc.wrapper.Svg.updateStrokeColor(polyline, color);
         rightWidget.addListener("changeDecorator", e => {
