@@ -19,7 +19,7 @@ def create_image_spec(
     runtime_cfg: Optional[RuntimeConfig] = None,
     *,
     extra_labels: Dict[str, str] = {},
-    **context
+    **_context
 ) -> ComposeSpecification:
     """Creates the image-spec provided the osparc-config and a given context (e.g. development)
 
