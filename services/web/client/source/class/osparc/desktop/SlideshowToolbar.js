@@ -147,7 +147,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
 
     // overriden
     _applyStudy: function(study) {
-      this.base(arguments);
+      this.base(arguments, study);
 
       if (study) {
         const studyTitle = this.getChildControl("study-title");
