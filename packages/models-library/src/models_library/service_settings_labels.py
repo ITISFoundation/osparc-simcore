@@ -104,7 +104,7 @@ class PathMappingsLabel(BaseModel):
         }
 
 
-ComposeSpecLabel = Optional[Dict[str, Any]]
+ComposeSpecLabel = Dict[str, Any]
 
 
 class DynamicSidecarServiceLabels(BaseModel):

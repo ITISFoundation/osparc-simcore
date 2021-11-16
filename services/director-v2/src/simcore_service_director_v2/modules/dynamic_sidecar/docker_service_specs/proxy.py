@@ -9,7 +9,7 @@ MEMORY_50MB = 52430000
 CPU_1_PERCENT = 10000000
 
 
-async def get_dynamic_proxy_spec(
+def get_dynamic_proxy_spec(
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_network_id: str,

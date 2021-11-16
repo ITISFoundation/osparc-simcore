@@ -57,7 +57,7 @@ def _get_environment_variables(
     }
 
 
-async def get_dynamic_sidecar_spec(
+def get_dynamic_sidecar_spec(
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_network_id: str,

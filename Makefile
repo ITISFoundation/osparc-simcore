@@ -467,7 +467,19 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 	@echo CATALOG_BACKGROUND_TASK_REST_TIME=1 >> .env
 	# local registry set in $(local_registry):5000
 	# images currently in registry:
-	curl --silent $(local_registry):5000/v2/_catalog | jq
+	@sleep 3
+	curl --silent $(LOCAL_REGISTRY_HOSTNAME):5000/v2/_catalog | jq '.repositories'
+
+info-registry: ## info on local registry (if any)
+	# ping API
+	curl --silent $(LOCAL_REGISTRY_HOSTNAME):5000/v2
+	# list all
+	curl --silent $(LOCAL_REGISTRY_HOSTNAME):5000/v2/_catalog | jq
+	# target detail info (if set)
+	$(if $(target),\
+	@echo Tags for $(target); \
+	curl --silent $(LOCAL_REGISTRY_HOSTNAME):5000/v2/$(target)/tags/list | jq ,\
+	@echo No target set)
 
 
 ## INFO -------------------------------
