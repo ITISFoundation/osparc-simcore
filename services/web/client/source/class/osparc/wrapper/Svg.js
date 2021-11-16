@@ -183,6 +183,23 @@ qx.Class.define("osparc.wrapper.Svg", {
       });
     },
 
+    drawLine: function(draw, controls) {
+      const polygon = draw.line(controls.join())
+        .fill("none")
+        .stroke({
+          color: "#BFBFBF",
+          width: 1
+        })
+        .move(0, 0);
+      return polygon;
+    },
+
+    updateLineColor: function(line, color) {
+      line.stroke({
+        color: color
+      });
+    },
+
     drawPath: function(draw, controls) {
       const polygon = draw.path(controls)
         .fill("none")
