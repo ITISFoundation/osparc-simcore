@@ -35,7 +35,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
           }
           btns.push(btn);
         });
-        this._buttonsToBreadcrumb(btns, "arrow");
+        this._buttonsToBreadcrumb(btns, "separator");
       } else {
         this._removeAll();
         const label = new qx.ui.basic.Label();
@@ -56,7 +56,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
       if (node && nodeId in slideshow) {
         const pos = slideshow[nodeId].position;
         node.bind("label", btn, "label", {
-          converter: val => `${pos+1}- ${val}`
+          converter: val => `${pos+1}: ${val}`
         });
         node.getStatus().bind("dependencies", btn.getChildControl("label"), "font", {
           converter: dependencies => (dependencies && dependencies.length) ? "text-14" : "title-14"
