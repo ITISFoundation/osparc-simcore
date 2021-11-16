@@ -20,15 +20,18 @@ Commands of ``osparc-service-integrator`` CLI:
 $ osparc-service-integrator  --help
 Usage: osparc-service-integrator [OPTIONS] COMMAND [ARGS]...
 
+  o2s2parc service integration library
+
 Options:
   --version  Show the version and exit.
   --help     Show this message and exit.
 
 Commands:
-  bump-version           Bumps target version in metadata
-  get-version            Prints to output requested version
-  run-creator            Creates a sh script that uses jq tool to retrieve...
-  update-compose-labels  Update a docker-compose file with json files in a...
+  bump-version  Bumps target version in metadata
+  compose       create docker image/runtime compose-specs from the osparc...
+  config        Creates osparc config from complete docker compose-spec
+  get-version   Prints to output requested version
+  run-creator   Creates a sh script that uses jq tool to retrieve...
 ```
 
 
@@ -44,9 +47,10 @@ service.cli/run: $(METADATA)
 
 docker-compose-meta.yml: $(METADATA)
 	# Injects metadata from $< as labels
-	osparc-service-integrator update-compose-labels --compose $@ --metadata $<
+	osparc-service-integrator compose --metadata $< --to-spec-file $@
 
 ```
+
 ### testing plugin
 
 Created a pytest-plugin from submodule ``service_integration.pytest_plugin`` with fixtures and helper assert function.
