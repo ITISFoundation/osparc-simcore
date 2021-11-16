@@ -218,46 +218,12 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const infoLayout = this.__serviceInfoLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       header.add(infoLayout);
 
-      const nodeEditLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const title = this.__title = new osparc.ui.form.EditLabel().set({
-        maxWidth: 180,
-        labelFont: "text-14",
-        inputFont: "text-14",
-        editable: osparc.data.Permissions.getInstance().canDo("study.node.rename")
-      });
-      title.addListener("editValue", evt => {
-        if (evt.getData() !== this.__title.getValue()) {
-          const node = this.getNode();
-          if (node) {
-            node.renameNode(evt.getData());
-          }
-          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", study.serialize());
-        }
-      }, this);
-      nodeEditLayout.add(title);
-
-      if (osparc.data.Permissions.getInstance().canDo("study.node.update") && osparc.data.model.Study.isOwner(study)) {
-        const editAccessLevel = new qx.ui.form.Button(this.tr("Edit"), "@FontAwesome5Solid/edit/14");
-        editAccessLevel.addListener("execute", () => this._openEditAccessLevel(), this);
-        nodeEditLayout.add(editAccessLevel);
-      }
-      header.add(nodeEditLayout);
-
-      header.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
       // just a placeholder until the node is set
       const nodeStatusUI = this.__nodeStatusUI = new qx.ui.core.Widget();
       header.add(nodeStatusUI);
 
-      header.add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
-
       const buttonsLayout = this.__buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const filesBtn = this.__outFilesButton = new qx.ui.form.Button(this.tr("Output Files"), "@FontAwesome5Solid/folder-open/14");
+      const filesBtn = this.__outFilesButton = new qx.ui.form.Button(this.tr("Artifacts"), "@FontAwesome5Solid/folder-open/14");
       osparc.utils.Utils.setIdToWidget(filesBtn, "nodeOutputFilesBtn");
       filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
       buttonsLayout.add(filesBtn);
