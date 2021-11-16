@@ -1,5 +1,10 @@
+from datetime import datetime
+
 from pkg_resources import parse_version
 from pydantic import BaseModel
+from pydantic.types import constr
+
+from .basic_regex import SEMANTIC_VERSION_RE
 
 
 def bump_version_string(current_version: str, bump: str) -> str:
@@ -33,8 +38,18 @@ def bump_version_string(current_version: str, bump: str) -> str:
 # - further libraries version dump (e.g. requirements.txt, etc)
 
 
-class VersionInfo(BaseModel):
-    executable_name: str
-    executable_version: str
-    service_version: str
-    service_integration: str
+class ExecutableVersionInfo(BaseModel):
+    name: str  # e.g semcad x
+    version_label: str  # e.g. Matterhorn Student Edition 1
+    version: constr(regex=SEMANTIC_VERSION_RE)  # e.g. 3.4.5-beta
+    released: datetime
+
+
+class ServiceVersionInfo(BaseModel):
+    version: constr(
+        regex=SEMANTIC_VERSION_RE
+    )  # 1.0.0 (first time released as an osparc)
+    integration_version: constr(
+        regex=SEMANTIC_VERSION_RE
+    )  # 2.0.0 (osparc internal integration version)
+    released: datetime  # timestamp when service was officially published
