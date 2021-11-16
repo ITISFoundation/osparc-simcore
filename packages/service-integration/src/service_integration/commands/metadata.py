@@ -77,5 +77,5 @@ def get_version(target_version, metadata_file_path):
 
     # MUST have no new line so that we can produce a VERSION file with no extra new-line
     # VERSION: $(METADATA)
-    #    @simcore-service-integrator get-version --metadata-file $< > $@
+    #    @osparc-service-integrator get-version --metadata-file $< > $@
     click.echo(current_version, nl=False)
