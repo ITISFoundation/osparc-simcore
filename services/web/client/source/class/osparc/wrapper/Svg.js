@@ -177,27 +177,21 @@ qx.Class.define("osparc.wrapper.Svg", {
       return polyline;
     },
 
-    updatePolylineColor: function(polyline, color) {
+    updateStrokeColor: function(polyline, color) {
       polyline.stroke({
         color: color
       });
     },
 
     drawLine: function(draw, controls) {
-      const polygon = draw.line(controls.join())
+      const line = draw.line(controls.join())
         .fill("none")
         .stroke({
           color: "#BFBFBF",
           width: 1
         })
         .move(0, 0);
-      return polygon;
-    },
-
-    updateLineColor: function(line, color) {
-      line.stroke({
-        color: color
-      });
+      return line;
     },
 
     drawPath: function(draw, controls) {
