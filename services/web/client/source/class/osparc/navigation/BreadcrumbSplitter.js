@@ -264,25 +264,25 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
           polylineControls = this.self().getArrowControls(16, bounds.height);
           break;
         case "sepatator":
-          lineControls = this.self().getArrowControls(16, bounds.height);
+          lineControls = this.self().getSeparatorControls(16, bounds.height);
           break;
       }
       if (polylineControls) {
-        const polyline = osparc.wrapper.Svg.drawPolyline(this.__canvas, polylineControls);
+        const polyline = osparc.wrapper.Svg.drawPolyline(this.__canvas, strokeControls);
         const color = this.__getTextColor();
-        osparc.wrapper.Svg.updatePolylineColor(polyline, color);
+        osparc.wrapper.Svg.updateStrokeColor(polyline, color);
         rightWidget.addListener("changeDecorator", e => {
           const newColor = this.__getTextColor();
-          osparc.wrapper.Svg.updatePolylineColor(polyline, newColor);
+          osparc.wrapper.Svg.updateStrokeColor(polyline, newColor);
         }, this);
       }
       if (lineControls) {
         const polyline = osparc.wrapper.Svg.drawLine(this.__canvas, lineControls);
         const color = this.__getTextColor();
-        osparc.wrapper.Svg.updateLineColor(polyline, color);
+        osparc.wrapper.Svg.updateStrokeColor(polyline, color);
         rightWidget.addListener("changeDecorator", e => {
           const newColor = this.__getTextColor();
-          osparc.wrapper.Svg.updateLineColor(polyline, newColor);
+          osparc.wrapper.Svg.updateStrokeColor(polyline, newColor);
         }, this);
       }
     }
