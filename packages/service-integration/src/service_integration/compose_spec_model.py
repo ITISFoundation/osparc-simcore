@@ -556,4 +556,4 @@ class ComposeSpecification(BaseModel):
     configs: Optional[Dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Config]] = None
 
 
-# TODO: pin this version
+# TODO: dump this spec version
