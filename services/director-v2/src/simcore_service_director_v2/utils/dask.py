@@ -1,12 +1,29 @@
 import asyncio
+import collections
 import logging
 from pprint import pformat
-from typing import Awaitable, Callable, Dict, Final, Optional, Tuple, cast
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Final,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 from uuid import uuid4
 
 import dask.distributed
+import distributed
 from aiopg.sa.engine import Engine
-from dask_task_models_library.container_tasks.events import TaskStateEvent
+from dask_task_models_library.container_tasks.events import (
+    DaskTaskEvents,
+    TaskStateEvent,
+)
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
@@ -21,7 +38,14 @@ from pydantic import AnyUrl
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import links, port_utils
 
-from ..models.schemas.constants import UserID
+from ..core.errors import (
+    ComputationalBackendNotConnectedError,
+    InsuficientComputationalResourcesError,
+    MissingComputationalResourcesError,
+)
+from ..models.domains.comp_tasks import Image
+from ..models.schemas.constants import ClusterID, UserID
+from ..models.schemas.services import NodeRequirements
 
 logger = logging.getLogger(__name__)
 
@@ -268,3 +292,117 @@ async def clean_task_output_and_log_files_if_invalid(
         await port_utils.delete_target_link(
             user_id, f"{project_id}", f"{node_id}", _LOGS_FILE_NAME
         )
+
+
+async def dask_sub_consumer(
+    task_event: DaskTaskEvents, handler: Callable[[str], Awaitable[None]]
+):
+    dask_sub = distributed.Sub(task_event.topic_name())
+    async for dask_event in dask_sub:
+        logger.debug(
+            "received dask event '%s' of topic %s", dask_event, task_event.topic_name()
+        )
+        await handler(dask_event)
+
+
+async def dask_sub_consumer_task(
+    task_event: DaskTaskEvents, handler: Callable[[str], Awaitable[None]]
+):
+    while True:
+        try:
+            logger.info(
+                "starting consumer task for topic '%s'", task_event.topic_name()
+            )
+            await dask_sub_consumer(task_event, handler)
+        except asyncio.CancelledError:
+            logger.info("stopped consumer task for topic '%s'", task_event.topic_name())
+            raise
+        except Exception:  # pylint: disable=broad-except
+            _REST_TIMEOUT_S: Final[int] = 1
+            logger.exception(
+                "unknown exception in consumer task for topic '%s', restarting task in %s sec...",
+                task_event.topic_name(),
+                _REST_TIMEOUT_S,
+            )
+            await asyncio.sleep(_REST_TIMEOUT_S)
+
+
+def from_node_reqs_to_dask_resources(
+    node_reqs: NodeRequirements,
+) -> Dict[str, Union[int, float]]:
+    """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
+    dask_resources = node_reqs.dict(exclude_unset=True, by_alias=True)
+    logger.debug("transformed to dask resources: %s", dask_resources)
+    return dask_resources
+
+
+def check_client_can_connect_to_scheduler(client: distributed.Client):
+    client_status = client.status
+    if client_status not in "running":
+        logger.error(
+            "The computational backend is not connected!",
+        )
+        raise ComputationalBackendNotConnectedError()
+
+
+def check_if_cluster_is_able_to_run_pipeline(
+    node_id: NodeID,
+    scheduler_info: Dict[str, Any],
+    task_resources: Dict[str, Any],
+    node_image: Image,
+    cluster_id_prefix: str,
+    cluster_id: ClusterID,
+):
+    logger.debug("Dask scheduler infos: %s", pformat(scheduler_info))
+    workers = scheduler_info.get("workers", {})
+
+    def can_task_run_on_worker(
+        task_resources: Dict[str, Any], worker_resources: Dict[str, Any]
+    ) -> bool:
+        def gen_check(
+            task_resources: Dict[str, Any], worker_resources: Dict[str, Any]
+        ) -> Iterable[bool]:
+            for r in task_resources:
+                yield worker_resources.get(r, 0) >= task_resources[r]
+
+        return all(gen_check(task_resources, worker_resources))
+
+    def cluster_missing_resources(
+        task_resources: Dict[str, Any], cluster_resources: Dict[str, Any]
+    ) -> List[str]:
+        return [r for r in task_resources if r not in cluster_resources]
+
+    cluster_resources_counter = collections.Counter()
+    can_a_worker_run_task = False
+    for worker in workers:
+        worker_resources = workers[worker].get("resources", {})
+        if worker_resources.get(f"{cluster_id_prefix}{cluster_id}"):
+            cluster_resources_counter.update(worker_resources)
+            if can_task_run_on_worker(task_resources, worker_resources):
+                can_a_worker_run_task = True
+    all_available_resources_in_cluster = dict(cluster_resources_counter)
+
+    logger.debug(
+        "Dask scheduler total available resources in cluster %s: %s, task needed resources %s",
+        cluster_id,
+        pformat(all_available_resources_in_cluster),
+        pformat(task_resources),
+    )
+
+    if can_a_worker_run_task:
+        return
+
+    # check if we have missing resources
+    if missing_resources := cluster_missing_resources(
+        task_resources, all_available_resources_in_cluster
+    ):
+        raise MissingComputationalResourcesError(
+            node_id=node_id,
+            msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled on cluster {cluster_id}: missing resource {missing_resources}",
+        )
+
+    # well then our workers are not powerful enough
+    raise InsuficientComputationalResourcesError(
+        node_id=node_id,
+        msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled on cluster {cluster_id}: insuficient resources",
+    )
