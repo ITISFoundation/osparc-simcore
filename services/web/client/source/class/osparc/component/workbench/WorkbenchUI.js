@@ -305,6 +305,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return inputOutputNodesLayout;
     },
 
+    __openServiceCatalog: function(e) {
+      if (this.getStudy().isReadOnly()) {
+        return;
+      }
+      const winPos = this.__pointerEventToScreenPos(e);
+      const nodePos = this.__pointerEventToWorkbenchPos(e);
+      this.openServiceCatalog(winPos, nodePos);
+    },
+
     openServiceCatalog: function(winPos, nodePos) {
       const srvCat = new osparc.component.workbench.ServiceCatalog();
       const maxLeft = this.getBounds().width - osparc.component.workbench.ServiceCatalog.Width;
@@ -810,7 +819,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return topOffset;
     },
 
-    __pointerEventToWinPos: function(e) {
+    __pointerEventToScreenPos: function(e) {
       const leftOffset = this.__getLeftOffset();
       const inputNodesLayoutWidth = this.__inputNodesLayout && this.__inputNodesLayout.isVisible() ? this.__inputNodesLayout.getWidth() : 0;
       return {
@@ -823,7 +832,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const {
         x,
         y
-      } = this.__pointerEventToWinPos(e);
+      } = this.__pointerEventToScreenPos(e);
       const scaledPos = this.__scaleCoordinates(x, y);
       const scrollX = this._workbenchLayoutScroll.getScrollX();
       const scrollY = this._workbenchLayoutScroll.getScrollY();
@@ -1091,7 +1100,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__isSelectedItemAnEdge()) {
         const edge = this.__getEdgeUI(newID);
         edge.setSelected(true);
-      } else if (newID) {
+      } else {
         this.fireDataEvent("changeSelectedNode", newID);
       }
 
@@ -1118,10 +1127,72 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       };
     },
 
+    __openContextMenu: function(e) {
+      const radialMenuWrapper = osparc.wrapper.RadialMenu.getInstance();
+      if (radialMenuWrapper.getLibReady()) {
+        this.__doOpenContextMenu(e);
+      } else {
+        radialMenuWrapper.init()
+          .then(loaded => {
+            if (loaded) {
+              this.__doOpenContextMenu(e);
+            }
+          });
+      }
+    },
+
+    __doOpenContextMenu: function(e) {
+      if (this.__contextMenu) {
+        this.__contextMenu.hide();
+      }
+      const buttons = [{
+        "text": "\uf067", // plus
+        "action": () => {
+          this.__openServiceCatalog(e);
+        }
+      }, {
+        "text": "\uf00e", // search-plus
+        "action": () => {
+          this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
+          this.__zoom(true);
+        }
+      }, {
+        "text": "\uf002", // search
+        "action": () => {
+          this.setScale(1);
+        }
+      }, {
+        "text": "\uf010", // search-minus
+        "action": () => {
+          this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
+          this.__zoom(false);
+        }
+      }];
+      let rotation = 3 * Math.PI / 2;
+      rotation -= (2/buttons.length) * (Math.PI / 2);
+      const radialMenuWrapper = osparc.wrapper.RadialMenu.getInstance();
+      const contextMenu = this.__contextMenu = radialMenuWrapper.createMenu({rotation});
+      contextMenu.addButtons(buttons);
+      contextMenu.setPos(e.getDocumentLeft() - contextMenu.w2, e.getDocumentTop() - contextMenu.h2);
+      contextMenu.show();
+      /*
+      const tapListener = ev => {
+        if (osparc.utils.Utils.isMouseOnElement(contextMenu, ev)) {
+          return;
+        }
+        contextMenu.hide();
+        document.removeEventListener("mousedown", tapListener);
+      };
+      document.addEventListener("mousedown", tapListener);
+      */
+    },
+
     __mouseDown: function(e) {
-      if (e.isMiddlePressed()) {
-        this.__panning = true;
+      if (e.isRightPressed()) {
+        this.__openContextMenu(e);
+      } else if (e.isMiddlePressed()) {
         this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
+        this.__panning = true;
         this.set({
           cursor: "move"
         });
@@ -1407,12 +1478,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
 
       this.__workbenchLayout.addListener("dbltap", e => {
-        if (this.getStudy().isReadOnly()) {
-          return;
-        }
-        const winPos = this.__pointerEventToWinPos(e);
-        const nodePos = this.__pointerEventToWorkbenchPos(e);
-        this.openServiceCatalog(winPos, nodePos);
+        this.__openServiceCatalog(e);
       }, this);
 
       this.__workbenchLayout.addListener("resize", () => this.__updateHint(), this);

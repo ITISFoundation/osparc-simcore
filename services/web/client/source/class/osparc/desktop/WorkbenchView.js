@@ -234,6 +234,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         study.getUi().addListener("changeMode", () => this.__evalSlidesButtons());
         this.__evalSlidesButtons();
         this.evalSnapshotsButtons();
+
+        // if there are no nodes, preselect the study item (show study info)
+        const nodes = study.getWorkbench().getNodes(true);
+        if (Object.values(nodes).length === 0) {
+          this.__studyTreeItem.selectStudyItem();
+        }
       }
       this.__workbenchPanel.getToolbar().setStudy(study);
     },
@@ -523,14 +529,19 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
       });
       workbenchUI.addListener("changeSelectedNode", e => {
-        studyTreeItem.resetSelection();
         const nodeId = e.getData();
-        this.__nodesTree.nodeSelected(nodeId);
-        const workbench = this.getStudy().getWorkbench();
-        const node = workbench.getNode(nodeId);
-        this.__populateSecondPanel(node);
-        this.__evalIframe(node);
-        this.__loggerView.setCurrentNodeId(nodeId);
+        if (nodeId) {
+          studyTreeItem.resetSelection();
+          this.__nodesTree.nodeSelected(nodeId);
+          const workbench = this.getStudy().getWorkbench();
+          const node = workbench.getNode(nodeId);
+          this.__populateSecondPanel(node);
+          this.__evalIframe(node);
+          this.__loggerView.setCurrentNodeId(nodeId);
+        } else {
+          // empty selection
+          this.__studyTreeItem.selectStudyItem();
+        }
       });
       workbenchUI.addListener("nodeSelected", e => {
         studyTreeItem.resetSelection();
@@ -679,7 +690,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     nodeSelected: function(nodeId) {
       const study = this.getStudy();
-      if (nodeId === null) {
+      if (nodeId === null || nodeId === undefined) {
         nodeId = study.getUuid();
       }
 
@@ -690,8 +701,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__nodesTree.nodeSelected(nodeId);
       }
 
-      const node = study.getWorkbench().getNode(nodeId);
-      this.__populateSecondPanel(node);
+      if (nodeId === study.getUuid()) {
+        this.__studyTreeItem.selectStudyItem();
+      } else {
+        const node = study.getWorkbench().getNode(nodeId);
+        this.__populateSecondPanel(node);
+      }
     },
 
     __evalIframe: function(node) {
