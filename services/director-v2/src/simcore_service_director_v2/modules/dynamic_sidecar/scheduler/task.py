@@ -54,6 +54,7 @@ async def _apply_observation_cycle(
     dynamic_services_settings: DynamicServicesSettings = (
         app.state.settings.DYNAMIC_SERVICES
     )
+    # TODO: PC-> ANE: custom settings are frozen. in principle, no need to create copies.
     initial_status = deepcopy(scheduler_data.dynamic_sidecar.status)
 
     if (  # do not refactor, second part of "and condition" is skiped most times
@@ -114,21 +115,25 @@ class DynamicSidecarsScheduler:
         keep track of the service for faster searches.
         """
         async with self._lock:
+
+            if not scheduler_data.service_name:
+                raise DynamicSidecarError(
+                    "a service with no name is not valid. Invalid usage."
+                )
+
             if scheduler_data.service_name in self._to_observe:
                 logger.warning(
                     "Service %s is already being observed", scheduler_data.service_name
                 )
                 return
+
             if scheduler_data.node_uuid in self._inverse_search_mapping:
                 raise DynamicSidecarError(
                     "node_uuids at a global level collided. A running "
                     f"service for node {scheduler_data.node_uuid} already exists. "
                     "Please checkout other projects which may have this issue."
                 )
-            if not scheduler_data.service_name:
-                raise DynamicSidecarError(
-                    "a service with no name is not valid. Invalid usage."
-                )
+
             self._inverse_search_mapping[
                 scheduler_data.node_uuid
             ] = scheduler_data.service_name
