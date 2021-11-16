@@ -15,6 +15,8 @@ from collections import namedtuple
 from pathlib import Path
 from typing import Any, Dict, Iterator, Optional, Type, Union
 
+from contextlib import contextmanager
+
 import pytest
 from aiohttp.client import ClientSession
 from attr import dataclass
@@ -75,6 +77,39 @@ def e_tag() -> str:
     return "1212132546546321-1"
 
 
+@contextmanager
+def symlink_to_file_with_data(file_name: Path) -> Iterator[Path]:
+    symlink_path = file_name
+    assert not symlink_path.exists()
+    file_path = file_name.parent / f"source_{file_name.name}"
+    assert not file_path.exists()
+    
+    file_path.write_text("some dummy data")
+    assert file_path.exists()
+    os.symlink(file_path, symlink_path)
+    assert symlink_path.exists()
+
+    yield symlink_path
+
+    symlink_path.unlink()
+    assert not symlink_path.exists()
+    file_path.unlink()
+    assert not file_path.exists()
+
+
+@contextmanager
+def file_with_data(file_name: Path) -> Iterator[Path]:
+    file_path = file_name
+    assert not file_path.exists()
+    file_path.write_text("some dummy data")
+    assert file_path.exists()
+
+    yield file_path
+
+    file_path.unlink()
+    assert not file_path.exists()
+
+
 ##################### FIXTURES
 
 
@@ -84,41 +119,20 @@ def e_tag() -> str:
         False,
     ]
 )
-def is_symlink(request) -> bool:
+def return_symlink(request) -> bool:
     return request.param
 
 
 @pytest.fixture()
-def this_node_file(is_symlink: bool, tmp_path: Path) -> Iterator[Path]:
-    """return either a symlink or a file with the same name"""
-
+def this_node_file(return_symlink: bool, tmp_path: Path) -> Iterator[Path]:
     file_name = this_node_file_name()
 
-    symlink_path: Optional[Path] = None
-    return_path: Optional[Path] = None
-
-    if is_symlink:
-        symlink_path = file_name
-        file_path = file_name.parent / f"source_{file_name.name}"
-        file_path.write_text("some dummy data")
-        if not symlink_path.exists():
-            os.symlink(file_path, symlink_path)
-        assert symlink_path.exists()
-        return_path = symlink_path
+    if return_symlink:
+        with symlink_to_file_with_data(file_name) as symlink_path:
+            yield symlink_path
     else:
-        file_path = file_name
-        file_path.write_text("some dummy data")
-        return_path = file_path
-
-    assert file_path.exists()
-
-    assert return_path
-    yield return_path
-
-    if file_path.exists():
-        file_path.unlink()
-    if symlink_path and symlink_path.exists():
-        symlink_path.unlink()
+        with file_with_data(file_name) as file_path:
+            yield file_path
 
 
 @pytest.fixture
