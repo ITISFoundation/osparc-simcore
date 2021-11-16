@@ -120,18 +120,25 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
 
     // overriden
     _buildLayout: function() {
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
       this.getChildControl("edit-slideshow-buttons");
       this.getChildControl("prev-next-btns");
       this.getChildControl("breadcrumb-navigation");
       this.getChildControl("breadcrumb-navigation-edit");
 
-      this._add(new qx.ui.core.Spacer(20));
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
 
       this.getChildControl("stop-slideshow");
 
       this._add(new qx.ui.core.Spacer(20));
 
       this._startStopBtns = this.getChildControl("start-stop-btns");
+      this._startStopBtns.getChildControl("clusters-box").exclude();
     },
 
     populateButtons: function(start = false) {
