@@ -108,7 +108,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
         case "stop-slideshow":
           control = new qx.ui.form.Button().set({
             ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-            label: this.tr("Stop Slideshow"),
+            label: this.tr("Stop App"),
             icon: "@FontAwesome5Solid/stop/14"
           });
           control.addListener("execute", () => this.fireEvent("slidesStop"));
