@@ -80,7 +80,7 @@ def main(
     config_path: Path,
     compose_spec_path: Path,
 ):
-    """create docker image/runtime compose-specs from the osparc config"""
+    """create docker image/runtime compose-specs from an osparc config"""
 
     basedir = Path(".osparc")
     meta_filename = "metadata.yml"
