@@ -31,6 +31,13 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "study-title":
+          control = new qx.ui.basic.Label().set({
+            marginLeft: 10,
+            font: "title-16"
+          });
+          this._add(control);
+          break;
         case "edit-slideshow-buttons": {
           control = new qx.ui.container.Stack();
           const editBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/edit/14").set({
@@ -70,9 +77,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
         }
         case "breadcrumbs-scroll":
           control = new qx.ui.container.Scroll();
-          this._add(control, {
-            flex: 1
-          });
+          this._add(control);
           break;
         case "breadcrumb-navigation": {
           control = new osparc.navigation.BreadcrumbsSlideshow();
@@ -85,9 +90,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
         }
         case "breadcrumbs-scroll-edit":
           control = new qx.ui.container.Scroll();
-          this._add(control, {
-            flex: 1
-          });
+          this._add(control);
           break;
         case "breadcrumb-navigation-edit": {
           control = new osparc.navigation.BreadcrumbsSlideshowEdit();
@@ -120,6 +123,8 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
 
     // overriden
     _buildLayout: function() {
+      this.getChildControl("study-title");
+
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
       });
@@ -139,6 +144,16 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
 
       this._startStopBtns = this.getChildControl("start-stop-btns");
       this._startStopBtns.getChildControl("clusters-box").exclude();
+    },
+
+    // overriden
+    _applyStudy: function(study) {
+      this.base(arguments);
+
+      if (study) {
+        const studyTitle = this.getChildControl("study-title");
+        study.bind("name", studyTitle, "value");
+      }
     },
 
     populateButtons: function(start = false) {

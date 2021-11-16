@@ -45,7 +45,7 @@ qx.Class.define("osparc.desktop.Toolbar", {
   properties: {
     study: {
       check: "osparc.data.model.Study",
-      apply: "__applyStudy",
+      apply: "_applyStudy",
       nullable: false
     }
   },
@@ -78,7 +78,7 @@ qx.Class.define("osparc.desktop.Toolbar", {
       return control || this.base(arguments, id);
     },
 
-    __applyStudy: function(study) {
+    _applyStudy: function(study) {
       if (study) {
         study.getUi().addListener("changeCurrentNodeId", () => {
           this._populateNodesNavigationLayout();
