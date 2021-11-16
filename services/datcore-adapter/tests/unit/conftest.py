@@ -13,6 +13,7 @@ import httpx
 import pytest
 import respx
 import simcore_service_datcore_adapter
+from _pytest.monkeypatch import MonkeyPatch
 from asgi_lifespan import LifespanManager
 from fastapi.applications import FastAPI
 from simcore_service_datcore_adapter.modules.pennsieve import _create_pennsieve_client
@@ -68,8 +69,14 @@ def client(minimal_app: FastAPI) -> TestClient:
         return cli
 
 
+@pytest.fixture
+def app_envs(monkeypatch: MonkeyPatch):
+    # disable tracing as together with LifespanManager, it does not remove itself nicely
+    monkeypatch.setenv("DATCORE_ADAPTER_TRACING", "null")
+
+
 @pytest.fixture()
-async def initialized_app(minimal_app: FastAPI) -> Iterator[FastAPI]:
+async def initialized_app(app_envs: None, minimal_app: FastAPI) -> Iterator[FastAPI]:
     async with LifespanManager(minimal_app):
         yield minimal_app
 

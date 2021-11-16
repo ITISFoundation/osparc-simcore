@@ -343,9 +343,10 @@ class DynamicSidecarsScheduler:
 
                 await sleep(settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS)
             except asyncio.CancelledError:  # pragma: no cover
-                break  # pragma: no cover
-
-        logger.warning("Scheduler was shut down")
+                logger.info("Stopped dynamic scheduler")
+                raise
+            except Exception:  # pylint: disable=broad-except
+                logger.error("Unexpected error in dynamic scheduler", exc_info=True)
 
     async def _discover_running_services(self) -> None:
         """discover all services which were started before and add them to the scheduler"""
@@ -395,6 +396,7 @@ class DynamicSidecarsScheduler:
 
         if self._trigger_observation_queue_task is not None:
             await self._trigger_observation_queue.put(None)
+
             self._trigger_observation_queue_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await self._trigger_observation_queue_task
@@ -405,7 +407,6 @@ class DynamicSidecarsScheduler:
 async def setup_scheduler(app: FastAPI):
     dynamic_sidecars_scheduler = DynamicSidecarsScheduler(app)
     app.state.dynamic_sidecar_scheduler = dynamic_sidecars_scheduler
-
     settings: DynamicServicesSchedulerSettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )

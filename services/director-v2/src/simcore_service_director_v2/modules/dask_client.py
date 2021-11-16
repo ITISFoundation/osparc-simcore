@@ -3,6 +3,8 @@ import collections
 import contextlib
 import functools
 import logging
+import os
+import socket
 from dataclasses import dataclass, field
 from pprint import pformat
 from typing import Any, Awaitable, Callable, Dict, Iterable, List, Tuple, Union
@@ -99,7 +101,7 @@ class DaskClient:
             client=await dask.distributed.Client(
                 f"tcp://{settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
                 asynchronous=True,
-                name="director-v2-client",
+                name=f"director-v2-client_{socket.gethostname()}_{os.getpid()}",
             ),  # type: ignore
             settings=settings,
         )
@@ -131,7 +133,7 @@ class DaskClient:
     async def reconnect_client(self):
         if self.client:
             await self.client.close()  # type: ignore
-        self.client = await dask.distributed.Client(
+        self.client = await distributed.Client(
             f"tcp://{self.settings.DASK_SCHEDULER_HOST}:{self.settings.DASK_SCHEDULER_PORT}",
             asynchronous=True,
             name="director-v2-client",
@@ -149,10 +151,9 @@ class DaskClient:
         async def _dask_sub_handler(
             dask_sub_topic_name: str, handler: Callable[[str], Awaitable[None]]
         ):
-            dask_sub = distributed.Sub(dask_sub_topic_name)
-
             while True:
                 try:
+                    dask_sub = distributed.Sub(dask_sub_topic_name)
                     async for event in dask_sub:
                         logger.debug("received event %s", event)
                         await handler(event)
