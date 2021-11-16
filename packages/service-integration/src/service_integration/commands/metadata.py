@@ -64,7 +64,7 @@ def bump_version(target_version, upgrade, metadata_file_path):
     help="The metadata yaml file",
     type=Path,
     required=False,
-    default="metadata/metadata.yml",
+    default=".osparc/metadata.yml",
 )
 def get_version(target_version, metadata_file_path):
     """Prints to output requested version"""
