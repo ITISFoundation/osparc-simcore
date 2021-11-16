@@ -208,7 +208,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __buildHeader: function() {
-      const header = this.__header = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+      const header = this.__header = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
         alignX: "center"
       })).set({
         height: this.self().HEADER_HEIGHT,

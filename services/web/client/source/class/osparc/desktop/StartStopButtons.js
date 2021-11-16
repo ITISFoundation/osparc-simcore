@@ -34,7 +34,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(5));
+    this._setLayout(new qx.ui.layout.HBox());
 
     this.__initDefault();
   },
