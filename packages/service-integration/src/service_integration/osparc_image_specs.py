@@ -11,33 +11,38 @@ from service_integration.compose_spec_model import (
     Service,
 )
 
-from .osparc_config import IoOsparcConfig, ServiceOsparcConfig
+from .osparc_config import MetaConfig, RuntimeConfig
 
 
 def create_image_spec(
-    io_spec: IoOsparcConfig,
-    service_spec: Optional[ServiceOsparcConfig] = None,
+    meta_cfg: MetaConfig,
+    runtime_cfg: Optional[RuntimeConfig] = None,
     *,
-    extra_labels: Dict[str, str] = {}
+    extra_labels: Dict[str, str] = {},
+    **context
 ) -> ComposeSpecification:
-    """produces image-specification provided the osparc-config
+    """Creates the image-spec provided the osparc-config and a given context (e.g. development)
 
-    - Can be executed with ``docker-compose build``
+    - the image-spec simplifies building an image to ``docker-compose build``
     """
+    # TODO: context still not implemented
 
-    labels = {**extra_labels, **io_spec.to_labels_annotations()}
-    if service_spec:
-        labels.update(service_spec.to_labels_annotations())
+    labels = {**extra_labels, **meta_cfg.to_labels_annotations()}
+    if runtime_cfg:
+        labels.update(runtime_cfg.to_labels_annotations())
 
     build_spec = BuildItem(
         context="./",
+        # TODO: tool to find stardard location of file, get from config or query user
         dockerfile="docker/Dockerfile",
         labels=labels,
-        args={"VERSION": io_spec.version},
+        args={"VERSION": meta_cfg.version},
     )
 
     compose_spec = ComposeSpecification(
-        version="3.7",
-        services={io_spec.name: Service(image=io_spec.image_name(), build=build_spec)},
+        version="3.7",  # TODO: how compatibility is guaranteed? Sync with docker-compose version required in this repo!!
+        services={
+            meta_cfg.name: Service(image=meta_cfg.image_name(), build=build_spec)
+        },
     )
     return compose_spec

@@ -554,3 +554,6 @@ class ComposeSpecification(BaseModel):
     volumes: Optional[Dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Volume]] = None
     secrets: Optional[Dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Secret]] = None
     configs: Optional[Dict[constr(regex=r"^[a-zA-Z0-9._-]+$"), Config]] = None
+
+
+# TODO: pin this version

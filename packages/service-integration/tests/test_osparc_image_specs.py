@@ -7,7 +7,7 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel
 from service_integration.compose_spec_model import BuildItem
-from service_integration.osparc_config import IoOsparcConfig, ServiceOsparcConfig
+from service_integration.osparc_config import MetaConfig, RuntimeConfig
 from service_integration.osparc_image_specs import create_image_spec
 
 
@@ -16,20 +16,20 @@ def test_create_image_spec_impl(tests_data_dir: Path):
     # image-spec for devel, prod, ...
 
     # load & parse osparc configs
-    io_spec = IoOsparcConfig.from_yaml(tests_data_dir / "metadata-dynamic.yml")
-    service_spec = ServiceOsparcConfig.from_yaml(tests_data_dir / "runtime.yml")
+    meta_cfg = MetaConfig.from_yaml(tests_data_dir / "metadata-dynamic.yml")
+    runtime_cfg = RuntimeConfig.from_yaml(tests_data_dir / "runtime.yml")
 
     # assemble docker-compose
     build_spec = BuildItem(
         context=".",
         dockerfile="Dockerfile",
         labels={
-            **io_spec.to_labels_annotations(),
-            **service_spec.to_labels_annotations(),
+            **meta_cfg.to_labels_annotations(),
+            **runtime_cfg.to_labels_annotations(),
         },
     )
 
-    compose_spec = create_image_spec(io_spec, service_spec)
+    compose_spec = create_image_spec(meta_cfg, runtime_cfg)
     assert compose_spec.services
 
     service_name = next(iter(compose_spec.services.keys()))
