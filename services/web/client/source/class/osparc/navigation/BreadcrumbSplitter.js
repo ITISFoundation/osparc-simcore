@@ -187,7 +187,8 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
             this.__leftPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
             break;
           case "separator":
-            this.__leftPart = osparc.wrapper.Svg.drawLine(this.__canvas, controls);
+            this.__leftPart = osparc.wrapper.Svg.drawLine(this.__canvas, controls)
+              .move(16 / 2, 0);
             break;
           case "plusBtn":
             this.__leftPart = osparc.wrapper.Svg.drawPath(this.__canvas, controls);
@@ -232,26 +233,28 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
       if (controls) {
         switch (this.getShape()) {
           case "slash":
-          case "arrow":
+          case "arrow": {
             this.__rightPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
+            const color = this.__getBGColor(rightWidget.getDecorator());
+            if (color) {
+              osparc.wrapper.Svg.updatePolygonColor(this.__rightPart, color);
+            }
+            rightWidget.addListener("changeDecorator", e => {
+              const newColor = this.__getBGColor(rightWidget.getDecorator());
+              if (newColor) {
+                osparc.wrapper.Svg.updatePolygonColor(this.__rightPart, newColor);
+              }
+            }, this);
             break;
+          }
           case "separator":
-            this.__rightPart = osparc.wrapper.Svg.drawLine(this.__canvas, controls);
+            this.__rightPart = osparc.wrapper.Svg.drawLine(this.__canvas, controls)
+              .move(16 / 2, 0);
             break;
           case "plusBtn":
             this.__rightPart = osparc.wrapper.Svg.drawPath(this.__canvas, controls);
             break;
         }
-        const color = this.__getBGColor(rightWidget.getDecorator());
-        if (color) {
-          osparc.wrapper.Svg.updatePolygonColor(this.__rightPart, color);
-        }
-        rightWidget.addListener("changeDecorator", e => {
-          const newColor = this.__getBGColor(rightWidget.getDecorator());
-          if (newColor) {
-            osparc.wrapper.Svg.updatePolygonColor(this.__rightPart, newColor);
-          }
-        }, this);
       }
 
       let polylineControls;
@@ -267,22 +270,18 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
           lineControls = this.self().getSeparatorControls(16, bounds.height);
           break;
       }
-      if (polylineControls) {
-        const polyline = osparc.wrapper.Svg.drawPolyline(this.__canvas, polylineControls);
+      if (polylineControls || lineControls) {
+        let stroke = null;
+        if (polylineControls) {
+          stroke = osparc.wrapper.Svg.drawPolyline(this.__canvas, polylineControls);
+        } else if (lineControls) {
+          stroke = osparc.wrapper.Svg.drawLine(this.__canvas, lineControls);
+        }
         const color = this.__getTextColor();
-        osparc.wrapper.Svg.updateStrokeColor(polyline, color);
+        osparc.wrapper.Svg.updateStrokeColor(stroke, color);
         rightWidget.addListener("changeDecorator", e => {
           const newColor = this.__getTextColor();
-          osparc.wrapper.Svg.updateStrokeColor(polyline, newColor);
-        }, this);
-      }
-      if (lineControls) {
-        const polyline = osparc.wrapper.Svg.drawLine(this.__canvas, lineControls);
-        const color = this.__getTextColor();
-        osparc.wrapper.Svg.updateStrokeColor(polyline, color);
-        rightWidget.addListener("changeDecorator", e => {
-          const newColor = this.__getTextColor();
-          osparc.wrapper.Svg.updateStrokeColor(polyline, newColor);
+          osparc.wrapper.Svg.updateStrokeColor(stroke, newColor);
         }, this);
       }
     }
