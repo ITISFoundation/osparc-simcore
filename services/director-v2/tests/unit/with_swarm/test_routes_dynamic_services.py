@@ -5,10 +5,10 @@
 import json
 import logging
 import os
-import urllib
+import urllib.parse
 from argparse import Namespace
 from collections import namedtuple
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, AsyncIterator, Dict, Optional
 from uuid import UUID
 
 import pytest
@@ -30,14 +30,8 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     SchedulerData,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.client_api import (
-    setup_api_client,
-)
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
-    setup_scheduler,
 )
 from starlette import status
 from starlette.testclient import TestClient
@@ -60,6 +54,7 @@ def minimal_config(project_env_devel_environment, monkeypatch: MonkeyPatch) -> N
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
 
 
 @pytest.fixture(scope="session")
@@ -90,6 +85,7 @@ def mock_env(monkeypatch: MonkeyPatch, docker_swarm: None) -> None:
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
+    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
 
     monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
     monkeypatch.setenv("POSTGRES_USER", "mocked_user")
@@ -100,20 +96,14 @@ def mock_env(monkeypatch: MonkeyPatch, docker_swarm: None) -> None:
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
 
-@pytest.fixture(scope="function")
-def minimal_app(client: TestClient) -> FastAPI:
-    # disbale shutdown events, not required for these tests
-    client.app.router.on_shutdown = []
-    return client.app
-
-
 @pytest.fixture
 async def mock_retrieve_features(
     minimal_app: FastAPI,
+    client: TestClient,
     service: Dict[str, Any],
     is_legacy: bool,
     scheduler_data_from_http_request: SchedulerData,
-) -> Iterator[Optional[MockRouter]]:
+) -> AsyncIterator[Optional[MockRouter]]:
     with respx.mock(
         assert_all_called=False,
         assert_all_mocked=True,
@@ -129,9 +119,6 @@ async def mock_retrieve_features(
             yield respx_mock
             # no cleanup required
         else:
-            await setup_scheduler(minimal_app)
-            await setup_api_client(minimal_app)
-
             dynamic_sidecar_scheduler = minimal_app.state.dynamic_sidecar_scheduler
             node_uuid = UUID(service["node_uuid"])
             serice_name = "serice_name"

@@ -131,6 +131,9 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
 
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
+    # disable tracing as together with LifespanManager, it does not remove itself nicely
+    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
+
 
 @pytest.fixture(scope="function")
 def client(loop: asyncio.AbstractEventLoop, mock_env: None) -> Iterable[TestClient]:
