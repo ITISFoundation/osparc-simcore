@@ -134,15 +134,15 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       this.getChildControl("breadcrumb-navigation");
       this.getChildControl("breadcrumb-navigation-edit");
 
+      this._add(new qx.ui.core.Spacer(50));
+
+      this._startStopBtns = this.getChildControl("start-stop-btns");
+
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
       });
 
       this.getChildControl("stop-slideshow");
-
-      this._add(new qx.ui.core.Spacer(20));
-
-      this._startStopBtns = this.getChildControl("start-stop-btns");
     },
 
     // overriden

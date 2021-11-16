@@ -80,12 +80,12 @@ qx.Class.define("osparc.desktop.Toolbar", {
 
     _applyStudy: function(study) {
       if (study) {
+        this._populateNodesNavigationLayout();
         study.getUi().addListener("changeCurrentNodeId", () => {
           this._populateNodesNavigationLayout();
         });
-        this._startStopBtns.setStudy(study);
 
-        this._populateNodesNavigationLayout();
+        this._startStopBtns.setStudy(study);
       }
     },
 
