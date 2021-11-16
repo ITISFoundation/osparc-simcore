@@ -14,7 +14,7 @@ from ..osparc_image_specs import create_image_spec
 
 def create_docker_compose_image_spec(
     io_config_path: Path,
-    service_config_path: Path,
+    service_config_path: Path = None,
 ) -> ComposeSpecification:
     """Creates image compose-spec"""
 
@@ -25,11 +25,10 @@ def create_docker_compose_image_spec(
 
     # optional
     runtime_cfg = None
-    try:
-        # TODO: should include default?
-        runtime_cfg = RuntimeConfig.from_yaml(service_config_path)
-    except FileNotFoundError:
-        pass
+    if service_config_path:
+        with suppress(FileNotFoundError):
+            # TODO: should include default?
+            runtime_cfg = RuntimeConfig.from_yaml(service_config_path)
 
     # OCI annotations (optional)
     extra_labels = {}
