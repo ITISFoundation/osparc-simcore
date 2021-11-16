@@ -26,6 +26,16 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     const slideshowToolbar = this.__slideshowToolbar = new osparc.desktop.SlideshowToolbar().set({
       backgroundColor: "contrasted-background+"
     });
+
+    const collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
+    [
+      "backToDashboardPressed",
+      "collapseNavBar",
+      "expandNavBar"
+    ].forEach(signalName => collapseWithUserMenu.addListener(signalName, () => this.fireEvent(signalName)), this);
+    // eslint-disable-next-line no-underscore-dangle
+    slideshowToolbar._add(collapseWithUserMenu);
+
     slideshowToolbar.addListener("saveSlideshow", () => {
       if (this.__currentNodeId) {
         const slideshow = this.getStudy().getUi().getSlideshow();
@@ -68,7 +78,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
 
   events: {
     "slidesStop": "qx.event.type.Event",
-    "startPartialPipeline": "qx.event.type.Data"
+    "startPartialPipeline": "qx.event.type.Data",
+    "backToDashboardPressed": "qx.event.type.Event",
+    "collapseNavBar": "qx.event.type.Event",
+    "expandNavBar": "qx.event.type.Event"
   },
 
   properties: {

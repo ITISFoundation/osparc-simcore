@@ -34,16 +34,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       "slidesGuidedStart",
       "slidesAppStart"
     ].forEach(singalName => workbenchView.addListener(singalName, () => this.fireEvent(singalName)));
-    workbenchView.addListener("takeSnapshot", () => {
-      this.__takeSnapshot();
-    }, this);
-    workbenchView.addListener("showSnapshots", () => {
-      this.__showSnapshots();
-    }, this);
+    workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
+    workbenchView.addListener("showSnapshots", () => this.__showSnapshots(), this);
     viewsStack.add(workbenchView);
 
     const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
-    slideshowView.addListener("slidesStop", () => this.fireEvent("slidesStop"));
+    [
+      "collapseNavBar",
+      "expandNavBar",
+      "backToDashboardPressed",
+      "slidesStop"
+    ].forEach(singalName => slideshowView.addListener(singalName, () => this.fireEvent(singalName)));
     viewsStack.add(slideshowView);
 
     slideshowView.addListener("startPartialPipeline", e => {
