@@ -49,10 +49,13 @@ from ..models.schemas.services import NodeRequirements
 
 logger = logging.getLogger(__name__)
 
+ServiceKeyStr = str
+ServiceVersionStr = str
+
 
 def generate_dask_job_id(
-    service_key: str,
-    service_version: str,
+    service_key: ServiceKeyStr,
+    service_version: ServiceVersionStr,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -65,7 +68,9 @@ def generate_dask_job_id(
     return f"{service_key}:{service_version}:userid_{user_id}:projectid_{project_id}:nodeid_{node_id}:uuid_{uuid4()}"
 
 
-def parse_dask_job_id(job_id: str) -> Tuple[str, str, UserID, ProjectID, NodeID]:
+def parse_dask_job_id(
+    job_id: str,
+) -> Tuple[ServiceKeyStr, ServiceVersionStr, UserID, ProjectID, NodeID]:
     parts = job_id.split(":")
     assert len(parts) == 6  # nosec
     return (

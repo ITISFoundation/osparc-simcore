@@ -7,18 +7,33 @@
 # pylint:disable=no-name-in-module
 
 
+import uuid
 from typing import Dict
 from unittest import mock
+from uuid import uuid4
 
 import aiopg
 import pytest
 from _helpers import PublishedProject, set_comp_task_outputs  # type: ignore
-from models_library.projects_nodes_io import SimCoreFileLink
+from dask_task_models_library.container_tasks.io import (
+    FileUrl,
+    TaskInputData,
+    TaskOutputData,
+    TaskOutputDataSchema,
+)
+from faker import Faker
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID, SimCoreFileLink
+from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
+from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.models.schemas.constants import UserID
 from simcore_service_director_v2.utils.dask import (
     _LOGS_FILE_NAME,
     clean_task_output_and_log_files_if_invalid,
+    generate_dask_job_id,
+    parse_dask_job_id,
+    parse_output_data,
 )
 
 pytest_simcore_core_services_selection = ["postgres"]
@@ -41,6 +56,86 @@ async def mocked_node_ports_filemanager_fcts(
             return_value=None,
         ),
     }
+
+
+@pytest.fixture(
+    params=["simcore/service/comp/some/fake/service/key", "dockerhub-style/service_key"]
+)
+def service_key(request) -> str:
+    return request.param
+
+
+@pytest.fixture()
+def service_version() -> str:
+    return "1234.32432.2344"
+
+
+@pytest.fixture()
+def project_id() -> ProjectID:
+    return uuid.uuid4()
+
+
+@pytest.fixture()
+def node_id() -> NodeID:
+    return uuid.uuid4()
+
+
+def test_dask_job_id_serialization(
+    service_key: str,
+    service_version: str,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+):
+    dask_job_id = generate_dask_job_id(
+        service_key, service_version, user_id, project_id, node_id
+    )
+    (
+        parsed_service_key,
+        parsed_service_version,
+        parsed_user_id,
+        parsed_project_id,
+        parsed_node_id,
+    ) = parse_dask_job_id(dask_job_id)
+    assert service_key == parsed_service_key
+    assert service_version == parsed_service_version
+    assert user_id == parsed_user_id
+    assert project_id == parsed_project_id
+    assert node_id == parsed_node_id
+
+
+async def test_parse_output_data(
+    aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
+    published_project: PublishedProject,
+    user_id: UserID,
+    faker: Faker,
+    mocker: MockerFixture,
+):
+    mocker.patch(
+        "simcore_service_director_v2.utils.dask.node_ports_v2.Nodeports.outputs.set_value"
+    )
+    sleeper_task: CompTaskAtDB = published_project.tasks[1]
+
+    dask_job_id = generate_dask_job_id(
+        sleeper_task.image.name,
+        sleeper_task.image.tag,
+        user_id,
+        published_project.project.uuid,
+        sleeper_task.node_id,
+    )
+
+    fake_data = parse_obj_as(
+        TaskOutputData,
+        {
+            "out_1": 2,
+            "out_2": {"url": faker.url(), "file_mapping": "myfile.txt"},
+            "out_3": False,
+            "out_4": 12.3,
+            "out_5": "some string",
+            "out_23": {"url": faker.url()},
+        },
+    )
+    await parse_output_data(aiopg_engine, dask_job_id, fake_data)
 
 
 @pytest.mark.parametrize("entry_exists_returns", [True, False])
