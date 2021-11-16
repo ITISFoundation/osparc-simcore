@@ -32,6 +32,16 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
     "expandNavBar": "qx.event.type.Event"
   },
 
+  properties: {
+    collapsed: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeCollapsed",
+      apply: "__applyCollapsed"
+    }
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -75,10 +85,7 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
           });
           control.add(collapseNavBarBtn);
           collapseNavBarBtn.addListener("execute", () => {
-            this.getChildControl("separator").show();
-            this.getChildControl("back-to-dashboard-button").show();
-            this.getChildControl("user-menu-button").show();
-            control.setSelection([control.getSelectables()[1]]);
+            this.setCollapsed(true);
             this.fireEvent("collapseNavBar");
           });
 
@@ -87,10 +94,7 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
           });
           control.add(expandNavBarBtn);
           expandNavBarBtn.addListener("execute", () => {
-            this.getChildControl("separator").exclude();
-            this.getChildControl("back-to-dashboard-button").exclude();
-            this.getChildControl("user-menu-button").exclude();
-            control.setSelection([control.getSelectables()[0]]);
+            this.setCollapsed(false);
             this.fireEvent("expandNavBar");
           });
 
@@ -112,6 +116,14 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
       userMenuButton.exclude();
 
       this.getChildControl("collapse-expand-stack");
+    },
+
+    __applyCollapsed: function(collapsed) {
+      this.getChildControl("separator").setVisibility(collapsed ? "visible" : "excluded");
+      this.getChildControl("back-to-dashboard-button").setVisibility(collapsed ? "visible" : "excluded");
+      this.getChildControl("user-menu-button").setVisibility(collapsed ? "visible" : "excluded");
+      const collapseExpandStack = this.getChildControl("collapse-expand-stack");
+      collapseExpandStack.setSelection([collapseExpandStack.getSelectables()[collapsed ? 1 : 0]]);
     }
   }
 });
