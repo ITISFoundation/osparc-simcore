@@ -103,6 +103,10 @@ class MetaConfig(ServiceDockerData):
         )
         return io_labels
 
+    def service_name(self):
+        """name used as key in the compose-spec services map"""
+        return self.key.split("/")[-1].replace(" ", "")
+
     def image_name(self, registry="local") -> str:
         registry_prefix = REGISTRY_PREFIX[registry]
         mid_name = SERVICE_KEY_FORMATS[self.service_type].format(service_name=self.name)

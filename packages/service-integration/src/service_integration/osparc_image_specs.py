@@ -42,7 +42,9 @@ def create_image_spec(
     compose_spec = ComposeSpecification(
         version="3.7",  # TODO: how compatibility is guaranteed? Sync with docker-compose version required in this repo!!
         services={
-            meta_cfg.name: Service(image=meta_cfg.image_name(), build=build_spec)
+            meta_cfg.service_name(): Service(
+                image=meta_cfg.image_name(), build=build_spec
+            )
         },
     )
     return compose_spec
