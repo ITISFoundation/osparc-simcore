@@ -44,12 +44,12 @@ def metadata_file_path(tests_data_dir, tmp_path) -> Path:
 
 
 @pytest.fixture
-def run_simcore_service_integrator() -> Callable:
+def run_program_with_args() -> Callable:
     # SEE https://click.palletsprojects.com/en/7.x/testing/
     runner = CliRunner()
 
     def _invoke(*cmd):
-        print("RUNNING", "simcore-service-integrator", cmd)
+        print("RUNNING", "osparc-service-integrator", cmd)
         print(runner.make_env())
         return runner.invoke(main, list(cmd))
 

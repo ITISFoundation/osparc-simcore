@@ -75,7 +75,7 @@ SETUP = dict(
     zip_safe=False,
     entry_points={
         "console_scripts": [
-            "simcore-service-integrator=service_integration.cli:main",
+            "osparc-service-integrator=service_integration.cli:main",
             "ooil=service_integration.cli:main",
         ],
         "pytest11": ["simcore_service_integration=service_integration.pytest_plugin"],

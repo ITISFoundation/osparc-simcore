@@ -25,17 +25,17 @@ def compose_file_path(metadata_file_path: Path) -> Path:
 
 
 def test_make_docker_compose_meta(
-    run_simcore_service_integrator: Callable,
+    run_program_with_args: Callable,
     metadata_file_path: Path,
     compose_file_path: Path,
 ):
     """
     docker-compose-build.yml: $(metatada)
         # Injects metadata from $< as labels
-        simcore-service-integrator compose --metadata $< --to-spec-file $@
+        osparc-service-integrator compose --metadata $< --to-spec-file $@
     """
 
-    result = run_simcore_service_integrator(
+    result = run_program_with_args(
         "compose",
         "--metadata",
         str(metadata_file_path),
