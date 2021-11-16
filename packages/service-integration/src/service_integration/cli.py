@@ -9,7 +9,7 @@ from .commands import compose, config, metadata, run_creator
 @click.group()
 @click.version_option(version=__version__)
 def main():
-    pass
+    """o2s2parc service integration library"""
 
 
 main.add_command(compose.main, "compose")
