@@ -65,7 +65,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
   members: {
     __pane2: null,
-    __title: null,
     __serviceInfoLayout: null,
     __nodeStatusUI: null,
     __header: null,
@@ -82,7 +81,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     populateLayout: function() {
       this.__cleanLayout();
 
-      this.getNode().bind("label", this.__title, "value");
       this.__addInputPortsUIs();
       this.__addOutputPortsUIs();
       this._addSettings();
@@ -210,7 +208,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __buildHeader: function() {
-      const header = this.__header = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+      const header = this.__header = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        alignX: "center"
+      })).set({
         height: this.self().HEADER_HEIGHT,
         backgroundColor: "material-button-background"
       });

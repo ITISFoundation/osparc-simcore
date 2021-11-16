@@ -19,7 +19,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
-    this.base(arguments, "horizontal");
+    this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox());
 
