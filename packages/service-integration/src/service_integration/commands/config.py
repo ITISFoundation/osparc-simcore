@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from pydantic.main import BaseModel
 
 from ..compose_spec_model import ComposeSpecification
-from ..osparc_config import IoOsparcConfig, ServiceOsparcConfig
+from ..osparc_config import MetaConfig, RuntimeConfig
 
 
 def create_osparc_specs(
@@ -51,18 +51,18 @@ def create_osparc_specs(
                     assert isinstance(labels.__root__, dict)
                     labels = labels.__root__
 
-                io_spec = IoOsparcConfig.from_labels_annotations(labels)
+                meta_cfg = MetaConfig.from_labels_annotations(labels)
                 _save(
                     service_name,
                     io_specs_path,
-                    io_spec,
+                    meta_cfg,
                 )
 
-                service_spec = ServiceOsparcConfig.from_labels_annotations(labels)
+                runtime_cfg = RuntimeConfig.from_labels_annotations(labels)
                 _save(
                     service_name,
                     service_specs_path,
-                    service_spec,
+                    runtime_cfg,
                 )
 
             except (AttributeError, ValidationError, TypeError) as err:
@@ -90,13 +90,13 @@ def main(
 
     # TODO: sync defaults among CLI commands
     config_basedir = compose_spec_path.parent / ".osparc"
-    io_specs_path = config_basedir / "metadata.yml"
-    service_specs_path = config_basedir / "runtime.yml"
+    meta_cfg_path = config_basedir / "metadata.yml"
+    runtime_cfg_path = config_basedir / "runtime.yml"
 
-    io_specs_path.parent.mkdir(parents=True, exist_ok=True)
-    service_specs_path.parent.mkdir(parents=True, exist_ok=True)
+    meta_cfg_path.parent.mkdir(parents=True, exist_ok=True)
+    runtime_cfg_path.parent.mkdir(parents=True, exist_ok=True)
 
-    create_osparc_specs(compose_spec_path, io_specs_path, service_specs_path)
+    create_osparc_specs(compose_spec_path, meta_cfg_path, runtime_cfg_path)
 
 
 if __name__ == "__main__":

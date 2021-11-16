@@ -8,7 +8,7 @@ from typing import Dict
 
 import pytest
 import yaml
-from service_integration.osparc_config import IoOsparcConfig, ServiceOsparcConfig
+from service_integration.osparc_config import MetaConfig, RuntimeConfig
 
 
 @pytest.fixture
@@ -40,14 +40,14 @@ def labels(tests_data_dir: Path, labels_fixture_name: str) -> Dict[str, str]:
 def test_load_from_labels(
     labels: Dict[str, str], labels_fixture_name: str, tmp_path: Path
 ):
-    io_spec = IoOsparcConfig.from_labels_annotations(labels)
-    service_spec = ServiceOsparcConfig.from_labels_annotations(labels)
+    meta_cfg = MetaConfig.from_labels_annotations(labels)
+    runtime_cfg = RuntimeConfig.from_labels_annotations(labels)
 
-    print(io_spec.json(exclude_unset=True, indent=2))
-    print(service_spec.json(exclude_unset=True, indent=2))
+    print(meta_cfg.json(exclude_unset=True, indent=2))
+    print(runtime_cfg.json(exclude_unset=True, indent=2))
 
     # create yamls from config
-    for model in (service_spec, io_spec):
+    for model in (runtime_cfg, meta_cfg):
         config_path = (
             tmp_path / f"{model.__class__.__name__.lower()}-{labels_fixture_name}.yml"
         )

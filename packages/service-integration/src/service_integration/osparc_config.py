@@ -1,8 +1,15 @@
-""" Defines the configuration of a user service stored in '.osparc/' folder
+""" 'osparc config' is a set of stardard file forms (yaml) that the user fills to describe how his/her service works and
+integrates with osparc.
 
-    - models for config sections
-        - load/dump from/to yaml
-        - load/save from label annotations
+    - config files are stored under '.osparc/' folder in the root repo folder (analogous to other configs like .github, .vscode, etc)
+    - configs are parsed and validated into pydantic models
+    - models can be serialized/deserialized into label annotations on images. This way, the config is attached to the service
+    during it's entire lifetime.
+    - config should provide enough information about that context to allow
+        - build an image
+        - run an container
+    on a single command call.
+    -
 """
 
 from pathlib import Path
@@ -14,10 +21,13 @@ from models_library.services import (
     ServiceDockerData,
     ServiceType,
 )
+from pydantic import BaseSettings
 from pydantic.fields import Field
 from pydantic.main import BaseModel, Extra
+from pydantic.types import SecretStr
 
 from .compose_spec_model import ComposeSpecification
+from .errors import ConfigNotFound
 from .labels_annotations import from_labels, to_labels
 from .yaml_utils import yaml_safe_load
 
@@ -26,36 +36,60 @@ CONFIG_FOLDER_NAME = ".osparc"
 
 REGISTRY_PREFIX = {
     "local": "registry:5000",
-    "dockerhub": "itisfoundation",
+    "dockerhub": "itisfoundation",  # index.docker.io
 }
-# TODO: read from config all available registries
+# TODO: read from UserSettings all available registries
 
 SERVICE_KEY_FORMATS = {
     ServiceType.COMPUTATIONAL: COMPUTATIONAL_SERVICE_KEY_FORMAT,
     ServiceType.DYNAMIC: DYNAMIC_SERVICE_KEY_FORMAT,
 }
 
-OSPARC_LABEL_PREFIXES = ("io.simcore", "simcore.service", "io.osparc", "swiss.z43")
-# FIXME: all to swiss.z43 or to io.osparc
+OSPARC_LABEL_PREFIXES = (
+    "io.simcore",
+    "simcore.service",
+)
+# SEE https://docs.docker.com/config/labels-custom-metadata/#label-keys-and-values
+#  "Authors of third-party tools should prefix each label key with the reverse DNS notation of a
+#   domain they own, such as com.example.some-label ""
+# FIXME: review and define a z43-wide inverse DNS e.g. swiss.z43
 
 
 ## MODELS -------------------------
 
+#
+# User settings -> stored in ~/.osparc
+#
+class Registry(BaseSettings):
+    url: str
+    user: Optional[str] = None
+    password: Optional[SecretStr] = None
 
-class IoOsparcConfig(ServiceDockerData):
-    """General info + I/O configuration
 
-    Include both image and runtime specs
+class UserSettings(BaseSettings):
+    """Stored in ~/.osparc"""
+
+    registries: Dict[str, Registry]
+    default_registry: str = "local"
+
+
+#
+# Project config -> stored in repo's basedir/.osparc
+#
+class MetaConfig(ServiceDockerData):
+    """Details about general info and I/O configuration of the service
+
+    Necessary for both image- and runtime-spec
     """
 
     @classmethod
-    def from_yaml(cls, path: Path) -> "IoOsparcConfig":
+    def from_yaml(cls, path: Path) -> "MetaConfig":
         with path.open() as fh:
             data = yaml_safe_load(fh)
         return cls.parse_obj(data)
 
     @classmethod
-    def from_labels_annotations(cls, labels: Dict[str, str]) -> "IoOsparcConfig":
+    def from_labels_annotations(cls, labels: Dict[str, str]) -> "MetaConfig":
         data = from_labels(
             labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
         )
@@ -117,8 +151,11 @@ class SettingsItem(BaseModel):
     )
 
 
-class ServiceOsparcConfig(BaseModel):
-    """Runtime specs"""
+class RuntimeConfig(BaseModel):
+    """Details about the service runtime
+
+    Necessary for runtime-spec
+    """
 
     compose_spec: Optional[ComposeSpecification] = None
     container_http_entrypoint: Optional[str] = None
@@ -133,13 +170,13 @@ class ServiceOsparcConfig(BaseModel):
         extra = Extra.forbid
 
     @classmethod
-    def from_yaml(cls, path: Path) -> "ServiceOsparcConfig":
+    def from_yaml(cls, path: Path) -> "RuntimeConfig":
         with path.open() as fh:
             data = yaml_safe_load(fh)
         return cls.parse_obj(data)
 
     @classmethod
-    def from_labels_annotations(cls, labels: Dict[str, str]) -> "ServiceOsparcConfig":
+    def from_labels_annotations(cls, labels: Dict[str, str]) -> "RuntimeConfig":
         data = from_labels(labels, prefix_key=OSPARC_LABEL_PREFIXES[1])
         return cls.parse_obj(data)
 
@@ -149,3 +186,37 @@ class ServiceOsparcConfig(BaseModel):
             prefix_key=OSPARC_LABEL_PREFIXES[1],
         )
         return service_labels
+
+
+## FOLDER STRUCTURE -------------------------
+
+
+class ConfigFilesStructure:
+    """
+    Defines config file structure and how they
+    map to the models
+    """
+
+    FILES_GLOBS = {
+        MetaConfig.__name__: "metadata.y*ml",
+        RuntimeConfig.__name__: "runtime.y*ml",
+    }
+
+    def search(self, start_dir: Path):
+        """tries to match of any standard config layouts"""
+        found = {
+            configtype: list(start_dir.rglob(pattern))
+            for configtype, pattern in self.FILES_GLOBS.items()
+        }
+
+        if not found:
+            raise ConfigNotFound(basedir=start_dir)
+
+        raise NotImplemented
+
+        # TODO:
+        # scenarios:
+        #   .osparc/meta, [runtime]
+        #   .osparc/{service-name}/meta, [runtime]
+
+        # metadata is required, runtime is optional?

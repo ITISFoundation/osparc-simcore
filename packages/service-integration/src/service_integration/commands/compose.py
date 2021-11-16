@@ -8,7 +8,7 @@ import yaml
 from ..compose_spec_model import ComposeSpecification
 from ..labels_annotations import to_labels
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
-from ..osparc_config import IoOsparcConfig, ServiceOsparcConfig
+from ..osparc_config import MetaConfig, RuntimeConfig
 from ..osparc_image_specs import create_image_spec
 
 
@@ -20,18 +20,18 @@ def create_docker_compose_image_spec(
 
     config_basedir = io_config_path.parent
 
-    # i/o specs (required)
-    io_spec = IoOsparcConfig.from_yaml(io_config_path)
+    # required
+    meta_cfg = MetaConfig.from_yaml(io_config_path)
 
-    # service specs (not required)
-    service_spec = None
+    # optional
+    runtime_cfg = None
     try:
         # TODO: should include default?
-        service_spec = ServiceOsparcConfig.from_yaml(service_config_path)
+        runtime_cfg = RuntimeConfig.from_yaml(service_config_path)
     except FileNotFoundError:
         pass
 
-    # OCI annotations (not required)
+    # OCI annotations (optional)
     extra_labels = {}
     try:
         oci_spec = yaml.safe_load(
@@ -52,7 +52,7 @@ def create_docker_compose_image_spec(
             ls_labels = to_labels(ls_spec, prefix_key=LS_LABEL_PREFIX)
             extra_labels.update(ls_labels)
 
-    compose_spec = create_image_spec(io_spec, service_spec, extra_labels=extra_labels)
+    compose_spec = create_image_spec(meta_cfg, runtime_cfg, extra_labels=extra_labels)
 
     return compose_spec
 
@@ -82,28 +82,28 @@ def main(
 ):
     """create docker image/runtime compose-specs from the osparc config"""
 
-    config_basedir = Path(".osparc")
-    metadata_filename = "metadata.yml"
+    basedir = Path(".osparc")
+    meta_filename = "metadata.yml"
 
     if config_path.exists():
         if config_path.is_dir():
-            config_basedir = config_path
+            basedir = config_path
         else:
-            config_basedir = config_path.parent
-            metadata_filename = config_path.name
+            basedir = config_path.parent
+            meta_filename = config_path.name
 
     config_filenames: Dict[str, List[Path]] = {}
-    if config_basedir.exists():
-        for io_config in config_basedir.rglob(metadata_filename):
-            config_name = io_config.parent.name
+    if basedir.exists():
+        for meta_cfg in basedir.rglob(meta_filename):
+            config_name = meta_cfg.parent.name
             config_filenames[config_name] = [
-                io_config,
+                meta_cfg,
             ]
 
             # find pair (not required)
-            service_config = io_config.parent / "runtime.yml"
-            if service_config.exists():
-                config_filenames[config_name].append(service_config)
+            runtime_cfg = meta_cfg.parent / "runtime.yml"
+            if runtime_cfg.exists():
+                config_filenames[config_name].append(runtime_cfg)
 
     # output
     compose_spec_dict = {}
