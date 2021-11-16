@@ -143,7 +143,6 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       this._add(new qx.ui.core.Spacer(20));
 
       this._startStopBtns = this.getChildControl("start-stop-btns");
-      this._startStopBtns.getChildControl("clusters-box").exclude();
     },
 
     // overriden
