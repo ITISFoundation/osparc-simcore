@@ -8,6 +8,7 @@ from pydantic.networks import HttpUrl
 from settings_library.base import BaseCustomSettings
 from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
+from settings_library.tracing import TracingSettings
 
 # SERVICES CLIENTS --------------------------------------------
 
@@ -91,6 +92,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     API_SERVER_CATALOG: Optional[CatalogSettings]
     API_SERVER_STORAGE: Optional[StorageSettings]
     API_SERVER_DIRECTOR_V2: Optional[DirectorV2Settings]
+    API_SERVER_TRACING: Optional[TracingSettings]
 
     API_SERVER_DEV_FEATURES_ENABLED: bool = Field(
         False, env=["API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"]
