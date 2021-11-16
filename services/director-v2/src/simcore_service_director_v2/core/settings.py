@@ -159,6 +159,10 @@ class DynamicSidecarSettings(BaseCustomSettings):
 
     DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings
 
+    DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
+        "3.8", description="docker-compose version used in the compose-specs"
+    )
+
     @validator("DYNAMIC_SIDECAR_IMAGE", pre=True)
     @classmethod
     def strip_leading_slashes(cls, v) -> str:

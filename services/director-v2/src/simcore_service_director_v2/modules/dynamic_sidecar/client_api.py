@@ -15,6 +15,16 @@ from .errors import (
     EntrypointContainerNotFoundError,
 )
 
+# PC -> SAN improvements to discuss
+#
+# TODO: Use logger, not logging!
+#      - compose error msgs instead of log functions
+# TODO: Single instance of httpx client for all requests?: https://www.python-httpx.org/advanced/#why-use-a-client
+#      - see services/api-server/src/simcore_service_api_server/utils/client_base.py  (-> move to servicelib/fastapi ?)
+# TODO: context to unify session's error handling and logging
+# TODO: client function names equal/very similar to server handlers
+#
+
 logger = logging.getLogger(__name__)
 
 
@@ -132,7 +142,7 @@ class DynamicSidecarClient:
                 response = await client.post(url, data=compose_spec)
             if response.status_code != status.HTTP_202_ACCEPTED:
                 message = (
-                    f"ERROR during service creation request: "
+                    "ERROR during service creation request: "
                     f"status={response.status_code}, body={response.text}"
                 )
                 logging.warning(message)
@@ -176,7 +186,7 @@ class DynamicSidecarClient:
                 logging.warning(message)
                 raise DynamicSchedulerException(message)
         except httpx.HTTPError as e:
-            log_httpx_http_error(url, "PUT", traceback.format_exc())
+            log_httpx_http_error(url, "POST", traceback.format_exc())
             raise e
 
     async def service_restore_state(self, dynamic_sidecar_endpoint: str) -> None:
@@ -191,9 +201,9 @@ class DynamicSidecarClient:
                 )
                 logging.warning(message)
                 raise DynamicSchedulerException(message)
-        except httpx.HTTPError as e:
-            log_httpx_http_error(url, "PUT", traceback.format_exc())
-            raise e
+        except httpx.HTTPError:
+            log_httpx_http_error(url, "POST", traceback.format_exc())
+            raise
 
     async def service_pull_input_ports(
         self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
@@ -212,7 +222,7 @@ class DynamicSidecarClient:
                 raise DynamicSchedulerException(message)
             return int(response.text)
         except httpx.HTTPError as e:
-            log_httpx_http_error(url, "PUT", traceback.format_exc())
+            log_httpx_http_error(url, "POST", traceback.format_exc())
             raise e
 
     async def service_push_output_ports(
@@ -231,7 +241,7 @@ class DynamicSidecarClient:
                 logging.warning(message)
                 raise DynamicSchedulerException(message)
         except httpx.HTTPError as e:
-            log_httpx_http_error(url, "PUT", traceback.format_exc())
+            log_httpx_http_error(url, "POST", traceback.format_exc())
             raise e
 
     async def get_entrypoint_container_name(

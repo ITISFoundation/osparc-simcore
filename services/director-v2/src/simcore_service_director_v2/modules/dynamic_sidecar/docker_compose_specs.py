@@ -1,6 +1,6 @@
 import json
 from copy import deepcopy
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import yaml
 from fastapi.applications import FastAPI
@@ -10,10 +10,6 @@ from settings_library.docker_registry import RegistrySettings
 from .docker_service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
 
 CONTAINER_NAME = "container"
-BASE_SERVICE_SPEC: Dict[str, Any] = {
-    "version": "3.8",
-    "services": {CONTAINER_NAME: {}},
-}
 
 
 def _inject_proxy_network_configuration(
@@ -41,32 +37,61 @@ def _inject_proxy_network_configuration(
     target_container_spec["networks"] = container_networks
 
 
+EnvKeyEqValueList = List[str]
+EnvVarsMap = Dict[str, Optional[str]]
+
+
+class _environment_section:
+    """the 'environment' field in a docker-compose can be either a dict (EnvVarsMap)
+    or a list of "key=value" (EnvKeyEqValueList)
+
+    These helpers can resolve parsing and exporting between these formats
+
+    SEE https://docs.docker.com/compose/compose-file/compose-file-v3/#environment
+    """
+
+    @staticmethod
+    def parse(environment: Union[EnvVarsMap, EnvKeyEqValueList]) -> EnvVarsMap:
+        envs = {}
+        if isinstance(environment, list):
+            for key_eq_value in environment:
+                assert isinstance(key_eq_value, str)  # nosec
+                key, value, *_ = key_eq_value.split("=", maxsplit=1) + [
+                    None,
+                ]  # type: ignore
+                envs[key] = value
+        else:
+            assert isinstance(environment, dict)  # nosec
+            envs = deepcopy(environment)
+        return envs
+
+    @staticmethod
+    def export_as_list(environment: EnvVarsMap) -> EnvKeyEqValueList:
+        envs = []
+        for key, value in environment.items():
+            if value is None:
+                envs.append(f"{key}")
+            else:
+                envs.append(f"{key}={value}")
+        return envs
+
+
 def _inject_paths_mappings(
     service_spec: Dict[str, Any], path_mappings: PathMappingsLabel
 ) -> None:
     for service_name in service_spec["services"]:
         service_content = service_spec["services"][service_name]
 
-        environment_vars: List[str] = service_content.get("environment", [])
-        environment_vars.append(f"DY_SIDECAR_PATH_INPUTS={path_mappings.inputs_path}")
-        environment_vars.append(f"DY_SIDECAR_PATH_OUTPUTS={path_mappings.outputs_path}")
-        str_path_mappings = json.dumps([str(x) for x in path_mappings.state_paths])
-        environment_vars.append(f"DY_SIDECAR_STATE_PATHS={str_path_mappings}")
+        env_vars: EnvVarsMap = _environment_section.parse(
+            service_content.get("environment", {})
+        )
+        env_vars["DY_SIDECAR_PATH_INPUTS"] = f"{path_mappings.inputs_path}"
+        env_vars["DY_SIDECAR_PATH_OUTPUTS"] = f"{path_mappings.outputs_path}"
+        env_vars[
+            "DY_SIDECAR_STATE_PATHS"
+        ] = f"{json.dumps([f'{p}' for p in path_mappings.state_paths])}"
 
-        service_content["environment"] = environment_vars
-
-
-def _assemble_from_service_key_and_tag(
-    resolved_registry_url: str,
-    service_key: str,
-    service_tag: str,
-):
-    service_spec = deepcopy(BASE_SERVICE_SPEC)
-    service_spec["services"][CONTAINER_NAME] = {
-        "image": f"{resolved_registry_url}/{service_key}:{service_tag}"
-    }
-
-    return service_spec
+        service_content["environment"] = _environment_section.export_as_list(env_vars)
 
 
 def _replace_env_vars_in_compose_spec(
@@ -81,12 +106,12 @@ def _replace_env_vars_in_compose_spec(
     return stringified_service_spec
 
 
-async def assemble_spec(
+def assemble_spec(
     app: FastAPI,
     service_key: str,
     service_tag: str,
     paths_mapping: PathMappingsLabel,
-    compose_spec: ComposeSpecLabel,
+    compose_spec: Optional[ComposeSpecLabel],
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
 ) -> str:
@@ -99,18 +124,27 @@ async def assemble_spec(
         app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
     )
 
-    container_name = container_http_entry
-    service_spec = compose_spec
+    docker_compose_version = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
+    )
 
     # when no compose yaml file was provided
-    if service_spec is None:
-        service_spec = _assemble_from_service_key_and_tag(
-            resolved_registry_url=docker_registry_settings.resolved_registry_url,
-            service_key=service_key,
-            service_tag=service_tag,
-        )
+    if compose_spec is None:
+        service_spec: Dict[str, Any] = {
+            # NOTE: latest version does NOT require
+            "version": docker_compose_version,
+            "services": {
+                CONTAINER_NAME: {
+                    "image": f"{docker_registry_settings.resolved_registry_url}/{service_key}:{service_tag}"
+                }
+            },
+        }
         container_name = CONTAINER_NAME
+    else:
+        service_spec = compose_spec
+        container_name = container_http_entry
 
+    assert service_spec is not None  # nosec
     assert container_name is not None  # nosec
 
     _inject_proxy_network_configuration(

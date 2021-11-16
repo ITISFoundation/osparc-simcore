@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
+from servicelib.fastapi.tracing import setup_tracing
 from simcore_service_director_v2.modules import dask_client
 from starlette import status
 from starlette.exceptions import HTTPException
@@ -88,6 +89,9 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         or settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_SCHEDULER_ENABLED
     ):
         comp_scheduler.setup(app)
+
+    if settings.DIRECTOR_V2_TRACING:
+        setup_tracing(app, settings.DIRECTOR_V2_TRACING)
 
     # setup app --
     app.add_event_handler("startup", on_startup)

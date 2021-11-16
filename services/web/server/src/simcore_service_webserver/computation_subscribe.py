@@ -75,7 +75,10 @@ async def log_message_parser(app: web.Application, data: bytes) -> None:
     socket_messages: List[SocketMessageDict] = [
         {
             "event_type": SOCKET_IO_LOG_EVENT,
-            "data": {"messages": rabbit_message.messages},
+            "data": {
+                "messages": rabbit_message.messages,
+                "node_id": f"{rabbit_message.node_id}",
+            },
         }
     ]
     await send_messages(app, f"{rabbit_message.user_id}", socket_messages)
