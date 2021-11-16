@@ -25,10 +25,10 @@ qx.Class.define("osparc.component.widget.StudyTitleOnlyTree", {
       this.setDelegate({
         ...this.getDelegate(),
         createItem: () => {
-          const nodeTreeItem = new osparc.component.widget.NodeTreeItem();
-          nodeTreeItem.addListener("renameNode", e => this.__openItemRenamer(e.getData()));
-          nodeTreeItem.addListener("infoNode", e => this.__openStudyInfo());
-          return nodeTreeItem;
+          const studyTreeItem = new osparc.component.widget.NodeTreeItem();
+          studyTreeItem.addListener("renameNode", e => this.__openItemRenamer(e.getData()));
+          studyTreeItem.addListener("infoNode", e => this.__openStudyInfo());
+          return studyTreeItem;
         }
       });
     },
@@ -39,6 +39,11 @@ qx.Class.define("osparc.component.widget.StudyTitleOnlyTree", {
       const width = 500;
       const height = 500;
       osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
+    },
+
+    selectStudyItem: function() {
+      this.setSelection(new qx.data.Array([this.getModel()]));
+      this.fireDataEvent("nodeSelected", this.getModel().getNodeId());
     }
   }
 });
