@@ -32,12 +32,15 @@ def create_osparc_specs(
                 output_path = filename.parent / service_name / filename.name
 
             output_path.parent.mkdir(parents=True, exist_ok=True)
+            click.echo(f"Creating {output_path} ...", nl=False)
 
             with output_path.open("wt") as fh:
                 data = json.loads(
                     model.json(exclude_unset=True, by_alias=True, exclude_none=True)
                 )
                 yaml.safe_dump(data, fh, sort_keys=False)
+
+            click.echo("DONE")
 
         for service_name in compose_spec.services:
             try:
@@ -87,14 +90,14 @@ def main(
     compose_spec_path: Path,
 ):
     """Creates osparc config from complete docker compose-spec"""
-
     # TODO: sync defaults among CLI commands
-    config_basedir = compose_spec_path.parent / ".osparc"
-    meta_cfg_path = config_basedir / "metadata.yml"
-    runtime_cfg_path = config_basedir / "runtime.yml"
+    config_dir = compose_spec_path.parent / ".osparc"
+    meta_cfg_path = config_dir / "metadata.yml"
+    runtime_cfg_path = config_dir / "runtime.yml"
 
     meta_cfg_path.parent.mkdir(parents=True, exist_ok=True)
     runtime_cfg_path.parent.mkdir(parents=True, exist_ok=True)
+    click.echo(f"Creating {config_dir} from {compose_spec_path} ...")
 
     create_osparc_specs(compose_spec_path, meta_cfg_path, runtime_cfg_path)
 
