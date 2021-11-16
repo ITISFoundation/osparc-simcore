@@ -73,14 +73,14 @@ def simcore_service_labels() -> SimcoreServiceLabels:
         lazy_fixture("scheduler_data_from_service_labels_stored_data"),
     ),
 )
-async def test_get_dynamic_proxy_spec(
+def test_get_dynamic_proxy_spec(
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_network_id: str,
     swarm_network_id: str,
     simcore_service_labels: SimcoreServiceLabels,
 ) -> None:
-    dynamic_sidecar_spec = await get_dynamic_sidecar_spec(
+    dynamic_sidecar_spec = get_dynamic_sidecar_spec(
         scheduler_data=scheduler_data,
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         dynamic_sidecar_network_id=dynamic_sidecar_network_id,
