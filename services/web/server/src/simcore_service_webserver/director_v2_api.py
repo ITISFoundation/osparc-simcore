@@ -1,5 +1,6 @@
 from typing import Tuple
 
+from .director_v2_abc import AbstractProjectRunPolicy, get_run_policy, set_run_policy
 from .director_v2_core import (
     DirectorServiceError,
     create_or_update_pipeline,
@@ -17,15 +18,18 @@ from .director_v2_core import (
 
 # director-v2 module internal API
 __all__: Tuple[str, ...] = (
+    "AbstractProjectRunPolicy",
     "create_or_update_pipeline",
     "delete_pipeline",
     "DirectorServiceError",
     "get_computation_task",
+    "get_run_policy",
     "get_service_state",
     "get_services",
     "is_healthy",
     "request_retrieve_dyn_service",
     "retrieve",
+    "set_run_policy",
     "start_service",
     "stop_service",
     "stop_services",
