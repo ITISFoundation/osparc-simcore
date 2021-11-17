@@ -50,43 +50,53 @@ class OciImageSpecAnnotations(BaseModel):
         None,
         description="contact details of the people or organization responsible for the image (freeform string)",
     )
+
     url: AnyUrl = Field(
         None, description="URL to find more information on the image (string)"
     )
+
     documentation: AnyUrl = Field(
         None, description="URL to get documentation on the image (string)"
     )
+
     source: AnyUrl = Field(
         None, description="URL to get source code for building the image (string)"
     )
+
     version: VersionStr = Field(
         None,
         description="version of the packaged software"
         "The version MAY match a label or tag in the source code repository"
         "version MAY be Semantic versioning-compatible",
     )
+
     revision: str = Field(
         None,
         description="Source control revision identifier for the packaged software.",
     )
+
     vendor: str = Field(
         None, description="Name of the distributing entity, organization or individual."
     )
+
     # SEE https://spdx.dev/spdx-specification-21-web-version/#h.jxpfx0ykyb60
     licenses: str = Field(
         "MIT",
         description="License(s) under which contained software is distributed as an SPDX License Expression.",
     )
+
     ref_name: str = Field(
         None,
         description="Name of the reference for a target (string).",
     )
 
     title: str = Field(None, description="Human-readable title of the image (string)")
+
     description: str = Field(
         None,
         description="Human-readable description of the software packaged in the image (string)",
     )
+
     base_digest: SHA1Str = Field(
         None,
         description="Digest of the image this image is based on (string)",
