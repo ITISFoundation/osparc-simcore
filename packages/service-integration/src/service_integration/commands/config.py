@@ -13,7 +13,7 @@ from ..osparc_config import ProjectConfig, MetaConfig, RuntimeConfig
 
 def create_osparc_specs(
     compose_spec_path: Path,
-    defaults_cfg_path: Path = Path("defaults.yml"),
+    project_cfg_path: Path = Path("project.yml"),
     io_specs_path: Path = Path("metadata.yml"),
     service_specs_path: Path = Path("runtime-spec.yml"),
 ):
@@ -54,7 +54,7 @@ def create_osparc_specs(
                     labels = labels.__root__
 
                 project_cfg = ProjectConfig()
-                _save(service_name, defaults_cfg_path, project_cfg)
+                _save(service_name, project_cfg_path, project_cfg)
 
                 meta_cfg = MetaConfig.from_labels_annotations(labels)
                 _save(service_name, io_specs_path, meta_cfg)
@@ -86,7 +86,7 @@ def main(
     """Creates osparc config from complete docker compose-spec"""
     # TODO: sync defaults among CLI commands
     config_dir = compose_spec_path.parent / ".osparc"
-    defaults_cfg_path = config_dir / "defaults.yml"
+    project_cfg_path = config_dir / "project.yml"
     meta_cfg_path = config_dir / "metadata.yml"
     runtime_cfg_path = config_dir / "runtime.yml"
 
@@ -95,7 +95,7 @@ def main(
     click.echo(f"Creating {config_dir} from {compose_spec_path} ...")
 
     create_osparc_specs(
-        compose_spec_path, defaults_cfg_path, meta_cfg_path, runtime_cfg_path
+        compose_spec_path, project_cfg_path, meta_cfg_path, runtime_cfg_path
     )
 
 

@@ -104,9 +104,9 @@ def main(
             config_filenames[config_name] = []
 
             # loads defaults
-            defaults_cfg = meta_cfg.parent / "defaults.yml"
-            if defaults_cfg.exists():
-                config_filenames[config_name].append(defaults_cfg)
+            project_cfg = meta_cfg.parent / "project.yml"
+            if project_cfg.exists():
+                config_filenames[config_name].append(project_cfg)
 
             config_filenames[config_name].append(meta_cfg)
 
