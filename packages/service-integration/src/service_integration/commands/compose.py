@@ -84,6 +84,7 @@ def main(
     basedir = Path(".osparc")
     meta_filename = "metadata.yml"
 
+    # TODO: all these MUST be replaced by osparc_config.ConfigFilesStructure
     if config_path.exists():
         if config_path.is_dir():
             basedir = config_path
