@@ -934,14 +934,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const filePickerView = new osparc.file.FilePicker(filePicker);
         filePickerView.buildLayout();
         filePickerView.getChildControl("reload-button").exclude();
-        filePickerView.getChildControl("files-tree").set({
-          hideRoot: true,
-          showLeafs: true
-        });
+        filePickerView.getChildControl("files-tree").exclude();
         filePickerView.getChildControl("folder-viewer").exclude();
         filePickerView.getChildControl("selected-file-layout").getChildControl("download-button").exclude();
         filePickerView.addListener("itemSelected", () => this.__populateSecondPanel(filePicker));
-        this.__settingsPage.add(filePickerView, {
+        this.__settingsPage.add(filePickerView);
+
+        const fileDrop = new osparc.file.FileDrop();
+        this.__settingsPage.add(fileDrop, {
           flex: 1
         });
       }
