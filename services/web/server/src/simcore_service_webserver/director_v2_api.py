@@ -1,3 +1,8 @@
+""" plugin API
+
+PLEASE avoid importing from any other module to access this plugin's functionality
+"""
+
 from typing import Tuple
 
 from .director_v2_abc import AbstractProjectRunPolicy, get_run_policy, set_run_policy

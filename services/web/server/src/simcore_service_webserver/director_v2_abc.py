@@ -8,6 +8,24 @@ CommitID = int
 
 
 class AbstractProjectRunPolicy(ABC):
+    """
+    Since the introduction of meta-projects, not all
+    projects can be executed "as is". E.g. a meta-project
+    with an iterator needs to be converted to a project that
+    replaces the iterator node with a concrete
+    iteration value so it can be run.
+
+    This policy class intends to fill this gap by resolving which
+    runnable/s project/s are associated to a given project (by it's project_uuid)
+
+    For instance, if project_uuid is a standard project, then it returns itself
+    but if project_uuid is a meta-project, then it returns iterations
+
+    NOTE: this abstraction is used to change the functionality of
+    the ``director_v2`` app module while keeping it decoupled from
+    higher level add-ons like the ``meta`` app module
+    """
+
     # pylint: disable=unused-argument
 
     @abstractmethod
@@ -24,11 +42,7 @@ class AbstractProjectRunPolicy(ABC):
         request: web.Request,
         project_uuid: ProjectID,
     ) -> Tuple[List[ProjectID], List[CommitID]]:
-        """
-        Returns ids and refid of projects that can run
-        If project_uuid is a std-project, then it returns itself
-        If project_uuid is a meta-project, then it returns iterations
-        """
+
         ...
 
 
