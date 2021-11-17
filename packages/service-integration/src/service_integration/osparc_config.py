@@ -33,42 +33,26 @@ from .yaml_utils import yaml_safe_load
 
 CONFIG_FOLDER_NAME = ".osparc"
 
+
+# TODO: read from UserSettings all available registries
 REGISTRY_PREFIX = {
     "local": "registry:5000",
     "dockerhub": "itisfoundation",  # index.docker.io
 }
-# TODO: read from UserSettings all available registries
 
 SERVICE_KEY_FORMATS = {
     ServiceType.COMPUTATIONAL: COMPUTATIONAL_SERVICE_KEY_FORMAT,
     ServiceType.DYNAMIC: DYNAMIC_SERVICE_KEY_FORMAT,
 }
 
-OSPARC_LABEL_PREFIXES = (
-    "io.simcore",
-    "simcore.service",
-)
 # SEE https://docs.docker.com/config/labels-custom-metadata/#label-keys-and-values
 #  "Authors of third-party tools should prefix each label key with the reverse DNS notation of a
 #   domain they own, such as com.example.some-label ""
 # FIXME: review and define a z43-wide inverse DNS e.g. swiss.z43
-
-
-## SETTINGS ---------------------------------------------------------------------------------
-#
-# User settings -> stored in ~/.osparc
-#
-class Registry(BaseSettings):
-    url: str
-    user: Optional[str] = None
-    password: Optional[SecretStr] = None
-
-
-class UserSettings(BaseSettings):
-    """Stored in ~/.osparc"""
-
-    registries: Dict[str, Registry]
-    default_registry: str = "local"
+OSPARC_LABEL_PREFIXES = (
+    "io.simcore",
+    "simcore.service",
+)
 
 
 ## MODELS ---------------------------------------------------------------------------------
