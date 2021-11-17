@@ -16,7 +16,7 @@ app = FastAPI(
             "url": "http://{host}:{port}",
             "variables": {
                 "host": {"default": "127.0.0.1"},
-                "port": {"default": "3006"},
+                "port": {"default": "8006"},
             },
         },
     ],
