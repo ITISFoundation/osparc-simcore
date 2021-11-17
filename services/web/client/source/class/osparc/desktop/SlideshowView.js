@@ -27,7 +27,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       backgroundColor: "contrasted-background+"
     });
 
-    const collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
+    const collapseWithUserMenu = this.__collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
     [
       "backToDashboardPressed",
       "collapseNavBar",
@@ -102,6 +102,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     __currentNodeId: null,
     __slideshowToolbar: null,
     __lastView: null,
+    __collapseWithUserMenu: null,
 
     getStartStopButtons: function() {
       return this.__slideshowToolbar.getStartStopButtons();
@@ -109,6 +110,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
 
     getSelectedNodeIDs: function() {
       return [this.__currentNodeId];
+    },
+
+    getCollapseWithUserMenu: function() {
+      return this.__collapseWithUserMenu;
     },
 
     __isNodeReady: function(node, oldCurrentNodeId) {

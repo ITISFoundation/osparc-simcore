@@ -102,6 +102,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __editSlidesButton: null,
     __takeSnapshotButton: null,
     __showSnapshotsButton: null,
+    __collapseWithUserMenu: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -411,7 +412,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__addTopBarSpacer(topBar);
 
 
-      const collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
+      const collapseWithUserMenu = this.__collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
       [
         "backToDashboardPressed",
         "collapseNavBar",
@@ -419,6 +420,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       ].forEach(signalName => collapseWithUserMenu.addListener(signalName, () => this.fireEvent(signalName)), this);
 
       topBar.add(collapseWithUserMenu);
+    },
+
+    getCollapseWithUserMenu: function() {
+      return this.__collapseWithUserMenu;
     },
 
     __removePages: function(tabView) {

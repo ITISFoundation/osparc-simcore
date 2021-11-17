@@ -47,6 +47,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     ].forEach(singalName => slideshowView.addListener(singalName, () => this.fireEvent(singalName)));
     viewsStack.add(slideshowView);
 
+    const wbAppear = new Promise(resolve => workbenchView.addListenerOnce("appear", resolve, false));
+    const ssAppear = new Promise(resolve => slideshowView.addListenerOnce("appear", resolve, false));
+    Promise.all([wbAppear, ssAppear]).then(() => {
+      // both are ready
+      workbenchView.getCollapseWithUserMenu().bind("collapsed", slideshowView.getCollapseWithUserMenu(), "collapsed");
+      slideshowView.getCollapseWithUserMenu().bind("collapsed", workbenchView.getCollapseWithUserMenu(), "collapsed");
+    });
+
     slideshowView.addListener("startPartialPipeline", e => {
       const partialPipeline = e.getData();
       this.__startPipeline(partialPipeline);
