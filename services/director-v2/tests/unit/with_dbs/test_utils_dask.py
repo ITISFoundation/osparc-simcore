@@ -195,6 +195,8 @@ async def test_clean_task_output_and_log_files_if_invalid(
     published_project: PublishedProject,
     mocked_node_ports_filemanager_fcts: Dict[str, mock.MagicMock],
     entry_exists_returns: bool,
+    fake_outputs_schema: Dict[str, Any],
+    faker: Faker,
 ):
     # since the presigned links for outputs and logs file are created
     # BEFORE the task is actually run. In case there is a failure at running
@@ -205,29 +207,17 @@ async def test_clean_task_output_and_log_files_if_invalid(
     ].return_value = entry_exists_returns
 
     sleeper_task = published_project.tasks[1]
-    # add 2 outputs there
-    outputs_schema = {
-        "out_1": {
-            "type": "data:text/plain",
-            "label": "first output",
-            "description": "whatever",
-        },
-        "out_2": {
-            "type": "data:text/plain",
-            "label": "second output",
-            "description": "whatever",
-        },
-    }
-    outputs = {
-        "out_1": SimCoreFileLink(store=0, path="some/fake/test/path").dict(
+
+    # simulate pre-created file links
+    fake_outputs = {
+        key: SimCoreFileLink(store=0, path=faker.file_path()).dict(
             by_alias=True, exclude_unset=True
-        ),
-        "out_2": SimCoreFileLink(store=0, path="some/fake/test/path").dict(
-            by_alias=True, exclude_unset=True
-        ),
+        )
+        for key, value_type in fake_outputs_schema.items()
+        if value_type["type"] == "data:*/*"
     }
     await set_comp_task_outputs(
-        aiopg_engine, sleeper_task.node_id, outputs_schema, outputs
+        aiopg_engine, sleeper_task.node_id, fake_outputs_schema, fake_outputs
     )
     # this should ask for the 2 files + the log file
     await clean_task_output_and_log_files_if_invalid(
@@ -236,44 +226,24 @@ async def test_clean_task_output_and_log_files_if_invalid(
         published_project.project.uuid,
         published_project.tasks[1].node_id,
     )
-    mocked_node_ports_filemanager_fcts["entry_exists"].assert_has_calls(
-        [
-            mock.call(
-                user_id=user_id,
-                store_id="0",
-                s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/out_1",
-            ),
-            mock.call(
-                user_id=user_id,
-                store_id="0",
-                s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/out_2",
-            ),
-            mock.call(
-                user_id=user_id,
-                store_id="0",
-                s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{_LOGS_FILE_NAME}",
-            ),
-        ]
-    )
+    expected_calls = [
+        mock.call(
+            user_id=user_id,
+            store_id="0",
+            s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{key}",
+        )
+        for key in fake_outputs.keys()
+    ] + [
+        mock.call(
+            user_id=user_id,
+            store_id="0",
+            s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{_LOGS_FILE_NAME}",
+        )
+    ]
+    mocked_node_ports_filemanager_fcts["entry_exists"].assert_has_calls(expected_calls)
     if entry_exists_returns:
         mocked_node_ports_filemanager_fcts["delete_file"].assert_not_called()
     else:
         mocked_node_ports_filemanager_fcts["delete_file"].assert_has_calls(
-            [
-                mock.call(
-                    user_id=user_id,
-                    store_id="0",
-                    s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/out_1",
-                ),
-                mock.call(
-                    user_id=user_id,
-                    store_id="0",
-                    s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/out_2",
-                ),
-                mock.call(
-                    user_id=user_id,
-                    store_id="0",
-                    s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{_LOGS_FILE_NAME}",
-                ),
-            ]
+            expected_calls
         )
