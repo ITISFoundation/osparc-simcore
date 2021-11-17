@@ -17,7 +17,6 @@ from typing import (
 )
 from uuid import uuid4
 
-import dask.distributed
 import distributed
 from aiopg.sa.engine import Engine
 from dask_task_models_library.container_tasks.events import (
@@ -126,6 +125,7 @@ async def parse_output_data(
             value_to_transfer = port_value.url
         else:
             value_to_transfer = port_value
+
         await (await ports.outputs)[port_key].set_value(value_to_transfer)
 
 
@@ -217,8 +217,8 @@ _DASK_FUTURE_TIMEOUT_S: Final[int] = 5
 
 
 def done_dask_callback(
-    dask_future: dask.distributed.Future,
-    task_to_future_map: Dict[str, dask.distributed.Future],
+    dask_future: distributed.Future,
+    task_to_future_map: Dict[str, distributed.Future],
     user_callback: UserCompleteCB,
     main_loop: asyncio.AbstractEventLoop,
 ):
@@ -246,7 +246,7 @@ def done_dask_callback(
                 state=RunningState.SUCCESS,
                 msg=task_result.json(),
             )
-    except dask.distributed.TimeoutError:
+    except distributed.TimeoutError:
         event_data = TaskStateEvent(
             job_id=job_id,
             state=RunningState.FAILED,

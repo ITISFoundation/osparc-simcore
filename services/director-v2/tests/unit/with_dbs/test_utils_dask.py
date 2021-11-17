@@ -8,19 +8,14 @@
 
 
 import uuid
-from typing import Dict
+from random import choice
+from typing import Any, Dict
 from unittest import mock
-from uuid import uuid4
 
 import aiopg
 import pytest
 from _helpers import PublishedProject, set_comp_task_outputs  # type: ignore
-from dask_task_models_library.container_tasks.io import (
-    FileUrl,
-    TaskInputData,
-    TaskOutputData,
-    TaskOutputDataSchema,
-)
+from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink
@@ -104,18 +99,76 @@ def test_dask_job_id_serialization(
     assert node_id == parsed_node_id
 
 
+@pytest.fixture()
+def fake_output_config() -> Dict[str, str]:
+    return {
+        "out_1": "integer",
+        "out_2": "data:*/*",
+        "out_3": "boolean",
+        "out_4": "number",
+        "out_5": "string",
+        "out_23": "data:*/*",
+    }
+
+
+@pytest.fixture()
+def fake_outputs_schema(fake_output_config: Dict[str, str], faker: Faker):
+    fake_outputs_schema = {
+        key: {
+            "type": value_type,
+            "label": faker.pystr(),
+            "description": faker.pystr(),
+        }
+        for key, value_type in fake_output_config.items()
+    }
+    return fake_outputs_schema
+
+
+@pytest.fixture()
+def fake_task_output_data(
+    fake_output_config: Dict[str, str], faker: Faker
+) -> TaskOutputData:
+    def generate_random_file_url() -> Dict[str, Any]:
+        return {"url": faker.url(), "file_mapping": choice([faker.file_name(), None])}
+
+    TYPE_TO_FAKE_CALLABLE_MAP = {
+        "number": faker.pyfloat,
+        "integer": faker.pyint,
+        "string": faker.pystr,
+        "boolean": faker.pybool,
+        "data:*/*": generate_random_file_url,
+    }
+    data = parse_obj_as(
+        TaskOutputData,
+        {
+            key: TYPE_TO_FAKE_CALLABLE_MAP[value_type]()
+            for key, value_type in fake_output_config.items()
+        },
+    )
+    return data
+
+
 async def test_parse_output_data(
     aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
     published_project: PublishedProject,
     user_id: UserID,
-    faker: Faker,
+    fake_outputs_schema: Dict[str, Any],
+    fake_task_output_data: TaskOutputData,
     mocker: MockerFixture,
+    faker: Faker,
 ):
-    mocker.patch(
-        "simcore_service_director_v2.utils.dask.node_ports_v2.Nodeports.outputs.set_value"
-    )
+    # need some fakes set in the DB
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
+    no_outputs = {}
+    await set_comp_task_outputs(
+        aiopg_engine, sleeper_task.node_id, fake_outputs_schema, no_outputs
+    )
+    # mock the set_value function so we can test it is called correctly
+    mocked_node_ports_set_value_fct = mocker.patch(
+        "simcore_sdk.node_ports_v2.port.Port.set_value"
+    )
 
+    # test
     dask_job_id = generate_dask_job_id(
         sleeper_task.image.name,
         sleeper_task.image.tag,
@@ -123,19 +176,16 @@ async def test_parse_output_data(
         published_project.project.uuid,
         sleeper_task.node_id,
     )
+    await parse_output_data(aiopg_engine, dask_job_id, fake_task_output_data)
 
-    fake_data = parse_obj_as(
-        TaskOutputData,
-        {
-            "out_1": 2,
-            "out_2": {"url": faker.url(), "file_mapping": "myfile.txt"},
-            "out_3": False,
-            "out_4": 12.3,
-            "out_5": "some string",
-            "out_23": {"url": faker.url()},
-        },
+    # the FileUrl types are converted to a pure url
+    expected_values = {
+        k: v.url if isinstance(v, FileUrl) else v
+        for k, v in fake_task_output_data.items()
+    }
+    mocked_node_ports_set_value_fct.assert_has_calls(
+        [mock.call(value) for value in expected_values.values()]
     )
-    await parse_output_data(aiopg_engine, dask_job_id, fake_data)
 
 
 @pytest.mark.parametrize("entry_exists_returns", [True, False])
