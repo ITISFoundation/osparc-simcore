@@ -924,6 +924,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         view.setEnabled(false);
         this.__infoPage.add(view);
       } else {
+        // empty File Picker
+        const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
+        tabViewLeftPanel.setSelection([this.__storagePage]);
+
         this.__settingsPage.getChildControl("button").show();
         this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
 
