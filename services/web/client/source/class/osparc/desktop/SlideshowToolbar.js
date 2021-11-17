@@ -31,10 +31,15 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "study-info":
+          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/14");
+          control.addListener("execute", () => this.__openStudyDetails(), this);
+          this._add(control);
+          break;
         case "study-title":
           control = new qx.ui.basic.Label().set({
             marginLeft: 10,
-            maxWidth: 150,
+            maxWidth: 200,
             font: "title-16"
           });
           this._add(control);
@@ -128,6 +133,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
 
     // overriden
     _buildLayout: function() {
+      this.getChildControl("study-info");
       this.getChildControl("study-title");
 
       this._add(new qx.ui.core.Spacer(), {
@@ -148,6 +154,14 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       });
 
       this.getChildControl("stop-slideshow");
+    },
+
+    __openStudyDetails: function() {
+      const studyDetails = new osparc.studycard.Large(this.getStudy());
+      const title = this.tr("Study Details");
+      const width = 500;
+      const height = 500;
+      osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
     },
 
     // overriden
