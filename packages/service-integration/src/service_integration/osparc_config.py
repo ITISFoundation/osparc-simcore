@@ -21,10 +21,8 @@ from models_library.services import (
     ServiceDockerData,
     ServiceType,
 )
-from pydantic import BaseSettings
 from pydantic.fields import Field
 from pydantic.main import BaseModel, Extra
-from pydantic.types import SecretStr
 
 from .compose_spec_model import ComposeSpecification
 from .errors import ConfigNotFound
