@@ -8,17 +8,21 @@ import yaml
 from ..compose_spec_model import ComposeSpecification
 from ..labels_annotations import to_labels
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
-from ..osparc_config import MetaConfig, RuntimeConfig
+from ..osparc_config import ProjectConfig, MetaConfig, RuntimeConfig
 from ..osparc_image_specs import create_image_spec
 
 
 def create_docker_compose_image_spec(
+    defaults_path: Path,
     io_config_path: Path,
     service_config_path: Path = None,
 ) -> ComposeSpecification:
     """Creates image compose-spec"""
 
     config_basedir = io_config_path.parent
+
+    # required
+    project_cfg = ProjectConfig.from_yaml(defaults_path)
 
     # required
     meta_cfg = MetaConfig.from_yaml(io_config_path)
@@ -51,7 +55,9 @@ def create_docker_compose_image_spec(
             ls_labels = to_labels(ls_spec, prefix_key=LS_LABEL_PREFIX)
             extra_labels.update(ls_labels)
 
-    compose_spec = create_image_spec(meta_cfg, runtime_cfg, extra_labels=extra_labels)
+    compose_spec = create_image_spec(
+        project_cfg, meta_cfg, runtime_cfg, extra_labels=extra_labels
+    )
 
     return compose_spec
 
@@ -64,7 +70,7 @@ def create_docker_compose_image_spec(
     help="osparc config file or folder",
     type=Path,
     required=False,
-    default="metadata.yml",
+    default=Path("metadata.yml"),
 )
 @click.option(
     "-f",
@@ -95,9 +101,14 @@ def main(
     if basedir.exists():
         for meta_cfg in basedir.rglob(meta_filename):
             config_name = meta_cfg.parent.name
-            config_filenames[config_name] = [
-                meta_cfg,
-            ]
+            config_filenames[config_name] = []
+
+            # loads defaults
+            defaults_cfg = meta_cfg.parent / "defaults.yml"
+            if defaults_cfg.exists():
+                config_filenames[config_name].append(defaults_cfg)
+
+            config_filenames[config_name].append(meta_cfg)
 
             # find pair (not required)
             runtime_cfg = meta_cfg.parent / "runtime.yml"

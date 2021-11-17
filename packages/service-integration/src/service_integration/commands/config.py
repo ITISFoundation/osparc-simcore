@@ -8,11 +8,12 @@ from pydantic import ValidationError
 from pydantic.main import BaseModel
 
 from ..compose_spec_model import ComposeSpecification
-from ..osparc_config import MetaConfig, RuntimeConfig
+from ..osparc_config import ProjectConfig, MetaConfig, RuntimeConfig
 
 
 def create_osparc_specs(
     compose_spec_path: Path,
+    defaults_cfg_path: Path = Path("defaults.yml"),
     io_specs_path: Path = Path("metadata.yml"),
     service_specs_path: Path = Path("runtime-spec.yml"),
 ):
@@ -35,9 +36,7 @@ def create_osparc_specs(
             click.echo(f"Creating {output_path} ...", nl=False)
 
             with output_path.open("wt") as fh:
-                data = json.loads(
-                    model.json(exclude_unset=True, by_alias=True, exclude_none=True)
-                )
+                data = json.loads(model.json(by_alias=True, exclude_none=True))
                 yaml.safe_dump(data, fh, sort_keys=False)
 
             click.echo("DONE")
@@ -54,19 +53,14 @@ def create_osparc_specs(
                     assert isinstance(labels.__root__, dict)
                     labels = labels.__root__
 
+                project_cfg = ProjectConfig()
+                _save(service_name, defaults_cfg_path, project_cfg)
+
                 meta_cfg = MetaConfig.from_labels_annotations(labels)
-                _save(
-                    service_name,
-                    io_specs_path,
-                    meta_cfg,
-                )
+                _save(service_name, io_specs_path, meta_cfg)
 
                 runtime_cfg = RuntimeConfig.from_labels_annotations(labels)
-                _save(
-                    service_name,
-                    service_specs_path,
-                    runtime_cfg,
-                )
+                _save(service_name, service_specs_path, runtime_cfg)
 
             except (AttributeError, ValidationError, TypeError) as err:
                 click.echo(
@@ -92,6 +86,7 @@ def main(
     """Creates osparc config from complete docker compose-spec"""
     # TODO: sync defaults among CLI commands
     config_dir = compose_spec_path.parent / ".osparc"
+    defaults_cfg_path = config_dir / "defaults.yml"
     meta_cfg_path = config_dir / "metadata.yml"
     runtime_cfg_path = config_dir / "runtime.yml"
 
@@ -99,7 +94,9 @@ def main(
     runtime_cfg_path.parent.mkdir(parents=True, exist_ok=True)
     click.echo(f"Creating {config_dir} from {compose_spec_path} ...")
 
-    create_osparc_specs(compose_spec_path, meta_cfg_path, runtime_cfg_path)
+    create_osparc_specs(
+        compose_spec_path, defaults_cfg_path, meta_cfg_path, runtime_cfg_path
+    )
 
 
 if __name__ == "__main__":

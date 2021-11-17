@@ -4,6 +4,7 @@
 
 
 from typing import Dict, Optional
+from pathlib import Path
 
 from service_integration.compose_spec_model import (
     BuildItem,
@@ -11,15 +12,16 @@ from service_integration.compose_spec_model import (
     Service,
 )
 
-from .osparc_config import MetaConfig, RuntimeConfig
+from .osparc_config import ProjectConfig, MetaConfig, RuntimeConfig
 
 
 def create_image_spec(
+    project_cfg: ProjectConfig,
     meta_cfg: MetaConfig,
     runtime_cfg: Optional[RuntimeConfig] = None,
     *,
     extra_labels: Dict[str, str] = {},
-    **_context
+    **_context,
 ) -> ComposeSpecification:
     """Creates the image-spec provided the osparc-config and a given context (e.g. development)
 
@@ -33,8 +35,7 @@ def create_image_spec(
 
     build_spec = BuildItem(
         context="./",
-        # TODO: tool to find stardard location of file, get from config or query user
-        dockerfile="docker/Dockerfile",
+        dockerfile=f"{project_cfg.dockerfile_path}",
         labels=labels,
         args={"VERSION": meta_cfg.version},
     )

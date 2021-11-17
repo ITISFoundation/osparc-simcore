@@ -75,6 +75,26 @@ class UserSettings(BaseSettings):
 #
 # Project config -> stored in repo's basedir/.osparc
 #
+
+
+class ProjectConfig(BaseModel):
+    """
+    User overwritable configurations relative to the structure of repository
+    """
+
+    dockerfile_path: Path = Field(
+        "docker/Dockerfile", description="path from where to load the Dockerfile"
+    )
+
+    # add hooks for tests and other thins which we want to automatically pick up
+
+    @classmethod
+    def from_yaml(cls, path: Path) -> "ProjectConfig":
+        with path.open() as fh:
+            data = yaml_safe_load(fh)
+        return cls.parse_obj(data)
+
+
 class MetaConfig(ServiceDockerData):
     """Details about general info and I/O configuration of the service
 
@@ -108,14 +128,14 @@ class MetaConfig(ServiceDockerData):
 
     def image_name(self, registry="local") -> str:
         registry_prefix = REGISTRY_PREFIX[registry]
-        mid_name = SERVICE_KEY_FORMATS[self.service_type].format(service_name=self.name)
+        service_path = self.key
         if registry in "dockerhub":
             # dockerhub allows only one-level names -> dot it
             # TODO: check thisname is compatible with REGEX
-            mid_name = mid_name.replace("/", ".")
+            service_path = service_path.replace("/", ".")
 
-        tag = self.version
-        return f"{registry_prefix}/{mid_name}:{tag}"
+        service_version = self.version
+        return f"{registry_prefix}/{service_path}:{service_version}"
 
 
 class PathsMapping(BaseModel):
