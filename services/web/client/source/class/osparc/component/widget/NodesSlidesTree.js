@@ -80,8 +80,12 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           break;
         case "exposed-settings":
           control = osparc.component.node.BaseNodeView.createSettingsGroupBox("Exposed Settings").set({
-            margin: 10,
             visibility: "excluded"
+          });
+          control.getChildControl("legend").setFont("title-14");
+          control.getChildControl("frame").set({
+            padding: 10,
+            paddingTop: 15
           });
           this._add(control);
           break;
