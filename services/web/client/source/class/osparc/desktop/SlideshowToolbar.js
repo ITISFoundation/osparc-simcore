@@ -34,6 +34,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
         case "study-title":
           control = new qx.ui.basic.Label().set({
             marginLeft: 10,
+            maxWidth: 150,
             font: "title-16"
           });
           this._add(control);
@@ -77,7 +78,9 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
         }
         case "breadcrumbs-scroll":
           control = new qx.ui.container.Scroll();
-          this._add(control);
+          this._add(control, {
+            flex: 1
+          });
           break;
         case "breadcrumb-navigation": {
           control = new osparc.navigation.BreadcrumbsSlideshow();
@@ -90,7 +93,9 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
         }
         case "breadcrumbs-scroll-edit":
           control = new qx.ui.container.Scroll();
-          this._add(control);
+          this._add(control, {
+            flex: 1
+          });
           break;
         case "breadcrumb-navigation-edit": {
           control = new osparc.navigation.BreadcrumbsSlideshowEdit();
@@ -152,6 +157,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       if (study) {
         const studyTitle = this.getChildControl("study-title");
         study.bind("name", studyTitle, "value");
+        study.bind("name", studyTitle, "toolTipText");
       }
     },
 
