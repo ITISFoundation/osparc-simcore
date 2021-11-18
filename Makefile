@@ -616,14 +616,13 @@ endef
 _git_get_repo_orga_name = $(shell git config --get remote.origin.url | \
 							grep --perl-regexp --only-matching "((?<=git@github\.com:)|(?<=https:\/\/github\.com\/))(.*?)(?=.git)")
 
-.PHONY: .check-master-branch
-.check-master-branch:
+.PHONY: .check-on-master-branch .create_github_release_url
+.check-on-master-branch:
 	@if [ "$(_git_get_current_branch)" != "master" ]; then\
 		echo -e "\e[91mcurrent branch is not master branch."; exit 1;\
 	fi
 
-.PHONY: release-staging release-prod
-release-staging release-prod: .check-master-branch ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=optional)
+.create_github_release_url:
 	# ensure tags are uptodate
 	@git pull --tags
 	@echo -e "\e[33mOpen the following link to create the $(if $(findstring -staging, $@),staging,production) release:";
@@ -631,10 +630,8 @@ release-staging release-prod: .check-master-branch ## Helper to create a staging
 	@echo -e "\e[33mOr open the following link to create the $(if $(findstring -staging, $@),staging,production) release and paste the logs:";
 	@echo -e "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)";
 	@echo -e "\e[34m$(_prettify_logs)"
+.PHONY: release-staging release-prod
+release-staging release-prod: .check-on-master-branch .create_github_release_url ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=optional)
 
-.PHONY: release-hotfix
-release-hotfix: ## Helper to create a hotfix release in Github (usage: make release-hotfix version=1.2.4 git_sha=optional)
-	# ensure tags are uptodate
-	@git pull --tags
-	@echo -e "\e[33mOpen the following link to create the $(if $(findstring -staging, $@),staging,production) release:";
-	@echo -e "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)&body=$(_url_encoded_logs)";
+.PHONY: release-hotfix release-staging-hotfix
+release-hotfix release-staging-hotfix: .create_github_release_url## Helper to create a hotfix release in Github (usage: make release-hotfix version=1.2.4 git_sha=optional or make release-staging-hotfix name=Sprint version=2)

@@ -27,10 +27,15 @@ jobs:
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     env:
-      FROM_TAG_PREFIX: master-github
       TO_TAG_PREFIX: staging-github
     steps:
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: set target variable
+        run: |
+          target=$(git name-rev --refs="refs/remotes/origin/*" --name-only ${GITHUB_SHA})
+          echo "TARGET=${target}" >> $GITHUB_ENV
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -43,5 +48,13 @@ jobs:
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
       - name: set git tag
         run: echo "GIT_TAG=${GITHUB_REF##*/}" >> $GITHUB_ENV
-      - name: deploy
+      - if: contains(env.TARGET, 'remotes/origin/master')
+        env:
+          FROM_TAG_PREFIX: master-github
+        name: deploy from master to staging
+        run: ./ci/deploy/dockerhub-tag-version.bash
+      - if: contains(env.TARGET, 'remotes/origin/hotfix_staging_')
+        env:
+          FROM_TAG_PREFIX: hotfix-staging-github
+        name: deploy from hotfix staging to staging
         run: ./ci/deploy/dockerhub-tag-version.bash
