@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import List, Set, Tuple
+from typing import Any, Dict, List, Set, Tuple
 from uuid import UUID
 
 from aiohttp import web
@@ -77,13 +77,15 @@ async def start_pipeline(request: web.Request) -> web.Response:
 
         assert set(_started_pipelines_ids) == set(map(str, project_ids))  # nosec
 
+        data: Dict[str, Any] = {
+            "pipeline_id": project_id,
+        }
+        # Optional
+        if project_vc_commits:
+            data["ref_ids"] = project_vc_commits
+
         return web.json_response(
-            {
-                "data": {
-                    "pipeline_id": project_id,
-                    "ref_ids": project_vc_commits,
-                }
-            },
+            {"data": data},
             status=web.HTTPCreated.status_code,
             dumps=json_dumps,
         )
