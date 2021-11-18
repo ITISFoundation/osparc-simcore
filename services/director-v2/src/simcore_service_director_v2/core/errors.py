@@ -141,3 +141,8 @@ class ConfigurationError(DirectorException):
 class ClusterNotFoundError(PydanticErrorMixin, DirectorException):
     code = "cluster not found error"
     msg_template = "The cluster with id '{cluster_id}' was not found"
+
+
+class DaskClientAcquisisitonError(PydanticErrorMixin, DirectorException):
+    code = "cluster's dask client acquisiton error"
+    msg_template = "The dasl client to cluster '{cluster}' encountered an error"
