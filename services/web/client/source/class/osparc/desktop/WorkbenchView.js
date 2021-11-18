@@ -607,8 +607,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             // Filtering out logs from other studies
             return;
           }
-          const nodeId = data["node_id"];
-          const messages = data["messages"];
+          const nodeId = data["Node"];
+          const messages = data["Messages"];
           this.__loggerView.infos(nodeId, messages);
           const nodeLogger = this.__getNodeLogger(nodeId);
           if (nodeLogger) {
