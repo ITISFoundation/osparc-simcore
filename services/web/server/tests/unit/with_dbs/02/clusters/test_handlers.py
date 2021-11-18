@@ -15,6 +15,13 @@ import sqlalchemy as sa
 from _helpers import ExpectedResponse, standard_role_response  # type: ignore
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.clusters import (
+    CLUSTER_ADMIN_RIGHTS,
+    CLUSTER_MANAGER_RIGHTS,
+    CLUSTER_NO_RIGHTS,
+    CLUSTER_USER_RIGHTS,
+    Cluster,
+)
 from models_library.users import GroupID
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
@@ -22,11 +29,6 @@ from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.clusters.models import (
-    CLUSTER_ADMIN_RIGHTS,
-    CLUSTER_MANAGER_RIGHTS,
-    CLUSTER_NO_RIGHTS,
-    CLUSTER_USER_RIGHTS,
-    Cluster,
     ClusterAccessRights,
     ClusterCreate,
     ClusterPatch,
