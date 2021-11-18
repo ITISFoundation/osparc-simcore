@@ -13,7 +13,6 @@ env:
 
 jobs:
   deploy:
-    if: github.event.base_ref == 'refs/heads/master'
     name: deploy staging
     runs-on: ${{ matrix.os }}
     strategy:
