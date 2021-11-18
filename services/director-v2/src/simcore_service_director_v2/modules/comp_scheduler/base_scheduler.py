@@ -403,14 +403,14 @@ class BaseCompScheduler(ABC):
             elif isinstance(r, ComputationalBackendNotConnectedError):
                 logger.error(
                     "The computational backend is disconnected. Tasks are set back "
-                    "to FAILED state until scheduler comes back!"
+                    "to PUBLISHED state until scheduler comes back!"
                 )
                 # we should try re-connecting.
                 # in the meantime we cannot schedule tasks on the scheduler,
-                # let's put these tasks back to FAILED, so they might be re-submitted later
+                # let's put these tasks back to PUBLISHED, so they might be re-submitted later
                 await asyncio.gather(
                     comp_tasks_repo.set_project_tasks_state(
-                        project_id, tasks, RunningState.FAILED
+                        project_id, tasks, RunningState.PUBLISHED
                     ),
                 )
                 raise ComputationalBackendNotConnectedError(f"{r}") from r
