@@ -22,6 +22,7 @@ from typing import Optional
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from pydantic.errors import PydanticErrorMixin
 
 
 class DirectorException(Exception):
@@ -135,3 +136,8 @@ class ConfigurationError(DirectorException):
         super().__init__(
             msg or "Invalid configuration of the director-v2 application. Please check."
         )
+
+
+class ClusterNotFoundError(PydanticErrorMixin, DirectorException):
+    code = "cluster not found error"
+    msg_template = "The cluster with id '{cluster_id}' was not found"
