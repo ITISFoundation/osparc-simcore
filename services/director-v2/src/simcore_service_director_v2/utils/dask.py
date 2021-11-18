@@ -403,11 +403,15 @@ def check_if_cluster_is_able_to_run_pipeline(
     ):
         raise MissingComputationalResourcesError(
             node_id=node_id,
-            msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled on cluster {cluster_id}: missing resource {missing_resources}",
+            msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled "
+            f"on cluster {cluster_id}: task needs '{task_resources}', "
+            f"cluster has '{all_available_resources_in_cluster}', missing: '{missing_resources}'",
         )
 
     # well then our workers are not powerful enough
     raise InsuficientComputationalResourcesError(
         node_id=node_id,
-        msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled on cluster {cluster_id}: insuficient resources",
+        msg=f"Service {node_image.name}:{node_image.tag} cannot be scheduled "
+        f"on cluster {cluster_id}: insuficient resources"
+        f"cluster has '{all_available_resources_in_cluster}', missing: '{missing_resources}'",
     )
