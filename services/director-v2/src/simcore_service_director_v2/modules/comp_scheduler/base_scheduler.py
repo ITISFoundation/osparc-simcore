@@ -391,7 +391,8 @@ class BaseCompScheduler(ABC):
                 ),
             ):
                 logger.error(
-                    "The task %s could not be scheduled due to the following: %s",
+                    "Project '%s''s task '%s' could not be scheduled due to the following: %s",
+                    project_id,
                     r.node_id,
                     f"{r}",
                 )
