@@ -1,7 +1,7 @@
 import asyncio
 import collections
+import json
 import logging
-from pprint import pformat
 from typing import (
     Any,
     Awaitable,
@@ -105,7 +105,7 @@ async def parse_output_data(
     ) = parse_dask_job_id(job_id)
     logger.debug(
         "parsing output %s of dask task for %s:%s of user %s on project '%s' and node '%s'",
-        pformat(data),
+        json.dumps(data, indent=2),
         service_key,
         service_version,
         user_id,
@@ -360,7 +360,7 @@ def check_if_cluster_is_able_to_run_pipeline(
     cluster_id_prefix: str,
     cluster_id: ClusterID,
 ):
-    logger.debug("Dask scheduler infos: %s", pformat(scheduler_info))
+    logger.debug("Dask scheduler infos: %s", json.dumps(scheduler_info, indent=2))
     workers = scheduler_info.get("workers", {})
 
     def can_task_run_on_worker(
@@ -392,8 +392,8 @@ def check_if_cluster_is_able_to_run_pipeline(
     logger.debug(
         "Dask scheduler total available resources in cluster %s: %s, task needed resources %s",
         cluster_id,
-        pformat(all_available_resources_in_cluster),
-        pformat(task_resources),
+        json.dumps(all_available_resources_in_cluster, indent=2),
+        json.dumps(task_resources, indent=2),
     )
 
     if can_a_worker_run_task:

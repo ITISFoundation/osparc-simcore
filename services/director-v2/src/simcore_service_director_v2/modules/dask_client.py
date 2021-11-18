@@ -108,6 +108,10 @@ class DaskClient:
                     f"dask-scheduler at {settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
                     json.dumps(attempt.retry_state.retry_object.statistics),
                 )
+                logger.info(
+                    "Client is connected to scheduler: %s",
+                    json.dumps(dask_client.scheduler_info(), indent=2),
+                )
         return cls.instance(app)
 
     @classmethod
