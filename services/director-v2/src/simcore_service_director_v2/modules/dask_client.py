@@ -103,11 +103,11 @@ class DaskClient:
                     settings=settings,
                     cancellation_dask_pub=distributed.Pub(TaskCancelEvent.topic_name()),
                 )
-            logger.info(
-                "Connection to %s succeeded [%s]",
-                f"dask-scheduler at {settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
-                json.dumps(attempt.retry_state.retry_object.statistics),
-            )
+                logger.info(
+                    "Connection to %s succeeded [%s]",
+                    f"dask-scheduler at {settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
+                    json.dumps(attempt.retry_state.retry_object.statistics),
+                )
         return cls.instance(app)
 
     @classmethod
