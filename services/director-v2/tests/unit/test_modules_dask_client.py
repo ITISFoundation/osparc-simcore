@@ -21,8 +21,6 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from distributed import Client
-from distributed.deploy.local import LocalCluster
 from distributed.deploy.spec import SpecCluster
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
@@ -48,21 +46,25 @@ from simcore_service_director_v2.modules.dask_client import (
     DaskClient,
 )
 from starlette.testclient import TestClient
-from tenacity import retry
+from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
-from yarl import URL
 
 
-@retry(
-    stop=stop_after_delay(10),
-    wait=wait_random(0, 1),
-    retry=retry_if_exception_type(AssertionError),
-    reraise=True,
-)
 async def _wait_for_call(mocked_fct):
-    mocked_fct.assert_called_once()
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(10),
+        wait=wait_random(0, 1),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            print(
+                f"waiting for call in mocked fct {mocked_fct}, "
+                f"Attempt={attempt.retry_state.attempt_number}"
+            )
+            mocked_fct.assert_called_once()
 
 
 @pytest.fixture
@@ -107,15 +109,6 @@ def dask_client(
     client = DaskClient.instance(minimal_app)
     assert client
     return client
-
-
-async def test_dask_cluster():
-    async with LocalCluster(
-        n_workers=2, threads_per_worker=1, asynchronous=True
-    ) as cluster:
-        scheduler_address = URL(cluster.scheduler_address)
-        async with Client(cluster, asynchronous=True) as client:
-            assert client.status == "running"
 
 
 async def test_local_dask_cluster_through_client(dask_client: DaskClient):
@@ -224,8 +217,8 @@ def mocked_node_ports(mocker: MockerFixture):
 
 
 @pytest.fixture
-def mocked_user_completed_cb(mocker: MockerFixture) -> mock.Mock:
-    return mocker.Mock()
+async def mocked_user_completed_cb(mocker: MockerFixture) -> mock.AsyncMock:
+    return mocker.AsyncMock()
 
 
 def _fake_sidecar_fct(
@@ -282,7 +275,7 @@ async def test_send_computation_task(
     cluster_id: ClusterID,
     image_params: ImageParams,
     mocked_node_ports: None,
-    mocked_user_completed_cb: mock.Mock,
+    mocked_user_completed_cb: mock.AsyncMock,
 ):
     # NOTE: We pass another fct so it can run in our localy created dask cluster
     await dask_client.send_computation_tasks(
@@ -302,6 +295,7 @@ async def test_send_computation_task(
     job_id, future = list(dask_client._taskid_to_future_map.items())[0]
     # this waits for the computation to run
     task_result = await future.result(timeout=2)
+    assert isinstance(task_result, TaskOutputData)
     assert task_result["some_output_key"] == 123
     assert future.key == job_id
     await _wait_for_call(mocked_user_completed_cb)
@@ -333,7 +327,7 @@ async def test_abort_send_computation_task(
     cluster_id: ClusterID,
     image_params: ImageParams,
     mocked_node_ports: None,
-    mocked_user_completed_cb: mock.Mock,
+    mocked_user_completed_cb: mock.AsyncMock,
 ):
     await dask_client.send_computation_tasks(
         user_id=user_id,
@@ -375,7 +369,7 @@ async def test_failed_task_returns_exceptions(
     cluster_id: ClusterID,
     gpu_image: ImageParams,
     mocked_node_ports: None,
-    mocked_user_completed_cb: mock.Mock,
+    mocked_user_completed_cb: mock.AsyncMock,
 ):
     await dask_client.send_computation_tasks(
         user_id=user_id,
@@ -419,7 +413,7 @@ async def test_invalid_cluster_send_computation_task(
     cluster_id: ClusterID,
     image_params: ImageParams,
     mocked_node_ports: None,
-    mocked_user_completed_cb: mock.Mock,
+    mocked_user_completed_cb: mock.AsyncMock,
 ):
     with pytest.raises(MissingComputationalResourcesError):
         await dask_client.send_computation_tasks(
@@ -443,7 +437,7 @@ async def test_too_many_resource_send_computation_task(
     node_id: NodeID,
     cluster_id: ClusterID,
     mocked_node_ports: None,
-    mocked_user_completed_cb: mock.Mock,
+    mocked_user_completed_cb: mock.AsyncMock,
 ):
     # create an image that needs a huge amount of CPU
     image = Image(
@@ -477,7 +471,7 @@ async def test_disconnected_backend_send_computation_task(
     cluster_id: ClusterID,
     cpu_image: ImageParams,
     mocked_node_ports: None,
-    mocked_user_completed_cb: mock.Mock,
+    mocked_user_completed_cb: mock.AsyncMock,
 ):
     # DISCONNECT THE CLUSTER
     await dask_spec_local_cluster.close()  # type: ignore

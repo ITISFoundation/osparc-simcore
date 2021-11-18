@@ -8,17 +8,17 @@ info:
     email: support@simcore.io
   license:
     name: MIT
-    url: "https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE"
+    url: 'https://github.com/ITISFoundation/osparc-simcore/blob/master/LICENSE'
 servers:
   - description: API server
     url: /v0
   - description: Development server
-    url: "http://{host}:{port}/{basePath}"
+    url: 'http://{host}:{port}/{basePath}'
     variables:
       host:
         default: localhost
       port:
-        default: "8080"
+        default: '8080'
       basePath:
         enum:
           - v0
@@ -30,22 +30,22 @@ paths:
       description: Some general information on the API and state of the service behind
       operationId: health_check
       responses:
-        "200":
+        '200':
           description: Service information
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HealthCheckEnveloped"
+                $ref: '#/components/schemas/HealthCheckEnveloped'
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"
+          $ref: '#/components/responses/DefaultErrorResponse'
   /status:
     get:
       summary: checks status of self and connected services
       operationId: get_status
       responses:
-        "200":
+        '200':
           description: returns app status check
-  "/check/{action}":
+  '/check/{action}':
     post:
       summary: Test checkpoint to ask server to fail or echo back the transmitted data
       parameters:
@@ -66,16 +66,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Fake"
+              $ref: '#/components/schemas/Fake'
       responses:
-        "200":
+        '200':
           description: Echoes response based on action
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FakeEnveloped"
+                $ref: '#/components/schemas/FakeEnveloped'
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"
+          $ref: '#/components/responses/DefaultErrorResponse'
   /locations:
     get:
       summary: Lists available storage locations
@@ -87,15 +87,15 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: List of available storage locations
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FileLocationArrayEnveloped"
+                $ref: '#/components/schemas/FileLocationArrayEnveloped'
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-  "/locations/{location_id}:sync":
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/locations/{location_id}:sync':
     post:
       summary: Manually triggers the synchronisation of the file meta data table in the database
       operationId: synchronise_meta_data_table
@@ -118,15 +118,15 @@ paths:
             type: boolean
             default: false
       responses:
-        "200":
-          description: "An object containing added, changed and removed paths"
+        '200':
+          description: 'An object containing added, changed and removed paths'
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TableSynchronisationEnveloped"
+                $ref: '#/components/schemas/TableSynchronisationEnveloped'
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-  "/locations/{location_id}/datasets":
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/locations/{location_id}/datasets':
     get:
       summary: Lists all dataset's metadata
       operationId: get_datasets_metadata
@@ -142,15 +142,15 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: list of dataset meta-datas
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DatasetMetaDataArrayEnveloped"
+                $ref: '#/components/schemas/DatasetMetaDataArrayEnveloped'
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-  "/locations/{location_id}/files/metadata":
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/locations/{location_id}/files/metadata':
     get:
       summary: Lists all file's metadata
       operationId: get_files_metadata
@@ -171,15 +171,15 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: list of file meta-datas
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FileMetaDataArrayEnveloped"
+                $ref: '#/components/schemas/FileMetaDataArrayEnveloped'
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-  "/locations/{location_id}/datasets/{dataset_id}/metadata":
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/locations/{location_id}/datasets/{dataset_id}/metadata':
     get:
       summary: Get dataset metadata
       operationId: get_files_metadata_dataset
@@ -200,15 +200,15 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: list of file meta-datas
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FileMetaDataArrayEnveloped"
+                $ref: '#/components/schemas/FileMetaDataArrayEnveloped'
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-  "/locations/{location_id}/files/{fileId}/metadata":
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/locations/{location_id}/files/{fileId}/metadata':
     get:
       summary: Get file metadata
       operationId: get_file_metadata
@@ -229,14 +229,14 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Returns file metadata
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FileMetaEnvelope"
+                $ref: '#/components/schemas/FileMetaEnvelope'
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"
+          $ref: '#/components/responses/DefaultErrorResponse'
     patch:
       summary: Update file metadata
       operationId: update_file_meta_data
@@ -255,17 +255,17 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/FileMetaData"
+              $ref: '#/components/schemas/FileMetaData'
       responses:
-        "200":
+        '200':
           description: Returns file metadata
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FileMetaEnvelope"
+                $ref: '#/components/schemas/FileMetaEnvelope'
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-  "/locations/{location_id}/files/{fileId}":
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/locations/{location_id}/files/{fileId}':
     get:
       summary: Gets download link for file at location
       operationId: download_file
@@ -286,14 +286,14 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Returns presigned link
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PresignedLinkEnveloped"
+                $ref: '#/components/schemas/PresignedLinkEnveloped'
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"
+          $ref: '#/components/responses/DefaultErrorResponse'
     put:
       summary: Returns upload link or performs copy operation to datcore
       operationId: upload_file
@@ -324,14 +324,14 @@ paths:
           schema:
             type: string
       responses:
-        "200":
+        '200':
           description: Returns presigned link
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PresignedLinkEnveloped"
+                $ref: '#/components/schemas/PresignedLinkEnveloped'
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"
+          $ref: '#/components/responses/DefaultErrorResponse'
     delete:
       summary: Deletes file
       operationId: delete_file
@@ -352,11 +352,11 @@ paths:
           schema:
             type: string
       responses:
-        "204":
-          description: "everything is OK, but there is no content to return"
+        '204':
+          description: 'everything is OK, but there is no content to return'
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-  "/simcore-s3/files/metadata:search":
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/simcore-s3/files/metadata:search':
     post:
       summary: Returns metadata for all files matching a pattern
       operationId: search_files_starting_with
@@ -371,16 +371,16 @@ paths:
           in: query
           schema:
             type: string
-            default: ""
+            default: ''
       responses:
-        "200":
+        '200':
           description: list of matching files found
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FileMetaDataArrayEnveloped"
+                $ref: '#/components/schemas/FileMetaDataArrayEnveloped'
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"
+          $ref: '#/components/responses/DefaultErrorResponse'
   /simcore-s3/folders:
     post:
       summary: Deep copies of all data from source to destination project in s3
@@ -398,24 +398,24 @@ paths:
               type: object
               properties:
                 source:
-                  $ref: "#/components/schemas/Project"
+                  $ref: '#/components/schemas/Project'
                 destination:
-                  $ref: "#/components/schemas/Project"
+                  $ref: '#/components/schemas/Project'
                 nodes_map:
                   type: object
                   description: maps source and destination node uuids
                   additionalProperties:
                     type: string
       responses:
-        "201":
+        '201':
           description: Data from destination project copied and returns project
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Project"
+                $ref: '#/components/schemas/Project'
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-  "/simcore-s3/folders/{folder_id}":
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/simcore-s3/folders/{folder_id}':
     delete:
       summary: Deletes all objects within a node_id or within a project_id if node_id is omitted
       operationId: delete_folders_of_project
@@ -436,9 +436,9 @@ paths:
           schema:
             type: string
       responses:
-        "204":
+        '204':
           description: folder has been successfully deleted
-  "/files/{file_id}:soft-copy":
+  '/files/{file_id}:soft-copy':
     post:
       summary: Copy as soft link
       operationId: copy_as_soft_link
@@ -464,14 +464,14 @@ paths:
                 link_id:
                   type: string
       responses:
-        "200":
+        '200':
           description: Returns link metadata
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FileMetaEnvelope"
+                $ref: '#/components/schemas/FileMetaEnvelope'
         default:
-          $ref: "#/components/responses/DefaultErrorResponse"
+          $ref: '#/components/responses/DefaultErrorResponse'
 components:
   schemas:
     HealthCheckEnveloped:
@@ -481,7 +481,7 @@ components:
         - error
       properties:
         data:
-          $ref: "#/components/schemas/HealthCheck"
+          $ref: '#/components/schemas/HealthCheck'
         error:
           nullable: true
           default: null
@@ -511,7 +511,7 @@ components:
           nullable: true
           default: null
         error:
-          $ref: "#/components/schemas/Error"
+          $ref: '#/components/schemas/Error'
     Error:
       type: object
       properties:
@@ -519,12 +519,12 @@ components:
           description: log messages
           type: array
           items:
-            $ref: "#/components/schemas/LogMessage"
+            $ref: '#/components/schemas/LogMessage'
         errors:
           description: errors metadata
           type: array
           items:
-            $ref: "#/components/schemas/ErrorItem"
+            $ref: '#/components/schemas/ErrorItem'
         status:
           description: HTTP error code
           type: integer
@@ -569,7 +569,7 @@ components:
         - error
       properties:
         data:
-          $ref: "#/components/schemas/LogMessage"
+          $ref: '#/components/schemas/LogMessage'
         error:
           nullable: true
           default: null
@@ -586,7 +586,7 @@ components:
             - INFO
             - ERROR
         message:
-          description: "log message. If logger is USER, then it MUST be human readable"
+          description: 'log message. If logger is USER, then it MUST be human readable'
           type: string
         logger:
           description: name of the logger receiving this message
@@ -594,7 +594,7 @@ components:
       required:
         - message
       example:
-        message: "Hi there, Mr user"
+        message: 'Hi there, Mr user'
         level: INFO
         logger: user-logger
     FakeEnveloped:
@@ -604,7 +604,7 @@ components:
         - error
       properties:
         data:
-          $ref: "#/components/schemas/Fake"
+          $ref: '#/components/schemas/Fake'
         error:
           nullable: true
           default: null
@@ -635,7 +635,7 @@ components:
         - error
       properties:
         data:
-          $ref: "#/components/schemas/TableSynchronisation"
+          $ref: '#/components/schemas/TableSynchronisation'
         error:
           nullable: true
           default: null
@@ -659,14 +659,14 @@ components:
         - error
       properties:
         data:
-          $ref: "#/components/schemas/FileLocationArray"
+          $ref: '#/components/schemas/FileLocationArray'
         error:
           nullable: true
           default: null
     FileLocationArray:
       type: array
       items:
-        $ref: "#/components/schemas/FileLocation"
+        $ref: '#/components/schemas/FileLocation'
     FileLocationEnveloped:
       type: object
       required:
@@ -674,7 +674,7 @@ components:
         - error
       properties:
         data:
-          $ref: "#/components/schemas/FileLocation"
+          $ref: '#/components/schemas/FileLocation'
         error:
           nullable: true
           default: null
@@ -695,7 +695,7 @@ components:
         - error
       properties:
         data:
-          $ref: "#/components/schemas/DatasetMetaDataArray"
+          $ref: '#/components/schemas/DatasetMetaDataArray'
         error:
           nullable: true
           default: null
@@ -706,7 +706,7 @@ components:
         - error
       properties:
         data:
-          $ref: "#/components/schemas/DatasetMetaData"
+          $ref: '#/components/schemas/DatasetMetaData'
         error:
           nullable: true
           default: null
@@ -718,12 +718,12 @@ components:
         display_name:
           type: string
       example:
-        dataset_uuid: "N:id-aaaa"
+        dataset_uuid: 'N:id-aaaa'
         display_name: simcore-testing
     DatasetMetaDataArray:
       type: array
       items:
-        $ref: "#/components/schemas/DatasetMetaData"
+        $ref: '#/components/schemas/DatasetMetaData'
     FileMetaEnvelope:
       type: object
       required:
@@ -731,7 +731,7 @@ components:
         - error
       properties:
         data:
-          $ref: "#/components/schemas/FileMetaData"
+          $ref: '#/components/schemas/FileMetaData'
         error:
           nullable: true
           default: null
@@ -785,14 +785,14 @@ components:
         - error
       properties:
         data:
-          $ref: "#/components/schemas/FileMetaDataArray"
+          $ref: '#/components/schemas/FileMetaDataArray'
         error:
           nullable: true
           default: null
     FileMetaDataArray:
       type: array
       items:
-        $ref: "#/components/schemas/FileMetaData"
+        $ref: '#/components/schemas/FileMetaData'
     PresignedLinkEnveloped:
       type: object
       required:
@@ -800,7 +800,7 @@ components:
         - error
       properties:
         data:
-          $ref: "#/components/schemas/PresignedLink"
+          $ref: '#/components/schemas/PresignedLink'
         error:
           nullable: true
           default: null
@@ -873,24 +873,24 @@ components:
           type: string
           description: project creation date
           pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
-          example: "2018-07-01T11:13:43Z"
+          example: '2018-07-01T11:13:43Z'
         lastChangeDate:
           type: string
           description: last save date
           pattern: '\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z'
-          example: "2018-07-01T11:13:43Z"
+          example: '2018-07-01T11:13:43Z'
         thumbnail:
           type: string
           minLength: 0
           maxLength: 2083
           format: uri
           description: url of the latest screenshot of the project
-          example: "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
+          example: 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
         workbench:
           type: object
           x-patternProperties:
-            ? "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$"
-            : type: object
+            '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
+              type: object
               additionalProperties: false
               required:
                 - key
@@ -929,26 +929,26 @@ components:
                   type: string
                   description: url of the latest screenshot of the node
                   example:
-                    - "https://placeimg.com/171/96/tech/grayscale/?0.jpg"
+                    - 'https://placeimg.com/171/96/tech/grayscale/?0.jpg'
                 runHash:
                   description: the hex digest of the resolved inputs +outputs hash at the time when the last outputs were generated
                   type:
                     - string
-                    - "null"
+                    - 'null'
                   example:
                     - a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2
                 inputs:
                   type: object
                   description: values of input properties
                   patternProperties:
-                    "^[-_a-zA-Z0-9]+$":
+                    '^[-_a-zA-Z0-9]+$':
                       oneOf:
                         - type:
                             - integer
                             - boolean
                             - string
                             - number
-                            - "null"
+                            - 'null'
                         - type: object
                           additionalProperties: false
                           required:
@@ -960,7 +960,7 @@ components:
                               format: uuid
                             output:
                               type: string
-                              pattern: "^[-_a-zA-Z0-9]+$"
+                              pattern: '^[-_a-zA-Z0-9]+$'
                         - type: object
                           additionalProperties: false
                           required:
@@ -995,7 +995,7 @@ components:
                   description: map with key - access level pairs
                   type: object
                   patternProperties:
-                    "^[-_a-zA-Z0-9]+$":
+                    '^[-_a-zA-Z0-9]+$':
                       type: string
                       enum:
                         - Invisible
@@ -1017,14 +1017,14 @@ components:
                   default: {}
                   type: object
                   patternProperties:
-                    "^[-_a-zA-Z0-9]+$":
+                    '^[-_a-zA-Z0-9]+$':
                       oneOf:
                         - type:
                             - integer
                             - boolean
                             - string
                             - number
-                            - "null"
+                            - 'null'
                         - type: object
                           additionalProperties: false
                           required:
@@ -1069,7 +1069,7 @@ components:
                     - nodeUuid2
                 parent:
                   type:
-                    - "null"
+                    - 'null'
                     - string
                   format: uuid
                   description: Parent's (group-nodes') node ID s.
@@ -1081,18 +1081,18 @@ components:
                   additionalProperties: false
                   required:
                     - x
-                    - "y"
+                    - 'y'
                   properties:
                     x:
                       type: integer
                       description: The x position
                       example:
-                        - "12"
-                    "y":
+                        - '12'
+                    'y':
                       type: integer
                       description: The y position
                       example:
-                        - "15"
+                        - '15'
                   deprecated: true
                 state:
                   title: NodeState
@@ -1137,8 +1137,8 @@ components:
             workbench:
               type: object
               x-patternProperties:
-                ? "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$"
-                : type: object
+                '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
+                  type: object
                   additionalProperties: false
                   required:
                     - position
@@ -1148,24 +1148,24 @@ components:
                       additionalProperties: false
                       required:
                         - x
-                        - "y"
+                        - 'y'
                       properties:
                         x:
                           type: integer
                           description: The x position
                           example:
-                            - "12"
-                        "y":
+                            - '12'
+                        'y':
                           type: integer
                           description: The y position
                           example:
-                            - "15"
+                            - '15'
               additionalProperties: true
             slideshow:
               type: object
               x-patternProperties:
-                ? "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$"
-                : type: object
+                '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
+                  type: object
                   additionalProperties: false
                   required:
                     - position
@@ -1189,7 +1189,7 @@ components:
           description: Contains the reference to the project classifiers
           items:
             type: string
-          example: "some:id:to:a:classifier"
+          example: 'some:id:to:a:classifier'
         dev:
           type: object
           description: object used for development purposes only
@@ -1216,7 +1216,7 @@ components:
                           type: boolean
                         owner:
                           title: Owner
-                          description: "If locked, the user that owns the lock"
+                          description: 'If locked, the user that owns the lock'
                           allOf:
                             - title: Owner
                               type: object
@@ -1295,4 +1295,4 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorEnveloped"
+            $ref: '#/components/schemas/ErrorEnveloped'

@@ -83,7 +83,15 @@ class DaskScheduler(BaseCompScheduler):
         await self.dask_client.abort_computation_tasks([f"{t.job_id}" for t in tasks])
 
     async def _reconnect_backend(self) -> None:
-        await self.dask_client.reconnect_client()
+        app = self.dask_client.app
+        client_settings = self.dask_client.settings
+        await self.dask_client.delete()
+        self.dask_client = await DaskClient.create(app, client_settings)
+        self.dask_client.register_handlers(
+            task_change_handler=self._task_state_change_handler,
+            task_progress_handler=self._task_progress_change_handler,
+            task_log_handler=self._task_log_change_handler,
+        )
 
     async def _on_task_completed(self, event: TaskStateEvent) -> None:
         logger.debug(
