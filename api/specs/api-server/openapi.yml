@@ -9,7 +9,7 @@ servers:
     host:
       default: 127.0.0.1
     port:
-      default: '3006'
+      default: '8006'
 paths:
   /v0/meta:
     get:

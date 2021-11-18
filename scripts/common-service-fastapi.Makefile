@@ -10,6 +10,11 @@
 
 .PHONY: openapi-specs openapi.json openapi.yaml
 
+#
+# NOTE that the scripts below assume that the package will have a main.py
+#      with 'the_app':FastAPI global defined inside  (provided by the cookiecutter)
+#
+
 openapi.json: .env
 	# generating openapi specs in a JSON file
 	@set -o allexport; \
