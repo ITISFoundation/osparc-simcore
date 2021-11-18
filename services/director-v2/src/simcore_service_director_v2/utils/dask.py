@@ -305,7 +305,9 @@ async def dask_sub_consumer(
     dask_sub = distributed.Sub(task_event.topic_name())
     async for dask_event in dask_sub:
         logger.debug(
-            "received dask event '%s' of topic %s", dask_event, task_event.topic_name()
+            "received dask event '%s' of topic %s",
+            dask_event,
+            task_event.topic_name(),
         )
         await handler(dask_event)
 
