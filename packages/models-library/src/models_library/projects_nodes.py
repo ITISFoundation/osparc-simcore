@@ -158,7 +158,6 @@ class Node(BaseModel):
         description="Parent's (group-nodes') node ID s. Used to group",
     )
 
-    # NOTE: use projects_ui.py
     position: Optional[Position] = Field(
         None,
         deprecated=True,

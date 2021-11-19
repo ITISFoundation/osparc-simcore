@@ -46,9 +46,9 @@ class AbstractProjectRunPolicy(ABC):
         ...
 
 
-def get_run_policy(app: web.Application) -> Optional[AbstractProjectRunPolicy]:
+def get_project_run_policy(app: web.Application) -> Optional[AbstractProjectRunPolicy]:
     return app.get(f"{__name__}.ProjectRunPolicy")
 
 
-def set_run_policy(app: web.Application, policy_obj: AbstractProjectRunPolicy):
+def set_project_run_policy(app: web.Application, policy_obj: AbstractProjectRunPolicy):
     app[f"{__name__}.ProjectRunPolicy"] = policy_obj

@@ -12,7 +12,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.logging_utils import log_decorator
 
 from ._meta import api_version_prefix as VTAG
-from .director_v2_abc import get_run_policy
+from .director_v2_abc import get_project_run_policy
 from .director_v2_core import DirectorServiceError, DirectorV2ApiClient
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
@@ -33,11 +33,11 @@ routes = web.RouteTableDef()
 async def start_pipeline(request: web.Request) -> web.Response:
     client = DirectorV2ApiClient(request.app)
 
-    run_policy = get_run_policy(request.app)
+    run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
 
     user_id = UserID(request[RQT_USERID_KEY])
-    project_id = UUID(request.match_info["project_id"])
+    project_id = ProjectID(request.match_info["project_id"])
 
     subgraph: Set[str] = set()
     force_restart: bool = False  # TODO: deprecate this entry
@@ -105,7 +105,7 @@ async def start_pipeline(request: web.Request) -> web.Response:
 @log_decorator(logger=log)
 async def stop_pipeline(request: web.Request) -> web.Response:
     client = DirectorV2ApiClient(request.app)
-    run_policy = get_run_policy(request.app)
+    run_policy = get_project_run_policy(request.app)
     assert run_policy  # nosec
 
     user_id = UserID(request[RQT_USERID_KEY])

@@ -5,7 +5,11 @@ PLEASE avoid importing from any other module to access this plugin's functionali
 
 from typing import Tuple
 
-from .director_v2_abc import AbstractProjectRunPolicy, get_run_policy, set_run_policy
+from .director_v2_abc import (
+    AbstractProjectRunPolicy,
+    get_project_run_policy,
+    set_project_run_policy,
+)
 from .director_v2_core import (
     DirectorServiceError,
     create_or_update_pipeline,
@@ -28,13 +32,13 @@ __all__: Tuple[str, ...] = (
     "delete_pipeline",
     "DirectorServiceError",
     "get_computation_task",
-    "get_run_policy",
+    "get_project_run_policy",
     "get_service_state",
     "get_services",
     "is_healthy",
     "request_retrieve_dyn_service",
     "retrieve",
-    "set_run_policy",
+    "set_project_run_policy",
     "start_service",
     "stop_service",
     "stop_services",
