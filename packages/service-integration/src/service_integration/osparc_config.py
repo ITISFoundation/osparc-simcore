@@ -21,6 +21,7 @@ from models_library.services import (
     ServiceDockerData,
     ServiceType,
 )
+from pydantic.class_validators import validator
 from pydantic.fields import Field
 from pydantic.main import BaseModel, Extra
 
@@ -57,11 +58,22 @@ OSPARC_LABEL_PREFIXES = (
 #
 # Project config -> stored in repo's basedir/.osparc
 #
+
+
 class MetaConfig(ServiceDockerData):
     """Details about general info and I/O configuration of the service
 
     Necessary for both image- and runtime-spec
     """
+
+    @validator("contact")
+    @classmethod
+    def check_contact_in_authors(cls, v, values):
+        """catalog service relies on contact and author to define access rights"""
+        authors_emails = {author.email for author in values["authors"]}
+        if v not in authors_emails:
+            raise ValueError("Contact {v} must be registered as an author")
+        return v
 
     @classmethod
     def from_yaml(cls, path: Path) -> "MetaConfig":
