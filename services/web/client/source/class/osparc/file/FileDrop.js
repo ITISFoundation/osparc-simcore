@@ -46,63 +46,36 @@ qx.Class.define("osparc.file.FileDrop", {
       });
       domEl.addEventListener("drop", this.__dropFile.bind(this), false);
 
-      /*
       this.setDroppable(true);
       [
-        "dragover", // on target (pointer over)
-        "dragleave" // on target (pointer out)
-      ].forEach(signalName => {
-        this.addListener(signalName, e => {
-          const dragging = signalName !== "dragleave";
-          if (dragging === false) {
-            this.__dragging = dragging;
-          }
-          this.__dragging(e, dragging);
-        }, this);
-      });
-      this.addListener("drop", this.__dropLink.bind(this), false);
-      */
-    });
-    /*
-    this.addListenerOnce("appear", () => {
-      const domEl = this.getContentElement().getDomElement();
-      [
-        "dragenter",
         "dragover",
         "dragleave"
       ].forEach(signalName => {
-        domEl.addEventListener(signalName, e => {
-          const dragging = signalName !== "dragleave";
-          this.__dragging(e, dragging);
-        }, this);
-      });
-      domEl.addEventListener("drop", this.__drop.bind(this), false);
-
-      this.setDroppable(true);
-      [
-        "dragover", // on target (pointer over)
-        "dragleave" // on target (pointer out)
-      ].forEach(signalName => {
         this.addListener(signalName, e => {
+          console.log(signalName);
           const dragging = signalName !== "dragleave";
           if (dragging === false) {
             this.__dragging = dragging;
           }
-          this.__dragging(e, dragging);
+          this.__draggingLink(e, dragging);
         }, this);
       });
       this.addListener("mousemove", e => {
+        console.log("mousemove", this.__dragging);
         if (this.__dragging) {
-          this.__dragging(e, true);
+          this.__draggingLink(e, true);
         }
       }, this);
+      /*
       this.addListener("mouseup", e => {
+        console.log("mouseup", this.__dragging);
         if (this.__dragging) {
-          this.__drop(e);
+          this.__dropLink(e, true);
         }
       }, this);
+      this.addListener("drop", this.__dropLink.bind(this), false);
+      */
     });
-    */
   },
 
   statics: {
@@ -192,7 +165,7 @@ qx.Class.define("osparc.file.FileDrop", {
       } else if ("supportsType" in e) {
         // item drag from osparc's file tree
         allow = e.supportsType("osparc-file-link");
-        this.__draggingFile = allow;
+        this.__dragging = allow;
       }
       return allow;
     },
@@ -268,7 +241,7 @@ qx.Class.define("osparc.file.FileDrop", {
     },
 
     __dropLink: function(e) {
-      this.__dragging(e, false);
+      this.__draggingLink(e, false);
 
       if ("supportsType" in e && e.supportsType("osparc-file-link")) {
         this.__dragging = false;
