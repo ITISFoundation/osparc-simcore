@@ -11,6 +11,9 @@ from pydantic import BaseModel, Extra, Field, conint, constr
 
 #  MODIFICATIONS -------------------------------------------------------------------------
 #
+SCHEMA_URL = "http://json-schema.org/draft/2019-09/schema#"
+SCHEMA_VERSION = SCHEMA_URL.split("/")[-2]
+
 #  "$schema": "http://json-schema.org/draft/2019-09/schema#",
 #
 # UserWarning: format of 'ports' not understood for 'number' - using default
