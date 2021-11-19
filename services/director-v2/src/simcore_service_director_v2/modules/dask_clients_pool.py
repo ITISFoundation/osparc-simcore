@@ -2,7 +2,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import AsyncIterable, AsyncIterator, Dict
+from typing import AsyncIterator, Dict
 
 from fastapi import FastAPI
 from models_library.clusters import Cluster
@@ -30,9 +30,16 @@ class DaskClientsPool:
             )
         return app.state.dask_clients_pool
 
+    async def delete(self) -> None:
+        await asyncio.gather(
+            *[client.delete() for client in self._cluster_to_client_map.values()],
+            return_exceptions=True
+        )
+
     @asynccontextmanager
     async def acquire(self, cluster: Cluster) -> AsyncIterator[DaskClient]:
         try:
+            # we create a new client if that cluster was never used before
             dask_client = self._cluster_to_client_map.setdefault(
                 cluster.id,
                 await DaskClient.create(app=self.app, settings=self.settings),
@@ -55,10 +62,8 @@ def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
         app.state.dask_clients_pool = DaskClientsPool(app, settings)
 
     async def on_shutdown() -> None:
-        ...
-        # nothing for now
-        # if app.state.dask_clients_pool:
-        #     del app.state.dask_clients_pool  # type: ignore
+        if app.state.dask_clients_pool:
+            await app.state.dask_clients_pool.delete()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)

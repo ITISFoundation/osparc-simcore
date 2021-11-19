@@ -7,13 +7,15 @@ from typing import Callable, Dict, Iterable, List
 import pytest
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
+from distributed.deploy.spec import SpecCluster
 from models_library.clusters import Cluster
+from models_library.settings.rabbit import RabbitConfig
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from starlette import status
 from starlette.testclient import TestClient
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
@@ -22,9 +24,12 @@ def clusters_config(
     mock_env: None,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
+    rabbit_service: RabbitConfig,
     monkeypatch: MonkeyPatch,
+    dask_spec_local_cluster: SpecCluster,
 ):
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
+    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
 
 
 @pytest.fixture
@@ -48,6 +53,7 @@ def cluster(
                 .values(new_cluster.to_clusters_db(only_update=False))
                 .returning(clusters.c.id)
             )
+            created_cluster_ids.append(created_cluser_id)
             result = conn.execute(
                 sa.select(
                     [
@@ -92,7 +98,7 @@ def cluster(
     with postgres_db.connect() as conn:
         conn.execute(
             # pylint: disable=no-value-for-parameter
-            clusters.delete().where(clusters.c.project_id.in_(created_cluster_ids))
+            clusters.delete().where(clusters.c.id.in_(created_cluster_ids))
         )
 
 
