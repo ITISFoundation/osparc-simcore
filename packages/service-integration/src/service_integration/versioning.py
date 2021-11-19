@@ -1,10 +1,17 @@
 from datetime import datetime
 
-from pkg_resources import parse_version
+from packaging.version import Version
 from pydantic import BaseModel
+from pydantic.fields import Field
 from pydantic.types import constr
 
 from .basic_regex import SEMANTIC_VERSION_RE
+
+# TODO: create https://pydantic-docs.helpmanual.io/usage/types/#custom-data-types for packaging.version.Version
+# We needdefine __modify_schema__ (see how is done with UUID in pydantic) and a validator that
+# allows parsing from string as well
+#
+VersionStr = constr(regex=SEMANTIC_VERSION_RE)
 
 
 def bump_version_string(current_version: str, bump: str) -> str:
@@ -12,7 +19,7 @@ def bump_version_string(current_version: str, bump: str) -> str:
     BUMP means to increment the version number to a new, unique value
     NOTE: Simple implementation of version-bump w/o extra dependencies
     """
-    version = parse_version(current_version)
+    version = Version(current_version)
 
     # CAN ONLY bump releases not pre/post/dev releases
     if version.is_devrelease or version.is_postrelease or version.is_prerelease:
@@ -39,17 +46,38 @@ def bump_version_string(current_version: str, bump: str) -> str:
 
 
 class ExecutableVersionInfo(BaseModel):
-    name: str  # e.g semcad x
-    version_label: str  # e.g. Matterhorn Student Edition 1
-    version: constr(regex=SEMANTIC_VERSION_RE)  # e.g. 3.4.5-beta
+    display_name: str
+    display_version: str
+    description: str
+    name: str
+    version: VersionStr
     released: datetime
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "display_name": "SEMCAD X",
+                "display_version": "Matterhorn Student Edition 1",
+                "description": "z43 flag simulator for student use",
+                "name": "semcad-x",
+                "version": "3.4.5-beta",
+                "released": "2021-11-19T14:58:45.900979",
+            }
+        }
 
 
 class ServiceVersionInfo(BaseModel):
-    version: constr(
-        regex=SEMANTIC_VERSION_RE
-    )  # 1.0.0 (first time released as an osparc)
-    integration_version: constr(
-        regex=SEMANTIC_VERSION_RE
-    )  # 2.0.0 (osparc internal integration version)
-    released: datetime  # timestamp when service was officially published
+    version: VersionStr
+    integration_version: VersionStr = Field(
+        ..., description="osparc internal integration version"
+    )
+    released: datetime = Field(..., description="Publication/release date")
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "version": "1.0.0",  # e.g. first time released as an osparc
+                "integration_version": "2.1.0",
+                "released": "2021-11-19T14:58:45.900979",
+            }
+        }
