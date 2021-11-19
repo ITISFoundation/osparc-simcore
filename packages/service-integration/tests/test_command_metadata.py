@@ -42,18 +42,18 @@ def test_make_version(
     new_version: str,
     current_metadata: Dict,
     metadata_file_path: Path,
-    run_simcore_service_integrator: Callable,
+    run_program_with_args: Callable,
 ):
     """
     As Makefile recipe:
 
         version-service-patch version-service-minor version-service-major: $(metatada) ## kernel/service versioning as patch
-                simcore-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-service-,,$@)
+                osparc-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-service-,,$@)
     """
     # ensures current_metadata fixture worked as expected
     assert current_metadata[target_version] == current_version
 
-    result = run_simcore_service_integrator(
+    result = run_program_with_args(
         "bump-version",
         "--metadata-file",
         str(metadata_file_path),
@@ -79,15 +79,15 @@ def test_make_version(
     "cmd,expected_output",
     [
         (
-            "simcore-service-integrator get-version --metadata-file tests/data/metadata.yml",
+            "osparc-service-integrator get-version --metadata-file tests/data/metadata.yml",
             "1.1.0",
         ),
         (
-            "simcore-service-integrator get-version --metadata-file tests/data/metadata.yml integration-version",
+            "osparc-service-integrator get-version --metadata-file tests/data/metadata.yml integration-version",
             "1.0.0",
         ),
         (
-            "simcore-service-integrator get-version --metadata-file tests/data/metadata.yml version",
+            "osparc-service-integrator get-version --metadata-file tests/data/metadata.yml version",
             "1.1.0",
         ),
     ],
@@ -96,24 +96,25 @@ def test_get_version_from_metadata(
     cmd,
     expected_output,
     metadata_file_path: Path,
-    run_simcore_service_integrator: Callable,
+    run_program_with_args: Callable,
 ):
     cmd = cmd.replace("tests/data/metadata.yml", str(metadata_file_path))
-    result = run_simcore_service_integrator(*cmd.split()[1:])
+    result = run_program_with_args(*cmd.split()[1:])
     assert result.exit_code == os.EX_OK, (result.output, result.exception)
 
     assert result.output == expected_output
 
 
 def test_changes_in_metadata_keeps_keys_order(
-    metadata_file_path, run_simcore_service_integrator
+    metadata_file_path: Path, run_program_with_args: Callable
 ):
 
-    before = metadata_file_path.read_text()
-    assert "1.1.0" in before
-
+    before = yaml.safe_load(metadata_file_path.read_text())
     print(before)
-    result = run_simcore_service_integrator(
+
+    assert before["version"] == "1.1.0"
+
+    result = run_program_with_args(
         "bump-version",
         "--metadata-file",
         metadata_file_path,
@@ -121,8 +122,11 @@ def test_changes_in_metadata_keeps_keys_order(
         "major",
     )
     assert result.exit_code == os.EX_OK, (result.output, result.exception)
-    after = metadata_file_path.read_text()
+
+    after = yaml.safe_load(metadata_file_path.read_text())
     print(after)
 
-    assert "2.0.0" in after
-    assert before == after.replace("2.0.0", "1.1.0")
+    assert after["version"] == "2.0.0"
+
+    after["version"] = "1.1.0"
+    assert before == after
