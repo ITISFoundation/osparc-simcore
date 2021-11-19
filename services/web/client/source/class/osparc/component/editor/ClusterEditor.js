@@ -121,8 +121,7 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
           control = new qx.ui.form.TextField().set({
             font: "text-14",
             backgroundColor: "background-main",
-            placeholder: this.tr("Username"),
-            height: 35
+            placeholder: this.tr("Username")
           });
           this.bind("simpleAuthenticationUsername", control, "value");
           control.bind("value", this, "simpleAuthenticationUsername");
@@ -135,8 +134,7 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
           control = new qx.ui.form.PasswordField().set({
             font: "text-14",
             backgroundColor: "background-main",
-            placeholder: this.tr("Password"),
-            height: 35
+            placeholder: this.tr("Password")
           });
           this.bind("simpleAuthenticationPassword", control, "value");
           control.bind("value", this, "simpleAuthenticationPassword");
