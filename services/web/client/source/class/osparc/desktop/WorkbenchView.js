@@ -798,6 +798,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         page.getChildControl("button").exclude();
       });
 
+      const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
+      tabViewLeftPanel.setSelection([this.__nodesTree]);
+
       if (node instanceof osparc.data.model.Study) {
         this.__populateSecondPanelStudy(node);
       } else if (node && node.isFilePicker()) {
@@ -943,7 +946,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const fileDrop = new osparc.file.FileDrop();
         fileDrop.addListener("uploadFile", e => {
           const files = e.getData();
-          filePickerView.uploadPendingFiles(files);
+          if (filePickerView.uploadPendingFiles(files)) {
+            setTimeout(() => this.__populateSecondPanel(filePicker), 500);
+          } else {
+            fileDrop.resetDropAction();
+          }
         });
         fileDrop.addListener("setOutputFile", e => {
           const data = e.getData();

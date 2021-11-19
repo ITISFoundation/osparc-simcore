@@ -400,11 +400,13 @@ qx.Class.define("osparc.file.FilePicker", {
 
     uploadPendingFiles: function(files) {
       if (files.length > 0) {
-        if (files.length > 1) {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
+        if (files.length === 1) {
+          this.getChildControl("files-add").retrieveUrlAndUpload(files[0]);
+          return true;
         }
-        this.getChildControl("files-add").retrieveUrlAndUpload(files[0]);
+        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
       }
+      return false;
     },
 
     __selectionChanged: function(selectedItem) {
