@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from typing import Any, Dict, List, Set, Tuple
-from uuid import UUID
 
 from aiohttp import web
 from models_library.projects import ProjectID
