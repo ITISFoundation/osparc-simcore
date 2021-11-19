@@ -26,9 +26,11 @@ def create_docker_compose_image_spec(
     # optional
     runtime_cfg = None
     if service_config_path:
-        with suppress(FileNotFoundError):
+        try:
             # TODO: should include default?
             runtime_cfg = RuntimeConfig.from_yaml(service_config_path)
+        except FileNotFoundError:
+            click.echo("No runtime config found (optional), using default.")
 
     # OCI annotations (optional)
     extra_labels = {}
@@ -43,13 +45,18 @@ def create_docker_compose_image_spec(
         extra_labels.update(oci_labels)
     except (FileNotFoundError, ValueError):
 
-        # if not OCI, try label-schema
-        with suppress(FileNotFoundError):
+        try:
+            # if not OCI, try label-schema
             ls_spec = yaml.safe_load(
                 (config_basedir / f"{LS_LABEL_PREFIX}.yml").read_text()
             )
             ls_labels = to_labels(ls_spec, prefix_key=LS_LABEL_PREFIX)
             extra_labels.update(ls_labels)
+
+        except FileNotFoundError:
+            click.echo(
+                "No explicit config for OCI/label-schema found (optional), skipping OCI annotations."
+            )
 
     compose_spec = create_image_spec(meta_cfg, runtime_cfg, extra_labels=extra_labels)
 
