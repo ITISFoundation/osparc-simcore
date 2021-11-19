@@ -40,7 +40,6 @@ qx.Class.define("osparc.file.FileDrop", {
         "dragleave"
       ].forEach(signalName => {
         domEl.addEventListener(signalName, e => {
-          console.log("drag - ", signalName);
           const dragging = signalName !== "dragleave";
           this.__draggingFile(e, dragging);
         }, this);

@@ -83,6 +83,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
   members: {
     __sidePanels: null,
+    __nodesPage: null,
     __studyTreeItem: null,
     __nodesTree: null,
     __filesTree: null,
@@ -335,7 +336,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }));
       homeAndNodesTree.add(addNewNodeBtn);
 
-      const nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, primaryColumnBGColor);
+      const nodesPage = this.__nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, primaryColumnBGColor);
       tabViewPrimary.add(nodesPage);
 
       const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
@@ -799,7 +800,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
 
       const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
-      tabViewLeftPanel.setSelection([this.__nodesTree]);
+      tabViewLeftPanel.setSelection([this.__nodesPage]);
 
       if (node instanceof osparc.data.model.Study) {
         this.__populateSecondPanelStudy(node);
