@@ -4,10 +4,10 @@ type: dynamic
 integration-version: 1.0.0
 version: 2.0.2
 description: test of a dynamic service
-contact: anderegg@itis.swiss
+contact: bar@foo.com
 authors:
-  - name: Sylvain Anderegg
-    email: anderegg@itis.swiss
+  - name: Mr X
+    email: bar@foo.com
     affiliation: IT'IS Foundation
 inputs:
   string_input:
