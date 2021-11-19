@@ -67,7 +67,10 @@ qx.Class.define("osparc.file.FileDrop", {
       this.addListener("drop", e => this.__drop(e), this);
     });
 
-    this.getContentElement().setStyles(this.self().getBorderStyle());
+    const contentElement = this.getContentElement();
+    contentElement.setStyles(this.self().getBorderStyle());
+    const colorManager = qx.theme.manager.Color.getInstance();
+    colorManager.addListener("changeTheme", () => contentElement.setStyles(this.self().getBorderStyle()));
 
     this._createChildControlImpl("drop-here");
     this._createChildControlImpl("svg-layer");
@@ -84,7 +87,7 @@ qx.Class.define("osparc.file.FileDrop", {
   },
 
   events: {
-    "uploadFile": "qx.event.type.Data",
+    "uploadFile": "qx.event.type.Data"
   },
 
   properties: {
