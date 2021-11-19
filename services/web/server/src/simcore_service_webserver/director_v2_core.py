@@ -22,6 +22,7 @@ from .director_v2_settings import Directorv2Settings, get_client_session, get_se
 
 log = logging.getLogger(__file__)
 
+_APP_DIRECTOR_V2_CLIENT_KEY = f"{__name__}.DirectorV2ApiClient"
 
 SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)  # type:ignore
 SERVICE_RETRIEVE_HTTP_TIMEOUT = ClientTimeout(
@@ -78,11 +79,11 @@ class DirectorV2ApiClient:
 
 
 def get_client(app: web.Application) -> Optional[DirectorV2ApiClient]:
-    return app.get(f"{__name__}.DirectorV2ApiClient")
+    return app.get(_APP_DIRECTOR_V2_CLIENT_KEY)
 
 
 def set_client(app: web.Application, obj: DirectorV2ApiClient):
-    app[f"{__name__}.DirectorV2ApiClient"] = obj
+    app[_APP_DIRECTOR_V2_CLIENT_KEY] = obj
 
 
 async def _request_director_v2(
@@ -132,7 +133,7 @@ async def _request_director_v2(
 
 
 # POLICY ------------------------------------------------
-class DefaultRunPolicy(AbstractProjectRunPolicy):
+class DefaultProjectRunPolicy(AbstractProjectRunPolicy):
     # pylint: disable=unused-argument
 
     async def get_runnable_projects_ids(

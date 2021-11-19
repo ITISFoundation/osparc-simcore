@@ -57,25 +57,31 @@ async def start_pipeline(request: web.Request) -> web.Response:
     }
 
     try:
-        project_ids: List[ProjectID]
+        running_project_ids: List[ProjectID]
         project_vc_commits: List[CommitID]
 
         (
-            project_ids,
+            running_project_ids,
             project_vc_commits,
         ) = await run_policy.get_or_create_runnable_projects(request, project_id)
-        log.debug("Project %s will start %d variants", project_id, len(project_ids))
+        log.debug(
+            "Project %s will start %d variants", project_id, len(running_project_ids)
+        )
 
-        assert project_ids  # nosec
+        assert running_project_ids  # nosec
         assert (  # nosec
-            len(project_ids) == len(project_vc_commits) if project_vc_commits else True
+            len(running_project_ids) == len(project_vc_commits)
+            if project_vc_commits
+            else True
         )
 
         _started_pipelines_ids: Tuple[str] = await asyncio.gather(
-            *[client.start(pid, user_id, **options) for pid in project_ids]
+            *[client.start(pid, user_id, **options) for pid in running_project_ids]
         )
 
-        assert set(_started_pipelines_ids) == set(map(str, project_ids))  # nosec
+        assert set(_started_pipelines_ids) == set(
+            map(str, running_project_ids)
+        )  # nosec
 
         data: Dict[str, Any] = {
             "pipeline_id": project_id,

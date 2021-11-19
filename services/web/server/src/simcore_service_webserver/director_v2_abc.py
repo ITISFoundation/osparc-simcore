@@ -5,6 +5,7 @@ from aiohttp import web
 from models_library.projects import ProjectID
 
 CommitID = int
+_APP_PROJECT_RUN_POLICY_KEY = f"{__name__}.ProjectRunPolicy"
 
 
 class AbstractProjectRunPolicy(ABC):
@@ -47,8 +48,8 @@ class AbstractProjectRunPolicy(ABC):
 
 
 def get_project_run_policy(app: web.Application) -> Optional[AbstractProjectRunPolicy]:
-    return app.get(f"{__name__}.ProjectRunPolicy")
+    return app.get(_APP_PROJECT_RUN_POLICY_KEY)
 
 
 def set_project_run_policy(app: web.Application, policy_obj: AbstractProjectRunPolicy):
-    app[f"{__name__}.ProjectRunPolicy"] = policy_obj
+    app[_APP_PROJECT_RUN_POLICY_KEY] = policy_obj
