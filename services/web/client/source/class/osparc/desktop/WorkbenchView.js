@@ -940,7 +940,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         filePickerView.addListener("itemSelected", () => this.__populateSecondPanel(filePicker));
         this.__settingsPage.add(filePickerView);
 
-        const fileDrop = new osparc.file.FileDrop();
+        const fileDrop = new osparc.file.FileDrop(filePicker);
         this.__settingsPage.add(fileDrop, {
           flex: 1
         });

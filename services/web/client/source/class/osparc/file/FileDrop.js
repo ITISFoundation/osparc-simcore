@@ -18,10 +18,14 @@
 qx.Class.define("osparc.file.FileDrop", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(node) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.Canvas());
+
+    if (node) {
+      this.setNode(node);
+    }
 
     this.addListenerOnce("appear", () => {
       const domEl = this.getContentElement().getDomElement();
@@ -35,7 +39,7 @@ qx.Class.define("osparc.file.FileDrop", {
           this.__dragging(e, dragging);
         }, this);
       });
-      // domEl.addEventListener("drop", this.__drop.bind(this), false);
+      domEl.addEventListener("drop", e => this.__drop(e), this);
 
       this.setDroppable(true);
       [
@@ -60,7 +64,7 @@ qx.Class.define("osparc.file.FileDrop", {
           }
         }, this);
       });
-      // this.addListener("drop", this.__drop.bind(this), false);
+      this.addListener("drop", e => this.__drop(e), this);
     });
 
     this.getContentElement().setStyles(this.self().getBorderStyle());
@@ -79,9 +83,17 @@ qx.Class.define("osparc.file.FileDrop", {
     }
   },
 
-  members: {
-    __dropHint: null,
+  events: {
+    "uploadFile": "qx.event.type.Data",
+  },
 
+  properties: {
+    node: {
+      check: "osparc.data.model.Node"
+    }
+  },
+
+  members: {
     _createChildControlImpl: function(id) {
       let control = null;
       switch (id) {
@@ -165,7 +177,7 @@ qx.Class.define("osparc.file.FileDrop", {
       }
 
       const dropHint = this.getChildControl("drop-me");
-      if (dragging) {
+      if (dragging && "rect" in dropHint) {
         dropHint.show();
         dropHint.setLayoutProperties({
           left: posX,
@@ -179,7 +191,25 @@ qx.Class.define("osparc.file.FileDrop", {
 
     __drop: function(e) {
       this.__dragging(e, false);
-      this.__draggingFile = false;
+
+      if ("dataTransfer" in e) {
+        this.__draggingFile = false;
+        const files = e.dataTransfer.files;
+        if (files.length === 1) {
+          const fileList = e.dataTransfer.files;
+          if (fileList.length) {
+            this.fireDataEvent("uploadFile", files[0]);
+          }
+        } else {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
+        }
+      } else if ("supportsType" in e && e.supportsType("osparc-file-link")) {
+        this.__draggingFile = false;
+        const data = e.getData("osparc-file-link")["dragData"];
+        if (this.getNode()) {
+          osparc.file.FilePicker.setOutputValueFromStore(this.getNode(), data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
+        }
+      }
     }
   }
 });
