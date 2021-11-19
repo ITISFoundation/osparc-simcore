@@ -40,13 +40,13 @@ async def start_pipeline(request: web.Request) -> web.Response:
     project_id = UUID(request.match_info["project_id"])
 
     subgraph: Set[str] = set()
-    force_restart: bool = False
+    force_restart: bool = False  # TODO: deprecate this entry
     cluster_id: NonNegativeInt = 0
 
     if request.can_read_body:
         body = await request.json()
         subgraph = body.get("subgraph", [])
-        force_restart = bool(body.get("force_restart"))
+        force_restart = bool(body.get("force_restart", force_restart))
         cluster_id = body.get("cluster_id")
 
     options = {
@@ -109,7 +109,7 @@ async def stop_pipeline(request: web.Request) -> web.Response:
     assert run_policy  # nosec
 
     user_id = UserID(request[RQT_USERID_KEY])
-    project_id = UUID(request.match_info["project_id"])
+    project_id = ProjectID(request.match_info["project_id"])
 
     try:
         project_ids: List[ProjectID] = await run_policy.get_runnable_projects_ids(
