@@ -12,6 +12,7 @@ from models_library.clusters import Cluster
 from models_library.settings.rabbit import RabbitConfig
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
+from simcore_service_director_v2.models.schemas.clusters import ClusterOut
 from starlette import status
 from starlette.testclient import TestClient
 
@@ -100,6 +101,15 @@ def cluster(
             # pylint: disable=no-value-for-parameter
             clusters.delete().where(clusters.c.id.in_(created_cluster_ids))
         )
+
+
+def test_get_default_cluster_entrypoint(clusters_config: None, client: TestClient):
+    response = client.get("/v2/clusters/default")
+    assert response.status_code == status.HTTP_200_OK
+    default_cluster_out = ClusterOut.parse_obj(response.json())
+    response = client.get(f"/v2/clusters/{0}")
+    assert response.status_code == status.HTTP_200_OK
+    assert default_cluster_out == ClusterOut.parse_obj(response.json())
 
 
 def test_get_cluster_entrypoint(
