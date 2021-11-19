@@ -5,4 +5,4 @@
 --requirement ../../../requirements/devenv.txt
 
 # to generate compose_spec_model.py
-datamodel-code-generator
+datamodel-code-generator[http]
