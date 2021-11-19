@@ -937,12 +937,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         const filePickerView = new osparc.file.FilePicker(filePicker);
         filePickerView.buildLayout();
-        filePickerView.getChildControl("reload-button").exclude();
-        filePickerView.getChildControl("files-tree").exclude();
-        filePickerView.getChildControl("folder-viewer").exclude();
-        filePickerView.getChildControl("selected-file-layout").getChildControl("download-button").exclude();
-        filePickerView.addListener("itemSelected", () => this.__populateSecondPanel(filePicker));
-        this.__settingsPage.add(filePickerView);
 
         const fileDrop = new osparc.file.FileDrop();
         fileDrop.addListener("uploadFile", e => {
@@ -961,6 +955,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__settingsPage.add(fileDrop, {
           flex: 1
         });
+
+        filePickerView.getChildControl("reload-button").exclude();
+        filePickerView.getChildControl("files-tree").exclude();
+        filePickerView.getChildControl("folder-viewer").exclude();
+        filePickerView.getChildControl("selected-file-layout").exclude();
+        filePickerView.getChildControl("select-button").exclude();
+        filePickerView.addListener("itemSelected", () => this.__populateSecondPanel(filePicker));
+        this.__settingsPage.add(filePickerView);
       }
     },
 
