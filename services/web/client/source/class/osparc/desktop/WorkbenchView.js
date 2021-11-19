@@ -940,7 +940,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         filePickerView.addListener("itemSelected", () => this.__populateSecondPanel(filePicker));
         this.__settingsPage.add(filePickerView);
 
-        const fileDrop = new osparc.file.FileDrop(filePicker);
+        const fileDrop = new osparc.file.FileDrop();
+        fileDrop.addListener("uploadFile", e => {
+          const files = e.getData();
+          filePickerView.uploadPendingFiles(files);
+        });
+        fileDrop.addListener("setOutputFile", e => {
+          const data = e.getData();
+          osparc.file.FilePicker.setOutputValueFromStore(filePicker, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
+        });
+
         this.__settingsPage.add(fileDrop, {
           flex: 1
         });
