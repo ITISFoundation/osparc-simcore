@@ -2439,13 +2439,18 @@ jobs:
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: set owner variable
         run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
-      - name: deploy master
-        if: github.ref == 'refs/heads/master'
+      - if: github.ref == 'refs/heads/master'
+        name: deploy master image
         env:
           TAG_PREFIX: master-github
         run: ./ci/deploy/dockerhub-deploy.bash
-      - name: deploy hotfix
-        if: contains(github.ref, 'refs/heads/hotfix_v')
+      - if: contains(github.ref, 'refs/heads/hotfix_v')
+        name: deploy release hotfix image
         env:
           TAG_PREFIX: hotfix-github
+        run: ./ci/deploy/dockerhub-deploy.bash
+      - if: contains(github.ref, 'refs/heads/hotfix_staging_')
+        name: deploy staging hotfix image
+        env:
+          TAG_PREFIX: hotfix-staging-github
         run: ./ci/deploy/dockerhub-deploy.bash

@@ -211,17 +211,12 @@ services:
     volumes:
       - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment: &sidecar-environment
       DASK_SCHEDULER_HOST: ${DASK_SCHEDULER_HOST:-dask-scheduler}
-      DEFAULT_MAX_MEMORY: ${DEFAULT_MAX_MEMORY:-0}
-      DEFAULT_MAX_NANO_CPUS: ${DEFAULT_MAX_NANO_CPUS:-0}
       SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore}
       SIDECAR_LOGLEVEL: ${LOG_LEVEL:-WARNING}
-      SIDECAR_HOST_HOSTNAME_PATH: ${SIDECAR_HOST_HOSTNAME_PATH:-/home/scu/hostname}
       SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: ${SWARM_STACK_NAME}_computational_shared_data
       SIDECAR_COMP_SERVICES_SHARED_FOLDER: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
-      START_AS_MODE_CPU: ${SIDECAR_FORCE_CPU_NODE:-0}
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
     networks:
       - computational_services_subnet
