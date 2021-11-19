@@ -22,6 +22,7 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputDataSchema,
 )
 from fastapi import FastAPI
+from models_library.clusters import ClusterAuthentication
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.networks import AnyUrl
@@ -78,11 +79,15 @@ class DaskClient:
 
     @classmethod
     async def create(
-        cls, app: FastAPI, settings: DaskSchedulerSettings
+        cls,
+        app: FastAPI,
+        settings: DaskSchedulerSettings,
+        endpoint: AnyUrl,
+        authentication: ClusterAuthentication,
     ) -> "DaskClient":
         logger.info(
             "Initiating connection to %s",
-            f"dask-scheduler at {settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
+            f"dask-scheduler at {endpoint}",
         )
         async for attempt in AsyncRetrying(
             reraise=True,

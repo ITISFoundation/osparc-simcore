@@ -5,8 +5,9 @@ from dataclasses import dataclass, field
 from typing import AsyncIterator, Dict
 
 from fastapi import FastAPI
-from models_library.clusters import Cluster
+from models_library.clusters import Cluster, NoAuthentication
 from servicelib.json_serialization import json_dumps
+from simcore_postgres_database.models.clusters import ClusterType
 
 from ..core.errors import ConfigurationError, DaskClientAcquisisitonError
 from ..core.settings import DaskSchedulerSettings
@@ -22,6 +23,24 @@ class DaskClientsPool:
     settings: DaskSchedulerSettings
     _cluster_to_client_map: Dict[ClusterID, DaskClient] = field(default_factory=dict)
 
+    @classmethod
+    async def create(
+        cls, app: FastAPI, settings: DaskSchedulerSettings
+    ) -> "DaskClientsPool":
+        new_instance = cls(app=app, settings=settings)
+        # create default dask client
+        default_cluster = Cluster(
+            id=0,
+            name="Internal Cluster",
+            type=ClusterType.ON_PREMISE,
+            endpoint=f"tcp://{settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
+            authentication=NoAuthentication(),
+            owner=1,
+        )
+        async with new_instance.acquire(default_cluster):
+            ...
+        return new_instance
+
     @staticmethod
     def instance(app: FastAPI) -> "DaskClientsPool":
         if not hasattr(app.state, "dask_clients_pool"):
@@ -33,7 +52,7 @@ class DaskClientsPool:
     async def delete(self) -> None:
         await asyncio.gather(
             *[client.delete() for client in self._cluster_to_client_map.values()],
-            return_exceptions=True
+            return_exceptions=True,
         )
 
     @asynccontextmanager
@@ -42,7 +61,12 @@ class DaskClientsPool:
             # we create a new client if that cluster was never used before
             dask_client = self._cluster_to_client_map.setdefault(
                 cluster.id,
-                await DaskClient.create(app=self.app, settings=self.settings),
+                await DaskClient.create(
+                    app=self.app,
+                    settings=self.settings,
+                    endpoint=cluster.endpoint,
+                    authentication=cluster.authentication,
+                ),
             )
             assert dask_client  # nosec
             yield dask_client
@@ -59,7 +83,7 @@ class DaskClientsPool:
 
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
     async def on_startup() -> None:
-        app.state.dask_clients_pool = DaskClientsPool(app, settings)
+        app.state.dask_clients_pool = DaskClientsPool(app=app, settings=settings)
 
     async def on_shutdown() -> None:
         if app.state.dask_clients_pool:

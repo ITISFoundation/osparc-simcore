@@ -44,8 +44,15 @@ class JupyterHubTokenAuthentication(BaseAuthentication):
     # NOTE: the entries here still need to be defined
 
 
+class NoAuthentication(BaseAuthentication):
+    type: Literal["none"] = "none"
+
+
 ClusterAuthentication = Union[
-    SimpleAuthentication, KerberosAuthentication, JupyterHubTokenAuthentication
+    SimpleAuthentication,
+    KerberosAuthentication,
+    JupyterHubTokenAuthentication,
+    NoAuthentication,
 ]
 
 
