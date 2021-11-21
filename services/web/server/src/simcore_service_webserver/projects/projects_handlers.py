@@ -2,6 +2,7 @@
 
 """
 
+import asyncio
 import json
 import logging
 from typing import Any, Coroutine, Dict, List, Optional, Set
@@ -63,8 +64,8 @@ async def create_projects(request: web.Request):
     as_template = request.query.get("as_template")
     hidden: bool = bool(request.query.get("hidden", False))
 
+    new_project = {}
     try:
-        project = {}
         clone_data_coro: Optional[Coroutine] = None
 
         if as_template:  # create template from
@@ -77,11 +78,12 @@ async def create_projects(request: web.Request):
                 include_templates=False,
             )
             # clone user project as tempalte
-            project, nodes_map = clone_project_document(
+            new_project, nodes_map = clone_project_document(
                 source_project, forced_copy_project_id=None
             )
+
             clone_data_coro = copy_data_folders_from_project(
-                request.app, source_project, project, nodes_map, user_id
+                request.app, source_project, new_project, nodes_map, user_id
             )
 
         elif template_uuid:  # create from template
@@ -91,35 +93,35 @@ async def create_projects(request: web.Request):
                     reason="Invalid template uuid {}".format(template_uuid)
                 )
             # clone template as user project
-            project, nodes_map = clone_project_document(
+            new_project, nodes_map = clone_project_document(
                 source_project, forced_copy_project_id=None
             )
             clone_data_coro = copy_data_folders_from_project(
-                request.app, source_project, project, nodes_map, user_id
+                request.app, source_project, new_project, nodes_map, user_id
             )
 
             # remove template access rights
-            project["accessRights"] = {}
+            new_project["accessRights"] = {}
             # FIXME: parameterized inputs should get defaults provided by service
 
         # overrides with body
         if request.has_body:
             predefined = await request.json()
-            if project:
+            if new_project:
                 for key in OVERRIDABLE_DOCUMENT_KEYS:
                     non_null_value = predefined.get(key)
                     if non_null_value:
-                        project[key] = non_null_value
+                        new_project[key] = non_null_value
             else:
                 # TODO: take skeleton and fill instead
-                project = predefined
+                new_project = predefined
 
         # re-validate data
-        projects_api.validate_project(request.app, project)
+        projects_api.validate_project(request.app, new_project)
 
         # update metadata (uuid, timestamps, ownership) and save
-        project = await db.add_project(
-            project,
+        new_project = await db.add_project(
+            new_project,
             user_id,
             force_as_template=as_template is not None,
             hidden=hidden,
@@ -131,13 +133,13 @@ async def create_projects(request: web.Request):
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_api.create_or_update_pipeline(
-            request.app, user_id, project["uuid"]
+            request.app, user_id, new_project["uuid"]
         )
 
         # Appends state
-        project = await projects_api.add_project_states_for_user(
+        new_project = await projects_api.add_project_states_for_user(
             user_id=user_id,
-            project=project,
+            project=new_project,
             is_template=as_template is not None,
             app=request.app,
         )
@@ -148,9 +150,13 @@ async def create_projects(request: web.Request):
         raise web.HTTPNotFound(reason="Project not found") from exc
     except ProjectInvalidRightsError as exc:
         raise web.HTTPUnauthorized from exc
-
+    except asyncio.CancelledError:
+        log.warning("cancelled creation of project, cleaning up")
+        await projects_api.delete_project(request.app, new_project["uuid"], user_id)
     else:
-        raise web.HTTPCreated(text=json.dumps(project), content_type="application/json")
+        raise web.HTTPCreated(
+            text=json.dumps(new_project), content_type="application/json"
+        )
 
 
 @routes.get(f"/{VTAG}/projects")

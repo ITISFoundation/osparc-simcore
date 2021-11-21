@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 import asyncio
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Tuple
 from unittest import mock
 
 import pytest
@@ -12,6 +12,7 @@ from _helpers import ExpectedResponse, standard_role_response
 from aiohttp.test_utils import TestClient
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
+from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
 
 API_PREFIX = "/" + api_version_prefix
@@ -47,8 +48,22 @@ async def slow_storage_subsystem_mock(
     return MockedStorageSubsystem(mock, mock1)
 
 
-@pytest.mark.parametrize("copy_query_param", ["from_template"])
-@pytest.mark.parametrize(*standard_role_response())
+def standard_user_role_response() -> Tuple[
+    str, List[Tuple[UserRole, ExpectedResponse]]
+]:
+    all_roles = standard_role_response()
+    return (
+        all_roles[0],
+        [
+            (user_role, response)
+            for user_role, response in all_roles[1]
+            if user_role not in [UserRole.ANONYMOUS, UserRole.GUEST]
+        ],
+    )
+
+
+@pytest.mark.parametrize("copy_query_param", ["from_template", "as_template"])
+@pytest.mark.parametrize(*standard_user_role_response())
 async def test_creating_new_project_and_disconnecting_does_not_create_project(
     client: TestClient,
     logged_user: Dict[str, Any],
@@ -68,7 +83,7 @@ async def test_creating_new_project_and_disconnecting_does_not_create_project(
     assert str(create_url) == f"{API_PREFIX}/projects"
     create_url = create_url.with_query(from_template=template_project["uuid"])
     with pytest.raises(asyncio.TimeoutError):
-        await client.post(f"{create_url}", json={}, timeout=10)
+        await client.post(f"{create_url}", json={}, timeout=5)
     # now check the project was not created
     list_url = client.app.router["list_projects"].url_for()
     assert str(list_url) == API_PREFIX + "/projects"
