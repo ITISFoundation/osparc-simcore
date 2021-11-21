@@ -153,6 +153,7 @@ async def create_projects(request: web.Request):
     except asyncio.CancelledError:
         log.warning("cancelled creation of project, cleaning up")
         await projects_api.delete_project(request.app, new_project["uuid"], user_id)
+        raise
     else:
         raise web.HTTPCreated(
             text=json.dumps(new_project), content_type="application/json"

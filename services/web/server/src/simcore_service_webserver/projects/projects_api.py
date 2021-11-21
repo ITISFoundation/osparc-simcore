@@ -184,13 +184,13 @@ async def start_project_interactive_services(
 
 
 async def delete_project(app: web.Application, project_uuid: str, user_id: int) -> None:
-    await delete_project_from_db(app, project_uuid, user_id)
+    await _delete_project_from_db(app, project_uuid, user_id)
 
     async def _remove_services_and_data():
         await remove_project_interactive_services(
             user_id, project_uuid, app, notify_users=False
         )
-        await delete_project_data(app, project_uuid, user_id)
+        await delete_data_folders_of_project(app, project_uuid, user_id)
 
     fire_and_forget_task(_remove_services_and_data())
 
@@ -307,21 +307,13 @@ async def remove_project_interactive_services(
             await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
 
 
-async def delete_project_data(
+async def _delete_project_from_db(
     app: web.Application, project_uuid: str, user_id: int
 ) -> None:
-    # requests storage to delete all project's stored data
-    await delete_data_folders_of_project(app, project_uuid, user_id)
-
-
-async def delete_project_from_db(
-    app: web.Application, project_uuid: str, user_id: int
-) -> None:
+    log.debug("deleting project '%s' for user '%s' in database", project_uuid, user_id)
     db = app[APP_PROJECT_DBAPI]
     await director_v2_api.delete_pipeline(app, user_id, UUID(project_uuid))
     await db.delete_user_project(user_id, project_uuid)
-    # requests storage to delete all project's stored data
-    await delete_data_folders_of_project(app, project_uuid, user_id)
 
 
 ## PROJECT NODES -----------------------------------------------------

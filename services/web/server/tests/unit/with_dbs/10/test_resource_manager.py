@@ -30,7 +30,7 @@ from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.projects.module_setup import setup_projects
 from simcore_service_webserver.projects.projects_api import (
-    delete_project_from_db,
+    delete_project,
     remove_project_interactive_services,
 )
 from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
@@ -737,12 +737,12 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     mocked_director_v2_api["director_v2_core.stop_service"].assert_has_calls(calls)
 
     if expect_call:
-        # make sure `delete_project_from_db` is called
+        # make sure `delete_project` is called
         storage_subsystem_mock[1].assert_called_once()
         # make sure `delete_user` is called
         # asyncpg_storage_system_mock.assert_called_once()
     else:
-        # make sure `delete_project_from_db` not called
+        # make sure `delete_project` not called
         storage_subsystem_mock[1].assert_not_called()
         # make sure `delete_user` not called
         # asyncpg_storage_system_mock.assert_not_called()
@@ -759,7 +759,7 @@ async def test_regression_removing_unexisting_user(
     # regression test for https://github.com/ITISFoundation/osparc-simcore/issues/2504
 
     # remove project
-    await delete_project_from_db(
+    await delete_project(
         app=client.server.app,
         project_uuid=empty_user_project["uuid"],
         user_id=logged_user["id"],

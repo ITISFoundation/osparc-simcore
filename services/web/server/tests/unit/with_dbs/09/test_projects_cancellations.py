@@ -14,6 +14,8 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
+from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_delay
 
 API_PREFIX = "/" + api_version_prefix
 
@@ -84,13 +86,16 @@ async def test_creating_new_project_and_disconnecting_does_not_create_project(
     create_url = create_url.with_query(from_template=template_project["uuid"])
     with pytest.raises(asyncio.TimeoutError):
         await client.post(f"{create_url}", json={}, timeout=5)
-    # now check the project was not created
-    list_url = client.app.router["list_projects"].url_for()
-    assert str(list_url) == API_PREFIX + "/projects"
-    list_url = list_url.with_query(type="user")
-    resp = await client.get(f"{list_url}")
-    data, *_ = await assert_status(
-        resp,
-        expected.ok,
-    )
-    assert not data
+
+    # let's check that there are no new project created, after timing out
+    async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(10)):
+        with attempt:
+            list_url = client.app.router["list_projects"].url_for()
+            assert str(list_url) == API_PREFIX + "/projects"
+            list_url = list_url.with_query(type="user")
+            resp = await client.get(f"{list_url}")
+            data, *_ = await assert_status(
+                resp,
+                expected.ok,
+            )
+            assert not data
