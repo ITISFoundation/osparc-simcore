@@ -251,6 +251,10 @@ async def lock_with_notification(
                     user_id, project_uuid, app
                 )
             yield
+            log.debug(
+                "Project [%s] lock released",
+                project_uuid,
+            )
     except ProjectLockError:
         # someone else has already the lock?
         prj_states: ProjectState = await get_project_states_for_user(
