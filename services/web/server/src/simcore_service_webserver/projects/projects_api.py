@@ -242,12 +242,26 @@ async def lock_with_notification(
             user_id,
             user_name,
         ):
+            log.debug(
+                "Project [%s] lock acquired",
+                project_uuid,
+            )
             if notify_users:
                 await retrieve_and_notify_project_locked_state(
                     user_id, project_uuid, app
                 )
             yield
-
+    except ProjectLockError:
+        # someone else has already the lock?
+        prj_states: ProjectState = await get_project_states_for_user(
+            user_id, project_uuid, app
+        )
+        log.error(
+            "Project [%s] already locked in state '%s'. Please check with support.",
+            project_uuid,
+            prj_states.locked.status,
+        )
+        raise
     finally:
         if notify_users:
             await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
@@ -258,24 +272,20 @@ async def remove_project_interactive_services(
 ) -> None:
     # NOTE: during the closing process, which might take awhile,
     # the project is locked so no one opens it at the same time
+    log.debug(
+        "removing project interactive services for project [%s] and user [%s]",
+        project_uuid,
+        user_id,
+    )
     try:
-        log.debug(
-            "removing project interactive services for project [%s] and user [%s]",
-            project_uuid,
-            user_id,
-        )
-        async with await lock_project(
+        async with lock_with_notification(
             app,
             project_uuid,
             ProjectStatus.CLOSING,
             user_id,
             await get_user_name(app, user_id),
+            notify_users=notify_users,
         ):
-            if notify_users:
-                await retrieve_and_notify_project_locked_state(
-                    user_id, project_uuid, app
-                )
-
             # save the state if the user is not a guest. if we do not know we save in any case.
             with suppress(director_v2_api.DirectorServiceError):
                 # here director exceptions are suppressed. in case the service is not found to preserve old behavior
@@ -288,23 +298,7 @@ async def remove_project_interactive_services(
                     else True,
                 )
     except ProjectLockError:
-        # maybe the someone else is already closing
-        prj_states: ProjectState = await get_project_states_for_user(
-            user_id, project_uuid, app
-        )
-        if prj_states.locked.status not in [
-            ProjectStatus.CLOSED,
-            ProjectStatus.CLOSING,
-        ]:
-            log.error(
-                "lock for project [%s] was already taken, current state is %s. project could not be closed please check.",
-                project_uuid,
-                prj_states.locked.status,
-            )
-    finally:
-        # notify when done and the project is closed
-        if notify_users:
-            await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
+        pass
 
 
 async def _delete_project_from_db(
@@ -639,17 +633,15 @@ async def try_open_project_for_user(
     user_id: int, project_uuid: str, client_session_id: str, app: web.Application
 ) -> bool:
     try:
-        async with await lock_project(
+        async with lock_with_notification(
             app,
             project_uuid,
             ProjectStatus.OPENING,
             user_id,
             await get_user_name(app, user_id),
+            notify_users=False,
         ):
-            log.debug(
-                "project [%s] lock acquired, now checking if project is available",
-                project_uuid,
-            )
+
             with managed_resource(user_id, client_session_id, app) as rt:
                 user_session_id_list: List[
                     UserSessionID
