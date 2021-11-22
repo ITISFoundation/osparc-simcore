@@ -8,6 +8,7 @@
 """
 # pylint: disable=too-many-arguments
 
+import asyncio
 import contextlib
 import json
 import logging
@@ -70,9 +71,11 @@ def _is_node_dynamic(node_key: str) -> bool:
     return "/dynamic/" in node_key
 
 
-def validate_project(app: web.Application, project: Dict):
+async def validate_project(app: web.Application, project: Dict):
     project_schema = app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME]
-    validate_instance(project, project_schema)  # TODO: handl
+    await asyncio.get_event_loop().run_in_executor(
+        None, validate_instance, project, project_schema
+    )
 
 
 async def get_project_for_user(
@@ -107,7 +110,7 @@ async def get_project_for_user(
 
     # TODO: how to handle when database has an invalid project schema???
     # Notice that db model does not include a check on project schema.
-    validate_project(app, project)
+    await validate_project(app, project)
     return project
 
 

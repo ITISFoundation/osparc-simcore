@@ -14,6 +14,9 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
+from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 API_PREFIX = "/" + api_version_prefix
 
@@ -21,7 +24,7 @@ API_PREFIX = "/" + api_version_prefix
 @dataclass
 class MockedStorageSubsystem:
     copy_data_folders_from_project: mock.MagicMock
-    delete_data_folders_of_project: mock.MagicMock
+    delete_project: mock.MagicMock
 
 
 @pytest.fixture
@@ -91,7 +94,14 @@ async def test_creating_new_project_from_template_and_disconnecting_does_not_cre
         expected.ok,
     )
     assert not data
-    slow_storage_subsystem_mock.delete_data_folders_of_project.assert_called_once()
+
+    # NOTE: after coming back here timing-out, the code shall still run
+    # in the server which is why we need to retry here
+    async for attempt in AsyncRetrying(
+        reraise=True, stop=stop_after_delay(10), wait=wait_fixed(1)
+    ):
+        with attempt:
+            slow_storage_subsystem_mock.delete_project.assert_called_once()
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
@@ -125,7 +135,13 @@ async def test_creating_new_project_as_template_and_disconnecting_does_not_creat
         expected.ok,
     )
     assert not data
-    slow_storage_subsystem_mock.delete_data_folders_of_project.assert_called_once()
+    # NOTE: after coming back here timing-out, the code shall still run
+    # in the server which is why we need to retry here
+    async for attempt in AsyncRetrying(
+        reraise=True, stop=stop_after_delay(10), wait=wait_fixed(1)
+    ):
+        with attempt:
+            slow_storage_subsystem_mock.delete_project.assert_called_once()
 
 
 @pytest.mark.parametrize(*standard_user_role_response())

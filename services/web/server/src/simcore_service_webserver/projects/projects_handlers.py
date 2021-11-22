@@ -120,9 +120,7 @@ async def create_projects(
                 new_project = predefined
 
         # re-validate data
-        await asyncio.get_event_loop().run_in_executor(
-            None, projects_api.validate_project, request.app, new_project
-        )
+        await projects_api.validate_project(request.app, new_project)
 
         # update metadata (uuid, timestamps, ownership) and save
         new_project = await db.add_project(
@@ -144,6 +142,7 @@ async def create_projects(
                     user_id,
                     await get_user_name(request.app, user_id),
                 ):
+
                     await clone_data_coro
             else:
                 await clone_data_coro
@@ -167,16 +166,20 @@ async def create_projects(
         )
 
     except ValidationError as exc:
+        log.debug("project validation error")
         raise web.HTTPBadRequest(reason="Invalid project data") from exc
     except ProjectNotFoundError as exc:
+        log.debug("project not found error")
         raise web.HTTPNotFound(reason="Project not found") from exc
     except ProjectInvalidRightsError as exc:
+        log.debug("project invalid rights error")
         raise web.HTTPUnauthorized from exc
     except asyncio.CancelledError:
         log.warning("cancelled creation of project, cleaning up")
         await projects_api.delete_project(request.app, new_project["uuid"], user_id)
         raise
     else:
+        log.debug("project created successfuly")
         raise web.HTTPCreated(
             text=json.dumps(new_project), content_type="application/json"
         )
@@ -368,7 +371,7 @@ async def replace_project(request: web.Request):
     )
 
     try:
-        projects_api.validate_project(request.app, new_project)
+        await projects_api.validate_project(request.app, new_project)
 
         current_project = await projects_api.get_project_for_user(
             request.app,
