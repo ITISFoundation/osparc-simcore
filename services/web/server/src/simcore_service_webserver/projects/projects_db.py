@@ -22,7 +22,7 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from change_case import ChangeCase
-from models_library.projects import ProjectAtDB
+from models_library.projects import ProjectAtDB, ProjectIDStr
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -816,7 +816,11 @@ class ProjectDBAPI:
             return list(result)
 
     async def update_project_without_checking_permissions(
-        self, project_data: Dict, project_uuid: str, hidden: Optional[bool] = None
+        self,
+        project_data: Dict,
+        project_uuid: ProjectIDStr,
+        *,
+        hidden: Optional[bool] = None,
     ) -> bool:
         """The garbage collector needs to alter the row without passing through the
         permissions layer."""
