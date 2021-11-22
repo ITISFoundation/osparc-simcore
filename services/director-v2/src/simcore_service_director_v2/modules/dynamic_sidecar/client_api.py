@@ -269,6 +269,28 @@ class DynamicSidecarClient:
             log_httpx_http_error(url, "GET", traceback.format_exc())
             raise
 
+    async def restart_containers(self, dynamic_sidecar_endpoint: str) -> None:
+        """
+        runs docker-compose stop and docker-compose start in succession
+        resulting in a container restart without loosing state
+        """
+        url = get_url(
+            dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers:restart"
+        )
+        try:
+            async with httpx.AsyncClient(timeout=self._base_timeout) as client:
+                response = await client.post(url=url)
+                if response.status_code != status.HTTP_204_NO_CONTENT:
+                    message = (
+                        f"ERROR during service restart request: "
+                        f"status={response.status_code}, body={response.text}"
+                    )
+                    logging.warning(message)
+                    raise DynamicSchedulerException(message)
+        except httpx.HTTPError:
+            log_httpx_http_error(url, "POST", traceback.format_exc())
+            raise
+
 
 async def setup_api_client(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client setup")

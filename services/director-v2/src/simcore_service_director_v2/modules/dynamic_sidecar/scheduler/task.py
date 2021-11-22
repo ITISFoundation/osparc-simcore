@@ -12,6 +12,7 @@ import httpx
 from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
+from models_library.service_settings_labels import RestartPolicy
 
 from ....core.settings import (
     DynamicServicesSchedulerSettings,
@@ -275,6 +276,13 @@ class DynamicSidecarsScheduler:
             dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
             port_keys=port_keys,
         )
+
+        if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:
+            logger.info("Will restart containers")
+            await dynamic_sidecar_client.restart_containers(
+                scheduler_data.dynamic_sidecar.endpoint
+            )
+            logger.info("Containers restarted")
 
         return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
 

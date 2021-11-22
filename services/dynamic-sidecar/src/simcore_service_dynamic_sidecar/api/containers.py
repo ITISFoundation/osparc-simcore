@@ -467,6 +467,7 @@ async def restarts_containers(
     ),
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
+    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
 ) -> Response:
     """Removes the previously started service
     and returns the docker-compose output"""
@@ -481,7 +482,7 @@ async def restarts_containers(
     async def _run_command(command: str, command_timeout: Optional[float]) -> None:
         finished_without_errors, stdout = await write_file_and_run_command(
             settings=settings,
-            file_content=shared_store.compose_spec,
+            file_content=stored_compose_content,
             command=command,
             command_timeout=command_timeout,
         )
@@ -502,6 +503,9 @@ async def restarts_containers(
         command="docker-compose --project-name {project} --file {file_path} start",
         command_timeout=command_timeout,
     )
+
+    await _send_message(rabbitmq, "Service was restarted please reload the UI")
+    await rabbitmq.send_event_reload_iframe()
 
     # SEE https://github.com/tiangolo/fastapi/issues/2253
     return Response(status_code=status.HTTP_204_NO_CONTENT)
