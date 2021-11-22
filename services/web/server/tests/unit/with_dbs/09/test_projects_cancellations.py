@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Tuple
 from unittest import mock
 
 import pytest
-from _helpers import ExpectedResponse, standard_role_response
+from _helpers import ExpectedResponse, standard_role_response  # type: ignore
 from aiohttp.test_utils import TestClient
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
