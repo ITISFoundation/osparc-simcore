@@ -23,20 +23,24 @@ class DaskClientsPool:
     settings: DaskSchedulerSettings
     _cluster_to_client_map: Dict[ClusterID, DaskClient] = field(default_factory=dict)
 
+    @staticmethod
+    def default_cluster(settings: DaskSchedulerSettings):
+        return Cluster(
+            id=0,
+            name="Default internal cluster",
+            type=ClusterType.ON_PREMISE,
+            endpoint=f"tcp://{settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
+            authentication=NoAuthentication(),
+            owner=1,  # FIXME: that is usually the everyone's group... but we do not know about it in director-v2...
+        )
+
     @classmethod
     async def create(
         cls, app: FastAPI, settings: DaskSchedulerSettings
     ) -> "DaskClientsPool":
         new_instance = cls(app=app, settings=settings)
         # create default dask client
-        default_cluster = Cluster(
-            id=0,
-            name="Internal Cluster",
-            type=ClusterType.ON_PREMISE,
-            endpoint=f"tcp://{settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
-            authentication=NoAuthentication(),
-            owner=1,
-        )
+        default_cluster = DaskClientsPool.default_cluster(settings)
         async with new_instance.acquire(default_cluster):
             ...
         return new_instance

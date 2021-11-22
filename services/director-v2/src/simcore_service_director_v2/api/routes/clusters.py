@@ -17,13 +17,21 @@ log = logging.getLogger(__file__)
 
 
 async def _get_cluster_with_id(
+    request: Request,
     cluster_id: NonNegativeInt,
     clusters_repo: ClustersRepository,
     dask_clients_pool: DaskClientsPool,
 ) -> ClusterOut:
     log.debug("Getting details for cluster '%s'", cluster_id)
     try:
-        cluster: Cluster = await clusters_repo.get_cluster(cluster_id)
+        cluster: Cluster = dask_clients_pool.default_cluster(
+            request.app.state.settings.DASK_SCHEDULER
+        )
+        if (
+            cluster_id
+            != request.app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID
+        ):
+            cluster = await clusters_repo.get_cluster(cluster_id)
         async with dask_clients_pool.acquire(cluster) as dask_client:
             scheduler_info = dask_client.client.scheduler_info()
             scheduler_status = dask_client.client.status
@@ -48,9 +56,10 @@ async def get_default_cluster(
     dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
     return await _get_cluster_with_id(
-        request.app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
-        clusters_repo,
-        dask_clients_pool,
+        request=request,
+        cluster_id=request.app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
+        clusters_repo=clusters_repo,
+        dask_clients_pool=dask_clients_pool,
     )
 
 
@@ -61,8 +70,11 @@ async def get_default_cluster(
     status_code=status.HTTP_200_OK,
 )
 async def get_cluster_with_id(
+    request: Request,
     cluster_id: NonNegativeInt,
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
     dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
-    return await _get_cluster_with_id(cluster_id, clusters_repo, dask_clients_pool)
+    return await _get_cluster_with_id(
+        request, cluster_id, clusters_repo, dask_clients_pool
+    )

@@ -1,6 +1,7 @@
 from typing import Any, Dict, Literal, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, PositiveInt, validator
+from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, validator
+from pydantic.types import NonNegativeInt
 from simcore_postgres_database.models.clusters import ClusterType
 
 from .users import GroupID
@@ -87,7 +88,7 @@ class BaseCluster(BaseModel):
 
 
 class Cluster(BaseCluster):
-    id: PositiveInt = Field(..., description="The cluster ID")
+    id: NonNegativeInt = Field(..., description="The cluster ID")
 
     class Config(BaseCluster.Config):
         schema_extra = {
