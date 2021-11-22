@@ -828,11 +828,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       };
     },
 
-    __pointerEventToWorkbenchPos: function(e) {
-      const {
-        x,
-        y
-      } = this.__pointerEventToScreenPos(e);
+    __screenToToWorkbenchPos: function(x, y) {
       const scaledPos = this.__scaleCoordinates(x, y);
       const scrollX = this._workbenchLayoutScroll.getScrollX();
       const scrollY = this._workbenchLayoutScroll.getScrollY();
@@ -841,6 +837,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         x: scaledPos.x + scaledScroll.x,
         y: scaledPos.y + scaledScroll.y
       };
+    },
+
+    __pointerEventToWorkbenchPos: function(e) {
+      const {
+        x,
+        y
+      } = this.__pointerEventToScreenPos(e);
+      return this.__screenToToWorkbenchPos(x, y);
     },
 
     __updateTempEdge: function(e) {
@@ -1175,16 +1179,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       contextMenu.addButtons(buttons);
       contextMenu.setPos(e.getDocumentLeft() - contextMenu.w2, e.getDocumentTop() - contextMenu.h2);
       contextMenu.show();
-      /*
-      const tapListener = ev => {
-        if (osparc.utils.Utils.isMouseOnElement(contextMenu, ev)) {
-          return;
-        }
-        contextMenu.hide();
-        document.removeEventListener("mousedown", tapListener);
-      };
-      document.addEventListener("mousedown", tapListener);
-      */
     },
 
     __mouseDown: function(e) {
