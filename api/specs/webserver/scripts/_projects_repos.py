@@ -109,6 +109,14 @@ def list_project_checkpoints(
     ...
 
 
+@router.get(
+    "/{project_uuid}/checkpoints/{ref_id}",
+    response_model=Envelope[CheckpointAsBody],
+)
+def get_project_checkpoint(project_uuid: ProjectID, ref_id: RefID):
+    ...
+
+
 @router.patch(
     "/{project_uuid}/checkpoints/{ref_id}",
     response_model=Envelope[CheckpointAsBody],
