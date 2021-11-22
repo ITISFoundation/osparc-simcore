@@ -62,7 +62,9 @@ async def create_projects(
 
     template_uuid = request.query.get("from_template")
     as_template = request.query.get("as_template")
-    copy_data = request.query.get("copy_data", True)
+    copy_data: bool = bool(
+        request.query.get("copy_data", "true") in [1, "true", "True"]
+    )
     hidden: bool = bool(request.query.get("hidden", False))
 
     new_project = {}
@@ -84,17 +86,18 @@ async def create_projects(
                 raise web.HTTPNotFound(
                     reason="Invalid template uuid {}".format(template_uuid)
                 )
-
         if source_project:
             # clone template as user project
             new_project, nodes_map = clone_project_document(
-                source_project, forced_copy_project_id=None
+                source_project,
+                forced_copy_project_id=None,
+                clean_output_data=(copy_data == False),
             )
             if template_uuid:
                 # remove template access rights
                 new_project["accessRights"] = {}
             # the project is to be hidden until the data is copied
-            hidden = True
+            hidden = copy_data
             clone_data_coro = (
                 copy_data_folders_from_project(
                     request.app, source_project, new_project, nodes_map, user_id

@@ -14,8 +14,6 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
-from tenacity._asyncio import AsyncRetrying
-from tenacity.stop import stop_after_delay
 
 API_PREFIX = "/" + api_version_prefix
 
@@ -41,14 +39,9 @@ async def slow_storage_subsystem_mock(
         side_effect=_very_slow_copy_of_data,
     )
 
-    # requests storage to delete data
-    async def _very_slow_deletion_of_data(*args, **kwargs):
-        await asyncio.sleep(30)
-
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project",
+        "simcore_service_webserver.projects.projects_handlers.projects_api.delete_project",
         autospec=True,
-        side_effect=_very_slow_deletion_of_data,
     )
     return MockedStorageSubsystem(mock, mock1)
 
@@ -67,9 +60,8 @@ def standard_user_role_response() -> Tuple[
     )
 
 
-@pytest.mark.parametrize("copy_query_param", ["from_template", "as_template"])
 @pytest.mark.parametrize(*standard_user_role_response())
-async def test_creating_new_project_and_disconnecting_does_not_create_project(
+async def test_creating_new_project_from_template_and_disconnecting_does_not_create_project(
     client: TestClient,
     logged_user: Dict[str, Any],
     primary_group: Dict[str, str],
@@ -79,7 +71,6 @@ async def test_creating_new_project_and_disconnecting_does_not_create_project(
     catalog_subsystem_mock: Callable,
     slow_storage_subsystem_mock: MockedStorageSubsystem,
     project_db_cleaner: None,
-    copy_query_param: str,
 ):
     catalog_subsystem_mock([template_project])
     # create a project from another and disconnect while doing this by timing out
@@ -91,14 +82,139 @@ async def test_creating_new_project_and_disconnecting_does_not_create_project(
         await client.post(f"{create_url}", json={}, timeout=5)
 
     # let's check that there are no new project created, after timing out
-    async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(10)):
-        with attempt:
-            list_url = client.app.router["list_projects"].url_for()
-            assert str(list_url) == API_PREFIX + "/projects"
-            list_url = list_url.with_query(type="user")
-            resp = await client.get(f"{list_url}")
-            data, *_ = await assert_status(
-                resp,
-                expected.ok,
-            )
-            assert not data
+    list_url = client.app.router["list_projects"].url_for()
+    assert str(list_url) == API_PREFIX + "/projects"
+    list_url = list_url.with_query(type="user")
+    resp = await client.get(f"{list_url}")
+    data, *_ = await assert_status(
+        resp,
+        expected.ok,
+    )
+    assert not data
+    slow_storage_subsystem_mock.delete_data_folders_of_project.assert_called_once()
+
+
+@pytest.mark.parametrize(*standard_user_role_response())
+async def test_creating_new_project_as_template_and_disconnecting_does_not_create_project(
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    primary_group: Dict[str, str],
+    standard_groups: List[Dict[str, str]],
+    user_project: Dict[str, Any],
+    expected: ExpectedResponse,
+    catalog_subsystem_mock: Callable,
+    slow_storage_subsystem_mock: MockedStorageSubsystem,
+    project_db_cleaner: None,
+):
+    catalog_subsystem_mock([user_project])
+    # create a project from another and disconnect while doing this by timing out
+    # POST /v0/projects
+    create_url = client.app.router["create_projects"].url_for()
+    assert str(create_url) == f"{API_PREFIX}/projects"
+    create_url = create_url.with_query(as_template=user_project["uuid"])
+    with pytest.raises(asyncio.TimeoutError):
+        await client.post(f"{create_url}", json={}, timeout=5)
+
+    # let's check that there are no new project created, after timing out
+    list_url = client.app.router["list_projects"].url_for()
+    assert str(list_url) == API_PREFIX + "/projects"
+    list_url = list_url.with_query(type="template")
+    resp = await client.get(f"{list_url}")
+    data, *_ = await assert_status(
+        resp,
+        expected.ok,
+    )
+    assert not data
+    slow_storage_subsystem_mock.delete_data_folders_of_project.assert_called_once()
+
+
+@pytest.mark.parametrize(*standard_user_role_response())
+async def test_creating_new_project_from_template_without_copying_data_creates_skeleton(
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    primary_group: Dict[str, str],
+    standard_groups: List[Dict[str, str]],
+    template_project: Dict[str, Any],
+    expected: ExpectedResponse,
+    catalog_subsystem_mock: Callable,
+    slow_storage_subsystem_mock: MockedStorageSubsystem,
+    project_db_cleaner: None,
+):
+    catalog_subsystem_mock([template_project])
+    # create a project from another without copying data shall not call in the storage API
+    # POST /v0/projects
+    create_url = client.app.router["create_projects"].url_for()
+    assert str(create_url) == f"{API_PREFIX}/projects"
+    create_url = create_url.with_query(
+        from_template=template_project["uuid"], copy_data="false"
+    )
+    # this should go fast, let's have a timeout
+    await client.post(f"{create_url}", json={}, timeout=2)
+
+    slow_storage_subsystem_mock.copy_data_folders_from_project.assert_not_called()
+
+    # we should have a new project without any data (meaning all the outputs, progress and run_hashes are empty)
+    list_url = client.app.router["list_projects"].url_for()
+    assert str(list_url) == API_PREFIX + "/projects"
+    list_url = list_url.with_query(type="user")
+    resp = await client.get(f"{list_url}")
+    data, *_ = await assert_status(
+        resp,
+        expected.ok,
+    )
+    assert len(data) == 1
+    project = data[0]
+    assert "workbench" in project
+    project_workbench = project["workbench"]
+    assert project_workbench
+    assert len(project_workbench) > 0
+    for node_data in project_workbench.values():
+        assert not node_data["outputs"]
+        assert not node_data["runHash"]
+        assert not node_data["progress"]
+
+
+@pytest.mark.parametrize(*standard_user_role_response())
+async def test_creating_new_project_as_template_without_copying_data_creates_skeleton(
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    primary_group: Dict[str, str],
+    standard_groups: List[Dict[str, str]],
+    user_project: Dict[str, Any],
+    expected: ExpectedResponse,
+    catalog_subsystem_mock: Callable,
+    slow_storage_subsystem_mock: MockedStorageSubsystem,
+    project_db_cleaner: None,
+):
+    catalog_subsystem_mock([user_project])
+    # create a project from another without copying data shall not call in the storage API
+    # POST /v0/projects
+    create_url = client.app.router["create_projects"].url_for()
+    assert str(create_url) == f"{API_PREFIX}/projects"
+    create_url = create_url.with_query(
+        as_template=user_project["uuid"], copy_data="false"
+    )
+    # this should go fast, let's have a timeout
+    await client.post(f"{create_url}", json={}, timeout=2)
+
+    slow_storage_subsystem_mock.copy_data_folders_from_project.assert_not_called()
+
+    # we should have a new project without any data (meaning all the outputs, progress and run_hashes are empty)
+    list_url = client.app.router["list_projects"].url_for()
+    assert str(list_url) == API_PREFIX + "/projects"
+    list_url = list_url.with_query(type="template")
+    resp = await client.get(f"{list_url}")
+    data, *_ = await assert_status(
+        resp,
+        expected.ok,
+    )
+    assert len(data) == 1
+    project = data[0]
+    assert "workbench" in project
+    project_workbench = project["workbench"]
+    assert project_workbench
+    assert len(project_workbench) > 0
+    for node_data in project_workbench.values():
+        assert not node_data["outputs"]
+        assert not node_data["runHash"]
+        assert not node_data["progress"]
