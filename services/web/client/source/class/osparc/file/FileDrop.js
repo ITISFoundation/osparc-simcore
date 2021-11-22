@@ -35,8 +35,36 @@ qx.Class.define("osparc.file.FileDrop", {
         contentElement.setStyles(this.self().getBorderStyle());
       }
     }, this);
-    this._createChildControlImpl("drop-here");
-    this._createChildControlImpl("svg-layer");
+
+    const dropHere = this.__dropHere = new qx.ui.basic.Label(this.tr("Drop here")).set({
+      font: "title-14",
+      alignX: "center",
+      alignY: "middle"
+    });
+    this._add(dropHere, {
+      top: 40,
+      left: 40
+    });
+    dropHere.addListener("appear", () => {
+      // center it
+      const hintBounds = dropHere.getBounds() || dropHere.getSizeHint();
+      const {
+        height,
+        width
+      } = this.getBounds();
+      dropHere.setLayoutProperties({
+        top: Math.round((height - hintBounds.height) / 2),
+        left: Math.round((width - hintBounds.width) / 2)
+      });
+    }, this);
+
+    const svgLayer = this.__svgLayer = new osparc.component.workbench.SvgWidget();
+    this._add(svgLayer, {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0
+    });
 
     this.__addDragAndDropListeners();
   },
@@ -71,60 +99,11 @@ qx.Class.define("osparc.file.FileDrop", {
   },
 
   members: {
+    __svgLayer: null,
+    __dropHere: null,
+    __dropMe: null,
     __isDraggingFile: null,
     __isDraggingLink: null,
-
-    _createChildControlImpl: function(id) {
-      let control = null;
-      switch (id) {
-        case "drop-here":
-          control = new qx.ui.basic.Label(this.tr("Drop here")).set({
-            font: "title-14",
-            alignX: "center",
-            alignY: "middle"
-          });
-          this._add(control, {
-            top: 40,
-            left: 40
-          });
-          control.addListener("appear", () => {
-            // center it
-            const hintBounds = control.getBounds() || control.getSizeHint();
-            const {
-              height,
-              width
-            } = this.getBounds();
-            control.setLayoutProperties({
-              top: Math.round((height - hintBounds.height) / 2),
-              left: Math.round((width - hintBounds.width) / 2)
-            });
-          }, this);
-          break;
-        case "svg-layer":
-          control = new osparc.component.workbench.SvgWidget();
-          this._add(control, {
-            top: 0,
-            right: 0,
-            bottom: 0,
-            left: 0
-          });
-          break;
-        case "drop-me": {
-          control = new qx.ui.basic.Label(this.tr("Drop me")).set({
-            font: "title-14",
-            textAlign: "center"
-          });
-          this._add(control);
-          const svgLayer = this.getChildControl("svg-layer");
-          if (svgLayer.getReady()) {
-            control.rect = svgLayer.drawDashedRect(120, 60);
-          } else {
-            svgLayer.addListenerOnce("SvgWidgetReady", () => control.rect = svgLayer.drawDashedRect(120, 60), this);
-          }
-        }
-      }
-      return control || this.base(arguments, id);
-    },
 
     __applyShowBorder: function(show) {
       const contentElement = this.getContentElement();
@@ -132,8 +111,7 @@ qx.Class.define("osparc.file.FileDrop", {
     },
 
     resetDropAction: function() {
-      this.getChildControl("drop-here").show();
-      this.getChildControl("drop-me").exclude();
+      this.__updateWidgets(false);
     },
 
     __pointerEventToScreenPos: function(e) {
@@ -203,26 +181,51 @@ qx.Class.define("osparc.file.FileDrop", {
     },
 
     __updateWidgets: function(dragging, posX, posY) {
-      this.getChildControl("drop-here").set({
-        visibility: dragging ? "excluded" : "visible"
-      });
-      const dropMe = this.getChildControl("drop-me").set({
-        visibility: dragging ? "visible" : "excluded"
-      });
-      if ("rect" in dropMe) {
-        if (dragging) {
-          if (dropMe.rect.style.display === "none") {
-            dropMe.rect.style.display = "block";
-          }
-          dropMe.setLayoutProperties({
-            left: posX,
-            top: posY
-          });
-          osparc.component.workbench.SvgWidget.updateRect(dropMe.rect, posX, posY);
+      if (dragging) {
+        this.__dropHere.exclude();
+        this.__updateDropMe(posX, posY);
+      } else {
+        this.__dropHere.show();
+        this.__hideDropMe();
+      }
+    },
+
+    __updateDropMe: function(posX, posY) {
+      if (this.__dropMe === null) {
+        this.__dropMe = new qx.ui.basic.Label(this.tr("Drop me")).set({
+          font: "title-14",
+          textAlign: "center"
+        });
+        this._add(this.__dropMe);
+        const svgLayer = this.__svgLayer;
+        if (svgLayer.getReady()) {
+          this.__dropMe.rect = svgLayer.drawDashedRect(120, 60);
         } else {
-          dropMe.rect.style.display = "none";
+          svgLayer.addListenerOnce("SvgWidgetReady", () => this.__dropMe.rect = svgLayer.drawDashedRect(120, 60), this);
         }
       }
+      const dropMe = this.__dropMe;
+      dropMe.show();
+      if ("rect" in dropMe) {
+        dropMe.rect.stroke({
+          width: 1
+        });
+        dropMe.setLayoutProperties({
+          left: posX,
+          top: posY
+        });
+        osparc.component.workbench.SvgWidget.updateRect(dropMe.rect, posX, posY);
+      }
+    },
+
+    __hideDropMe: function() {
+      const dropMe = this.__dropMe;
+      if ("rect" in dropMe) {
+        dropMe.rect.stroke({
+          width: 0
+        });
+      }
+      dropMe.exclude();
     },
 
     __dropFile: function(e) {
