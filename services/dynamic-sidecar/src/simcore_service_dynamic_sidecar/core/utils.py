@@ -6,7 +6,7 @@ import tempfile
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, List, Tuple
+from typing import AsyncGenerator, List, Optional, Tuple
 
 import aiodocker
 import aiofiles
@@ -112,7 +112,9 @@ async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
         await docker.close()
 
 
-async def async_command(command: str, command_timeout: float) -> Tuple[bool, str]:
+async def async_command(
+    command: str, command_timeout: Optional[float]
+) -> Tuple[bool, str]:
     """Returns if the command exited correctly and the stdout of the command"""
     proc = await asyncio.create_subprocess_shell(
         command,

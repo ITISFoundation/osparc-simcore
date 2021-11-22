@@ -450,3 +450,21 @@ async def test_containers_entrypoint_name_containers_not_started(
     assert response.json() == {
         "detail": "No container found for network=entrypoint_container_network"
     }
+
+
+async def test_containers_restart_after_starting(
+    test_client: TestClient, compose_spec: Dict[str, Any]
+) -> None:
+    # store spec first
+    response = await test_client.post(f"/{API_VTAG}/containers", data=compose_spec)
+    assert response.status_code == status.HTTP_202_ACCEPTED, response.text
+    shared_store: SharedStore = test_client.application.state.shared_store
+    container_names = shared_store.container_names
+    assert response.json() == container_names
+
+    response = await test_client.post(
+        f"/{API_VTAG}/containers:restart",
+        query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT),
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+    assert response.text == ""
