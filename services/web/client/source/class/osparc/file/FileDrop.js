@@ -55,18 +55,18 @@ qx.Class.define("osparc.file.FileDrop", {
 
       // listen to drag&drop file-links from osparc-storage
       this.setDroppable(true);
-      [
-        "dragover",
-        "dragleave"
-      ].forEach(signalName => {
-        this.addListener(signalName, e => {
-          const dragging = signalName !== "dragleave";
-          if (dragging === false) {
-            this.__isDraggingLink = dragging;
-          }
-          this.__draggingLink(e, dragging);
-        }, this);
-      });
+
+      const stopDraggingLink = () => {
+        this.__isDraggingLink = null;
+        this.__updateWidgets(false);
+      };
+      const startDraggingLink = e => {
+        this.addListenerOnce("dragleave", stopDraggingLink, this);
+        this.addListenerOnce("dragover", startDraggingLink, this);
+        this.__draggingLink(e, true);
+      };
+      this.addListenerOnce("dragover", startDraggingLink, this);
+
       this.addListener("mousemove", e => {
         if (this.__isDraggingLink) {
           this.__draggingLink(e, true);
@@ -77,8 +77,7 @@ qx.Class.define("osparc.file.FileDrop", {
           this.__dropLink(e, true);
         }
       }, this);
-      // this.addListener("drop", this.__dropLink.bind(this), false);
-    });
+    }, this);
   },
 
   statics: {
@@ -127,6 +126,18 @@ qx.Class.define("osparc.file.FileDrop", {
             top: 40,
             left: 40
           });
+          control.addListener("appear", () => {
+            // center it
+            const hintBounds = control.getBounds() || control.getSizeHint();
+            const {
+              height,
+              width
+            } = this.getBounds();
+            control.setLayoutProperties({
+              top: Math.round((height - hintBounds.height) / 2),
+              left: Math.round((width - hintBounds.width) / 2)
+            });
+          }, this);
           break;
         case "svg-layer":
           control = new osparc.component.workbench.SvgWidget();
@@ -211,22 +222,9 @@ qx.Class.define("osparc.file.FileDrop", {
         dragging = false;
       }
 
-      let posX = e.offsetX + 2;
-      let posY = e.offsetY + 2;
-      const dropHere = this.getChildControl("drop-here");
-      const dropHint = this.getChildControl("drop-me");
-      if (dragging && "rect" in dropHint) {
-        dropHere.exclude();
-        dropHint.show();
-        dropHint.setLayoutProperties({
-          left: posX,
-          top: posY
-        });
-        osparc.component.workbench.SvgWidget.updateRect(dropHint.rect, posX, posY);
-      } else {
-        dropHere.show();
-        dropHint.exclude();
-      }
+      const posX = e.offsetX + 2;
+      const posY = e.offsetY + 2;
+      this.__updateWidgets(dragging, posX, posY);
     },
 
     __draggingLink: function(e, dragging) {
@@ -240,19 +238,29 @@ qx.Class.define("osparc.file.FileDrop", {
       const pos = this.__pointerEventToScreenPos(e);
       const posX = pos.x;
       const posY = pos.y;
-      const dropHere = this.getChildControl("drop-here");
-      const dropHint = this.getChildControl("drop-me");
-      if (dragging && "rect" in dropHint) {
-        dropHere.exclude();
-        dropHint.show();
-        dropHint.setLayoutProperties({
-          left: posX,
-          top: posY
-        });
-        osparc.component.workbench.SvgWidget.updateRect(dropHint.rect, posX, posY);
-      } else {
-        dropHere.show();
-        dropHint.exclude();
+      this.__updateWidgets(dragging, posX, posY);
+    },
+
+    __updateWidgets: function(dragging, posX, posY) {
+      this.getChildControl("drop-here").set({
+        visibility: dragging ? "excluded" : "visible"
+      });
+      const dropMe = this.getChildControl("drop-me").set({
+        visibility: dragging ? "visible" : "excluded"
+      });
+      if ("rect" in dropMe) {
+        if (dragging) {
+          if (dropMe.rect.style.display === "none") {
+            dropMe.rect.style.display = "block";
+          }
+          dropMe.setLayoutProperties({
+            left: posX,
+            top: posY
+          });
+          osparc.component.workbench.SvgWidget.updateRect(dropMe.rect, posX, posY);
+        } else {
+          dropMe.rect.style.display = "none";
+        }
       }
     },
 
