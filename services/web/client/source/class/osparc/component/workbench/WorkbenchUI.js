@@ -127,7 +127,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __pointerPos: null,
     __selectedItemId: null,
     __startHint: null,
-    __dropHint: null,
+    __dropMe: null,
     __panning: null,
     __draggingFile: null,
 
@@ -1488,7 +1488,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       } else if ("supportsType" in e) {
         // item drag from osparc's file tree
         allow = e.supportsType("osparc-file-link");
-        this.__draggingFile = allow;
+        if (allow) {
+          // store "osparc-file-link" data in variable,
+          // because the mousemove event doesn't contain that information
+          this.__draggingFile = e.getData("osparc-file-link");
+        }
       } else {
         // item drag from the outside world
         allow = e.target instanceof SVGElement;
@@ -1498,6 +1502,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __dragging: function(e, dragging) {
+      const boxWidth = 120;
+      const boxHeight = 60;
       if (this.__allowDrag(e)) {
         e.preventDefault();
         e.stopPropagation();
@@ -1519,24 +1525,26 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         posY = pos.y;
       }
 
-      if (this.__dropHint === null) {
-        const dropHint = this.__dropHint = new qx.ui.basic.Label(this.tr("Drop me")).set({
+      if (this.__dropMe === null) {
+        const dropHint = this.__dropMe = new qx.ui.basic.Label(this.tr("Drop me")).set({
           font: "workbench-start-hint",
           textColor: "workbench-start-hint"
         });
         dropHint.exclude();
         this.__workbenchLayout.add(dropHint);
-        const nodeWidth = osparc.component.workbench.NodeUI.NODE_WIDTH;
-        const nodeHeight = osparc.component.workbench.NodeUI.NODE_HEIGHT;
-        dropHint.rect = this.__svgLayer.drawDashedRect(nodeWidth, nodeHeight, posX, posY);
+        dropHint.rect = this.__svgLayer.drawDashedRect(boxWidth, boxHeight);
       }
+      const dropMe = this.__dropMe;
       if (dragging) {
-        this.__dropHint.show();
-        this.__dropHint.setLayoutProperties({
-          left: posX,
-          top: posY
+        dropMe.show();
+        const dropMeBounds = dropMe.getBounds() || dropMe.getSizeHint();
+        dropMe.setLayoutProperties({
+          left: posX - parseInt(dropMeBounds.width/2) - parseInt(boxWidth/2),
+          top: posY - parseInt(dropMeBounds.height/2)- parseInt(boxHeight/2)
         });
-        osparc.component.workbench.SvgWidget.updateRect(this.__dropHint.rect, posX, posY);
+        if ("rect" in dropMe) {
+          osparc.component.workbench.SvgWidget.updateRect(dropMe.rect, posX - boxWidth, posY - boxHeight);
+        }
       } else {
         this.__removeDropHint();
       }
@@ -1564,9 +1572,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         } else {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
         }
-      } else if ("supportsType" in e && e.supportsType("osparc-file-link")) {
-        this.__draggingFile = false;
-        const data = e.getData("osparc-file-link")["dragData"];
+      } else if (this.__draggingFile && "dragData" in this.__draggingFile) {
+        const data = this.__draggingFile["dragData"];
         const pos = this.__pointerEventToWorkbenchPos(e, false);
         const service = qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker());
         const nodeUI = this.__addNode(service, pos);
@@ -1574,6 +1581,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const filePicker = new osparc.file.FilePicker(node);
         filePicker.buildLayout();
         osparc.file.FilePicker.setOutputValueFromStore(node, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
+        this.__draggingFile = null;
       }
     },
 
@@ -1597,9 +1605,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __removeDropHint: function() {
-      this.__dropHint.setVisibility("excluded");
-      osparc.component.workbench.SvgWidget.removeRect(this.__dropHint.rect);
-      this.__dropHint = null;
+      this.__dropMe.setVisibility("excluded");
+      osparc.component.workbench.SvgWidget.removeRect(this.__dropMe.rect);
+      this.__dropMe = null;
     }
   }
 });
