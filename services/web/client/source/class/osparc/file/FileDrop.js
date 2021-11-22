@@ -220,12 +220,14 @@ qx.Class.define("osparc.file.FileDrop", {
 
     __hideDropMe: function() {
       const dropMe = this.__dropMe;
-      if ("rect" in dropMe) {
-        dropMe.rect.stroke({
-          width: 0
-        });
+      if (dropMe) {
+        if ("rect" in dropMe) {
+          dropMe.rect.stroke({
+            width: 0
+          });
+        }
+        dropMe.exclude();
       }
-      dropMe.exclude();
     },
 
     __dropFile: function(e) {
