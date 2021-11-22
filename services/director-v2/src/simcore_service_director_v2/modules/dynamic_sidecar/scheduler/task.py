@@ -297,7 +297,7 @@ class DynamicSidecarsScheduler:
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
             self.app
         )
-        
+
         await dynamic_sidecar_client.restart_containers(
             scheduler_data.dynamic_sidecar.endpoint
         )
