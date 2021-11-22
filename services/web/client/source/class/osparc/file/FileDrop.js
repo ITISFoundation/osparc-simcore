@@ -60,7 +60,6 @@ qx.Class.define("osparc.file.FileDrop", {
         "dragleave"
       ].forEach(signalName => {
         this.addListener(signalName, e => {
-          console.log(signalName);
           const dragging = signalName !== "dragleave";
           if (dragging === false) {
             this.__isDraggingLink = dragging;
@@ -69,20 +68,16 @@ qx.Class.define("osparc.file.FileDrop", {
         }, this);
       });
       this.addListener("mousemove", e => {
-        console.log("mousemove", this.__isDraggingLink);
         if (this.__isDraggingLink) {
           this.__draggingLink(e, true);
         }
       }, this);
-      /*
       this.addListener("mouseup", e => {
-        console.log("mouseup", this.__isDraggingLink);
         if (this.__isDraggingLink) {
           this.__dropLink(e, true);
         }
       }, this);
-      this.addListener("drop", this.__dropLink.bind(this), false);
-      */
+      // this.addListener("drop", this.__dropLink.bind(this), false);
     });
   },
 
@@ -199,7 +194,11 @@ qx.Class.define("osparc.file.FileDrop", {
       } else if ("supportsType" in e) {
         // item drag from osparc's file tree
         allow = e.supportsType("osparc-file-link");
-        this.__isDraggingLink = allow;
+        if (allow) {
+          // store "osparc-file-link" data in variable,
+          // because the mousemove event doesn't contain that information
+          this.__isDraggingLink = e.getData("osparc-file-link");
+        }
       }
       return allow;
     },
@@ -277,10 +276,9 @@ qx.Class.define("osparc.file.FileDrop", {
     __dropLink: function(e) {
       this.__draggingLink(e, false);
 
-      this.__isDraggingLink = false;
-      if ("supportsType" in e && e.supportsType("osparc-file-link")) {
-        const data = e.getData("osparc-file-link")["dragData"];
-        this.fireDataEvent("setOutputFile", data);
+      if (this.__isDraggingLink && "dragData" in this.__isDraggingLink) {
+        this.fireDataEvent("setOutputFile", this.__isDraggingLink["dragData"]);
+        this.__isDraggingLink = null;
       }
     }
   }

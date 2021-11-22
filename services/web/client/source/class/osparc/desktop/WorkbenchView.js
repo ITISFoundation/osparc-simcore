@@ -943,13 +943,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const files = e.getData();
           if (filePickerView.uploadPendingFiles(files)) {
             setTimeout(() => this.__populateSecondPanel(filePicker), 500);
-          } else {
-            fileDrop.resetDropAction();
           }
+          fileDrop.resetDropAction();
         });
         fileDrop.addListener("setOutputFile", e => {
           const data = e.getData();
           osparc.file.FilePicker.setOutputValueFromStore(filePicker, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
+          this.__populateSecondPanel(filePicker);
+          fileDrop.resetDropAction();
         });
 
         this.__settingsPage.add(fileDrop, {
