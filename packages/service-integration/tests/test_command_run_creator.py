@@ -10,23 +10,23 @@ from pprint import pformat
 from service_integration import __version__
 
 
-def test_version(run_simcore_service_integrator):
-    result = run_simcore_service_integrator("--version")
+def test_version(run_program_with_args):
+    result = run_program_with_args("--version")
     assert result.exit_code == os.EX_OK
     assert __version__ in result.output
 
 
-def test_make_service_cli_run(run_simcore_service_integrator, metadata_file_path: Path):
+def test_make_service_cli_run(run_program_with_args, metadata_file_path: Path):
     """
     service.cli/run: $(metatada)
         # Updates adapter script from metadata in $<
-        simcore-service-integrator run-creator --metadata $< --runscript $@
+        osparc-service-integrator run-creator --metadata $< --runscript $@
     """
     run_script_path: Path = metadata_file_path.parent / "run"
 
     assert not run_script_path.exists()
 
-    result = run_simcore_service_integrator(
+    result = run_program_with_args(
         "run-creator",
         "--metadata",
         str(metadata_file_path),
