@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from typing import Awaitable, Callable, Dict, List, Tuple
 
 import dask.distributed
+import dask_gateway
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.events import (
@@ -22,7 +23,13 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputDataSchema,
 )
 from fastapi import FastAPI
-from models_library.clusters import ClusterAuthentication
+from models_library.clusters import (
+    ClusterAuthentication,
+    JupyterHubTokenAuthentication,
+    KerberosAuthentication,
+    NoAuthentication,
+    SimpleAuthentication,
+)
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from pydantic.networks import AnyUrl
@@ -52,19 +59,26 @@ logger = logging.getLogger(__name__)
 CLUSTER_RESOURCE_MOCK_USAGE: float = 1e-9
 
 
-def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
-    async def on_startup() -> None:
-        await DaskClient.create(
-            app,
-            settings=settings,
+async def _create_internal_client_base_on_auth(
+    endpoint: AnyUrl, authentication: ClusterAuthentication
+) -> distributed.Client:
+    if isinstance(authentication, NoAuthentication):
+        # if no auth then we go for a standard scheduler connection
+        return await distributed.Client(
+            f"{endpoint}",
+            asynchronous=True,
+            name=f"director-v2_{socket.gethostname()}_{os.getpid()}",
         )
-
-    async def on_shutdown() -> None:
-        if app.state.dask_client:
-            await app.state.dask_client.delete()
-
-    app.add_event_handler("startup", on_startup)
-    app.add_event_handler("shutdown", on_shutdown)
+    auth = None
+    if isinstance(authentication, SimpleAuthentication):
+        auth = dask_gateway.BasicAuth(**authentication.dict())
+    elif isinstance(authentication, KerberosAuthentication):
+        auth = dask_gateway.KerberosAuth()
+    elif isinstance(authentication, JupyterHubTokenAuthentication):
+        auth = dask_gateway.JupyterHubAuth(authentication.api_token)
+    gateway = dask_gateway.Gateway(address=f"{endpoint}", auth=auth, asynchronous=True)
+    cluster = gateway.new_cluster(shutdown_on_close=False)
+    return cluster.get_client()
 
 
 @dataclass
@@ -86,8 +100,9 @@ class DaskClient:
         authentication: ClusterAuthentication,
     ) -> "DaskClient":
         logger.info(
-            "Initiating connection to %s",
+            "Initiating connection to %s with auth: %s",
             f"dask-scheduler at {endpoint}",
+            authentication,
         )
         async for attempt in AsyncRetrying(
             reraise=True,
@@ -96,10 +111,13 @@ class DaskClient:
             retry=retry_if_exception_type(),
         ):
             with attempt:
-                dask_client = await distributed.Client(
-                    f"tcp://{settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
-                    asynchronous=True,
-                    name=f"director-v2_{socket.gethostname()}_{os.getpid()}",
+                logger.debug(
+                    "Connecting to %s, attempt %s...",
+                    endpoint,
+                    attempt.retry_state.attempt_number,
+                )
+                dask_client = await _create_internal_client_base_on_auth(
+                    endpoint, authentication
                 )
                 check_client_can_connect_to_scheduler(dask_client)
                 app.state.dask_client = cls(
@@ -110,11 +128,11 @@ class DaskClient:
                 )
                 logger.info(
                     "Connection to %s succeeded [%s]",
-                    f"dask-scheduler at {settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
+                    f"dask-scheduler/gateway at {endpoint}",
                     json.dumps(attempt.retry_state.retry_object.statistics),
                 )
                 logger.info(
-                    "Client is connected to scheduler: %s",
+                    "Scheduler info:\n%s",
                     json.dumps(dask_client.scheduler_info(), indent=2),
                 )
         return cls.instance(app)
