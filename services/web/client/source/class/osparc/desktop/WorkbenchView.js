@@ -674,8 +674,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         socket.on(slotName4, eventData => {
           const eventPayload = JSON.parse(eventData);
           const action = eventPayload["action"];
-          if (action == "RELOAD_IFRAME"){
-            //TODO: maybe reload iframe in the future
+          if (action == "RELOAD_IFRAME") {
+            // TODO: maybe reload iframe in the future
             // for now a message is displayed to the user
             const nodeId = eventPayload["node_id"];
 
