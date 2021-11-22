@@ -7,7 +7,7 @@ import json
 import logging
 import re
 from copy import deepcopy
-from typing import Any, Dict, Generator, Iterator, List, Tuple
+from typing import Any, Dict, Generator, Iterator, List, Optional, Tuple, TypedDict
 
 from aiohttp import web
 from models_library.basic_types import MD5Str
@@ -110,6 +110,13 @@ def extract_parameters(
 # TAGGING iterations -----
 
 
+class IterInfoDict(TypedDict):
+    repo_commit_id: str
+    iter_index: int
+    total_count: int
+    parameters_checksum: str
+
+
 def compose_iteration_tag_name(
     repo_commit_id, iter_index, total_count, parameters_checksum
 ) -> str:
@@ -119,13 +126,15 @@ def compose_iteration_tag_name(
     )
 
 
-def parse_iteration_tag_name(name: str) -> Dict[str, Any]:
+def parse_iteration_tag_name(name: str) -> Optional[IterInfoDict]:
     if m := re.match(
         r"^iteration:(?P<repo_commit_id>\d+)/(?P<iter_index>\d+)/(?P<total_count>-*\d+)/(?P<parameters_checksum>.*)$",
         name,
     ):
-        return m.groupdict()
-    return {}
+        data = m.groupdict()
+        assert isinstance(data, IterInfoDict)  # nosec
+        return data
+    return None
 
 
 # GET/CREATE iterations -----------
