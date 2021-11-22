@@ -12,8 +12,8 @@ from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.rabbitmq_messages import (
-    LoggerRabbitMessage,
     EventRabbitMessage,
+    LoggerRabbitMessage,
     RabbitEventMessageType,
 )
 from models_library.users import UserID
