@@ -2,11 +2,16 @@ from enum import Enum
 
 from pydantic import conint, constr
 
+from .basic_regex import VERSION_RE
+
 # port number range
 PortInt = conint(gt=0, lt=65535)
 
 # e.g. 'v5'
 VersionTag = constr(regex=r"^v\d$")
+
+# e.g. '1.23.11' or '2.1.0-rc2'
+VersionStr = constr(regex=VERSION_RE)
 
 # checksums
 SHA1Str = constr(regex=r"^[a-fA-F0-9]{40}$")

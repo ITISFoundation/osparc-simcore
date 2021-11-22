@@ -95,9 +95,11 @@ inf%: ## displays basic info
 	@echo ' python : $(shell python3 --version)'
 	# installed in .venv
 	@pip list
-	# package
+	# package setup
 	-@echo ' name         : ' $(shell python ${CURDIR}/setup.py --name)
 	-@echo ' version      : ' $(shell python ${CURDIR}/setup.py --version)
+	-@echo ' authors      : ' "$(shell python ${CURDIR}/setup.py --author)"
+	-@echo ' description  : ' "$(shell python ${CURDIR}/setup.py --description)"
 
 
 .PHONY: autoformat
