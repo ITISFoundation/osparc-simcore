@@ -1209,12 +1209,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    __mouseUp: function() {
+    __mouseUp: function(e) {
       if (this.__panning) {
         this.__panning = false;
         this.set({
           cursor: "auto"
         });
+      } else if (this.__draggingFile) {
+        this.__drop(e);
       }
     },
 

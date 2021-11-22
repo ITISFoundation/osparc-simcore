@@ -36,7 +36,7 @@ qx.Class.define("osparc.file.FileDrop", {
       }
     }, this);
 
-    const dropHere = this.__dropHere = new qx.ui.basic.Label(this.tr("Drop here")).set({
+    const dropHere = this.__dropHere = new qx.ui.basic.Label(this.tr("Drop file")).set({
       font: "title-14",
       alignX: "center",
       alignY: "middle"
