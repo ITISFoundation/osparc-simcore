@@ -63,6 +63,7 @@ class DaskClientsPool:
     async def acquire(self, cluster: Cluster) -> AsyncIterator[DaskClient]:
         try:
             # we create a new client if that cluster was never used before
+            logger.debug("acquiring connection to cluster %s", cluster.name)
             dask_client = self._cluster_to_client_map.setdefault(
                 cluster.id,
                 await DaskClient.create(
@@ -87,7 +88,9 @@ class DaskClientsPool:
 
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
     async def on_startup() -> None:
-        app.state.dask_clients_pool = DaskClientsPool(app=app, settings=settings)
+        app.state.dask_clients_pool = await DaskClientsPool.create(
+            app=app, settings=settings
+        )
 
     async def on_shutdown() -> None:
         if app.state.dask_clients_pool:
