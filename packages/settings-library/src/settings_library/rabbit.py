@@ -1,5 +1,7 @@
 from functools import cached_property
-from typing import Dict
+from typing import Any, Dict, Optional
+from pydantic.fields import Field
+from pydantic.main import BaseModel
 
 from pydantic.networks import AnyUrl
 from pydantic.types import SecretStr
@@ -23,9 +25,10 @@ class RabbitSettings(BaseCustomSettings):
 
     # channels
     RABBIT_CHANNELS: Dict[str, str] = {
-        "log": "comp.backend.channels.log",
-        "progress": "comp.backend.channels.progress",
-        "instrumentation": "comp.backend.channels.instrumentation",
+        "log": "simcore.services.logs",
+        "progress": "simcore.services.progress",
+        "instrumentation": "simcore.services.instrumentation",
+        "events": "simcore.services.events",
     }
 
     @cached_property

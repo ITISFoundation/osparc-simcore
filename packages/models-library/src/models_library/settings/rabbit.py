@@ -27,9 +27,10 @@ class RabbitConfig(BaseSettings):
 
     # channels
     channels: Dict[str, str] = {
-        "log": "comp.backend.channels.log",
-        "progress": "comp.backend.channels.progress",
-        "instrumentation": "comp.backend.channels.instrumentation",
+        "log": "simcore.services.log",
+        "progress": "simcore.services.progress",
+        "instrumentation": "simcore.services.instrumentation",
+        "events": "simcore.services.events"
     }
 
     @property
