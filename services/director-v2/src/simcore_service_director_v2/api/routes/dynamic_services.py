@@ -247,7 +247,7 @@ async def service_restart_containers(
 ) -> NoContentResponse:
     try:
         await scheduler.restart_containers(node_uuid)
-    except DynamicSidecarNotFoundError:
-        raise LegacyServiceIsNotSupportedError()
+    except DynamicSidecarNotFoundError as error:
+        raise LegacyServiceIsNotSupportedError() from error
 
     return NoContentResponse()
