@@ -705,3 +705,21 @@ class VersionControlForMetaModeling(VersionControlRepository):
                     )
 
                 return branch.head_commit_id
+
+    async def get_children_tags(
+        self, repo_id: int, commit_id: int
+    ) -> List[List[TagProxy]]:
+        async with self.engine.acquire() as conn:
+            commits_ids = (
+                await self.CommitsOrm(conn)
+                .set_filter(repo_id=repo_id, parent_commit_id=commit_id)
+                .fetch_all(returning_cols="id")
+            )
+            # TODO: single query for this loop
+            tags = []
+            for commit_id in commits_ids:
+                tags_in_commit = (
+                    await self.TagsOrm(conn).set_filter(commit_id=commit_id).fetch_all()
+                )
+                tags.append(tags_in_commit)
+            return tags
