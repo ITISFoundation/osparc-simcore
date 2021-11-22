@@ -42,7 +42,7 @@ class KerberosAuthentication(BaseAuthentication):
 
 class JupyterHubTokenAuthentication(BaseAuthentication):
     type: Literal["jupyterhub"] = "jupyterhub"
-    # NOTE: the entries here still need to be defined
+    api_token: str
 
 
 class NoAuthentication(BaseAuthentication):
