@@ -9,6 +9,8 @@ from servicelib.aiohttp.rest_routing import (
 
 from . import director_v2_handlers
 from .constants import APP_OPENAPI_SPECS_KEY
+from .director_v2_abc import set_project_run_policy
+from .director_v2_core import DefaultProjectRunPolicy, DirectorV2ApiClient, set_client
 from .director_v2_settings import CONFIG_SECTION_NAME, create_settings
 
 log = logging.getLogger(__file__)
@@ -24,6 +26,10 @@ log = logging.getLogger(__file__)
 def setup_director_v2(app: web.Application):
     # create settings and injects in app
     create_settings(app)
+
+    set_project_run_policy(app, DefaultProjectRunPolicy())
+
+    set_client(app, DirectorV2ApiClient(app))
 
     if not APP_OPENAPI_SPECS_KEY in app:
         log.warning(
@@ -41,5 +47,5 @@ def setup_director_v2(app: web.Application):
         filter(lambda o: "computation" in o[1], iter_path_operations(specs)),
         strict=True,
     )
-    # FIXME:  app.router.add_routes(director_v2_handlers.routes)
+    # TODO:  app.router.add_routes(director_v2_handlers.routes) and corresponding tests
     app.router.add_routes(routes)

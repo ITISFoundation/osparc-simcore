@@ -17,7 +17,7 @@ NodeID = UUID
 UUID_REGEX = (
     r"^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
 )
-NodeID_AsDictKey = constr(regex=UUID_REGEX)
+NodeIDStr = constr(regex=UUID_REGEX)
 
 
 class PortLink(BaseModel):
