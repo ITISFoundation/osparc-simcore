@@ -184,10 +184,10 @@ async def test_creating_new_project_from_template_without_copying_data_creates_s
     project_workbench = project["workbench"]
     assert project_workbench
     assert len(project_workbench) > 0
+    EXPECTED_DELETED_FIELDS = ["outputs", "progress", "runHash"]
     for node_data in project_workbench.values():
-        assert not node_data["outputs"]
-        assert not node_data["runHash"]
-        assert not node_data["progress"]
+        for field in EXPECTED_DELETED_FIELDS:
+            assert field not in node_data
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
@@ -230,7 +230,7 @@ async def test_creating_new_project_as_template_without_copying_data_creates_ske
     project_workbench = project["workbench"]
     assert project_workbench
     assert len(project_workbench) > 0
+    EXPECTED_DELETED_FIELDS = ["outputs", "progress", "runHash"]
     for node_data in project_workbench.values():
-        assert not node_data["outputs"]
-        assert not node_data["runHash"]
-        assert not node_data["progress"]
+        for field in EXPECTED_DELETED_FIELDS:
+            assert field not in node_data
