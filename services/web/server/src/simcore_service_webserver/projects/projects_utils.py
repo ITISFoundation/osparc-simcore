@@ -73,7 +73,7 @@ def clone_project_document(
         if "mode" in project_copy["ui"]:
             project_copy["ui"]["mode"] = project_copy["ui"]["mode"]
     if clean_output_data:
-        FIELDS_TO_DELETE = ["outputs", "progress", "runHash"]
+        FIELDS_TO_DELETE = ("outputs", "progress", "runHash")
         for node_data in project_copy.get("workbench", {}).values():
             for field in FIELDS_TO_DELETE:
                 node_data.pop(field, None)
