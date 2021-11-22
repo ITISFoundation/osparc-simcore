@@ -1,4 +1,3 @@
-from models_library.services import FILENAME_RE
 from pydantic import BaseSettings, Field, PositiveInt
 
 _MINUTE = 60
