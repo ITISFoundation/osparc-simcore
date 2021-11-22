@@ -6013,7 +6013,8 @@ paths:
                 force_restart:
                   type: boolean
                   default: false
-                  description: if true will force re-running all dependent nodes
+                  description: DEPRECATED if true will force re-running all dependent nodes
+                  deprecated: true
                 cluster_id:
                   type: integer
                   description: 'the computation shall use the cluster described by its id, 0 is the default cluster'
