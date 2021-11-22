@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aio-pika==6.8.0
+aio_pika==6.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -13,6 +13,7 @@ aiohttp==3.7.4.post0
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/./constraints.txt
     #   -c requirements/_base.txt
+    #   dask-gateway-server
     #   pytest-aiohttp
 aioredis==1.3.1
     # via
@@ -109,7 +110,10 @@ coveralls==3.3.1
 cryptography==36.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   dask-gateway-server
     #   paramiko
+dask-gateway-server==0.9.0
+    # via -r requirements/_test.in
 distro==1.6.0
     # via docker-compose
 docker==5.0.3
@@ -318,6 +322,7 @@ sqlalchemy==1.3.24
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
+    #   dask-gateway-server
 text-unidecode==1.3
     # via faker
 texttable==1.6.4
