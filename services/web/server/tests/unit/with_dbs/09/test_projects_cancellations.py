@@ -42,10 +42,13 @@ async def slow_storage_subsystem_mock(
     )
 
     # requests storage to delete data
+    async def _very_slow_deletion_of_data(*args, **kwargs):
+        await asyncio.sleep(30)
+
     mock1 = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project",
         autospec=True,
-        return_value="",
+        side_effect=_very_slow_deletion_of_data,
     )
     return MockedStorageSubsystem(mock, mock1)
 

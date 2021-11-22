@@ -50,18 +50,24 @@ from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_
 from simcore_service_webserver.socketio.module_setup import setup_socketio
 from simcore_service_webserver.users import setup_users
 from simcore_service_webserver.users_api import delete_user
+from simcore_service_webserver.users_exceptions import UserNotFoundError
+from six import reraise
+from tenacity._asyncio import AsyncRetrying
+from tenacity.after import after_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt, stop_after_delay
+from tenacity.wait import wait_fixed
 
 logger = logging.getLogger(__name__)
-
 
 API_VERSION = "v0"
 GARBAGE_COLLECTOR_INTERVAL = 1
 SERVICE_DELETION_DELAY = 1
 CHECK_BACKGROUND_RETRY_POLICY = dict(
-    stop=tenacity.stop_after_attempt(2),
-    wait=tenacity.wait_fixed(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL),
-    retry=tenacity.retry_if_exception_type(AssertionError),
-    after=tenacity.after_log(logger, logging.INFO),
+    stop=stop_after_attempt(2),
+    wait=wait_fixed(SERVICE_DELETION_DELAY + GARBAGE_COLLECTOR_INTERVAL),
+    retry=retry_if_exception_type(AssertionError),
+    after=after_log(logger, logging.INFO),
     reraise=True,
 )
 
@@ -129,7 +135,7 @@ def client(
 
 @pytest.fixture()
 def socket_registry(client: TestClient) -> RedisResourceRegistry:
-    app = client.server.app
+    app = client.server.app  # type: ignore
     socket_registry = get_registry(app)
     return socket_registry
 
@@ -736,16 +742,19 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     ]
     mocked_director_v2_api["director_v2_core.stop_service"].assert_has_calls(calls)
 
-    if expect_call:
-        # make sure `delete_project` is called
-        storage_subsystem_mock[1].assert_called_once()
-        # make sure `delete_user` is called
-        # asyncpg_storage_system_mock.assert_called_once()
-    else:
-        # make sure `delete_project` not called
-        storage_subsystem_mock[1].assert_not_called()
-        # make sure `delete_user` not called
-        # asyncpg_storage_system_mock.assert_not_called()
+    # this call is done async, so wait a bit here to ensure it is correctly done
+    async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(10)):
+        with attempt:
+            if expect_call:
+                # make sure `delete_project` is called
+                storage_subsystem_mock[1].assert_called_once()
+                # make sure `delete_user` is called
+                # asyncpg_storage_system_mock.assert_called_once()
+            else:
+                # make sure `delete_project` not called
+                storage_subsystem_mock[1].assert_not_called()
+                # make sure `delete_user` not called
+                # asyncpg_storage_system_mock.assert_not_called()
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER, UserRole.GUEST])
@@ -767,9 +776,16 @@ async def test_regression_removing_unexisting_user(
     # remove user
     await delete_user(app=client.server.app, user_id=logged_user["id"])
 
+    with pytest.raises(UserNotFoundError):
+        await remove_project_interactive_services(
+            user_id=logged_user["id"],
+            project_uuid=empty_user_project["uuid"],
+            app=client.server.app,
+        )
     with pytest.raises(ProjectNotFoundError):
         await remove_project_interactive_services(
             user_id=logged_user["id"],
             project_uuid=empty_user_project["uuid"],
             app=client.server.app,
+            user_name={"first_name": "my name is", "last_name": "pytest"},
         )

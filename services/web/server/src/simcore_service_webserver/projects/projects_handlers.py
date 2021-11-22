@@ -54,7 +54,7 @@ routes = web.RouteTableDef()
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
-async def create_projects(request: web.Request):
+async def create_projects(request: web.Request):  # pylint: disable=too-many-branches
     # TODO: keep here since is async and parser thinks it is a handler
 
     user_id: int = request[RQT_USERID_KEY]
@@ -65,6 +65,7 @@ async def create_projects(request: web.Request):
     hidden: bool = bool(request.query.get("hidden", False))
 
     new_project = {}
+    new_project_was_hidden_before_data_was_copied = hidden
     try:
         clone_data_coro: Optional[Coroutine] = None
 
@@ -81,6 +82,8 @@ async def create_projects(request: web.Request):
             new_project, nodes_map = clone_project_document(
                 source_project, forced_copy_project_id=None
             )
+            # the project is to be hidden until the data is copied
+            hidden = True
 
             clone_data_coro = copy_data_folders_from_project(
                 request.app, source_project, new_project, nodes_map, user_id
@@ -96,6 +99,8 @@ async def create_projects(request: web.Request):
             new_project, nodes_map = clone_project_document(
                 source_project, forced_copy_project_id=None
             )
+            # the project is to be hidden until the data is copied
+            hidden = True
             clone_data_coro = copy_data_folders_from_project(
                 request.app, source_project, new_project, nodes_map, user_id
             )
@@ -130,6 +135,11 @@ async def create_projects(request: web.Request):
         # copies the project's DATA IF cloned
         if clone_data_coro:
             await clone_data_coro
+            # unhide the project if needed since it is now complete
+            if not new_project_was_hidden_before_data_was_copied:
+                await db.update_project_without_checking_permissions(
+                    new_project, new_project["uuid"], hidden=False
+                )
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_api.create_or_update_pipeline(

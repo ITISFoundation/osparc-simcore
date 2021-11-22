@@ -272,7 +272,12 @@ async def remove_disconnected_user_resources(
                             user_id=int(dead_key["user_id"]),
                             project_uuid=resource_value,
                             app=app,
+                            user_name={
+                                "first_name": "garbage",
+                                "last_name": "collector",
+                            },
                         )
+
                     except ProjectNotFoundError as err:
                         logger.warning(
                             (
@@ -714,7 +719,7 @@ async def replace_current_owner(
 
     # syncing back project data
     try:
-        await app[APP_PROJECT_DBAPI].update_project_without_enforcing_checks(
+        await app[APP_PROJECT_DBAPI].update_project_without_checking_permissions(
             project_data=project,
             project_uuid=project_uuid,
         )

@@ -52,7 +52,12 @@ from ..storage_api import (
 )
 from ..users_api import get_user_name, is_user_guest
 from .config import CONFIG_SECTION_NAME
-from .project_lock import ProjectLockError, get_project_locked_state, lock_project
+from .project_lock import (
+    ProjectLockError,
+    UserNameDict,
+    get_project_locked_state,
+    lock_project,
+)
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_utils import extract_dns_without_default_port
 
@@ -80,7 +85,7 @@ async def get_project_for_user(
 ) -> Dict:
     """Returns a VALID project accessible to user
 
-    :raises web.HTTPNotFound: if no match found
+    :raises ProjectNotFoundError: if no match found
     :return: schema-compliant project data
     :rtype: Dict
     """
@@ -231,7 +236,7 @@ async def lock_with_notification(
     project_uuid: str,
     status: ProjectStatus,
     user_id: int,
-    user_name: Dict[str, str],
+    user_name: UserNameDict,
     notify_users: bool = True,
 ):
     try:
@@ -272,7 +277,11 @@ async def lock_with_notification(
 
 
 async def remove_project_interactive_services(
-    user_id: int, project_uuid: str, app: web.Application, notify_users: bool = True
+    user_id: int,
+    project_uuid: str,
+    app: web.Application,
+    notify_users: bool = True,
+    user_name: Optional[UserNameDict] = None,
 ) -> None:
     # NOTE: during the closing process, which might take awhile,
     # the project is locked so no one opens it at the same time
@@ -287,7 +296,7 @@ async def remove_project_interactive_services(
             project_uuid,
             ProjectStatus.CLOSING,
             user_id,
-            await get_user_name(app, user_id),
+            user_name or await get_user_name(app, user_id),
             notify_users=notify_users,
         ):
             # save the state if the user is not a guest. if we do not know we save in any case.
