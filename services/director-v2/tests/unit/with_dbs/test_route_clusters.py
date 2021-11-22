@@ -112,11 +112,18 @@ def test_get_default_cluster_entrypoint(clusters_config: None, client: TestClien
     assert default_cluster_out == ClusterOut.parse_obj(response.json())
 
 
+# @pytest.fixture
+# def local_dask_gateway():
+
+
 def test_get_cluster_entrypoint(
     clusters_config: None, client: TestClient, cluster: Callable[..., Cluster]
 ):
     some_cluster = cluster()
     response = client.get(f"/v2/clusters/{some_cluster.id}")
     assert response.status_code == status.HTTP_200_OK
+    import pdb
+
+    pdb.set_trace()
     data = response.json()
     assert data
