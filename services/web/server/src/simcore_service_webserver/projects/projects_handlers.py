@@ -62,6 +62,7 @@ async def create_projects(
 
     template_uuid = request.query.get("from_template")
     as_template = request.query.get("as_template")
+    copy_data = request.query.get("copy_data", True)
     hidden: bool = bool(request.query.get("hidden", False))
 
     new_project = {}
@@ -94,8 +95,12 @@ async def create_projects(
                 new_project["accessRights"] = {}
             # the project is to be hidden until the data is copied
             hidden = True
-            clone_data_coro = copy_data_folders_from_project(
-                request.app, source_project, new_project, nodes_map, user_id
+            clone_data_coro = (
+                copy_data_folders_from_project(
+                    request.app, source_project, new_project, nodes_map, user_id
+                )
+                if copy_data
+                else None
             )
             # FIXME: parameterized inputs should get defaults provided by service
 
