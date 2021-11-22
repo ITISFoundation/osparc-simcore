@@ -47,14 +47,14 @@ qx.Class.define("osparc.file.FileDrop", {
     });
     dropHere.addListener("appear", () => {
       // center it
-      const hintBounds = dropHere.getBounds() || dropHere.getSizeHint();
+      const dropHereBounds = dropHere.getBounds() || dropHere.getSizeHint();
       const {
         height,
         width
       } = this.getBounds();
       dropHere.setLayoutProperties({
-        top: Math.round((height - hintBounds.height) / 2),
-        left: Math.round((width - hintBounds.width) / 2)
+        top: parseInt((height - dropHereBounds.height) / 2),
+        left: parseInt((width - dropHereBounds.width) / 2)
       });
     }, this);
 
@@ -95,6 +95,12 @@ qx.Class.define("osparc.file.FileDrop", {
       check: "Boolean",
       init: true,
       apply: "__applyShowBorder"
+    },
+
+    showDropHere: {
+      check: "Boolean",
+      init: true,
+      apply: "__applyShowDropHere"
     }
   },
 
@@ -110,14 +116,24 @@ qx.Class.define("osparc.file.FileDrop", {
       contentElement.setStyles(show ? this.self().getBorderStyle() : this.self().getNoBorderStyle());
     },
 
+    __applyShowDropHere: function(value) {
+      this.__dropHere.setVisibility(value ? "visible" : "excluded");
+    },
+
     resetDropAction: function() {
       this.__updateWidgets(false);
     },
 
-    __pointerEventToScreenPos: function(e) {
-      const rect = e.getCurrentTarget()
-        .getContentElement().getDomElement()
-        .getBoundingClientRect();
+    __pointerFileEventToScreenPos: function(e) {
+      const rect = this.getContentElement().getDomElement().getBoundingClientRect();
+      return {
+        x: e.pageX - rect.x,
+        y: e.pageY - rect.y
+      };
+    },
+
+    __pointerLinkEventToScreenPos: function(e) {
+      const rect = this.getContentElement().getDomElement().getBoundingClientRect();
       return {
         x: e.getDocumentLeft() - rect.x,
         y: e.getDocumentTop() - rect.y
@@ -161,9 +177,8 @@ qx.Class.define("osparc.file.FileDrop", {
         dragging = false;
       }
 
-      const posX = e.offsetX + 2;
-      const posY = e.offsetY + 2;
-      this.__updateWidgets(dragging, posX, posY);
+      const pos = this.__pointerFileEventToScreenPos(e);
+      this.__updateWidgets(dragging, pos.x, pos.y);
     },
 
     __draggingLink: function(e, dragging) {
@@ -174,10 +189,8 @@ qx.Class.define("osparc.file.FileDrop", {
         dragging = false;
       }
 
-      const pos = this.__pointerEventToScreenPos(e);
-      const posX = pos.x;
-      const posY = pos.y;
-      this.__updateWidgets(dragging, posX, posY);
+      const pos = this.__pointerLinkEventToScreenPos(e);
+      this.__updateWidgets(dragging, pos.x, pos.y);
     },
 
     __updateWidgets: function(dragging, posX, posY) {
@@ -185,12 +198,16 @@ qx.Class.define("osparc.file.FileDrop", {
         this.__dropHere.exclude();
         this.__updateDropMe(posX, posY);
       } else {
-        this.__dropHere.show();
+        if (this.getShowDropHere()) {
+          this.__dropHere.show();
+        }
         this.__hideDropMe();
       }
     },
 
     __updateDropMe: function(posX, posY) {
+      const boxWidth = 120;
+      const boxHeight = 60;
       if (this.__dropMe === null) {
         this.__dropMe = new qx.ui.basic.Label(this.tr("Drop me")).set({
           font: "title-14",
@@ -199,22 +216,23 @@ qx.Class.define("osparc.file.FileDrop", {
         this._add(this.__dropMe);
         const svgLayer = this.__svgLayer;
         if (svgLayer.getReady()) {
-          this.__dropMe.rect = svgLayer.drawDashedRect(120, 60);
+          this.__dropMe.rect = svgLayer.drawDashedRect(boxWidth, boxHeight);
         } else {
-          svgLayer.addListenerOnce("SvgWidgetReady", () => this.__dropMe.rect = svgLayer.drawDashedRect(120, 60), this);
+          svgLayer.addListenerOnce("SvgWidgetReady", () => this.__dropMe.rect = svgLayer.drawDashedRect(boxWidth, boxHeight), this);
         }
       }
       const dropMe = this.__dropMe;
       dropMe.show();
+      const dropMeBounds = dropMe.getBounds() || dropMe.getSizeHint();
+      dropMe.setLayoutProperties({
+        left: posX - parseInt(dropMeBounds.width/2) - parseInt(boxWidth/2),
+        top: posY - parseInt(dropMeBounds.height/2)- parseInt(boxHeight/2)
+      });
       if ("rect" in dropMe) {
         dropMe.rect.stroke({
           width: 1
         });
-        dropMe.setLayoutProperties({
-          left: posX,
-          top: posY
-        });
-        osparc.component.workbench.SvgWidget.updateRect(dropMe.rect, posX, posY);
+        osparc.component.workbench.SvgWidget.updateRect(dropMe.rect, posX - boxWidth, posY - boxHeight);
       }
     },
 
