@@ -38,46 +38,7 @@ qx.Class.define("osparc.file.FileDrop", {
     this._createChildControlImpl("drop-here");
     this._createChildControlImpl("svg-layer");
 
-    this.addListenerOnce("appear", () => {
-      // listen to drag&drop files from local-storage
-      const domEl = this.getContentElement().getDomElement();
-      [
-        "dragenter",
-        "dragover",
-        "dragleave"
-      ].forEach(signalName => {
-        domEl.addEventListener(signalName, e => {
-          const dragging = signalName !== "dragleave";
-          this.__draggingFile(e, dragging);
-        }, this);
-      });
-      domEl.addEventListener("drop", this.__dropFile.bind(this), false);
-
-      // listen to drag&drop file-links from osparc-storage
-      this.setDroppable(true);
-
-      const stopDraggingLink = () => {
-        this.__isDraggingLink = null;
-        this.__updateWidgets(false);
-      };
-      const startDraggingLink = e => {
-        this.addListenerOnce("dragleave", stopDraggingLink, this);
-        this.addListenerOnce("dragover", startDraggingLink, this);
-        this.__draggingLink(e, true);
-      };
-      this.addListenerOnce("dragover", startDraggingLink, this);
-
-      this.addListener("mousemove", e => {
-        if (this.__isDraggingLink) {
-          this.__draggingLink(e, true);
-        }
-      }, this);
-      this.addListener("mouseup", e => {
-        if (this.__isDraggingLink) {
-          this.__dropLink(e, true);
-        }
-      }, this);
-    }, this);
+    this.__addDragAndDropListeners();
   },
 
   statics: {
@@ -288,6 +249,49 @@ qx.Class.define("osparc.file.FileDrop", {
         this.fireDataEvent("setOutputFile", this.__isDraggingLink["dragData"]);
         this.__isDraggingLink = null;
       }
+    },
+
+    __addDragAndDropListeners: function() {
+      this.addListenerOnce("appear", () => {
+        // listen to drag&drop files from local-storage
+        const domEl = this.getContentElement().getDomElement();
+        [
+          "dragenter",
+          "dragover",
+          "dragleave"
+        ].forEach(signalName => {
+          domEl.addEventListener(signalName, e => {
+            const dragging = signalName !== "dragleave";
+            this.__draggingFile(e, dragging);
+          }, this);
+        });
+        domEl.addEventListener("drop", this.__dropFile.bind(this), false);
+
+        // listen to drag&drop file-links from osparc-storage
+        this.setDroppable(true);
+
+        const stopDraggingLink = () => {
+          this.__isDraggingLink = null;
+          this.__updateWidgets(false);
+        };
+        const startDraggingLink = e => {
+          this.addListenerOnce("dragleave", stopDraggingLink, this);
+          this.addListenerOnce("dragover", startDraggingLink, this);
+          this.__draggingLink(e, true);
+        };
+        this.addListenerOnce("dragover", startDraggingLink, this);
+
+        this.addListener("mousemove", e => {
+          if (this.__isDraggingLink) {
+            this.__draggingLink(e, true);
+          }
+        }, this);
+        this.addListener("mouseup", e => {
+          if (this.__isDraggingLink) {
+            this.__dropLink(e, true);
+          }
+        }, this);
+      }, this);
     }
   }
 });
