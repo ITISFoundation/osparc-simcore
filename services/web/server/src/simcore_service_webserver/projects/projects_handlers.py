@@ -166,16 +166,15 @@ async def create_projects(
         )
 
     except ValidationError as exc:
-        log.debug("project validation error")
         raise web.HTTPBadRequest(reason="Invalid project data") from exc
     except ProjectNotFoundError as exc:
-        log.debug("project not found error")
         raise web.HTTPNotFound(reason="Project not found") from exc
     except ProjectInvalidRightsError as exc:
-        log.debug("project invalid rights error")
         raise web.HTTPUnauthorized from exc
     except asyncio.CancelledError:
-        log.warning("cancelled creation of project, cleaning up")
+        log.warning(
+            "cancelled creation of project for user '%s', cleaning up", f"{user_id=}"
+        )
         await projects_api.delete_project(request.app, new_project["uuid"], user_id)
         raise
     else:
