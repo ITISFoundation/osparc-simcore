@@ -54,9 +54,9 @@ routes = web.RouteTableDef()
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
-async def create_projects(request: web.Request):  # pylint: disable=too-many-branches
-    # TODO: keep here since is async and parser thinks it is a handler
-
+async def create_projects(
+    request: web.Request,
+):  # pylint: disable=too-many-branches, too-many-statements
     user_id: int = request[RQT_USERID_KEY]
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
 
@@ -68,45 +68,35 @@ async def create_projects(request: web.Request):  # pylint: disable=too-many-bra
     new_project_was_hidden_before_data_was_copied = hidden
     try:
         clone_data_coro: Optional[Coroutine] = None
-
+        source_project: Optional[Dict[str, Any]] = None
         if as_template:  # create template from
             await check_permission(request, "project.template.create")
-
             source_project = await projects_api.get_project_for_user(
                 request.app,
                 project_uuid=as_template,
                 user_id=user_id,
                 include_templates=False,
             )
-            # clone user project as tempalte
-            new_project, nodes_map = clone_project_document(
-                source_project, forced_copy_project_id=None
-            )
-            # the project is to be hidden until the data is copied
-            hidden = True
-
-            clone_data_coro = copy_data_folders_from_project(
-                request.app, source_project, new_project, nodes_map, user_id
-            )
-
         elif template_uuid:  # create from template
             source_project = await db.get_template_project(template_uuid)
             if not source_project:
                 raise web.HTTPNotFound(
                     reason="Invalid template uuid {}".format(template_uuid)
                 )
+
+        if source_project:
             # clone template as user project
             new_project, nodes_map = clone_project_document(
                 source_project, forced_copy_project_id=None
             )
+            if template_uuid:
+                # remove template access rights
+                new_project["accessRights"] = {}
             # the project is to be hidden until the data is copied
             hidden = True
             clone_data_coro = copy_data_folders_from_project(
                 request.app, source_project, new_project, nodes_map, user_id
             )
-
-            # remove template access rights
-            new_project["accessRights"] = {}
             # FIXME: parameterized inputs should get defaults provided by service
 
         # overrides with body
