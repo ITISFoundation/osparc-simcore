@@ -111,7 +111,7 @@ qx.Class.define("osparc.file.FileDrop", {
     showBorder: {
       check: "Boolean",
       init: true,
-      change: "__applyShowBorder"
+      apply: "__applyShowBorder"
     }
   },
 
@@ -129,8 +129,8 @@ qx.Class.define("osparc.file.FileDrop", {
             alignY: "middle"
           });
           this._add(control, {
-            top: 20,
-            left: 30
+            top: 40,
+            left: 40
           });
           break;
         case "svg-layer":
@@ -149,7 +149,11 @@ qx.Class.define("osparc.file.FileDrop", {
           });
           this._add(control);
           const svgLayer = this.getChildControl("svg-layer");
-          control.rect = svgLayer.drawDashedRect(120, 60);
+          if (svgLayer.getReady()) {
+            control.rect = svgLayer.drawDashedRect(120, 60);
+          } else {
+            svgLayer.addListenerOnce("SvgWidgetReady", () => control.rect = svgLayer.drawDashedRect(120, 60), this);
+          }
         }
       }
       return control || this.base(arguments, id);
