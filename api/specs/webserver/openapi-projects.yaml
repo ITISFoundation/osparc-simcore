@@ -444,6 +444,32 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
+  /projects/{project_id}/nodes/{node_id}/restart:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: node_id
+        in: path
+        required: true
+        schema:
+          type: string
+
+    post:
+      tags:
+        - project
+      description: Restarts containers started by the dynamic-sidecar
+      operationId: post_restart
+
+      responses:
+        "204":
+          description: Restarts containers started by the dynamic-sidecar
+
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
   /projects/{study_uuid}/tags/{tag_id}:
     parameters:
       - name: tag_id

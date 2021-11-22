@@ -286,6 +286,22 @@ class DynamicSidecarsScheduler:
 
         return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
 
+    async def restart_containers(self, node_uuid: NodeID) -> None:
+        """Restarts containers without saving or restiring the state or I/O ports"""
+        if node_uuid not in self._inverse_search_mapping:
+            raise DynamicSidecarNotFoundError(node_uuid)
+
+        service_name = self._inverse_search_mapping[node_uuid]
+        scheduler_data: SchedulerData = self._to_observe[service_name].scheduler_data
+
+        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+            self.app
+        )
+        
+        await dynamic_sidecar_client.restart_containers(
+            scheduler_data.dynamic_sidecar.endpoint
+        )
+
     async def _enqueue_observation_from_service_name(self, service_name: str) -> None:
         await self._trigger_observation_queue.put(service_name)
 

@@ -74,6 +74,10 @@ class DynamicSidecarClient:
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
             connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
+        self._restart_containers_timeout = httpx.Timeout(
+            dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
+            connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+        )
 
     async def is_healthy(self, dynamic_sidecar_endpoint: str) -> bool:
         """returns True if service is UP and running else False"""
@@ -278,7 +282,9 @@ class DynamicSidecarClient:
             dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers:restart"
         )
         try:
-            async with httpx.AsyncClient(timeout=self._base_timeout) as client:
+            async with httpx.AsyncClient(
+                timeout=self._restart_containers_timeout
+            ) as client:
                 response = await client.post(url=url)
                 if response.status_code != status.HTTP_204_NO_CONTENT:
                     message = (

@@ -1,3 +1,4 @@
+from models_library.services import FILENAME_RE
 from pydantic import BaseSettings, Field, PositiveInt
 
 _MINUTE = 60
@@ -31,6 +32,9 @@ class ServicesCommonSettings(BaseSettings):
             "such payloads it is required to have long timeouts which "
             "allow the service to finish the operation."
         ),
+    )
+    restart_containers_timeout: PositiveInt = Field(
+        1 * _MINUTE, description="timeout of containers restart"
     )
 
     class Config:

@@ -138,6 +138,14 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "platform this value is set to 1 hour."
         ),
     )
+    DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT: PositiveFloat = Field(
+        1 * MINS,
+        description=(
+            "When saving and restoring the state of a dynamic service, depending on the payload "
+            "some services take longer or shorter to save and restore. Across the "
+            "platform this value is set to 1 hour."
+        ),
+    )
     DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START: PositiveFloat = Field(
         60.0 * MINS,
         description=(
