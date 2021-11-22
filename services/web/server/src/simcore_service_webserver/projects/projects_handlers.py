@@ -10,7 +10,7 @@ from typing import Any, Coroutine, Dict, List, Optional, Set
 from aiohttp import web
 from jsonschema import ValidationError
 from models_library.projects import ProjectID
-from models_library.projects_state import ProjectState
+from models_library.projects_state import ProjectState, ProjectStatus
 from servicelib.json_serialization import json_dumps
 from servicelib.rest_pagination_utils import PageResponseLimitOffset
 from servicelib.utils import logged_gather
@@ -120,7 +120,9 @@ async def create_projects(
                 new_project = predefined
 
         # re-validate data
-        projects_api.validate_project(request.app, new_project)
+        await asyncio.get_event_loop().run_in_executor(
+            None, projects_api.validate_project, request.app, new_project
+        )
 
         # update metadata (uuid, timestamps, ownership) and save
         new_project = await db.add_project(
@@ -132,7 +134,19 @@ async def create_projects(
 
         # copies the project's DATA IF cloned
         if clone_data_coro:
-            await clone_data_coro
+            assert source_project  # nosec
+            if as_template:
+                # we need to lock the original study while copying the data
+                async with projects_api.lock_with_notification(
+                    request.app,
+                    source_project["uuid"],
+                    ProjectStatus.CLONING,
+                    user_id,
+                    await get_user_name(request.app, user_id),
+                ):
+                    await clone_data_coro
+            else:
+                await clone_data_coro
             # unhide the project if needed since it is now complete
             if not new_project_was_hidden_before_data_was_copied:
                 await db.update_project_without_checking_permissions(
