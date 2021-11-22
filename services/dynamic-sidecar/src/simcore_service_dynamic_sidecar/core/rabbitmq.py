@@ -152,7 +152,13 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
     async def _publish_command(
         self, action: str, payload: Optional[Dict[str, Any]] = None
     ) -> None:
-        data = EventRabbitMessage(action=action, payload=payload)
+        data = EventRabbitMessage(
+            node_id=self._node_id,
+            user_id=self._user_id,
+            project_id=self._project_id,
+            action=action,
+            payload=payload,
+        )
         assert self._events_exchange  # nosec
         await self._events_exchange.publish(
             aio_pika.Message(body=data.json().encode()), routing_key=""
