@@ -129,7 +129,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __startHint: null,
     __dropMe: null,
     __panning: null,
-    __draggingFile: null,
+    __isDraggingFile: null,
+    __isDraggingLink: null,
 
     __applyStudy: function(study) {
       study.getWorkbench().addListener("reloadModel", () => {
@@ -1204,8 +1205,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.set({
           cursor: "move"
         });
-      } else if (this.__draggingFile) {
-        this.__dragging(e, true);
+      } else if (this.__isDraggingLink) {
+        this.__draggingLink(e, true);
       }
     },
 
@@ -1215,8 +1216,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.set({
           cursor: "auto"
         });
-      } else if (this.__draggingFile) {
-        this.__drop(e);
+      } else if (this.__isDraggingLink) {
+        this.__dropLink(e);
       }
     },
 
@@ -1436,25 +1437,22 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         ].forEach(signalName => {
           domEl.addEventListener(signalName, e => {
             const dragging = signalName !== "dragleave";
-            this.__dragging(e, dragging);
+            this.__draggingFile(e, dragging);
           }, this);
         });
-        domEl.addEventListener("drop", this.__drop.bind(this), false);
+        domEl.addEventListener("drop", this.__dropFile.bind(this), false);
 
         this.setDroppable(true);
-        [
-          "dragover", // on target (pointer over)
-          "dragleave" // on target (pointer out)
-        ].forEach(signalName => {
-          this.addListener(signalName, e => {
-            const dragging = signalName !== "dragleave";
-            if (dragging === false) {
-              this.__draggingFile = dragging;
-            }
-            this.__dragging(e, dragging);
-          }, this);
-        });
-        this.addListener("drop", this.__drop.bind(this), false);
+        const stopDragging = e => {
+          this.__isDraggingLink = null;
+          this.__updateWidgets(false);
+        };
+        const startDragging = e => {
+          this.addListenerOnce("dragleave", stopDragging, this);
+          this.addListenerOnce("dragover", startDragging, this);
+          this.__draggingLink(e, true);
+        };
+        this.addListenerOnce("dragover", startDragging, this);
 
         this.addListener("mousewheel", this.__mouseWheel, this);
         this.addListener("mousedown", this.__mouseDown, this);
@@ -1480,9 +1478,22 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__workbenchLayout.addListener("resize", () => this.__updateHint(), this);
     },
 
-    __allowDrag: function(e) {
+    __allowDragFile: function(e) {
       let allow = false;
-      if (this.__draggingFile) {
+      if (this.__isDraggingFile) {
+        // item still being dragged
+        allow = true;
+      } else {
+        // item drag from the outside world
+        allow = e.target instanceof SVGElement;
+        this.__isDraggingFile = allow;
+      }
+      return allow;
+    },
+
+    __allowDragLink: function(e) {
+      let allow = false;
+      if (this.__isDraggingLink) {
         // item still being dragged
         allow = true;
       } else if ("supportsType" in e) {
@@ -1491,20 +1502,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         if (allow) {
           // store "osparc-file-link" data in variable,
           // because the mousemove event doesn't contain that information
-          this.__draggingFile = e.getData("osparc-file-link");
+          this.__isDraggingLink = e.getData("osparc-file-link");
         }
-      } else {
-        // item drag from the outside world
-        allow = e.target instanceof SVGElement;
-        this.__draggingFile = allow;
       }
       return allow;
     },
 
-    __dragging: function(e, dragging) {
-      const boxWidth = 120;
-      const boxHeight = 60;
-      if (this.__allowDrag(e)) {
+    __draggingFile: function(e, dragging) {
+      if (this.__allowDragFile(e)) {
         e.preventDefault();
         e.stopPropagation();
       } else {
@@ -1514,17 +1519,31 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (!this.isPropertyInitialized("study") || this.getStudy().isReadOnly()) {
         return;
       }
-      let posX = 0;
-      let posY = 0;
-      if ("offsetX" in e && "offsetY" in e) {
-        posX = e.offsetX + 2;
-        posY = e.offsetY + 2;
+
+      const posX = e.offsetX + 2;
+      const posY = e.offsetY + 2;
+      this.__updateWidgets(dragging, posX, posY);
+    },
+
+    __draggingLink: function(e, dragging) {
+      if (this.__allowDragLink(e)) {
+        e.preventDefault();
+        e.stopPropagation();
       } else {
-        const pos = this.__pointerEventToWorkbenchPos(e);
-        posX = pos.x;
-        posY = pos.y;
+        dragging = false;
       }
 
+      if (!this.isPropertyInitialized("study") || this.getStudy().isReadOnly()) {
+        return;
+      }
+
+      const pos = this.__pointerEventToWorkbenchPos(e);
+      this.__updateWidgets(dragging, pos.x, pos.y);
+    },
+
+    __updateWidgets: function(dragging, posX, posY) {
+      const boxWidth = 120;
+      const boxHeight = 60;
       if (this.__dropMe === null) {
         const dropHint = this.__dropMe = new qx.ui.basic.Label(this.tr("Drop me")).set({
           font: "workbench-start-hint",
@@ -1550,11 +1569,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    __drop: function(e) {
-      this.__dragging(e, false);
+    __dropFile: function(e) {
+      this.__draggingFile(e, false);
 
       if ("dataTransfer" in e) {
-        this.__draggingFile = false;
+        this.__isDraggingFile = false;
         const files = e.dataTransfer.files;
         if (files.length === 1) {
           const pos = {
@@ -1572,8 +1591,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         } else {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
         }
-      } else if (this.__draggingFile && "dragData" in this.__draggingFile) {
-        const data = this.__draggingFile["dragData"];
+      }
+    },
+
+    __dropLink: function(e) {
+      this.__draggingLink(e, false);
+
+      if (this.__isDraggingLink && "dragData" in this.__isDraggingLink) {
+        const data = this.__isDraggingLink["dragData"];
         const pos = this.__pointerEventToWorkbenchPos(e, false);
         const service = qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker());
         const nodeUI = this.__addNode(service, pos);
@@ -1581,7 +1606,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const filePicker = new osparc.file.FilePicker(node);
         filePicker.buildLayout();
         osparc.file.FilePicker.setOutputValueFromStore(node, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
-        this.__draggingFile = null;
+        this.__isDraggingLink = null;
       }
     },
 
