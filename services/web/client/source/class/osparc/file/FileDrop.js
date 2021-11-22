@@ -86,8 +86,8 @@ qx.Class.define("osparc.file.FileDrop", {
   },
 
   events: {
-    "uploadFile": "qx.event.type.Data",
-    "setOutputFile": "qx.event.type.Data"
+    "localFileDropped": "qx.event.type.Data",
+    "fileLinkDropped": "qx.event.type.Data"
   },
 
   properties: {
@@ -257,7 +257,7 @@ qx.Class.define("osparc.file.FileDrop", {
         if (files.length === 1) {
           const fileList = e.dataTransfer.files;
           if (fileList.length) {
-            this.fireDataEvent("uploadFile", files);
+            this.fireDataEvent("localFileDropped", files);
           }
         } else {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
@@ -269,7 +269,7 @@ qx.Class.define("osparc.file.FileDrop", {
       this.__draggingLink(e, false);
 
       if (this.__isDraggingLink && "dragData" in this.__isDraggingLink) {
-        this.fireDataEvent("setOutputFile", this.__isDraggingLink["dragData"]);
+        this.fireDataEvent("fileLinkDropped", this.__isDraggingLink["dragData"]);
         this.__isDraggingLink = null;
       }
     },

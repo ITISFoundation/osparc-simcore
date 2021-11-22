@@ -939,14 +939,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         filePickerView.buildLayout();
 
         const fileDrop = new osparc.file.FileDrop();
-        fileDrop.addListener("uploadFile", e => {
+        fileDrop.addListener("localFileDropped", e => {
           const files = e.getData();
           if (filePickerView.uploadPendingFiles(files)) {
             setTimeout(() => this.__populateSecondPanel(filePicker), 500);
           }
           fileDrop.resetDropAction();
         });
-        fileDrop.addListener("setOutputFile", e => {
+        fileDrop.addListener("fileLinkDropped", e => {
           const data = e.getData();
           osparc.file.FilePicker.setOutputValueFromStore(filePicker, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
           this.__populateSecondPanel(filePicker);
