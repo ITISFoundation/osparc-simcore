@@ -2,11 +2,15 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Callable, Dict, Iterable, List
+import asyncio
+from typing import AsyncIterator, Callable, Dict, Iterable, List, NamedTuple
 
 import pytest
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
+from dask_gateway import Gateway
+from dask_gateway_server.app import DaskGateway
+from dask_gateway_server.backends.inprocess import InProcessBackend
 from distributed.deploy.spec import SpecCluster
 from models_library.clusters import Cluster
 from models_library.settings.rabbit import RabbitConfig
@@ -15,6 +19,10 @@ from simcore_postgres_database.models.clusters import clusters
 from simcore_service_director_v2.models.schemas.clusters import ClusterOut
 from starlette import status
 from starlette.testclient import TestClient
+from tenacity._asyncio import AsyncRetrying
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
+from traitlets.config import Config
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -112,13 +120,78 @@ def test_get_default_cluster_entrypoint(clusters_config: None, client: TestClien
     assert default_cluster_out == ClusterOut.parse_obj(response.json())
 
 
+class DaskGatewayServer(NamedTuple):
+    address: str
+    proxy_address: str
+
+
 @pytest.fixture
-def local_dask_gateway_server():
-    ...
+async def local_dask_gateway_server(
+    loop: asyncio.AbstractEventLoop,
+) -> AsyncIterator[DaskGatewayServer]:
+    c = Config()
+    c.DaskGateway.backend_class = InProcessBackend  # type: ignore
+    c.DaskGateway.address = "127.0.0.1:0"  # type: ignore
+    c.Proxy.address = "127.0.0.1:0"  # type: ignore
+    c.DaskGateway.authenticator_class = "dask_gateway_server.auth.SimpleAuthenticator"  # type: ignore
+    print("--> creating local dask gateway server")
+    dask_gateway_server = DaskGateway(config=c)
+    dask_gateway_server.initialize([])  # that is a shitty one!
+    print("--> local dask gateway server initialized")
+    await dask_gateway_server.setup()
+    await dask_gateway_server.backend.proxy._proxy_contacted  # pylint: disable=protected-access
+    print("--> local dask gateway server setup completed")
+    yield DaskGatewayServer(
+        f"http://{dask_gateway_server.backend.proxy.address}",
+        f"gateway://{dask_gateway_server.backend.proxy.tcp_address}",
+    )
+    print("--> local dask gateway server switching off...")
+    await dask_gateway_server.cleanup()
+    print("...done")
 
 
-def test_local_dask_gateway_server(local_dask_gateway_server):
-    pass
+async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayServer):
+    async with Gateway(
+        local_dask_gateway_server.address,
+        local_dask_gateway_server.proxy_address,
+        asynchronous=True,
+    ) as gateway:
+        print(f"--> {gateway=} created")
+        cluster_options = await gateway.cluster_options()
+        gateway_versions = await gateway.get_versions()
+        clusters_list = await gateway.list_clusters()
+        print(f"--> {gateway_versions=}, {cluster_options=}, {clusters_list=}")
+
+        async with gateway.new_cluster() as cluster:
+            assert cluster
+            print(f"--> created new cluster {cluster=}, {cluster.scheduler_info=}")
+            NUM_WORKERS = 10
+            await cluster.scale(NUM_WORKERS)
+            print(f"--> scaling cluster {cluster=} to {NUM_WORKERS} workers")
+            async for attempt in AsyncRetrying(
+                reraise=True, wait=wait_fixed(0.24), stop=stop_after_delay(30)
+            ):
+                with attempt:
+                    print(
+                        f"cluster {cluster=} has now {len(cluster.scheduler_info.get('workers', []))}"
+                    )
+                    assert len(cluster.scheduler_info.get("workers", 0)) == 10
+            async with cluster.get_client() as client:
+                print(f"--> created new client {client=}, submitting a job")
+                res = await client.submit(lambda x: x + 1, 1)  # type: ignore
+                assert res == 2
+
+            print(f"--> scaling cluster {cluster=} back to 0")
+            await cluster.scale(0)
+
+            async for attempt in AsyncRetrying(
+                reraise=True, wait=wait_fixed(0.24), stop=stop_after_delay(30)
+            ):
+                with attempt:
+                    print(
+                        f"cluster {cluster=} has now {len(cluster.scheduler_info.get('workers', []))}"
+                    )
+                    assert len(cluster.scheduler_info.get("workers", 0)) == 0
 
 
 def test_get_cluster_entrypoint(
@@ -127,8 +200,5 @@ def test_get_cluster_entrypoint(
     some_cluster = cluster()
     response = client.get(f"/v2/clusters/{some_cluster.id}")
     assert response.status_code == status.HTTP_200_OK
-    import pdb
-
-    pdb.set_trace()
     data = response.json()
     assert data
