@@ -147,14 +147,6 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       this.getChildControl("stop-slideshow");
     },
 
-    __openStudyDetails: function() {
-      const studyDetails = new osparc.studycard.Large(this.getStudy());
-      const title = this.tr("Study Details");
-      const width = 500;
-      const height = 500;
-      osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
-    },
-
     // overriden
     _applyStudy: function(study) {
       this.base(arguments, study);
@@ -163,17 +155,6 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
         const studyTitle = this.getChildControl("study-title");
         study.bind("name", studyTitle, "value");
         study.bind("name", studyTitle, "toolTipText");
-      }
-    },
-
-    populateButtons: function(start = false) {
-      this._populateNodesNavigationLayout();
-      if (start) {
-        const editSlideshowButtons = this.getChildControl("edit-slideshow-buttons");
-        const currentModeBtn = editSlideshowButtons.getSelection()[0];
-        if ("editing" in currentModeBtn && currentModeBtn["editing"]) {
-          currentModeBtn.execute();
-        }
       }
     },
 
@@ -192,6 +173,25 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
         this.getChildControl("breadcrumb-navigation-edit").populateButtons(study);
         this.__evalButtonsIfEditing();
       }
+    },
+
+    populateButtons: function(start = false) {
+      this._populateNodesNavigationLayout();
+      if (start) {
+        const editSlideshowButtons = this.getChildControl("edit-slideshow-buttons");
+        const currentModeBtn = editSlideshowButtons.getSelection()[0];
+        if ("editing" in currentModeBtn && currentModeBtn["editing"]) {
+          currentModeBtn.execute();
+        }
+      }
+    },
+
+    __openStudyDetails: function() {
+      const studyDetails = new osparc.studycard.Large(this.getStudy());
+      const title = this.tr("Study Details");
+      const width = 500;
+      const height = 500;
+      osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
     },
 
     __evalButtonsIfEditing: function() {
