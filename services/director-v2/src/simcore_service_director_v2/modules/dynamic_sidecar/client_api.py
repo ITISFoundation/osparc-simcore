@@ -74,7 +74,7 @@ class DynamicSidecarClient:
         )
 
         # timeouts
-        self._heatlth_request_timeout: httpx.Timeout = httpx.Timeout(1.0, connect=1.0)
+        self._health_request_timeout: httpx.Timeout = httpx.Timeout(1.0, connect=1.0)
         self._save_restore_timeout: httpx.Timeout = httpx.Timeout(
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
             connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
@@ -90,7 +90,7 @@ class DynamicSidecarClient:
         try:
             # this request uses a very short timeout
             response = await self._client.get(
-                url=url, timeout=self._heatlth_request_timeout
+                url=url, timeout=self._health_request_timeout
             )
             response.raise_for_status()
 
