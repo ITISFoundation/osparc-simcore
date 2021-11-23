@@ -44,6 +44,14 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
     __nextBtn: null,
     __currentNodeId: null,
 
+    getPreviousButton: function() {
+      return this.__prvsBtn;
+    },
+
+    getNextButton: function() {
+      return this.__nextBtn;
+    },
+
     populateButtons: function(nodesIds) {
       this.__createButtons();
 
