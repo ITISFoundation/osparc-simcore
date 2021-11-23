@@ -65,7 +65,7 @@ class DynamicSidecarClient:
         )
 
         self._app: FastAPI = app
-        self._heatlth_request_timeout: httpx.Timeout = httpx.Timeout(1.0, connect=1.0)
+        self._health_request_timeout: httpx.Timeout = httpx.Timeout(1.0, connect=1.0)
         self._base_timeout = httpx.Timeout(
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
             connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
@@ -81,7 +81,7 @@ class DynamicSidecarClient:
         try:
             # this request uses a very short timeout
             async with httpx.AsyncClient(
-                timeout=self._heatlth_request_timeout
+                timeout=self._health_request_timeout
             ) as client:
                 response = await client.get(url=url)
             response.raise_for_status()
