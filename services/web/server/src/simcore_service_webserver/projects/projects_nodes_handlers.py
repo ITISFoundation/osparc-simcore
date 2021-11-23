@@ -122,7 +122,6 @@ async def post_retrieve(request: web.Request) -> web.Response:
 async def post_restart(request: web.Request) -> web.Response:
     try:
         node_uuid = request.match_info["node_id"]
-        data = await request.json()
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
 

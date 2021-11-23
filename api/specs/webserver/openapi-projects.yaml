@@ -444,9 +444,9 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_id}/nodes/{node_id}/restart:
+  /projects/{project_uuid}/nodes/{node_id}/restart:
     parameters:
-      - name: project_id
+      - name: project_uuid
         in: path
         required: true
         schema:
