@@ -15,7 +15,6 @@ from collections import namedtuple
 from pathlib import Path
 from typing import Any, Dict, Iterator, Optional, Type, Union
 
-from contextlib import contextmanager
 
 import pytest
 from aiohttp.client import ClientSession
