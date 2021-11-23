@@ -13,7 +13,7 @@ from servicelib.aiohttp.application_setup import (
 )
 
 from .constants import APP_SETTINGS_KEY
-from .director_v2_api import get_run_policy, set_run_policy
+from .director_v2_api import get_project_run_policy, set_project_run_policy
 from .meta_projects import MetaProjectRunPolicy, projects_redirection_middleware
 from .settings import ApplicationSettings
 
@@ -39,5 +39,5 @@ def setup_meta(app: web.Application):
     app.middlewares.append(projects_redirection_middleware)
 
     # Overrides run-policy from directorv2
-    assert get_run_policy(app)  # nosec
-    set_run_policy(app, MetaProjectRunPolicy())
+    assert get_project_run_policy(app)  # nosec
+    set_project_run_policy(app, MetaProjectRunPolicy())
