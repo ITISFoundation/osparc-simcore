@@ -26,7 +26,7 @@ import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
 import sqlalchemy as sa
 import trafaret_config
-from _helpers import MockedStorageSubsystem
+from _helpers import MockedStorageSubsystem  # type: ignore
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pytest_simcore.helpers.utils_login import NewUser
@@ -229,7 +229,7 @@ async def storage_subsystem_mock(loop, mocker) -> MockedStorageSubsystem:
 
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.projects_api.delete_project",
+        "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project",
         side_effect=async_mock,
     )
     return MockedStorageSubsystem(mock, mock1)
