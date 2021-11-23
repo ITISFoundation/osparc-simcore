@@ -147,9 +147,10 @@ class DynamicSidecarServiceLabels(BaseModel):
         RestartPolicy.NO_RESTART,
         alias="simcore.service.restart-policy",
         description=(
-            "the dynamic-sidecar can restart all started container "
-            "on certain events. Currently supported events: "
-            "`on-inputs-downloaded` default is `no-restart`"
+            "the dynamic-sidecar can restart all running containers "
+            "on certain events. Supported events:\n"
+            "- `no-restart` default\n"
+            "- `on-inputs-downloaded` after inputs are downloaded\n"
         ),
     )
 
