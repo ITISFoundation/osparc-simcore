@@ -27,13 +27,6 @@ class Nodeports(BaseModel):
         [DBManager, int, str, str], Coroutine[Any, Any, Type["Nodeports"]]
     ]
     auto_update: bool = False
-    follow_symlinks: bool = Field(
-        True,
-        description=(
-            "When uploading a file, in most cases the content should "
-            "be uploaded and. The symlink per se should not be stored"
-        ),
-    )
 
     class Config:
         arbitrary_types_allowed = True

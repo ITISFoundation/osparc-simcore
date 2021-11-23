@@ -51,18 +51,6 @@ class InvalidItemTypeError(NodeportsException):
         self.item_value = item_value
 
 
-class SymlinksUsageIsDisabledError(NodeportsException):
-    """Item type incorrect"""
-
-    def __init__(self):
-        super().__init__(
-            (
-                "Symlink follow is disabled. It is not possible to use symlinks. "
-                "Check nodeports configuration if you would like to do so"
-            )
-        )
-
-
 class InvalidProtocolError(NodeportsException):
     """Invalid protocol used"""
 

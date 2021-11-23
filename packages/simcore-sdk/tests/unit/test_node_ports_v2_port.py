@@ -583,7 +583,6 @@ async def test_valid_port(
         user_id: int
         project_id: str
         node_uuid: str
-        follow_symlinks: bool
 
         @staticmethod
         async def get(key):
@@ -600,7 +599,6 @@ async def test_valid_port(
                 user_id=user_id,
                 project_id=project_id,
                 node_uuid=node_uuid,
-                follow_symlinks=True,
             )
 
         @staticmethod
@@ -611,7 +609,6 @@ async def test_valid_port(
         user_id=user_id,
         project_id=project_id,
         node_uuid=node_uuid,
-        follow_symlinks=True,
     )
     port = Port(**port_cfg)
     port._node_ports = fake_node_ports
