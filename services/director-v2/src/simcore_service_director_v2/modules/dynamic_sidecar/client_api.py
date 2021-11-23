@@ -65,16 +65,21 @@ class DynamicSidecarClient:
         )
 
         self._app: FastAPI = app
-        self._heatlth_request_timeout: httpx.Timeout = httpx.Timeout(1.0, connect=1.0)
-        self._base_timeout = httpx.Timeout(
-            dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
-            connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+
+        self._client: httpx.AsyncClient = httpx.AsyncClient(
+            timeout=httpx.Timeout(
+                dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_REQUEST_TIMEOUT,
+                connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
+            )
         )
-        self._save_restore_timeout = httpx.Timeout(
+
+        # timeouts
+        self._heatlth_request_timeout: httpx.Timeout = httpx.Timeout(1.0, connect=1.0)
+        self._save_restore_timeout: httpx.Timeout = httpx.Timeout(
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
             connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
-        self._restart_containers_timeout = httpx.Timeout(
+        self._restart_containers_timeout: httpx.Timeout = httpx.Timeout(
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT,
             connect=dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT,
         )
@@ -84,10 +89,9 @@ class DynamicSidecarClient:
         url = get_url(dynamic_sidecar_endpoint, "/health")
         try:
             # this request uses a very short timeout
-            async with httpx.AsyncClient(
-                timeout=self._heatlth_request_timeout
-            ) as client:
-                response = await client.get(url=url)
+            response = await self._client.get(
+                url=url, timeout=self._heatlth_request_timeout
+            )
             response.raise_for_status()
 
             return response.json()["is_healthy"]
@@ -101,8 +105,7 @@ class DynamicSidecarClient:
         """
         url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers")
         try:
-            async with httpx.AsyncClient(timeout=self._base_timeout) as client:
-                response = await client.get(url=url)
+            response = await self._client.get(url=url)
             if response.status_code != status.HTTP_200_OK:
                 message = (
                     f"error during request status={response.status_code}, "
@@ -121,8 +124,7 @@ class DynamicSidecarClient:
     ) -> Dict[str, Dict[str, str]]:
         url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers")
         try:
-            async with httpx.AsyncClient(timeout=self._base_timeout) as client:
-                response = await client.get(url=url, params=dict(only_status=True))
+            response = await self._client.get(url=url, params=dict(only_status=True))
             if response.status_code != status.HTTP_200_OK:
                 logging.warning(
                     "error during request status=%s, body=%s",
@@ -142,8 +144,7 @@ class DynamicSidecarClient:
         """returns: True if the compose up was submitted correctly"""
         url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers")
         try:
-            async with httpx.AsyncClient(timeout=self._base_timeout) as client:
-                response = await client.post(url, data=compose_spec)
+            response = await self._client.post(url, data=compose_spec)
             if response.status_code != status.HTTP_202_ACCEPTED:
                 message = (
                     "ERROR during service creation request: "
@@ -162,8 +163,7 @@ class DynamicSidecarClient:
         """runs docker compose down on the started spec"""
         url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers:down")
         try:
-            async with httpx.AsyncClient(timeout=self._base_timeout) as client:
-                response = await client.post(url)
+            response = await self._client.post(url)
             if response.status_code != status.HTTP_200_OK:
                 message = (
                     f"ERROR during service destruction request: "
@@ -180,8 +180,7 @@ class DynamicSidecarClient:
     async def service_save_state(self, dynamic_sidecar_endpoint: str) -> None:
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers/state:save")
         try:
-            async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
-                response = await client.post(url)
+            response = await self._client.post(url, timeout=self._save_restore_timeout)
             if response.status_code != status.HTTP_204_NO_CONTENT:
                 message = (
                     f"ERROR while saving service state: "
@@ -196,8 +195,7 @@ class DynamicSidecarClient:
     async def service_restore_state(self, dynamic_sidecar_endpoint: str) -> None:
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers/state:restore")
         try:
-            async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
-                response = await client.post(url)
+            response = await self._client.post(url, timeout=self._save_restore_timeout)
             if response.status_code != status.HTTP_204_NO_CONTENT:
                 message = (
                     f"ERROR while restoring service state: "
@@ -215,8 +213,9 @@ class DynamicSidecarClient:
         port_keys = [] if port_keys is None else port_keys
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/inputs:pull")
         try:
-            async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
-                response = await client.post(url, json=port_keys)
+            response = await self._client.post(
+                url, json=port_keys, timeout=self._save_restore_timeout
+            )
             if response.status_code != status.HTTP_200_OK:
                 message = (
                     f"ERROR while restoring service state: "
@@ -235,8 +234,9 @@ class DynamicSidecarClient:
         port_keys = [] if port_keys is None else port_keys
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/outputs:push")
         try:
-            async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
-                response = await client.post(url, json=port_keys)
+            response = await self._client.post(
+                url, json=port_keys, timeout=self._save_restore_timeout
+            )
             if response.status_code != status.HTTP_204_NO_CONTENT:
                 message = (
                     f"ERROR while restoring service state: "
@@ -262,13 +262,12 @@ class DynamicSidecarClient:
             f"/{self.API_VERSION}/containers/name?filters={filters}",
         )
         try:
-            async with httpx.AsyncClient(timeout=self._base_timeout) as client:
-                response = await client.get(url=url)
-                if response.status_code == status.HTTP_404_NOT_FOUND:
-                    raise EntrypointContainerNotFoundError()
-                response.raise_for_status()
+            response = await self._client.get(url=url)
+            if response.status_code == status.HTTP_404_NOT_FOUND:
+                raise EntrypointContainerNotFoundError()
+            response.raise_for_status()
 
-                return response.json()
+            return response.json()
         except httpx.HTTPError:
             log_httpx_http_error(url, "GET", traceback.format_exc())
             raise
@@ -282,17 +281,16 @@ class DynamicSidecarClient:
             dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers:restart"
         )
         try:
-            async with httpx.AsyncClient(
-                timeout=self._restart_containers_timeout
-            ) as client:
-                response = await client.post(url=url)
-                if response.status_code != status.HTTP_204_NO_CONTENT:
-                    message = (
-                        f"ERROR during service restart request: "
-                        f"status={response.status_code}, body={response.text}"
-                    )
-                    logging.warning(message)
-                    raise DynamicSchedulerException(message)
+            response = await self._client.post(
+                url=url, timeout=self._restart_containers_timeout
+            )
+            if response.status_code != status.HTTP_204_NO_CONTENT:
+                message = (
+                    f"ERROR during service restart request: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise DynamicSchedulerException(message)
         except httpx.HTTPError:
             log_httpx_http_error(url, "POST", traceback.format_exc())
             raise
