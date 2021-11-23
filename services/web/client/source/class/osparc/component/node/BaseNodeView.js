@@ -103,9 +103,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __buildMainView: function() {
       const mainView = this._mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const settingsLayout = this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
-      this.bind("backgroundColor", settingsLayout, "backgroundColor");
-      this.bind("backgroundColor", settingsLayout.getChildControl("frame"), "backgroundColor");
+      const groupBox = this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
+      this.bind("backgroundColor", groupBox, "backgroundColor");
+      this.bind("backgroundColor", groupBox.getChildControl("frame"), "backgroundColor");
 
       this._iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 

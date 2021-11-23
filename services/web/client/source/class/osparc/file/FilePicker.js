@@ -241,7 +241,7 @@ qx.Class.define("osparc.file.FilePicker", {
             backgroundColor: "background-main-lighter+",
             showLeafs: false,
             minWidth: 150,
-            width: 200
+            width: 250
           });
           treeFolderLayout.add(control, 0);
           break;
@@ -286,6 +286,8 @@ qx.Class.define("osparc.file.FilePicker", {
           const groupBox = new qx.ui.groupbox.GroupBox(this.tr("Or provide a Download Link")).set({
             layout: new qx.ui.layout.VBox(5)
           });
+          this.bind("backgroundColor", groupBox, "backgroundColor");
+          this.bind("backgroundColor", groupBox.getChildControl("frame"), "backgroundColor");
           control = new osparc.file.FileDownloadLink();
           groupBox.add(control);
           this._addAt(groupBox, this.self().POS.DOWNLOAD_LINK);
