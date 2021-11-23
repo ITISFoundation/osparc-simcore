@@ -217,7 +217,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           return;
         }
       } else if (this.__nodeView) {
-        this._remove(this.__nodeView);
+        this.__mainView.remove(this.__nodeView);
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
 

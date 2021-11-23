@@ -79,7 +79,7 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
 
     __applyStudy: function(study) {
       this.__updatePrevNextButtons();
-      study.addListener("changeCurrentNodeId", () => this.__updatePrevNextButtons(), this);
+      study.getStudy().addListener("changeCurrentNodeId", () => this.__updatePrevNextButtons(), this);
     },
 
     __updatePrevNextButtons: function() {
