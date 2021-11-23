@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List
 from uuid import uuid4
+from faker import Faker
 
 import pytest
 from simcore_service_director_v2.models.schemas.constants import (
@@ -52,19 +53,21 @@ def test_expected_paths(
     state_paths: List[Path],
     expect: Callable[[str, str], Dict[str, Any]],
 ) -> None:
-    inputs_path = Path("/tmp/some/inputs")
+    fake = Faker()
+
+    inputs_path = Path(fake.file_path(depth=3)).parent
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
         compose_namespace, inputs_path, node_uuid
     ) == expect(
-        source=f"{compose_namespace}_tmp_some_inputs",
+        source=f"{compose_namespace}{f'{inputs_path}'.replace('/', '_')}",
         target=str(Path("/dy-volumes") / inputs_path.relative_to("/")),
     )
 
-    outputs_path = Path("/tmp/some/outputs")
+    outputs_path = Path(fake.file_path(depth=3)).parent
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
         compose_namespace, outputs_path, node_uuid
     ) == expect(
-        source=f"{compose_namespace}_tmp_some_outputs",
+        source=f"{compose_namespace}{f'{outputs_path}'.replace('/', '_')}",
         target=str(Path("/dy-volumes") / outputs_path.relative_to("/")),
     )
 
