@@ -169,15 +169,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this.__header.add(this.__buttonContainer);
     },
 
-    _maximizeIFrame: function(maximize) {
-      const othersStatus = maximize ? "excluded" : "visible";
-      const isSettingsGroupShowable = this.isSettingsGroupShowable();
-      const othersStatus2 = isSettingsGroupShowable && !maximize ? "visible" : "excluded";
-      this._settingsLayout.setVisibility(othersStatus2);
-      this._loggerLayout.setVisibility(othersStatus);
-      this.__header.setVisibility(othersStatus);
-    },
-
     __hasIFrame: function() {
       return (this.isPropertyInitialized("node") && this.getNode() && this.getNode().getIFrame());
     },

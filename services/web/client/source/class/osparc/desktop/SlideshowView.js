@@ -188,15 +188,37 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           }
           view.setNode(node);
           view.populateLayout();
-          if (this.getPageContext() === "app" && !node.isComputational()) {
-            view.getHeaderLayout().exclude();
-            view.getSettingsLayout().exclude();
+          if (this.getPageContext() === "app") {
+            if (node.isComputational()) {
+              view.getHeaderLayout().show();
+              view.getSettingsLayout().show();
+            } else if (node.isDynamic()) {
+              view.getHeaderLayout().show();
+              view.getSettingsLayout().exclude();
+            } else {
+              view.getHeaderLayout().exclude();
+              view.getSettingsLayout().exclude();
+            }
           }
         }
-        if (!node.isDynamic()) {
+
+        if (node.isDynamic()) {
+          const loadingPage = node.getLoadingPage();
+          const iFrame = node.getIFrame();
+          if (loadingPage && iFrame) {
+            [
+              loadingPage,
+              iFrame
+            ].forEach(widget => {
+              if (widget) {
+                widget.addListener("maximize", () => this.__maximizeIframe(true), this);
+                widget.addListener("restore", () => this.__maximizeIframe(false), this);
+              }
+            });
+          }
+        } else {
           view.set({
             maxWidth: 800,
-            backgroundColor: "background-main-lighter+",
             padding: 10,
             margin: 6
           });
@@ -204,6 +226,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             "border-radius": "12px"
           });
         }
+        view.set({
+          backgroundColor: "background-main-lighter+"
+        });
 
         if (view) {
           if (this.__nodeView && this.__mainView.getChildren().includes(this.__nodeView)) {
@@ -225,6 +250,15 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       this.getStudy().getUi().setCurrentNodeId(nodeId);
 
       // this.getStartStopButtons().nodeSelectionChanged([nodeId]);
+    },
+
+    __maximizeIframe: function(maximize) {
+      [
+        this.__slideshowToolbar,
+        this.__prevButton,
+        this.__nextButton,
+        this.__nodeView.getHeaderLayout()
+      ].forEach(widget => widget.setVisibility(maximize ? "excluded" : "visible"));
     },
 
     startSlides: function(context = "guided") {
