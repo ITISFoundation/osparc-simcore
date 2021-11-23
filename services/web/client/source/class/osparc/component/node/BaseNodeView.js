@@ -20,15 +20,15 @@
  */
 
 qx.Class.define("osparc.component.node.BaseNodeView", {
-  extend: qx.ui.splitpane.Pane,
+  extend: qx.ui.core.Widget,
   type: "abstract",
 
   construct: function() {
     this.base(arguments);
 
-    this.__buildLayout();
+    this._setLayout(new qx.ui.layout.VBox());
 
-    this.__attachEventHandlers();
+    this.__buildLayout();
   },
 
   statics: {
@@ -70,9 +70,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __nodeStatusUI: null,
     __header: null,
     _mainView: null,
-    __inputsView: null,
-    __outputsView: null,
-    __inputNodesLayout: null,
     _settingsLayout: null,
     _iFrameLayout: null,
     _loggerLayout: null,
@@ -82,8 +79,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     populateLayout: function() {
       this.__cleanLayout();
 
-      this.__addInputPortsUIs();
-      this.__addOutputPortsUIs();
       this._addSettings();
       this._addIFrame();
       // this._addLogger();
@@ -92,110 +87,17 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __buildLayout: function() {
-      const inputs = this.__buildSideView(true);
-
-      const vBox = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       const header = this.__buildHeader();
+      this._add(header);
+
       const mainView = this.__buildMainView();
-      vBox.add(header);
-      vBox.add(mainView, {
+      this._add(mainView, {
         flex: 1
       });
-
-      const outputs = this.__buildSideView(false);
-
-      const pane2 = this.__pane2 = new qx.ui.splitpane.Pane();
-      this.add(inputs, 0); // flex 0
-      this.add(pane2, 1); // flex 1
-
-      pane2.add(vBox, 1); // flex 1
-      pane2.add(outputs, 0); // flex 0
     },
 
     __cleanLayout: function() {
       this._mainView.removeAll();
-    },
-
-    __buildSideView: function(isInput) {
-      const collapsedWidth = 35;
-      const sidePanel = new osparc.desktop.SidePanel().set({
-        minWidth: 220,
-        collapsedMinWidth: collapsedWidth,
-        collapsedWidth: collapsedWidth
-      });
-      sidePanel.getLayout().resetSeparator();
-
-      const headerContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
-        alignY: "middle"
-      })).set({
-        height: this.self().HEADER_HEIGHT,
-        paddingLeft: 10,
-        backgroundColor: "material-button-background"
-      });
-      const titleLabel = new qx.ui.basic.Label(isInput ? this.tr("Inputs") : this.tr("Outputs")).set({
-        font: "text-14"
-      });
-      headerContainer.add(titleLabel);
-      sidePanel.add(headerContainer);
-
-      const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      const scroll = new qx.ui.container.Scroll();
-      scroll.add(container);
-      sidePanel.add(scroll, {
-        flex: 1
-      });
-
-      if (isInput) {
-        this.__inputsView = sidePanel;
-        this.__inputNodesLayout = container;
-      } else {
-        this.__outputsView = sidePanel;
-        this.__outputNodesLayout = container;
-      }
-
-      const collapsedView = this.__buildCollapsedSideView(isInput);
-      sidePanel.setCollapsedView(collapsedView);
-
-      return sidePanel;
-    },
-
-    __buildCollapsedSideView: function(isInput) {
-      const text = isInput ? this.tr("Inputs") : this.tr("Outputs");
-      const minWidth = isInput ? 120 : 130;
-      const view = isInput ? this.__inputsView : this.__outputsView;
-      const container = isInput ? this.__inputNodesLayout : this.__outputNodesLayout;
-
-      const collapsedView = new qx.ui.basic.Atom().set({
-        label: text + " (0)",
-        iconPosition: "right",
-        gap: 6,
-        padding: 8,
-        alignX: "center",
-        alignY: "middle",
-        minWidth: minWidth,
-        font: "title-14"
-      });
-      collapsedView.getContentElement().addClass("verticalText");
-      collapsedView.addListener("tap", view.toggleCollapsed.bind(view));
-      collapsedView.addListenerOnce("appear", () => {
-        const elem = collapsedView.getContentElement();
-        console.log(elem);
-        // const size = qx.bom.element.Dimension.getSize(collapsedView);
-        // collapsedView.setDomLeft(-1 * (size.width/2) - (size.height/2));
-        collapsedView.setDomLeft(-45);
-      });
-
-      [
-        "addChildWidget",
-        "removeChildWidget"
-      ].forEach(event => {
-        container.addListener(event, () => {
-          const nChildren = container.getChildren().length;
-          collapsedView.setLabel(text + " (" + nChildren + ")");
-        });
-      });
-
-      return collapsedView;
     },
 
     __buildMainView: function() {
@@ -245,68 +147,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       }
     },
 
-    __addInputPortsUIs: function() {
-      this.__inputNodesLayout.removeAll();
-
-      // Add the default inputs if any
-      if (Object.keys(this.getNode().getInputsDefault()).length > 0) {
-        this.__createInputPortsUI(this.getNode(), false);
-      }
-
-      // Add the representations for the inputs
-      const inputNodes = this.getNode().getInputNodes();
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      for (let i=0; i<inputNodes.length; i++) {
-        const inputNode = study.getWorkbench().getNode(inputNodes[i]);
-        if (inputNode) {
-          if (inputNode.isContainer()) {
-            const exposedInnerNodes = inputNode.getExposedInnerNodes();
-            for (const exposedInnerNodeId in exposedInnerNodes) {
-              const exposedInnerNode = exposedInnerNodes[exposedInnerNodeId];
-              this.__createInputPortsUI(exposedInnerNode);
-            }
-          } else {
-            this.__createInputPortsUI(inputNode);
-          }
-        }
-      }
-    },
-
-    __createInputPortsUI: function(inputNode, isInputModel = true) {
-      const nodePorts = isInputModel ? inputNode.getOutputWidget() : inputNode.getInputsDefaultWidget();
-      if (nodePorts) {
-        this.__inputNodesLayout.add(nodePorts, {
-          flex: 1
-        });
-        nodePorts.setCollapsed(false);
-      }
-    },
-
-    __addOutputPortsUIs: function() {
-      this.__outputNodesLayout.removeAll();
-
-      // Add the representations for the outputs
-      if (this.getNode().isContainer()) {
-        const exposedInnerNodes = this.getNode().getExposedInnerNodes();
-        for (const exposedInnerNodeId in exposedInnerNodes) {
-          const exposedInnerNode = exposedInnerNodes[exposedInnerNodeId];
-          this.__createOutputPortsUI(exposedInnerNode);
-        }
-      } else {
-        this.__createOutputPortsUI(this.getNode());
-      }
-    },
-
-    __createOutputPortsUI: function(outputNode) {
-      const nodePorts = outputNode.getOutputWidget();
-      if (nodePorts) {
-        this.__outputNodesLayout.add(nodePorts, {
-          flex: 1
-        });
-        nodePorts.setCollapsed(false);
-      }
-    },
-
     _addButtons: function() {
       this.__buttonContainer.removeAll();
       if (this.getNode().isDynamic()) {
@@ -327,8 +167,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     _maximizeIFrame: function(maximize) {
       const othersStatus = maximize ? "excluded" : "visible";
-      this.__inputNodesLayout.setVisibility(othersStatus);
-      this.__outputNodesLayout.setVisibility(othersStatus);
       const isSettingsGroupShowable = this.isSettingsGroupShowable();
       const othersStatus2 = isSettingsGroupShowable && !maximize ? "visible" : "excluded";
       this._settingsLayout.setVisibility(othersStatus2);
@@ -365,88 +203,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       return this.__header;
     },
 
-    getInputsView: function() {
-      return this.__inputsView;
-    },
-
-    getOutputsView: function() {
-      return this.__outputsView;
-    },
-
     getSettingsLayout: function() {
       return this._settingsLayout;
-    },
-
-    __attachEventHandlers: function() {
-      const inputBlocker = this.getBlocker();
-      const outputBlocker = this.__pane2.getBlocker();
-      inputBlocker.addListener("tap", this.__inputsView.toggleCollapsed.bind(this.__inputsView));
-      outputBlocker.addListener("tap", this.__outputsView.toggleCollapsed.bind(this.__outputsView));
-
-      this.addListenerOnce("appear", () => {
-        const inputSplitter = this.getChildControl("splitter");
-        const inputKnob = inputSplitter.getChildControl("knob");
-        inputKnob.set({
-          visibility: "visible"
-        });
-        this.__inputsView.bind("collapsed", inputKnob, "source", {
-          converter: collapsed => collapsed ? "@FontAwesome5Solid/angle-double-right/12" : "@FontAwesome5Solid/angle-double-left/12"
-        });
-        this.__fillUpSplittersGap(inputSplitter);
-      }, this);
-
-      this.__pane2.addListenerOnce("appear", () => {
-        const outputSplitter = this.__pane2.getChildControl("splitter");
-        const outputKnob = outputSplitter.getChildControl("knob");
-        outputKnob.set({
-          visibility: "visible"
-        });
-        this.__outputsView.bind("collapsed", outputKnob, "source", {
-          converter: collapsed => collapsed ? "@FontAwesome5Solid/angle-double-left/12" : "@FontAwesome5Solid/angle-double-right/12"
-        });
-        this.__fillUpSplittersGap(outputSplitter);
-      }, this);
-
-      const maximizeIframeCb = msg => {
-        inputBlocker.setStyles({
-          display: msg.getData() ? "none" : "block"
-        });
-        outputBlocker.setStyles({
-          display: msg.getData() ? "none" : "block"
-        });
-        this.__inputsView.setVisibility(msg.getData() ? "excluded" : "visible");
-        this.__outputsView.setVisibility(msg.getData() ? "excluded" : "visible");
-      };
-
-      this.addListener("appear", () => {
-        qx.event.message.Bus.getInstance().subscribe("maximizeIframe", maximizeIframeCb, this);
-      }, this);
-
-      this.addListener("disappear", () => {
-        qx.event.message.Bus.getInstance().unsubscribe("maximizeIframe", maximizeIframeCb, this);
-      }, this);
-    },
-
-    // fill up the gap created on top of the slider when the knob image was added
-    __fillUpSplittersGap: function(splitter) {
-      const headerExtender = new qx.ui.core.Widget().set({
-        backgroundColor: "material-button-background",
-        height: this.self().HEADER_HEIGHT,
-        maxWidth: 12
-      });
-      // eslint-disable-next-line no-underscore-dangle
-      splitter._addAt(headerExtender, 0, {
-        flex: 0
-      });
-      // eslint-disable-next-line no-underscore-dangle
-      splitter._addAt(new qx.ui.core.Spacer(), 1, {
-        flex: 1
-      });
-      // knob goes in second postion
-      // eslint-disable-next-line no-underscore-dangle
-      splitter._addAt(new qx.ui.core.Spacer(), 3, {
-        flex: 1
-      });
     },
 
     /**

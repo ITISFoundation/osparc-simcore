@@ -188,8 +188,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           }
           view.setNode(node);
           view.populateLayout();
-          view.getInputsView().exclude();
-          view.getOutputsView().exclude();
           if (this.getPageContext() === "app" && !node.isComputational()) {
             view.getHeaderLayout().exclude();
             view.getSettingsLayout().exclude();
