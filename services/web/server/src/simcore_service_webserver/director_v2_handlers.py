@@ -19,7 +19,6 @@ from .version_control_db import CommitID
 
 log = logging.getLogger(__file__)
 
-# FIXME: remove meta_* dependency. Create interface to start, stop and use in meta_
 # TODO: connect routes
 routes = web.RouteTableDef()
 
