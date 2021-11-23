@@ -13,22 +13,25 @@ pip install "git+https://github.com/ITISFoundation/osparc-simcore.git@master#egg
 
 ```
 
-## ``simcore-service-integrator`` entrypoint
+## ``osparc-service-integrator`` entrypoint
 
-Commands of ``simcore-service-integrator`` CLI:
+Commands of ``osparc-service-integrator`` CLI:
 ```cmd
-$ simcore-service-integrator  --help
-Usage: simcore-service-integrator [OPTIONS] COMMAND [ARGS]...
+$ osparc-service-integrator  --help
+Usage: osparc-service-integrator [OPTIONS] COMMAND [ARGS]...
+
+  o2s2parc service integration library
 
 Options:
   --version  Show the version and exit.
   --help     Show this message and exit.
 
 Commands:
-  bump-version           Bumps target version in metadata
-  get-version            Prints to output requested version
-  run-creator            Creates a sh script that uses jq tool to retrieve...
-  update-compose-labels  Update a docker-compose file with json files in a...
+  bump-version  Bumps target version in metadata
+  compose       create docker image/runtime compose-specs from the osparc...
+  config        Creates osparc config from complete docker compose-spec
+  get-version   Prints to output requested version
+  run-creator   Creates a sh script that uses jq tool to retrieve...
 ```
 
 
@@ -40,13 +43,14 @@ A replacement for the old Makefile recipes might be:
 ```Makefile
 service.cli/run: $(METADATA)
 	# Updates adapter script from metadata in $<
-	simcore-service-integrator run-creator --metadata $< --runscript $@
+	osparc-service-integrator run-creator --metadata $< --runscript $@
 
 docker-compose-meta.yml: $(METADATA)
 	# Injects metadata from $< as labels
-	simcore-service-integrator update-compose-labels --compose $@ --metadata $<
+	osparc-service-integrator compose --metadata $< --to-spec-file $@
 
 ```
+
 ### testing plugin
 
 Created a pytest-plugin from submodule ``service_integration.pytest_plugin`` with fixtures and helper assert function.
@@ -90,8 +94,8 @@ TODO:
 
 Tools to increase versions by specifying ``patch, minor, major``.
 ```cmd
-$ simcore-service-integrator bump-version --help
-Usage: simcore-service-integrator bump-version [OPTIONS] [[integration-
+$ osparc-service-integrator bump-version --help
+Usage: osparc-service-integrator bump-version [OPTIONS] [[integration-
                                                version|version]]
 
   Bumps target version in metadata
@@ -108,16 +112,16 @@ so a replacement Makefile recipes might be
 CURRENT_VERSION := $(shell VERSION)
 
 VERSION: $(METADATA) ## creates VERSION file
-  @simcore-service-integrator get-version --metadata-file $< > $@
+  @osparc-service-integrator get-version --metadata-file $< > $@
 
 .PHONY: version-service-patch version-service-minor version-service-major
 version-service-patch version-service-minor version-service-major: $(METADATA) ## kernel/service versioning as patch
-	simcore-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-service-,,$@)
+	osparc-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-service-,,$@)
   $(MAKE) VERSION
 
 .PHONY: version-integration-patch version-integration-minor version-integration-major
 version-integration-patch version-integration-minor version-integration-major: $(METADATA) ## integration versioning as patch (bug fixes not affecting API/handling), minor/major (backwards-compatible/INcompatible API changes)
-	simcore-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-integration-,,$@) integration-version
+	osparc-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-integration-,,$@) integration-version
 
 ```
 

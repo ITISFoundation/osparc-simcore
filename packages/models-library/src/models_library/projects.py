@@ -7,20 +7,22 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, validator
+from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 
-from .basic_regex import DATE_RE
+from .basic_regex import DATE_RE, UUID_RE
 from .projects_access import AccessRights, GroupID
 from .projects_nodes import Node
-from .projects_nodes_io import NodeID_AsDictKey
+from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
 
 ProjectID = UUID
+ProjectIDStr = constr(regex=UUID_RE)
+
 ClassifierID = str
 
 # TODO: for some reason class Workbench(BaseModel): __root__= does not work as I thought ... investigate!
-Workbench = Dict[NodeID_AsDictKey, Node]
+Workbench = Dict[NodeIDStr, Node]
 
 
 # NOTE: careful this is in sync with packages/postgres-database/src/simcore_postgres_database/models/projects.py!!!

@@ -47,6 +47,15 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     osparc.wrapper.JsonDiffPatch.getInstance().init();
     osparc.wrapper.JsonTreeViewer.getInstance().init();
     osparc.wrapper.DOMPurify.getInstance().init();
+    osparc.wrapper.RadialMenu.getInstance().init()
+      .then(loaded => {
+        if (loaded) {
+          // hack to trigger the fonts loading
+          const menu = osparc.wrapper.RadialMenu.getInstance().createMenu();
+          menu.show();
+          menu.hide();
+        }
+      });
     this.__createMainViewLayout();
   },
 

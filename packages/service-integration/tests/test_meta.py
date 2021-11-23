@@ -6,12 +6,12 @@ import re
 
 import pytest
 from service_integration import __version__
+from service_integration._meta import INTEGRATION_API_VERSION, project_name
 from service_integration.basic_regex import (
     PEP404_VERSION_RE,
     SEMANTIC_VERSION_RE,
     VERSION_RE,
 )
-from service_integration.meta import INTEGRATION_API_VERSION, project_name
 
 
 def test_package_metadata():

@@ -6,7 +6,7 @@ from typing import Dict, Optional
 
 from pydantic import BaseModel, Extra, Field
 
-from .projects_nodes_io import NodeID, NodeID_AsDictKey
+from .projects_nodes_io import NodeID, NodeIDStr
 from .projects_nodes_ui import Position
 
 
@@ -25,8 +25,8 @@ class Slideshow(BaseModel):
 
 
 class StudyUI(BaseModel):
-    workbench: Optional[Dict[NodeID_AsDictKey, WorkbenchUI]] = Field(None)
-    slideshow: Optional[Dict[NodeID_AsDictKey, Slideshow]]
+    workbench: Optional[Dict[NodeIDStr, WorkbenchUI]] = Field(None)
+    slideshow: Optional[Dict[NodeIDStr, Slideshow]]
     current_node_id: Optional[NodeID] = Field(alias="currentNodeId")
 
     class Config:

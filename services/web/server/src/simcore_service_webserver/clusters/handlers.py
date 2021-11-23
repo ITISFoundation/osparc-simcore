@@ -3,6 +3,7 @@ from typing import List
 
 from aiohttp import web
 from models_library.users import GroupID, UserID
+from pydantic import ValidationError
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from servicelib.json_serialization import json_dumps
 
@@ -50,12 +51,22 @@ async def create_cluster_handler(request: web.Request) -> web.Response:
     user_id: UserID = request[RQT_USERID_KEY]
     primary_group, _, _ = await list_user_groups(request.app, user_id)
 
-    new_cluster = ClusterCreate(
-        name=body.name if hasattr(body, "name") else None,
-        description=body.description if hasattr(body, "description") else None,
-        type=body.type if hasattr(body, "type") else None,
-        owner=primary_group["gid"],
-    )
+    body = await request.json()
+
+    assert body  # no sec
+    try:
+        new_cluster = ClusterCreate(
+            name=body.get("name"),
+            description=body.get("description"),
+            type=body.get("type"),
+            endpoint=body.get("endpoint"),
+            authentication=body.get("authentication"),
+            owner=primary_group["gid"],
+        )
+    except ValidationError as exc:
+        raise web.HTTPUnprocessableEntity(
+            reason=f"Invalid cluster definition: {exc} "
+        ) from exc
 
     clusters_repo = ClustersRepository(request)
     new_cluster = await clusters_repo.create_cluster(new_cluster)
@@ -103,11 +114,9 @@ async def update_cluster_handler(request: web.Request) -> web.Response:
     primary_group, std_groups, all_group = await list_user_groups(request.app, user_id)
 
     body = await request.json()
-
-    updated_cluster = ClusterPatch.parse_obj(body)
-
-    clusters_repo = ClustersRepository(request)
     try:
+        updated_cluster = ClusterPatch.parse_obj(body)
+        clusters_repo = ClustersRepository(request)
         cluster = await clusters_repo.update_cluster(
             GroupID(primary_group["gid"]),
             [GroupID(g["gid"]) for g in std_groups],
@@ -117,6 +126,10 @@ async def update_cluster_handler(request: web.Request) -> web.Response:
         )
         data = cluster.dict(by_alias=True)
         return web.json_response(data={"data": data}, dumps=json_dumps)
+    except ValidationError as exc:
+        raise web.HTTPUnprocessableEntity(
+            reason=f"Invalid cluster definition: {exc} "
+        ) from exc
     except ClusterNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"{exc}")
     except ClusterAccessForbidden as exc:
