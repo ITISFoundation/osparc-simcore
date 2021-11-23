@@ -31,6 +31,7 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
   statics: {
     BUTTON_OPTIONS: {
       font: "text-14",
+      backgroundColor: "transparent",
       allowGrowY: false,
       minWidth: 32,
       minHeight: 32
@@ -60,16 +61,16 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
 
     __createButtons: function() {
       const prvsBtn = this.__prvsBtn = new qx.ui.form.Button().set({
-        toolTipText: this.tr("Previous"),
-        icon: "@FontAwesome5Solid/arrow-left/14",
+        toolTipText: qx.locale.Manager.tr("Previous"),
+        icon: "@FontAwesome5Solid/arrow-left/18",
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
         allowGrowX: false
       });
       prvsBtn.addListener("execute", () => this.__prevPressed(), this);
 
       const nextBtn = this.__nextBtn = new qx.ui.form.Button().set({
-        toolTipText: this.tr("Next"),
-        icon: "@FontAwesome5Solid/arrow-right/14",
+        toolTipText: qx.locale.Manager.tr("Next"),
+        icon: "@FontAwesome5Solid/arrow-right/18",
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
         allowGrowX: false
       });
