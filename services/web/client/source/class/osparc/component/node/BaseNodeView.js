@@ -244,7 +244,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __createNodeStatusUI: function(node) {
-      const nodeStatusUI = new osparc.ui.basic.NodeStatusUI(node);
+      const nodeStatusUI = new osparc.ui.basic.NodeStatusUI(node).set({
+        backgroundColor: "material-button-background"
+      });
       nodeStatusUI.getChildControl("label").set({
         font: "text-14"
       });
