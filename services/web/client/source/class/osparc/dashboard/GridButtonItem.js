@@ -306,7 +306,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         let toolTipText = null;
         switch (uiMode) {
           case "guided":
-          default:
             source = osparc.dashboard.CardBase.MODE_GUIDED;
             toolTipText = this.tr("Guided mode");
             break;
