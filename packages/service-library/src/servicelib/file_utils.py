@@ -1,5 +1,4 @@
 from pathlib import Path
-import pathlib
 from .pools import async_on_threadpool
 import logging
 
@@ -30,7 +29,10 @@ async def remove_directory(path: Path, only_children: bool = False) -> None:
         return
 
     for child in path.glob("*"):
-        await async_on_threadpool(lambda: _rm_path_contents(child))
+        await async_on_threadpool(
+            # pylint: disable=cell-var-from-loop
+            lambda: _rm_path_contents(child)
+        )
 
     if not only_children:
         await async_on_threadpool(lambda: _rm_path_contents(path))

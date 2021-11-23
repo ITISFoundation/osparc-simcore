@@ -1,11 +1,11 @@
-from typing import Dict, List, Optional, Union, Any
+from typing import List, Optional, Union
 from enum import Enum
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from pydantic.types import NonNegativeFloat
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
