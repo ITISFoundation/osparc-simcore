@@ -5,9 +5,7 @@
 import importlib
 import json
 from collections import namedtuple
-from os import name
-from re import A
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List
 
 import aiodocker
 import faker
