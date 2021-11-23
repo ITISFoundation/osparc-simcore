@@ -26,13 +26,6 @@ class LoggerRabbitMessage(RabbitMessageBase):
 
 class EventRabbitMessage(RabbitMessageBase):
     action: RabbitEventMessageType
-    payload: Optional[Dict[str, Any]] = Field(
-        None,
-        description=(
-            "each action will define a different set of parameters it "
-            "requires to be present"
-        ),
-    )
 
 
 class ProgressRabbitMessage(RabbitMessageBase):
