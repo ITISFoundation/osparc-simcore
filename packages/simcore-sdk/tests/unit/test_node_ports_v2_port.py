@@ -77,13 +77,17 @@ def e_tag() -> str:
     return "1212132546546321-1"
 
 
-@contextmanager
-def symlink_to_file_with_data(file_name: Path) -> Iterator[Path]:
+##################### FIXTURES
+
+
+@pytest.fixture
+def symlink_to_file_with_data() -> Iterator[Path]:
+    file_name: Path = this_node_file_name()
     symlink_path = file_name
     assert not symlink_path.exists()
     file_path = file_name.parent / f"source_{file_name.name}"
     assert not file_path.exists()
-    
+
     file_path.write_text("some dummy data")
     assert file_path.exists()
     os.symlink(file_path, symlink_path)
@@ -97,8 +101,9 @@ def symlink_to_file_with_data(file_name: Path) -> Iterator[Path]:
     assert not file_path.exists()
 
 
-@contextmanager
-def file_with_data(file_name: Path) -> Iterator[Path]:
+@pytest.fixture
+def file_with_data() -> Iterator[Path]:
+    file_name: Path = this_node_file_name()
     file_path = file_name
     assert not file_path.exists()
     file_path.write_text("some dummy data")
@@ -110,29 +115,14 @@ def file_with_data(file_name: Path) -> Iterator[Path]:
     assert not file_path.exists()
 
 
-##################### FIXTURES
-
-
 @pytest.fixture(
     params=[
-        True,
-        False,
+        pytest.lazy_fixture("symlink_to_file_with_data"),
+        pytest.lazy_fixture("file_with_data"),
     ]
 )
-def return_symlink(request) -> bool:
-    return request.param
-
-
-@pytest.fixture()
-def this_node_file(return_symlink: bool, tmp_path: Path) -> Iterator[Path]:
-    file_name = this_node_file_name()
-
-    if return_symlink:
-        with symlink_to_file_with_data(file_name) as symlink_path:
-            yield symlink_path
-    else:
-        with file_with_data(file_name) as file_path:
-            yield file_path
+def this_node_file(request) -> Iterator[Path]:
+    yield request.param
 
 
 @pytest.fixture
