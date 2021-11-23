@@ -300,7 +300,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__getStudyLogger().error(null, "Failed submitting pipeline");
         }
         startStopButtonsWB.setRunning(false);
-        startStopButtonsSS.setRunning(false);
       }, this);
 
       const requestData = {
