@@ -11,9 +11,9 @@ from typing import Any, Dict, Iterable, List, Tuple
 
 import aiodocker
 import faker
-from aiodocker.containers import DockerContainer
 import pytest
 import yaml
+from aiodocker.containers import DockerContainer
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI, status
 from pytest_mock.plugin import MockerFixture
