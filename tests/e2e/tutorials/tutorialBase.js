@@ -263,7 +263,7 @@ class TutorialBase {
     }
     console.log("Timeout reached waiting for study done ", ((new Date().getTime()) - start) / 1000);
     await utils.takeScreenshot(this.__page, 'run_pipeline_timeout_reached');
-    return;
+    throw new Error("Pipeline timed out");
   }
 
   async waitForStudyUnlocked(studyId, timeout = 10000) {
