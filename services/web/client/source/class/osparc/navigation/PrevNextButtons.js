@@ -30,10 +30,9 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
 
   statics: {
     BUTTON_OPTIONS: {
-      font: "text-14",
-      allowGrowY: false,
-      minWidth: 32,
-      minHeight: 32
+      backgroundColor: "background-main",
+      allowGrowX: false,
+      allowGrowY: false
     }
   },
 
@@ -48,7 +47,6 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
   members: {
     __prvsBtn: null,
     __nextBtn: null,
-    __currentNodeId: null,
 
     getPreviousButton: function() {
       return this.__prvsBtn;
@@ -61,17 +59,15 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
     __createButtons: function() {
       const prvsBtn = this.__prvsBtn = new qx.ui.form.Button().set({
         toolTipText: qx.locale.Manager.tr("Previous"),
-        icon: "@FontAwesome5Solid/arrow-left/18",
-        ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-        allowGrowX: false
+        icon: "@FontAwesome5Solid/arrow-left/24",
+        ...this.self().BUTTON_OPTIONS
       });
       prvsBtn.addListener("execute", () => this.__prevPressed(), this);
 
       const nextBtn = this.__nextBtn = new qx.ui.form.Button().set({
         toolTipText: qx.locale.Manager.tr("Next"),
-        icon: "@FontAwesome5Solid/arrow-right/18",
-        ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-        allowGrowX: false
+        icon: "@FontAwesome5Solid/arrow-right/24",
+        ...this.self().BUTTON_OPTIONS
       });
       nextBtn.addListener("execute", () => this.__nextPressed(), this);
     },
