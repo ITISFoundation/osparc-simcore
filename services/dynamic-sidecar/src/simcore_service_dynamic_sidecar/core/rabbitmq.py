@@ -149,7 +149,7 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
             aio_pika.Message(body=data.json().encode()), routing_key=""
         )
 
-    async def _publish_command(
+    async def _publish_event(
         self, action: str, payload: Optional[Dict[str, Any]] = None
     ) -> None:
         data = EventRabbitMessage(
@@ -165,7 +165,7 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
         )
 
     async def send_event_reload_iframe(self) -> None:
-        await self._publish_command(action=RabbitEventMessageType.RELOAD_IFRAME.value)
+        await self._publish_event(action=RabbitEventMessageType.RELOAD_IFRAME.value)
 
     async def post_log_message(self, log_msg: Union[str, List[str]]) -> None:
         if isinstance(log_msg, str):
