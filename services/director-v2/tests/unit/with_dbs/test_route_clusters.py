@@ -112,8 +112,13 @@ def test_get_default_cluster_entrypoint(clusters_config: None, client: TestClien
     assert default_cluster_out == ClusterOut.parse_obj(response.json())
 
 
-# @pytest.fixture
-# def local_dask_gateway():
+@pytest.fixture
+def local_dask_gateway_server():
+    ...
+
+
+def test_local_dask_gateway_server(local_dask_gateway_server):
+    pass
 
 
 def test_get_cluster_entrypoint(
