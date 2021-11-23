@@ -131,10 +131,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     __nodeView: null,
     __currentNodeId: null,
 
-    getStartStopButtons: function() {
-      return this.__slideshowToolbar.getStartStopButtons();
-    },
-
     getSelectedNodeIDs: function() {
       return [this.__currentNodeId];
     },
@@ -224,7 +220,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
 
-      this.getStartStopButtons().nodeSelectionChanged([nodeId]);
+      // this.getStartStopButtons().nodeSelectionChanged([nodeId]);
     },
 
     startSlides: function(context = "guided") {
