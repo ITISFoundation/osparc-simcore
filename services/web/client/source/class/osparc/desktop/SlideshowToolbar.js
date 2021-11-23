@@ -32,7 +32,9 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       let control;
       switch (id) {
         case "study-info":
-          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/14");
+          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/14").set({
+            backgroundColor: "transparent"
+          });
           control.addListener("execute", () => this.__openStudyDetails(), this);
           this._add(control);
           break;
@@ -75,9 +77,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
         }
         case "prev-next-btns": {
           control = new osparc.navigation.PrevNextButtons();
-          control.addListener("nodeSelected", e => {
-            this.fireDataEvent("nodeSelected", e.getData());
-          }, this);
+          control.addListener("nodeSelected", e => this.fireDataEvent("nodeSelected", e.getData()), this);
           this._add(control);
           break;
         }
@@ -89,9 +89,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
           break;
         case "breadcrumb-navigation": {
           control = new osparc.navigation.BreadcrumbsSlideshow();
-          control.addListener("nodeSelected", e => {
-            this.fireDataEvent("nodeSelected", e.getData());
-          }, this);
+          control.addListener("nodeSelected", e => this.fireDataEvent("nodeSelected", e.getData()), this);
           const scroll = this.getChildControl("breadcrumbs-scroll");
           scroll.add(control);
           break;
