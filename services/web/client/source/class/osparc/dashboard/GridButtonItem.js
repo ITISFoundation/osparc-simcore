@@ -314,10 +314,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
             source = osparc.dashboard.CardBase.MODE_APP;
             toolTipText = this.tr("App mode");
             break;
-          case "workbench":
-            source = osparc.dashboard.CardBase.MODE_WORKBENCH;
-            toolTipText = this.tr("Workbench mode");
-            break;
         }
         if (source) {
           this.getChildControl("ui-mode").set({
