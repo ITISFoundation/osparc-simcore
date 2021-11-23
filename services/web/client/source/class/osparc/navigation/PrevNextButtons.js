@@ -79,7 +79,7 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
 
     __applyStudy: function(study) {
       this.__updatePrevNextButtons();
-      study.getStudy().addListener("changeCurrentNodeId", () => this.__updatePrevNextButtons(), this);
+      study.getUi().addListener("changeCurrentNodeId", () => this.__updatePrevNextButtons(), this);
     },
 
     __updatePrevNextButtons: function() {
@@ -88,13 +88,8 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
       const nodesIds = studyUI.getSlideshow().getSortedNodeIds();
       const currentIdx = nodesIds.indexOf(currentNodeId);
 
-      if (currentIdx === 0) {
-        this.__prvsBtn.setEnabled(false);
-      }
-
-      if (currentIdx === nodesIds.length-1) {
-        this.__nextBtn.setEnabled(false);
-      }
+      this.__prvsBtn.setEnabled(currentIdx > 0);
+      this.__nextBtn.setEnabled(currentIdx < nodesIds.length-1);
     },
 
     __prevPressed: function() {

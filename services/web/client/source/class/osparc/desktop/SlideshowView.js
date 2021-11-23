@@ -200,7 +200,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           }
         }
         if (!node.isDynamic()) {
-          view.setMaxWidth(800);
+          view.set({
+            maxWidth: 800,
+            backgroundColor: "background-main-lighter+"
+          });
         }
 
         if (view) {
