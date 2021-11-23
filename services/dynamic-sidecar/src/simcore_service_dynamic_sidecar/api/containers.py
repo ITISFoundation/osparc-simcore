@@ -479,30 +479,21 @@ async def restarts_containers(
             detail="No spec for docker-compose command was found",
         )
 
-    async def _run_command(command: str, command_timeout: Optional[float]) -> None:
-        finished_without_errors, stdout = await write_file_and_run_command(
-            settings=settings,
-            file_content=stored_compose_content,
-            command=command,
-            command_timeout=command_timeout,
-        )
-        if not finished_without_errors:
-            error_message = (f"'{command}' finished with errors\n{stdout}",)
-            logger.warning(error_message)
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=stdout)
-
-    await _run_command(
-        command=(
-            "docker-compose --project-name {project} --file {file_path} "
-            "stop --timeout {stop_and_remove_timeout}"
-        ),
-        command_timeout=command_timeout,
+    command = (
+        "docker-compose --project-name {project} --file {file_path} "
+        "restart --timeout {stop_and_remove_timeout}"
     )
 
-    await _run_command(
-        command="docker-compose --project-name {project} --file {file_path} start",
+    finished_without_errors, stdout = await write_file_and_run_command(
+        settings=settings,
+        file_content=stored_compose_content,
+        command=command,
         command_timeout=command_timeout,
     )
+    if not finished_without_errors:
+        error_message = (f"'{command}' finished with errors\n{stdout}",)
+        logger.warning(error_message)
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=stdout)
 
     await _send_message(rabbitmq, "Service was restarted please reload the UI")
     await rabbitmq.send_event_reload_iframe()

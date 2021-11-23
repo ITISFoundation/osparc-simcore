@@ -287,7 +287,7 @@ class DynamicSidecarsScheduler:
         return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
 
     async def restart_containers(self, node_uuid: NodeID) -> None:
-        """Restarts containers without saving or restiring the state or I/O ports"""
+        """Restarts containers without saving or restoring the state or I/O ports"""
         if node_uuid not in self._inverse_search_mapping:
             raise DynamicSidecarNotFoundError(node_uuid)
 

@@ -39,4 +39,4 @@ class EntrypointContainerNotFoundError(DirectorException):
 
 
 class LegacyServiceIsNotSupportedError(DirectorException):
-    """This API is not impmeneted by the director-v0"""
+    """This API is not implemented by the director-v0"""
