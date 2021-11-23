@@ -1,11 +1,18 @@
 from functools import cached_property
-from typing import Dict
+from typing_extensions import TypedDict
 
 from pydantic.networks import AnyUrl
 from pydantic.types import SecretStr
 
 from .base import BaseCustomSettings
 from .basic_types import PortInt
+
+
+class Channels(TypedDict):
+    log: str
+    progress: str
+    instrumentation: str
+    events: str
 
 
 class RabbitDsn(AnyUrl):
@@ -22,7 +29,7 @@ class RabbitSettings(BaseCustomSettings):
     RABBIT_PASSWORD: SecretStr = SecretStr("simcore")
 
     # channels
-    RABBIT_CHANNELS: Dict[str, str] = {
+    RABBIT_CHANNELS: Channels = {
         "log": "simcore.services.logs",
         "progress": "simcore.services.progress",
         "instrumentation": "simcore.services.instrumentation",

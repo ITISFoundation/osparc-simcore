@@ -150,7 +150,7 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
         )
 
     async def _publish_event(
-        self, action: str, payload: Optional[Dict[str, Any]] = None
+        self, action: RabbitEventMessageType, payload: Optional[Dict[str, Any]] = None
     ) -> None:
         data = EventRabbitMessage(
             node_id=self._node_id,
@@ -165,7 +165,7 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
         )
 
     async def send_event_reload_iframe(self) -> None:
-        await self._publish_event(action=RabbitEventMessageType.RELOAD_IFRAME.value)
+        await self._publish_event(action=RabbitEventMessageType.RELOAD_IFRAME)
 
     async def post_log_message(self, log_msg: Union[str, List[str]]) -> None:
         if isinstance(log_msg, str):
