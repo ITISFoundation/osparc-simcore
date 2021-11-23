@@ -200,10 +200,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             maxWidth: 800,
             backgroundColor: "background-main-lighter+",
             padding: 10,
-            margin: 5
+            margin: 6
           });
           view.getContentElement().setStyles({
-            "border-radius": "10px"
+            "border-radius": "12px"
           });
         }
 
