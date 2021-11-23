@@ -130,8 +130,7 @@ qx.Class.define("osparc.component.node.NodeView", {
       });
       loggerView.getChildControl("pin-node").exclude();
       const loggerPanel = new osparc.desktop.PanelView(this.tr("Logger"), loggerView).set({
-        collapsed: true,
-        backgroundColor: "background-main-lighter"
+        collapsed: true
       });
       osparc.utils.Utils.setIdToWidget(loggerPanel.getTitleLabel(), "nodeLoggerTitleLabel");
       this._loggerLayout.add(loggerPanel);
