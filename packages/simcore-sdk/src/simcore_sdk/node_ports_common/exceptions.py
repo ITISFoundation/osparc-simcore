@@ -54,7 +54,7 @@ class InvalidItemTypeError(NodeportsException):
 class SymlinksUsageIsDisabledError(NodeportsException):
     """Item type incorrect"""
 
-    def __init__(self, msg: Optional[str] = None):
+    def __init__(self):
         super().__init__(
             (
                 "Symlink follow is disabled. It is not possible to use symlinks. "
