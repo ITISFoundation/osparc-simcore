@@ -59,6 +59,13 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
     node: {
       check: "osparc.data.model.Node",
       nullable: false
+    },
+
+    showMyData: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeShowMyData"
     }
   },
 
@@ -70,6 +77,14 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "show-my-data-checkbox":
+          control = new qx.ui.form.CheckBox().set({
+            label: this.tr("Show My Data"),
+            alignX: "right",
+            value: this.getShowMyData()
+          });
+          this._add(control);
+          break;
         case "files-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
           this._add(control, {
@@ -112,6 +127,10 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
     },
 
     __buildLayout: function() {
+      const showMyData = this.getChildControl("show-my-data-checkbox");
+      showMyData.exclude();
+      showMyData.bind("value", this, "showMyData");
+
       const treesLayout = this.getChildControl("files-layout");
 
 
@@ -156,6 +175,9 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
 
 
       const userTreeLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      this.bind("showMyData", userTreeLayout, "visibility", {
+        converter: showMyDataValue => showMyDataValue ? "visible" : "excluded"
+      });
 
       const userReloadBtn = this.getChildControl("reload-button");
       userReloadBtn.addListener("execute", function() {
