@@ -212,8 +212,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const header = this.__header = new qx.ui.container.Composite(new qx.ui.layout.HBox(20).set({
         alignX: "center"
       })).set({
-        height: this.self().HEADER_HEIGHT,
-        backgroundColor: "material-button-background"
+        height: this.self().HEADER_HEIGHT
       });
 
       const infoLayout = this.__serviceInfoLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -483,9 +482,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __createNodeStatusUI: function(node) {
-      const nodeStatusUI = new osparc.ui.basic.NodeStatusUI(node).set({
-        backgroundColor: "material-button-background"
-      });
+      const nodeStatusUI = new osparc.ui.basic.NodeStatusUI(node);
       nodeStatusUI.getChildControl("label").set({
         font: "text-14"
       });
