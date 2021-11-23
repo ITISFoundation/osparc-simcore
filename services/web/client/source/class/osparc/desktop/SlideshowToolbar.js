@@ -75,12 +75,6 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
           this._add(control);
           break;
         }
-        case "prev-next-btns": {
-          control = new osparc.navigation.PrevNextButtons();
-          control.addListener("nodeSelected", e => this.fireDataEvent("nodeSelected", e.getData()), this);
-          this._add(control);
-          break;
-        }
         case "breadcrumbs-scroll":
           control = new qx.ui.container.Scroll();
           this._add(control, {
@@ -139,7 +133,6 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       });
 
       this.getChildControl("edit-slideshow-buttons");
-      this.getChildControl("prev-next-btns");
       this.getChildControl("breadcrumb-navigation");
       this.getChildControl("breadcrumb-navigation-edit");
 
@@ -194,15 +187,9 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
           editSlideshowButtons.exclude();
         }
 
-        const nodes = study.getUi().getSlideshow().getSortedNodes();
-        const nodeIds = [];
-        nodes.forEach(node => {
-          nodeIds.push(node.nodeId);
-        });
-
+        const nodeIds = study.getUi().getSlideshow().getSortedNodeIds();
         this.getChildControl("breadcrumb-navigation").populateButtons(nodeIds);
         this.getChildControl("breadcrumb-navigation-edit").populateButtons(study);
-        this.getChildControl("prev-next-btns").populateButtons(nodeIds);
         this.__evalButtonsIfEditing();
       }
     },

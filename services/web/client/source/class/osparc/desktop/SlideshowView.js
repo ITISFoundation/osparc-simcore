@@ -74,6 +74,29 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     }, this);
     slideshowToolbar.addListener("slidesStop", () => this.fireEvent("slidesStop"), this);
     this._add(slideshowToolbar);
+
+    const mainView = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+      alignX: "center"
+    }));
+    this._add(mainView, {
+      flex: 1
+    });
+
+    const prevNextButtons = this.__prevNextButtons = new osparc.navigation.PrevNextButtons();
+    prevNextButtons.addListener("nodeSelected", e => {
+      const nodeId = e.getData();
+      this.nodeSelected(nodeId);
+    }, this);
+    const prevButton = this.__prevButton = prevNextButtons.getPreviousButton().set({
+      alignX: "right",
+      alignY: "middle"
+    });
+    const nextButton = this.__nextButton = prevNextButtons.getNextButton().set({
+      alignX: "left",
+      alignY: "middle"
+    });
+    mainView.add(prevButton);
+    mainView.add(nextButton);
   },
 
   events: {
@@ -99,10 +122,14 @@ qx.Class.define("osparc.desktop.SlideshowView", {
   },
 
   members: {
-    __currentNodeId: null,
     __slideshowToolbar: null,
-    __lastView: null,
     __collapseWithUserMenu: null,
+    __mainView: null,
+    __prevNextButtons: null,
+    __prevButton: null,
+    __nextButton: null,
+    __nodeView: null,
+    __currentNodeId: null,
 
     getStartStopButtons: function() {
       return this.__slideshowToolbar.getStartStopButtons();
@@ -158,9 +185,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           });
           view.add(renderer);
         } else {
-          if (node.isContainer()) {
-            view = new osparc.component.node.GroupNodeView();
-          } else if (node.isFilePicker()) {
+          if (node.isFilePicker()) {
             view = new osparc.component.node.FilePickerNodeView();
           } else {
             view = new osparc.component.node.NodeView();
@@ -174,22 +199,25 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             view.getSettingsLayout().exclude();
           }
         }
+        if (!node.isDynamic()) {
+          view.setMaxWidth(800);
+        }
 
         if (view) {
-          if (this.__lastView && this._getChildren().includes(this.__lastView)) {
-            this._remove(this.__lastView);
+          if (this.__nodeView && this.__mainView.getChildren().includes(this.__nodeView)) {
+            this.__mainView.remove(this.__nodeView);
           }
-          this._add(view, {
+          this.__mainView.addAt(view, 1, {
             flex: 1
           });
-          this.__lastView = view;
+          this.__nodeView = view;
         }
         // check if upstream has to be run
         if (!this.__isNodeReady(node, oldCurrentNodeId)) {
           return;
         }
-      } else if (this.__lastView) {
-        this._remove(this.__lastView);
+      } else if (this.__nodeView) {
+        this._remove(this.__nodeView);
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
 
@@ -222,6 +250,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     _applyStudy: function(study) {
       if (study) {
         this.__slideshowToolbar.setStudy(study);
+        this.__prevNextButtons.setStudy(study);
       }
     },
 
