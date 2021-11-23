@@ -9,6 +9,7 @@ import logging
 from asyncio import Future
 from copy import deepcopy
 from typing import Any, Callable, Dict
+from unittest import mock
 from unittest.mock import call
 
 import pytest
@@ -16,6 +17,7 @@ import socketio
 import socketio.exceptions
 import sqlalchemy as sa
 import tenacity
+from _helpers import MockedStorageSubsystem  # type: ignore
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioredis import Redis
@@ -141,7 +143,7 @@ def socket_registry(client: TestClient) -> RedisResourceRegistry:
 
 
 @pytest.fixture
-async def empty_user_project(client, empty_project, logged_user):
+async def empty_user_project(client, empty_project, logged_user) -> Dict[str, Any]:
     project = empty_project()
     async with NewProject(project, client.app, user_id=logged_user["id"]) as project:
         print("-----> added project", project["name"])
@@ -150,7 +152,7 @@ async def empty_user_project(client, empty_project, logged_user):
 
 
 @pytest.fixture
-async def empty_user_project2(client, empty_project, logged_user):
+async def empty_user_project2(client, empty_project, logged_user) -> Dict[str, Any]:
     project = empty_project()
     async with NewProject(project, client.app, user_id=logged_user["id"]) as project:
         print("-----> added project", project["name"])
@@ -321,12 +323,12 @@ async def test_websocket_multiple_connections(
     ],
 )
 async def test_websocket_disconnected_after_logout(
-    client,
-    logged_user,
+    client: TestClient,
+    logged_user: Dict[str, Any],
     socketio_client_factory: Callable,
     client_session_id_factory: Callable[[], str],
     expected,
-    mocker,
+    mocker: MockerFixture,
 ):
     app = client.server.app
     socket_registry = get_registry(app)
@@ -352,7 +354,7 @@ async def test_websocket_disconnected_after_logout(
     # logout client with socket 2
     logout_url = client.app.router["auth_logout"].url_for()
     r = await client.post(
-        logout_url, json={"client_session_id": cur_client_session_id2}
+        f"{logout_url}", json={"client_session_id": cur_client_session_id2}
     )
     assert r.url_obj.path == logout_url.path
     await assert_status(r, expected)
@@ -384,14 +386,14 @@ async def test_websocket_disconnected_after_logout(
     ],
 )
 async def test_interactive_services_removed_after_logout(
-    client,
-    logged_user,
-    empty_user_project,
-    mocked_director_v2_api,
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    empty_user_project: Dict[str, Any],
+    mocked_director_v2_api: Dict[str, mock.MagicMock],
     create_dynamic_service_mock,
     client_session_id_factory: Callable[[], str],
     socketio_client_factory: Callable,
-    storage_subsystem_mock,  # when guest user logs out garbage is collected
+    storage_subsystem_mock: MockedStorageSubsystem,  # when guest user logs out garbage is collected
     director_v2_service_mock: aioresponses,
     exp_save_state: bool,
 ):
@@ -409,7 +411,9 @@ async def test_interactive_services_removed_after_logout(
     await open_project(client, empty_user_project["uuid"], client_session_id1)
     # logout
     logout_url = client.app.router["auth_logout"].url_for()
-    r = await client.post(logout_url, json={"client_session_id": client_session_id1})
+    r = await client.post(
+        f"{logout_url}", json={"client_session_id": client_session_id1}
+    )
     assert r.url_obj.path == logout_url.path
     await assert_status(r, web.HTTPOk)
 
@@ -417,12 +421,16 @@ async def test_interactive_services_removed_after_logout(
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector.collect_garbage(client.app)
 
-    # assert dynamic service is removed
-    mocked_director_v2_api["director_v2_core.stop_service"].assert_awaited_with(
-        app=client.server.app,
-        service_uuid=service["service_uuid"],
-        save_state=exp_save_state,
-    )
+    # assert dynamic service is removed *this is done in a fire/forget way so give a bit of leeway
+    async for attempt in AsyncRetrying(
+        reraise=True, stop=stop_after_delay(10), wait=wait_fixed(1)
+    ):
+        with attempt:
+            mocked_director_v2_api["director_v2_core.stop_service"].assert_awaited_with(
+                app=client.server.app,
+                service_uuid=service["service_uuid"],
+                save_state=exp_save_state,
+            )
 
 
 @pytest.mark.parametrize(

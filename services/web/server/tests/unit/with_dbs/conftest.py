@@ -15,7 +15,7 @@ import textwrap
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, AsyncIterator, Callable, Dict, Iterator, List
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import aioredis
@@ -245,7 +245,7 @@ def asyncpg_storage_system_mock(mocker):
 
 
 @pytest.fixture
-async def mocked_director_v2_api(loop, mocker):
+async def mocked_director_v2_api(loop, mocker) -> Dict[str, MagicMock]:
     mock = {}
 
     #
