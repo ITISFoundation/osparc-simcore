@@ -105,8 +105,7 @@ qx.Class.define("osparc.studycard.Medium", {
         this._add(extraInfoLayout);
         thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
         const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        if (thumbnail.getChildControl("image").getSource() !== osparc.dashboard.GridButtonItem.STUDY_ICON) {
-          // Only show if not default thumbnail
+        if (thumbnail) {
           this._add(thumbnail);
         }
       } else {
@@ -117,8 +116,7 @@ qx.Class.define("osparc.studycard.Medium", {
         thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
         thumbnailWidth = Math.min(thumbnailWidth, this.self().THUMBNAIL_MAX_WIDTH);
         const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        if (thumbnail.getChildControl("image").getSource() !== osparc.dashboard.GridButtonItem.STUDY_ICON) {
-          // Only show if not default thumbnail
+        if (thumbnail) {
           hBox.add(thumbnail, {
             flex: 1
           });
@@ -126,7 +124,10 @@ qx.Class.define("osparc.studycard.Medium", {
         this._add(hBox);
       }
 
-      this._add(this.__createDescription());
+      const description = this.__createDescription();
+      if (description) {
+        this._add(description);
+      }
     },
 
     __createMenuButton: function() {
@@ -228,12 +229,18 @@ qx.Class.define("osparc.studycard.Medium", {
     },
 
     __createThumbnail: function(maxWidth, maxHeight = 150) {
-      return osparc.studycard.Utils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
+      if (this.getStudy().getThumbnail()) {
+        return osparc.studycard.Utils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
+      }
+      return null;
     },
 
     __createDescription: function() {
-      const maxHeight = 300;
-      return osparc.studycard.Utils.createDescription(this.getStudy(), maxHeight);
+      if (this.getStudy().getDescription()) {
+        const maxHeight = 300;
+        return osparc.studycard.Utils.createDescription(this.getStudy(), maxHeight);
+      }
+      return null;
     },
 
     __openAccessRights: function() {

@@ -6013,7 +6013,8 @@ paths:
                 force_restart:
                   type: boolean
                   default: false
-                  description: if true will force re-running all dependent nodes
+                  description: DEPRECATED if true will force re-running all dependent nodes
+                  deprecated: true
                 cluster_id:
                   type: integer
                   description: 'the computation shall use the cluster described by its id, 0 is the default cluster'
@@ -16542,6 +16543,48 @@ paths:
                           description: the cluster owner group
                           type: integer
                           minimum: 1
+                        thumbnail:
+                          type: string
+                          format: uri
+                        endpoint:
+                          type: string
+                          minLength: 1
+                          maxLength: 65536
+                        authentication:
+                          description: Dask gateway authentication
+                          anyOf:
+                            - type: object
+                              properties:
+                                type:
+                                  type: string
+                                  enum:
+                                    - simple
+                                  default: simple
+                                username:
+                                  type: string
+                                password:
+                                  type: string
+                                  writeOnly: true
+                              required:
+                                - username
+                                - password
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                type:
+                                  type: string
+                                  enum:
+                                    - kerberos
+                                  default: kerberos
+                              additionalProperties: false
+                            - type: object
+                              properties:
+                                type:
+                                  type: string
+                                  enum:
+                                    - jupyterhub
+                                  default: jupyterhub
+                              additionalProperties: false
                         accessRights:
                           type: object
                           description: object containing the GroupID as key and read/write/execution permissions as value
@@ -16567,10 +16610,18 @@ paths:
                         - id
                         - name
                         - accessRights
+                        - endpoint
+                        - authentication
+                      additionalProperties: false
                       example:
                         - id: 1
                           name: AWS cluster
                           type: AWS
+                          endpoint: 'https://registry.osparc-development.fake.dev'
+                          authentication:
+                            type: simple
+                            username: someuser
+                            password: somepassword
                           owner: 2
                           accessRights:
                             '2':
@@ -16688,9 +16739,53 @@ paths:
                   enum:
                     - ON_PREMISE
                     - AWS
+                thumbnail:
+                  type: string
+                endpoint:
+                  type: string
+                  minLength: 1
+                  maxLength: 65536
+                authentication:
+                  description: Dask gateway authentication
+                  anyOf:
+                    - type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - simple
+                          default: simple
+                        username:
+                          type: string
+                        password:
+                          type: string
+                          writeOnly: true
+                      required:
+                        - username
+                        - password
+                      additionalProperties: false
+                    - type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - kerberos
+                          default: kerberos
+                      additionalProperties: false
+                    - type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - jupyterhub
+                          default: jupyterhub
+                      additionalProperties: false
               required:
                 - name
                 - type
+                - endpoint
+                - authentication
+              additionalProperties: false
       responses:
         '201':
           description: cluster created
@@ -16724,6 +16819,48 @@ paths:
                         description: the cluster owner group
                         type: integer
                         minimum: 1
+                      thumbnail:
+                        type: string
+                        format: uri
+                      endpoint:
+                        type: string
+                        minLength: 1
+                        maxLength: 65536
+                      authentication:
+                        description: Dask gateway authentication
+                        anyOf:
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - simple
+                                default: simple
+                              username:
+                                type: string
+                              password:
+                                type: string
+                                writeOnly: true
+                            required:
+                              - username
+                              - password
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - kerberos
+                                default: kerberos
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - jupyterhub
+                                default: jupyterhub
+                            additionalProperties: false
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
@@ -16749,10 +16886,18 @@ paths:
                       - id
                       - name
                       - accessRights
+                      - endpoint
+                      - authentication
+                    additionalProperties: false
                     example:
                       - id: 1
                         name: AWS cluster
                         type: AWS
+                        endpoint: 'https://registry.osparc-development.fake.dev'
+                        authentication:
+                          type: simple
+                          username: someuser
+                          password: somepassword
                         owner: 2
                         accessRights:
                           '2':
@@ -16890,6 +17035,48 @@ paths:
                         description: the cluster owner group
                         type: integer
                         minimum: 1
+                      thumbnail:
+                        type: string
+                        format: uri
+                      endpoint:
+                        type: string
+                        minLength: 1
+                        maxLength: 65536
+                      authentication:
+                        description: Dask gateway authentication
+                        anyOf:
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - simple
+                                default: simple
+                              username:
+                                type: string
+                              password:
+                                type: string
+                                writeOnly: true
+                            required:
+                              - username
+                              - password
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - kerberos
+                                default: kerberos
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - jupyterhub
+                                default: jupyterhub
+                            additionalProperties: false
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
@@ -16915,10 +17102,18 @@ paths:
                       - id
                       - name
                       - accessRights
+                      - endpoint
+                      - authentication
+                    additionalProperties: false
                     example:
                       - id: 1
                         name: AWS cluster
                         type: AWS
+                        endpoint: 'https://registry.osparc-development.fake.dev'
+                        authentication:
+                          type: simple
+                          username: someuser
+                          password: somepassword
                         owner: 2
                         accessRights:
                           '2':
@@ -17040,6 +17235,47 @@ paths:
                   description: the cluster owner group
                   type: integer
                   minimum: 1
+                thumbnail:
+                  type: string
+                endpoint:
+                  type: string
+                  minLength: 1
+                  maxLength: 65536
+                authentication:
+                  description: Dask gateway authentication
+                  anyOf:
+                    - type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - simple
+                          default: simple
+                        username:
+                          type: string
+                        password:
+                          type: string
+                          writeOnly: true
+                      required:
+                        - username
+                        - password
+                      additionalProperties: false
+                    - type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - kerberos
+                          default: kerberos
+                      additionalProperties: false
+                    - type: object
+                      properties:
+                        type:
+                          type: string
+                          enum:
+                            - jupyterhub
+                          default: jupyterhub
+                      additionalProperties: false
                 accessRights:
                   type: object
                   description: object containing the GroupID as key and read/write/execution permissions as value
@@ -17061,6 +17297,7 @@ paths:
                         - read
                         - write
                         - delete
+              additionalProperties: false
       responses:
         '200':
           description: the modified cluster
@@ -17094,6 +17331,48 @@ paths:
                         description: the cluster owner group
                         type: integer
                         minimum: 1
+                      thumbnail:
+                        type: string
+                        format: uri
+                      endpoint:
+                        type: string
+                        minLength: 1
+                        maxLength: 65536
+                      authentication:
+                        description: Dask gateway authentication
+                        anyOf:
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - simple
+                                default: simple
+                              username:
+                                type: string
+                              password:
+                                type: string
+                                writeOnly: true
+                            required:
+                              - username
+                              - password
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - kerberos
+                                default: kerberos
+                            additionalProperties: false
+                          - type: object
+                            properties:
+                              type:
+                                type: string
+                                enum:
+                                  - jupyterhub
+                                default: jupyterhub
+                            additionalProperties: false
                       accessRights:
                         type: object
                         description: object containing the GroupID as key and read/write/execution permissions as value
@@ -17119,10 +17398,18 @@ paths:
                       - id
                       - name
                       - accessRights
+                      - endpoint
+                      - authentication
+                    additionalProperties: false
                     example:
                       - id: 1
                         name: AWS cluster
                         type: AWS
+                        endpoint: 'https://registry.osparc-development.fake.dev'
+                        authentication:
+                          type: simple
+                          username: someuser
+                          password: somepassword
                         owner: 2
                         accessRights:
                           '2':

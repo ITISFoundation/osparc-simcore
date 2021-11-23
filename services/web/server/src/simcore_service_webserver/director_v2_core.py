@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from uuid import UUID
 
 import aiohttp
@@ -8,6 +8,7 @@ from aiohttp import ClientTimeout, web
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.settings.services_common import ServicesCommonSettings
+from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
@@ -16,10 +17,12 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 from yarl import URL
 
+from .director_v2_abc import AbstractProjectRunPolicy
 from .director_v2_settings import Directorv2Settings, get_client_session, get_settings
 
 log = logging.getLogger(__file__)
 
+_APP_DIRECTOR_V2_CLIENT_KEY = f"{__name__}.DirectorV2ApiClient"
 
 SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)  # type:ignore
 SERVICE_RETRIEVE_HTTP_TIMEOUT = ClientTimeout(
@@ -46,6 +49,41 @@ class DirectorServiceError(Exception):
 
 
 # base/HELPERS ------------------------------------------------
+
+
+class DirectorV2ApiClient:
+    def __init__(self, app: web.Application) -> None:
+        self._app = app
+        self._settings: Directorv2Settings = get_settings(app)
+        self._base_url = URL(self._settings.endpoint)
+
+    async def start(self, project_id: ProjectID, user_id: UserID, **options) -> str:
+        computation_task_out = await _request_director_v2(
+            self._app,
+            "POST",
+            self._base_url / "computations",
+            expected_status=web.HTTPCreated,
+            data={"user_id": user_id, "project_id": project_id, **options},
+        )
+        assert isinstance(computation_task_out, dict)  # nosec
+        return computation_task_out["id"]
+
+    async def stop(self, project_id: ProjectID, user_id: UserID):
+        await _request_director_v2(
+            self._app,
+            "POST",
+            self._base_url / "computations" / f"{project_id}:stop",
+            expected_status=web.HTTPAccepted,
+            data={"user_id": user_id},
+        )
+
+
+def get_client(app: web.Application) -> Optional[DirectorV2ApiClient]:
+    return app.get(_APP_DIRECTOR_V2_CLIENT_KEY)
+
+
+def set_client(app: web.Application, obj: DirectorV2ApiClient):
+    app[_APP_DIRECTOR_V2_CLIENT_KEY] = obj
 
 
 async def _request_director_v2(
@@ -94,7 +132,38 @@ async def _request_director_v2(
         ) from err
 
 
-# CORE FUNCTIONALITY ------------------------------------------------
+# POLICY ------------------------------------------------
+class DefaultProjectRunPolicy(AbstractProjectRunPolicy):
+    # pylint: disable=unused-argument
+
+    async def get_runnable_projects_ids(
+        self,
+        request: web.Request,
+        project_uuid: ProjectID,
+    ) -> List[ProjectID]:
+        return [
+            project_uuid,
+        ]
+
+    async def get_or_create_runnable_projects(
+        self,
+        request: web.Request,
+        project_uuid: ProjectID,
+    ) -> Tuple[List[ProjectID], List[int]]:
+        """
+        Returns ids and refid of projects that can run
+        If project_uuid is a std-project, then it returns itself
+        If project_uuid is a meta-project, then it returns iterations
+        """
+        return (
+            [
+                project_uuid,
+            ],
+            [],
+        )
+
+
+# calls to director-v2 API ------------------------------------------------
 
 
 async def is_healthy(app: web.Application) -> bool:

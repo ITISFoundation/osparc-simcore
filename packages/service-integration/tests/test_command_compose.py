@@ -5,6 +5,7 @@
 
 import os
 from pathlib import Path
+from typing import Callable
 
 import pytest
 import yaml
@@ -24,22 +25,24 @@ def compose_file_path(metadata_file_path: Path) -> Path:
 
 
 def test_make_docker_compose_meta(
-    run_simcore_service_integrator, metadata_file_path: Path, compose_file_path: Path
+    run_program_with_args: Callable,
+    metadata_file_path: Path,
+    compose_file_path: Path,
 ):
     """
-    docker-compose-meta.yml: $(metatada)
+    docker-compose-build.yml: $(metatada)
         # Injects metadata from $< as labels
-        simcore-service-integrator update-compose-labels --compose $@ --metadata $<
+        osparc-service-integrator compose --metadata $< --to-spec-file $@
     """
 
-    result = run_simcore_service_integrator(
-        "update-compose-labels",
+    result = run_program_with_args(
+        "compose",
         "--metadata",
         str(metadata_file_path),
-        "--compose",
+        "--to-spec-file",
         compose_file_path,
     )
-    assert result.exit_code == os.EX_OK
+    assert result.exit_code == os.EX_OK, f"with {result.output=}"
 
     assert compose_file_path.exists()
 
