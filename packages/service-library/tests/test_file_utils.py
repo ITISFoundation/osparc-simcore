@@ -1,0 +1,33 @@
+import pytest
+from pathlib import Path
+
+from servicelib.file_utils import remove_directory
+
+
+@pytest.fixture
+def some_dir(tmp_path) -> Path:
+    """Folder with some data, representing a given state"""
+    base_dir = tmp_path / "original"
+    base_dir.mkdir()
+    (base_dir / "empty").mkdir()
+    (base_dir / "d1").mkdir()
+    (base_dir / "d1" / "f1").write_text("o" * 100)
+    (base_dir / "d1" / "f2").write_text("o" * 100)
+    (base_dir / "d1" / "d1_1" / "d1_2").mkdir(parents=True, exist_ok=True)
+    (base_dir / "d1" / "d1_1" / "f3").touch()
+    (base_dir / "d1" / "d1_1" / "d1_2" / "f4").touch()
+    (base_dir / "d1" / "d1_1" / "d1_1_1").mkdir(parents=True, exist_ok=True)
+    (base_dir / "d1" / "d1_1" / "d1_1_1" / "f6").touch()
+
+    return base_dir
+
+
+@pytest.fixture(params=[True, False])
+def only_children(request) -> bool:
+    return request.param
+
+
+async def test_remove_directory(some_dir: Path, only_children: bool) -> None:
+    assert some_dir.exists() is True
+    await remove_directory(path=some_dir, only_children=only_children)
+    assert some_dir.exists() is only_children
