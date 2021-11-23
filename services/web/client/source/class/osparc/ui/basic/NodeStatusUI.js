@@ -11,6 +11,10 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
   construct: function(node) {
     this.base(arguments, this.tr("Idle"), "@FontAwesome5Solid/clock/12");
 
+    this.set({
+      backgroundColor: "material-button-background"
+    });
+
     this.__node = node;
     this.__label = this.getChildControl("label");
     this.__icon = this.getChildControl("icon");
