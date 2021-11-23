@@ -99,7 +99,7 @@ async def get_node(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
-@routes.post(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_uuid}}/retrieve")
+@routes.post(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_uuid}}:retrieve")
 @login_required
 @permission_required("project.node.read")
 async def post_retrieve(request: web.Request) -> web.Response:
@@ -116,7 +116,7 @@ async def post_retrieve(request: web.Request) -> web.Response:
     )
 
 
-@routes.post(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_uuid}}/restart")
+@routes.post(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_uuid}}:restart")
 @login_required
 @permission_required("project.node.read")
 async def post_restart(request: web.Request) -> web.Response:
