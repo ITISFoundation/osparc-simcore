@@ -198,7 +198,12 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         if (!node.isDynamic()) {
           view.set({
             maxWidth: 800,
-            backgroundColor: "background-main-lighter+"
+            backgroundColor: "background-main-lighter+",
+            padding: 10,
+            margin: 5
+          });
+          view.getContentElement().setStyles({
+            "border-radius": "10px"
           });
         }
 
