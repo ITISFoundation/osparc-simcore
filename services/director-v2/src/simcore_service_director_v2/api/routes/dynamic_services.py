@@ -238,7 +238,6 @@ async def service_retrieve_data_on_ports(
 @router.post(
     "/{node_uuid}:restart",
     summary="Calls the dynamic service's restart containers endpoint",
-    responses={204: {"model": None}},
     status_code=status.HTTP_204_NO_CONTENT,
 )
 @log_decorator(logger=logger)
