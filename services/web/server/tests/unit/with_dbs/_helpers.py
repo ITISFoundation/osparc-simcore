@@ -1,8 +1,8 @@
 from collections import namedtuple
-from typing import List, Tuple
+from typing import List, NamedTuple, Tuple
+from unittest import mock
 
 from aiohttp import web
-
 from simcore_service_webserver.projects.projects_handlers import HTTPLocked
 from simcore_service_webserver.security_roles import UserRole
 
@@ -66,3 +66,8 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
             ),
         ],
     )
+
+
+class MockedStorageSubsystem(NamedTuple):
+    copy_data_folders_from_project: mock.MagicMock
+    delete_project: mock.MagicMock

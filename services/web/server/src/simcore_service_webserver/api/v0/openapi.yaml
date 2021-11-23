@@ -6887,6 +6887,12 @@ paths:
           schema:
             type: string
           description: 'Option to create a template from existing project: as_template={study_uuid}'
+        - name: copy_data
+          in: query
+          schema:
+            type: boolean
+            default: true
+          description: 'Option to copy data when creating from an existing template or as a template, defaults to True'
         - name: hidden
           in: query
           schema:
