@@ -59,7 +59,6 @@ async def create_projects(
 ):  # pylint: disable=too-many-branches, too-many-statements
     user_id: int = request[RQT_USERID_KEY]
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
-
     template_uuid = request.query.get("from_template")
     as_template = request.query.get("as_template")
     copy_data: bool = bool(

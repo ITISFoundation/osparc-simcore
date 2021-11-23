@@ -769,7 +769,7 @@ async def _get_project_lock_state(
         project_uuid,
         set_user_ids,
     )
-    usernames: List[Dict[str, str]] = [
+    usernames: List[UserNameDict] = [
         await get_user_name(app, uid) for uid in set_user_ids
     ]
     # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session

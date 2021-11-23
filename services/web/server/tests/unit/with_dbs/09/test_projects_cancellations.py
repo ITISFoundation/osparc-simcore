@@ -3,14 +3,15 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 import asyncio
-from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Tuple
-from unittest import mock
 
 import pytest
-from _helpers import ExpectedResponse, standard_role_response  # type: ignore
+from _helpers import (  # type: ignore
+    ExpectedResponse,
+    MockedStorageSubsystem,
+    standard_role_response,
+)
 from aiohttp.test_utils import TestClient
-from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver._meta import api_version_prefix
@@ -21,32 +22,20 @@ from tenacity.wait import wait_fixed
 API_PREFIX = "/" + api_version_prefix
 
 
-@dataclass
-class MockedStorageSubsystem:
-    copy_data_folders_from_project: mock.MagicMock
-    delete_project: mock.MagicMock
-
-
 @pytest.fixture
 async def slow_storage_subsystem_mock(
-    loop: asyncio.AbstractEventLoop, mocker: MockerFixture
+    storage_subsystem_mock: MockedStorageSubsystem,
 ) -> MockedStorageSubsystem:
     # requests storage to copy data
     async def _very_slow_copy_of_data(*args):
         await asyncio.sleep(30)
         return args[2]
 
-    mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.copy_data_folders_from_project",
-        autospec=True,
-        side_effect=_very_slow_copy_of_data,
+    storage_subsystem_mock.copy_data_folders_from_project.side_effect = (
+        _very_slow_copy_of_data
     )
 
-    mock1 = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.projects_api.delete_project",
-        autospec=True,
-    )
-    return MockedStorageSubsystem(mock, mock1)
+    return storage_subsystem_mock
 
 
 def standard_user_role_response() -> Tuple[
