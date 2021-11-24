@@ -73,6 +73,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     _mainView: null,
     _settingsLayout: null,
     _iFrameLayout: null,
+    _outputsLayout: null,
 
     __buildLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
@@ -85,18 +86,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       });
 
       this.add(layout, 1);
-    },
-
-    __buildMainView: function() {
-      const mainView = this._mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-
-      const groupBox = this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
-      this.bind("backgroundColor", groupBox, "backgroundColor");
-      this.bind("backgroundColor", groupBox.getChildControl("frame"), "backgroundColor");
-
-      this._iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-
-      return mainView;
     },
 
     __buildHeader: function() {
@@ -126,11 +115,37 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
-      const outputsBtn = new qx.ui.form.ToggleButton(this.tr("Outputs"), "@FontAwesome5Solid/sign-out-alt/14");
-      outputsBtn.addListener("execute", () => this.__openNodeDataManager(), this);
+      const outputsBtn = this._outputsBtn = new qx.ui.form.ToggleButton(this.tr("Outputs"), "@FontAwesome5Solid/sign-out-alt/14");
       header.add(outputsBtn);
 
       return header;
+    },
+
+    __buildMainView: function() {
+      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+
+      const mainView = this._mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+
+      const groupBox = this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
+      this.bind("backgroundColor", groupBox, "backgroundColor");
+      this.bind("backgroundColor", groupBox.getChildControl("frame"), "backgroundColor");
+
+      this._iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+
+      hBox.add(mainView, {
+        flex: 1
+      });
+
+      const outputsLayout = this._outputsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
+        padding: 5,
+        width: 250
+      });
+      this._outputsBtn.bind("value", outputsLayout, "visibility", {
+        converter: value => value ? "visible" : "excluded"
+      });
+      hBox.add(outputsLayout);
+
+      return hBox;
     },
 
     _addToMainView: function(view, options = {}) {
@@ -182,6 +197,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       throw new Error("Abstract method called!");
     },
 
+    _addOutputs: function() {
+      return;
+    },
+
     _addLogger: function() {
       return;
     },
@@ -200,6 +219,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this._mainView.removeAll();
       this._addSettings();
       this._addIFrame();
+
+      this._addOutputs();
 
       this._addLogger();
     }

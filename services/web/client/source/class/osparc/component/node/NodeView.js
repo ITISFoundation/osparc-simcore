@@ -89,10 +89,33 @@ qx.Class.define("osparc.component.node.NodeView", {
     },
 
     // overridden
+    _addOutputs: function() {
+      this._outputsLayout.removeAll();
+
+      const outputFilesBtn = new qx.ui.form.Button(this.tr("Artifacts"), "@FontAwesome5Solid/folder-open/14").set({
+        allowGrowX: false
+      });
+      osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
+      outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(this.getNode()));
+      this._outputsLayout.add(outputFilesBtn);
+
+      this._outputsBtn.set({
+        value: false,
+        enabled: this.getNode().hasOutputs() > 0
+      });
+      const outputsTree = new osparc.component.widget.inputs.NodeOutputTree(this.getNode(), this.getNode().getMetaData().outputs);
+      this.bind("backgroundColor", outputsTree, "backgroundColor");
+      this._outputsLayout.add(outputsTree, {
+        flex: 1
+      });
+    },
+
+    // overridden
     _addLogger: function() {
       const loggerView = this.getNode().getLogger();
       loggerView.getChildControl("pin-node").exclude();
       const loggerPanel = this.__loggerPanel = new osparc.desktop.PanelView(this.tr("Logger"), loggerView).set({
+        minHeight: 24,
         collapsed: true
       });
       loggerPanel.bind("collapsed", loggerPanel, "maxHeight", {
