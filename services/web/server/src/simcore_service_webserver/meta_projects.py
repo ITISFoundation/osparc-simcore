@@ -7,16 +7,14 @@
 #
 
 
-import json
 import logging
 import re
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import List, Tuple
 
 from aiohttp import web
 from aiohttp.web_middlewares import _Handler
 from models_library.basic_regex import UUID_RE
 from models_library.projects import ProjectID
-from servicelib.json_serialization import json_dumps
 
 from ._meta import api_version_prefix as VTAG
 from .director_v2_api import AbstractProjectRunPolicy
