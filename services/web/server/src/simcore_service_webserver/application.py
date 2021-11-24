@@ -63,6 +63,7 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_settings(app)
     settings: ApplicationSettings = app[APP_SETTINGS_KEY]
 
+    # WARNING: setup order matters
     # TODO: create dependency mechanism
     # and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
     #

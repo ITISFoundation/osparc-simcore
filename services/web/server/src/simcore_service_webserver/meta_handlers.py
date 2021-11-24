@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 
 class MetaProjectIDs(BaseModel):
     project_id: ProjectID
-    checkpoint_id: CheckpointID
+    ref_id: CheckpointID
 
 
 class ProjectIterationAsItem(BaseModel):
@@ -81,31 +81,31 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
 
     #
     (
-        wcopy_projects_ids,
+        selected_project_iterations,
         total_number_of_iterations,
-    ) = await list_wcopy_projects_iterations(
+    ) = await list_project_iterations(
         vc_repo, _project_uuid, commit_id, offset=_offset, limit=_limit
     )
 
-    assert len(wcopy_projects_ids) <= _limit  # nosec
+    assert len(selected_project_iterations) <= _limit  # nosec
 
     # parse and validate
     iterations_list = [
-        ProjectIterationAsItem.parse_obj(
-            {
-                "parent": MetaProjectIDs(project_id=_project_uuid, ref_id=commit_id),
-                "wcopy_project_id": wcp_id,
-                "wcopy_project_url": url_for(
-                    "get_project",
-                    project_uuid=wcp_id,
-                ),
-                "url": url_for(
-                    f"{__name__}._list_meta_project_iterations_handler",
-                    project_uuid=_project_uuid,
-                ),
-            }
+        ProjectIterationAsItem(
+            name=f"projects/{_project_uuid}/checkpoint/{commit_id}/iterations/{iter_id}",
+            parent=MetaProjectIDs(project_id=_project_uuid, ref_id=commit_id),
+            wcopy_project_id=wcp_id,
+            wcopy_project_url=url_for(
+                "get_project",
+                project_id=wcp_id,
+            ),
+            url=url_for(
+                f"{__name__}._list_meta_project_iterations_handler",
+                project_uuid=_project_uuid,
+                ref_id=commit_id,
+            ),
         )
-        for wcp_id in wcopy_projects_ids
+        for wcp_id, iter_id in selected_project_iterations
     ]
 
     return web.Response(
@@ -138,30 +138,30 @@ async def _get_meta_project_iterations_handler(request: web.Request) -> web.Resp
 
 # HANDLER'S CORE ------------------------------------------------------------
 
+IterationTuple = Tuple[ProjectID, CommitID]
 
-async def list_wcopy_projects_iterations(
+
+async def list_project_iterations(
     vc_repo: VersionControlForMetaModeling,
     project_uuid: ProjectID,
     commit_id: CommitID,
     offset: int,
     limit: int,
-) -> Tuple[List[ProjectID], int]:
+) -> Tuple[List[IterationTuple], int]:
 
     repo_id = await vc_repo.get_repo_id(project_uuid)
     assert repo_id is not None
 
     total_number_of_iterations = 0  # count number of iterations
-    wcopy_project_ids: List[ProjectID] = []
 
     # Search all subsequent commits (i.e. children) and retrieve their tags
     # Select range on those tagged as iterations and returned their assigned wcopy id
-
     # FIXME: do all these operations in database
     tags_per_child: List[List[TagProxy]] = await vc_repo.get_children_tags(
         repo_id, commit_id
     )
 
-    iterations: List[Tuple[ProjectID, int]] = []
+    iterations: List[Tuple[ProjectID, CommitID]] = []
     for n, tags in enumerate(tags_per_child):
 
         # FIXME: the db query did not guarantee
@@ -173,7 +173,7 @@ async def list_wcopy_projects_iterations(
             wcopy_id: Optional[ProjectID] = None
 
             for tag in tags:
-                if info := IterInfo.from_tag_name(tag.name):
+                if info := IterInfo.from_tag_name(tag.name, return_none_if_fails=True):
                     if iter_info:
                         raise ValueError(
                             f"This entry has more than one iteration {tag=}"
@@ -199,10 +199,9 @@ async def list_wcopy_projects_iterations(
         except ValueError as err:
             log.debug("Skipping child %s: %s", n, err)
 
-    total_number_of_iterations = len(wcopy_project_ids)
+    total_number_of_iterations = len(iterations)
 
     # sort and select. If requested interval is outside of range, it returns empty
     iterations.sort(key=lambda tup: tup[1])
-    wcopy_project_ids = [s[0] for s in iterations[offset : (offset + limit)]]
 
-    return wcopy_project_ids, total_number_of_iterations
+    return iterations[offset : (offset + limit)], total_number_of_iterations
