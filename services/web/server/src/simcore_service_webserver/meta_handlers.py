@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 # MODELS ------------------------------------------------------------
 
 
-class MetaProjectIDs(BaseModel):
+class ParentMetaProjectRef(BaseModel):
     project_id: ProjectID
     ref_id: CheckpointID
 
@@ -38,7 +38,7 @@ class ProjectIterationAsItem(BaseModel):
         ...,
         description="Iteration's resource name [AIP-122](https://google.aip.dev/122)",
     )
-    parent: MetaProjectIDs = Field(
+    parent: ParentMetaProjectRef = Field(
         ..., description="Identifies the meta-project that created this iteration"
     )
 
@@ -93,7 +93,7 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
     iterations_list = [
         ProjectIterationAsItem(
             name=f"projects/{_project_uuid}/checkpoint/{commit_id}/iterations/{iter_id}",
-            parent=MetaProjectIDs(project_id=_project_uuid, ref_id=commit_id),
+            parent=ParentMetaProjectRef(project_id=_project_uuid, ref_id=commit_id),
             wcopy_project_id=wcp_id,
             wcopy_project_url=url_for(
                 "get_project",
