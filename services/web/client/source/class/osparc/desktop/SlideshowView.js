@@ -240,6 +240,18 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           margin: 6
         });
 
+        // check if lastCurrentNodeId has to be run
+        if (!this.__isLastCurrentNodeReady(lastCurrentNodeId)) {
+          this.getStudy().getUi().setCurrentNodeId(lastCurrentNodeId);
+          return;
+        }
+
+        // check if upstream has to be run
+        if (!this.__isSelectedNodeReady(node, lastCurrentNodeId)) {
+          this.getStudy().getUi().setCurrentNodeId(lastCurrentNodeId);
+          return;
+        }
+
         if (view) {
           if (this.__nodeView && this.__mainView.getChildren().includes(this.__nodeView)) {
             this.__mainView.remove(this.__nodeView);
@@ -249,22 +261,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           });
           this.__nodeView = view;
         }
-
-        // check if lastCurrentNodeId has to be run
-        if (!this.__isLastCurrentNodeReady(lastCurrentNodeId)) {
-          return;
-        }
-
-        // check if upstream has to be run
-        if (!this.__isSelectedNodeReady(node, lastCurrentNodeId)) {
-          return;
-        }
       } else if (this.__nodeView) {
         this.__mainView.remove(this.__nodeView);
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
-
-      // this.getStartStopButtons().nodeSelectionChanged([nodeId]);
     },
 
     __maximizeIframe: function(maximize) {
