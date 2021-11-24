@@ -20,13 +20,15 @@
  */
 
 qx.Class.define("osparc.component.node.BaseNodeView", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.splitpane.Pane,
   type: "abstract",
 
   construct: function() {
-    this.base(arguments);
+    this.base(arguments, "vertical");
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this.setOffset(2);
+    osparc.desktop.WorkbenchView.decorateSplitter(this.getChildControl("splitter"));
+    osparc.desktop.WorkbenchView.decorateSlider(this.getChildControl("slider"));
 
     this.__buildLayout();
   },
@@ -71,28 +73,30 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     _mainView: null,
     _settingsLayout: null,
     _iFrameLayout: null,
-    _loggerLayout: null,
     __buttonContainer: null,
     __outFilesButton: null,
 
     populateLayout: function() {
-      this._mainView.removeAll();
+      this._addButtons();
 
+      this._mainView.removeAll();
       this._addSettings();
       this._addIFrame();
-      // this._addLogger();
 
-      this._addButtons();
+      this._addLogger();
     },
 
     __buildLayout: function() {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       const header = this.__buildHeader();
-      this._add(header);
+      layout.add(header);
 
       const mainView = this.__buildMainView();
-      this._add(mainView, {
+      layout.add(mainView, {
         flex: 1
       });
+
+      this.add(layout, 1);
     },
 
     __buildMainView: function() {
@@ -103,8 +107,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this.bind("backgroundColor", groupBox.getChildControl("frame"), "backgroundColor");
 
       this._iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-
-      this._loggerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
       return mainView;
     },

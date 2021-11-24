@@ -47,6 +47,8 @@ qx.Class.define("osparc.component.node.NodeView", {
   },
 
   members: {
+    __loggerPanel: null,
+
     // overridden
     _addSettings: function() {
       this._settingsLayout.removeAll();
@@ -89,19 +91,19 @@ qx.Class.define("osparc.component.node.NodeView", {
 
     // overridden
     _addLogger: function() {
-      this._loggerLayout.removeAll();
-
-      const loggerView = this.__loggerView = this.getNode().getLogger().set({
-        maxHeight: 250
-      });
+      const loggerView = this.getNode().getLogger();
       loggerView.getChildControl("pin-node").exclude();
-      const loggerPanel = new osparc.desktop.PanelView(this.tr("Logger"), loggerView).set({
+      const loggerPanel = this.__loggerPanel = new osparc.desktop.PanelView(this.tr("Logger"), loggerView).set({
         collapsed: true
       });
-      osparc.utils.Utils.setIdToWidget(loggerPanel.getTitleLabel(), "nodeLoggerTitleLabel");
-      this._loggerLayout.add(loggerPanel);
+      loggerPanel.bind("collapsed", loggerPanel, "maxHeight", {
+        converter: collapsed => collapsed ? 25 : null
+      });
+      this.add(loggerPanel, 0);
+    },
 
-      this._addToMainView(this._loggerLayout);
+    getLoggerPanel: function() {
+      return this.__loggerPanel;
     },
 
     // overridden

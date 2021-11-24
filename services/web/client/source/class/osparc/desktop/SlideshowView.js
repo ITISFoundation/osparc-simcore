@@ -257,7 +257,8 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__slideshowToolbar,
         this.__prevButton,
         this.__nextButton,
-        this.__nodeView.getHeaderLayout()
+        this.__nodeView.getHeaderLayout(),
+        this.__nodeView.getLoggerPanel()
       ].forEach(widget => widget.setVisibility(maximize ? "excluded" : "visible"));
     },
 
