@@ -47,6 +47,7 @@ qx.Class.define("osparc.component.node.NodeView", {
   },
 
   members: {
+    // overridden
     _addSettings: function() {
       this._settingsLayout.removeAll();
 
@@ -63,28 +64,7 @@ qx.Class.define("osparc.component.node.NodeView", {
       this._addToMainView(this._settingsLayout);
     },
 
-    __checkSettingsVisibility: function() {
-      const isSettingsGroupShowable = this.isSettingsGroupShowable();
-      this._settingsLayout.setVisibility(isSettingsGroupShowable ? "visible" : "excluded");
-    },
-
-    isSettingsGroupShowable: function() {
-      const node = this.getNode();
-      return this.self().isPropsFormShowable(node);
-    },
-
-    __iFrameChanged: function() {
-      this._iFrameLayout.removeAll();
-
-      const loadingPage = this.getNode().getLoadingPage();
-      const iFrame = this.getNode().getIFrame();
-      const src = iFrame.getSource();
-      const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
-      this._iFrameLayout.add(iFrameView, {
-        flex: 1
-      });
-    },
-
+    // overridden
     _addIFrame: function() {
       this._iFrameLayout.removeAll();
 
@@ -107,6 +87,7 @@ qx.Class.define("osparc.component.node.NodeView", {
       });
     },
 
+    // overridden
     _addLogger: function() {
       this._loggerLayout.removeAll();
 
@@ -123,6 +104,7 @@ qx.Class.define("osparc.component.node.NodeView", {
       this._addToMainView(this._loggerLayout);
     },
 
+    // overridden
     _openEditAccessLevel: function() {
       const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
       const propsFormEditor = this.getNode().getPropsFormEditor();
@@ -133,11 +115,34 @@ qx.Class.define("osparc.component.node.NodeView", {
       });
     },
 
+    // overridden
     _applyNode: function(node) {
       if (node.isContainer()) {
         console.error("Only non-group nodes are supported");
       }
       this.base(arguments, node);
+    },
+
+    __checkSettingsVisibility: function() {
+      const isSettingsGroupShowable = this.isSettingsGroupShowable();
+      this._settingsLayout.setVisibility(isSettingsGroupShowable ? "visible" : "excluded");
+    },
+
+    isSettingsGroupShowable: function() {
+      const node = this.getNode();
+      return this.self().isPropsFormShowable(node);
+    },
+
+    __iFrameChanged: function() {
+      this._iFrameLayout.removeAll();
+
+      const loadingPage = this.getNode().getLoadingPage();
+      const iFrame = this.getNode().getIFrame();
+      const src = iFrame.getSource();
+      const iFrameView = (src === null || src === "about:blank") ? loadingPage : iFrame;
+      this._iFrameLayout.add(iFrameView, {
+        flex: 1
+      });
     }
   }
 });

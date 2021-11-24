@@ -123,7 +123,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       return control || this.base(arguments, id);
     },
 
-    // overriden
+    // overridden
     _buildLayout: function() {
       this.getChildControl("study-info");
       this.getChildControl("study-title");
@@ -143,7 +143,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       this.getChildControl("stop-slideshow");
     },
 
-    // overriden
+    // overridden
     _applyStudy: function(study) {
       this.base(arguments, study);
 
@@ -154,7 +154,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       }
     },
 
-    // overriden
+    // overridden
     _populateNodesNavigationLayout: function() {
       const study = this.getStudy();
       if (study) {

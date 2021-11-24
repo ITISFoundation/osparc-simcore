@@ -86,7 +86,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
       return control || this.base(arguments, id);
     },
 
-    // overriden
+    // overridden
     _initResources: function() {
       this.__buildLayout();
 

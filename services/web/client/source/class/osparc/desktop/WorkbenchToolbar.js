@@ -67,7 +67,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       return control || this.base(arguments, id);
     },
 
-    // overriden
+    // overridden
     _buildLayout: function() {
       this.getChildControl("breadcrumb-navigation");
 
@@ -75,7 +75,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       startStopBtns.exclude();
     },
 
-    // overriden
+    // overridden
     _applyStudy: function(study) {
       this.base(arguments, study);
 
@@ -84,7 +84,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       }
     },
 
-    // overriden
+    // overridden
     _populateNodesNavigationLayout: function() {
       const study = this.getStudy();
       if (study) {
