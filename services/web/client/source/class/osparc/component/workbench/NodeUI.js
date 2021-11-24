@@ -58,7 +58,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     type: {
-      check: ["normal", "file", "parameter", "iterator", "iterator-consumer"],
+      check: ["normal", "file", "parameter"],
       init: "normal",
       nullable: false,
       apply: "__applyType"
@@ -80,7 +80,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   members: {
     __progressBar: null,
     __thumbnail: null,
-    __svgWorkbenchCanvas: null,
 
     getNodeType: function() {
       return "service";
@@ -94,28 +93,18 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       let control;
       switch (id) {
         case "chips": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3).set({
-            alignY: "middle"
-          })).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
             margin: [3, 4]
           });
           let nodeType = this.getNode().getMetaData().type;
-          if (this.getNode().isIterator()) {
-            nodeType = "iterator";
-          } else if (this.getNode().isIteratorConsumer()) {
-            nodeType = "iterator-consumer";
-          }
           const type = osparc.utils.Services.getType(nodeType);
           if (type) {
-            const chip = new osparc.ui.basic.Chip().set({
-              icon: type.icon + "18",
-              toolTipText: type.label
-            });
-            control.add(chip);
+            control.add(new osparc.ui.basic.Chip(type.label, type.icon + "12"));
           }
           this.add(control, {
-            row: 0,
-            column: 1
+            row: 1,
+            column: 0,
+            colSpan: 3
           });
           break;
         }
@@ -125,7 +114,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             margin: 4
           });
           this.add(control, {
-            row: 1,
+            row: 2,
             column: 0,
             colSpan: 3
           });
@@ -141,7 +130,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.setThumbnail(node.getThumbnail());
       }
       const chipContainer = this.getChildControl("chips");
-      if (node.isComputational() || node.isFilePicker() || node.isIterator()) {
+      if (node.isComputational() || node.isFilePicker()) {
         this.__progressBar = this.getChildControl("progress");
       }
 
@@ -149,7 +138,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       chipContainer.add(nodeStatus);
     },
 
-    populateNodeLayout: function(svgWorkbenchCanvas) {
+    populateNodeLayout: function() {
       const node = this.getNode();
       node.bind("label", this, "caption", {
         onUpdate: () => {
@@ -166,11 +155,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.setType("file");
       } else if (node.isParameter()) {
         this.setType("parameter");
-      } else if (node.isIterator()) {
-        this.__svgWorkbenchCanvas = svgWorkbenchCanvas;
-        this.setType("iterator");
-      } else if (node.isIteratorConsumer()) {
-        this.setType("iterator-consumer");
       }
     },
 
@@ -194,12 +178,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           break;
         case "parameter":
           this.__turnIntoParameterUI();
-          break;
-        case "iterator":
-          this.__turnIntoIteratorUI();
-          break;
-        case "iterator-consumer":
-          this.__turnIntoIteratorConsumerUI();
           break;
       }
     },
@@ -279,26 +257,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         label.setValue(String(newVal["value"]));
       });
       this.fireEvent("nodeMoving");
-    },
-
-    __turnIntoIteratorUI: function() {
-      const width = 150;
-      const height = 69;
-      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
-
-      if (this.__svgWorkbenchCanvas) {
-        const nShadows = 2;
-        this.shadows = [];
-        for (let i=0; i<nShadows; i++) {
-          const nodeUIShadow = this.__svgWorkbenchCanvas.drawNodeUI(width, height, this.self().CIRCLED_RADIUS);
-          this.shadows.push(nodeUIShadow);
-        }
-      }
-    },
-
-    __turnIntoIteratorConsumerUI: function() {
-      const width = 150;
-      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
     },
 
     // overridden

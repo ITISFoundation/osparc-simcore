@@ -233,11 +233,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     isIterator: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("/data-iterator/"));
-    },
-
-    isIteratorConsumer: function(metaData) {
-      return (metaData && metaData.key && metaData.key.includes("/iterator-consumer/"));
+      return (metaData && metaData.key && metaData.key.includes("data-iterator"));
     },
 
     isDynamic: function(metaData) {
@@ -292,20 +288,12 @@ qx.Class.define("osparc.data.model.Node", {
       return osparc.data.model.Node.isIterator(this.getMetaData());
     },
 
-    isIteratorConsumer: function() {
-      return osparc.data.model.Node.isIteratorConsumer(this.getMetaData());
-    },
-
     isDynamic: function() {
       return osparc.data.model.Node.isDynamic(this.getMetaData());
     },
 
     isComputational: function() {
       return osparc.data.model.Node.isComputational(this.getMetaData());
-    },
-
-    hasIteratorUpstream: function() {
-      return osparc.data.model.Workbench.hasIteratorUpstream(this.getStudy().getWorkbench(), this);
     },
 
     getMetaData: function() {
@@ -757,11 +745,6 @@ qx.Class.define("osparc.data.model.Node", {
             }
           });
       });
-    },
-
-    getLinks: function() {
-      const links = this.getPropsForm() ? this.getPropsForm().getLinks() : [];
-      return links;
     },
 
     // ----- Input Nodes -----

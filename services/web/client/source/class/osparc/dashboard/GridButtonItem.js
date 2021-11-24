@@ -182,11 +182,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     _applyOwner: function(value, old) {
       if (this.isResourceType("service") || this.isResourceType("template")) {
         const label = this.getChildControl("subtitle-text");
-        if (value === osparc.auth.Data.getInstance().getEmail()) {
-          label.setValue(this.tr("me"));
-        } else {
-          label.setValue(value);
-        }
+        label.setValue(value);
       }
     },
 

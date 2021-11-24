@@ -75,7 +75,7 @@ qx.Class.define("osparc.data.model.Edge", {
   statics: {
     checkAnyPortsConnected: function(node1, node2) {
       if (node2.getPropsForm()) {
-        const links = node2.getLinks();
+        const links = node2.getPropsForm().getLinks();
         const anyConnected = links.some(link => link["nodeUuid"] === node1.getNodeId());
         return anyConnected;
       }
