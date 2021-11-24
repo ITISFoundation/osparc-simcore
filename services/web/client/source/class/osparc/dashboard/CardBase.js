@@ -300,7 +300,20 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _applyQuality: function(quality) {
-      throw new Error("Abstract method called!");
+      if (osparc.component.metadata.Quality.isEnabled(quality)) {
+        const tsrRating = this.getChildControl("tsr-rating");
+        tsrRating.set({
+          nStars: 4,
+          showScore: true
+        });
+        osparc.ui.basic.StarsRating.scoreToStarsRating(quality["tsr_current"], quality["tsr_target"], tsrRating);
+        // Stop propagation of the pointer event in case the tag is inside a button that we don't want to trigger
+        tsrRating.addListener("tap", e => {
+          e.stopPropagation();
+          this.__openQualityEditor();
+        }, this);
+        tsrRating.addListener("pointerdown", e => e.stopPropagation());
+      }
     },
 
     _applyUiMode: function(uiMode) {
@@ -347,6 +360,21 @@ qx.Class.define("osparc.dashboard.CardBase", {
         this.addListener("mouseover", () => permissionIcon.show(), this);
         this.addListener("mouseout", () => permissionIcon.exclude(), this);
       }
+    },
+
+    __openQualityEditor: function() {
+      const resourceData = this.getResourceData();
+      const qualityEditor = osparc.studycard.Utils.openQuality(resourceData);
+      qualityEditor.addListener("updateQuality", e => {
+        const updatedResourceData = e.getData();
+        if (osparc.utils.Resources.isStudy(resourceData)) {
+          this.fireDataEvent("updateQualityStudy", updatedResourceData);
+        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+          this.fireDataEvent("updateQualityTemplate", updatedResourceData);
+        } else if (osparc.utils.Resources.isService(resourceData)) {
+          this.fireDataEvent("updateQualityService", updatedResourceData);
+        }
+      });
     },
 
     /**
