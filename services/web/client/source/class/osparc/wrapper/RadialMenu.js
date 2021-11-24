@@ -20,8 +20,7 @@
 /**
  * @asset(radialMenu/RadialMenuES5.js)
  * @asset(radialMenu/font-awesome.css)
- * @asset(radialMenu/fontawesome.*)
- * @asset(radialMenu/FontAwesome.otf)
+ * @asset(radialMenu/fonts/*)
  * @ignore(RadialMenu)
  */
 

@@ -59,11 +59,11 @@ class _LoaderWithInclude(yaml.SafeLoader):
     def include(self, node):
         fpath = os.path.join(self._basepath, f"{self.construct_scalar(node)}")
         with open(fpath, "r") as f:
-            return yaml.load(f, _LoaderWithInclude)
+            return yaml_safe_load(f)
 
 
 _LoaderWithInclude.add_constructor("!include", _LoaderWithInclude.include)
 
 
 def yaml_safe_load(stream):
-    return yaml.load(stream, _LoaderWithInclude)
+    return yaml.load(stream, _LoaderWithInclude)  # nosec

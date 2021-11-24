@@ -839,7 +839,7 @@ async def test_nodeports_integration(
     )
 
     # wait for the computation to start
-    assert_pipeline_status(
+    await assert_pipeline_status(
         client,
         task_out.url,
         user_db["id"],
@@ -848,7 +848,7 @@ async def test_nodeports_integration(
     )
 
     # wait for the computation to finish (either by failing, success or abort)
-    task_out = assert_pipeline_status(
+    task_out = await assert_pipeline_status(
         client, task_out.url, user_db["id"], current_study.uuid
     )
 

@@ -10,7 +10,11 @@ from math import ceil
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 import pytest
-from _helpers import standard_role_response
+from _helpers import (  # type: ignore
+    ExpectedResponse,
+    MockedStorageSubsystem,
+    standard_role_response,
+)
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
@@ -427,26 +431,17 @@ async def test_new_project_from_template_with_body(
                 pytest.fail("Invalid uuid in workbench node {}".format(node_name))
 
 
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPCreated),
-        (UserRole.TESTER, web.HTTPCreated),
-    ],
-)
+@pytest.mark.parametrize(*standard_role_response())
 async def test_new_template_from_project(
-    client,
-    logged_user,
+    client: TestClient,
+    logged_user: Dict[str, Any],
     primary_group: Dict[str, str],
     all_group: Dict[str, str],
-    user_project,
-    expected,
-    storage_subsystem_mock,
-    catalog_subsystem_mock,
-    project_db_cleaner,
-    mocks_on_projects_api,
+    user_project: Dict[str, Any],
+    expected: ExpectedResponse,
+    storage_subsystem_mock: MockedStorageSubsystem,
+    catalog_subsystem_mock: Callable,
+    project_db_cleaner: None,
 ):
     # POST /v0/projects?as_template={project_uuid}
     url = (
@@ -455,8 +450,8 @@ async def test_new_template_from_project(
         .with_query(as_template=user_project["uuid"])
     )
 
-    resp = await client.post(url)
-    data, error = await assert_status(resp, expected)
+    resp = await client.post(f"{url}")
+    data, error = await assert_status(resp, expected.created)
 
     if not error:
         template_project = data
@@ -507,8 +502,8 @@ async def test_new_template_from_project(
         "classifiers": [],
     }
 
-    resp = await client.post(url, json=predefined)
-    data, error = await assert_status(resp, expected)
+    resp = await client.post(f"{url}", json=predefined)
+    data, error = await assert_status(resp, expected.created)
 
     if not error:
         template_project = data

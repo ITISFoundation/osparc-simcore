@@ -2,9 +2,9 @@ services:
   dy-static-file-server:
     build:
       labels:
-        io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email":
-          "anderegg@itis.swiss", "affiliation": "IT''IS Foundation"}]}'
-        io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'
+        io.simcore.authors: '{"authors": [{"name": "Mr X", "email": "bar@foo.com",
+          "affiliation": "IT''IS Foundation"}]}'
+        io.simcore.contact: '{"contact": "bar@foo.com"}'
         io.simcore.description: '{"description": "Legacy test dynamic service (starts
           using original director-v0). The /workdir/generated-data directory is
           populated if no content is present."}'
@@ -26,9 +26,9 @@ services:
   dy-static-file-server-dynamic-sidecar:
     build:
       labels:
-        io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email":
-          "anderegg@itis.swiss", "affiliation": "IT''IS Foundation"}]}'
-        io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'
+        io.simcore.authors: '{"authors": [{"name": "Mr X", "email": "bar@foo.com",
+          "affiliation": "IT''IS Foundation"}]}'
+        io.simcore.contact: '{"contact": "bar@foo.com"}'
         io.simcore.description: '{"description": "Modern test dynamic service (with
           dynamic sidecar). Changes to the inputs will be forwarded to the
           outputs. The /workdir/generated-data directory is populated if no
@@ -76,9 +76,9 @@ services:
   dy-static-file-server-dynamic-sidecar-compose-spec:
     build:
       labels:
-        io.simcore.authors: '{"authors": [{"name": "Sylvain Anderegg", "email":
-          "anderegg@itis.swiss", "affiliation": "IT''IS Foundation"}]}'
-        io.simcore.contact: '{"contact": "anderegg@itis.swiss"}'
+        io.simcore.authors: '{"authors": [{"name": "Mr X", "email": "bar@foo.com",
+          "affiliation": "IT''IS Foundation"}]}'
+        io.simcore.contact: '{"contact": "bar@foo.com"}'
         io.simcore.description: '{"description": "Modern test dynamic service providing
           a docker-compose specification file (with dynamic sidecar and
           compose-spec). Changes to the inputs will be forwarded to the outputs.
@@ -122,6 +122,7 @@ services:
         simcore.service.container-http-entrypoint: dy-static-file-server-dynamic-sidecar-compose-spec
         simcore.service.paths-mapping: '{"outputs_path": "/www/outputs", "inputs_path":
           "/www/inputs", "state_paths": ["/workdir/generated-data"]}'
+        simcore.service.restart-policy: on-inputs-downloaded
         simcore.service.settings: '[{"name": "resources", "type": "Resources", "value":
           {"mem_limit":17179869184, "cpu_limit": 1000000000}}, {"name": "ports",
           "type": "int", "value": 8080}, {"name": "constraints", "type":

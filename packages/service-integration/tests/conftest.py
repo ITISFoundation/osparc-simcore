@@ -13,7 +13,7 @@ from click.testing import CliRunner
 from service_integration.cli import main
 
 pytest_plugins = [
-    "pytester",
+    "pytest_simcore.pydantic_models",
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
 ]

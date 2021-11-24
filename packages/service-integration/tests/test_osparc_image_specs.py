@@ -39,7 +39,9 @@ def test_create_image_spec_impl(
         },
     )
 
-    compose_spec = create_image_spec(integration_context, project_cfg, meta_cfg, runtime_cfg)
+    compose_spec = create_image_spec(
+        integration_context, project_cfg, meta_cfg, runtime_cfg
+    )
     assert compose_spec.services is not None
     assert isinstance(compose_spec.services, dict)
 

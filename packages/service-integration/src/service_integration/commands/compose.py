@@ -1,4 +1,3 @@
-from contextlib import suppress
 from pathlib import Path
 from typing import Dict, List
 
@@ -9,9 +8,12 @@ import yaml
 from ..compose_spec_model import ComposeSpecification
 from ..labels_annotations import to_labels
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
+
 from ..osparc_config import ProjectConfig, MetaConfig, RuntimeConfig
 from ..osparc_image_specs import create_image_spec
 from ..context import IntegrationContext
+from ..osparc_config import MetaConfig, RuntimeConfig
+from ..osparc_image_specs import create_image_spec
 
 
 def create_docker_compose_image_spec(
@@ -33,9 +35,11 @@ def create_docker_compose_image_spec(
     # optional
     runtime_cfg = None
     if service_config_path:
-        with suppress(FileNotFoundError):
+        try:
             # TODO: should include default?
             runtime_cfg = RuntimeConfig.from_yaml(service_config_path)
+        except FileNotFoundError:
+            click.echo("No runtime config found (optional), using default.")
 
     # OCI annotations (optional)
     extra_labels = {}
@@ -50,16 +54,24 @@ def create_docker_compose_image_spec(
         extra_labels.update(oci_labels)
     except (FileNotFoundError, ValueError):
 
-        # if not OCI, try label-schema
-        with suppress(FileNotFoundError):
+        try:
+            # if not OCI, try label-schema
             ls_spec = yaml.safe_load(
                 (config_basedir / f"{LS_LABEL_PREFIX}.yml").read_text()
             )
             ls_labels = to_labels(ls_spec, prefix_key=LS_LABEL_PREFIX)
             extra_labels.update(ls_labels)
+        except FileNotFoundError:
+            click.echo(
+                "No explicit config for OCI/label-schema found (optional), skipping OCI annotations."
+            )
 
     compose_spec = create_image_spec(
-        integration_context, project_cfg, meta_cfg, runtime_cfg, extra_labels=extra_labels
+        integration_context,
+        project_cfg,
+        meta_cfg,
+        runtime_cfg,
+        extra_labels=extra_labels,
     )
 
     return compose_spec
@@ -95,6 +107,7 @@ def main(
     basedir = Path(".osparc")
     meta_filename = "metadata.yml"
 
+    # TODO: all these MUST be replaced by osparc_config.ConfigFilesStructure
     if config_path.exists():
         if config_path.is_dir():
             basedir = config_path

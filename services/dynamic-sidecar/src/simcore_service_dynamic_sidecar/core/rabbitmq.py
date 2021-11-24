@@ -11,7 +11,11 @@ import aio_pika
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
-from models_library.rabbitmq_messages import LoggerRabbitMessage
+from models_library.rabbitmq_messages import (
+    EventRabbitMessage,
+    LoggerRabbitMessage,
+    RabbitEventMessageType,
+)
 from models_library.users import UserID
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from settings_library.rabbit import RabbitSettings
@@ -70,6 +74,7 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
         self._connection: Optional[aio_pika.Connection] = None
         self._channel: Optional[aio_pika.Channel] = None
         self._logs_exchange: Optional[aio_pika.Exchange] = None
+        self._events_exchange: Optional[aio_pika.Exchange] = None
 
         self.max_messages_to_send: int = max_messages_to_send
         # pylint: disable=unsubscriptable-object
@@ -101,6 +106,14 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
             self._rabbit_settings.RABBIT_CHANNELS["log"], aio_pika.ExchangeType.FANOUT
         )
         self._channel_queues[self.CHANNEL_LOG] = Queue()
+
+        log.debug(
+            "Declaring %s exchange", self._rabbit_settings.RABBIT_CHANNELS["events"]
+        )
+        self._events_exchange = await self._channel.declare_exchange(
+            self._rabbit_settings.RABBIT_CHANNELS["events"],
+            aio_pika.ExchangeType.FANOUT,
+        )
 
         # start background worker to dispatch messages
         self._keep_running = True
@@ -135,6 +148,21 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
         await self._logs_exchange.publish(
             aio_pika.Message(body=data.json().encode()), routing_key=""
         )
+
+    async def _publish_event(self, action: RabbitEventMessageType) -> None:
+        data = EventRabbitMessage(
+            node_id=self._node_id,
+            user_id=self._user_id,
+            project_id=self._project_id,
+            action=action,
+        )
+        assert self._events_exchange  # nosec
+        await self._events_exchange.publish(
+            aio_pika.Message(body=data.json().encode()), routing_key=""
+        )
+
+    async def send_event_reload_iframe(self) -> None:
+        await self._publish_event(action=RabbitEventMessageType.RELOAD_IFRAME)
 
     async def post_log_message(self, log_msg: Union[str, List[str]]) -> None:
         if isinstance(log_msg, str):

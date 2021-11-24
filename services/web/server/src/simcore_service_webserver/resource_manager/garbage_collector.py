@@ -15,7 +15,7 @@ from ..db_models import GroupType
 from ..director.director_exceptions import DirectorException, ServiceNotFoundError
 from ..groups_api import get_group_from_gid
 from ..projects.projects_api import (
-    delete_project_from_db,
+    delete_project,
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
@@ -272,7 +272,12 @@ async def remove_disconnected_user_resources(
                             user_id=int(dead_key["user_id"]),
                             project_uuid=resource_value,
                             app=app,
+                            user_name={
+                                "first_name": "garbage",
+                                "last_name": "collector",
+                            },
                         )
+
                     except ProjectNotFoundError as err:
                         logger.warning(
                             (
@@ -563,7 +568,7 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
                 "The project can be removed as is not shared with write access with other users"
             )
             try:
-                await delete_project_from_db(app, project_uuid, user_id)
+                await delete_project(app, project_uuid, user_id)
             except ProjectNotFoundError:
                 logging.warning(
                     "Project '%s' not found, skipping removal", project_uuid
@@ -714,7 +719,7 @@ async def replace_current_owner(
 
     # syncing back project data
     try:
-        await app[APP_PROJECT_DBAPI].update_project_without_enforcing_checks(
+        await app[APP_PROJECT_DBAPI].update_project_without_checking_permissions(
             project_data=project,
             project_uuid=project_uuid,
         )

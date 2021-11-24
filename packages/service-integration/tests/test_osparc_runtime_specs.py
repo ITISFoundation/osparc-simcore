@@ -8,7 +8,7 @@ from typing import Dict
 from uuid import uuid4
 
 import yaml
-from service_integration.compose_spec_model import Service, Volume1
+from service_integration.compose_spec_model import Service, ServiceVolume
 from service_integration.osparc_config import PathsMapping, SettingsItem
 
 
@@ -36,13 +36,13 @@ def test_create_runtime_spec_impl(tests_data_dir: Path):
     nid = f"{uuid4()}"
 
     volumes = [
-        Volume1(
+        ServiceVolume(
             type="bind",
             source=f"{pid / nid / 'inputs'}",
             target=f"{pm_spec.inputs_path}",
             read_only=True,
         ),
-        Volume1(
+        ServiceVolume(
             type="bind",
             source=f"{pid / nid / 'outputs'}",
             target=f"{pm_spec.outputs_path}",
@@ -50,7 +50,7 @@ def test_create_runtime_spec_impl(tests_data_dir: Path):
     ]
 
     volumes += [
-        Volume1(
+        ServiceVolume(
             type="bind",
             source=f"{pid / nid /'state'/ workdir.name}",
             target=f"{workdir}",

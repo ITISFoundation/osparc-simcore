@@ -83,6 +83,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
   members: {
     __sidePanels: null,
+    __nodesPage: null,
     __studyTreeItem: null,
     __nodesTree: null,
     __filesTree: null,
@@ -335,7 +336,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }));
       homeAndNodesTree.add(addNewNodeBtn);
 
-      const nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, primaryColumnBGColor);
+      const nodesPage = this.__nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, primaryColumnBGColor);
       tabViewPrimary.add(nodesPage);
 
       const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
@@ -667,6 +668,26 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           }
         }, this);
       }
+
+      // callback for events
+      const slotName4 = "event";
+      if (!socket.slotExists(slotName4)) {
+        socket.on(slotName4, eventData => {
+          const eventPayload = JSON.parse(eventData);
+          const action = eventPayload["action"];
+          if (action == "RELOAD_IFRAME") {
+            // TODO: maybe reload iframe in the future
+            // for now a message is displayed to the user
+            const nodeId = eventPayload["node_id"];
+
+            const workbench = this.getStudy().getWorkbench();
+            const node = workbench.getNode(nodeId);
+            const label = node.getLabel();
+            const text = `New inputs for service ${label}. Please reload to refresh service.`;
+            osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+          }
+        }, this);
+      }
     },
 
     __createPanelView: function(caption, widget) {
@@ -798,6 +819,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         page.getChildControl("button").exclude();
       });
 
+      const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
+      tabViewLeftPanel.setSelection([this.__nodesPage]);
+
       if (node instanceof osparc.data.model.Study) {
         this.__populateSecondPanelStudy(node);
       } else if (node && node.isFilePicker()) {
@@ -924,22 +948,42 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         view.setEnabled(false);
         this.__infoPage.add(view);
       } else {
+        // empty File Picker
+        const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
+        tabViewLeftPanel.setSelection([this.__storagePage]);
+
         this.__settingsPage.getChildControl("button").show();
         this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
 
         const filePickerView = new osparc.file.FilePicker(filePicker);
         filePickerView.buildLayout();
-        filePickerView.getChildControl("reload-button").exclude();
-        filePickerView.getChildControl("files-tree").set({
-          hideRoot: true,
-          showLeafs: true
+
+        const fileDrop = new osparc.file.FileDrop();
+        fileDrop.addListener("localFileDropped", e => {
+          const files = e.getData()["data"];
+          if (filePickerView.uploadPendingFiles(files)) {
+            setTimeout(() => this.__populateSecondPanel(filePicker), 500);
+          }
+          fileDrop.resetDropAction();
         });
-        filePickerView.getChildControl("folder-viewer").exclude();
-        filePickerView.getChildControl("selected-file-layout").getChildControl("download-button").exclude();
-        filePickerView.addListener("itemSelected", () => this.__populateSecondPanel(filePicker));
-        this.__settingsPage.add(filePickerView, {
+        fileDrop.addListener("fileLinkDropped", e => {
+          const data = e.getData()["data"];
+          osparc.file.FilePicker.setOutputValueFromStore(filePicker, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
+          this.__populateSecondPanel(filePicker);
+          fileDrop.resetDropAction();
+        });
+
+        this.__settingsPage.add(fileDrop, {
           flex: 1
         });
+
+        filePickerView.getChildControl("reload-button").exclude();
+        filePickerView.getChildControl("files-tree").exclude();
+        filePickerView.getChildControl("folder-viewer").exclude();
+        filePickerView.getChildControl("selected-file-layout").exclude();
+        filePickerView.getChildControl("select-button").exclude();
+        filePickerView.addListener("itemSelected", () => this.__populateSecondPanel(filePicker));
+        this.__settingsPage.add(filePickerView);
       }
     },
 

@@ -109,10 +109,11 @@ def test_changes_in_metadata_keeps_keys_order(
     metadata_file_path, run_program_with_args
 ):
 
-    before = metadata_file_path.read_text()
-    assert "1.1.0" in before
-
+    before = yaml.safe_load(metadata_file_path.read_text())
     print(before)
+
+    assert before["version"] == "1.1.0"
+
     result = run_program_with_args(
         "bump-version",
         "--metadata-file",
@@ -121,8 +122,11 @@ def test_changes_in_metadata_keeps_keys_order(
         "major",
     )
     assert result.exit_code == os.EX_OK, result
-    after = metadata_file_path.read_text()
+
+    after = yaml.safe_load(metadata_file_path.read_text())
     print(after)
 
-    assert "2.0.0" in after
-    assert before == after.replace("2.0.0", "1.1.0")
+    assert after["version"] == "2.0.0"
+
+    after["version"] = "1.1.0"
+    assert before == after

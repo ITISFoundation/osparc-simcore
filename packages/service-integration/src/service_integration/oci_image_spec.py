@@ -50,15 +50,19 @@ class OciImageSpecAnnotations(BaseModel):
         None,
         description="contact details of the people or organization responsible for the image (freeform string)",
     )
+
     url: AnyUrl = Field(
         None, description="URL to find more information on the image (string)"
     )
+
     documentation: AnyUrl = Field(
         None, description="URL to get documentation on the image (string)"
     )
+
     source: AnyUrl = Field(
         None, description="URL to get source code for building the image (string)"
     )
+
     version: VersionStr = Field(
         None,
         description="version of the packaged software"
@@ -69,9 +73,11 @@ class OciImageSpecAnnotations(BaseModel):
         None,
         description="Source control revision identifier for the packaged software.",
     )
+
     vendor: str = Field(
         None, description="Name of the distributing entity, organization or individual."
     )
+
     # SEE https://spdx.dev/spdx-specification-21-web-version/#h.jxpfx0ykyb60
     licenses: str = Field(
         "MIT",

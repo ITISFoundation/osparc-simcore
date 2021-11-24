@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
 from .context import IntegrationContext
+from models_library.service_settings_labels import RestartPolicy
 
 from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
@@ -27,6 +28,9 @@ from pydantic import BaseSettings
 from pydantic.fields import Field
 from pydantic.main import BaseModel, Extra
 from pydantic.types import SecretStr
+from pydantic.class_validators import validator
+from pydantic.fields import Field
+from pydantic.main import BaseModel, Extra
 
 from .compose_spec_model import ComposeSpecification
 from .errors import ConfigNotFound
@@ -41,31 +45,14 @@ SERVICE_KEY_FORMATS = {
     ServiceType.DYNAMIC: DYNAMIC_SERVICE_KEY_FORMAT,
 }
 
-OSPARC_LABEL_PREFIXES = (
-    "io.simcore",
-    "simcore.service",
-)
 # SEE https://docs.docker.com/config/labels-custom-metadata/#label-keys-and-values
 #  "Authors of third-party tools should prefix each label key with the reverse DNS notation of a
 #   domain they own, such as com.example.some-label ""
 # FIXME: review and define a z43-wide inverse DNS e.g. swiss.z43
-
-
-## SETTINGS ---------------------------------------------------------------------------------
-#
-# User settings -> stored in ~/.osparc
-#
-class Registry(BaseSettings):
-    url: str
-    user: Optional[str] = None
-    password: Optional[SecretStr] = None
-
-
-class UserSettings(BaseSettings):
-    """Stored in ~/.osparc"""
-
-    registries: Dict[str, Registry]
-    default_registry: str = "local"
+OSPARC_LABEL_PREFIXES = (
+    "io.simcore",
+    "simcore.service",
+)
 
 
 ## MODELS ---------------------------------------------------------------------------------
@@ -97,6 +84,15 @@ class MetaConfig(ServiceDockerData):
 
     Necessary for both image- and runtime-spec
     """
+
+    @validator("contact")
+    @classmethod
+    def check_contact_in_authors(cls, v, values):
+        """catalog service relies on contact and author to define access rights"""
+        authors_emails = {author.email for author in values["authors"]}
+        if v not in authors_emails:
+            raise ValueError("Contact {v} must be registered as an author")
+        return v
 
     @classmethod
     def from_yaml(cls, path: Path) -> "MetaConfig":
@@ -185,6 +181,8 @@ class RuntimeConfig(BaseModel):
 
     compose_spec: Optional[ComposeSpecification] = None
     container_http_entrypoint: Optional[str] = None
+
+    restart_policy: RestartPolicy = RestartPolicy.NO_RESTART
 
     paths_mapping: Optional[PathsMapping] = None
 
