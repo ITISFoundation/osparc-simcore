@@ -48,6 +48,7 @@ async def list_project_iterations(
 
     # Search all subsequent commits (i.e. children) and retrieve their tags
     # Select range on those tagged as iterations and returned their assigned wcopy id
+    # Can also check all associated project uuids and see if they exists
     # FIXME: do all these operations in database
     tags_per_child: List[List[TagProxy]] = await vc_repo.get_children_tags(
         repo_id, commit_id
@@ -176,6 +177,11 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
     ) = await list_project_iterations(
         vc_repo, _project_uuid, commit_id, offset=_offset, limit=_limit
     )
+
+    if total_number_of_iterations == 0:
+        raise web.HTTPNotFound(
+            reason=f"No iterations found for project {_project_uuid=}/{commit_id=}"
+        )
 
     assert len(selected_project_iterations) <= _limit  # nosec
 
