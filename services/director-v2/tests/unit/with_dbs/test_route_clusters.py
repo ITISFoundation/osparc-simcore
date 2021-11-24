@@ -112,6 +112,8 @@ def cluster(
 
 
 def test_get_default_cluster_entrypoint(clusters_config: None, client: TestClient):
+    # This test checks that the default cluster is accessible
+    # the default cluster is the osparc internal cluster available through a dask-scheduler
     response = client.get("/v2/clusters/default")
     assert response.status_code == status.HTTP_200_OK
     default_cluster_out = ClusterOut.parse_obj(response.json())
@@ -161,6 +163,8 @@ async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayS
         gateway_versions = await gateway.get_versions()
         clusters_list = await gateway.list_clusters()
         print(f"--> {gateway_versions=}, {cluster_options=}, {clusters_list=}")
+        for option in cluster_options.items():
+            print(f"--> {option=}")
 
         async with gateway.new_cluster() as cluster:
             assert cluster
@@ -195,9 +199,12 @@ async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayS
 
 
 def test_get_cluster_entrypoint(
-    clusters_config: None, client: TestClient, cluster: Callable[..., Cluster]
+    clusters_config: None,
+    client: TestClient,
+    local_dask_gateway_server: DaskGatewayServer,
+    cluster: Callable[..., Cluster],
 ):
-    some_cluster = cluster()
+    some_cluster = cluster(endpoint=local_dask_gateway_server.address)
     response = client.get(f"/v2/clusters/{some_cluster.id}")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
