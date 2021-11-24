@@ -1,0 +1,362 @@
+paths:
+  ## projects/{project_uuid}/checkpoint/{ref_id}/iterations:
+  projects__project_uuid__checkpoint__ref_id__iterations:
+    get:
+      tags:
+        - meta-projects
+      summary: List Project Iterations
+      operationId: _list_meta_project_iterations_handler
+      parameters:
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+        - required: true
+          schema:
+            title: Ref Id
+            anyOf:
+              - type: integer
+              - type: string
+          name: ref_id
+          in: path
+        - description: index to the first item to return (pagination)
+          required: false
+          schema:
+            title: Offset
+            exclusiveMinimum: false
+            type: integer
+            description: index to the first item to return (pagination)
+            default: 0
+          name: offset
+          in: query
+        - description: maximum number of items to return (pagination)
+          required: false
+          schema:
+            title: Limit
+            maximum: 50
+            minimum: 1
+            type: integer
+            description: maximum number of items to return (pagination)
+            default: 20
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page_IterationAsItem_"
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+  ##projects/{project_uuid}/checkpoint/{ref_id}/iterations/{iter_id}:
+  projects__project_uuid__checkpoint__ref_id__iterations__iter_id:
+    get:
+      tags:
+        - meta-projects
+      summary: Get Project Iteration
+      operationId: _get_meta_project_iterations_handler
+      parameters:
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+        - required: true
+          schema:
+            title: Ref Id
+            anyOf:
+              - type: integer
+              - type: string
+          name: ref_id
+          in: path
+        - required: true
+          schema:
+            title: Iter Id
+            type: integer
+          name: iter_id
+          in: path
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope_IterationAsBody_"
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+components:
+  schemas:
+    Envelope_IterationAsBody_:
+      title: Envelope[IterationAsBody]
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/IterationAsBody"
+        error:
+          $ref: "#/components/schemas/Error"
+    Error:
+      title: Error
+      required:
+        - code
+        - message
+      type: object
+      properties:
+        code:
+          title: Code
+          type: integer
+        message:
+          title: Message
+          type: string
+    HTTPValidationError:
+      title: HTTPValidationError
+      type: object
+      properties:
+        detail:
+          title: Detail
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationError"
+    IterationAsBody:
+      title: IterationAsBody
+      required:
+        - uid
+        - wcopy_project_uuid
+        - parameters
+        - probes
+        - wcopy_project_url
+        - url
+      type: object
+      properties:
+        uid:
+          title: Uid
+          type: integer
+        wcopy_project_uuid:
+          title: Wcopy Project Uuid
+          type: string
+          description:
+            ID to this iteration's working copy.A working copy is a real
+            project where this iteration is run
+          format: uuid
+        parameters:
+          title: Parameters
+          type: array
+          items:
+            $ref: "#/components/schemas/ParameterItem"
+        probes:
+          title: Probes
+          type: array
+          items:
+            $ref: "#/components/schemas/ParameterItem"
+        wcopy_project_url:
+          title: Wcopy Project Url
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
+        url:
+          title: Url
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
+    IterationAsItem:
+      title: IterationAsItem
+      required:
+        - wcopy_project_uuid
+        - wcopy_project_url
+        - url
+      type: object
+      properties:
+        uid:
+          title: Uid
+          type: integer
+        wcopy_project_uuid:
+          title: Wcopy Project Uuid
+          type: string
+          description:
+            ID to this iteration's working copy.A working copy is a real
+            project where this iteration is run
+          format: uuid
+        parameters:
+          title: Parameters
+          type: array
+          items:
+            $ref: "#/components/schemas/ParameterItem"
+        probes:
+          title: Probes
+          type: array
+          items:
+            $ref: "#/components/schemas/ParameterItem"
+        wcopy_project_url:
+          title: Wcopy Project Url
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
+        url:
+          title: Url
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
+
+    PageLinks:
+      title: PageLinks
+      required:
+        - self
+        - first
+        - last
+      type: object
+      properties:
+        self:
+          title: Self
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+        first:
+          title: First
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+        prev:
+          title: Prev
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+        next:
+          title: Next
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+        last:
+          title: Last
+          maxLength: 65536
+          minLength: 1
+          type: string
+          format: uri
+      additionalProperties: false
+    PageMetaInfoLimitOffset:
+      title: PageMetaInfoLimitOffset
+      required:
+        - total
+        - count
+      type: object
+      properties:
+        limit:
+          title: Limit
+          exclusiveMinimum: false
+          type: integer
+          default: 20
+        total:
+          title: Total
+          minimum: 0.0
+          type: integer
+        offset:
+          title: Offset
+          minimum: 0.0
+          type: integer
+          default: 0
+        count:
+          title: Count
+          minimum: 0.0
+          type: integer
+    Page_CheckpointAsItem_:
+      title: Page[CheckpointAsItem]
+      required:
+        - _meta
+        - _links
+        - data
+      type: object
+      properties:
+        _meta:
+          $ref: "#/components/schemas/PageMetaInfoLimitOffset"
+        _links:
+          $ref: "#/components/schemas/PageLinks"
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: "#/components/schemas/CheckpointAsItem"
+    Page_IterationAsItem_:
+      title: Page[IterationAsItem]
+      required:
+        - _meta
+        - _links
+        - data
+      type: object
+      properties:
+        _meta:
+          $ref: "#/components/schemas/PageMetaInfoLimitOffset"
+        _links:
+          $ref: "#/components/schemas/PageLinks"
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: "#/components/schemas/IterationAsItem"
+
+    ParameterItem:
+      title: ParameterItem
+      required:
+        - display_name
+        - port_url
+      type: object
+      properties:
+        display_name:
+          title: Display Name
+          type: string
+        value:
+          title: Value
+          anyOf:
+            - type: boolean
+            - type: integer
+            - type: number
+            - type: string
+        port_url:
+          title: Port Url
+          maxLength: 2083
+          minLength: 1
+          type: string
+          format: uri
+
+    ValidationError:
+      title: ValidationError
+      required:
+        - loc
+        - msg
+        - type
+      type: object
+      properties:
+        loc:
+          title: Location
+          type: array
+          items:
+            type: string
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
