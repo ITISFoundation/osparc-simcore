@@ -62,13 +62,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   },
 
   events: {
-    "dashboardPressed": "qx.event.type.Event",
-    "slidesGuidedStart": "qx.event.type.Event",
-    "slidesAppStart": "qx.event.type.Event",
-    "slidesStop": "qx.event.type.Event",
-    "slidesEdit": "qx.event.type.Event",
-    "takeSnapshot": "qx.event.type.Event",
-    "showSnapshots": "qx.event.type.Event"
+    "backToDashboardPressed": "qx.event.type.Event"
   },
 
   properties: {
@@ -116,7 +110,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
 
       this._add(new qx.ui.core.Spacer(30));
 
-      this.getChildControl("study-options-menu");
       this.getChildControl("read-only-icon");
 
       this._add(new qx.ui.core.Spacer(), {
@@ -145,26 +138,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             font: "title-14"
           });
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
-          control.addListener("execute", () => this.fireEvent("dashboardPressed"), this);
+          control.addListener("execute", () => this.fireEvent("backToDashboardPressed"), this);
           this._add(control);
           break;
         case "dashboard-label":
           control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
             font: "text-16"
-          });
-          this._add(control);
-          break;
-        case "study-options-menu":
-          control = new osparc.navigation.StudyMenu();
-          [
-            "slidesGuidedStart",
-            "slidesAppStart",
-            "slidesStop",
-            "slidesEdit",
-            "takeSnapshot",
-            "showSnapshots"
-          ].forEach(signalName => {
-            control.addListener(signalName, () => this.fireEvent(signalName));
           });
           this._add(control);
           break;
@@ -191,11 +170,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this._add(control);
           break;
         case "theme-switch":
-          control = new osparc.ui.switch.ThemeSwitcher();
+          control = new osparc.ui.switch.ThemeSwitcherFormBtn();
+          control.set(this.self().BUTTON_OPTIONS);
           this._add(control);
           break;
         case "user-menu":
-          control = this.__createUserMenuBtn();
+          control = new osparc.navigation.UserMenuButton();
+          control.populateSimpleMenu();
           control.set(this.self().BUTTON_OPTIONS);
           this._add(control);
           break;
@@ -208,7 +189,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "dashboard":
           this.getChildControl("dashboard-label").show();
           this.getChildControl("dashboard-button").exclude();
-          this.getChildControl("study-options-menu").exclude();
           this.getChildControl("read-only-icon").exclude();
           break;
         case "workbench":
@@ -216,7 +196,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "app":
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
-          this.getChildControl("study-options-menu").show();
           break;
       }
     },
@@ -271,12 +250,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       });
 
       const newGHIssueBtn = new qx.ui.menu.Button(this.tr("Issue in GitHub"));
-      newGHIssueBtn.addListener("execute", this.__openGithubIssueInfoDialog, this);
+      newGHIssueBtn.addListener("execute", () => osparc.navigation.UserMenuButton.openGithubIssueInfoDialog(), this);
       menu.add(newGHIssueBtn);
 
       if (osparc.utils.Utils.isInZ43()) {
         const newFogbugzIssueBtn = new qx.ui.menu.Button(this.tr("Issue in Fogbugz"));
-        newFogbugzIssueBtn.addListener("execute", this.__openFogbugzIssueInfoDialog, this);
+        newFogbugzIssueBtn.addListener("execute", () => osparc.navigation.UserMenuButton.openFogbugzIssueInfoDialog(), this);
         menu.add(newFogbugzIssueBtn);
       }
 
@@ -294,123 +273,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       return feedbackBtn;
     },
 
-    __createUserMenuBtn: function() {
-      const menu = new qx.ui.menu.Menu().set({
-        font: "text-14"
-      });
-
-      const activityManager = new qx.ui.menu.Button(this.tr("Activity manager"));
-      activityManager.addListener("execute", this.__openActivityManager, this);
-      menu.add(activityManager);
-
-      const preferences = new qx.ui.menu.Button(this.tr("Preferences"));
-      preferences.addListener("execute", this.__onOpenAccountSettings, this);
-      osparc.utils.Utils.setIdToWidget(preferences, "userMenuPreferencesBtn");
-      menu.add(preferences);
-
-      menu.addSeparator();
-
-      const aboutBtn = new qx.ui.menu.Button(this.tr("About"));
-      aboutBtn.addListener("execute", () => osparc.About.getInstance().open());
-      osparc.utils.Utils.setIdToWidget(aboutBtn, "userMenuAboutBtn");
-      menu.add(aboutBtn);
-
-      menu.addSeparator();
-
-      const logout = new qx.ui.menu.Button(this.tr("Logout"));
-      logout.addListener("execute", e => {
-        qx.core.Init.getApplication().logout();
-      });
-      osparc.utils.Utils.setIdToWidget(logout, "userMenuLogoutBtn");
-      menu.add(logout);
-
-      const userEmail = osparc.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
-      const userName = osparc.auth.Data.getInstance().getUserName() || "bizzy";
-      const userBtn = new qx.ui.form.MenuButton(null, null, menu);
-      userBtn.getChildControl("icon").getContentElement()
-        .setStyles({
-          "border-radius": "16px"
-        });
-      userBtn.set({
-        icon: osparc.utils.Avatar.getUrl(userEmail, 32),
-        label: userName
-      });
-      osparc.utils.Utils.setIdToWidget(userBtn, "userMenuMainBtn");
-
-      return userBtn;
-    },
-
-    __onOpenAccountSettings: function() {
-      const preferencesWindow = new osparc.desktop.preferences.PreferencesWindow();
-      preferencesWindow.center();
-      preferencesWindow.open();
-    },
-
-    __openActivityManager: function() {
-      const activityWindow = new osparc.ui.window.SingletonWindow("activityManager", this.tr("Activity manager")).set({
-        height: 600,
-        width: 800,
-        layout: new qx.ui.layout.Grow(),
-        appearance: "service-window",
-        showMinimize: false,
-        contentPadding: 0
-      });
-      activityWindow.add(new osparc.component.service.manager.ActivityManager());
-      activityWindow.center();
-      activityWindow.open();
-    },
-
-    __openGithubIssueInfoDialog: function() {
-      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
-        this.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
-      );
-      const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
-      contBtn.addListener("execute", () => {
-        window.open(osparc.utils.issue.Github.getNewIssueUrl());
-        issueConfirmationWindow.close();
-      }, this);
-      const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
-      loginBtn.addListener("execute", () => window.open("https://github.com/login"), this);
-      issueConfirmationWindow.addButton(contBtn);
-      issueConfirmationWindow.addButton(loginBtn);
-      issueConfirmationWindow.addCancelButton();
-      issueConfirmationWindow.open();
-    },
-
-    __openFogbugzIssueInfoDialog: function() {
-      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
-        this.tr("To create an issue in Fogbugz, you must have an account in Fogbugz and be already logged-in.")
-      );
-      const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
-      contBtn.addListener("execute", () => {
-        const statics = this.__serverStatics;
-        if (statics) {
-          const fbNewIssueUrl = osparc.utils.issue.Fogbugz.getNewIssueUrl(statics);
-          if (fbNewIssueUrl) {
-            window.open(fbNewIssueUrl);
-            issueConfirmationWindow.close();
-          }
-        }
-      }, this);
-      const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in Fogbugz"), "@FontAwesome5Solid/external-link-alt/12");
-      loginBtn.addListener("execute", () => {
-        const statics = this.__serverStatics;
-        if (statics && statics.fogbugzLoginUrl) {
-          window.open(statics.fogbugzLoginUrl);
-        }
-      }, this);
-      issueConfirmationWindow.addButton(contBtn);
-      issueConfirmationWindow.addButton(loginBtn);
-      issueConfirmationWindow.addCancelButton();
-      issueConfirmationWindow.open();
-    },
-
     _applyStudy: function(study) {
       if (study) {
         study.bind("readOnly", this.getChildControl("read-only-icon"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
-        this.getChildControl("study-options-menu").setStudy(study);
       }
     }
   }

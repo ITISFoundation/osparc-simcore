@@ -1,14 +1,14 @@
 import logging
 from collections import deque
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Dict, Type
+from typing import Any, Callable, Coroutine, Dict, Optional, Type
 
 from pydantic import BaseModel, Field
 from servicelib.utils import logged_gather
 
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.exceptions import PortNotFound, UnboundPortError
-from .links import ItemConcreteValue
+from .links import ItemConcreteValue, ItemValue
 from .port_utils import is_file_type
 from .ports_mapping import InputsList, OutputsList
 
@@ -55,7 +55,16 @@ class Nodeports(BaseModel):
             await self._auto_update_from_db()
         return self.internal_outputs
 
-    async def get(self, item_key: str) -> ItemConcreteValue:
+    async def get_value_link(self, item_key: str) -> Optional[ItemValue]:
+        try:
+            return await (await self.inputs)[item_key].get_value()
+        except UnboundPortError:
+            # not available try outputs
+            pass
+        # if this fails it will raise an exception
+        return await (await self.outputs)[item_key].get_value()
+
+    async def get(self, item_key: str) -> Optional[ItemConcreteValue]:
         try:
             return await (await self.inputs)[item_key].get()
         except UnboundPortError:

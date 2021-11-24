@@ -11,9 +11,10 @@ from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
     DynamicSidecarServiceLabels,
     PathMappingsLabel,
+    RestartPolicy,
     SimcoreServiceLabels,
 )
-from pydantic import BaseModel, Extra, Field, PositiveInt, PrivateAttr
+from pydantic import BaseModel, Extra, Field, PositiveInt, PrivateAttr, constr
 
 from ..constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
@@ -27,6 +28,9 @@ TEMPORARY_PORT_NUMBER = 65_534
 
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 
+SHA256 = constr(max_length=64, regex=r"\b[A-Fa-f0-9]{64}\b")
+ServiceId = SHA256
+NetworkId = SHA256
 
 logger = logging.getLogger()
 
@@ -104,6 +108,32 @@ class DockerContainerInspect(BaseModel):
         )
 
 
+class ServiceRemovalState(BaseModel):
+    can_remove: bool = Field(
+        False,
+        description="when True, marks the service as ready to be removed",
+    )
+    can_save: Optional[bool] = Field(
+        None,
+        description="when True, saves the internal state and upload outputs of the service",
+    )
+    was_removed: bool = Field(
+        False,
+        description=(
+            "Will be True when the removal finished. Used primarily "
+            "to cancel retrying long running operations."
+        ),
+    )
+
+    def mark_to_remove(self, can_save: Optional[bool]) -> None:
+        self.can_remove = True
+        self.can_save = can_save
+
+    def mark_removed(self) -> None:
+        self.can_remove = False
+        self.was_removed = True
+
+
 class DynamicSidecar(BaseModel):
     status: Status = Field(
         Status.create_as_initially_ok(),
@@ -141,12 +171,46 @@ class DynamicSidecar(BaseModel):
         scription="docker inspect results from all the container ran at regular intervals",
     )
 
+    was_dynamic_sidecar_started: bool = False
     were_services_created: bool = Field(
         False,
         description=(
             "when True no longer will the Docker api "
             "be used to check if the services were started"
         ),
+    )
+
+    service_environment_prepared: bool = Field(
+        False,
+        description=(
+            "True when the environment setup required by the "
+            "dynamic-sidecars created services was completed."
+            "Example: nodeports data downloaded, globally "
+            "shared service data fetched, etc.."
+        ),
+    )
+
+    service_removal_state: ServiceRemovalState = Field(
+        default_factory=ServiceRemovalState,
+        description=(
+            "stores information used during service removal "
+            "from the dynamic-sidecar scheduler"
+        ),
+    )
+
+    # below had already been validated and
+    # used only to start the proxy
+    dynamic_sidecar_id: Optional[ServiceId] = Field(
+        None, description="returned by the docker engine; used for starting the proxy"
+    )
+    dynamic_sidecar_network_id: Optional[NetworkId] = Field(
+        None, description="returned by the docker engine; used for starting the proxy"
+    )
+    swarm_network_id: Optional[NetworkId] = Field(
+        None, description="returned by the docker engine; used for starting the proxy"
+    )
+    swarm_network_name: Optional[str] = Field(
+        None, description="used for starting the proxy"
     )
 
     @property
@@ -200,7 +264,8 @@ class ServiceLabelsStoredData(CommonServiceDetails, DynamicSidecarServiceLabels)
             params["compose_spec"] = labels["compose_spec"]
         if "container_http_entry" in labels:
             params["container_http_entry"] = labels["container_http_entry"]
-
+        if "restart_policy" in labels:
+            params["restart_policy"] = labels["restart_policy"]
         return cls(**params)
 
     class Config:
@@ -222,6 +287,7 @@ class ServiceLabelsStoredData(CommonServiceDetails, DynamicSidecarServiceLabels)
                 "dynamic_sidecar_network_name": "some_network_name",
                 "simcore_traefik_zone": "main",
                 "service_port": 300,
+                "restart_policy": RestartPolicy.NO_RESTART.value,
                 "project_id": UUID("dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe"),
                 "user_id": 234,
             }
@@ -344,6 +410,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             paths_mapping=simcore_service_labels.paths_mapping,
             compose_spec=json.dumps(simcore_service_labels.compose_spec),
             container_http_entry=simcore_service_labels.container_http_entry,
+            restart_policy=simcore_service_labels.restart_policy,
             dynamic_sidecar_network_name=dynamic_sidecar_names.dynamic_sidecar_network_name,
             simcore_traefik_zone=dynamic_sidecar_names.simcore_traefik_zone,
             request_dns=request_dns,
@@ -376,6 +443,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
                 paths_mapping=service_labels_stored_data.paths_mapping,
                 compose_spec=json.dumps(service_labels_stored_data.compose_spec),
                 container_http_entry=service_labels_stored_data.container_http_entry,
+                restart_policy=service_labels_stored_data.restart_policy,
                 dynamic_sidecar_network_name=service_labels_stored_data.dynamic_sidecar_network_name,
                 simcore_traefik_zone=service_labels_stored_data.simcore_traefik_zone,
                 service_port=service_labels_stored_data.service_port,

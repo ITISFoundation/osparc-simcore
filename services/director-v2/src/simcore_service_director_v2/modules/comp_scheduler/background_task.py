@@ -18,14 +18,14 @@ async def scheduler_task(app: FastAPI) -> None:
     scheduler = app.state.scheduler
     while app.state.comp_scheduler_running:
         try:
-            logger.debug("scheduler task running...")
+            logger.debug("Computational scheduler task running...")
             await scheduler.schedule_all_pipelines()
             with suppress(asyncio.TimeoutError):
                 await asyncio.wait_for(
                     scheduler.wake_up_event.wait(), timeout=_DEFAULT_TIMEOUT_S
                 )
         except CancelledError:
-            logger.info("scheduler task cancelled")
+            logger.info("Computational scheduler task cancelled")
             raise
         except ComputationalBackendNotConnectedError:
             logger.info("trying to reconnect to computational backend...")
@@ -35,7 +35,7 @@ async def scheduler_task(app: FastAPI) -> None:
                 logger.warning("Forced to stop computational scheduler")
                 break
             logger.exception(
-                "Unexpected error in scheduler task, restarting scheduler now..."
+                "Unexpected error in computational scheduler task, restarting scheduler now..."
             )
             # wait a bit before restarting the task
             await asyncio.sleep(_DEFAULT_TIMEOUT_S)
@@ -50,7 +50,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
         app.state.comp_scheduler_running = True
         app.state.scheduler = await factory.create_from_db(app)
         app.state.scheduler_task = asyncio.create_task(
-            scheduler_task(app), name="comp. services scheduler"
+            scheduler_task(app), name="computational services scheduler"
         )
         logger.info("Computational services Scheduler started")
 

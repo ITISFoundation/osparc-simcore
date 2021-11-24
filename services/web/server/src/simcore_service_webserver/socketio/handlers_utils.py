@@ -44,6 +44,7 @@ def register_handlers(app: web.Application, module: ModuleType):
         socket_io_handler(app)(func_handler) for func_handler in member_fcts
     ]
     app[APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY] = partial_fcts
+
     # register the fcts
     for func in partial_fcts:
         sio.on(func.__name__, handler=func)

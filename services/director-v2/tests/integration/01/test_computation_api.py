@@ -7,11 +7,10 @@
 
 import asyncio
 import json
-from collections import namedtuple
 from copy import deepcopy
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List
-from uuid import UUID
 
 import pytest
 import sqlalchemy as sa
@@ -24,114 +23,30 @@ from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
-from pydantic.networks import AnyHttpUrl
 from pydantic.types import PositiveInt
-from requests.models import Response
-from simcore_postgres_database.models.comp_tasks import comp_tasks
-from simcore_postgres_database.models.projects import projects
+from shared_comp_utils import (
+    COMPUTATION_URL,
+    assert_computation_task_out_obj,
+    assert_pipeline_status,
+    create_pipeline,
+)
+from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from starlette import status
 from starlette.testclient import TestClient
-from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
-    "director",
     "dask-scheduler",
     "dask-sidecar",
-    "redis",
-    "rabbit",
-    "storage",
+    "director",
+    "migration",
     "postgres",
+    "rabbit",
+    "redis",
+    "storage",
 ]
 pytest_simcore_ops_services_selection = ["minio", "adminer", "flower"]
-
-COMPUTATION_URL: str = "v2/computations"
-
-# HELPERS ---------------------------------------
-
-
-def _assert_pipeline_status(
-    client: TestClient,
-    url: AnyHttpUrl,
-    user_id: PositiveInt,
-    project_uuid: UUID,
-    wait_for_states: List[RunningState] = None,
-) -> ComputationTaskOut:
-    if not wait_for_states:
-        wait_for_states = [
-            RunningState.SUCCESS,
-            RunningState.FAILED,
-            RunningState.ABORTED,
-        ]
-
-    MAX_TIMEOUT_S = 60
-
-    @retry(
-        stop=stop_after_delay(MAX_TIMEOUT_S),
-        wait=wait_random(0, 2),
-        retry=retry_if_exception_type(AssertionError),
-        reraise=True,
-    )
-    def check_pipeline_state() -> ComputationTaskOut:
-        response = client.get(url, params={"user_id": user_id})
-        assert (
-            response.status_code == status.HTTP_202_ACCEPTED
-        ), f"response code is {response.status_code}, error: {response.text}"
-        task_out = ComputationTaskOut.parse_obj(response.json())
-        assert task_out.id == project_uuid
-        assert task_out.url == f"{client.base_url}/v2/computations/{project_uuid}"
-        print("Pipeline is in ", task_out.state)
-        assert task_out.state in wait_for_states
-        return task_out
-
-    task_out = check_pipeline_state()
-
-    return task_out
-
-
-def _create_pipeline(
-    client: TestClient,
-    *,
-    project: ProjectAtDB,
-    user_id: PositiveInt,
-    start_pipeline: bool,
-    expected_response_status_code: int,
-    **kwargs,
-) -> Response:
-    response = client.post(
-        COMPUTATION_URL,
-        json={
-            "user_id": user_id,
-            "project_id": str(project.uuid),
-            "start_pipeline": start_pipeline,
-            **kwargs,
-        },
-    )
-    assert (
-        response.status_code == expected_response_status_code
-    ), f"response code is {response.status_code}, error: {response.text}"
-    return response
-
-
-def _assert_computation_task_out_obj(
-    client: TestClient,
-    task_out: ComputationTaskOut,
-    *,
-    project: ProjectAtDB,
-    exp_task_state: RunningState,
-    exp_pipeline_details: PipelineDetails,
-):
-    assert task_out.id == project.uuid
-    assert task_out.state == exp_task_state
-    assert task_out.url == f"{client.base_url}/v2/computations/{project.uuid}"
-    assert task_out.stop_url == (
-        f"{client.base_url}/v2/computations/{project.uuid}:stop"
-        if exp_task_state in [RunningState.PUBLISHED, RunningState.PENDING]
-        else None
-    )
-    # check pipeline details contents
-    assert task_out.pipeline_details == exp_pipeline_details
 
 
 # FIXTURES ---------------------------------------
@@ -154,6 +69,7 @@ def mock_env(monkeypatch: MonkeyPatch, request) -> None:
         "DIRECTOR_V2_CELERY_SCHEDULER_ENABLED",
         "1" if request.param == "celery" else "0",
     )
+    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
@@ -169,37 +85,13 @@ def minimal_configuration(
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
-    simcore_services: Dict[str, URL],
+    simcore_services_ready: None,
+    storage_service: URL,
+    mocker,
 ) -> None:
-    pass
-
-
-@pytest.fixture
-def update_project_workbench_with_comp_tasks(postgres_db: sa.engine.Engine) -> Callable:
-    def updator(project_uuid: str):
-        with postgres_db.connect() as con:
-            result = con.execute(
-                projects.select().where(projects.c.uuid == project_uuid)
-            )
-            prj_row = result.first()
-            prj_workbench = prj_row.workbench
-
-            result = con.execute(
-                comp_tasks.select().where(comp_tasks.c.project_id == project_uuid)
-            )
-            # let's get the results and run_hash
-            for task_row in result:
-                # pass these to the project workbench
-                prj_workbench[task_row.node_id]["outputs"] = task_row.outputs
-                prj_workbench[task_row.node_id]["runHash"] = task_row.run_hash
-
-            con.execute(
-                projects.update()
-                .values(workbench=prj_workbench)
-                .where(projects.c.uuid == project_uuid)
-            )
-
-    yield updator
+    node_ports_config.STORAGE_ENDPOINT = (
+        f"{storage_service.host}:{storage_service.port}"
+    )
 
 
 @pytest.fixture(scope="session")
@@ -288,7 +180,7 @@ def test_start_empty_computation(
 ):
     # send an empty project to process
     empty_project = project()
-    _create_pipeline(
+    create_pipeline(
         client,
         project=empty_project,
         user_id=user_id,
@@ -297,17 +189,21 @@ def test_start_empty_computation(
     )
 
 
-PartialComputationParams = namedtuple(
-    "PartialComputationParams",
-    "subgraph_elements, exp_pipeline_adj_list, exp_node_states, exp_node_states_after_run",
-)
+@dataclass
+class PartialComputationParams:
+    subgraph_elements: List[int]
+    exp_pipeline_adj_list: Dict[int, List[int]]
+    exp_node_states: Dict[int, Dict[str, Any]]
+    exp_node_states_after_run: Dict[int, Dict[str, Any]]
+    exp_pipeline_adj_list_after_force_run: Dict[int, List[int]]
+    exp_node_states_after_force_run: Dict[int, Dict[str, Any]]
 
 
 @pytest.mark.parametrize(
-    "subgraph_elements,exp_pipeline_adj_list, exp_node_states, exp_node_states_after_run",
+    "params",
     [
         pytest.param(
-            *PartialComputationParams(
+            PartialComputationParams(
                 subgraph_elements=[0, 1],
                 exp_pipeline_adj_list={1: []},
                 exp_node_states={
@@ -348,11 +244,34 @@ PartialComputationParams = namedtuple(
                         "dependencies": [2, 3],
                     },
                 },
+                exp_pipeline_adj_list_after_force_run={1: []},
+                exp_node_states_after_force_run={
+                    1: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                    2: {
+                        "modified": True,
+                        "dependencies": [],
+                        "currentStatus": RunningState.NOT_STARTED,
+                    },
+                    3: {
+                        "modified": True,
+                        "dependencies": [],
+                        "currentStatus": RunningState.NOT_STARTED,
+                    },
+                    4: {
+                        "modified": True,
+                        "dependencies": [2, 3],
+                        "currentStatus": RunningState.NOT_STARTED,
+                    },
+                },
             ),
             id="element 0,1",
         ),
         pytest.param(
-            *PartialComputationParams(
+            PartialComputationParams(
                 subgraph_elements=[1, 2, 4],
                 exp_pipeline_adj_list={1: [2], 2: [4], 3: [4], 4: []},
                 exp_node_states={
@@ -399,32 +318,52 @@ PartialComputationParams = namedtuple(
                         "currentStatus": RunningState.SUCCESS,
                     },
                 },
+                exp_pipeline_adj_list_after_force_run={1: [2], 2: [4], 4: []},
+                exp_node_states_after_force_run={
+                    1: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                    2: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                    3: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
+                    },
+                    4: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                },
             ),
             id="element 1,2,4",
         ),
     ],
 )
-def test_run_partial_computation(
+async def test_run_partial_computation(
     minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
-    subgraph_elements: List[int],
-    exp_pipeline_adj_list: Dict[int, List[str]],
-    exp_node_states: Dict[int, Dict[str, Any]],
-    exp_node_states_after_run: Dict[int, Dict[str, Any]],
+    params: PartialComputationParams,
 ):
     sleepers_project: ProjectAtDB = project(workbench=fake_workbench_without_outputs)
 
     def _convert_to_pipeline_details(
         project: ProjectAtDB,
-        exp_pipeline_adj_list: Dict[int, List[str]],
+        exp_pipeline_adj_list: Dict[int, List[int]],
         exp_node_states: Dict[int, Dict[str, Any]],
     ) -> PipelineDetails:
         workbench_node_uuids = list(project.workbench.keys())
-        converted_adj_list: Dict[NodeID, Dict[NodeID, List[NodeID]]] = {}
+        converted_adj_list: Dict[NodeID, List[NodeID]] = {}
         for node_key, next_nodes in exp_pipeline_adj_list.items():
             converted_adj_list[NodeID(workbench_node_uuids[node_key])] = [
                 NodeID(workbench_node_uuids[n]) for n in next_nodes
@@ -445,11 +384,11 @@ def test_run_partial_computation(
 
     # convert the ids to the node uuids from the project
     expected_pipeline_details = _convert_to_pipeline_details(
-        sleepers_project, exp_pipeline_adj_list, exp_node_states
+        sleepers_project, params.exp_pipeline_adj_list, params.exp_node_states
     )
 
     # send a valid project with sleepers
-    response = _create_pipeline(
+    response = create_pipeline(
         client,
         project=sleepers_project,
         user_id=user_id,
@@ -458,12 +397,12 @@ def test_run_partial_computation(
         subgraph=[
             str(node_id)
             for index, node_id in enumerate(sleepers_project.workbench)
-            if index in subgraph_elements
+            if index in params.subgraph_elements
         ],
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
     # check the contents is correctb
-    _assert_computation_task_out_obj(
+    assert_computation_task_out_obj(
         client,
         task_out,
         project=sleepers_project,
@@ -472,13 +411,13 @@ def test_run_partial_computation(
     )
 
     # now wait for the computation to finish
-    task_out = _assert_pipeline_status(
+    task_out = await assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
     expected_pipeline_details_after_run = _convert_to_pipeline_details(
-        sleepers_project, exp_pipeline_adj_list, exp_node_states_after_run
+        sleepers_project, params.exp_pipeline_adj_list, params.exp_node_states_after_run
     )
-    _assert_computation_task_out_obj(
+    assert_computation_task_out_obj(
         client,
         task_out,
         project=sleepers_project,
@@ -490,7 +429,7 @@ def test_run_partial_computation(
     # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
 
-    response = _create_pipeline(
+    response = create_pipeline(
         client,
         project=sleepers_project,
         user_id=user_id,
@@ -499,18 +438,18 @@ def test_run_partial_computation(
         subgraph=[
             str(node_id)
             for index, node_id in enumerate(sleepers_project.workbench)
-            if index in subgraph_elements
+            if index in params.subgraph_elements
         ],
     )
 
     # force run it this time.
     # the task are up-to-date but we force run them
-    expected_pipeline_details_forced = deepcopy(expected_pipeline_details_after_run)
-    for node_id, node_data in expected_pipeline_details_forced.node_states.items():
-        node_data.current_status = expected_pipeline_details.node_states[
-            node_id
-        ].current_status
-    response = _create_pipeline(
+    expected_pipeline_details_forced = _convert_to_pipeline_details(
+        sleepers_project,
+        params.exp_pipeline_adj_list_after_force_run,
+        params.exp_node_states_after_force_run,
+    )
+    response = create_pipeline(
         client,
         project=sleepers_project,
         user_id=user_id,
@@ -519,13 +458,13 @@ def test_run_partial_computation(
         subgraph=[
             str(node_id)
             for index, node_id in enumerate(sleepers_project.workbench)
-            if index in subgraph_elements
+            if index in params.subgraph_elements
         ],
         force_restart=True,
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
 
-    _assert_computation_task_out_obj(
+    assert_computation_task_out_obj(
         client,
         task_out,
         project=sleepers_project,
@@ -534,12 +473,12 @@ def test_run_partial_computation(
     )
 
     # now wait for the computation to finish
-    task_out = _assert_pipeline_status(
+    task_out = await assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
 
 
-def test_run_computation(
+async def test_run_computation(
     minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
@@ -551,7 +490,7 @@ def test_run_computation(
 ):
     sleepers_project = project(workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
-    response = _create_pipeline(
+    response = create_pipeline(
         client,
         project=sleepers_project,
         user_id=user_id,
@@ -561,7 +500,7 @@ def test_run_computation(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     # check the contents is correct: a pipeline that just started gets PUBLISHED
-    _assert_computation_task_out_obj(
+    assert_computation_task_out_obj(
         client,
         task_out,
         project=sleepers_project,
@@ -570,7 +509,7 @@ def test_run_computation(
     )
 
     # wait for the computation to start
-    _assert_pipeline_status(
+    await assert_pipeline_status(
         client,
         task_out.url,
         user_id,
@@ -579,11 +518,11 @@ def test_run_computation(
     )
 
     # wait for the computation to finish (either by failing, success or abort)
-    task_out = _assert_pipeline_status(
+    task_out = await assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
 
-    _assert_computation_task_out_obj(
+    assert_computation_task_out_obj(
         client,
         task_out,
         project=sleepers_project,
@@ -594,7 +533,7 @@ def test_run_computation(
     # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
     # run again should return a 422 cause everything is uptodate
-    response = _create_pipeline(
+    response = create_pipeline(
         client,
         project=sleepers_project,
         user_id=user_id,
@@ -613,7 +552,7 @@ def test_run_computation(
                 node_id
             ].current_status
         )
-    response = _create_pipeline(
+    response = create_pipeline(
         client,
         project=sleepers_project,
         user_id=user_id,
@@ -623,7 +562,7 @@ def test_run_computation(
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
     # check the contents is correct
-    _assert_computation_task_out_obj(
+    assert_computation_task_out_obj(
         client,
         task_out,
         project=sleepers_project,
@@ -632,10 +571,10 @@ def test_run_computation(
     )
 
     # wait for the computation to finish
-    task_out = _assert_pipeline_status(
+    task_out = await assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
-    _assert_computation_task_out_obj(
+    assert_computation_task_out_obj(
         client,
         task_out,
         project=sleepers_project,
@@ -644,7 +583,7 @@ def test_run_computation(
     )
 
 
-def test_abort_computation(
+async def test_abort_computation(
     minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
@@ -654,7 +593,7 @@ def test_abort_computation(
 ):
     sleepers_project = project(workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
-    response = _create_pipeline(
+    response = create_pipeline(
         client,
         project=sleepers_project,
         user_id=user_id,
@@ -664,7 +603,7 @@ def test_abort_computation(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     # check the contents is correctb
-    _assert_computation_task_out_obj(
+    assert_computation_task_out_obj(
         client,
         task_out,
         project=sleepers_project,
@@ -673,7 +612,7 @@ def test_abort_computation(
     )
 
     # wait until the pipeline is started
-    task_out = _assert_pipeline_status(
+    task_out = await assert_pipeline_status(
         client,
         task_out.url,
         user_id,
@@ -702,7 +641,7 @@ def test_abort_computation(
     assert task_out.stop_url == None
 
     # check that the pipeline is aborted/stopped
-    task_out = _assert_pipeline_status(
+    task_out = await assert_pipeline_status(
         client,
         task_out.url,
         user_id,
@@ -712,7 +651,7 @@ def test_abort_computation(
     assert task_out.state == RunningState.ABORTED
 
 
-def test_update_and_delete_computation(
+async def test_update_and_delete_computation(
     minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
@@ -723,7 +662,7 @@ def test_update_and_delete_computation(
 ):
     sleepers_project = project(workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
-    response = _create_pipeline(
+    response = create_pipeline(
         client,
         project=sleepers_project,
         user_id=user_id,
@@ -733,7 +672,7 @@ def test_update_and_delete_computation(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     # check the contents is correctb
-    _assert_computation_task_out_obj(
+    assert_computation_task_out_obj(
         client,
         task_out,
         project=sleepers_project,
@@ -742,7 +681,7 @@ def test_update_and_delete_computation(
     )
 
     # update the pipeline
-    response = _create_pipeline(
+    response = create_pipeline(
         client,
         project=sleepers_project,
         user_id=user_id,
@@ -752,7 +691,7 @@ def test_update_and_delete_computation(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     # check the contents is correctb
-    _assert_computation_task_out_obj(
+    assert_computation_task_out_obj(
         client,
         task_out,
         project=sleepers_project,
@@ -761,7 +700,7 @@ def test_update_and_delete_computation(
     )
 
     # update the pipeline
-    response = _create_pipeline(
+    response = create_pipeline(
         client,
         project=sleepers_project,
         user_id=user_id,
@@ -771,7 +710,7 @@ def test_update_and_delete_computation(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     # check the contents is correctb
-    _assert_computation_task_out_obj(
+    assert_computation_task_out_obj(
         client,
         task_out,
         project=sleepers_project,
@@ -780,7 +719,7 @@ def test_update_and_delete_computation(
     )
 
     # start it now
-    response = _create_pipeline(
+    response = create_pipeline(
         client,
         project=sleepers_project,
         user_id=user_id,
@@ -789,7 +728,7 @@ def test_update_and_delete_computation(
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
     # check the contents is correctb
-    _assert_computation_task_out_obj(
+    assert_computation_task_out_obj(
         client,
         task_out,
         project=sleepers_project,
@@ -798,7 +737,7 @@ def test_update_and_delete_computation(
     )
 
     # wait until the pipeline is started
-    task_out = _assert_pipeline_status(
+    task_out = await assert_pipeline_status(
         client,
         task_out.url,
         user_id,
@@ -810,7 +749,7 @@ def test_update_and_delete_computation(
     ), f"pipeline is not in the expected starting state but in {task_out.state}"
 
     # now try to update the pipeline, is expected to be forbidden
-    response = _create_pipeline(
+    response = create_pipeline(
         client,
         project=sleepers_project,
         user_id=user_id,
@@ -836,7 +775,7 @@ def test_pipeline_with_no_comp_services_still_create_correct_comp_tasks(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    jupyter_service: Dict[str, str],
+    jupyter_service: Dict[str, Any],
 ):
     # create a workbench with just a dynamic service
     project_with_dynamic_node = project(
@@ -850,7 +789,7 @@ def test_pipeline_with_no_comp_services_still_create_correct_comp_tasks(
     )
 
     # this pipeline is not runnable as there are no computational services
-    response = _create_pipeline(
+    response = create_pipeline(
         client,
         project=project_with_dynamic_node,
         user_id=user_id,
@@ -859,7 +798,7 @@ def test_pipeline_with_no_comp_services_still_create_correct_comp_tasks(
     )
 
     # still this pipeline shall be createable if we do not want to start it
-    response = _create_pipeline(
+    response = create_pipeline(
         client,
         project=project_with_dynamic_node,
         user_id=user_id,
@@ -876,7 +815,7 @@ def test_pipeline_with_control_pipeline_made_of_dynamic_services_are_allowed(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    jupyter_service: Dict[str, str],
+    jupyter_service: Dict[str, Any],
 ):
     # create a workbench with just 2 dynamic service in a cycle
     project_with_dynamic_node = project(
@@ -940,8 +879,8 @@ def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    sleeper_service: Dict[str, str],
-    jupyter_service: Dict[str, str],
+    sleeper_service: Dict[str, Any],
+    jupyter_service: Dict[str, Any],
 ):
     # create a workbench with just 2 dynamic service in a cycle
     project_with_cycly_and_comp_service = project(
@@ -1025,7 +964,7 @@ async def test_burst_create_computations(
     sleepers_project = project(workbench=fake_workbench_without_outputs)
     sleepers_project2 = project(workbench=fake_workbench_without_outputs)
 
-    async def _create_pipeline(project: ProjectAtDB, start_pipeline: bool):
+    async def create_pipeline(project: ProjectAtDB, start_pipeline: bool):
         return await async_client.post(
             COMPUTATION_URL,
             json={
@@ -1043,10 +982,10 @@ async def test_burst_create_computations(
     responses = await asyncio.gather(
         *(
             [
-                _create_pipeline(sleepers_project, start_pipeline=False)
+                create_pipeline(sleepers_project, start_pipeline=False)
                 for _ in range(NUMBER_OF_CALLS)
             ]
-            + [_create_pipeline(sleepers_project2, start_pipeline=False)]
+            + [create_pipeline(sleepers_project2, start_pipeline=False)]
         )
     )
     received_status_codes = [r.status_code for r in responses]
@@ -1058,10 +997,10 @@ async def test_burst_create_computations(
     responses = await asyncio.gather(
         *(
             [
-                _create_pipeline(sleepers_project, start_pipeline=True)
+                create_pipeline(sleepers_project, start_pipeline=True)
                 for _ in range(NUMBER_OF_CALLS)
             ]
-            + [_create_pipeline(sleepers_project2, start_pipeline=False)]
+            + [create_pipeline(sleepers_project2, start_pipeline=False)]
         )
     )
     received_status_codes = [r.status_code for r in responses]

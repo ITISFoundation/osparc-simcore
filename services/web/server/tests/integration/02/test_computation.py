@@ -4,18 +4,18 @@
 import asyncio
 import json
 import sys
+from collections import namedtuple
 from pathlib import Path
-from typing import Callable, Dict
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 
 import pytest
+import socketio
 import sqlalchemy as sa
-from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser
-from pytest_simcore.helpers.utils_projects import NewProject
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.webserver_models import (
     NodeClass,
@@ -28,6 +28,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.projects.module_setup import setup_projects
+from simcore_service_webserver.projects.projects_handlers import HTTPLocked
 from simcore_service_webserver.resource_manager.module_setup import (
     setup_resource_manager,
 )
@@ -38,35 +39,105 @@ from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.module_setup import setup_socketio
 from simcore_service_webserver.users import setup_users
 from socketio.exceptions import ConnectionError as SocketConnectionError
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity import retry
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 from yarl import URL
-
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
 
+
 # Selection of core and tool services started in this swarm fixture (integration)
 pytest_simcore_core_services_selection = [
-    "redis",
-    "rabbit",
-    "director",
-    "director-v2",
-    "postgres",
     "dask-scheduler",
     "dask-sidecar",
+    "director-v2",
+    "director",
+    "migration",
+    "postgres",
+    "rabbit",
+    "redis",
     "storage",
 ]
 
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
+# HELPERS ----------------------------------------------------------------------------
+
+ExpectedResponse = namedtuple(
+    "ExpectedResponse",
+    ["ok", "created", "no_content", "not_found", "forbidden", "locked", "accepted"],
+)
+
+
+def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse]]]:
+    return (
+        "user_role,expected",
+        [
+            (
+                UserRole.ANONYMOUS,
+                ExpectedResponse(
+                    web.HTTPUnauthorized,
+                    web.HTTPUnauthorized,
+                    web.HTTPUnauthorized,
+                    web.HTTPUnauthorized,
+                    web.HTTPUnauthorized,
+                    web.HTTPUnauthorized,
+                    web.HTTPUnauthorized,
+                ),
+            ),
+            (
+                UserRole.GUEST,
+                ExpectedResponse(
+                    web.HTTPForbidden,
+                    web.HTTPForbidden,
+                    web.HTTPForbidden,
+                    web.HTTPForbidden,
+                    web.HTTPForbidden,
+                    web.HTTPForbidden,
+                    web.HTTPForbidden,
+                ),
+            ),
+            (
+                UserRole.USER,
+                ExpectedResponse(
+                    web.HTTPOk,
+                    web.HTTPCreated,
+                    web.HTTPNoContent,
+                    web.HTTPNotFound,
+                    web.HTTPForbidden,
+                    HTTPLocked,
+                    web.HTTPAccepted,
+                ),
+            ),
+            (
+                UserRole.TESTER,
+                ExpectedResponse(
+                    web.HTTPOk,
+                    web.HTTPCreated,
+                    web.HTTPNoContent,
+                    web.HTTPNotFound,
+                    web.HTTPForbidden,
+                    HTTPLocked,
+                    web.HTTPAccepted,
+                ),
+            ),
+        ],
+    )
+
+
+# FIXTURES ----------------------------------------------------------------------------
+
+
 @pytest.fixture
 def client(
-    loop,
-    aiohttp_client,
-    app_config,  ## waits until swarm with *_services are up
-):
+    loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable,
+    app_config: Dict[str, Any],  ## waits until swarm with *_services are up
+) -> TestClient:
     assert app_config["rest"]["version"] == API_VERSION
 
     app_config["storage"]["enabled"] = False
@@ -87,7 +158,7 @@ def client(
     setup_director_v2(app)
     setup_resource_manager(app)
 
-    yield loop.run_until_complete(
+    return loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={
@@ -99,18 +170,18 @@ def client(
 
 
 @pytest.fixture(scope="session")
-def mock_workbench_adjacency_list() -> Dict:
-    file_path = current_dir / "workbench_sleeper_dag_adjacency_list.json"
+def mock_workbench_adjacency_list(tests_data_dir: Path) -> Dict[str, Any]:
+    file_path = tests_data_dir / "workbench_sleeper_dag_adjacency_list.json"
     with file_path.open() as fp:
         return json.load(fp)
 
 
 # HELPERS ----------------------------------
 def _assert_db_contents(
-    project_id,
-    postgres_session,
-    mock_workbench_payload,
-    mock_workbench_adjacency_list,
+    project_id: str,
+    postgres_session: sa.orm.session.Session,
+    mock_workbench_payload: Dict[str, Any],
+    mock_workbench_adjacency_list: Dict[str, Any],
     check_outputs: bool,
 ):
     # pylint: disable=no-member
@@ -149,7 +220,7 @@ def _assert_sleeper_services_completed(
     project_id: str,
     postgres_session: sa.orm.session.Session,
     expected_state: StateType,
-    mock_workbench_payload,
+    mock_workbench_payload: Dict[str, Any],
 ):
     # pylint: disable=no-member
     TIMEOUT_SECONDS = 60
@@ -160,7 +231,7 @@ def _assert_sleeper_services_completed(
 
     @retry(
         reraise=True,
-        stop=stop_after_attempt(TIMEOUT_SECONDS / WAIT_TIME),
+        stop=stop_after_delay(TIMEOUT_SECONDS),
         wait=wait_fixed(WAIT_TIME),
         retry=retry_if_exception_type(AssertionError),
     )
@@ -228,12 +299,14 @@ async def test_start_pipeline(
     postgres_session: sa.orm.session.Session,
     rabbit_service: RabbitConfig,
     redis_service: RedisConfig,
-    simcore_services: Dict[str, URL],
-    client,
-    socketio_client_factory: Callable,
-    logged_user: LoggedUser,
-    user_project: NewProject,
-    mock_workbench_adjacency_list: Dict,
+    simcore_services_ready: None,
+    client: TestClient,
+    socketio_client_factory: Callable[
+        [Optional[str], Optional[TestClient]], Awaitable[socketio.AsyncClient]
+    ],
+    logged_user: Dict[str, Any],
+    user_project: Dict[str, Any],
+    mock_workbench_adjacency_list: Dict[str, Any],
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
@@ -241,7 +314,7 @@ async def test_start_pipeline(
     mock_workbench_payload = user_project["workbench"]
     # connect websocket (to prevent the GC to remove the project)
     try:
-        sio = await socketio_client_factory()
+        sio = await socketio_client_factory(None, None)
         assert sio.sid
     except SocketConnectionError:
         if expected.created == web.HTTPCreated:
@@ -253,24 +326,19 @@ async def test_start_pipeline(
     )
 
     # POST /v0/computation/pipeline/{project_id}:start
-    resp = await client.post(url_start)
+    resp = await client.post(f"{url_start}")
     data, error = await assert_status(
         resp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
     )
 
     if not error:
-        # starting again should be disallowed
-        resp = await client.post(url_start)
+        # starting again should be disallowed, since it's already running
+        resp = await client.post(f"{url_start}")
         assert (
             resp.status == web.HTTPForbidden.status_code
             if user_role == UserRole.GUEST
             else expected.forbidden.status_code
         )
-        # FIXME: to PC: I have an issue here with how the webserver middleware transforms errors (see director_v2.py)
-        # await assert_status(
-        #     resp,
-        #     web.HTTPForbidden if user_role == UserRole.GUEST else expected.forbidden,
-        # )
 
         assert "pipeline_id" in data
         assert data["pipeline_id"] == project_id
@@ -282,10 +350,12 @@ async def test_start_pipeline(
             mock_workbench_adjacency_list,
             check_outputs=False,
         )
+        # wait for the computation to stop
         _assert_sleeper_services_completed(
             project_id, postgres_session, StateType.SUCCESS, mock_workbench_payload
         )
-        resp = await client.post(url_start)
+        # restart the computation
+        resp = await client.post(f"{url_start}")
         data, error = await assert_status(
             resp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
         )
@@ -297,11 +367,12 @@ async def test_start_pipeline(
         API_PREFIX + "/computation/pipeline/{}:stop".format(project_id)
     )
     await asyncio.sleep(2)
-    resp = await client.post(url_stop)
+    resp = await client.post(f"{url_stop}")
     data, error = await assert_status(
         resp, web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content
     )
     if not error:
+        # now wait for it to stop
         _assert_sleeper_services_completed(
             project_id, postgres_session, StateType.ABORTED, mock_workbench_payload
         )

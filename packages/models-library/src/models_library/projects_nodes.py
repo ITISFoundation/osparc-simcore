@@ -139,7 +139,6 @@ class Node(BaseModel):
     input_nodes: Optional[List[NodeID]] = Field(
         default_factory=list,
         description="node IDs of where the node is connected to",
-        examples=["nodeUuid1", "nodeUuid2"],
         alias="inputNodes",
     )
 
@@ -151,7 +150,6 @@ class Node(BaseModel):
     output_nodes: Optional[List[NodeID]] = Field(
         None,
         description="Used in group-nodes. Node IDs of those connected to the output",
-        examples=["nodeUuid1", "nodeUuid2"],
         alias="outputNodes",
     )
 
@@ -160,8 +158,11 @@ class Node(BaseModel):
         description="Parent's (group-nodes') node ID s. Used to group",
     )
 
-    # NOTE: use projects_ui.py
-    position: Optional[Position] = Field(None, deprecated=True)
+    position: Optional[Position] = Field(
+        None,
+        deprecated=True,
+        description="Use projects_ui.WorkbenchUI.position instead",
+    )
 
     state: Optional[NodeState] = Field(
         default_factory=NodeState, description="The node's state object"

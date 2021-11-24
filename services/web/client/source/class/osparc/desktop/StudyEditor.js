@@ -28,11 +28,22 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     const workbenchView = this.__workbenchView = new osparc.desktop.WorkbenchView();
     [
       "collapseNavBar",
-      "expandNavBar"
+      "expandNavBar",
+      "backToDashboardPressed",
+      "slidesEdit",
+      "slidesGuidedStart",
+      "slidesAppStart"
     ].forEach(singalName => workbenchView.addListener(singalName, () => this.fireEvent(singalName)));
+    workbenchView.addListener("takeSnapshot", () => {
+      this.__takeSnapshot();
+    }, this);
+    workbenchView.addListener("showSnapshots", () => {
+      this.__showSnapshots();
+    }, this);
     viewsStack.add(workbenchView);
 
     const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
+    slideshowView.addListener("slidesStop", () => this.fireEvent("slidesStop"));
     viewsStack.add(slideshowView);
 
     slideshowView.addListener("startPartialPipeline", e => {
@@ -61,10 +72,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
   events: {
     "forceBackToDashboard": "qx.event.type.Event",
-    "snapshotTaken": "qx.event.type.Event",
     "startSnapshot": "qx.event.type.Data",
     "collapseNavBar": "qx.event.type.Event",
-    "expandNavBar": "qx.event.type.Event"
+    "expandNavBar": "qx.event.type.Event",
+    "backToDashboardPressed": "qx.event.type.Event",
+    "slidesEdit": "qx.event.type.Event",
+    "slidesGuidedStart": "qx.event.type.Event",
+    "slidesAppStart": "qx.event.type.Event",
+    "slidesStop": "qx.event.type.Event"
   },
 
   properties: {
@@ -395,7 +410,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    takeSnapshot: function() {
+    __takeSnapshot: function() {
       const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
       const tagCtrl = editSnapshotView.getChildControl("tags");
       const study = this.getStudy();
@@ -418,7 +433,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         };
         osparc.data.Resources.fetch("snapshots", "takeSnapshot", params)
-          .then(data => this.fireEvent("snapshotTaken"))
+          .then(data => {
+            this.__workbenchView.evalSnapshotsButtons();
+          })
           .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
 
         win.close();
@@ -426,7 +443,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       editSnapshotView.addListener("cancel", () => win.close(), this);
     },
 
-    showSnapshots: function() {
+    __showSnapshots: function() {
       const study = this.getStudy();
       const snapshots = new osparc.component.snapshots.SnapshotsView(study);
       const title = this.tr("Snapshots");

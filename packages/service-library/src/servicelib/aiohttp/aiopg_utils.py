@@ -11,40 +11,26 @@
     SEE for extra keywords: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 """
 # TODO: Towards implementing https://github.com/ITISFoundation/osparc-simcore/issues/1195
+# TODO: deprecate this module. Move utils into retry_policies, simcore_postgres_database.utils_aiopg
 
 import functools
 import logging
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
 from psycopg2 import DatabaseError
 from psycopg2 import Error as DBAPIError
-from tenacity import (
-    RetryCallState,
-    after_log,
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_fixed,
-)
+from tenacity import RetryCallState, retry
+from tenacity.after import after_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
-from ..common_aiopg_utils import (
-    DataSourceName,
-    PostgresRetryPolicyUponInitialization
-)
+from ..common_aiopg_utils import DataSourceName
 
 log = logging.getLogger(__name__)
-
-
-def get_pg_engine_stateinfo(engine: Engine) -> Dict[str, Any]:
-    return {
-        "size": engine.size,
-        "acquired": engine.size - engine.freesize,
-        "free": engine.freesize,
-        "reserved": {"min": engine.minsize, "max": engine.maxsize},
-    }
 
 
 async def raise_if_not_responsive(engine: Engine):
@@ -159,6 +145,5 @@ def retry_pg_api(func):
 
 __all__ = [
     "DBAPIError",
-    "PostgresRetryPolicyUponInitialization",
     "PostgresRetryPolicyUponOperation",
 ]

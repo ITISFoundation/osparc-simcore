@@ -66,7 +66,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
   events: {
     "fullscreenNode": "qx.event.type.Data",
     "renameNode": "qx.event.type.Data",
-    "showInfo": "qx.event.type.Data",
+    "infoNode": "qx.event.type.Data",
     "deleteNode": "qx.event.type.Data"
   },
 
@@ -113,7 +113,6 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "options-rename-button": {
           control = new qx.ui.menu.Button().set({
-            backgroundColor: "transparent",
             label: this.tr("Rename"),
             icon: "@FontAwesome5Solid/i-cursor/10"
           });
@@ -124,18 +123,16 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "options-info-button": {
           control = new qx.ui.menu.Button().set({
-            backgroundColor: "transparent",
             label: this.tr("Information"),
             icon: "@FontAwesome5Solid/info/10"
           });
-          control.addListener("execute", () => this.fireDataEvent("showInfo", this.getNodeId()));
+          control.addListener("execute", () => this.fireDataEvent("infoNode", this.getNodeId()));
           const optionsMenu = this.getChildControl("options-menu-button");
           optionsMenu.getMenu().add(control);
           break;
         }
         case "options-delete-button": {
           control = new qx.ui.menu.Button().set({
-            backgroundColor: "transparent",
             label: this.tr("Delete"),
             icon: "@FontAwesome5Solid/trash/10"
           });

@@ -1,22 +1,25 @@
-# pylint: disable=unused-import
+""" aiopg errors
 
-#
-# StandardError
-# |__ Warning
-# |__ Error
-#     |__ InterfaceError
-#     |__ DatabaseError
-#         |__ DataError
-#         |__ OperationalError
-#         |__ IntegrityError
-#         |__ InternalError
-#         |__ ProgrammingError
-#         |__ NotSupportedError
-#
-# aiopg reuses DBAPI exceptions
-# SEE https://aiopg.readthedocs.io/en/stable/core.html?highlight=Exception#exceptions
-# SEE http://initd.org/psycopg/docs/module.html#dbapi-exceptions
+    StandardError
+    |__ Warning
+    |__ Error
+        |__ InterfaceError
+        |__ DatabaseError
+            |__ DataError
+            |__ OperationalError
+            |__ IntegrityError
+            |__ InternalError
+            |__ ProgrammingError
+            |__ NotSupportedError
 
+    - aiopg reuses DBAPI exceptions
+        SEE https://aiopg.readthedocs.io/en/stable/core.html?highlight=Exception#exceptions
+        SEE http://initd.org/psycopg/docs/module.html#dbapi-exceptions
+"""
+# NOTE: psycopg2.errors are created dynamically
+# pylint: disable=no-name-in-module
+
+from typing import Tuple
 
 from psycopg2 import DatabaseError, DataError
 from psycopg2 import Error as DBAPIError
@@ -28,11 +31,7 @@ from psycopg2 import (
     OperationalError,
     ProgrammingError,
 )
-
-# pylint: disable=no-name-in-module
 from psycopg2.errors import ForeignKeyViolation, NotNullViolation, UniqueViolation
-
-# pylint: enable=no-name-in-module
 
 assert issubclass(UniqueViolation, IntegrityError)  # nosec
 
@@ -45,3 +44,18 @@ assert issubclass(UniqueViolation, IntegrityError)  # nosec
 #        s.commit()
 #   except IntegrityError as e:
 #        assert isinstance(e.orig, UniqueViolation)
+
+
+__all__: Tuple[str, ...] = (
+    "DatabaseError",
+    "DataError",
+    "DBAPIError",
+    "ForeignKeyViolation",
+    "IntegrityError",
+    "InterfaceError",
+    "InternalError",
+    "NotNullViolation",
+    "NotSupportedError",
+    "OperationalError",
+    "ProgrammingError",
+)

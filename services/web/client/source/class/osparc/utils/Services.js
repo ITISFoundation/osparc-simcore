@@ -33,29 +33,35 @@ qx.Class.define("osparc.utils.Services", {
 
   statics: {
     TYPES: {
-      computational: {
-        label: "Computational",
-        icon: "@FontAwesome5Solid/cogs/"
-      },
-      dynamic: {
-        label: "Interactive",
-        icon: "@FontAwesome5Solid/mouse-pointer/"
-      },
-      iterator: {
-        label: "Iterator",
-        icon: "@FontAwesome5Solid/copy/"
-      },
-      "iterator-consumer": {
-        label: "Probe",
-        icon: "@FontAwesome5Solid/thermometer/"
-      },
       parameter: {
         label: "",
-        icon: "@FontAwesome5Solid/sliders-h/"
+        icon: "@FontAwesome5Solid/sliders-h/",
+        sorting: 0
       },
       file: {
         label: "",
-        icon: "@FontAwesome5Solid/file/"
+        icon: "@FontAwesome5Solid/file/",
+        sorting: 1
+      },
+      computational: {
+        label: "Computational",
+        icon: "@FontAwesome5Solid/cogs/",
+        sorting: 2
+      },
+      dynamic: {
+        label: "Interactive",
+        icon: "@FontAwesome5Solid/mouse-pointer/",
+        sorting: 3
+      },
+      iterator: {
+        label: "Iterator",
+        icon: "@FontAwesome5Solid/copy/",
+        sorting: 4
+      },
+      "iterator-consumer": {
+        label: "Probe",
+        icon: "@FontAwesome5Solid/thermometer/",
+        sorting: 5
       }
     },
 
@@ -85,6 +91,14 @@ qx.Class.define("osparc.utils.Services", {
         return typeInfo["icon"];
       }
       return null;
+    },
+
+    getSorting(type) {
+      const typeInfo = this.getType(type);
+      if (typeInfo) {
+        return typeInfo["sorting"];
+      }
+      return 0;
     },
 
     convertArrayToObject: function(servicesArray) {

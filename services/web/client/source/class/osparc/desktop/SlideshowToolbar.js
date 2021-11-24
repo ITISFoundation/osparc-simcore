@@ -23,7 +23,8 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
     "addServiceBetween": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
     "showNode": "qx.event.type.Data",
-    "hideNode": "qx.event.type.Data"
+    "hideNode": "qx.event.type.Data",
+    "slidesStop": "qx.event.type.Event"
   },
 
   members: {
@@ -56,6 +57,14 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
           control.add(editBtn);
           control.add(saveBtn);
           control.setSelection([editBtn]);
+          this._add(control);
+          break;
+        }
+        case "prev-next-btns": {
+          control = new osparc.navigation.PrevNextButtons();
+          control.addListener("nodeSelected", e => {
+            this.fireDataEvent("nodeSelected", e.getData());
+          }, this);
           this._add(control);
           break;
         }
@@ -96,14 +105,15 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
           scroll.add(control);
           break;
         }
-        case "prev-next-btns": {
-          control = new osparc.navigation.PrevNextButtons();
-          control.addListener("nodeSelected", e => {
-            this.fireDataEvent("nodeSelected", e.getData());
-          }, this);
+        case "stop-slideshow":
+          control = new qx.ui.form.Button().set({
+            ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
+            label: this.tr("Stop Slideshow"),
+            icon: "@FontAwesome5Solid/stop/14"
+          });
+          control.addListener("execute", () => this.fireEvent("slidesStop"));
           this._add(control);
           break;
-        }
       }
       return control || this.base(arguments, id);
     },
@@ -111,9 +121,13 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
     // overriden
     _buildLayout: function() {
       this.getChildControl("edit-slideshow-buttons");
+      this.getChildControl("prev-next-btns");
       this.getChildControl("breadcrumb-navigation");
       this.getChildControl("breadcrumb-navigation-edit");
-      this.getChildControl("prev-next-btns");
+
+      this._add(new qx.ui.core.Spacer(20));
+
+      this.getChildControl("stop-slideshow");
 
       this._add(new qx.ui.core.Spacer(20));
 
@@ -149,16 +163,20 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
 
         this.getChildControl("breadcrumb-navigation").populateButtons(nodeIds);
         this.getChildControl("breadcrumb-navigation-edit").populateButtons(study);
-        const currentModeBtn = editSlideshowButtons.getSelection()[0];
-        if ("editing" in currentModeBtn && currentModeBtn["editing"]) {
-          this.getChildControl("breadcrumbs-scroll").exclude();
-          this.getChildControl("breadcrumbs-scroll-edit").show();
-        } else {
-          this.getChildControl("breadcrumbs-scroll").show();
-          this.getChildControl("breadcrumbs-scroll-edit").exclude();
-        }
-
         this.getChildControl("prev-next-btns").populateButtons(nodeIds);
+        this.__evalButtonsIfEditing();
+      }
+    },
+
+    __evalButtonsIfEditing: function() {
+      const editSlideshowButtons = this.getChildControl("edit-slideshow-buttons");
+      const currentModeBtn = editSlideshowButtons.getSelection()[0];
+      if ("editing" in currentModeBtn && currentModeBtn["editing"]) {
+        this.getChildControl("breadcrumbs-scroll").exclude();
+        this.getChildControl("breadcrumbs-scroll-edit").show();
+      } else {
+        this.getChildControl("breadcrumbs-scroll").show();
+        this.getChildControl("breadcrumbs-scroll-edit").exclude();
       }
     }
   }

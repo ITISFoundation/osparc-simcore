@@ -30,13 +30,13 @@ SIMCORE_SERVICE_EXAMPLES = [
     ),
     SimcoreServiceExample(
         example=SimcoreServiceLabels.Config.schema_extra["examples"][1],
-        items=2,
+        items=3,
         uses_dynamic_sidecar=True,
         id="dynamic-service",
     ),
     SimcoreServiceExample(
         example=SimcoreServiceLabels.Config.schema_extra["examples"][2],
-        items=4,
+        items=5,
         uses_dynamic_sidecar=True,
         id="dynamic-service-with-compose-spec",
     ),
@@ -130,3 +130,13 @@ def test_simcore_services_labels_compose_spec_null_container_http_entry_provided
     sample_data["simcore.service.compose-spec"] = None
     with pytest.raises(ValidationError):
         SimcoreServiceLabels(**sample_data)
+
+
+def test_raises_error_wrong_restart_policy() -> None:
+    simcore_service_labels: Dict[str, Any] = deepcopy(
+        SimcoreServiceLabels.Config.schema_extra["examples"][2]
+    )
+    simcore_service_labels["simcore.service.restart-policy"] = "__not_a_valid_policy__"
+
+    with pytest.raises(ValueError):
+        SimcoreServiceLabels(**simcore_service_labels)

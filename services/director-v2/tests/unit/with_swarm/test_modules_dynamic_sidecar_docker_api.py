@@ -148,6 +148,7 @@ def dynamic_sidecar_service_spec(
             "paths_mapping": sample["paths_mapping"].json(),
             "compose_spec": sample["compose_spec"],
             "container_http_entry": sample["container_http_entry"],
+            "restart_policy": sample["restart_policy"],
             "traefik.docker.network": "",
             "io.simcore.zone": "",
             "service_port": "80",
@@ -423,7 +424,7 @@ async def test_dynamic_sidecar_get_dynamic_sidecar_sate_fail_to_schedule(
     )
 
 
-async def test_are_services_missing(
+async def test_is_dynamic_sidecar_missing(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_stack_specs: List[Dict[str, Any]],
@@ -431,7 +432,7 @@ async def test_are_services_missing(
     docker_swarm: None,
 ) -> None:
 
-    services_are_missing = await docker_api.are_services_missing(
+    services_are_missing = await docker_api.is_dynamic_sidecar_missing(
         node_uuid, dynamic_sidecar_settings
     )
     assert services_are_missing == True
@@ -441,7 +442,7 @@ async def test_are_services_missing(
         service_id = await docker_api.create_service_and_get_id(dynamic_sidecar_stack)
         assert service_id
 
-    services_are_missing = await docker_api.are_services_missing(
+    services_are_missing = await docker_api.is_dynamic_sidecar_missing(
         node_uuid, dynamic_sidecar_settings
     )
     assert services_are_missing == False

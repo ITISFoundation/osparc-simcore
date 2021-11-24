@@ -18,6 +18,7 @@ class BasePortsMapping(BaseModel):
                 key = list(self.__root__.keys())[key]
         if not key in self.__root__:
             raise UnboundPortError(key)
+        assert isinstance(key, str)  # nosec
         return self.__root__[key]
 
     def __iter__(self) -> Iterator[PortKey]:

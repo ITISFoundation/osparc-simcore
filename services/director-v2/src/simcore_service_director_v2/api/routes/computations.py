@@ -10,13 +10,11 @@ from models_library.projects_state import RunningState
 from servicelib.async_utils import run_sequentially_in_context
 from starlette import status
 from starlette.requests import Request
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_result,
-    stop_after_delay,
-    wait_random,
-)
+from tenacity import retry
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_result
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random
 
 from ...core.errors import PipelineNotFoundError, ProjectNotFoundError, SchedulerError
 from ...models.domains.comp_pipelines import CompPipelineAtDB

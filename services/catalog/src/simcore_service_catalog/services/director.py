@@ -5,28 +5,45 @@ from typing import Callable, Dict, List, Optional, Union
 
 import httpx
 from fastapi import FastAPI, HTTPException
+from servicelib.json_serialization import json_dumps
 from starlette import status
-from tenacity import retry
+from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
 logger = logging.getLogger(__name__)
 
-director_statup_retry_policy = dict(
-    wait=wait_random(5, 10),
+MINUTE = 60
+
+director_startup_retry_policy = dict(
+    # Random service startup order in swarm.
+    # wait_random prevents saturating other services while startup
+    #
+    wait=wait_random(2, 5),
+    stop=stop_after_delay(2 * MINUTE),
     before_sleep=before_sleep_log(logger, logging.WARNING),
     reraise=True,
 )
 
 
-@retry(**director_statup_retry_policy)
 async def setup_director(app: FastAPI) -> None:
     if settings := app.state.settings.CATALOG_DIRECTOR:
         # init client-api
         logger.debug("Setup director at %s...", settings.base_url)
         director_client = DirectorApi(base_url=settings.base_url, app=app)
+
         # check that the director is accessible
-        await director_client.is_responsive()
+        async for attempt in AsyncRetrying(**director_startup_retry_policy):
+            with attempt:
+                if not await director_client.is_responsive():
+                    raise ValueError("Director-v0 is not responsive")
+
+                logger.info(
+                    "Connection to director-v0 succeded [%s]",
+                    json_dumps(attempt.retry_state.retry_object.statistics),
+                )
+
         app.state.director_api = director_client
 
 
@@ -130,9 +147,10 @@ class DirectorApi:
 
     async def is_responsive(self) -> bool:
         try:
+            logger.debug("checking director-v0 is responsive")
             health_check_path: str = "/"
-            result = await self.client.head(health_check_path)
+            result = await self.client.head(health_check_path, timeout=1.0)
             result.raise_for_status()
             return True
-        except (httpx.HTTPStatusError, httpx.RequestError):
+        except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException):
             return False

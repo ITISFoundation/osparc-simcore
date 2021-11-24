@@ -66,36 +66,50 @@ async def push(
         return await _push_file(user_id, project_id, node_uuid, archive_file_path, None)
 
 
-async def _pull_file(user_id: int, project_id: str, node_uuid: str, file_path: Path):
+async def _pull_file(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    file_path: Path,
+    save_to: Optional[Path] = None,
+):
+    destination_path = file_path if save_to is None else save_to
     s3_object = _create_s3_object(project_id, node_uuid, file_path)
     log.info("pulling data from %s to %s...", s3_object, file_path)
     downloaded_file = await filemanager.download_file_from_s3(
         user_id=user_id,
         store_id="0",
         s3_object=s3_object,
-        local_folder=file_path.parent,
+        local_folder=destination_path.parent,
     )
-    if downloaded_file != file_path:
-        if file_path.exists():
-            file_path.unlink()
-        move(f"{downloaded_file}", file_path)
-    log.info("%s successfuly pulled", file_path)
+    if downloaded_file != destination_path:
+        destination_path.unlink(missing_ok=True)
+        move(f"{downloaded_file}", destination_path)
+    log.info("%s successfuly pulled", destination_path)
 
 
 def _get_archive_name(path: Path) -> str:
     return f"{path.stem}.zip"
 
 
-async def pull(user_id: int, project_id: str, node_uuid: str, file_or_folder: Path):
+async def pull(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    file_or_folder: Path,
+    save_to: Optional[Path] = None,
+):
     if file_or_folder.is_file():
-        return await _pull_file(user_id, project_id, node_uuid, file_or_folder)
+        return await _pull_file(user_id, project_id, node_uuid, file_or_folder, save_to)
     # we have a folder, so we need somewhere to extract it to
     with TemporaryDirectory() as tmp_dir_name:
         archive_file = Path(tmp_dir_name) / _get_archive_name(file_or_folder)
         await _pull_file(user_id, project_id, node_uuid, archive_file)
         log.info("extracting data from %s", archive_file)
+
+        destination_folder = file_or_folder if save_to is None else save_to
         await unarchive_dir(
-            archive_to_extract=archive_file, destination_folder=file_or_folder
+            archive_to_extract=archive_file, destination_folder=destination_folder
         )
         log.info("extraction completed")
 

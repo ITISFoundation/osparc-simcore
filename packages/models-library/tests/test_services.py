@@ -10,6 +10,8 @@ import pytest
 import yaml
 from models_library.basic_regex import VERSION_RE
 from models_library.services import (
+    COMPUTATIONAL_SERVICE_KEY_FORMAT,
+    DYNAMIC_SERVICE_KEY_FORMAT,
     SERVICE_KEY_RE,
     ServiceAccessRightsAtDB,
     ServiceCommonData,
@@ -167,6 +169,24 @@ def test_service_key_regex_patterns(service_key: str, regex_pattern: str):
     assert match.group(2) == "services"
     assert match.group(3) in ["comp", "dynamic", "frontend"]
     assert match.group(4) is not None
+
+    # tests formatters
+    new_service_key = None
+    service_type = match.group(3)
+    service_name = match.group(4).strip(
+        "/"
+    )  # FIXME: SERVICE_KEY_RE MUST eliminate / in the last capture!!!
+    if service_type == "comp":
+        new_service_key = COMPUTATIONAL_SERVICE_KEY_FORMAT.format(
+            service_name=service_name
+        )
+    elif service_type == "dynamic":
+        new_service_key = DYNAMIC_SERVICE_KEY_FORMAT.format(service_name=service_name)
+
+    if new_service_key:
+        new_match = re.match(regex_pattern, new_service_key)
+        assert new_match
+        assert new_match.groups() == match.groups()
 
 
 @pytest.mark.parametrize(

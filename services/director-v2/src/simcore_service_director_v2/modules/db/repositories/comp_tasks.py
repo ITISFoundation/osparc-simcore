@@ -114,7 +114,7 @@ class CompTasksRepository(BaseRepository):
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(
                 sa.select([comp_tasks]).where(
-                    (comp_tasks.c.project_id == str(project_id))
+                    (comp_tasks.c.project_id == f"{project_id}")
                 )
             ):
                 task_db = CompTaskAtDB.from_orm(row)
@@ -131,7 +131,7 @@ class CompTasksRepository(BaseRepository):
         async with self.db_engine.acquire() as conn:
             async for row in conn.execute(
                 sa.select([comp_tasks]).where(
-                    (comp_tasks.c.project_id == str(project_id))
+                    (comp_tasks.c.project_id == f"{project_id}")
                     & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                 )
             ):
@@ -205,14 +205,30 @@ class CompTasksRepository(BaseRepository):
             await conn.execute(
                 sa.update(comp_tasks)
                 .where(
-                    (comp_tasks.c.project_id == str(project_id))
+                    (comp_tasks.c.project_id == f"{project_id}")
                     & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                     & (
                         (comp_tasks.c.state == StateType.PUBLISHED)
                         | (comp_tasks.c.state == StateType.PENDING)
+                        | (comp_tasks.c.state == StateType.RUNNING)
                     )
                 )
                 .values(state=StateType.ABORTED)
+            )
+
+    @log_decorator(logger=logger)
+    async def set_project_task_job_id(
+        self, project_id: ProjectID, task: NodeID, job_id: str
+    ) -> None:
+        # block all pending tasks, so the sidecars stop taking them
+        async with self.db_engine.acquire() as conn:
+            await conn.execute(
+                sa.update(comp_tasks)
+                .where(
+                    (comp_tasks.c.project_id == f"{project_id}")
+                    & (comp_tasks.c.node_id == f"{task}")
+                )
+                .values(job_id=job_id)
             )
 
     @log_decorator(logger=logger)
@@ -224,7 +240,7 @@ class CompTasksRepository(BaseRepository):
             await conn.execute(
                 sa.update(comp_tasks)
                 .where(
-                    (comp_tasks.c.project_id == str(project_id))
+                    (comp_tasks.c.project_id == f"{project_id}")
                     & (comp_tasks.c.node_id.in_([str(t) for t in tasks]))
                 )
                 .values(state=RUNNING_STATE_TO_DB[state])

@@ -71,7 +71,6 @@ services:
   dask-sidecar:
     volumes: &dev-dask-sidecar-volumes
       - ./dask-sidecar:/devel/services/dask-sidecar
-      - ./sidecar:/devel/services/sidecar
       - ../packages:/devel/packages
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment:

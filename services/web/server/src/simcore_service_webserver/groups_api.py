@@ -18,6 +18,7 @@ from .groups_exceptions import (
     UserInGroupNotFoundError,
 )
 from .groups_utils import (
+    AccessRightsDict,
     check_group_permissions,
     convert_groups_db_to_schema,
     convert_groups_schema_to_db,
@@ -28,8 +29,17 @@ from .users_exceptions import UserNotFoundError
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_GROUP_READ_ACCESS_RIGHTS = {"read": True, "write": False, "delete": False}
-DEFAULT_GROUP_OWNER_ACCESS_RIGHTS = {"read": True, "write": True, "delete": True}
+
+DEFAULT_GROUP_READ_ACCESS_RIGHTS: AccessRightsDict = {
+    "read": True,
+    "write": False,
+    "delete": False,
+}
+DEFAULT_GROUP_OWNER_ACCESS_RIGHTS: AccessRightsDict = {
+    "read": True,
+    "write": True,
+    "delete": True,
+}
 
 
 async def list_user_groups(
@@ -222,7 +232,7 @@ async def add_user_in_group(
     *,
     new_user_id: Optional[int] = None,
     new_user_email: Optional[str] = None,
-    access_rights: Optional[Dict[str, bool]] = None,
+    access_rights: Optional[AccessRightsDict] = None,
 ) -> None:
     """
     adds new_user (either by id or email) in group (with gid) owned by user_id
@@ -321,9 +331,9 @@ async def update_user_in_group(
                 )
             )
         )
-        the_user = dict(the_user)
-        the_user.update(**new_db_values)
-        return convert_user_in_group_to_schema(the_user)
+        user = dict(the_user)
+        user.update(**new_db_values)
+        return convert_user_in_group_to_schema(user)
 
 
 async def delete_user_in_group(

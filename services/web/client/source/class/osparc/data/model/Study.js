@@ -436,7 +436,7 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     updateStudy: function(params, run = false) {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         osparc.data.Resources.fetch("studies", "put", {
           url: {
             "studyId": this.getUuid(),
@@ -446,11 +446,13 @@ qx.Class.define("osparc.data.model.Study", {
             ...this.serialize(),
             ...params
           }
-        }).then(data => {
-          this.__updateModel(data);
-          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
-          resolve(data);
-        });
+        })
+          .then(data => {
+            this.__updateModel(data);
+            qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
+            resolve(data);
+          })
+          .catch(err => reject(err));
       });
     },
 

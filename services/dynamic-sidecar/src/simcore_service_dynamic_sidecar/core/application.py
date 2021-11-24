@@ -3,10 +3,13 @@ from typing import Any, Callable, Coroutine
 
 from fastapi import FastAPI
 
-from .._meta import __version__, api_vtag
+from .._meta import API_VTAG, __version__
 from ..api import main_router
+from ..core.docker_logs import setup_background_log_fetcher
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
+from ..modules.directory_watcher import setup_directory_watcher
+from .rabbitmq import setup_rabbitmq
 from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
 from .shared_handlers import on_shutdown_handler
@@ -39,15 +42,15 @@ def assemble_application() -> FastAPI:
     needed in other requests and used to share data.
     """
 
-    dynamic_sidecar_settings = DynamicSidecarSettings.create()
+    dynamic_sidecar_settings = DynamicSidecarSettings.create_from_envs()
 
     logging.basicConfig(level=dynamic_sidecar_settings.loglevel)
     logging.root.setLevel(dynamic_sidecar_settings.loglevel)
     logger.debug(dynamic_sidecar_settings.json(indent=2))
 
     application = FastAPI(
-        debug=dynamic_sidecar_settings.debug,
-        openapi_url=f"/api/{api_vtag}/openapi.json",
+        debug=dynamic_sidecar_settings.DEBUG,
+        openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
     )
 
@@ -62,24 +65,31 @@ def assemble_application() -> FastAPI:
     if dynamic_sidecar_settings.is_development_mode:
         remote_debug_setup(application)
 
+    if dynamic_sidecar_settings.RABBIT_SETTINGS:
+        setup_rabbitmq(application)
+        # requires rabbitmq to be in place
+        setup_background_log_fetcher(application)
+
     # add routing paths
     application.include_router(main_router)
 
-    def create_start_app_handler(
-        app: FastAPI,
-    ) -> Callable[[], Coroutine[Any, Any, None]]:
+    setup_directory_watcher(application)
+
+    def create_start_app_handler() -> Callable[[], Coroutine[Any, Any, None]]:
         async def on_startup() -> None:
-            await login_registry(app.state.settings.registry)
+            await login_registry(application.state.settings.REGISTRY_SETTINGS)
             print(WELCOME_MSG, flush=True)
 
         return on_startup
 
-    # setting up handler for lifecycle
-    async def on_shutdown() -> None:
-        await on_shutdown_handler(application)
-        logger.info("shutdown cleanup completed")
+    def create_stop_app_handler() -> Callable[[], Coroutine[Any, Any, None]]:
+        async def on_shutdown() -> None:
+            await on_shutdown_handler(application)
+            logger.info("shutdown cleanup completed")
 
-    application.add_event_handler("startup", create_start_app_handler(application))
-    application.add_event_handler("shutdown", on_shutdown)
+        return on_shutdown
+
+    application.add_event_handler("startup", create_start_app_handler())
+    application.add_event_handler("shutdown", create_stop_app_handler())
 
     return application

@@ -32,6 +32,9 @@ class ServicesCommonSettings(BaseSettings):
             "allow the service to finish the operation."
         ),
     )
+    restart_containers_timeout: PositiveInt = Field(
+        1 * _MINUTE, description="timeout of containers restart"
+    )
 
     class Config:
         env_prefix = "SERVICES_COMMON_"

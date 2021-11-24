@@ -28,7 +28,15 @@ install() {
 }
 
 test() {
-  pytest --color=yes --cov-report=term-missing -v --keep-docker-up tests/public-api --log-level=DEBUG
+  # WARNING: this test is heavy. Due to limited CI machine power, please do not
+  # add too much overhead (e.g. low log-level etc)
+  pytest \
+    --color=yes \
+    --cov-report=term-missing \
+    --keep-docker-up \
+    --durations=5 \
+    -v \
+    tests/public-api
 }
 
 clean_up() {

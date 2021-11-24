@@ -2,18 +2,19 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-""" Fixtures to create docker-compose.yaml configururation files (as in Makefile)
+""" Fixtures to create docker-compose.yaml configuration files (as in Makefile)
 
-    Basically runs `docker-compose config
+    - Basically runs `docker-compose config
+    - Services in stack can be selected using 'core_services_selection', 'ops_services_selection' fixtures
 """
 
+import json
 import os
 import shutil
 import sys
 from copy import deepcopy
 from pathlib import Path
-from pprint import pformat
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Iterator, List
 
 import pytest
 import yaml
@@ -24,11 +25,13 @@ from .helpers import (
     FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
     FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
 )
+from .helpers.constants import HEADER_STR
 from .helpers.utils_docker import get_ip, run_docker_compose_config, save_docker_infos
+from .helpers.utils_environs import EnvVarsDict
 
 
 @pytest.fixture(scope="session")
-def testing_environ_vars(env_devel_file: Path) -> Dict[str, Union[str, None]]:
+def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
     """
     Loads and extends .env-devel returning
     all environment variables key=value
@@ -36,7 +39,7 @@ def testing_environ_vars(env_devel_file: Path) -> Dict[str, Union[str, None]]:
     env_devel_unresolved = dotenv_values(env_devel_file, verbose=True, interpolate=True)
 
     # get from environ if applicable
-    env_devel = {
+    env_devel: EnvVarsDict = {
         key: os.environ.get(key, value) for key, value in env_devel_unresolved.items()
     }
 
@@ -77,7 +80,7 @@ def env_file_for_testing(
     testing_environ_vars: Dict[str, str],
     temp_folder: Path,
     osparc_simcore_root_dir: Path,
-) -> Path:
+) -> Iterator[Path]:
     """Dumps all the environment variables into an $(temp_folder)/.env.test file
 
     Pass path as argument in 'docker-compose --env-file ... '
@@ -142,7 +145,12 @@ def simcore_docker_compose(
         env_file_path=env_file_for_testing,
         destination_path=temp_folder / "simcore_docker_compose.yml",
     )
-    print("simcore docker-compose:\n%s", pformat(config))
+    # NOTE: do not add indent. Copy&Paste log into editor instead
+    print(
+        HEADER_STR.format("simcore docker-compose"),
+        json.dumps(config),
+        HEADER_STR.format("-"),
+    )
     return config
 
 
@@ -169,7 +177,12 @@ def ops_docker_compose(
         env_file_path=env_file_for_testing,
         destination_path=temp_folder / "ops_docker_compose.yml",
     )
-    print("ops docker-compose:\n%s", pformat(config))
+    # NOTE: do not add indent. Copy&Paste log into editor instead
+    print(
+        HEADER_STR.format("ops docker-compose"),
+        json.dumps(config),
+        HEADER_STR.format("-"),
+    )
     return config
 
 
@@ -238,13 +251,14 @@ def pytest_exception_interact(node, call, report):
 @pytest.hookimpl()
 def pytest_sessionfinish(session: pytest.Session, exitstatus: ExitCode) -> None:
     if exitstatus == ExitCode.TESTS_FAILED:
-        # get the node root dir (guaranteed to exist)
         root_directory: Path = Path(session.fspath)
         failed_test_directory = root_directory / "test_failures" / session.name
         save_docker_infos(failed_test_directory)
 
 
 # HELPERS ---------------------------------------------
+
+
 def _minio_fix(service_environs: Dict) -> Dict:
     """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work."""
     if "S3_ENDPOINT" in service_environs:

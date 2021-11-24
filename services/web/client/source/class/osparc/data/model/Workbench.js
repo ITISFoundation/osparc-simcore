@@ -330,7 +330,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         node.addListener("showInLogger", e => this.fireDataEvent("showInLogger", e.getData()), this);
         node.addListener("retrieveInputs", e => this.fireDataEvent("retrieveInputs", e.getData()), this);
         node.addListener("fileRequested", e => this.fireDataEvent("fileRequested", e.getData()), this);
-        node.addListener("parameterNodeRequested", e => {
+        node.addListener("parameterRequested", e => {
           const {
             portId,
             nodeId
@@ -343,18 +343,7 @@ qx.Class.define("osparc.data.model.Workbench", {
             nodeId,
             file
           } = e.getData();
-          this.connectFilePicker(nodeId, portId)
-            .then(filePicker => {
-              const fileObj = file.data;
-              osparc.file.FilePicker.setOutputValueFromStore(
-                filePicker,
-                fileObj.getLocation(),
-                fileObj.getDatasetId(),
-                fileObj.getFileId(),
-                fileObj.getLabel()
-              );
-              this.fireEvent("reloadModel");
-            });
+          this.__filePickerNodeRequested(nodeId, portId, file);
         }, this);
       }
     },
@@ -387,7 +376,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       };
     },
 
-    connectFilePicker: function(nodeId, portId) {
+    __connectFilePicker: function(nodeId, portId) {
       return new Promise((resolve, reject) => {
         const requesterNode = this.getNode(nodeId);
         const freePos = this.getFreePosition(requesterNode);
@@ -414,6 +403,24 @@ qx.Class.define("osparc.data.model.Workbench", {
             }
           });
       });
+    },
+
+    __filePickerNodeRequested: function(nodeId, portId, file) {
+      this.__connectFilePicker(nodeId, portId)
+        .then(filePicker => {
+          if (file) {
+            const fileObj = file.data;
+            osparc.file.FilePicker.setOutputValueFromStore(
+              filePicker,
+              fileObj.getLocation(),
+              fileObj.getDatasetId(),
+              fileObj.getFileId(),
+              fileObj.getLabel()
+            );
+          }
+          this.fireDataEvent("openNode", filePicker.getNodeId());
+          this.fireEvent("reloadModel");
+        });
     },
 
     __parameterNodeRequested: function(nodeId, portId) {
@@ -540,6 +547,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       if (rightNodeId) {
         this.createEdge(null, node.getNodeId(), rightNodeId);
       }
+      this.fireEvent("reloadModel");
 
       return node;
     },

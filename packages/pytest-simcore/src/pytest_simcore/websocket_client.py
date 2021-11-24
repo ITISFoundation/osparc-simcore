@@ -2,7 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Callable, Optional
+import logging
+from typing import AsyncIterable, Awaitable, Callable, List, Optional
 from uuid import uuid4
 
 import pytest
@@ -12,28 +13,31 @@ from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from yarl import URL
 
+logger = logging.getLogger(__name__)
+
 
 @pytest.fixture()
 def client_session_id_factory() -> Callable[[], str]:
-    def create() -> str:
-        # NOTE:
+    def _create() -> str:
         return str(uuid4())
 
-    return create
+    return _create
 
 
 @pytest.fixture()
-def socketio_url_factory(client) -> Callable:
-    def create_url(client_override: Optional[TestClient] = None) -> str:
+def socketio_url_factory(client) -> Callable[[Optional[TestClient]], str]:
+    def _create(client_override: Optional[TestClient] = None) -> str:
         SOCKET_IO_PATH = "/socket.io/"
         return str((client_override or client).make_url(SOCKET_IO_PATH))
 
-    yield create_url
+    return _create
 
 
 @pytest.fixture()
-async def security_cookie_factory(client: TestClient) -> Callable:
-    async def creator(client_override: Optional[TestClient] = None) -> str:
+async def security_cookie_factory(
+    client: TestClient,
+) -> Callable[[Optional[TestClient]], Awaitable[str]]:
+    async def _create(client_override: Optional[TestClient] = None) -> str:
         # get the cookie by calling the root entrypoint
         resp = await (client_override or client).get("/v0/")
         data, error = await assert_status(resp, web.HTTPOk)
@@ -47,7 +51,7 @@ async def security_cookie_factory(client: TestClient) -> Callable:
         )
         return cookie
 
-    yield creator
+    return _create
 
 
 @pytest.fixture()
@@ -55,10 +59,12 @@ async def socketio_client_factory(
     socketio_url_factory: Callable,
     security_cookie_factory: Callable,
     client_session_id_factory: Callable,
-) -> Callable[[str, Optional[TestClient]], socketio.AsyncClient]:
-    clients = []
+) -> AsyncIterable[
+    Callable[[Optional[str], Optional[TestClient]], Awaitable[socketio.AsyncClient]]
+]:
+    clients: List[socketio.AsyncClient] = []
 
-    async def connect(
+    async def _connect(
         client_session_id: Optional[str] = None, client: Optional[TestClient] = None
     ) -> socketio.AsyncClient:
 
@@ -67,6 +73,7 @@ async def socketio_client_factory(
 
         sio = socketio.AsyncClient(ssl_verify=False)
         # enginio 3.10.0 introduced ssl verification
+        assert client_session_id
         url = str(
             URL(socketio_url_factory(client)).with_query(
                 {"client_session_id": client_session_id}
@@ -78,14 +85,19 @@ async def socketio_client_factory(
             # WARNING: engineio fails with empty cookies. Expects "key=value"
             headers.update({"Cookie": cookie})
 
+        logger.debug("Connecting socketio client to %s ...", url)
         await sio.connect(url, headers=headers)
         assert sio.sid
         clients.append(sio)
         return sio
 
-    yield connect
+    yield _connect
 
+    # cleans up clients produce by _connect(*) calls
     for sio in clients:
         if sio.connected:
+            logger.debug("Disconnecting socketio client %s", sio)
             await sio.disconnect()
+            await sio.wait()
+
         assert not sio.sid

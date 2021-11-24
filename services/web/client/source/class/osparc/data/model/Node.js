@@ -126,6 +126,12 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: true
     },
 
+    dynamicV2: {
+      check: "Boolean",
+      init: false,
+      nullable: true
+    },
+
     serviceUrl: {
       check: "String",
       nullable: true,
@@ -206,7 +212,7 @@ qx.Class.define("osparc.data.model.Node", {
   events: {
     "retrieveInputs": "qx.event.type.Data",
     "fileRequested": "qx.event.type.Data",
-    "parameterNodeRequested": "qx.event.type.Data",
+    "parameterRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event",
@@ -558,7 +564,7 @@ qx.Class.define("osparc.data.model.Node", {
 
       [
         "fileRequested",
-        "parameterNodeRequested"
+        "parameterRequested"
       ].forEach(nodeRequestSignal => {
         propsForm.addListener(nodeRequestSignal, e => {
           const portId = e.getData();
@@ -959,14 +965,14 @@ qx.Class.define("osparc.data.model.Node", {
         }
         const srvUrl = this.getServiceUrl();
         if (srvUrl) {
-          let urlUpdate = srvUrl + "/retrieve";
-          urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
+          const urlRetrieve = this.isDynamicV2() ? osparc.utils.Utils.computeServiceV2RetrieveUrl(this.getStudy().getUuid(), this.getNodeId()) : osparc.utils.Utils.computeServiceRetrieveUrl(srvUrl);
           const updReq = new qx.io.request.Xhr();
           const reqData = {
             "port_keys": portKey ? [portKey] : []
           };
+          updReq.setRequestHeader("Content-Type", "application/json");
           updReq.set({
-            url: urlUpdate,
+            url: urlRetrieve,
             method: "POST",
             requestData: qx.util.Serializer.toJson(reqData)
           });
@@ -1072,20 +1078,13 @@ qx.Class.define("osparc.data.model.Node", {
             return;
           }
 
-          const isDynamicType = data["boot_type"] === "V2" || false;
-          if (isDynamicType) {
-            // dynamic service
-            const srvUrl = window.location.protocol + "//" + nodeId + ".services." + window.location.host;
+          const {
+            srvUrl,
+            isDynamicV2
+          } = osparc.utils.Utils.computeServiceUrl(data);
+          this.setDynamicV2(isDynamicV2);
+          if (srvUrl) {
             this.__waitForServiceReady(srvUrl);
-          } else {
-            // old implementation
-            const servicePath = data["service_basepath"];
-            const entryPointD = data["entry_point"];
-            if (servicePath) {
-              const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
-              const srvUrl = servicePath + entryPoint;
-              this.__waitForServiceReady(srvUrl);
-            }
           }
           break;
         }
