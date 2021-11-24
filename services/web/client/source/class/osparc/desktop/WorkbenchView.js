@@ -623,10 +623,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __createPanelView: function(caption, widget) {
-      return new osparc.desktop.PanelView(caption, widget);
-    },
-
     getStartStopButtons: function() {
       return this.__workbenchPanel.getToolbar().getStartStopButtons();
     },
