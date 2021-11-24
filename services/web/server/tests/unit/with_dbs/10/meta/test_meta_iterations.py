@@ -1,17 +1,27 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import json
 from pathlib import Path
 from typing import Dict, Union
 
+import pytest
 from models_library.database_project_models import (
     ProjectForPgInsert,
     load_projects_exported_as_csv,
 )
 from models_library.projects import Project
+from simcore_service_webserver.meta_iterations import IterInfo
+from simcore_service_webserver.version_control_tags import (
+    compose_wcopy_project_tag_name,
+)
 
 JSON_KWARGS = dict(indent=2, sort_keys=True)
 
 
-def test_it():
+@pytest.mark.skip(reason="DEV")
+def test_it1():
 
     respath = Path("/home/crespo/Downloads/response_1633600264408.json")
     csvpath = Path("/home/crespo/Downloads/projects.csv")
@@ -19,6 +29,7 @@ def test_it():
     reponse_body = json.loads(respath.read_text())
 
     project_api_dict = reponse_body["data"]
+
     with open("project_api_dict.json", "wt") as fh:
         print(json.dumps(project_api_dict, **JSON_KWARGS), file=fh)
 
@@ -71,8 +82,8 @@ def test_it():
     #     )
 
 
-def test_that():
-
+@pytest.mark.skip(reason="DEV")
+def test_it2():
     from pydantic import BaseModel, Json
 
     class S(BaseModel):
