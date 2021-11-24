@@ -1,5 +1,5 @@
 # pylint: disable=redefined-outer-name
-import asyncio
+# pylint: disable=unused-argument
 import pytest
 from asyncio import AbstractEventLoop
 from pathlib import Path
