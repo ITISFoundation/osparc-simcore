@@ -7,13 +7,16 @@
 """
 
 import functools
-from typing import Iterator
+from typing import Iterator, Optional
 
 from .services import Author, ServiceDockerData, ServiceType
 
 FRONTEND_SERVICE_KEY_PREFIX = "simcore/services/frontend"
 
 OM = Author(name="Odei Maiz", email="maiz@itis.swiss", affiliation="IT'IS")
+
+
+# FACTORY FUNCTIONS ----------------------------------------------------
 
 
 def _create_file_picker_service() -> ServiceDockerData:
@@ -70,19 +73,20 @@ def _create_node_group_service() -> ServiceDockerData:
     return meta
 
 
-def _create_parameter(param_type: str) -> ServiceDockerData:
+def _create_constant_node_def(
+    output_type: str, output_name: Optional[str] = None
+) -> ServiceDockerData:
     """
     Represents a parameter (e.g. x=5) in a study
 
     This is a parametrized node (or param-node in short)
     """
-    assert param_type in ["number", "boolean", "integer"]  # nosec
-
-    LABEL = f"{param_type.capitalize()} Parameter"
-    DESCRIPTION = f"Parameter of type {param_type}"
+    LABEL = output_name or f"{output_type.capitalize()} Parameter"
+    DESCRIPTION = f"Parameter of type {output_type}"
+    output_name = output_name or "out_1"
 
     meta = ServiceDockerData(
-        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/{param_type}",
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/{output_type}",
         version="1.0.0",
         type=ServiceType.FRONTEND,
         name=LABEL,
@@ -94,9 +98,9 @@ def _create_parameter(param_type: str) -> ServiceDockerData:
         inputs={},
         outputs={
             "out_1": {
-                "label": LABEL,
+                "label": output_name,
                 "description": DESCRIPTION,
-                "type": param_type,
+                "type": output_type,
             }
         },
     )
@@ -192,7 +196,7 @@ _FACTORY_FUNCTIONS = [
     _create_data_iterator_int_range,
     _create_iterator_consumer_probe_int,
 ] + [
-    functools.partial(_create_parameter, param_type=p)
+    functools.partial(_create_constant_node_def, output_type=p)
     for p in ["number", "boolean", "integer"]
 ]
 
@@ -201,3 +205,22 @@ def iter_service_docker_data() -> Iterator[ServiceDockerData]:
     for create in _FACTORY_FUNCTIONS:
         model_instance = create()
         yield model_instance
+
+
+# VALIDATORS --------------------------------------
+
+
+def is_frontend_service(service_key: str) -> bool:
+    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/")
+
+
+def is_parameter_service(service_key: str) -> bool:
+    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/")
+
+
+def is_iterator_service(service_key: str) -> bool:
+    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/")
+
+
+def is_iterator_consumer_service(service_key: str) -> bool:
+    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/iterator-consumer/")

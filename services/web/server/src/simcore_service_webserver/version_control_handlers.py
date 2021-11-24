@@ -12,7 +12,11 @@ from ._meta import api_version_prefix as VTAG
 from .login.decorators import login_required
 from .rest_utils import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
-from .utils_aiohttp import rename_routes_as_handler_function, view_routes
+from .utils_aiohttp import (
+    create_url_for_function,
+    rename_routes_as_handler_function,
+    view_routes,
+)
 from .version_control_core import (
     checkout_checkpoint_safe,
     create_checkpoint_safe,
@@ -23,11 +27,7 @@ from .version_control_core import (
     update_checkpoint_safe,
 )
 from .version_control_db import HEAD, VersionControlRepository
-from .version_control_handlers_base import (
-    create_url_for_function,
-    enveloped_response,
-    handle_request_errors,
-)
+from .version_control_handlers_base import enveloped_response, handle_request_errors
 from .version_control_models import (
     Checkpoint,
     CheckpointAnnotations,
