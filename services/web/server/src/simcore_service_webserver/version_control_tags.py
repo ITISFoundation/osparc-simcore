@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict, TypedDict, Union
+from typing import Any, Dict, Optional, TypedDict, Union
 from uuid import UUID, uuid3
 
 from models_library.basic_regex import UUID_RE
@@ -7,14 +7,7 @@ from models_library.projects import ProjectID
 
 from .version_control_models import CommitID
 
-
 # TODO: move this to modelslib?
-class EmptyDict(TypedDict):
-    pass
-
-
-class WorkingCopyInfoDict(TypedDict):
-    wcopy_project_id: str
 
 
 def compose_wcopy_project_id(
@@ -30,9 +23,8 @@ def compose_wcopy_project_tag_name(wcopy_project_id: ProjectID) -> str:
     return f"project:{wcopy_project_id}"
 
 
-def parse_wcopy_project_tag_name(name: str) -> Union[WorkingCopyInfoDict, EmptyDict]:
+def parse_wcopy_project_tag_name(name: str) -> Optional[ProjectID]:
     if m := re.match(rf"^project:(?P<wcopy_project_id>{UUID_RE})$", name):
         data = m.groupdict()
-        assert isinstance(data, WorkingCopyInfoDict)  # nosec
-        return data
-    return {}
+        return ProjectID(data["wcopy_project_id"])
+    return None

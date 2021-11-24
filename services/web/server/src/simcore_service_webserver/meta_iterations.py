@@ -10,11 +10,12 @@ from copy import deepcopy
 from typing import Any, Dict, Generator, Iterator, List, Optional, Tuple, TypedDict
 
 from aiohttp import web
-from models_library.basic_types import MD5Str
+from models_library.basic_types import MD5Str, SHA1Str
 from models_library.frontend_services_catalog import is_iterator_service
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
 from models_library.services import ServiceDockerData
+from pydantic import BaseModel
 
 from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
 from .utils import compute_sha1
@@ -110,15 +111,27 @@ def extract_parameters(
 # TAGGING iterations -----
 
 
-class IterInfoDict(TypedDict):
-    repo_commit_id: str
+class IterInfo(BaseModel):
+    repo_commit_id: CommitID
     iter_index: int
     total_count: int
-    parameters_checksum: str
+    parameters_checksum: SHA1Str
+
+    def to_tag_name(self) -> str:
+        """Composes unique tag name for this iteration"""
+        return compose_iteration_tag_name(**self.dict())
+
+    @classmethod
+    def from_tag_name(cls, tag_name: str) -> "IterInfo":
+        """Parses iteration info from tag name"""
+        return cls.parse_obj(parse_iteration_tag_name(tag_name))
 
 
 def compose_iteration_tag_name(
-    repo_commit_id, iter_index, total_count, parameters_checksum
+    repo_commit_id: CommitID,
+    iter_index: int,
+    total_count: int,
+    parameters_checksum: SHA1Str,
 ) -> str:
     """Composes unique tag name for iter_index-th iteration of repo_commit_id out of total_count"""
     return (
@@ -126,15 +139,13 @@ def compose_iteration_tag_name(
     )
 
 
-def parse_iteration_tag_name(name: str) -> Optional[IterInfoDict]:
+def parse_iteration_tag_name(name: str) -> Dict[str, Any]:
     if m := re.match(
         r"^iteration:(?P<repo_commit_id>\d+)/(?P<iter_index>\d+)/(?P<total_count>-*\d+)/(?P<parameters_checksum>.*)$",
         name,
     ):
-        data = m.groupdict()
-        assert isinstance(data, IterInfoDict)  # nosec
-        return data
-    return None
+        return m.groupdict()
+    return {}
 
 
 # GET/CREATE iterations -----------
