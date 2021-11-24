@@ -29,7 +29,6 @@
  * <pre class='javascript'>
  *   let nodeView = new osparc.component.node.NodeView();
  *   nodeView.setNode(workbench.getNode1());
- *   nodeView.populateLayout();
  *   this.getRoot().add(nodeView);
  * </pre>
  */

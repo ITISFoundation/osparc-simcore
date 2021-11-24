@@ -187,7 +187,6 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             view = new osparc.component.node.NodeView();
           }
           view.setNode(node);
-          view.populateLayout();
           if (this.getPageContext() === "app") {
             if (node.isComputational()) {
               view.getHeaderLayout().show();
@@ -218,16 +217,16 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           }
         } else {
           view.set({
-            maxWidth: 800,
-            padding: 10,
-            margin: 6
-          });
-          view.getContentElement().setStyles({
-            "border-radius": "12px"
+            maxWidth: 800
           });
         }
+        view.getContentElement().setStyles({
+          "border-radius": "12px"
+        });
         view.set({
-          backgroundColor: "background-main-lighter+"
+          backgroundColor: "background-main-lighter+",
+          padding: 10,
+          margin: 6
         });
 
         if (view) {
@@ -260,6 +259,11 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__nodeView.getHeaderLayout(),
         this.__nodeView.getLoggerPanel()
       ].forEach(widget => widget.setVisibility(maximize ? "excluded" : "visible"));
+
+      this.set({
+        pading: maximize ? 0 : 10,
+        margin: maximize ? 0 : 6
+      });
     },
 
     startSlides: function(context = "guided") {
