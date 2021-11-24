@@ -170,7 +170,6 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
       const isSettingsGroupShowable = this.isSettingsGroupShowable();
       const othersStatus2 = isSettingsGroupShowable && !maximize ? "visible" : "excluded";
       this._settingsLayout.setVisibility(othersStatus2);
-      this._loggerLayout.setVisibility(othersStatus);
       this.__header.setVisibility(othersStatus);
     },
 
