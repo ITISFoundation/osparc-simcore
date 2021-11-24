@@ -28,7 +28,25 @@ def only_children(request) -> bool:
     return request.param
 
 
+@pytest.fixture
+def a_file(tmp_path) -> Path:
+    base_dir = tmp_path / "other_folder"
+    base_dir.mkdir()
+    file_path = base_dir / "f1"
+    file_path.write_text("o" * 100)
+    return file_path
+
+
 async def test_remove_directory(some_dir: Path, only_children: bool) -> None:
     assert some_dir.exists() is True
     await remove_directory(path=some_dir, only_children=only_children)
     assert some_dir.exists() is only_children
+
+
+async def test_remove_fail_fails(a_file: Path, only_children: bool) -> None:
+    assert a_file.exists() is True
+
+    with pytest.raises(ValueError) as excinfo:
+        await remove_directory(path=a_file, only_children=only_children)
+
+    assert excinfo.value.args[0] == f"Provided path={a_file} must be a directory"
