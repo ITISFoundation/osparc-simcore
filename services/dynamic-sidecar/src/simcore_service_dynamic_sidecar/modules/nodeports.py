@@ -53,7 +53,7 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
     )
 
     # let's gather the tasks
-    temp_files: List[Path] = []
+    temp_paths: Deque[Path] = deque()
     ports_values: Dict[str, ItemConcreteValue] = {}
     archiving_tasks: Deque[Coroutine[None, None, None]] = deque()
 
@@ -67,20 +67,25 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
         if _FILE_TYPE_PREFIX in port.property_type:
             src_folder = outputs_path / port.key
             files_and_folders_list = list(src_folder.rglob("*"))
+            logger.debug("Discovered files to upload %s", files_and_folders_list)
 
             if not files_and_folders_list:
                 ports_values[port.key] = None
                 continue
 
-            if len(files_and_folders_list) == 1 and files_and_folders_list[0].is_file():
+            if len(files_and_folders_list) == 1 and (
+                files_and_folders_list[0].is_file()
+                or files_and_folders_list[0].is_symlink()
+            ):
                 # special case, direct upload
                 ports_values[port.key] = files_and_folders_list[0]
                 continue
 
             # generic case let's create an archive
             # only the filtered out files will be zipped
-            tmp_file = Path(tempfile.mkdtemp()) / f"{src_folder.stem}.zip"
-            temp_files.append(tmp_file)
+            tmp_folder = Path(tempfile.mkdtemp())
+            tmp_file = tmp_folder / f"{src_folder.stem}.zip"
+            temp_paths.append(tmp_folder)
 
             # when having multiple directories it is important to
             # run the compression in parallel to guarantee better performance
@@ -114,7 +119,7 @@ async def upload_outputs(outputs_path: Path, port_keys: List[str]) -> None:
         logger.info("Uploaded %s bytes in %s seconds", total_bytes, elapsed_time)
     finally:
         # clean up possible compressed files
-        for file_path in temp_files:
+        for file_path in temp_paths:
             await async_on_threadpool(
                 # pylint: disable=cell-var-from-loop
                 lambda: shutil.rmtree(file_path.parent, ignore_errors=True)
