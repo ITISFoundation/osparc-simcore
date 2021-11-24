@@ -14,6 +14,7 @@ from .activity.module_setup import setup_activity
 from .catalog import setup_catalog
 from .clusters.module_setup import setup_clusters
 from .computation import setup_computation
+from .constants import APP_SETTINGS_KEY
 from .db import setup_db
 from .diagnostics import setup_diagnostics
 from .director.module_setup import setup_director
@@ -30,7 +31,7 @@ from .resource_manager.module_setup import setup_resource_manager
 from .rest import setup_rest
 from .security import setup_security
 from .session import setup_session
-from .settings import setup_settings
+from .settings import ApplicationSettings, setup_settings
 from .socketio.module_setup import setup_socketio
 from .statics import setup_statics
 from .storage import setup_storage
@@ -59,12 +60,13 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     app = create_safe_application(config)
 
     setup_settings(app)
+    settings: ApplicationSettings = app[APP_SETTINGS_KEY]
 
     # TODO: create dependency mechanism
     # and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
 
     # core modules
-    setup_app_tracing(app) # WARNING: must be UPPERMOST middleware
+    setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
     setup_statics(app)
     setup_db(app)
     setup_session(app)
@@ -86,8 +88,11 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     # projects
     setup_projects(app)
     # project add-ons
-    setup_version_control(app)
-    setup_meta(app)
+    if settings.WEBSERVER_DEV_FEATURES_ENABLED:
+        setup_version_control(app)
+        setup_meta(app)
+    else:
+        log.info("Skipping add-ons under development: version-control and meta")
 
     # TODO: classify
     setup_activity(app)
