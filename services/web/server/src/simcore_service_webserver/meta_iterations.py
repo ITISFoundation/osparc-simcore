@@ -7,7 +7,7 @@ import json
 import logging
 import re
 from copy import deepcopy
-from typing import Any, Dict, Generator, Iterator, List, Tuple
+from typing import Any, Dict, Generator, Iterator, List, Optional, Tuple
 
 from aiohttp import web
 from models_library.basic_types import MD5Str, SHA1Str
@@ -15,7 +15,7 @@ from models_library.frontend_services_catalog import is_iterator_service
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
 from models_library.services import ServiceDockerData
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
 from .utils import compute_sha1
@@ -120,9 +120,18 @@ class IterInfo(BaseModel):
         return compose_iteration_tag_name(**self.dict())
 
     @classmethod
-    def from_tag_name(cls, tag_name: str) -> "IterInfo":
+    def from_tag_name(
+        cls, tag_name: str, *, return_none_if_fails: bool = False
+    ) -> Optional["IterInfo"]:
         """Parses iteration info from tag name"""
-        return cls.parse_obj(parse_iteration_tag_name(tag_name))
+        try:
+            return cls.parse_obj(parse_iteration_tag_name(tag_name))
+        except ValidationError as err:
+            if return_none_if_fails:
+                log.debug(f"{err}")
+                return None
+            else:
+                raise
 
 
 def compose_iteration_tag_name(
