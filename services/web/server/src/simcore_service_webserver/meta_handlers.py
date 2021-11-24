@@ -59,7 +59,7 @@ routes = web.RouteTableDef()
 
 
 @routes.get(
-    f"/{VTAG}/meta/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
+    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
     name="{__name__}._list_meta_project_iterations_handler",
 )
 async def _list_meta_project_iterations_handler(request: web.Request) -> web.Response:
@@ -118,6 +118,25 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
         ).json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )
+
+
+@routes.post(
+    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
+    name="{__name__}._create_meta_project_iterations_handler",
+)
+async def _create_meta_project_iterations_handler(request: web.Request) -> web.Response:
+    raise NotImplementedError
+
+
+@routes.get(
+    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}",
+    name="{__name__}._create_meta_project_iterations_handler",
+)
+async def _get_meta_project_iterations_handler(request: web.Request) -> web.Response:
+    raise NotImplementedError
+
+
+# HANDLER'S CORE ------------------------------------------------------------
 
 
 async def list_wcopy_projects_iterations(
