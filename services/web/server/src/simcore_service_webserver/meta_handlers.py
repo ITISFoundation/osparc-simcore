@@ -60,7 +60,7 @@ routes = web.RouteTableDef()
 
 @routes.get(
     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
-    name="{__name__}._list_meta_project_iterations_handler",
+    name=f"{__name__}._list_meta_project_iterations_handler",
 )
 async def _list_meta_project_iterations_handler(request: web.Request) -> web.Response:
     # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]
@@ -122,7 +122,7 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
 
 @routes.post(
     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
-    name="{__name__}._create_meta_project_iterations_handler",
+    name=f"{__name__}._create_meta_project_iterations_handler",
 )
 async def _create_meta_project_iterations_handler(request: web.Request) -> web.Response:
     raise NotImplementedError
@@ -130,7 +130,7 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
 
 @routes.get(
     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}",
-    name="{__name__}._create_meta_project_iterations_handler",
+    name=f"{__name__}._get_meta_project_iterations_handler",
 )
 async def _get_meta_project_iterations_handler(request: web.Request) -> web.Response:
     raise NotImplementedError

@@ -12,10 +12,6 @@ from models_library.database_project_models import (
     load_projects_exported_as_csv,
 )
 from models_library.projects import Project
-from simcore_service_webserver.meta_iterations import IterInfo
-from simcore_service_webserver.version_control_tags import (
-    compose_wcopy_project_tag_name,
-)
 
 JSON_KWARGS = dict(indent=2, sort_keys=True)
 
