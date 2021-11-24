@@ -1,8 +1,10 @@
 import io
-from typing import Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Type
 
 from aiohttp import web
+from aiohttp.web_exceptions import HTTPException
 from aiohttp.web_routedef import RouteDef, RouteTableDef
+from servicelib.json_serialization import json_dumps
 from yarl import URL
 
 
@@ -41,3 +43,13 @@ def create_url_for_function(request: web.Request) -> Callable:
             return None
 
     return url_for
+
+
+def enveloped_json_response(
+    data: Any, status_cls: Type[HTTPException] = web.HTTPOk, **extra
+) -> web.Response:
+    # TODO: implement Envelop with generics
+    enveloped: str = json_dumps({"data": data, **extra})
+    return web.Response(
+        text=enveloped, content_type="application/json", status=status_cls.status_code
+    )

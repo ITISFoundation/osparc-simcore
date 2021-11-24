@@ -17,123 +17,12 @@ from servicelib.rest_pagination_utils import (
 from ._meta import api_version_prefix as VTAG
 from .meta_iterations import IterInfo
 from .rest_utils import RESPONSE_MODEL_POLICY
-from .utils_aiohttp import create_url_for_function
+from .utils_aiohttp import create_url_for_function, enveloped_json_response
 from .version_control_db import VersionControlForMetaModeling
 from .version_control_models import CheckpointID, CommitID, TagProxy
 from .version_control_tags import parse_wcopy_project_tag_name
 
 log = logging.getLogger(__name__)
-
-
-# MODELS ------------------------------------------------------------
-
-
-class ParentMetaProjectRef(BaseModel):
-    project_id: ProjectID
-    ref_id: CheckpointID
-
-
-class ProjectIterationAsItem(BaseModel):
-    name: str = Field(
-        ...,
-        description="Iteration's resource name [AIP-122](https://google.aip.dev/122)",
-    )
-    parent: ParentMetaProjectRef = Field(
-        ..., description="Identifies the meta-project that created this iteration"
-    )
-
-    wcopy_project_id: ProjectID = Field(
-        ...,
-        description="ID to this iteration's working copy."
-        "A working copy is a real project where this iteration is run",
-    )
-
-    wcopy_project_url: HttpUrl  # should be read-only!
-    url: HttpUrl  # self
-
-
-# ROUTES ------------------------------------------------------------
-
-
-routes = web.RouteTableDef()
-
-
-@routes.get(
-    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
-    name=f"{__name__}._list_meta_project_iterations_handler",
-)
-async def _list_meta_project_iterations_handler(request: web.Request) -> web.Response:
-    # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]
-    url_for = create_url_for_function(request)
-    vc_repo = VersionControlForMetaModeling(request)
-
-    _project_uuid = ProjectID(request.match_info["project_uuid"])
-    _ref_id = request.match_info["ref_id"]
-
-    _limit = int(request.query.get("limit", DEFAULT_NUMBER_OF_ITEMS_PER_PAGE))
-    _offset = int(request.query.get("offset", 0))
-
-    try:
-        commit_id = CommitID(_ref_id)
-    except ValueError:
-        # e.g. HEAD
-        raise NotImplementedError("cannot convert ref (e.g. HEAD) -> commit id")
-
-    #
-    (
-        selected_project_iterations,
-        total_number_of_iterations,
-    ) = await list_project_iterations(
-        vc_repo, _project_uuid, commit_id, offset=_offset, limit=_limit
-    )
-
-    assert len(selected_project_iterations) <= _limit  # nosec
-
-    # parse and validate
-    iterations_list = [
-        ProjectIterationAsItem(
-            name=f"projects/{_project_uuid}/checkpoint/{commit_id}/iterations/{iter_id}",
-            parent=ParentMetaProjectRef(project_id=_project_uuid, ref_id=commit_id),
-            wcopy_project_id=wcp_id,
-            wcopy_project_url=url_for(
-                "get_project",
-                project_id=wcp_id,
-            ),
-            url=url_for(
-                f"{__name__}._list_meta_project_iterations_handler",
-                project_uuid=_project_uuid,
-                ref_id=commit_id,
-            ),
-        )
-        for wcp_id, iter_id in selected_project_iterations
-    ]
-
-    return web.Response(
-        text=PageResponseLimitOffset.paginate_data(
-            data=iterations_list,
-            request_url=request.url,
-            total=total_number_of_iterations,
-            limit=_limit,
-            offset=_offset,
-        ).json(**RESPONSE_MODEL_POLICY),
-        content_type="application/json",
-    )
-
-
-@routes.post(
-    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
-    name=f"{__name__}._create_meta_project_iterations_handler",
-)
-async def _create_meta_project_iterations_handler(request: web.Request) -> web.Response:
-    raise NotImplementedError
-
-
-@routes.get(
-    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}",
-    name=f"{__name__}._get_meta_project_iterations_handler",
-)
-async def _get_meta_project_iterations_handler(request: web.Request) -> web.Response:
-    raise NotImplementedError
 
 
 # HANDLER'S CORE ------------------------------------------------------------
@@ -205,3 +94,161 @@ async def list_project_iterations(
     iterations.sort(key=lambda tup: tup[1])
 
     return iterations[offset : (offset + limit)], total_number_of_iterations
+
+
+async def create_or_get_project_iterations(
+    vc_repo: VersionControlForMetaModeling,
+    project_uuid: ProjectID,
+    commit_id: CommitID,
+) -> List[IterationTuple]:
+
+    raise NotImplementedError()
+
+
+# MODELS ------------------------------------------------------------
+
+
+class ParentMetaProjectRef(BaseModel):
+    project_id: ProjectID
+    ref_id: CheckpointID
+
+
+class ProjectIterationAsItem(BaseModel):
+    name: str = Field(
+        ...,
+        description="Iteration's resource name [AIP-122](https://google.aip.dev/122)",
+    )
+    parent: ParentMetaProjectRef = Field(
+        ..., description="Identifies the meta-project that created this iteration"
+    )
+
+    wcopy_project_id: ProjectID = Field(
+        ...,
+        description="ID to this iteration's working copy."
+        "A working copy is a real project where this iteration is run",
+    )
+
+    wcopy_project_url: HttpUrl  # should be read-only!
+    url: HttpUrl  # self
+
+
+# ROUTES ------------------------------------------------------------
+
+
+routes = web.RouteTableDef()
+
+
+@routes.get(
+    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
+    name=f"{__name__}._list_meta_project_iterations_handler",
+)
+async def _list_meta_project_iterations_handler(request: web.Request) -> web.Response:
+    # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]
+
+    # parse and validate request ----
+    url_for = create_url_for_function(request)
+    vc_repo = VersionControlForMetaModeling(request)
+
+    _project_uuid = ProjectID(request.match_info["project_uuid"])
+    _ref_id = request.match_info["ref_id"]
+
+    _limit = int(request.query.get("limit", DEFAULT_NUMBER_OF_ITEMS_PER_PAGE))
+    _offset = int(request.query.get("offset", 0))
+
+    try:
+        commit_id = CommitID(_ref_id)
+    except ValueError:
+        # e.g. HEAD
+        raise NotImplementedError("cannot convert ref (e.g. HEAD) -> commit id")
+
+    # core function ----
+    (
+        selected_project_iterations,
+        total_number_of_iterations,
+    ) = await list_project_iterations(
+        vc_repo, _project_uuid, commit_id, offset=_offset, limit=_limit
+    )
+
+    assert len(selected_project_iterations) <= _limit  # nosec
+
+    # parse and validate response ----
+    iterations_items = [
+        ProjectIterationAsItem(
+            name=f"projects/{_project_uuid}/checkpoint/{commit_id}/iterations/{iter_id}",
+            parent=ParentMetaProjectRef(project_id=_project_uuid, ref_id=commit_id),
+            wcopy_project_id=wcp_id,
+            wcopy_project_url=url_for(
+                "get_project",
+                project_id=wcp_id,
+            ),
+            url=url_for(
+                f"{__name__}._list_meta_project_iterations_handler",
+                project_uuid=_project_uuid,
+                ref_id=commit_id,
+            ),
+        )
+        for wcp_id, iter_id in selected_project_iterations
+    ]
+
+    return web.Response(
+        text=PageResponseLimitOffset.paginate_data(
+            data=iterations_items,
+            request_url=request.url,
+            total=total_number_of_iterations,
+            limit=_limit,
+            offset=_offset,
+        ).json(**RESPONSE_MODEL_POLICY),
+        content_type="application/json",
+    )
+
+
+@routes.post(
+    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
+    name=f"{__name__}._create_meta_project_iterations_handler",
+)
+async def _create_meta_project_iterations_handler(request: web.Request) -> web.Response:
+    # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]
+    url_for = create_url_for_function(request)
+    vc_repo = VersionControlForMetaModeling(request)
+
+    _project_uuid = ProjectID(request.match_info["project_uuid"])
+    _ref_id = request.match_info["ref_id"]
+    try:
+        commit_id = CommitID(_ref_id)
+    except ValueError:
+        # e.g. HEAD
+        raise NotImplementedError("cannot convert ref (e.g. HEAD) -> commit id")
+
+    # core function ----
+    project_iterations = await create_or_get_project_iterations(
+        vc_repo, _project_uuid, commit_id
+    )
+
+    # parse and validate response ----
+    iterations_items = [
+        ProjectIterationAsItem(
+            name=f"projects/{_project_uuid}/checkpoint/{commit_id}/iterations/{iter_id}",
+            parent=ParentMetaProjectRef(project_id=_project_uuid, ref_id=commit_id),
+            wcopy_project_id=wcp_id,
+            wcopy_project_url=url_for(
+                "get_project",
+                project_id=wcp_id,
+            ),
+            url=url_for(
+                f"{__name__}._create_meta_project_iterations_handler",
+                project_uuid=_project_uuid,
+                ref_id=commit_id,
+            ),
+        )
+        for wcp_id, iter_id in project_iterations
+    ]
+
+    return enveloped_json_response(data=iterations_items, status_cls=web.HTTPCreated)
+
+
+@routes.get(
+    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}",
+    name=f"{__name__}._get_meta_project_iterations_handler",
+)
+async def _get_meta_project_iterations_handler(request: web.Request) -> web.Response:
+    raise NotImplementedError
