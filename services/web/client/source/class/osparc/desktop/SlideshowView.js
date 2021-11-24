@@ -242,12 +242,14 @@ qx.Class.define("osparc.desktop.SlideshowView", {
 
         // check if lastCurrentNodeId has to be run
         if (!this.__isLastCurrentNodeReady(lastCurrentNodeId)) {
+          this.__currentNodeId = lastCurrentNodeId;
           this.getStudy().getUi().setCurrentNodeId(lastCurrentNodeId);
           return;
         }
 
         // check if upstream has to be run
         if (!this.__isSelectedNodeReady(node, lastCurrentNodeId)) {
+          this.__currentNodeId = lastCurrentNodeId;
           this.getStudy().getUi().setCurrentNodeId(lastCurrentNodeId);
           return;
         }
