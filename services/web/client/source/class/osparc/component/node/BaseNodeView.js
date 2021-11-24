@@ -65,7 +65,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
   },
 
   members: {
-    __pane2: null,
     __serviceInfoLayout: null,
     __nodeStatusUI: null,
     __header: null,
@@ -77,7 +76,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     __outFilesButton: null,
 
     populateLayout: function() {
-      this.__cleanLayout();
+      this._mainView.removeAll();
 
       this._addSettings();
       this._addIFrame();
@@ -94,10 +93,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this._add(mainView, {
         flex: 1
       });
-    },
-
-    __cleanLayout: function() {
-      this._mainView.removeAll();
     },
 
     __buildMainView: function() {
@@ -129,7 +124,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       header.add(nodeStatusUI);
 
       const buttonsLayout = this.__buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      const filesBtn = this.__outFilesButton = new qx.ui.form.Button(this.tr("Artifacts"), "@FontAwesome5Solid/folder-open/14");
+      const filesBtn = this.__outFilesButton = new qx.ui.form.Button(this.tr("Outputs"), "@FontAwesome5Solid/sign-out-alt/14");
       osparc.utils.Utils.setIdToWidget(filesBtn, "nodeOutputFilesBtn");
       filesBtn.addListener("execute", () => this.__openNodeDataManager(), this);
       buttonsLayout.add(filesBtn);
