@@ -74,7 +74,7 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_db(app)
     setup_session(app)
     setup_security(app)
-    setup_rest(app)
+    setup_rest(app, swagger_doc_enabled=True)
     setup_diagnostics(app)
     setup_email(app)
     setup_computation(app)
