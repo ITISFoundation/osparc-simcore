@@ -19,9 +19,11 @@ def test_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):
     assert route.path.startswith(f"/{VX}")
     path = route.path.replace(f"/{VX}", "")
 
+    assert path in openapi_specs.paths
+
     assert (
         route.method.lower() in openapi_specs.paths[path].operations
-    ), f"operation {route.method} undefined in OAS"
+    ), f"operation {route.method=} for {path=} undefined in OAS"
 
     assert (
         openapi_specs.paths[path].operations[route.method.lower()].operation_id
