@@ -426,6 +426,8 @@ async def retrieve(
     )
     body = dict(port_keys=port_keys)
 
+    # sometimes the director-v2 cannot be reached causing the service to fail
+    # retrying 3 times before giving up for good
     async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
         with attempt:
             retry_result = await _request_director_v2(
@@ -439,3 +441,27 @@ async def retrieve(
 
     assert isinstance(retry_result, dict)  # nosec
     return retry_result
+
+
+@log_decorator(logger=log)
+async def restart(app: web.Application, node_uuid: str) -> None:
+    # when triggering retrieve endpoint
+    # this will allow to sava bigger datasets from the services
+    timeout = ServicesCommonSettings().restart_containers_timeout
+
+    director2_settings: Directorv2Settings = get_settings(app)
+    backend_url = (
+        URL(director2_settings.endpoint) / "dynamic_services" / f"{node_uuid}:restart"
+    )
+
+    # sometimes the director-v2 cannot be reached causing the service to fail
+    # retrying 3 times before giving up for good
+    async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
+        with attempt:
+            await _request_director_v2(
+                app,
+                "POST",
+                backend_url,
+                expected_status=web.HTTPOk,
+                timeout=timeout,
+            )

@@ -4,9 +4,10 @@ import json
 import logging
 import tempfile
 import traceback
+from collections import namedtuple
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, List, Tuple
+from typing import AsyncGenerator, List, Optional
 
 import aiodocker
 import aiofiles
@@ -20,6 +21,8 @@ from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
+
+CommandResult = namedtuple("CommandResult", "finished_without_errors, decoded_stdout")
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
@@ -112,7 +115,9 @@ async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
         await docker.close()
 
 
-async def async_command(command: str, command_timeout: float) -> Tuple[bool, str]:
+async def async_command(
+    command: str, command_timeout: Optional[float]
+) -> CommandResult:
     """Returns if the command exited correctly and the stdout of the command"""
     proc = await asyncio.create_subprocess_shell(
         command,
@@ -132,13 +137,15 @@ async def async_command(command: str, command_timeout: float) -> Tuple[bool, str
             f"seconds while running {command}"
         )
         logger.warning(message)
-        return False, message
+        return CommandResult(finished_without_errors=False, decoded_stdout=message)
 
     decoded_stdout = stdout.decode()
     logger.info("'%s' result:\n%s", command, decoded_stdout)
     finished_without_errors = proc.returncode == 0
 
-    return finished_without_errors, decoded_stdout
+    return CommandResult(
+        finished_without_errors=finished_without_errors, decoded_stdout=decoded_stdout
+    )
 
 
 def assemble_container_names(validated_compose_content: str) -> List[str]:

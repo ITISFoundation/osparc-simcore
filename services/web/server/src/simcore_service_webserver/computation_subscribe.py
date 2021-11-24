@@ -8,6 +8,7 @@ from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List
 import aio_pika
 from aiohttp import web
 from models_library.rabbitmq_messages import (
+    EventRabbitMessage,
     InstrumentationRabbitMessage,
     LoggerRabbitMessage,
     ProgressRabbitMessage,
@@ -29,6 +30,7 @@ from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundErro
 from .socketio.events import (
     SOCKET_IO_LOG_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
+    SOCKET_IO_EVENT,
     SocketMessageDict,
     send_messages,
 )
@@ -94,6 +96,21 @@ async def instrumentation_message_parser(app: web.Application, data: bytes) -> N
         service_stopped(
             app, **{key: rabbit_message.dict()[key] for key in SERVICE_STOPPED_LABELS}
         )
+
+
+async def events_message_parser(app: web.Application, data: bytes) -> None:
+    rabbit_message = EventRabbitMessage.parse_raw(data)
+
+    socket_messages: List[SocketMessageDict] = [
+        {
+            "event_type": SOCKET_IO_EVENT,
+            "data": {
+                "action": rabbit_message.action,
+                "node_id": f"{rabbit_message.node_id}",
+            },
+        }
+    ]
+    await send_messages(app, f"{rabbit_message.user_id}", socket_messages)
 
 
 APP_RABBITMQ_POOL_KEY = f"{__name__}.pool"
@@ -194,6 +211,11 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
         (
             comp_settings.rabbit.channels["instrumentation"],
             instrumentation_message_parser,
+            {"no_ack": False},
+        ),
+        (
+            comp_settings.rabbit.channels["events"],
+            events_message_parser,
             {"no_ack": False},
         ),
     ]:
