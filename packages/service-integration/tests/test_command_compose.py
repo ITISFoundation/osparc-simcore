@@ -26,6 +26,7 @@ def compose_file_path(metadata_file_path: Path) -> Path:
 
 def test_make_docker_compose_meta(
     run_program_with_args: Callable,
+    project_file_path: Path,
     metadata_file_path: Path,
     compose_file_path: Path,
 ):
@@ -42,7 +43,7 @@ def test_make_docker_compose_meta(
         "--to-spec-file",
         compose_file_path,
     )
-    assert result.exit_code == os.EX_OK, f"with {result.output=}"
+    assert result.exit_code == os.EX_OK, result
 
     assert compose_file_path.exists()
 

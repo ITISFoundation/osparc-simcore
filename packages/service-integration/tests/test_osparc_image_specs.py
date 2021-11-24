@@ -5,17 +5,27 @@
 from pathlib import Path
 
 import yaml
+import pytest
 from pydantic import BaseModel
 from service_integration.compose_spec_model import BuildItem, Service
-from service_integration.osparc_config import MetaConfig, RuntimeConfig
+from service_integration.osparc_config import MetaConfig, RuntimeConfig, ProjectConfig
 from service_integration.osparc_image_specs import create_image_spec
+from service_integration.context import IntegrationContext
 
 
-def test_create_image_spec_impl(tests_data_dir: Path):
+@pytest.fixture
+def integration_context() -> IntegrationContext:
+    return IntegrationContext()
+
+
+def test_create_image_spec_impl(
+    tests_data_dir: Path, integration_context: IntegrationContext
+):
     # have image spec  -> assemble build part of the compose-spec -> ready to build with `docker-compose build`
     # image-spec for devel, prod, ...
 
     # load & parse osparc configs
+    project_cfg = ProjectConfig.from_yaml(tests_data_dir / "project.yml")
     meta_cfg = MetaConfig.from_yaml(tests_data_dir / "metadata-dynamic.yml")
     runtime_cfg = RuntimeConfig.from_yaml(tests_data_dir / "runtime.yml")
 
@@ -29,7 +39,7 @@ def test_create_image_spec_impl(tests_data_dir: Path):
         },
     )
 
-    compose_spec = create_image_spec(meta_cfg, runtime_cfg)
+    compose_spec = create_image_spec(integration_context, project_cfg, meta_cfg, runtime_cfg)
     assert compose_spec.services is not None
     assert isinstance(compose_spec.services, dict)
 

@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict, List
 
 import click
+from click.core import Context
 import yaml
 
 from ..compose_spec_model import ComposeSpecification
@@ -10,10 +11,12 @@ from ..labels_annotations import to_labels
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
 from ..osparc_config import ProjectConfig, MetaConfig, RuntimeConfig
 from ..osparc_image_specs import create_image_spec
+from ..context import IntegrationContext
 
 
 def create_docker_compose_image_spec(
-    defaults_path: Path,
+    integration_context: IntegrationContext,
+    project_path: Path,
     io_config_path: Path,
     service_config_path: Path = None,
 ) -> ComposeSpecification:
@@ -22,7 +25,7 @@ def create_docker_compose_image_spec(
     config_basedir = io_config_path.parent
 
     # required
-    project_cfg = ProjectConfig.from_yaml(defaults_path)
+    project_cfg = ProjectConfig.from_yaml(project_path)
 
     # required
     meta_cfg = MetaConfig.from_yaml(io_config_path)
@@ -56,13 +59,14 @@ def create_docker_compose_image_spec(
             extra_labels.update(ls_labels)
 
     compose_spec = create_image_spec(
-        project_cfg, meta_cfg, runtime_cfg, extra_labels=extra_labels
+        integration_context, project_cfg, meta_cfg, runtime_cfg, extra_labels=extra_labels
     )
 
     return compose_spec
 
 
 @click.command()
+@click.pass_context
 @click.option(
     "-m",
     "--metadata",
@@ -82,6 +86,7 @@ def create_docker_compose_image_spec(
     default=Path("docker-compose.yml"),
 )
 def main(
+    ctx: Context,
     config_path: Path,
     compose_spec_path: Path,
 ):
@@ -119,7 +124,7 @@ def main(
     compose_spec_dict = {}
     for n, config_name in enumerate(config_filenames):
         nth_compose_spec = create_docker_compose_image_spec(
-            *config_filenames[config_name]
+            ctx.parent.integration_context, *config_filenames[config_name]
         ).dict(exclude_unset=True)
 
         # FIXME: shaky! why first decides ??

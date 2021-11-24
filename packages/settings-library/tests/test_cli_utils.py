@@ -39,19 +39,19 @@ def cli(settings_cls: Type[BaseCustomSettings]) -> typer.Typer:
 def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
     result = cli_runner.invoke(cli, ["--help"])
     print(result.stdout)
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result
 
     # first command
     result = cli_runner.invoke(cli, ["run", "--help"])
     print(result.stdout)
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result
 
     # settings command
     result = cli_runner.invoke(cli, ["settings", "--help"])
     print(result.stdout)
 
     assert "--compact" in result.stdout
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result
 
     def extract_lines(text):
         lines = [line.strip() for line in text.split("\n") if line.strip()]

@@ -15,6 +15,8 @@ integrates with osparc.
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
+from .context import IntegrationContext
+
 from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
@@ -33,11 +35,6 @@ from .yaml_utils import yaml_safe_load
 
 CONFIG_FOLDER_NAME = ".osparc"
 
-REGISTRY_PREFIX = {
-    "local": "registry:5000",
-    "dockerhub": "itisfoundation",  # index.docker.io
-}
-# TODO: read from UserSettings all available registries
 
 SERVICE_KEY_FORMATS = {
     ServiceType.COMPUTATIONAL: COMPUTATIONAL_SERVICE_KEY_FORMAT,
@@ -126,8 +123,14 @@ class MetaConfig(ServiceDockerData):
         """name used as key in the compose-spec services map"""
         return self.key.split("/")[-1].replace(" ", "")
 
-    def image_name(self, registry="local") -> str:
-        registry_prefix = REGISTRY_PREFIX[registry]
+    def image_name(
+        self, integration_context: IntegrationContext, registry="local"
+    ) -> str:
+        registry_prefix = (
+            f"{integration_context.REGISTRY_NAME}/"
+            if integration_context.REGISTRY_NAME
+            else ""
+        )
         service_path = self.key
         if registry in "dockerhub":
             # dockerhub allows only one-level names -> dot it
@@ -135,7 +138,7 @@ class MetaConfig(ServiceDockerData):
             service_path = service_path.replace("/", ".")
 
         service_version = self.version
-        return f"{registry_prefix}/{service_path}:{service_version}"
+        return f"{registry_prefix}{service_path}:{service_version}"
 
 
 class PathsMapping(BaseModel):
@@ -219,6 +222,7 @@ class ConfigFilesStructure:
     """
 
     FILES_GLOBS = {
+        ProjectConfig.__name__: "project.y*ml",
         MetaConfig.__name__: "metadata.y*ml",
         RuntimeConfig.__name__: "runtime.y*ml",
     }
