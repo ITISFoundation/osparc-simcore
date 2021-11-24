@@ -260,8 +260,8 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__nodeView.getLoggerPanel()
       ].forEach(widget => widget.setVisibility(maximize ? "excluded" : "visible"));
 
-      this.set({
-        pading: maximize ? 0 : 10,
+      this.__nodeView.set({
+        padding: maximize ? 0 : 10,
         margin: maximize ? 0 : 6
       });
     },
