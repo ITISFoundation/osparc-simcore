@@ -145,12 +145,11 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         // run if last run was not succesful
         let needsRun = node.getStatus().getRunning() !== "SUCCESS";
         // or inputs changed
-        needsRun |= node.getStatus().getOutput() === "out-of-date";
+        needsRun = needsRun || node.getStatus().getOutput() === "out-of-date";
         if (needsRun) {
           this.fireDataEvent("startPartialPipeline", [lastCurrentNodeId]);
-          return false;
         }
-        return true;
+        return !needsRun;
       }
       return true;
     },
