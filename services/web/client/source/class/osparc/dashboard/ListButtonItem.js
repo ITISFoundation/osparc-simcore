@@ -272,28 +272,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       }
     },
 
-    _applyUiMode: function(uiMode) {
-      if (uiMode) {
-        let source = null;
-        switch (uiMode) {
-          case "guided":
-          default:
-            source = osparc.dashboard.CardBase.MODE_GUIDED;
-            break;
-          case "app":
-            source = osparc.dashboard.CardBase.MODE_APP;
-            break;
-          case "workbench":
-            source = osparc.dashboard.CardBase.MODE_WORKBENCH;
-            break;
-        }
-        if (source) {
-          const uiModeIcon = this.getChildControl("ui-mode");
-          uiModeIcon.setSource(source);
-        }
-      }
-    },
-
     // overridden
     _applyMultiSelectionMode: function(value) {
       if (value) {

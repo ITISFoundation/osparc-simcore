@@ -300,29 +300,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       }
     },
 
-    _applyUiMode: function(uiMode) {
-      if (uiMode) {
-        let source = null;
-        let toolTipText = null;
-        switch (uiMode) {
-          case "guided":
-            source = osparc.dashboard.CardBase.MODE_GUIDED;
-            toolTipText = this.tr("Guided mode");
-            break;
-          case "app":
-            source = osparc.dashboard.CardBase.MODE_APP;
-            toolTipText = this.tr("App mode");
-            break;
-        }
-        if (source) {
-          this.getChildControl("ui-mode").set({
-            source,
-            toolTipText
-          });
-        }
-      }
-    },
-
     _applyState: function(state) {
       const locked = ("locked" in state) ? state["locked"]["value"] : false;
       this.setLocked(locked);

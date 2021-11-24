@@ -76,6 +76,24 @@ qx.Class.define("osparc.dashboard.CardBase", {
         }
       }
       return false;
+    },
+
+    applyUiMode: function(uiMode, uiModeIcon) {
+      let source = null;
+      let toolTipText = null;
+      switch (uiMode) {
+        case "guided":
+        case "app":
+          source = osparc.dashboard.CardBase.MODE_APP;
+          toolTipText = this.tr("App mode");
+          break;
+      }
+      if (source) {
+        uiModeIcon.set({
+          source,
+          toolTipText
+        });
+      }
     }
   },
 
@@ -286,7 +304,22 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _applyUiMode: function(uiMode) {
-      throw new Error("Abstract method called!");
+      let source = null;
+      let toolTipText = null;
+      switch (uiMode) {
+        case "guided":
+        case "app":
+          source = osparc.dashboard.CardBase.MODE_APP;
+          toolTipText = this.tr("App mode");
+          break;
+      }
+      if (source) {
+        const uiModeIcon = this.getChildControl("ui-mode");
+        uiModeIcon.set({
+          source,
+          toolTipText
+        });
+      }
     },
 
     _applyState: function(state) {
