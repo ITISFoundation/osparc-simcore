@@ -27,7 +27,7 @@ from models_library.projects_nodes import (
 )
 from models_library.projects_nodes_io import NodeID, PortLink
 from models_library.services import ServiceDockerData
-from simcore_service_webserver.meta_core import PROPTYPE_2_PYTYPE, SumDiffDef
+from simcore_service_webserver.meta_experimental import PROPTYPE_2_PYTYPE, SumDiffDef
 
 ## HELPERS -------------------------------------------------
 
