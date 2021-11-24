@@ -356,12 +356,6 @@ async function downloadSelectedFile(page) {
   }
 }
 
-async function clickRetrieve(page) {
-  console.log("Opening Data produced by Node");
-
-  await utils.waitAndClick(page, '[osparc-test-id="nodeViewRetrieveBtn"]')
-}
-
 async function clickRestart(page) {
   console.log("Opening Data produced by Node");
 
@@ -394,6 +388,5 @@ module.exports = {
   openNodeFiles,
   checkDataProducedByNode,
   downloadSelectedFile,
-  clickRetrieve,
   clickRestart,
 }
