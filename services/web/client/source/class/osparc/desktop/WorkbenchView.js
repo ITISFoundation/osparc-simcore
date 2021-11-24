@@ -668,6 +668,26 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           }
         }, this);
       }
+
+      // callback for events
+      const slotName4 = "event";
+      if (!socket.slotExists(slotName4)) {
+        socket.on(slotName4, eventData => {
+          const eventPayload = JSON.parse(eventData);
+          const action = eventPayload["action"];
+          if (action == "RELOAD_IFRAME") {
+            // TODO: maybe reload iframe in the future
+            // for now a message is displayed to the user
+            const nodeId = eventPayload["node_id"];
+
+            const workbench = this.getStudy().getWorkbench();
+            const node = workbench.getNode(nodeId);
+            const label = node.getLabel();
+            const text = `New inputs for service ${label}. Please reload to refresh service.`;
+            osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+          }
+        }, this);
+      }
     },
 
     __createPanelView: function(caption, widget) {

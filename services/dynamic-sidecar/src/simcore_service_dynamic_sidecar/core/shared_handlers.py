@@ -14,7 +14,7 @@ async def write_file_and_run_command(
     settings: DynamicSidecarSettings,
     file_content: Optional[str],
     command: str,
-    command_timeout: float,
+    command_timeout: Optional[float],
 ) -> Tuple[bool, str]:
     """The command which accepts {file_path} as an argument for string formatting"""
 

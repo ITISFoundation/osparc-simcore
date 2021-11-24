@@ -231,7 +231,7 @@ def jupyter_service(docker_registry: str, node_meta_schema: Dict) -> Dict[str, A
     )
 
 
-@pytest.fixture(scope="session", params=["2.0.2"])
+@pytest.fixture(scope="session", params=["2.0.3"])
 def dy_static_file_server_version(request):
     return request.param
 
