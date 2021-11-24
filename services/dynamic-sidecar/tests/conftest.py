@@ -112,12 +112,15 @@ def app(mock_environment: None, disable_registry_check: None) -> FastAPI:
 
 @pytest.fixture
 async def ensure_external_volumes(
-    compose_namespace: str, state_paths_dirs: List[Path]
+    compose_namespace: str,
+    inputs_dir: Path,
+    outputs_dir: Path,
+    state_paths_dirs: List[Path],
 ) -> AsyncGenerator[None, None]:
     """ensures inputs and outputs volumes for the service are present"""
 
-    volume_names = [f"{compose_namespace}_inputs", f"{compose_namespace}_outputs"]
-    for state_paths_dir in state_paths_dirs:
+    volume_names = []
+    for state_paths_dir in [inputs_dir, outputs_dir] + state_paths_dirs:
         name_from_path = str(state_paths_dir).replace(os.sep, "_")
         volume_names.append(f"{compose_namespace}{name_from_path}")
 
