@@ -2,7 +2,7 @@
 
 """
 import logging
-from typing import Any, Dict, List, Tuple, Union
+from typing import List, Optional, Tuple
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -15,12 +15,15 @@ from servicelib.rest_pagination_utils import (
 )
 
 from ._meta import api_version_prefix as VTAG
-from .meta_iterations import IterInfoDict, parse_iteration_tag_name
+from .meta_iterations import IterInfo
 from .rest_utils import RESPONSE_MODEL_POLICY
 from .utils_aiohttp import create_url_for_function
 from .version_control_db import VersionControlForMetaModeling
-from .version_control_models import CheckpointID, CommitID, RefID, TagProxy
-from .version_control_tags import compose_wcopy_project_id, parse_wcopy_project_tag_name
+from .version_control_models import CheckpointID, CommitID, TagProxy
+from .version_control_tags import parse_wcopy_project_tag_name
+
+log = logging.getLogger(__name__)
+
 
 # MODELS ------------------------------------------------------------
 
@@ -50,6 +53,8 @@ class ProjectIterationAsItem(BaseModel):
 
 
 # ROUTES ------------------------------------------------------------
+
+
 routes = web.RouteTableDef()
 
 
@@ -58,7 +63,6 @@ routes = web.RouteTableDef()
     name="{__name__}._list_meta_project_iterations_handler",
 )
 async def _list_meta_project_iterations_handler(request: web.Request) -> web.Response:
-
     # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
     vc_repo = VersionControlForMetaModeling(request)
@@ -75,6 +79,7 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
         # e.g. HEAD
         raise NotImplementedError("cannot convert ref (e.g. HEAD) -> commit id")
 
+    #
     (
         wcopy_projects_ids,
         total_number_of_iterations,
@@ -115,9 +120,6 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
     )
 
 
-logger = logging.getLogger(__name__)
-
-
 async def list_wcopy_projects_iterations(
     vc_repo: VersionControlForMetaModeling,
     project_uuid: ProjectID,
@@ -129,27 +131,59 @@ async def list_wcopy_projects_iterations(
     repo_id = await vc_repo.get_repo_id(project_uuid)
     assert repo_id is not None
 
-    # search iterations
-    #  - check all commits with parent_commit == ref_id, are branch
+    total_number_of_iterations = 0  # count number of iterations
+    wcopy_project_ids: List[ProjectID] = []
 
+    # Search all subsequent commits (i.e. children) and retrieve their tags
+    # Select range on those tagged as iterations and returned their assigned wcopy id
+
+    # FIXME: do all these operations in database
     tags_per_child: List[List[TagProxy]] = await vc_repo.get_children_tags(
         repo_id, commit_id
     )
 
-    iterations: List[IterInfoDict] = []
-    for tags in tags_per_child:
-        for tag in tags:
-            if iterinfo := parse_iteration_tag_name(tag.message):
-                assert int(iterinfo.repo_commit_id) == commit_id
-                iterations.append(iterinfo)
-            elif iterinfo := parse_wcopy_project_tag_name(tag.message):
-                pass
-            else:
-                logger.debug("Got tag: %s for children of {}", tag)
+    iterations: List[Tuple[ProjectID, int]] = []
+    for n, tags in enumerate(tags_per_child):
 
-    # wcopy_project_id = compose_wcopy_project_id(repo.project_uuid, commit_id)
+        # FIXME: the db query did not guarantee
+        # not sorted
+        # not limited
+        # not certain if tags we need
+        try:
+            iter_info: Optional[IterInfo] = None
+            wcopy_id: Optional[ProjectID] = None
 
-    wcopy_project_id = await vc_repo.get_wcopy_project_id(repo_id, commit_id)
+            for tag in tags:
+                if info := IterInfo.from_tag_name(tag.name):
+                    if iter_info:
+                        raise ValueError(
+                            f"This entry has more than one iteration {tag=}"
+                        )
+                    iter_info = info
+                elif info := parse_wcopy_project_tag_name(tag.name):
+                    if wcopy_id:
+                        raise ValueError(f"This entry has more than one wcopy  {tag=}")
+                    wcopy_id = info
+                else:
+                    log.debug("Got %s for children of %s", f"{tag=}", f"{commit_id=}")
 
-    # build project_ids based on
-    raise NotImplementedError
+            if not wcopy_id:
+                raise ValueError("No working copy found")
+            if not iter_info:
+                raise ValueError("No iteration tag found")
+
+            total_number_of_iterations = max(
+                total_number_of_iterations, iter_info.total_count
+            )
+            iterations.append((wcopy_id, iter_info.iter_index))
+
+        except ValueError as err:
+            log.debug("Skipping child %s: %s", n, err)
+
+    total_number_of_iterations = len(wcopy_project_ids)
+
+    # sort and select. If requested interval is outside of range, it returns empty
+    iterations.sort(key=lambda tup: tup[1])
+    wcopy_project_ids = [s[0] for s in iterations[offset : (offset + limit)]]
+
+    return wcopy_project_ids, total_number_of_iterations
