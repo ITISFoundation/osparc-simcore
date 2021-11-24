@@ -15,10 +15,10 @@ from servicelib.rest_pagination_utils import (
 )
 
 from ._meta import api_version_prefix as VTAG
-from .meta_iterations import IterInfo
+from .meta_db import VersionControlForMetaModeling
+from .meta_iterations import ProjectIteration
 from .rest_utils import RESPONSE_MODEL_POLICY
 from .utils_aiohttp import create_url_for_function, enveloped_json_response
-from .version_control_db import VersionControlForMetaModeling
 from .version_control_models import CheckpointID, CommitID, TagProxy
 from .version_control_tags import parse_wcopy_project_tag_name
 
@@ -34,9 +34,11 @@ async def list_project_iterations(
     vc_repo: VersionControlForMetaModeling,
     project_uuid: ProjectID,
     commit_id: CommitID,
-    offset: int,
-    limit: int,
+    offset: int = 0,
+    limit: Optional[int] = None,
 ) -> Tuple[List[IterationTuple], int]:
+
+    assert offset >= 0  # nosec
 
     repo_id = await vc_repo.get_repo_id(project_uuid)
     assert repo_id is not None
@@ -58,32 +60,34 @@ async def list_project_iterations(
         # not limited
         # not certain if tags we need
         try:
-            iter_info: Optional[IterInfo] = None
+            iteration: Optional[ProjectIteration] = None
             wcopy_id: Optional[ProjectID] = None
 
             for tag in tags:
-                if info := IterInfo.from_tag_name(tag.name, return_none_if_fails=True):
-                    if iter_info:
+                if pim := ProjectIteration.from_tag_name(
+                    tag.name, return_none_if_fails=True
+                ):
+                    if iteration:
                         raise ValueError(
                             f"This entry has more than one iteration {tag=}"
                         )
-                    iter_info = info
-                elif info := parse_wcopy_project_tag_name(tag.name):
+                    iteration = pim
+                elif pid := parse_wcopy_project_tag_name(tag.name):
                     if wcopy_id:
                         raise ValueError(f"This entry has more than one wcopy  {tag=}")
-                    wcopy_id = info
+                    wcopy_id = pid
                 else:
                     log.debug("Got %s for children of %s", f"{tag=}", f"{commit_id=}")
 
             if not wcopy_id:
                 raise ValueError("No working copy found")
-            if not iter_info:
+            if not iteration:
                 raise ValueError("No iteration tag found")
 
             total_number_of_iterations = max(
-                total_number_of_iterations, iter_info.total_count
+                total_number_of_iterations, iteration.total_count
             )
-            iterations.append((wcopy_id, iter_info.iter_index))
+            iterations.append((wcopy_id, iteration.iter_index))
 
         except ValueError as err:
             log.debug("Skipping child %s: %s", n, err)
@@ -92,6 +96,9 @@ async def list_project_iterations(
 
     # sort and select. If requested interval is outside of range, it returns empty
     iterations.sort(key=lambda tup: tup[1])
+
+    if limit is None:
+        return iterations[offset:], total_number_of_iterations
 
     return iterations[offset : (offset + limit)], total_number_of_iterations
 
@@ -119,7 +126,7 @@ class ProjectIterationAsItem(BaseModel):
         description="Iteration's resource name [AIP-122](https://google.aip.dev/122)",
     )
     parent: ParentMetaProjectRef = Field(
-        ..., description="Identifies the meta-project that created this iteration"
+        ..., description="Reference to the the meta-project that created this iteration"
     )
 
     wcopy_project_id: ProjectID = Field(

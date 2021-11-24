@@ -4,7 +4,7 @@ from typing import Generator, Iterator, get_origin, get_type_hints
 import pytest
 from models_library.frontend_services_catalog import is_iterator_service
 from models_library.services import ServiceDockerData
-from simcore_service_webserver.meta_core import SumDiffData, SumDiffDef
+from simcore_service_webserver.meta_experimental import SumDiffData, SumDiffDef
 
 ## HELPERS -------------------------------------------------
 

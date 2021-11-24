@@ -7,7 +7,7 @@ import json
 import logging
 import re
 from copy import deepcopy
-from typing import Any, Dict, Generator, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Generator, Iterator, List, Literal, Optional, Tuple, Union
 
 from aiohttp import web
 from models_library.basic_types import MD5Str, SHA1Str
@@ -16,11 +16,11 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
 from models_library.services import ServiceDockerData
 from pydantic import BaseModel, ValidationError
+from pydantic.fields import Field
 
+from .meta_db import CommitID, ProjectDict, VersionControlForMetaModeling
 from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
 from .utils import compute_sha1
-from .version_control_db import VersionControlForMetaModeling
-from .version_control_models import CommitID, ProjectDict
 
 log = logging.getLogger(__file__)
 
@@ -106,14 +106,22 @@ def extract_parameters(
     raise NotImplementedError()
 
 
-# TAGGING iterations -----
+# DOMAIN MODEL for project iteration -----
 
 
-class IterInfo(BaseModel):
-    repo_commit_id: CommitID
-    iter_index: int
-    total_count: int
-    parameters_checksum: SHA1Str
+class ProjectIteration(BaseModel):
+    """
+    A project iteration
+
+    - de/serializes from/to a vc tag
+
+    """
+
+    repo_id: Optional[int] = None
+    repo_commit_id: CommitID = Field(...)
+    iter_index: int = Field(...)
+    total_count: Union[int, Literal["undefined"]] = "undefined"
+    parameters_checksum: SHA1Str = Field(...)
 
     def to_tag_name(self) -> str:
         """Composes unique tag name for this iteration"""
@@ -122,7 +130,7 @@ class IterInfo(BaseModel):
     @classmethod
     def from_tag_name(
         cls, tag_name: str, *, return_none_if_fails: bool = False
-    ) -> Optional["IterInfo"]:
+    ) -> Optional["ProjectIteration"]:
         """Parses iteration info from tag name"""
         try:
             return cls.parse_obj(parse_iteration_tag_name(tag_name))
@@ -130,8 +138,7 @@ class IterInfo(BaseModel):
             if return_none_if_fails:
                 log.debug(f"{err}")
                 return None
-            else:
-                raise
+            raise
 
 
 def compose_iteration_tag_name(
@@ -141,6 +148,9 @@ def compose_iteration_tag_name(
     parameters_checksum: SHA1Str,
 ) -> str:
     """Composes unique tag name for iter_index-th iteration of repo_commit_id out of total_count"""
+    # NOTE: prefers to a json dump because it allows regex search?
+    # should be searchable e.g. get repo/*/*/*
+    # can do the same with json since it is a str!?
     return (
         f"iteration:{repo_commit_id}/{iter_index}/{total_count}/{parameters_checksum}"
     )
