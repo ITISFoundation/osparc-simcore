@@ -148,9 +148,8 @@ class VersionControlRepository(BaseRepository):
             await self.TagsOrm(conn).set_filter(commit_id=commit_id).fetch_all("name")
         )
         for tag in found:
-            if wcp_tag := parse_wcopy_project_tag_name(tag.name):
-                wcopy_project_id = wcp_tag["wcopy_project_id"]
-                return wcopy_project_id
+            if wcopy_project_id := parse_wcopy_project_tag_name(tag.name):
+                return str(wcopy_project_id)
 
         repo = await self.ReposOrm(conn).set_filter(id=repo_id).fetch("project_uuid")
         assert repo  # nosec
@@ -710,16 +709,16 @@ class VersionControlForMetaModeling(VersionControlRepository):
         self, repo_id: int, commit_id: int
     ) -> List[List[TagProxy]]:
         async with self.engine.acquire() as conn:
-            commits_ids = (
+            commits = (
                 await self.CommitsOrm(conn)
                 .set_filter(repo_id=repo_id, parent_commit_id=commit_id)
                 .fetch_all(returning_cols="id")
             )
             # TODO: single query for this loop
             tags = []
-            for commit_id in commits_ids:
+            for commit in commits:
                 tags_in_commit = (
-                    await self.TagsOrm(conn).set_filter(commit_id=commit_id).fetch_all()
+                    await self.TagsOrm(conn).set_filter(commit_id=commit.id).fetch_all()
                 )
                 tags.append(tags_in_commit)
             return tags
