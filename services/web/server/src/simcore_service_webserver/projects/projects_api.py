@@ -8,6 +8,7 @@
 """
 # pylint: disable=too-many-arguments
 
+import asyncio
 import contextlib
 import json
 import logging
@@ -52,7 +53,12 @@ from ..storage_api import (
 )
 from ..users_api import get_user_name, is_user_guest
 from .config import CONFIG_SECTION_NAME
-from .project_lock import ProjectLockError, get_project_locked_state, lock_project
+from .project_lock import (
+    ProjectLockError,
+    UserNameDict,
+    get_project_locked_state,
+    lock_project,
+)
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_utils import extract_dns_without_default_port
 
@@ -65,9 +71,11 @@ def _is_node_dynamic(node_key: str) -> bool:
     return "/dynamic/" in node_key
 
 
-def validate_project(app: web.Application, project: Dict):
+async def validate_project(app: web.Application, project: Dict):
     project_schema = app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME]
-    validate_instance(project, project_schema)  # TODO: handl
+    await asyncio.get_event_loop().run_in_executor(
+        None, validate_instance, project, project_schema
+    )
 
 
 async def get_project_for_user(
@@ -80,7 +88,7 @@ async def get_project_for_user(
 ) -> Dict:
     """Returns a VALID project accessible to user
 
-    :raises web.HTTPNotFound: if no match found
+    :raises ProjectNotFoundError: if no match found
     :return: schema-compliant project data
     :rtype: Dict
     """
@@ -102,7 +110,7 @@ async def get_project_for_user(
 
     # TODO: how to handle when database has an invalid project schema???
     # Notice that db model does not include a check on project schema.
-    validate_project(app, project)
+    await validate_project(app, project)
     return project
 
 
@@ -184,13 +192,13 @@ async def start_project_interactive_services(
 
 
 async def delete_project(app: web.Application, project_uuid: str, user_id: int) -> None:
-    await delete_project_from_db(app, project_uuid, user_id)
+    await _delete_project_from_db(app, project_uuid, user_id)
 
     async def _remove_services_and_data():
         await remove_project_interactive_services(
             user_id, project_uuid, app, notify_users=False
         )
-        await delete_project_data(app, project_uuid, user_id)
+        await delete_data_folders_of_project(app, project_uuid, user_id)
 
     fire_and_forget_task(_remove_services_and_data())
 
@@ -231,7 +239,7 @@ async def lock_with_notification(
     project_uuid: str,
     status: ProjectStatus,
     user_id: int,
-    user_name: Dict[str, str],
+    user_name: UserNameDict,
     notify_users: bool = True,
 ):
     try:
@@ -242,40 +250,58 @@ async def lock_with_notification(
             user_id,
             user_name,
         ):
+            log.debug(
+                "Project [%s] lock acquired",
+                project_uuid,
+            )
             if notify_users:
                 await retrieve_and_notify_project_locked_state(
                     user_id, project_uuid, app
                 )
             yield
-
+            log.debug(
+                "Project [%s] lock released",
+                project_uuid,
+            )
+    except ProjectLockError:
+        # someone else has already the lock?
+        prj_states: ProjectState = await get_project_states_for_user(
+            user_id, project_uuid, app
+        )
+        log.error(
+            "Project [%s] already locked in state '%s'. Please check with support.",
+            project_uuid,
+            prj_states.locked.status,
+        )
+        raise
     finally:
         if notify_users:
             await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
 
 
 async def remove_project_interactive_services(
-    user_id: int, project_uuid: str, app: web.Application, notify_users: bool = True
+    user_id: int,
+    project_uuid: str,
+    app: web.Application,
+    notify_users: bool = True,
+    user_name: Optional[UserNameDict] = None,
 ) -> None:
     # NOTE: during the closing process, which might take awhile,
     # the project is locked so no one opens it at the same time
+    log.debug(
+        "removing project interactive services for project [%s] and user [%s]",
+        project_uuid,
+        user_id,
+    )
     try:
-        log.debug(
-            "removing project interactive services for project [%s] and user [%s]",
-            project_uuid,
-            user_id,
-        )
-        async with await lock_project(
+        async with lock_with_notification(
             app,
             project_uuid,
             ProjectStatus.CLOSING,
             user_id,
-            await get_user_name(app, user_id),
+            user_name or await get_user_name(app, user_id),
+            notify_users=notify_users,
         ):
-            if notify_users:
-                await retrieve_and_notify_project_locked_state(
-                    user_id, project_uuid, app
-                )
-
             # save the state if the user is not a guest. if we do not know we save in any case.
             with suppress(director_v2_api.DirectorServiceError):
                 # here director exceptions are suppressed. in case the service is not found to preserve old behavior
@@ -288,40 +314,16 @@ async def remove_project_interactive_services(
                     else True,
                 )
     except ProjectLockError:
-        # maybe the someone else is already closing
-        prj_states: ProjectState = await get_project_states_for_user(
-            user_id, project_uuid, app
-        )
-        if prj_states.locked.status not in [
-            ProjectStatus.CLOSED,
-            ProjectStatus.CLOSING,
-        ]:
-            log.error(
-                "lock for project [%s] was already taken, current state is %s. project could not be closed please check.",
-                project_uuid,
-                prj_states.locked.status,
-            )
-    finally:
-        # notify when done and the project is closed
-        if notify_users:
-            await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
+        pass
 
 
-async def delete_project_data(
+async def _delete_project_from_db(
     app: web.Application, project_uuid: str, user_id: int
 ) -> None:
-    # requests storage to delete all project's stored data
-    await delete_data_folders_of_project(app, project_uuid, user_id)
-
-
-async def delete_project_from_db(
-    app: web.Application, project_uuid: str, user_id: int
-) -> None:
+    log.debug("deleting project '%s' for user '%s' in database", project_uuid, user_id)
     db = app[APP_PROJECT_DBAPI]
     await director_v2_api.delete_pipeline(app, user_id, UUID(project_uuid))
     await db.delete_user_project(user_id, project_uuid)
-    # requests storage to delete all project's stored data
-    await delete_data_folders_of_project(app, project_uuid, user_id)
 
 
 ## PROJECT NODES -----------------------------------------------------
@@ -647,17 +649,15 @@ async def try_open_project_for_user(
     user_id: int, project_uuid: str, client_session_id: str, app: web.Application
 ) -> bool:
     try:
-        async with await lock_project(
+        async with lock_with_notification(
             app,
             project_uuid,
             ProjectStatus.OPENING,
             user_id,
             await get_user_name(app, user_id),
+            notify_users=False,
         ):
-            log.debug(
-                "project [%s] lock acquired, now checking if project is available",
-                project_uuid,
-            )
+
             with managed_resource(user_id, client_session_id, app) as rt:
                 user_session_id_list: List[
                     UserSessionID
@@ -769,7 +769,7 @@ async def _get_project_lock_state(
         project_uuid,
         set_user_ids,
     )
-    usernames: List[Dict[str, str]] = [
+    usernames: List[UserNameDict] = [
         await get_user_name(app, uid) for uid in set_user_ids
     ]
     # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
