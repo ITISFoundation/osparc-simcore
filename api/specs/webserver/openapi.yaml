@@ -230,6 +230,9 @@ paths:
   "/repos/projects/{project_uuid}/checkpoints":
     $ref: "./openapi-version-control.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints"
 
+  "/repos/projects/{project_uuid}/checkpoints/HEAD":
+    $ref: "./openapi-version-control.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints~1HEAD"
+
   "/repos/projects/{project_uuid}/checkpoints/{ref_id}":
     $ref: "./openapi-version-control.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints~1{ref_id}"
 
