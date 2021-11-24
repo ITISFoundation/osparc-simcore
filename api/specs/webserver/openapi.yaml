@@ -223,9 +223,6 @@ paths:
   /projects/{project_uuid}/checkpoint/{ref_id}/iterations:
     $ref: "./openapi-meta-projects.yaml#/paths/projects__project_uuid__checkpoint__ref_id__iterations"
 
-  /projects/{project_uuid}/checkpoint/{ref_id}/iterations/{iter_id}:
-    $ref: "./openapi-meta-projects.yaml#/paths/projects__project_uuid__checkpoint__ref_id__iterations__iter_id"
-
   # REPOSITORY -------------------------------------------------------------------------
   /repos/projects:
     $ref: "./openapi-version-control.yaml#/paths/~1repos~1projects"
