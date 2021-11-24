@@ -139,6 +139,22 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       return this.__collapseWithUserMenu;
     },
 
+    __isLastCurrentNodeReady: function(lastCurrentNodeId) {
+      const node = this.getStudy().getWorkbench().getNode(lastCurrentNodeId);
+      if (node && node.isComputational()) {
+        // run if last run was not succesful
+        let needsRun = node.getStatus().getRunning() !== "SUCCESS";
+        // or inputs changed
+        needsRun |= node.getStatus().getOutput() === "out-of-date";
+        if (needsRun) {
+          this.fireDataEvent("startPartialPipeline", [lastCurrentNodeId]);
+          return false;
+        }
+        return true;
+      }
+      return true;
+    },
+
     __isSelectedNodeReady: function(node, lastCurrentNodeId) {
       const dependencies = node.getStatus().getDependencies();
       if (dependencies && dependencies.length) {
@@ -233,6 +249,11 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             flex: 1
           });
           this.__nodeView = view;
+        }
+
+        // check if lastCurrentNodeId has to be run
+        if (!this.__isLastCurrentNodeReady(lastCurrentNodeId)) {
+          return;
         }
 
         // check if upstream has to be run
