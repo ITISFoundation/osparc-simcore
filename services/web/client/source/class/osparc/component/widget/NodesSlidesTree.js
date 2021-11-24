@@ -166,7 +166,7 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           item.addListener("hideNode", () => this.__itemActioned(item, "hide"), this);
           item.addListener("moveUp", () => this.__itemActioned(item, "moveUp"), this);
           item.addListener("moveDown", () => this.__itemActioned(item, "moveDown"), this);
-          item.addListener("tap", () => this.__populateExposedSettings(item), this);
+          // item.addListener("tap", () => this.__populateExposedSettings(item), this);
         }
       });
     },
