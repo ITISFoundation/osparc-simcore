@@ -52,7 +52,7 @@ async def test_remove_fail_fails(
 ) -> None:
     assert a_file.exists() is True
 
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(NotADirectoryError) as excinfo:
         await remove_directory(path=a_file, only_children=only_children)
 
     assert excinfo.value.args[0] == f"Provided path={a_file} must be a directory"
