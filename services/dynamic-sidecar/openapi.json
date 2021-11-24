@@ -412,6 +412,41 @@
           }
         }
       }
+    },
+    "/v1/containers:restart": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Restarts Containers",
+        "description": "Removes the previously started service\nand returns the docker-compose output",
+        "operationId": "restarts_containers_v1_containers_restart_post",
+        "parameters": [
+          {
+            "description": "docker-compose stop command timeout default",
+            "required": false,
+            "schema": {
+              "title": "Command Timeout",
+              "type": "number",
+              "description": "docker-compose stop command timeout default",
+              "default": 10.0
+            },
+            "name": "command_timeout",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Container does not exist"
+          },
+          "422": {
+            "description": "Error while running docker-compose command"
+          }
+        }
+      }
     }
   },
   "components": {

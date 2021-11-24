@@ -12,6 +12,7 @@ from typing import Coroutine, Deque, Dict, List, Optional, Set, Tuple, cast
 from pydantic import ByteSize
 from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_dir
 from servicelib.async_utils import run_sequentially_in_context
+from servicelib.file_utils import remove_directory
 from servicelib.pools import async_on_threadpool
 from servicelib.utils import logged_gather
 from simcore_sdk import node_ports_v2
@@ -190,6 +191,8 @@ async def download_inputs(inputs_path: Path, port_keys: List[str]) -> ByteSize:
 
                 if not downloaded_file or not downloaded_file.exists():
                     # the link may be empty
+                    # remove files all files from disk when disconnecting port
+                    await remove_directory(dest_path, only_children=True)
                     continue
 
                 transfer_bytes = transfer_bytes + downloaded_file.stat().st_size

@@ -170,6 +170,7 @@ def get_dynamic_sidecar_spec(
             "paths_mapping": scheduler_data.paths_mapping.json(),
             "compose_spec": json_dumps(scheduler_data.compose_spec),
             "container_http_entry": scheduler_data.container_http_entry,
+            "restart_policy": scheduler_data.restart_policy
         },
         "name": scheduler_data.service_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],

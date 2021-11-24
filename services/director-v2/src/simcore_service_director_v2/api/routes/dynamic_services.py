@@ -26,7 +26,10 @@ from ...modules.dynamic_sidecar.docker_api import (
     is_dynamic_service_running,
     list_dynamic_sidecar_services,
 )
-from ...modules.dynamic_sidecar.errors import DynamicSidecarNotFoundError
+from ...modules.dynamic_sidecar.errors import (
+    DynamicSidecarNotFoundError,
+    LegacyServiceIsNotSupportedError,
+)
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 from ...utils.logging_utils import log_decorator
 from ...utils.routes import NoContentResponse
@@ -230,3 +233,20 @@ async def service_retrieve_data_on_ports(
 
         # validate and return
         return RetrieveDataOutEnveloped.parse_obj(response.json())
+
+
+@router.post(
+    "/{node_uuid}:restart",
+    summary="Calls the dynamic service's restart containers endpoint",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+@log_decorator(logger=logger)
+async def service_restart_containers(
+    node_uuid: NodeID, scheduler: DynamicSidecarsScheduler = Depends(get_scheduler)
+) -> NoContentResponse:
+    try:
+        await scheduler.restart_containers(node_uuid)
+    except DynamicSidecarNotFoundError as error:
+        raise LegacyServiceIsNotSupportedError() from error
+
+    return NoContentResponse()

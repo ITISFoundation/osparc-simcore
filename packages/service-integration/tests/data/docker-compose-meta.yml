@@ -122,6 +122,7 @@ services:
         simcore.service.container-http-entrypoint: dy-static-file-server-dynamic-sidecar-compose-spec
         simcore.service.paths-mapping: '{"outputs_path": "/www/outputs", "inputs_path":
           "/www/inputs", "state_paths": ["/workdir/generated-data"]}'
+        simcore.service.restart-policy: on-inputs-downloaded
         simcore.service.settings: '[{"name": "resources", "type": "Resources", "value":
           {"mem_limit":17179869184, "cpu_limit": 1000000000}}, {"name": "ports",
           "type": "int", "value": 8080}, {"name": "constraints", "type":

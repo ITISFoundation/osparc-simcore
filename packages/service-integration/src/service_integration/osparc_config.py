@@ -14,6 +14,7 @@ integrates with osparc.
 
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
+from models_library.service_settings_labels import RestartPolicy
 
 from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
@@ -156,6 +157,8 @@ class RuntimeConfig(BaseModel):
 
     compose_spec: Optional[ComposeSpecification] = None
     container_http_entrypoint: Optional[str] = None
+
+    restart_policy: RestartPolicy = RestartPolicy.NO_RESTART
 
     paths_mapping: Optional[PathsMapping] = None
 
