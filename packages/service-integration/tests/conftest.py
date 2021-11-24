@@ -34,11 +34,10 @@ def tests_data_dir() -> Path:
     assert pdir.exists()
     return pdir
 
+
 @pytest.fixture
 def project_file_path(tests_data_dir, tmp_path) -> Path:
-    dst = shutil.copy(
-        src=tests_data_dir / "project.yml", dst=tmp_path / "project.yml"
-    )
+    dst = shutil.copy(src=tests_data_dir / "project.yml", dst=tmp_path / "project.yml")
     return Path(dst)
 
 

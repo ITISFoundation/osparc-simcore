@@ -15,24 +15,19 @@ integrates with osparc.
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
-from .context import IntegrationContext
 from models_library.service_settings_labels import RestartPolicy
-
 from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
     ServiceDockerData,
     ServiceType,
 )
-from pydantic import BaseSettings
-from pydantic.fields import Field
-from pydantic.main import BaseModel, Extra
-from pydantic.types import SecretStr
 from pydantic.class_validators import validator
 from pydantic.fields import Field
 from pydantic.main import BaseModel, Extra
 
 from .compose_spec_model import ComposeSpecification
+from .context import IntegrationContext
 from .errors import ConfigNotFound
 from .labels_annotations import from_labels, to_labels
 from .yaml_utils import yaml_safe_load

@@ -11,8 +11,8 @@ from service_integration.compose_spec_model import (
     Service,
 )
 
-from .osparc_config import ProjectConfig, MetaConfig, RuntimeConfig
 from .context import IntegrationContext
+from .osparc_config import MetaConfig, ProjectConfig, RuntimeConfig
 
 
 def create_image_spec(

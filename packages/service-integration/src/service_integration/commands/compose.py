@@ -2,17 +2,14 @@ from pathlib import Path
 from typing import Dict, List
 
 import click
-from click.core import Context
 import yaml
+from click.core import Context
 
 from ..compose_spec_model import ComposeSpecification
+from ..context import IntegrationContext
 from ..labels_annotations import to_labels
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
-
-from ..osparc_config import ProjectConfig, MetaConfig, RuntimeConfig
-from ..osparc_image_specs import create_image_spec
-from ..context import IntegrationContext
-from ..osparc_config import MetaConfig, RuntimeConfig
+from ..osparc_config import MetaConfig, ProjectConfig, RuntimeConfig
 from ..osparc_image_specs import create_image_spec
 
 

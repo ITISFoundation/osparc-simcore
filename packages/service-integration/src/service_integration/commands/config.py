@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from pydantic.main import BaseModel
 
 from ..compose_spec_model import ComposeSpecification
-from ..osparc_config import ProjectConfig, MetaConfig, RuntimeConfig
+from ..osparc_config import MetaConfig, ProjectConfig, RuntimeConfig
 
 
 def create_osparc_specs(

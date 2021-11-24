@@ -1,8 +1,9 @@
-from typing import Dict, Any, List
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+from typing import Any, Dict, List
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
-
 from service_integration.context import IntegrationContext
 
 CONTEXT_DEFAULTS: Dict[str, Any] = {

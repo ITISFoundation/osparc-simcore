@@ -4,13 +4,13 @@
 
 from pathlib import Path
 
-import yaml
 import pytest
+import yaml
 from pydantic import BaseModel
 from service_integration.compose_spec_model import BuildItem, Service
-from service_integration.osparc_config import MetaConfig, RuntimeConfig, ProjectConfig
-from service_integration.osparc_image_specs import create_image_spec
 from service_integration.context import IntegrationContext
+from service_integration.osparc_config import MetaConfig, ProjectConfig, RuntimeConfig
+from service_integration.osparc_image_specs import create_image_spec
 
 
 @pytest.fixture

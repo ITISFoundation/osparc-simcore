@@ -7,7 +7,7 @@ via environment variables and are overwritable via
 cli option.
 """
 
-from pydantic import BaseSettings, Field, Extra, SecretStr
+from pydantic import BaseSettings, Extra, Field, SecretStr
 
 
 class IntegrationContext(BaseSettings):
