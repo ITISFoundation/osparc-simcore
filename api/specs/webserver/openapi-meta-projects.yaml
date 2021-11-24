@@ -195,16 +195,6 @@ components:
             ID to this iteration's working copy.A working copy is a real
             project where this iteration is run
           format: uuid
-        parameters:
-          title: Parameters
-          type: array
-          items:
-            $ref: "#/components/schemas/ParameterItem"
-        probes:
-          title: Probes
-          type: array
-          items:
-            $ref: "#/components/schemas/ParameterItem"
         wcopy_project_url:
           title: Wcopy Project Url
           maxLength: 2083
@@ -282,23 +272,7 @@ components:
           title: Count
           minimum: 0.0
           type: integer
-    Page_CheckpointAsItem_:
-      title: Page[CheckpointAsItem]
-      required:
-        - _meta
-        - _links
-        - data
-      type: object
-      properties:
-        _meta:
-          $ref: "#/components/schemas/PageMetaInfoLimitOffset"
-        _links:
-          $ref: "#/components/schemas/PageLinks"
-        data:
-          title: Data
-          type: array
-          items:
-            $ref: "#/components/schemas/CheckpointAsItem"
+
     Page_IterationAsItem_:
       title: Page[IterationAsItem]
       required:

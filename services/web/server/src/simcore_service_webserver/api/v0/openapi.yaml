@@ -13649,58 +13649,6 @@ paths:
                           type: string
                           description: ID to this iteration's working copy.A working copy is a real project where this iteration is run
                           format: uuid
-                        parameters:
-                          title: Parameters
-                          type: array
-                          items:
-                            title: ParameterItem
-                            required:
-                              - display_name
-                              - port_url
-                            type: object
-                            properties:
-                              display_name:
-                                title: Display Name
-                                type: string
-                              value:
-                                title: Value
-                                anyOf:
-                                  - type: boolean
-                                  - type: integer
-                                  - type: number
-                                  - type: string
-                              port_url:
-                                title: Port Url
-                                maxLength: 2083
-                                minLength: 1
-                                type: string
-                                format: uri
-                        probes:
-                          title: Probes
-                          type: array
-                          items:
-                            title: ParameterItem
-                            required:
-                              - display_name
-                              - port_url
-                            type: object
-                            properties:
-                              display_name:
-                                title: Display Name
-                                type: string
-                              value:
-                                title: Value
-                                anyOf:
-                                  - type: boolean
-                                  - type: integer
-                                  - type: number
-                                  - type: string
-                              port_url:
-                                title: Port Url
-                                maxLength: 2083
-                                minLength: 1
-                                type: string
-                                format: uri
                         wcopy_project_url:
                           title: Wcopy Project Url
                           maxLength: 2083
