@@ -4,6 +4,7 @@ import _projects
 import _projects_meta
 import _projects_repos
 import yaml
+from __common import override_fastapi_openapi_method
 from fastapi import APIRouter, FastAPI
 from packaging.version import Version
 
@@ -26,13 +27,15 @@ app = FastAPI(
 
 router = APIRouter()
 router.include_router(_projects_meta.router, tags=["meta-projects"], prefix="/projects")
-router.include_router(_projects.router, tags=["projects"], prefix="/projects")
-router.include_router(
-    _projects_repos.router, tags=["version control"], prefix="/projects"
-)
+
+if 0:
+    router.include_router(_projects.router, tags=["projects"], prefix="/projects")
+    router.include_router(
+        _projects_repos.router, tags=["version control"], prefix="/projects"
+    )
 
 app.include_router(router, prefix=f"/v{version.major:1d}")
-
+override_fastapi_openapi_method(app)
 
 if __name__ == "__main__":
 
