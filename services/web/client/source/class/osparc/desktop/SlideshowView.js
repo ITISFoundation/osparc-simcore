@@ -172,13 +172,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         let view;
         if (node.isParameter()) {
           view = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
+          view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
           const renderer = new osparc.component.node.ParameterEditor(node);
-          renderer.buildForm();
-          renderer.set({
-            appearance: "settings-groupbox",
-            maxWidth: 800,
-            alignX: "center"
-          });
+          renderer.buildForm(false);
           view.add(renderer);
         } else {
           if (node.isFilePicker()) {
