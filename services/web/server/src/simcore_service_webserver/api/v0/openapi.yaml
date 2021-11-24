@@ -14392,6 +14392,114 @@ paths:
                         type:
                           title: Error Type
                           type: string
+  '/repos/projects/{project_uuid}/checkpoints/HEAD':
+    get:
+      tags:
+        - repository
+      summary: Gets HEAD (i.e. current) checkpoint
+      description: Get current commit
+      operationId: simcore_service_webserver.version_control_handlers._get_checkpoint_handler_head
+      parameters:
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                title: 'Envelope[Checkpoint]'
+                type: object
+                properties:
+                  data:
+                    title: Checkpoint
+                    required:
+                      - id
+                      - checksum
+                      - tag
+                      - message
+                      - parent
+                      - created_at
+                      - url
+                    type: object
+                    properties:
+                      id:
+                        title: Id
+                        exclusiveMinimum: false
+                        type: integer
+                      checksum:
+                        title: Checksum
+                        type: string
+                      tag:
+                        title: Tag
+                        type: string
+                      message:
+                        title: Message
+                        type: string
+                      parent:
+                        title: Parent
+                        exclusiveMinimum: false
+                        type: integer
+                      created_at:
+                        title: Created At
+                        type: string
+                        format: date-time
+                      url:
+                        title: Url
+                        maxLength: 2083
+                        minLength: 1
+                        type: string
+                        format: uri
+                  error:
+                    title: Error
+                    required:
+                      - code
+                      - message
+                    type: object
+                    properties:
+                      code:
+                        title: Code
+                        type: integer
+                      message:
+                        title: Message
+                        type: string
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                title: HTTPValidationError
+                type: object
+                properties:
+                  detail:
+                    title: Detail
+                    type: array
+                    items:
+                      title: ValidationError
+                      required:
+                        - loc
+                        - msg
+                        - type
+                      type: object
+                      properties:
+                        loc:
+                          title: Location
+                          type: array
+                          items:
+                            type: string
+                        msg:
+                          title: Message
+                          type: string
+                        type:
+                          title: Error Type
+                          type: string
   '/repos/projects/{project_uuid}/checkpoints/{ref_id}':
     get:
       tags:

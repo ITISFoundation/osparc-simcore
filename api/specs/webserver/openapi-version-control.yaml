@@ -126,6 +126,36 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
+  /repos/projects/{project_uuid}/checkpoints/HEAD:
+    get:
+      tags:
+        - repository
+      summary: Gets HEAD (i.e. current) checkpoint
+      description: Get current commit
+      operationId: simcore_service_webserver.version_control_handlers._get_checkpoint_handler_head
+      parameters:
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Envelope_Checkpoint_"
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
   /repos/projects/{project_uuid}/checkpoints/{ref_id}:
     get:
       tags:
