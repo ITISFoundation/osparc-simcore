@@ -76,24 +76,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
         }
       }
       return false;
-    },
-
-    applyUiMode: function(uiMode, uiModeIcon) {
-      let source = null;
-      let toolTipText = null;
-      switch (uiMode) {
-        case "guided":
-        case "app":
-          source = osparc.dashboard.CardBase.MODE_APP;
-          toolTipText = this.tr("App mode");
-          break;
-      }
-      if (source) {
-        uiModeIcon.set({
-          source,
-          toolTipText
-        });
-      }
     }
   },
 
