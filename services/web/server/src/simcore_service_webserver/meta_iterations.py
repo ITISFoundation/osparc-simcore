@@ -7,7 +7,7 @@ import json
 import logging
 import re
 from copy import deepcopy
-from typing import Any, Dict, Generator, Iterator, List, Optional, Tuple, TypedDict
+from typing import Any, Dict, Generator, Iterator, List, Tuple
 
 from aiohttp import web
 from models_library.basic_types import MD5Str, SHA1Str
@@ -21,8 +21,6 @@ from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
 from .utils import compute_sha1
 from .version_control_db import VersionControlForMetaModeling
 from .version_control_models import CommitID, ProjectDict
-
-##from .projects.projects_api import get_project_for_user
 
 log = logging.getLogger(__file__)
 
@@ -167,7 +165,7 @@ async def get_or_create_runnable_projects(
     assert vc_repo.user_id  # nosec
 
     # TODO:  handle UserUndefined and translate into web.HTTPForbidden
-    project: ProjectDict = await vc_repo.get_project(project_uuid)
+    project: ProjectDict = await vc_repo.get_project(str(project_uuid))
     project["thumbnail"] = project["thumbnail"] or ""
 
     project_nodes: Dict[NodeID, Node] = {
@@ -257,7 +255,7 @@ async def get_or_create_runnable_projects(
         wcopy_project_id = await vc_repo.get_wcopy_project_id(repo_id, commit_id)
         # assert project["uuid"] == wcopy_project_id  # nosec
 
-        runnable_project_ids.append(wcopy_project_id)
+        runnable_project_ids.append(ProjectID(wcopy_project_id))
         runnable_project_vc_commits.append(commit_id)
 
     return runnable_project_ids, runnable_project_vc_commits
@@ -271,7 +269,7 @@ async def get_runnable_projects_ids(
     vc_repo = VersionControlForMetaModeling(request)
     assert vc_repo.user_id  # nosec
 
-    project: ProjectDict = await vc_repo.get_project(project_uuid)
+    project: ProjectDict = await vc_repo.get_project(str(project_uuid))
     assert project["uuid"] == str(project_uuid)  # nosec
     project_nodes: Dict[NodeID, Node] = {
         nid: Node.parse_obj(n) for nid, n in project["workbench"].items()
