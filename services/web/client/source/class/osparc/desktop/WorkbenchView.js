@@ -67,7 +67,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     "expandNavBar": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event",
     "slidesEdit": "qx.event.type.Event",
-    "slidesGuidedStart": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
     "takeSnapshot": "qx.event.type.Event",
     "showSnapshots": "qx.event.type.Event"
@@ -98,7 +97,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __iframePage: null,
     __loggerView: null,
     __currentNodeId: null,
-    __startSlidesButton: null,
     __startAppButton: null,
     __editSlidesButton: null,
     __takeSnapshotButton: null,
@@ -793,22 +791,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       slideshowSection.add(slideshowButtons);
 
       const buttonsHeight = 28;
-      const editSlidesBtn = this.__editSlidesButton = new qx.ui.form.Button().set({
+      const editSlidesBtn = this.__editSlidesButton = new qx.ui.form.Button(this.tr("Edit Slideshow")).set({
         icon: "@FontAwesome5Solid/edit/14",
-        toolTipText: this.tr("Edit slideshow"),
         height: buttonsHeight
       });
       editSlidesBtn.addListener("execute", () => this.fireEvent("slidesEdit"), this);
       slideshowButtons.add(editSlidesBtn);
-
-      const startGuidedBtn = this.__startSlidesButton = new qx.ui.form.Button().set({
-        label: this.tr("Guided Mode"),
-        icon: "@FontAwesome5Solid/play/14",
-        toolTipText: this.tr("Start Guided Mode"),
-        height: buttonsHeight
-      });
-      startGuidedBtn.addListener("execute", () => this.fireEvent("slidesGuidedStart"), this);
-      slideshowButtons.add(startGuidedBtn);
 
       const startAppBtn = this.__startAppButton = new qx.ui.form.Button().set({
         label: this.tr("App Mode"),
@@ -830,8 +818,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
         const isOwner = osparc.data.model.Study.isOwner(study);
         this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
-        this.__startSlidesButton.setEnabled(study.hasSlideshow());
-        this.__startAppButton.setEnabled(study.getWorkbench().isPipelineLinear());
+        this.__startAppButton.setEnabled(study.hasSlideshow() || study.getWorkbench().isPipelineLinear());
       }
     },
 
