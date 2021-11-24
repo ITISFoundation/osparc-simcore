@@ -1,6 +1,5 @@
+import asyncio
 from pathlib import Path
-from .pools import async_on_threadpool
-import os
 
 
 async def remove_directory(path: Path, only_children: bool = False) -> None:
@@ -9,4 +8,6 @@ async def remove_directory(path: Path, only_children: bool = False) -> None:
         raise ValueError(f"Provided path={path} must be a directory")
 
     command = f"rm -r {path}/*" if only_children else f"rm -r {path}"
-    await async_on_threadpool(lambda: os.system(command))
+
+    process = await asyncio.create_subprocess_exec(*command.split(" "))
+    await process.wait()

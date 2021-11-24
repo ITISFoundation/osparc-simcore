@@ -1,5 +1,7 @@
 # pylint: disable=redefined-outer-name
+import asyncio
 import pytest
+from asyncio import AbstractEventLoop
 from pathlib import Path
 
 from servicelib.file_utils import remove_directory
@@ -37,13 +39,17 @@ def a_file(tmp_path) -> Path:
     return file_path
 
 
-async def test_remove_directory(some_dir: Path, only_children: bool) -> None:
+async def test_remove_directory(
+    loop: AbstractEventLoop, some_dir: Path, only_children: bool
+) -> None:
     assert some_dir.exists() is True
     await remove_directory(path=some_dir, only_children=only_children)
     assert some_dir.exists() is only_children
 
 
-async def test_remove_fail_fails(a_file: Path, only_children: bool) -> None:
+async def test_remove_fail_fails(
+    loop: AbstractEventLoop, a_file: Path, only_children: bool
+) -> None:
     assert a_file.exists() is True
 
     with pytest.raises(ValueError) as excinfo:
