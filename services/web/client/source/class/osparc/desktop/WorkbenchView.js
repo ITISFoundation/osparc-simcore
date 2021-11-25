@@ -105,8 +105,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __editSlidesButton: null,
     __takeSnapshotButton: null,
     __showSnapshotsButton: null,
-    __createIterationsButton: null,
-    __showIterationsButton: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -950,33 +948,27 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       iterationsSection.add(iterationButtons);
 
       const buttonsHeight = 28;
-      const createIterationsBtn = this.__createIterationsButton = new qx.ui.form.Button().set({
+      const createIterationsBtn = new qx.ui.form.Button().set({
         label: this.tr("Create Iterations"),
         height: buttonsHeight
       });
+      createIterationsBtn.setEnabled(osparc.data.Permissions.getInstance().canDo("study.snapshot.create"));
+      createIterationsBtn.setEnabled(false);
       createIterationsBtn.addListener("execute", () => this.fireEvent("createIterations"), this);
       iterationButtons.add(createIterationsBtn);
 
-      const showIterationsBtn = this.__showIterationsButton = new qx.ui.form.Button().set({
+      const showIterationsBtn = new qx.ui.form.Button().set({
         label: this.tr("Show Iterations"),
         height: buttonsHeight
+      });
+      const store = osparc.store.Store.getInstance();
+      store.bind("iterations", showIterationsBtn, "enabled", {
+        converter: iterations => Boolean(iterations.length)
       });
       showIterationsBtn.addListener("execute", () => this.fireEvent("showIterations"), this);
       iterationButtons.add(showIterationsBtn);
 
-      this.evalIterationsButtons();
-
       return iterationsSection;
-    },
-
-    evalIterationsButtons: async function() {
-      const study = this.getStudy();
-      if (study && this.__takeSnapshotButton) {
-        this.__takeSnapshotButton.setEnabled(osparc.data.Permissions.getInstance().canDo("study.snapshot.create"));
-
-        const hasSnapshots = await study.hasSnapshots();
-        this.__showSnapshotsButton.setEnabled(hasSnapshots);
-      }
     },
 
     __populateSecondPanelFilePicker: function(filePicker) {
