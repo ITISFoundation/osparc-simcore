@@ -8,7 +8,7 @@ from typing import AsyncIterator, Callable, Dict, Iterable, List, NamedTuple
 import pytest
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
-from dask_gateway import Gateway
+from dask_gateway import Gateway, auth
 from dask_gateway_server.app import DaskGateway
 from dask_gateway_server.backends.inprocess import InProcessBackend
 from distributed.deploy.spec import SpecCluster
@@ -125,6 +125,7 @@ def test_get_default_cluster_entrypoint(clusters_config: None, client: TestClien
 class DaskGatewayServer(NamedTuple):
     address: str
     proxy_address: str
+    password: str
 
 
 @pytest.fixture
@@ -136,6 +137,7 @@ async def local_dask_gateway_server(
     c.DaskGateway.address = "127.0.0.1:0"  # type: ignore
     c.Proxy.address = "127.0.0.1:0"  # type: ignore
     c.DaskGateway.authenticator_class = "dask_gateway_server.auth.SimpleAuthenticator"  # type: ignore
+    c.SimpleAuthenticator.password = "qweqwe"  # type: ignore
     print("--> creating local dask gateway server")
     dask_gateway_server = DaskGateway(config=c)
     dask_gateway_server.initialize([])  # that is a shitty one!
@@ -146,6 +148,7 @@ async def local_dask_gateway_server(
     yield DaskGatewayServer(
         f"http://{dask_gateway_server.backend.proxy.address}",
         f"gateway://{dask_gateway_server.backend.proxy.tcp_address}",
+        c.SimpleAuthenticator.password,  # type: ignore
     )
     print("--> local dask gateway server switching off...")
     await dask_gateway_server.cleanup()
@@ -157,6 +160,7 @@ async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayS
         local_dask_gateway_server.address,
         local_dask_gateway_server.proxy_address,
         asynchronous=True,
+        auth=auth.BasicAuth("pytest_user", local_dask_gateway_server.password),
     ) as gateway:
         print(f"--> {gateway=} created")
         cluster_options = await gateway.cluster_options()
