@@ -21,6 +21,8 @@ from setuptools import find_packages, setup
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
+VERSION = (CURRENT_DIR / "VERSION").read_text().strip()
+
 
 def read_reqs(reqs_path: Path) -> Set[str]:
     return {
@@ -35,7 +37,7 @@ def read_reqs(reqs_path: Path) -> Set[str]:
 
 
 INSTALL_REQUIREMENTS = tuple(
-    read_reqs(CURRENT_DIR / "requirements" / "_base.txt") | {"simcore-models-library"}
+    read_reqs(CURRENT_DIR / "requirements" / "prod.txt") #| {"simcore-models-library"}
 )  # STRICT requirements
 
 TEST_REQUIREMENTS = tuple(
@@ -45,7 +47,7 @@ TEST_REQUIREMENTS = tuple(
 
 SETUP = dict(
     name="simcore-service-integration",
-    version="1.0.1",
+    version=VERSION,
     author=", ".join(
         (
             "Pedro Crespo-Valero (pcrespov)",
