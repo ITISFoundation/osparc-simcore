@@ -253,9 +253,10 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
     return enveloped_json_response(data=iterations_items, status_cls=web.HTTPCreated)
 
 
-@routes.get(
-    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}",
-    name=f"{__name__}._get_meta_project_iterations_handler",
-)
-async def _get_meta_project_iterations_handler(request: web.Request) -> web.Response:
-    raise NotImplementedError
+# TODO:
+# @routes.get(
+#     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}",
+#     name=f"{__name__}._get_meta_project_iterations_handler",
+# )
+# async def _get_meta_project_iterations_handler(request: web.Request) -> web.Response:
+#     raise NotImplementedError
