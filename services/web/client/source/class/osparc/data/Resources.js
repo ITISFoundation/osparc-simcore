@@ -168,6 +168,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/repos/projects/{studyId}/checkpoints?offset={offset}&limit={limit}"
           },
+          getCurrentCommit: {
+            method: "GET",
+            url: statics.API + "/repos/projects/{studyId}/checkpoints/HEAD"
+          },
           getOne: {
             useCache: false,
             method: "GET",
@@ -201,12 +205,19 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
+      /*
+       * ITERATIONS
+       */
       "iterations": {
         idField: "uuid",
         endpoints: {
           get: {
             method: "GET",
-            url: statics.API + "/repos/projects/{studyId}/{snapshotId}/iterations"
+            url: statics.API + "/projects/{studyId}/checkpoint/{snapshotId}/iterations"
+          },
+          createIterations: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/checkpoint/{snapshotId}/iterations"
           }
         }
       },
