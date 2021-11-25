@@ -9,6 +9,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
+from models_library.clusters import Cluster
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -18,11 +19,14 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessage,
 )
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_service_director_v2.modules.db.repositories.clusters import (
+    ClustersRepository,
+)
 
 from ...core.settings import DaskSchedulerSettings
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
 from ...models.schemas.constants import ClusterID, UserID
-from ...modules.dask_client import DaskClient
+from ...modules.dask_clients_pool import DaskClientsPool
 from ...utils.dask import (
     clean_task_output_and_log_files_if_invalid,
     parse_dask_job_id,
@@ -39,7 +43,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DaskScheduler(BaseCompScheduler):
     settings: DaskSchedulerSettings
-    dask_client: DaskClient
+    dask_clients_pool: DaskClientsPool
     rabbitmq_client: RabbitMQClient
 
     def __post_init__(self):
@@ -58,16 +62,27 @@ class DaskScheduler(BaseCompScheduler):
         callback: Callable[[], None],
     ):
         # now transfer the pipeline to the dask scheduler
-        task_job_ids: List[
-            Tuple[NodeID, str]
-        ] = await self.dask_client.send_computation_tasks(
-            user_id=user_id,
-            project_id=project_id,
-            cluster_id=cluster_id,
-            tasks=scheduled_tasks,
-            callback=self._on_task_completed,
-        )
-        logger.debug("started following tasks (node_id, job_id)[%s]", task_job_ids)
+        cluster: Cluster = self.dask_clients_pool.default_cluster(self.settings)
+        if cluster_id != self.settings.DASK_DEFAULT_CLUSTER_ID:
+            clusters_repo: ClustersRepository = get_repository(
+                self.db_engine, ClustersRepository
+            )  # type: ignore
+            cluster = await clusters_repo.get_cluster(cluster_id)
+        async with self.dask_clients_pool.acquire(cluster) as client:
+            task_job_ids: List[
+                Tuple[NodeID, str]
+            ] = await client.send_computation_tasks(
+                user_id=user_id,
+                project_id=project_id,
+                cluster_id=cluster_id,
+                tasks=scheduled_tasks,
+                callback=self._on_task_completed,
+            )
+            logger.debug(
+                "started following tasks (node_id, job_id)[%s] on cluster %s",
+                f"{task_job_ids=}",
+                f"{cluster_id=}",
+            )
         # update the database so we do have the correct job_ids there
         comp_tasks_repo: CompTasksRepository = get_repository(
             self.db_engine, CompTasksRepository
