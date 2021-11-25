@@ -345,9 +345,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__getStudyLogger().error(null, "Submission failed");
       } else {
         if (iterationRefIds) {
-          console.log(iterationRefIds);
-          // TODO: get the iteration information
-          // osparc.store.Store.getInstance().setIterations(iterationRefIds);
+          // if the reposnse contains the ref_ids field, it means that a meta-project was run
+          this.getStudy().getIterations()
+            .then(iterations => {
+              osparc.store.Store.getInstance().setIterations(iterations);
+            });
         }
         this.__getStudyLogger().info(null, "Pipeline started");
         /* If no projectStateUpdated comes in 60 seconds, client must

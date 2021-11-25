@@ -220,36 +220,6 @@ qx.Class.define("osparc.data.model.Study", {
       return false;
     },
 
-    getIterations: function(studyId) {
-      return new Promise((resolve, reject) => {
-        if (!osparc.data.Permissions.getInstance().canDo("study.snapshot.read")) {
-          reject();
-          return;
-        }
-        this.self().getCurrentSnapshot(studyId)
-          .then(snapshot => {
-            const params = {
-              url: {
-                studyId,
-                snapshotId: snapshot["id"]
-              }
-            };
-            osparc.data.Resources.get("iterations", params)
-              .then(iterations => {
-                resolve(iterations);
-              })
-              .catch(err => {
-                console.error(err);
-                reject(err);
-              });
-          })
-          .catch(err => {
-            console.error(err);
-            reject(err);
-          });
-      });
-    },
-
     getUiMode: function(studyData) {
       if ("ui" in studyData && "mode" in studyData["ui"]) {
         return studyData["ui"]["mode"];
@@ -290,7 +260,7 @@ qx.Class.define("osparc.data.model.Study", {
         }
         const params = {
           url: {
-            "studyId": this.getStudyId()
+            "studyId": this.getUuid()
           }
         };
         osparc.data.Resources.get("snapshots", params)
@@ -335,7 +305,34 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     getIterations: function() {
-      return this.self().getIterations(this.getUuid());
+      return new Promise((resolve, reject) => {
+        if (!osparc.data.Permissions.getInstance().canDo("study.snapshot.read")) {
+          reject();
+          return;
+        }
+        const studyId = this.getUuid();
+        this.self().getCurrentSnapshot(studyId)
+          .then(snapshot => {
+            const params = {
+              url: {
+                studyId,
+                snapshotId: snapshot["id"]
+              }
+            };
+            osparc.data.Resources.get("iterations", params)
+              .then(iterations => {
+                resolve(iterations);
+              })
+              .catch(err => {
+                console.error(err);
+                reject(err);
+              });
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
     },
 
     getPipelineState: function() {
