@@ -37,7 +37,7 @@ def read_reqs(reqs_path: Path) -> Set[str]:
 
 
 INSTALL_REQUIREMENTS = tuple(
-    read_reqs(CURRENT_DIR / "requirements" / "prod.txt") #| {"simcore-models-library"}
+    read_reqs(CURRENT_DIR / "requirements" / "_base.txt") #| {"simcore-models-library"}
 )  # STRICT requirements
 
 TEST_REQUIREMENTS = tuple(
