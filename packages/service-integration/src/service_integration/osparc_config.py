@@ -12,6 +12,7 @@ integrates with osparc.
     -
 """
 
+import io
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
@@ -55,20 +56,30 @@ OSPARC_LABEL_PREFIXES = (
 # Project config -> stored in repo's basedir/.osparc
 #
 
+COMPOSE_OVERWRITE_DEFAULTS = """
+services:
+  {service_name}:
+    build:
+      dockerfile: Dockerfile
+"""
 
-class ProjectConfig(BaseModel):
-    """
-    User overwritable configurations relative to the structure of repository
-    """
 
-    dockerfile_path: Path = Field(
-        "docker/Dockerfile", description="path from where to load the Dockerfile"
-    )
-
-    # add hooks for tests and other thins which we want to automatically pick up
+class DockerComposeOverwriteCfg(ComposeSpecification):
+    """picks up configurations used to overwrite the docker-compuse output"""
 
     @classmethod
-    def from_yaml(cls, path: Path) -> "ProjectConfig":
+    def from_yaml(
+        cls, path: Optional[Path], service_name: Optional[str] = None
+    ) -> "DockerComposeOverwriteCfg":
+        """Loads from the file or creates the content of the file if missing"""
+        if path is None:
+            if service_name is None:
+                raise ValueError("Must provide a 'service_name' when path is missing")
+
+            string_io = io.StringIO(
+                COMPOSE_OVERWRITE_DEFAULTS.format(service_name=service_name)
+            )
+            return cls.parse_obj(yaml_safe_load(string_io))
         with path.open() as fh:
             data = yaml_safe_load(fh)
         return cls.parse_obj(data)
@@ -110,7 +121,7 @@ class MetaConfig(ServiceDockerData):
         )
         return labels
 
-    def service_name(self):
+    def service_name(self) -> str:
         """name used as key in the compose-spec services map"""
         return self.key.split("/")[-1].replace(" ", "")
 
@@ -215,7 +226,8 @@ class ConfigFilesStructure:
     """
 
     FILES_GLOBS = {
-        ProjectConfig.__name__: "project.y*ml",
+        # TODO: below DockerComposeOverwrite might not be required, maybe remove?
+        DockerComposeOverwriteCfg.__name__: "docker-compose.overwrite.y*ml",
         MetaConfig.__name__: "metadata.y*ml",
         RuntimeConfig.__name__: "runtime.y*ml",
     }

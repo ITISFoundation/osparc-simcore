@@ -14,6 +14,9 @@ class IntegrationContext(BaseSettings):
     REGISTRY_NAME: str = Field(
         "", description="name of the registry to use for images, default is Docker Hub"
     )
+    COMPOSE_VERSION: str = Field(
+        "3.7", description="version of the docker-compose spec"
+    )
 
     class Config:
         case_sensitive = False

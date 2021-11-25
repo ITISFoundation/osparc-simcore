@@ -8,13 +8,13 @@ from pydantic import ValidationError
 from pydantic.main import BaseModel
 
 from ..compose_spec_model import ComposeSpecification
-from ..osparc_config import MetaConfig, ProjectConfig, RuntimeConfig
+from ..osparc_config import MetaConfig, DockerComposeOverwriteCfg, RuntimeConfig
 
 
 def create_osparc_specs(
     compose_spec_path: Path,
-    project_cfg_path: Path = Path("project.yml"),
-    io_specs_path: Path = Path("metadata.yml"),
+    docker_compose_overwrite_path: Path = Path("docker-compose.overwrite.yml"),
+    metadata_path: Path = Path("metadata.yml"),
     service_specs_path: Path = Path("runtime-spec.yml"),
 ):
     click.echo(f"Creating osparc config files from {compose_spec_path}")
@@ -53,11 +53,17 @@ def create_osparc_specs(
                     assert isinstance(labels.__root__, dict)
                     labels = labels.__root__
 
-                project_cfg = ProjectConfig()
-                _save(service_name, project_cfg_path, project_cfg)
-
                 meta_cfg = MetaConfig.from_labels_annotations(labels)
-                _save(service_name, io_specs_path, meta_cfg)
+                _save(service_name, metadata_path, meta_cfg)
+
+                docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.from_yaml(
+                    path=None, service_name=meta_cfg.service_name()
+                )
+                _save(
+                    service_name,
+                    docker_compose_overwrite_path,
+                    docker_compose_overwrite_cfg,
+                )
 
                 runtime_cfg = RuntimeConfig.from_labels_annotations(labels)
                 _save(service_name, service_specs_path, runtime_cfg)
@@ -86,7 +92,7 @@ def main(
     """Creates osparc config from complete docker compose-spec"""
     # TODO: sync defaults among CLI commands
     config_dir = compose_spec_path.parent / ".osparc"
-    project_cfg_path = config_dir / "project.yml"
+    project_cfg_path = config_dir / "docker-compose.overwrite.yml"
     meta_cfg_path = config_dir / "metadata.yml"
     runtime_cfg_path = config_dir / "runtime.yml"
 

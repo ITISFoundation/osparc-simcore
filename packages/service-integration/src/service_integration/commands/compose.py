@@ -9,25 +9,27 @@ from ..compose_spec_model import ComposeSpecification
 from ..context import IntegrationContext
 from ..labels_annotations import to_labels
 from ..oci_image_spec import LS_LABEL_PREFIX, OCI_LABEL_PREFIX
-from ..osparc_config import MetaConfig, ProjectConfig, RuntimeConfig
+from ..osparc_config import MetaConfig, DockerComposeOverwriteCfg, RuntimeConfig
 from ..osparc_image_specs import create_image_spec
 
 
 def create_docker_compose_image_spec(
     integration_context: IntegrationContext,
-    project_path: Path,
-    io_config_path: Path,
+    meta_config_path: Path,
+    docker_compose_overwrite_path: Path,
     service_config_path: Path = None,
 ) -> ComposeSpecification:
     """Creates image compose-spec"""
 
-    config_basedir = io_config_path.parent
+    config_basedir = meta_config_path.parent
 
     # required
-    project_cfg = ProjectConfig.from_yaml(project_path)
+    meta_cfg = MetaConfig.from_yaml(meta_config_path)
 
     # required
-    meta_cfg = MetaConfig.from_yaml(io_config_path)
+    docker_compose_overwrite_cfg = DockerComposeOverwriteCfg.from_yaml(
+        docker_compose_overwrite_path, service_name=meta_cfg.service_name()
+    )
 
     # optional
     runtime_cfg = None
@@ -65,8 +67,8 @@ def create_docker_compose_image_spec(
 
     compose_spec = create_image_spec(
         integration_context,
-        project_cfg,
         meta_cfg,
+        docker_compose_overwrite_cfg,
         runtime_cfg,
         extra_labels=extra_labels,
     )
@@ -117,13 +119,15 @@ def main(
         for meta_cfg in basedir.rglob(meta_filename):
             config_name = meta_cfg.parent.name
             config_filenames[config_name] = []
-
-            # loads defaults
-            project_cfg = meta_cfg.parent / "project.yml"
-            if project_cfg.exists():
-                config_filenames[config_name].append(project_cfg)
-
+            # load meta
             config_filenames[config_name].append(meta_cfg)
+
+            # loads overwrites
+            docker_compose_overwrite_path = (
+                meta_cfg.parent / "docker-compose.overwrite.yml"
+            )
+            if docker_compose_overwrite_path.exists():
+                config_filenames[config_name].append(docker_compose_overwrite_path)
 
             # find pair (not required)
             runtime_cfg = meta_cfg.parent / "runtime.yml"

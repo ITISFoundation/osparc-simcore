@@ -20,10 +20,21 @@ DEFAULTS = IntegrationContext()
     default=lambda: DEFAULTS.REGISTRY_NAME,
     show_default=DEFAULTS.REGISTRY_NAME,
 )
+@click.option(
+    "--COMPOSE_VERSION",
+    "compose_version",
+    help="overwrite docker-compose spec version",
+    type=str,
+    default=lambda: DEFAULTS.COMPOSE_VERSION,
+    show_default=DEFAULTS.COMPOSE_VERSION,
+)
 @click.version_option(version=__version__)
-def main(ctx: Context, registry_name: str):
+def main(ctx: Context, registry_name: str, compose_version: str):
     """o2s2parc service integration library"""
-    ctx.integration_context = IntegrationContext(REGISTRY_NAME=registry_name)
+    ctx.integration_context = IntegrationContext(
+        REGISTRY_NAME=registry_name,
+        COMPOSE_VERSION=compose_version,
+    )
 
 
 main.add_command(compose.main, "compose")
