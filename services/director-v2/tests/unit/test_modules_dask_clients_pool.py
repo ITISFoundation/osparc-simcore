@@ -7,6 +7,7 @@ from typing import Any, Dict
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
+from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import ConfigurationError
 from simcore_service_director_v2.core.settings import AppSettings
@@ -45,3 +46,19 @@ def test_dask_clients_pool_missing_raises_configuration_error(
     with TestClient(app, raise_server_exceptions=True) as client:
         with pytest.raises(ConfigurationError):
             DaskClientsPool.instance(client.app)
+
+
+def test_dask_clients_pool_properly_setup_and_deleted(
+    minimal_dask_config: None, mocker: MockerFixture
+):
+    mocked_dask_clients_pool = mocker.patch(
+        "simcore_service_director_v2.modules.dask_clients_pool.DaskClientsPool",
+        autospec=True,
+    )
+    mocked_dask_clients_pool.create.return_value = mocked_dask_clients_pool
+    settings = AppSettings.create_from_envs()
+    app = init_app(settings)
+
+    with TestClient(app, raise_server_exceptions=True) as client:
+        mocked_dask_clients_pool.create.assert_called_once()
+    mocked_dask_clients_pool.delete.assert_called_once()
