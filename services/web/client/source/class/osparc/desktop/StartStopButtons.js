@@ -72,7 +72,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
         selectedNodeIds.forEach(selectedNodeId => {
           runnableNodes.push(this.getStudy().getWorkbench().getNode(selectedNodeId));
         });
-        const isSelectionRunnable = runnableNodes.length && runnableNodes.some(node => node && node.isComputational());
+        const isSelectionRunnable = runnableNodes.length && runnableNodes.some(node => node && (node.isComputational() || node.isIterator()));
         if (isSelectionRunnable) {
           this.__startButton.exclude();
           this.__startSelectionButton.show();
