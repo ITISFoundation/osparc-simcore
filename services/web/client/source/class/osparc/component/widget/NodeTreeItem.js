@@ -184,7 +184,6 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         flex: 1
       });
 
-
       this.getChildControl("fullscreen-button");
       this.getChildControl("options-rename-button");
       this.getChildControl("options-info-button");

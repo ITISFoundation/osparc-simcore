@@ -310,12 +310,11 @@ qx.Class.define("osparc.data.model.Study", {
           reject();
           return;
         }
-        const studyId = this.getUuid();
-        this.self().getCurrentSnapshot(studyId)
+        this.getCurrentSnapshot()
           .then(snapshot => {
             const params = {
               url: {
-                studyId,
+                studyId: this.getUuid(),
                 snapshotId: snapshot["id"]
               }
             };
