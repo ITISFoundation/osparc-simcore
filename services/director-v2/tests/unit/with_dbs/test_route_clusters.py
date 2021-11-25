@@ -216,5 +216,7 @@ def test_get_cluster_entrypoint(
     )
     response = client.get(f"/v2/clusters/{some_cluster.id}")
     assert response.status_code == status.HTTP_200_OK
-    data = response.json()
-    assert data
+    print(f"<-- received cluster details response {response=}")
+    cluster_out = ClusterOut.parse_obj(response.json())
+    assert cluster_out
+    print(f"<-- received cluster details {cluster_out=}")

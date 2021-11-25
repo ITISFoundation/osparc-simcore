@@ -38,12 +38,12 @@ class DaskClientsPool:
     async def create(
         cls, app: FastAPI, settings: DaskSchedulerSettings
     ) -> "DaskClientsPool":
-        new_instance = cls(app=app, settings=settings)
-        # create default dask client
-        default_cluster = DaskClientsPool.default_cluster(settings)
-        async with new_instance.acquire(default_cluster):
-            ...
-        return new_instance
+        return cls(app=app, settings=settings)
+        # # create default dask client
+        # default_cluster = DaskClientsPool.default_cluster(settings)
+        # async with new_instance.acquire(default_cluster):
+        #     ...
+        # return new_instance
 
     @staticmethod
     def instance(app: FastAPI) -> "DaskClientsPool":

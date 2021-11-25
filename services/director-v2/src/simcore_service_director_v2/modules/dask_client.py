@@ -59,7 +59,7 @@ logger = logging.getLogger(__name__)
 CLUSTER_RESOURCE_MOCK_USAGE: float = 1e-9
 
 
-async def _create_internal_client_base_on_auth(
+async def _create_internal_client_based_on_auth(
     endpoint: AnyUrl, authentication: ClusterAuthentication
 ) -> Tuple[
     distributed.Client,
@@ -85,7 +85,17 @@ async def _create_internal_client_base_on_auth(
     elif isinstance(authentication, JupyterHubTokenAuthentication):
         auth = dask_gateway.JupyterHubAuth(authentication.api_token)
     gateway = dask_gateway.Gateway(address=f"{endpoint}", auth=auth, asynchronous=True)
-    cluster = await gateway.new_cluster(shutdown_on_close=True)
+    # if there is already a cluster that means we can re-connect to it
+    cluster_reports_list = await gateway.list_clusters()
+    cluster = None
+    if cluster_reports_list:
+        cluster = await gateway.connect(
+            cluster_reports_list[0].name, shutdown_on_close=False
+        )
+    else:
+        cluster = await gateway.new_cluster(shutdown_on_close=False)
+    assert cluster  # nosec
+    await cluster.adapt()
     return (await cluster.get_client(), cluster, gateway)
 
 
@@ -130,7 +140,9 @@ class DaskClient:
                     dask_client,
                     cluster,
                     gateway,
-                ) = await _create_internal_client_base_on_auth(endpoint, authentication)
+                ) = await _create_internal_client_based_on_auth(
+                    endpoint, authentication
+                )
                 check_client_can_connect_to_scheduler(dask_client)
                 app.state.dask_client = cls(
                     app=app,
