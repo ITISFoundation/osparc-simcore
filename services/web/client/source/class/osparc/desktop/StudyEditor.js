@@ -146,11 +146,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       // reload snapshots cache
       store.invalidate("snapshots");
-      study.getSnapshots();
+      study.getSnapshots()
+        .then(snapshots => {
+          store.setSnapshots(snapshots);
+        });
 
       // reload iterations cache
       store.invalidate("iterations");
-      study.getIterations();
+      study.getIterations()
+        .then(iterations => {
+          store.setIterations(iterations);
+        });
 
       study.buildWorkbench();
       study.openStudy()
@@ -338,7 +344,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__getStudyLogger().error(null, "Submission failed");
       } else {
         if (iterationRefIds) {
-          osparc.store.Store.getInstance().setIterations(iterationRefIds);
+          console.log(iterationRefIds);
+          // TODO: get the iteration information
+          // osparc.store.Store.getInstance().setIterations(iterationRefIds);
         }
         this.__getStudyLogger().info(null, "Pipeline started");
         /* If no projectStateUpdated comes in 60 seconds, client must

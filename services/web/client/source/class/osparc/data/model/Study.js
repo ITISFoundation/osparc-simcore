@@ -279,11 +279,11 @@ qx.Class.define("osparc.data.model.Study", {
           return;
         }
         this.self().getCurrentSnapshot(studyId)
-          .then(refId => {
+          .then(snapshot => {
             const params = {
               url: {
                 studyId,
-                snapshotId: refId
+                snapshotId: snapshot["id"]
               }
             };
             osparc.data.Resources.get("iterations", params)
