@@ -136,7 +136,9 @@ class DaskClient:
                     app=app,
                     client=dask_client,
                     settings=settings,
-                    cancellation_dask_pub=distributed.Pub(TaskCancelEvent.topic_name()),
+                    cancellation_dask_pub=distributed.Pub(
+                        TaskCancelEvent.topic_name(), client=dask_client
+                    ),
                     cluster=cluster,
                     gateway=gateway,
                 )
@@ -184,7 +186,7 @@ class DaskClient:
         ]
         self._subscribed_tasks = [
             asyncio.create_task(
-                dask_sub_consumer_task(event, handler),
+                dask_sub_consumer_task(event, handler, self.client),
                 name=f"{event.topic_name()}_dask_sub_consumer_task",
             )
             for event, handler in _EVENT_CONSUMER_MAP

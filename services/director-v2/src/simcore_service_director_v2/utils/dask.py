@@ -306,9 +306,11 @@ async def clean_task_output_and_log_files_if_invalid(
 
 
 async def dask_sub_consumer(
-    task_event: DaskTaskEvents, handler: Callable[[str], Awaitable[None]]
+    task_event: DaskTaskEvents,
+    handler: Callable[[str], Awaitable[None]],
+    dask_client: distributed.Client,
 ):
-    dask_sub = distributed.Sub(task_event.topic_name())
+    dask_sub = distributed.Sub(task_event.topic_name(), client=dask_client)
     async for dask_event in dask_sub:
         logger.debug(
             "received dask event '%s' of topic %s",
@@ -319,14 +321,16 @@ async def dask_sub_consumer(
 
 
 async def dask_sub_consumer_task(
-    task_event: DaskTaskEvents, handler: Callable[[str], Awaitable[None]]
+    task_event: DaskTaskEvents,
+    handler: Callable[[str], Awaitable[None]],
+    dask_client: distributed.Client,
 ):
     while True:
         try:
             logger.info(
                 "starting consumer task for topic '%s'", task_event.topic_name()
             )
-            await dask_sub_consumer(task_event, handler)
+            await dask_sub_consumer(task_event, handler, dask_client)
         except asyncio.CancelledError:
             logger.info("stopped consumer task for topic '%s'", task_event.topic_name())
             raise
