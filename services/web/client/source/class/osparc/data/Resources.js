@@ -177,7 +177,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "PATCH",
             url: statics.API + "/repos/projects/{studyId}/checkpoints/{snapshotId}"
           },
-          current: {
+          currentCommit: {
             method: "GET",
             url: statics.API + "/repos/projects/{studyId}/checkpoints/HEAD"
           },

@@ -144,18 +144,19 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const store = osparc.store.Store.getInstance();
       store.setCurrentStudy(study);
 
-      // reload snapshots cache
+      // reload caches
       store.invalidate("snapshots");
+      store.invalidate("iterations");
+
       study.getSnapshots()
         .then(snapshots => {
           store.setSnapshots(snapshots);
-        });
-
-      // reload iterations cache
-      store.invalidate("iterations");
-      study.getIterations()
-        .then(iterations => {
-          store.setIterations(iterations);
+          if (snapshots.length) {
+            study.getIterations()
+              .then(iterations => {
+                store.setIterations(iterations);
+              });
+          }
         });
 
       study.buildWorkbench();
