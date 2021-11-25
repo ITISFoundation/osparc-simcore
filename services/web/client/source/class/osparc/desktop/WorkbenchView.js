@@ -70,7 +70,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     "slidesGuidedStart": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
     "takeSnapshot": "qx.event.type.Event",
-    "showSnapshots": "qx.event.type.Event"
+    "showSnapshots": "qx.event.type.Event",
+    "createIterations": "qx.event.type.Event",
+    "showIterations": "qx.event.type.Event"
   },
 
   properties: {
@@ -103,6 +105,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __editSlidesButton: null,
     __takeSnapshotButton: null,
     __showSnapshotsButton: null,
+    __createIterationsButton: null,
+    __showIterationsButton: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -840,12 +844,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__studyOptionsPage.add(new osparc.studycard.Medium(study), {
         flex: 1
       });
-
       this.__studyOptionsPage.add(this.__getSlideshowSection());
-
-      this.__studyOptionsPage.add(this.__getSnapshotsSection(), {
-        flex: 1
-      });
+      this.__studyOptionsPage.add(this.__getSnapshotsSection());
+      this.__studyOptionsPage.add(this.__getIterationsSection());
     },
 
     __getSlideshowSection: function() {
@@ -906,11 +907,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         font: "title-14"
       }));
 
-      const snapshotButtons = this.__takeSnapshotButton = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const snapshotButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       snapshotSection.add(snapshotButtons);
 
       const buttonsHeight = 28;
-      const takeSnapshotBtn = new qx.ui.form.Button().set({
+      const takeSnapshotBtn = this.__takeSnapshotButton = new qx.ui.form.Button().set({
         label: this.tr("New"),
         height: buttonsHeight
       });
@@ -930,6 +931,45 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     evalSnapshotsButtons: async function() {
+      const study = this.getStudy();
+      if (study && this.__takeSnapshotButton) {
+        this.__takeSnapshotButton.setEnabled(osparc.data.Permissions.getInstance().canDo("study.snapshot.create"));
+
+        const hasSnapshots = await study.hasSnapshots();
+        this.__showSnapshotsButton.setEnabled(hasSnapshots);
+      }
+    },
+
+    __getIterationsSection: function() {
+      const iterationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      iterationsSection.add(new qx.ui.basic.Label(this.tr("Iterations")).set({
+        font: "title-14"
+      }));
+
+      const iterationButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      iterationsSection.add(iterationButtons);
+
+      const buttonsHeight = 28;
+      const createIterationsBtn = this.__createIterationsButton = new qx.ui.form.Button().set({
+        label: this.tr("Create Iterations"),
+        height: buttonsHeight
+      });
+      createIterationsBtn.addListener("execute", () => this.fireEvent("createIterations"), this);
+      iterationButtons.add(createIterationsBtn);
+
+      const showIterationsBtn = this.__showIterationsButton = new qx.ui.form.Button().set({
+        label: this.tr("Show Iterations"),
+        height: buttonsHeight
+      });
+      showIterationsBtn.addListener("execute", () => this.fireEvent("showIterations"), this);
+      iterationButtons.add(showIterationsBtn);
+
+      this.evalIterationsButtons();
+
+      return iterationsSection;
+    },
+
+    evalIterationsButtons: async function() {
       const study = this.getStudy();
       if (study && this.__takeSnapshotButton) {
         this.__takeSnapshotButton.setEnabled(osparc.data.Permissions.getInstance().canDo("study.snapshot.create"));
