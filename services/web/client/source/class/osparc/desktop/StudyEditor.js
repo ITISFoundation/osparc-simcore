@@ -321,11 +321,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["pipeline_id"];
+      const iterationRefIds = resp.data["ref_ids"];
       this.__getStudyLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
         this.__getStudyLogger().error(null, "Submission failed");
       } else {
+        if (iterationRefIds) {
+          osparc.store.Store.getInstance().setIterations(iterationRefIds);
+        }
         this.__getStudyLogger().info(null, "Pipeline started");
         /* If no projectStateUpdated comes in 60 seconds, client must
         check state of pipeline and update button accordingly. */
