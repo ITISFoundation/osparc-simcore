@@ -272,21 +272,28 @@ qx.Class.define("osparc.data.model.Study", {
       });
     },
 
-    getIterations: function(studyId, snapshotId) {
+    getIterations: function(studyId) {
       return new Promise((resolve, reject) => {
         if (!osparc.data.Permissions.getInstance().canDo("study.snapshot.read")) {
           reject();
           return;
         }
-        const params = {
-          url: {
-            studyId,
-            snapshotId
-          }
-        };
-        osparc.data.Resources.get("iterations", params)
-          .then(iterations => {
-            resolve(iterations);
+        this.self().getCurrentSnapshot(studyId)
+          .then(refId => {
+            const params = {
+              url: {
+                studyId,
+                snapshotId: refId
+              }
+            };
+            osparc.data.Resources.get("iterations", params)
+              .then(iterations => {
+                resolve(iterations);
+              })
+              .catch(err => {
+                console.error(err);
+                reject(err);
+              });
           })
           .catch(err => {
             console.error(err);
@@ -340,8 +347,7 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     getIterations: function() {
-      const snapshotId = "HEAD";
-      return this.self().getIterations(this.getUuid(), snapshotId);
+      return this.self().getIterations(this.getUuid());
     },
 
     getPipelineState: function() {

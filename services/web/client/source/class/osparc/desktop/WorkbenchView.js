@@ -235,9 +235,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         study.getUi().addListener("changeMode", () => this.__evalSlidesButtons());
         this.__evalSlidesButtons();
 
-        // invalid snapshots and iterations caches
-        Store
-
         // if there are no nodes, preselect the study item (show study info)
         const nodes = study.getWorkbench().getNodes(true);
         if (Object.values(nodes).length === 0) {

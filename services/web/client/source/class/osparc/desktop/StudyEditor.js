@@ -141,7 +141,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this._hideLoadingPage();
 
-      osparc.store.Store.getInstance().setCurrentStudy(study);
+      const store = osparc.store.Store.getInstance();
+      store.setCurrentStudy(study);
+
+      // reload snapshots cache
+      store.invalidate("snapshots");
+      study.getSnapshots();
+
+      // reload iterations cache
+      store.invalidate("iterations");
+      study.getIterations();
+
       study.buildWorkbench();
       study.openStudy()
         .then(() => {
@@ -437,6 +447,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         };
         osparc.data.Resources.fetch("snapshots", "takeSnapshot", params)
+          .then(data => {
+            const store = osparc.store.Store.getInstance();
+            store.getSnapshots().push(data);
+          })
           .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
 
         win.close();
