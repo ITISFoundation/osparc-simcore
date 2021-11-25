@@ -10,7 +10,7 @@ import json
 import random
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, AsyncIterator, Dict, List
 from unittest import mock
 from uuid import uuid4
 
@@ -26,20 +26,18 @@ from dask_task_models_library.container_tasks.io import (
 )
 from distributed.deploy.spec import SpecCluster
 from fastapi.applications import FastAPI
+from models_library.clusters import NoAuthentication
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import AnyUrl
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
-from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
     ComputationalBackendNotConnectedError,
-    ConfigurationError,
     InsuficientComputationalResourcesError,
     MissingComputationalResourcesError,
 )
-from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_tasks import Image
 from simcore_service_director_v2.models.schemas.constants import ClusterID, UserID
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
@@ -47,7 +45,6 @@ from simcore_service_director_v2.modules.dask_client import (
     CLUSTER_RESOURCE_MOCK_USAGE,
     DaskClient,
 )
-from starlette.testclient import TestClient
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -91,27 +88,22 @@ def minimal_dask_config(
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
 
-def test_dask_client_missing_raises_configuration_error(
-    minimal_dask_config: None, monkeypatch: MonkeyPatch
-):
-    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "0")
-    settings = AppSettings.create_from_envs()
-    app = init_app(settings)
-
-    with TestClient(app, raise_server_exceptions=True) as client:
-        with pytest.raises(ConfigurationError):
-            DaskClient.instance(client.app)
-
-
 @pytest.fixture
-def dask_client(
+async def dask_client(
     minimal_dask_config: None,
     dask_spec_local_cluster: SpecCluster,
     minimal_app: FastAPI,
-) -> DaskClient:
-    client = DaskClient.instance(minimal_app)
+) -> AsyncIterator[DaskClient]:
+    client = await DaskClient.create(
+        app=minimal_app,
+        settings=minimal_app.state.settings.DASK_SCHEDULER,
+        endpoint=parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address),
+        authentication=NoAuthentication(),
+    )
     assert client
-    return client
+    yield client
+
+    await client.delete()
 
 
 async def test_local_dask_cluster_through_client(dask_client: DaskClient):
