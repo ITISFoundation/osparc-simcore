@@ -5,7 +5,7 @@ import logging
 import os
 import socket
 from dataclasses import dataclass, field
-from typing import Awaitable, Callable, Dict, List, Tuple
+from typing import Awaitable, Callable, Dict, List, Optional, Tuple
 
 import dask.distributed
 import dask_gateway
@@ -61,24 +61,32 @@ CLUSTER_RESOURCE_MOCK_USAGE: float = 1e-9
 
 async def _create_internal_client_base_on_auth(
     endpoint: AnyUrl, authentication: ClusterAuthentication
-) -> distributed.Client:
+) -> Tuple[
+    distributed.Client,
+    Optional[dask_gateway.GatewayCluster],
+    Optional[dask_gateway.Gateway],
+]:
     if isinstance(authentication, NoAuthentication):
         # if no auth then we go for a standard scheduler connection
-        return await distributed.Client(
-            f"{endpoint}",
-            asynchronous=True,
-            name=f"director-v2_{socket.gethostname()}_{os.getpid()}",
+        return (
+            await distributed.Client(
+                f"{endpoint}",
+                asynchronous=True,
+                name=f"director-v2_{socket.gethostname()}_{os.getpid()}",
+            ),
+            None,
+            None,
         )
     auth = None
     if isinstance(authentication, SimpleAuthentication):
-        auth = dask_gateway.BasicAuth(**authentication.dict())
+        auth = dask_gateway.BasicAuth(**authentication.dict(exclude={"type"}))
     elif isinstance(authentication, KerberosAuthentication):
         auth = dask_gateway.KerberosAuth()
     elif isinstance(authentication, JupyterHubTokenAuthentication):
         auth = dask_gateway.JupyterHubAuth(authentication.api_token)
     gateway = dask_gateway.Gateway(address=f"{endpoint}", auth=auth, asynchronous=True)
-    cluster = gateway.new_cluster(shutdown_on_close=False)
-    return cluster.get_client()
+    cluster = await gateway.new_cluster(shutdown_on_close=True)
+    return (await cluster.get_client(), cluster, gateway)
 
 
 @dataclass
@@ -87,6 +95,8 @@ class DaskClient:
     client: distributed.Client
     settings: DaskSchedulerSettings
     cancellation_dask_pub: distributed.Pub
+    cluster: Optional[dask_gateway.GatewayCluster]
+    gateway: Optional[dask_gateway.Gateway]
 
     _taskid_to_future_map: Dict[str, distributed.Future] = field(default_factory=dict)
     _subscribed_tasks: List[asyncio.Task] = field(default_factory=list)
@@ -116,15 +126,19 @@ class DaskClient:
                     endpoint,
                     attempt.retry_state.attempt_number,
                 )
-                dask_client = await _create_internal_client_base_on_auth(
-                    endpoint, authentication
-                )
+                (
+                    dask_client,
+                    cluster,
+                    gateway,
+                ) = await _create_internal_client_base_on_auth(endpoint, authentication)
                 check_client_can_connect_to_scheduler(dask_client)
                 app.state.dask_client = cls(
                     app=app,
                     client=dask_client,
                     settings=settings,
                     cancellation_dask_pub=distributed.Pub(TaskCancelEvent.topic_name()),
+                    cluster=cluster,
+                    gateway=gateway,
                 )
                 logger.info(
                     "Connection to %s succeeded [%s]",
@@ -151,6 +165,10 @@ class DaskClient:
             task.cancel()
         await asyncio.gather(*self._subscribed_tasks, return_exceptions=True)
         await self.client.close()  # type: ignore
+        if self.cluster:
+            await self.cluster.close()  # type: ignore
+        if self.gateway:
+            await self.gateway.close()  # type: ignore
         logger.info("dask client properly closed")
 
     def register_handlers(

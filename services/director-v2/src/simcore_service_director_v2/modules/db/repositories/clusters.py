@@ -52,7 +52,7 @@ async def _clusters_from_cluster_ids(
 
         cluster_id = row[clusters.c.id]
         if cluster_id not in cluster_id_to_cluster:
-            cluster_id_to_cluster[cluster_id] = Cluster.construct(
+            cluster_id_to_cluster[cluster_id] = Cluster(
                 id=cluster_id,
                 name=row[clusters.c.name],
                 description=row[clusters.c.description],
@@ -76,5 +76,6 @@ class ClustersRepository(BaseRepository):
         async with self.db_engine.acquire() as conn:
             clusters_list = await _clusters_from_cluster_ids(conn, {cluster_id})
             if not clusters_list:
-                raise ClusterNotFoundError
+                raise ClusterNotFoundError(cluster_id=cluster_id)
+            logger.debug("found cluster in DB: %s", f"{clusters_list[0]=}")
             return clusters_list[0]

@@ -12,7 +12,7 @@ from dask_gateway import Gateway, auth
 from dask_gateway_server.app import DaskGateway
 from dask_gateway_server.backends.inprocess import InProcessBackend
 from distributed.deploy.spec import SpecCluster
-from models_library.clusters import Cluster
+from models_library.clusters import Cluster, SimpleAuthentication
 from models_library.settings.rabbit import RabbitConfig
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
@@ -208,7 +208,12 @@ def test_get_cluster_entrypoint(
     local_dask_gateway_server: DaskGatewayServer,
     cluster: Callable[..., Cluster],
 ):
-    some_cluster = cluster(endpoint=local_dask_gateway_server.address)
+    some_cluster = cluster(
+        endpoint=local_dask_gateway_server.address,
+        authentication=SimpleAuthentication(
+            username="pytest_user", password=local_dask_gateway_server.password
+        ).dict(by_alias=True),
+    )
     response = client.get(f"/v2/clusters/{some_cluster.id}")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
