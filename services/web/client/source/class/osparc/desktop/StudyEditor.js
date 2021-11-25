@@ -144,20 +144,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const store = osparc.store.Store.getInstance();
       store.setCurrentStudy(study);
 
-      // reload caches
-      store.invalidate("snapshots");
-      store.invalidate("iterations");
-
-      study.getSnapshots()
-        .then(snapshots => {
-          store.setSnapshots(snapshots);
-          if (snapshots.length) {
-            study.getIterations()
-              .then(iterations => {
-                store.setIterations(iterations);
-              });
-          }
-        });
+      this.__reloadSnapshotsAndIterations();
 
       study.buildWorkbench();
       study.openStudy()
@@ -235,6 +222,24 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this.__workbenchView.setStudy(study);
       this.__slideshowView.setStudy(study);
+    },
+
+    __reloadSnapshotsAndIterations: function() {
+      const store = osparc.store.Store.getInstance();
+      store.invalidate("snapshots");
+      store.invalidate("iterations");
+
+      const study = this.getStudy();
+      study.getSnapshots()
+        .then(snapshots => {
+          store.setSnapshots(snapshots);
+          if (snapshots.length) {
+            study.getIterations()
+              .then(iterations => {
+                store.setIterations(iterations);
+              });
+          }
+        });
     },
 
     __noLongerActive: function() {
@@ -345,11 +350,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.__getStudyLogger().error(null, "Submission failed");
       } else {
         if (iterationRefIds) {
-          // if the reposnse contains the ref_ids field, it means that a meta-project was run
-          this.getStudy().getIterations()
-            .then(iterations => {
-              osparc.store.Store.getInstance().setIterations(iterations);
-            });
+          this.__reloadSnapshotsAndIterations();
         }
         this.__getStudyLogger().info(null, "Pipeline started");
         /* If no projectStateUpdated comes in 60 seconds, client must
