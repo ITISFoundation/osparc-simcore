@@ -240,18 +240,28 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           margin: 6
         });
 
-        // check if lastCurrentNodeId has to be run
-        if (!this.__isLastCurrentNodeReady(lastCurrentNodeId)) {
-          this.__currentNodeId = lastCurrentNodeId;
-          this.getStudy().getUi().setCurrentNodeId(lastCurrentNodeId);
-          return;
+        // If the current node is moving forward do some run checks:
+        const studyUI = this.getStudy().getUi();
+        let doChecks = false;
+        if (lastCurrentNodeId && nodeId) {
+          const sortedNodeIds = studyUI.getSlideshow().getSortedNodeIds();
+          doChecks = sortedNodeIds.indexOf(lastCurrentNodeId) < sortedNodeIds.indexOf(nodeId);
         }
 
-        // check if upstream has to be run
-        if (!this.__isSelectedNodeReady(node, lastCurrentNodeId)) {
-          this.__currentNodeId = lastCurrentNodeId;
-          this.getStudy().getUi().setCurrentNodeId(lastCurrentNodeId);
-          return;
+        if (doChecks) {
+          // check if lastCurrentNodeId has to be run
+          if (!this.__isLastCurrentNodeReady(lastCurrentNodeId)) {
+            this.__currentNodeId = lastCurrentNodeId;
+            studyUI.setCurrentNodeId(lastCurrentNodeId);
+            return;
+          }
+
+          // check if upstream has to be run
+          if (!this.__isSelectedNodeReady(node, lastCurrentNodeId)) {
+            this.__currentNodeId = lastCurrentNodeId;
+            studyUI.setCurrentNodeId(lastCurrentNodeId);
+            return;
+          }
         }
 
         if (view) {
