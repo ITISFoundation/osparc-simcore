@@ -437,9 +437,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         };
         osparc.data.Resources.fetch("snapshots", "takeSnapshot", params)
-          .then(data => {
-            this.__workbenchView.evalSnapshotsButtons();
-          })
           .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
 
         win.close();

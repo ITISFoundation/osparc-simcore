@@ -103,8 +103,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __startSlidesButton: null,
     __startAppButton: null,
     __editSlidesButton: null,
-    __takeSnapshotButton: null,
-    __showSnapshotsButton: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -236,7 +234,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         study.getUi().getSlideshow().addListener("changeSlideshow", () => this.__evalSlidesButtons());
         study.getUi().addListener("changeMode", () => this.__evalSlidesButtons());
         this.__evalSlidesButtons();
-        this.evalSnapshotsButtons();
+
+        // invalid snapshots and iterations caches
+        Store
 
         // if there are no nodes, preselect the study item (show study info)
         const nodes = study.getWorkbench().getNodes(true);
@@ -909,33 +909,26 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       snapshotSection.add(snapshotButtons);
 
       const buttonsHeight = 28;
-      const takeSnapshotBtn = this.__takeSnapshotButton = new qx.ui.form.Button().set({
+      const takeSnapshotBtn = new qx.ui.form.Button().set({
         label: this.tr("New"),
         height: buttonsHeight
       });
+      takeSnapshotBtn.setEnabled(osparc.data.Permissions.getInstance().canDo("study.snapshot.create"));
       takeSnapshotBtn.addListener("execute", () => this.fireEvent("takeSnapshot"), this);
       snapshotButtons.add(takeSnapshotBtn);
 
-      const showSnapshotsBtn = this.__showSnapshotsButton = new qx.ui.form.Button().set({
+      const showSnapshotsBtn = new qx.ui.form.Button().set({
         label: this.tr("Show Snapshots"),
         height: buttonsHeight
+      });
+      const store = osparc.store.Store.getInstance();
+      store.bind("snapshots", showSnapshotsBtn, "enabled", {
+        converter: snapshots => Boolean(snapshots.length)
       });
       showSnapshotsBtn.addListener("execute", () => this.fireEvent("showSnapshots"), this);
       snapshotButtons.add(showSnapshotsBtn);
 
-      this.evalSnapshotsButtons();
-
       return snapshotSection;
-    },
-
-    evalSnapshotsButtons: async function() {
-      const study = this.getStudy();
-      if (study && this.__takeSnapshotButton) {
-        this.__takeSnapshotButton.setEnabled(osparc.data.Permissions.getInstance().canDo("study.snapshot.create"));
-
-        const hasSnapshots = await study.hasSnapshots();
-        this.__showSnapshotsButton.setEnabled(hasSnapshots);
-      }
     },
 
     __getIterationsSection: function() {
