@@ -313,14 +313,14 @@ class DaskClient:
             )
 
             check_client_can_connect_to_scheduler(self.dask_subsystem.client)
-            # check_if_cluster_is_able_to_run_pipeline(
-            #     node_id=node_id,
-            #     scheduler_info=self.dask_subsystem.client.scheduler_info(),
-            #     task_resources=dask_resources,
-            #     node_image=node_image,
-            #     cluster_id_prefix=self.settings.DASK_CLUSTER_ID_PREFIX,  # type: ignore
-            #     cluster_id=cluster_id,
-            # )
+            check_if_cluster_is_able_to_run_pipeline(
+                node_id=node_id,
+                scheduler_info=self.dask_subsystem.client.scheduler_info(),
+                task_resources=dask_resources,
+                node_image=node_image,
+                cluster_id_prefix=self.settings.DASK_CLUSTER_ID_PREFIX,  # type: ignore
+                cluster_id=cluster_id,
+            )
 
             input_data = await compute_input_data(
                 self.app, user_id, project_id, node_id
