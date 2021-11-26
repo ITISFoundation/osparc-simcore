@@ -6,7 +6,7 @@ components:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/PipelineCreatedSchema'
+          $ref: "#/components/schemas/PipelineCreatedSchema"
         error:
           nullable: true
           default: null
@@ -14,7 +14,7 @@ components:
     PipelineCreatedSchema:
       type: object
       required:
-        - pipelines_ids
+        - pipelines_id
       properties:
         pipeline_id:
           type: string
