@@ -16,8 +16,8 @@
 ************************************************************************ */
 
 /**
- * @ignore(fetch)
- */
+  * @ignore(fetch)
+  */
 
 qx.Class.define("osparc.component.snapshots.IterationsView", {
   extend: qx.ui.core.Widget,
@@ -27,10 +27,9 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    if (study.hasSnapshots()) {
-      this.__study = study;
-      this.__buildLayout();
-    }
+    this.__study = study;
+    this.__iterations = [];
+    this.__buildLayout();
   },
 
   events: {
@@ -38,126 +37,75 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
   },
 
   members: {
-    __snapshotsSection: null,
-    __snapshotsTable: null,
-    __gitGraphLayout: null,
-    __gitGraphWrapper: null,
-    __snapshotPreview: null,
-    __editSnapshotBtn: null,
-    __openSnapshotBtn: null,
-    __snapshots: null,
-    __currentSnapshot: null,
-    __selectedSnapshotId: null,
+    __study: null,
+    __iterations: null,
+    __iterationsSection: null,
+    __iterationsTable: null,
+    __iterationPreview: null,
+    __openIterationBtn: null,
+    __selectedIterationId: null,
 
     __buildLayout: function() {
-      const snapshotsSection = this.__snapshotsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      this._add(snapshotsSection, {
+      const iterationsSection = this.__iterationsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      this._add(iterationsSection, {
         flex: 1
       });
-      this.__rebuildSnapshots();
-      this.__buildSnapshotPreview();
+      this.__rebuildIterations();
+      this.__buildIterationPreview();
 
       const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       this._add(buttonsSection);
 
-      const editSnapshotBtn = this.__editSnapshotBtn = this.__createEditSnapshotBtn();
-      editSnapshotBtn.setEnabled(false);
-      editSnapshotBtn.addListener("execute", () => {
-        if (this.__selectedSnapshotId) {
-          this.__editSnapshot(this.__selectedSnapshotId);
+      const openIterationBtn = this.__openIterationBtn = this.__createOpenIterationBtn();
+      openIterationBtn.setEnabled(false);
+      openIterationBtn.addListener("execute", () => {
+        if (this.__selectedIterationId) {
+          this.fireDataEvent("openIteration", this.__selectedIterationId);
         }
       });
-      buttonsSection.add(editSnapshotBtn);
-
-      const openSnapshotBtn = this.__openSnapshotBtn = this.__createOpenSnapshotBtn();
-      openSnapshotBtn.setEnabled(false);
-      openSnapshotBtn.addListener("execute", () => {
-        if (this.__selectedSnapshotId) {
-          this.fireDataEvent("openSnapshot", this.__selectedSnapshotId);
-        }
-      });
-      buttonsSection.add(openSnapshotBtn);
+      buttonsSection.add(openIterationBtn);
     },
 
-    __rebuildSnapshots: function() {
-      Promise.all([
-        this.__study.getSnapshots(),
-        this.__study.getCurrentSnapshot()
-      ])
-        .then(values => {
-          this.__snapshots = values[0];
-          this.__currentSnapshot = values[1];
-          this.__rebuildSnapshotsTable();
-          this.__rebuildSnapshotsGraph();
+    __rebuildIterations: function() {
+      this.__study.getIterations()
+        .then(iterations => {
+          if (iterations.length) {
+            this.__iterations = iterations;
+            this.__rebuildIterationsTable();
+          }
         });
     },
 
-    __rebuildSnapshotsTable: function() {
-      if (this.__snapshotsTable) {
-        this.__snapshotsSection.remove(this.__snapshotsTable);
+    __rebuildIterationsTable: function() {
+      if (this.__iterationsTable) {
+        this.__iterationsSection.remove(this.__iterationsTable);
       }
 
-      const snapshotsTable = this.__snapshotsTable = new osparc.component.snapshots.Snapshots();
-      snapshotsTable.populateTable(this.__snapshots);
-      snapshotsTable.addListener("cellTap", e => {
+      const iterationsTable = this.__iterationsTable = new osparc.component.snapshots.Iterations();
+      iterationsTable.populateTable(this.__iterations);
+      iterationsTable.addListener("cellTap", e => {
         const selectedRow = e.getRow();
-        const snapshotId = snapshotsTable.getRowData(selectedRow)["Id"];
-        this.__snapshotSelected(snapshotId);
+        const iterationId = iterationsTable.getRowData(selectedRow)["Id"];
+        this.__iterationSelected(iterationId);
       });
 
-      this.__snapshotsSection.addAt(snapshotsTable, 0, {
+      this.__iterationsSection.addAt(iterationsTable, 0, {
+        width: "60%"
+      });
+    },
+
+    __buildIterationPreview: function() {
+      const iterationPreview = this.__iterationPreview = new osparc.component.workbench.WorkbenchUIPreview();
+      this.__iterationsSection.addAt(iterationPreview, 1, {
         width: "40%"
       });
     },
 
-    __rebuildSnapshotsGraph: function() {
-      if (this.__gitGraphLayout) {
-        this.__snapshotsSection.remove(this.__gitGraphLayout);
-      }
-
-      const gitGraphLayout = this.__gitGraphLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      const gitGraphCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
-      const gitGraphInteract = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-      gitGraphLayout.add(gitGraphCanvas, {
-        top: 20,
-        right: 0,
-        bottom: 0,
-        left: 0
-      });
-      gitGraphLayout.add(gitGraphInteract, {
-        top: 20 + 2,
-        right: 0,
-        bottom: 0,
-        left: 0
-      });
-
-      gitGraphCanvas.addListenerOnce("appear", () => {
-        const gitGraphWrapper = this.__gitGraphWrapper = new osparc.wrapper.GitGraph();
-        gitGraphWrapper.init(gitGraphCanvas, gitGraphInteract)
-          .then(() => gitGraphWrapper.populateGraph(this.__snapshots, this.__currentSnapshot));
-        gitGraphWrapper.addListener("snapshotTap", e => {
-          const snapshotId = e.getData();
-          this.__snapshotSelected(snapshotId);
-        });
-      });
-
-      this.__snapshotsSection.addAt(gitGraphLayout, 1, {
-        width: "20%"
-      });
-    },
-
-    __buildSnapshotPreview: function() {
-      const snapshotPreview = this.__snapshotPreview = new osparc.component.workbench.WorkbenchUIPreview();
-      this.__snapshotsSection.addAt(snapshotPreview, 2, {
-        width: "40%"
-      });
-    },
-
-    __loadSnapshotsPreview: function(snapshotId) {
+    __loadIterationPreview: function(iterationId) {
       const params = {
         url: {
           "studyId": this.__study.getUuid(),
-          "snapshotId": snapshotId
+          "snapshotId": iterationId
         }
       };
       osparc.data.Resources.fetch("snapshots", "preview", params)
@@ -168,80 +116,31 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
           const study = new osparc.data.model.Study(studyData);
           study.buildWorkbench();
           study.setReadOnly(true);
-          this.__snapshotPreview.set({
+          this.__iterationPreview.set({
             study: study
           });
-          this.__snapshotPreview.loadModel(study.getWorkbench());
+          this.__iterationPreview.loadModel(study.getWorkbench());
         });
     },
 
-    __createEditSnapshotBtn: function() {
-      const editSnapshotBtn = new qx.ui.form.Button(this.tr("Edit Snapshot")).set({
+    __createOpenIterationBtn: function() {
+      const openIterationBtn = new qx.ui.form.Button(this.tr("Open Iteration")).set({
         allowGrowX: false
       });
-      return editSnapshotBtn;
+      return openIterationBtn;
     },
 
-    __createOpenSnapshotBtn: function() {
-      const openSnapshotBtn = new qx.ui.form.Button(this.tr("Open Snapshot")).set({
-        allowGrowX: false
-      });
-      return openSnapshotBtn;
-    },
+    __iterationSelected: function(iterationId) {
+      this.__selectedIterationId = iterationId;
 
-    __editSnapshot: function(snapshotId) {
-      const selectedSnapshot = this.__snapshots.find(snapshot => snapshot["id"] === snapshotId);
-      if (selectedSnapshot) {
-        const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
-        const tagCtrl = editSnapshotView.getChildControl("tags");
-        tagCtrl.setValue(selectedSnapshot["tags"][0]);
-        const msgCtrl = editSnapshotView.getChildControl("message");
-        msgCtrl.setValue(selectedSnapshot["message"]);
-        const title = this.tr("Edit Snapshot");
-        const win = osparc.ui.window.Window.popUpInWindow(editSnapshotView, title, 400, 180);
-        editSnapshotView.addListener("takeSnapshot", () => {
-          const params = {
-            url: {
-              "studyId": this.__study.getUuid(),
-              "snapshotId": snapshotId
-            },
-            data: {
-              "tag": editSnapshotView.getTag(),
-              "message": editSnapshotView.getMessage()
-            }
-          };
-          osparc.data.Resources.fetch("snapshots", "updateSnapshot", params)
-            .then(() => {
-              this.__rebuildSnapshots();
-            })
-            .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
-          win.close();
-        }, this);
-        editSnapshotView.addListener("cancel", () => {
-          win.close();
-        }, this);
-      }
-    },
-
-    __snapshotSelected: function(snapshotId) {
-      this.__selectedSnapshotId = snapshotId;
-
-      if (this.__snapshotsTable) {
-        this.__snapshotsTable.setSelection(snapshotId);
+      if (this.__iterationsTable) {
+        this.__iterationsTable.setSelection(iterationId);
       }
 
-      if (this.__gitGraphWrapper) {
-        this.__gitGraphWrapper.setSelection(snapshotId);
-      }
+      this.__loadIterationPreview(iterationId);
 
-      this.__loadSnapshotsPreview(snapshotId);
-
-      if (this.__editSnapshotBtn) {
-        this.__editSnapshotBtn.setEnabled(true);
-      }
-
-      if (this.__openSnapshotBtn) {
-        this.__openSnapshotBtn.setEnabled(true);
+      if (this.__openIterationBtn) {
+        this.__openIterationBtn.setEnabled(true);
       }
     }
   }
