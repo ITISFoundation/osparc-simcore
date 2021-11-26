@@ -3,7 +3,6 @@
 #
 #
 
---constraint ../../../requirements/constraints.txt
 --constraint ./_base.in
 
 openapi-core==0.12.0     # frozen until https://github.com/ITISFoundation/osparc-simcore/pull/1396 is CLOSED

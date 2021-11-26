@@ -4,15 +4,15 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-certifi==2021.5.30
+certifi==2021.10.8
     # via requests
-charset-normalizer==2.0.6
+charset-normalizer==2.0.8
     # via requests
-docker==5.0.2
+docker==5.0.3
     # via -r requirements.in
-idna==3.2
+idna==3.3
     # via requests
-pyyaml==5.4.1
+pyyaml==6.0
     # via
     #   -c ../../../requirements/constraints.txt
     #   -r requirements.in
@@ -20,7 +20,7 @@ requests==2.26.0
     # via docker
 tenacity==8.0.1
     # via -r requirements.in
-urllib3==1.26.6
+urllib3==1.26.7
     # via
     #   -c ../../../requirements/constraints.txt
     #   requests

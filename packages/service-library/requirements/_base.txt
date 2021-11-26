@@ -10,13 +10,14 @@ pydantic==1.8.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-pyinstrument==4.0.3
+pyinstrument==4.1.1
     # via -r requirements/_base.in
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/./constraints.txt
     #   -r requirements/_base.in
 tenacity==8.0.1
     # via -r requirements/_base.in
-typing-extensions==3.10.0.2
+typing-extensions==4.0.0
     # via pydantic

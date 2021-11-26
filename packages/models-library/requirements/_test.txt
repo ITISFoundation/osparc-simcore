@@ -4,38 +4,44 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aiohttp==3.7.4.post0
+aiohttp==3.8.1
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-aiohttp
-alembic==1.7.4
+aiosignal==1.2.0
+    # via aiohttp
+alembic==1.7.5
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
-astroid==2.8.0
+astroid==2.9.0
     # via pylint
-async-timeout==3.0.1
+async-timeout==4.0.1
     # via aiohttp
 attrs==21.2.0
     # via
     #   aiohttp
     #   pytest
-certifi==2021.5.30
+certifi==2021.10.8
     # via requests
-chardet==4.0.0
-    # via aiohttp
-charset-normalizer==2.0.6
-    # via requests
-coverage==5.5
+charset-normalizer==2.0.8
+    # via
+    #   aiohttp
+    #   requests
+coverage==6.1.2
     # via
     #   -r requirements/_test.in
     #   coveralls
     #   pytest-cov
-coveralls==3.2.0
+coveralls==3.3.1
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
-faker==8.13.2
+faker==9.8.3
     # via -r requirements/_test.in
+frozenlist==1.2.0
+    # via
+    #   aiohttp
+    #   aiosignal
 icdiff==2.0.4
     # via pytest-icdiff
 idna==2.10
@@ -44,49 +50,49 @@ idna==2.10
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   requests
     #   yarl
-importlib-metadata==4.8.1
+importlib-metadata==4.8.2
     # via alembic
-importlib-resources==5.3.0 ; python_version < "3.9"
+importlib-resources==5.4.0 ; python_version < "3.9"
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   alembic
 iniconfig==1.1.1
     # via pytest
-isort==5.9.3
+isort==5.10.1
     # via pylint
 lazy-object-proxy==1.6.0
     # via astroid
-mako==1.1.5
+mako==1.1.6
     # via alembic
 markupsafe==2.0.1
     # via mako
 mccabe==0.6.1
     # via pylint
-multidict==5.1.0
+multidict==5.2.0
     # via
     #   aiohttp
     #   yarl
-packaging==21.0
+packaging==21.3
     # via
     #   pint
     #   pytest
     #   pytest-sugar
-pint==0.17
+pint==0.18
     # via -r requirements/_test.in
-platformdirs==2.3.0
+platformdirs==2.4.0
     # via pylint
 pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-psycopg2-binary==2.9.1
+psycopg2-binary==2.9.2
     # via sqlalchemy
-py==1.10.0
+py==1.11.0
     # via pytest
-pylint==2.11.1
+pylint==2.12.1
     # via -r requirements/_test.in
-pyparsing==2.4.7
+pyparsing==3.0.6
     # via packaging
 pytest==6.2.5
     # via
@@ -99,7 +105,7 @@ pytest==6.2.5
     #   pytest-sugar
 pytest-aiohttp==0.3.0
     # via -r requirements/_test.in
-pytest-cov==2.12.1
+pytest-cov==3.0.0
     # via -r requirements/_test.in
 pytest-icdiff==0.5
     # via -r requirements/_test.in
@@ -113,7 +119,7 @@ pytest-sugar==0.9.4
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
-pyyaml==5.4.1
+pyyaml==6.0
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -136,21 +142,22 @@ toml==0.10.2
     # via
     #   pylint
     #   pytest
-    #   pytest-cov
-typing-extensions==3.10.0.2
+tomli==1.2.2
+    # via coverage
+typing-extensions==4.0.0
     # via
     #   -c requirements/_base.txt
-    #   aiohttp
     #   astroid
+    #   async-timeout
     #   pylint
-urllib3==1.26.6
+urllib3==1.26.7
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-wrapt==1.12.1
+wrapt==1.13.3
     # via astroid
-yarl==1.6.3
+yarl==1.7.2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiohttp

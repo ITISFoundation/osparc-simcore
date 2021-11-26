@@ -35,9 +35,9 @@ anyio==3.2.1
     #   httpcore
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
-astroid==2.8.0
+astroid==2.9.0
     # via pylint
-async-asgi-testclient==1.4.6
+async-asgi-testclient==1.4.7
     # via -r requirements/_test.in
 async-timeout==3.0.1
     # via
@@ -67,7 +67,7 @@ certifi==2021.5.30
     #   httpx
     #   minio
     #   requests
-cffi==1.14.6
+cffi==1.15.0
     # via
     #   bcrypt
     #   cryptography
@@ -98,14 +98,14 @@ click-repl==0.1.6
     #   celery
 codecov==2.1.12
     # via -r requirements/_test.in
-coverage==5.5
+coverage==6.1.2
     # via
     #   codecov
     #   coveralls
     #   pytest-cov
-coveralls==3.2.0
+coveralls==3.3.1
     # via -r requirements/_test.in
-cryptography==3.4.8
+cryptography==36.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   paramiko
@@ -128,7 +128,7 @@ docopt==0.6.2
     #   docker-compose
 execnet==1.9.0
     # via pytest-xdist
-faker==8.13.2
+faker==9.8.3
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -164,7 +164,7 @@ importlib-resources==5.3.0 ; python_version < "3.9"
     #   alembic
 iniconfig==1.1.1
     # via pytest
-isort==5.9.3
+isort==5.10.1
     # via pylint
 jsonschema==3.2.0
     # via docker-compose
@@ -204,9 +204,9 @@ pamqp==2.3.0
     # via
     #   -c requirements/_base.txt
     #   aiormq
-paramiko==2.7.2
+paramiko==2.8.0
     # via docker
-platformdirs==2.3.0
+platformdirs==2.4.0
     # via pylint
 pluggy==1.0.0
     # via pytest
@@ -222,13 +222,13 @@ psycopg2-binary==2.9.1
     #   sqlalchemy
 ptvsd==4.3.2
     # via -r requirements/_test.in
-py==1.10.0
+py==1.11.0
     # via
     #   pytest
     #   pytest-forked
-pycparser==2.20
+pycparser==2.21
     # via cffi
-pylint==2.11.1
+pylint==2.12.1
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -253,7 +253,7 @@ pytest-aiohttp==0.3.0
     # via -r requirements/_test.in
 pytest-celery==0.0.0
     # via -r requirements/_test.in
-pytest-cov==2.12.1
+pytest-cov==3.0.0
     # via -r requirements/_test.in
 pytest-docker==0.10.3
     # via -r requirements/_test.in
@@ -267,7 +267,7 @@ pytest-mock==3.6.1
     # via -r requirements/_test.in
 pytest-runner==5.3.1
     # via -r requirements/_test.in
-pytest-xdist==2.3.0
+pytest-xdist==2.4.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
@@ -293,7 +293,9 @@ requests==2.25.1
     #   docker
     #   docker-compose
 respx==0.17.1
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 rfc3986==1.4.0
     # via
     #   -c requirements/_base.txt
@@ -329,7 +331,8 @@ toml==0.10.2
     # via
     #   pylint
     #   pytest
-    #   pytest-cov
+tomli==1.2.2
+    # via coverage
 typing-extensions==3.10.0.2 ; python_version < "3.9"
     # via
     #   -c requirements/_base.txt
@@ -357,7 +360,7 @@ websocket-client==0.59.0
     #   -c requirements/_base.txt
     #   docker
     #   docker-compose
-wrapt==1.12.1
+wrapt==1.13.3
     # via astroid
 yarl==1.6.3
     # via
