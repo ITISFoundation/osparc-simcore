@@ -36,7 +36,7 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
     T_POS: {
       ID: {
         col: 0,
-        label: "Id"
+        label: "uuid"
       },
       NAME: {
         col: 1,
@@ -117,15 +117,17 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
       return model;
     },
 
+    /*
     setSelection: function(iterationId) {
       this.resetSelection();
       for (let i=0; i<this.getTableModel().getRowCount(); i++) {
-        if (this.getRowData(i)["Id"] === iterationId) {
+        if (this.getRowData(i)["Uuid"] === iterationId) {
           this.getSelectionModel().setSelectionInterval(i, i);
           return;
         }
       }
     },
+    */
 
     populateTable: function(iterations) {
       if (iterations.length === 0) {
