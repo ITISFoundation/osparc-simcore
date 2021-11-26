@@ -96,7 +96,9 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       iterationsTable.addListener("cellTap", e => {
         const selectedRow = e.getRow();
         const iterationId = iterationsTable.getRowData(selectedRow)["uuid"];
-        this.__iterationSelected(iterationId);
+        this.__iterationSelected(iterationId, {
+          flex: 1
+        });
       });
 
       this.__iterationsSection.add(iterationsTable);
