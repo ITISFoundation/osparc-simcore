@@ -54,6 +54,7 @@ async def progress_message_parser(app: web.Application, data: bytes) -> None:
                 {
                     "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
                     "data": {
+                        "project_id": project["uuid"],
                         "node_id": rabbit_message.node_id,
                         "data": project["workbench"][f"{rabbit_message.node_id}"],
                     },
