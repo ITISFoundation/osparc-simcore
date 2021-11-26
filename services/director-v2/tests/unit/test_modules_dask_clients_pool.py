@@ -5,6 +5,7 @@
 
 from random import choice
 from typing import Any, Callable, Dict, List
+from unittest import mock
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
@@ -19,7 +20,10 @@ from models_library.clusters import (
 from pytest_mock.plugin import MockerFixture
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_service_director_v2.core.application import init_app
-from simcore_service_director_v2.core.errors import ConfigurationError
+from simcore_service_director_v2.core.errors import (
+    ConfigurationError,
+    DaskClientAcquisisitonError,
+)
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPool
 from starlette.testclient import TestClient
@@ -116,20 +120,50 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
         "simcore_service_director_v2.modules.dask_clients_pool.DaskClient",
         autospec=True,
     )
+    mocked_dask_client.create.return_value = mocked_dask_client
     clients_pool = DaskClientsPool.instance(client.app)
     mocked_dask_client.assert_not_called()
 
     clusters = fake_clusters(30)
+    mocked_creation_calls = []
     for cluster in clusters:
+        mocked_creation_calls.append(
+            mock.call(
+                app=client.app,
+                settings=client.app.state.settings.DASK_SCHEDULER,
+                authentication=cluster.authentication,
+                endpoint=cluster.endpoint,
+            )
+        )
         async with clients_pool.acquire(cluster) as dask_client:
             # on start it is created
-            mocked_dask_client.create.assert_called_once_with(
-                app=client.app, settings=client.app.state.settings.DASK_SCHEDULER
-            )
+            mocked_dask_client.create.assert_has_calls(mocked_creation_calls)
 
-        import pdb
-
-        pdb.set_trace()
         async with clients_pool.acquire(cluster) as dask_client:
-            # the connection already exists
-            mocked_dask_client.create.assert_not_called()
+            # the connection already exists, so there is no new call to create
+            mocked_dask_client.create.assert_has_calls(mocked_creation_calls)
+
+    # now let's delete the pool, this will trigger deletion of all the clients
+    await clients_pool.delete()
+    mocked_deletion_calls = [mock.call()] * len(clusters)
+    mocked_dask_client.delete.assert_has_calls(mocked_deletion_calls)
+
+
+async def test_acquiring_wrong_cluster_raises_exception(
+    minimal_dask_config: None,
+    mocker: MockerFixture,
+    client: TestClient,
+    fake_clusters: Callable[[int], List[Cluster]],
+):
+    mocked_dask_client = mocker.patch(
+        "simcore_service_director_v2.modules.dask_clients_pool.DaskClient",
+        autospec=True,
+    )
+    mocked_dask_client.create.side_effect = Exception
+    clients_pool = DaskClientsPool.instance(client.app)
+    mocked_dask_client.assert_not_called()
+
+    non_existing_cluster = fake_clusters(1)[0]
+    with pytest.raises(DaskClientAcquisisitonError):
+        async with clients_pool.acquire(non_existing_cluster):
+            ...

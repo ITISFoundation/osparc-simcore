@@ -138,12 +138,29 @@ class ConfigurationError(DirectorException):
         )
 
 
-class ClusterNotFoundError(PydanticErrorMixin, DirectorException):
+class ClusterNotFoundError(PydanticErrorMixin, SchedulerError):
     code = "cluster not found error"
     msg_template = "The cluster with id '{cluster_id}' was not found"
 
 
-class DaskClientAcquisisitonError(PydanticErrorMixin, DirectorException):
+class DaskClientRequestError(PydanticErrorMixin, SchedulerError):
+    code = "cluster's dask client created an invalid request to the dask gateway"
+    msg_template = (
+        "The dask client to cluster on '{endpoint}' did an invalid request '{error}'"
+    )
+
+
+class DaskClusterError(PydanticErrorMixin, SchedulerError):
+    code = "dask cluster encountered an error"
+    msg_template = "The dask cluster on '{endpoint}' encountered an error: '{error}'"
+
+
+class DaskGatewayServerError(PydanticErrorMixin, SchedulerError):
+    code = "dask gateway server encountered an error"
+    msg_template = "The dask gateway on '{endpoint}' encountered an error: '{error}'"
+
+
+class DaskClientAcquisisitonError(PydanticErrorMixin, SchedulerError):
     code = "cluster's dask client acquisiton error"
     msg_template = (
         "The dask client to cluster '{cluster}' encountered an error '{error}'"

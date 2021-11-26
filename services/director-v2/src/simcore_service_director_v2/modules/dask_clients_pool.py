@@ -26,12 +26,12 @@ class DaskClientsPool:
     @staticmethod
     def default_cluster(settings: DaskSchedulerSettings):
         return Cluster(
-            id=0,
+            id=settings.DASK_DEFAULT_CLUSTER_ID,
             name="Default internal cluster",
             type=ClusterType.ON_PREMISE,
             endpoint=f"tcp://{settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
             authentication=NoAuthentication(),
-            owner=1,  # FIXME: that is usually the everyone's group... but we do not know about it in director-v2...
+            owner=1,  # FIXME: that is usually the everyone's group... but we do not know nor care about it in director-v2...
         )
 
     @classmethod
@@ -58,16 +58,18 @@ class DaskClientsPool:
     async def acquire(self, cluster: Cluster) -> AsyncIterator[DaskClient]:
         try:
             # we create a new client if that cluster was never used before
-            logger.debug("acquiring connection to cluster %s", cluster.name)
-            dask_client = self._cluster_to_client_map.setdefault(
-                cluster.id,
-                await DaskClient.create(
+            logger.debug(
+                "acquiring connection to cluster %s:%s", cluster.id, cluster.name
+            )
+            if cluster.id not in self._cluster_to_client_map:
+                self._cluster_to_client_map[cluster.id] = await DaskClient.create(
                     app=self.app,
                     settings=self.settings,
                     endpoint=cluster.endpoint,
                     authentication=cluster.authentication,
-                ),
-            )
+                )
+
+            dask_client = self._cluster_to_client_map[cluster.id]
             assert dask_client  # nosec
             yield dask_client
         except asyncio.CancelledError:

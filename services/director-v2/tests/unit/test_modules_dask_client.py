@@ -110,7 +110,7 @@ async def test_local_dask_cluster_through_client(dask_client: DaskClient):
     def test_fct_add(x: int, y: int) -> int:
         return x + y
 
-    future = dask_client.client.submit(test_fct_add, 2, 5)
+    future = dask_client.dask_subsystem.client.submit(test_fct_add, 2, 5)
     assert future
     result = await future.result(timeout=2)
     assert result == 7
