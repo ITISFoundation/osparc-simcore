@@ -9,11 +9,8 @@
 aiofiles
 aiohttp
 aiopg[sa]
-
+packaging
 pydantic[email]
 tenacity
 tqdm
 trafaret-config
-
-attrs
-packaging
