@@ -45,7 +45,6 @@ attrs==20.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aiohttp
     #   jsonschema
     #   pytest
