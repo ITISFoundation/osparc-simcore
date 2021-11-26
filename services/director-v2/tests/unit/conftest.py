@@ -105,7 +105,8 @@ def cluster_id_resource_name(cluster_id: NonNegativeInt) -> str:
 
 @pytest.fixture
 async def dask_spec_local_cluster(
-    monkeypatch: MonkeyPatch, cluster_id_resource_name: str
+    monkeypatch: MonkeyPatch,
+    cluster_id_resource_name: str,
 ) -> AsyncIterable[SpecCluster]:
     # in this mode we can precisely create a specific cluster
     workers = {

@@ -206,7 +206,7 @@ class DaskClient:
                     endpoint, authentication
                 )
                 check_client_can_connect_to_scheduler(dask_subsystem.client)
-                app.state.dask_client = cls(
+                instance = cls(
                     app=app,
                     dask_subsystem=dask_subsystem,
                     settings=settings,
@@ -223,15 +223,9 @@ class DaskClient:
                     "Scheduler info:\n%s",
                     json.dumps(dask_subsystem.client.scheduler_info(), indent=2),
                 )
-        return cls.instance(app)
-
-    @classmethod
-    def instance(cls, app: FastAPI) -> "DaskClient":
-        if not hasattr(app.state, "dask_client"):
-            raise ConfigurationError(
-                "Dask client is not available. Please check the configuration."
-            )
-        return app.state.dask_client
+                return instance
+        # this is to satisfy pylance
+        raise ValueError("Could not create client")
 
     async def delete(self) -> None:
         logger.debug("closing dask client...")
