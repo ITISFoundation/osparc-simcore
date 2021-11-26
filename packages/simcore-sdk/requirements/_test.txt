@@ -40,6 +40,8 @@ charset-normalizer==2.0.8
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
+click==8.0.3
+    # via -r requirements/_test.in
 coverage==6.1.2
     # via
     #   -r requirements/_test.in
