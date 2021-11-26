@@ -1,5 +1,11 @@
 """
-    Models to interact with the projects table in the database
+    "Pydantic models will easily **parse** user-supplied data,
+    **providing gurantees** about output data structures" in `Robust Python` by P. Viafore
+
+    For that reason we cannot expect to have a single pydantic class for every input/output
+    combination we have (e.g. one single Project model for all interfaces).
+
+    Here we explore the best way to deal with different contexts for data describing a project.
 
 """
 import csv
@@ -28,38 +34,12 @@ class _NodeRelaxed(Node):
         allow_population_by_field_name = True
 
 
-class ProjectForPgInsert(BaseModel):
-    """Fields used to insert a new row in a postgres (pg) table"""
-
-    project_type: ProjectType = Field(ProjectType.STANDARD, alias="type")
-    uuid: UUID
-    name: str
-    description: Optional[str]
-    thumbnail: Optional[HttpUrl]
-    prj_owner: PositiveInt
-    access_rights: Dict[GroupID, AccessRights]
-    workbench: Dict[NodeIDStr, _NodeRelaxed]
-    ui: StudyUI = Field({})
-    classifiers: List[ClassifierID] = []
-    dev: Dict = {}
-    quality: Dict = {}
-    published: bool = False
-    hidden: bool = False
-
-    class Config:
-        extra = Extra.allow
-        allow_population_by_field_name = True
-
-    def to_values(self) -> Dict[str, Any]:
-        return self.dict(exclude_unset=True, by_alias=True)
-
-
 class ProjectFromCsv(ProjectAtDB):
-    """Parse database's project from a CSV export
+    """
+    Source: Parses a row from user-supplied CSV export containing a pg project's table
+    Target: Produces a data compatible with a project in the pg interface
 
-    Adds extra tooling (i.e. validation and conversion logic) to correctly
-    read and parse rows of a projects table in the database that was exported
-    as a CSV file (as produced by adminer)
+    These CSV files can be exported from adminer GUI
     """
 
     # These fields below are REQUIRED in this context
@@ -93,7 +73,39 @@ class ProjectFromCsv(ProjectAtDB):
         return v
 
 
-# UTILS
+class ProjectForPgInsert(BaseModel):
+    """
+    Model for pg db table
+
+    - Source: parses data that fits pg table columns
+    - Target: filters out and guarantees fields used to insert a new row in a postgres (pg) table
+
+    """
+
+    project_type: ProjectType = Field(ProjectType.STANDARD, alias="type")
+    uuid: UUID
+    name: str
+    description: Optional[str]
+    thumbnail: Optional[HttpUrl]
+    prj_owner: PositiveInt
+    access_rights: Dict[GroupID, AccessRights]
+    workbench: Dict[NodeIDStr, _NodeRelaxed]
+    ui: StudyUI = Field({})
+    classifiers: List[ClassifierID] = []
+    dev: Dict = {}
+    quality: Dict = {}
+    published: bool = False
+    hidden: bool = False
+
+    class Config:
+        extra = Extra.allow
+        allow_population_by_field_name = True
+
+    def to_values(self) -> Dict[str, Any]:
+        return self.dict(exclude_unset=True, by_alias=True)
+
+
+# UTILS ---------------------------------
 
 
 def load_projects_exported_as_csv(
