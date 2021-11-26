@@ -107,7 +107,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._studiesContainer.nextRequest = null;
     },
 
-    // overriden
+    // overridden
     _initResources: function() {
       this._showLoadingPage(this.tr("Starting..."));
 

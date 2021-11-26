@@ -72,7 +72,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshowEdit", {
           });
         } else {
           btn.set({
-            label: currentPos+1 + " - " + nodeLabel
+            label: currentPos+1 + ": " + nodeLabel
           });
         }
         btn.nodeId = nodeId;

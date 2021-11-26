@@ -67,7 +67,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     "expandNavBar": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event",
     "slidesEdit": "qx.event.type.Event",
-    "slidesGuidedStart": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
     "takeSnapshot": "qx.event.type.Event",
     "showSnapshots": "qx.event.type.Event"
@@ -98,11 +97,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __iframePage: null,
     __loggerView: null,
     __currentNodeId: null,
-    __startSlidesButton: null,
     __startAppButton: null,
     __editSlidesButton: null,
     __takeSnapshotButton: null,
     __showSnapshotsButton: null,
+    __collapseWithUserMenu: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -412,64 +411,18 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__addTopBarSpacer(topBar);
 
 
-      const separator = new qx.ui.toolbar.Separator().set({
-        padding: 0,
-        margin: 0,
-        backgroundColor: "contrasted-background++"
-      });
-      separator.exclude();
-      topBar.add(separator);
+      const collapseWithUserMenu = this.__collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
+      [
+        "backToDashboardPressed",
+        "collapseNavBar",
+        "expandNavBar"
+      ].forEach(signalName => collapseWithUserMenu.addListener(signalName, () => this.fireEvent(signalName)), this);
 
-      const closeStudyButton = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16").set({
-        font: "text-14",
-        backgroundColor: "contrasted-background+"
-      });
-      osparc.utils.Utils.setIdToWidget(closeStudyButton, "dashboardBtn");
-      closeStudyButton.addListener("execute", () => this.fireEvent("backToDashboardPressed"));
-      closeStudyButton.exclude();
-      topBar.add(closeStudyButton);
-      const userMenuButton = new osparc.navigation.UserMenuButton().set({
-        backgroundColor: "contrasted-background+"
-      });
-      osparc.io.WatchDog.getInstance().bind("online", userMenuButton, "backgroundColor", {
-        converter: on => on ? "contrasted-background+" : "red"
-      });
-      userMenuButton.getChildControl("label").exclude();
-      userMenuButton.getMenu().set({
-        backgroundColor: "contrasted-background+"
-      });
-      userMenuButton.populateExtendedMenu();
-      userMenuButton.exclude();
-      topBar.add(userMenuButton);
+      topBar.add(collapseWithUserMenu);
+    },
 
-
-      const collapseExpandNavBarStack = new qx.ui.container.Stack();
-
-      const collapseNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-up/14").set({
-        backgroundColor: "contrasted-background+"
-      });
-      collapseExpandNavBarStack.add(collapseNavBarBtn);
-      collapseNavBarBtn.addListener("execute", () => {
-        separator.show();
-        closeStudyButton.show();
-        userMenuButton.show();
-        collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[1]]);
-        this.fireEvent("collapseNavBar");
-      });
-
-      const expandNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-down/14").set({
-        backgroundColor: "contrasted-background+"
-      });
-      collapseExpandNavBarStack.add(expandNavBarBtn);
-      expandNavBarBtn.addListener("execute", () => {
-        separator.exclude();
-        closeStudyButton.exclude();
-        userMenuButton.exclude();
-        collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[0]]);
-        this.fireEvent("expandNavBar");
-      });
-
-      topBar.add(collapseExpandNavBarStack);
+    getCollapseWithUserMenu: function() {
+      return this.__collapseWithUserMenu;
     },
 
     __removePages: function(tabView) {
@@ -690,10 +643,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __createPanelView: function(caption, widget) {
-      return new osparc.desktop.PanelView(caption, widget);
-    },
-
     getStartStopButtons: function() {
       return this.__workbenchPanel.getToolbar().getStartStopButtons();
     },
@@ -858,22 +807,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       slideshowSection.add(slideshowButtons);
 
       const buttonsHeight = 28;
-      const editSlidesBtn = this.__editSlidesButton = new qx.ui.form.Button().set({
+      const editSlidesBtn = this.__editSlidesButton = new qx.ui.form.Button(this.tr("Edit Slideshow")).set({
         icon: "@FontAwesome5Solid/edit/14",
-        toolTipText: this.tr("Edit slideshow"),
         height: buttonsHeight
       });
       editSlidesBtn.addListener("execute", () => this.fireEvent("slidesEdit"), this);
       slideshowButtons.add(editSlidesBtn);
-
-      const startGuidedBtn = this.__startSlidesButton = new qx.ui.form.Button().set({
-        label: this.tr("Guided Mode"),
-        icon: "@FontAwesome5Solid/play/14",
-        toolTipText: this.tr("Start Guided Mode"),
-        height: buttonsHeight
-      });
-      startGuidedBtn.addListener("execute", () => this.fireEvent("slidesGuidedStart"), this);
-      slideshowButtons.add(startGuidedBtn);
 
       const startAppBtn = this.__startAppButton = new qx.ui.form.Button().set({
         label: this.tr("App Mode"),
@@ -895,8 +834,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
         const isOwner = osparc.data.model.Study.isOwner(study);
         this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
-        this.__startSlidesButton.setEnabled(study.hasSlideshow());
-        this.__startAppButton.setEnabled(study.getWorkbench().isPipelineLinear());
+        this.__startAppButton.setEnabled(study.hasSlideshow() || study.getWorkbench().isPipelineLinear());
       }
     },
 

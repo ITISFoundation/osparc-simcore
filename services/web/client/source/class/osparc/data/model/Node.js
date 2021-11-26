@@ -573,7 +573,7 @@ qx.Class.define("osparc.data.model.Node", {
       }, this);
     },
 
-    __addSettingsEditor: function(inputs) {
+    __addSettingsAccessLevelEditor: function(inputs) {
       const propsForm = this.getPropsForm();
       const form = new osparc.component.form.Auto(inputs);
       form.setData(this.__settingsForm.getData());
@@ -585,7 +585,10 @@ qx.Class.define("osparc.data.model.Node", {
       }, this);
       propsForm.addListener("linkFieldModified", e => {
         const linkFieldModified = e.getData();
-        const {portId, added} = linkFieldModified;
+        const {
+          portId,
+          added
+        } = linkFieldModified;
         if (added) {
           const srcControlLink = propsForm.getControlLink(portId);
           const controlLink = new qx.ui.form.TextField().set({
@@ -635,7 +638,7 @@ qx.Class.define("osparc.data.model.Node", {
 
       if (Object.keys(inputs).length) {
         this.__addSettings(inputs);
-        this.__addSettingsEditor(inputs);
+        this.__addSettingsAccessLevelEditor(inputs);
       }
     },
 
