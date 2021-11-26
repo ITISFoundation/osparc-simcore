@@ -146,11 +146,21 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
         row[this.self().T_POS.NAME.col] = iteration["name"];
         let countRow = this.self().T_POS.NAME.col+1;
         iterators.forEach(iterator => {
-          row[countRow] = this.self().extractIteratorOutput(iterator);
+          const itOut = this.self().extractIteratorOutput(iterator);
+          if (itOut) {
+            row[countRow] = itOut.toString();
+          } else {
+            row[countRow] = "unknown";
+          }
           countRow++;
         });
         probes.forEach(probe => {
-          row[countRow] = this.self().extractProbeOutput(probe);
+          const porbeOut = this.self().extractProbeOutput(probe);
+          if (porbeOut) {
+            row[countRow] = porbeOut.toString();
+          } else {
+            row[countRow] = "unknown";
+          }
           countRow++;
         });
         rows.push(row);
