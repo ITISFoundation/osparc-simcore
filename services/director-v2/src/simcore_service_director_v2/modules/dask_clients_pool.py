@@ -78,7 +78,7 @@ class DaskClientsPool:
                 "could not create/access dask computational cluster %s",
                 json_dumps(cluster),
             )
-            raise DaskClientAcquisisitonError() from exc
+            raise DaskClientAcquisisitonError(cluster=cluster, error=exc) from exc
 
 
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
