@@ -4,11 +4,9 @@
 #
 #    pip-compile --output-file=requirements/_tools.txt --strip-extras requirements/_tools.in
 #
-argh==0.26.2
-    # via watchdog
-backports.entry-points-selectable==1.1.0
+backports.entry-points-selectable==1.1.1
     # via virtualenv
-black==21.9b0
+black==21.11b1
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
@@ -22,13 +20,13 @@ click==7.1.2
     #   -c requirements/_test.txt
     #   black
     #   pip-tools
-distlib==0.3.2
+distlib==0.3.3
     # via virtualenv
-filelock==3.0.12
+filelock==3.4.0
     # via virtualenv
-identify==2.2.15
+identify==2.4.0
     # via pre-commit
-isort==5.9.3
+isort==5.10.1
     # via
     #   -c requirements/_test.txt
     #   -r requirements/../../../requirements/devenv.txt
@@ -48,11 +46,11 @@ nodeenv==1.6.0
     # via pre-commit
 pathspec==0.9.0
     # via black
-pep517==0.11.0
+pep517==0.12.0
     # via pip-tools
 pip-tools==6.4.0
     # via -r requirements/../../../requirements/devenv.txt
-platformdirs==2.3.0
+platformdirs==2.4.0
     # via
     #   -c requirements/_test.txt
     #   black
@@ -68,7 +66,7 @@ pyyaml==5.4.1
     #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
-regex==2021.8.28
+regex==2021.11.10
     # via black
 six==1.16.0
     # via
@@ -79,8 +77,9 @@ toml==0.10.2
     # via
     #   -c requirements/_test.txt
     #   pre-commit
-tomli==1.2.1
+tomli==1.2.2
     # via
+    #   -c requirements/_test.txt
     #   black
     #   pep517
 typing-extensions==3.10.0.2
@@ -88,9 +87,9 @@ typing-extensions==3.10.0.2
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-virtualenv==20.8.0
+virtualenv==20.10.0
     # via pre-commit
-watchdog==2.1.5
+watchdog==2.1.6
     # via -r requirements/_tools.in
 wheel==0.37.0
     # via pip-tools

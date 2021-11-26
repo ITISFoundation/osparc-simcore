@@ -8,21 +8,23 @@ aiodebug==1.1.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 aiofiles==0.7.0
     # via -r requirements/_base.in
-aiohttp==3.7.4.post0
+aiohttp==3.8.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-aiopg==1.3.1
+aiopg==1.3.3
     # via -r requirements/_base.in
-alembic==1.7.4
+aiosignal==1.2.0
+    # via aiohttp
+alembic==1.7.5
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/_base.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.in
-async-timeout==3.0.1
+async-timeout==4.0.1
     # via
     #   aiohttp
     #   aiopg
@@ -31,20 +33,24 @@ attrs==20.3.0
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/_base.in
     #   aiohttp
-certifi==2021.5.30
+certifi==2021.10.8
     # via requests
-chardet==4.0.0
-    # via aiohttp
-charset-normalizer==2.0.6
-    # via requests
-click==8.0.1
+charset-normalizer==2.0.8
+    # via
+    #   aiohttp
+    #   requests
+click==8.0.3
     # via -r requirements/../../../packages/postgres-database/requirements/_migration.in
 dnspython==2.1.0
     # via email-validator
-docker==5.0.2
+docker==5.0.3
     # via -r requirements/../../../packages/postgres-database/requirements/_migration.in
 email-validator==1.1.3
     # via pydantic
+frozenlist==1.2.0
+    # via
+    #   aiohttp
+    #   aiosignal
 idna==2.10
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/_base.txt
@@ -54,11 +60,11 @@ idna==2.10
     #   email-validator
     #   requests
     #   yarl
-importlib-metadata==4.8.1
+importlib-metadata==4.8.2
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/_base.txt
     #   alembic
-importlib-resources==5.3.0 ; python_version < "3.9"
+importlib-resources==5.4.0 ; python_version < "3.9"
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -66,7 +72,7 @@ importlib-resources==5.3.0 ; python_version < "3.9"
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   alembic
-mako==1.1.5
+mako==1.1.6
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/_base.txt
     #   alembic
@@ -74,16 +80,16 @@ markupsafe==2.0.1
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/_base.txt
     #   mako
-multidict==5.1.0
+multidict==5.2.0
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/_base.txt
     #   aiohttp
     #   yarl
 networkx==2.6.3
     # via -r requirements/_base.in
-packaging==21.0
+packaging==21.3
     # via -r requirements/_base.in
-psycopg2-binary==2.9.1
+psycopg2-binary==2.9.2
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/_base.txt
     #   -r requirements/_base.in
@@ -98,15 +104,16 @@ pydantic==1.8.2
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
-pyinstrument==4.0.3
+pyinstrument==4.1.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-pyparsing==2.4.7
+pyparsing==3.0.6
     # via packaging
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   trafaret-config
@@ -135,11 +142,11 @@ trafaret==2.1.0
     # via trafaret-config
 trafaret-config==2.0.2
     # via -r requirements/_base.in
-typing-extensions==3.10.0.2
+typing-extensions==4.0.0
     # via
-    #   aiohttp
+    #   async-timeout
     #   pydantic
-urllib3==1.26.6
+urllib3==1.26.7
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -151,7 +158,7 @@ websocket-client==0.59.0
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.in
     #   docker
-yarl==1.6.3
+yarl==1.7.2
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/_base.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
