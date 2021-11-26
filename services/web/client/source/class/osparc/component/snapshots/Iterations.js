@@ -75,9 +75,9 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
       let nodeUuid = null;
       let portKey = null;
       if ("inputs" in probe && "in_1" in probe["inputs"]) {
-        const asdf = probe["inputs"]["in_1"];
-        nodeUuid = asdf["nodeUuid"];
-        portKey = asdf["output"];
+        const input = probe["inputs"]["in_1"];
+        nodeUuid = input["nodeUuid"];
+        portKey = input["output"];
       }
       const itWB = iteration["workbench"];
       if (nodeUuid && nodeUuid in itWB &&

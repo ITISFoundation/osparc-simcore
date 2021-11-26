@@ -170,13 +170,7 @@ def _create_iterator_consumer_probe_int() -> ServiceDockerData:
                 "type": "integer",
             }
         },
-        outputs={
-            "out_1": {
-                "label": "Output",
-                "description": "Probes output",
-                "type": "integer",
-            }
-        },
+        outputs={},
     )
 
 
