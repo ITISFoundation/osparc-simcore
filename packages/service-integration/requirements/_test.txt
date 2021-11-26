@@ -4,26 +4,26 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-astroid==2.8.0
+astroid==2.9.0
     # via pylint
 attrs==21.2.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-certifi==2021.5.30
+certifi==2021.10.8
     # via
     #   -c requirements/_base.txt
     #   requests
-charset-normalizer==2.0.6
+charset-normalizer==2.0.8
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==5.5
+coverage==6.1.2
     # via
     #   -r requirements/_test.in
     #   coveralls
     #   pytest-cov
-coveralls==3.2.0
+coveralls==3.3.1
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
@@ -35,30 +35,30 @@ iniconfig==1.1.1
     # via
     #   -c requirements/_base.txt
     #   pytest
-isort==5.9.3
+isort==5.10.1
     # via pylint
 lazy-object-proxy==1.6.0
     # via astroid
 mccabe==0.6.1
     # via pylint
-packaging==21.0
+packaging==21.3
     # via
     #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
-platformdirs==2.3.0
+platformdirs==2.4.0
     # via pylint
 pluggy==1.0.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-py==1.10.0
+py==1.11.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pylint==2.11.1
+pylint==2.12.1
     # via -r requirements/_test.in
-pyparsing==2.4.7
+pyparsing==3.0.6
     # via
     #   -c requirements/_base.txt
     #   packaging
@@ -69,7 +69,7 @@ pytest==6.2.5
     #   pytest-cov
     #   pytest-instafail
     #   pytest-sugar
-pytest-cov==2.12.1
+pytest-cov==3.0.0
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
     # via -r requirements/_test.in
@@ -88,18 +88,19 @@ toml==0.10.2
     #   -c requirements/_base.txt
     #   pylint
     #   pytest
-    #   pytest-cov
-typing-extensions==3.10.0.2
+tomli==1.2.2
+    # via coverage
+typing-extensions==4.0.0
     # via
     #   -c requirements/_base.txt
     #   astroid
     #   pylint
-urllib3==1.26.6
+urllib3==1.26.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   requests
-wrapt==1.12.1
+wrapt==1.13.3
     # via astroid
 
 # The following packages are considered to be unsafe in a requirements file:

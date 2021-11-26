@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-async-asgi-testclient==1.4.6
+async-asgi-testclient==1.4.7
     # via -r requirements/_test.in
 attrs==20.3.0
     # via
@@ -18,9 +18,9 @@ chardet==4.0.0
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==5.5
+coverage==6.1.2
     # via pytest-cov
-faker==8.13.2
+faker==9.8.3
     # via -r requirements/_test.in
 idna==2.10
     # via
@@ -38,7 +38,7 @@ packaging==21.0
     #   pytest
 pluggy==1.0.0
     # via pytest
-py==1.10.0
+py==1.11.0
     # via pytest
 pyparsing==2.4.7
     # via
@@ -52,7 +52,7 @@ pytest==6.2.5
     #   pytest-mock
 pytest-asyncio==0.16.0
     # via -r requirements/_test.in
-pytest-cov==2.12.1
+pytest-cov==3.0.0
     # via -r requirements/_test.in
 pytest-mock==3.6.1
     # via -r requirements/_test.in
@@ -69,14 +69,14 @@ six==1.16.0
 text-unidecode==1.3
     # via faker
 toml==0.10.2
-    # via
-    #   pytest
-    #   pytest-cov
-types-aiofiles==0.1.9
+    # via pytest
+tomli==1.2.2
+    # via coverage
+types-aiofiles==0.7.0
     # via -r requirements/_test.in
 types-pkg-resources==0.1.3
     # via -r requirements/_test.in
-types-pyyaml==5.4.10
+types-pyyaml==6.0.1
     # via -r requirements/_test.in
 urllib3==1.26.6
     # via

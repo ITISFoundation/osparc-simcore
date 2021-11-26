@@ -16,5 +16,5 @@ pydantic==1.8.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
-typing-extensions==3.10.0.2
+typing-extensions==4.0.0
     # via pydantic

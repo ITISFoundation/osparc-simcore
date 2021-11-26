@@ -11,7 +11,7 @@ alembic==1.7.4
     #   -r requirements/_test.in
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
-astroid==2.8.0
+astroid==2.9.0
     # via pylint
 attrs==20.3.0
     # via
@@ -44,12 +44,12 @@ click==7.1.2
     #   -r requirements/_test.in
 codecov==2.1.12
     # via -r requirements/_test.in
-coverage==5.5
+coverage==6.1.2
     # via
     #   codecov
     #   coveralls
     #   pytest-cov
-coveralls==3.2.0
+coveralls==3.3.1
     # via -r requirements/_test.in
 cryptography==3.4.7
     # via
@@ -75,7 +75,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==8.13.2
+faker==9.8.3
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -108,7 +108,7 @@ importlib-resources==5.3.0 ; python_version < "3.9"
     #   alembic
 iniconfig==1.1.1
     # via pytest
-isort==5.9.3
+isort==5.10.1
     # via pylint
 jsonschema==3.2.0
     # via docker-compose
@@ -132,11 +132,11 @@ packaging==20.9
     # via
     #   -c requirements/_base.txt
     #   pytest
-paramiko==2.7.2
+paramiko==2.8.0
     # via docker
 passlib==1.7.4
     # via -r requirements/_test.in
-platformdirs==2.3.0
+platformdirs==2.4.0
     # via pylint
 pluggy==1.0.0
     # via pytest
@@ -144,13 +144,13 @@ psycopg2-binary==2.9.1
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-py==1.10.0
+py==1.11.0
     # via pytest
 pycparser==2.20
     # via
     #   -c requirements/_base.txt
     #   cffi
-pylint==2.11.1
+pylint==2.12.1
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -167,9 +167,9 @@ pytest==6.2.5
     #   pytest-cov
     #   pytest-docker
     #   pytest-mock
-pytest-asyncio==0.15.1
+pytest-asyncio==0.16.0
     # via -r requirements/_test.in
-pytest-cov==2.12.1
+pytest-cov==3.0.0
     # via -r requirements/_test.in
 pytest-docker==0.10.3
     # via -r requirements/_test.in
@@ -197,7 +197,10 @@ requests==2.25.1
     #   docker
     #   docker-compose
 respx==0.17.1
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 rfc3986==1.5.0
     # via
     #   -c requirements/_base.txt
@@ -237,7 +240,8 @@ toml==0.10.2
     # via
     #   pylint
     #   pytest
-    #   pytest-cov
+tomli==1.2.2
+    # via coverage
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
@@ -254,7 +258,7 @@ websocket-client==0.59.0
     #   -c requirements/_base.txt
     #   docker
     #   docker-compose
-wrapt==1.12.1
+wrapt==1.13.3
     # via astroid
 yarl==1.6.3
     # via

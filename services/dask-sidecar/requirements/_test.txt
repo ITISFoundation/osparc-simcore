@@ -9,7 +9,7 @@ aiohttp==3.7.4.post0
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   pytest-aiohttp
-astroid==2.8.0
+astroid==2.9.0
     # via pylint
 async-timeout==3.0.1
     # via
@@ -37,22 +37,22 @@ charset-normalizer==2.0.6
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==5.5
+coverage==6.1.2
     # via
     #   -r requirements/_test.in
     #   coveralls
     #   pytest-cov
-coveralls==3.2.0
+coveralls==3.3.1
     # via -r requirements/_test.in
-cryptography==3.4.8
+cryptography==36.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pyopenssl
-docker==5.0.2
+docker==5.0.3
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
-faker==8.13.2
+faker==9.8.3
     # via -r requirements/_test.in
 icdiff==2.0.4
     # via pytest-icdiff
@@ -64,7 +64,7 @@ idna==2.10
     #   yarl
 iniconfig==1.1.1
     # via pytest
-isort==5.9.3
+isort==5.10.1
     # via pylint
 lazy-object-proxy==1.6.0
     # via astroid
@@ -85,7 +85,7 @@ packaging==20.4
     #   -c requirements/_packages.txt
     #   pytest
     #   pytest-sugar
-platformdirs==2.3.0
+platformdirs==2.4.0
     # via pylint
 pluggy==1.0.0
     # via pytest
@@ -93,7 +93,7 @@ pprintpp==0.4.0
     # via pytest-icdiff
 ptvsd==4.3.2
     # via -r requirements/_test.in
-py==1.10.0
+py==1.11.0
     # via pytest
 pycparser==2.20
     # via
@@ -101,9 +101,9 @@ pycparser==2.20
     #   cffi
 pyftpdlib==1.5.6
     # via pytest-localftpserver
-pylint==2.11.1
+pylint==2.12.1
     # via -r requirements/_test.in
-pyopenssl==20.0.1
+pyopenssl==21.0.0
     # via pytest-localftpserver
 pyparsing==2.4.7
     # via
@@ -123,7 +123,7 @@ pytest==6.2.5
     #   pytest-sugar
 pytest-aiohttp==0.3.0
     # via -r requirements/_test.in
-pytest-cov==2.12.1
+pytest-cov==3.0.0
     # via -r requirements/_test.in
 pytest-icdiff==0.5
     # via -r requirements/_test.in
@@ -166,7 +166,8 @@ toml==0.10.2
     # via
     #   pylint
     #   pytest
-    #   pytest-cov
+tomli==1.2.2
+    # via coverage
 typing-extensions==3.10.0.2 ; python_version < "3.9"
     # via
     #   -c requirements/_base.txt
@@ -184,7 +185,7 @@ websocket-client==0.59.0
     # via
     #   -c requirements/_base.txt
     #   docker
-wrapt==1.12.1
+wrapt==1.13.3
     # via astroid
 yarl==1.6.3
     # via

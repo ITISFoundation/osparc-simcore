@@ -4,35 +4,36 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aiohttp==3.8.0
+aiohttp==3.8.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
 aiosignal==1.2.0
     # via aiohttp
-anyio==3.3.1
+anyio==3.4.0
     # via httpcore
-async-timeout==4.0.0a3
+async-timeout==4.0.1
     # via aiohttp
 attrs==21.2.0
     # via
     #   aiohttp
     #   jsonschema
     #   pytest
-certifi==2021.5.30
+certifi==2021.10.8
     # via
+    #   httpcore
     #   httpx
     #   requests
-charset-normalizer==2.0.6
+charset-normalizer==2.0.8
     # via
     #   aiohttp
     #   httpx
     #   requests
-coverage==5.5
+coverage==6.1.2
     # via pytest-cov
-docker==5.0.2
+docker==5.0.3
     # via -r requirements/_test.in
-faker==8.13.2
+faker==9.8.3
     # via -r requirements/_test.in
 frozenlist==1.2.0
     # via
@@ -40,31 +41,35 @@ frozenlist==1.2.0
     #   aiosignal
 h11==0.12.0
     # via httpcore
-httpcore==0.13.7
+httpcore==0.14.3
     # via httpx
-httpx==0.19.0
+httpx==0.21.1
     # via -r requirements/_test.in
-idna==3.2
+idna==3.3
     # via
     #   anyio
     #   requests
     #   rfc3986
     #   yarl
+importlib-resources==5.4.0 ; python_version < "3.9"
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   jsonschema
 iniconfig==1.1.1
     # via pytest
-jsonschema==3.2.0
+jsonschema==4.2.1
     # via -r requirements/_test.in
 multidict==5.2.0
     # via
     #   aiohttp
     #   yarl
-packaging==21.0
+packaging==21.3
     # via pytest
 pluggy==1.0.0
     # via pytest
-py==1.10.0
+py==1.11.0
     # via pytest
-pyparsing==2.4.7
+pyparsing==3.0.6
     # via packaging
 pyrsistent==0.18.0
     # via jsonschema
@@ -73,15 +78,15 @@ pytest==6.2.5
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
-pytest-asyncio==0.15.1
+pytest-asyncio==0.16.0
     # via -r requirements/_test.in
-pytest-cov==2.12.1
+pytest-cov==3.0.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
-python-dotenv==0.19.0
+python-dotenv==0.19.2
     # via -r requirements/_test.in
-pyyaml==5.4.1
+pyyaml==6.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
@@ -90,9 +95,7 @@ requests==2.26.0
 rfc3986==1.5.0
     # via httpx
 six==1.16.0
-    # via
-    #   jsonschema
-    #   python-dateutil
+    # via python-dateutil
 sniffio==1.2.0
     # via
     #   anyio
@@ -103,19 +106,18 @@ tenacity==8.0.1
 text-unidecode==1.3
     # via faker
 toml==0.10.2
-    # via
-    #   pytest
-    #   pytest-cov
-typing-extensions==3.10.0.2
+    # via pytest
+tomli==1.2.2
+    # via coverage
+typing-extensions==4.0.0
     # via async-timeout
-urllib3==1.26.6
+urllib3==1.26.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
 websocket-client==1.2.1
     # via docker
-yarl==1.7.0
+yarl==1.7.2
     # via aiohttp
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
+zipp==3.6.0
+    # via importlib-resources

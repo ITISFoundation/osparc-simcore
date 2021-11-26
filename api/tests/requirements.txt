@@ -4,12 +4,14 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-aiohttp==3.7.4.post0
+aiohttp==3.8.1
     # via
     #   -c ../../requirements/constraints.txt
     #   -r requirements.in
     #   pytest-aiohttp
-async-timeout==3.0.1
+aiosignal==1.2.0
+    # via aiohttp
+async-timeout==4.0.1
     # via aiohttp
 attrs==21.2.0
     # via
@@ -17,31 +19,39 @@ attrs==21.2.0
     #   jsonschema
     #   openapi-core
     #   pytest
-chardet==4.0.0
+charset-normalizer==2.0.8
     # via aiohttp
-coverage==5.5
+coverage[toml]==6.1.2
     # via
     #   -r requirements.in
     #   pytest-cov
 dictpath==0.1.3
     # via openapi-core
-idna==3.2
+frozenlist==1.2.0
+    # via
+    #   aiohttp
+    #   aiosignal
+idna==3.3
     # via yarl
+importlib-resources==5.4.0 ; python_version < "3.9"
+    # via
+    #   -c ../../requirements/constraints.txt
+    #   jsonschema
 iniconfig==1.1.1
     # via pytest
 isodate==0.6.0
     # via
     #   openapi-core
     #   openapi-schema-validator
-jsonschema==3.2.0
+jsonschema==4.2.1
     # via
     #   openapi-schema-validator
     #   openapi-spec-validator
 lazy-object-proxy==1.6.0
     # via openapi-core
-more-itertools==8.10.0
+more-itertools==8.12.0
     # via openapi-core
-multidict==5.1.0
+multidict==5.2.0
     # via
     #   aiohttp
     #   yarl
@@ -53,7 +63,7 @@ openapi-schema-validator==0.1.5
     #   openapi-spec-validator
 openapi-spec-validator==0.3.1
     # via openapi-core
-packaging==21.0
+packaging==21.3
     # via
     #   pytest
     #   pytest-sugar
@@ -61,9 +71,9 @@ parse==1.19.0
     # via openapi-core
 pluggy==1.0.0
     # via pytest
-py==1.10.0
+py==1.11.0
     # via pytest
-pyparsing==2.4.7
+pyparsing==3.0.6
     # via packaging
 pyrsistent==0.18.0
     # via jsonschema
@@ -76,35 +86,33 @@ pytest==6.2.5
     #   pytest-sugar
 pytest-aiohttp==0.3.0
     # via -r requirements.in
-pytest-cov==2.12.1
+pytest-cov==3.0.0
     # via -r requirements.in
 pytest-instafail==0.4.2
     # via -r requirements.in
 pytest-sugar==0.9.4
     # via -r requirements.in
-pyyaml==5.4.1
+pyyaml==6.0
     # via
     #   -c ../../requirements/constraints.txt
     #   openapi-spec-validator
 six==1.16.0
     # via
     #   isodate
-    #   jsonschema
     #   openapi-core
     #   openapi-schema-validator
     #   openapi-spec-validator
 termcolor==1.1.0
     # via pytest-sugar
 toml==0.10.2
-    # via
-    #   pytest
-    #   pytest-cov
-typing-extensions==3.10.0.2
-    # via aiohttp
-werkzeug==2.0.1
+    # via pytest
+tomli==1.2.2
+    # via coverage
+typing-extensions==4.0.0
+    # via async-timeout
+werkzeug==2.0.2
     # via openapi-core
-yarl==1.6.3
+yarl==1.7.2
     # via aiohttp
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
+zipp==3.6.0
+    # via importlib-resources
