@@ -145,6 +145,7 @@ async def dask_client_from_gateway(
     assert client.dask_subsystem.client
     assert client.dask_subsystem.gateway
     assert client.dask_subsystem.gateway_cluster
+
     scheduler_infos = client.dask_subsystem.client.scheduler_info()  # type: ignore
     print(
         f"--> Connected to gateway {client.dask_subsystem.gateway=} using"
@@ -268,6 +269,7 @@ async def mocked_user_completed_cb(mocker: MockerFixture) -> mock.AsyncMock:
 
 
 async def test_send_computation_task(
+    loop: asyncio.AbstractEventLoop,
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -314,7 +316,7 @@ async def test_send_computation_task(
 
     job_id, future = list(dask_client._taskid_to_future_map.items())[0]
     # this waits for the computation to run
-    task_result = await future.result(timeout=2)
+    task_result = await future.result(timeout=20)
     assert isinstance(task_result, TaskOutputData)
     assert task_result["some_output_key"] == 123
     assert future.key == job_id

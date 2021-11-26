@@ -179,6 +179,7 @@ async def local_dask_gateway_server() -> AsyncIterator[DaskGatewayServer]:
     print("--> local dask gateway server initialized")
     await dask_gateway_server.setup()
     await dask_gateway_server.backend.proxy._proxy_contacted  # pylint: disable=protected-access
+
     print("--> local dask gateway server setup completed")
     yield DaskGatewayServer(
         f"http://{dask_gateway_server.backend.proxy.address}",
