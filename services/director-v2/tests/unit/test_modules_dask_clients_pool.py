@@ -17,6 +17,8 @@ from models_library.clusters import (
     NoAuthentication,
     SimpleAuthentication,
 )
+from pydantic.networks import AnyUrl
+from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_service_director_v2.core.application import init_app
@@ -167,3 +169,15 @@ async def test_acquiring_wrong_cluster_raises_exception(
     with pytest.raises(DaskClientAcquisisitonError):
         async with clients_pool.acquire(non_existing_cluster):
             ...
+
+
+def test_default_cluster(minimal_dask_config: None, client: TestClient):
+    dask_scheduler_settings = client.app.state.settings.DASK_SCHEDULER
+    default_cluster = DaskClientsPool.default_cluster(dask_scheduler_settings)
+    assert default_cluster
+    assert default_cluster.endpoint == parse_obj_as(
+        AnyUrl,
+        f"tcp://{dask_scheduler_settings.DASK_SCHEDULER_HOST}:{dask_scheduler_settings.DASK_SCHEDULER_PORT}",
+    )
+    assert default_cluster.id == dask_scheduler_settings.DASK_DEFAULT_CLUSTER_ID
+    assert default_cluster.authentication == NoAuthentication()
