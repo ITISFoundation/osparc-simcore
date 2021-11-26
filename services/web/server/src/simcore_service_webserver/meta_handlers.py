@@ -18,6 +18,7 @@ from ._meta import api_version_prefix as VTAG
 from .meta_db import VersionControlForMetaModeling
 from .meta_iterations import ProjectIteration
 from .rest_utils import RESPONSE_MODEL_POLICY
+from .security_decorators import permission_required
 from .utils_aiohttp import create_url_for_function, envelope_json_response
 
 from .version_control_models import CheckpointID, CommitID, TagProxy
@@ -151,6 +152,7 @@ routes = web.RouteTableDef()
     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
     name=f"{__name__}._list_meta_project_iterations_handler",
 )
+@permission_required("project.snapshot.read")
 async def _list_meta_project_iterations_handler(request: web.Request) -> web.Response:
     # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]
 
@@ -220,6 +222,7 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
     name=f"{__name__}._create_meta_project_iterations_handler",
 )
+@permission_required("project.snapshot.create")
 async def _create_meta_project_iterations_handler(request: web.Request) -> web.Response:
     # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
