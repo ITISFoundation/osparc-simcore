@@ -163,14 +163,20 @@ def _create_iterator_consumer_probe_int() -> ServiceDockerData:
         ],
         contact=OM.email,
         inputs={
-            "iterator": {
+            "in_1": {
                 "label": "Iterator consumer",
                 "description": "Iterator consumer",
                 "defaultValue": 0,
                 "type": "integer",
             }
         },
-        outputs={},
+        outputs={
+            "out_1": {
+                "label": "Output",
+                "description": "Probes output",
+                "type": "integer",
+            }
+        },
     )
 
 
