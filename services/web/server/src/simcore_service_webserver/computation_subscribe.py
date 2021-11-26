@@ -28,9 +28,9 @@ from .computation_config import get_settings as get_computation_settings
 from .projects import projects_api
 from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 from .socketio.events import (
+    SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
-    SOCKET_IO_EVENT,
     SocketMessageDict,
     send_messages,
 )
@@ -54,6 +54,7 @@ async def progress_message_parser(app: web.Application, data: bytes) -> None:
                 {
                     "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
                     "data": {
+                        "project_id": project["uuid"],
                         "node_id": rabbit_message.node_id,
                         "data": project["workbench"][f"{rabbit_message.node_id}"],
                     },

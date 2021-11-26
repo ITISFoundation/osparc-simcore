@@ -565,6 +565,7 @@ async def notify_project_node_update(
         {
             "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
             "data": {
+                "project_id": project["uuid"],
                 "node_id": node_id,
                 "data": project["workbench"][node_id],
             },
