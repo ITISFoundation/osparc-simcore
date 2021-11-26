@@ -268,15 +268,13 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         column: 1
       });
 
-      const firstOutput = this.getNode().getFirstOutput();
-      if (firstOutput && "value" in firstOutput) {
-        const value = firstOutput["value"];
-        label.setValue(String(value));
-      }
-      this.getNode().addListener("changeOutputs", e => {
-        const updatedOutputs = e.getData();
-        const newVal = updatedOutputs["out_1"];
-        label.setValue(String(newVal["value"]));
+      this.getNode().bind("outputs", label, "value", {
+        converter: outputs => {
+          if ("out_1" in outputs && "value" in outputs["out_1"]) {
+            return String(outputs["out_1"]["value"]);
+          }
+          return "";
+        }
       });
       this.fireEvent("nodeMoving");
     },
@@ -295,34 +293,25 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         }
       }
 
-      const itOut = osparc.component.snapshots.Iterations.extractIteratorOutput(this.getNode().serialize());
-      if (itOut) {
-        const label = new qx.ui.basic.Label(itOut).set({
-          font: "text-18",
-          paddingTop: 6
-        });
-        const chipContainer = this.getChildControl("chips");
-        chipContainer.add(label);
-      } else {
-        this.getNode().addListener("changeOutputs", () => this.__turnIntoIteratorUI(), this);
-      }
+      const label = new qx.ui.basic.Label().set({
+        font: "text-18",
+        paddingTop: 6
+      });
+      const chipContainer = this.getChildControl("chips");
+      chipContainer.add(label);
+      this.getNode().bind("outputs", label, "value", {
+        converter: outputs => {
+          if ("out_1" in outputs && "value" in outputs["out_1"]) {
+            return String(outputs["out_1"]["value"]);
+          }
+          return "";
+        }
+      });
     },
 
     __turnIntoProbeUI: function() {
       const width = 150;
       this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
-
-      const probeOut = osparc.component.snapshots.Iterations.extractProbeOutput(this.getNode().getStudy().serialize(), this.getNode().serialize());
-      if (probeOut) {
-        const label = new qx.ui.basic.Label(probeOut).set({
-          font: "text-18",
-          paddingTop: 6
-        });
-        const chipContainer = this.getChildControl("chips");
-        chipContainer.add(label);
-      } else {
-        this.getNode().addListener("changeOutputs", () => this.__turnIntoProbeUI(), this);
-      }
     },
 
     // overridden
