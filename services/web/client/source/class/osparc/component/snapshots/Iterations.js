@@ -71,9 +71,21 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
       return null;
     },
 
-    extractProbeOutput: function(probe) {
-      console.log("extractProbeOutput", probe);
-      return 4;
+    extractProbeOutput: function(iteration, probe) {
+      let nodeUuid = null;
+      let portKey = null;
+      if ("inputs" in probe && "iterator" in probe["inputs"]) {
+        const asdf = probe["inputs"]["iterator"];
+        nodeUuid = asdf["nodeUuid"];
+        portKey = asdf["output"];
+      }
+      const itWB = iteration["workbench"];
+      if (nodeUuid && nodeUuid in itWB &&
+        "outputs" in itWB[nodeUuid] &&
+        portKey && portKey in itWB[nodeUuid]["outputs"]) {
+        return itWB["outputs"][nodeUuid][portKey];
+      }
+      return null;
     }
   },
 
@@ -147,19 +159,19 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
         let countRow = this.self().T_POS.NAME.col+1;
         iterators.forEach(iterator => {
           const itOut = this.self().extractIteratorOutput(iterator);
-          if (itOut) {
-            row[countRow] = itOut.toString();
-          } else {
+          if (itOut === null) {
             row[countRow] = "unknown";
+          } else {
+            row[countRow] = itOut.toString();
           }
           countRow++;
         });
         probes.forEach(probe => {
-          const porbeOut = this.self().extractProbeOutput(probe);
-          if (porbeOut) {
-            row[countRow] = porbeOut.toString();
-          } else {
+          const porbeOut = this.self().extractProbeOutput(iteration, probe);
+          if (porbeOut === null) {
             row[countRow] = "unknown";
+          } else {
+            row[countRow] = porbeOut.toString();
           }
           countRow++;
         });
