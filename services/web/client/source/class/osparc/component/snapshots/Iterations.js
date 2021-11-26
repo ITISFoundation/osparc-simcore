@@ -83,7 +83,7 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
       if (nodeUuid && nodeUuid in itWB &&
         "outputs" in itWB[nodeUuid] &&
         portKey && portKey in itWB[nodeUuid]["outputs"]) {
-        return itWB["outputs"][nodeUuid][portKey];
+        return itWB[nodeUuid]["outputs"][portKey];
       }
       return null;
     }
