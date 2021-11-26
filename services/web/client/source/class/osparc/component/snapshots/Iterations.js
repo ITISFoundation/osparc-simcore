@@ -74,8 +74,8 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
     extractProbeOutput: function(iteration, probe) {
       let nodeUuid = null;
       let portKey = null;
-      if ("inputs" in probe && "iterator" in probe["inputs"]) {
-        const asdf = probe["inputs"]["iterator"];
+      if ("inputs" in probe && "in_1" in probe["inputs"]) {
+        const asdf = probe["inputs"]["in_1"];
         nodeUuid = asdf["nodeUuid"];
         portKey = asdf["output"];
       }
