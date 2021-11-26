@@ -41,7 +41,6 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     __iterations: null,
     __iterationsSection: null,
     __iterationsTable: null,
-    __iterationPreview: null,
     __openIterationBtn: null,
     __selectedIterationId: null,
 
@@ -51,7 +50,6 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
         flex: 1
       });
       this.__rebuildIterations();
-      this.__buildIterationPreview();
 
       const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       this._add(buttonsSection);
@@ -97,42 +95,11 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       iterationsTable.populateTable(this.__iterations);
       iterationsTable.addListener("cellTap", e => {
         const selectedRow = e.getRow();
-        const iterationId = iterationsTable.getRowData(selectedRow)["Id"];
+        const iterationId = iterationsTable.getRowData(selectedRow)["Uuid"];
         this.__iterationSelected(iterationId);
       });
 
-      this.__iterationsSection.addAt(iterationsTable, 0, {
-        width: "60%"
-      });
-    },
-
-    __buildIterationPreview: function() {
-      const iterationPreview = this.__iterationPreview = new osparc.component.workbench.WorkbenchUIPreview();
-      this.__iterationsSection.addAt(iterationPreview, 1, {
-        width: "40%"
-      });
-    },
-
-    __loadIterationPreview: function(iterationId) {
-      const params = {
-        url: {
-          "studyId": this.__study.getUuid(),
-          "snapshotId": iterationId
-        }
-      };
-      osparc.data.Resources.fetch("snapshots", "preview", params)
-        .then(data => {
-          const studyData = this.__study.serialize();
-          studyData["workbench"] = data["workbench"];
-          studyData["ui"] = data["ui"];
-          const study = new osparc.data.model.Study(studyData);
-          study.buildWorkbench();
-          study.setReadOnly(true);
-          this.__iterationPreview.set({
-            study: study
-          });
-          this.__iterationPreview.loadModel(study.getWorkbench());
-        });
+      this.__iterationsSection.add(iterationsTable);
     },
 
     __createOpenIterationBtn: function() {
@@ -144,12 +111,6 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
 
     __iterationSelected: function(iterationId) {
       this.__selectedIterationId = iterationId;
-
-      if (this.__iterationsTable) {
-        this.__iterationsTable.setSelection(iterationId);
-      }
-
-      this.__loadIterationPreview(iterationId);
 
       if (this.__openIterationBtn) {
         this.__openIterationBtn.setEnabled(true);
