@@ -42,7 +42,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
   },
 
   members: {
-    // overriden
+    // overridden
     _addItemsToLayout: function() {
       this._addWorkbenchLayer();
       this._workbenchLayoutScroll.set({
@@ -51,7 +51,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
       });
     },
 
-    // overriden
+    // overridden
     _loadModel: function(model) {
       this._clearAll();
       this.resetSelectedNodes();
@@ -86,7 +86,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
       }
     },
 
-    // overriden
+    // overridden
     _addEventListeners: function() {
       return;
     }

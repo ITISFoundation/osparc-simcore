@@ -142,7 +142,7 @@ qx.Class.define("osparc.dashboard.ExploreBrowser", {
         });
     },
 
-    // overriden
+    // overridden
     _initResources: function() {
       this._showLoadingPage(this.tr("Starting..."));
 

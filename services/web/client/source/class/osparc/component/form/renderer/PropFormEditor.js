@@ -29,7 +29,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
   construct: function(form, node) {
     this.base(arguments, form, node);
 
-    this.__ctrlRBsMap = {};
+    this.__ctrlRadioButtonsMap = {};
     this.__addAccessLevelRBs();
   },
 
@@ -48,14 +48,14 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
       readAndWrite: 2
     },
 
-    __ctrlRBsMap: null,
+    __ctrlRadioButtonsMap: null,
 
     // overridden
     setAccessLevel: function(data) {
       for (const key in data) {
         const control = this.__getRadioButtonsFieldChild(key);
         if (control) {
-          const group = this.__ctrlRBsMap[key];
+          const group = this.__ctrlRadioButtonsMap[key];
           switch (data[key]) {
             case this._visibility.hidden: {
               group.setSelection([group.getSelectables()[0]]);
@@ -127,7 +127,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
 
       const group = new qx.ui.form.RadioGroup(rbHidden, rbReadOnly, rbEditable);
       group.setSelection([rbEditable]);
-      this.__ctrlRBsMap[portId] = group;
+      this.__ctrlRadioButtonsMap[portId] = group;
       group.addListener("changeSelection", this.__onAccessLevelChanged, this);
 
       const ctrlField = this._getCtrlFieldChild(portId);
@@ -161,8 +161,8 @@ qx.Class.define("osparc.component.form.renderer.PropFormEditor", {
       inputAccess[portId] = accessLevel;
       this.getNode().setInputAccess(inputAccess);
 
-      const propWidget = this.getNode().getPropsForm();
-      propWidget.setAccessLevel(data);
+      const propsForm = this.getNode().getPropsForm();
+      propsForm.setAccessLevel(data);
     },
 
     __addDelTag: function(label) {

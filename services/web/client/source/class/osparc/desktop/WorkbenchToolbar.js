@@ -24,8 +24,15 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
     this.__attachEventHandlers();
   },
 
+  events: {
+    "startPipeline": "qx.event.type.Event",
+    "startPartialPipeline": "qx.event.type.Event",
+    "stopPipeline": "qx.event.type.Event"
+  },
+
   members: {
     __navNodes: null,
+    __startStopBtns: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -42,25 +49,52 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
           });
           break;
         }
+        case "start-stop-btns": {
+          control = new osparc.desktop.StartStopButtons();
+          [
+            "startPipeline",
+            "startPartialPipeline",
+            "stopPipeline"
+          ].forEach(signalName => {
+            control.addListener(signalName, () => {
+              this.fireEvent(signalName);
+            }, this);
+          });
+          this._add(control);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
 
-    // overriden
+    // overridden
     _buildLayout: function() {
       this.getChildControl("breadcrumb-navigation");
 
-      const startStopBtns = this._startStopBtns = this.getChildControl("start-stop-btns");
+      const startStopBtns = this.__startStopBtns = this.getChildControl("start-stop-btns");
       startStopBtns.exclude();
     },
 
-    // overriden
+    // overridden
+    _applyStudy: function(study) {
+      this.base(arguments, study);
+
+      if (study) {
+        this.__startStopBtns.setStudy(study);
+      }
+    },
+
+    // overridden
     _populateNodesNavigationLayout: function() {
       const study = this.getStudy();
       if (study) {
         const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
         this.__navNodes.populateButtons(nodeIds);
       }
+    },
+
+    getStartStopButtons: function() {
+      return this.__startStopBtns;
     },
 
     __attachEventHandlers: function() {

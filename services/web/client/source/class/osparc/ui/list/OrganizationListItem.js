@@ -94,7 +94,7 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
       return menu;
     },
 
-    // overriden
+    // overridden
     _applyThumbnail: function(value) {
       const thumbnail = this.getChildControl("thumbnail");
       if (value) {

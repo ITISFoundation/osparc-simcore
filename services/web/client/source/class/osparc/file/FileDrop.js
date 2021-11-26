@@ -48,13 +48,10 @@ qx.Class.define("osparc.file.FileDrop", {
     dropHere.addListener("appear", () => {
       // center it
       const dropHereBounds = dropHere.getBounds() || dropHere.getSizeHint();
-      const {
-        height,
-        width
-      } = this.getBounds();
+      const fileDropBounds = this.getBounds() || this.getSizeHint();
       dropHere.setLayoutProperties({
-        top: parseInt((height - dropHereBounds.height) / 2),
-        left: parseInt((width - dropHereBounds.width) / 2)
+        top: parseInt((fileDropBounds.height - dropHereBounds.height) / 2),
+        left: parseInt((fileDropBounds.width - dropHereBounds.width) / 2)
       });
     }, this);
 
