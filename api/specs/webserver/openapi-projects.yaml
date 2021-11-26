@@ -61,6 +61,12 @@ paths:
           schema:
             type: string
           description: "Option to create a template from existing project: as_template={study_uuid}"
+        - name: copy_data
+          in: query
+          schema:
+            type: boolean
+            default: True
+          description: "Option to copy data when creating from an existing template or as a template, defaults to True"
         - name: hidden
           in: query
           schema:
@@ -440,6 +446,32 @@ paths:
                       size_bytes:
                         type: integer
                         description: amount of transferred bytes
+
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /projects/{project_uuid}/nodes/{node_id}/restart:
+    parameters:
+      - name: project_uuid
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: node_id
+        in: path
+        required: true
+        schema:
+          type: string
+
+    post:
+      tags:
+        - project
+      description: Restarts containers started by the dynamic-sidecar
+      operationId: post_restart
+
+      responses:
+        "204":
+          description: Restarts containers started by the dynamic-sidecar
 
         default:
           $ref: "#/components/responses/DefaultErrorResponse"

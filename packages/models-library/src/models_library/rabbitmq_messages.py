@@ -1,4 +1,5 @@
 from typing import List, Optional, Union
+from enum import Enum
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
@@ -9,6 +10,10 @@ from pydantic.types import NonNegativeFloat
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
 
+class RabbitEventMessageType(str, Enum):
+    RELOAD_IFRAME = "RELOAD_IFRAME"
+
+
 class RabbitMessageBase(BaseModel):
     node_id: NodeID
     user_id: UserID
@@ -17,6 +22,10 @@ class RabbitMessageBase(BaseModel):
 
 class LoggerRabbitMessage(RabbitMessageBase):
     messages: List[str]
+
+
+class EventRabbitMessage(RabbitMessageBase):
+    action: RabbitEventMessageType
 
 
 class ProgressRabbitMessage(RabbitMessageBase):

@@ -148,6 +148,7 @@ def dynamic_sidecar_service_spec(
             "paths_mapping": sample["paths_mapping"].json(),
             "compose_spec": sample["compose_spec"],
             "container_http_entry": sample["container_http_entry"],
+            "restart_policy": sample["restart_policy"],
             "traefik.docker.network": "",
             "io.simcore.zone": "",
             "service_port": "80",
