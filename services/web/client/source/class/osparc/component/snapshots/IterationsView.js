@@ -70,8 +70,20 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       this.__study.getIterations()
         .then(iterations => {
           if (iterations.length) {
-            this.__iterations = iterations;
-            this.__rebuildIterationsTable();
+            const iterationPromises = [];
+            iterations.forEach(iteration => {
+              const params = {
+                url: {
+                  "studyId": iteration["wcopy_project_id"]
+                }
+              };
+              iterationPromises.push(osparc.data.Resources.getOne("studies", params));
+            });
+            Promise.all(iterationPromises)
+              .then(values => {
+                this.__iterations = values;
+                this.__rebuildIterationsTable();
+              });
           }
         });
     },
@@ -81,7 +93,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
         this.__iterationsSection.remove(this.__iterationsTable);
       }
 
-      const iterationsTable = this.__iterationsTable = new osparc.component.snapshots.Iterations();
+      const iterationsTable = this.__iterationsTable = new osparc.component.snapshots.Iterations(this.__study.serialize());
       iterationsTable.populateTable(this.__iterations);
       iterationsTable.addListener("cellTap", e => {
         const selectedRow = e.getRow();

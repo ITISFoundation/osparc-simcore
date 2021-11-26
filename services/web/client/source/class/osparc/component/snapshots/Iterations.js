@@ -18,7 +18,8 @@
 qx.Class.define("osparc.component.snapshots.Iterations", {
   extend: osparc.ui.table.Table,
 
-  construct: function() {
+  construct: function(metaStudy) {
+    this.__metaStudy = metaStudy;
     const model = this.__initModel();
 
     this.base(arguments, model, {
@@ -28,7 +29,7 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
       statusBarVisible: false
     });
 
-    this.setColumnWidth(this.self().T_POS.NAME.col, 100);
+    this.setColumnWidth(this.self().T_POS.NAME.col, 200);
   },
 
   statics: {
@@ -41,10 +42,44 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
         col: 1,
         label: qx.locale.Manager.tr("Name")
       }
+    },
+
+    extractIterators: function(iteration) {
+      const iterators = [];
+      Object.values(iteration["workbench"]).forEach(node => {
+        if (osparc.data.model.Node.isIterator(node)) {
+          iterators.push(node);
+        }
+      });
+      return iterators;
+    },
+
+    extractProbes: function(iteration) {
+      const probes = [];
+      Object.values(iteration["workbench"]).forEach(node => {
+        if (osparc.data.model.Node.isProbe(node)) {
+          probes.push(node);
+        }
+      });
+      return probes;
+    },
+
+    extractIteratorOutput: function(iterator) {
+      if ("outputs" in iterator && "out_1" in iterator["outputs"]) {
+        return iterator["outputs"]["out_1"];
+      }
+      return null;
+    },
+
+    extractProbeOutput: function(probe) {
+      console.log("extractProbeOutput", probe);
+      return 4;
     }
   },
 
   members: {
+    __metaStudy: null,
+
     getRowData: function(rowIdx) {
       return this.getTableModel().getRowDataAsMap(rowIdx);
     },
@@ -58,6 +93,13 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
         const label = this.self().T_POS[colKey].label;
         cols.splice(idx, 0, label);
       });
+
+      const iteratorsInMeta = this.self().extractIterators(this.__metaStudy);
+      iteratorsInMeta.forEach(iteratorInMeta => cols.push(iteratorInMeta["label"]));
+
+      const probesInMeta = this.self().extractProbes(this.__metaStudy);
+      probesInMeta.forEach(probeInMeta => cols.push(probeInMeta["label"]));
+
       model.setColumns(cols);
 
       return model;
@@ -74,15 +116,43 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
     },
 
     populateTable: function(iterations) {
+      if (iterations.length === 0) {
+        return;
+      }
+
+      console.log("populateTable", iterations);
+      const iteratorsInMeta = this.self().extractIterators(iterations[0]);
+      const probesInMeta = this.self().extractProbes(iterations[0]);
+
       const columnModel = this.getTableColumnModel();
       columnModel.setDataCellRenderer(this.self().T_POS.ID.col, new qx.ui.table.cellrenderer.Number());
       columnModel.setDataCellRenderer(this.self().T_POS.NAME.col, new qx.ui.table.cellrenderer.String());
+      let countFormat = this.self().T_POS.NAME.col+1;
+      iteratorsInMeta.forEach(() => {
+        columnModel.setDataCellRenderer(countFormat, new qx.ui.table.cellrenderer.String());
+        countFormat++;
+      });
+      probesInMeta.forEach(() => {
+        columnModel.setDataCellRenderer(countFormat, new qx.ui.table.cellrenderer.String());
+        countFormat++;
+      });
 
       const rows = [];
       iterations.forEach(iteration => {
+        const iterators = this.self().extractIterators(iteration);
+        const probes = this.self().extractProbes(iteration);
         const row = [];
-        row[this.self().T_POS.ID.col] = iteration["id"];
+        row[this.self().T_POS.ID.col] = iteration["uuid"];
         row[this.self().T_POS.NAME.col] = iteration["name"];
+        let countRow = this.self().T_POS.NAME.col+1;
+        iterators.forEach(iterator => {
+          row[countRow] = this.self().extractIteratorOutput(iterator);
+          countRow++;
+        });
+        probes.forEach(probe => {
+          row[countRow] = this.self().extractProbeOutput(probe);
+          countRow++;
+        });
         rows.push(row);
       });
       this.getTableModel().setData(rows, false);
