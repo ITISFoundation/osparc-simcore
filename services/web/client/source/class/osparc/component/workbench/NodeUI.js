@@ -294,11 +294,35 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           this.shadows.push(nodeUIShadow);
         }
       }
+
+      const itOut = osparc.component.snapshots.Iterations.extractIteratorOutput(this.getNode().serialize());
+      if (itOut) {
+        const label = new qx.ui.basic.Label(itOut).set({
+          font: "text-18",
+          paddingTop: 6
+        });
+        const chipContainer = this.getChildControl("chips");
+        chipContainer.add(label);
+      } else {
+        this.getNode().addListener("changeOutputs", () => this.__turnIntoIteratorUI(), this);
+      }
     },
 
     __turnIntoProbeUI: function() {
       const width = 150;
       this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
+
+      const probeOut = osparc.component.snapshots.Iterations.extractProbeOutput(this.getNode().getStudy().serialize(), this.getNode().serialize());
+      if (probeOut) {
+        const label = new qx.ui.basic.Label(probeOut).set({
+          font: "text-18",
+          paddingTop: 6
+        });
+        const chipContainer = this.getChildControl("chips");
+        chipContainer.add(label);
+      } else {
+        this.getNode().addListener("changeOutputs", () => this.__turnIntoProbeUI(), this);
+      }
     },
 
     // overridden
