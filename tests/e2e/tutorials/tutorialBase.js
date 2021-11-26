@@ -263,7 +263,7 @@ class TutorialBase {
     }
     console.log("Timeout reached waiting for study done ", ((new Date().getTime()) - start) / 1000);
     await utils.takeScreenshot(this.__page, 'run_pipeline_timeout_reached');
-    return;
+    throw new Error("Pipeline timed out");
   }
 
   async waitForStudyUnlocked(studyId, timeout = 10000) {
@@ -320,19 +320,6 @@ class TutorialBase {
 
   async closeNodeFiles() {
     await utils.waitAndClick(this.__page, '[osparc-test-id="nodeDataManagerCloseBtn"]');
-  }
-
-  async retrieve(waitAfterRetrieve = 5000) {
-    await auto.clickRetrieve(this.__page);
-    await this.waitFor(waitAfterRetrieve);
-  }
-
-  async openNodeRetrieveAndRestart(nodePosInTree = 0) {
-    await this.takeScreenshot("openNodeRetrieveAndRestart_before");
-    await auto.openNode(this.__page, nodePosInTree);
-    await this.retrieve();
-    await auto.clickRestart(this.__page);
-    await this.takeScreenshot("openNodeRetrieveAndRestart_after");
   }
 
   async checkNodeOutputs(nodePos, fileNames, checkNFiles=true, checkFileNames=true) {

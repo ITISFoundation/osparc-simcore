@@ -60,11 +60,18 @@ qx.Class.define("osparc.data.model.StudyUI", {
       check: ["workbench", "guided", "app"],
       init: "workbench",
       nullable: true,
-      event: "changeMode"
+      event: "changeMode",
+      apply: "__applyMode"
     }
   },
 
   members: {
+    __applyMode: function(mode) {
+      if (mode === "guided") {
+        this.setMode("app");
+      }
+    },
+
     serialize: function() {
       const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
       let jsonObject = {};

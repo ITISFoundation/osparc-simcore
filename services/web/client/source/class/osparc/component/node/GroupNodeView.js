@@ -131,12 +131,12 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
         ].forEach(widget => {
           if (widget) {
             widget.addListener("maximize", e => {
-              this._maximizeIFrame(true);
+              this.__maximizeIFrame(true);
             }, this);
             widget.addListener("restore", e => {
-              this._maximizeIFrame(false);
+              this.__maximizeIFrame(false);
             }, this);
-            this._maximizeIFrame(widget.hasState("maximized"));
+            this.__maximizeIFrame(widget.hasState("maximized"));
           }
         });
 
@@ -163,6 +163,14 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
           flex: 1
         });
       }
+    },
+
+    __maximizeIFrame: function(maximize) {
+      const othersStatus = maximize ? "excluded" : "visible";
+      const isSettingsGroupShowable = this.isSettingsGroupShowable();
+      const othersStatus2 = isSettingsGroupShowable && !maximize ? "visible" : "excluded";
+      this._settingsLayout.setVisibility(othersStatus2);
+      this.__header.setVisibility(othersStatus);
     },
 
     _openEditAccessLevel: function() {

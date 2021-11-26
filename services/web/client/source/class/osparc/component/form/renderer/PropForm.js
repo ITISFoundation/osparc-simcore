@@ -111,8 +111,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __createLinkOpts: function(field) {
       const optionsMenu = new qx.ui.menu.Menu().set({
         offsetLeft: 2,
-        position: "right-top",
-        backgroundColor: "background-main-lighter+"
+        position: "right-top"
       });
       optionsMenu.getContentElement().setStyles({
         "border-top-right-radius": "6px",

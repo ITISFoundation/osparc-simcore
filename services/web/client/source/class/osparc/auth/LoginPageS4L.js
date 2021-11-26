@@ -37,7 +37,7 @@ qx.Class.define("osparc.auth.LoginPageS4L", {
   },
 
   members: {
-    // overriden
+    // overridden
     _buildLayout: function() {
       const layout = new qx.ui.layout.HBox();
       this._setLayout(layout);
