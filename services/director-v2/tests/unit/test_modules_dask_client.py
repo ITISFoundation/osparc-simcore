@@ -10,11 +10,12 @@ import json
 import random
 import time
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Dict, List
+from typing import Any, AsyncIterator, Dict
 from unittest import mock
 from uuid import uuid4
 
 import pytest
+from _dask_helpers import fake_failing_sidecar_fct, fake_sidecar_fct
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import get_worker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -104,16 +105,6 @@ async def dask_client(
     yield client
 
     await client.delete()
-
-
-async def test_local_dask_cluster_through_client(dask_client: DaskClient):
-    def test_fct_add(x: int, y: int) -> int:
-        return x + y
-
-    future = dask_client.dask_subsystem.client.submit(test_fct_add, 2, 5)
-    assert future
-    result = await future.result(timeout=2)
-    assert result == 7
 
 
 @pytest.fixture

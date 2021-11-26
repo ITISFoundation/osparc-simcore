@@ -17,7 +17,7 @@ from _helpers import assert_comp_tasks_state  # type: ignore
 from _helpers import manually_run_comp_scheduler  # type: ignore
 from _helpers import set_comp_task_state  # type: ignore
 from _pytest.monkeypatch import MonkeyPatch
-from dask.distributed import LocalCluster, SpecCluster
+from dask.distributed import SpecCluster
 from dask_task_models_library.container_tasks.events import TaskStateEvent
 from dask_task_models_library.container_tasks.io import TaskOutputData
 from fastapi.applications import FastAPI
@@ -123,7 +123,7 @@ def mocked_scheduler_task(monkeypatch: MonkeyPatch) -> None:
 async def test_scheduler_gracefully_starts_and_stops(
     minimal_dask_scheduler_config: None,
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    dask_local_cluster: LocalCluster,
+    dask_spec_local_cluster: SpecCluster,
     minimal_app: FastAPI,
 ):
     # check it started correctly
@@ -140,7 +140,7 @@ async def test_scheduler_gracefully_starts_and_stops(
 def test_scheduler_raises_exception_for_missing_dependencies(
     minimal_dask_scheduler_config: None,
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    dask_local_cluster: LocalCluster,
+    dask_spec_local_cluster: SpecCluster,
     monkeypatch: MonkeyPatch,
     missing_dependency: str,
 ):

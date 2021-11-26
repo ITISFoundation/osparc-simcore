@@ -2,15 +2,13 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import asyncio
-from typing import AsyncIterator, Callable, Dict, Iterable, List, NamedTuple
+from typing import Callable, Dict, Iterable, List
 
 import pytest
 import sqlalchemy as sa
+from _dask_helpers import DaskGatewayServer
 from _pytest.monkeypatch import MonkeyPatch
 from dask_gateway import Gateway, auth
-from dask_gateway_server.app import DaskGateway
-from dask_gateway_server.backends.inprocess import InProcessBackend
 from distributed.deploy.spec import SpecCluster
 from models_library.clusters import Cluster, SimpleAuthentication
 from models_library.settings.rabbit import RabbitConfig
@@ -22,7 +20,6 @@ from starlette.testclient import TestClient
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
-from traitlets.config import Config
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -120,39 +117,6 @@ def test_get_default_cluster_entrypoint(clusters_config: None, client: TestClien
     response = client.get(f"/v2/clusters/{0}")
     assert response.status_code == status.HTTP_200_OK
     assert default_cluster_out == ClusterOut.parse_obj(response.json())
-
-
-class DaskGatewayServer(NamedTuple):
-    address: str
-    proxy_address: str
-    password: str
-
-
-@pytest.fixture
-async def local_dask_gateway_server(
-    loop: asyncio.AbstractEventLoop,
-) -> AsyncIterator[DaskGatewayServer]:
-    c = Config()
-    c.DaskGateway.backend_class = InProcessBackend  # type: ignore
-    c.DaskGateway.address = "127.0.0.1:0"  # type: ignore
-    c.Proxy.address = "127.0.0.1:0"  # type: ignore
-    c.DaskGateway.authenticator_class = "dask_gateway_server.auth.SimpleAuthenticator"  # type: ignore
-    c.SimpleAuthenticator.password = "qweqwe"  # type: ignore
-    print("--> creating local dask gateway server")
-    dask_gateway_server = DaskGateway(config=c)
-    dask_gateway_server.initialize([])  # that is a shitty one!
-    print("--> local dask gateway server initialized")
-    await dask_gateway_server.setup()
-    await dask_gateway_server.backend.proxy._proxy_contacted  # pylint: disable=protected-access
-    print("--> local dask gateway server setup completed")
-    yield DaskGatewayServer(
-        f"http://{dask_gateway_server.backend.proxy.address}",
-        f"gateway://{dask_gateway_server.backend.proxy.tcp_address}",
-        c.SimpleAuthenticator.password,  # type: ignore
-    )
-    print("--> local dask gateway server switching off...")
-    await dask_gateway_server.cleanup()
-    print("...done")
 
 
 async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayServer):
