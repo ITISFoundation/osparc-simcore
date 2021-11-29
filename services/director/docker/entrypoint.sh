@@ -8,6 +8,15 @@ INFO="INFO: [$(basename "$0")] "
 WARNING="WARNING: [$(basename "$0")] "
 ERROR="ERROR: [$(basename "$0")] "
 
+# Read self-signed SSH certificates (if applicable)
+#
+# entrypoint.sh is run as root. For the local deployment of oSparc,
+# we need to point the director to the self-signed certificate in order to
+# connect to the local docker-container-registry. While the certificates
+# are handled in the docker-compose file for the local deployment in the ops-repo,
+# we need to call 'update-ca-certificates' in order to read them (as root!)
+# This script is the proper place for this necessary call. If the deployment is non-local
+# nothing will happen.
 update-ca-certificates
 
 # This entrypoint script:
@@ -19,7 +28,7 @@ update-ca-certificates
 echo "$INFO" "Entrypoint for stage ${SC_BUILD_TARGET} ..."
 echo "$INFO" "User    :$(id "$(whoami)")"
 echo "$INFO" "Workdir :$(pwd)"
-echo   scuUser :"$(id scu)"
+echo  scuUser :"$(id scu)"
 
 if [ "${SC_BUILD_TARGET}" = "development" ]
 then

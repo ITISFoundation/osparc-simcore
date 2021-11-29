@@ -132,7 +132,6 @@ HEALTHCHECK --interval=30s \
       --start-period=30s \
       --retries=3 \
       CMD ["python3", "/home/scu/services/director/docker/healthcheck.py", "http://localhost:8080/v0/"]
-USER root
 ENTRYPOINT [ "services/director/docker/entrypoint.sh" ]
 CMD ["services/director/docker/boot.sh"]
 
@@ -151,6 +150,5 @@ ENV SC_BUILD_TARGET=development
 ENV NODE_SCHEMA_LOCATION=../../../api/specs/common/schemas/node-meta-v0.0.1.json
 WORKDIR /devel
 RUN chown -R scu:scu "${VIRTUAL_ENV}"
-USER root
 ENTRYPOINT [ "/bin/sh", "services/director/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/director/docker/boot.sh"]
