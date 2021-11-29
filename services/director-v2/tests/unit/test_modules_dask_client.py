@@ -397,6 +397,13 @@ async def test_abort_send_computation_task(
     ), "the list of futures was not cleaned correctly"
 
 
+@pytest.mark.parametrize(
+    "dask_client",
+    [
+        (lazy_fixture("dask_client_from_scheduler")),
+        (lazy_fixture("dask_client_from_gateway")),
+    ],
+)
 async def test_failed_task_returns_exceptions(
     dask_client: DaskClient,
     user_id: UserID,
@@ -470,6 +477,13 @@ async def test_invalid_cluster_send_computation_task(
     mocked_user_completed_cb.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    "dask_client",
+    [
+        (lazy_fixture("dask_client_from_scheduler")),
+        (lazy_fixture("dask_client_from_gateway")),
+    ],
+)
 async def test_too_many_resource_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
@@ -503,6 +517,13 @@ async def test_too_many_resource_send_computation_task(
     mocked_user_completed_cb.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    "dask_client",
+    [
+        (lazy_fixture("dask_client_from_scheduler")),
+        (lazy_fixture("dask_client_from_gateway")),
+    ],
+)
 async def test_disconnected_backend_send_computation_task(
     dask_spec_local_cluster: SpecCluster,
     dask_client: DaskClient,
