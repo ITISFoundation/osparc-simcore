@@ -313,6 +313,7 @@ class DaskClient:
             )
 
             check_client_can_connect_to_scheduler(self.dask_subsystem.client)
+            # FIXME: This returns False when a gateway is used
             check_if_cluster_is_able_to_run_pipeline(
                 node_id=node_id,
                 scheduler_info=self.dask_subsystem.client.scheduler_info(),
