@@ -41,7 +41,7 @@ aiopg==1.2.1
     #   -r requirements/_base.in
 aiormq==3.3.1
     # via aio-pika
-alembic==1.7.4
+alembic==1.7.5
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
@@ -224,7 +224,7 @@ msgpack==1.0.2
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-multidict==5.1.0
+multidict==5.2.0
     # via
     #   aiohttp
     #   yarl
@@ -259,7 +259,7 @@ psutil==5.8.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-psycopg2-binary==2.9.1
+psycopg2-binary==2.9.2
     # via
     #   aiopg
     #   sqlalchemy
@@ -465,7 +465,7 @@ wcwidth==0.2.5
     # via prompt-toolkit
 websockets==8.1
     # via uvicorn
-yarl==1.6.3
+yarl==1.7.2
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
