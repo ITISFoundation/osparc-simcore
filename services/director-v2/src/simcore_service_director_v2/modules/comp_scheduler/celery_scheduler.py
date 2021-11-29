@@ -39,6 +39,3 @@ class CeleryScheduler(BaseCompScheduler):
 
     async def _stop_tasks(self, tasks: List[CompTaskAtDB]) -> None:
         self.celery_client.abort_computation_tasks([str(t.job_id) for t in tasks])
-
-    async def _reconnect_backend(self) -> None:
-        raise NotImplementedError

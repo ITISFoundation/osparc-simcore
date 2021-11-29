@@ -2,7 +2,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import AsyncIterator, Dict
+from typing import AsyncIterator, Awaitable, Callable, Dict, Optional
 
 from fastapi import FastAPI
 from models_library.clusters import Cluster, NoAuthentication
@@ -13,10 +13,12 @@ from ..core.errors import (
     ComputationalBackendNotConnectedError,
     ConfigurationError,
     DaskClientAcquisisitonError,
+    InsuficientComputationalResourcesError,
+    MissingComputationalResourcesError,
 )
 from ..core.settings import DaskSchedulerSettings
 from ..models.schemas.constants import ClusterID
-from .dask_client import DaskClient
+from .dask_client import DaskClient, TaskHandlers
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +28,7 @@ class DaskClientsPool:
     app: FastAPI
     settings: DaskSchedulerSettings
     _cluster_to_client_map: Dict[ClusterID, DaskClient] = field(default_factory=dict)
+    _task_handlers: Optional[TaskHandlers] = None
 
     @staticmethod
     def default_cluster(settings: DaskSchedulerSettings):
@@ -37,6 +40,9 @@ class DaskClientsPool:
             authentication=NoAuthentication(),
             owner=1,  # FIXME: that is usually the everyone's group... but we do not know nor care about it in director-v2...
         )
+
+    def register_handlers(self, task_handlers: TaskHandlers) -> None:
+        self._task_handlers = task_handlers
 
     @classmethod
     async def create(
@@ -67,28 +73,33 @@ class DaskClientsPool:
                 "acquiring connection to cluster %s:%s", cluster.id, cluster.name
             )
             if not dask_client:
-                self._cluster_to_client_map[cluster.id] = await DaskClient.create(
+                self._cluster_to_client_map[
+                    cluster.id
+                ] = dask_client = await DaskClient.create(
                     app=self.app,
                     settings=self.settings,
                     endpoint=cluster.endpoint,
                     authentication=cluster.authentication,
                 )
+                assert self._task_handlers  # nosec
+                dask_client.register_handlers(self._task_handlers)
 
-            dask_client = self._cluster_to_client_map[cluster.id]
             assert dask_client  # nosec
             yield dask_client
-        except asyncio.CancelledError:
-            logger.info("cancelled connection to dask computational cluster")
+        except (
+            MissingComputationalResourcesError,
+            InsuficientComputationalResourcesError,
+        ):
             raise
-        except ComputationalBackendNotConnectedError:
-            if dask_client:
-                # reset the connection to this cluster
+        except (asyncio.CancelledError, ComputationalBackendNotConnectedError):
+            # cleanup and re-raise
+            if dask_client := self._cluster_to_client_map.pop(cluster.id, None):
                 await dask_client.delete()
-                del self._cluster_to_client_map[cluster.id]
-            logger.warning(
-                "the underlying dask computational backend is disconnected, resetting connection"
-            )
+            raise
         except Exception as exc:
+            # cleanup and re-raise
+            if dask_client := self._cluster_to_client_map.pop(cluster.id, None):
+                await dask_client.delete()
             logger.error(
                 "could not create/access dask computational cluster %s",
                 json_dumps(cluster),

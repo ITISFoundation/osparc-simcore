@@ -132,9 +132,6 @@ class BaseCompScheduler(ABC):
             ]
         )
 
-    async def reconnect_backend(self) -> None:
-        await self._reconnect_backend()
-
     async def _get_pipeline_dag(self, project_id: ProjectID) -> nx.DiGraph:
         comp_pipeline_repo: CompPipelinesRepository = get_repository(
             self.db_engine, CompPipelinesRepository
@@ -209,11 +206,9 @@ class BaseCompScheduler(ABC):
         ...
 
     @abstractmethod
-    async def _stop_tasks(self, tasks: List[CompTaskAtDB]) -> None:
-        ...
-
-    @abstractmethod
-    async def _reconnect_backend(self) -> None:
+    async def _stop_tasks(
+        self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
+    ) -> None:
         ...
 
     async def _schedule_pipeline(
@@ -311,23 +306,7 @@ class BaseCompScheduler(ABC):
 
         # 3. Are we stopping??
         if marked_for_stopping:
-            # get any running task and stop them
-            comp_tasks_repo: CompTasksRepository = get_repository(
-                self.db_engine, CompTasksRepository
-            )  # type: ignore
-            await comp_tasks_repo.mark_project_tasks_as_aborted(project_id)
-            # stop any remaining running task
-            running_tasks = [
-                t
-                for t in pipeline_tasks.values()
-                if t.state in [RunningState.STARTED, RunningState.RETRY]
-            ]
-            await self._stop_tasks(running_tasks)
-            logger.debug(
-                "pipeline '%s' is marked for cancellation. stopping tasks for [%s]",
-                project_id,
-                running_tasks,
-            )
+            await self._schedule_tasks_to_stop(project_id, cluster_id, pipeline_tasks)
             # the scheduled pipeline will be removed in the next iteration
             return
 
@@ -338,16 +317,47 @@ class BaseCompScheduler(ABC):
             for node_id, degree in pipeline_dag.in_degree()  # type: ignore
             if degree == 0 and pipeline_tasks[node_id].state == RunningState.PUBLISHED
         ]
-        if not next_tasks:
-            # nothing to run at the moment
-            return
 
         # let's schedule the tasks, mark them as PENDING so the sidecar will take them
-        await self._schedule_tasks(
+        await self._schedule_next_tasks(
             user_id, project_id, cluster_id, pipeline_tasks, next_tasks
         )
 
-    async def _schedule_tasks(
+    async def _schedule_tasks_to_stop(
+        self,
+        project_id: ProjectID,
+        cluster_id: ClusterID,
+        tasks_to_stop: Dict[str, CompTaskAtDB],
+    ) -> None:
+        # get any running task and stop them
+        comp_tasks_repo: CompTasksRepository = get_repository(
+            self.db_engine, CompTasksRepository
+        )  # type: ignore
+        await comp_tasks_repo.mark_project_tasks_as_aborted(project_id)
+        # stop any remaining running task
+        running_tasks = [
+            t
+            for t in tasks_to_stop.values()
+            if t.state in [RunningState.STARTED, RunningState.RETRY]
+        ]
+        try:
+            await self._stop_tasks(cluster_id, running_tasks)
+        except ComputationalBackendNotConnectedError:
+            logger.error(
+                "The computational backend is disconnected. Tasks cannot be aborted properly!"
+            )
+        except asyncio.CancelledError:
+            logger.warning(
+                "The task stopping was cancelled, there might be still be running tasks!"
+            )
+            raise
+        logger.debug(
+            "pipeline '%s' is marked for cancellation. stopping tasks for [%s]",
+            project_id,
+            running_tasks,
+        )
+
+    async def _schedule_next_tasks(
         self,
         user_id: UserID,
         project_id: ProjectID,
@@ -355,6 +365,9 @@ class BaseCompScheduler(ABC):
         comp_tasks: Dict[str, CompTaskAtDB],
         tasks: List[NodeID],
     ):
+        if not tasks:
+            # nothing to do
+            return
         # get tasks runtime requirements
         tasks_to_reqs: Dict[NodeID, Image] = {
             node_id: comp_tasks[f"{node_id}"].image for node_id in tasks

@@ -167,6 +167,13 @@ async def _create_internal_client_based_on_auth(
 
 
 @dataclass
+class TaskHandlers:
+    task_change_handler: Callable[[str], Awaitable[None]]
+    task_progress_handler: Callable[[str], Awaitable[None]]
+    task_log_handler: Callable[[str], Awaitable[None]]
+
+
+@dataclass
 class DaskClient:
     app: FastAPI
     dask_subsystem: DaskSubSystem
@@ -186,7 +193,7 @@ class DaskClient:
     ) -> "DaskClient":
         logger.info(
             "Initiating connection to %s with auth: %s",
-            f"dask-scheduler at {endpoint}",
+            f"dask-scheduler/gateway at {endpoint}",
             authentication,
         )
         async for attempt in AsyncRetrying(
@@ -235,16 +242,11 @@ class DaskClient:
         await self.dask_subsystem.close()
         logger.info("dask client properly closed")
 
-    def register_handlers(
-        self,
-        task_change_handler: Callable[[str], Awaitable[None]],
-        task_progress_handler: Callable[[str], Awaitable[None]],
-        task_log_handler: Callable[[str], Awaitable[None]],
-    ) -> None:
+    def register_handlers(self, task_handlers: TaskHandlers) -> None:
         _EVENT_CONSUMER_MAP = [
-            (TaskStateEvent, task_change_handler),
-            (TaskProgressEvent, task_progress_handler),
-            (TaskLogEvent, task_log_handler),
+            (TaskStateEvent, task_handlers.task_change_handler),
+            (TaskProgressEvent, task_handlers.task_progress_handler),
+            (TaskLogEvent, task_handlers.task_log_handler),
         ]
         self._subscribed_tasks = [
             asyncio.create_task(
