@@ -14,7 +14,9 @@ env:
 jobs:
   deploy:
     name: deploy staging
-    runs-on: ${{ matrix.os }}
+    runs-on:
+        - ${{ matrix.os }}
+        - self-hosted
     strategy:
       matrix:
         python: [3.8]

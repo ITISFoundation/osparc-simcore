@@ -36,7 +36,9 @@ jobs:
   unit-test-api:
     timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] api"
-    runs-on: ${{ matrix.os }}
+    runs-on:
+        - ${{ matrix.os }}
+        - self-hosted
     strategy:
       matrix:
         python: [3.8]
