@@ -2,6 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
 from typing import Callable, Dict, Iterable, List
 
 import pytest
@@ -119,7 +120,9 @@ def test_get_default_cluster_entrypoint(clusters_config: None, client: TestClien
     assert default_cluster_out == ClusterOut.parse_obj(response.json())
 
 
-async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayServer):
+async def test_local_dask_gateway_server(
+    loop: asyncio.AbstractEventLoop, local_dask_gateway_server: DaskGatewayServer
+):
     async with Gateway(
         local_dask_gateway_server.address,
         local_dask_gateway_server.proxy_address,
@@ -148,6 +151,7 @@ async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayS
                         f"cluster {cluster=} has now {len(cluster.scheduler_info.get('workers', []))}"
                     )
                     assert len(cluster.scheduler_info.get("workers", 0)) == 10
+
             async with cluster.get_client() as client:
                 print(f"--> created new client {client=}, submitting a job")
                 res = await client.submit(lambda x: x + 1, 1)  # type: ignore
