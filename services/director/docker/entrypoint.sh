@@ -8,6 +8,8 @@ INFO="INFO: [$(basename "$0")] "
 WARNING="WARNING: [$(basename "$0")] "
 ERROR="ERROR: [$(basename "$0")] "
 
+update-ca-certificates
+
 # This entrypoint script:
 #
 # - Executes *inside* of the container upon start as --user [default root]
