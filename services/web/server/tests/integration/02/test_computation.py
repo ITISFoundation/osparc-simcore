@@ -185,15 +185,14 @@ def client(
     setup_director_v2(app)
 
     # GC not relevant for these test-suite,
-    if 0:
-        mocker.patch(
-            "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
-            side_effect=lambda app: print(
-                f"PATCH @{__name__}:"
-                "Garbage collector disabled."
-                "Mock bypasses setup_garbage_collector to skip initializing the GC"
-            ),
-        )
+    mocker.patch(
+        "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
+        side_effect=lambda app: print(
+            f"PATCH @{__name__}:"
+            "Garbage collector disabled."
+            "Mock bypasses setup_garbage_collector to skip initializing the GC"
+        ),
+    )
     setup_resource_manager(app)
 
     return loop.run_until_complete(
@@ -208,7 +207,7 @@ def client(
 
 
 @pytest.fixture(scope="session")
-def mock_workbench_adjacency_list(tests_data_dir: Path) -> Dict[str, Any]:
+def fake_workbench_adjacency_list(tests_data_dir: Path) -> Dict[str, Any]:
     file_path = tests_data_dir / "workbench_sleeper_dag_adjacency_list.json"
     with file_path.open() as fp:
         return json.load(fp)
@@ -219,7 +218,7 @@ def _assert_db_contents(
     project_id: str,
     postgres_session: sa.orm.session.Session,
     mock_workbench_payload: Dict[str, Any],
-    mock_workbench_adjacency_list: Dict[str, Any],
+    fake_workbench_adjacency_list: Dict[str, Any],
     check_outputs: bool,
 ):
     # pylint: disable=no-member
@@ -229,7 +228,7 @@ def _assert_db_contents(
         .one()
     )
     assert pipeline_db.project_id == project_id
-    assert pipeline_db.dag_adjacency_list == mock_workbench_adjacency_list
+    assert pipeline_db.dag_adjacency_list == fake_workbench_adjacency_list
 
     # check db comp_tasks
     tasks_db = (
@@ -339,25 +338,15 @@ async def test_start_pipeline(
     redis_service: RedisConfig,
     simcore_services_ready: None,
     client: TestClient,
-    socketio_client_factory: Callable[
-        [Optional[str], Optional[TestClient]], Awaitable[socketio.AsyncClient]
-    ],
     logged_user: Dict[str, Any],
     user_project: Dict[str, Any],
-    mock_workbench_adjacency_list: Dict[str, Any],
+    fake_workbench_adjacency_list: Dict[str, Any],
+    # parametrization
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
     project_id = user_project["uuid"]
     mock_workbench_payload = user_project["workbench"]
-
-    # connect websocket (to prevent the GC to remove the project)
-    try:
-        sio = await socketio_client_factory(None, None)
-        assert sio.sid
-    except SocketConnectionError:
-        if expected.created == web.HTTPCreated:
-            pytest.fail("socket io connection should not fail")
 
     url_start = client.app.router["start_pipeline"].url_for(project_id=project_id)
     assert url_start == URL(f"{API_PREFIX}/computation/pipeline/{project_id}:start")
@@ -384,7 +373,7 @@ async def test_start_pipeline(
             project_id,
             postgres_session,
             mock_workbench_payload,
-            mock_workbench_adjacency_list,
+            fake_workbench_adjacency_list,
             check_outputs=False,
         )
         # wait for the computation to stop

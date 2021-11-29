@@ -536,26 +536,25 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
     except users_exceptions.UserNotFoundError:
         logger.warning(
             "Could not recover user data for user '%s', stopping removal of projects!",
-            user_id,
+            f"{user_id=}",
         )
         return
+
     user_primary_gid = int(project_owner["primary_gid"])
 
     # fetch all projects for the user
     user_project_uuids = await app[
         APP_PROJECT_DBAPI
     ].list_all_projects_by_uuid_for_user(user_id=user_id)
+
     logger.info(
-        "Project uuids, to clean, for user '%s': '%s'",
-        user_id,
-        user_project_uuids,
+        "Removing or transfering projects of user with %s, %s: %s",
+        f"{user_id=}",
+        f"{project_owner=}",
+        f"{user_project_uuids=}",
     )
 
     for project_uuid in user_project_uuids:
-        logger.debug(
-            "Removing or transfering project '%s'",
-            project_uuid,
-        )
         try:
             project: Dict = await get_project_for_user(
                 app=app,
@@ -565,10 +564,13 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
             )
         except web.HTTPNotFound:
             logger.warning(
-                "Could not recover project data for project_uuid '%s', skipping...",
-                project_uuid,
+                "Could not find project %s for user with %s to be removed. Skipping.",
+                f"{project_uuid=}",
+                f"{user_id=}",
             )
             continue
+
+        assert project  # nosec
 
         new_project_owner_gid = await get_new_project_owner_gid(
             app=app,
@@ -580,25 +582,38 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
 
         if new_project_owner_gid is None:
             # when no new owner is found just remove the project
-            logger.info(
-                "The project can be removed as is not shared with write access with other users"
-            )
             try:
+                logger.debug(
+                    "Removing or transfering ownership of project with %s from user with %s",
+                    f"{project_uuid=}",
+                    f"{user_id=}",
+                )
+
                 await delete_project(app, project_uuid, user_id)
+
             except ProjectNotFoundError:
                 logging.warning(
-                    "Project '%s' not found, skipping removal", project_uuid
+                    "Project with %s was not found, skipping removal",
+                    f"{project_uuid=}",
                 )
-            continue
 
-        # Try to change the project owner and remove access rights from the current owner
-        await replace_current_owner(
-            app=app,
-            project_uuid=project_uuid,
-            user_primary_gid=user_primary_gid,
-            new_project_owner_gid=new_project_owner_gid,
-            project=project,
-        )
+        else:
+
+            # Try to change the project owner and remove access rights from the current owner
+            logger.debug(
+                "Transfering ownership of project %s from user %s to %s.",
+                "This project cannot be removed since it is shared with other users"
+                f"{project_uuid=}",
+                f"{user_id}",
+                f"{new_project_owner_gid}",
+            )
+            await replace_current_owner(
+                app=app,
+                project_uuid=project_uuid,
+                user_primary_gid=user_primary_gid,
+                new_project_owner_gid=new_project_owner_gid,
+                project=project,
+            )
 
 
 async def get_new_project_owner_gid(
