@@ -3,10 +3,19 @@
 # pylint:disable=redefined-outer-name
 import asyncio
 import json
-import sys
-from collections import namedtuple
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import pytest
 import socketio
@@ -15,6 +24,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.webserver_models import (
@@ -67,10 +77,26 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 # HELPERS ----------------------------------------------------------------------------
 
-ExpectedResponse = namedtuple(
-    "ExpectedResponse",
-    ["ok", "created", "no_content", "not_found", "forbidden", "locked", "accepted"],
-)
+
+class ExpectedResponse(NamedTuple):
+    ok: Union[Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPOk]]
+    created: Union[
+        Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPCreated]
+    ]
+    no_content: Union[
+        Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPNoContent]
+    ]
+    not_found: Union[
+        Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPNotFound]
+    ]
+    forbidden: Union[
+        Type[web.HTTPUnauthorized],
+        Type[web.HTTPForbidden],
+    ]
+    locked: Union[Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[HTTPLocked]]
+    accepted: Union[
+        Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPAccepted]
+    ]
 
 
 def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse]]]:
@@ -80,49 +106,49 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
             (
                 UserRole.ANONYMOUS,
                 ExpectedResponse(
-                    web.HTTPUnauthorized,
-                    web.HTTPUnauthorized,
-                    web.HTTPUnauthorized,
-                    web.HTTPUnauthorized,
-                    web.HTTPUnauthorized,
-                    web.HTTPUnauthorized,
-                    web.HTTPUnauthorized,
+                    ok=web.HTTPUnauthorized,
+                    created=web.HTTPUnauthorized,
+                    no_content=web.HTTPUnauthorized,
+                    not_found=web.HTTPUnauthorized,
+                    forbidden=web.HTTPUnauthorized,
+                    locked=web.HTTPUnauthorized,
+                    accepted=web.HTTPUnauthorized,
                 ),
             ),
             (
                 UserRole.GUEST,
                 ExpectedResponse(
-                    web.HTTPForbidden,
-                    web.HTTPForbidden,
-                    web.HTTPForbidden,
-                    web.HTTPForbidden,
-                    web.HTTPForbidden,
-                    web.HTTPForbidden,
-                    web.HTTPForbidden,
+                    ok=web.HTTPForbidden,
+                    created=web.HTTPForbidden,
+                    no_content=web.HTTPForbidden,
+                    not_found=web.HTTPForbidden,
+                    forbidden=web.HTTPForbidden,
+                    locked=web.HTTPForbidden,
+                    accepted=web.HTTPForbidden,
                 ),
             ),
             (
                 UserRole.USER,
                 ExpectedResponse(
-                    web.HTTPOk,
-                    web.HTTPCreated,
-                    web.HTTPNoContent,
-                    web.HTTPNotFound,
-                    web.HTTPForbidden,
-                    HTTPLocked,
-                    web.HTTPAccepted,
+                    ok=web.HTTPOk,
+                    created=web.HTTPCreated,
+                    no_content=web.HTTPNoContent,
+                    not_found=web.HTTPNotFound,
+                    forbidden=web.HTTPForbidden,
+                    locked=HTTPLocked,
+                    accepted=web.HTTPAccepted,
                 ),
             ),
             (
                 UserRole.TESTER,
                 ExpectedResponse(
-                    web.HTTPOk,
-                    web.HTTPCreated,
-                    web.HTTPNoContent,
-                    web.HTTPNotFound,
-                    web.HTTPForbidden,
-                    HTTPLocked,
-                    web.HTTPAccepted,
+                    ok=web.HTTPOk,
+                    created=web.HTTPCreated,
+                    no_content=web.HTTPNoContent,
+                    not_found=web.HTTPNotFound,
+                    forbidden=web.HTTPForbidden,
+                    locked=HTTPLocked,
+                    accepted=web.HTTPAccepted,
                 ),
             ),
         ],
@@ -137,6 +163,7 @@ def client(
     loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_config: Dict[str, Any],  ## waits until swarm with *_services are up
+    mocker: MockerFixture,
 ) -> TestClient:
     assert app_config["rest"]["version"] == API_VERSION
 
@@ -156,6 +183,17 @@ def client(
     setup_projects(app)
     setup_computation(app)
     setup_director_v2(app)
+
+    # GC not relevant for these test-suite,
+    if 0:
+        mocker.patch(
+            "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
+            side_effect=lambda app: print(
+                f"PATCH @{__name__}:"
+                "Garbage collector disabled."
+                "Mock bypasses setup_garbage_collector to skip initializing the GC"
+            ),
+        )
     setup_resource_manager(app)
 
     return loop.run_until_complete(
@@ -312,6 +350,7 @@ async def test_start_pipeline(
 ):
     project_id = user_project["uuid"]
     mock_workbench_payload = user_project["workbench"]
+
     # connect websocket (to prevent the GC to remove the project)
     try:
         sio = await socketio_client_factory(None, None)
@@ -321,9 +360,7 @@ async def test_start_pipeline(
             pytest.fail("socket io connection should not fail")
 
     url_start = client.app.router["start_pipeline"].url_for(project_id=project_id)
-    assert url_start == URL(
-        API_PREFIX + "/computation/pipeline/{}:start".format(project_id)
-    )
+    assert url_start == URL(f"{API_PREFIX}/computation/pipeline/{project_id}:start")
 
     # POST /v0/computation/pipeline/{project_id}:start
     resp = await client.post(f"{url_start}")
@@ -360,12 +397,11 @@ async def test_start_pipeline(
             resp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
         )
         assert not error
+
     # now stop the pipeline
     # POST /v0/computation/pipeline/{project_id}:stop
     url_stop = client.app.router["stop_pipeline"].url_for(project_id=project_id)
-    assert url_stop == URL(
-        API_PREFIX + "/computation/pipeline/{}:stop".format(project_id)
-    )
+    assert url_stop == URL(f"{API_PREFIX}/computation/pipeline/{project_id}:stop")
     await asyncio.sleep(2)
     resp = await client.post(f"{url_stop}")
     data, error = await assert_status(
