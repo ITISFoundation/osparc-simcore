@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 from pprint import pformat
 from typing import Any, Callable, Dict, Optional, Tuple, Type
@@ -159,9 +160,25 @@ class Port(ServiceProperty):
             # convert the concrete value to a data value
             converted_value: ItemConcreteValue = self._py_value_converter(new_value)
 
-            if isinstance(converted_value, Path):
-                if not converted_value.exists() or not converted_value.is_file():
+            def _raise_if_file_not_on_disk(path: Path) -> None:
+                if not path.exists() or not path.is_file():
+                    log.warning("Could not find a valid file %s", path)
                     raise InvalidItemTypeError(self.property_type, str(new_value))
+
+            if isinstance(converted_value, Path):
+                if converted_value.is_symlink():
+                    symlink_target_path = Path(os.readlink(converted_value))
+                    if not symlink_target_path.is_absolute():
+                        # in the case of a relative symlink
+                        # since the working directory is different form the
+                        # one in which the symlink is placed,
+                        # it must be transfromed to an absolute path
+                        symlink_target_path = (
+                            converted_value.parent / symlink_target_path
+                        )
+                    _raise_if_file_not_on_disk(symlink_target_path)
+                else:
+                    _raise_if_file_not_on_disk(converted_value)
                 final_value = await port_utils.push_file_to_store(
                     file=converted_value,
                     user_id=self._node_ports.user_id,

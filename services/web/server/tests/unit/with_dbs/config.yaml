@@ -57,3 +57,6 @@ session:
   secret_key: "tjwiMSLe0Xd9dwMlAVQT9pYY9JEnr7rcH05fkUcukVs="
 activity:
   enabled: False
+tracing:
+  enabled: false
+  zipkin_endpoint: http://jaeger:9411

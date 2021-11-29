@@ -67,7 +67,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     "expandNavBar": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event",
     "slidesEdit": "qx.event.type.Event",
-    "slidesGuidedStart": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
     "takeSnapshot": "qx.event.type.Event",
     "showSnapshots": "qx.event.type.Event"
@@ -83,6 +82,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
   members: {
     __sidePanels: null,
+    __nodesPage: null,
     __studyTreeItem: null,
     __nodesTree: null,
     __filesTree: null,
@@ -97,11 +97,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __iframePage: null,
     __loggerView: null,
     __currentNodeId: null,
-    __startSlidesButton: null,
     __startAppButton: null,
     __editSlidesButton: null,
     __takeSnapshotButton: null,
     __showSnapshotsButton: null,
+    __collapseWithUserMenu: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -234,6 +234,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         study.getUi().addListener("changeMode", () => this.__evalSlidesButtons());
         this.__evalSlidesButtons();
         this.evalSnapshotsButtons();
+
+        // if there are no nodes, preselect the study item (show study info)
+        const nodes = study.getWorkbench().getNodes(true);
+        if (Object.values(nodes).length === 0) {
+          this.__studyTreeItem.selectStudyItem();
+        }
       }
       this.__workbenchPanel.getToolbar().setStudy(study);
     },
@@ -320,10 +326,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         alignX: "left",
         marginLeft: 14
       });
-      addNewNodeBtn.addListener("execute", () => this.__workbenchUI.openServiceCatalog());
+      addNewNodeBtn.addListener("execute", () => this.__workbenchUI.openServiceCatalog({
+        x: 50,
+        y: 50
+      }, {
+        x: 50,
+        y: 50
+      }));
       homeAndNodesTree.add(addNewNodeBtn);
 
-      const nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, primaryColumnBGColor);
+      const nodesPage = this.__nodesPage = this.__createTabPage("@FontAwesome5Solid/list", this.tr("Nodes"), homeAndNodesTree, primaryColumnBGColor);
       tabViewPrimary.add(nodesPage);
 
       const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
@@ -399,64 +411,18 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__addTopBarSpacer(topBar);
 
 
-      const separator = new qx.ui.toolbar.Separator().set({
-        padding: 0,
-        margin: 0,
-        backgroundColor: "contrasted-background++"
-      });
-      separator.exclude();
-      topBar.add(separator);
+      const collapseWithUserMenu = this.__collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
+      [
+        "backToDashboardPressed",
+        "collapseNavBar",
+        "expandNavBar"
+      ].forEach(signalName => collapseWithUserMenu.addListener(signalName, () => this.fireEvent(signalName)), this);
 
-      const closeStudyButton = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16").set({
-        font: "text-14",
-        backgroundColor: "contrasted-background+"
-      });
-      osparc.utils.Utils.setIdToWidget(closeStudyButton, "dashboardBtn");
-      closeStudyButton.addListener("execute", () => this.fireEvent("backToDashboardPressed"));
-      closeStudyButton.exclude();
-      topBar.add(closeStudyButton);
-      const userMenuButton = new osparc.navigation.UserMenuButton().set({
-        backgroundColor: "contrasted-background+"
-      });
-      osparc.io.WatchDog.getInstance().bind("online", userMenuButton, "backgroundColor", {
-        converter: on => on ? "contrasted-background+" : "red"
-      });
-      userMenuButton.getChildControl("label").exclude();
-      userMenuButton.getMenu().set({
-        backgroundColor: "contrasted-background+"
-      });
-      userMenuButton.populateExtendedMenu();
-      userMenuButton.exclude();
-      topBar.add(userMenuButton);
+      topBar.add(collapseWithUserMenu);
+    },
 
-
-      const collapseExpandNavBarStack = new qx.ui.container.Stack();
-
-      const collapseNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-up/14").set({
-        backgroundColor: "contrasted-background+"
-      });
-      collapseExpandNavBarStack.add(collapseNavBarBtn);
-      collapseNavBarBtn.addListener("execute", () => {
-        separator.show();
-        closeStudyButton.show();
-        userMenuButton.show();
-        collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[1]]);
-        this.fireEvent("collapseNavBar");
-      });
-
-      const expandNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-down/14").set({
-        backgroundColor: "contrasted-background+"
-      });
-      collapseExpandNavBarStack.add(expandNavBarBtn);
-      expandNavBarBtn.addListener("execute", () => {
-        separator.exclude();
-        closeStudyButton.exclude();
-        userMenuButton.exclude();
-        collapseExpandNavBarStack.setSelection([collapseExpandNavBarStack.getSelectables()[0]]);
-        this.fireEvent("expandNavBar");
-      });
-
-      topBar.add(collapseExpandNavBarStack);
+    getCollapseWithUserMenu: function() {
+      return this.__collapseWithUserMenu;
     },
 
     __removePages: function(tabView) {
@@ -517,14 +483,19 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
       });
       workbenchUI.addListener("changeSelectedNode", e => {
-        studyTreeItem.resetSelection();
         const nodeId = e.getData();
-        this.__nodesTree.nodeSelected(nodeId);
-        const workbench = this.getStudy().getWorkbench();
-        const node = workbench.getNode(nodeId);
-        this.__populateSecondPanel(node);
-        this.__evalIframe(node);
-        this.__loggerView.setCurrentNodeId(nodeId);
+        if (nodeId) {
+          studyTreeItem.resetSelection();
+          this.__nodesTree.nodeSelected(nodeId);
+          const workbench = this.getStudy().getWorkbench();
+          const node = workbench.getNode(nodeId);
+          this.__populateSecondPanel(node);
+          this.__evalIframe(node);
+          this.__loggerView.setCurrentNodeId(nodeId);
+        } else {
+          // empty selection
+          this.__studyTreeItem.selectStudyItem();
+        }
       });
       workbenchUI.addListener("nodeSelected", e => {
         studyTreeItem.resetSelection();
@@ -650,10 +621,26 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           }
         }, this);
       }
-    },
 
-    __createPanelView: function(caption, widget) {
-      return new osparc.desktop.PanelView(caption, widget);
+      // callback for events
+      const slotName4 = "event";
+      if (!socket.slotExists(slotName4)) {
+        socket.on(slotName4, eventData => {
+          const eventPayload = JSON.parse(eventData);
+          const action = eventPayload["action"];
+          if (action == "RELOAD_IFRAME") {
+            // TODO: maybe reload iframe in the future
+            // for now a message is displayed to the user
+            const nodeId = eventPayload["node_id"];
+
+            const workbench = this.getStudy().getWorkbench();
+            const node = workbench.getNode(nodeId);
+            const label = node.getLabel();
+            const text = `New inputs for service ${label}. Please reload to refresh service.`;
+            osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
+          }
+        }, this);
+      }
     },
 
     getStartStopButtons: function() {
@@ -673,7 +660,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     nodeSelected: function(nodeId) {
       const study = this.getStudy();
-      if (nodeId === null) {
+      if (nodeId === null || nodeId === undefined) {
         nodeId = study.getUuid();
       }
 
@@ -684,8 +671,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__nodesTree.nodeSelected(nodeId);
       }
 
-      const node = study.getWorkbench().getNode(nodeId);
-      this.__populateSecondPanel(node);
+      if (nodeId === study.getUuid()) {
+        this.__studyTreeItem.selectStudyItem();
+      } else {
+        const node = study.getWorkbench().getNode(nodeId);
+        this.__populateSecondPanel(node);
+      }
     },
 
     __evalIframe: function(node) {
@@ -777,6 +768,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         page.getChildControl("button").exclude();
       });
 
+      const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
+      tabViewLeftPanel.setSelection([this.__nodesPage]);
+
       if (node instanceof osparc.data.model.Study) {
         this.__populateSecondPanelStudy(node);
       } else if (node && node.isFilePicker()) {
@@ -813,22 +807,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       slideshowSection.add(slideshowButtons);
 
       const buttonsHeight = 28;
-      const editSlidesBtn = this.__editSlidesButton = new qx.ui.form.Button().set({
+      const editSlidesBtn = this.__editSlidesButton = new qx.ui.form.Button(this.tr("Edit Slideshow")).set({
         icon: "@FontAwesome5Solid/edit/14",
-        toolTipText: this.tr("Edit slideshow"),
         height: buttonsHeight
       });
       editSlidesBtn.addListener("execute", () => this.fireEvent("slidesEdit"), this);
       slideshowButtons.add(editSlidesBtn);
-
-      const startGuidedBtn = this.__startSlidesButton = new qx.ui.form.Button().set({
-        label: this.tr("Guided Mode"),
-        icon: "@FontAwesome5Solid/play/14",
-        toolTipText: this.tr("Start Guided Mode"),
-        height: buttonsHeight
-      });
-      startGuidedBtn.addListener("execute", () => this.fireEvent("slidesGuidedStart"), this);
-      slideshowButtons.add(startGuidedBtn);
 
       const startAppBtn = this.__startAppButton = new qx.ui.form.Button().set({
         label: this.tr("App Mode"),
@@ -850,8 +834,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
         const isOwner = osparc.data.model.Study.isOwner(study);
         this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
-        this.__startSlidesButton.setEnabled(study.hasSlideshow());
-        this.__startAppButton.setEnabled(study.getWorkbench().isPipelineLinear());
+        this.__startAppButton.setEnabled(study.hasSlideshow() || study.getWorkbench().isPipelineLinear());
       }
     },
 
@@ -903,22 +886,42 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         view.setEnabled(false);
         this.__infoPage.add(view);
       } else {
+        // empty File Picker
+        const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
+        tabViewLeftPanel.setSelection([this.__storagePage]);
+
         this.__settingsPage.getChildControl("button").show();
         this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
 
         const filePickerView = new osparc.file.FilePicker(filePicker);
         filePickerView.buildLayout();
-        filePickerView.getChildControl("reload-button").exclude();
-        filePickerView.getChildControl("files-tree").set({
-          hideRoot: true,
-          showLeafs: true
+
+        const fileDrop = new osparc.file.FileDrop();
+        fileDrop.addListener("localFileDropped", e => {
+          const files = e.getData()["data"];
+          if (filePickerView.uploadPendingFiles(files)) {
+            setTimeout(() => this.__populateSecondPanel(filePicker), 500);
+          }
+          fileDrop.resetDropAction();
         });
-        filePickerView.getChildControl("folder-viewer").exclude();
-        filePickerView.getChildControl("selected-file-layout").getChildControl("download-button").exclude();
-        filePickerView.addListener("itemSelected", () => this.__populateSecondPanel(filePicker));
-        this.__settingsPage.add(filePickerView, {
+        fileDrop.addListener("fileLinkDropped", e => {
+          const data = e.getData()["data"];
+          osparc.file.FilePicker.setOutputValueFromStore(filePicker, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
+          this.__populateSecondPanel(filePicker);
+          fileDrop.resetDropAction();
+        });
+
+        this.__settingsPage.add(fileDrop, {
           flex: 1
         });
+
+        filePickerView.getChildControl("reload-button").exclude();
+        filePickerView.getChildControl("files-tree").exclude();
+        filePickerView.getChildControl("folder-viewer").exclude();
+        filePickerView.getChildControl("selected-file-layout").exclude();
+        filePickerView.getChildControl("select-button").exclude();
+        filePickerView.addListener("itemSelected", () => this.__populateSecondPanel(filePicker));
+        this.__settingsPage.add(filePickerView);
       }
     },
 

@@ -1,4 +1,4 @@
-from pprint import pformat
+import json
 from typing import List
 from uuid import UUID
 
@@ -11,7 +11,10 @@ from requests.models import Response
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from starlette import status
 from starlette.testclient import TestClient
-from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_random
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random
 
 COMPUTATION_URL: str = "v2/computations"
 
@@ -57,12 +60,10 @@ def assert_computation_task_out_obj(
         else None
     )
     # check pipeline details contents
-    assert (
-        task_out.pipeline_details == exp_pipeline_details
-    ), f"received pipeline: {pformat(task_out.pipeline_details.dict())}\n vs expected: {pformat(exp_pipeline_details.dict())}"
+    assert task_out.pipeline_details.dict() == exp_pipeline_details.dict()
 
 
-def assert_pipeline_status(
+async def assert_pipeline_status(
     client: TestClient,
     url: AnyHttpUrl,
     user_id: PositiveInt,
@@ -78,13 +79,7 @@ def assert_pipeline_status(
 
     MAX_TIMEOUT_S = 60
 
-    @retry(
-        stop=stop_after_delay(MAX_TIMEOUT_S),
-        wait=wait_random(0, 2),
-        retry=retry_if_exception_type(AssertionError),
-        reraise=True,
-    )
-    def check_pipeline_state() -> ComputationTaskOut:
+    async def check_pipeline_state() -> ComputationTaskOut:
         response = client.get(url, params={"user_id": user_id})
         assert (
             response.status_code == status.HTTP_202_ACCEPTED
@@ -92,12 +87,30 @@ def assert_pipeline_status(
         task_out = ComputationTaskOut.parse_obj(response.json())
         assert task_out.id == project_uuid
         assert task_out.url == f"{client.base_url}/v2/computations/{project_uuid}"
-        print("Pipeline is in ", task_out.state)
+        print(
+            f"Pipeline '{project_uuid}' current state is '{task_out.state}'",
+        )
         assert (
             task_out.state in wait_for_states
         ), f"current task state is '{task_out.state}', not in any of {wait_for_states}"
         return task_out
 
-    task_out = check_pipeline_state()
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(MAX_TIMEOUT_S),
+        wait=wait_random(0, 2),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            print(
+                f"Waiting for pipeline '{project_uuid}' state to be one of: {wait_for_states}, attempt={attempt.retry_state.attempt_number}"
+            )
+            task_out = await check_pipeline_state()
+            print(
+                f"Pipeline '{project_uuid}' state succesfuly became '{task_out.state}'\n{json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
+            )
 
-    return task_out
+            return task_out
+
+    # this is only to satisfy pylance
+    raise AssertionError("No computation task generated!")

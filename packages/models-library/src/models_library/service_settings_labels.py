@@ -1,4 +1,5 @@
 # pylint: disable=unsubscriptable-object
+from enum import Enum
 import json
 from functools import cached_property
 from pathlib import Path
@@ -104,7 +105,12 @@ class PathMappingsLabel(BaseModel):
         }
 
 
-ComposeSpecLabel = Optional[Dict[str, Any]]
+ComposeSpecLabel = Dict[str, Any]
+
+
+class RestartPolicy(str, Enum):
+    NO_RESTART = "no-restart"
+    ON_INPUTS_DOWNLOADED = "on-inputs-downloaded"
 
 
 class DynamicSidecarServiceLabels(BaseModel):
@@ -134,6 +140,17 @@ class DynamicSidecarServiceLabels(BaseModel):
             "the container where the traffic must flow has to be "
             "specified. Required by dynamic-sidecar when "
             "compose_spec is set."
+        ),
+    )
+
+    restart_policy: RestartPolicy = Field(
+        RestartPolicy.NO_RESTART,
+        alias="simcore.service.restart-policy",
+        description=(
+            "the dynamic-sidecar can restart all running containers "
+            "on certain events. Supported events:\n"
+            "- `no-restart` default\n"
+            "- `on-inputs-downloaded` after inputs are downloaded\n"
         ),
     )
 
@@ -204,6 +221,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     "simcore.service.paths-mapping": json.dumps(
                         PathMappingsLabel.Config.schema_extra["example"]
                     ),
+                    "simcore.service.restart-policy": RestartPolicy.NO_RESTART.value,
                 },
                 # dynamic-service with compose spec
                 {
@@ -235,6 +253,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                         }
                     ),
                     "simcore.service.container-http-entrypoint": "rt-web",
+                    "simcore.service.restart-policy": RestartPolicy.ON_INPUTS_DOWNLOADED.value,
                 },
             ]
         }

@@ -43,6 +43,7 @@ API_VERSION = "v0"
 pytest_simcore_core_services_selection = [
     "catalog",
     "director",
+    "migration",
     "postgres",
     "redis",
 ]

@@ -4,11 +4,14 @@
 
 import importlib
 import json
+from collections import namedtuple
 from typing import Any, Dict, Iterable, List
 
+import aiodocker
 import faker
 import pytest
 import yaml
+from aiodocker.containers import DockerContainer
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI, status
 from pytest_mock.plugin import MockerFixture
@@ -20,6 +23,8 @@ from simcore_service_dynamic_sidecar.core.shared_handlers import (
 from simcore_service_dynamic_sidecar.core.utils import async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
+
+ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at")
 
 DEFAULT_COMMAND_TIMEOUT = 5.0
 
@@ -60,7 +65,7 @@ async def _docker_ps_a_container_names() -> List[str]:
     return stdout.split("\n")
 
 
-async def assert_compose_spec_pulled(
+async def _assert_compose_spec_pulled(
     compose_spec: str, settings: DynamicSidecarSettings
 ) -> None:
     """ensures all containers inside compose_spec are pulled"""
@@ -90,10 +95,29 @@ async def assert_compose_spec_pulled(
     assert len(started_containers) == expected_services_count
 
 
+async def _get_container_timestamps(
+    container_names: List[str],
+) -> Dict[str, ContainerTimes]:
+    container_timestamps: Dict[str, ContainerTimes] = {}
+    async with aiodocker.Docker() as docker_client:
+        for container_name in container_names:
+            container: DockerContainer = await docker_client.containers.get(
+                container_name
+            )
+            container_inspect: Dict[str, Any] = await container.show()
+            container_timestamps[container_name] = ContainerTimes(
+                created=container_inspect["Created"],
+                started_at=container_inspect["State"]["StartedAt"],
+                finished_at=container_inspect["State"]["FinishedAt"],
+            )
+
+    return container_timestamps
+
+
 @pytest.fixture
 async def started_containers(test_client: TestClient, compose_spec: str) -> List[str]:
     settings: DynamicSidecarSettings = test_client.application.state.settings
-    await assert_compose_spec_pulled(compose_spec, settings)
+    await _assert_compose_spec_pulled(compose_spec, settings)
 
     # start containers
     response = await test_client.post(f"/{API_VTAG}/containers", data=compose_spec)
@@ -181,10 +205,10 @@ async def test_start_same_space_twice(
     compose_spec: str, mutable_settings: DynamicSidecarSettings
 ) -> None:
     mutable_settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_1"
-    await assert_compose_spec_pulled(compose_spec, mutable_settings)
+    await _assert_compose_spec_pulled(compose_spec, mutable_settings)
 
     mutable_settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_2"
-    await assert_compose_spec_pulled(compose_spec, mutable_settings)
+    await _assert_compose_spec_pulled(compose_spec, mutable_settings)
 
 
 async def test_compose_up(
@@ -450,3 +474,33 @@ async def test_containers_entrypoint_name_containers_not_started(
     assert response.json() == {
         "detail": "No container found for network=entrypoint_container_network"
     }
+
+
+async def test_containers_restart(
+    test_client: TestClient, compose_spec: Dict[str, Any]
+) -> None:
+    # store spec first
+    response = await test_client.post(f"/{API_VTAG}/containers", data=compose_spec)
+    assert response.status_code == status.HTTP_202_ACCEPTED, response.text
+    shared_store: SharedStore = test_client.application.state.shared_store
+    container_names = shared_store.container_names
+    assert response.json() == container_names
+
+    container_timestamps_before = await _get_container_timestamps(container_names)
+
+    response = await test_client.post(
+        f"/{API_VTAG}/containers:restart",
+        query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT),
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+    assert response.text == ""
+
+    container_timestamps_after = await _get_container_timestamps(container_names)
+
+    for container_name in container_names:
+        before: ContainerTimes = container_timestamps_before[container_name]
+        after: ContainerTimes = container_timestamps_after[container_name]
+
+        assert before.created == after.created
+        assert before.started_at < after.started_at
+        assert before.finished_at < after.finished_at

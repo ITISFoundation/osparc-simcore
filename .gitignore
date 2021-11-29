@@ -114,7 +114,6 @@ node_modules/
 .vscode/*
 !.vscode/*.template.json
 
-
 # manual overrides
 services/docker-compose.override.yml
 
@@ -169,3 +168,6 @@ dask*-space/
 
 # produced when mounting volumes on docker and pip installing
 .local/
+
+# Makefile artifacts
+packages/service-integration/compose-spec.json

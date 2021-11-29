@@ -12,7 +12,7 @@ from yarl import URL
 NEW_EMAIL = "new@mail.com"
 
 
-async def test_unauthorized(client):
+async def test_unauthorized_to_change_email(client):
     url = client.app.router["auth_change_email"].url_for()
     rsp = await client.post(
         url,

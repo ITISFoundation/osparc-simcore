@@ -1,0 +1,17 @@
+#
+# Only for local development
+#
+version: "3.7"
+services:
+  registry:
+    image: registry:2
+    container_name: registry
+    init: true
+    environment:
+      - REGISTRY_STORAGE_DELETE_ENABLED=true
+    ports:
+      - 5000:5000
+    volumes:
+      - registry:/var/lib/registry
+volumes:
+  registry

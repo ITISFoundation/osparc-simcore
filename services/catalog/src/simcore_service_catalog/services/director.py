@@ -5,15 +5,23 @@ from typing import Callable, Dict, List, Optional, Union
 
 import httpx
 from fastapi import FastAPI, HTTPException
+from servicelib.json_serialization import json_dumps
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
 
 logger = logging.getLogger(__name__)
 
-director_statup_retry_policy = dict(
-    wait=wait_random(1, 10),
+MINUTE = 60
+
+director_startup_retry_policy = dict(
+    # Random service startup order in swarm.
+    # wait_random prevents saturating other services while startup
+    #
+    wait=wait_random(2, 5),
+    stop=stop_after_delay(2 * MINUTE),
     before_sleep=before_sleep_log(logger, logging.WARNING),
     reraise=True,
 )
@@ -24,12 +32,18 @@ async def setup_director(app: FastAPI) -> None:
         # init client-api
         logger.debug("Setup director at %s...", settings.base_url)
         director_client = DirectorApi(base_url=settings.base_url, app=app)
+
         # check that the director is accessible
-        async for attempt in AsyncRetrying(**director_statup_retry_policy):
+        async for attempt in AsyncRetrying(**director_startup_retry_policy):
             with attempt:
                 if not await director_client.is_responsive():
                     raise ValueError("Director-v0 is not responsive")
-        logger.info("Connection with director-v0 established")
+
+                logger.info(
+                    "Connection to director-v0 succeded [%s]",
+                    json_dumps(attempt.retry_state.retry_object.statistics),
+                )
+
         app.state.director_api = director_client
 
 

@@ -100,3 +100,15 @@ async def set_comp_task_outputs(
             .where(comp_tasks.c.node_id == f"{node_id}")
             .values(outputs=outputs, schema={"outputs": outputs_schema, "inputs": {}})
         )
+
+
+async def set_comp_task_inputs(
+    aiopg_engine: aiopg.sa.engine.Engine, node_id: NodeID, inputs_schema: Dict[str, Any], inputs: Dict[str, Any]  # type: ignore
+):
+    async with aiopg_engine.acquire() as conn:  # type: ignore
+        await conn.execute(
+            # pylint: disable=no-value-for-parameter
+            comp_tasks.update()
+            .where(comp_tasks.c.node_id == f"{node_id}")
+            .values(inputs=inputs, schema={"outputs": {}, "inputs": inputs_schema})
+        )

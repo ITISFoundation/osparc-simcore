@@ -2,7 +2,7 @@ import functools
 import inspect
 import logging
 from enum import Enum
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Protocol
 
 from aiohttp import web
 
@@ -11,6 +11,13 @@ from .application_keys import APP_CONFIG_KEY
 log = logging.getLogger(__name__)
 
 APP_SETUP_KEY = f"{__name__ }.setup"
+
+
+class _SetupFunc(Protocol):
+    __name__: str
+
+    def __call__(self, app: web.Application, *args: Any, **kwds: Any) -> bool:
+        ...
 
 
 class ModuleCategory(Enum):
@@ -95,7 +102,7 @@ def app_module_setup(
         # if passes config_enabled, invalidates info on section
         section = None
 
-    def _decorate(setup_func: Callable):
+    def _decorate(setup_func: _SetupFunc):
 
         if "setup" not in setup_func.__name__:
             logger.warning("Rename '%s' to contain 'setup'", setup_func.__name__)

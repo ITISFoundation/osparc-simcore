@@ -450,4 +450,56 @@ async def push_output_ports(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@containers_router.post(
+    "/containers:restart",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        status.HTTP_404_NOT_FOUND: {"description": "Container does not exist"},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {
+            "description": "Error while running docker-compose command"
+        },
+    },
+)
+async def restarts_containers(
+    command_timeout: float = Query(
+        10.0, description="docker-compose stop command timeout default"
+    ),
+    settings: DynamicSidecarSettings = Depends(get_settings),
+    shared_store: SharedStore = Depends(get_shared_store),
+    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+) -> Response:
+    """Removes the previously started service
+    and returns the docker-compose output"""
+
+    stored_compose_content = shared_store.compose_spec
+    if stored_compose_content is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail="No spec for docker-compose command was found",
+        )
+
+    command = (
+        "docker-compose --project-name {project} --file {file_path} "
+        "restart --timeout {stop_and_remove_timeout}"
+    )
+
+    finished_without_errors, stdout = await write_file_and_run_command(
+        settings=settings,
+        file_content=stored_compose_content,
+        command=command,
+        command_timeout=command_timeout,
+    )
+    if not finished_without_errors:
+        error_message = (f"'{command}' finished with errors\n{stdout}",)
+        logger.warning(error_message)
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=stdout)
+
+    await _send_message(rabbitmq, "Service was restarted please reload the UI")
+    await rabbitmq.send_event_reload_iframe()
+
+    # SEE https://github.com/tiangolo/fastapi/issues/2253
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 __all__ = ["containers_router"]

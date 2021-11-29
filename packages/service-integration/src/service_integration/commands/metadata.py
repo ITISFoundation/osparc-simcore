@@ -5,7 +5,7 @@ import click
 import yaml
 from models_library.services import ServiceDockerData
 
-from ..version_utils import bump_version_string
+from ..versioning import bump_version_string
 from ..yaml_utils import ordered_safe_dump, ordered_safe_load
 
 TARGET_VERSION_CHOICES = ["integration-version", "version"]
@@ -64,7 +64,7 @@ def bump_version(target_version, upgrade, metadata_file_path):
     help="The metadata yaml file",
     type=Path,
     required=False,
-    default="metadata/metadata.yml",
+    default=".osparc/metadata.yml",
 )
 def get_version(target_version, metadata_file_path):
     """Prints to output requested version"""
@@ -77,5 +77,5 @@ def get_version(target_version, metadata_file_path):
 
     # MUST have no new line so that we can produce a VERSION file with no extra new-line
     # VERSION: $(METADATA)
-    #    @simcore-service-integrator get-version --metadata-file $< > $@
+    #    @osparc-service-integrator get-version --metadata-file $< > $@
     click.echo(current_version, nl=False)

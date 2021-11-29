@@ -36,61 +36,27 @@ qx.Class.define("osparc.desktop.Toolbar", {
   },
 
   events: {
-    "nodeSelected": "qx.event.type.Data",
-    "startPipeline": "qx.event.type.Event",
-    "startPartialPipeline": "qx.event.type.Event",
-    "stopPipeline": "qx.event.type.Event"
+    "nodeSelected": "qx.event.type.Data"
   },
 
   properties: {
     study: {
       check: "osparc.data.model.Study",
-      apply: "__applyStudy",
+      apply: "_applyStudy",
       nullable: false
     }
   },
 
   members: {
-    _startStopBtns: null,
-
-    getStartStopButtons: function() {
-      return this._startStopBtns;
-    },
-
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "start-stop-btns": {
-          control = new osparc.desktop.StartStopButtons();
-          [
-            "startPipeline",
-            "startPartialPipeline",
-            "stopPipeline"
-          ].forEach(signalName => {
-            control.addListener(signalName, () => {
-              this.fireEvent(signalName);
-            }, this);
-          });
-          this._add(control);
-          break;
-        }
-      }
-      return control || this.base(arguments, id);
-    },
-
-    __applyStudy: function(study) {
-      if (study) {
-        study.getUi().addListener("changeCurrentNodeId", () => {
-          this._populateNodesNavigationLayout();
-        });
-        this._startStopBtns.setStudy(study);
-
-        this._populateNodesNavigationLayout();
-      }
-    },
-
     _buildLayout: function() {
       throw new Error("Abstract method called!");
+    },
+
+    _applyStudy: function(study) {
+      if (study) {
+        this._populateNodesNavigationLayout();
+        study.getUi().addListener("changeCurrentNodeId", () => this._populateNodesNavigationLayout(), this);
+      }
     },
 
     _populateNodesNavigationLayout: function() {

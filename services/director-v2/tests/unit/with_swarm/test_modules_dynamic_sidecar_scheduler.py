@@ -3,14 +3,13 @@
 
 
 import asyncio
-import json
 import logging
 import re
 import urllib.parse
 from asyncio import BaseEventLoop
 from contextlib import asynccontextmanager, contextmanager
 from importlib import reload
-from typing import Any, AsyncGenerator, Callable, Dict, Iterator, List, Type, Union
+from typing import AsyncGenerator, Callable, Iterator, List, Type, Union
 from unittest.mock import AsyncMock
 
 import httpx
@@ -117,14 +116,6 @@ async def _assert_get_dynamic_services_mocked(
         yield stack_status
 
         await _assert_remove_service(scheduler, scheduler_data)
-
-
-def _assemble_labels(scheduler_data: SchedulerData) -> Dict[str, Any]:
-    return {
-        "simcore.service.container-http-entrypoint": scheduler_data.container_http_entry,
-        "simcore.service.paths-mapping": json.dumps(scheduler_data.paths_mapping),
-        "simcore.service.compose-spec": json.dumps(scheduler_data.compose_spec),
-    }
 
 
 # FIXTURES

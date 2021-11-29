@@ -11,7 +11,7 @@ from simcore_service_webserver.login.cfg import APP_LOGIN_CONFIG
 NEW_PASSWORD = "NewPassword1*&^"
 
 
-async def test_unauthorized(client):
+async def test_unauthorized_to_change_password(client):
     url = client.app.router["auth_change_password"].url_for()
     rsp = await client.post(
         url,

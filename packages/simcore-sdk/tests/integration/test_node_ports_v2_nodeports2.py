@@ -5,11 +5,12 @@
 # pylint:disable=pointless-statement
 
 import filecmp
+import os
 import tempfile
 import threading
 from asyncio import gather
 from pathlib import Path
-from typing import Any, Callable, Dict, Type, Union
+from typing import Any, Callable, Dict, Type, Union, Iterable
 from uuid import uuid4
 
 import np_helpers  # pylint: disable=no-name-in-module
@@ -21,7 +22,12 @@ from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 
-pytest_simcore_core_services_selection = ["postgres", "storage"]
+
+pytest_simcore_core_services_selection = [
+    "migration",
+    "postgres",
+    "storage",
+]
 
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
@@ -101,6 +107,23 @@ async def check_config_valid(ports: Nodeports, config_dict: Dict):
 @pytest.fixture(scope="session")
 def e_tag() -> str:
     return "123154654684321-1"
+
+
+@pytest.fixture
+def symlink_path() -> Iterable[Path]:
+    symlink = Path(tempfile.gettempdir()) / f"symlink_{Path(__file__).name}"
+    if not symlink.exists():
+        os.symlink(__file__, symlink)
+
+    yield symlink
+
+    if symlink.exists():
+        symlink.unlink()
+
+
+@pytest.fixture
+def config_value_symlink_path(symlink_path: Path) -> Dict[str, Any]:
+    return {"store": "0", "path": symlink_path}
 
 
 async def test_default_configuration(
@@ -188,6 +211,12 @@ async def test_port_value_accessors(
         ("data:*/*", __file__, Path, {"store": "0", "path": __file__}),
         ("data:text/*", __file__, Path, {"store": "0", "path": __file__}),
         ("data:text/py", __file__, Path, {"store": "0", "path": __file__}),
+        (
+            "data:text/py",
+            pytest.lazy_fixture("symlink_path"),
+            Path,
+            pytest.lazy_fixture("config_value_symlink_path"),
+        ),
     ],
 )
 async def test_port_file_accessors(

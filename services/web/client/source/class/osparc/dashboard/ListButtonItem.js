@@ -255,45 +255,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
       }
     },
 
-    _applyQuality: function(quality) {
-      if (osparc.component.metadata.Quality.isEnabled(quality)) {
-        const tsrRating = this.getChildControl("tsr-rating");
-        tsrRating.set({
-          nStars: 4,
-          showScore: true
-        });
-        osparc.ui.basic.StarsRating.scoreToStarsRating(quality["tsr_current"], quality["tsr_target"], tsrRating);
-        // Stop propagation of the pointer event in case the tag is inside a button that we don't want to trigger
-        tsrRating.addListener("tap", e => {
-          e.stopPropagation();
-          this.__openQualityEditor();
-        }, this);
-        tsrRating.addListener("pointerdown", e => e.stopPropagation());
-      }
-    },
-
-    _applyUiMode: function(uiMode) {
-      if (uiMode) {
-        let source = null;
-        switch (uiMode) {
-          case "guided":
-          default:
-            source = osparc.dashboard.CardBase.MODE_GUIDED;
-            break;
-          case "app":
-            source = osparc.dashboard.CardBase.MODE_APP;
-            break;
-          case "workbench":
-            source = osparc.dashboard.CardBase.MODE_WORKBENCH;
-            break;
-        }
-        if (source) {
-          const uiModeIcon = this.getChildControl("ui-mode");
-          uiModeIcon.setSource(source);
-        }
-      }
-    },
-
     // overridden
     _applyMultiSelectionMode: function(value) {
       if (value) {
@@ -398,21 +359,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
 
       this._getChildren().forEach(item => {
         item.setOpacity(enabled ? 1.0 : 0.4);
-      });
-    },
-
-    __openQualityEditor: function() {
-      const resourceData = this.getResourceData();
-      const qualityEditor = osparc.studycard.Utils.openQuality(resourceData);
-      qualityEditor.addListener("updateQuality", e => {
-        const updatedResourceData = e.getData();
-        if (osparc.utils.Resources.isStudy(resourceData)) {
-          this.fireDataEvent("updateQualityStudy", updatedResourceData);
-        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-          this.fireDataEvent("updateQualityTemplate", updatedResourceData);
-        } else if (osparc.utils.Resources.isService(resourceData)) {
-          this.fireDataEvent("updateQualityService", updatedResourceData);
-        }
       });
     }
   },

@@ -25,35 +25,16 @@ qx.Class.define("osparc.component.study.SaveAsTemplate", {
   extend: qx.ui.core.Widget,
 
   /**
-   * @param studyId {String} Study Id
    * @param studyData {Object} Object containing part or the entire serialized Study Data
    */
-  construct: function(studyId, studyData) {
+  construct: function(studyData) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    this.__studyId = studyId;
-    this.__formData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+    this.__studyDataClone = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
     this.__buildLayout();
-
-    this.setHeaderText(this.tr("Make Template accessible to"));
-    this.setButtonText(this.tr("Publish"));
-  },
-
-  properties: {
-    headerText: {
-      check: "String",
-      init: "",
-      event: "changeHeaderText"
-    },
-
-    buttonText: {
-      check: "String",
-      init: "",
-      event: "changeButtonText"
-    }
   },
 
   events: {
@@ -61,25 +42,31 @@ qx.Class.define("osparc.component.study.SaveAsTemplate", {
   },
 
   members: {
-    __studyId: null,
+    __studyDataClone: null,
     __shareWith: null,
-    __formData: null,
+    __copyWData: null,
 
     __buildLayout: function() {
       const shareWith = this.__shareWith = new osparc.component.permissions.ShareWith();
-      this.bind("headerText", shareWith, "legend");
+      shareWith.getChildControl("legend").set({
+        label: this.tr("Make Template accessible to"),
+        font: "title-14"
+      });
       this._add(shareWith, {
         flex: 1
       });
 
+      const publishWithdData = this.__copyWData = new qx.ui.form.CheckBox(this.tr("Publish with data")).set({
+        value: true
+      });
+      this._add(publishWithdData);
+
       const shareResourceBtn = new osparc.ui.form.FetchButton().set({
+        label: this.tr("Publish"),
         allowGrowX: false,
         alignX: "right"
       });
-      this.bind("buttonText", shareResourceBtn, "label");
-      shareResourceBtn.addListener("execute", () => {
-        this.__shareResource(shareResourceBtn);
-      }, this);
+      shareResourceBtn.addListener("execute", () => this.__shareResource(shareResourceBtn), this);
       shareWith.bind("ready", shareResourceBtn, "enabled");
       this._add(shareResourceBtn);
     },
@@ -89,7 +76,7 @@ qx.Class.define("osparc.component.study.SaveAsTemplate", {
 
       const selectedGroupIDs = this.__shareWith.getSelectedGroups();
       selectedGroupIDs.forEach(gid => {
-        this.__formData["accessRights"][gid] = {
+        this.__studyDataClone["accessRights"][gid] = {
           "read": true,
           "write": false,
           "delete": false
@@ -98,9 +85,10 @@ qx.Class.define("osparc.component.study.SaveAsTemplate", {
 
       const params = {
         url: {
-          "study_id": this.__studyId
+          "study_id": this.__studyDataClone.uuid,
+          "copy_data": this.__copyWData.getValue()
         },
-        data: this.__formData
+        data: this.__studyDataClone
       };
       osparc.data.Resources.fetch("studies", "postToTemplate", params)
         .then(template => {

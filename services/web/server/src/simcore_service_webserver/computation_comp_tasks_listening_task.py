@@ -11,8 +11,6 @@ from typing import Dict, Optional
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
-from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -29,9 +27,7 @@ log = logging.getLogger(__name__)
 
 
 @log_decorator(logger=log)
-async def _get_project_owner(
-    conn: SAConnection, project_uuid: ProjectID
-) -> PositiveInt:
+async def _get_project_owner(conn: SAConnection, project_uuid: str) -> PositiveInt:
     the_project_owner = await conn.scalar(
         select([projects.c.prj_owner]).where(projects.c.uuid == project_uuid)
     )
@@ -44,8 +40,8 @@ async def _get_project_owner(
 async def _update_project_state(
     app: web.Application,
     user_id: PositiveInt,
-    project_uuid: ProjectID,
-    node_uuid: NodeID,
+    project_uuid: str,
+    node_uuid: str,
     new_state: RunningState,
 ) -> None:
     project = await projects_api.update_project_node_state(
@@ -59,8 +55,8 @@ async def _update_project_state(
 async def _update_project_outputs(
     app: web.Application,
     user_id: PositiveInt,
-    project_uuid: ProjectID,
-    node_uuid: NodeID,
+    project_uuid: str,
+    node_uuid: str,
     outputs: Dict,
     run_hash: Optional[str],
 ) -> None:
@@ -74,9 +70,9 @@ async def _update_project_outputs(
         new_run_hash=run_hash,
     )
 
-    await projects_api.notify_project_node_update(app, project, node_uuid)
+    await projects_api.notify_project_node_update(app, project, f"{node_uuid}")
     # get depending node and notify for these ones as well
-    depending_node_uuids = await project_get_depending_nodes(project, node_uuid)
+    depending_node_uuids = await project_get_depending_nodes(project, f"{node_uuid}")
     await logged_gather(
         *[
             projects_api.notify_project_node_update(app, project, n)
@@ -123,8 +119,8 @@ async def listen(app: web.Application, db_engine: Engine):
                 log.error("no changes but still triggered: %s", pformat(payload))
                 continue
 
-            project_uuid = task_data.get("project_id", None)
-            node_uuid = task_data.get("node_id", None)
+            project_uuid = task_data.get("project_id", "undefined")
+            node_uuid = task_data.get("node_id", "undefined")
 
             # FIXME: we do not know who triggered these changes. we assume the user had the rights to do so
             # therefore we'll use the prj_owner user id. This should be fixed when the new sidecar comes in

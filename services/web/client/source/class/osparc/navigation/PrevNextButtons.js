@@ -16,14 +16,12 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.navigation.PrevNextButtons", {
-  extend: qx.ui.core.Widget,
+  extend: qx.core.Object,
 
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(0).set({
-      alignY: "middle"
-    }));
+    this.__createButtons();
   },
 
   events: {
@@ -32,60 +30,79 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
 
   statics: {
     BUTTON_OPTIONS: {
-      font: "text-14",
-      allowGrowY: false,
-      minWidth: 32,
-      minHeight: 32
+      backgroundColor: "background-main",
+      allowGrowX: false,
+      allowGrowY: false
+    }
+  },
+
+  properties: {
+    study: {
+      check: "osparc.data.model.Study",
+      apply: "__applyStudy",
+      nullable: false
     }
   },
 
   members: {
     __prvsBtn: null,
     __nextBtn: null,
-    __currentNodeId: null,
 
-    populateButtons: function(nodesIds) {
-      this.__createButtons();
+    getPreviousButton: function() {
+      return this.__prvsBtn;
+    },
 
-      const study = osparc.store.Store.getInstance().getCurrentStudy();
-      const currentNodeId = study.getUi().getCurrentNodeId();
-      const currentIdx = nodesIds.indexOf(currentNodeId);
-
-      if (currentIdx > 0) {
-        this.__prvsBtn.addListener("execute", () => {
-          this.fireDataEvent("nodeSelected", nodesIds[currentIdx-1]);
-        }, this);
-      } else {
-        this.__prvsBtn.setEnabled(false);
-      }
-
-      if (currentIdx < nodesIds.length-1) {
-        this.__nextBtn.addListener("execute", () => {
-          this.fireDataEvent("nodeSelected", nodesIds[currentIdx+1]);
-        }, this);
-      } else {
-        this.__nextBtn.setEnabled(false);
-      }
+    getNextButton: function() {
+      return this.__nextBtn;
     },
 
     __createButtons: function() {
-      this._removeAll();
-
       const prvsBtn = this.__prvsBtn = new qx.ui.form.Button().set({
-        toolTipText: this.tr("Previous"),
-        icon: "@FontAwesome5Solid/arrow-left/14",
-        ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-        allowGrowX: false
+        toolTipText: qx.locale.Manager.tr("Previous"),
+        icon: "@FontAwesome5Solid/arrow-left/24",
+        ...this.self().BUTTON_OPTIONS
       });
-      this._add(prvsBtn);
+      prvsBtn.addListener("execute", () => this.__prevPressed(), this);
 
       const nextBtn = this.__nextBtn = new qx.ui.form.Button().set({
-        toolTipText: this.tr("Next"),
-        icon: "@FontAwesome5Solid/arrow-right/14",
-        ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
-        allowGrowX: false
+        toolTipText: qx.locale.Manager.tr("Next"),
+        icon: "@FontAwesome5Solid/arrow-right/24",
+        ...this.self().BUTTON_OPTIONS
       });
-      this._add(nextBtn);
+      nextBtn.addListener("execute", () => this.__nextPressed(), this);
+    },
+
+    __applyStudy: function(study) {
+      this.__updatePrevNextButtons();
+      study.getUi().addListener("changeCurrentNodeId", () => this.__updatePrevNextButtons(), this);
+    },
+
+    __updatePrevNextButtons: function() {
+      const studyUI = this.getStudy().getUi();
+      const currentNodeId = studyUI.getCurrentNodeId();
+      const nodesIds = studyUI.getSlideshow().getSortedNodeIds();
+      const currentIdx = nodesIds.indexOf(currentNodeId);
+
+      this.__prvsBtn.setEnabled(currentIdx > 0);
+      this.__nextBtn.setEnabled(currentIdx < nodesIds.length-1);
+    },
+
+    __prevPressed: function() {
+      const studyUI = this.getStudy().getUi();
+      const currentNodeId = studyUI.getCurrentNodeId();
+      const nodesIds = studyUI.getSlideshow().getSortedNodeIds();
+      const currentIdx = nodesIds.indexOf(currentNodeId);
+
+      this.fireDataEvent("nodeSelected", nodesIds[currentIdx-1]);
+    },
+
+    __nextPressed: function() {
+      const studyUI = this.getStudy().getUi();
+      const currentNodeId = studyUI.getCurrentNodeId();
+      const nodesIds = studyUI.getSlideshow().getSortedNodeIds();
+      const currentIdx = nodesIds.indexOf(currentNodeId);
+
+      this.fireDataEvent("nodeSelected", nodesIds[currentIdx+1]);
     }
   }
 });

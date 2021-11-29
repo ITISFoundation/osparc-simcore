@@ -7,8 +7,8 @@ from typing import Any, AsyncIterator, Awaitable, Dict, Optional, cast
 
 import distributed
 from dask_task_models_library.container_tasks.events import (
+    BaseTaskEvent,
     TaskCancelEvent,
-    TaskEvent,
     TaskLogEvent,
     TaskProgressEvent,
 )
@@ -110,7 +110,7 @@ async def monitor_task_abortion(task_name: str) -> AsyncIterator[Awaitable[None]
                 await periodically_checking_task
 
 
-def publish_event(dask_pub: distributed.Pub, event: TaskEvent) -> None:
+def publish_event(dask_pub: distributed.Pub, event: BaseTaskEvent) -> None:
     dask_pub.put(event.json())
 
 

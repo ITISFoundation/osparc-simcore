@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
-click==8.0.1
+click==8.0.3
     # via typer
 pydantic==1.8.2
     # via
@@ -12,5 +12,5 @@ pydantic==1.8.2
     #   -r requirements/_base.in
 typer==0.4.0
     # via -r requirements/_base.in
-typing-extensions==3.10.0.2
+typing-extensions==4.0.0
     # via pydantic

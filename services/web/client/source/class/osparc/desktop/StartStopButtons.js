@@ -34,7 +34,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox(5));
+    this._setLayout(new qx.ui.layout.HBox());
 
     this.__initDefault();
   },
@@ -55,6 +55,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
   },
 
   members: {
+    __clustersSelectBox: null,
     __startButton: null,
     __startSelectionButton: null,
     __startAllButton: null,
@@ -115,9 +116,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       });
 
       const store = osparc.store.Store.getInstance();
-      store.addListener("changeClusters", e => {
-        this.__populateClustersSelectBox();
-      });
+      store.addListener("changeClusters", () => this.__populateClustersSelectBox(), this);
       this.__populateClustersSelectBox();
       return selectBox;
     },
@@ -157,17 +156,13 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __createStartButton: function() {
       const startButton = this.__startButton = new osparc.ui.toolbar.FetchButton(this.tr("Run"), "@FontAwesome5Solid/play/14");
       osparc.utils.Utils.setIdToWidget(startButton, "runStudyBtn");
-      startButton.addListener("execute", () => {
-        this.fireEvent("startPipeline");
-      }, this);
+      startButton.addListener("execute", () => this.fireEvent("startPipeline"), this);
       return startButton;
     },
 
     __createStartSplitButton: function() {
       const startSelectionButton = this.__startSelectionButton = new osparc.ui.toolbar.FetchSplitButton(this.tr("Run Selection"), "@FontAwesome5Solid/play/14");
-      startSelectionButton.addListener("execute", () => {
-        this.fireEvent("startPartialPipeline");
-      }, this);
+      startSelectionButton.addListener("execute", () => this.fireEvent("startPartialPipeline"), this);
       const splitButtonMenu = this.__createSplitButtonMenu();
       startSelectionButton.setMenu(splitButtonMenu);
       return startSelectionButton;
@@ -177,9 +172,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       const splitButtonMenu = new qx.ui.menu.Menu();
 
       const startAllButton = this.__startAllButton = new osparc.ui.menu.FetchButton(this.tr("Run All"));
-      startAllButton.addListener("execute", () => {
-        this.fireEvent("startPipeline");
-      });
+      startAllButton.addListener("execute", () => this.fireEvent("startPipeline"), this);
       splitButtonMenu.add(startAllButton);
 
       return splitButtonMenu;
@@ -188,9 +181,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __createStopButton: function() {
       const stopButton = this.__stopButton = new osparc.ui.toolbar.FetchButton(this.tr("Stop"), "@FontAwesome5Solid/stop/14");
       osparc.utils.Utils.setIdToWidget(stopButton, "stopStudyBtn");
-      stopButton.addListener("execute", () => {
-        this.fireEvent("stopPipeline");
-      }, this);
+      stopButton.addListener("execute", () => this.fireEvent("stopPipeline"), this);
       return stopButton;
     },
 

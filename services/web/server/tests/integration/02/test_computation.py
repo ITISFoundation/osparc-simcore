@@ -4,13 +4,13 @@
 import asyncio
 import json
 import sys
+from collections import namedtuple
 from pathlib import Path
-from typing import Any, Awaitable, Callable, Dict, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple
 
 import pytest
 import socketio
 import sqlalchemy as sa
-from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.settings.rabbit import RabbitConfig
@@ -28,6 +28,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.projects.module_setup import setup_projects
+from simcore_service_webserver.projects.projects_handlers import HTTPLocked
 from simcore_service_webserver.resource_manager.module_setup import (
     setup_resource_manager,
 )
@@ -44,24 +45,91 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 API_VERSION = "v0"
 API_PREFIX = "/" + API_VERSION
 
+
 # Selection of core and tool services started in this swarm fixture (integration)
 pytest_simcore_core_services_selection = [
-    "redis",
-    "rabbit",
-    "director",
-    "director-v2",
-    "postgres",
     "dask-scheduler",
     "dask-sidecar",
+    "director-v2",
+    "director",
+    "migration",
+    "postgres",
+    "rabbit",
+    "redis",
     "storage",
 ]
 
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
+
+
+# HELPERS ----------------------------------------------------------------------------
+
+ExpectedResponse = namedtuple(
+    "ExpectedResponse",
+    ["ok", "created", "no_content", "not_found", "forbidden", "locked", "accepted"],
+)
+
+
+def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse]]]:
+    return (
+        "user_role,expected",
+        [
+            (
+                UserRole.ANONYMOUS,
+                ExpectedResponse(
+                    web.HTTPUnauthorized,
+                    web.HTTPUnauthorized,
+                    web.HTTPUnauthorized,
+                    web.HTTPUnauthorized,
+                    web.HTTPUnauthorized,
+                    web.HTTPUnauthorized,
+                    web.HTTPUnauthorized,
+                ),
+            ),
+            (
+                UserRole.GUEST,
+                ExpectedResponse(
+                    web.HTTPForbidden,
+                    web.HTTPForbidden,
+                    web.HTTPForbidden,
+                    web.HTTPForbidden,
+                    web.HTTPForbidden,
+                    web.HTTPForbidden,
+                    web.HTTPForbidden,
+                ),
+            ),
+            (
+                UserRole.USER,
+                ExpectedResponse(
+                    web.HTTPOk,
+                    web.HTTPCreated,
+                    web.HTTPNoContent,
+                    web.HTTPNotFound,
+                    web.HTTPForbidden,
+                    HTTPLocked,
+                    web.HTTPAccepted,
+                ),
+            ),
+            (
+                UserRole.TESTER,
+                ExpectedResponse(
+                    web.HTTPOk,
+                    web.HTTPCreated,
+                    web.HTTPNoContent,
+                    web.HTTPNotFound,
+                    web.HTTPForbidden,
+                    HTTPLocked,
+                    web.HTTPAccepted,
+                ),
+            ),
+        ],
+    )
+
+
+# FIXTURES ----------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -102,8 +170,8 @@ def client(
 
 
 @pytest.fixture(scope="session")
-def mock_workbench_adjacency_list() -> Dict[str, Any]:
-    file_path = current_dir / "workbench_sleeper_dag_adjacency_list.json"
+def mock_workbench_adjacency_list(tests_data_dir: Path) -> Dict[str, Any]:
+    file_path = tests_data_dir / "workbench_sleeper_dag_adjacency_list.json"
     with file_path.open() as fp:
         return json.load(fp)
 

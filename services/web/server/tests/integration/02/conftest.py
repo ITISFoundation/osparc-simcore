@@ -3,22 +3,17 @@
 # pylint:disable=redefined-outer-name
 
 import json
-import sys
 import uuid
 from pathlib import Path
 from typing import Dict
 
 import pytest
-from pytest_simcore.helpers.utils_login import LoggedUser
 from pytest_simcore.helpers.utils_projects import NewProject
-from simcore_service_webserver.security_roles import UserRole
-
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture(scope="session")
-def mock_workbench_payload() -> Dict:
-    file_path = current_dir / "workbench_sleeper_payload.json"
+def mock_workbench_payload(tests_data_dir: Path) -> Dict:
+    file_path = tests_data_dir / "workbench_sleeper_payload.json"
     with file_path.open() as fp:
         return json.load(fp)
 
@@ -49,7 +44,7 @@ def project_id() -> str:
 
 @pytest.fixture(scope="session")
 def node_uuid() -> str:
-    return "some_node_id"
+    return f"{uuid.uuid4()}"
 
 
 @pytest.fixture(scope="session")

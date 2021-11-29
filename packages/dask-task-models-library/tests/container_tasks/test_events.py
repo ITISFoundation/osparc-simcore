@@ -7,8 +7,8 @@
 
 import pytest
 from dask_task_models_library.container_tasks.events import (
+    BaseTaskEvent,
     TaskCancelEvent,
-    TaskEvent,
     TaskLogEvent,
     TaskProgressEvent,
     TaskStateEvent,
@@ -20,7 +20,7 @@ from pytest_mock.plugin import MockerFixture
 def test_task_event_abstract():
     with pytest.raises(TypeError):
         # pylint: disable=abstract-class-instantiated
-        TaskEvent(job_id="some_fake")  # type: ignore
+        BaseTaskEvent(job_id="some_fake")  # type: ignore
 
 
 @pytest.mark.parametrize(

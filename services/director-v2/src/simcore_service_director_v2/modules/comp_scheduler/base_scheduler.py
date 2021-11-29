@@ -391,7 +391,8 @@ class BaseCompScheduler(ABC):
                 ),
             ):
                 logger.error(
-                    "The task %s could not be scheduled due to the following: %s",
+                    "Project '%s''s task '%s' could not be scheduled due to the following: %s",
+                    project_id,
                     r.node_id,
                     f"{r}",
                 )
@@ -400,8 +401,9 @@ class BaseCompScheduler(ABC):
                 )
                 # TODO: we should set some specific state so the user may know what to do
             elif isinstance(r, ComputationalBackendNotConnectedError):
-                logger.warning(
-                    "The computational backend is disconnected. Tasks are set back to PUBLISHED state until scheduler comes back!"
+                logger.error(
+                    "The computational backend is disconnected. Tasks are set back "
+                    "to PUBLISHED state until scheduler comes back!"
                 )
                 # we should try re-connecting.
                 # in the meantime we cannot schedule tasks on the scheduler,

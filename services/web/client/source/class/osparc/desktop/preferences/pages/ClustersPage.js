@@ -56,7 +56,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         const newCluster = true;
         const clusterEditor = new osparc.component.editor.ClusterEditor(newCluster);
         const title = this.tr("Cluster Details Editor");
-        const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 200);
+        const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 250);
         clusterEditor.addListener("createCluster", () => {
           this.__createCluster(win, clusterEditor.getChildControl("create"), clusterEditor);
         });
@@ -93,6 +93,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
           ctrl.bindProperty("id", "key", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
+          ctrl.bindProperty("endpoint", "endpoint", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
           ctrl.bindProperty("access_rights", "members", null, item, id);
         },
@@ -175,6 +176,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
           ctrl.bindProperty("id", "key", null, item, id);
           ctrl.bindProperty("thumbnail", "thumbnail", null, item, id);
           ctrl.bindProperty("name", "title", null, item, id);
+          ctrl.bindProperty("endpoint", "endpoint", null, item, id);
+          ctrl.bindProperty("simpleAuthenticationUsername", "simpleAuthenticationUsername", null, item, id);
+          ctrl.bindProperty("simpleAuthenticationPassword", "simpleAuthenticationPassword", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
           ctrl.bindProperty("login", "subtitleMD", null, item, id);
           ctrl.bindProperty("showOptions", "showOptions", null, item, id);
@@ -293,6 +297,9 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       const clusterEditor = new osparc.component.editor.ClusterEditor(newCluster);
       cluster.bind("id", clusterEditor, "cid");
       cluster.bind("name", clusterEditor, "label");
+      cluster.bind("endpoint", clusterEditor, "endpoint");
+      clusterEditor.setSimpleAuthenticationUsername(cluster.getAuthentication().getUsername());
+      clusterEditor.setSimpleAuthenticationPassword(cluster.getAuthentication().getPassword());
       cluster.bind("description", clusterEditor, "description");
       const title = this.tr("Cluster Details Editor");
       const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 200);
@@ -344,6 +351,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     __createCluster: function(win, button, clusterEditor) {
       const clusterKey = clusterEditor.getCid();
       const name = clusterEditor.getLabel();
+      const endpoint = clusterEditor.getEndpoint();
+      const authenticationType = "simple";
+      const simpleAuthenticationUsername = clusterEditor.getSimpleAuthenticationUsername();
+      const simpleAuthenticationPassword = clusterEditor.getSimpleAuthenticationPassword();
       const description = clusterEditor.getDescription();
       const params = {
         url: {
@@ -351,6 +362,12 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         },
         data: {
           "name": name,
+          "endpoint": endpoint,
+          "authentication": {
+            "type": authenticationType,
+            "username": simpleAuthenticationUsername,
+            "password": simpleAuthenticationPassword
+          },
           "description": description,
           "type": "AWS"
         }
@@ -375,6 +392,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     __updateCluster: function(win, button, clusterEditor) {
       const clusterId = clusterEditor.getCid();
       const name = clusterEditor.getLabel();
+      const endpoint = clusterEditor.getEndpoint();
+      const authenticationType = "simple";
+      const simpleAuthenticationUsername = clusterEditor.getSimpleAuthenticationUsername();
+      const simpleAuthenticationPassword = clusterEditor.getSimpleAuthenticationPassword();
       const description = clusterEditor.getDescription();
       const params = {
         url: {
@@ -382,6 +403,12 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         },
         data: {
           "name": name,
+          "endpoint": endpoint,
+          "authentication": {
+            "type": authenticationType,
+            "username": simpleAuthenticationUsername,
+            "password": simpleAuthenticationPassword
+          },
           "description": description,
           "type": "AWS"
         }

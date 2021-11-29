@@ -4,17 +4,16 @@
 
 import logging
 import subprocess
-from datetime import datetime
-from pprint import pformat
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Literal, TypedDict
 
 import pytest
 from docker import DockerClient
 from docker.models.services import Service
-from pytest_simcore.docker_swarm import by_task_update
+from pytest_simcore.docker_swarm import assert_service_is_running
+from pytest_simcore.helpers.utils_environs import EnvVarsDict
 from tenacity import Retrying
-from tenacity.before import before_log
-from tenacity.stop import stop_after_attempt
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 pytest_plugins = [
@@ -29,28 +28,49 @@ pytest_plugins = [
     "pytest_simcore.tmp_path_extra",
     "pytest_simcore.traefik_service",
 ]
+
 log = logging.getLogger(__name__)
 
+_MINUTE: int = 60  # secs
 
-# CORE stack
+
+ServiceNameStr = str
+ComposeSpec = Dict[str, Any]
+UrlStr = str
+
+
+class StackInfo(TypedDict):
+    name: str
+    compose: ComposeSpec
+
+
+class DockerStackInfo(TypedDict):
+    stacks: Dict[Literal["core", "ops"], StackInfo]
+    services: List[ServiceNameStr]
+
+
+# CORE stack -----------------------------------
 
 
 @pytest.fixture(scope="module")
-def core_services_selection(simcore_docker_compose: Dict) -> List[str]:
+def core_services_selection(simcore_docker_compose: Dict) -> List[ServiceNameStr]:
     ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection
     # select ALL services for these tests
     return list(simcore_docker_compose["services"].keys())
 
 
 @pytest.fixture(scope="module")
-def core_stack_name(docker_stack: Dict) -> str:
-    return docker_stack["stacks"]["core"]["name"]
+def core_stack_namespace(testing_environ_vars: EnvVarsDict) -> str:
+    """returns 'com.docker.stack.namespace' service label core stack"""
+    stack_name = testing_environ_vars["SWARM_STACK_NAME"]
+    assert stack_name is not None
+    return stack_name
 
 
 @pytest.fixture(scope="module")
-def core_stack_compose(
-    docker_stack: Dict, simcore_docker_compose: Dict
-) -> Dict[str, Any]:
+def core_stack_compose_specs(
+    docker_stack: DockerStackInfo, simcore_docker_compose: Dict
+) -> ComposeSpec:
     # verifies core_services_selection
     assert set(docker_stack["stacks"]["core"]["compose"]["services"]) == set(
         simcore_docker_compose["services"]
@@ -58,54 +78,12 @@ def core_stack_compose(
     return docker_stack["stacks"]["core"]["compose"]
 
 
-# OPS stack
-
-
 @pytest.fixture(scope="module")
-def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
-    # select ALL services for these tests
-    return list(ops_docker_compose["services"].keys())
-
-
-@pytest.fixture(scope="module")
-def ops_stack_name(docker_stack: Dict) -> str:
-    return docker_stack["stacks"]["ops"]["name"]
-
-
-@pytest.fixture(scope="module")
-def ops_stack_compose(docker_stack: Dict, ops_docker_compose: Dict):
-    # verifies ops_services_selection
-    assert set(docker_stack["stacks"]["ops"]["compose"]["services"]) == set(
-        ops_docker_compose["services"]
-    )
-    return docker_stack["stacks"]["core"]["compose"]
-
-
-WAIT_TIME_BETWEEN_RETRIES_SECS = 30
-NUMBER_OF_ATTEMPTS = 10
-
-
-def to_datetime(datetime_str: str) -> datetime:
-    # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
-    #  - The T separates the date portion from the time-of-day portion
-    #  - The Z on the end means UTC, that is, an offset-from-UTC
-    # The 099 before the Z is not clear, therefore we will truncate the last part
-    N = len("2020-10-09T12:28:14.7710")
-    if len(datetime_str) > N:
-        datetime_str = datetime_str[:N]
-    return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
-
-
-def by_task_update(task: Dict) -> datetime:
-    datetime_str = task["Status"]["Timestamp"]
-    return to_datetime(datetime_str)
-
-
-@pytest.fixture(scope="module")
-def deployed_simcore_stack(
-    docker_registry: str,
-    core_stack_name: str,
-    core_stack_compose: Dict,
+def simcore_stack_deployed_services(
+    docker_registry: UrlStr,
+    core_stack_namespace: str,
+    ops_stack_namespace: str,
+    core_stack_compose_specs: ComposeSpec,
     docker_client: DockerClient,
 ) -> List[Service]:
 
@@ -113,33 +91,23 @@ def deployed_simcore_stack(
     # rather guaranteing that the framework is fully deployed before starting
     # tests. Obviously in a critical state in which the frameworks has a problem
     # the fixture will fail
-    desired_state_to_state_map = {
-        "shutdown": ["failed", "shutdown", "complete"],
-        "running": ["running"],
-    }
     try:
         for attempt in Retrying(
-            wait=wait_fixed(WAIT_TIME_BETWEEN_RETRIES_SECS),
-            stop=stop_after_attempt(NUMBER_OF_ATTEMPTS),
-            before=before_log(log, logging.WARNING),
+            wait=wait_fixed(5),
+            stop=stop_after_delay(4 * _MINUTE),
+            before_sleep=before_sleep_log(log, logging.INFO),
+            reraise=True,
         ):
             with attempt:
                 for service in docker_client.services.list():
-                    print(f"Waiting for {service.name}...")
-                    for task in sorted(service.tasks(), key=by_task_update):
-                        # NOTE: Could have been restarted from latest test parameter, accept as well complete
-                        assert (
-                            task["Status"]["State"]
-                            in desired_state_to_state_map[task["DesiredState"]]
-                        ), (
-                            f"{service.name} still not ready or complete. Expected "
-                            f"desired_state[{task['DesiredState']}] but got "
-                            f"status_state[{task['Status']['State']}]). Details:"
-                            f"\n{pformat(task)}"
-                        )
+                    assert_service_is_running(service)
 
     finally:
-        subprocess.run(f"docker stack ps {core_stack_name}", shell=True, check=False)
+        for stack_namespace in (core_stack_namespace, ops_stack_namespace):
+            subprocess.run(
+                f"docker stack ps {stack_namespace}", shell=True, check=False
+            )
+
         # logs table like
         #  ID                  NAME                  IMAGE                                      NODE                DESIRED STATE       CURRENT STATE                ERROR
         # xbrhmaygtb76        simcore_sidecar.1     itisfoundation/sidecar:latest              crespo-wkstn        Running             Running 53 seconds ago
@@ -151,14 +119,43 @@ def deployed_simcore_stack(
     # TODO: find a more reliable way to list services in a stack
     core_stack_services: List[Service] = [
         service
-        for service in docker_client.services.list()
-        if service.name.startswith(f"{core_stack_name}_")
+        for service in docker_client.services.list(
+            filters={"label": f"com.docker.stack.namespace={core_stack_namespace}"}
+        )
     ]  # type: ignore
 
     assert (
         core_stack_services
-    ), f"Expected some services in core stack '{core_stack_name}'"
+    ), f"Expected some services in core stack '{core_stack_namespace}'"
 
-    assert len(core_stack_compose["services"].keys()) == len(core_stack_services)
+    assert len(core_stack_compose_specs["services"].keys()) == len(core_stack_services)
 
     return core_stack_services
+
+
+# OPS stack -----------------------------------
+
+
+@pytest.fixture(scope="module")
+def ops_services_selection(ops_docker_compose: ComposeSpec) -> List[ServiceNameStr]:
+    ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection
+    # select ALL services for these tests
+    return list(ops_docker_compose["services"].keys())
+
+
+@pytest.fixture(scope="module")
+def ops_stack_namespace(testing_environ_vars: EnvVarsDict) -> str:
+    """returns 'com.docker.stack.namespace' service label operations stack"""
+    # TODO: set in environment
+    return "pytest-ops"
+
+
+@pytest.fixture(scope="module")
+def ops_stack_compose_specs(
+    docker_stack: DockerStackInfo, ops_docker_compose: ComposeSpec
+) -> ComposeSpec:
+    # verifies ops_services_selection
+    assert set(docker_stack["stacks"]["ops"]["compose"]["services"]) == set(
+        ops_docker_compose["services"]
+    )
+    return docker_stack["stacks"]["core"]["compose"]

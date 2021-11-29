@@ -39,23 +39,7 @@ from simcore_service_webserver.resources import resources as app_resources
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-# imports the fixtures for the integration tests
-pytest_plugins = [
-    "pytest_simcore.celery_service",
-    "pytest_simcore.docker_compose",
-    "pytest_simcore.docker_registry",
-    "pytest_simcore.docker_swarm",
-    "pytest_simcore.monkeypatch_extra",
-    "pytest_simcore.postgres_service",
-    "pytest_simcore.rabbit_service",
-    "pytest_simcore.redis_service",
-    "pytest_simcore.repository_paths",
-    "pytest_simcore.schemas",
-    "pytest_simcore.services_api_mocks_for_aiohttp_clients",
-    "pytest_simcore.simcore_services",
-    "pytest_simcore.tmp_path_extra",
-    "pytest_simcore.websocket_client",
-]
+# NOTE:
 
 log = logging.getLogger(__name__)
 
@@ -115,7 +99,9 @@ def webserver_environ(
 
 
 @pytest.fixture(scope="module")
-def _webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
+def _webserver_dev_config(
+    webserver_environ: Dict, docker_stack: Dict, temp_folder: Path
+) -> Dict:
     """
     Swarm with integration stack already started
 
@@ -123,7 +109,7 @@ def _webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
 
     NOTE: Prefer using 'app_config' below instead of this as a function-scoped fixture
     """
-    config_file_path = CURRENT_DIR / "webserver_dev_config.ignore.yaml"
+    config_file_path = temp_folder / "webserver_dev_config.yaml"
 
     # recreate config-file
     with app_resources.stream("config/server-docker-dev.yaml") as f:

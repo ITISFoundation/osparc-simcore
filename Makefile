@@ -257,7 +257,7 @@ down: ## Stops and removes stack
 	# Removing generated docker compose configurations, i.e. .stack-*
 	-@rm $(wildcard .stack-*)
 	# Removing local registry if any
-	-@docker rm --force $(local_registry)
+	-@docker rm --force $(LOCAL_REGISTRY_HOSTNAME)
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -422,52 +422,69 @@ postgres-upgrade: ## initalize or upgrade postgres db to latest state
 	@$(MAKE_C) packages/postgres-database/docker upgrade
 
 
-local_registry=registry
+## LOCAL DOCKER REGISTRY (for local development only) -------------------------------
+
+LOCAL_REGISTRY_HOSTNAME := registry
+LOCAL_REGISTRY_VOLUME   := $(LOCAL_REGISTRY_HOSTNAME)
+
 .PHONY: local-registry rm-registry
 
 rm-registry: ## remove the registry and changes to host/file
-	@$(if $(shell grep "127.0.0.1 $(local_registry)" /etc/hosts),\
+	@$(if $(shell grep "127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME)" /etc/hosts),\
 		echo removing entry in /etc/hosts...;\
-		sudo sed -i "/127.0.0.1 $(local_registry)/d" /etc/hosts,\
+		sudo sed -i "/127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME)/d" /etc/hosts,\
 		echo /etc/hosts is already cleaned)
-	@$(if $(shell grep "{\"insecure-registries\": \[\"$(local_registry):5000\"\]}" /etc/docker/daemon.json),\
+	@$(if $(shell grep "{\"insecure-registries\": \[\"$(LOCAL_REGISTRY_HOSTNAME):5000\"\]}" /etc/docker/daemon.json),\
 		echo removing entry in /etc/docker/daemon.json...;\
-		sudo sed -i '/{"insecure-registries": \["$(local_registry):5000"\]}/d' /etc/docker/daemon.json;,\
+		sudo sed -i '/{"insecure-registries": \["$(LOCAL_REGISTRY_HOSTNAME):5000"\]}/d' /etc/docker/daemon.json;,\
 		echo /etc/docker/daemon.json is already cleaned)
-
-
-
+	# removing container and volume
+	-docker rm --force $(LOCAL_REGISTRY_HOSTNAME)
+	-docker volume rm $(LOCAL_REGISTRY_VOLUME)
 
 local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
-	@$(if $(shell grep "127.0.0.1 $(local_registry)" /etc/hosts),,\
-					echo configuring host file to redirect $(local_registry) to 127.0.0.1; \
-					sudo echo 127.0.0.1 $(local_registry) | sudo tee -a /etc/hosts;\
+	@$(if $(shell grep "127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME)" /etc/hosts),,\
+					echo configuring host file to redirect $(LOCAL_REGISTRY_HOSTNAME) to 127.0.0.1; \
+					sudo echo 127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME) | sudo tee -a /etc/hosts;\
 					echo done)
 	@$(if $(shell grep "{\"insecure-registries\": \[\"registry:5000\"\]}" /etc/docker/daemon.json),,\
 					echo configuring docker engine to use insecure local registry...; \
-					sudo echo {\"insecure-registries\": [\"$(local_registry):5000\"]} | sudo tee -a /etc/docker/daemon.json; \
+					sudo echo {\"insecure-registries\": [\"$(LOCAL_REGISTRY_HOSTNAME):5000\"]} | sudo tee -a /etc/docker/daemon.json; \
 					echo restarting engine...; \
 					sudo service docker restart;\
 					echo done)
 	@$(if $(shell docker ps --format="{{.Names}}" | grep registry),,\
-					echo starting registry on $(local_registry):5000...; \
+					echo starting registry on $(LOCAL_REGISTRY_HOSTNAME):5000...; \
 					docker run --detach \
 							--init \
+							--env REGISTRY_STORAGE_DELETE_ENABLED=true \
 							--publish 5000:5000 \
-							--volume $(local_registry):/var/lib/registry \
-							--name $(local_registry) \
+							--volume $(LOCAL_REGISTRY_VOLUME):/var/lib/registry \
+							--name $(LOCAL_REGISTRY_HOSTNAME) \
 							registry:2)
 
 	# WARNING: environment file .env is now setup to use local registry on port 5000 without any security (take care!)...
 	@echo REGISTRY_AUTH=False >> .env
 	@echo REGISTRY_SSL=False >> .env
-	@echo REGISTRY_PATH=$(local_registry):5000 >> .env
+	@echo REGISTRY_PATH=$(LOCAL_REGISTRY_HOSTNAME):5000 >> .env
 	@echo REGISTRY_URL=$(get_my_ip):5000 >> .env
 	@echo DIRECTOR_REGISTRY_CACHING=False >> .env
 	@echo CATALOG_BACKGROUND_TASK_REST_TIME=1 >> .env
-	# local registry set in $(local_registry):5000
+	# local registry set in $(LOCAL_REGISTRY_HOSTNAME):5000
 	# images currently in registry:
-	curl --silent $(local_registry):5000/v2/_catalog | jq
+	@sleep 3
+	curl --silent $(LOCAL_REGISTRY_HOSTNAME):5000/v2/_catalog | jq '.repositories'
+
+info-registry: ## info on local registry (if any)
+	# ping API
+	curl --silent $(LOCAL_REGISTRY_HOSTNAME):5000/v2
+	# list all
+	curl --silent $(LOCAL_REGISTRY_HOSTNAME):5000/v2/_catalog | jq
+	# target detail info (if set)
+	$(if $(target),\
+	@echo Tags for $(target); \
+	curl --silent $(LOCAL_REGISTRY_HOSTNAME):5000/v2/$(target)/tags/list | jq ,\
+	@echo No target set)
 
 
 ## INFO -------------------------------
@@ -604,25 +621,26 @@ endef
 _git_get_repo_orga_name = $(shell git config --get remote.origin.url | \
 							grep --perl-regexp --only-matching "((?<=git@github\.com:)|(?<=https:\/\/github\.com\/))(.*?)(?=.git)")
 
-.PHONY: .check-master-branch
-.check-master-branch:
+.PHONY: .check-on-master-branch .create_github_release_url
+.check-on-master-branch:
 	@if [ "$(_git_get_current_branch)" != "master" ]; then\
 		echo -e "\e[91mcurrent branch is not master branch."; exit 1;\
 	fi
 
-.PHONY: release-staging release-prod
-release-staging release-prod: .check-master-branch ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=optional)
+define create_github_release_url
 	# ensure tags are uptodate
-	@git pull --tags
-	@echo -e "\e[33mOpen the following link to create the $(if $(findstring -staging, $@),staging,production) release:";
-	@echo -e "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)&body=$(_url_encoded_logs)";
-	@echo -e "\e[33mOr open the following link to create the $(if $(findstring -staging, $@),staging,production) release and paste the logs:";
-	@echo -e "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)";
-	@echo -e "\e[34m$(_prettify_logs)"
+	git pull --tags && \
+	echo -e "\e[33mOpen the following link to create the $(if $(findstring -staging, $@),staging,production) release:" && \
+	echo -e "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)&body=$(_url_encoded_logs)" && \
+	echo -e "\e[33mOr open the following link to create the $(if $(findstring -staging, $@),staging,production) release and paste the logs:" && \
+	echo -e "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)" && \
+	echo -e "\e[34m$(_prettify_logs)"
+endef
 
-.PHONY: release-hotfix
-release-hotfix: ## Helper to create a hotfix release in Github (usage: make release-hotfix version=1.2.4 git_sha=optional)
-	# ensure tags are uptodate
-	@git pull --tags
-	@echo -e "\e[33mOpen the following link to create the $(if $(findstring -staging, $@),staging,production) release:";
-	@echo -e "\e[32mhttps://github.com/$(_git_get_repo_orga_name)/releases/new?prerelease=$(if $(findstring -staging, $@),1,0)&target=$(_url_encoded_target)&tag=$(_url_encoded_tag)&title=$(_url_encoded_title)&body=$(_url_encoded_logs)";
+.PHONY: release-staging release-prod
+release-staging release-prod: .check-on-master-branch  ## Helper to create a staging or production release in Github (usage: make release-staging name=sprint version=1 git_sha=optional or make release-prod version=1.2.3 git_sha=optional)
+	$(create_github_release_url)
+
+.PHONY: release-hotfix release-staging-hotfix
+release-hotfix release-staging-hotfix: ## Helper to create a hotfix release in Github (usage: make release-hotfix version=1.2.4 git_sha=optional or make release-staging-hotfix name=Sprint version=2)
+	$(create_github_release_url)

@@ -59,6 +59,8 @@ def test_setup_ok(mounted_volumes: mounted_fs.MountedVolumes) -> None:
 
 def test_expected_paths_and_volumes(
     mounted_volumes: mounted_fs.MountedVolumes,
+    inputs_dir: Path,
+    outputs_dir: Path,
     state_paths_dirs: List[Path],
     compose_namespace: str,
 ) -> None:
@@ -69,16 +71,28 @@ def test_expected_paths_and_volumes(
     )
 
     # check location on disk
-    assert mounted_volumes.disk_outputs_path == mounted_fs.DY_VOLUMES / "outputs"
-    assert mounted_volumes.disk_inputs_path == mounted_fs.DY_VOLUMES / "inputs"
+    assert (
+        mounted_volumes.disk_outputs_path
+        == mounted_fs.DY_VOLUMES / outputs_dir.relative_to("/")
+    )
+    assert (
+        mounted_volumes.disk_inputs_path
+        == mounted_fs.DY_VOLUMES / inputs_dir.relative_to("/")
+    )
 
     assert set(mounted_volumes.disk_state_paths()) == {
-        mounted_fs.DY_VOLUMES / _replace_slashes(x).strip("_") for x in state_paths_dirs
+        mounted_fs.DY_VOLUMES / x.relative_to("/") for x in state_paths_dirs
     }
 
     # check volume mount point
-    assert mounted_volumes.volume_name_outputs == f"{compose_namespace}_outputs"
-    assert mounted_volumes.volume_name_inputs == f"{compose_namespace}_inputs"
+    assert (
+        mounted_volumes.volume_name_outputs
+        == f"{compose_namespace}{_replace_slashes(outputs_dir)}"
+    )
+    assert (
+        mounted_volumes.volume_name_inputs
+        == f"{compose_namespace}{_replace_slashes(inputs_dir)}"
+    )
 
     assert set(mounted_volumes.volume_name_state_paths()) == {
         f"{compose_namespace}{_replace_slashes(x)}" for x in state_paths_dirs

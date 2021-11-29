@@ -18,7 +18,6 @@ from simcore_service_dask_sidecar.utils import cluster_id, num_available_gpus
 def mock_service_envs(
     mock_env_devel_environment: Dict[str, Optional[str]], monkeypatch: MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("SIDECAR_HOST_HOSTNAME_PATH", "/home/scu/hostname")
     monkeypatch.setenv(
         "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME", "simcore_computational_shared_data"
     )

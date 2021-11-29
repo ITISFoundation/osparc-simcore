@@ -210,6 +210,7 @@ class CompTasksRepository(BaseRepository):
                     & (
                         (comp_tasks.c.state == StateType.PUBLISHED)
                         | (comp_tasks.c.state == StateType.PENDING)
+                        | (comp_tasks.c.state == StateType.RUNNING)
                     )
                 )
                 .values(state=StateType.ABORTED)

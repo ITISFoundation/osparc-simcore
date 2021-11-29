@@ -12,7 +12,11 @@ import np_helpers
 import pytest
 from simcore_sdk.node_ports_common import exceptions, filemanager
 
-pytest_simcore_core_services_selection = ["postgres", "storage"]
+pytest_simcore_core_services_selection = [
+    "migration",
+    "postgres",
+    "storage",
+]
 
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 

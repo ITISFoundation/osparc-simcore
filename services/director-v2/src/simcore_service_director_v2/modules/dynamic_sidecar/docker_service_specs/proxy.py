@@ -9,7 +9,7 @@ MEMORY_50MB = 52430000
 CPU_1_PERCENT = 10000000
 
 
-async def get_dynamic_proxy_spec(
+def get_dynamic_proxy_spec(
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_network_id: str,
@@ -54,7 +54,12 @@ async def get_dynamic_proxy_spec(
             "traefik.enable": "true",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.customresponseheaders.Content-Security-Policy": f"frame-ancestors {scheduler_data.request_dns}",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolallowmethods": "GET,OPTIONS,PUT,POST,DELETE,PATCH,HEAD",
-            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accessControlAllowOriginList": f"{scheduler_data.request_scheme}://{scheduler_data.request_dns}",
+            f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accessControlAllowOriginList": ",".join(
+                [
+                    f"{scheduler_data.request_scheme}://{scheduler_data.request_dns}",
+                    f"{scheduler_data.request_scheme}://{scheduler_data.node_uuid}.services.{scheduler_data.request_dns}",
+                ]
+            ),
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.accesscontrolmaxage": "100",
             f"traefik.http.middlewares.{scheduler_data.proxy_service_name}-security-headers.headers.addvaryheader": "true",
             f"traefik.http.services.{scheduler_data.proxy_service_name}.loadbalancer.server.port": "80",

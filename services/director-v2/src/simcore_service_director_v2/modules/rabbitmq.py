@@ -3,11 +3,13 @@ from dataclasses import dataclass
 from typing import Dict
 
 import aio_pika
-from dask_task_models_library.container_tasks.events import (
-    TaskLogEvent,
-    TaskProgressEvent,
-)
 from fastapi import FastAPI
+from models_library.rabbitmq_messages import (
+    InstrumentationRabbitMessage,
+    LoggerRabbitMessage,
+    ProgressRabbitMessage,
+    RabbitMessageTypes,
+)
 from settings_library.rabbit import RabbitSettings
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
@@ -37,6 +39,13 @@ def setup(app: FastAPI) -> None:
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
+
+
+_MESSAGE_TO_EXCHANGE_MAP = {
+    LoggerRabbitMessage: "log",
+    ProgressRabbitMessage: "progress",
+    InstrumentationRabbitMessage: "instrumentation",
+}
 
 
 @dataclass
@@ -73,16 +82,22 @@ class RabbitMQClient:
     async def delete(self) -> None:
         await self.connection.close()
 
-    async def publish_message(self, topic: str, message: str) -> None:
-        if topic == TaskProgressEvent.topic_name():
-            await self.exchanges["progress"].publish(
-                aio_pika.Message(message.encode(encoding="utf-8")), routing_key=""
+    async def publish_message(
+        self,
+        message: RabbitMessageTypes,
+    ) -> None:
+        def get_exchange(message) -> aio_pika.Exchange:
+            for message_type, exchange_name in _MESSAGE_TO_EXCHANGE_MAP.items():
+                if isinstance(message, message_type):
+                    assert exchange_name in self.exchanges  # nosec
+                    return self.exchanges[exchange_name]
+
+            raise ValueError(f"message '{message}' type is of incorrect type")
+
+        try:
+            await get_exchange(message).publish(
+                aio_pika.Message(message.json().encode(encoding="utf-8")),
+                routing_key="",
             )
-        elif topic == TaskLogEvent.topic_name():
-            await self.exchanges["log"].publish(
-                aio_pika.Message(message.encode(encoding="utf-8")), routing_key=""
-            )
-        elif topic == "instrumentation":
-            await self.exchanges[topic].publish(
-                aio_pika.Message(message.encode(encoding="utf-8")), routing_key=""
-            )
+        except ValueError:
+            logger.warning("Unsupported rabbit message sent:", exc_info=True)

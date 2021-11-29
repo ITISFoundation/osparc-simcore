@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from httpx import HTTPStatusError
+from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
 from starlette import status
 from starlette.exceptions import HTTPException
@@ -64,6 +65,9 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     if settings.API_SERVER_DIRECTOR_V2:
         director_v2.setup(app, settings.API_SERVER_DIRECTOR_V2)
+
+    if settings.API_SERVER_TRACING:
+        setup_tracing(app, settings.API_SERVER_TRACING)
 
     # setup app
     app.add_event_handler("startup", create_start_app_handler(app))

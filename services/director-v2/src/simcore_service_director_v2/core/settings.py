@@ -131,11 +131,19 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
     DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: PositiveFloat = Field(
-        60 * MINS,
+        60.0 * MINS,
         description=(
             "When saving and restoring the state of a dynamic service, depending on the payload "
             "some services take longer or shorter to save and restore. Across the "
             "platform this value is set to 1 hour."
+        ),
+    )
+    DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT: PositiveFloat = Field(
+        1.0 * MINS,
+        description=(
+            "Restarts all started containers. During this operation, no data "
+            "stored in the container will be lost as docker-compose restart "
+            "will not alter the state of the files on the disk nor its environment."
         ),
     )
     DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START: PositiveFloat = Field(
@@ -158,6 +166,10 @@ class DynamicSidecarSettings(BaseCustomSettings):
     )
 
     DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings
+
+    DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
+        "3.8", description="docker-compose version used in the compose-specs"
+    )
 
     @validator("DYNAMIC_SIDECAR_IMAGE", pre=True)
     @classmethod

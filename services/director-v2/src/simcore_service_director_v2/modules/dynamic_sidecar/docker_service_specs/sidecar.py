@@ -1,5 +1,4 @@
 import logging
-from pathlib import Path
 from typing import Any, Dict
 
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
@@ -57,7 +56,7 @@ def _get_environment_variables(
     }
 
 
-async def get_dynamic_sidecar_spec(
+def get_dynamic_sidecar_spec(
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_network_id: str,
@@ -87,16 +86,16 @@ async def get_dynamic_sidecar_spec(
     # Docker does not allow mounting of subfolders from volumes as the following:
     #   `volume_name/inputs:/target_folder/inputs`
     #   `volume_name/outputs:/target_folder/inputs`
-    #   `volume_name/path/to/sate/01:/target_folder/path_to_sate_01`
+    #   `volume_name/path/to/state/01:/target_folder/path_to_state_01`
     #
     # Two separate volumes are required to achieve the following on the spawned
     # dynamic-sidecar containers:
-    #   `volume_name_inputs:/target_folder/inputs`
-    #   `volume_name_outputs:/target_folder/outputs`
-    #   `volume_name_path_to_sate_01:/target_folder/path_to_sate_01`
+    #   `volume_name_path_to_inputs:/target_folder/path/to/inputs`
+    #   `volume_name_path_to_outputs:/target_folder/path/to/outputs`
+    #   `volume_name_path_to_state_01:/target_folder/path/to/state/01`
     for path_to_mount in [
-        Path("/inputs"),
-        Path("/outputs"),
+        scheduler_data.paths_mapping.inputs_path,
+        scheduler_data.paths_mapping.outputs_path,
     ] + scheduler_data.paths_mapping.state_paths:
         mounts.append(
             DynamicSidecarVolumesPathsResolver.mount_entry(
@@ -170,6 +169,7 @@ async def get_dynamic_sidecar_spec(
             "paths_mapping": scheduler_data.paths_mapping.json(),
             "compose_spec": json_dumps(scheduler_data.compose_spec),
             "container_http_entry": scheduler_data.container_http_entry,
+            "restart_policy": scheduler_data.restart_policy
         },
         "name": scheduler_data.service_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],

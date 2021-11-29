@@ -21,7 +21,7 @@ amqp==5.0.6
     # via
     #   -c requirements/_base.txt
     #   kombu
-astroid==2.8.0
+astroid==2.9.0
     # via pylint
 async-timeout==3.0.1
     # via
@@ -46,7 +46,7 @@ celery==5.1.2
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
-certifi==2021.5.30
+certifi==2021.10.8
     # via requests
 cffi==1.14.5
     # via
@@ -59,7 +59,7 @@ chardet==4.0.0
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   aiohttp
-charset-normalizer==2.0.6
+charset-normalizer==2.0.8
     # via requests
 click==7.1.2
     # via
@@ -83,13 +83,13 @@ click-repl==0.2.0
     #   celery
 codecov==2.1.12
     # via -r requirements/_test.in
-coverage==5.5
+coverage==6.1.2
     # via
     #   -r requirements/_test.in
     #   codecov
     #   coveralls
     #   pytest-cov
-coveralls==3.2.0
+coveralls==3.3.1
     # via -r requirements/_test.in
 cryptography==3.4.7
     # via
@@ -98,7 +98,7 @@ cryptography==3.4.7
     #   paramiko
 distro==1.6.0
     # via docker-compose
-docker==5.0.2
+docker==5.0.3
     # via
     #   -r requirements/_test.in
     #   docker-compose
@@ -112,7 +112,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==8.13.2
+faker==9.8.3
     # via -r requirements/_test.in
 icdiff==2.0.4
     # via pytest-icdiff
@@ -137,7 +137,7 @@ isodate==0.6.0
     # via
     #   -c requirements/_packages.txt
     #   openapi-schema-validator
-isort==5.9.3
+isort==5.10.1
     # via pylint
 jsonschema==3.2.0
     # via
@@ -179,13 +179,13 @@ openapi-spec-validator==0.3.1
     # via
     #   -c requirements/_packages.txt
     #   -r requirements/_test.in
-packaging==21.0
+packaging==21.3
     # via
     #   pytest
     #   pytest-sugar
-paramiko==2.7.2
+paramiko==2.8.0
     # via docker
-platformdirs==2.3.0
+platformdirs==2.4.0
     # via pylint
 pluggy==1.0.0
     # via pytest
@@ -202,17 +202,17 @@ psycopg2-binary==2.9.1
     #   sqlalchemy
 ptvsd==4.3.2
     # via -r requirements/_test.in
-py==1.10.0
+py==1.11.0
     # via pytest
 pycparser==2.20
     # via
     #   -c requirements/_base.txt
     #   cffi
-pylint==2.11.1
+pylint==2.12.1
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
-pyparsing==2.4.7
+pyparsing==3.0.6
     # via packaging
 pyrsistent==0.18.0
     # via
@@ -232,7 +232,7 @@ pytest-aiohttp==0.3.0
     # via -r requirements/_test.in
 pytest-celery==0.0.0
     # via -r requirements/_test.in
-pytest-cov==2.12.1
+pytest-cov==3.0.0
     # via -r requirements/_test.in
 pytest-docker==0.10.3
     # via -r requirements/_test.in
@@ -248,7 +248,7 @@ pytest-sugar==0.9.4
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
-python-dotenv==0.19.0
+python-dotenv==0.19.2
     # via
     #   -r requirements/_test.in
     #   docker-compose
@@ -307,7 +307,8 @@ toml==0.10.2
     # via
     #   pylint
     #   pytest
-    #   pytest-cov
+tomli==1.2.2
+    # via coverage
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
@@ -315,7 +316,7 @@ typing-extensions==3.10.0.2
     #   aiohttp
     #   astroid
     #   pylint
-urllib3==1.26.6
+urllib3==1.26.7
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   requests
@@ -333,9 +334,9 @@ websocket-client==0.59.0
     # via
     #   docker
     #   docker-compose
-websockets==10.0
+websockets==10.1
     # via -r requirements/_test.in
-wrapt==1.12.1
+wrapt==1.13.3
     # via astroid
 yarl==1.5.1
     # via

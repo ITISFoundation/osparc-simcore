@@ -7,6 +7,7 @@ import logging
 from typing import Dict, List, Union
 
 from aiohttp import web
+from servicelib.json_serialization import json_dumps
 
 from .. import director_v2_api
 from .._meta import api_version_prefix as VTAG
@@ -34,7 +35,6 @@ async def create_node(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
     except json.JSONDecodeError as exc:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
-
     try:
         # ensure the project exists
 
@@ -54,7 +54,9 @@ async def create_node(request: web.Request) -> web.Response:
                 body["service_id"] if "service_id" in body else None,
             )
         }
-        return web.json_response({"data": data}, status=web.HTTPCreated.status_code)
+        return web.json_response(
+            {"data": data}, status=web.HTTPCreated.status_code, dumps=json_dumps
+        )
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
@@ -89,15 +91,15 @@ async def get_node(request: web.Request) -> web.Response:
 
         if "data" not in reply:
             # dynamic-service NODE STATE
-            return web.json_response({"data": reply})
+            return web.json_response({"data": reply}, dumps=json_dumps)
 
         # LEGACY-service NODE STATE
-        return web.json_response({"data": reply["data"]})
+        return web.json_response({"data": reply["data"]}, dumps=json_dumps)
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
-@routes.delete(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_uuid}}")
+@routes.post(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_uuid}}:retrieve")
 @login_required
 @permission_required("project.node.read")
 async def post_retrieve(request: web.Request) -> web.Response:
@@ -109,8 +111,23 @@ async def post_retrieve(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
 
     return web.json_response(
-        await director_v2_api.retrieve(request.app, node_uuid, port_keys)
+        await director_v2_api.retrieve(request.app, node_uuid, port_keys),
+        dumps=json_dumps,
     )
+
+
+@routes.post(f"/{VTAG}/projects/{{project_uuid}}/nodes/{{node_uuid}}:restart")
+@login_required
+@permission_required("project.node.read")
+async def post_restart(request: web.Request) -> web.Response:
+    try:
+        node_uuid = request.match_info["node_id"]
+    except KeyError as err:
+        raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
+
+    await director_v2_api.restart(request.app, node_uuid)
+
+    return web.HTTPNoContent()
 
 
 @login_required

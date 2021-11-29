@@ -39,7 +39,7 @@ MAX_TIME_TO_RESTART_SERVICE = 10
     ids=[f"service={x[0]},exit_code={x[1]}" for x in SERVICES_AND_EXIT_CODES],
 )
 def test_graceful_restart_services(
-    deployed_simcore_stack: List[Service],
+    simcore_stack_deployed_services: List[Service],
     docker_compose_service_key: str,
     exit_code: int,
 ):
@@ -70,16 +70,17 @@ def test_graceful_restart_services(
     SEE Gracefully Shutdown Docker Container by Kakashi: https://kkc.github.io/2018/06/06/gracefully-shutdown-docker-container/
 
     """
-    assert deployed_simcore_stack
+    assert simcore_stack_deployed_services
 
     assert any(
-        s.name.endswith(docker_compose_service_key) for s in deployed_simcore_stack
+        s.name.endswith(docker_compose_service_key)
+        for s in simcore_stack_deployed_services
     )
 
     # Service names:'pytest-simcore_static-webserver', 'pytest-simcore_webserver'
     service: Service = next(
         s
-        for s in deployed_simcore_stack
+        for s in simcore_stack_deployed_services
         if s.name.endswith(f"_{docker_compose_service_key}")
     )
 

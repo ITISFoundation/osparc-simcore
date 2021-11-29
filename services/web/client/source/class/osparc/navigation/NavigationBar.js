@@ -92,8 +92,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     PAGE_CONTEXT: {
       0: "dashboard",
       1: "workbench",
-      2: "guided",
-      3: "app"
+      2: "app"
     }
   },
 
@@ -250,12 +249,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       });
 
       const newGHIssueBtn = new qx.ui.menu.Button(this.tr("Issue in GitHub"));
-      newGHIssueBtn.addListener("execute", () => osparc.navigation.UserMenuButton.openGithubIssueInfoDialog, this);
+      newGHIssueBtn.addListener("execute", () => osparc.navigation.UserMenuButton.openGithubIssueInfoDialog(), this);
       menu.add(newGHIssueBtn);
 
       if (osparc.utils.Utils.isInZ43()) {
         const newFogbugzIssueBtn = new qx.ui.menu.Button(this.tr("Issue in Fogbugz"));
-        newFogbugzIssueBtn.addListener("execute", () => osparc.navigation.UserMenuButton.openFogbugzIssueInfoDialog, this);
+        newFogbugzIssueBtn.addListener("execute", () => osparc.navigation.UserMenuButton.openFogbugzIssueInfoDialog(), this);
         menu.add(newFogbugzIssueBtn);
       }
 

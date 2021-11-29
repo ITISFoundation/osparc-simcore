@@ -1,9 +1,17 @@
 import warnings
-from typing import Dict
+from typing_extensions import TypedDict
 
 from pydantic import BaseSettings, Extra
 from pydantic.networks import AnyUrl
 from pydantic.types import PositiveInt, SecretStr
+
+
+class Channels(TypedDict):
+    log: str
+    progress: str
+    instrumentation: str
+    events: str
+
 
 warnings.warn(
     "models_library.settings will be mostly replaced by settings_library in future versions. "
@@ -26,10 +34,11 @@ class RabbitConfig(BaseSettings):
     password: SecretStr = SecretStr("simcore")
 
     # channels
-    channels: Dict[str, str] = {
-        "log": "comp.backend.channels.log",
-        "progress": "comp.backend.channels.progress",
-        "instrumentation": "comp.backend.channels.instrumentation",
+    channels: Channels = {
+        "log": "simcore.services.log",
+        "progress": "simcore.services.progress",
+        "instrumentation": "simcore.services.instrumentation",
+        "events": "simcore.services.events",
     }
 
     @property

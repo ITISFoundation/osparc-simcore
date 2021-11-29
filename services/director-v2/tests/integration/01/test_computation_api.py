@@ -37,13 +37,14 @@ from starlette.testclient import TestClient
 from yarl import URL
 
 pytest_simcore_core_services_selection = [
-    "director",
     "dask-scheduler",
     "dask-sidecar",
-    "redis",
-    "rabbit",
-    "storage",
+    "director",
+    "migration",
     "postgres",
+    "rabbit",
+    "redis",
+    "storage",
 ]
 pytest_simcore_ops_services_selection = ["minio", "adminer", "flower"]
 
@@ -68,6 +69,7 @@ def mock_env(monkeypatch: MonkeyPatch, request) -> None:
         "DIRECTOR_V2_CELERY_SCHEDULER_ENABLED",
         "1" if request.param == "celery" else "0",
     )
+    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
@@ -344,7 +346,7 @@ class PartialComputationParams:
         ),
     ],
 )
-def test_run_partial_computation(
+async def test_run_partial_computation(
     minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
@@ -409,7 +411,7 @@ def test_run_partial_computation(
     )
 
     # now wait for the computation to finish
-    task_out = assert_pipeline_status(
+    task_out = await assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
     expected_pipeline_details_after_run = _convert_to_pipeline_details(
@@ -471,12 +473,12 @@ def test_run_partial_computation(
     )
 
     # now wait for the computation to finish
-    task_out = assert_pipeline_status(
+    task_out = await assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
 
 
-def test_run_computation(
+async def test_run_computation(
     minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
@@ -507,7 +509,7 @@ def test_run_computation(
     )
 
     # wait for the computation to start
-    assert_pipeline_status(
+    await assert_pipeline_status(
         client,
         task_out.url,
         user_id,
@@ -516,7 +518,7 @@ def test_run_computation(
     )
 
     # wait for the computation to finish (either by failing, success or abort)
-    task_out = assert_pipeline_status(
+    task_out = await assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
 
@@ -569,7 +571,7 @@ def test_run_computation(
     )
 
     # wait for the computation to finish
-    task_out = assert_pipeline_status(
+    task_out = await assert_pipeline_status(
         client, task_out.url, user_id, sleepers_project.uuid
     )
     assert_computation_task_out_obj(
@@ -581,7 +583,7 @@ def test_run_computation(
     )
 
 
-def test_abort_computation(
+async def test_abort_computation(
     minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
@@ -610,7 +612,7 @@ def test_abort_computation(
     )
 
     # wait until the pipeline is started
-    task_out = assert_pipeline_status(
+    task_out = await assert_pipeline_status(
         client,
         task_out.url,
         user_id,
@@ -639,7 +641,7 @@ def test_abort_computation(
     assert task_out.stop_url == None
 
     # check that the pipeline is aborted/stopped
-    task_out = assert_pipeline_status(
+    task_out = await assert_pipeline_status(
         client,
         task_out.url,
         user_id,
@@ -649,7 +651,7 @@ def test_abort_computation(
     assert task_out.state == RunningState.ABORTED
 
 
-def test_update_and_delete_computation(
+async def test_update_and_delete_computation(
     minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
@@ -735,7 +737,7 @@ def test_update_and_delete_computation(
     )
 
     # wait until the pipeline is started
-    task_out = assert_pipeline_status(
+    task_out = await assert_pipeline_status(
         client,
         task_out.url,
         user_id,
@@ -773,7 +775,7 @@ def test_pipeline_with_no_comp_services_still_create_correct_comp_tasks(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    jupyter_service: Dict[str, str],
+    jupyter_service: Dict[str, Any],
 ):
     # create a workbench with just a dynamic service
     project_with_dynamic_node = project(
@@ -813,7 +815,7 @@ def test_pipeline_with_control_pipeline_made_of_dynamic_services_are_allowed(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    jupyter_service: Dict[str, str],
+    jupyter_service: Dict[str, Any],
 ):
     # create a workbench with just 2 dynamic service in a cycle
     project_with_dynamic_node = project(
@@ -877,8 +879,8 @@ def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
     client: TestClient,
     user_id: PositiveInt,
     project: Callable,
-    sleeper_service: Dict[str, str],
-    jupyter_service: Dict[str, str],
+    sleeper_service: Dict[str, Any],
+    jupyter_service: Dict[str, Any],
 ):
     # create a workbench with just 2 dynamic service in a cycle
     project_with_cycly_and_comp_service = project(

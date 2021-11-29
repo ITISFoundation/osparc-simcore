@@ -12,6 +12,7 @@ import httpx
 from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
+from models_library.service_settings_labels import RestartPolicy
 
 from ....core.settings import (
     DynamicServicesSchedulerSettings,
@@ -54,6 +55,7 @@ async def _apply_observation_cycle(
     dynamic_services_settings: DynamicServicesSettings = (
         app.state.settings.DYNAMIC_SERVICES
     )
+    # TODO: PC-> ANE: custom settings are frozen. in principle, no need to create copies.
     initial_status = deepcopy(scheduler_data.dynamic_sidecar.status)
 
     if (  # do not refactor, second part of "and condition" is skiped most times
@@ -114,21 +116,25 @@ class DynamicSidecarsScheduler:
         keep track of the service for faster searches.
         """
         async with self._lock:
+
+            if not scheduler_data.service_name:
+                raise DynamicSidecarError(
+                    "a service with no name is not valid. Invalid usage."
+                )
+
             if scheduler_data.service_name in self._to_observe:
                 logger.warning(
                     "Service %s is already being observed", scheduler_data.service_name
                 )
                 return
+
             if scheduler_data.node_uuid in self._inverse_search_mapping:
                 raise DynamicSidecarError(
                     "node_uuids at a global level collided. A running "
                     f"service for node {scheduler_data.node_uuid} already exists. "
                     "Please checkout other projects which may have this issue."
                 )
-            if not scheduler_data.service_name:
-                raise DynamicSidecarError(
-                    "a service with no name is not valid. Invalid usage."
-                )
+
             self._inverse_search_mapping[
                 scheduler_data.node_uuid
             ] = scheduler_data.service_name
@@ -271,7 +277,30 @@ class DynamicSidecarsScheduler:
             port_keys=port_keys,
         )
 
+        if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:
+            logger.info("Will restart containers")
+            await dynamic_sidecar_client.restart_containers(
+                scheduler_data.dynamic_sidecar.endpoint
+            )
+            logger.info("Containers restarted")
+
         return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
+
+    async def restart_containers(self, node_uuid: NodeID) -> None:
+        """Restarts containers without saving or restoring the state or I/O ports"""
+        if node_uuid not in self._inverse_search_mapping:
+            raise DynamicSidecarNotFoundError(node_uuid)
+
+        service_name = self._inverse_search_mapping[node_uuid]
+        scheduler_data: SchedulerData = self._to_observe[service_name].scheduler_data
+
+        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+            self.app
+        )
+
+        await dynamic_sidecar_client.restart_containers(
+            scheduler_data.dynamic_sidecar.endpoint
+        )
 
     async def _enqueue_observation_from_service_name(self, service_name: str) -> None:
         await self._trigger_observation_queue.put(service_name)
@@ -338,9 +367,10 @@ class DynamicSidecarsScheduler:
 
                 await sleep(settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS)
             except asyncio.CancelledError:  # pragma: no cover
-                break  # pragma: no cover
-
-        logger.warning("Scheduler was shut down")
+                logger.info("Stopped dynamic scheduler")
+                raise
+            except Exception:  # pylint: disable=broad-except
+                logger.error("Unexpected error in dynamic scheduler", exc_info=True)
 
     async def _discover_running_services(self) -> None:
         """discover all services which were started before and add them to the scheduler"""
@@ -390,6 +420,7 @@ class DynamicSidecarsScheduler:
 
         if self._trigger_observation_queue_task is not None:
             await self._trigger_observation_queue.put(None)
+
             self._trigger_observation_queue_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await self._trigger_observation_queue_task
@@ -400,7 +431,6 @@ class DynamicSidecarsScheduler:
 async def setup_scheduler(app: FastAPI):
     dynamic_sidecars_scheduler = DynamicSidecarsScheduler(app)
     app.state.dynamic_sidecar_scheduler = dynamic_sidecars_scheduler
-
     settings: DynamicServicesSchedulerSettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     )
