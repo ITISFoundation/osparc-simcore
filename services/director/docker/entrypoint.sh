@@ -10,13 +10,9 @@ ERROR="ERROR: [$(basename "$0")] "
 
 # Read self-signed SSH certificates (if applicable)
 #
-# entrypoint.sh is run as root. For the local deployment of oSparc,
-# we need to point the director to the self-signed certificate in order to
-# connect to the local docker-container-registry. While the certificates
-# are handled in the docker-compose file for the local deployment in the ops-repo,
-# we need to call 'update-ca-certificates' in order to read them (as root!)
-# This script is the proper place for this necessary call. If the deployment is non-local
-# nothing will happen.
+# In case the director must access a docker registry in a secure way using
+# non-standard certificates (e.g. such as self-signed certificates), this call is needed.
+# It needs to be executed as root.
 update-ca-certificates
 
 # This entrypoint script:
