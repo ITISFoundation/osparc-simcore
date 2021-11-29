@@ -9,7 +9,6 @@ from ...models.domains.comp_runs import CompRunsAtDB
 from ...modules.rabbitmq import RabbitMQClient
 from ...utils.scheduler import SCHEDULED_STATES, get_repository
 from ..celery import CeleryClient
-from ..dask_client import DaskClient
 from ..db.repositories.comp_runs import CompRunsRepository
 from .base_scheduler import BaseCompScheduler, ScheduledPipelineParams
 from .celery_scheduler import CeleryScheduler
