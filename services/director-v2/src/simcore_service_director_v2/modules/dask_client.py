@@ -315,15 +315,19 @@ class DaskClient:
             )
 
             check_client_can_connect_to_scheduler(self.dask_subsystem.client)
-            # FIXME: This returns False when a gateway is used
-            check_if_cluster_is_able_to_run_pipeline(
-                node_id=node_id,
-                scheduler_info=self.dask_subsystem.client.scheduler_info(),
-                task_resources=dask_resources,
-                node_image=node_image,
-                cluster_id_prefix=self.settings.DASK_CLUSTER_ID_PREFIX,  # type: ignore
-                cluster_id=cluster_id,
-            )
+            # NOTE: in case it's a gateway we do not check a priori if the task
+            # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)
+            # might also auto-scale and the gateway does not know that a priori.
+            # So, we'll just send the tasks over and see what happens after a while.
+            if not self.dask_subsystem.gateway:
+                check_if_cluster_is_able_to_run_pipeline(
+                    node_id=node_id,
+                    scheduler_info=self.dask_subsystem.client.scheduler_info(),
+                    task_resources=dask_resources,
+                    node_image=node_image,
+                    cluster_id_prefix=self.settings.DASK_CLUSTER_ID_PREFIX,  # type: ignore
+                    cluster_id=cluster_id,
+                )
 
             input_data = await compute_input_data(
                 self.app, user_id, project_id, node_id
