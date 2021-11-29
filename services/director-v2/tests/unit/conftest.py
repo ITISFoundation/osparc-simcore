@@ -11,6 +11,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import Scheduler, Worker
 from dask_gateway_server.app import DaskGateway
 from dask_gateway_server.backends.inprocess import InProcessBackend
+from dask_gateway_server.traitlets import Command
 from distributed.deploy.spec import SpecCluster
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pydantic.types import NonNegativeInt
@@ -173,6 +174,12 @@ async def local_dask_gateway_server() -> AsyncIterator[DaskGatewayServer]:
     c.Proxy.address = "127.0.0.1:0"  # type: ignore
     c.DaskGateway.authenticator_class = "dask_gateway_server.auth.SimpleAuthenticator"  # type: ignore
     c.SimpleAuthenticator.password = "qweqwe"  # type: ignore
+    c.ClusterConfig.worker_cmd = [
+        "dask-worker",
+        f"--resources CPU=8,GPU=1,MPI=1,RAM={768e9}",
+    ]
+    c.DaskGateway.log_level = "DEBUG"
+
     print("--> creating local dask gateway server")
     dask_gateway_server = DaskGateway(config=c)
     dask_gateway_server.initialize([])  # that is a shitty one!
