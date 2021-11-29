@@ -9,7 +9,11 @@ from models_library.clusters import Cluster, NoAuthentication
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.clusters import ClusterType
 
-from ..core.errors import ConfigurationError, DaskClientAcquisisitonError
+from ..core.errors import (
+    ComputationalBackendNotConnectedError,
+    ConfigurationError,
+    DaskClientAcquisisitonError,
+)
 from ..core.settings import DaskSchedulerSettings
 from ..models.schemas.constants import ClusterID
 from .dask_client import DaskClient
@@ -56,12 +60,13 @@ class DaskClientsPool:
 
     @asynccontextmanager
     async def acquire(self, cluster: Cluster) -> AsyncIterator[DaskClient]:
+        dask_client = self._cluster_to_client_map.get(cluster.id)
         try:
             # we create a new client if that cluster was never used before
             logger.debug(
                 "acquiring connection to cluster %s:%s", cluster.id, cluster.name
             )
-            if cluster.id not in self._cluster_to_client_map:
+            if not dask_client:
                 self._cluster_to_client_map[cluster.id] = await DaskClient.create(
                     app=self.app,
                     settings=self.settings,
@@ -75,6 +80,14 @@ class DaskClientsPool:
         except asyncio.CancelledError:
             logger.info("cancelled connection to dask computational cluster")
             raise
+        except ComputationalBackendNotConnectedError:
+            if dask_client:
+                # reset the connection to this cluster
+                await dask_client.delete()
+                del self._cluster_to_client_map[cluster.id]
+            logger.warning(
+                "the underlying dask computational backend is disconnected, resetting connection"
+            )
         except Exception as exc:
             logger.error(
                 "could not create/access dask computational cluster %s",

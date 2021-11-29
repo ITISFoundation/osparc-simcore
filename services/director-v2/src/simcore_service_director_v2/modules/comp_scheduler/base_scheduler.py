@@ -413,8 +413,7 @@ class BaseCompScheduler(ABC):
                         project_id, tasks, RunningState.PUBLISHED
                     ),
                 )
-                raise ComputationalBackendNotConnectedError(f"{r}") from r
-            if isinstance(r, Exception):
+            elif isinstance(r, Exception):
                 logger.error(
                     "Unexpected error happened when scheduling task due to following error %s",
                     f"{r}",
