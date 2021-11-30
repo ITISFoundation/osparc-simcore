@@ -48,7 +48,7 @@ def cluster_authentication(faker: Faker) -> Iterable[Callable[[], Dict[str, Any]
             "password": faker.password(),
         }
         kerberos_auth = {"type": "kerberos"}
-        jupyterhub_auth = {"type": "jupyterhub"}
+        jupyterhub_auth = {"type": "jupyterhub", "api_token": faker.pystr()}
         return random.choice([simple_auth, kerberos_auth, jupyterhub_auth])
 
     yield creator
@@ -193,14 +193,6 @@ async def test_list_clusters(
         ]
 
 
-@pytest.mark.parametrize(
-    "authentication",
-    [
-        {"type": "simple", "username": "fake", "password": "sldfkjsl"},
-        {"type": "kerberos"},
-        {"type": "jupyterhub"},
-    ],
-)
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_create_cluster(
     enable_dev_features: None,
@@ -209,7 +201,7 @@ async def test_create_cluster(
     logged_user: Dict[str, Any],
     faker: Faker,
     user_role: UserRole,
-    authentication: Dict[str, Any],
+    cluster_authentication: Callable[[], Dict[str, Any]],
     expected: ExpectedResponse,
 ):
     # check we can create a cluster
@@ -217,7 +209,7 @@ async def test_create_cluster(
     cluster_data = json.loads(
         ClusterCreate(
             endpoint=faker.uri(),
-            authentication=authentication,
+            authentication=cluster_authentication(),
             name=faker.name(),
             type=random.choice(list(ClusterType)),
         ).json(by_alias=True, exclude_unset=True)
