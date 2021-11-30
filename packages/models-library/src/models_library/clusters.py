@@ -126,7 +126,10 @@ class Cluster(BaseCluster):
                     "type": ClusterType.AWS,
                     "owner": 2321,
                     "endpoint": "https://registry.osparc-development.fake2.dev",
-                    "authentication": {"type": "jupyterhub"},
+                    "authentication": {
+                        "type": "jupyterhub",
+                        "api_token": "some_fake_token",
+                    },
                     "access_rights": {
                         154: CLUSTER_ADMIN_RIGHTS,
                         12: CLUSTER_MANAGER_RIGHTS,
