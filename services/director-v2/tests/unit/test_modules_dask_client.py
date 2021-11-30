@@ -10,7 +10,7 @@ import json
 import random
 import time
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Dict, List
+from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List
 from unittest import mock
 from uuid import uuid4
 
@@ -96,31 +96,36 @@ async def dask_client_from_scheduler(
     minimal_dask_config: None,
     dask_spec_local_cluster: SpecCluster,
     minimal_app: FastAPI,
-) -> AsyncIterator[DaskClient]:
-    client = await DaskClient.create(
-        app=minimal_app,
-        settings=minimal_app.state.settings.DASK_SCHEDULER,
-        endpoint=parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address),
-        authentication=NoAuthentication(),
-    )
-    assert client
-    assert client.app == minimal_app
-    assert client.settings == minimal_app.state.settings.DASK_SCHEDULER
-    assert client.cancellation_dask_pub
-    assert not client._taskid_to_future_map
-    assert not client._subscribed_tasks
+) -> AsyncIterator[Callable[[], Awaitable[DaskClient]]]:
+    created_clients = []
 
-    assert client.dask_subsystem.client
-    assert not client.dask_subsystem.gateway
-    assert not client.dask_subsystem.gateway_cluster
-    scheduler_infos = client.dask_subsystem.client.scheduler_info()  # type: ignore
-    print(
-        f"--> Connected to scheduler via client {client=} to scheduler {scheduler_infos=}"
-    )
-    yield client
+    async def factory() -> DaskClient:
+        client = await DaskClient.create(
+            app=minimal_app,
+            settings=minimal_app.state.settings.DASK_SCHEDULER,
+            endpoint=parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address),
+            authentication=NoAuthentication(),
+        )
+        assert client
+        assert client.app == minimal_app
+        assert client.settings == minimal_app.state.settings.DASK_SCHEDULER
+        assert client.cancellation_dask_pub
+        assert not client._taskid_to_future_map
+        assert not client._subscribed_tasks
 
-    await client.delete()
-    print(f"<-- Disconnected from scheduler via client {client=}")
+        assert client.dask_subsystem.client
+        assert not client.dask_subsystem.gateway
+        assert not client.dask_subsystem.gateway_cluster
+        scheduler_infos = client.dask_subsystem.client.scheduler_info()  # type: ignore
+        print(
+            f"--> Connected to scheduler via client {client=} to scheduler {scheduler_infos=}"
+        )
+        created_clients.append(client)
+        return client
+
+    yield factory
+    await asyncio.gather(*[client.delete() for client in created_clients])
+    print(f"<-- Disconnected scheduler clients {created_clients=}")
 
 
 @pytest.fixture
@@ -128,37 +133,52 @@ async def dask_client_from_gateway(
     minimal_dask_config: None,
     local_dask_gateway_server: DaskGatewayServer,
     minimal_app: FastAPI,
-) -> AsyncIterator[DaskClient]:
-    client = await DaskClient.create(
-        app=minimal_app,
-        settings=minimal_app.state.settings.DASK_SCHEDULER,
-        endpoint=parse_obj_as(AnyUrl, local_dask_gateway_server.address),
-        authentication=SimpleAuthentication(
-            username="pytest_user", password=local_dask_gateway_server.password
-        ),
-    )
-    assert client
-    assert client.app == minimal_app
-    assert client.settings == minimal_app.state.settings.DASK_SCHEDULER
-    assert client.cancellation_dask_pub
-    assert not client._taskid_to_future_map
-    assert not client._subscribed_tasks
+) -> AsyncIterator[Callable[[], Awaitable[DaskClient]]]:
+    created_clients = []
 
-    assert client.dask_subsystem.client
-    assert client.dask_subsystem.gateway
-    assert client.dask_subsystem.gateway_cluster
+    async def factory() -> DaskClient:
+        client = await DaskClient.create(
+            app=minimal_app,
+            settings=minimal_app.state.settings.DASK_SCHEDULER,
+            endpoint=parse_obj_as(AnyUrl, local_dask_gateway_server.address),
+            authentication=SimpleAuthentication(
+                username="pytest_user", password=local_dask_gateway_server.password
+            ),
+        )
+        assert client
+        assert client.app == minimal_app
+        assert client.settings == minimal_app.state.settings.DASK_SCHEDULER
+        assert client.cancellation_dask_pub
+        assert not client._taskid_to_future_map
+        assert not client._subscribed_tasks
 
-    scheduler_infos = client.dask_subsystem.client.scheduler_info()  # type: ignore
-    print(f"--> Connected to gateway {client.dask_subsystem.gateway=}")
-    print(f"--> Cluster {client.dask_subsystem.gateway_cluster=}")
-    print(f"--> Client {client=}")
-    print(
-        f"--> Cluster dashboard link {client.dask_subsystem.gateway_cluster.dashboard_link}"
-    )
-    yield client
+        assert client.dask_subsystem.client
+        assert client.dask_subsystem.gateway
+        assert client.dask_subsystem.gateway_cluster
 
-    await client.delete()
-    print(f"<-- Disconnected from gateway via client {client=}")
+        scheduler_infos = client.dask_subsystem.client.scheduler_info()  # type: ignore
+        print(f"--> Connected to gateway {client.dask_subsystem.gateway=}")
+        print(f"--> Cluster {client.dask_subsystem.gateway_cluster=}")
+        print(f"--> Client {client=}")
+        print(
+            f"--> Cluster dashboard link {client.dask_subsystem.gateway_cluster.dashboard_link}"
+        )
+        created_clients.append(client)
+        return client
+
+    yield factory
+    await asyncio.gather(*[client.delete() for client in created_clients])
+    print(f"<-- Disconnected gateway clients {created_clients=}")
+
+
+@pytest.fixture(params=["dask_client_from_scheduler", "dask_client_from_gateway"])
+async def dask_client(
+    dask_client_from_scheduler, dask_client_from_gateway, request
+) -> DaskClient:
+    return await {
+        "dask_client_from_scheduler": dask_client_from_scheduler,
+        "dask_client_from_gateway": dask_client_from_gateway,
+    }[request.param]()
 
 
 @pytest.fixture
@@ -289,7 +309,6 @@ async def test_dask_cluster_through_client(
 
 
 async def test_send_computation_task(
-    loop: asyncio.AbstractEventLoop,
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -355,7 +374,6 @@ async def test_send_computation_task(
 
 
 async def test_abort_send_computation_task(
-    loop: asyncio.AbstractEventLoop,
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -418,15 +436,7 @@ async def test_abort_send_computation_task(
     ), "the list of futures was not cleaned correctly"
 
 
-@pytest.mark.parametrize(
-    "dask_client",
-    [
-        (lazy_fixture("dask_client_from_scheduler")),
-        (lazy_fixture("dask_client_from_gateway")),
-    ],
-)
 async def test_failed_task_returns_exceptions(
-    loop: asyncio.AbstractEventLoop,
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -477,8 +487,8 @@ async def test_failed_task_returns_exceptions(
     mocked_user_completed_cb.call_args[0][0].msg.find("raise ValueError")
 
 
+@pytest.mark.parametrize("dask_client", ["dask_client_from_scheduler"], indirect=True)
 async def test_invalid_cluster_send_computation_task(
-    loop: asyncio.AbstractEventLoop,
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -502,17 +512,8 @@ async def test_invalid_cluster_send_computation_task(
     mocked_user_completed_cb.assert_not_called()
 
 
-@pytest.mark.parametrize(
-    "dask_client",
-    [
-        (lazy_fixture("dask_client_from_scheduler")),
-        # (lazy_fixture("dask_client_from_gateway")),
-        # NOTE: the gateway is not able to raise this exception as it does not
-        # know a priori the available computational resources
-    ],
-)
-async def test_too_many_resource_send_computation_task(
-    loop: asyncio.AbstractEventLoop,
+@pytest.mark.parametrize("dask_client", ["dask_client_from_scheduler"], indirect=True)
+async def test_too_many_resources_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -545,15 +546,7 @@ async def test_too_many_resource_send_computation_task(
     mocked_user_completed_cb.assert_not_called()
 
 
-@pytest.mark.parametrize(
-    "dask_client",
-    [
-        (lazy_fixture("dask_client_from_scheduler")),
-        (lazy_fixture("dask_client_from_gateway")),
-    ],
-)
 async def test_disconnected_backend_send_computation_task(
-    loop: asyncio.AbstractEventLoop,
     dask_spec_local_cluster: SpecCluster,
     local_dask_gateway_server: DaskGatewayServer,
     dask_client: DaskClient,

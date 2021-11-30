@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import asyncio
 import random
 from typing import AsyncIterable, AsyncIterator
 
@@ -105,6 +106,7 @@ def cluster_id_resource_name(cluster_id: NonNegativeInt) -> str:
 
 @pytest.fixture
 async def dask_spec_local_cluster(
+    loop: asyncio.AbstractEventLoop,
     monkeypatch: MonkeyPatch,
     cluster_id_resource_name: str,
 ) -> AsyncIterable[SpecCluster]:

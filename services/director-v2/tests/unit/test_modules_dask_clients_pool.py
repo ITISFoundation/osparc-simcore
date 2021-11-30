@@ -54,7 +54,7 @@ def minimal_dask_config(
 
 
 def test_dask_clients_pool_missing_raises_configuration_error(
-    loop: asyncio.AbstractEventLoop, minimal_dask_config: None, monkeypatch: MonkeyPatch
+    minimal_dask_config: None, monkeypatch: MonkeyPatch
 ):
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "0")
     settings = AppSettings.create_from_envs()
@@ -66,7 +66,7 @@ def test_dask_clients_pool_missing_raises_configuration_error(
 
 
 def test_dask_clients_pool_properly_setup_and_deleted(
-    loop: asyncio.AbstractEventLoop, minimal_dask_config: None, mocker: MockerFixture
+    minimal_dask_config: None, mocker: MockerFixture
 ):
     mocked_dask_clients_pool = mocker.patch(
         "simcore_service_director_v2.modules.dask_clients_pool.DaskClientsPool",
