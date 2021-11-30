@@ -190,7 +190,7 @@ def app_module_setup(
                 "%s %s [Elapsed: %3.1f secs]",
                 head_msg,
                 "completed" if completed else "skipped",
-                elapsed,
+                elapsed.total_seconds(),
             )
             return completed
 
