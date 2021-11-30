@@ -66,23 +66,22 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
 class ExpectedResponse(NamedTuple):
-    ok: Union[Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPOk]]
+    """
+    Stores respons status to an API request in function of the user
+
+    e.g. for a request that normally returns OK, a non-authorized user
+    will have no access, therefore ExpectedResponse.ok = HTTPUnauthorized
+    """
+
     created: Union[
         Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPCreated]
     ]
     no_content: Union[
         Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPNoContent]
     ]
-    not_found: Union[
-        Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPNotFound]
-    ]
     forbidden: Union[
         Type[web.HTTPUnauthorized],
         Type[web.HTTPForbidden],
-    ]
-    locked: Union[Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[HTTPLocked]]
-    accepted: Union[
-        Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPAccepted]
     ]
 
     def __str__(self) -> str:
@@ -97,49 +96,33 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
             (
                 UserRole.ANONYMOUS,
                 ExpectedResponse(
-                    ok=web.HTTPUnauthorized,
                     created=web.HTTPUnauthorized,
                     no_content=web.HTTPUnauthorized,
-                    not_found=web.HTTPUnauthorized,
                     forbidden=web.HTTPUnauthorized,
-                    locked=web.HTTPUnauthorized,
-                    accepted=web.HTTPUnauthorized,
                 ),
             ),
             (
                 UserRole.GUEST,
                 ExpectedResponse(
-                    ok=web.HTTPForbidden,
-                    created=web.HTTPForbidden,
-                    no_content=web.HTTPForbidden,
-                    not_found=web.HTTPForbidden,
+                    created=web.HTTPCreated,
+                    no_content=web.HTTPNoContent,
                     forbidden=web.HTTPForbidden,
-                    locked=web.HTTPForbidden,
-                    accepted=web.HTTPForbidden,
                 ),
             ),
             (
                 UserRole.USER,
                 ExpectedResponse(
-                    ok=web.HTTPOk,
                     created=web.HTTPCreated,
                     no_content=web.HTTPNoContent,
-                    not_found=web.HTTPNotFound,
                     forbidden=web.HTTPForbidden,
-                    locked=HTTPLocked,
-                    accepted=web.HTTPAccepted,
                 ),
             ),
             (
                 UserRole.TESTER,
                 ExpectedResponse(
-                    ok=web.HTTPOk,
                     created=web.HTTPCreated,
                     no_content=web.HTTPNoContent,
-                    not_found=web.HTTPNotFound,
                     forbidden=web.HTTPForbidden,
-                    locked=HTTPLocked,
-                    accepted=web.HTTPAccepted,
                 ),
             ),
         ],
@@ -208,7 +191,7 @@ def fake_workbench_adjacency_list(tests_data_dir: Path) -> Dict[str, Any]:
 def _assert_db_contents(
     project_id: str,
     postgres_session: sa.orm.session.Session,
-    mock_workbench_payload: Dict[str, Any],
+    fake_workbench_payload: Dict[str, Any],
     fake_workbench_adjacency_list: Dict[str, Any],
     check_outputs: bool,
 ):
@@ -227,7 +210,7 @@ def _assert_db_contents(
         .filter(comp_tasks.c.project_id == project_id)
         .all()
     )
-    mock_pipeline = mock_workbench_payload
+    mock_pipeline = fake_workbench_payload
     assert len(tasks_db) == len(mock_pipeline)
 
     for task_db in tasks_db:
@@ -248,13 +231,13 @@ def _assert_sleeper_services_completed(
     project_id: str,
     postgres_session: sa.orm.session.Session,
     expected_state: StateType,
-    mock_workbench_payload: Dict[str, Any],
+    fake_workbench_payload: Dict[str, Any],
 ):
     # pylint: disable=no-member
     TIMEOUT_SECONDS = 60
     WAIT_TIME = 1
     NUM_COMP_TASKS_TO_WAIT_FOR = len(
-        [x for x in mock_workbench_payload.values() if "/comp/" in x["key"]]
+        [x for x in fake_workbench_payload.values() if "/comp/" in x["key"]]
     )
 
     @retry(
@@ -335,25 +318,19 @@ async def test_start_pipeline(
     expected: ExpectedResponse,
 ):
     project_id = user_project["uuid"]
-    mock_workbench_payload = user_project["workbench"]
+    fake_workbench_payload = user_project["workbench"]
 
     url_start = client.app.router["start_pipeline"].url_for(project_id=project_id)
     assert url_start == URL(f"{API_PREFIX}/computation/pipeline/{project_id}:start")
 
     # POST /v0/computation/pipeline/{project_id}:start
     resp = await client.post(f"{url_start}")
-    data, error = await assert_status(
-        resp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
-    )
+    data, error = await assert_status(resp, expected.created)
 
     if not error:
         # starting again should be disallowed, since it's already running
         resp = await client.post(f"{url_start}")
-        assert (
-            resp.status == web.HTTPForbidden.status_code
-            if user_role == UserRole.GUEST
-            else expected.forbidden.status_code
-        )
+        assert resp.status == expected.forbidden.status_code
 
         assert "pipeline_id" in data
         assert data["pipeline_id"] == project_id
@@ -361,32 +338,30 @@ async def test_start_pipeline(
         _assert_db_contents(
             project_id,
             postgres_session,
-            mock_workbench_payload,
+            fake_workbench_payload,
             fake_workbench_adjacency_list,
             check_outputs=False,
         )
         # wait for the computation to stop
         _assert_sleeper_services_completed(
-            project_id, postgres_session, StateType.SUCCESS, mock_workbench_payload
+            project_id, postgres_session, StateType.SUCCESS, fake_workbench_payload
         )
         # restart the computation
         resp = await client.post(f"{url_start}")
-        data, error = await assert_status(
-            resp, web.HTTPCreated if user_role == UserRole.GUEST else expected.created
-        )
+        data, error = await assert_status(resp, expected.created)
         assert not error
+
+    # give time to run a bit ... before stoppinng
+    await asyncio.sleep(2)
 
     # now stop the pipeline
     # POST /v0/computation/pipeline/{project_id}:stop
     url_stop = client.app.router["stop_pipeline"].url_for(project_id=project_id)
     assert url_stop == URL(f"{API_PREFIX}/computation/pipeline/{project_id}:stop")
-    await asyncio.sleep(2)
     resp = await client.post(f"{url_stop}")
-    data, error = await assert_status(
-        resp, web.HTTPNoContent if user_role == UserRole.GUEST else expected.no_content
-    )
+    data, error = await assert_status(resp, expected.no_content)
     if not error:
         # now wait for it to stop
         _assert_sleeper_services_completed(
-            project_id, postgres_session, StateType.ABORTED, mock_workbench_payload
+            project_id, postgres_session, StateType.ABORTED, fake_workbench_payload
         )
