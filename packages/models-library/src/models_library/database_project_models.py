@@ -1,12 +1,12 @@
 """
     "Pydantic models will easily **parse** user-supplied data,
-    **providing gurantees** about output data structures" in `Robust Python` by P. Viafore
+    **providing guarantees** about output data structures" in `Robust Python` by P. Viafore
 
-    For that reason we cannot expect to have a single pydantic class for every input/output
-    combination we have (e.g. one single Project model for all interfaces).
+    With that in mind, it seems logic that we cannot expect to always have a single pydantic class for every
+    input/output combination we have (e.g. one single `Project` model for all interfaces).
 
-    Here we explore the best way to deal with different contexts for data describing a project.
-
+    Here we explore the best way to deal with different models in each context involving
+    the project's data
 """
 import csv
 import json
@@ -36,8 +36,10 @@ class _NodeRelaxed(Node):
 
 class ProjectFromCsv(ProjectAtDB):
     """
-    Source: Parses a row from user-supplied CSV export containing a pg project's table
-    Target: Produces a data compatible with a project in the pg interface
+    Models project in a exported CSV row
+
+    - Inputs: Parses a row from user-supplied CSV export containing a pg project's table
+    - Outputs: Produces a data compatible with a project in the pg interface
 
     These CSV files can be exported from adminer GUI
     """
@@ -75,10 +77,10 @@ class ProjectFromCsv(ProjectAtDB):
 
 class ProjectForPgInsert(BaseModel):
     """
-    Model for pg db table
+    Model to create a project row in a pg table
 
-    - Source: parses data that fits pg table columns
-    - Target: filters out and guarantees fields used to insert a new row in a postgres (pg) table
+    - Inputs: parses data that fits pg table columns
+    - Outputs: filters out and guarantees fields used to insert a new row in a postgres (pg) table
 
     """
 
