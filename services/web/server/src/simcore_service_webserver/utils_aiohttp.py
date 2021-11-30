@@ -14,7 +14,7 @@ def rename_routes_as_handler_function(routes: RouteTableDef, *, prefix: str):
         route.kwargs["name"] = f"{prefix}.{route.handler.__name__}"
 
 
-def view_routes(routes: RouteTableDef):
+def get_routes_view(routes: RouteTableDef) -> str:
     fh = io.StringIO()
     print(routes, file=fh)
     for r in routes:
@@ -49,6 +49,9 @@ def enveloped_json_response(
     data: Any, status_cls: Type[HTTPException] = web.HTTPOk, **extra
 ) -> web.Response:
     # TODO: implement Envelop with generics
+    # TODO: replace all envelope functionality form packages/service-library/src/servicelib/aiohttp/rest_responses.py
+    # TODO: create decorator instead of middleware to envelope handler responses
+    #
     enveloped: str = json_dumps({"data": data, **extra})
     return web.Response(
         text=enveloped, content_type="application/json", status=status_cls.status_code
