@@ -81,8 +81,8 @@ class DaskClientsPool:
                     endpoint=cluster.endpoint,
                     authentication=cluster.authentication,
                 )
-                assert self._task_handlers  # nosec
-                dask_client.register_handlers(self._task_handlers)
+                if self._task_handlers:
+                    dask_client.register_handlers(self._task_handlers)
 
             assert dask_client  # nosec
             yield dask_client
