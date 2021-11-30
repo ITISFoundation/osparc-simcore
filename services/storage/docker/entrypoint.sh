@@ -10,7 +10,7 @@ ERROR="ERROR: [$(basename "$0")] "
 
 # Read self-signed SSH certificates (if applicable)
 #
-# In case the director must access a docker registry in a secure way using
+# In case storage must access a docker registry in a secure way using
 # non-standard certificates (e.g. such as self-signed certificates), this call is needed.
 # It needs to be executed as root.
 update-ca-certificates
