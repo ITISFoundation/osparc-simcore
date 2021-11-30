@@ -1,0 +1,8 @@
+
+
+# There are incompatible versions in the resolved dependencies:
+#   async-timeout<5.0,>=4.0.0a3 (from aiohttp==3.8.1)
+#   async-timeout<4.0,>=3.0 (from aiopg[sa]==1.2.1->-r requirements/_base.in (line 25))
+# NOTE: All services with aiopg and aiohttp will have this conflict.
+#       Need to wait until aiopg releases and removes this constraint
+aiohttp<3.8.0

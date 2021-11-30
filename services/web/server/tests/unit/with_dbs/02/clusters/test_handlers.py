@@ -125,9 +125,7 @@ async def second_user(
         yield user
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_list_clusters(
     enable_dev_features: None,
     client: TestClient,
@@ -201,9 +199,7 @@ async def test_list_clusters(
         {"type": "jupyterhub"},
     ],
 )
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_create_cluster(
     enable_dev_features: None,
     client: TestClient,
@@ -264,9 +260,7 @@ async def test_create_cluster(
     postgres_db.execute(clusters.delete().where(clusters.c.id == row[clusters.c.id]))
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_get_cluster(
     enable_dev_features: None,
     client: TestClient,
@@ -336,9 +330,7 @@ async def test_get_cluster(
         data, error = await assert_status(rsp, expected.forbidden)
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_update_cluster(
     enable_dev_features: None,
     client: TestClient,
@@ -553,9 +545,7 @@ async def test_update_cluster(
         data, error = await assert_status(rsp, expected.forbidden)
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_delete_cluster(
     enable_dev_features: None,
     client: TestClient,
