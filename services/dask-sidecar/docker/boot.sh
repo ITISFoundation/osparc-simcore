@@ -99,6 +99,7 @@ else
   #
   # DASK RESOURCES DEFINITION --------------------------------- END
   #
+  DASK_NPROCS=${DASK_NPROCS:="1"}
   DASK_NTHREADS=${DASK_NTHREADS:="$num_cpus"}
   DASK_MEMORY_LIMIT=${DASK_MEMORY_LIMIT:="$ram"}
   DASK_WORKER_NAME=${DASK_WORKER_NAME:="dask-sidecar_$(hostname)_$(date +'%Y-%m-%d_%T')_$$"}
@@ -115,7 +116,7 @@ else
       --preload simcore_service_dask_sidecar.tasks \
       --reconnect \
       --no-nanny \
-      --nprocs 1 \
+      --nprocs ${DASK_NPROCS} \
       --nthreads "${DASK_NTHREADS}" \
       --dashboard-address 8787 \
       --memory-limit "${DASK_MEMORY_LIMIT}" \
@@ -127,7 +128,7 @@ else
       --preload simcore_service_dask_sidecar.tasks \
       --reconnect \
       --no-nanny \
-      --nprocs 1 \
+      --nprocs ${DASK_NPROCS} \
       --nthreads "${DASK_NTHREADS}" \
       --dashboard-address 8787 \
       --memory-limit "${DASK_MEMORY_LIMIT}" \
