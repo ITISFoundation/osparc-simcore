@@ -32,9 +32,9 @@ async def _get_cluster_with_id(
             != request.app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID
         ):
             cluster = await clusters_repo.get_cluster(cluster_id)
-        async with dask_clients_pool.acquire(cluster) as dask_client:
-            scheduler_info = dask_client.client.scheduler_info()
-            scheduler_status = dask_client.client.status
+        async with dask_clients_pool.acquire(cluster) as client:
+            scheduler_info = client.dask_subsystem.client.scheduler_info()
+            scheduler_status = client.dask_subsystem.client.status
 
         return ClusterOut(
             cluster=cluster,
