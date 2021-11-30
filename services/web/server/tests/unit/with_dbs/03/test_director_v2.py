@@ -35,9 +35,7 @@ def project_id() -> UUID:
     return uuid4()
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_start_pipeline(
     client,
     logged_user: Dict,
@@ -60,9 +58,7 @@ async def test_start_pipeline(
         ), f"received pipeline id: {data['pipeline_id']}, expected {project_id}"
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_start_partial_pipeline(
     client,
     logged_user: Dict,
@@ -87,9 +83,7 @@ async def test_start_partial_pipeline(
         ), f"received pipeline id: {data['pipeline_id']}, expected {project_id}"
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_stop_pipeline(
     client,
     logged_user: Dict,

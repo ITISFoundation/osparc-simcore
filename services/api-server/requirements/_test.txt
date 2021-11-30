@@ -59,9 +59,8 @@ cryptography==3.4.7
     #   paramiko
 distro==1.6.0
     # via docker-compose
-docker==5.0.2
+docker==5.0.3
     # via
-    #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   docker-compose
 docker-compose==1.29.1
@@ -247,7 +246,7 @@ typing-extensions==3.10.0.2
     #   -c requirements/_base.txt
     #   astroid
     #   pylint
-urllib3==1.26.5
+urllib3==1.26.7
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -255,7 +254,6 @@ urllib3==1.26.5
     #   requests
 websocket-client==0.59.0
     # via
-    #   -c requirements/_base.txt
     #   docker
     #   docker-compose
 wrapt==1.13.3
