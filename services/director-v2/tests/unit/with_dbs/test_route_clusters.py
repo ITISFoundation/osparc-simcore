@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import asyncio
 from typing import Callable, Dict, Iterable, List
 
 import pytest
