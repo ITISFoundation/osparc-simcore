@@ -138,6 +138,7 @@ async def test_list_clusters(
     expected: ExpectedResponse,
 ):
     # check empty clusters
+    assert client.app
     url = client.app.router["list_clusters_handler"].url_for()
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected.ok)
@@ -205,6 +206,7 @@ async def test_create_cluster(
     expected: ExpectedResponse,
 ):
     # check we can create a cluster
+    assert client.app
     url = client.app.router["create_cluster_handler"].url_for()
     cluster_data = json.loads(
         ClusterCreate(
@@ -266,6 +268,7 @@ async def test_get_cluster(
     expected: ExpectedResponse,
 ):
     # check not found
+    assert client.app
     url = client.app.router["get_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected.not_found)
@@ -338,6 +341,7 @@ async def test_update_cluster(
 ):
     _PATCH_EXPORT = {"by_alias": True, "exclude_unset": True, "exclude_none": True}
     # check modifying invalid returns not found
+    assert client.app
     url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.patch(
         f"{url}",
