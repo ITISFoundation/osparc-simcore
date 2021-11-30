@@ -23,7 +23,6 @@ pytest_simcore_ops_services_selection = ["adminer", "redis-commander"]
 
 @pytest.fixture
 def minimal_celery_scheduler_config(
-    loop,
     mock_env: None,
     postgres_host_config: Dict[str, str],
     redis_service: RedisConfig,

@@ -62,7 +62,6 @@ def mocked_rabbit_mq_client(mocker: MockerFixture):
 
 @pytest.fixture
 def minimal_dask_scheduler_config(
-    loop,
     mock_env: None,
     postgres_host_config: Dict[str, str],
     monkeypatch: MonkeyPatch,
