@@ -367,6 +367,7 @@ async def test_update_cluster(
         ClusterPatch(authentication=cluster_authentication()),
     ]:
         jsonable_cluster_patch = json.loads(cluster_patch.json(**_PATCH_EXPORT))
+        print(f"--> patching cluster with {jsonable_cluster_patch}")
         rsp = await client.patch(f"{url}", json=jsonable_cluster_patch)
         data, error = await assert_status(rsp, expected.ok)
         expected_admin_cluster = expected_admin_cluster.copy(
