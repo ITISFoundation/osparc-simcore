@@ -33,6 +33,7 @@ from starlette.testclient import TestClient
 
 @pytest.fixture
 def minimal_dask_config(
+    loop,
     mock_env: None,
     project_env_devel_environment: Dict[str, Any],
     monkeypatch: MonkeyPatch,

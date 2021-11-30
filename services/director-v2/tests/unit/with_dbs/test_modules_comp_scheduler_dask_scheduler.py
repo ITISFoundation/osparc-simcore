@@ -62,6 +62,7 @@ def mocked_rabbit_mq_client(mocker: MockerFixture):
 
 @pytest.fixture
 def minimal_dask_scheduler_config(
+    loop,
     mock_env: None,
     postgres_host_config: Dict[str, str],
     monkeypatch: MonkeyPatch,
@@ -466,26 +467,20 @@ async def test_handling_of_disconnected_dask_scheduler(
     mocker: MockerFixture,
     published_project: PublishedProject,
 ):
-    # this will crate a non connected backend issue that will trigger re-connection
+    # this will create a non connected backend issue that will trigger re-connection
     mocked_dask_client_send_task = mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.send_computation_tasks",
         side_effect=ComputationalBackendNotConnectedError(
             msg="faked disconnected backend"
         ),
     )
-    # mocked_delete_client_fct = mocker.patch(
-    #     "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.delete",
-    #     autospec=True,
-    # )
 
-    # check the pipeline is correctly added to the scheduled pipelines
+    # running the pipeline will now raise and the tasks are set back to PUBLISHED
     await scheduler.run_new_pipeline(
         user_id=user_id,
         project_id=published_project.project.uuid,
         cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
     )
-    with pytest.raises(ComputationalBackendNotConnectedError):
-        await manually_run_comp_scheduler(scheduler)
 
     # since there is no cluster, there is no dask-scheduler,
     # the tasks shall all still be in PUBLISHED state now
@@ -498,13 +493,7 @@ async def test_handling_of_disconnected_dask_scheduler(
         [t.node_id for t in published_project.tasks],
         exp_state=RunningState.PUBLISHED,
     )
-    # the exception risen should trigger calls to reconnect the client, we do it manually here
-    old_dask_client = cast(DaskScheduler, scheduler).dask_client
-    await scheduler.reconnect_backend()
-    # this will delete and re-create the dask client
-    new_dask_client = cast(DaskScheduler, scheduler).dask_client
-    assert old_dask_client is not new_dask_client
-
+    # on the next iteration of the pipeline it will try to re-connect
     # now try to abort the tasks since we are wondering what is happening, this should auto-trigger the scheduler
     await scheduler.stop_pipeline(
         user_id=user_id, project_id=published_project.project.uuid
