@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 
-import asyncio
 from random import choice
 from typing import Any, Callable, Dict, List
 from unittest import mock
