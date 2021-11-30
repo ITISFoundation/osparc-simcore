@@ -15,6 +15,7 @@ import aio_pika
 import pytest
 import socketio
 import sqlalchemy as sa
+from faker import Faker
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
@@ -198,9 +199,24 @@ def client(
     )
 
 
+@pytest.fixture(scope="session")
+def user_id(faker: Faker) -> int:
+    return faker.pyint(min_value=1)
+
+
 @pytest.fixture
-def client_session_id() -> UUIDStr:
-    return str(uuid4())
+def project_id(faker: Faker) -> str:
+    return faker.uuid4()
+
+
+@pytest.fixture(scope="session")
+def node_uuid(faker: Faker) -> str:
+    return faker.uuid4()
+
+
+@pytest.fixture
+def client_session_id(faker: Faker) -> UUIDStr:
+    return faker.uuid4()
 
 
 @pytest.fixture
