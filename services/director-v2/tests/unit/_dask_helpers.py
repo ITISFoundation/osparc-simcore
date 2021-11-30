@@ -3,6 +3,7 @@
 
 from typing import Any, Dict, List, NamedTuple
 
+from dask_gateway_server.app import DaskGateway
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.io import (
     TaskInputData,
@@ -16,6 +17,7 @@ class DaskGatewayServer(NamedTuple):
     address: str
     proxy_address: str
     password: str
+    server: DaskGateway
 
 
 def fake_sidecar_fct(

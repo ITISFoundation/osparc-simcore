@@ -137,6 +137,7 @@ async def _connect_with_gateway_and_create_cluster(
         else:
             cluster = await gateway.new_cluster(shutdown_on_close=False)
         assert cluster  # nosec
+        logger.info("Cluster dashboard available: %s", cluster.dashboard_link)
         await cluster.adapt()
         client = await cluster.get_client()
         assert client  # nosec

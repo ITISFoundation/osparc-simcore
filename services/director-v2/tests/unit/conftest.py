@@ -10,8 +10,7 @@ from _dask_helpers import DaskGatewayServer
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import Scheduler, Worker
 from dask_gateway_server.app import DaskGateway
-from dask_gateway_server.backends.inprocess import InProcessBackend
-from dask_gateway_server.traitlets import Command
+from dask_gateway_server.backends.local import UnsafeLocalBackend
 from distributed.deploy.spec import SpecCluster
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pydantic.types import NonNegativeInt
@@ -167,20 +166,28 @@ async def dask_spec_local_cluster(
 
 
 @pytest.fixture
-async def local_dask_gateway_server() -> AsyncIterator[DaskGatewayServer]:
+async def local_dask_gateway_server(
+    cluster_id_resource_name: str,
+) -> AsyncIterator[DaskGatewayServer]:
     c = traitlets.config.Config()
-    c.DaskGateway.backend_class = InProcessBackend  # type: ignore
+    c.DaskGateway.backend_class = UnsafeLocalBackend  # type: ignore
     c.DaskGateway.address = "127.0.0.1:0"  # type: ignore
     c.Proxy.address = "127.0.0.1:0"  # type: ignore
     c.DaskGateway.authenticator_class = "dask_gateway_server.auth.SimpleAuthenticator"  # type: ignore
     c.SimpleAuthenticator.password = "qweqwe"  # type: ignore
-    c.ClusterConfig.worker_cmd = [
+    c.ClusterConfig.worker_cmd = [  # type: ignore
         "dask-worker",
-        f"--resources CPU=8,GPU=1,MPI=1,RAM={768e9}",
+        "--resources",
+        f"CPU=12,GPU=1,MPI=1,RAM={16e9},{cluster_id_resource_name}=1",
     ]
-    c.DaskGateway.log_level = "DEBUG"
+    # NOTE: This must be set such that the local unsafe backend creates a worker with enough cores/memory
+    c.ClusterConfig.worker_cores = 12  # type: ignore
+    c.ClusterConfig.worker_memory = "16G"  # type: ignore
+
+    c.DaskGateway.log_level = "DEBUG"  # type: ignore
 
     print("--> creating local dask gateway server")
+
     dask_gateway_server = DaskGateway(config=c)
     dask_gateway_server.initialize([])  # that is a shitty one!
     print("--> local dask gateway server initialized")
@@ -192,6 +199,7 @@ async def local_dask_gateway_server() -> AsyncIterator[DaskGatewayServer]:
         f"http://{dask_gateway_server.backend.proxy.address}",
         f"gateway://{dask_gateway_server.backend.proxy.tcp_address}",
         c.SimpleAuthenticator.password,  # type: ignore
+        dask_gateway_server,
     )
     print("--> local dask gateway server switching off...")
     await dask_gateway_server.cleanup()

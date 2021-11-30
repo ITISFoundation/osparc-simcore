@@ -10,12 +10,12 @@ import json
 import random
 import time
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Dict
+from typing import Any, AsyncIterator, Dict, List
 from unittest import mock
 from uuid import uuid4
 
 import pytest
-from _dask_helpers import DaskGatewayServer, fake_failing_sidecar_fct, fake_sidecar_fct
+from _dask_helpers import DaskGatewayServer, fake_failing_sidecar_fct
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import get_worker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -147,9 +147,11 @@ async def dask_client_from_gateway(
     assert client.dask_subsystem.gateway_cluster
 
     scheduler_infos = client.dask_subsystem.client.scheduler_info()  # type: ignore
+    print(f"--> Connected to gateway {client.dask_subsystem.gateway=}")
+    print(f"--> Cluster {client.dask_subsystem.gateway_cluster=}")
+    print(f"--> Client {client=}")
     print(
-        f"--> Connected to gateway {client.dask_subsystem.gateway=} using"
-        f" cluster {client.dask_subsystem.gateway_cluster=} via client {client=} onto scheduler {scheduler_infos=}"
+        f"--> Cluster dashboard link {client.dask_subsystem.gateway_cluster.dashboard_link}"
     )
     yield client
 
@@ -316,7 +318,8 @@ async def test_send_computation_task(
 
     job_id, future = list(dask_client._taskid_to_future_map.items())[0]
     # this waits for the computation to run
-    task_result = await future.result(timeout=20)
+    _ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS = 20
+    task_result = await future.result(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)
     assert isinstance(task_result, TaskOutputData)
     assert task_result["some_output_key"] == 123
     assert future.key == job_id
@@ -335,6 +338,7 @@ async def test_send_computation_task(
 
 
 async def test_abort_send_computation_task(
+    loop: asyncio.AbstractEventLoop,
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -454,6 +458,7 @@ async def test_failed_task_returns_exceptions(
 
 
 async def test_invalid_cluster_send_computation_task(
+    loop: asyncio.AbstractEventLoop,
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -481,10 +486,13 @@ async def test_invalid_cluster_send_computation_task(
     "dask_client",
     [
         (lazy_fixture("dask_client_from_scheduler")),
-        (lazy_fixture("dask_client_from_gateway")),
+        # (lazy_fixture("dask_client_from_gateway")),
+        # NOTE: the gateway is not able to raise this exception as it does not
+        # know a priori the available computational resources
     ],
 )
 async def test_too_many_resource_send_computation_task(
+    loop: asyncio.AbstractEventLoop,
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -525,7 +533,9 @@ async def test_too_many_resource_send_computation_task(
     ],
 )
 async def test_disconnected_backend_send_computation_task(
+    loop: asyncio.AbstractEventLoop,
     dask_spec_local_cluster: SpecCluster,
+    local_dask_gateway_server: DaskGatewayServer,
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -536,6 +546,7 @@ async def test_disconnected_backend_send_computation_task(
 ):
     # DISCONNECT THE CLUSTER
     await dask_spec_local_cluster.close()  # type: ignore
+    await local_dask_gateway_server.server.cleanup()
     #
     with pytest.raises(ComputationalBackendNotConnectedError):
         await dask_client.send_computation_tasks(
