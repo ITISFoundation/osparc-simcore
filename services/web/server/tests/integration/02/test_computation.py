@@ -4,21 +4,9 @@
 import asyncio
 import json
 from pathlib import Path
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    Dict,
-    List,
-    NamedTuple,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Type, Union
 
 import pytest
-import socketio
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -48,7 +36,6 @@ from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.module_setup import setup_socketio
 from simcore_service_webserver.users import setup_users
-from socketio.exceptions import ConnectionError as SocketConnectionError
 from tenacity import retry
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -97,6 +84,10 @@ class ExpectedResponse(NamedTuple):
     accepted: Union[
         Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPAccepted]
     ]
+
+    def __str__(self) -> str:
+        items = ", ".join(f"{k}={v.__name__}" for k, v in self._asdict().items())
+        return f"{self.__class__.__name__}({items})"
 
 
 def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse]]]:
@@ -184,7 +175,7 @@ def client(
     setup_computation(app)
     setup_director_v2(app)
 
-    # GC not relevant for these test-suite,
+    # GC not included in this test-suite,
     mocker.patch(
         "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
         side_effect=lambda app: print(
@@ -328,9 +319,7 @@ def _assert_sleeper_services_completed(
 
 
 # TESTS ------------------------------------------
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_start_pipeline(
     sleeper_service: Dict[str, str],
     postgres_session: sa.orm.session.Session,
