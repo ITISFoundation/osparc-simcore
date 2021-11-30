@@ -37,5 +37,7 @@ class CeleryScheduler(BaseCompScheduler):
             callback=callback,
         )
 
-    async def _stop_tasks(self, tasks: List[CompTaskAtDB]) -> None:
+    async def _stop_tasks(
+        self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
+    ) -> None:
         self.celery_client.abort_computation_tasks([str(t.job_id) for t in tasks])

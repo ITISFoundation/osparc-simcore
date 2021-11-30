@@ -2,7 +2,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import AsyncIterator, Awaitable, Callable, Dict, Optional
+from typing import AsyncIterator, Dict, Optional
 
 from fastapi import FastAPI
 from models_library.clusters import Cluster, NoAuthentication

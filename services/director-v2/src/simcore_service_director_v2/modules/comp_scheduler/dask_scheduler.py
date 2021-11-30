@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import AsyncIterator, Callable, Dict, List, Tuple
 
-from aiopg.sa.engine import Engine
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
     TaskProgressEvent,
