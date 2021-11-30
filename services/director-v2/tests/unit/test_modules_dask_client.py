@@ -15,7 +15,7 @@ from unittest import mock
 from uuid import uuid4
 
 import pytest
-from _dask_helpers import DaskGatewayServer, fake_failing_sidecar_fct
+from _dask_helpers import DaskGatewayServer
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import get_worker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -50,6 +50,8 @@ from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
+
+_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS = 20
 
 
 async def _wait_for_call(mocked_fct):
@@ -270,6 +272,22 @@ async def mocked_user_completed_cb(mocker: MockerFixture) -> mock.AsyncMock:
     return mocker.AsyncMock()
 
 
+async def test_dask_client(loop: asyncio.AbstractEventLoop, dask_client: DaskClient):
+    assert dask_client
+
+
+async def test_dask_cluster_through_client(
+    loop: asyncio.AbstractEventLoop, dask_client: DaskClient
+):
+    def test_fct_add(x: int, y: int) -> int:
+        return x + y
+
+    future = dask_client.dask_subsystem.client.submit(test_fct_add, 2, 5)
+    assert future
+    result = await future.result(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)
+    assert result == 7
+
+
 async def test_send_computation_task(
     loop: asyncio.AbstractEventLoop,
     dask_client: DaskClient,
@@ -318,7 +336,6 @@ async def test_send_computation_task(
 
     job_id, future = list(dask_client._taskid_to_future_map.items())[0]
     # this waits for the computation to run
-    _ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS = 20
     task_result = await future.result(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)
     assert isinstance(task_result, TaskOutputData)
     assert task_result["some_output_key"] == 123
@@ -409,6 +426,7 @@ async def test_abort_send_computation_task(
     ],
 )
 async def test_failed_task_returns_exceptions(
+    loop: asyncio.AbstractEventLoop,
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -448,7 +466,9 @@ async def test_failed_task_returns_exceptions(
     job_id, future = list(dask_client._taskid_to_future_map.items())[0]
     # this waits for the computation to run
     with pytest.raises(ValueError):
-        task_result = await future.result(timeout=2)
+        task_result = await future.result(
+            timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS
+        )
     await _wait_for_call(mocked_user_completed_cb)
     mocked_user_completed_cb.assert_called_once()
     assert mocked_user_completed_cb.call_args[0][0].job_id == job_id

@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
+import asyncio
 from random import choice
 from typing import Any, Callable, Dict, List
 from unittest import mock
@@ -53,7 +54,7 @@ def minimal_dask_config(
 
 
 def test_dask_clients_pool_missing_raises_configuration_error(
-    minimal_dask_config: None, monkeypatch: MonkeyPatch
+    loop: asyncio.AbstractEventLoop, minimal_dask_config: None, monkeypatch: MonkeyPatch
 ):
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "0")
     settings = AppSettings.create_from_envs()
@@ -65,7 +66,7 @@ def test_dask_clients_pool_missing_raises_configuration_error(
 
 
 def test_dask_clients_pool_properly_setup_and_deleted(
-    minimal_dask_config: None, mocker: MockerFixture
+    loop: asyncio.AbstractEventLoop, minimal_dask_config: None, mocker: MockerFixture
 ):
     mocked_dask_clients_pool = mocker.patch(
         "simcore_service_director_v2.modules.dask_clients_pool.DaskClientsPool",
@@ -124,7 +125,8 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
     )
     mocked_dask_client.create.return_value = mocked_dask_client
     clients_pool = DaskClientsPool.instance(client.app)
-    mocked_dask_client.assert_not_called()
+    mocked_dask_client.create.assert_not_called()
+    mocked_dask_client.register_handlers.assert_not_called()
 
     clusters = fake_clusters(30)
     mocked_creation_calls = []
