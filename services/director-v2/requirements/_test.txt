@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aio_pika==6.8.0
+aio-pika==6.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -161,11 +161,11 @@ idna==2.10
     #   requests
     #   rfc3986
     #   yarl
-importlib-metadata==4.8.2
+importlib-metadata==4.8.1
     # via
     #   -c requirements/_base.txt
     #   alembic
-importlib-resources==5.4.0 ; python_version < "3.9"
+importlib-resources==5.3.0 ; python_version < "3.9"
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -187,7 +187,7 @@ kombu==5.1.0
     #   celery
 lazy-object-proxy==1.6.0
     # via astroid
-mako==1.1.6
+mako==1.1.5
     # via
     #   -c requirements/_base.txt
     #   alembic
