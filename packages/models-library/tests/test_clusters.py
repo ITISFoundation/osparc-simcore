@@ -65,7 +65,7 @@ def test_export_clusters_to_db(
         instance = model_cls(**example)
 
         # for inserts
-        cluster_db_dict = instance.to_clusters_db(only_update=True)
+        cluster_db_dict = instance.to_clusters_db(only_update=True)  # type: ignore
         keys_not_in_db = ["id", "access_rights"]
 
         assert list(cluster_db_dict.keys()) == [
