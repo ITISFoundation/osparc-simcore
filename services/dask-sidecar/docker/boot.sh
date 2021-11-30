@@ -50,6 +50,7 @@ if [ ${DASK_START_AS_SCHEDULER+x} ]; then
 else
   DASK_WORKER_VERSION=$(dask-worker --version)
   DASK_SCHEDULER_ADDRESS="tcp://${DASK_SCHEDULER_HOST}:8786"
+  DASK_SCHEDULER_ADDRESS=${DASK_SCHEDULER_ADDRESS:="tcp://${DASK_SCHEDULER_HOST}:8786"}
 
   #
   # DASK RESOURCES DEFINITION
@@ -98,7 +99,9 @@ else
   #
   # DASK RESOURCES DEFINITION --------------------------------- END
   #
-
+  DASK_NTHREADS=${DASK_NTHREADS:="$num_cpus"}
+  DASK_MEMORY_LIMIT=${DASK_MEMORY_LIMIT:="$ram"}
+  DASK_WORKER_NAME=${DASK_WORKER_NAME:="dask-sidecar_$(hostname)_$(date +'%Y-%m-%d_%T')_$$"}
   #
   # 'daemonic processes are not allowed to have children' arises when running the sidecar.cli
   # because multi-processing library is used by the sidecar and the nanny does not like it
@@ -113,11 +116,11 @@ else
       --reconnect \
       --no-nanny \
       --nprocs 1 \
-      --nthreads "$num_cpus" \
+      --nthreads "${DASK_NTHREADS}" \
       --dashboard-address 8787 \
-      --memory-limit "$ram" \
+      --memory-limit "${DASK_MEMORY_LIMIT}" \
       --resources "$resources" \
-      --name "dask-sidecar_$(hostname)_$(date +'%Y-%m-%d_%T')_$$"
+      --name "${DASK_WORKER_NAME}"
   else
     exec dask-worker "${DASK_SCHEDULER_ADDRESS}" \
       --local-directory /tmp/dask-sidecar \
@@ -125,10 +128,10 @@ else
       --reconnect \
       --no-nanny \
       --nprocs 1 \
-      --nthreads "$num_cpus" \
+      --nthreads "${DASK_NTHREADS}" \
       --dashboard-address 8787 \
-      --memory-limit "$ram" \
+      --memory-limit "${DASK_MEMORY_LIMIT}" \
       --resources "$resources" \
-      --name "dask-sidecar_$(hostname)_$(date +'%Y-%m-%d_%T')_$$"
+      --name "${DASK_WORKER_NAME}"
   fi
 fi
