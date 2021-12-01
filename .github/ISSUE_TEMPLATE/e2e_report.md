@@ -1,3 +1,9 @@
+---
+name: e2e failure report
+about: Report an issue in e2e (only for testers)
+
+---
+
 ## what fails:
   - [ ] [isolve-gpu]
   - [ ] [isolve-mpi]
