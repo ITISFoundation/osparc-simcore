@@ -1,6 +1,7 @@
 ---
 name: e2e failure report
 about: Report an issue in e2e (only for testers)
+labels: e2e
 
 ---
 
