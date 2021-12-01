@@ -6,7 +6,7 @@ CURRENT_FILE = Path(sys.argv[0] if __name__ == "__main__" else __name__)
 CURRENT_DIR = CURRENT_FILE.resolve().parent
 REPO_DIR = CURRENT_DIR.parent
 
-ITEM_BULLET = "\t- [ ]"
+ITEM_BULLET = "  - [ ]"
 CI_BASEURL_FORMAT = "https://git.speag.com/oSparc/e2e-testing/-/pipelines?page=1&scope=all&ref={branch_name}"
 TARGET_DIR = REPO_DIR / "tests" / "e2e" / "tutorials"
 
