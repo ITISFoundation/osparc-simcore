@@ -21,6 +21,7 @@ tests-unit: ## runs unit tests
 	# running unit tests
 	@pytest -vv --color=yes --exitfirst --failed-first --durations=10 \
 	--cov-config=../../.coveragerc --cov=simcore_sdk --cov-report=term-missing \
+	--cov-report=xml \
 	--pdb $(CURDIR)/tests/unit
 
 
@@ -30,6 +31,7 @@ tests-integration: ## runs integration tests against local+production images
 	export DOCKER_IMAGE_TAG=production; \
 	pytest -vv --color=yes --exitfirst --failed-first --durations=10 \
 	--cov-config=../../.coveragerc --cov=simcore_sdk --cov-report=term-missing \
+	--cov-report=xml \
 	--pdb $(CURDIR)/tests/integration
 
 tests: tests-unit tests-integration ## runs all tests
