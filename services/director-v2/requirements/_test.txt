@@ -194,8 +194,6 @@ multidict==5.1.0
     #   aiohttp
     #   async-asgi-testclient
     #   yarl
-nest-asyncio==1.5.1
-    # via -r requirements/_test.in
 packaging==20.4
     # via
     #   -c requirements/_base.txt
