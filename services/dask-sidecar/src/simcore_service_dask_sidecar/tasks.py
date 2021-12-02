@@ -67,7 +67,7 @@ async def dask_setup(worker: distributed.Worker) -> None:
 
     if threading.current_thread() is threading.main_thread():
         loop = asyncio.get_event_loop()
-        logger.info("We do have a loop in the main thread: %s", f"{loop=}")
+        logger.info("We do have a running loop in the main thread: %s", f"{loop=}")
 
     if threading.current_thread() is threading.main_thread():
         GracefulKiller(worker)
@@ -126,6 +126,13 @@ def run_computational_sidecar(
     # NOTE: The event loop MUST BE created in the main thread prior to this
     # Dask creates threads to run these calls, and the loop shall be created before
     # else the loop might get closed by another thread running another task
+
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        # NOTE: this happens in testing when the dask cluster runs INProcess
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
     result = asyncio.get_event_loop().run_until_complete(
         _run_computational_sidecar_async(
