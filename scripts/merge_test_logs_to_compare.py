@@ -1,3 +1,4 @@
+# This script aids in the comparison of two log files of github action runners.
 import sys
 from io import StringIO
 from pathlib import Path
