@@ -5,8 +5,6 @@ from typing import Set
 
 from setuptools import find_packages, setup
 
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 
 def read_reqs(reqs_path: Path) -> Set[str]:
     return {
@@ -19,6 +17,8 @@ def read_reqs(reqs_path: Path) -> Set[str]:
         if isinstance(r, str)
     }
 
+
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 INSTALL_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_base.txt") | {"simcore-models-library"}
