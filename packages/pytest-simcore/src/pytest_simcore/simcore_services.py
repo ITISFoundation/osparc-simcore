@@ -155,16 +155,14 @@ def simcore_services_ready(
     for h in health_endpoints:
         print(f" - {h.name} -> {h.url}")
 
-    # check ready
-    loop = (
-        asyncio.get_event_loop()
-    )  # as of python 3.7 it is guarranteed to return the loop
-    loop.run_until_complete(
-        asyncio.gather(
+    async def _check_all_services_are_healthy():
+        await asyncio.gather(
             *[wait_till_service_healthy(h.name, h.url) for h in health_endpoints],
             return_exceptions=False,
         )
-    )
+
+    # check ready
+    asyncio.run(_check_all_services_are_healthy())
 
     # patches environment variables with right host/port per service
     for service, endpoint in services_endpoint.items():
