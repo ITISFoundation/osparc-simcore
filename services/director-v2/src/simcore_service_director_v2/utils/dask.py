@@ -229,10 +229,12 @@ def done_dask_callback(
     try:
         if dask_future.status == "error":
             task_exception = dask_future.exception(timeout=_DASK_FUTURE_TIMEOUT_S)
+            task_traceback = dask_future.traceback(timeout=_DASK_FUTURE_TIMEOUT_S)
+            exception = {"exc": task_exception, "trace": task_traceback}
             event_data = TaskStateEvent(
                 job_id=job_id,
                 state=RunningState.FAILED,
-                msg=f"{task_exception}",
+                msg=json_dumps(exception),
             )
         elif dask_future.cancelled():
             event_data = TaskStateEvent(job_id=job_id, state=RunningState.ABORTED)
