@@ -1,6 +1,6 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
 import asyncio
 import logging
 from typing import AsyncIterator, Dict, Iterator, List
@@ -70,13 +70,6 @@ def drop_template_db(postgres_engine: sa.engine.Engine) -> None:
         f"DROP DATABASE {TEMPLATE_DB_TO_RESTORE};",
     ]
     execute_queries(postgres_engine, queries)
-
-
-@pytest.fixture(scope="module")
-def loop(request):
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest.fixture(scope="module")
@@ -173,9 +166,10 @@ def postgres_db(
         yield postgres_engine
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 async def aiopg_engine(
-    postgres_db: sa.engine.Engine, loop
+    loop: asyncio.AbstractEventLoop,
+    postgres_db: sa.engine.Engine,
 ) -> AsyncIterator[aiopg.sa.engine.Engine]:
     """An aiopg engine connected to an initialized database"""
     from aiopg.sa import create_engine

@@ -2,6 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from typing import Dict
+
 import pytest
 from models_library.basic_types import LogLevel
 from simcore_service_director_v2.core.settings import (
@@ -23,7 +25,7 @@ def test_settings_with_project_env_devel(project_env_devel_environment):
     assert settings.POSTGRES.dsn == "postgresql://test:test@localhost:5432/test"
 
 
-def test_settings_with_env_devel(mock_env_devel_environment):
+def test_settings_with_env_devel(mock_env_devel_environment: Dict[str, str]):
     settings = AppSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
     assert settings
