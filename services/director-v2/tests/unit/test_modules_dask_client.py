@@ -28,7 +28,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import AnyUrl
 from pydantic.tools import parse_obj_as
-from pytest_lazyfixture import lazy_fixture
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
