@@ -1,7 +1,7 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-
+# pylint: disable=too-many-branches
 
 import asyncio
 import json
@@ -138,10 +138,10 @@ def _fetch_and_print_services(
                         "Slot": ...,
                     },
                 )
-                for task in service_obj.tasks()
+                for task in service_obj.tasks()  # type: ignore
             ]
 
-        print(HEADER_STR.format(service_obj.name))
+        print(HEADER_STR.format(service_obj.name))  # type: ignore
         print(json.dumps({"service": service, "tasks": tasks}, indent=1))
 
 
@@ -271,7 +271,7 @@ def docker_stack(
 
     yield {
         "stacks": stacks_deployed,
-        "services": [service.name for service in docker_client.services.list()],
+        "services": [service.name for service in docker_client.services.list()],  # type: ignore
     }
 
     ## TEAR DOWN ----------------------
