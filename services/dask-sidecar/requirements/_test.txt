@@ -123,7 +123,6 @@ pytest==6.2.5
     #   pytest-cov
     #   pytest-icdiff
     #   pytest-instafail
-    #   pytest-lazy-fixture
     #   pytest-localftpserver
     #   pytest-mock
     #   pytest-sugar
@@ -134,8 +133,6 @@ pytest-cov==3.0.0
 pytest-icdiff==0.5
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
-    # via -r requirements/_test.in
-pytest-lazy-fixture==0.6.3
     # via -r requirements/_test.in
 pytest-localftpserver==1.1.3
     # via -r requirements/_test.in
