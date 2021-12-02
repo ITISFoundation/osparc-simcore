@@ -3,19 +3,14 @@
 #
 --constraint ../../../requirements/constraints.txt
 --requirement ../../../packages/postgres-database/requirements/_base.in
---requirement ../../../packages/postgres-database/requirements/_migration.in
 --requirement ../../../packages/service-library/requirements/_base.in
 --requirement ../../../packages/models-library/requirements/_base.in
 
 aiofiles
 aiohttp
 aiopg[sa]
-networkx
-psycopg2-binary
+packaging
 pydantic[email]
 tenacity
 tqdm
 trafaret-config
-
-attrs
-packaging

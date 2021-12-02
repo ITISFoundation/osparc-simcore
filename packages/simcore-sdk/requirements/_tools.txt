@@ -14,7 +14,7 @@ cfgv==3.3.1
     # via pre-commit
 click==8.0.3
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   black
     #   pip-tools
 distlib==0.3.3
@@ -53,7 +53,6 @@ regex==2021.11.10
     # via black
 six==1.16.0
     # via
-    #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   virtualenv
 toml==0.10.2

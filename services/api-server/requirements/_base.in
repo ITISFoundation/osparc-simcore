@@ -4,6 +4,7 @@
 # NOTE: ALL version constraints MUST be commented
 # intra-repo constraints
 --constraint ../../../requirements/constraints.txt
+--constraint ./constraints.txt
 
 # intra-repo required dependencies
 --requirement ../../../packages/models-library/requirements/_base.in

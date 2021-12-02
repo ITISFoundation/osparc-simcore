@@ -8,6 +8,13 @@ INFO="INFO: [$(basename "$0")] "
 WARNING="WARNING: [$(basename "$0")] "
 ERROR="ERROR: [$(basename "$0")] "
 
+# Read self-signed SSH certificates (if applicable)
+#
+# In case the director must access a docker registry in a secure way using
+# non-standard certificates (e.g. such as self-signed certificates), this call is needed.
+# It needs to be executed as root.
+update-ca-certificates
+
 # This entrypoint script:
 #
 # - Executes *inside* of the container upon start as --user [default root]
@@ -17,7 +24,7 @@ ERROR="ERROR: [$(basename "$0")] "
 echo "$INFO" "Entrypoint for stage ${SC_BUILD_TARGET} ..."
 echo "$INFO" "User    :$(id "$(whoami)")"
 echo "$INFO" "Workdir :$(pwd)"
-echo   scuUser :"$(id scu)"
+echo  scuUser :"$(id scu)"
 
 if [ "${SC_BUILD_TARGET}" = "development" ]
 then

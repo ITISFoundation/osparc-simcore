@@ -15,7 +15,7 @@ def read_reqs(reqs_path: Path):
 
 install_requirements = read_reqs(here / "requirements" / "_base.in")
 test_requirements = read_reqs(here / "requirements" / "_test.txt") + [
-    "simcore-postgres-database[migration]",
+    "simcore-postgres-database",
     "simcore-service-library",
     "simcore-models-library",
 ]
