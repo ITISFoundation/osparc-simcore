@@ -66,6 +66,10 @@ async def dask_setup(worker: distributed.Worker) -> None:
     print_banner()
 
     if threading.current_thread() is threading.main_thread():
+        loop = asyncio.get_event_loop()
+        logger.info("We do have a loop in the main thread: %s", f"{loop=}")
+
+    if threading.current_thread() is threading.main_thread():
         GracefulKiller(worker)
 
 
@@ -106,6 +110,7 @@ async def _run_computational_sidecar_async(
             task_max_resources=task_max_resources,
         ) as sidecar:
             output_data = await sidecar.run(command=command)
+        log.debug("completed run of sidecar with result %s", f"{output_data=}")
         return output_data
 
 
@@ -118,7 +123,11 @@ def run_computational_sidecar(
     log_file_url: AnyUrl,
     command: List[str],
 ) -> TaskOutputData:
-    result = asyncio.run(
+    # NOTE: The event loop MUST BE created in the main thread prior to this
+    # Dask creates threads to run these calls, and the loop shall be created before
+    # else the loop might get closed by another thread running another task
+
+    result = asyncio.get_event_loop().run_until_complete(
         _run_computational_sidecar_async(
             docker_auth,
             service_key,
