@@ -246,7 +246,6 @@ pytest==6.2.5
     #   pytest-docker
     #   pytest-forked
     #   pytest-icdiff
-    #   pytest-lazy-fixture
     #   pytest-mock
     #   pytest-xdist
 pytest-aiohttp==0.3.0
@@ -260,8 +259,6 @@ pytest-docker==0.10.3
 pytest-forked==1.3.0
     # via pytest-xdist
 pytest-icdiff==0.5
-    # via -r requirements/_test.in
-pytest-lazy-fixture==0.6.3
     # via -r requirements/_test.in
 pytest-mock==3.6.1
     # via -r requirements/_test.in
