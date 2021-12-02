@@ -302,8 +302,7 @@ def docker_stack(
 
         try:
             subprocess.run(
-                f"docker stack remove {stack}",
-                shell=True,
+                f"docker stack remove {stack}".split(" "),
                 check=True,
                 capture_output=True,
             )
