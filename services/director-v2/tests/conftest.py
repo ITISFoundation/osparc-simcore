@@ -259,7 +259,7 @@ def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
     with postgres_db.connect() as con:
         # removes all users before continuing
         con.execute(users.delete())
-        result1 = con.execute(
+        con.execute(
             users.insert()
             .values(
                 id=user_id,
