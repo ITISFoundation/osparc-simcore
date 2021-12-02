@@ -3,9 +3,11 @@
 # pylint:disable=redefined-outer-name
 
 
+import asyncio
 import json
 import logging
 import subprocess
+import sys
 from contextlib import suppress
 from pathlib import Path
 from typing import Any, Dict, Iterator
@@ -216,8 +218,9 @@ def docker_stack(
     stacks_deployed: Dict[str, Dict] = {}
     for key, stack_name, compose_file in stacks:
         subprocess.run(
-            f"docker stack deploy --with-registry-auth -c {compose_file.name} {stack_name}",
-            shell=True,
+            f"docker stack deploy --with-registry-auth -c {compose_file.name} {stack_name}".split(
+                " "
+            ),
             check=True,
             cwd=compose_file.parent,
         )
@@ -230,15 +233,38 @@ def docker_stack(
     # - notice that the timeout is set for all services in both stacks
     # - TODO: the time to deploy will depend on the number of services selected
     try:
-        for attempt in Retrying(
-            wait=wait_fixed(5),
-            stop=stop_after_delay(8 * MINUTE),
-            before_sleep=before_sleep_log(log, logging.INFO),
-            reraise=True,
-        ):
-            with attempt:
-                for service in docker_client.services.list():
-                    assert_service_is_running(service)
+        if sys.version_info >= (3, 7):
+            from tenacity._asyncio import AsyncRetrying
+
+            async def _check_all_services_are_running():
+                async for attempt in AsyncRetrying(
+                    wait=wait_fixed(5),
+                    stop=stop_after_delay(8 * MINUTE),
+                    before_sleep=before_sleep_log(log, logging.INFO),
+                    reraise=True,
+                ):
+                    with attempt:
+                        await asyncio.gather(
+                            *[
+                                asyncio.get_event_loop().run_in_executor(
+                                    None, assert_service_is_running, service
+                                )
+                                for service in docker_client.services.list()
+                            ]
+                        )
+
+            asyncio.run(_check_all_services_are_running())
+
+        else:
+            for attempt in Retrying(
+                wait=wait_fixed(5),
+                stop=stop_after_delay(8 * MINUTE),
+                before_sleep=before_sleep_log(log, logging.INFO),
+                reraise=True,
+            ):
+                with attempt:
+                    for service in docker_client.services.list():
+                        assert_service_is_running(service)
 
     finally:
         _fetch_and_print_services(docker_client, "[BEFORE TEST]")
