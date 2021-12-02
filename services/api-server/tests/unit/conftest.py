@@ -1,7 +1,6 @@
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
-# pylint: disable=no-name-in-module
 
 import os
 import shutil
