@@ -4,7 +4,6 @@ import signal
 import threading
 from pprint import pformat
 from typing import List
-from uuid import uuid4
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -119,7 +118,7 @@ def run_computational_sidecar(
     log_file_url: AnyUrl,
     command: List[str],
 ) -> TaskOutputData:
-    task = asyncio.get_event_loop().create_task(
+    result = asyncio.run(
         _run_computational_sidecar_async(
             docker_auth,
             service_key,
@@ -128,9 +127,6 @@ def run_computational_sidecar(
             output_data_keys,
             log_file_url,
             command,
-        ),
-        name=f"run_computational_sidecar_{uuid4()}",
+        )
     )
-    # TODO: this could be used for constraining task time
-    result = asyncio.get_event_loop().run_until_complete(task)
     return result
