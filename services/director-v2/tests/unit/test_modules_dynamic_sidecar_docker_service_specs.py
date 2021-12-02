@@ -10,7 +10,6 @@ from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
 )
-from pytest_lazyfixture import lazy_fixture
 from simcore_service_director_v2.core.settings import (
     AppSettings,
     DynamicSidecarSettings,
@@ -26,11 +25,18 @@ from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs im
 @pytest.fixture
 def mocked_env(monkeypatch: MonkeyPatch) -> Iterator[Dict[str, str]]:
     env_vars: Dict[str, str] = {
+        "REGISTRY_AUTH": "false",
+        "REGISTRY_USER": "test",
+        "REGISTRY_PW": "test",
+        "REGISTRY_SSL": "false",
         "DYNAMIC_SIDECAR_IMAGE": "local/dynamic-sidecar:MOCK",
         "POSTGRES_HOST": "test_host",
         "POSTGRES_USER": "test_user",
         "POSTGRES_PASSWORD": "test_password",
         "POSTGRES_DB": "test_db",
+        "SIMCORE_SERVICES_NETWORK_NAME": "simcore_services_network_name",
+        "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
+        "SWARM_STACK_NAME": "test_swarm_name",
     }
 
     with monkeypatch.context() as m:
@@ -64,15 +70,6 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 
 # TESTS
-
-
-@pytest.mark.parametrize(
-    "scheduler_data",
-    (
-        lazy_fixture("scheduler_data_from_http_request"),
-        lazy_fixture("scheduler_data_from_service_labels_stored_data"),
-    ),
-)
 def test_get_dynamic_proxy_spec(
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,

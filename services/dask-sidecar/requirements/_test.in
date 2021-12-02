@@ -15,7 +15,6 @@ pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytes
 pytest-cov
 pytest-icdiff
 pytest-instafail
-pytest-lazy-fixture
 pytest-mock
 pytest-sugar
 pytest-localftpserver

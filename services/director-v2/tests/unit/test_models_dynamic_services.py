@@ -119,16 +119,6 @@ SAMPLE_EXPECTED_STATUSES: List[ExpectedStatus] = [
 ]
 
 # TESTS
-
-
-@pytest.mark.parametrize(
-    "scheduler_data",
-    [
-        # pylint: disable=no-member
-        pytest.lazy_fixture("scheduler_data_from_http_request"),
-        pytest.lazy_fixture("scheduler_data_from_service_labels_stored_data"),
-    ],
-)
 def test_running_service_details_make_status(
     scheduler_data: SchedulerData, service_message: str, service_state: ServiceState
 ):
@@ -208,7 +198,8 @@ def test_extract_containers_minimim_statuses(
 
 def test_not_implemented_comparison() -> None:
     with pytest.raises(TypeError):
-        ServiceState.FAILED > {}  # pylint: disable=pointless-statement
+        # pylint: disable=pointless-statement
+        ServiceState.FAILED > {}  # type: ignore
 
 
 def test_regression_legacy_service_compatibility() -> None:

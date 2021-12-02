@@ -105,6 +105,7 @@ _run-test-dev: _check_venv_active
 		--color=yes \
 		--cov-config=.coveragerc \
 		--cov-report=term-missing \
+		--cov-report=xml \
 		--cov=$(APP_PACKAGE_NAME) \
 		--durations=10 \
 		--exitfirst \

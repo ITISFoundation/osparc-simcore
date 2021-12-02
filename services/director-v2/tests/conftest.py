@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint:disable=no-value-for-parameter
 
-import asyncio
 import json
 import logging
 import os
@@ -17,12 +16,10 @@ from uuid import uuid4
 
 import dotenv
 import httpx
-import nest_asyncio
 import pytest
 import simcore_service_director_v2
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
-from aiohttp.test_utils import loop_context
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.projects import Node, ProjectAtDB, Workbench
@@ -38,10 +35,8 @@ from simcore_service_director_v2.models.domains.comp_pipelines import CompPipeli
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.utils.computations import to_node_class
 from sqlalchemy import literal_column
+from sqlalchemy.sql.expression import select
 from starlette.testclient import TestClient
-
-nest_asyncio.apply()
-
 
 pytest_plugins = [
     "pytest_simcore.docker_compose",
@@ -98,12 +93,6 @@ def project_env_devel_environment(
     return deepcopy(project_env_devel_dict)
 
 
-@pytest.fixture(scope="module")
-def loop() -> Iterable[asyncio.AbstractEventLoop]:
-    with loop_context() as loop:
-        yield loop
-
-
 @pytest.fixture(scope="function")
 def mock_env(monkeypatch: MonkeyPatch) -> None:
     # Works as below line in docker.compose.yml
@@ -123,6 +112,11 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
 
+    monkeypatch.setenv("REGISTRY_AUTH", "false")
+    monkeypatch.setenv("REGISTRY_USER", "test")
+    monkeypatch.setenv("REGISTRY_PW", "test")
+    monkeypatch.setenv("REGISTRY_SSL", "false")
+
     monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
     monkeypatch.setenv("POSTGRES_USER", "mocked_user")
     monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
@@ -136,7 +130,7 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
 
 
 @pytest.fixture(scope="function")
-def client(loop: asyncio.AbstractEventLoop, mock_env: None) -> Iterable[TestClient]:
+def client(loop, mock_env: None) -> Iterable[TestClient]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     print("Application settings\n", pformat(settings))
@@ -147,14 +141,7 @@ def client(loop: asyncio.AbstractEventLoop, mock_env: None) -> Iterable[TestClie
 
 
 @pytest.fixture(scope="function")
-async def initialized_app(monkeypatch: MonkeyPatch) -> AsyncIterable[FastAPI]:
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCK")
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
-    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
-
+async def initialized_app(mock_env: None) -> AsyncIterable[FastAPI]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     async with LifespanManager(app):
@@ -265,7 +252,7 @@ def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
     with postgres_db.connect() as con:
         # removes all users before continuing
         con.execute(users.delete())
-        result = con.execute(
+        con.execute(
             users.insert()
             .values(
                 id=user_id,
@@ -277,7 +264,8 @@ def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
             )
             .returning(literal_column("*"))
         )
-
+        # this is needed to get the primary_gid correctly
+        result = con.execute(select([users]).where(users.c.id == user_id))
         user = result.first()
 
         yield dict(user)
