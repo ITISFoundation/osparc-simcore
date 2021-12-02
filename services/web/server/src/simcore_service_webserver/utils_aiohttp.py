@@ -1,11 +1,10 @@
 import io
-from typing import Any, Callable, Optional, Type
+from typing import Any, Callable, Dict, Optional, Type
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
 from aiohttp.web_routedef import RouteDef, RouteTableDef
 from models_library.generics import Envelope
-from pydantic import BaseModel
 from servicelib.json_serialization import json_dumps
 from yarl import URL
 
@@ -29,10 +28,10 @@ def get_routes_view(routes: RouteTableDef) -> str:
 def create_url_for_function(request: web.Request) -> Callable:
     app = request.app
 
-    def url_for(router_name: str, **params) -> Optional[str]:
+    def url_for(route_name: str, **params: Dict[str, Any]) -> str:
         """Reverse URL constructing using named resources"""
         try:
-            rel_url: URL = app.router[router_name].url_for(
+            rel_url: URL = app.router[route_name].url_for(
                 **{k: f"{v}" for k, v in params.items()}
             )
             url = (
@@ -46,8 +45,11 @@ def create_url_for_function(request: web.Request) -> Callable:
             )
             return f"{url}"
 
-        except KeyError:
-            return None
+        except KeyError as err:
+            raise RuntimeError(
+                f"Cannot find URL because there is no resource registered as {route_name=}"
+                "Check name spelling or whether the router was not registered"
+            ) from err
 
     return url_for
 
