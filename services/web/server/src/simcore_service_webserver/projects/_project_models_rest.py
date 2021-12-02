@@ -396,6 +396,3 @@ class SimcoreProject(BaseModel):
         description="Object containing Quality Assessment related data",
         title="Quality",
     )
-
-
-ProjectAsBody = SimcoreProject
