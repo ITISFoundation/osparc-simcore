@@ -6,7 +6,6 @@ import hashlib
 import json
 import logging
 import os
-from asyncio import BaseEventLoop
 from collections import namedtuple
 from itertools import tee
 from pathlib import Path
@@ -276,9 +275,7 @@ async def fast_api_app(
 
 
 @pytest.fixture
-async def director_v2_client(
-    loop: BaseEventLoop, fast_api_app: FastAPI
-) -> AsyncIterable[httpx.AsyncClient]:
+async def director_v2_client(fast_api_app: FastAPI) -> AsyncIterable[httpx.AsyncClient]:
     async with LifespanManager(fast_api_app):
         async with httpx.AsyncClient(
             app=fast_api_app, base_url="http://testserver/v2"
