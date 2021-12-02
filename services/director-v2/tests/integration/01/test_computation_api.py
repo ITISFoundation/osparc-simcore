@@ -24,6 +24,7 @@ from models_library.projects_state import RunningState
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pydantic.types import PositiveInt
+from pytest_mock.plugin import MockerFixture
 from shared_comp_utils import (
     COMPUTATION_URL,
     assert_computation_task_out_obj,
@@ -52,17 +53,18 @@ pytest_simcore_ops_services_selection = ["minio", "adminer", "flower"]
 # FIXTURES ---------------------------------------
 
 
+@pytest.fixture(scope="function")
 def mock_env(monkeypatch: MonkeyPatch) -> None:
     # used by the client fixture
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCKED")
-
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "1")
-    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "1")
+    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCKED")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
-    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
+    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
 
 
 @pytest.fixture()
@@ -78,7 +80,7 @@ def minimal_configuration(
     rabbit_service: RabbitConfig,
     simcore_services_ready: None,
     storage_service: URL,
-    mocker,
+    mocker: MockerFixture,
 ) -> None:
     node_ports_config.STORAGE_ENDPOINT = (
         f"{storage_service.host}:{storage_service.port}"
