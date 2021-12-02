@@ -1,17 +1,3 @@
-"""
-
-TIP: to preview setup options w/o installation
-
-use constant SETUP
-
-    python -c "from setup import SETUP; import json; print(json.dumps(SETUP, indent=1))"
-
-or use setuptools.setup API
-    python setup.py --name
-    python setup.py --version
-    ...
-"""
-
 import re
 import sys
 from pathlib import Path
