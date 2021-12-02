@@ -12,6 +12,7 @@ import re
 # copied out from dask
 from dataclasses import dataclass
 from pprint import pformat
+from random import randint
 from typing import Dict, Iterable, List
 from unittest import mock
 from uuid import uuid4
@@ -173,9 +174,11 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         if integration_version > LEGACY_INTEGRATION_VERSION
         else "input.json"
     )
+
     list_of_commands += [
         f"(test -f ${{INPUT_FOLDER}}/{input_json_file_name} || (echo ${{INPUT_FOLDER}}/{input_json_file_name} file does not exists && exit 1))",
         f"echo $(cat ${{INPUT_FOLDER}}/{input_json_file_name})",
+        f"sleep {randint(1,4)}",
     ]
 
     # defines the expected outputs
@@ -343,6 +346,44 @@ def test_run_computational_sidecar_real_fct(
     assert saved_logs
     for log in ubuntu_task.expected_logs:
         assert log in saved_logs
+
+
+def test_run_multiple_computational_sidecar_dask(
+    loop: asyncio.AbstractEventLoop,
+    dask_client: Client,
+    ubuntu_task: ServiceExampleParam,
+    mocker: MockerFixture,
+):
+    NUMBER_OF_TASKS = 50
+
+    mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
+        autospec=True,
+        return_value=ubuntu_task.integration_version,
+    )
+    futures = [
+        dask_client.submit(
+            run_computational_sidecar,
+            ubuntu_task.docker_basic_auth,
+            ubuntu_task.service_key,
+            ubuntu_task.service_version,
+            ubuntu_task.input_data,
+            ubuntu_task.output_data_keys,
+            ubuntu_task.log_file_url,
+            ubuntu_task.command,
+            resources={},
+        )
+        for _ in range(NUMBER_OF_TASKS)
+    ]
+
+    results = dask_client.gather(futures)
+
+    # for result in results:
+    # check that the task produce the expected data, not less not more
+    for output_data in results:
+        for k, v in ubuntu_task.expected_output_data.items():
+            assert k in output_data
+            assert output_data[k] == v
 
 
 def test_run_computational_sidecar_dask(
