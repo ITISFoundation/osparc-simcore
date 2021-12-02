@@ -6,7 +6,7 @@ from models_library.clusters import (
     CLUSTER_USER_RIGHTS,
     BaseCluster,
     ClusterAccessRights,
-    ClusterAuthentication,
+    ExternalClusterAuthentication,
 )
 from models_library.users import GroupID
 from pydantic import Field, validator
@@ -16,6 +16,7 @@ from simcore_postgres_database.models.clusters import ClusterType
 
 class ClusterCreate(BaseCluster):
     owner: Optional[GroupID]
+    authentication: ExternalClusterAuthentication
 
     @validator("thumbnail", always=True, pre=True)
     @classmethod
@@ -70,7 +71,7 @@ class ClusterPatch(BaseCluster):
     owner: Optional[GroupID]
     thumbnail: Optional[HttpUrl]
     endpoint: Optional[AnyUrl]
-    authentication: Optional[ClusterAuthentication]
+    authentication: Optional[ExternalClusterAuthentication]
     access_rights: Optional[Dict[GroupID, ClusterAccessRights]] = Field(
         alias="accessRights"
     )

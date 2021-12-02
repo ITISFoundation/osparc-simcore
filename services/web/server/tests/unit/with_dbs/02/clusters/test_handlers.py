@@ -21,6 +21,10 @@ from models_library.clusters import (
     CLUSTER_NO_RIGHTS,
     CLUSTER_USER_RIGHTS,
     Cluster,
+    ExternalClusterAuthentication,
+    JupyterHubTokenAuthentication,
+    KerberosAuthentication,
+    SimpleAuthentication,
 )
 from models_library.users import GroupID
 from pytest_simcore.helpers.utils_assert import assert_status
@@ -40,18 +44,51 @@ from sqlalchemy.sql.elements import literal_column
 
 
 @pytest.fixture
-def cluster_authentication(faker: Faker) -> Iterable[Callable[[], Dict[str, Any]]]:
+def cluster_simple_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
     def creator() -> Dict[str, Any]:
         simple_auth = {
             "type": "simple",
             "username": faker.user_name(),
             "password": faker.password(),
         }
-        kerberos_auth = {"type": "kerberos"}
-        jupyterhub_auth = {"type": "jupyterhub", "api_token": faker.pystr()}
-        return random.choice([simple_auth, kerberos_auth, jupyterhub_auth])
+        assert SimpleAuthentication.parse_obj(simple_auth)
+        return simple_auth
 
-    yield creator
+    return creator
+
+
+@pytest.fixture
+def cluster_kerberos_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
+    def creator() -> Dict[str, Any]:
+        kerberos_auth = {"type": "kerberos"}
+        assert KerberosAuthentication.parse_obj(kerberos_auth)
+        return kerberos_auth
+
+    return creator
+
+
+@pytest.fixture
+def cluster_jupyterhub_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
+    def creator() -> Dict[str, Any]:
+        jupyterhub_auth = {"type": "jupyterhub", "api_token": faker.pystr()}
+        assert JupyterHubTokenAuthentication.parse_obj(jupyterhub_auth)
+        return jupyterhub_auth
+
+    return creator
+
+
+@pytest.fixture(params=list(ExternalClusterAuthentication.__args__))  # type: ignore
+def cluster_authentication(
+    cluster_simple_authentication,
+    cluster_kerberos_authentication,
+    cluster_jupyterhub_authentication,
+    request,
+) -> Callable[[], Dict[str, Any]]:
+    return {
+        SimpleAuthentication: cluster_simple_authentication,
+        KerberosAuthentication: cluster_kerberos_authentication,
+        JupyterHubTokenAuthentication: cluster_jupyterhub_authentication,
+    }[request.param]
 
 
 @pytest.fixture

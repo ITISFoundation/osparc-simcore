@@ -34,26 +34,54 @@ class SimpleAuthentication(BaseAuthentication):
     username: str
     password: str
 
+    class Config(BaseAuthentication.Config):
+        schema_extra = {
+            "examples": [
+                {
+                    "type": "simple",
+                    "username": "someuser",
+                    "password": "somepassword",
+                },
+            ]
+        }
+
 
 class KerberosAuthentication(BaseAuthentication):
     type: Literal["kerberos"] = "kerberos"
     # NOTE: the entries here still need to be defined
+    class Config(BaseAuthentication.Config):
+        schema_extra = {
+            "examples": [
+                {
+                    "type": "kerberos",
+                },
+            ]
+        }
 
 
 class JupyterHubTokenAuthentication(BaseAuthentication):
     type: Literal["jupyterhub"] = "jupyterhub"
     api_token: str
 
+    class Config(BaseAuthentication.Config):
+        schema_extra = {
+            "examples": [
+                {"type": "jupyterhub", "api_token": "some_jupyterhub_token"},
+            ]
+        }
+
 
 class NoAuthentication(BaseAuthentication):
     type: Literal["none"] = "none"
 
 
+InternalClusterAuthentication = NoAuthentication
+ExternalClusterAuthentication = Union[
+    SimpleAuthentication, KerberosAuthentication, JupyterHubTokenAuthentication
+]
 ClusterAuthentication = Union[
-    SimpleAuthentication,
-    KerberosAuthentication,
-    JupyterHubTokenAuthentication,
-    NoAuthentication,
+    ExternalClusterAuthentication,
+    InternalClusterAuthentication,
 ]
 
 
