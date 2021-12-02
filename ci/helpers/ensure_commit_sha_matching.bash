@@ -29,5 +29,5 @@ while read -r line; do
 	echo 'This means the containter does not match the expected git commit.';
 	exit 1;
 fi
-done <<< "$(export DOCKER_IMAGE_TAG=master-github-latest && make info-images 2>/dev/null | grep itisfoundation | grep -v ago | grep -v Error | grep -v "\#" | grep $DOCKER_IMAGE_TAG)"
+done <<< "$(make info-images 2>/dev/null | grep itisfoundation | grep -v ago | grep -v Error | grep -v "\#" | grep $DOCKER_IMAGE_TAG)"
 #exit 0;
