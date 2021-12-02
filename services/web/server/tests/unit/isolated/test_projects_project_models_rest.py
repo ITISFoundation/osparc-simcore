@@ -2,15 +2,60 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-
-from simcore_service_webserver.projects._project_models_rest import ProjectAsBody
-
 #
-# These are the first requests in the front-end to build a project
+# These tests were build following requests/reponse calls from the front-end
+# i.e. it captures models created by the front-end and response models by the backend
 #
 
 
-def test_create_new_empty():
+from pydantic import BaseModel, create_model
+from simcore_service_webserver.projects._project_models_rest import SimcoreProject
+
+# TODO: how could we implement all the model variants provided SimcoreProject as base???
+#
+# https://github.com/samuelcolvin/pydantic/issues/830#issuecomment-534141136
+#
+# 1. Use create_model to create your models "dynamically" (even if you actually do it un-dynamically)
+# 2. Make the extra fields optional so they can be ignored.
+#
+# but there is a new __exclude_fields__ feature coming with https://github.com/samuelcolvin/pydantic/pull/2231
+
+
+ProjectInNew = create_model(
+    "PorjectInNew",
+    **{
+        name: field
+        for name, field in SimcoreProject.__fields__.items()
+        if name
+        in {
+            "name",
+            "description",
+            "thumbnail",
+            "prj_owner",
+            "access_rights",
+        }
+    }
+)
+
+
+# class ProjectInNew(BaseModel):
+#    pass
+
+# name:
+# description:
+# thumbnail:
+# prj_owner:
+# access_rights:
+
+
+#    name: SimcoreProject.__fields__[]
+
+
+class ProjectAsBody(SimcoreProject):
+    pass
+
+
+def test_create_new_empty_request_model():
 
     # POST /projects
     request_payload = {
@@ -25,6 +70,9 @@ def test_create_new_empty():
         "workbench": {},
     }
     project_in_new = ProjectAsBody.parse_obj(request_payload)
+
+
+def test_create_new_empty_response_model():
 
     reponse_body = {
         "data": {
@@ -48,7 +96,7 @@ def test_create_new_empty():
     project_as_body = ProjectAsBody.parse_obj(reponse_body["data"])
 
 
-def test_replace_opened_project():
+def test_replace_opened_project_request_model():
 
     # PUT projects/ef6fa0a8-534d-11ec-89f5-02420a0fd439
     request_payload = {
@@ -143,6 +191,8 @@ def test_replace_opened_project():
 
     project_in_replace = ProjectAsBody.parse_obj(request_payload)
 
+
+def test_replace_opened_project_response_model():
     response_body = {
         "data": {
             "uuid": "ef6fa0a8-534d-11ec-89f5-02420a0fd439",
@@ -257,7 +307,7 @@ def test_replace_opened_project():
     project_as_body = ProjectAsBody.parse_obj(response_body["data"])
 
 
-def test_replace_changed_project():
+def test_replace_changed_project_request_model():
 
     # PUT projects/ef6fa0a8-534d-11ec-89f5-02420a0fd439
     request_payload = {
@@ -350,6 +400,9 @@ def test_replace_changed_project():
     }
 
     project_in_replace = ProjectAsBody.parse_obj(request_payload)
+
+
+def test_replace_changed_project_response_model():
 
     response_body = {
         "data": {
