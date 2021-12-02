@@ -21,7 +21,7 @@ from pydantic.main import BaseModel, Extra
 from pydantic.networks import HttpUrl
 from pydantic.types import Json, PositiveInt
 
-from .projects import ClassifierID, ProjectAtDB, ProjectType, Workbench
+from .projects import ClassifierID, ProjectAtDB, ProjectType
 from .projects_access import AccessRights
 from .projects_ui import StudyUI
 from .users import GroupID
@@ -61,7 +61,7 @@ class ProjectFromCsv(ProjectAtDB):
 
     @validator("published", "hidden", pre=True, check_fields=False)
     @classmethod
-    def empty_str_parsed_as_false(cls, v):
+    def _empty_str_parsed_as_false(cls, v):
         # See booleans for >v1.0  https://pydantic-docs.helpmanual.io/usage/types/#booleans
         if isinstance(v, str) and v == "":
             return False
@@ -69,7 +69,7 @@ class ProjectFromCsv(ProjectAtDB):
 
     @validator("workbench", pre=True, check_fields=False)
     @classmethod
-    def jsonstr_loaded_as_dict(cls, v):
+    def _jsonstr_loaded_as_dict(cls, v):
         if isinstance(v, str):
             return json.loads(v)
         return v
@@ -77,11 +77,14 @@ class ProjectFromCsv(ProjectAtDB):
 
 class ProjectForPgInsert(BaseModel):
     """
-    Model to create a project row in a pg table
+    Model to insert a project row in a pg table
 
     - Inputs: parses data that fits pg table columns
     - Outputs: filters out and guarantees fields used to insert a new row in a postgres (pg) table
 
+
+    The model needed to output an update shall be analogous
+    but with all Optional (if independent) or inter-dependent optional (e.g. if a is optional then b is also/ or not)
     """
 
     project_type: ProjectType = Field(ProjectType.STANDARD, alias="type")
