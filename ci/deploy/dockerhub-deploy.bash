@@ -27,6 +27,11 @@ make pull-version tag-local
 log_info "Before push"
 make info-images
 
+################
+# TEST TO CHECK FOR CI DEPLOY FAILURE
+# OBSERVED FIRST ON 01Dec2021
+bash ci/helpers/ensure_commit_sha_matching.bash
+
 # re-tag build
 DOCKER_IMAGE_TAG="$TAG_PREFIX-latest"
 export DOCKER_IMAGE_TAG
