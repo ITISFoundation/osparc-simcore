@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 
 import random
-from typing import AsyncIterable, AsyncIterator
+from typing import AsyncIterable
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
