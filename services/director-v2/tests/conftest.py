@@ -141,14 +141,7 @@ def client(loop, mock_env: None) -> Iterable[TestClient]:
 
 
 @pytest.fixture(scope="function")
-async def initialized_app(monkeypatch: MonkeyPatch) -> AsyncIterable[FastAPI]:
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCK")
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
-    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
-
+async def initialized_app(mock_env: None) -> AsyncIterable[FastAPI]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     async with LifespanManager(app):
