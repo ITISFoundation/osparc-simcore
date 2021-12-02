@@ -52,23 +52,13 @@ pytest_simcore_ops_services_selection = ["minio", "adminer", "flower"]
 # FIXTURES ---------------------------------------
 
 
-@pytest.fixture(scope="function", params=["dask"])
-def mock_env(monkeypatch: MonkeyPatch, request) -> None:
+def mock_env(monkeypatch: MonkeyPatch) -> None:
     # used by the client fixture
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCKED")
 
-    monkeypatch.setenv(
-        "DIRECTOR_V2_DASK_CLIENT_ENABLED",
-        "1" if request.param == "dask" else "0",
-    )
-    monkeypatch.setenv(
-        "DIRECTOR_V2_DASK_SCHEDULER_ENABLED",
-        "1" if request.param == "dask" else "0",
-    )
-    monkeypatch.setenv(
-        "DIRECTOR_V2_CELERY_SCHEDULER_ENABLED",
-        "1" if request.param == "celery" else "0",
-    )
+    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
+    monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "1")
+    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
@@ -77,6 +67,7 @@ def mock_env(monkeypatch: MonkeyPatch, request) -> None:
 
 @pytest.fixture()
 def minimal_configuration(
+    loop: asyncio.AbstractEventLoop,
     sleeper_service: Dict[str, str],
     jupyter_service: Dict[str, str],
     dask_scheduler_service: None,
