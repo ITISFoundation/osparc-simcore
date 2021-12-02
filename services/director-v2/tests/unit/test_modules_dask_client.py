@@ -4,6 +4,7 @@
 # pylint:disable=protected-access
 # pylint:disable=too-many-arguments
 
+import asyncio
 import functools
 import json
 import random
@@ -68,6 +69,7 @@ async def _wait_for_call(mocked_fct):
 
 @pytest.fixture
 def minimal_dask_config(
+    loop: asyncio.AbstractEventLoop,
     mock_env: None,
     project_env_devel_environment: Dict[str, Any],
     monkeypatch: MonkeyPatch,
@@ -199,6 +201,17 @@ def mpi_image(node_id: NodeID, cluster_id_resource_name: str) -> ImageParams:
     )
 
 
+@pytest.fixture(params=[cpu_image.__name__, gpu_image.__name__, mpi_image.__name__])
+def image_params(
+    cpu_image: ImageParams, gpu_image: ImageParams, mpi_image: ImageParams, request
+) -> ImageParams:
+    return {
+        "cpu_image": cpu_image,
+        "gpu_image": gpu_image,
+        "mpi_image": mpi_image,
+    }[request.param]
+
+
 @pytest.fixture()
 def mocked_node_ports(mocker: MockerFixture):
     mocker.patch(
@@ -259,14 +272,6 @@ def _fake_failing_sidecar_fct(
     raise ValueError("sadly we are failing to execute anything cause we are dumb...")
 
 
-@pytest.mark.parametrize(
-    "image_params",
-    [
-        (lazy_fixture("cpu_image")),
-        (lazy_fixture("gpu_image")),
-        (lazy_fixture("mpi_image")),
-    ],
-)
 async def test_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
@@ -311,14 +316,6 @@ async def test_send_computation_task(
     ), "the list of futures was not cleaned correctly"
 
 
-@pytest.mark.parametrize(
-    "image_params",
-    [
-        (lazy_fixture("cpu_image")),
-        (lazy_fixture("gpu_image")),
-        (lazy_fixture("mpi_image")),
-    ],
-)
 async def test_abort_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
@@ -397,14 +394,6 @@ async def test_failed_task_returns_exceptions(
     )
 
 
-@pytest.mark.parametrize(
-    "image_params",
-    [
-        (lazy_fixture("cpu_image")),
-        (lazy_fixture("gpu_image")),
-        (lazy_fixture("mpi_image")),
-    ],
-)
 async def test_invalid_cluster_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
