@@ -51,7 +51,7 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
     },
 
     shape: {
-      check: ["slash", "arrow", "plusBtn"],
+      check: ["slash", "arrow", "separator", "plusBtn"],
       nullable: true,
       init: "slash"
     },
@@ -125,6 +125,10 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
       ];
     },
 
+    getSeparatorControls: function(w = 16, h = 32) {
+      return [w/2, 0, w/2, h];
+    },
+
     getPlusBtnControlsLeft: function(w = 16, h = 32) {
       // return `M0 0 M0 0 L${w/2} 0 L${w/2} ${h/4} A${w/2} ${h/4} 0 1 0 ${w/2} ${h*3/4} L${w/2} ${h} L0 ${h} L0 0`;
       return `M0 0 M0 0 L8 0 L8 8 A8 8 0 1 0 8 24 L8 32 L0 32 L0 0`;
@@ -163,24 +167,32 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
 
       let controls;
       switch (this.getShape()) {
-        case "slash": {
+        case "slash":
           controls = this.self().getTriangleControlsLeft(16, bounds.height);
           break;
-        }
-        case "arrow": {
+        case "arrow":
           controls = this.self().getArrowControlsLeft(16, bounds.height);
           break;
-        }
-        case "plusBtn": {
+        case "separator":
+          controls = this.self().getSeparatorControls(16, bounds.height);
+          break;
+        case "plusBtn":
           controls = this.self().getPlusBtnControlsLeft(16, bounds.height);
           break;
-        }
       }
       if (controls) {
-        if (this.getShape() === "plusBtn") {
-          this.__leftPart = osparc.wrapper.Svg.drawPath(this.__canvas, controls);
-        } else {
-          this.__leftPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
+        switch (this.getShape()) {
+          case "slash":
+          case "arrow":
+            this.__leftPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
+            break;
+          case "separator":
+            this.__leftPart = osparc.wrapper.Svg.drawLine(this.__canvas, controls)
+              .move(16 / 2, 0);
+            break;
+          case "plusBtn":
+            this.__leftPart = osparc.wrapper.Svg.drawPath(this.__canvas, controls);
+            break;
         }
 
         const color = this.__getBGColor(leftWidget.getDecorator());
@@ -205,55 +217,71 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
 
       let controls;
       switch (this.getShape()) {
-        case "slash": {
+        case "slash":
           controls = this.self().getTriangleControlsRight(16, bounds.height);
           break;
-        }
-        case "arrow": {
+        case "arrow":
           controls = this.self().getArrowControlsRight(16, bounds.height);
           break;
-        }
-        case "plusBtn": {
+        case "separator":
+          controls = this.self().getSeparatorControls(16, bounds.height);
+          break;
+        case "plusBtn":
           controls = this.self().getPlusBtnControlsRight(16, bounds.height);
           break;
-        }
       }
       if (controls) {
-        if (this.getShape() === "plusBtn") {
-          this.__rightPart = osparc.wrapper.Svg.drawPath(this.__canvas, controls);
-        } else {
-          this.__rightPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
-        }
-        const color = this.__getBGColor(rightWidget.getDecorator());
-        if (color) {
-          osparc.wrapper.Svg.updatePolygonColor(this.__rightPart, color);
-        }
-        rightWidget.addListener("changeDecorator", e => {
-          const newColor = this.__getBGColor(rightWidget.getDecorator());
-          if (newColor) {
-            osparc.wrapper.Svg.updatePolygonColor(this.__rightPart, newColor);
+        switch (this.getShape()) {
+          case "slash":
+          case "arrow": {
+            this.__rightPart = osparc.wrapper.Svg.drawPolygon(this.__canvas, controls);
+            const color = this.__getBGColor(rightWidget.getDecorator());
+            if (color) {
+              osparc.wrapper.Svg.updatePolygonColor(this.__rightPart, color);
+            }
+            rightWidget.addListener("changeDecorator", e => {
+              const newColor = this.__getBGColor(rightWidget.getDecorator());
+              if (newColor) {
+                osparc.wrapper.Svg.updatePolygonColor(this.__rightPart, newColor);
+              }
+            }, this);
+            break;
           }
-        }, this);
+          case "separator":
+            this.__rightPart = osparc.wrapper.Svg.drawLine(this.__canvas, controls)
+              .move(16 / 2, 0);
+            break;
+          case "plusBtn":
+            this.__rightPart = osparc.wrapper.Svg.drawPath(this.__canvas, controls);
+            break;
+        }
       }
 
-      let plControls;
+      let polylineControls;
+      let lineControls;
       switch (this.getShape()) {
-        case "slash": {
-          plControls = this.self().getSlashControls(16, bounds.height);
+        case "slash":
+          polylineControls = this.self().getSlashControls(16, bounds.height);
           break;
-        }
-        case "arrow": {
-          plControls = this.self().getArrowControls(16, bounds.height);
+        case "arrow":
+          polylineControls = this.self().getArrowControls(16, bounds.height);
           break;
-        }
+        case "sepatator":
+          lineControls = this.self().getSeparatorControls(16, bounds.height);
+          break;
       }
-      if (plControls) {
-        const polyline = osparc.wrapper.Svg.drawPolyline(this.__canvas, plControls);
+      if (polylineControls || lineControls) {
+        let stroke = null;
+        if (polylineControls) {
+          stroke = osparc.wrapper.Svg.drawPolyline(this.__canvas, polylineControls);
+        } else if (lineControls) {
+          stroke = osparc.wrapper.Svg.drawLine(this.__canvas, lineControls);
+        }
         const color = this.__getTextColor();
-        osparc.wrapper.Svg.updatePolylineColor(polyline, color);
+        osparc.wrapper.Svg.updateStrokeColor(stroke, color);
         rightWidget.addListener("changeDecorator", e => {
           const newColor = this.__getTextColor();
-          osparc.wrapper.Svg.updatePolylineColor(polyline, newColor);
+          osparc.wrapper.Svg.updateStrokeColor(stroke, newColor);
         }, this);
       }
     }

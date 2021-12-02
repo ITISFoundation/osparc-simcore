@@ -11,18 +11,12 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
   construct: function(node) {
     this.base(arguments, this.tr("Idle"), "@FontAwesome5Solid/clock/12");
 
-    this.__node = node;
     this.__label = this.getChildControl("label");
     this.__icon = this.getChildControl("icon");
 
-    if (node.isFilePicker()) {
-      this.__setupFilepicker();
-    } else if (node.isComputational()) {
-      this.__setupComputational();
-    } else if (node.isDynamic()) {
-      this.__setupInteractive();
-    } else {
-      this.__setupBlank();
+    this.__setupBlank();
+    if (node) {
+      this.setNode(node);
     }
   },
 
@@ -30,6 +24,13 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     appearance: {
       init: "chip",
       refine: true
+    },
+
+    node: {
+      check: "osparc.data.model.Node",
+      apply: "__applyNode",
+      nullable: false,
+      init: null
     }
   },
 
@@ -58,8 +59,21 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     __label: null,
     __icon: null,
 
+    __applyNode: function(node) {
+      this.show();
+      if (node.isFilePicker()) {
+        this.__setupFilepicker();
+      } else if (node.isComputational()) {
+        this.__setupComputational();
+      } else if (node.isDynamic()) {
+        this.__setupInteractive();
+      } else {
+        this.__setupBlank();
+      }
+    },
+
     __setupComputational: function() {
-      this.__node.getStatus().bind("running", this.__label, "value", {
+      this.getNode().getStatus().bind("running", this.__label, "value", {
         converter: state => {
           if (state) {
             this.show();
@@ -75,7 +89,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         }
       });
 
-      this.__node.getStatus().bind("running", this.__icon, "source", {
+      this.getNode().getStatus().bind("running", this.__icon, "source", {
         converter: state => osparc.utils.StatusUI.getIconSource(state),
         onUpdate: (source, target) => {
           target.show();
@@ -105,7 +119,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     },
 
     __setupInteractive: function() {
-      this.__node.getStatus().bind("interactive", this.__label, "value", {
+      this.getNode().getStatus().bind("interactive", this.__label, "value", {
         converter: state => osparc.utils.StatusUI.getLabelValue(state),
         onUpdate: (source, target) => {
           const state = source.getInteractive();
@@ -113,7 +127,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         }
       });
 
-      this.__node.getStatus().bind("interactive", this.__icon, "source", {
+      this.getNode().getStatus().bind("interactive", this.__icon, "source", {
         converter: state => osparc.utils.StatusUI.getIconSource(state),
         onUpdate: (source, target) => {
           const state = source.getInteractive();
@@ -144,7 +158,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     },
 
     __setupFilepicker: function() {
-      this.__node.bind("outputs", this.__icon, "source", {
+      this.getNode().bind("outputs", this.__icon, "source", {
         converter: outputs => {
           if (osparc.file.FilePicker.getOutput(outputs)) {
             return "@FontAwesome5Solid/check/12";
@@ -160,7 +174,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         }
       });
 
-      this.__node.bind("outputs", this.__label, "value", {
+      this.getNode().bind("outputs", this.__label, "value", {
         converter: outputs => {
           if (osparc.file.FilePicker.getOutput(outputs)) {
             let outputLabel = osparc.file.FilePicker.getOutputLabel(outputs);

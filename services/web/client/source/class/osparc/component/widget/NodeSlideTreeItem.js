@@ -54,7 +54,7 @@ qx.Class.define("osparc.component.widget.NodeSlideTreeItem", {
   },
 
   members: {
-    // overriden
+    // overridden
     _addWidgets: function() {
       this.addSpacer();
       this.addOpenButton();

@@ -34,7 +34,7 @@ async-timeout==3.0.1
     #   aiopg
 attrs==20.3.0
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/././constraints.txt
+
     #   -c requirements/../../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
@@ -55,7 +55,7 @@ email-validator==1.1.3
     #   pydantic
 idna==2.10
     # via
-    #   -c requirements/../../../../packages/service-library/requirements/././constraints.txt
+
     #   -c requirements/../../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/../../../../packages/models-library/requirements/_base.in
@@ -78,6 +78,8 @@ isodate==0.6.0
     #   openapi-schema-validator
 jsonschema==3.2.0
     # via
+
+    #   -c requirements/../../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
     #   openapi-schema-validator
     #   openapi-spec-validator
@@ -136,6 +138,7 @@ pyyaml==5.4.1
     #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/./_base.in
+    #   -c requirements/../../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/../../../../packages/service-library/requirements/_base.in

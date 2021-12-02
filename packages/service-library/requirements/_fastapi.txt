@@ -4,12 +4,18 @@
 #
 #    pip-compile --output-file=requirements/_fastapi.txt --strip-extras requirements/_fastapi.in
 #
-fastapi==0.68.1
+anyio==3.3.4
+    # via starlette
+fastapi==0.70.0
     # via
     #   -r requirements/_fastapi.in
     #   fastapi-contrib
 fastapi-contrib==0.2.11
     # via -r requirements/_fastapi.in
+idna==2.10
+    # via
+    #   -c requirements/././constraints.txt
+    #   anyio
 jaeger-client==4.8.0
     # via fastapi-contrib
 opentracing==2.4.0
@@ -18,21 +24,22 @@ opentracing==2.4.0
     #   jaeger-client
 pydantic==1.8.2
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/./../../../requirements/constraints.txt
     #   -c requirements/./_base.in
     #   fastapi
 six==1.16.0
     # via thrift
-starlette==0.14.2
+sniffio==1.2.0
+    # via anyio
+starlette==0.16.0
     # via fastapi
 threadloop==1.0.2
     # via jaeger-client
-thrift==0.13.0
+thrift==0.15.0
     # via jaeger-client
 tornado==6.1
     # via
     #   jaeger-client
     #   threadloop
-typing-extensions==3.10.0.2
+typing-extensions==4.0.0
     # via pydantic

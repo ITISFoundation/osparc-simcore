@@ -238,9 +238,10 @@ qx.Class.define("osparc.file.FilePicker", {
         case "files-tree": {
           const treeFolderLayout = this.getChildControl("tree-folder-layout");
           control = new osparc.file.FilesTree().set({
+            backgroundColor: "background-main-lighter+",
             showLeafs: false,
             minWidth: 150,
-            width: 200
+            width: 250
           });
           treeFolderLayout.add(control, 0);
           break;
@@ -251,15 +252,17 @@ qx.Class.define("osparc.file.FilePicker", {
           treeFolderLayout.add(control, 1);
           break;
         }
-        case "toolbar":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+        case "select-toolbar":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
+            backgroundColor: "background-main-lighter+"
+          });
           this._addAt(control, this.self().POS.TOOLBAR);
           break;
         case "files-add": {
           control = new osparc.file.FilesAdd().set({
             node: this.getNode()
           });
-          const mainButtons = this.getChildControl("toolbar");
+          const mainButtons = this.getChildControl("select-toolbar");
           mainButtons.add(control);
           break;
         }
@@ -267,7 +270,7 @@ qx.Class.define("osparc.file.FilePicker", {
           control = new osparc.file.FileLabelWithActions().set({
             alignY: "middle"
           });
-          const mainButtons = this.getChildControl("toolbar");
+          const mainButtons = this.getChildControl("select-toolbar");
           mainButtons.add(control, {
             flex: 1
           });
@@ -275,7 +278,7 @@ qx.Class.define("osparc.file.FilePicker", {
         }
         case "select-button": {
           control = new qx.ui.form.Button(this.tr("Select"));
-          const mainButtons = this.getChildControl("toolbar");
+          const mainButtons = this.getChildControl("select-toolbar");
           mainButtons.add(control);
           break;
         }

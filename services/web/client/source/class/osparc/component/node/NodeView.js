@@ -29,7 +29,6 @@
  * <pre class='javascript'>
  *   let nodeView = new osparc.component.node.NodeView();
  *   nodeView.setNode(workbench.getNode1());
- *   nodeView.populateLayout();
  *   this.getRoot().add(nodeView);
  * </pre>
  */
@@ -47,6 +46,9 @@ qx.Class.define("osparc.component.node.NodeView", {
   },
 
   members: {
+    __loggerPanel: null,
+
+    // overridden
     _addSettings: function() {
       this._settingsLayout.removeAll();
 
@@ -61,6 +63,88 @@ qx.Class.define("osparc.component.node.NodeView", {
       this.__checkSettingsVisibility();
 
       this._addToMainView(this._settingsLayout);
+    },
+
+    // overridden
+    _addIFrame: function() {
+      this._iFrameLayout.removeAll();
+
+      const loadingPage = this.getNode().getLoadingPage();
+      const iFrame = this.getNode().getIFrame();
+      if (loadingPage && iFrame) {
+        this.__iFrameChanged();
+        iFrame.addListener("load", () => {
+          this.__iFrameChanged();
+        });
+      } else {
+        // This will keep what comes after at the bottom
+        this._iFrameLayout.add(new qx.ui.core.Spacer(), {
+          flex: 1
+        });
+      }
+
+      this._addToMainView(this._iFrameLayout, {
+        flex: 1
+      });
+    },
+
+    // overridden
+    _addOutputs: function() {
+      this._outputsLayout.removeAll();
+
+      const outputFilesBtn = new qx.ui.form.Button(this.tr("Artifacts"), "@FontAwesome5Solid/folder-open/14").set({
+        allowGrowX: false
+      });
+      osparc.utils.Utils.setIdToWidget(outputFilesBtn, "nodeOutputFilesBtn");
+      outputFilesBtn.addListener("execute", () => osparc.component.node.BaseNodeView.openNodeDataManager(this.getNode()));
+      this._outputsLayout.add(outputFilesBtn);
+
+      this._outputsBtn.set({
+        value: false,
+        enabled: this.getNode().hasOutputs() > 0
+      });
+      const outputsTree = new osparc.component.widget.inputs.NodeOutputTree(this.getNode(), this.getNode().getMetaData().outputs);
+      this.bind("backgroundColor", outputsTree, "backgroundColor");
+      this._outputsLayout.add(outputsTree, {
+        flex: 1
+      });
+    },
+
+    // overridden
+    _addLogger: function() {
+      const loggerView = this.getNode().getLogger();
+      loggerView.getChildControl("pin-node").exclude();
+      const loggerPanel = this.__loggerPanel = new osparc.desktop.PanelView(this.tr("Logger"), loggerView).set({
+        minHeight: 24,
+        collapsed: true
+      });
+      loggerPanel.bind("collapsed", loggerPanel, "maxHeight", {
+        converter: collapsed => collapsed ? 25 : null
+      });
+      this.add(loggerPanel, 0);
+    },
+
+    getLoggerPanel: function() {
+      return this.__loggerPanel;
+    },
+
+    // overridden
+    _openEditAccessLevel: function() {
+      const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
+      const propsFormEditor = this.getNode().getPropsFormEditor();
+      settingsEditorLayout.add(propsFormEditor);
+      const title = this.getNode().getLabel();
+      osparc.ui.window.Window.popUpInWindow(settingsEditorLayout, title, 800, 600).set({
+        autoDestroy: false
+      });
+    },
+
+    // overridden
+    _applyNode: function(node) {
+      if (node.isContainer()) {
+        console.error("Only non-group nodes are supported");
+      }
+      this.base(arguments, node);
     },
 
     __checkSettingsVisibility: function() {
@@ -83,77 +167,6 @@ qx.Class.define("osparc.component.node.NodeView", {
       this._iFrameLayout.add(iFrameView, {
         flex: 1
       });
-    },
-
-    _addIFrame: function() {
-      this._iFrameLayout.removeAll();
-
-      const loadingPage = this.getNode().getLoadingPage();
-      const iFrame = this.getNode().getIFrame();
-      if (loadingPage && iFrame) {
-        [
-          loadingPage,
-          iFrame
-        ].forEach(widget => {
-          if (widget) {
-            widget.addListener("maximize", e => {
-              this._maximizeIFrame(true);
-            }, this);
-            widget.addListener("restore", e => {
-              this._maximizeIFrame(false);
-            }, this);
-            this._maximizeIFrame(widget.hasState("maximized"));
-          }
-        });
-        this.__iFrameChanged();
-
-        iFrame.addListener("load", () => {
-          this.__iFrameChanged();
-        });
-      } else {
-        // This will keep what comes after at the bottom
-        this._iFrameLayout.add(new qx.ui.core.Spacer(), {
-          flex: 1
-        });
-      }
-
-      this._addToMainView(this._iFrameLayout, {
-        flex: 1
-      });
-    },
-
-    _addLogger: function() {
-      this._loggerLayout.removeAll();
-
-      const loggerView = this.__loggerView = this.getNode().getLogger().set({
-        maxHeight: 250
-      });
-      loggerView.getChildControl("pin-node").exclude();
-      const loggerPanel = new osparc.desktop.PanelView(this.tr("Logger"), loggerView).set({
-        collapsed: true,
-        backgroundColor: "background-main-lighter"
-      });
-      osparc.utils.Utils.setIdToWidget(loggerPanel.getTitleLabel(), "nodeLoggerTitleLabel");
-      this._loggerLayout.add(loggerPanel);
-
-      this._addToMainView(this._loggerLayout);
-    },
-
-    _openEditAccessLevel: function() {
-      const settingsEditorLayout = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
-      const propsFormEditor = this.getNode().getPropsFormEditor();
-      settingsEditorLayout.add(propsFormEditor);
-      const title = this.getNode().getLabel();
-      osparc.ui.window.Window.popUpInWindow(settingsEditorLayout, title, 800, 600).set({
-        autoDestroy: false
-      });
-    },
-
-    _applyNode: function(node) {
-      if (node.isContainer()) {
-        console.error("Only non-group nodes are supported");
-      }
-      this.base(arguments, node);
     }
   }
 });

@@ -31,6 +31,7 @@ RUN adduser \
       --home /home/${SC_USER_NAME} \
       ${SC_USER_NAME}
 
+
 # Sets utf-8 encoding for Python et al
 ENV LANG=C.UTF-8
 # Turns off writing .pyc files; superfluous on an ephemeral container.
@@ -131,7 +132,6 @@ HEALTHCHECK --interval=30s \
       --start-period=30s \
       --retries=3 \
       CMD ["python3", "/home/scu/services/director/docker/healthcheck.py", "http://localhost:8080/v0/"]
-
 ENTRYPOINT [ "services/director/docker/entrypoint.sh" ]
 CMD ["services/director/docker/boot.sh"]
 

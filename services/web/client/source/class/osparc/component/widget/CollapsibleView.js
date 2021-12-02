@@ -61,7 +61,8 @@ qx.Class.define("osparc.component.widget.CollapsibleView", {
     collapsed: {
       init: false,
       check: "Boolean",
-      apply: "_applyCollapsed"
+      apply: "_applyCollapsed",
+      event: "changeCollapsed"
     },
 
     caretSize: {

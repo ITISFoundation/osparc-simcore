@@ -3,6 +3,8 @@
 #  both for unit and integration tests!!
 #
 --constraint ../../../requirements/constraints.txt
+--constraint ./constraints.txt
+
 # Adds base AS CONSTRAINT specs, not requirement.
 #  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
 #

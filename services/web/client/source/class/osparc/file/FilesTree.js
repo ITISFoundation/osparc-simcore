@@ -244,6 +244,9 @@ qx.Class.define("osparc.file.FilesTree", {
       rootModel.getChildren().removeAll();
       this.self().addLoadingChild(rootModel);
 
+      this.set({
+        hideRoot: true
+      });
       const dataStore = osparc.store.Data.getInstance();
       dataStore.getLocations()
         .then(locations => {
