@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 from typing import Set
 
+from setuptools import find_packages, setup
+
 
 def read_reqs(reqs_path: Path) -> Set[str]:
     return {
@@ -39,34 +41,34 @@ PROD_REQUIREMENTS = tuple(
 
 TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
-if __name__ == "__main__":
-    from setuptools import find_packages, setup
+SETUP = dict(
+    name=NAME,
+    version=VERSION,
+    author=AUTHORS,
+    description=DESCRIPTION,
+    long_description=README,
+    license="MIT license",
+    python_requires="~=3.8",
+    packages=find_packages(where="src"),
+    package_dir={
+        "": "src",
+    },
+    include_package_data=True,
+    package_data={
+        "": [
+            "mocks/*.y*ml",
+        ]
+    },
+    install_requires=PROD_REQUIREMENTS,
+    test_suite="tests",
+    tests_require=TEST_REQUIREMENTS,
+    extras_require={"test": TEST_REQUIREMENTS},
+    entry_points={
+        "console_scripts": [
+            "simcore-service-api-server = simcore_service_api_server.cli:main",
+        ],
+    },
+)
 
-    setup(
-        name=NAME,
-        version=VERSION,
-        author=AUTHORS,
-        description=DESCRIPTION,
-        long_description=README,
-        license="MIT license",
-        python_requires="~=3.8",
-        packages=find_packages(where="src"),
-        package_dir={
-            "": "src",
-        },
-        include_package_data=True,
-        package_data={
-            "": [
-                "mocks/*.y*ml",
-            ]
-        },
-        install_requires=PROD_REQUIREMENTS,
-        test_suite="tests",
-        tests_require=TEST_REQUIREMENTS,
-        extras_require={"test": TEST_REQUIREMENTS},
-        entry_points={
-            "console_scripts": [
-                "simcore-service-api-server = simcore_service_api_server.cli:main",
-            ],
-        },
-    )
+if __name__ == "__main__":
+    setup(**SETUP)
