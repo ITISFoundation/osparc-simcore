@@ -528,7 +528,7 @@ async def test_run_computation(
     # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
     # run again should return a 422 cause everything is uptodate
-    response = create_pipeline(
+    response = await create_pipeline(
         async_client,
         project=sleepers_project,
         user_id=user_id,
@@ -758,14 +758,16 @@ async def test_update_and_delete_computation(
     )
 
     # try to delete the pipeline, is expected to be forbidden if force parameter is false (default)
-    response = await async_client.delete(task_out.url, json={"user_id": user_id})
+    response = await async_client.request(
+        "DELETE", task_out.url, json={"user_id": user_id}
+    )
     assert (
         response.status_code == status.HTTP_403_FORBIDDEN
     ), f"response code is {response.status_code}, error: {response.text}"
 
     # try again with force=True this should abort and delete the pipeline
-    response = await async_client.delete(
-        task_out.url, json={"user_id": user_id, "force": True}
+    response = await async_client.request(
+        "DELETE", task_out.url, json={"user_id": user_id, "force": True}
     )
     assert (
         response.status_code == status.HTTP_204_NO_CONTENT
