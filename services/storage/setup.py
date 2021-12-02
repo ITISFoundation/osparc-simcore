@@ -21,14 +21,17 @@ def read_reqs(reqs_path: Path) -> Set[str]:
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
-PROD_REQUIREMENTS = read_reqs(CURRENT_DIR / "requirements" / "_base.txt") | {
-    "simcore-models-library",
-    "simcore-postgres-database",
-    "simcore-service-library[aiohttp]",
-    "simcore-settings-library",
-}
+PROD_REQUIREMENTS = tuple(
+    read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
+    | {
+        "simcore-models-library",
+        "simcore-postgres-database",
+        "simcore-service-library[aiohttp]",
+        "simcore-settings-library",
+    }
+)
 
-TEST_REQUIREMENTS = read_reqs(CURRENT_DIR / "requirements" / "_test.txt")
+TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
 
 SETUP = dict(

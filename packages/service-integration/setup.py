@@ -37,6 +37,7 @@ SETUP = dict(
             "Pedro Crespo-Valero (pcrespov)",
             "Sylvain Anderegg (sanderegg)",
             "Katie Zhuang (KZzizzle)",
+            "Andrei Neagu (GitHK)",
         )
     ),
     description="Toolkit for service integration",

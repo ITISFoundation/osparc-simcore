@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 SETUP = dict(
     name="pytest-simcore",
     version="0.1.0",
-    maintainer=", ".join(
+    author=", ".join(
         (
             "Pedro Crespo-Valero (pcrespov)",
             "Sylvain Anderegg (sanderegg)",

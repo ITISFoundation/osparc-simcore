@@ -21,19 +21,24 @@ def read_reqs(reqs_path: Path) -> Set[str]:
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
-INSTALL_REQUIREMENTS = read_reqs(
-    CURRENT_DIR / "requirements" / "_base.in"
+INSTALL_REQUIREMENTS = tuple(
+    read_reqs(CURRENT_DIR / "requirements" / "_base.in")
 )  # WEAK requirements
 
-TEST_REQUIREMENTS = read_reqs(
-    CURRENT_DIR / "requirements" / "_test.txt"
+TEST_REQUIREMENTS = tuple(
+    read_reqs(CURRENT_DIR / "requirements" / "_test.txt")
 )  # STRONG requirements
 
 
 SETUP = dict(
     name="simcore-settings-library",
     version="0.1.0",
-    author="Pedro Crespo-Valero (pcrespov), Sylvain Anderegg (sanderegg)",
+    author=", ".join(
+        (
+            "Pedro Crespo-Valero (pcrespov)",
+            "Sylvain Anderegg (sanderegg)",
+        )
+    ),
     description="Library with common pydantic settings",
     # SEE https://pypi.org/classifiers/
     classifiers=[
@@ -43,12 +48,7 @@ SETUP = dict(
         "Natural Language :: English",
         "Programming Language :: Python :: 3.8",
     ],
-    long_description=Path(
-        CURRENT_DIR=Path(sys.argv[0] if __name__ == "__main__" else __file__)
-        .resolve()
-        .parent
-        / "README.md"
-    ).read_text(),
+    long_description=(CURRENT_DIR.resolve().parent / "README.md").read_text(),
     license="MIT license",
     install_requires=INSTALL_REQUIREMENTS,
     packages=find_packages(where="src"),
