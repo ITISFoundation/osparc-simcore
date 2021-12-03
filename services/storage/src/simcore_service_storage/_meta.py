@@ -4,7 +4,7 @@
 import pkg_resources
 from semantic_version import Version
 
-__version__: str = pkg_resources.get_distribution("simcore_service_storage").version
+__version__: str = pkg_resources.get_distribution("simcore-service-storage").version
 
 version = Version(__version__)
 

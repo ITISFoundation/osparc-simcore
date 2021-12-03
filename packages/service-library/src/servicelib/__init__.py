@@ -2,4 +2,6 @@
 
 """
 
-__version__ = "1.1.0"
+import pkg_resources
+
+__version__: str = pkg_resources.get_distribution("simcore-service-library").version
