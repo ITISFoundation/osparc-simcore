@@ -8,4 +8,4 @@
 
 import pkg_resources
 
-__version__: str = pkg_resources.get_distribution("models_library").version
+__version__: str = pkg_resources.get_distribution("simcore-models-library").version

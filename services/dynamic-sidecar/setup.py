@@ -35,7 +35,7 @@ TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
 
 SETUP = dict(
-    name="simcore_service_dynamic_sidecar",
+    name="simcore-service-dynamic-sidecar",
     version=(CURRENT_DIR / "VERSION").read_text().strip(),
     author=", ".join(
         (

@@ -4,4 +4,4 @@
 
 import pkg_resources
 
-__version__: str = pkg_resources.get_distribution("simcore_sdk").version
+__version__: str = pkg_resources.get_distribution("simcore-sdk").version

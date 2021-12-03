@@ -4,4 +4,4 @@
 
 import pkg_resources
 
-__version__: str = pkg_resources.get_distribution("servicelib").version
+__version__: str = pkg_resources.get_distribution("simcore-service-library").version
