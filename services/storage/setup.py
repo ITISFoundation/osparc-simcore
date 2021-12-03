@@ -36,7 +36,7 @@ TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
 SETUP = dict(
     name="simcore-service-storage",
-    version="0.2.1",
+    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
     description="Service to manage data storage in simcore",
     author="Manuel Guidon (mguidon)",
     python_requires="~=3.8",
