@@ -32,7 +32,7 @@ TEST_REQUIREMENTS = tuple(
 
 SETUP = dict(
     name="simcore-settings-library",
-    version="0.1.0",
+    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
     author=", ".join(
         (
             "Pedro Crespo-Valero (pcrespov)",

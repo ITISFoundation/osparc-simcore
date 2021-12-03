@@ -33,7 +33,7 @@ TEST_REQUIREMENTS = tuple(
 
 SETUP = dict(
     name="simcore-sdk",
-    version="1.0.0",
+    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     python_requires=">=3.6",

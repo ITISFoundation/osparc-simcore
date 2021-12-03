@@ -35,7 +35,7 @@ TEST_REQUIREMENTS = tuple(
 
 SETUP = dict(
     name="simcore-dask-task-models-library",
-    version="0.1.0",
+    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
     author="Sylvain Anderegg (sanderegg)",
     description="Core service library for simcore pydantic dask task models",
     python_requires="~=3.8",

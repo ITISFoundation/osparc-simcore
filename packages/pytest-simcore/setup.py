@@ -1,8 +1,13 @@
+import sys
+from pathlib import Path
+
 from setuptools import find_packages, setup
+
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 SETUP = dict(
     name="pytest-simcore",
-    version="0.1.0",
+    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
     author=", ".join(
         (
             "Pedro Crespo-Valero (pcrespov)",

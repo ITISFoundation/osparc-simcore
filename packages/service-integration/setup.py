@@ -31,7 +31,7 @@ TEST_REQUIREMENTS = tuple(
 
 SETUP = dict(
     name="simcore-service-integration",
-    version="1.0.1",
+    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
     author=", ".join(
         (
             "Pedro Crespo-Valero (pcrespov)",

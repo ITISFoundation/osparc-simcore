@@ -32,7 +32,7 @@ TEST_REQUIREMENTS = read_reqs(CURRENT_DIR / "requirements" / "_test.txt")
 
 SETUP = dict(
     name="simcore-service-library",
-    version="1.1.0",
+    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
     author="Pedro Crespo-Valero (pcrespov)",
     description="Core service library for simcore (or servicelib)",
     license="MIT license",
