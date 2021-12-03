@@ -1,5 +1,5 @@
 import io
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Callable, Dict, Type
 
 from aiohttp import web
 from aiohttp.web_exceptions import HTTPError, HTTPException
