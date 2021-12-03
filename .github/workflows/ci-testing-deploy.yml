@@ -596,7 +596,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.8, 3.9, 3.10]
+        python: [3.8, 3.9, "3.10"]
         os: [ubuntu-20.04]
         docker_buildx: [v0.5.1]
         docker_compose: [1.29.1]
