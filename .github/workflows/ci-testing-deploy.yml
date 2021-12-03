@@ -2390,7 +2390,6 @@ jobs:
         unit-test-dask-task-models-library,
         unit-test-dask-sidecar,
         unit-test-frontend,
-        unit-test-python-linting,
         unit-test-service-integration,
         unit-test-service-library,
         unit-test-settings-library,
