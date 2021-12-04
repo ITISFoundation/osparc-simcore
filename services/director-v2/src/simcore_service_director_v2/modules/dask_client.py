@@ -308,12 +308,6 @@ class DaskClient:
             dask_resources = from_node_reqs_to_dask_resources(
                 node_image.node_requirements
             )
-            # add the cluster ID here
-            dask_resources.update(
-                {
-                    f"{self.settings.DASK_CLUSTER_ID_PREFIX}{cluster_id}": CLUSTER_RESOURCE_MOCK_USAGE
-                }
-            )
 
             check_client_can_connect_to_scheduler(self.dask_subsystem.client)
             # NOTE: in case it's a gateway we do not check a priori if the task
