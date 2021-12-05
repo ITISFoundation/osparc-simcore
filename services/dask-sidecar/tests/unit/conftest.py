@@ -58,7 +58,6 @@ def mock_service_envs(
     # Variables directly define inside Dockerfile
     monkeypatch.setenv("SC_BOOT_MODE", "debug-ptvsd")
 
-    monkeypatch.setenv("SWARM_STACK_NAME", "simcore")
     monkeypatch.setenv("SIDECAR_LOGLEVEL", "DEBUG")
     monkeypatch.setenv(
         "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME", "simcore_computational_shared_data"

@@ -15,8 +15,6 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         env=["DASK_SIDECAR_LOGLEVEL", "SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
 
-    SWARM_STACK_NAME: str = "simcore"
-
     # sidecar config ---
 
     SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: str
