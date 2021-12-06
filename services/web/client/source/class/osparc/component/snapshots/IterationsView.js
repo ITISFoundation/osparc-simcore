@@ -41,6 +41,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     __iterations: null,
     __iterationsSection: null,
     __iterationsTable: null,
+    __iterationPreview: null,
     __openIterationBtn: null,
     __selectedIterationId: null,
 
@@ -50,6 +51,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
         flex: 1
       });
       this.__rebuildIterations();
+      this.__buildIterationsPreview();
 
       const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       this._add(buttonsSection);
@@ -101,7 +103,37 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
         });
       });
 
-      this.__iterationsSection.add(iterationsTable);
+      this.__iterationsSection.addAt(iterationsTable, 0, {
+        width: "50%"
+      });
+    },
+
+    __buildIterationsPreview: function() {
+      const iterationsPreview = this.__iterationPreview = new osparc.component.workbench.WorkbenchUIPreview();
+      this.__iterationsSection.addAt(iterationsPreview, 1, {
+        width: "50%"
+      });
+    },
+
+    __loadIterationPreview: function(iterationId) {
+      const params = {
+        url: {
+          "studyId": iterationId
+        }
+      };
+      osparc.data.Resources.getOne("studies", params)
+        .then(data => {
+          const studyData = this.__study.serialize();
+          studyData["workbench"] = data["workbench"];
+          studyData["ui"] = data["ui"];
+          const study = new osparc.data.model.Study(studyData);
+          study.buildWorkbench();
+          study.setReadOnly(true);
+          this.__iterationPreview.set({
+            study: study
+          });
+          this.__iterationPreview.loadModel(study.getWorkbench());
+        });
     },
 
     __createOpenIterationBtn: function() {
@@ -113,6 +145,8 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
 
     __iterationSelected: function(iterationId) {
       this.__selectedIterationId = iterationId;
+
+      this.__loadIterationPreview(iterationId);
 
       if (this.__openIterationBtn) {
         this.__openIterationBtn.setEnabled(true);
