@@ -25,6 +25,7 @@ from fastapi import Path as PathParam
 from fastapi import Query, Request, status
 from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRoute, APIRouter
+from models_library.rest_pagination import PageLinks, PageMetaInfoLimitOffset
 from models_library.services import PROPERTY_KEY_RE, Author
 from pydantic import (
     BaseModel,
@@ -38,7 +39,6 @@ from pydantic import (
 )
 from pydantic.generics import GenericModel
 from pydantic.networks import HttpUrl
-from servicelib.rest_pagination_utils import PageLinks, PageMetaInfoLimitOffset
 from simcore_service_webserver.version_control_models_snapshots import SnapshotResource
 from starlette.datastructures import URL
 
@@ -84,7 +84,6 @@ class Envelope(GenericModel, Generic[DataT]):
 
 ItemT = TypeVar("ItemT")
 
-# FIXME: replace PageResponseLimitOffset
 # FIXME: page envelope is inconstent since DataT != Page ??
 class Page(GenericModel, Generic[ItemT]):
     meta: PageMetaInfoLimitOffset = Field(alias="_meta")

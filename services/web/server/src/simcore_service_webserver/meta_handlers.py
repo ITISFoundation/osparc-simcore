@@ -6,13 +6,11 @@ from typing import List, Optional, Tuple
 
 from aiohttp import web
 from models_library.projects import ProjectID
+from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
+from models_library.rest_pagination_utils import paginate_data
 from pydantic import BaseModel
 from pydantic.fields import Field
 from pydantic.networks import HttpUrl
-from servicelib.rest_pagination_utils import (
-    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    PageResponseLimitOffset,
-)
 
 from ._meta import api_version_prefix as VTAG
 from .meta_db import VersionControlForMetaModeling
@@ -20,7 +18,6 @@ from .meta_iterations import ProjectIteration
 from .rest_utils import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 from .utils_aiohttp import create_url_for_function, envelope_json_response
-
 from .version_control_models import CheckpointID, CommitID, TagProxy
 from .version_control_tags import parse_wcopy_project_tag_name
 
@@ -206,14 +203,17 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
         for wcp_id, iter_id in selected_project_iterations
     ]
 
-    return web.Response(
-        text=PageResponseLimitOffset.paginate_data(
+    page = Page[ProjectIterationAsItem].parse_obj(
+        paginate_data(
             data=iterations_items,
             request_url=request.url,
             total=total_number_of_iterations,
             limit=_limit,
             offset=_offset,
-        ).json(**RESPONSE_MODEL_POLICY),
+        )
+    )
+    return web.Response(
+        text=page.json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )
 
