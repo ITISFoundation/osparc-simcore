@@ -420,7 +420,7 @@ class ProjectDBAPI:
                 if not await project_uses_available_services(prj, filter_by_services):
                     log.warning(
                         "Project %s will not be listed for user %s since it has no access rights"
-                        " for one or more of the services that includes."
+                        " for one or more of the services that includes.",
                         f"{row.id=}",
                         f"{user_id=}",
                     )
