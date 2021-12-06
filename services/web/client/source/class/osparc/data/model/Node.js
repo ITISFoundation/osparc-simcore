@@ -327,8 +327,8 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__inputsDefault;
     },
 
-    getInput: function(outputId) {
-      return this.__inputs[outputId];
+    getInput: function(inputId) {
+      return this.getInputs()[inputId];
     },
 
     getOutput: function(outputId) {
