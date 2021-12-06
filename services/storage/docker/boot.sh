@@ -25,7 +25,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   pip list | sed 's/^/    /'
 
   echo "$INFO" "Setting entrypoint to use watchmedo autorestart..."
-  entrypoint='watchmedo auto-restart --recursive --pattern="*.py" --'
+  entrypoint='watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*" --ignore-directories --directory /devel/services/storage/src --directory /devel/packages --'
 
 elif [ "${SC_BUILD_TARGET}" = "production" ]; then
   entrypoint=""
