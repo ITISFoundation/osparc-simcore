@@ -16,7 +16,6 @@ import io
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
-from models_library.service_settings_labels import RestartPolicy
 from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
@@ -32,6 +31,8 @@ from .context import IntegrationContext
 from .errors import ConfigNotFound
 from .labels_annotations import from_labels, to_labels
 from .yaml_utils import yaml_safe_load
+from models_library.service_settings_labels import PathMappingsLabel, RestartPolicy
+from models_library.services import BootOptionsType
 
 CONFIG_FOLDER_NAME = ".osparc"
 
@@ -143,29 +144,6 @@ class MetaConfig(ServiceDockerData):
         return f"{registry_prefix}{service_path}:{service_version}"
 
 
-class PathsMapping(BaseModel):
-    inputs_path: Path = Field(
-        ..., description="folder path where the service expects all the inputs"
-    )
-    outputs_path: Path = Field(
-        ...,
-        description="folder path where the service is expected to provide all its outputs",
-    )
-    state_paths: List[Path] = Field(
-        [],
-        description="optional list of paths which contents need to be persisted",
-    )
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "outputs_path": "/outputs",
-                "inputs_path": "/inputs",
-                "state_paths": ["/workdir1", "/workdir2"],
-            }
-        }
-
-
 class SettingsItem(BaseModel):
     name: str = Field(..., description="The name of the service setting")
     type_: str = Field(
@@ -190,7 +168,8 @@ class RuntimeConfig(BaseModel):
 
     restart_policy: RestartPolicy = RestartPolicy.NO_RESTART
 
-    paths_mapping: Optional[PathsMapping] = None
+    paths_mapping: Optional[PathMappingsLabel] = None
+    boot_options: BootOptionsType = None
 
     settings: List[SettingsItem] = []
 
