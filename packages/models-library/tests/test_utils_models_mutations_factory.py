@@ -4,7 +4,7 @@
 
 from typing import Dict, Optional
 
-from models_library.utils.model_variants_factory import extract_fields
+from models_library.utils.models_mutations_factory import extract_fields
 from pydantic import BaseModel, Field, create_model
 
 
