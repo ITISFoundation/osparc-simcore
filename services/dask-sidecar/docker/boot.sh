@@ -105,7 +105,7 @@ else
   echo "$INFO" "Starting as a ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_ADDRESS} ..."
   echo "$INFO" "Worker resources set as: $resources"
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-    exec watchmedo auto-restart --recursive --pattern="*.py" -- \
+    exec watchmedo auto-restart --recursive --patterns="*.py;*/src/*" --ignore-patterns="*test*" --ignore-directories-- \
       dask-worker "${DASK_SCHEDULER_ADDRESS}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
