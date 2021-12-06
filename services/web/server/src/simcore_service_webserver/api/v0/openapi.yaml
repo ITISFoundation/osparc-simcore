@@ -6759,7 +6759,7 @@ paths:
                               type: object
                               title: Quality
                               description: Object containing Quality Assessment related data
-                            boot_options:
+                            bootOptions:
                               title: Boot Options
                               description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
                               type: object
@@ -7386,7 +7386,7 @@ paths:
                   type: object
                   title: Quality
                   description: Object containing Quality Assessment related data
-                boot_options:
+                bootOptions:
                   title: Boot Options
                   description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
                   type: object
@@ -7881,7 +7881,7 @@ paths:
                             type: object
                             title: Quality
                             description: Object containing Quality Assessment related data
-                          boot_options:
+                          bootOptions:
                             title: Boot Options
                             description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
                             type: object
@@ -8494,7 +8494,7 @@ paths:
                             type: object
                             title: Quality
                             description: Object containing Quality Assessment related data
-                          boot_options:
+                          bootOptions:
                             title: Boot Options
                             description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
                             type: object
@@ -9113,7 +9113,7 @@ paths:
                             type: object
                             title: Quality
                             description: Object containing Quality Assessment related data
-                          boot_options:
+                          bootOptions:
                             title: Boot Options
                             description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
                             type: object
@@ -9723,7 +9723,7 @@ paths:
                   type: object
                   title: Quality
                   description: Object containing Quality Assessment related data
-                boot_options:
+                bootOptions:
                   title: Boot Options
                   description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
                   type: object
@@ -10218,7 +10218,7 @@ paths:
                             type: object
                             title: Quality
                             description: Object containing Quality Assessment related data
-                          boot_options:
+                          bootOptions:
                             title: Boot Options
                             description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
                             type: object
@@ -10853,7 +10853,7 @@ paths:
                             type: object
                             title: Quality
                             description: Object containing Quality Assessment related data
-                          boot_options:
+                          bootOptions:
                             title: Boot Options
                             description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
                             type: object
@@ -12851,7 +12851,7 @@ paths:
                             type: object
                             title: Quality
                             description: Object containing Quality Assessment related data
-                          boot_options:
+                          bootOptions:
                             title: Boot Options
                             description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
                             type: object
@@ -13463,7 +13463,7 @@ paths:
                             type: object
                             title: Quality
                             description: Object containing Quality Assessment related data
-                          boot_options:
+                          bootOptions:
                             title: Boot Options
                             description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
                             type: object
