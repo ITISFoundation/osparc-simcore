@@ -4,8 +4,17 @@ import json
 from functools import cached_property
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from typing_extensions import TypedDict
 
-from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
+from pydantic import (
+    BaseModel,
+    Extra,
+    Field,
+    Json,
+    PrivateAttr,
+    validator,
+    root_validator,
+)
 
 
 class _BaseConfig:
@@ -113,6 +122,80 @@ class RestartPolicy(str, Enum):
     ON_INPUTS_DOWNLOADED = "on-inputs-downloaded"
 
 
+class BootModeItem(TypedDict):
+    label: str
+    description: str
+
+
+class BootMode(BaseModel):
+    label: str
+    description: str
+    default: str
+    items: Dict[str, BootModeItem]
+
+    @root_validator
+    def ensure_default_is_present(cls, values: Dict) -> Dict:
+        default = values["default"]
+        items = values["items"]
+        if default not in items:
+            raise ValueError(
+                f"Expected default={default} to be present a key of items={items}"
+            )
+        return values
+
+
+class OptionBootMode(BaseModel):
+    boot_mode: BootMode = Field(
+        ...,
+        description="Allows the user to select in which boot mode to start the service",
+    )
+
+    class Config(_BaseConfig):
+        extra = Extra.allow
+        schema_extra = {
+            "examples": [
+                {
+                    "boot_mode": {
+                        "label": "Boot mode",
+                        "description": "Start it in web page mode",
+                        "default": "0",
+                        "items": {
+                            "0": {
+                                "label": "Non Voila",
+                                "description": "Tooltip for non Voila boot mode",
+                            },
+                            "1": {
+                                "label": "Voila",
+                                "description": "Tooltip for Voila boot mode",
+                            },
+                        },
+                    }
+                },
+                {
+                    "boot_mode": {
+                        "label": "Boot mode",
+                        "description": "Schedule the service to use different types of hardware",
+                        "default": "1",
+                        "items": {
+                            "0": {
+                                "label": "CPU",
+                                "description": "Use CPUs to run computation",
+                            },
+                            "1": {
+                                "label": "GPU",
+                                "description": "Use GPUs to accelerate computation",
+                            },
+                            "2": {
+                                "label": "MPI",
+                                "description": "Use MPI mode to accelerate computation",
+                            },
+                        },
+                    }
+                },
+            ]
+        }
+
+
 class DynamicSidecarServiceLabels(BaseModel):
     paths_mapping: Optional[Json[PathMappingsLabel]] = Field(
         None,
@@ -151,6 +234,15 @@ class DynamicSidecarServiceLabels(BaseModel):
             "on certain events. Supported events:\n"
             "- `no-restart` default\n"
             "- `on-inputs-downloaded` after inputs are downloaded\n"
+        ),
+    )
+
+    boot_options: Optional[OptionBootMode] = Field(
+        None,
+        alias="simcore.service.boot-options",
+        descriptions=(
+            "Additional actions selectable by the user int the UI."
+            "All are predefined by the service."
         ),
     )
 
@@ -254,6 +346,9 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     ),
                     "simcore.service.container-http-entrypoint": "rt-web",
                     "simcore.service.restart-policy": RestartPolicy.ON_INPUTS_DOWNLOADED.value,
+                    "simcore.service.boot-options": OptionBootMode.Config.schema_extra[
+                        "examples"
+                    ][0],
                 },
             ]
         }

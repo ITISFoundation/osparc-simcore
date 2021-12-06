@@ -13,6 +13,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
+    OptionBootMode,
 )
 from pydantic import BaseModel, ValidationError
 
@@ -36,7 +37,7 @@ SIMCORE_SERVICE_EXAMPLES = [
     ),
     SimcoreServiceExample(
         example=SimcoreServiceLabels.Config.schema_extra["examples"][2],
-        items=5,
+        items=6,
         uses_dynamic_sidecar=True,
         id="dynamic-service-with-compose-spec",
     ),
@@ -140,3 +141,16 @@ def test_raises_error_wrong_restart_policy() -> None:
 
     with pytest.raises(ValueError):
         SimcoreServiceLabels(**simcore_service_labels)
+
+
+def test_option_boot_mode() -> None:
+    for example in OptionBootMode.Config.schema_extra["examples"]:
+        option_boot_mode = OptionBootMode(**example)
+        assert option_boot_mode
+
+
+def test_option_boot_mode_wrong_default() -> None:
+    for example in OptionBootMode.Config.schema_extra["examples"]:
+        with pytest.raises(ValueError):
+            example["boot_mode"]["default"] = "__undefined__"
+            OptionBootMode(**example)
