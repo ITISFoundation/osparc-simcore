@@ -10,9 +10,9 @@ from models_library.api_schemas_storage import HealthCheck
 from models_library.app_diagnostics import AppStatusCheck
 from servicelib.aiohttp.rest_utils import extract_and_validate
 
+from ._meta import api_version, api_version_prefix, app_name
 from .db import get_engine_state
 from .db import is_service_responsive as is_pg_responsive
-from .meta import api_version, api_version_prefix, app_name
 
 log = logging.getLogger(__name__)
 

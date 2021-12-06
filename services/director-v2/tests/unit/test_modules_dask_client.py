@@ -4,9 +4,11 @@
 # pylint:disable=protected-access
 # pylint:disable=too-many-arguments
 
+import asyncio
 import functools
 import json
 import random
+import time
 from dataclasses import dataclass
 from typing import Any, Dict, List
 from unittest import mock
@@ -14,6 +16,7 @@ from uuid import uuid4
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
+from dask.distributed import get_worker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.events import TaskStateEvent
 from dask_task_models_library.container_tasks.io import (
@@ -28,7 +31,6 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from pydantic import AnyUrl
 from pydantic.tools import parse_obj_as
-from pytest_lazyfixture import lazy_fixture
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
@@ -69,6 +71,7 @@ async def _wait_for_call(mocked_fct):
 
 @pytest.fixture
 def minimal_dask_config(
+    loop: asyncio.AbstractEventLoop,
     mock_env: None,
     project_env_devel_environment: Dict[str, Any],
     monkeypatch: MonkeyPatch,
@@ -200,6 +203,17 @@ def mpi_image(node_id: NodeID, cluster_id_resource_name: str) -> ImageParams:
     )
 
 
+@pytest.fixture(params=[cpu_image.__name__, gpu_image.__name__, mpi_image.__name__])
+def image_params(
+    cpu_image: ImageParams, gpu_image: ImageParams, mpi_image: ImageParams, request
+) -> ImageParams:
+    return {
+        "cpu_image": cpu_image,
+        "gpu_image": gpu_image,
+        "mpi_image": mpi_image,
+    }[request.param]
+
+
 @pytest.fixture()
 def mocked_node_ports(mocker: MockerFixture):
     mocker.patch(
@@ -221,53 +235,6 @@ async def mocked_user_completed_cb(mocker: MockerFixture) -> mock.AsyncMock:
     return mocker.AsyncMock()
 
 
-def _fake_sidecar_fct(
-    docker_auth: DockerBasicAuth,
-    service_key: str,
-    service_version: str,
-    input_data: TaskInputData,
-    output_data_keys: TaskOutputDataSchema,
-    log_file_url: AnyUrl,
-    command: List[str],
-    expected_annotations: Dict[str, Any],
-) -> TaskOutputData:
-    import time
-
-    from dask.distributed import get_worker
-
-    # sleep a bit in case someone is aborting us
-    time.sleep(1)
-
-    # get the task data
-    worker = get_worker()
-    task = worker.tasks.get(worker.get_current_task())
-    assert task is not None
-    assert task.annotations == expected_annotations
-
-    return TaskOutputData.parse_obj({"some_output_key": 123})
-
-
-def _fake_failing_sidecar_fct(
-    docker_auth: DockerBasicAuth,
-    service_key: str,
-    service_version: str,
-    input_data: TaskInputData,
-    output_data_keys: TaskOutputDataSchema,
-    log_file_url: AnyUrl,
-    command: List[str],
-) -> TaskOutputData:
-
-    raise ValueError("sadly we are failing to execute anything cause we are dumb...")
-
-
-@pytest.mark.parametrize(
-    "image_params",
-    [
-        (lazy_fixture("cpu_image")),
-        (lazy_fixture("gpu_image")),
-        (lazy_fixture("mpi_image")),
-    ],
-)
 async def test_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
@@ -277,6 +244,27 @@ async def test_send_computation_task(
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
 ):
+    # NOTE: this must be inlined so that the test works,
+    # the dask-worker must be able to import the function
+    def fake_sidecar_fct(
+        docker_auth: DockerBasicAuth,
+        service_key: str,
+        service_version: str,
+        input_data: TaskInputData,
+        output_data_keys: TaskOutputDataSchema,
+        log_file_url: AnyUrl,
+        command: List[str],
+        expected_annotations: Dict[str, Any],
+    ) -> TaskOutputData:
+        # sleep a bit in case someone is aborting us
+        time.sleep(1)
+        # get the task data
+        worker = get_worker()
+        task = worker.tasks.get(worker.get_current_task())
+        assert task is not None
+        assert task.annotations == expected_annotations
+        return TaskOutputData.parse_obj({"some_output_key": 123})
+
     # NOTE: We pass another fct so it can run in our localy created dask cluster
     await dask_client.send_computation_tasks(
         user_id=user_id,
@@ -285,7 +273,7 @@ async def test_send_computation_task(
         tasks=image_params.fake_task,
         callback=mocked_user_completed_cb,
         remote_fct=functools.partial(
-            _fake_sidecar_fct, expected_annotations=image_params.expected_annotations
+            fake_sidecar_fct, expected_annotations=image_params.expected_annotations
         ),
     )
     assert (
@@ -312,14 +300,6 @@ async def test_send_computation_task(
     ), "the list of futures was not cleaned correctly"
 
 
-@pytest.mark.parametrize(
-    "image_params",
-    [
-        (lazy_fixture("cpu_image")),
-        (lazy_fixture("gpu_image")),
-        (lazy_fixture("mpi_image")),
-    ],
-)
 async def test_abort_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
@@ -329,6 +309,27 @@ async def test_abort_send_computation_task(
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
 ):
+    # NOTE: this must be inlined so that the test works,
+    # the dask-worker must be able to import the function
+    def fake_sidecar_fct(
+        docker_auth: DockerBasicAuth,
+        service_key: str,
+        service_version: str,
+        input_data: TaskInputData,
+        output_data_keys: TaskOutputDataSchema,
+        log_file_url: AnyUrl,
+        command: List[str],
+        expected_annotations: Dict[str, Any],
+    ) -> TaskOutputData:
+        # sleep a bit in case someone is aborting us
+        time.sleep(1)
+        # get the task data
+        worker = get_worker()
+        task = worker.tasks.get(worker.get_current_task())
+        assert task is not None
+        assert task.annotations == expected_annotations
+        return TaskOutputData.parse_obj({"some_output_key": 123})
+
     await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
@@ -336,7 +337,7 @@ async def test_abort_send_computation_task(
         tasks=image_params.fake_task,
         callback=mocked_user_completed_cb,
         remote_fct=functools.partial(
-            _fake_sidecar_fct, expected_annotations=image_params.expected_annotations
+            fake_sidecar_fct, expected_annotations=image_params.expected_annotations
         ),
     )
     assert (
@@ -371,13 +372,29 @@ async def test_failed_task_returns_exceptions(
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
 ):
+    # NOTE: this must be inlined so that the test works,
+    # the dask-worker must be able to import the function
+    def fake_failing_sidecar_fct(
+        docker_auth: DockerBasicAuth,
+        service_key: str,
+        service_version: str,
+        input_data: TaskInputData,
+        output_data_keys: TaskOutputDataSchema,
+        log_file_url: AnyUrl,
+        command: List[str],
+    ) -> TaskOutputData:
+
+        raise ValueError(
+            "sadly we are failing to execute anything cause we are dumb..."
+        )
+
     await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
         cluster_id=cluster_id,
         tasks=gpu_image.fake_task,
         callback=mocked_user_completed_cb,
-        remote_fct=_fake_failing_sidecar_fct,
+        remote_fct=fake_failing_sidecar_fct,
     )
     assert (
         len(dask_client._taskid_to_future_map) == 1
@@ -389,23 +406,12 @@ async def test_failed_task_returns_exceptions(
         task_result = await future.result(timeout=2)
     await _wait_for_call(mocked_user_completed_cb)
     mocked_user_completed_cb.assert_called_once()
-    mocked_user_completed_cb.assert_called_with(
-        TaskStateEvent(
-            job_id=job_id,
-            msg="sadly we are failing to execute anything cause we are dumb...",
-            state=RunningState.FAILED,
-        )
-    )
+    assert mocked_user_completed_cb.call_args[0][0].job_id == job_id
+    assert mocked_user_completed_cb.call_args[0][0].state == RunningState.FAILED
+    mocked_user_completed_cb.call_args[0][0].msg.find("Traceback")
+    mocked_user_completed_cb.call_args[0][0].msg.find("raise ValueError")
 
 
-@pytest.mark.parametrize(
-    "image_params",
-    [
-        (lazy_fixture("cpu_image")),
-        (lazy_fixture("gpu_image")),
-        (lazy_fixture("mpi_image")),
-    ],
-)
 async def test_invalid_cluster_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,

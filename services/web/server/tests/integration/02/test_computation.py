@@ -21,12 +21,12 @@ from simcore_postgres_database.webserver_models import (
     comp_pipeline,
     comp_tasks,
 )
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.projects.module_setup import setup_projects
-from simcore_service_webserver.projects.projects_handlers import HTTPLocked
 from simcore_service_webserver.resource_manager.module_setup import (
     setup_resource_manager,
 )
@@ -42,8 +42,8 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-API_VERSION = "v0"
-API_PREFIX = "/" + API_VERSION
+API_VTAG = "v0"
+API_PREFIX = "/" + API_VTAG
 
 
 # Selection of core and tool services started in this swarm fixture (integration)
@@ -139,7 +139,7 @@ def client(
     app_config: Dict[str, Any],  ## waits until swarm with *_services are up
     mocker: MockerFixture,
 ) -> TestClient:
-    assert app_config["rest"]["version"] == API_VERSION
+    assert app_config["rest"]["version"] == API_VTAG
 
     app_config["storage"]["enabled"] = False
     app_config["main"]["testing"] = True
@@ -214,7 +214,6 @@ def _assert_db_contents(
     assert len(tasks_db) == len(mock_pipeline)
 
     for task_db in tasks_db:
-        # assert task_db.task_id == (i+1)
         assert task_db.project_id == project_id
         assert task_db.node_id in mock_pipeline.keys()
 
@@ -321,7 +320,7 @@ async def test_start_pipeline(
     fake_workbench_payload = user_project["workbench"]
 
     url_start = client.app.router["start_pipeline"].url_for(project_id=project_id)
-    assert url_start == URL(f"{API_PREFIX}/computation/pipeline/{project_id}:start")
+    assert url_start == URL(f"/{API_VTAG}/computation/pipeline/{project_id}:start")
 
     # POST /v0/computation/pipeline/{project_id}:start
     resp = await client.post(f"{url_start}")
@@ -357,7 +356,7 @@ async def test_start_pipeline(
     # now stop the pipeline
     # POST /v0/computation/pipeline/{project_id}:stop
     url_stop = client.app.router["stop_pipeline"].url_for(project_id=project_id)
-    assert url_stop == URL(f"{API_PREFIX}/computation/pipeline/{project_id}:stop")
+    assert url_stop == URL(f"/{API_VTAG}/computation/pipeline/{project_id}:stop")
     resp = await client.post(f"{url_stop}")
     data, error = await assert_status(resp, expected.no_content)
     if not error:

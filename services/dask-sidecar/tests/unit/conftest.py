@@ -18,7 +18,6 @@ import requests
 import simcore_service_dask_sidecar
 from _pytest.monkeypatch import MonkeyPatch
 from _pytest.tmpdir import TempPathFactory
-from aiohttp.test_utils import loop_context
 from faker import Faker
 from pytest_localftpserver.servers import ProcessFTPServer
 from pytest_mock.plugin import MockerFixture
@@ -75,7 +74,9 @@ def mock_service_envs(
 
 
 @pytest.fixture
-def dask_client(mock_service_envs: None) -> Iterable[distributed.Client]:
+def dask_client(
+    loop: asyncio.AbstractEventLoop, mock_service_envs: None
+) -> Iterable[distributed.Client]:
     print(pformat(dask.config.get("distributed")))
     with distributed.LocalCluster(
         worker_class=distributed.Worker,
@@ -86,12 +87,6 @@ def dask_client(mock_service_envs: None) -> Iterable[distributed.Client]:
     ) as cluster:
         with distributed.Client(cluster) as client:
             yield client
-
-
-@pytest.fixture(scope="module")
-def loop() -> Iterable[asyncio.AbstractEventLoop]:
-    with loop_context() as loop:
-        yield loop
 
 
 @pytest.fixture(scope="module")

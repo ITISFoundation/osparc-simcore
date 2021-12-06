@@ -86,15 +86,15 @@ class ServiceState(Enum):
 
     def __lt__(self, other):
         if self.__class__ is other.__class__:
-            comparison_order = self.comparison_order()
+            comparison_order = ServiceState.comparison_order()
             self_index = comparison_order[self]
             other_index = comparison_order[other]
             return self_index < other_index
         return NotImplemented
 
-    @classmethod
+    @staticmethod
     @lru_cache(maxsize=2)
-    def comparison_order(cls) -> Dict["ServiceState", int]:
+    def comparison_order() -> Dict["ServiceState", int]:
         """States are comparable to supportmin() on a list of ServiceState"""
         return {
             ServiceState.FAILED: 0,
