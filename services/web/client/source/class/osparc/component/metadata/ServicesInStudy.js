@@ -242,22 +242,26 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
             column: this.self().gridPos.updateButton
           });
 
-          const bootModeSB = new qx.ui.form.SelectBox();
-          const nonVoilaItem = new qx.ui.form.ListItem("Non Voila");
-          nonVoilaItem.id = 0;
-          bootModeSB.add(nonVoilaItem);
-          bootModeSB.setSelection([nonVoilaItem]);
-          const voilaItem = new qx.ui.form.ListItem("Voila");
-          bootModeSB.add(voilaItem);
-          nonVoilaItem.id = 1;
-          bootModeSB.addListener("changeSelection", e => {
-            let newBootModeId = e.getData()[0].id;
-            this.__updateBootMode(nodeId, newBootModeId);
-          }, this);
-          this._add(bootModeSB, {
-            row: i,
-            column: this.self().gridPos.bootMode
-          });
+          if ("boot-options" in nodeMetaData && "boot_mode" in nodeMetaData["boot-options"]) {
+            const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
+            const bootModeSB = new qx.ui.form.SelectBox();
+            Object.entries(bootModesMD).forEach(([bootModeId, bootModeMD]) => {
+              const sbItem = new qx.ui.form.ListItem(bootModeMD["label"]);
+              sbItem.bootModeId = bootModeId;
+              bootModeSB.add(sbItem);
+              if (bootModeId === bootModesMD["default"]) {
+                bootModeSB.setSelection([sbItem]);
+              }
+            });
+            bootModeSB.addListener("changeSelection", e => {
+              let newBootModeId = e.getData()[0].bootModeId;
+              this.__updateBootMode(nodeId, newBootModeId);
+            }, this);
+            this._add(bootModeSB, {
+              row: i,
+              column: this.self().gridPos.bootMode
+            });
+          }
         }
 
         i++;
