@@ -1,6 +1,6 @@
 import pytest
 from models_library.rest_pagination import Page, PageLinks, PageMetaInfoLimitOffset
-from servicelib.rest_pagination_utils import PageDict, paginate_data
+from models_library.rest_pagination_utils import PageDict, paginate_data
 from yarl import URL
 
 
