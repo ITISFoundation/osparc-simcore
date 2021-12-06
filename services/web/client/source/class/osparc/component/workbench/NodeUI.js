@@ -293,6 +293,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         }
       }
 
+      this.__addIterationValue();
+    },
+
+    __addIterationValue: function() {
       const label = new qx.ui.basic.Label().set({
         font: "text-18",
         paddingTop: 6
@@ -301,8 +305,9 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       chipContainer.add(label);
       this.getNode().bind("outputs", label, "value", {
         converter: outputs => {
-          if ("out_1" in outputs && "value" in outputs["out_1"]) {
-            return String(outputs["out_1"]["value"]);
+          const portKey = "out_1";
+          if (portKey in outputs && "value" in outputs[portKey]) {
+            return String(outputs[portKey]["value"]);
           }
           return "";
         }
@@ -312,6 +317,37 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     __turnIntoProbeUI: function() {
       const width = 150;
       this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
+
+      const label = new qx.ui.basic.Label().set({
+        font: "text-18",
+        paddingTop: 6
+      });
+      const chipContainer = this.getChildControl("chips");
+      chipContainer.add(label);
+
+      this.getNode().getPropsForm().addListener("linkFieldModified", () => this.__setProbeValue(label), this);
+      this.__setProbeValue(label);
+    },
+
+    __setProbeValue: function(label) {
+      const link = this.getNode().getPropsForm().getLink("in_1");
+      if (link && "nodeUuid" in link) {
+        const inputNodeId = link["nodeUuid"];
+        const portKey = link["output"];
+        const inputNode = this.getNode().getWorkbench().getNode(inputNodeId);
+        if (inputNode) {
+          inputNode.bind("outputs", label, "value", {
+            converter: outputs => {
+              if (portKey in outputs && "value" in outputs[portKey]) {
+                return String(outputs[portKey]["value"]);
+              }
+              return "";
+            }
+          });
+        }
+      } else {
+        label.setValue("");
+      }
     },
 
     // overridden
