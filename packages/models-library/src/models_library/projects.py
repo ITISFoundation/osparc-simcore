@@ -150,11 +150,11 @@ class Project(ProjectCommons):
     # Dev only
     dev: Optional[Dict] = Field(description="object used for development purposes only")
 
-    boot_options: Optional[Dict[EnvVarKey, str]] = Field(
+    boot_options: Optional[Dict[NodeIDStr, Dict[EnvVarKey, str]]] = Field(
         description=(
-            "If the user selects a boot_option defined by a service it will "
-            "appear in here. If no selection is made, the default value defined "
-            "by the service will be injected as an environment variable."
+            "Some services provide alternative parameters to be injected at boot time. "
+            "The user selection should be stored here, and it will overwrite the "
+            "services's defaults."
         )
     )
 

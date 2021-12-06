@@ -128,4 +128,11 @@ projects = sa.Table(
         default=False,
         doc="If true, the project is by default not listed in the API",
     ),
+    sa.Column(
+        "boot_options",
+        JSONB,
+        nullable=False,
+        server_default=sa.text("'{}'::jsonb"),
+        doc="Per service user selected boot options used to overwrite the defaults of the service",
+    ),
 )
