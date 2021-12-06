@@ -5,7 +5,7 @@ from contextlib import suppress
 
 import pkg_resources
 
-_current_distribution = pkg_resources.get_distribution("simcore_service_director_v2")
+_current_distribution = pkg_resources.get_distribution("simcore-service-director-v2")
 
 PROJECT_NAME: str = _current_distribution.project_name
 

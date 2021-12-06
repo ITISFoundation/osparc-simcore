@@ -232,6 +232,7 @@ async def test_list_service_releases_version_filtered(
     latest = await services_repo.get_latest_release(
         "simcore/services/dynamic/jupyterlab"
     )
+    assert latest
     assert latest.version == fake_catalog_with_jupyterlab.expected_latest
 
     releases_1_1_x: List[

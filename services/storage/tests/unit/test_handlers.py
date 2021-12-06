@@ -9,7 +9,7 @@ import openapi_core
 import pytest
 import yaml
 from simcore_service_storage import handlers
-from simcore_service_storage.meta import api_vtag
+from simcore_service_storage._meta import api_vtag
 from simcore_service_storage.resources import resources
 from simcore_service_storage.rest import set_default_names
 

@@ -2,7 +2,6 @@
 # pylint: disable=unused-argument
 
 import asyncio
-from asyncio import BaseEventLoop
 from typing import Any, AsyncIterator, Dict, List
 from uuid import UUID, uuid4
 
@@ -28,8 +27,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     GenericDockerError,
 )
 
-pytestmark = pytest.mark.asyncio
-
 MAX_INT64 = 9223372036854775807
 
 # FIXTURES
@@ -37,7 +34,7 @@ MAX_INT64 = 9223372036854775807
 
 @pytest.fixture
 async def async_docker_client(
-    loop: BaseEventLoop,
+    loop: asyncio.AbstractEventLoop,
     docker_swarm: None,
 ) -> AsyncIterator[aiodocker.docker.Docker]:
     async with aiodocker.Docker() as client:
@@ -50,6 +47,9 @@ def dynamic_sidecar_settings(
 ) -> DynamicSidecarSettings:
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
     return DynamicSidecarSettings.create_from_envs()
 
 
@@ -64,11 +64,10 @@ def network_config(simcore_services_network_name: str) -> Dict[str, Any]:
 
 @pytest.fixture
 async def ensure_swarm_network(
-    loop: BaseEventLoop,
     network_config: Dict[str, Any],
     async_docker_client: aiodocker.docker.Docker,
     docker_swarm: None,
-) -> None:
+) -> AsyncIterator[None]:
     network_id = None
     try:
         network_id = await docker_api.create_network(network_config)
@@ -81,11 +80,10 @@ async def ensure_swarm_network(
 
 @pytest.fixture
 async def cleanup_swarm_network(
-    loop: BaseEventLoop,
     simcore_services_network_name: str,
     async_docker_client: aiodocker.docker.Docker,
     docker_swarm: None,
-) -> None:
+) -> AsyncIterator[None]:
     yield
     docker_network = await async_docker_client.networks.get(
         simcore_services_network_name
@@ -115,11 +113,10 @@ def service_spec(test_service_name: str) -> Dict[str, Any]:
 
 @pytest.fixture
 async def cleanup_test_service_name(
-    loop: BaseEventLoop,
     test_service_name: str,
     async_docker_client: aiodocker.docker.Docker,
     docker_swarm: None,
-) -> None:
+) -> AsyncIterator[None]:
     yield
 
     assert await async_docker_client.services.delete(test_service_name) is True
@@ -160,10 +157,9 @@ def dynamic_sidecar_service_spec(
 
 @pytest.fixture
 async def cleanup_test_dynamic_sidecar_service(
-    loop: BaseEventLoop,
     dynamic_sidecar_service_name: str,
     async_docker_client: aiodocker.docker.Docker,
-) -> None:
+) -> AsyncIterator[None]:
     yield
     assert (
         await async_docker_client.services.delete(dynamic_sidecar_service_name) is True
@@ -224,10 +220,9 @@ def dynamic_sidecar_stack_specs(
 
 @pytest.fixture
 async def cleanup_dynamic_sidecar_stack(
-    loop: BaseEventLoop,
     dynamic_sidecar_stack_specs: List[Dict[str, Any]],
     async_docker_client: aiodocker.docker.Docker,
-) -> None:
+) -> AsyncIterator[None]:
     yield
     for dynamic_sidecar_spec in dynamic_sidecar_stack_specs:
         assert (
@@ -288,6 +283,8 @@ def test_valid_network_names(
 ) -> None:
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", simcore_services_network_name)
+    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
     dynamic_sidecar_settings = DynamicSidecarSettings.create_from_envs()
     assert dynamic_sidecar_settings
 

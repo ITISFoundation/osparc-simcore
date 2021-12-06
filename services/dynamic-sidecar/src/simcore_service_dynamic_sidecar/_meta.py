@@ -6,7 +6,7 @@ from contextlib import suppress
 import pkg_resources
 
 _current_distribution = pkg_resources.get_distribution(
-    "simcore_service_dynamic_sidecar"
+    "simcore-service-dynamic-sidecar"
 )
 
 PROJECT_NAME: str = _current_distribution.project_name

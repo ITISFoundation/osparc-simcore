@@ -3,7 +3,7 @@
 
 import asyncio
 import logging
-from typing import Any, AsyncIterable, Dict
+from typing import Any, AsyncIterable, AsyncIterator, Dict
 from uuid import uuid4
 
 import aiodocker
@@ -77,8 +77,8 @@ def start_request_data(
 
 @pytest.fixture
 async def test_client(
+    loop: asyncio.AbstractEventLoop,
     minimal_configuration: None,
-    loop: asyncio.BaseEventLoop,
     mock_env: None,
     network_name: str,
     monkeypatch,
@@ -114,7 +114,7 @@ async def test_client(
 @pytest.fixture
 async def ensure_services_stopped(
     start_request_data: Dict[str, Any], test_client: TestClient
-) -> None:
+) -> AsyncIterator[None]:
     yield
     # ensure service cleanup when done testing
     async with aiodocker.Docker() as docker_client:

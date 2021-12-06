@@ -87,6 +87,11 @@ def mock_env(monkeypatch: MonkeyPatch, docker_swarm: None) -> None:
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
 
+    monkeypatch.setenv("REGISTRY_AUTH", "false")
+    monkeypatch.setenv("REGISTRY_USER", "test")
+    monkeypatch.setenv("REGISTRY_PW", "test")
+    monkeypatch.setenv("REGISTRY_SSL", "false")
+
     monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
     monkeypatch.setenv("POSTGRES_USER", "mocked_user")
     monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
@@ -228,7 +233,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
         ),
     ],
 )
-async def test_create_dynamic_services(
+def test_create_dynamic_services(
     minimal_config: None,
     mocked_director_v0_service_api: MockRouter,
     docker_swarm: None,
@@ -300,7 +305,7 @@ async def test_create_dynamic_services(
         ),
     ],
 )
-async def test_get_service_status(
+def test_get_service_status(
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
     client: TestClient,
@@ -361,7 +366,7 @@ async def test_get_service_status(
 @pytest.mark.parametrize(
     "can_save, exp_save_state", [(None, True), (True, True), (False, False)]
 )
-async def test_delete_service(
+def test_delete_service(
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
     client: TestClient,
@@ -423,7 +428,7 @@ async def test_delete_service(
         ),
     ],
 )
-async def test_retrieve(
+def test_retrieve(
     mock_retrieve_features: Optional[MockRouter],
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,

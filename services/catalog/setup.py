@@ -1,9 +1,9 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 import re
 import sys
 from pathlib import Path
 from typing import Set
+
+from setuptools import find_packages, setup
 
 
 def read_reqs(reqs_path: Path) -> Set[str]:
@@ -20,12 +20,6 @@ def read_reqs(reqs_path: Path) -> Set[str]:
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-NAME = "simcore-service-catalog"
-VERSION = (CURRENT_DIR / "VERSION").read_text().strip()
-AUTHORS = "Pedro Crespo-Valero (pcrespov), Sylvain Anderegg (sanderegg)"
-DESCRIPTION = "Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)"
-README = (CURRENT_DIR / "README.md").read_text()
-
 PROD_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
     | {
@@ -38,24 +32,29 @@ PROD_REQUIREMENTS = tuple(
 TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
 
-if __name__ == "__main__":
-    from setuptools import find_packages, setup
+SETUP = dict(
+    name="simcore-service-catalog",
+    version=(CURRENT_DIR / "VERSION").read_text().strip(),
+    author=", ".join(
+        (
+            "Pedro Crespo-Valero (pcrespov)",
+            "Sylvain Anderegg (sanderegg)",
+        )
+    ),
+    description="Manages and maintains a catalog of all published components (e.g. macro-algorithms, scripts, etc)",
+    long_description=(CURRENT_DIR / "README.md").read_text(),
+    license="MIT license",
+    python_requires="~=3.8",
+    packages=find_packages(where="src"),
+    package_dir={
+        "": "src",
+    },
+    include_package_data=True,
+    install_requires=PROD_REQUIREMENTS,
+    test_suite="tests",
+    tests_require=TEST_REQUIREMENTS,
+    extras_require={"test": TEST_REQUIREMENTS},
+)
 
-    setup(
-        name=NAME,
-        version=VERSION,
-        author=AUTHORS,
-        description=DESCRIPTION,
-        long_description=README,
-        license="MIT license",
-        python_requires="~=3.8",
-        packages=find_packages(where="src"),
-        package_dir={
-            "": "src",
-        },
-        include_package_data=True,
-        install_requires=PROD_REQUIREMENTS,
-        test_suite="tests",
-        tests_require=TEST_REQUIREMENTS,
-        extras_require={"test": TEST_REQUIREMENTS},
-    )
+if __name__ == "__main__":
+    setup(**SETUP)

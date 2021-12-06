@@ -6,5 +6,6 @@
 #   - "examples" = [ ...] keyword and NOT "example". See https://json-schema.org/understanding-json-schema/reference/generic.html#annotations
 #
 
+import pkg_resources
 
-__version__ = "0.1.0"
+__version__: str = pkg_resources.get_distribution("simcore-models-library").version
