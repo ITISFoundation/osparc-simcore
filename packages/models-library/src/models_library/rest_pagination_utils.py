@@ -1,33 +1,36 @@
 from math import ceil
-from typing import Any, Dict, List, Protocol, TypedDict, Union
+from typing import Any, Dict, List, Protocol, TypedDict, Union, runtime_checkable
 
-from models_library.rest_pagination import PageLinks, PageMetaInfoLimitOffset
-from yarl import URL
+from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
+
+# In this repo we use two type of URL-like data structures:
+#        - from yarl (aiohttp-style) and
+#        - from starlette (fastapi-style)
+#
+# Here define protocol to avoid including starlette  or yarl in this librarie's requirements
+# and a helper function below that can handle both protocols at runtime
+
+
+@runtime_checkable
+class _YarlURL(Protocol):
+    def update_query(self, *args, **kwargs):
+        ...
 
 
 class _StarletteURL(Protocol):
-    # Convenience protocol to avoid including starlette in requirements
-    #
     # SEE starlette.data_structures.URL
     #  in https://github.com/encode/starlette/blob/master/starlette/datastructures.py#L130
-    #
 
     def replace_query_params(self, **kwargs: Any) -> "_StarletteURL":
         ...
 
 
-URLType = Union[URL, _StarletteURL]
+_URLType = Union[_YarlURL, _StarletteURL]
 
 
-def _replace_query(url: URLType, query: Dict[str, Any]):
-    """In this repo we use two type of URL-like data structures:
-        - from yarl (aiohttp-style) and
-        - from starlette (fastapi-style).
-
-    This helper function ensures query replacement works with both
-    """
-    if isinstance(url, URL):
-        # yarl URL
+def _replace_query(url: _URLType, query: Dict[str, Any]):
+    """This helper function ensures query replacement works with both"""
+    if isinstance(url, _YarlURL):
         new_url = url.update_query(query)
     else:
         new_url = url.replace_query_params(**query)
@@ -42,12 +45,18 @@ class PageDict(TypedDict):
 
 def paginate_data(
     data: List[Any],
-    request_url: URLType,
+    request_url: _URLType,
     total: int,
     limit: int,
     offset: int,
 ) -> PageDict:
-    """Helper to build page-like objects to feed to Page[X] pydantic model class"""
+    """Builds page-like objects to feed to Page[X] pydantic model class
+
+    Usage:
+
+        obj: PageDict = paginate_data( ... )
+        model = Page[MyModelItem].parse_obj(obj)
+    """
     last_page = ceil(total / limit) - 1
 
     return PageDict(
