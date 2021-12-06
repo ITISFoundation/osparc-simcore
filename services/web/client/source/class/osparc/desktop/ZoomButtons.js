@@ -36,9 +36,12 @@ qx.Class.define("osparc.desktop.ZoomButtons", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox());
+    this._setLayout(new qx.ui.layout.HBox(0));
 
-    this.setSpacing(0);
+    this.set({
+      spacing: 0,
+      backgroundColor: "transparent"
+    });
 
     this.__buildLayout();
   },
@@ -57,9 +60,10 @@ qx.Class.define("osparc.desktop.ZoomButtons", {
     },
 
     __getZoomBtn: function(icon, tooltip) {
-      const btn = new qx.ui.toolbar.Button(null, icon+"/18").set({
+      const btn = new qx.ui.toolbar.Button(null, icon+"/20").set({
         width: ZOOM_BUTTON_SIZE,
-        height: ZOOM_BUTTON_SIZE
+        height: ZOOM_BUTTON_SIZE,
+        backgroundColor: "transparent"
       });
       if (tooltip) {
         btn.setToolTipText(tooltip);
