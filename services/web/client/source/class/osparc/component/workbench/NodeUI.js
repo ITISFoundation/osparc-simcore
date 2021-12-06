@@ -298,8 +298,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     __addIterationValue: function() {
       const label = new qx.ui.basic.Label().set({
-        font: "text-18",
-        paddingTop: 6
+        paddingLeft: 5,
+        font: "text-18"
       });
       const chipContainer = this.getChildControl("chips");
       chipContainer.add(label);
@@ -319,8 +319,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
 
       const label = new qx.ui.basic.Label().set({
-        font: "text-18",
-        paddingTop: 6
+        paddingLeft: 5,
+        font: "text-18"
       });
       const chipContainer = this.getChildControl("chips");
       chipContainer.add(label);
