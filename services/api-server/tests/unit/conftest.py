@@ -1,29 +1,36 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
+# pylint:disable=no-name-in-module
 # pylint:disable=redefined-outer-name
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
 
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+from pprint import pformat
 from typing import Callable, Dict, Iterator, Union
 
 import aiopg.sa
 import aiopg.sa.engine as aiopg_sa_engine
+import faker
+import passlib.hash
 import pytest
 import simcore_postgres_database.cli as pg_cli
 import simcore_service_api_server
+import simcore_service_api_server.db.tables as orm
 import sqlalchemy as sa
 import sqlalchemy.engine as sa_engine
 import yaml
-from _helpers import RWApiKeysRepository, RWUsersRepository
+from aiopg.sa.result import RowProxy
 from asgi_lifespan import LifespanManager
 from dotenv import dotenv_values
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from simcore_postgres_database.models.base import metadata
+from simcore_service_api_server.db.repositories import BaseRepository
+from simcore_service_api_server.db.repositories.users import UsersRepository
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -35,6 +42,71 @@ pytest_plugins = [
     "pytest_simcore.pydantic_models",
 ]
 
+
+# HELPERS -----------------------------------------------------------------
+
+
+fake = faker.Faker()
+
+
+def _hash_it(password: str) -> str:
+    return passlib.hash.sha256_crypt.using(rounds=1000).hash(password)
+
+
+# TODO: this should be generated from the metadata in orm.users table
+def random_user(**overrides) -> Dict:
+    data = dict(
+        name=fake.name(),
+        email=fake.email(),
+        password_hash=_hash_it("secret"),
+        status=orm.UserStatus.ACTIVE,
+        created_ip=fake.ipv4(),
+    )
+
+    password = overrides.pop("password")
+    if password:
+        overrides["password_hash"] = _hash_it(password)
+
+    data.update(overrides)
+    return data
+
+
+class RWUsersRepository(UsersRepository):
+    # pylint: disable=no-value-for-parameter
+
+    async def create(self, **user) -> int:
+        values = random_user(**user)
+        async with self.db_engine.acquire() as conn:
+            user_id = await conn.scalar(orm.users.insert().values(**values))
+
+        print("Created user ", pformat(values), f"with user_id={user_id}")
+        return user_id
+
+
+class RWApiKeysRepository(BaseRepository):
+    # pylint: disable=no-value-for-parameter
+
+    async def create(self, name: str, *, api_key: str, api_secret: str, user_id: int):
+        values = dict(
+            display_name=name,
+            user_id=user_id,
+            api_key=api_key,
+            api_secret=api_secret,
+        )
+        async with self.db_engine.acquire() as conn:
+            _id = await conn.scalar(orm.api_keys.insert().values(**values))
+
+            # check inserted
+            row: RowProxy = await (
+                await conn.execute(
+                    orm.api_keys.select().where(orm.api_keys.c.id == _id)
+                )
+            ).first()
+
+        return ApiKeyInDB.from_orm(row)
+
+
+# FIXTURES -----------------------------------------------------------------
 
 ## TEST_ENVIRON ---
 
@@ -71,7 +143,7 @@ def project_env_devel_environment(project_env_devel_dict, monkeypatch):
     monkeypatch.setenv("API_SERVER_DEV_FEATURES_ENABLED", "1")
 
 
-## FOLDER LAYOUT ---------------------------------------------------------------------
+## FOLDER LAYOUT ----
 
 
 @pytest.fixture(scope="session")
@@ -99,7 +171,7 @@ def tests_utils_dir(project_tests_dir: Path) -> Path:
     return utils_dir
 
 
-## POSTGRES ---------------------------------------------------------------------
+## POSTGRES -----
 
 
 @pytest.fixture(scope="session")
@@ -202,7 +274,7 @@ def apply_migration(postgres_service: Dict, make_engine) -> Iterator[None]:
     metadata.drop_all(engine)
 
 
-## APP & TEST CLIENT -----------------------------------------------------------------------
+## APP & TEST CLIENT ------
 
 
 @pytest.fixture
@@ -243,7 +315,7 @@ def sync_client(app: FastAPI) -> TestClient:
         yield cli
 
 
-## FAKE DATA injected at repositories interface -------------------------------------------------
+## FAKE DATA injected at repositories interface ----
 
 
 @pytest.fixture

@@ -12,6 +12,7 @@ import re
 # copied out from dask
 from dataclasses import dataclass
 from pprint import pformat
+from random import randint
 from typing import Dict, Iterable, List
 from unittest import mock
 from uuid import uuid4
@@ -173,9 +174,11 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         if integration_version > LEGACY_INTEGRATION_VERSION
         else "input.json"
     )
+
     list_of_commands += [
         f"(test -f ${{INPUT_FOLDER}}/{input_json_file_name} || (echo ${{INPUT_FOLDER}}/{input_json_file_name} file does not exists && exit 1))",
         f"echo $(cat ${{INPUT_FOLDER}}/{input_json_file_name})",
+        f"sleep {randint(1,4)}",
     ]
 
     # defines the expected outputs
@@ -275,37 +278,34 @@ def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
         yield caplog
 
 
-@pytest.mark.parametrize(
-    "task",
-    [
-        pytest.lazy_fixture("ubuntu_task"),  # type: ignore
-    ],
-)
 def test_run_computational_sidecar_real_fct(
     caplog_info_level: LogCaptureFixture,
     loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
     dask_subsystem_mock: Dict[str, MockerFixture],
-    task: ServiceExampleParam,
+    ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
 ):
 
     mocked_get_integration_version = mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
         autospec=True,
-        return_value=task.integration_version,
+        return_value=ubuntu_task.integration_version,
     )
     output_data = run_computational_sidecar(
-        task.docker_basic_auth,
-        task.service_key,
-        task.service_version,
-        task.input_data,
-        task.output_data_keys,
-        task.log_file_url,
-        task.command,
+        ubuntu_task.docker_basic_auth,
+        ubuntu_task.service_key,
+        ubuntu_task.service_version,
+        ubuntu_task.input_data,
+        ubuntu_task.output_data_keys,
+        ubuntu_task.log_file_url,
+        ubuntu_task.command,
     )
     mocked_get_integration_version.assert_called_once_with(
-        mock.ANY, task.docker_basic_auth, task.service_key, task.service_version
+        mock.ANY,
+        ubuntu_task.docker_basic_auth,
+        ubuntu_task.service_key,
+        ubuntu_task.service_version,
     )
     for event in [TaskProgressEvent, TaskStateEvent, TaskLogEvent]:
         dask_subsystem_mock["dask_event_publish"].assert_any_call(  # type: ignore
@@ -313,27 +313,27 @@ def test_run_computational_sidecar_real_fct(
         )
 
     # check that the task produces expected logs
-    for log in task.expected_logs:
+    for log in ubuntu_task.expected_logs:
         r = re.compile(
-            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: ({log})"
+            rf"\[{ubuntu_task.service_key}:{ubuntu_task.service_version} - .+\/.+ - .+\]: ({log})"
         )
         search_results = list(filter(r.search, caplog_info_level.messages))
         assert (
             len(search_results) > 0
         ), f"Could not find '{log}' in worker_logs:\n {pformat(caplog_info_level.messages, width=240)}"
-    for log in task.expected_logs:
+    for log in ubuntu_task.expected_logs:
         assert re.search(
-            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: ({log})",
+            rf"\[{ubuntu_task.service_key}:{ubuntu_task.service_version} - .+\/.+ - .+\]: ({log})",
             caplog_info_level.text,
         )
     # check that the task produce the expected data, not less not more
-    for k, v in task.expected_output_data.items():
+    for k, v in ubuntu_task.expected_output_data.items():
         assert k in output_data
         assert output_data[k] == v
 
     for k, v in output_data.items():
-        assert k in task.expected_output_data
-        assert v == task.expected_output_data[k]
+        assert k in ubuntu_task.expected_output_data
+        assert v == ubuntu_task.expected_output_data[k]
 
         # if there are file urls in the output, check they exist
         if isinstance(v, FileUrl):
@@ -341,36 +341,68 @@ def test_run_computational_sidecar_real_fct(
                 assert fp.details.get("size") > 0
 
     # check the task has created a log file
-    with fsspec.open(f"{task.log_file_url}", mode="rt") as fp:
+    with fsspec.open(f"{ubuntu_task.log_file_url}", mode="rt") as fp:
         saved_logs = fp.read()
     assert saved_logs
-    for log in task.expected_logs:
+    for log in ubuntu_task.expected_logs:
         assert log in saved_logs
 
 
-@pytest.mark.parametrize(
-    "task",
-    [
-        pytest.lazy_fixture("ubuntu_task"),  # type: ignore
-    ],
-)
+def test_run_multiple_computational_sidecar_dask(
+    loop: asyncio.AbstractEventLoop,
+    dask_client: Client,
+    ubuntu_task: ServiceExampleParam,
+    mocker: MockerFixture,
+):
+    NUMBER_OF_TASKS = 50
+
+    mocker.patch(
+        "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
+        autospec=True,
+        return_value=ubuntu_task.integration_version,
+    )
+    futures = [
+        dask_client.submit(
+            run_computational_sidecar,
+            ubuntu_task.docker_basic_auth,
+            ubuntu_task.service_key,
+            ubuntu_task.service_version,
+            ubuntu_task.input_data,
+            ubuntu_task.output_data_keys,
+            ubuntu_task.log_file_url,
+            ubuntu_task.command,
+            resources={},
+        )
+        for _ in range(NUMBER_OF_TASKS)
+    ]
+
+    results = dask_client.gather(futures)
+
+    # for result in results:
+    # check that the task produce the expected data, not less not more
+    for output_data in results:
+        for k, v in ubuntu_task.expected_output_data.items():
+            assert k in output_data
+            assert output_data[k] == v
+
+
 def test_run_computational_sidecar_dask(
-    dask_client: Client, task: ServiceExampleParam, mocker: MockerFixture
+    dask_client: Client, ubuntu_task: ServiceExampleParam, mocker: MockerFixture
 ):
     mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
         autospec=True,
-        return_value=task.integration_version,
+        return_value=ubuntu_task.integration_version,
     )
     future = dask_client.submit(
         run_computational_sidecar,
-        task.docker_basic_auth,
-        task.service_key,
-        task.service_version,
-        task.input_data,
-        task.output_data_keys,
-        task.log_file_url,
-        task.command,
+        ubuntu_task.docker_basic_auth,
+        ubuntu_task.service_key,
+        ubuntu_task.service_version,
+        ubuntu_task.input_data,
+        ubuntu_task.output_data_keys,
+        ubuntu_task.log_file_url,
+        ubuntu_task.command,
         resources={},
     )
 
@@ -380,9 +412,9 @@ def test_run_computational_sidecar_dask(
 
     # check that the task produces expected logs
     worker_logs = [log for _, log in dask_client.get_worker_logs()[worker_name]]  # type: ignore
-    for log in task.expected_logs:
+    for log in ubuntu_task.expected_logs:
         r = re.compile(
-            rf"\[{task.service_key}:{task.service_version} - .+\/.+ - .+\]: ({log})"
+            rf"\[{ubuntu_task.service_key}:{ubuntu_task.service_version} - .+\/.+ - .+\]: ({log})"
         )
         search_results = list(filter(r.search, worker_logs))
         assert (
@@ -390,13 +422,13 @@ def test_run_computational_sidecar_dask(
         ), f"Could not find {log} in worker_logs:\n {pformat(worker_logs, width=240)}"
 
     # check that the task produce the expected data, not less not more
-    for k, v in task.expected_output_data.items():
+    for k, v in ubuntu_task.expected_output_data.items():
         assert k in output_data
         assert output_data[k] == v
 
     for k, v in output_data.items():
-        assert k in task.expected_output_data
-        assert v == task.expected_output_data[k]
+        assert k in ubuntu_task.expected_output_data
+        assert v == ubuntu_task.expected_output_data[k]
 
         # if there are file urls in the output, check they exist
         if isinstance(v, FileUrl):
@@ -404,33 +436,27 @@ def test_run_computational_sidecar_dask(
                 assert fp.details.get("size") > 0
 
 
-@pytest.mark.parametrize(
-    "task",
-    [
-        pytest.lazy_fixture("ubuntu_task_fail"),  # type: ignore
-    ],
-)
 def test_failing_service_raises_exception(
     caplog_info_level: LogCaptureFixture,
     loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
     dask_subsystem_mock: Dict[str, MockerFixture],
-    task: ServiceExampleParam,
+    ubuntu_task_fail: ServiceExampleParam,
     mocker: MockerFixture,
 ):
     mocked_get_integration_version = mocker.patch(
         "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
         autospec=True,
-        return_value=task.integration_version,
+        return_value=ubuntu_task_fail.integration_version,
     )
 
     with pytest.raises(ServiceRunError):
         run_computational_sidecar(
-            task.docker_basic_auth,
-            task.service_key,
-            task.service_version,
-            task.input_data,
-            task.output_data_keys,
-            task.log_file_url,
-            task.command,
+            ubuntu_task_fail.docker_basic_auth,
+            ubuntu_task_fail.service_key,
+            ubuntu_task_fail.service_version,
+            ubuntu_task_fail.input_data,
+            ubuntu_task_fail.output_data_keys,
+            ubuntu_task_fail.log_file_url,
+            ubuntu_task_fail.command,
         )

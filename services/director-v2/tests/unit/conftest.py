@@ -26,20 +26,6 @@ def simcore_services_network_name() -> str:
     return "test_network_name"
 
 
-@pytest.fixture(autouse=True)
-def disable_dynamic_sidecar_scheduler_in_unit_tests(
-    monkeypatch, simcore_services_network_name: str
-) -> None:
-    # FIXME: PC-> ANE: please avoid autouse!!!
-    monkeypatch.setenv("REGISTRY_AUTH", "false")
-    monkeypatch.setenv("REGISTRY_USER", "test")
-    monkeypatch.setenv("REGISTRY_PW", "test")
-    monkeypatch.setenv("REGISTRY_SSL", "false")
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", simcore_services_network_name)
-    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
-
-
 @pytest.fixture
 def simcore_service_labels() -> SimcoreServiceLabels:
     return SimcoreServiceLabels(
@@ -84,6 +70,23 @@ def scheduler_data_from_service_labels_stored_data(
     return SchedulerData.from_service_labels_stored_data(
         service_labels_stored_data=service_labels_stored_data, port=dynamic_sidecar_port
     )
+
+
+@pytest.fixture(
+    params=[
+        scheduler_data_from_http_request.__name__,
+        scheduler_data_from_service_labels_stored_data.__name__,
+    ]
+)
+def scheduler_data(
+    scheduler_data_from_http_request: SchedulerData,
+    scheduler_data_from_service_labels_stored_data: SchedulerData,
+    request,
+) -> SchedulerData:
+    return {
+        "scheduler_data_from_http_request": scheduler_data_from_http_request,
+        "scheduler_data_from_service_labels_stored_data": scheduler_data_from_service_labels_stored_data,
+    }[request.param]
 
 
 @pytest.fixture

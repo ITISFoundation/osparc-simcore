@@ -99,7 +99,7 @@ def _some_long_running_task_with_monitoring() -> int:
                 await asyncio.sleep(0.5)
             return 12
 
-    return asyncio.get_event_loop().run_until_complete(_long_running_task_async())
+    return asyncio.run(_long_running_task_async())
 
 
 def test_monitor_task_abortion(dask_client: distributed.Client):

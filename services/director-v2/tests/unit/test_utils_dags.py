@@ -186,9 +186,7 @@ class MinimalGraphTest:
         ),
     ],
 )
-async def test_create_minimal_graph(
-    loop, fake_workbench: Workbench, graph: MinimalGraphTest
-):
+async def test_create_minimal_graph(fake_workbench: Workbench, graph: MinimalGraphTest):
     """the workbench is made of file-picker and 4 sleepers. sleeper 1 has already run."""
     complete_dag: nx.DiGraph = create_complete_dag(fake_workbench)
 

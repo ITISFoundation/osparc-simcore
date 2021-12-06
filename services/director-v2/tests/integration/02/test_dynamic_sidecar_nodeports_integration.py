@@ -6,7 +6,6 @@ import hashlib
 import json
 import logging
 import os
-from asyncio import BaseEventLoop
 from collections import namedtuple
 from itertools import tee
 from pathlib import Path
@@ -32,7 +31,6 @@ import pytest
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
 from aiodocker.containers import DockerContainer
-from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.projects import Node, ProjectAtDB, Workbench
 from models_library.projects_pipeline import PipelineDetails
@@ -55,14 +53,11 @@ from simcore_sdk.node_data import data_manager
 # FIXTURES
 from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
-from simcore_service_director_v2.core.application import init_app
-from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
 from starlette import status
-from starlette.testclient import TestClient
 from utils import (
     SEPARATOR,
     assert_all_services_running,
@@ -108,6 +103,7 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def minimal_configuration(  # pylint:disable=too-many-arguments
+    loop: asyncio.AbstractEventLoop,
     sleeper_service: Dict,
     dy_static_file_server_dynamic_sidecar_service: Dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
@@ -230,18 +226,14 @@ def workbench_dynamic_services(
 
 
 @pytest.fixture
-async def db_manager(postgres_dsn: Dict[str, str]) -> AsyncIterable[DBManager]:
-    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        **postgres_dsn
-    )
-    async with aiopg.sa.create_engine(dsn) as db_engine:
-        yield DBManager(db_engine)
+async def db_manager(aiopg_engine: aiopg.sa.engine.Engine) -> DBManager:
+    return DBManager(aiopg_engine)
 
 
-@pytest.fixture
-async def fast_api_app(
-    minimal_configuration: None, network_name: str, monkeypatch: MonkeyPatch
-) -> FastAPI:
+@pytest.fixture(scope="function")
+def mock_env(
+    monkeypatch: MonkeyPatch, network_name: str, rabbit_service: RabbitConfig
+) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
@@ -268,35 +260,14 @@ async def fast_api_app(
     # the dynamic-sidecar (running inside a container) will use
     # this address to reach the rabbit service
     monkeypatch.setenv("RABBIT_HOST", f"{get_ip()}")
-
-    settings = AppSettings.create_from_envs()
-
-    app = init_app(settings)
-    return app
-
-
-@pytest.fixture
-async def director_v2_client(
-    loop: BaseEventLoop, fast_api_app: FastAPI
-) -> AsyncIterable[httpx.AsyncClient]:
-    async with LifespanManager(fast_api_app):
-        async with httpx.AsyncClient(
-            app=fast_api_app, base_url="http://testserver/v2"
-        ) as client:
-            yield client
-
-
-@pytest.fixture
-def client(fast_api_app: FastAPI) -> TestClient:
-    """required to avoid rewriting existing code"""
-    return TestClient(fast_api_app, raise_server_exceptions=True)
+    monkeypatch.setenv("POSTGRES_HOST", f"{get_ip()}")
 
 
 @pytest.fixture
 async def cleanup_services_and_networks(
     workbench_dynamic_services: Dict[str, Node],
     current_study: ProjectAtDB,
-    director_v2_client: httpx.AsyncClient,
+    initialized_app: FastAPI,
 ) -> AsyncIterable[None]:
     yield None
     # ensure service cleanup when done testing
@@ -313,9 +284,8 @@ async def cleanup_services_and_networks(
 
         project_id = f"{current_study.uuid}"
 
-        # pylint: disable=protected-access
         scheduler_interval = (
-            director_v2_client._transport.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS
+            initialized_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS
         )
         # sleep enough to ensure the observation cycle properly stopped the service
         await asyncio.sleep(2 * scheduler_interval)
@@ -442,18 +412,6 @@ async def _assert_port_values(
     assert sleeper_out_1 == dy_file_output
     assert sleeper_out_1 == dy_compose_spec_file_input
     assert sleeper_out_1 == dy_compose_spec_file_output
-
-
-def _patch_postgres_address(director_v2_client: httpx.AsyncClient) -> None:
-    # the dynamic-sidecar cannot reach postgres via port
-    # forwarding to localhost. the docker postgres host must be used
-
-    # pylint: disable=protected-access
-    director_v2_client._transport.app.state.settings.POSTGRES.__config__.allow_mutation = (
-        True
-    )
-    director_v2_client._transport.app.state.settings.POSTGRES.__config__.frozen = False
-    director_v2_client._transport.app.state.settings.POSTGRES.POSTGRES_HOST = "postgres"
 
 
 def _assert_command_successful(command: str) -> None:
@@ -767,12 +725,11 @@ async def test_nodeports_integration(
     minimal_configuration: None,
     cleanup_services_and_networks: None,
     update_project_workbench_with_comp_tasks: Callable,
-    client: TestClient,
+    async_client: httpx.AsyncClient,
     db_manager: DBManager,
     user_db: Dict,
     current_study: ProjectAtDB,
     services_endpoint: Dict[str, URL],
-    director_v2_client: httpx.AsyncClient,
     workbench_dynamic_services: Dict[str, Node],
     services_node_uuids: ServicesNodeUUIDs,
     fake_dy_success: Dict[str, Any],
@@ -806,12 +763,10 @@ async def test_nodeports_integration(
 
     # STEP 1
 
-    _patch_postgres_address(director_v2_client)
-
     dynamic_services_urls: Dict[
         str, str
     ] = await _wait_for_dynamic_services_to_be_running(
-        director_v2_client=director_v2_client,
+        director_v2_client=async_client,
         director_v0_url=services_endpoint["director"],
         user_id=user_db["id"],
         workbench_dynamic_services=workbench_dynamic_services,
@@ -820,8 +775,8 @@ async def test_nodeports_integration(
 
     # STEP 2
 
-    response = create_pipeline(
-        client,
+    response = await create_pipeline(
+        async_client,
         project=current_study,
         user_id=user_db["id"],
         start_pipeline=True,
@@ -830,8 +785,8 @@ async def test_nodeports_integration(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     # check the contents is correct: a pipeline that just started gets PUBLISHED
-    assert_computation_task_out_obj(
-        client,
+    await assert_computation_task_out_obj(
+        async_client,
         task_out,
         project=current_study,
         exp_task_state=RunningState.PUBLISHED,
@@ -840,7 +795,7 @@ async def test_nodeports_integration(
 
     # wait for the computation to start
     await assert_pipeline_status(
-        client,
+        async_client,
         task_out.url,
         user_db["id"],
         current_study.uuid,
@@ -849,11 +804,11 @@ async def test_nodeports_integration(
 
     # wait for the computation to finish (either by failing, success or abort)
     task_out = await assert_pipeline_status(
-        client, task_out.url, user_db["id"], current_study.uuid
+        async_client, task_out.url, user_db["id"], current_study.uuid
     )
 
-    assert_computation_task_out_obj(
-        client,
+    await assert_computation_task_out_obj(
+        async_client,
         task_out,
         project=current_study,
         exp_task_state=RunningState.SUCCESS,
@@ -873,14 +828,14 @@ async def test_nodeports_integration(
     )
 
     await _assert_retrieve_completed(
-        director_v2_client=director_v2_client,
+        director_v2_client=async_client,
         director_v0_url=services_endpoint["director"],
         service_uuid=services_node_uuids.dy,
         dynamic_services_urls=dynamic_services_urls,
     )
 
     await _assert_retrieve_completed(
-        director_v2_client=director_v2_client,
+        director_v2_client=async_client,
         director_v0_url=services_endpoint["director"],
         service_uuid=services_node_uuids.dy_compose_spec,
         dynamic_services_urls=dynamic_services_urls,
@@ -918,14 +873,14 @@ async def test_nodeports_integration(
     await asyncio.gather(
         *(
             assert_stop_service(
-                director_v2_client=director_v2_client,
+                director_v2_client=async_client,
                 service_uuid=service_uuid,
             )
             for service_uuid in workbench_dynamic_services
         )
     )
 
-    await _wait_for_dy_services_to_fully_stop(director_v2_client)
+    await _wait_for_dy_services_to_fully_stop(async_client)
 
     dy_path_data_manager_before = await _fetch_data_via_data_manager(
         dir_tag="dy",
@@ -946,7 +901,7 @@ async def test_nodeports_integration(
     # STEP 6
 
     await _wait_for_dynamic_services_to_be_running(
-        director_v2_client=director_v2_client,
+        director_v2_client=async_client,
         director_v0_url=services_endpoint["director"],
         user_id=user_db["id"],
         workbench_dynamic_services=workbench_dynamic_services,

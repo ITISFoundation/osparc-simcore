@@ -1,5 +1,7 @@
 import warnings
 
+from ._meta import __version__
+
 #
 # NOTE: Some BaseSettings are using aliases (e.g. version for vtag) to facility construct
 #  pydantic settings from names defined in trafaret schemas for the config files

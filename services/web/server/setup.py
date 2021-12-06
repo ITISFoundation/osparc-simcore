@@ -1,31 +1,40 @@
 import re
 import sys
 from pathlib import Path
+from typing import Set
 
 from setuptools import find_packages, setup
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+def read_reqs(reqs_path: Path) -> Set[str]:
+    return {
+        r
+        for r in re.findall(
+            r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)",
+            reqs_path.read_text(),
+            re.MULTILINE,
+        )
+        if isinstance(r, str)
+    }
 
 
-def read_reqs(reqs_path: Path):
-    return re.findall(
-        r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)", reqs_path.read_text(), re.MULTILINE
-    )
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-
-# -----------------------------------------------------------------
 # Hard requirements on third-parties and latest for in-repo packages
-install_requirements = read_reqs(current_dir / "requirements" / "_base.txt") + [
-    "simcore-models-library",
-    "simcore-postgres-database",
-    "simcore-sdk",
-    "simcore-service-library",
-]
-test_requirements = read_reqs(current_dir / "requirements" / "_test.txt")
+INSTALL_REQUIREMENTS = tuple(
+    read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
+    | {
+        "simcore-models-library",
+        "simcore-postgres-database",
+        "simcore-sdk",
+        "simcore-service-library",
+    }
+)
+TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
-setup(
+SETUP = dict(
     name="simcore-service-webserver",
-    version="0.7.0",
+    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
     packages=find_packages(where="src"),
     package_dir={
         "": "src",
@@ -46,7 +55,11 @@ setup(
         ]
     },
     python_requires="~=3.8",
-    install_requires=install_requirements,
-    tests_require=test_requirements,
+    install_requires=INSTALL_REQUIREMENTS,
+    tests_require=TEST_REQUIREMENTS,
     setup_requires=["pytest-runner"],
 )
+
+
+if __name__ == "__main__":
+    setup(**SETUP)

@@ -10,7 +10,11 @@ import tracemalloc
 from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List, Tuple
+
+import orjson
+from models_library.basic_types import SHA1Str
+from servicelib.json_serialization import json_dumps
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 log = logging.getLogger(__name__)
@@ -143,3 +147,26 @@ def compose_error_msg(msg: str) -> str:
 def snake_to_camel(subject: str) -> str:
     parts = subject.lower().split("_")
     return parts[0] + "".join(x.title() for x in parts[1:])
+
+
+# -----------------------------------------------
+#
+# SERIALIZATION, CHECKSUMS,
+#
+
+
+def orjson_dumps(v, *, default=None) -> str:
+    # NOTE: orjson.dumps returns bytes, to match standard
+    # json.dumps we need to decode
+    return orjson.dumps(v, default=default).decode()
+
+
+def compute_sha1(data: Any) -> SHA1Str:
+    # SEE options in https://github.com/ijl/orjson#option
+    raw_hash = hashlib.sha1(  # nosec
+        orjson.dumps(data, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS)
+    )
+    return raw_hash.hexdigest()
+
+
+__all__: Tuple[str, ...] = ("json_dumps", "orjson_dumps")
