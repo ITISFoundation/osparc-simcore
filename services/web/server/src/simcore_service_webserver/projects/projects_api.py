@@ -252,7 +252,7 @@ async def lock_with_notification(
         ):
             log.debug(
                 "Project [%s] lock acquired",
-                project_uuid,
+                f"{project_uuid=}",
             )
             if notify_users:
                 await retrieve_and_notify_project_locked_state(
@@ -261,7 +261,7 @@ async def lock_with_notification(
             yield
             log.debug(
                 "Project [%s] lock released",
-                project_uuid,
+                f"{project_uuid=}",
             )
     except ProjectLockError:
         # someone else has already the lock?
@@ -270,8 +270,8 @@ async def lock_with_notification(
         )
         log.error(
             "Project [%s] already locked in state '%s'. Please check with support.",
-            project_uuid,
-            prj_states.locked.status,
+            f"{project_uuid=}",
+            f"{prj_states.locked.status=}",
         )
         raise
     finally:
@@ -766,8 +766,8 @@ async def _get_project_lock_state(
 
     log.debug(
         "project [%s] might be used by the following users: [%s]",
-        project_uuid,
-        set_user_ids,
+        f"{project_uuid=}",
+        f"{set_user_ids=}",
     )
     usernames: List[UserNameDict] = [
         await get_user_name(app, uid) for uid in set_user_ids
@@ -778,8 +778,8 @@ async def _get_project_lock_state(
             # in this case the project is re-openable by the same user until it gets closed
             log.debug(
                 "project [%s] is in use by the same user [%s] that is currently disconnected, so it is unlocked for this specific user and opened",
-                project_uuid,
-                set_user_ids,
+                f"{project_uuid=}",
+                f"{set_user_ids=}",
             )
             return ProjectLocked(
                 value=False,
