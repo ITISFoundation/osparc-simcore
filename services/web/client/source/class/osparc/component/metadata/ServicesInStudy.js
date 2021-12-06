@@ -93,11 +93,13 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     },
 
     __updateBootMode: function(nodeId, newBootModeId) {
-      if (!("bootMode" in this.__studyData)) {
-        this.__studyData["bootMode"] = {};
+      if (!("bootOptions" in this.__studyData)) {
+        this.__studyData["bootOptions"] = {};
       }
-      this.__studyData["bootMode"][nodeId] = newBootModeId;
-      console.log("update Boot Mode", this.__studyData);
+      this.__studyData["bootOptions"][nodeId] = {
+        "bootMode": newBootModeId
+      };
+      console.log("Update Boot Mode", this.__studyData);
       return;
 
       const params = {
