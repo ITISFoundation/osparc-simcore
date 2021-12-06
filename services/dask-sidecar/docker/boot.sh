@@ -39,7 +39,7 @@ if [ ${DASK_START_AS_SCHEDULER+x} ]; then
   echo "$INFO" "Starting as ${SCHEDULER_VERSION}..."
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
 
-    exec watchmedo auto-restart --recursive --pattern="*.py" -- \
+    exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
       dask-scheduler
 
   else
@@ -71,7 +71,8 @@ else
   num_gpus=$(python -c "from simcore_service_dask_sidecar.utils import num_available_gpus; print(num_available_gpus());")
 
   # RAM (is computed similarly as the default dask-sidecar computation)
-  ram=$(($(python -c "import psutil; print(int(psutil.virtual_memory().total * $num_cpus/$(nproc)))") - ${DASK_SIDECAR_NON_USABLE_RAM:-0}))
+  _value=$(python -c "import psutil; print(int(psutil.virtual_memory().total * $num_cpus/$(nproc)))")
+  ram=$((_value - ${DASK_SIDECAR_NON_USABLE_RAM:-0}))
 
   # overall resources available on the dask-sidecar (CPUs and RAM are always available)
   resources="CPU=$num_cpus,RAM=$ram"
@@ -105,7 +106,7 @@ else
   echo "$INFO" "Starting as a ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_ADDRESS} ..."
   echo "$INFO" "Worker resources set as: $resources"
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-    exec watchmedo auto-restart --recursive --pattern="*.py" -- \
+    exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories \
       dask-worker "${DASK_SCHEDULER_ADDRESS}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
