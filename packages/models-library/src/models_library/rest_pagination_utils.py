@@ -13,7 +13,7 @@ from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
 @runtime_checkable
 class _YarlURL(Protocol):
-    def update_query(self, *args, **kwargs):
+    def update_query(self, query) -> "_YarlURL":
         ...
 
 
