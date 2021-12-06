@@ -181,7 +181,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         case "side-panel-left-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            contentPadding: 8,
+            contentPadding: 15 + 2, // collapse bar + padding
+            contentPaddingRight: 2,
             barPosition: "top"
           });
           const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
@@ -193,7 +194,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         case "side-panel-right-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            contentPadding: 8,
+            contentPadding: 15 + 2, // collapse bar + padding
+            contentPaddingRight: 2,
             barPosition: "top"
           });
           const collapsibleViewRight = this.getChildControl("collapsible-view-right");
@@ -295,6 +297,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
 
       const topBar = tabViewPrimary.getChildControl("bar");
+      topBar.set({
+        backgroundColor: "contrasted-background+",
+        paddingLeft: 15
+      });
       this.__addTopBarSpacer(topBar);
 
       const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
@@ -355,6 +361,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__removePages(tabViewSecondary);
 
       const topBar = tabViewSecondary.getChildControl("bar");
+      topBar.set({
+        backgroundColor: "contrasted-background+",
+        paddingLeft: 15
+      });
       this.__addTopBarSpacer(topBar);
 
       const studyOptionsPage = this.__studyOptionsPage = this.__createTabPage("@FontAwesome5Solid/book", this.tr("Study options"));
