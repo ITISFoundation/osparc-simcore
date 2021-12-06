@@ -141,19 +141,24 @@ class ProjectIteration(BaseModel):
             return cls.parse_obj(parse_iteration_tag_name(tag_name))
         except ValidationError as err:
             if return_none_if_fails:
-                log.debug(f"{err}")
+                log.debug("%s", f"{err=}")
                 return None
             raise
 
     def to_tag_name(self) -> str:
         """Composes unique tag name for this iteration"""
-        return compose_iteration_tag_name(**self.dict())
+        return compose_iteration_tag_name(
+            repo_commit_id=self.repo_commit_id,
+            iter_index=self.iter_index,
+            total_count=self.total_count,
+            parameters_checksum=self.parameters_checksum,
+        )
 
 
 def compose_iteration_tag_name(
     repo_commit_id: CommitID,
     iter_index: int,
-    total_count: int,
+    total_count: Union[int, str],
     parameters_checksum: SHA1Str,
 ) -> str:
     """Composes unique tag name for iter_index-th iteration of repo_commit_id out of total_count"""
@@ -284,7 +289,9 @@ async def get_or_create_runnable_projects(
         )
 
         wcopy_project_id = await vc_repo.get_wcopy_project_id(repo_id, commit_id)
-        assert wcopy_project_id == eval_wcopy_project_id(project_uuid, commit_id)
+        assert wcopy_project_id == str(
+            eval_wcopy_project_id(project_uuid, commit_id)
+        )  # nosec
 
         runnable_project_ids.append(ProjectID(wcopy_project_id))
         runnable_project_vc_commits.append(commit_id)

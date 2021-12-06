@@ -20,6 +20,8 @@ def eval_wcopy_project_id(
     The UUID of a wcopy project can be evaluated composing
     the parent projec and the commit ID. This routine does not
 
+    # FIXME: this should depend on the snapshot_checksum
+
     """
     if isinstance(repo_project_uuid, str):
         repo_project_uuid = UUID(repo_project_uuid)
