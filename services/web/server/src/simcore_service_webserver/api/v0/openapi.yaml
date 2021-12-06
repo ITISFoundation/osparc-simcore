@@ -6759,6 +6759,14 @@ paths:
                               type: object
                               title: Quality
                               description: Object containing Quality Assessment related data
+                            boot_options:
+                              title: Boot Options
+                              description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
+                              type: object
+                              x-patternProperties:
+                                '^[_a-zA-Z0-9]+$':
+                                  type: string
+                              additionalProperties: true
                         - type: object
                           properties:
                             state:
@@ -7378,6 +7386,14 @@ paths:
                   type: object
                   title: Quality
                   description: Object containing Quality Assessment related data
+                boot_options:
+                  title: Boot Options
+                  description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
+                  type: object
+                  x-patternProperties:
+                    '^[_a-zA-Z0-9]+$':
+                      type: string
+                  additionalProperties: true
       responses:
         '201':
           description: project created
@@ -7865,6 +7881,14 @@ paths:
                             type: object
                             title: Quality
                             description: Object containing Quality Assessment related data
+                          boot_options:
+                            title: Boot Options
+                            description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
+                            type: object
+                            x-patternProperties:
+                              '^[_a-zA-Z0-9]+$':
+                                type: string
+                            additionalProperties: true
                       - type: object
                         properties:
                           state:
@@ -8470,6 +8494,14 @@ paths:
                             type: object
                             title: Quality
                             description: Object containing Quality Assessment related data
+                          boot_options:
+                            title: Boot Options
+                            description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
+                            type: object
+                            x-patternProperties:
+                              '^[_a-zA-Z0-9]+$':
+                                type: string
+                            additionalProperties: true
                       - type: object
                         properties:
                           state:
@@ -9081,6 +9113,14 @@ paths:
                             type: object
                             title: Quality
                             description: Object containing Quality Assessment related data
+                          boot_options:
+                            title: Boot Options
+                            description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
+                            type: object
+                            x-patternProperties:
+                              '^[_a-zA-Z0-9]+$':
+                                type: string
+                            additionalProperties: true
                       - type: object
                         properties:
                           state:
@@ -9683,6 +9723,14 @@ paths:
                   type: object
                   title: Quality
                   description: Object containing Quality Assessment related data
+                boot_options:
+                  title: Boot Options
+                  description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
+                  type: object
+                  x-patternProperties:
+                    '^[_a-zA-Z0-9]+$':
+                      type: string
+                  additionalProperties: true
       responses:
         '200':
           description: got detailed project
@@ -10170,6 +10218,14 @@ paths:
                             type: object
                             title: Quality
                             description: Object containing Quality Assessment related data
+                          boot_options:
+                            title: Boot Options
+                            description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
+                            type: object
+                            x-patternProperties:
+                              '^[_a-zA-Z0-9]+$':
+                                type: string
+                            additionalProperties: true
                       - type: object
                         properties:
                           state:
@@ -10797,6 +10853,14 @@ paths:
                             type: object
                             title: Quality
                             description: Object containing Quality Assessment related data
+                          boot_options:
+                            title: Boot Options
+                            description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
+                            type: object
+                            x-patternProperties:
+                              '^[_a-zA-Z0-9]+$':
+                                type: string
+                            additionalProperties: true
                       - type: object
                         properties:
                           state:
@@ -12787,6 +12851,14 @@ paths:
                             type: object
                             title: Quality
                             description: Object containing Quality Assessment related data
+                          boot_options:
+                            title: Boot Options
+                            description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
+                            type: object
+                            x-patternProperties:
+                              '^[_a-zA-Z0-9]+$':
+                                type: string
+                            additionalProperties: true
                       - type: object
                         properties:
                           state:
@@ -13391,6 +13463,14 @@ paths:
                             type: object
                             title: Quality
                             description: Object containing Quality Assessment related data
+                          boot_options:
+                            title: Boot Options
+                            description: 'If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.'
+                            type: object
+                            x-patternProperties:
+                              '^[_a-zA-Z0-9]+$':
+                                type: string
+                            additionalProperties: true
                       - type: object
                         properties:
                           state:
