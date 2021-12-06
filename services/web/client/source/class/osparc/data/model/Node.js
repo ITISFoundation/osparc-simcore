@@ -51,7 +51,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     this.__metaData = {};
     this.__innerNodes = {};
-    this.__inputs = {};
     this.__inputsDefault = {};
     this.setOutputs({});
 
@@ -148,6 +147,12 @@ qx.Class.define("osparc.data.model.Node", {
       check: "Array",
       init: [],
       event: "changePortsConnected"
+    },
+
+    inputs: {
+      check: "Object",
+      // nullable: false,
+      event: "changeInputs"
     },
 
     outputs: {
@@ -255,7 +260,6 @@ qx.Class.define("osparc.data.model.Node", {
     __inputNodes: null,
     __exposedNodes: null,
     __settingsForm: null,
-    __inputs: null,
     __inputsDefault: null,
     __inputsDefaultWidget: null,
     __outputWidget: null,
@@ -327,10 +331,6 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__inputs[outputId];
     },
 
-    getInputs: function() {
-      return this.__inputs;
-    },
-
     getOutput: function(outputId) {
       return this.getOutputs()[outputId];
     },
@@ -344,7 +344,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     hasInputs: function() {
-      return Object.keys(this.__inputs).length;
+      return Object.keys(this.getInputs()).length;
     },
 
     hasOutputs: function() {
@@ -642,7 +642,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __addInputs: function(inputs) {
-      this.__inputs = inputs;
+      this.setInputs(inputs);
 
       if (inputs === null) {
         return;
