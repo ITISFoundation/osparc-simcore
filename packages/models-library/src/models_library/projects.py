@@ -7,6 +7,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
+from models_library.services import EnvVarKey
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 
 from .basic_regex import DATE_RE, UUID_RE
@@ -148,6 +149,14 @@ class Project(ProjectCommons):
 
     # Dev only
     dev: Optional[Dict] = Field(description="object used for development purposes only")
+
+    boot_options: Optional[Dict[EnvVarKey, str]] = Field(
+        description=(
+            "If the user selects a boot_option defined by a service it will "
+            "appear in here. If no selection is made, the default value defined "
+            "by the service will be injected as an environment variable."
+        )
+    )
 
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"
