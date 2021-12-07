@@ -29,14 +29,6 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
 
     # dask config ----
 
-    DASK_CLUSTER_ID_PREFIX: Optional[str] = Field(
-        "CLUSTER_", description="This defines the cluster name prefix"
-    )
-
-    DASK_DEFAULT_CLUSTER_ID: Optional[NonNegativeInt] = Field(
-        0, description="This defines the default cluster id when none is defined"
-    )
-
     DASK_START_AS_SCHEDULER: Optional[bool] = Field(
         False, description="If this env is set, then the app boots as scheduler"
     )

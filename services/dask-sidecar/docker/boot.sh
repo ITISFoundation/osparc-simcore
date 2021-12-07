@@ -89,11 +89,6 @@ else
     fi
   fi
 
-  # find if a cluster id was setup in the docker daemon labels
-  cluster_id=$(python -c "from simcore_service_dask_sidecar.utils import cluster_id; print(cluster_id());")
-  if [ "$cluster_id" != "None" ]; then
-    resources="$resources,$cluster_id=1"
-  fi
 
   #
   # DASK RESOURCES DEFINITION --------------------------------- END
