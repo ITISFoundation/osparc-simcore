@@ -117,24 +117,11 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
       return model;
     },
 
-    /*
-    setSelection: function(iterationId) {
-      this.resetSelection();
-      for (let i=0; i<this.getTableModel().getRowCount(); i++) {
-        if (this.getRowData(i)["Uuid"] === iterationId) {
-          this.getSelectionModel().setSelectionInterval(i, i);
-          return;
-        }
-      }
-    },
-    */
-
     populateTable: function(iterations) {
       if (iterations.length === 0) {
         return;
       }
 
-      console.log("populateTable", iterations);
       const iteratorsInMeta = this.self().extractIterators(iterations[0]);
       const probesInMeta = this.self().extractProbes(iterations[0]);
 

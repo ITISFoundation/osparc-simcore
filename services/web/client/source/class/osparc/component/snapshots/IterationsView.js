@@ -67,6 +67,11 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     },
 
     __rebuildIterations: function() {
+      const loadingTable = this.__loadingTable = new osparc.component.snapshots.Loading(this.tr("iterations"));
+      this.__iterationsSection.addAt(loadingTable, 0, {
+        width: "50%"
+      });
+
       this.__study.getIterations()
         .then(iterations => {
           if (iterations.length) {
@@ -89,6 +94,10 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     },
 
     __rebuildIterationsTable: function() {
+      if (this.__loadingTable) {
+        this.__iterationsSection.remove(this.__loadingTable);
+        this.__loadingTable = null;
+      }
       if (this.__iterationsTable) {
         this.__iterationsSection.remove(this.__iterationsTable);
       }
