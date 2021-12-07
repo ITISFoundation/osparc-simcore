@@ -108,12 +108,11 @@ qx.Class.define("osparc.data.model.Workbench", {
     getUpstreamNodes: function(node, upstreamNodes = new Set()) {
       upstreamNodes.add(node.getNodeId());
       const links = node.getLinks();
-      for (let i=0; i<links.length; i++) {
-        const link = links[i];
+      links.forEach(link => {
         upstreamNodes.add(link["nodeUuid"]);
         const linkNode = this.getNode(link["nodeUuid"]);
         this.getUpstreamNodes(linkNode, upstreamNodes);
-      }
+      });
       return upstreamNodes;
     },
 
