@@ -70,7 +70,8 @@ class BaseCompScheduler(ABC):
         dag = await self._get_pipeline_dag(project_id)
         if not dag:
             logger.warning(
-                "project %s has no computational dag defined. not scheduled for a run."
+                "project %s has no computational dag defined. not scheduled for a run.",
+                f"{project_id=}",
             )
             return
 
@@ -221,9 +222,9 @@ class BaseCompScheduler(ABC):
     ) -> None:
         logger.debug(
             "checking run of project [%s:%s] for user [%s]",
-            project_id,
-            iteration,
-            user_id,
+            f"{project_id=}",
+            f"{iteration=}",
+            f"{user_id=}",
         )
 
         pipeline_dag = nx.DiGraph()
@@ -280,14 +281,14 @@ class BaseCompScheduler(ABC):
         except PipelineNotFoundError:
             logger.warning(
                 "pipeline %s does not exist in comp_pipeline table, it will be removed from scheduler",
-                project_id,
+                f"{project_id=}",
             )
             pipeline_result = RunningState.ABORTED
             await self._set_run_result(user_id, project_id, iteration, pipeline_result)
         except InvalidPipelineError as exc:
             logger.warning(
                 "pipeline %s appears to be misconfigured, it will be removed from scheduler. Please check pipeline:\n%s",
-                project_id,
+                f"{project_id=}",
                 exc,
             )
             pipeline_result = RunningState.ABORTED
@@ -299,8 +300,8 @@ class BaseCompScheduler(ABC):
             self.scheduled_pipelines.pop((user_id, project_id, iteration))
             logger.info(
                 "pipeline %s scheduling completed with result %s",
-                project_id,
-                pipeline_result,
+                f"{project_id=}",
+                f"{pipeline_result=}",
             )
             return
 
@@ -353,8 +354,8 @@ class BaseCompScheduler(ABC):
             raise
         logger.debug(
             "pipeline '%s' is marked for cancellation. stopping tasks for [%s]",
-            project_id,
-            running_tasks,
+            f"{project_id=}",
+            f"{running_tasks=}",
         )
 
     async def _schedule_next_tasks(
