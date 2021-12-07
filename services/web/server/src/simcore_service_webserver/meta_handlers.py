@@ -165,9 +165,11 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
 
     try:
         commit_id = CommitID(_ref_id)
-    except ValueError:
+    except ValueError as err:
         # e.g. HEAD
-        raise NotImplementedError("cannot convert ref (e.g. HEAD) -> commit id")
+        raise NotImplementedError(
+            "cannot convert ref (e.g. HEAD) -> commit id"
+        ) from err
 
     # core function ----
     (
@@ -205,7 +207,7 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
 
     page = Page[ProjectIterationAsItem].parse_obj(
         paginate_data(
-            data=iterations_items,
+            chunk=iterations_items,
             request_url=request.url,
             total=total_number_of_iterations,
             limit=_limit,
@@ -232,9 +234,11 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
     _ref_id = request.match_info["ref_id"]
     try:
         commit_id = CommitID(_ref_id)
-    except ValueError:
+    except ValueError as err:
         # e.g. HEAD
-        raise NotImplementedError("cannot convert ref (e.g. HEAD) -> commit id")
+        raise NotImplementedError(
+            "cannot convert ref (e.g. HEAD) -> commit id"
+        ) from err
 
     # core function ----
     project_iterations = await create_or_get_project_iterations(
