@@ -367,7 +367,6 @@ def check_if_cluster_is_able_to_run_pipeline(
     scheduler_info: Dict[str, Any],
     task_resources: Dict[str, Any],
     node_image: Image,
-    cluster_id_prefix: str,
     cluster_id: ClusterID,
 ):
     logger.debug("Dask scheduler infos: %s", json_dumps(scheduler_info, indent=2))
@@ -393,10 +392,9 @@ def check_if_cluster_is_able_to_run_pipeline(
     can_a_worker_run_task = False
     for worker in workers:
         worker_resources = workers[worker].get("resources", {})
-        if worker_resources.get(f"{cluster_id_prefix}{cluster_id}"):
-            cluster_resources_counter.update(worker_resources)
-            if can_task_run_on_worker(task_resources, worker_resources):
-                can_a_worker_run_task = True
+        cluster_resources_counter.update(worker_resources)
+        if can_task_run_on_worker(task_resources, worker_resources):
+            can_a_worker_run_task = True
     all_available_resources_in_cluster = dict(cluster_resources_counter)
 
     logger.debug(

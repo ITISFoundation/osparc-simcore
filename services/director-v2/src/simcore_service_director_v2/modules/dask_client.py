@@ -319,7 +319,6 @@ class DaskClient:
                     scheduler_info=self.dask_subsystem.client.scheduler_info(),
                     task_resources=dask_resources,
                     node_image=node_image,
-                    cluster_id_prefix=self.settings.DASK_CLUSTER_ID_PREFIX,  # type: ignore
                     cluster_id=cluster_id,
                 )
 

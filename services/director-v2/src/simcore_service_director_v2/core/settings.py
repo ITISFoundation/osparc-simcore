@@ -231,10 +231,6 @@ class DaskSchedulerSettings(BaseCustomSettings):
     )
     DASK_SCHEDULER_PORT: PortInt = 8786
 
-    DASK_CLUSTER_ID_PREFIX: Optional[str] = Field(
-        "CLUSTER_", description="This defines the cluster name prefix"
-    )
-
     DASK_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
         0, description="This defines the default cluster id when none is defined"
     )
