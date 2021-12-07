@@ -40,7 +40,7 @@ SERVICE_NETWORK_RE = r"^([a-zA-Z0-9_-]+)$"
 
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
 PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"
-ENV_VAR_KEY_RE = r"^[_a-zA-Z0-9]+$"
+ENV_VAR_KEY_RE = r"[a-zA-Z][a-azA-Z0-9_]*"
 
 FILENAME_RE = r".+"
 
@@ -396,7 +396,7 @@ class BootOptionMode(BaseModel):
         }
 
 
-BootOptionsType = Optional[Dict[EnvVarKey, BootOptionMode]]
+BootOptions = Optional[Dict[EnvVarKey, BootOptionMode]]
 
 
 class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
@@ -433,7 +433,7 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
         ..., description="definition of the outputs of this node"
     )
 
-    boot_options: BootOptionsType = Field(
+    boot_options: BootOptions = Field(
         None,
         alias="boot-options",
         description="Service defined boot options. These get injected in the service as env variables.",

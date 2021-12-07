@@ -88,6 +88,14 @@ class ProjectAtDB(ProjectCommons):
         False, description="Defines if a study is available publicly"
     )
 
+    boot_options: Optional[Dict[NodeIDStr, Dict[EnvVarKey, str]]] = Field(
+        description=(
+            "Some services provide alternative parameters to be injected at boot time. "
+            "The user selection should be stored here, and it will overwrite the "
+            "services's defaults."
+        )
+    )
+
     @validator("project_type", pre=True)
     @classmethod
     def convert_sql_alchemy_enum(cls, v):
