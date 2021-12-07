@@ -35,7 +35,6 @@ from models_library.projects_nodes_io import NodeID
 from pydantic.networks import AnyUrl
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
-from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
@@ -204,7 +203,6 @@ class DaskClient:
             reraise=True,
             before_sleep=before_sleep_log(logger, logging.WARNING),
             wait=wait_fixed(0.3),
-            retry=retry_if_exception_type(),
             stop=stop_after_attempt(3),
         ):
             with attempt:
