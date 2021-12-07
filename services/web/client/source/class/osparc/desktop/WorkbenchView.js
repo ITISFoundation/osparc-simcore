@@ -610,20 +610,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           if (studyId !== this.getStudy().getUuid()) {
             return;
           }
-          const nodeId = d["node_id"];
-          const nodeData = d["data"];
-          const workbench = this.getStudy().getWorkbench();
-          const node = workbench.getNode(nodeId);
-          if (node && nodeData) {
-            node.setOutputData(nodeData.outputs);
-            if ("progress" in nodeData) {
-              const progress = Number.parseInt(nodeData["progress"]);
-              node.getStatus().setProgress(progress);
-            }
-            node.populateStates(nodeData);
-          } else if (osparc.data.Permissions.getInstance().isTester()) {
-            console.log("Ignored ws 'nodeUpdated' msg", d);
-          }
+          osparc.data.model.Study.nodeUpdated(this.getStudy(), d);
         }, this);
       }
 
