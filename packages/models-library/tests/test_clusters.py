@@ -21,8 +21,7 @@ def test_cluster_access_rights_correctly_created_when_owner_access_rights_not_pr
     for example in model_cls_examples.values():
         owner_gid = example["owner"]
         # remove the owner from the access rights if any
-        with suppress(KeyError):
-            example.get("access_rights", {}).pop(owner_gid)
+        example.get("access_rights", {}).pop(owner_gid, None)
 
         instance = model_cls(**example)
         assert instance.access_rights[owner_gid] == CLUSTER_ADMIN_RIGHTS  # type: ignore
