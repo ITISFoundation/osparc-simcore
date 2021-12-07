@@ -88,7 +88,7 @@ def minimal_dask_config(
 
 
 @pytest.fixture
-async def dask_client_from_scheduler(
+async def create_dask_client_from_scheduler(
     minimal_dask_config: None,
     dask_spec_local_cluster: SpecCluster,
     minimal_app: FastAPI,
@@ -125,7 +125,7 @@ async def dask_client_from_scheduler(
 
 
 @pytest.fixture
-async def dask_client_from_gateway(
+async def create_dask_client_from_gateway(
     minimal_dask_config: None,
     local_dask_gateway_server: DaskGatewayServer,
     minimal_app: FastAPI,
@@ -167,13 +167,15 @@ async def dask_client_from_gateway(
     print(f"<-- Disconnected gateway clients {created_clients=}")
 
 
-@pytest.fixture(params=["dask_client_from_scheduler", "dask_client_from_gateway"])
+@pytest.fixture(
+    params=["create_dask_client_from_scheduler", "create_dask_client_from_gateway"]
+)
 async def dask_client(
-    dask_client_from_scheduler, dask_client_from_gateway, request
+    create_dask_client_from_scheduler, create_dask_client_from_gateway, request
 ) -> DaskClient:
     return await {
-        "dask_client_from_scheduler": dask_client_from_scheduler,
-        "dask_client_from_gateway": dask_client_from_gateway,
+        "create_dask_client_from_scheduler": create_dask_client_from_scheduler,
+        "create_dask_client_from_gateway": create_dask_client_from_gateway,
     }[request.param]()
 
 
@@ -481,7 +483,9 @@ async def test_failed_task_returns_exceptions(
 
 
 # currently in the case of a dask-gateway we do not check for missing resources
-@pytest.mark.parametrize("dask_client", ["dask_client_from_scheduler"], indirect=True)
+@pytest.mark.parametrize(
+    "dask_client", ["create_dask_client_from_scheduler"], indirect=True
+)
 async def test_missing_resource_send_computation_task(
     dask_spec_local_cluster: SpecCluster,
     dask_client: DaskClient,
@@ -523,7 +527,9 @@ async def test_missing_resource_send_computation_task(
     mocked_user_completed_cb.assert_not_called()
 
 
-@pytest.mark.parametrize("dask_client", ["dask_client_from_scheduler"], indirect=True)
+@pytest.mark.parametrize(
+    "dask_client", ["create_dask_client_from_scheduler"], indirect=True
+)
 async def test_too_many_resources_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
