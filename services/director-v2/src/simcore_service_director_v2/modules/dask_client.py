@@ -313,6 +313,8 @@ class DaskClient:
             # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)
             # might also auto-scale and the gateway does not know that a priori.
             # So, we'll just send the tasks over and see what happens after a while.
+            # TODO: one idea is to do a lazy checking. A cluster might take a few seconds to run a
+            # sidecar, which will then populate the scheduler with resources available on the cluster
             if not self.dask_subsystem.gateway:
                 check_if_cluster_is_able_to_run_pipeline(
                     node_id=node_id,

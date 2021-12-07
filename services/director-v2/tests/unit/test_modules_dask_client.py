@@ -7,16 +7,16 @@
 import asyncio
 import functools
 import json
-import random
 import time
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List
+from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List, cast
 from unittest import mock
 from uuid import uuid4
 
 import pytest
 from _dask_helpers import DaskGatewayServer
 from _pytest.monkeypatch import MonkeyPatch
+from dask import distributed
 from dask.distributed import get_worker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.events import TaskStateEvent
@@ -25,6 +25,7 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
+from distributed import worker
 from distributed.deploy.spec import SpecCluster
 from fastapi.applications import FastAPI
 from models_library.clusters import NoAuthentication, SimpleAuthentication
@@ -481,8 +482,10 @@ async def test_failed_task_returns_exceptions(
     mocked_user_completed_cb.call_args[0][0].msg.find("raise ValueError")
 
 
+# currently in the case of a dask-gateway we do not check for missing resources
 @pytest.mark.parametrize("dask_client", ["dask_client_from_scheduler"], indirect=True)
-async def test_invalid_cluster_send_computation_task(
+async def test_missing_resource_send_computation_task(
+    dask_spec_local_cluster: SpecCluster,
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -491,11 +494,28 @@ async def test_invalid_cluster_send_computation_task(
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
 ):
+
+    # remove the workers that can handle mpi
+    scheduler_info = dask_client.dask_subsystem.client.scheduler_info()
+    assert scheduler_info
+    scheduler_info["workers"]
+    # find mpi workers
+    workers_to_remove = [
+        worker_key
+        for worker_key, worker_info in scheduler_info["workers"].items()
+        if "MPI" in worker_info["resources"]
+    ]
+    await dask_client.dask_subsystem.client.retire_workers(workers=workers_to_remove)
+    await asyncio.sleep(5)  # a bit of time is needed so the cluster adapts
+
+    # now let's adapt the task so it needs mpi
+    image_params.image.node_requirements.mpi = 2
+
     with pytest.raises(MissingComputationalResourcesError):
         await dask_client.send_computation_tasks(
             user_id=user_id,
             project_id=project_id,
-            cluster_id=random.randint(cluster_id + 1, 100),
+            cluster_id=cluster_id,
             tasks=image_params.fake_task,
             callback=mocked_user_completed_cb,
             remote_fct=None,

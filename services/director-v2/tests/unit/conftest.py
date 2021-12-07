@@ -157,7 +157,7 @@ async def dask_spec_local_cluster(
     scheduler = {"cls": Scheduler, "options": {"dashboard_address": ":8787"}}
 
     async with SpecCluster(
-        workers=workers, scheduler=scheduler, asynchronous=True
+        workers=workers, scheduler=scheduler, asynchronous=True, name="pytest_cluster"
     ) as cluster:
         scheduler_address = URL(cluster.scheduler_address)
         monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
