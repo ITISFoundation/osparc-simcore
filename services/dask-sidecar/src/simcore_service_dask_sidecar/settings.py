@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from models_library.basic_types import LogLevel
-from pydantic import Field, NonNegativeInt, validator
+from pydantic import Field, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.logging_utils import MixinLoggingSettings
 
