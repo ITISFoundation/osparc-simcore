@@ -243,11 +243,21 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         if (canIWrite && "boot-options" in nodeMetaData && "boot_mode" in nodeMetaData["boot-options"]) {
           const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
           const bootModeSB = new qx.ui.form.SelectBox();
+          const sbItems = [];
           Object.entries(bootModesMD["items"]).forEach(([bootModeId, bootModeMD]) => {
             const sbItem = new qx.ui.form.ListItem(bootModeMD["label"]);
             sbItem.bootModeId = bootModeId;
             bootModeSB.add(sbItem);
-            if (bootModeId === bootModesMD["default"]) {
+            sbItems.push(sbItem);
+          });
+          let defaultBMId = null;
+          if ("boot-options" in this.__studyData && nodeId in this.__studyData["boot-options"] && "boot_mode" in this.__studyData["boot-options"][nodeId]) {
+            defaultBMId = this.__studyData["boot-options"][nodeId]["boot_mode"];
+          } else {
+            defaultBMId = bootModesMD["default"];
+          }
+          sbItems.forEach(sbItem => {
+            if (defaultBMId === bootModesMD["default"]) {
               bootModeSB.setSelection([sbItem]);
             }
           });
