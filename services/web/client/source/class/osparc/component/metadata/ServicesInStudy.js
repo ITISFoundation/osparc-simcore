@@ -97,10 +97,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         this.__studyData["bootOptions"] = {};
       }
       this.__studyData["bootOptions"][nodeId] = {
-        "bootMode": newBootModeId
+        "boot_mode": newBootModeId
       };
-      console.log("Update Boot Mode", this.__studyData);
-      return;
 
       const params = {
         url: {
@@ -117,7 +115,6 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating the Boot Mode"), "ERROR");
           console.error(err);
         });
-
     },
 
     __populateLayout: function() {
@@ -241,27 +238,27 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
             row: i,
             column: this.self().gridPos.updateButton
           });
+        }
 
-          if ("boot-options" in nodeMetaData && "boot_mode" in nodeMetaData["boot-options"]) {
-            const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
-            const bootModeSB = new qx.ui.form.SelectBox();
-            Object.entries(bootModesMD).forEach(([bootModeId, bootModeMD]) => {
-              const sbItem = new qx.ui.form.ListItem(bootModeMD["label"]);
-              sbItem.bootModeId = bootModeId;
-              bootModeSB.add(sbItem);
-              if (bootModeId === bootModesMD["default"]) {
-                bootModeSB.setSelection([sbItem]);
-              }
-            });
-            bootModeSB.addListener("changeSelection", e => {
-              let newBootModeId = e.getData()[0].bootModeId;
-              this.__updateBootMode(nodeId, newBootModeId);
-            }, this);
-            this._add(bootModeSB, {
-              row: i,
-              column: this.self().gridPos.bootMode
-            });
-          }
+        if (canIWrite && "boot-options" in nodeMetaData && "boot_mode" in nodeMetaData["boot-options"]) {
+          const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
+          const bootModeSB = new qx.ui.form.SelectBox();
+          Object.entries(bootModesMD["items"]).forEach(([bootModeId, bootModeMD]) => {
+            const sbItem = new qx.ui.form.ListItem(bootModeMD["label"]);
+            sbItem.bootModeId = bootModeId;
+            bootModeSB.add(sbItem);
+            if (bootModeId === bootModesMD["default"]) {
+              bootModeSB.setSelection([sbItem]);
+            }
+          });
+          bootModeSB.addListener("changeSelection", e => {
+            let newBootModeId = e.getData()[0].bootModeId;
+            this.__updateBootMode(nodeId, newBootModeId);
+          }, this);
+          this._add(bootModeSB, {
+            row: i,
+            column: this.self().gridPos.bootMode
+          });
         }
 
         i++;
