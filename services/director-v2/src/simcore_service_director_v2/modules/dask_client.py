@@ -126,10 +126,14 @@ async def _connect_with_gateway_and_create_cluster(
         gateway = dask_gateway.Gateway(
             address=f"{endpoint}", auth=gateway_auth, asynchronous=True
         )
-        # if there is already a cluster that means we can re-connect to it
+        # if there is already a cluster that means we can re-connect to it,
+        # and IT SHALL BE the first in the list
         cluster_reports_list = await gateway.list_clusters()
         cluster = None
         if cluster_reports_list:
+            assert (
+                len(cluster_reports_list) == 1
+            ), "More than 1 cluster at this location, that is unexpected!!"  # nosec
             cluster = await gateway.connect(
                 cluster_reports_list[0].name, shutdown_on_close=False
             )
