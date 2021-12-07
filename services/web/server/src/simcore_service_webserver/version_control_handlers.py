@@ -90,7 +90,7 @@ async def _list_repos_handler(request: web.Request):
 
     page = Page[RepoApiModel].parse_obj(
         paginate_data(
-            data=repos_list,
+            chunk=repos_list,
             request_url=request.url,
             total=total_number_of_repos,
             limit=_limit,
@@ -171,7 +171,7 @@ async def _list_checkpoints_handler(request: web.Request):
 
     page = Page[CheckpointApiModel].parse_obj(
         paginate_data(
-            data=checkpoints_list,
+            chunk=checkpoints_list,
             request_url=request.url,
             total=total,
             limit=_limit,

@@ -45,7 +45,7 @@ class PageDict(TypedDict):
 
 
 def paginate_data(
-    data_chunk: List[Any],
+    chunk: List[Any],
     request_url: _URLType,
     total: int,
     limit: int,
@@ -64,7 +64,7 @@ def paginate_data(
 
     return PageDict(
         _meta=PageMetaInfoLimitOffset(
-            total=total, count=len(data_chunk), limit=limit, offset=offset
+            total=total, count=len(chunk), limit=limit, offset=offset
         ),
         _links=PageLinks(
             self=_replace_query(request_url, {"offset": offset, "limit": limit}),
@@ -84,5 +84,5 @@ def paginate_data(
                 request_url, {"offset": last_page * limit, "limit": limit}
             ),
         ),
-        data=data_chunk,
+        data=chunk,
     )
