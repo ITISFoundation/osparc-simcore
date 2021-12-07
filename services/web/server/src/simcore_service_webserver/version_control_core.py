@@ -9,7 +9,7 @@
     more fine grained concepts as tags and commits directly
 """
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 from uuid import UUID
 
 from aiopg.sa.result import RowProxy
