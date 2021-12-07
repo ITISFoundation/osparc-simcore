@@ -151,10 +151,34 @@ def _create_data_iterator_int_range() -> ServiceDockerData:
     )
 
 
+def _create_iterator_consumer_probe_int() -> ServiceDockerData:
+    return ServiceDockerData(
+        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/iterator-consumer/probe/int",
+        version="1.0.0",
+        type=ServiceType.FRONTEND,
+        name="Probe Sensor - Integer",
+        description="Integer iterator consumer.",
+        authors=[
+            OM,
+        ],
+        contact=OM.email,
+        inputs={
+            "in_1": {
+                "label": "Iterator consumer",
+                "description": "Iterator consumer",
+                "defaultValue": 0,
+                "type": "integer",
+            }
+        },
+        outputs={},
+    )
+
+
 _FACTORY_FUNCTIONS = [
     _create_file_picker_service,
     _create_node_group_service,
     _create_data_iterator_int_range,
+    _create_iterator_consumer_probe_int,
 ] + [
     functools.partial(_create_constant_node_def, output_type=p)
     for p in ["number", "boolean", "integer"]
