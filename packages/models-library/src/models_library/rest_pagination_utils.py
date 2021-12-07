@@ -46,6 +46,7 @@ class PageDict(TypedDict):
 
 def paginate_data(
     chunk: List[Any],
+    *,
     request_url: _URLType,
     total: int,
     limit: int,

@@ -21,26 +21,30 @@ from yarl import URL
 )
 def test_paginating_data(base_url):
     # create random data
-    total_number_of_data = 29
+    total_number_of_items = 29
     limit = 9
     data_chunk = list(range(limit))
     request_url = URL(f"{base_url}?some=1&random=4&query=true")
 
-    number_of_chunks = total_number_of_data // limit + 1
-    last_chunk_size = total_number_of_data % limit
+    number_of_chunks = total_number_of_items // limit + 1
+    last_chunk_size = total_number_of_items % limit
     last_chunk_offset = (number_of_chunks - 1) * len(data_chunk)
 
     # first "call"
     offset = 0
     data_obj: PageDict = paginate_data(
-        data_chunk, request_url, total_number_of_data, limit, offset
+        data_chunk,
+        total=total_number_of_items,
+        limit=limit,
+        offset=offset,
+        request_url=request_url,
     )
     assert data_obj
 
     model_instance = Page[int].parse_obj(data_obj)
     assert model_instance
     assert model_instance.meta == PageMetaInfoLimitOffset(
-        total=total_number_of_data, count=len(data_chunk), limit=limit, offset=offset
+        total=total_number_of_items, count=len(data_chunk), limit=limit, offset=offset
     )
     assert model_instance.links == PageLinks(
         self=str(
@@ -73,16 +77,16 @@ def test_paginating_data(base_url):
 
         data_obj: PageDict = paginate_data(
             data_chunk,
-            URL(model_instance.links.next),
-            total_number_of_data,
-            limit,
-            offset,
+            request_url=URL(model_instance.links.next),
+            total=total_number_of_items,
+            limit=limit,
+            offset=offset,
         )
 
         model_instance = Page[int].parse_obj(data_obj)
         assert model_instance
         assert model_instance.meta == PageMetaInfoLimitOffset(
-            total=total_number_of_data,
+            total=total_number_of_items,
             count=len(data_chunk),
             limit=limit,
             offset=offset,
@@ -125,10 +129,10 @@ def test_paginating_data(base_url):
     assert model_instance.links.next is not None
     data_obj: PageDict = paginate_data(
         data_chunk,
-        URL(model_instance.links.next),
-        total_number_of_data,
-        limit,
-        offset,
+        request_url=URL(model_instance.links.next),
+        total=total_number_of_items,
+        limit=limit,
+        offset=offset,
     )
     assert data_obj
 
@@ -136,7 +140,7 @@ def test_paginating_data(base_url):
     assert model_instance
 
     assert model_instance.meta == PageMetaInfoLimitOffset(
-        total=total_number_of_data,
+        total=total_number_of_items,
         count=len(data_chunk),
         limit=limit,
         offset=offset,
