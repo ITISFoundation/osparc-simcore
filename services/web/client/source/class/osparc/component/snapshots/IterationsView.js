@@ -40,6 +40,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     __study: null,
     __iterations: null,
     __iterationsSection: null,
+    __loadingTable: null,
     __iterationsTable: null,
     __iterationPreview: null,
     __openIterationBtn: null,
@@ -124,7 +125,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       });
     },
 
-    __loadIterationPreview: function(iterationId) {
+    __reloadIteration: function(iterationId) {
       const params = {
         url: {
           "studyId": iterationId
@@ -135,6 +136,13 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
           const studyData = this.__study.serialize();
           studyData["workbench"] = data["workbench"];
           studyData["ui"] = data["ui"];
+
+          const idx = this.__iterations.findIndex(it => it["uuid"] === data["uuid"]);
+          if (idx !== -1) {
+            this.__iterations.splice(idx, 1, data);
+            this.__iterationsTable.iterationsToTable(this.__iterations);
+          }
+
           const study = new osparc.data.model.Study(studyData);
           study.buildWorkbench();
           study.setReadOnly(true);
@@ -155,7 +163,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     __iterationSelected: function(iterationId) {
       this.__selectedIterationId = iterationId;
 
-      this.__loadIterationPreview(iterationId);
+      this.__reloadIteration(iterationId);
 
       if (this.__openIterationBtn) {
         this.__openIterationBtn.setEnabled(true);

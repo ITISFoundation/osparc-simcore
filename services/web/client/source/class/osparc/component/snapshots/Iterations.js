@@ -138,6 +138,10 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
         countFormat++;
       });
 
+      this.iterationsToTable(iterations);
+    },
+
+    iterationsToTable(iterations) {
       const rows = [];
       iterations.forEach(iteration => {
         const iterators = this.self().extractIterators(iteration);
