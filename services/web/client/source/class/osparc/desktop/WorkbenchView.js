@@ -69,7 +69,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     "slidesEdit": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
     "takeSnapshot": "qx.event.type.Event",
-    "showSnapshots": "qx.event.type.Event"
+    "showSnapshots": "qx.event.type.Event",
+    "createIterations": "qx.event.type.Event",
+    "showIterations": "qx.event.type.Event"
   },
 
   properties: {
@@ -181,8 +183,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         case "side-panel-left-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            contentPadding: 15 + 2, // collapse bar + padding
-            contentPaddingRight: 2,
+            contentPadding: 8,
             barPosition: "top"
           });
           const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
@@ -194,8 +195,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         case "side-panel-right-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            contentPadding: 15 + 2, // collapse bar + padding
-            contentPaddingRight: 2,
+            contentPadding: 8,
             barPosition: "top"
           });
           const collapsibleViewRight = this.getChildControl("collapsible-view-right");
@@ -235,7 +235,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         study.getUi().getSlideshow().addListener("changeSlideshow", () => this.__evalSlidesButtons());
         study.getUi().addListener("changeMode", () => this.__evalSlidesButtons());
         this.__evalSlidesButtons();
-        this.evalSnapshotsButtons();
 
         // if there are no nodes, preselect the study item (show study info)
         const nodes = study.getWorkbench().getNodes(true);
@@ -297,10 +296,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
 
       const topBar = tabViewPrimary.getChildControl("bar");
-      topBar.set({
-        backgroundColor: "contrasted-background+",
-        paddingLeft: 15
-      });
       this.__addTopBarSpacer(topBar);
 
       const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
@@ -326,10 +321,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       homeAndNodesTree.add(nodesTree);
 
       const addNewNodeBtn = new qx.ui.form.Button().set({
-        label: this.tr("New node"),
+        label: this.tr("Add new node"),
         icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false,
-        alignX: "center",
+        alignX: "left",
         marginLeft: 14
       });
       addNewNodeBtn.addListener("execute", () => this.__workbenchUI.openServiceCatalog({
@@ -361,10 +356,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__removePages(tabViewSecondary);
 
       const topBar = tabViewSecondary.getChildControl("bar");
-      topBar.set({
-        backgroundColor: "contrasted-background+",
-        paddingLeft: 15
-      });
       this.__addTopBarSpacer(topBar);
 
       const studyOptionsPage = this.__studyOptionsPage = this.__createTabPage("@FontAwesome5Solid/book", this.tr("Study options"));
@@ -576,7 +567,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       // callback for incoming logs
       const slotName = "logger";
       if (!socket.slotExists(slotName)) {
-        socket.on(slotName, function(jsonString) {
+        socket.on(slotName, jsonString => {
           const data = JSON.parse(jsonString);
           if (Object.prototype.hasOwnProperty.call(data, "project_id") && this.getStudy().getUuid() !== data["project_id"]) {
             // Filtering out logs from other studies
@@ -596,7 +587,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       // callback for incoming progress
       const slotName2 = "progress";
       if (!socket.slotExists(slotName2)) {
-        socket.on(slotName2, function(data) {
+        socket.on(slotName2, data => {
           const d = JSON.parse(data);
           const nodeId = d["node_id"];
           const progress = Number.parseFloat(d["progress"]).toFixed(4);
@@ -615,6 +606,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       if (!socket.slotExists(slotName3)) {
         socket.on(slotName3, data => {
           const d = JSON.parse(data);
+          const studyId = d["project_id"];
+          if (studyId !== this.getStudy().getUuid()) {
+            return;
+          }
           const nodeId = d["node_id"];
           const nodeData = d["data"];
           const workbench = this.getStudy().getWorkbench();
@@ -795,17 +790,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__studyOptionsPage.add(new osparc.studycard.Medium(study), {
         flex: 1
       });
-
       this.__studyOptionsPage.add(this.__getSlideshowSection());
-
-      this.__studyOptionsPage.add(this.__getSnapshotsSection(), {
-        flex: 1
-      });
+      this.__studyOptionsPage.add(this.__getSnapshotsSection());
+      this.__studyOptionsPage.add(this.__getIterationsSection());
     },
 
     __getSlideshowSection: function() {
       const slideshowSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      slideshowSection.add(new qx.ui.basic.Label(this.tr("App Mode")).set({
+      slideshowSection.add(new qx.ui.basic.Label(this.tr("Slideshow")).set({
         font: "title-14"
       }));
 
@@ -813,8 +805,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       slideshowSection.add(slideshowButtons);
 
       const buttonsHeight = 28;
-      const editSlidesBtn = this.__editSlidesButton = new qx.ui.form.Button().set({
-        label: this.tr("Edit"),
+      const editSlidesBtn = this.__editSlidesButton = new qx.ui.form.Button(this.tr("Edit Slideshow")).set({
         icon: "@FontAwesome5Solid/edit/14",
         height: buttonsHeight
       });
@@ -822,8 +813,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       slideshowButtons.add(editSlidesBtn);
 
       const startAppBtn = this.__startAppButton = new qx.ui.form.Button().set({
-        label: this.tr("Start"),
+        label: this.tr("App Mode"),
         icon: "@FontAwesome5Solid/play/14",
+        toolTipText: this.tr("Start App Mode"),
         height: buttonsHeight
       });
       startAppBtn.addListener("execute", () => this.fireEvent("slidesAppStart"), this);
@@ -850,7 +842,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         font: "title-14"
       }));
 
-      const snapshotButtons = this.__takeSnapshotButton = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const snapshotButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       snapshotSection.add(snapshotButtons);
 
       const buttonsHeight = 28;
@@ -858,29 +850,55 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         label: this.tr("New"),
         height: buttonsHeight
       });
+      takeSnapshotBtn.setEnabled(osparc.data.Permissions.getInstance().canDo("study.snapshot.create"));
       takeSnapshotBtn.addListener("execute", () => this.fireEvent("takeSnapshot"), this);
       snapshotButtons.add(takeSnapshotBtn);
 
-      const showSnapshotsBtn = this.__showSnapshotsButton = new qx.ui.form.Button().set({
-        label: this.tr("Show"),
+      const showSnapshotsBtn = new qx.ui.form.Button().set({
+        label: this.tr("Show Snapshots"),
         height: buttonsHeight
+      });
+      const store = osparc.store.Store.getInstance();
+      store.bind("snapshots", showSnapshotsBtn, "enabled", {
+        converter: snapshots => Boolean(snapshots.length)
       });
       showSnapshotsBtn.addListener("execute", () => this.fireEvent("showSnapshots"), this);
       snapshotButtons.add(showSnapshotsBtn);
 
-      this.evalSnapshotsButtons();
-
       return snapshotSection;
     },
 
-    evalSnapshotsButtons: async function() {
-      const study = this.getStudy();
-      if (study && this.__takeSnapshotButton) {
-        this.__takeSnapshotButton.setEnabled(osparc.data.Permissions.getInstance().canDo("study.snapshot.create"));
+    __getIterationsSection: function() {
+      const iterationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      iterationsSection.add(new qx.ui.basic.Label(this.tr("Iterations")).set({
+        font: "title-14"
+      }));
 
-        const hasSnapshots = await study.hasSnapshots();
-        this.__showSnapshotsButton.setEnabled(hasSnapshots);
-      }
+      const iterationButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      iterationsSection.add(iterationButtons);
+
+      const buttonsHeight = 28;
+      const createIterationsBtn = new qx.ui.form.Button().set({
+        label: this.tr("Create Iterations"),
+        height: buttonsHeight
+      });
+      createIterationsBtn.setEnabled(osparc.data.Permissions.getInstance().canDo("study.snapshot.create"));
+      createIterationsBtn.setEnabled(false);
+      createIterationsBtn.addListener("execute", () => this.fireEvent("createIterations"), this);
+      iterationButtons.add(createIterationsBtn);
+
+      const showIterationsBtn = new qx.ui.form.Button().set({
+        label: this.tr("Show Iterations"),
+        height: buttonsHeight
+      });
+      const store = osparc.store.Store.getInstance();
+      store.bind("iterations", showIterationsBtn, "enabled", {
+        converter: iterations => Boolean(iterations.length)
+      });
+      showIterationsBtn.addListener("execute", () => this.fireEvent("showIterations"), this);
+      iterationButtons.add(showIterationsBtn);
+
+      return iterationsSection;
     },
 
     __populateSecondPanelFilePicker: function(filePicker) {
