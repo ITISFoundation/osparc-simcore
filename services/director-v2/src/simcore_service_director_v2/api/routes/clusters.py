@@ -54,7 +54,7 @@ async def get_default_cluster(
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
     dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
-    assert settings.DASK_DEFAULT_CLUSTER_ID  # nosec
+    assert settings.DASK_DEFAULT_CLUSTER_ID is not None  # nosec
     return await _get_cluster_with_id(
         settings=settings,
         cluster_id=settings.DASK_DEFAULT_CLUSTER_ID,
