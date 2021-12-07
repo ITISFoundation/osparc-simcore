@@ -89,7 +89,6 @@ else
     fi
   fi
 
-
   #
   # DASK RESOURCES DEFINITION --------------------------------- END
   #
