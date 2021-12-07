@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
-from random import randint
 from typing import Any, Dict, Optional
 from uuid import uuid4
 
@@ -19,11 +18,7 @@ from simcore_service_director_v2.models.domains.comp_tasks import Image
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.modules.celery import CeleryClient
 
-
 # Fixtures -----------------------------------------------------------------
-@pytest.fixture
-def user_id() -> PositiveInt:
-    return randint(0, 10000)
 
 
 @pytest.fixture
