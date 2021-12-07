@@ -9,14 +9,13 @@ import functools
 import json
 import time
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List, cast
+from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List
 from unittest import mock
 from uuid import uuid4
 
 import pytest
 from _dask_helpers import DaskGatewayServer
 from _pytest.monkeypatch import MonkeyPatch
-from dask import distributed
 from dask.distributed import get_worker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.events import TaskStateEvent
@@ -25,7 +24,6 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from distributed import worker
 from distributed.deploy.spec import SpecCluster
 from fastapi.applications import FastAPI
 from models_library.clusters import NoAuthentication, SimpleAuthentication
@@ -498,7 +496,6 @@ async def test_missing_resource_send_computation_task(
     # remove the workers that can handle mpi
     scheduler_info = dask_client.dask_subsystem.client.scheduler_info()
     assert scheduler_info
-    scheduler_info["workers"]
     # find mpi workers
     workers_to_remove = [
         worker_key
