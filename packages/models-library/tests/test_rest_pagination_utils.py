@@ -23,20 +23,24 @@ def test_paginating_data(base_url):
     # create random data
     total_number_of_data = 29
     limit = 9
-    offset = 0
-    partial_data = list(range(9))
+    data_chunk = list(range(limit))
     request_url = URL(f"{base_url}?some=1&random=4&query=true")
 
+    number_of_chunks = total_number_of_data // limit + 1
+    last_chunk_size = total_number_of_data % limit
+    last_chunk_offset = (number_of_chunks - 1) * len(data_chunk)
+
     # first "call"
+    offset = 0
     data_obj: PageDict = paginate_data(
-        partial_data, request_url, total_number_of_data, limit, offset
+        data_chunk, request_url, total_number_of_data, limit, offset
     )
     assert data_obj
 
     model_instance = Page[int].parse_obj(data_obj)
     assert model_instance
     assert model_instance.meta == PageMetaInfoLimitOffset(
-        total=total_number_of_data, count=len(partial_data), limit=limit, offset=offset
+        total=total_number_of_data, count=len(data_chunk), limit=limit, offset=offset
     )
     assert model_instance.links == PageLinks(
         self=str(
@@ -52,40 +56,41 @@ def test_paginating_data(base_url):
         prev=None,
         next=str(
             URL(base_url).with_query(
-                f"some=1&random=4&query=true&offset=9&limit={limit}"
+                f"some=1&random=4&query=true&offset={offset+limit}&limit={limit}"
             )
         ),
         last=str(
             URL(base_url).with_query(
-                f"some=1&random=4&query=true&offset=27&limit={limit}"
+                f"some=1&random=4&query=true&offset={last_chunk_offset}&limit={limit}"
             )
         ),
     )
 
     # next "call"s
-    for i in (1, 2):
+    for _ in range(1, number_of_chunks - 1):
+        offset += len(data_chunk)
         assert model_instance.links.next is not None
 
         data_obj: PageDict = paginate_data(
-            partial_data,
+            data_chunk,
             URL(model_instance.links.next),
             total_number_of_data,
             limit,
-            offset + i * limit,
+            offset,
         )
 
         model_instance = Page[int].parse_obj(data_obj)
         assert model_instance
         assert model_instance.meta == PageMetaInfoLimitOffset(
             total=total_number_of_data,
-            count=len(partial_data),
+            count=len(data_chunk),
             limit=limit,
-            offset=offset + i * limit,
+            offset=offset,
         )
         assert model_instance.links == PageLinks(
             self=str(
                 URL(base_url).with_query(
-                    f"some=1&random=4&query=true&offset={offset + i*limit}&limit={limit}"
+                    f"some=1&random=4&query=true&offset={offset}&limit={limit}"
                 )
             ),
             first=str(
@@ -95,29 +100,35 @@ def test_paginating_data(base_url):
             ),
             prev=str(
                 URL(base_url).with_query(
-                    f"some=1&random=4&query=true&offset={offset + i*limit-limit}&limit={limit}"
+                    f"some=1&random=4&query=true&offset={offset-limit}&limit={limit}"
                 )
             ),
             next=str(
                 URL(base_url).with_query(
-                    f"some=1&random=4&query=true&offset={offset + i*limit+limit}&limit={limit}"
+                    f"some=1&random=4&query=true&offset={offset+limit}&limit={limit}"
                 )
             ),
             last=str(
                 URL(base_url).with_query(
-                    f"some=1&random=4&query=true&offset=27&limit={limit}"
+                    f"some=1&random=4&query=true&offset={last_chunk_offset}&limit={limit}"
                 )
             ),
         )
 
     # last "call"
+    #
+    offset += len(data_chunk)
+    data_chunk = data_chunk[:last_chunk_size]
+
+    assert offset == last_chunk_offset
+
     assert model_instance.links.next is not None
     data_obj: PageDict = paginate_data(
-        partial_data,
+        data_chunk,
         URL(model_instance.links.next),
         total_number_of_data,
         limit,
-        offset + 3 * limit,
+        offset,
     )
     assert data_obj
 
@@ -126,14 +137,14 @@ def test_paginating_data(base_url):
 
     assert model_instance.meta == PageMetaInfoLimitOffset(
         total=total_number_of_data,
-        count=len(partial_data),
+        count=len(data_chunk),
         limit=limit,
-        offset=offset + 3 * limit,
+        offset=offset,
     )
     assert model_instance.links == PageLinks(
         self=str(
             URL(base_url).with_query(
-                f"some=1&random=4&query=true&offset={offset+3*limit}&limit={limit}"
+                f"some=1&random=4&query=true&offset={offset}&limit={limit}"
             )
         ),
         first=str(
@@ -143,13 +154,13 @@ def test_paginating_data(base_url):
         ),
         prev=str(
             URL(base_url).with_query(
-                f"some=1&random=4&query=true&offset=18&limit={limit}"
+                f"some=1&random=4&query=true&offset={last_chunk_offset - limit}&limit={limit}"
             )
         ),
         next=None,
         last=str(
             URL(base_url).with_query(
-                f"some=1&random=4&query=true&offset=27&limit={limit}"
+                f"some=1&random=4&query=true&offset={last_chunk_offset}&limit={limit}"
             )
         ),
     )

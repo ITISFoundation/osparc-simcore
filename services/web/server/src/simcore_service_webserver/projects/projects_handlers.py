@@ -243,7 +243,7 @@ async def list_projects(request: web.Request):
     await set_all_project_states(projects, project_types)
     page = Page[ProjectDict].parse_obj(
         paginate_data(
-            data=projects,
+            data_chunk=projects,
             request_url=request.url,
             total=total_number_projects,
             limit=limit,
