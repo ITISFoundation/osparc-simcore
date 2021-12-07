@@ -49,7 +49,7 @@ if [ ${DASK_START_AS_SCHEDULER+x} ]; then
   fi
 else
   DASK_WORKER_VERSION=$(dask-worker --version)
-  DASK_SCHEDULER_ADDRESS=${DASK_SCHEDULER_ADDRESS:="tcp://${DASK_SCHEDULER_HOST}:8786"}
+  DASK_SCHEDULER_URL=${DASK_SCHEDULER_URL:="tcp://${DASK_SCHEDULER_HOST}:8786"}
 
   #
   # DASK RESOURCES DEFINITION
@@ -101,11 +101,11 @@ else
   # 'daemonic processes are not allowed to have children' arises when running the sidecar.cli
   # because multi-processing library is used by the sidecar and the nanny does not like it
   # setting --no-nanny fixes this: see https://github.com/dask/distributed/issues/2142
-  echo "$INFO" "Starting as a ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_ADDRESS} ..."
+  echo "$INFO" "Starting as a ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_URL} ..."
   echo "$INFO" "Worker resources set as: $resources"
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories \
-      dask-worker "${DASK_SCHEDULER_ADDRESS}" \
+      dask-worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
       --reconnect \
@@ -117,7 +117,7 @@ else
       --resources "$resources" \
       --name "${DASK_WORKER_NAME}"
   else
-    exec dask-worker "${DASK_SCHEDULER_ADDRESS}" \
+    exec dask-worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
       --reconnect \
