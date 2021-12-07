@@ -88,10 +88,33 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
             Promise.all(iterationPromises)
               .then(values => {
                 this.__iterations = values;
+                // this.__listenToNodeUpdates();
                 this.__rebuildIterationsTable();
               });
           }
         });
+    },
+
+    __listenToNodeUpdates: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      const slotName = "nodeUpdated";
+      // if (!socket.slotExists(slotName)) {
+      socket.on(slotName, data => {
+        const d = JSON.parse(data);
+        const studyId = d["project_id"];
+        const idx = this.__iterations.findIndex(it => it["uuid"] === studyId);
+        if (idx === -1) {
+          return;
+        }
+
+        const iterationData = this.__iterations[idx];
+        const iteration = new osparc.data.model.Study(iterationData);
+        iteration.buildWorkbench();
+        osparc.data.model.Study.nodeUpdated(iteration, d);
+        this.__iterations.splice(idx, 1, iteration.serialize());
+        this.__iterationsTable.iterationsToTable(this.__iterations);
+      }, this);
+      // }
     },
 
     __rebuildIterationsTable: function() {
