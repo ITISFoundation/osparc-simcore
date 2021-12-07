@@ -140,7 +140,8 @@ async def _connect_with_gateway_and_create_cluster(
             cluster = await gateway.new_cluster(shutdown_on_close=False)
         assert cluster  # nosec
         logger.info("Cluster dashboard available: %s", cluster.dashboard_link)
-        await cluster.adapt()
+        # NOTE: we scale to 1 worker as they are global
+        await cluster.scale(1)
         client = await cluster.get_client()
         assert client  # nosec
         return DaskSubSystem(client, gateway, cluster)
