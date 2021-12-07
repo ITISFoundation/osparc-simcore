@@ -3,12 +3,13 @@ from typing import Any, Dict, List, Protocol, TypedDict, Union, runtime_checkabl
 
 from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
-# In this repo we use two type of URL-like data structures:
-#        - from yarl (aiohttp-style) and
-#        - from starlette (fastapi-style)
+# NOTE: In this repo we use two type of URL-like data structures:
+#  - from yarl (aiohttp-style) and
+#  - from starlette (fastapi-style)
 #
 # Here define protocol to avoid including starlette  or yarl in this librarie's requirements
 # and a helper function below that can handle both protocols at runtime
+#
 
 
 @runtime_checkable
@@ -44,24 +45,26 @@ class PageDict(TypedDict):
 
 
 def paginate_data(
-    data: List[Any],
+    data_chunk: List[Any],
     request_url: _URLType,
     total: int,
     limit: int,
     offset: int,
 ) -> PageDict:
-    """Builds page-like objects to feed to Page[X] pydantic model class
+    """Builds page-like objects to feed to Page[ItemT] pydantic model class
 
     Usage:
 
         obj: PageDict = paginate_data( ... )
         model = Page[MyModelItem].parse_obj(obj)
+
+    raises ValidationError
     """
     last_page = ceil(total / limit) - 1
 
     return PageDict(
         _meta=PageMetaInfoLimitOffset(
-            total=total, count=len(data), limit=limit, offset=offset
+            total=total, count=len(data_chunk), limit=limit, offset=offset
         ),
         _links=PageLinks(
             self=_replace_query(request_url, {"offset": offset, "limit": limit}),
@@ -81,5 +84,5 @@ def paginate_data(
                 request_url, {"offset": last_page * limit, "limit": limit}
             ),
         ),
-        data=data,
+        data=data_chunk,
     )
