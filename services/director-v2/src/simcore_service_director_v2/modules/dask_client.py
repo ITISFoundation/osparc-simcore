@@ -62,7 +62,6 @@ from ..utils.dask import (
 )
 
 logger = logging.getLogger(__name__)
-CLUSTER_RESOURCE_MOCK_USAGE: float = 1e-9
 
 
 @dataclass

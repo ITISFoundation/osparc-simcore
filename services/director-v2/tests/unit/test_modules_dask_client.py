@@ -42,10 +42,7 @@ from simcore_service_director_v2.core.errors import (
 from simcore_service_director_v2.models.domains.comp_tasks import Image
 from simcore_service_director_v2.models.schemas.constants import ClusterID, UserID
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
-from simcore_service_director_v2.modules.dask_client import (
-    CLUSTER_RESOURCE_MOCK_USAGE,
-    DaskClient,
-)
+from simcore_service_director_v2.modules.dask_client import DaskClient
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -199,7 +196,7 @@ class ImageParams:
 
 
 @pytest.fixture
-def cpu_image(node_id: NodeID, cluster_id_resource_name: str) -> ImageParams:
+def cpu_image(node_id: NodeID) -> ImageParams:
     image = Image(
         name="simcore/services/comp/pytest/cpu_image",
         tag="1.5.5",
@@ -211,7 +208,6 @@ def cpu_image(node_id: NodeID, cluster_id_resource_name: str) -> ImageParams:
             "resources": {
                 "CPU": 1.0,
                 "RAM": 128 * 1024 * 1024,
-                cluster_id_resource_name: CLUSTER_RESOURCE_MOCK_USAGE,
             }
         },
         fake_task={node_id: image},
@@ -219,7 +215,7 @@ def cpu_image(node_id: NodeID, cluster_id_resource_name: str) -> ImageParams:
 
 
 @pytest.fixture
-def gpu_image(node_id: NodeID, cluster_id_resource_name: str) -> ImageParams:
+def gpu_image(node_id: NodeID) -> ImageParams:
     image = Image(
         name="simcore/services/comp/pytest/gpu_image",
         tag="1.4.7",
@@ -232,7 +228,6 @@ def gpu_image(node_id: NodeID, cluster_id_resource_name: str) -> ImageParams:
                 "CPU": 1.0,
                 "GPU": 1.0,
                 "RAM": 256 * 1024 * 1024,
-                cluster_id_resource_name: CLUSTER_RESOURCE_MOCK_USAGE,
             },
         },
         fake_task={node_id: image},
@@ -240,7 +235,7 @@ def gpu_image(node_id: NodeID, cluster_id_resource_name: str) -> ImageParams:
 
 
 @pytest.fixture
-def mpi_image(node_id: NodeID, cluster_id_resource_name: str) -> ImageParams:
+def mpi_image(node_id: NodeID) -> ImageParams:
     image = Image(
         name="simcore/services/comp/pytest/mpi_image",
         tag="1.4.5123",
@@ -253,7 +248,6 @@ def mpi_image(node_id: NodeID, cluster_id_resource_name: str) -> ImageParams:
                 "CPU": 2.0,
                 "MPI": 1.0,
                 "RAM": 128 * 1024 * 1024,
-                cluster_id_resource_name: CLUSTER_RESOURCE_MOCK_USAGE,
             },
         },
         fake_task={node_id: image},
