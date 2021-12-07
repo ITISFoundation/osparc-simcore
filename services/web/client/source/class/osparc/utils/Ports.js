@@ -38,8 +38,8 @@ qx.Class.define("osparc.utils.Ports", {
       return osparc.data.Resources.getCompatibleInputs(node1, portId1, node2)
         .then(compatiblePorts => {
           let arePortsCompatible = compatiblePorts.includes(portId2);
-          if (node2.isIteratorConsumer()) {
-            arePortsCompatible = node1.hasIteratorUpstream();
+          if (node2.isProbe()) {
+            arePortsCompatible = arePortsCompatible && node1.hasIteratorUpstream();
           }
           return arePortsCompatible;
         });

@@ -72,7 +72,7 @@ qx.Class.define("osparc.component.node.GroupNodeView", {
       const innerNodes = this.getNode().getInnerNodes(true);
       Object.values(innerNodes).forEach(innerNode => {
         const propsForm = innerNode.getPropsForm();
-        if (propsForm && Object.keys(innerNode.getInputs()).length && propsForm.hasVisibleInputs()) {
+        if (propsForm && innerNode.hasInputs() && propsForm.hasVisibleInputs()) {
           const innerSettings = osparc.component.node.BaseNodeView.createSettingsGroupBox();
           innerNode.bind("label", innerSettings, "legend");
           innerSettings.add(propsForm);

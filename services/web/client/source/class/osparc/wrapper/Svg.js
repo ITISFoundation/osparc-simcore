@@ -124,6 +124,22 @@ qx.Class.define("osparc.wrapper.Svg", {
       return rect;
     },
 
+    drawNodeUI: function(draw, width, height, radius, x, y) {
+      const nodeUIColor = qx.theme.manager.Color.getInstance().getTheme().colors["window-border"];
+      const rect = draw.rect(width, height)
+        .fill(nodeUIColor)
+        .stroke({
+          width: 0.2,
+          color: "black"
+        })
+        .move(x, y)
+        .attr({
+          rx: radius,
+          ry: radius
+        });
+      return rect;
+    },
+
     updateRect: function(rect, x, y) {
       rect.move(x, y);
     },
@@ -181,6 +197,14 @@ qx.Class.define("osparc.wrapper.Svg", {
       polyline.stroke({
         color: color
       });
+    },
+
+    updateNodeUI: function(nodeUI, x, y) {
+      nodeUI.move(x, y);
+    },
+
+    removeNodeUI: function(nodeUI) {
+      nodeUI.remove();
     },
 
     drawLine: function(draw, controls) {

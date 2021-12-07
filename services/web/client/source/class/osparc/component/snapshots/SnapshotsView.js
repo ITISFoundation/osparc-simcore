@@ -88,27 +88,9 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
         .then(values => {
           this.__snapshots = values[0];
           this.__currentSnapshot = values[1];
-          this.__rebuildSnapshotsTable();
           this.__rebuildSnapshotsGraph();
+          this.__rebuildSnapshotsTable();
         });
-    },
-
-    __rebuildSnapshotsTable: function() {
-      if (this.__snapshotsTable) {
-        this.__snapshotsSection.remove(this.__snapshotsTable);
-      }
-
-      const snapshotsTable = this.__snapshotsTable = new osparc.component.snapshots.Snapshots();
-      snapshotsTable.populateTable(this.__snapshots);
-      snapshotsTable.addListener("cellTap", e => {
-        const selectedRow = e.getRow();
-        const snapshotId = snapshotsTable.getRowData(selectedRow)["Id"];
-        this.__snapshotSelected(snapshotId);
-      });
-
-      this.__snapshotsSection.addAt(snapshotsTable, 0, {
-        width: "40%"
-      });
     },
 
     __rebuildSnapshotsGraph: function() {
@@ -142,8 +124,26 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
         });
       });
 
-      this.__snapshotsSection.addAt(gitGraphLayout, 1, {
+      this.__snapshotsSection.addAt(gitGraphLayout, 0, {
         width: "20%"
+      });
+    },
+
+    __rebuildSnapshotsTable: function() {
+      if (this.__snapshotsTable) {
+        this.__snapshotsSection.remove(this.__snapshotsTable);
+      }
+
+      const snapshotsTable = this.__snapshotsTable = new osparc.component.snapshots.Snapshots();
+      snapshotsTable.populateTable(this.__snapshots);
+      snapshotsTable.addListener("cellTap", e => {
+        const selectedRow = e.getRow();
+        const snapshotId = snapshotsTable.getRowData(selectedRow)["Id"];
+        this.__snapshotSelected(snapshotId);
+      });
+
+      this.__snapshotsSection.addAt(snapshotsTable, 1, {
+        width: "40%"
       });
     },
 
