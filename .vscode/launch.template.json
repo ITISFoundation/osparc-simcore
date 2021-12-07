@@ -15,6 +15,7 @@
         "--log-cli-level=INFO",
         "--ff",
         "--keep-docker-up",
+        "--setup-show",
         "${file}"
       ],
       "cwd": "${workspaceFolder}",
