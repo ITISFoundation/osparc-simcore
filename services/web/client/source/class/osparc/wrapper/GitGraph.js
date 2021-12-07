@@ -57,6 +57,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
             size: 3
           },
           message: {
+            display: false,
             displayAuthor: false,
             displayBranch: false,
             displayHash: false,
