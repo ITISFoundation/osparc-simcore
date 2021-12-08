@@ -14,7 +14,7 @@ from faker import Faker
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_simcore.helpers.rawdata_fakers import random_project
-from pytest_simcore.helpers.utils_login import UserDict
+from pytest_simcore.helpers.utils_login import AUserDict
 from pytest_simcore.helpers.utils_projects import NewProject
 from simcore_postgres_database.models.projects_version_control import (
     projects_vc_repos,
@@ -131,7 +131,7 @@ def app_cfg(
 
 
 @pytest.fixture
-async def user_id(logged_user: UserDict) -> UserID:
+async def user_id(logged_user: AUserDict) -> UserID:
     return logged_user["id"]
 
 
@@ -161,7 +161,7 @@ async def user_project(
 
 @pytest.fixture
 def do_update_user_project(
-    logged_user: UserDict, client: TestClient, faker: Faker
+    logged_user: AUserDict, client: TestClient, faker: Faker
 ) -> Callable[[UUID], Awaitable]:
     async def _doit(project_uuid: UUID) -> None:
         resp: aiohttp.ClientResponse = await client.get(f"{VX}/projects/{project_uuid}")
@@ -188,7 +188,7 @@ def do_update_user_project(
 
 @pytest.fixture
 def do_delete_user_project(
-    logged_user: UserDict, client: TestClient, mocker
+    logged_user: AUserDict, client: TestClient, mocker
 ) -> Callable[[UUID], Awaitable]:
     mocker.patch(
         "simcore_service_webserver.projects.projects_api.director_v2_api.delete_pipeline",
