@@ -1569,7 +1569,7 @@ paths:
                   data:
                     type: object
                     required:
-                      - pipelines_ids
+                      - pipelines_id
                     properties:
                       pipeline_id:
                         type: string
