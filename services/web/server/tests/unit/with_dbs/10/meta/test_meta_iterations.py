@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 
 import json
+from copy import deepcopy
 from http import HTTPStatus
 from pathlib import Path
 from typing import Dict, Union
@@ -15,61 +16,90 @@ from models_library.database_project_models import (
     load_projects_exported_as_csv,
 )
 from models_library.projects import Project
+from pytest_simcore.helpers.utils_login import AUserDict
 from pytest_simcore.simcore_webserver_projects_rest_api import (
     NEW_PROJECT,
     REPLACE_PROJECT_ON_MODIFIED,
     RUN_PROJECT,
 )
 from simcore_service_webserver.meta_handlers import Page, ProjectIterationAsItem
+from simcore_service_webserver.projects.project_models import ProjectDict
 
-JSON_KWARGS = dict(indent=2, sort_keys=True)
+REQUEST_MODEL_POLICY = {
+    "by_alias": True,
+    "exclude_defaults": True,
+    "exclude_none": False,
+    "exclude_unset": True,
+}
 
 
-async def test_iterators_workflow(client: TestClient):
+def clone_project(source_project: ProjectDict, new_project_uuid: str) -> ProjectDict:
+    clone = deepcopy(source_project)
+    assert clone
+    # TODO: attach to project
+    clone["uuid"] = new_project_uuid
+    clone["ui"]["currentNodeId"] = new_project_uuid
+    return clone
+
+
+# TESTS ----------------------------------
+
+
+async def test_iterators_workflow(client: TestClient, logged_user: AUserDict, mocker):
     resp: ClientResponse
 
-    # new project --------------------------------------------------------------
-    assert NEW_PROJECT.request_desc == "POST /projects"
-    resp = await client.request(
-        NEW_PROJECT.method, NEW_PROJECT.path, json=NEW_PROJECT.request_payload
+    mocker.patch(
+        "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
+        return_value=None,
     )
-    assert resp.status == NEW_PROJECT.status_code
+    mocker.patch(
+        "simcore_service_webserver.director_v2_api.get_computation_task",
+        return_value=None,
+    )
+
+    # new project --------------------------------------------------------------
+    assert NEW_PROJECT.request_desc == "POST /v0/projects"
+    resp = await client.post("/v0/projects", json=NEW_PROJECT.request_payload)
+    assert resp.status == NEW_PROJECT.status_code, await resp.text()
+    body = await resp.json()
+
+    project_data: ProjectDict = body["data"]
+    project_uuid = project_data["uuid"]
 
     # create meta-project: iterator 0:3 -> sleeper -> sleeper_2 ---------------
-    assert (
-        REPLACE_PROJECT_ON_MODIFIED.request_desc
-        == "PUT /projects/18f1938c-567d-11ec-b2f3-02420a000010"
+    modifications = REPLACE_PROJECT_ON_MODIFIED.request_payload
+    assert modifications
+    project_data.update({key: modifications[key] for key in ("workbench", "ui")})
+    project_data["ui"].setdefault("currentNodeId", project_uuid)
+
+    resp = await client.put(
+        f"/v0/projects/{project_data['uuid']}",
+        json=project_data,
     )
-    resp = await client.request(
-        REPLACE_PROJECT_ON_MODIFIED.method,
-        REPLACE_PROJECT_ON_MODIFIED.path,
-        json=REPLACE_PROJECT_ON_MODIFIED.request_payload,
-    )
-    assert resp.status == REPLACE_PROJECT_ON_MODIFIED.status_code
+    assert resp.status == REPLACE_PROJECT_ON_MODIFIED.status_code, await resp.text()
 
     # TODO: create iterations, so user could explore parametrizations?
 
     # run metaproject ----------------------------------------------------------
-    assert (
-        RUN_PROJECT.request_desc
-        == "POST /computation/pipeline/18f1938c-567d-11ec-b2f3-02420a000010:start"
+    # TODO: ideally mock DirectorV2ApiClient.start, DirectorV2ApiClient.stop
+    mocker.patch(
+        "simcore_service_webserver.director_v2_core._request_director_v2",
+        return_value={"id": project_uuid},
     )
-    resp = await client.request(
-        RUN_PROJECT.method,
-        RUN_PROJECT.path,
+    resp = await client.post(
+        f"/v0/computation/pipeline/{project_uuid}:start",
         json=RUN_PROJECT.request_payload,
     )
-    assert resp.status
     body = await resp.json()
-    assert RUN_PROJECT.response_body == body
-
-    project_uuid = body["data"]["pipeline_id"]
+    assert project_uuid == body["data"]["pipeline_id"]
     ref_ids = body["data"]["ref_ids"]
+    assert len(ref_ids) == 3
 
     # TODO: check: has auto-commited
     # TODO: check: has iterations as branches
     # TODO:retrieve results of iter1
 
+    # get iterations ----------------------------------------------------------
     resp = await client.get(
         f"/v0/projects/{project_uuid}/checkpoint/HEAD/iterations?offset=0"
     )
@@ -78,6 +108,8 @@ async def test_iterators_workflow(client: TestClient):
 
     assert len(iterlist_a) == 3
 
+    # get wcopy project for iter 0 ----------------------------------------------
+    # extract outputs
     resp = await client.get(iterlist_a[0].wcopy_project_url.path)
     assert resp.status == HTTPStatus.OK
 
@@ -89,8 +121,10 @@ async def test_iterators_workflow(client: TestClient):
         if out := node.get("outputs"):
             outputs[nid] = out
 
+    # get project and modefy iterator
     # TODO: change iterations from 0:4 -> HEAD+1
     resp = await client.get(f"/v0/projects/{project_uuid}")
+    assert resp.status == HTTPStatus.OK, await resp.text()
     body = await resp.json()
 
     project = Project.parse_obj(body["data"])
@@ -107,8 +141,12 @@ async def test_iterators_workflow(client: TestClient):
             }
         }
     )
+    resp = await client.put(
+        f"/v0/projects/{project_uuid}", json=new_project.dict(**REQUEST_MODEL_POLICY)
+    )
+    assert resp.status == HTTPStatus.OK, await resp.text()
 
-    # create iterations
+    # create iterations ------------------------------------------------------------------
     resp = await client.post(f"/v0/projects/{project_uuid}/checkpoint/HEAD/iterations")
     assert resp.status == HTTPStatus.CREATED
 
@@ -116,7 +154,7 @@ async def test_iterators_workflow(client: TestClient):
     # check four new branches
     #
 
-    # retrieve them
+    # retrieve iterations ---------------------------------------------------------------
     resp = await client.get(
         f"/v0/projects/{project_uuid}/checkpoint/HEAD/iterations?offset=0"
     )
@@ -124,18 +162,22 @@ async def test_iterators_workflow(client: TestClient):
     iterlist_b = Page[ProjectIterationAsItem].parse_obj(body).data
     assert len(iterlist_b) == 4
 
-    # run
+    # run them ---------------------------------------------------------------------------
     resp = await client.request(
         RUN_PROJECT.method,
         RUN_PROJECT.path,
         json=RUN_PROJECT.request_payload,
     )
 
+    # check iters 1, 2 and 3 share working copies
+    #
+
     # TODO: checkout i
 
 
 @pytest.mark.skip(reason="DEV")
 def test_it1():
+    JSON_KWARGS = dict(indent=2, sort_keys=True)
 
     respath = Path("/home/crespo/Downloads/response_1633600264408.json")
     csvpath = Path("/home/crespo/Downloads/projects.csv")
