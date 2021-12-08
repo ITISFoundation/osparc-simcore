@@ -3,6 +3,7 @@
 import pytest
 from asyncio import AbstractEventLoop
 from pathlib import Path
+from faker import Faker
 
 from servicelib.file_utils import remove_directory
 
@@ -56,3 +57,11 @@ async def test_remove_fail_fails(
         await remove_directory(path=a_file, only_children=only_children)
 
     assert excinfo.value.args[0] == f"Provided path={a_file} must be a directory"
+
+
+async def test_remove_none_existingdirectory(
+    loop: AbstractEventLoop, faker: Faker, only_children: bool
+) -> None:
+    missing_path = Path(faker.file_path())
+    assert missing_path.exists() is False
+    await remove_directory(path=missing_path, only_children=only_children)
