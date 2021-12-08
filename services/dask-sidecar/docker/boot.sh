@@ -49,7 +49,7 @@ if [ ${DASK_START_AS_SCHEDULER+x} ]; then
   fi
 else
   DASK_WORKER_VERSION=$(dask-worker --version)
-  DASK_SCHEDULER_ADDRESS="tcp://${DASK_SCHEDULER_HOST}:8786"
+  DASK_SCHEDULER_URL=${DASK_SCHEDULER_URL:="tcp://${DASK_SCHEDULER_HOST}:8786"}
 
   #
   # DASK RESOURCES DEFINITION
@@ -89,46 +89,44 @@ else
     fi
   fi
 
-  # find if a cluster id was setup in the docker daemon labels
-  cluster_id=$(python -c "from simcore_service_dask_sidecar.utils import cluster_id; print(cluster_id());")
-  if [ "$cluster_id" != "None" ]; then
-    resources="$resources,$cluster_id=1"
-  fi
 
   #
   # DASK RESOURCES DEFINITION --------------------------------- END
   #
-
+  DASK_NPROCS=${DASK_NPROCS:="1"}
+  DASK_NTHREADS=${DASK_NTHREADS:="$num_cpus"}
+  DASK_MEMORY_LIMIT=${DASK_MEMORY_LIMIT:="$ram"}
+  DASK_WORKER_NAME=${DASK_WORKER_NAME:="dask-sidecar_$(hostname)_$(date +'%Y-%m-%d_%T')_$$"}
   #
   # 'daemonic processes are not allowed to have children' arises when running the sidecar.cli
   # because multi-processing library is used by the sidecar and the nanny does not like it
   # setting --no-nanny fixes this: see https://github.com/dask/distributed/issues/2142
-  echo "$INFO" "Starting as a ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_ADDRESS} ..."
+  echo "$INFO" "Starting as a ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_URL} ..."
   echo "$INFO" "Worker resources set as: $resources"
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-    exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories \
-      dask-worker "${DASK_SCHEDULER_ADDRESS}" \
+    exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
+      dask-worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
       --reconnect \
       --no-nanny \
-      --nprocs 1 \
-      --nthreads "$num_cpus" \
+      --nprocs ${DASK_NPROCS} \
+      --nthreads "${DASK_NTHREADS}" \
       --dashboard-address 8787 \
-      --memory-limit "$ram" \
+      --memory-limit "${DASK_MEMORY_LIMIT}" \
       --resources "$resources" \
-      --name "dask-sidecar_$(hostname)_$(date +'%Y-%m-%d_%T')_$$"
+      --name "${DASK_WORKER_NAME}"
   else
-    exec dask-worker "${DASK_SCHEDULER_ADDRESS}" \
+    exec dask-worker "${DASK_SCHEDULER_URL}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
       --reconnect \
       --no-nanny \
-      --nprocs 1 \
-      --nthreads "$num_cpus" \
+      --nprocs ${DASK_NPROCS} \
+      --nthreads "${DASK_NTHREADS}" \
       --dashboard-address 8787 \
-      --memory-limit "$ram" \
+      --memory-limit "${DASK_MEMORY_LIMIT}" \
       --resources "$resources" \
-      --name "dask-sidecar_$(hostname)_$(date +'%Y-%m-%d_%T')_$$"
+      --name "${DASK_WORKER_NAME}"
   fi
 fi

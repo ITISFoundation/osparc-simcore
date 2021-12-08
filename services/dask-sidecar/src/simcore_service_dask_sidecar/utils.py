@@ -7,37 +7,11 @@ from typing import Any, Awaitable, Optional, cast
 import aiodocker
 from aiodocker.containers import DockerContainer
 
-from .settings import Settings
-
 logger = logging.getLogger(__name__)
 
 
 def wrap_async_call(fct: Awaitable[Any]) -> Any:
     return asyncio.get_event_loop().run_until_complete(fct)
-
-
-def cluster_id() -> Optional[str]:
-    """Returns the cluster id this docker engine belongs to, if any"""
-
-    async def async_get_engine_cluster_id() -> Optional[str]:
-        app_settings = Settings.create_from_envs()
-        async with aiodocker.Docker() as docker:
-            docker_system_info = await docker.system.info()
-        node_labels = docker_system_info.get("Labels", [])
-
-        for entry in node_labels:
-            try:
-                key, value = f"{entry}".split("=", maxsplit=1)
-                if key == "cluster_id" and value:
-                    return f"{app_settings.DASK_CLUSTER_ID_PREFIX}{value}"
-            except ValueError:
-                logger.warning(
-                    "The docker engine labels are not following the pattern `key=value`. Please check %s",
-                    entry,
-                )
-        return f"{app_settings.DASK_CLUSTER_ID_PREFIX}{app_settings.DASK_DEFAULT_CLUSTER_ID}"
-
-    return cast(Optional[str], wrap_async_call(async_get_engine_cluster_id()))
 
 
 def num_available_gpus() -> int:

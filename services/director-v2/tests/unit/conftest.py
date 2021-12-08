@@ -2,11 +2,15 @@
 # pylint: disable=unused-argument
 
 import random
-from typing import AsyncIterable
+from typing import AsyncIterable, AsyncIterator
 
 import pytest
+import traitlets.config
+from _dask_helpers import DaskGatewayServer
 from _pytest.monkeypatch import MonkeyPatch
-from dask.distributed import LocalCluster, Scheduler, Worker
+from dask.distributed import Scheduler, Worker
+from dask_gateway_server.app import DaskGateway
+from dask_gateway_server.backends.local import UnsafeLocalBackend
 from distributed.deploy.spec import SpecCluster
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pydantic.types import NonNegativeInt
@@ -90,17 +94,6 @@ def scheduler_data(
 
 
 @pytest.fixture
-async def dask_local_cluster(monkeypatch: MonkeyPatch) -> AsyncIterable[SpecCluster]:
-    async with LocalCluster(
-        n_workers=2, threads_per_worker=1, asynchronous=True
-    ) as cluster:
-        scheduler_address = URL(cluster.scheduler_address)
-        monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
-        monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
-        yield cluster
-
-
-@pytest.fixture
 def cluster_id() -> NonNegativeInt:
     return random.randint(0, 10)
 
@@ -112,7 +105,8 @@ def cluster_id_resource_name(cluster_id: NonNegativeInt) -> str:
 
 @pytest.fixture
 async def dask_spec_local_cluster(
-    monkeypatch: MonkeyPatch, cluster_id_resource_name: str
+    monkeypatch: MonkeyPatch,
+    cluster_id_resource_name: str,
 ) -> AsyncIterable[SpecCluster]:
     # in this mode we can precisely create a specific cluster
     workers = {
@@ -163,9 +157,50 @@ async def dask_spec_local_cluster(
     scheduler = {"cls": Scheduler, "options": {"dashboard_address": ":8787"}}
 
     async with SpecCluster(
-        workers=workers, scheduler=scheduler, asynchronous=True
+        workers=workers, scheduler=scheduler, asynchronous=True, name="pytest_cluster"
     ) as cluster:
         scheduler_address = URL(cluster.scheduler_address)
         monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
         monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
         yield cluster
+
+
+@pytest.fixture
+async def local_dask_gateway_server(
+    cluster_id_resource_name: str,
+) -> AsyncIterator[DaskGatewayServer]:
+    c = traitlets.config.Config()
+    c.DaskGateway.backend_class = UnsafeLocalBackend  # type: ignore
+    c.DaskGateway.address = "127.0.0.1:0"  # type: ignore
+    c.Proxy.address = "127.0.0.1:0"  # type: ignore
+    c.DaskGateway.authenticator_class = "dask_gateway_server.auth.SimpleAuthenticator"  # type: ignore
+    c.SimpleAuthenticator.password = "qweqwe"  # type: ignore
+    c.ClusterConfig.worker_cmd = [  # type: ignore
+        "dask-worker",
+        "--resources",
+        f"CPU=12,GPU=1,MPI=1,RAM={16e9},{cluster_id_resource_name}=1",
+    ]
+    # NOTE: This must be set such that the local unsafe backend creates a worker with enough cores/memory
+    c.ClusterConfig.worker_cores = 12  # type: ignore
+    c.ClusterConfig.worker_memory = "16G"  # type: ignore
+
+    c.DaskGateway.log_level = "DEBUG"  # type: ignore
+
+    print("--> creating local dask gateway server")
+
+    dask_gateway_server = DaskGateway(config=c)
+    dask_gateway_server.initialize([])  # that is a shitty one!
+    print("--> local dask gateway server initialized")
+    await dask_gateway_server.setup()
+    await dask_gateway_server.backend.proxy._proxy_contacted  # pylint: disable=protected-access
+
+    print("--> local dask gateway server setup completed")
+    yield DaskGatewayServer(
+        f"http://{dask_gateway_server.backend.proxy.address}",
+        f"gateway://{dask_gateway_server.backend.proxy.tcp_address}",
+        c.SimpleAuthenticator.password,  # type: ignore
+        dask_gateway_server,
+    )
+    print("--> local dask gateway server switching off...")
+    await dask_gateway_server.cleanup()
+    print("...done")

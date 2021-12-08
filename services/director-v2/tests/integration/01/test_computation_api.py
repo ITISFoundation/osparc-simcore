@@ -167,13 +167,12 @@ def test_invalid_computation(
     ), f"response code is {response.status_code}, error: {response.text}"
 
 
-async def test_start_empty_computation(
+async def test_start_empty_computation_is_refused(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     user_id: PositiveInt,
     project: Callable,
 ):
-    # send an empty project to process
     empty_project = project()
     await create_pipeline(
         async_client,
@@ -774,7 +773,7 @@ async def test_update_and_delete_computation(
     ), f"response code is {response.status_code}, error: {response.text}"
 
 
-async def test_pipeline_with_no_comp_services_still_create_correct_comp_tasks(
+async def test_pipeline_with_no_computational_services_still_create_correct_comp_tasks_in_db(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
     user_id: PositiveInt,
@@ -814,7 +813,7 @@ async def test_pipeline_with_no_comp_services_still_create_correct_comp_tasks(
     ), f"response code is {response.status_code}, error: {response.text}"
 
 
-def test_pipeline_with_control_pipeline_made_of_dynamic_services_are_allowed(
+def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
     minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,
