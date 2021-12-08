@@ -6,7 +6,7 @@
 from copy import deepcopy
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Literal, Optional, Tuple
 
 import pytest
 
@@ -20,19 +20,18 @@ class HttpApiCallCapture:
     """
 
     description: str
-    call: str
+    method: Literal["GET", "PUT", "POST", "PATCH"]
+    path: str
     request_payload: Optional[Dict[str, Any]]
     response_body: Optional[Dict[str, Any]]
     status_code: HTTPStatus = HTTPStatus.OK
 
     def __str__(self) -> str:
-        return f"{self.description: self.call}"
+        return f"{self.description: self.request_desc}"
 
-    def operator(self) -> str:
-        return self.call.split()[0]
-
-    def rel_url(self) -> str:
-        return self.call.split()[1]
+    @property
+    def request_desc(self) -> str:
+        return f"{self.method} {self.path}"
 
 
 #
@@ -43,7 +42,8 @@ class HttpApiCallCapture:
 
 NEW_PROJECT = HttpApiCallCapture(
     description="Press 'New Project'",
-    call="POST /projects",
+    method="POST",
+    path="/v0/projects",
     request_payload={
         "uuid": "",
         "name": "New Study",
@@ -80,7 +80,8 @@ NEW_PROJECT = HttpApiCallCapture(
 
 GET_PROJECT = HttpApiCallCapture(
     description="Received newly created project",
-    call="GET /projects/18f1938c-567d-11ec-b2f3-02420a000010",
+    method="GET",
+    path="/v0/projects/18f1938c-567d-11ec-b2f3-02420a000010",
     request_payload=None,
     response_body={
         "data": {
@@ -109,7 +110,8 @@ GET_PROJECT = HttpApiCallCapture(
 
 OPEN_PROJECT = HttpApiCallCapture(
     description="Open newly created project, i.e. project becomes active and dy-services are started",
-    call="POST /projects/18f1938c-567d-11ec-b2f3-02420a000010:open",
+    method="POST",
+    path="/v0/projects/18f1938c-567d-11ec-b2f3-02420a000010:open",
     request_payload=None,
     response_body={
         "data": {
@@ -146,7 +148,8 @@ OPEN_PROJECT = HttpApiCallCapture(
 
 REPLACE_PROJECT = HttpApiCallCapture(
     description="Saving periodically the project after modification (autosave)",
-    call="PUT /projects/18f1938c-567d-11ec-b2f3-02420a000010",
+    method="PUT",
+    path="/v0/projects/18f1938c-567d-11ec-b2f3-02420a000010",
     request_payload={
         "uuid": "18f1938c-567d-11ec-b2f3-02420a000010",
         "name": "New Study",
@@ -271,7 +274,8 @@ REPLACE_PROJECT = HttpApiCallCapture(
 
 REPLACE_PROJECT_ON_MODIFIED = HttpApiCallCapture(
     description="After the user adds an iterator 1:3 and two sleepers, the project is saved",
-    call="PUT /projects/18f1938c-567d-11ec-b2f3-02420a000010",
+    method="PUT",
+    path="/v0/projects/18f1938c-567d-11ec-b2f3-02420a000010",
     request_payload={
         "uuid": "18f1938c-567d-11ec-b2f3-02420a000010",
         "name": "New Study",
@@ -522,7 +526,8 @@ REPLACE_PROJECT_ON_MODIFIED = HttpApiCallCapture(
 
 RUN_PROJECT = HttpApiCallCapture(
     description="User press run button",
-    call="POST /computation/pipeline/18f1938c-567d-11ec-b2f3-02420a000010:start",
+    method="POST",
+    path="/computation/pipeline/18f1938c-567d-11ec-b2f3-02420a000010:start",
     request_payload={"subgraph": [], "force_restart": False},
     response_body={
         "data": {
@@ -536,7 +541,8 @@ RUN_PROJECT = HttpApiCallCapture(
 
 CLOSE_PROJECT = HttpApiCallCapture(
     description="Back to the dashboard, project closes",
-    call="POST /projects/18f1938c-567d-11ec-b2f3-02420a000010:close",
+    method="POST",
+    path="/v0/projects/18f1938c-567d-11ec-b2f3-02420a000010:close",
     # FIXME: string as payload? should use proper json with 'client_session_id'
     request_payload="367885c0-324c-451c-85a5-b361d1feecb9",
     response_body=None,
@@ -546,7 +552,8 @@ CLOSE_PROJECT = HttpApiCallCapture(
 
 LIST_PROJECTS = HttpApiCallCapture(
     description="Open browser in ashboard and user gets all projects",
-    call="POST /projects?type=user&offset=0&limit=10",
+    method="POST",
+    path="/v0/projects?type=user&offset=0&limit=10",
     request_payload=None,
     response_body={
         "_meta": {"limit": 10, "total": 1, "offset": 0, "count": 1},
