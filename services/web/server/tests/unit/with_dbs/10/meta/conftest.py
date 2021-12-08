@@ -4,7 +4,7 @@
 
 import logging
 from copy import deepcopy
-from typing import Any, Awaitable, Callable, Dict, Iterator
+from typing import Any, AsyncIterator, Awaitable, Callable, Dict
 from uuid import UUID
 
 import aiohttp
@@ -143,7 +143,7 @@ def project_uuid(user_project: ProjectDict) -> ProjectID:
 @pytest.fixture
 async def user_project(
     client: TestClient, fake_project: ProjectDict, user_id
-) -> Iterator[ProjectDict]:
+) -> AsyncIterator[ProjectDict]:
     # pylint: disable=no-value-for-parameter
 
     async with NewProject(fake_project, client.app, user_id=user_id) as project:
