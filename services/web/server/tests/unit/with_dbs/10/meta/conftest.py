@@ -7,12 +7,19 @@ from copy import deepcopy
 from typing import Any, Dict
 
 import pytest
+from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.log import setup_logging
 
 # HELPERS
 
 
 # FIXTURES
+
+
+@pytest.fixture
+def user_role() -> UserRole:
+    # TODO: user rights still not in place
+    return UserRole.TESTER
 
 
 @pytest.fixture
