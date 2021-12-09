@@ -23,6 +23,7 @@ test() {
   echo "testing in services/director-v2/tests/integration/$1"
   pytest --log-format="%(asctime)s %(levelname)s %(message)s" \
     --log-date-format="%Y-%m-%d %H:%M:%S" \
+    --log-cli-level=DEBUG \
     --cov=simcore_service_director_v2 --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
     -v -m "not travis" "services/director-v2/tests/integration/$1" --log-level=DEBUG
