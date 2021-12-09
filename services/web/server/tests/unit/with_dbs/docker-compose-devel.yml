@@ -1,7 +1,8 @@
 version: "3.8"
 services:
   postgres:
-    image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f"
+    image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27\
+      c02d8adb8feb20f"
     restart: always
     environment:
       # defaults are the same as in conftest.yaml so we start compose from command line for debugging
@@ -20,16 +21,23 @@ services:
     #   - net.ipv4.tcp_keepalive_intvl=600
     #   - net.ipv4.tcp_keepalive_probes=9
     #   - net.ipv4.tcp_keepalive_time=600
-    command: postgres -c tcp_keepalives_idle=600 -c tcp_keepalives_interval=600 -c tcp_keepalives_count=5
+    command: postgres -c tcp_keepalives_idle=600 -c tcp_keepalives_interval=600 -c
+      tcp_keepalives_count=5
   adminer:
-    image: adminer
+    image: adminer:4.8.0
+    init: true
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+      - ADMINER_DESIGN=nette
+      - ADMINER_PLUGINS=json-column
     restart: always
     ports:
       - 18080:8080
     depends_on:
       - postgres
   redis:
-    image: "redis:5.0.9-alpine@sha256:b011c1ca7fa97ed92d6c5995e5dd752dc37fe157c1b60ce96a6e35701851dabc"
+    image: "redis:5.0.9-alpine@sha256:b011c1ca7fa97ed92d6c5995e5dd752dc37fe157c1b60\
+      ce96a6e35701851dabc"
     ports:
       - "6379:6379"
   redis-commander:
