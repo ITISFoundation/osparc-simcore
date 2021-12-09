@@ -13,10 +13,6 @@ from pydantic.types import PositiveInt
 # HELPERS -----
 
 
-def copy_dict(obj: Dict, *, exclude={}):
-    return {k: v for k, v in obj.items() if k not in exclude}
-
-
 def update_dict(obj: Dict, **updates):
     for key, value in updates.items():
         if callable(value):
@@ -34,10 +30,11 @@ def validators_factory() -> Callable:
         return v.title()
 
     def passwords_match(v, values, **kwargs):
-        password_ref = values.get("password")
-        if password_ref is None:
+        pasword = values.get("password")
+        if pasword is None:
             raise ValueError("reference password missing")
-        elif v != password_ref:
+
+        if v != pasword:
             raise ValueError("passwords do not match")
         return v
 
