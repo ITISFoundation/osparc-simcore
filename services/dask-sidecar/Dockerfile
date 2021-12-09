@@ -49,6 +49,9 @@ ENV LANG=C.UTF-8 \
 
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
+# for ARM architecture this helps a lot VS building packages
+ENV PIP_EXTRA_INDEX_URL=https://www.piwheels.org/simple
+
 
 EXPOSE 8080
 EXPOSE 8786
