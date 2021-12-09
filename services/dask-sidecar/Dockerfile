@@ -1,5 +1,9 @@
+# syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.8.10"
-FROM python:${PYTHON_VERSION}-slim-buster as base
+FROM --platform=${TARGETPLATFORM} python:${PYTHON_VERSION}-slim-buster as base
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
 #
 #  USAGE:
 #     cd sercices/dask-sidecar
@@ -8,9 +12,11 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 #
 #  REQUIRED: context expected at ``osparc-simcore/`` folder because we need access to osparc-simcore/packages
 
-LABEL maintainer=pcrespov
+LABEL maintainer=sanderegg
 
-RUN set -eux \
+RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux \
   && apt-get update \
   && apt-get install -y --no-install-recommends \
   iputils-ping \
@@ -43,6 +49,9 @@ ENV LANG=C.UTF-8 \
 
 ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 
+# for ARM architecture this helps a lot VS building packages
+ENV PIP_EXTRA_INDEX_URL=https://www.piwheels.org/simple
+
 
 EXPOSE 8080
 EXPOSE 8786
@@ -58,7 +67,10 @@ FROM base as build
 
 ENV SC_BUILD_TARGET=build
 
-RUN apt-get update \
+RUN  --mount=type=cache,id=basecache,target=/var/cache/apt,mode=0755,sharing=locked \
+  --mount=type=cache,id=baseapt,target=/var/lib/apt,mode=0755,sharing=locked \
+  set -eux \
+  && apt-get update \
   && apt-get install -y --no-install-recommends \
   build-essential \
   && apt-get clean \
@@ -67,7 +79,8 @@ RUN apt-get update \
 
 # NOTE: python virtualenv is used here such that installed packages may be moved to production image easily by copying the venv
 RUN python -m venv "${VIRTUAL_ENV}"
-RUN pip --no-cache-dir install --upgrade \
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+  pip install --upgrade \
   pip~=21.3  \
   wheel \
   setuptools
@@ -77,9 +90,10 @@ WORKDIR /build
 # install base 3rd party dependencies (NOTE: this speeds up devel mode)
 COPY  --chown=scu:scu services/dask-sidecar/requirements/_base.txt .
 COPY  --chown=scu:scu services/dask-sidecar/requirements/_packages.txt .
-RUN pip --no-cache-dir install \
-  -r _base.txt \
-  -r _packages.txt
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+  pip install \
+  --requirement _base.txt \
+  --requirement _packages.txt
 
 # --------------------------Prod-depends-only stage -------------------
 # This stage is for production only dependencies that get partially wiped out afterwards (final docker image concerns)
@@ -96,7 +110,9 @@ COPY --chown=scu:scu services/dask-sidecar /build/services/dask-sidecar
 
 WORKDIR /build/services/dask-sidecar
 
-RUN pip --no-cache-dir install -r requirements/prod.txt
+RUN --mount=type=cache,mode=0777,target=/root/.cache/pip \
+  pip install \
+  --requirement requirements/prod.txt
 
 # --------------------------Production stage -------------------
 # Final cleanup up to reduce image size and startup setup

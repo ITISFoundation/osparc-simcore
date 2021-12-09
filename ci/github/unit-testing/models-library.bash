@@ -1,8 +1,8 @@
 #!/bin/bash
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
-set -o errexit   # abort on nonzero exitstatus
-set -o nounset   # abort on unbound variable
-set -o pipefail  # don't hide errors within pipes
+set -o errexit  # abort on nonzero exitstatus
+set -o nounset  # abort on unbound variable
+set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 install() {
@@ -14,7 +14,9 @@ install() {
 }
 
 test() {
-  pytest --cov=models_library --durations=10 --cov-append \
+  pytest --log-format="%(asctime)s %(levelname)s %(message)s" \
+    --log-date-format="%Y-%m-%d %H:%M:%S" \
+    --cov=models_library --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
     -v -m "not travis" packages/models-library/tests
 }
