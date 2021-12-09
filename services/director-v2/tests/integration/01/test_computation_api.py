@@ -474,6 +474,7 @@ async def test_run_partial_computation(
     )
 
 
+@pytest.mark.skip(reason="FIXME: temporary disabled")
 async def test_run_computation(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
