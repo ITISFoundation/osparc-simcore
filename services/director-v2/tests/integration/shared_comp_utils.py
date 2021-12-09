@@ -11,6 +11,7 @@ from pydantic.networks import AnyHttpUrl
 from pydantic.types import PositiveInt
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from starlette import status
+from tenacity import wait
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -88,8 +89,9 @@ async def assert_pipeline_status(
         assert task_out.id == project_uuid
         assert task_out.url == f"{client.base_url}/v2/computations/{project_uuid}"
         print(
-            f"Pipeline '{project_uuid}' current state is '{task_out.state}'",
+            f"Pipeline '{project_uuid=}' current task out is '{task_out=}'",
         )
+        assert wait_for_states
         assert (
             task_out.state in wait_for_states
         ), f"current task state is '{task_out.state}', not in any of {wait_for_states}"
@@ -105,11 +107,11 @@ async def assert_pipeline_status(
         elapsed_s = time.monotonic() - start
         with attempt:
             print(
-                f"Waiting for pipeline '{project_uuid}' state to be one of: {wait_for_states}, attempt={attempt.retry_state.attempt_number}, time={elapsed_s}s"
+                f"Waiting for pipeline '{project_uuid=}' state to be one of: {wait_for_states=}, attempt={attempt.retry_state.attempt_number}, time={elapsed_s}s"
             )
             task_out = await check_pipeline_state()
             print(
-                f"Pipeline '{project_uuid}' state succesfuly became '{task_out.state}'\n{json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}, time={elapsed_s}s"
+                f"Pipeline '{project_uuid=}' state succesfuly became '{task_out.state}'\n{json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}, time={elapsed_s}s"
             )
 
             return task_out
