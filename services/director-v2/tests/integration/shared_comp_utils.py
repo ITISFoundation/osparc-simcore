@@ -1,4 +1,5 @@
 import json
+import time
 from typing import List
 from uuid import UUID
 
@@ -76,7 +77,7 @@ async def assert_pipeline_status(
             RunningState.ABORTED,
         ]
 
-    MAX_TIMEOUT_S = 60
+    MAX_TIMEOUT_S = 120
 
     async def check_pipeline_state() -> ComputationTaskOut:
         response = await client.get(url, params={"user_id": user_id})
@@ -94,19 +95,21 @@ async def assert_pipeline_status(
         ), f"current task state is '{task_out.state}', not in any of {wait_for_states}"
         return task_out
 
+    start = time.monotonic()
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(MAX_TIMEOUT_S),
         wait=wait_random(0, 2),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
     ):
+        elapsed_s = time.monotonic() - start
         with attempt:
             print(
-                f"Waiting for pipeline '{project_uuid}' state to be one of: {wait_for_states}, attempt={attempt.retry_state.attempt_number}"
+                f"Waiting for pipeline '{project_uuid}' state to be one of: {wait_for_states}, attempt={attempt.retry_state.attempt_number}, time={elapsed_s}s"
             )
             task_out = await check_pipeline_state()
             print(
-                f"Pipeline '{project_uuid}' state succesfuly became '{task_out.state}'\n{json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
+                f"Pipeline '{project_uuid}' state succesfuly became '{task_out.state}'\n{json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}, time={elapsed_s}s"
             )
 
             return task_out
