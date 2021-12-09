@@ -22,7 +22,13 @@ from pytest_simcore.simcore_webserver_projects_rest_api import (
     REPLACE_PROJECT_ON_MODIFIED,
     RUN_PROJECT,
 )
+from servicelib.json_serialization import json_dumps
+from simcore_service_webserver.director_v2_api import get_project_run_policy
 from simcore_service_webserver.meta_handlers import Page, ProjectIterationAsItem
+from simcore_service_webserver.meta_projects import (
+    meta_project_policy,
+    projects_redirection_middleware,
+)
 from simcore_service_webserver.projects.project_models import ProjectDict
 
 REQUEST_MODEL_POLICY = {
@@ -33,21 +39,17 @@ REQUEST_MODEL_POLICY = {
 }
 
 
-def clone_project(source_project: ProjectDict, new_project_uuid: str) -> ProjectDict:
-    clone = deepcopy(source_project)
-    assert clone
-    # TODO: attach to project
-    clone["uuid"] = new_project_uuid
-    clone["ui"]["currentNodeId"] = new_project_uuid
-    return clone
-
-
 # TESTS ----------------------------------
 
 
 async def test_iterators_workflow(client: TestClient, logged_user: AUserDict, mocker):
     resp: ClientResponse
 
+    # check init meta is correct
+    assert projects_redirection_middleware in client.app.middlewares
+    assert get_project_run_policy(client.app) == meta_project_policy
+
+    # new project --------------------------------------------------------------
     mocker.patch(
         "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
         return_value=None,
@@ -56,8 +58,8 @@ async def test_iterators_workflow(client: TestClient, logged_user: AUserDict, mo
         "simcore_service_webserver.director_v2_api.get_computation_task",
         return_value=None,
     )
+    # ----
 
-    # new project --------------------------------------------------------------
     assert NEW_PROJECT.request_desc == "POST /v0/projects"
     resp = await client.post("/v0/projects", json=NEW_PROJECT.request_payload)
     assert resp.status == NEW_PROJECT.status_code, await resp.text()
@@ -81,11 +83,15 @@ async def test_iterators_workflow(client: TestClient, logged_user: AUserDict, mo
     # TODO: create iterations, so user could explore parametrizations?
 
     # run metaproject ----------------------------------------------------------
-    # TODO: ideally mock DirectorV2ApiClient.start, DirectorV2ApiClient.stop
+    async def _mock_start(project_id, user_id, **options):
+        return f"{project_id}"
+
     mocker.patch(
-        "simcore_service_webserver.director_v2_core._request_director_v2",
-        return_value={"id": project_uuid},
+        "simcore_service_webserver.director_v2_core.DirectorV2ApiClient.start",
+        side_effect=_mock_start,
     )
+    # ----
+
     resp = await client.post(
         f"/v0/computation/pipeline/{project_uuid}:start",
         json=RUN_PROJECT.request_payload,
@@ -100,8 +106,14 @@ async def test_iterators_workflow(client: TestClient, logged_user: AUserDict, mo
     # TODO:retrieve results of iter1
 
     # get iterations ----------------------------------------------------------
+    resp = await client.get(f"/v0/repos/projects/{project_uuid}/checkpoints/HEAD")
+    body = await resp.json()
+    head_ref_id = body["data"]["id"]
+
+    assert head_ref_id == 1
+
     resp = await client.get(
-        f"/v0/projects/{project_uuid}/checkpoint/HEAD/iterations?offset=0"
+        f"/v0/projects/{project_uuid}/checkpoint/{head_ref_id}/iterations?offset=0"
     )
     body = await resp.json()
     iterlist_a = Page[ProjectIterationAsItem].parse_obj(body).data
@@ -109,6 +121,17 @@ async def test_iterators_workflow(client: TestClient, logged_user: AUserDict, mo
     assert len(iterlist_a) == 3
 
     # get wcopy project for iter 0 ----------------------------------------------
+    async def _mock_catalog_get(app, user_id, product_name, only_key_versions):
+        return [
+            {"key": s["key"], "version": s["version"]}
+            for _, s in project_data["workbench"].items()
+        ]
+
+    mocker.patch(
+        "simcore_service_webserver.catalog.get_services_for_user_in_product",
+        side_effect=_mock_catalog_get,
+    )
+
     # extract outputs
     resp = await client.get(iterlist_a[0].wcopy_project_url.path)
     assert resp.status == HTTPStatus.OK
@@ -117,11 +140,11 @@ async def test_iterators_workflow(client: TestClient, logged_user: AUserDict, mo
     project_iter0 = body["data"]
 
     outputs = {}
-    for nid, node in project_iter0["workbench"]:
+    for nid, node in project_iter0["workbench"].items():
         if out := node.get("outputs"):
             outputs[nid] = out
 
-    # get project and modefy iterator
+    # get project and modify iterator
     # TODO: change iterations from 0:4 -> HEAD+1
     resp = await client.get(f"/v0/projects/{project_uuid}")
     assert resp.status == HTTPStatus.OK, await resp.text()
@@ -142,7 +165,8 @@ async def test_iterators_workflow(client: TestClient, logged_user: AUserDict, mo
         }
     )
     resp = await client.put(
-        f"/v0/projects/{project_uuid}", json=new_project.dict(**REQUEST_MODEL_POLICY)
+        f"/v0/projects/{project_uuid}",
+        json=json_dumps(new_project.dict(**REQUEST_MODEL_POLICY)),
     )
     assert resp.status == HTTPStatus.OK, await resp.text()
 
