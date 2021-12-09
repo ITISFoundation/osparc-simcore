@@ -32,7 +32,7 @@ from .errors import ConfigNotFound
 from .labels_annotations import from_labels, to_labels
 from .yaml_utils import yaml_safe_load
 from models_library.service_settings_labels import PathMappingsLabel, RestartPolicy
-from models_library.services import BootOptionsType
+from models_library.services import BootOptions
 
 CONFIG_FOLDER_NAME = ".osparc"
 
@@ -169,7 +169,7 @@ class RuntimeConfig(BaseModel):
     restart_policy: RestartPolicy = RestartPolicy.NO_RESTART
 
     paths_mapping: Optional[PathMappingsLabel] = None
-    boot_options: BootOptionsType = None
+    boot_options: BootOptions = None
 
     settings: List[SettingsItem] = []
 
