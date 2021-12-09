@@ -541,7 +541,7 @@ info: ## displays setup information
 
 define show-meta
 	$(foreach iid,$(shell docker images */$(1):* -q | sort | uniq),\
-		docker image inspect $(iid) | jq '.[0] | .RepoTags, .ContainerConfig.Labels';)
+		docker image inspect $(iid) | jq '.[0] | .RepoTags, .Config.Labels, .Architecture';)
 endef
 
 info-images:  ## lists tags and labels of built images. To display one: 'make target=webserver info-images'
