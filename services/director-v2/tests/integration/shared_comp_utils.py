@@ -9,6 +9,7 @@ from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from pydantic.networks import AnyHttpUrl
 from pydantic.types import PositiveInt
+from pytest_simcore.helpers.constants import MINUTE
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
@@ -76,8 +77,7 @@ async def assert_pipeline_status(
             RunningState.FAILED,
             RunningState.ABORTED,
         ]
-    _MINUTE = 60
-    MAX_TIMEOUT_S = 5 * _MINUTE
+    MAX_TIMEOUT_S = 5 * MINUTE
 
     async def check_pipeline_state() -> ComputationTaskOut:
         response = await client.get(url, params={"user_id": user_id})
