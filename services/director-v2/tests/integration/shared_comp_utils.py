@@ -11,11 +11,10 @@ from pydantic.networks import AnyHttpUrl
 from pydantic.types import PositiveInt
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from starlette import status
-from tenacity import wait
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_random
+from tenacity.wait import wait_fixed
 
 COMPUTATION_URL: str = "v2/computations"
 
@@ -100,7 +99,7 @@ async def assert_pipeline_status(
     start = time.monotonic()
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(MAX_TIMEOUT_S),
-        wait=wait_random(0, 2),
+        wait=wait_fixed(2),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
     ):
