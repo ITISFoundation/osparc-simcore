@@ -76,8 +76,8 @@ async def assert_pipeline_status(
             RunningState.FAILED,
             RunningState.ABORTED,
         ]
-
-    MAX_TIMEOUT_S = 120
+    _MINUTE = 60
+    MAX_TIMEOUT_S = 5 * _MINUTE
 
     async def check_pipeline_state() -> ComputationTaskOut:
         response = await client.get(url, params={"user_id": user_id})
