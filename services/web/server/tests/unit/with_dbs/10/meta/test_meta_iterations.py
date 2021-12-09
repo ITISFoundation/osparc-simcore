@@ -3,19 +3,20 @@
 # pylint: disable=unused-variable
 
 import json
-from copy import deepcopy
 from http import HTTPStatus
 from pathlib import Path
 from typing import Dict, Union
 
 import pytest
-from aiohttp import ClientResponse
+from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from models_library.database_project_models import (
     ProjectForPgInsert,
     load_projects_exported_as_csv,
 )
 from models_library.projects import Project
+from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import AUserDict
 from pytest_simcore.simcore_webserver_projects_rest_api import (
     NEW_PROJECT,
@@ -23,6 +24,8 @@ from pytest_simcore.simcore_webserver_projects_rest_api import (
     RUN_PROJECT,
 )
 from servicelib.json_serialization import json_dumps
+from simcore_postgres_database.models.projects import projects
+from simcore_service_webserver.constants import APP_DB_ENGINE_KEY
 from simcore_service_webserver.director_v2_api import get_project_run_policy
 from simcore_service_webserver.meta_handlers import Page, ProjectIterationAsItem
 from simcore_service_webserver.meta_projects import (
@@ -34,15 +37,31 @@ from simcore_service_webserver.projects.project_models import ProjectDict
 REQUEST_MODEL_POLICY = {
     "by_alias": True,
     "exclude_defaults": True,
-    "exclude_none": False,
+    "exclude_none": True,  # e.g. thumbnail: None will fail validation
     "exclude_unset": True,
 }
+
+# FIXTURES ----------------------------------
+
+
+@pytest.fixture
+async def context_with_logged_user(client: TestClient, logged_user: AUserDict):
+
+    yield
+
+    engine = client.app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+
+        # cascade deletes everything except projects_vc_snapshot
+        await conn.execute(projects.delete())
 
 
 # TESTS ----------------------------------
 
 
-async def test_iterators_workflow(client: TestClient, logged_user: AUserDict, mocker):
+async def test_iterators_workflow(
+    client: TestClient, context_with_logged_user: None, mocker, faker: Faker
+):
     resp: ClientResponse
 
     # check init meta is correct
@@ -96,9 +115,9 @@ async def test_iterators_workflow(client: TestClient, logged_user: AUserDict, mo
         f"/v0/computation/pipeline/{project_uuid}:start",
         json=RUN_PROJECT.request_payload,
     )
-    body = await resp.json()
-    assert project_uuid == body["data"]["pipeline_id"]
-    ref_ids = body["data"]["ref_ids"]
+    data, _ = await assert_status(resp, web.HTTPCreated)
+    assert project_uuid == data["pipeline_id"]
+    ref_ids = data["ref_ids"]
     assert len(ref_ids) == 3
 
     # TODO: check: has auto-commited
@@ -116,9 +135,9 @@ async def test_iterators_workflow(client: TestClient, logged_user: AUserDict, mo
         f"/v0/projects/{project_uuid}/checkpoint/{head_ref_id}/iterations?offset=0"
     )
     body = await resp.json()
-    iterlist_a = Page[ProjectIterationAsItem].parse_obj(body).data
+    first_iterlist = Page[ProjectIterationAsItem].parse_obj(body).data
 
-    assert len(iterlist_a) == 3
+    assert len(first_iterlist) == 3
 
     # get wcopy project for iter 0 ----------------------------------------------
     async def _mock_catalog_get(app, user_id, product_name, only_key_versions):
@@ -133,65 +152,85 @@ async def test_iterators_workflow(client: TestClient, logged_user: AUserDict, mo
     )
 
     # extract outputs
-    resp = await client.get(iterlist_a[0].wcopy_project_url.path)
-    assert resp.status == HTTPStatus.OK
+    for i, prj_iter in enumerate(first_iterlist):
+        resp = await client.get(prj_iter.wcopy_project_url.path)
+        assert resp.status == HTTPStatus.OK
 
-    body = await resp.json()
-    project_iter0 = body["data"]
+        body = await resp.json()
+        project_iter0 = body["data"]
 
-    outputs = {}
-    for nid, node in project_iter0["workbench"].items():
-        if out := node.get("outputs"):
-            outputs[nid] = out
+        outputs = {}
+        for nid, node in project_iter0["workbench"].items():
+            if out := node.get("outputs"):
+                outputs[nid] = out
 
-    # get project and modify iterator
+        assert len(outputs) == 1
+        assert outputs["fc9208d9-1a0a-430c-9951-9feaf1de3368"]["out_1"] == i
+
+    # ----------------------------------------------
+
+    # get project and modify iterator----------------------------------------------
     # TODO: change iterations from 0:4 -> HEAD+1
     resp = await client.get(f"/v0/projects/{project_uuid}")
     assert resp.status == HTTPStatus.OK, await resp.text()
     body = await resp.json()
 
+    # TODO: updating a project fields can be daunting because
+    # it combines nested field attributes with dicts and from the
+    # json you cannot distinguish easily what-is-what automatically
+    # Dict keys are usually some sort of identifier, typically a UUID or
+    # and index but nothing prevents a dict from user other type of key types
+    #
     project = Project.parse_obj(body["data"])
     new_project = project.copy(
         update={
-            "workbench": {
-                "fc9208d9-1a0a-430c-9951-9feaf1de3368": {
-                    "inputs": {
-                        "linspace_start": 0,
-                        "linspace_stop": 4,
-                        "linspace_step": 1,
-                    }
-                }
-            }
+            # FIXME: HACK to overcome export from None -> string
+            # SOLUTION 1: thumbnail should not be required
+            # SOLUTION 2: make thumbnail nullable
+            "thumbnail": faker.image_url(),
         }
     )
+    assert new_project.workbench is not None
+    assert new_project.workbench
+    node = new_project.workbench["fc9208d9-1a0a-430c-9951-9feaf1de3368"]
+    assert node.inputs
+    node.inputs["linspace_stop"] = 4
+
     resp = await client.put(
         f"/v0/projects/{project_uuid}",
-        json=json_dumps(new_project.dict(**REQUEST_MODEL_POLICY)),
+        data=json_dumps(new_project.dict(**REQUEST_MODEL_POLICY)),
     )
     assert resp.status == HTTPStatus.OK, await resp.text()
 
     # create iterations ------------------------------------------------------------------
-    resp = await client.post(f"/v0/projects/{project_uuid}/checkpoint/HEAD/iterations")
-    assert resp.status == HTTPStatus.CREATED
+    if 0:
+        # TODO: still not implemented
+        resp = await client.post(
+            f"/v0/projects/{project_uuid}/checkpoint/HEAD/iterations"
+        )
+        assert resp.status == HTTPStatus.NOT_IMPLEMENTED, await resp.text()
 
-    # check new auto-commit
-    # check four new branches
-    #
+        # check new auto-commit
+        # check four new branches
+        #
 
-    # retrieve iterations ---------------------------------------------------------------
-    resp = await client.get(
-        f"/v0/projects/{project_uuid}/checkpoint/HEAD/iterations?offset=0"
-    )
-    body = await resp.json()
-    iterlist_b = Page[ProjectIterationAsItem].parse_obj(body).data
-    assert len(iterlist_b) == 4
+        # retrieve iterations ---------------------------------------------------------------
+        resp = await client.get(
+            f"/v0/projects/{project_uuid}/checkpoint/HEAD/iterations?offset=0"
+        )
+        body = await resp.json()
+        iterlist_b = Page[ProjectIterationAsItem].parse_obj(body).data
+        assert len(iterlist_b) == 4
 
     # run them ---------------------------------------------------------------------------
-    resp = await client.request(
-        RUN_PROJECT.method,
-        RUN_PROJECT.path,
+    resp = await client.post(
+        f"/v0/computation/pipeline/{project_uuid}:start",
         json=RUN_PROJECT.request_payload,
     )
+    data, _ = await assert_status(resp, web.HTTPCreated)
+    assert project_uuid == data["pipeline_id"]
+    ref_ids = data["ref_ids"]
+    assert len(ref_ids) == 4
 
     # check iters 1, 2 and 3 share working copies
     #
