@@ -127,7 +127,6 @@ docker buildx bake \
 	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,--set *.output="type=docker$(comma)push=false") \
 	$(if $(push),--push,) \
 	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),) &&\
-	--file docker-compose-build.yml $(if $(target),$(target),) &&\
 popd;
 endef
 
