@@ -119,10 +119,6 @@ $(foreach service, $(SERVICES_LIST),\
 docker buildx bake \
 	$(if $(findstring -devel,$@),,\
 	--set *.platform=$(DOCKER_TARGET_PLATFORMS) \
-	$(foreach service, $(SERVICES_LIST),\
-		--set $(service).cache-from="type=local,src=$(DOCKER_BUILDX_CACHE_FROM)/$(service)" \
-		$(if $(create_cache),--set $(service).cache-to="type=local$(comma)mode=max$(comma)dest=$(DOCKER_BUILDX_CACHE_TO)/$(service)",) \
-	)\
 	)\
 	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,--set *.output="type=docker$(comma)push=false") \
 	$(if $(push),--push,) \
