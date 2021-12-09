@@ -1,10 +1,9 @@
 # syntax=docker/dockerfile:1
 ARG PYTHON_VERSION="3.8.10"
-FROM --platform=${BUILDPLATFORM} python:${PYTHON_VERSION}-slim-buster as base
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
-RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log \
-  && stat -c "%a %n" /var/cache/apt/ && stat -c "%a %n" /var/lib/apt/
+FROM --platform=${TARGETPLATFORM} python:${PYTHON_VERSION}-slim-buster as base
+RUN echo "I am running on $BUILDPLATFORM, building for $TARGETPLATFORM" > /log
 #
 #  USAGE:
 #     cd sercices/dask-sidecar
