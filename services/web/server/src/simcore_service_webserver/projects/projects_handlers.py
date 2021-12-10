@@ -11,8 +11,9 @@ from aiohttp import web
 from jsonschema import ValidationError
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectState, ProjectStatus
+from models_library.rest_pagination import Page
+from models_library.rest_pagination_utils import paginate_data
 from servicelib.json_serialization import json_dumps
-from servicelib.rest_pagination_utils import PageResponseLimitOffset
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
@@ -27,7 +28,7 @@ from ..security_decorators import permission_required
 from ..storage_api import copy_data_folders_from_project
 from ..users_api import get_user_name
 from . import projects_api
-from .project_models import ProjectTypeAPI
+from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import (
@@ -44,6 +45,7 @@ OVERRIDABLE_DOCUMENT_KEYS = [
     "accessRights",
 ]
 # TODO: validate these against api/specs/webserver/v0/components/schemas/project-v0.0.1.json
+
 
 log = logging.getLogger(__name__)
 
@@ -233,13 +235,16 @@ async def list_projects(request: web.Request):
         include_hidden=show_hidden,
     )
     await set_all_project_states(projects, project_types)
-    return PageResponseLimitOffset.paginate_data(
-        data=projects,
-        request_url=request.url,
-        total=total_number_projects,
-        limit=limit,
-        offset=offset,
-    ).dict(**RESPONSE_MODEL_POLICY)
+    page = Page[ProjectDict].parse_obj(
+        paginate_data(
+            chunk=projects,
+            request_url=request.url,
+            total=total_number_projects,
+            limit=limit,
+            offset=offset,
+        )
+    )
+    return page.dict(**RESPONSE_MODEL_POLICY)
 
 
 @routes.get(f"/{VTAG}/projects/{{project_uuid}}")
