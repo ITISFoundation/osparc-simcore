@@ -115,17 +115,32 @@ def patch_dy_volumes(
     yield dy_volumes_overwrite
 
 
+@pytest.fixture(params=[True, False])
+def relative_path(request):
+    return request.param
+
+
 @pytest.fixture
-def symlink_to_dy_volumes(patch_dy_volumes: Path, tmp_path: Path) -> Iterator[Path]:
+def pointed_fie_path(relative_path: bool, tmp_path: Path) -> Path:
+    if relative_path:
+        return Path("real_file_")
+    else:
+        return tmp_path / "real_file"
+
+
+@pytest.fixture
+def symlink_to_dy_volumes(
+    patch_dy_volumes: Path, pointed_fie_path: Path
+) -> Iterator[Path]:
     symlink_path = patch_dy_volumes / "symlink"
     assert not symlink_path.exists()
 
-    file_path = tmp_path / "real_file"
+    file_path = pointed_fie_path
     assert not file_path.exists()
     file_path.write_text("some dummy data")
     assert file_path.exists()
     # make sure the "dy_volumes" path exists
-    dy_sidecar_real_vile_path = patch_dy_volumes / file_path.relative_to("/")
+    dy_sidecar_real_vile_path = patch_dy_volumes / f"{file_path}".strip("/")
     dy_sidecar_real_vile_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(file_path, dy_sidecar_real_vile_path)
     assert dy_sidecar_real_vile_path.exists()
@@ -762,6 +777,5 @@ def test_add_dy_volumes_to_target(
     assert changed_pointer.relative_to(patch_dy_volumes)
     symlink_target_after = Path(os.readlink(changed_pointer))
     assert (
-        patch_dy_volumes / symlink_target_before.relative_to("/")
-        == symlink_target_after
+        patch_dy_volumes / f"{symlink_target_before}".strip("/") == symlink_target_after
     )

@@ -53,6 +53,13 @@ def add_dy_volumes_to_target(path: Path) -> Path:
         log.warning(message)
         raise SymlinkToSymlinkNotSupportedException(message)
 
+    if not symlink_target_path.is_absolute():
+        # in the case of a relative symlink
+        # since the working directory is different form the
+        # one in which the symlink is placed,
+        # it must be transfromed to an absolute path
+        symlink_target_path = path.parent / symlink_target_path
+
     # if original path is mounted on "/dy-volumes"
     # make sure the content of the symlink is also on the same path
     if _starts_with_dy_volumes(path) and not _starts_with_dy_volumes(
@@ -64,8 +71,8 @@ def add_dy_volumes_to_target(path: Path) -> Path:
         # `/dy-volumes` prefix is used in the context of thedynamic-sidecar
         symlink_target_path = Path(DY_VOLUMES) / symlink_target_path.relative_to("/")
 
-        # overwrite symlink with commands
-        os.system(f"ln -sfn {symlink_target_path} {path}")
+    # overwrite symlink with commands
+    os.system(f"ln -sfn {symlink_target_path} {path}")
     return path
 
 
