@@ -10,7 +10,7 @@ import tempfile
 import threading
 from asyncio import gather
 from pathlib import Path
-from typing import Any, Callable, Dict, Type, Union, Iterable
+from typing import Any, Callable, Dict, Iterable, Type, Union
 from uuid import uuid4
 
 import np_helpers  # pylint: disable=no-name-in-module
@@ -21,7 +21,6 @@ from simcore_sdk.node_ports_common.exceptions import UnboundPortError
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
-
 
 pytest_simcore_core_services_selection = [
     "migration",

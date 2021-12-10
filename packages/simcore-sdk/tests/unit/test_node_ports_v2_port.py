@@ -15,13 +15,13 @@ from collections import namedtuple
 from pathlib import Path
 from typing import Any, Dict, Iterator, Optional, Type, Union
 
-
 import pytest
 from aiohttp.client import ClientSession
 from attr import dataclass
 from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
 from simcore_sdk.node_ports_v2 import exceptions, node_config
+from simcore_sdk.node_ports_v2 import port as port_module
 from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
 from simcore_sdk.node_ports_v2.port import Port
 from utils_port_v2 import create_valid_port_config
@@ -89,6 +89,47 @@ def symlink_to_file_with_data() -> Iterator[Path]:
 
     file_path.write_text("some dummy data")
     assert file_path.exists()
+    os.symlink(file_path, symlink_path)
+    assert symlink_path.exists()
+
+    yield symlink_path
+
+    symlink_path.unlink()
+    assert not symlink_path.exists()
+    file_path.unlink()
+    assert not file_path.exists()
+
+
+@pytest.fixture
+def dy_volumes_overwrite(tmp_path: Path) -> Path:
+    dy_volumes = tmp_path / "dy_volumes"
+    dy_volumes.mkdir(exist_ok=True, parents=True)
+    return dy_volumes
+
+
+@pytest.fixture
+def patch_dy_volumes(
+    dy_volumes_overwrite: Path, mocker: MockerFixture
+) -> Iterator[Path]:
+    mocker.patch.object(port_module, "DY_VOLUMES", f"{dy_volumes_overwrite}")
+    yield dy_volumes_overwrite
+
+
+@pytest.fixture
+def symlink_to_dy_volumes(patch_dy_volumes: Path, tmp_path: Path) -> Iterator[Path]:
+    symlink_path = patch_dy_volumes / "symlink"
+    assert not symlink_path.exists()
+
+    file_path = tmp_path / "real_file"
+    assert not file_path.exists()
+    file_path.write_text("some dummy data")
+    assert file_path.exists()
+    # make sure the "dy_volumes" path exists
+    dy_sidecar_real_vile_path = patch_dy_volumes / file_path.relative_to("/")
+    dy_sidecar_real_vile_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(file_path, dy_sidecar_real_vile_path)
+    assert dy_sidecar_real_vile_path.exists()
+
     os.symlink(file_path, symlink_path)
     assert symlink_path.exists()
 
@@ -710,3 +751,17 @@ async def test_invalid_file_type_setter(
     # set a folder fails too
     with pytest.raises(exceptions.InvalidItemTypeError):
         await port.set(Path(__file__).parent)
+
+
+def test_add_dy_volumes_to_target(
+    patch_dy_volumes: Path, symlink_to_dy_volumes: Path
+) -> None:
+    symlink_target_before = Path(os.readlink(symlink_to_dy_volumes))
+    changed_pointer = port_module.add_dy_volumes_to_target(symlink_to_dy_volumes)
+    assert changed_pointer == symlink_to_dy_volumes
+    assert changed_pointer.relative_to(patch_dy_volumes)
+    symlink_target_after = Path(os.readlink(changed_pointer))
+    assert (
+        patch_dy_volumes / symlink_target_before.relative_to("/")
+        == symlink_target_after
+    )
