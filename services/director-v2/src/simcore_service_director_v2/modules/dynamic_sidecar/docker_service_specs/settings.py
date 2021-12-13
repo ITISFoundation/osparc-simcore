@@ -10,7 +10,6 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import BootOptionMode, EnvVarKey, ServiceKeyVersion
-from models_library.projects_nodes_io import NodeIDStr
 
 from ....api.dependencies.director_v0 import DirectorV0Client
 from ..errors import DynamicSidecarError

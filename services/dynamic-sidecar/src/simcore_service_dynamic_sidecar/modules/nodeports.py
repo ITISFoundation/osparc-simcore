@@ -1,8 +1,8 @@
 import json
 import logging
+import os
 import shutil
 import sys
-import os
 import tempfile
 import time
 import zipfile
