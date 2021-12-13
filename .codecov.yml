@@ -1,6 +1,6 @@
 codecov:
-  require_ci_to_pass: true
-  branch: master
+    require_ci_to_pass: yes
+    branch: master
 
 coverage:
   precision: 1
@@ -32,6 +32,7 @@ coverage:
         paths:
           - services
 
+
     patch:
       default:
         informational: true
@@ -52,4 +53,4 @@ parsers:
 comment:
   layout: "reach,diff,flags,tree"
   behavior: default
-  require_changes: false
+  require_changes: no

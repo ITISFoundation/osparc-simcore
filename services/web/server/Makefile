@@ -27,20 +27,3 @@ run-devel: ## runs app with pg service
 	# Running $(APP_CLI_NAME)
 	## $(APP_CLI_NAME) --print-config > config.yaml | sed enable: true enable: false
 	$(APP_CLI_NAME)  -c  tests/unit/with_dbs/config-devel.yml
-
-
-
-_project_models_rest.py: ## auto-generates pydantic model for project rest API model
-	# auto-generates $@ from $<
-	datamodel-codegen  \
-		--input $(CURDIR)/src/simcore_service_webserver/api/v0/schemas/project-v0.0.1.json  \
-		--input-file-type jsonschema \
-		--snake-case-field \
-		--use-schema-description  \
-		--output $@
-
-
-	echo ProjectAsBody = SimcoreProject >> $@
-	# formats and moves
-	black $@
-	mv $@ src/simcore_service_webserver/projects/$@

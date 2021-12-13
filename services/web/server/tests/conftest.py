@@ -10,7 +10,7 @@ from typing import Dict
 
 import pytest
 import simcore_service_webserver
-from pytest_simcore.helpers.utils_login import AUserDict, LoggedUser
+from pytest_simcore.helpers.utils_login import LoggedUser, UserDict
 from simcore_service_webserver.db_models import UserRole
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -88,7 +88,7 @@ def fake_project(tests_data_dir: Path) -> Dict:
 
 
 @pytest.fixture()
-async def logged_user(client, user_role: UserRole) -> AUserDict:
+async def logged_user(client, user_role: UserRole) -> UserDict:
     """adds a user in db and logs in with client
 
     NOTE: `user_role` fixture is defined as a parametrization below!!!

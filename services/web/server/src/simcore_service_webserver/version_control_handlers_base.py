@@ -1,15 +1,39 @@
 import logging
 from functools import wraps
+from typing import Any, Type
 
+import orjson
 from aiohttp import web
+from aiohttp.web_exceptions import HTTPException
 from pydantic.error_wrappers import ValidationError
+from pydantic.main import BaseModel
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.json_serialization import json_dumps
 
 from .projects.projects_exceptions import ProjectNotFoundError
+from .rest_utils import RESPONSE_MODEL_POLICY
 from .version_control_errors import InvalidParameterError, NoCommitError, NotFoundError
 
 logger = logging.getLogger(__name__)
+
+
+def _default(obj):
+    if isinstance(obj, BaseModel):
+        return obj.dict(**RESPONSE_MODEL_POLICY)
+    raise TypeError
+
+
+def json_dumps(v) -> str:
+    # orjson.dumps returns bytes, to match standard json.dumps we need to decode
+    return orjson.dumps(v, default=_default).decode()
+
+
+def enveloped_response(
+    data: Any, status_cls: Type[HTTPException] = web.HTTPOk, **extra
+) -> web.Response:
+    enveloped: str = json_dumps({"data": data, **extra})
+    return web.Response(
+        text=enveloped, content_type="application/json", status=status_cls.status_code
+    )
 
 
 def handle_request_errors(handler: Handler) -> Handler:

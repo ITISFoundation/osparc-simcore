@@ -1,9 +1,25 @@
+"""
+
+TIP: to preview setup options w/o installation
+
+use constant SETUP
+
+    python -c "from setup import SETUP; import json; print(json.dumps(SETUP, indent=1))"
+
+or use setuptools.setup API
+    python setup.py --name
+    python setup.py --version
+    ...
+"""
+
 import re
 import sys
 from pathlib import Path
 from typing import Set
 
 from setuptools import find_packages, setup
+
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 def read_reqs(reqs_path: Path) -> Set[str]:
@@ -18,8 +34,6 @@ def read_reqs(reqs_path: Path) -> Set[str]:
     }
 
 
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 INSTALL_REQUIREMENTS = tuple(
     read_reqs(CURRENT_DIR / "requirements" / "_base.txt") | {"simcore-models-library"}
 )  # STRICT requirements
@@ -31,13 +45,12 @@ TEST_REQUIREMENTS = tuple(
 
 SETUP = dict(
     name="simcore-service-integration",
-    version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
+    version="1.0.1",
     author=", ".join(
         (
             "Pedro Crespo-Valero (pcrespov)",
             "Sylvain Anderegg (sanderegg)",
             "Katie Zhuang (KZzizzle)",
-            "Andrei Neagu (GitHK)",
         )
     ),
     description="Toolkit for service integration",

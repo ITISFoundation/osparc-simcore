@@ -2,7 +2,6 @@ import logging
 from typing import List
 
 from aiohttp import web
-from models_library.clusters import Cluster
 from models_library.users import GroupID, UserID
 from pydantic import ValidationError
 from servicelib.aiohttp.rest_utils import extract_and_validate
@@ -14,7 +13,7 @@ from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
 from .db import ClustersRepository
 from .exceptions import ClusterAccessForbidden, ClusterNotFoundError
-from .models import ClusterCreate, ClusterPatch
+from .models import Cluster, ClusterCreate, ClusterPatch
 
 logger = logging.getLogger(__name__)
 

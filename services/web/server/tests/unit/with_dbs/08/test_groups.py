@@ -89,7 +89,9 @@ def _assert__group_user(
     assert "gid" in actual_user
 
 
-@pytest.mark.parametrize(*standard_role_response(), ids=str)
+@pytest.mark.parametrize(
+    *standard_role_response(),
+)
 async def test_list_groups(
     client,
     logged_user,

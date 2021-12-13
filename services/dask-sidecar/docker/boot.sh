@@ -39,7 +39,7 @@ if [ ${DASK_START_AS_SCHEDULER+x} ]; then
   echo "$INFO" "Starting as ${SCHEDULER_VERSION}..."
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
 
-    exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
+    exec watchmedo auto-restart --recursive --pattern="*.py" -- \
       dask-scheduler
 
   else
@@ -49,7 +49,7 @@ if [ ${DASK_START_AS_SCHEDULER+x} ]; then
   fi
 else
   DASK_WORKER_VERSION=$(dask-worker --version)
-  DASK_SCHEDULER_URL=${DASK_SCHEDULER_URL:="tcp://${DASK_SCHEDULER_HOST}:8786"}
+  DASK_SCHEDULER_ADDRESS="tcp://${DASK_SCHEDULER_HOST}:8786"
 
   #
   # DASK RESOURCES DEFINITION
@@ -71,8 +71,7 @@ else
   num_gpus=$(python -c "from simcore_service_dask_sidecar.utils import num_available_gpus; print(num_available_gpus());")
 
   # RAM (is computed similarly as the default dask-sidecar computation)
-  _value=$(python -c "import psutil; print(int(psutil.virtual_memory().total * $num_cpus/$(nproc)))")
-  ram=$((_value - ${DASK_SIDECAR_NON_USABLE_RAM:-0}))
+  ram=$(($(python -c "import psutil; print(int(psutil.virtual_memory().total * $num_cpus/$(nproc)))") - ${DASK_SIDECAR_NON_USABLE_RAM:-0}))
 
   # overall resources available on the dask-sidecar (CPUs and RAM are always available)
   resources="CPU=$num_cpus,RAM=$ram"
@@ -89,43 +88,46 @@ else
     fi
   fi
 
+  # find if a cluster id was setup in the docker daemon labels
+  cluster_id=$(python -c "from simcore_service_dask_sidecar.utils import cluster_id; print(cluster_id());")
+  if [ "$cluster_id" != "None" ]; then
+    resources="$resources,$cluster_id=1"
+  fi
+
   #
   # DASK RESOURCES DEFINITION --------------------------------- END
   #
-  DASK_NPROCS=${DASK_NPROCS:="1"}
-  DASK_NTHREADS=${DASK_NTHREADS:="$num_cpus"}
-  DASK_MEMORY_LIMIT=${DASK_MEMORY_LIMIT:="$ram"}
-  DASK_WORKER_NAME=${DASK_WORKER_NAME:="dask-sidecar_$(hostname)_$(date +'%Y-%m-%d_%T')_$$"}
+
   #
   # 'daemonic processes are not allowed to have children' arises when running the sidecar.cli
   # because multi-processing library is used by the sidecar and the nanny does not like it
   # setting --no-nanny fixes this: see https://github.com/dask/distributed/issues/2142
-  echo "$INFO" "Starting as a ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_URL} ..."
+  echo "$INFO" "Starting as a ${DASK_WORKER_VERSION} -> ${DASK_SCHEDULER_ADDRESS} ..."
   echo "$INFO" "Worker resources set as: $resources"
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-    exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
-      dask-worker "${DASK_SCHEDULER_URL}" \
+    exec watchmedo auto-restart --recursive --pattern="*.py" -- \
+      dask-worker "${DASK_SCHEDULER_ADDRESS}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
       --reconnect \
       --no-nanny \
-      --nprocs ${DASK_NPROCS} \
-      --nthreads "${DASK_NTHREADS}" \
+      --nprocs 1 \
+      --nthreads "$num_cpus" \
       --dashboard-address 8787 \
-      --memory-limit "${DASK_MEMORY_LIMIT}" \
+      --memory-limit "$ram" \
       --resources "$resources" \
-      --name "${DASK_WORKER_NAME}"
+      --name "dask-sidecar_$(hostname)_$(date +'%Y-%m-%d_%T')_$$"
   else
-    exec dask-worker "${DASK_SCHEDULER_URL}" \
+    exec dask-worker "${DASK_SCHEDULER_ADDRESS}" \
       --local-directory /tmp/dask-sidecar \
       --preload simcore_service_dask_sidecar.tasks \
       --reconnect \
       --no-nanny \
-      --nprocs ${DASK_NPROCS} \
-      --nthreads "${DASK_NTHREADS}" \
+      --nprocs 1 \
+      --nthreads "$num_cpus" \
       --dashboard-address 8787 \
-      --memory-limit "${DASK_MEMORY_LIMIT}" \
+      --memory-limit "$ram" \
       --resources "$resources" \
-      --name "${DASK_WORKER_NAME}"
+      --name "dask-sidecar_$(hostname)_$(date +'%Y-%m-%d_%T')_$$"
   fi
 fi

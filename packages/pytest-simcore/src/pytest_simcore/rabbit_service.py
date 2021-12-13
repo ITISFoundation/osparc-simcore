@@ -2,12 +2,13 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import json
 import logging
 import os
 import socket
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Dict, Optional
+from typing import Any, AsyncIterator, Dict, Iterator, Optional
 
 import aio_pika
 import pytest
@@ -38,8 +39,17 @@ async def wait_till_rabbit_responsive(url: str) -> None:
 # FIXTURES ------------------------------------------------------------------------------------
 
 
-@pytest.fixture(scope="function")
-async def rabbit_config(docker_stack: Dict, testing_environ_vars: Dict) -> RabbitConfig:
+@pytest.fixture(scope="module")
+def loop(request) -> Iterator[asyncio.AbstractEventLoop]:
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest.fixture(scope="module")
+async def rabbit_config(
+    loop: asyncio.AbstractEventLoop, docker_stack: Dict, testing_environ_vars: Dict
+) -> RabbitConfig:
     prefix = testing_environ_vars["SWARM_STACK_NAME"]
     assert f"{prefix}_rabbit" in docker_stack["services"]
     rabbit_config = RabbitConfig(

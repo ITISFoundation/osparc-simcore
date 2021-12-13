@@ -1,10 +1,3 @@
----
-name: 🐛 Bug
-about: File a bug/issue
-labels: bug
-
----
-
 ## Long story short
 
 <!-- Please describe your problem and why the fix is important. -->

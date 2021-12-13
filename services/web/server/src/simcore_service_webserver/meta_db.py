@@ -9,7 +9,10 @@ from .version_control_changes import compute_workbench_checksum
 from .version_control_db import VersionControlRepository
 from .version_control_errors import UserUndefined
 from .version_control_models import CommitID, ProjectDict, TagProxy
-from .version_control_tags import compose_wcopy_project_tag_name, eval_wcopy_project_id
+from .version_control_tags import (
+    compose_wcopy_project_id,
+    compose_wcopy_project_tag_name,
+)
 
 log = logging.getLogger(__name__)
 
@@ -65,11 +68,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
                 )
             )
             assert project  # nosec
-            project_as_dict = dict(project.items())
-            # FIXME: hack to avoid validation error
-            if "thumbnail" in project_as_dict:
-                project_as_dict["thumbnail"] = project_as_dict["thumbnail"] or ""
-            return project_as_dict
+            return dict(project.items())
 
     async def force_branch_and_wcopy(
         self,
@@ -118,7 +117,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
                 assert isinstance(commit_id, int)  # nosec
 
                 # creates unique identifier for variant
-                project["uuid"] = eval_wcopy_project_id(repo.project_uuid, commit_id)
+                project["uuid"] = compose_wcopy_project_id(repo.project_uuid, commit_id)
 
                 # FIXME: File-picker takes project uuid. replace!
                 project["hidden"] = True

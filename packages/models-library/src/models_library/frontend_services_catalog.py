@@ -174,6 +174,22 @@ def _create_iterator_consumer_probe_int() -> ServiceDockerData:
     )
 
 
+def is_frontend_service(service_key: str) -> bool:
+    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/")
+
+
+def is_parameter_service(service_key: str) -> bool:
+    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/")
+
+
+def is_iterator_service(service_key: str) -> bool:
+    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/")
+
+
+def is_iterator_consumer_service(service_key: str) -> bool:
+    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/iterator-consumer/")
+
+
 _FACTORY_FUNCTIONS = [
     _create_file_picker_service,
     _create_node_group_service,

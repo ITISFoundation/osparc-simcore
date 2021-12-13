@@ -4,18 +4,14 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aiohttp==3.8.1
+aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   pytest-aiohttp
-aiosignal==1.2.0
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
 astroid==2.9.0
     # via pylint
-async-timeout==4.0.1
+async-timeout==3.0.1
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -33,10 +29,13 @@ cffi==1.14.5
     # via
     #   -c requirements/_base.txt
     #   cryptography
-charset-normalizer==2.0.6
+chardet==3.0.4
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+charset-normalizer==2.0.6
+    # via
+    #   -c requirements/_base.txt
     #   requests
 coverage==6.1.2
     # via
@@ -55,11 +54,6 @@ docopt==0.6.2
     # via coveralls
 faker==9.8.3
     # via -r requirements/_test.in
-frozenlist==1.2.0
-    # via
-    #   -c requirements/_base.txt
-    #   aiohttp
-    #   aiosignal
 icdiff==2.0.4
     # via pytest-icdiff
 idna==2.10
@@ -123,6 +117,7 @@ pytest==6.2.5
     #   pytest-cov
     #   pytest-icdiff
     #   pytest-instafail
+    #   pytest-lazy-fixture
     #   pytest-localftpserver
     #   pytest-mock
     #   pytest-sugar
@@ -133,6 +128,8 @@ pytest-cov==3.0.0
 pytest-icdiff==0.5
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
+    # via -r requirements/_test.in
+pytest-lazy-fixture==0.6.3
     # via -r requirements/_test.in
 pytest-localftpserver==1.1.3
     # via -r requirements/_test.in
@@ -175,10 +172,10 @@ typing-extensions==3.10.0.2 ; python_version < "3.9"
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
+    #   aiohttp
     #   astroid
-    #   async-timeout
     #   pylint
-urllib3==1.26.7
+urllib3==1.26.5
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

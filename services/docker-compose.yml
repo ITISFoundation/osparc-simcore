@@ -150,7 +150,7 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=hostregexp(`{host:.+}`) && (PathPrefix(`/osparc`) || PathPrefix(`/s4l`) || PathPrefix(`/tis`) || PathPrefix(`/transpiled`) || PathPrefix(`/resource`))
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.priority=2
-        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker,${SWARM_STACK_NAME}_static_webserver_retry
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME}_static_webserver_retry
     networks:
       - default
 
@@ -211,12 +211,13 @@ services:
     volumes:
       - computational_shared_data:${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
       - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      &sidecar-environment
+    environment: &sidecar-environment
       DASK_SCHEDULER_HOST: ${DASK_SCHEDULER_HOST:-dask-scheduler}
+      SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore}
       SIDECAR_LOGLEVEL: ${LOG_LEVEL:-WARNING}
       SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: ${SWARM_STACK_NAME}_computational_shared_data
       SIDECAR_COMP_SERVICES_SHARED_FOLDER: ${SIDECAR_COMP_SERVICES_SHARED_FOLDER:-/home/scu/computational_shared_data}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
     networks:
       - computational_services_subnet
 
@@ -332,7 +333,7 @@ services:
           "--username",
           "${POSTGRES_USER}",
           "--dbname",
-          "${POSTGRES_DB}"
+          "${POSTGRES_DB}",
         ]
       interval: 15s
       retries: 5
@@ -358,7 +359,7 @@ services:
         "-c",
         "max_connections=413",
         "-c",
-        "shared_buffers=256MB"
+        "shared_buffers=256MB",
       ]
 
   redis:
@@ -369,7 +370,7 @@ services:
       - default
       - computational_services_subnet
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 30s
       retries: 50

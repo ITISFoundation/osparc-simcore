@@ -20,6 +20,7 @@ def mock_service_envs(
     # Variables  passed upon start via services/docker-compose.yml file under dask-sidecar/scheduler
     monkeypatch.setenv("DASK_START_AS_SCHEDULER", "1")
 
+    monkeypatch.setenv("SWARM_STACK_NAME", "simcore")
     monkeypatch.setenv("SIDECAR_LOGLEVEL", "DEBUG")
     monkeypatch.setenv(
         "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME", "simcore_computational_shared_data"

@@ -2,13 +2,13 @@ import logging
 from typing import List, cast
 
 from fastapi import FastAPI
-from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPool
 
 from ...core.errors import ConfigurationError
 from ...models.domains.comp_runs import CompRunsAtDB
 from ...modules.rabbitmq import RabbitMQClient
 from ...utils.scheduler import SCHEDULED_STATES, get_repository
 from ..celery import CeleryClient
+from ..dask_client import DaskClient
 from ..db.repositories.comp_runs import CompRunsRepository
 from .base_scheduler import BaseCompScheduler, ScheduledPipelineParams
 from .celery_scheduler import CeleryScheduler
@@ -62,7 +62,7 @@ async def create_from_db(app: FastAPI) -> BaseCompScheduler:
     logger.info("Creating Dask-based scheduler...")
     return DaskScheduler(
         settings=app.state.settings.DASK_SCHEDULER,
-        dask_clients_pool=DaskClientsPool.instance(app),
+        dask_client=DaskClient.instance(app),
         rabbitmq_client=RabbitMQClient.instance(app),
         db_engine=db_engine,
         default_cluster_id=app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,

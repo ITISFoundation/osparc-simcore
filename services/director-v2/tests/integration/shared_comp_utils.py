@@ -2,14 +2,15 @@ import json
 from typing import List
 from uuid import UUID
 
-import httpx
 from models_library.projects import ProjectAtDB
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from pydantic.networks import AnyHttpUrl
 from pydantic.types import PositiveInt
+from requests.models import Response
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from starlette import status
+from starlette.testclient import TestClient
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -18,16 +19,16 @@ from tenacity.wait import wait_random
 COMPUTATION_URL: str = "v2/computations"
 
 
-async def create_pipeline(
-    client: httpx.AsyncClient,
+def create_pipeline(
+    client: TestClient,
     *,
     project: ProjectAtDB,
     user_id: PositiveInt,
     start_pipeline: bool,
     expected_response_status_code: int,
     **kwargs,
-) -> httpx.Response:
-    response = await client.post(
+) -> Response:
+    response = client.post(
         COMPUTATION_URL,
         json={
             "user_id": user_id,
@@ -42,8 +43,8 @@ async def create_pipeline(
     return response
 
 
-async def assert_computation_task_out_obj(
-    client: httpx.AsyncClient,
+def assert_computation_task_out_obj(
+    client: TestClient,
     task_out: ComputationTaskOut,
     *,
     project: ProjectAtDB,
@@ -63,7 +64,7 @@ async def assert_computation_task_out_obj(
 
 
 async def assert_pipeline_status(
-    client: httpx.AsyncClient,
+    client: TestClient,
     url: AnyHttpUrl,
     user_id: PositiveInt,
     project_uuid: UUID,
@@ -79,7 +80,7 @@ async def assert_pipeline_status(
     MAX_TIMEOUT_S = 60
 
     async def check_pipeline_state() -> ComputationTaskOut:
-        response = await client.get(url, params={"user_id": user_id})
+        response = client.get(url, params={"user_id": user_id})
         assert (
             response.status_code == status.HTTP_202_ACCEPTED
         ), f"response code is {response.status_code}, error: {response.text}"

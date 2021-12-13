@@ -14,7 +14,7 @@
 # installs this repo's packages
 --editable ../pytest-simcore/
 
---editable ../postgres-database
+--editable ../postgres-database/[migration]
 --editable ../models-library/
 
 # FIXME: these dependencies should be removed

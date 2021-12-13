@@ -6,23 +6,6 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: Run Test",
-      "type": "python",
-      "request": "launch",
-      "module": "pytest",
-      "args": [
-        "-sx",
-        "--log-cli-level=INFO",
-        "--ff",
-        "--keep-docker-up",
-        "--setup-show",
-        "${file}"
-      ],
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "justMyCode": false
-    },
-    {
       "name": "Python: Remote Attach api-server",
       "type": "python",
       "request": "attach",

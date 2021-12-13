@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List
 
-import httpx
 import pytest
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
@@ -25,7 +24,6 @@ from models_library.projects_state import RunningState
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pydantic.types import PositiveInt
-from pytest_mock.plugin import MockerFixture
 from shared_comp_utils import (
     COMPUTATION_URL,
     assert_computation_task_out_obj,
@@ -54,24 +52,31 @@ pytest_simcore_ops_services_selection = ["minio", "adminer", "flower"]
 # FIXTURES ---------------------------------------
 
 
-@pytest.fixture(scope="function")
-def mock_env(monkeypatch: MonkeyPatch) -> None:
+@pytest.fixture(scope="function", params=["dask"])
+def mock_env(monkeypatch: MonkeyPatch, request) -> None:
     # used by the client fixture
-    monkeypatch.setenv("DIRECTOR_V2_CELERY_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "1")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
-    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCKED")
+
+    monkeypatch.setenv(
+        "DIRECTOR_V2_DASK_CLIENT_ENABLED",
+        "1" if request.param == "dask" else "0",
+    )
+    monkeypatch.setenv(
+        "DIRECTOR_V2_DASK_SCHEDULER_ENABLED",
+        "1" if request.param == "dask" else "0",
+    )
+    monkeypatch.setenv(
+        "DIRECTOR_V2_CELERY_SCHEDULER_ENABLED",
+        "1" if request.param == "celery" else "0",
+    )
+    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
 
 
 @pytest.fixture()
 def minimal_configuration(
-    loop: asyncio.AbstractEventLoop,
     sleeper_service: Dict[str, str],
     jupyter_service: Dict[str, str],
     dask_scheduler_service: None,
@@ -82,7 +87,7 @@ def minimal_configuration(
     rabbit_service: RabbitConfig,
     simcore_services_ready: None,
     storage_service: URL,
-    mocker: MockerFixture,
+    mocker,
 ) -> None:
     node_ports_config.STORAGE_ENDPOINT = (
         f"{storage_service.host}:{storage_service.port}"
@@ -167,15 +172,16 @@ def test_invalid_computation(
     ), f"response code is {response.status_code}, error: {response.text}"
 
 
-async def test_start_empty_computation_is_refused(
+def test_start_empty_computation(
     minimal_configuration: None,
-    async_client: httpx.AsyncClient,
+    client: TestClient,
     user_id: PositiveInt,
     project: Callable,
 ):
+    # send an empty project to process
     empty_project = project()
-    await create_pipeline(
-        async_client,
+    create_pipeline(
+        client,
         project=empty_project,
         user_id=user_id,
         start_pipeline=True,
@@ -342,7 +348,7 @@ class PartialComputationParams:
 )
 async def test_run_partial_computation(
     minimal_configuration: None,
-    async_client: httpx.AsyncClient,
+    client: TestClient,
     user_id: PositiveInt,
     project: Callable,
     update_project_workbench_with_comp_tasks: Callable,
@@ -382,8 +388,8 @@ async def test_run_partial_computation(
     )
 
     # send a valid project with sleepers
-    response = await create_pipeline(
-        async_client,
+    response = create_pipeline(
+        client,
         project=sleepers_project,
         user_id=user_id,
         start_pipeline=True,
@@ -396,8 +402,8 @@ async def test_run_partial_computation(
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
     # check the contents is correctb
-    await assert_computation_task_out_obj(
-        async_client,
+    assert_computation_task_out_obj(
+        client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
@@ -406,13 +412,13 @@ async def test_run_partial_computation(
 
     # now wait for the computation to finish
     task_out = await assert_pipeline_status(
-        async_client, task_out.url, user_id, sleepers_project.uuid
+        client, task_out.url, user_id, sleepers_project.uuid
     )
     expected_pipeline_details_after_run = _convert_to_pipeline_details(
         sleepers_project, params.exp_pipeline_adj_list, params.exp_node_states_after_run
     )
-    await assert_computation_task_out_obj(
-        async_client,
+    assert_computation_task_out_obj(
+        client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.SUCCESS,
@@ -423,8 +429,8 @@ async def test_run_partial_computation(
     # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
 
-    response = await create_pipeline(
-        async_client,
+    response = create_pipeline(
+        client,
         project=sleepers_project,
         user_id=user_id,
         start_pipeline=True,
@@ -443,8 +449,8 @@ async def test_run_partial_computation(
         params.exp_pipeline_adj_list_after_force_run,
         params.exp_node_states_after_force_run,
     )
-    response = await create_pipeline(
-        async_client,
+    response = create_pipeline(
+        client,
         project=sleepers_project,
         user_id=user_id,
         start_pipeline=True,
@@ -458,8 +464,8 @@ async def test_run_partial_computation(
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
 
-    await assert_computation_task_out_obj(
-        async_client,
+    assert_computation_task_out_obj(
+        client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
@@ -468,13 +474,13 @@ async def test_run_partial_computation(
 
     # now wait for the computation to finish
     task_out = await assert_pipeline_status(
-        async_client, task_out.url, user_id, sleepers_project.uuid
+        client, task_out.url, user_id, sleepers_project.uuid
     )
 
 
 async def test_run_computation(
     minimal_configuration: None,
-    async_client: httpx.AsyncClient,
+    client: TestClient,
     user_id: PositiveInt,
     project: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
@@ -484,8 +490,8 @@ async def test_run_computation(
 ):
     sleepers_project = project(workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
-    response = await create_pipeline(
-        async_client,
+    response = create_pipeline(
+        client,
         project=sleepers_project,
         user_id=user_id,
         start_pipeline=True,
@@ -494,8 +500,8 @@ async def test_run_computation(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     # check the contents is correct: a pipeline that just started gets PUBLISHED
-    await assert_computation_task_out_obj(
-        async_client,
+    assert_computation_task_out_obj(
+        client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
@@ -504,7 +510,7 @@ async def test_run_computation(
 
     # wait for the computation to start
     await assert_pipeline_status(
-        async_client,
+        client,
         task_out.url,
         user_id,
         sleepers_project.uuid,
@@ -513,11 +519,11 @@ async def test_run_computation(
 
     # wait for the computation to finish (either by failing, success or abort)
     task_out = await assert_pipeline_status(
-        async_client, task_out.url, user_id, sleepers_project.uuid
+        client, task_out.url, user_id, sleepers_project.uuid
     )
 
-    await assert_computation_task_out_obj(
-        async_client,
+    assert_computation_task_out_obj(
+        client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.SUCCESS,
@@ -527,8 +533,8 @@ async def test_run_computation(
     # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
     # run again should return a 422 cause everything is uptodate
-    response = await create_pipeline(
-        async_client,
+    response = create_pipeline(
+        client,
         project=sleepers_project,
         user_id=user_id,
         start_pipeline=True,
@@ -546,8 +552,8 @@ async def test_run_computation(
                 node_id
             ].current_status
         )
-    response = await create_pipeline(
-        async_client,
+    response = create_pipeline(
+        client,
         project=sleepers_project,
         user_id=user_id,
         start_pipeline=True,
@@ -556,8 +562,8 @@ async def test_run_computation(
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
     # check the contents is correct
-    await assert_computation_task_out_obj(
-        async_client,
+    assert_computation_task_out_obj(
+        client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
@@ -566,10 +572,10 @@ async def test_run_computation(
 
     # wait for the computation to finish
     task_out = await assert_pipeline_status(
-        async_client, task_out.url, user_id, sleepers_project.uuid
+        client, task_out.url, user_id, sleepers_project.uuid
     )
-    await assert_computation_task_out_obj(
-        async_client,
+    assert_computation_task_out_obj(
+        client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.SUCCESS,
@@ -579,7 +585,7 @@ async def test_run_computation(
 
 async def test_abort_computation(
     minimal_configuration: None,
-    async_client: httpx.AsyncClient,
+    client: TestClient,
     user_id: PositiveInt,
     project: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
@@ -587,8 +593,8 @@ async def test_abort_computation(
 ):
     sleepers_project = project(workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
-    response = await create_pipeline(
-        async_client,
+    response = create_pipeline(
+        client,
         project=sleepers_project,
         user_id=user_id,
         start_pipeline=True,
@@ -597,8 +603,8 @@ async def test_abort_computation(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     # check the contents is correctb
-    await assert_computation_task_out_obj(
-        async_client,
+    assert_computation_task_out_obj(
+        client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
@@ -607,7 +613,7 @@ async def test_abort_computation(
 
     # wait until the pipeline is started
     task_out = await assert_pipeline_status(
-        async_client,
+        client,
         task_out.url,
         user_id,
         sleepers_project.uuid,
@@ -616,32 +622,27 @@ async def test_abort_computation(
     assert (
         task_out.state == RunningState.STARTED
     ), f"pipeline is not in the expected starting state but in {task_out.state}"
-    assert (
-        task_out.url
-        == f"{async_client.base_url}/v2/computations/{sleepers_project.uuid}"
-    )
+    assert task_out.url == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
     assert (
         task_out.stop_url
-        == f"{async_client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
+        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
     )
 
     # now abort the pipeline
-    response = await async_client.post(
-        f"{task_out.stop_url}", json={"user_id": user_id}
-    )
+    response = client.post(f"{task_out.stop_url}", json={"user_id": user_id})
     assert (
         response.status_code == status.HTTP_202_ACCEPTED
     ), f"response code is {response.status_code}, error: {response.text}"
     task_out = ComputationTaskOut.parse_obj(response.json())
     assert (
         str(task_out.url)
-        == f"{async_client.base_url}/v2/computations/{sleepers_project.uuid}"
+        == f"{client.base_url}/v2/computations/{sleepers_project.uuid}"
     )
     assert task_out.stop_url == None
 
     # check that the pipeline is aborted/stopped
     task_out = await assert_pipeline_status(
-        async_client,
+        client,
         task_out.url,
         user_id,
         sleepers_project.uuid,
@@ -652,7 +653,7 @@ async def test_abort_computation(
 
 async def test_update_and_delete_computation(
     minimal_configuration: None,
-    async_client: httpx.AsyncClient,
+    client: TestClient,
     user_id: PositiveInt,
     project: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
@@ -661,8 +662,8 @@ async def test_update_and_delete_computation(
 ):
     sleepers_project = project(workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
-    response = await create_pipeline(
-        async_client,
+    response = create_pipeline(
+        client,
         project=sleepers_project,
         user_id=user_id,
         start_pipeline=False,
@@ -671,8 +672,8 @@ async def test_update_and_delete_computation(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     # check the contents is correctb
-    await assert_computation_task_out_obj(
-        async_client,
+    assert_computation_task_out_obj(
+        client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.NOT_STARTED,
@@ -680,8 +681,8 @@ async def test_update_and_delete_computation(
     )
 
     # update the pipeline
-    response = await create_pipeline(
-        async_client,
+    response = create_pipeline(
+        client,
         project=sleepers_project,
         user_id=user_id,
         start_pipeline=False,
@@ -690,8 +691,8 @@ async def test_update_and_delete_computation(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     # check the contents is correctb
-    await assert_computation_task_out_obj(
-        async_client,
+    assert_computation_task_out_obj(
+        client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.NOT_STARTED,
@@ -699,8 +700,8 @@ async def test_update_and_delete_computation(
     )
 
     # update the pipeline
-    response = await create_pipeline(
-        async_client,
+    response = create_pipeline(
+        client,
         project=sleepers_project,
         user_id=user_id,
         start_pipeline=False,
@@ -709,8 +710,8 @@ async def test_update_and_delete_computation(
     task_out = ComputationTaskOut.parse_obj(response.json())
 
     # check the contents is correctb
-    await assert_computation_task_out_obj(
-        async_client,
+    assert_computation_task_out_obj(
+        client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.NOT_STARTED,
@@ -718,8 +719,8 @@ async def test_update_and_delete_computation(
     )
 
     # start it now
-    response = await create_pipeline(
-        async_client,
+    response = create_pipeline(
+        client,
         project=sleepers_project,
         user_id=user_id,
         start_pipeline=True,
@@ -727,8 +728,8 @@ async def test_update_and_delete_computation(
     )
     task_out = ComputationTaskOut.parse_obj(response.json())
     # check the contents is correctb
-    await assert_computation_task_out_obj(
-        async_client,
+    assert_computation_task_out_obj(
+        client,
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
@@ -737,7 +738,7 @@ async def test_update_and_delete_computation(
 
     # wait until the pipeline is started
     task_out = await assert_pipeline_status(
-        async_client,
+        client,
         task_out.url,
         user_id,
         sleepers_project.uuid,
@@ -748,8 +749,8 @@ async def test_update_and_delete_computation(
     ), f"pipeline is not in the expected starting state but in {task_out.state}"
 
     # now try to update the pipeline, is expected to be forbidden
-    response = await create_pipeline(
-        async_client,
+    response = create_pipeline(
+        client,
         project=sleepers_project,
         user_id=user_id,
         start_pipeline=False,
@@ -757,25 +758,21 @@ async def test_update_and_delete_computation(
     )
 
     # try to delete the pipeline, is expected to be forbidden if force parameter is false (default)
-    response = await async_client.request(
-        "DELETE", task_out.url, json={"user_id": user_id}
-    )
+    response = client.delete(task_out.url, json={"user_id": user_id})
     assert (
         response.status_code == status.HTTP_403_FORBIDDEN
     ), f"response code is {response.status_code}, error: {response.text}"
 
     # try again with force=True this should abort and delete the pipeline
-    response = await async_client.request(
-        "DELETE", task_out.url, json={"user_id": user_id, "force": True}
-    )
+    response = client.delete(task_out.url, json={"user_id": user_id, "force": True})
     assert (
         response.status_code == status.HTTP_204_NO_CONTENT
     ), f"response code is {response.status_code}, error: {response.text}"
 
 
-async def test_pipeline_with_no_computational_services_still_create_correct_comp_tasks_in_db(
+def test_pipeline_with_no_comp_services_still_create_correct_comp_tasks(
     minimal_configuration: None,
-    async_client: httpx.AsyncClient,
+    client: TestClient,
     user_id: PositiveInt,
     project: Callable,
     jupyter_service: Dict[str, Any],
@@ -792,8 +789,8 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
     )
 
     # this pipeline is not runnable as there are no computational services
-    response = await create_pipeline(
-        async_client,
+    response = create_pipeline(
+        client,
         project=project_with_dynamic_node,
         user_id=user_id,
         start_pipeline=True,
@@ -801,8 +798,8 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
     )
 
     # still this pipeline shall be createable if we do not want to start it
-    response = await create_pipeline(
-        async_client,
+    response = create_pipeline(
+        client,
         project=project_with_dynamic_node,
         user_id=user_id,
         start_pipeline=False,
@@ -813,7 +810,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
     ), f"response code is {response.status_code}, error: {response.text}"
 
 
-def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
+def test_pipeline_with_control_pipeline_made_of_dynamic_services_are_allowed(
     minimal_configuration: None,
     client: TestClient,
     user_id: PositiveInt,

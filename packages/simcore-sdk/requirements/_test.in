@@ -21,14 +21,13 @@ pytest-xdist
 pytest-lazy-fixture
 
 # mockups/fixtures
-aioresponses
 alembic
-click
+aioresponses
+requests
 docker
+python-dotenv
 faker
 minio
-python-dotenv
-requests
 
 # tools for CI
 pylint

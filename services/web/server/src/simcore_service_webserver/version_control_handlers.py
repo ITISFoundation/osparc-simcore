@@ -2,9 +2,11 @@ import logging
 from typing import List
 
 from aiohttp import web
-from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
-from models_library.rest_pagination_utils import paginate_data
 from pydantic.decorator import validate_arguments
+from servicelib.rest_pagination_utils import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    PageResponseLimitOffset,
+)
 
 from ._meta import api_version_prefix as VTAG
 from .login.decorators import login_required
@@ -12,9 +14,8 @@ from .rest_utils import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 from .utils_aiohttp import (
     create_url_for_function,
-    envelope_json_response,
-    get_routes_view,
     rename_routes_as_handler_function,
+    view_routes,
 )
 from .version_control_core import (
     checkout_checkpoint_safe,
@@ -26,7 +27,7 @@ from .version_control_core import (
     update_checkpoint_safe,
 )
 from .version_control_db import HEAD, VersionControlRepository
-from .version_control_handlers_base import handle_request_errors
+from .version_control_handlers_base import enveloped_response, handle_request_errors
 from .version_control_models import (
     Checkpoint,
     CheckpointAnnotations,
@@ -88,17 +89,14 @@ async def _list_repos_handler(request: web.Request):
         for row in repos_rows
     ]
 
-    page = Page[RepoApiModel].parse_obj(
-        paginate_data(
-            chunk=repos_list,
+    return web.Response(
+        text=PageResponseLimitOffset.paginate_data(
+            data=repos_list,
             request_url=request.url,
             total=total_number_of_repos,
             limit=_limit,
             offset=_offset,
-        )
-    )
-    return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        ).json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )
 
@@ -130,7 +128,7 @@ async def _create_checkpoint_handler(request: web.Request):
             **checkpoint.dict(),
         }
     )
-    return envelope_json_response(data, status_cls=web.HTTPCreated)
+    return enveloped_response(data, status_cls=web.HTTPCreated)
 
 
 @routes.get(f"/{VTAG}/repos/projects/{{project_uuid}}/checkpoints")
@@ -169,17 +167,14 @@ async def _list_checkpoints_handler(request: web.Request):
         for checkpoint in checkpoints
     ]
 
-    page = Page[CheckpointApiModel].parse_obj(
-        paginate_data(
-            chunk=checkpoints_list,
+    return web.Response(
+        text=PageResponseLimitOffset.paginate_data(
+            data=checkpoints_list,
             request_url=request.url,
             total=total,
-            limit=_limit,
+            limit=_limit or total,
             offset=_offset,
-        )
-    )
-    return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        ).json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )
 
@@ -188,7 +183,6 @@ async def _list_checkpoints_handler(request: web.Request):
     f"/{VTAG}/repos/projects/{{project_uuid}}/checkpoints/HEAD",
 )
 async def _get_checkpoint_handler_head(request: web.Request):
-    # NOTE: added a function so below the route can be named
     return await _get_checkpoint_handler(request)
 
 
@@ -221,7 +215,7 @@ async def _get_checkpoint_handler(request: web.Request):
             **checkpoint.dict(**RESPONSE_MODEL_POLICY),
         }
     )
-    return envelope_json_response(data)
+    return enveloped_response(data)
 
 
 @routes.patch(
@@ -256,7 +250,7 @@ async def _update_checkpoint_annotations_handler(request: web.Request):
             **checkpoint.dict(**RESPONSE_MODEL_POLICY),
         }
     )
-    return envelope_json_response(data)
+    return enveloped_response(data)
 
 
 @routes.post(f"/{VTAG}/repos/projects/{{project_uuid}}/checkpoints/{{ref_id}}:checkout")
@@ -286,7 +280,7 @@ async def _checkout_handler(request: web.Request):
             **checkpoint.dict(**RESPONSE_MODEL_POLICY),
         }
     )
-    return envelope_json_response(data)
+    return enveloped_response(data)
 
 
 @routes.get(
@@ -330,10 +324,10 @@ async def _view_project_workbench_handler(request: web.Request):
         }
     )
 
-    return envelope_json_response(data)
+    return enveloped_response(data)
 
 
 # WARNING: changes in handlers naming will have an effect
 # since they are in sync with operation_id  (checked in tests)
 rename_routes_as_handler_function(routes, prefix=__name__)
-logger.debug("Routes collected in  %s:\n %s", __name__, get_routes_view(routes))
+logger.debug("Routes collected in  %s:\n %s", __name__, view_routes(routes))

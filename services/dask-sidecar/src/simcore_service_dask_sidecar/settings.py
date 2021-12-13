@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from models_library.basic_types import LogLevel
-from pydantic import Field, validator
+from pydantic import Field, NonNegativeInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.logging_utils import MixinLoggingSettings
 
@@ -14,6 +14,8 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel.INFO.value,
         env=["DASK_SIDECAR_LOGLEVEL", "SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
+
+    SWARM_STACK_NAME: str = "simcore"
 
     # sidecar config ---
 
@@ -28,6 +30,14 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # dask config ----
+
+    DASK_CLUSTER_ID_PREFIX: Optional[str] = Field(
+        "CLUSTER_", description="This defines the cluster name prefix"
+    )
+
+    DASK_DEFAULT_CLUSTER_ID: Optional[NonNegativeInt] = Field(
+        0, description="This defines the default cluster id when none is defined"
+    )
 
     DASK_START_AS_SCHEDULER: Optional[bool] = Field(
         False, description="If this env is set, then the app boots as scheduler"

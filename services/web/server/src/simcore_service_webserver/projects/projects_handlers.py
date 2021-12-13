@@ -11,9 +11,8 @@ from aiohttp import web
 from jsonschema import ValidationError
 from models_library.projects import ProjectID
 from models_library.projects_state import ProjectState, ProjectStatus
-from models_library.rest_pagination import Page
-from models_library.rest_pagination_utils import paginate_data
 from servicelib.json_serialization import json_dumps
+from servicelib.rest_pagination_utils import PageResponseLimitOffset
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
@@ -28,7 +27,7 @@ from ..security_decorators import permission_required
 from ..storage_api import copy_data_folders_from_project
 from ..users_api import get_user_name
 from . import projects_api
-from .project_models import ProjectDict, ProjectTypeAPI
+from .project_models import ProjectTypeAPI
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import (
@@ -51,7 +50,6 @@ OVERRIDABLE_DOCUMENT_KEYS = [
     "accessRights",
 ]
 # TODO: validate these against api/specs/webserver/v0/components/schemas/project-v0.0.1.json
-
 
 log = logging.getLogger(__name__)
 
@@ -241,16 +239,13 @@ async def list_projects(request: web.Request):
         include_hidden=show_hidden,
     )
     await set_all_project_states(projects, project_types)
-    page = Page[ProjectDict].parse_obj(
-        paginate_data(
-            chunk=projects,
-            request_url=request.url,
-            total=total_number_projects,
-            limit=limit,
-            offset=offset,
-        )
-    )
-    return page.dict(**RESPONSE_MODEL_POLICY)
+    return PageResponseLimitOffset.paginate_data(
+        data=projects,
+        request_url=request.url,
+        total=total_number_projects,
+        limit=limit,
+        offset=offset,
+    ).dict(**RESPONSE_MODEL_POLICY)
 
 
 @routes.get(f"/{VTAG}/projects/{{project_uuid}}")
@@ -363,19 +358,13 @@ async def replace_project(request: web.Request):
         project_uuid = ProjectID(request.match_info["project_id"])
         new_project = await request.json()
 
-        # Prune state field (just in case)
-        new_project.pop("state", None)
-
-    except AttributeError as err:
-        # NOTE: if new_project is not a dict, .pop will raise this error
-        raise web.HTTPBadRequest(
-            reason="Invalid request payload, expected a project model"
-        ) from err
-
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
     except json.JSONDecodeError as exc:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
+
+    # Prune state field (just in case)
+    new_project.pop("state", None)
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
     await check_permission(

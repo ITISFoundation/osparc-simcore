@@ -2,7 +2,6 @@ from fastapi import APIRouter
 
 from ..meta import API_VTAG
 from .routes import (
-    clusters,
     computations,
     dynamic_services,
     health,
@@ -34,7 +33,6 @@ v2_router.include_router(
 v2_router.include_router(
     dynamic_services.router, tags=["dynamic services"], prefix="/dynamic_services"
 )
-v2_router.include_router(clusters.router, tags=["clusters"], prefix="/clusters")
 
 # root
 api_router = APIRouter()

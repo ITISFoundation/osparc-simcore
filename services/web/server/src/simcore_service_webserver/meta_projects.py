@@ -52,9 +52,9 @@ async def projects_redirection_middleware(request: web.Request, handler: _Handle
             if wcopy_project_id != project_id:
                 request[RQ_REQUESTED_REPO_PROJECT_UUID_KEY] = wcopy_project_id
                 log.debug(
-                    "Redirecting request with %s to working copy %s",
-                    f"{project_id=}",
-                    f"{wcopy_project_id=}",
+                    "Redirecting project '%s' to working copy '%s'",
+                    project_id,
+                    wcopy_project_id,
                 )
 
     response = await handler(request)

@@ -6,18 +6,19 @@ from typing import List, Optional, Tuple
 
 from aiohttp import web
 from models_library.projects import ProjectID
-from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
-from models_library.rest_pagination_utils import paginate_data
 from pydantic import BaseModel
 from pydantic.fields import Field
 from pydantic.networks import HttpUrl
+from servicelib.rest_pagination_utils import (
+    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+    PageResponseLimitOffset,
+)
 
 from ._meta import api_version_prefix as VTAG
 from .meta_db import VersionControlForMetaModeling
 from .meta_iterations import ProjectIteration
 from .rest_utils import RESPONSE_MODEL_POLICY
-from .security_decorators import permission_required
-from .utils_aiohttp import create_url_for_function, envelope_json_response
+from .utils_aiohttp import create_url_for_function, enveloped_json_response
 from .version_control_models import CheckpointID, CommitID, TagProxy
 from .version_control_tags import parse_wcopy_project_tag_name
 
@@ -46,7 +47,6 @@ async def list_project_iterations(
 
     # Search all subsequent commits (i.e. children) and retrieve their tags
     # Select range on those tagged as iterations and returned their assigned wcopy id
-    # Can also check all associated project uuids and see if they exists
     # FIXME: do all these operations in database
     tags_per_child: List[List[TagProxy]] = await vc_repo.get_children_tags(
         repo_id, commit_id
@@ -149,7 +149,6 @@ routes = web.RouteTableDef()
     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
     name=f"{__name__}._list_meta_project_iterations_handler",
 )
-@permission_required("project.snapshot.read")
 async def _list_meta_project_iterations_handler(request: web.Request) -> web.Response:
     # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]
 
@@ -165,11 +164,9 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
 
     try:
         commit_id = CommitID(_ref_id)
-    except ValueError as err:
+    except ValueError:
         # e.g. HEAD
-        raise NotImplementedError(
-            "cannot convert ref (e.g. HEAD) -> commit id"
-        ) from err
+        raise NotImplementedError("cannot convert ref (e.g. HEAD) -> commit id")
 
     # core function ----
     (
@@ -178,11 +175,6 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
     ) = await list_project_iterations(
         vc_repo, _project_uuid, commit_id, offset=_offset, limit=_limit
     )
-
-    if total_number_of_iterations == 0:
-        raise web.HTTPNotFound(
-            reason=f"No iterations found for project {_project_uuid=}/{commit_id=}"
-        )
 
     assert len(selected_project_iterations) <= _limit  # nosec
 
@@ -205,17 +197,14 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
         for wcp_id, iter_id in selected_project_iterations
     ]
 
-    page = Page[ProjectIterationAsItem].parse_obj(
-        paginate_data(
-            chunk=iterations_items,
+    return web.Response(
+        text=PageResponseLimitOffset.paginate_data(
+            data=iterations_items,
             request_url=request.url,
             total=total_number_of_iterations,
             limit=_limit,
             offset=_offset,
-        )
-    )
-    return web.Response(
-        text=page.json(**RESPONSE_MODEL_POLICY),
+        ).json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )
 
@@ -224,7 +213,6 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
     name=f"{__name__}._create_meta_project_iterations_handler",
 )
-@permission_required("project.snapshot.create")
 async def _create_meta_project_iterations_handler(request: web.Request) -> web.Response:
     # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]
     url_for = create_url_for_function(request)
@@ -234,11 +222,9 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
     _ref_id = request.match_info["ref_id"]
     try:
         commit_id = CommitID(_ref_id)
-    except ValueError as err:
+    except ValueError:
         # e.g. HEAD
-        raise NotImplementedError(
-            "cannot convert ref (e.g. HEAD) -> commit id"
-        ) from err
+        raise NotImplementedError("cannot convert ref (e.g. HEAD) -> commit id")
 
     # core function ----
     project_iterations = await create_or_get_project_iterations(
@@ -264,7 +250,7 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
         for wcp_id, iter_id in project_iterations
     ]
 
-    return envelope_json_response(iterations_items, web.HTTPCreated)
+    return enveloped_json_response(data=iterations_items, status_cls=web.HTTPCreated)
 
 
 # TODO:

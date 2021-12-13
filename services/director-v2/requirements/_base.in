@@ -3,7 +3,6 @@
 #
 # NOTE: ALL version constraints MUST be commented
 --constraint ../../../requirements/constraints.txt
---constraint ./constraints.txt
 
 --requirement ../../../packages/dask-task-models-library/requirements/_base.in
 --requirement ../../../packages/models-library/requirements/_base.in
@@ -21,7 +20,6 @@ aio-pika
 aiodocker
 aiopg[sa]
 celery[redis]
-dask-gateway
 fastapi[all]
 httpx
 networkx

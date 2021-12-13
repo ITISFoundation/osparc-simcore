@@ -1,13 +1,13 @@
 from servicelib.aiohttp import application_keys
 
-from . import _meta
+from . import meta
 
 RETRY_WAIT_SECS = 2
 RETRY_COUNT = 20
 CONNECT_TIMEOUT_SECS = 30
 
 ## VERSION-----------------------------
-service_version = _meta.version
+service_version = meta.version
 
 ## CONFIGURATION FILES------------------
 DEFAULT_CONFIG = "docker-prod-config.yaml"

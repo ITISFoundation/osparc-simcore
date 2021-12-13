@@ -11,27 +11,13 @@ from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
-from typing import (
-    Any,
-    AsyncIterator,
-    Awaitable,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Set,
-    Tuple,
-)
-from unittest import mock
+from typing import Any, Callable, Coroutine, Dict, Iterable, List, Set, Tuple
 
 import aiofiles
-import aiohttp.web
+import aiohttp
 import aiopg
-import aiopg.sa
 import aioredis
 import pytest
-from aiohttp.test_utils import TestClient
 from models_library.settings.redis import RedisConfig
 from pytest_simcore.docker_registry import _pull_push_service
 from pytest_simcore.helpers.utils_login import log_client_in
@@ -109,9 +95,7 @@ KEYS_TO_IGNORE_FROM_COMPARISON = {
 
 
 @pytest.fixture(autouse=True)
-def __drop_and_recreate_postgres__(
-    database_from_template_before_each_function,
-) -> Iterator[None]:
+def __drop_and_recreate_postgres__(database_from_template_before_each_function) -> None:
     yield
 
 
@@ -127,12 +111,38 @@ async def __delete_all_redis_keys__(redis_service: RedisConfig):
 
 
 @pytest.fixture
+async def monkey_patch_aiohttp_request_url():
+    old_request = aiohttp.ClientSession._request
+
+    async def new_request(*args, **kwargs):
+        assert len(args) == 3
+
+        url = args[2]
+        if isinstance(url, str):
+            url = URL(url)
+
+        if url.host == "director-v2":
+            from pytest_simcore.helpers.utils_docker import get_service_published_port
+
+            log.debug("MOCKING _request [before] url=%s", url)
+            new_port = int(get_service_published_port("director-v2", 8000))
+            url = url.with_host("172.17.0.1").with_port(new_port)
+            log.debug("MOCKING _request [after] url=%s kwargs=%s", url, str(kwargs))
+
+            args = args[0], args[1], url
+
+        return await old_request(*args, **kwargs)
+
+    aiohttp.ClientSession._request = new_request
+
+    yield
+
+    aiohttp.ClientSession._request = old_request
+
+
+@pytest.fixture
 def client(
-    loop: asyncio.AbstractEventLoop,
-    aiohttp_client: Callable,
-    app_config: Dict,
-    postgres_with_template_db: aiopg.sa.engine.Engine,
-    mock_orphaned_services: mock.Mock,
+    loop, aiohttp_client, app_config, postgres_with_template_db, mock_orphaned_services
 ):
     cfg = deepcopy(app_config)
 
@@ -189,9 +199,7 @@ def get_exported_projects() -> List[Path]:
 
 
 @pytest.fixture
-async def apply_access_rights(
-    aiopg_engine: aiopg.sa.Engine,
-) -> AsyncIterator[Callable[..., Awaitable[None]]]:
+async def apply_access_rights(aiopg_engine: aiopg.sa.Engine) -> Coroutine:
     async def grant_rights_to_services(services: List[Tuple[str, str]]) -> None:
         for service_key, service_version in services:
             metada_data_values = dict(
@@ -241,9 +249,7 @@ async def apply_access_rights(
 
 
 @pytest.fixture
-async def grant_access_rights(
-    apply_access_rights: Callable[..., Awaitable[None]]
-) -> None:
+async def grant_access_rights(apply_access_rights: Coroutine) -> None:
     # services which require access
     services = [
         ("simcore/services/comp/itis/sleeper", "2.0.2"),
@@ -394,7 +400,7 @@ async def extract_download_links_from_storage(
             app=app,
             location_id=location_id,
             fileId=raw_file_path,
-            user_id=int(user_id),
+            user_id=user_id,
         )
         return seq_key, link
 
@@ -479,13 +485,15 @@ async def import_study_from_file(client, file_path: Path) -> str:
     "export_version", get_exported_projects(), ids=(lambda p: p.name)
 )
 async def test_import_export_import_duplicate(
-    client: TestClient,
-    push_services_to_registry: None,
-    aiopg_engine: aiopg.sa.engine.Engine,
-    redis_client: aioredis.Redis,
-    export_version: Path,
-    simcore_services_ready: None,
-    grant_access_rights: None,
+    loop,
+    client,
+    push_services_to_registry,
+    aiopg_engine,
+    redis_client,
+    export_version,
+    simcore_services_ready,
+    monkey_patch_aiohttp_request_url,
+    grant_access_rights,
 ):
     """
     Checks if the full "import -> export -> import -> duplicate" cycle
@@ -513,7 +521,7 @@ async def test_import_export_import_duplicate(
 
     assert url_export == URL(API_PREFIX + f"/projects/{imported_project_uuid}:xport")
     async with await client.post(
-        f"{url_export}", headers=headers, timeout=10
+        url_export, headers=headers, timeout=10
     ) as export_response:
         assert export_response.status == 200, await export_response.text()
 
@@ -540,7 +548,7 @@ async def test_import_export_import_duplicate(
         API_PREFIX + f"/projects/{imported_project_uuid}:duplicate"
     )
     async with await client.post(
-        f"{url_duplicate}", headers=headers, timeout=10
+        url_duplicate, headers=headers, timeout=10
     ) as duplicate_response:
         assert duplicate_response.status == 200, await duplicate_response.text()
         reply_data = await duplicate_response.json()

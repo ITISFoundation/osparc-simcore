@@ -211,10 +211,6 @@ JupyterHubTokenAuthentication:
       type: string
       enum: [jupyterhub]
       default: jupyterhub
-    api_token:
-      type: string
-  required:
-    - api_token
   additionalProperties: false
 
 ClusterAccessRights:

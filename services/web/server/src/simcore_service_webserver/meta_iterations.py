@@ -17,7 +17,6 @@ from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
 from models_library.services import ServiceDockerData
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
-from simcore_service_webserver.version_control_tags import eval_wcopy_project_id
 
 from .meta_db import CommitID, ProjectDict, VersionControlForMetaModeling
 from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
@@ -38,10 +37,6 @@ def _compute_params_checksum(parameters: Parameters) -> MD5Str:
 
 
 def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodesPair]:
-    """Builds changing instances (i.e. iterations) of the meta-project
-
-    This interface only knows about project/node models and parameters
-    """
 
     # select iterable nodes
     iterable_nodes_defs: List[ServiceDockerData] = []  # schemas of iterable nodes
@@ -92,7 +87,6 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
             _node.outputs = _node.outputs or {}
             _node.outputs.update(node_results)
 
-        # FIXME: here we yield.
         parameters_per_iter.append(parameters)
         updated_nodes_per_iter.append(updated_nodes)
 
@@ -117,20 +111,21 @@ def extract_parameters(
 
 class ProjectIteration(BaseModel):
     """
-    - Keeps a reference of the version: vc repo/commit and wcopy
-    - Keeps a reference of the interation: order, parameters (for the moment, only hash), ...
+    A project iteration
 
     - de/serializes from/to a vc tag
+
     """
 
-    # version-control info
     repo_id: Optional[int] = None
     repo_commit_id: CommitID = Field(...)
-
-    # iteration info
     iter_index: int = Field(...)
-    total_count: Union[int, Literal["unbound"]] = "unbound"
+    total_count: Union[int, Literal["undefined"]] = "undefined"
     parameters_checksum: SHA1Str = Field(...)
+
+    def to_tag_name(self) -> str:
+        """Composes unique tag name for this iteration"""
+        return compose_iteration_tag_name(**self.dict())
 
     @classmethod
     def from_tag_name(
@@ -141,24 +136,15 @@ class ProjectIteration(BaseModel):
             return cls.parse_obj(parse_iteration_tag_name(tag_name))
         except ValidationError as err:
             if return_none_if_fails:
-                log.debug("%s", f"{err=}")
+                log.debug(f"{err}")
                 return None
             raise
-
-    def to_tag_name(self) -> str:
-        """Composes unique tag name for this iteration"""
-        return compose_iteration_tag_name(
-            repo_commit_id=self.repo_commit_id,
-            iter_index=self.iter_index,
-            total_count=self.total_count,
-            parameters_checksum=self.parameters_checksum,
-        )
 
 
 def compose_iteration_tag_name(
     repo_commit_id: CommitID,
     iter_index: int,
-    total_count: Union[int, str],
+    total_count: int,
     parameters_checksum: SHA1Str,
 ) -> str:
     """Composes unique tag name for iter_index-th iteration of repo_commit_id out of total_count"""
@@ -199,6 +185,7 @@ async def get_or_create_runnable_projects(
 
     # TODO:  handle UserUndefined and translate into web.HTTPForbidden
     project: ProjectDict = await vc_repo.get_project(str(project_uuid))
+    project["thumbnail"] = project["thumbnail"] or ""
 
     project_nodes: Dict[NodeID, Node] = {
         nid: Node.parse_obj(n) for nid, n in project["workbench"].items()
@@ -211,7 +198,6 @@ async def get_or_create_runnable_projects(
     ]
 
     # auto-commit
-    #   because it will run in parallel -> needs an independent working copy
     repo_id = await vc_repo.get_repo_id(project_uuid)
     if repo_id is None:
         repo_id = await vc_repo.init_repo(project_uuid)
@@ -268,16 +254,13 @@ async def get_or_create_runnable_projects(
             }
         )
 
-        project_iteration = ProjectIteration(
-            repo_id=repo_id,
-            repo_commit_id=main_commit_id,
-            iter_index=iter_index,
-            total_count=total_count,
-            parameters_checksum=_compute_params_checksum(parameters),
-        )
-
         # tag to identify this iteration
-        branch_name = tag_name = project_iteration.to_tag_name()
+        branch_name = tag_name = compose_iteration_tag_name(
+            main_commit_id,
+            iter_index,
+            total_count,
+            _compute_params_checksum(parameters),
+        )
 
         commit_id = await vc_repo.force_branch_and_wcopy(
             repo_id,
@@ -289,9 +272,7 @@ async def get_or_create_runnable_projects(
         )
 
         wcopy_project_id = await vc_repo.get_wcopy_project_id(repo_id, commit_id)
-        assert wcopy_project_id == str(
-            eval_wcopy_project_id(project_uuid, commit_id)
-        )  # nosec
+        # assert project["uuid"] == wcopy_project_id  # nosec
 
         runnable_project_ids.append(ProjectID(wcopy_project_id))
         runnable_project_vc_commits.append(commit_id)

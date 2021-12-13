@@ -49,7 +49,7 @@ def setup_frontend_services(app: FastAPI):
         def is_included(key) -> bool:
             return (
                 app.state.settings.CATALOG_DEV_FEATURES_ENABLED
-                # FIXME: STILL UNDER DEVELOPMENT
+                # STILL UNDER DEVELOPMENT
                 #  - Parameter services
                 #  - Iterator
                 #  - Iterator consumer

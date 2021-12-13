@@ -1,7 +1,6 @@
 import functools
 import inspect
 import logging
-from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Protocol
 
@@ -121,13 +120,8 @@ def app_module_setup(
         @functools.wraps(setup_func)
         def _wrapper(app: web.Application, *args, **kargs) -> bool:
             # pre-setup
-            head_msg = f"Setup of {module_name}"
-            started = datetime.now()
-            logger.info(
-                "%s (%s, %s) started ... ",
-                head_msg,
-                f"{category.name=}",
-                f"{depends}",
+            logger.debug(
+                "Setting up '%s' [%s; %s] ... ", module_name, category.name, depends
             )
 
             if APP_SETUP_KEY not in app:
@@ -185,12 +179,8 @@ def app_module_setup(
                 logger.warning("Skipping '%s' setup: %s", module_name, exc.reason)
                 completed = False
 
-            elapsed = datetime.now() - started
-            logger.info(
-                "%s %s [Elapsed: %3.1f secs]",
-                head_msg,
-                "completed" if completed else "skipped",
-                elapsed.total_seconds(),
+            logger.debug(
+                "'%s' setup %s", module_name, "completed" if completed else "skipped"
             )
             return completed
 

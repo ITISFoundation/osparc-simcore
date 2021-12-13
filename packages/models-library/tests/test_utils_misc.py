@@ -13,7 +13,6 @@ import models_library
 import pytest
 from models_library.utils.misc import extract_examples
 from pydantic import BaseModel
-from pydantic.json import pydantic_encoder
 
 NameClassPair = Tuple[str, Type[BaseModel]]
 
@@ -49,6 +48,6 @@ def test_extract_examples(class_name, model_cls):
     # check if correct examples
     for example in examples:
         print(class_name)
-        print(json.dumps(example, default=pydantic_encoder, indent=2))
+        print(json.dumps(example, indent=2))
         model_instance = model_cls.parse_obj(example)
         assert isinstance(model_instance, model_cls)

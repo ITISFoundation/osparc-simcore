@@ -6,8 +6,8 @@ import logging
 from typing import Any, Dict
 
 from aiohttp import web
-from models_library.rest_pagination import monkey_patch_pydantic_url_regex
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.rest_pagination_utils import monkey_patch_pydantic_url_regex
 
 from ._meta import WELCOME_MSG
 from .activity.module_setup import setup_activity

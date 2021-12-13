@@ -11,8 +11,7 @@ from yarl import URL
 
 from .utils_assert import assert_status
 
-# WARNING: UserDict is already in https://docs.python.org/3/library/collections.html#collections.UserDict
-AUserDict = Dict[str, Any]
+UserDict = Dict[str, Any]
 
 TEST_MARKS = re.compile(r"TEST (\w+):(.*)")
 
@@ -35,7 +34,7 @@ def parse_link(text):
     return URL(link).path
 
 
-async def create_user(data=None) -> AUserDict:
+async def create_user(data=None) -> UserDict:
     data = data or {}
     password = get_random_string(10)
     params = {
@@ -54,7 +53,7 @@ async def create_user(data=None) -> AUserDict:
 
 async def log_client_in(
     client: TestClient, user_data=None, *, enable_check=True
-) -> AUserDict:
+) -> UserDict:
     # creates user directly in db
     user = await create_user(user_data)
 
@@ -94,7 +93,7 @@ class LoggedUser(NewUser):
         self.client = client
         self.enable_check = check_if_succeeds
 
-    async def __aenter__(self) -> AUserDict:
+    async def __aenter__(self) -> UserDict:
         self.user = await log_client_in(
             self.client, self.params, enable_check=self.enable_check
         )
