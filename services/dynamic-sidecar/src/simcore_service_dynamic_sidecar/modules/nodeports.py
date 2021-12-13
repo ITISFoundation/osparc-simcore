@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import shutil
 import sys
 import tempfile
@@ -33,7 +34,16 @@ logger = logging.getLogger(__name__)
 
 def _get_size_of_value(value: ItemConcreteValue) -> int:
     if isinstance(value, Path):
-        size_bytes = value.stat().st_size
+        # if symlink we need to fetch the pointer to the file
+        # relative symlink need to know which their parent is
+        # in oder to properly resolve the path since the workdir
+        # does not equal to their parent dir
+        path = (
+            Path(value.parent) / Path(os.readlink(value))
+            if value.is_symlink()
+            else value
+        )
+        size_bytes = path.stat().st_size
         return size_bytes
     return sys.getsizeof(value)
 

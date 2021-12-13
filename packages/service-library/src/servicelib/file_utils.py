@@ -4,6 +4,9 @@ from pathlib import Path
 
 async def remove_directory(path: Path, only_children: bool = False) -> None:
     """Optional parameter allows to remove all children and keep directory"""
+    if not path.exists():
+        return
+
     if not path.is_dir():
         raise NotADirectoryError(f"Provided path={path} must be a directory")
 

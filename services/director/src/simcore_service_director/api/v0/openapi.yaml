@@ -375,9 +375,11 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
-                                  description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
-                                  deprecated: true
                                   type: number
+                                  description: use this to numerically sort the properties for display
+                                  example:
+                                    - 1
+                                    - -0.2
                                 label:
                                   type: string
                                   description: short name for the property
@@ -415,6 +417,46 @@ paths:
                                   title: Unit
                                   description: 'Units of the output value, if a physical quantity'
                                   type: string
+                          additionalProperties: true
+                        boot-options:
+                          title: Boot-Options
+                          description: Service defined boot options. These get injected in the service as env variables.
+                          type: object
+                          x-patternProperties:
+                            '^[_a-zA-Z0-9]+$':
+                              title: BootOptionMode
+                              type: object
+                              properties:
+                                label:
+                                  title: Label
+                                  type: string
+                                description:
+                                  title: Description
+                                  type: string
+                                default:
+                                  title: Default
+                                  type: string
+                                items:
+                                  title: Items
+                                  type: object
+                                  additionalProperties:
+                                    title: BootOptionItem
+                                    type: object
+                                    properties:
+                                      label:
+                                        title: Label
+                                        type: string
+                                      description:
+                                        title: Description
+                                        type: string
+                                    required:
+                                      - label
+                                      - description
+                              required:
+                                - label
+                                - description
+                                - default
+                                - items
                           additionalProperties: true
                   error:
                     nullable: true
@@ -764,9 +806,11 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
-                                  description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
-                                  deprecated: true
                                   type: number
+                                  description: use this to numerically sort the properties for display
+                                  example:
+                                    - 1
+                                    - -0.2
                                 label:
                                   type: string
                                   description: short name for the property
@@ -804,6 +848,46 @@ paths:
                                   title: Unit
                                   description: 'Units of the output value, if a physical quantity'
                                   type: string
+                          additionalProperties: true
+                        boot-options:
+                          title: Boot-Options
+                          description: Service defined boot options. These get injected in the service as env variables.
+                          type: object
+                          x-patternProperties:
+                            '^[_a-zA-Z0-9]+$':
+                              title: BootOptionMode
+                              type: object
+                              properties:
+                                label:
+                                  title: Label
+                                  type: string
+                                description:
+                                  title: Description
+                                  type: string
+                                default:
+                                  title: Default
+                                  type: string
+                                items:
+                                  title: Items
+                                  type: object
+                                  additionalProperties:
+                                    title: BootOptionItem
+                                    type: object
+                                    properties:
+                                      label:
+                                        title: Label
+                                        type: string
+                                      description:
+                                        title: Description
+                                        type: string
+                                    required:
+                                      - label
+                                      - description
+                              required:
+                                - label
+                                - description
+                                - default
+                                - items
                           additionalProperties: true
                   error:
                     nullable: true
@@ -2560,9 +2644,11 @@ components:
                       - type
                     properties:
                       displayOrder:
-                        description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
-                        deprecated: true
                         type: number
+                        description: use this to numerically sort the properties for display
+                        example:
+                          - 1
+                          - -0.2
                       label:
                         type: string
                         description: short name for the property
@@ -2600,6 +2686,46 @@ components:
                         title: Unit
                         description: 'Units of the output value, if a physical quantity'
                         type: string
+                additionalProperties: true
+              boot-options:
+                title: Boot-Options
+                description: Service defined boot options. These get injected in the service as env variables.
+                type: object
+                x-patternProperties:
+                  '^[_a-zA-Z0-9]+$':
+                    title: BootOptionMode
+                    type: object
+                    properties:
+                      label:
+                        title: Label
+                        type: string
+                      description:
+                        title: Description
+                        type: string
+                      default:
+                        title: Default
+                        type: string
+                      items:
+                        title: Items
+                        type: object
+                        additionalProperties:
+                          title: BootOptionItem
+                          type: object
+                          properties:
+                            label:
+                              title: Label
+                              type: string
+                            description:
+                              title: Description
+                              type: string
+                          required:
+                            - label
+                            - description
+                    required:
+                      - label
+                      - description
+                      - default
+                      - items
                 additionalProperties: true
         error:
           nullable: true

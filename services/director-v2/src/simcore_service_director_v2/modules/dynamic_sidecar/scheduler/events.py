@@ -5,6 +5,7 @@ from typing import Any, Deque, Dict, List, Optional, Type
 import httpx
 from fastapi import FastAPI
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from models_library.projects import ProjectAtDB
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
@@ -20,6 +21,8 @@ from ....models.schemas.dynamic_services import (
 )
 from ....modules.director_v0 import DirectorV0Client
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
+from ...db.repositories.projects import ProjectsRepository
+from ....api.dependencies.database import fetch_repo_no_request
 from ..docker_api import (
     create_network,
     create_service_and_get_id,
@@ -91,10 +94,22 @@ class CreateSidecars(DynamicSchedulerEvent):
         # the provided docker-compose spec
         # also other encodes the env vars to target the proper container
         director_v0_client: DirectorV0Client = _get_director_v0_client(app)
+
+        # fetching project form DB and fetching user settings
+        projects_repository = fetch_repo_no_request(app, ProjectsRepository)
+        project: ProjectAtDB = await projects_repository.get_project(
+            project_id=scheduler_data.project_id
+        )
+        logger.info("boot_options=%s", project.boot_options)
+        service_user_selection_boot_options = project.boot_options.get(
+            f"{scheduler_data.node_uuid}", {}
+        )
+
         settings: SimcoreServiceSettingsLabel = await merge_settings_before_use(
             director_v0_client=director_v0_client,
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
+            service_user_selection_boot_options=service_user_selection_boot_options,
         )
 
         # these configuration should guarantee 245 address network

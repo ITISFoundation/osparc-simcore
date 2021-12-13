@@ -9,7 +9,7 @@ from settings_library.docker_registry import RegistrySettings
 
 from .docker_service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
 
-CONTAINER_NAME = "container"
+from .constants import CONTAINER_NAME
 
 
 def _inject_proxy_network_configuration(

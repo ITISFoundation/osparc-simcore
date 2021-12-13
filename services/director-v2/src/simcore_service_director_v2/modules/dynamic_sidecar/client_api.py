@@ -308,7 +308,6 @@ def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
 async def update_dynamic_sidecar_health(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
-
     api_client = get_dynamic_sidecar_client(app)
     service_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
