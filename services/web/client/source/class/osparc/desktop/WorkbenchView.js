@@ -879,7 +879,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const buttonsHeight = 28;
       const createIterationsBtn = new qx.ui.form.Button().set({
-        label: this.tr("Create Iterations"),
+        label: this.tr("Create"),
         height: buttonsHeight
       });
       createIterationsBtn.setEnabled(osparc.data.Permissions.getInstance().canDo("study.snapshot.create"));
@@ -888,7 +888,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       iterationButtons.add(createIterationsBtn);
 
       const showIterationsBtn = new qx.ui.form.Button().set({
-        label: this.tr("Show Iterations"),
+        label: this.tr("Show"),
         height: buttonsHeight
       });
       const store = osparc.store.Store.getInstance();
