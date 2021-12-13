@@ -21,6 +21,7 @@ from simcore_postgres_database.utils_aiopg_orm import BaseOrm
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from .db_base_repository import BaseRepository
+from .projects.project_models import ProjectProxy
 from .version_control_changes import compute_workbench_checksum
 from .version_control_errors import (
     CleanRequiredError,
@@ -33,7 +34,6 @@ from .version_control_models import (
     CommitID,
     CommitLog,
     CommitProxy,
-    ProjectProxy,
     RefID,
     RepoProxy,
     SHA1Str,

@@ -19,8 +19,6 @@ RepoProxy = RowProxy
 TagProxy = RowProxy
 CommitLog = Tuple[CommitProxy, List[TagProxy]]
 
-ProjectProxy = RowProxy
-ProjectDict = Dict
 
 HEAD = f"{__file__}/ref/HEAD"
 
