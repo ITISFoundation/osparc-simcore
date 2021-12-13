@@ -66,19 +66,6 @@ qx.Class.define("osparc.data.model.Workbench", {
     }
   },
 
-  statics: {
-    hasIteratorUpstream: function(workbench, node) {
-      const upstreamNodeIDs = workbench.getUpstreamNodes(node);
-      return [...upstreamNodeIDs].some(upstreamNodeID => {
-        const upstreamNode = workbench.getNode(upstreamNodeID);
-        if (upstreamNode) {
-          return upstreamNode.isIterator();
-        }
-        return false;
-      });
-    }
-  },
-
   members: {
     __workbenchInitData: null,
     __workbenchUIInitData: null,
@@ -103,17 +90,6 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     isContainer: function() {
       return false;
-    },
-
-    getUpstreamNodes: function(node, upstreamNodes = new Set()) {
-      upstreamNodes.add(node.getNodeId());
-      const links = node.getLinks();
-      links.forEach(link => {
-        upstreamNodes.add(link["nodeUuid"]);
-        const linkNode = this.getNode(link["nodeUuid"]);
-        this.getUpstreamNodes(linkNode, upstreamNodes);
-      });
-      return upstreamNodes;
     },
 
     isPipelineLinear: function() {

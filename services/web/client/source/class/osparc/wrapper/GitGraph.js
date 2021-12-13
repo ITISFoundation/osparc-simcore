@@ -57,7 +57,6 @@ qx.Class.define("osparc.wrapper.GitGraph", {
             size: 3
           },
           message: {
-            display: false,
             displayAuthor: false,
             displayBranch: false,
             displayHash: false,
@@ -264,8 +263,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
 
     populateGraph: function(snapshots, currentSnapshot) {
       this.__branches = [];
-      const snapshotsClone = JSON.parse(JSON.stringify(snapshots));
-      snapshotsClone.reverse().forEach((snapshot, i) => {
+      snapshots.reverse().forEach((snapshot, i) => {
         const branch = this.__getBranch(snapshot);
         const snapshotDate = new Date(snapshot["created_at"]);
         const commitData = {

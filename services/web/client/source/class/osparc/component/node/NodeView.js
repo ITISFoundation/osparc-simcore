@@ -54,7 +54,7 @@ qx.Class.define("osparc.component.node.NodeView", {
 
       const node = this.getNode();
       const propsForm = node.getPropsForm();
-      if (propsForm && node.hasInputs()) {
+      if (propsForm && Object.keys(node.getInputs()).length) {
         propsForm.addListener("changeChildVisibility", () => {
           this.__checkSettingsVisibility();
         }, this);
