@@ -102,6 +102,14 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
 
     updateCurveColor: function(curve, color) {
       osparc.wrapper.Svg.updateCurveColor(curve, color);
+    },
+
+    updateNodeUI: function(nodeUI, x, y) {
+      osparc.wrapper.Svg.updateNodeUI(nodeUI, x, y);
+    },
+
+    removeNodeUI: function(nodeUI) {
+      osparc.wrapper.Svg.removeNodeUI(nodeUI);
     }
   },
 
@@ -115,6 +123,10 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
 
     drawDashedRect: function(width, height, x = 0, y = 0) {
       return osparc.wrapper.Svg.drawDashedRect(this.__canvas, width, height, x, y);
+    },
+
+    drawNodeUI: function(width = osparc.component.workbench.NodeUI.NODE_WIDTH, height = osparc.component.workbench.NodeUI.NODE_HEIGHT, radius = 3, x = 0, y = 0) {
+      return osparc.wrapper.Svg.drawNodeUI(this.__canvas, width, height, radius, x, y);
     }
   }
 });

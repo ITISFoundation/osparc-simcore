@@ -58,7 +58,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     },
 
     type: {
-      check: ["normal", "file", "parameter"],
+      check: ["normal", "file", "parameter", "iterator", "iterator-consumer"],
       init: "normal",
       nullable: false,
       apply: "__applyType"
@@ -72,7 +72,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   },
 
   statics: {
-    NODE_WIDTH: 200,
+    NODE_WIDTH: 180,
     NODE_HEIGHT: 80,
     CIRCLED_RADIUS: 16
   },
@@ -80,6 +80,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   members: {
     __progressBar: null,
     __thumbnail: null,
+    __svgWorkbenchCanvas: null,
 
     getNodeType: function() {
       return "service";
@@ -93,18 +94,28 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       let control;
       switch (id) {
         case "chips": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3).set({
+            alignY: "middle"
+          })).set({
             margin: [3, 4]
           });
           let nodeType = this.getNode().getMetaData().type;
+          if (this.getNode().isIterator()) {
+            nodeType = "iterator";
+          } else if (this.getNode().isProbe()) {
+            nodeType = "iterator-consumer";
+          }
           const type = osparc.utils.Services.getType(nodeType);
           if (type) {
-            control.add(new osparc.ui.basic.Chip(type.label, type.icon + "12"));
+            const chip = new osparc.ui.basic.Chip().set({
+              icon: type.icon + "18",
+              toolTipText: type.label
+            });
+            control.add(chip);
           }
           this.add(control, {
-            row: 1,
-            column: 0,
-            colSpan: 3
+            row: 0,
+            column: 1
           });
           break;
         }
@@ -114,7 +125,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             margin: 4
           });
           this.add(control, {
-            row: 2,
+            row: 1,
             column: 0,
             colSpan: 3
           });
@@ -130,7 +141,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.setThumbnail(node.getThumbnail());
       }
       const chipContainer = this.getChildControl("chips");
-      if (node.isComputational() || node.isFilePicker()) {
+      if (node.isComputational() || node.isFilePicker() || node.isIterator()) {
         this.__progressBar = this.getChildControl("progress");
       }
 
@@ -138,7 +149,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       chipContainer.add(nodeStatus);
     },
 
-    populateNodeLayout: function() {
+    populateNodeLayout: function(svgWorkbenchCanvas) {
       const node = this.getNode();
       node.bind("label", this, "caption", {
         onUpdate: () => {
@@ -155,6 +166,11 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.setType("file");
       } else if (node.isParameter()) {
         this.setType("parameter");
+      } else if (node.isIterator()) {
+        this.__svgWorkbenchCanvas = svgWorkbenchCanvas;
+        this.setType("iterator");
+      } else if (node.isProbe()) {
+        this.setType("iterator-consumer");
       }
     },
 
@@ -178,6 +194,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           break;
         case "parameter":
           this.__turnIntoParameterUI();
+          break;
+        case "iterator":
+          this.__turnIntoIteratorUI();
+          break;
+        case "iterator-consumer":
+          this.__turnIntoProbeUI();
           break;
       }
     },
@@ -246,17 +268,86 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         column: 1
       });
 
-      const firstOutput = this.getNode().getFirstOutput();
-      if (firstOutput && "value" in firstOutput) {
-        const value = firstOutput["value"];
-        label.setValue(String(value));
-      }
-      this.getNode().addListener("changeOutputs", e => {
-        const updatedOutputs = e.getData();
-        const newVal = updatedOutputs["out_1"];
-        label.setValue(String(newVal["value"]));
+      this.getNode().bind("outputs", label, "value", {
+        converter: outputs => {
+          if ("out_1" in outputs && "value" in outputs["out_1"]) {
+            return String(outputs["out_1"]["value"]);
+          }
+          return "";
+        }
       });
       this.fireEvent("nodeMoving");
+    },
+
+    __turnIntoIteratorUI: function() {
+      const width = 150;
+      const height = 69;
+      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
+
+      if (this.__svgWorkbenchCanvas) {
+        const nShadows = 2;
+        this.shadows = [];
+        for (let i=0; i<nShadows; i++) {
+          const nodeUIShadow = this.__svgWorkbenchCanvas.drawNodeUI(width, height, this.self().CIRCLED_RADIUS);
+          this.shadows.push(nodeUIShadow);
+        }
+      }
+
+      this.__addIterationValue();
+    },
+
+    __addIterationValue: function() {
+      const label = new qx.ui.basic.Label().set({
+        paddingLeft: 5,
+        font: "text-18"
+      });
+      const chipContainer = this.getChildControl("chips");
+      chipContainer.add(label);
+      this.getNode().bind("outputs", label, "value", {
+        converter: outputs => {
+          const portKey = "out_1";
+          if (portKey in outputs && "value" in outputs[portKey]) {
+            return String(outputs[portKey]["value"]);
+          }
+          return "";
+        }
+      });
+    },
+
+    __turnIntoProbeUI: function() {
+      const width = 150;
+      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
+
+      const label = new qx.ui.basic.Label().set({
+        paddingLeft: 5,
+        font: "text-18"
+      });
+      const chipContainer = this.getChildControl("chips");
+      chipContainer.add(label);
+
+      this.getNode().getPropsForm().addListener("linkFieldModified", () => this.__setProbeValue(label), this);
+      this.__setProbeValue(label);
+    },
+
+    __setProbeValue: function(label) {
+      const link = this.getNode().getPropsForm().getLink("in_1");
+      if (link && "nodeUuid" in link) {
+        const inputNodeId = link["nodeUuid"];
+        const portKey = link["output"];
+        const inputNode = this.getNode().getWorkbench().getNode(inputNodeId);
+        if (inputNode) {
+          inputNode.bind("outputs", label, "value", {
+            converter: outputs => {
+              if (portKey in outputs && "value" in outputs[portKey]) {
+                return String(outputs[portKey]["value"]);
+              }
+              return "";
+            }
+          });
+        }
+      } else {
+        label.setValue("");
+      }
     },
 
     // overridden
