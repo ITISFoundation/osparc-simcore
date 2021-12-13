@@ -108,7 +108,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           const type = osparc.utils.Services.getType(nodeType);
           if (type) {
             const chip = new osparc.ui.basic.Chip().set({
-              icon: type.icon + "18",
+              icon: type.icon + "14",
               toolTipText: type.label
             });
             control.add(chip);
