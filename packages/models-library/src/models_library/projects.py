@@ -159,11 +159,12 @@ class Project(ProjectCommons):
     dev: Optional[Dict] = Field(description="object used for development purposes only")
 
     boot_options: Optional[Dict[NodeIDStr, Dict[EnvVarKey, str]]] = Field(
+        alias="bootOptions",
         description=(
             "Some services provide alternative parameters to be injected at boot time. "
             "The user selection should be stored here, and it will overwrite the "
             "services's defaults."
-        )
+        ),
     )
 
     class Config:

@@ -533,6 +533,21 @@
       "type": "object",
       "description": "object used for development purposes only"
     },
+    "bootOptions": {
+      "title": "Boot options",
+      "description": "Some services provide alternative parameters to be injected at boot time. The user selection should be stored here, and it will overwrite the services's defaults.",
+      "type": "object",
+      "patternProperties": {
+        "^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$": {
+          "type": "object",
+          "patternProperties": {
+            "[a-zA-Z][a-azA-Z0-9_]*": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
     "state": {
       "title": "State",
       "description": "Project state",
@@ -666,16 +681,6 @@
       "type": "object",
       "title": "Quality",
       "description": "Object containing Quality Assessment related data"
-    },
-    "bootOptions": {
-      "title": "Boot Options",
-      "description": "If the user selects a boot_option defined by a service it will appear in here. If no selection is made, the default value defined by the service will be injected as an environment variable.",
-      "type": "object",
-      "patternProperties": {
-        "^[_a-zA-Z0-9]+$": {
-          "type": "string"
-        }
-      }
     }
   }
 }
