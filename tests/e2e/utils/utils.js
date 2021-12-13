@@ -305,7 +305,7 @@ async function getStudyState(page, studyId) {
 
   if (resp !== null && "state" in resp && "value" in resp["state"]) {
     const state = resp["state"]["value"];
-    console.log("-- Study state", state);
+    console.log("-----> study state", state);
     return state;
   }
   console.log("Unable to parse Pipeline Status:", JSON.stringify(resp));
