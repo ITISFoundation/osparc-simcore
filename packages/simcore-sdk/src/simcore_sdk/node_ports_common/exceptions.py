@@ -127,3 +127,6 @@ class NodeNotFound(NodeportsException):
 
 class SymlinkToSymlinkNotSupportedException(NodeportsException):
     """Not possible to upload a symlink to a symlink"""
+
+class SymlinkWithAbsolutePathNotSupportedException(NodeportsException):
+    """Not possible to upload a symlink to a symlink"""

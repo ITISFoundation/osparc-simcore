@@ -2,6 +2,7 @@ import json
 import logging
 import shutil
 import sys
+import os
 import tempfile
 import time
 import zipfile
@@ -17,7 +18,6 @@ from servicelib.pools import async_on_threadpool
 from servicelib.utils import logged_gather
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import Nodeports, Port
-from simcore_sdk.node_ports_v2.port import add_dy_volumes_to_target
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
 from simcore_service_dynamic_sidecar.core.settings import (
     DynamicSidecarSettings,
@@ -34,7 +34,16 @@ logger = logging.getLogger(__name__)
 
 def _get_size_of_value(value: ItemConcreteValue) -> int:
     if isinstance(value, Path):
-        size_bytes = add_dy_volumes_to_target(value).stat().st_size
+        # if symlink we need to fetch the pointer to the file
+        # relative symlink need to know which their parent is
+        # in oder to properly resolve the path since the workdir
+        # does not equal to their parent dir
+        path = (
+            Path(value.parent) / Path(os.readlink(value))
+            if value.is_symlink()
+            else value
+        )
+        size_bytes = path.stat().st_size
         return size_bytes
     return sys.getsizeof(value)
 
