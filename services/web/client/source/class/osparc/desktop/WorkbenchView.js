@@ -101,8 +101,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __currentNodeId: null,
     __startAppButton: null,
     __editSlidesButton: null,
-    __takeSnapshotButton: null,
-    __showSnapshotsButton: null,
     __collapseWithUserMenu: null,
 
     _createChildControlImpl: function(id) {
@@ -183,7 +181,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         case "side-panel-left-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            contentPadding: 8,
+            contentPadding: 15 + 2, // collapse bar + padding
+            contentPaddingRight: 2,
             barPosition: "top"
           });
           const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
@@ -195,7 +194,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         case "side-panel-right-tabs": {
           control = new qx.ui.tabview.TabView().set({
-            contentPadding: 8,
+            contentPadding: 15 + 2, // collapse bar + padding
+            contentPaddingRight: 2,
             barPosition: "top"
           });
           const collapsibleViewRight = this.getChildControl("collapsible-view-right");
@@ -296,6 +296,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
 
       const topBar = tabViewPrimary.getChildControl("bar");
+      topBar.set({
+        backgroundColor: "contrasted-background+",
+        paddingLeft: 15
+      });
       this.__addTopBarSpacer(topBar);
 
       const homeAndNodesTree = new qx.ui.container.Composite(new qx.ui.layout.VBox(15)).set({
@@ -321,10 +325,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       homeAndNodesTree.add(nodesTree);
 
       const addNewNodeBtn = new qx.ui.form.Button().set({
-        label: this.tr("Add new node"),
+        label: this.tr("New node"),
         icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false,
-        alignX: "left",
+        alignX: "center",
         marginLeft: 14
       });
       addNewNodeBtn.addListener("execute", () => this.__workbenchUI.openServiceCatalog({
@@ -356,6 +360,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__removePages(tabViewSecondary);
 
       const topBar = tabViewSecondary.getChildControl("bar");
+      topBar.set({
+        backgroundColor: "contrasted-background+",
+        paddingLeft: 15
+      });
       this.__addTopBarSpacer(topBar);
 
       const studyOptionsPage = this.__studyOptionsPage = this.__createTabPage("@FontAwesome5Solid/book", this.tr("Study options"));
@@ -788,7 +796,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __getSlideshowSection: function() {
       const slideshowSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      slideshowSection.add(new qx.ui.basic.Label(this.tr("Slideshow")).set({
+      slideshowSection.add(new qx.ui.basic.Label(this.tr("App Mode")).set({
         font: "title-14"
       }));
 
@@ -796,7 +804,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       slideshowSection.add(slideshowButtons);
 
       const buttonsHeight = 28;
-      const editSlidesBtn = this.__editSlidesButton = new qx.ui.form.Button(this.tr("Edit Slideshow")).set({
+      const editSlidesBtn = this.__editSlidesButton = new qx.ui.form.Button().set({
+        label: this.tr("Edit"),
         icon: "@FontAwesome5Solid/edit/14",
         height: buttonsHeight
       });
@@ -804,7 +813,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       slideshowButtons.add(editSlidesBtn);
 
       const startAppBtn = this.__startAppButton = new qx.ui.form.Button().set({
-        label: this.tr("App Mode"),
+        label: this.tr("Start"),
         icon: "@FontAwesome5Solid/play/14",
         toolTipText: this.tr("Start App Mode"),
         height: buttonsHeight
@@ -846,7 +855,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       snapshotButtons.add(takeSnapshotBtn);
 
       const showSnapshotsBtn = new qx.ui.form.Button().set({
-        label: this.tr("Show Snapshots"),
+        label: this.tr("Show"),
         height: buttonsHeight
       });
       const store = osparc.store.Store.getInstance();
