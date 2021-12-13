@@ -17,7 +17,6 @@ from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
 from models_library.services import ServiceDockerData
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
-from simcore_service_webserver.version_control_tags import eval_wcopy_project_id
 
 from .meta_db import CommitID, ProjectDict, VersionControlForMetaModeling
 from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
@@ -289,9 +288,6 @@ async def get_or_create_runnable_projects(
         )
 
         wcopy_project_id = await vc_repo.get_wcopy_project_id(repo_id, commit_id)
-        assert wcopy_project_id == str(
-            eval_wcopy_project_id(project_uuid, commit_id)
-        )  # nosec
 
         runnable_project_ids.append(ProjectID(wcopy_project_id))
         runnable_project_vc_commits.append(commit_id)

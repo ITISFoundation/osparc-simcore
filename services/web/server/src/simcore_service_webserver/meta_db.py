@@ -5,11 +5,12 @@ from typing import List, Optional
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectIDStr
 
-from .version_control_changes import compute_workbench_checksum
+from .projects.project_models import ProjectDict
+from .version_control_changes import compute_workbench_checksum, eval_wcopy_project_id
 from .version_control_db import VersionControlRepository
 from .version_control_errors import UserUndefined
-from .version_control_models import CommitID, ProjectDict, TagProxy
-from .version_control_tags import compose_wcopy_project_tag_name, eval_wcopy_project_id
+from .version_control_models import CommitID, TagProxy
+from .version_control_tags import compose_wcopy_project_tag_name
 
 log = logging.getLogger(__name__)
 
@@ -118,7 +119,9 @@ class VersionControlForMetaModeling(VersionControlRepository):
                 assert isinstance(commit_id, int)  # nosec
 
                 # creates unique identifier for variant
-                project["uuid"] = eval_wcopy_project_id(repo.project_uuid, commit_id)
+                project["uuid"] = eval_wcopy_project_id(
+                    repo.project_uuid, snapshot_checksum
+                )
 
                 # FIXME: File-picker takes project uuid. replace!
                 project["hidden"] = True
