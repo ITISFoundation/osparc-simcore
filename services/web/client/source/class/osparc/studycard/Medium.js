@@ -50,7 +50,7 @@ qx.Class.define("osparc.studycard.Medium", {
   },
 
   statics: {
-    PADDING: 5,
+    PADDING: 0,
     EXTRA_INFO_WIDTH: 220,
     THUMBNAIL_MIN_WIDTH: 110,
     THUMBNAIL_MAX_WIDTH: 180

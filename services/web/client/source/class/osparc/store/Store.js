@@ -64,13 +64,7 @@ qx.Class.define("osparc.store.Store", {
     },
     snapshots: {
       check: "Array",
-      init: [],
-      event: "changeSnapshots"
-    },
-    iterations: {
-      check: "Array",
-      init: [],
-      event: "changeIterations"
+      init: []
     },
     config: {
       check: "Object",

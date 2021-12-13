@@ -329,13 +329,12 @@ qx.Class.define("osparc.studycard.Large", {
         thubmnailEditor.close();
         const dirty = e.getData()["newLabel"];
         const clean = osparc.wrapper.DOMPurify.getInstance().sanitize(dirty);
-        if ((dirty && dirty !== clean) || (clean !== "" && !osparc.utils.Utils.isValidHttpUrl(clean))) {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Error checking thumbnail link"), "WARNING");
-        } else {
-          this.__updateStudy({
-            "thumbnail": clean
-          });
+        if (dirty && dirty !== clean) {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was some curation in the text of thumbnail "), "WARNING");
         }
+        this.__updateStudy({
+          "thumbnail": clean
+        });
       }, this);
       thubmnailEditor.center();
       thubmnailEditor.open();

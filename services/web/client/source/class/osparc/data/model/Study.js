@@ -202,15 +202,21 @@ qx.Class.define("osparc.data.model.Study", {
       return studyObject;
     },
 
-    isOwner: function(studyData) {
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      let accessRights = {};
-      if (studyData instanceof osparc.data.model.Study) {
-        accessRights = studyData.getAccessRights();
-      } else {
-        accessRights = studyData["accessRights"];
+    isStudySecondary: function(studyData) {
+      if ("dev" in studyData && "sweeper" in studyData["dev"] && "primaryStudyId" in studyData["dev"]["sweeper"]) {
+        return true;
       }
-      return osparc.component.permissions.Study.canGroupDelete(accessRights, myGid);
+      return false;
+    },
+
+    isOwner: function(studyData) {
+      if (studyData instanceof osparc.data.model.Study) {
+        const myEmail = osparc.auth.Data.getInstance().getEmail();
+        return studyData.getPrjOwner() === myEmail;
+      }
+      const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const aceessRights = studyData["accessRights"];
+      return osparc.component.permissions.Study.canGroupDelete(aceessRights, myGid);
     },
 
     hasSlideshow: function(studyData) {
@@ -220,20 +226,61 @@ qx.Class.define("osparc.data.model.Study", {
       return false;
     },
 
+    getSnapshots: function(studyId) {
+      return new Promise((resolve, reject) => {
+        if (!osparc.data.Permissions.getInstance().canDo("study.snapshot.read")) {
+          reject();
+          return;
+        }
+        const params = {
+          url: {
+            "studyId": studyId
+          }
+        };
+        osparc.data.Resources.get("snapshots", params)
+          .then(snapshots => {
+            resolve(snapshots);
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
+    },
+
+    getCurrentSnapshot: function(studyId) {
+      return new Promise((resolve, reject) => {
+        const params = {
+          url: {
+            "studyId": studyId
+          }
+        };
+        osparc.data.Resources.fetch("snapshots", "current", params)
+          .then(currentSnapshot => {
+            resolve(currentSnapshot);
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
+    },
+
+    hasSnapshots: function(studyId) {
+      return new Promise((resolve, reject) => {
+        this.self().getSnapshots(studyId)
+          .then(snapshots => {
+            resolve(Boolean(snapshots.length));
+          })
+          .catch(() => {
+            resolve(false);
+          });
+      });
+    },
+
     getUiMode: function(studyData) {
       if ("ui" in studyData && "mode" in studyData["ui"]) {
         return studyData["ui"]["mode"];
-      }
-      return null;
-    },
-
-    getOutputValue: function(studyData, nodeId, portId) {
-      if ("workbench" in studyData &&
-        nodeId in studyData["workbench"] &&
-        "outputs" in studyData["workbench"][nodeId] &&
-        portId in studyData["workbench"][nodeId]["outputs"]
-      ) {
-        return studyData["workbench"][nodeId]["outputs"][portId];
       }
       return null;
     }
@@ -253,85 +300,15 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     getSnapshots: function() {
-      return new Promise((resolve, reject) => {
-        if (!osparc.data.Permissions.getInstance().canDo("study.snapshot.read")) {
-          reject();
-          return;
-        }
-        const params = {
-          url: {
-            "studyId": this.getUuid()
-          }
-        };
-        osparc.data.Resources.get("snapshots", params)
-          .then(snapshots => {
-            resolve(snapshots);
-          })
-          .catch(err => {
-            console.error(err);
-            reject(err);
-          });
-      });
+      return this.self().getSnapshots(this.getUuid());
     },
 
     getCurrentSnapshot: function() {
-      return new Promise((resolve, reject) => {
-        const params = {
-          url: {
-            "studyId": this.getUuid()
-          }
-        };
-        osparc.data.Resources.fetch("snapshots", "currentCommit", params)
-          .then(currentSnapshot => {
-            resolve(currentSnapshot);
-          })
-          .catch(err => {
-            console.error(err);
-            reject(err);
-          });
-      });
+      return this.self().getCurrentSnapshot(this.getUuid());
     },
 
     hasSnapshots: function() {
-      return new Promise(resolve => {
-        this.getSnapshots()
-          .then(snapshots => {
-            resolve(Boolean(snapshots.length));
-          })
-          .catch(() => {
-            resolve(false);
-          });
-      });
-    },
-
-    getIterations: function() {
-      return new Promise((resolve, reject) => {
-        if (!osparc.data.Permissions.getInstance().canDo("study.snapshot.read")) {
-          reject();
-          return;
-        }
-        this.getCurrentSnapshot()
-          .then(snapshot => {
-            const params = {
-              url: {
-                studyId: this.getUuid(),
-                snapshotId: snapshot["id"]
-              }
-            };
-            osparc.data.Resources.get("iterations", params)
-              .then(iterations => {
-                resolve(iterations);
-              })
-              .catch(err => {
-                console.error(err);
-                reject(err);
-              });
-          })
-          .catch(err => {
-            console.error(err);
-            reject(err);
-          });
-      });
+      return this.self().hasSnapshots(this.getUuid());
     },
 
     getPipelineState: function() {

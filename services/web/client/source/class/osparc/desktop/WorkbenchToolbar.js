@@ -27,7 +27,10 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   events: {
     "startPipeline": "qx.event.type.Event",
     "startPartialPipeline": "qx.event.type.Event",
-    "stopPipeline": "qx.event.type.Event"
+    "stopPipeline": "qx.event.type.Event",
+    "zoomIn": "qx.event.type.Event",
+    "zoomOut": "qx.event.type.Event",
+    "zoomReset": "qx.event.type.Event"
   },
 
   members: {
@@ -63,6 +66,20 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
           this._add(control);
           break;
         }
+        case "zoom-btns": {
+          control = new osparc.desktop.ZoomButtons();
+          [
+            "zoomIn",
+            "zoomOut",
+            "zoomReset"
+          ].forEach(signalName => {
+            control.addListener(signalName, () => {
+              this.fireEvent(signalName);
+            }, this);
+          });
+          this._add(control);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -73,6 +90,12 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
       const startStopBtns = this.__startStopBtns = this.getChildControl("start-stop-btns");
       startStopBtns.exclude();
+
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      this._createChildControl("zoom-btns");
     },
 
     // overridden

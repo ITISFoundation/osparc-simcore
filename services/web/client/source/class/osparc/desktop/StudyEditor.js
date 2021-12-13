@@ -35,8 +35,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     ].forEach(singalName => workbenchView.addListener(singalName, () => this.fireEvent(singalName)));
     workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
     workbenchView.addListener("showSnapshots", () => this.__showSnapshots(), this);
-    workbenchView.addListener("createIterations", () => this.__createIterations(), this);
-    workbenchView.addListener("showIterations", () => this.__showIterations(), this);
     viewsStack.add(workbenchView);
 
     const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
@@ -81,14 +79,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
   events: {
     "forceBackToDashboard": "qx.event.type.Event",
-    "backToDashboardPressed": "qx.event.type.Event",
+    "startSnapshot": "qx.event.type.Data",
     "collapseNavBar": "qx.event.type.Event",
     "expandNavBar": "qx.event.type.Event",
+    "backToDashboardPressed": "qx.event.type.Event",
     "slidesEdit": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
-    "slidesStop": "qx.event.type.Event",
-    "startSnapshot": "qx.event.type.Data",
-    "startIteration": "qx.event.type.Data"
+    "slidesStop": "qx.event.type.Event"
   },
 
   properties: {
@@ -150,11 +147,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this._showLoadingPage(this.tr("Opening ") + (study.getName() || this.tr("Study")));
 
-      const store = osparc.store.Store.getInstance();
-      store.setCurrentStudy(study);
-
-      this.__reloadSnapshotsAndIterations();
-
+      osparc.store.Store.getInstance().setCurrentStudy(study);
       study.buildWorkbench();
       study.openStudy()
         .then(() => {
@@ -234,24 +227,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
       this.__workbenchView.setStudy(study);
       this.__slideshowView.setStudy(study);
-    },
-
-    __reloadSnapshotsAndIterations: function() {
-      const store = osparc.store.Store.getInstance();
-      store.invalidate("snapshots");
-      store.invalidate("iterations");
-
-      const study = this.getStudy();
-      study.getSnapshots()
-        .then(snapshots => {
-          store.setSnapshots(snapshots);
-          if (snapshots.length) {
-            study.getIterations()
-              .then(iterations => {
-                store.setIterations(iterations);
-              });
-          }
-        });
     },
 
     __noLongerActive: function() {
@@ -349,15 +324,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __onPipelinesubmitted: function(e) {
       const resp = e.getTarget().getResponse();
       const pipelineId = resp.data["pipeline_id"];
-      const iterationRefIds = resp.data["ref_ids"];
       this.__getStudyLogger().debug(null, "Pipeline ID " + pipelineId);
       const notGood = [null, undefined, -1];
       if (notGood.includes(pipelineId)) {
         this.__getStudyLogger().error(null, "Submission failed");
       } else {
-        if (iterationRefIds) {
-          this.__reloadSnapshotsAndIterations();
-        }
         this.__getStudyLogger().info(null, "Pipeline started");
         /* If no projectStateUpdated comes in 60 seconds, client must
         check state of pipeline and update button accordingly. */
@@ -466,8 +437,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         };
         osparc.data.Resources.fetch("snapshots", "takeSnapshot", params)
           .then(data => {
-            const store = osparc.store.Store.getInstance();
-            store.getSnapshots().push(data);
+            this.__workbenchView.evalSnapshotsButtons();
           })
           .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
 
@@ -485,22 +455,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         win.close();
         const snapshotId = e.getData();
         this.fireDataEvent("startSnapshot", snapshotId);
-      });
-    },
-
-    __createIterations: function() {
-      console.log("createIterations not implemented yet");
-    },
-
-    __showIterations: function() {
-      const study = this.getStudy();
-      const iterations = new osparc.component.snapshots.IterationsView(study);
-      const title = this.tr("Iterations");
-      const win = osparc.ui.window.Window.popUpInWindow(iterations, title, 1000, 500);
-      iterations.addListener("openIteration", e => {
-        win.close();
-        const studyId = e.getData();
-        this.fireDataEvent("startIteration", studyId);
       });
     },
 

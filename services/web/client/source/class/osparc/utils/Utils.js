@@ -93,16 +93,6 @@ qx.Class.define("osparc.utils.Utils", {
       return new Promise(resolve => setTimeout(resolve, ms));
     },
 
-    isValidHttpUrl: function(string) {
-      let url;
-      try {
-        url = new URL(string);
-      } catch (_) {
-        return false;
-      }
-      return url.protocol === "http:" || url.protocol === "https:";
-    },
-
     isDevelopmentPlatform: function() {
       return new Promise((resolve, reject) => {
         osparc.utils.LibVersions.getPlatformName()

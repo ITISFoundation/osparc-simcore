@@ -38,6 +38,16 @@ qx.Class.define("osparc.desktop.WorkbenchPanel", {
     this._add(workbenchUI, {
       flex: 1
     });
+
+    toolbar.addListener("zoomIn", () => {
+      workbenchUI.zoom(true);
+    }, this);
+    toolbar.addListener("zoomOut", () => {
+      workbenchUI.zoom(false);
+    }, this);
+    toolbar.addListener("zoomReset", () => {
+      workbenchUI.setScale(1);
+    }, this);
   },
 
   members: {

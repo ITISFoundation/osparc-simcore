@@ -300,46 +300,6 @@ qx.Class.define("osparc.desktop.MainPage", {
         });
     },
 
-    __startIteration: async function(studyId, iterationUuid) {
-      this.__showLoadingPage(this.tr("Loading Iteration"));
-
-      this.__loadingPage.setMessages([
-        this.tr("Closing...")
-      ]);
-      this.__studyEditor.closeEditor();
-      this.__closeStudy(studyId);
-      const store = osparc.store.Store.getInstance();
-      const currentStudy = store.getCurrentStudy();
-      while (currentStudy.isLocked()) {
-        await osparc.utils.Utils.sleep(1000);
-        store.getStudyState(studyId);
-      }
-      this.__loadingPage.setMessages([]);
-      this.__openIteration(iterationUuid);
-    },
-
-    __openIteration: function(iterationUuid) {
-      const params = {
-        url: {
-          "studyId": iterationUuid
-        }
-      };
-      // OM TODO. DO NOT ADD ITERATIONS TO STUDIES CACHE
-      osparc.data.Resources.getOne("studies", params)
-        .then(studyData => {
-          if (!studyData) {
-            const msg = this.tr("Iteration not found");
-            throw new Error(msg);
-          }
-          this.__loadStudy(studyData);
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR");
-          this.__showDashboard();
-          return;
-        });
-    },
-
     __loadStudy: function(studyData, pageContext) {
       let locked = false;
       let lockedBy = false;
@@ -398,10 +358,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       studyEditor.addListener("startSnapshot", e => {
         const snapshotId = e.getData();
         this.__startSnapshot(this.__studyEditor.getStudy().getUuid(), snapshotId);
-      }, this);
-      studyEditor.addListener("startIteration", e => {
-        const iterationUuid = e.getData();
-        this.__startIteration(this.__studyEditor.getStudy().getUuid(), iterationUuid);
       }, this);
       studyEditor.addListener("expandNavBar", () => this.__navBar.show());
       studyEditor.addListener("collapseNavBar", () => this.__navBar.exclude());
