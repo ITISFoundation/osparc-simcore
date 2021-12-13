@@ -11,10 +11,9 @@ echo "$INFO" "Booting in ${SC_BOOT_MODE} mode ..."
 echo "  User    :$(id "$(whoami)")"
 echo "  Workdir :$(pwd)"
 
-if [ "${SC_BUILD_TARGET}" = "development" ]
-then
+if [ "${SC_BUILD_TARGET}" = "development" ]; then
   echo "$INFO" "Environment :"
-  printenv  | sed 's/=/: /' | sed 's/^/    /' | sort
+  printenv | sed 's/=/: /' | sed 's/^/    /' | sort
   echo "$INFO" "Python :"
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
@@ -26,9 +25,8 @@ then
 fi
 
 # RUNNING application ----------------------------------------
-if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]
-then
-  watchmedo auto-restart --recursive --pattern="*.py" -- \
+if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
+  watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
     python3 -m ptvsd --host 0.0.0.0 --port 3000 -m \
     simcore_service_director --loglevel="${LOGLEVEL}"
 else

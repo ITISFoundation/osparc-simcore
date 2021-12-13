@@ -82,6 +82,8 @@ qx.Class.define("osparc.utils.StatusUI", {
         // computationals
         case "STARTED":
           return qx.locale.Manager.tr("Running");
+        case "NOT_STARTED":
+          return qx.locale.Manager.tr("Idle");
 
         // dynamics
         case "ready":

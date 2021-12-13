@@ -398,27 +398,31 @@ class ProjectDBAPI:
         async for row in conn.execute(query):
             try:
                 _check_project_permissions(row, user_id, user_groups, "read")
-            except ProjectInvalidRightsError:
-                continue
-            try:
 
                 await asyncio.get_event_loop().run_in_executor(
                     None, ProjectAtDB.from_orm, row
                 )
+
+            except ProjectInvalidRightsError:
+                continue
+
             except ValidationError as exc:
                 log.warning(
-                    "project in db with uuid [%s] failed validation, please check. error: %s",
-                    row.get("id"),
+                    "project  %s  failed validation, please check. error: %s",
+                    f"{row.id=}",
                     exc,
                 )
                 continue
+
             prj = dict(row.items())
+
             if filter_by_services:
                 if not await project_uses_available_services(prj, filter_by_services):
                     log.warning(
-                        "project [%s] of user [%s] uses unshared services",
-                        row.get("id"),
-                        user_id,
+                        "Project %s will not be listed for user %s since it has no access rights"
+                        " for one or more of the services that includes.",
+                        f"{row.id=}",
+                        f"{user_id=}",
                     )
                     continue
             db_projects.append(prj)

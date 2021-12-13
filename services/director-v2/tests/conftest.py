@@ -244,7 +244,7 @@ def fake_workbench_complete_adjacency(
 
 @pytest.fixture(scope="session")
 def user_id() -> PositiveInt:
-    return randint(0, 10000)
+    return randint(1, 10000)
 
 
 @pytest.fixture(scope="module")

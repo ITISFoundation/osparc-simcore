@@ -22,6 +22,7 @@ from typing import Optional
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from pydantic.errors import PydanticErrorMixin
 
 
 class DirectorException(Exception):
@@ -135,3 +136,32 @@ class ConfigurationError(DirectorException):
         super().__init__(
             msg or "Invalid configuration of the director-v2 application. Please check."
         )
+
+
+class ClusterNotFoundError(PydanticErrorMixin, SchedulerError):
+    code = "cluster.not_found"
+    msg_template = "The cluster with id '{cluster_id}' was not found"
+
+
+class DaskClientRequestError(PydanticErrorMixin, SchedulerError):
+    code = "dask_client.request.error"
+    msg_template = (
+        "The dask client to cluster on '{endpoint}' did an invalid request '{error}'"
+    )
+
+
+class DaskClusterError(PydanticErrorMixin, SchedulerError):
+    code = "cluster.error"
+    msg_template = "The dask cluster on '{endpoint}' encountered an error: '{error}'"
+
+
+class DaskGatewayServerError(PydanticErrorMixin, SchedulerError):
+    code = "gateway.error"
+    msg_template = "The dask gateway on '{endpoint}' encountered an error: '{error}'"
+
+
+class DaskClientAcquisisitonError(PydanticErrorMixin, SchedulerError):
+    code = "dask_client.acquisition.error"
+    msg_template = (
+        "The dask client to cluster '{cluster}' encountered an error '{error}'"
+    )

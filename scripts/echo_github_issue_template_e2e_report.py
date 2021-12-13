@@ -1,4 +1,5 @@
 import sys
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -7,14 +8,19 @@ CURRENT_DIR = CURRENT_FILE.resolve().parent
 REPO_DIR = CURRENT_DIR.parent
 
 ITEM_BULLET = "  - [ ]"
-CI_BASEURL_FORMAT = "https://git.speag.com/oSparc/e2e-testing/-/pipelines?page=1&scope=all&ref={branch_name}"
-TARGET_DIR = REPO_DIR / "tests" / "e2e" / "tutorials"
+
 
 DEPLOY_LOCATIONS = ("master", "dalco", "aws")
 DEPLOY_FLAVOURS = ("staging", "production")
 
 
-def main():
+@dataclass
+class Config:
+    repo_name: str
+    test_dir_name: str
+
+
+def main(config: Config):
     """
     Prints e2e_report.md using a template and the scripts available under tests/e2e
 
@@ -24,7 +30,10 @@ def main():
         python echo_github_issue_template_e2e_report.py >> ../.github/ISSUE_TEMPLATE/e2e_report.md
 
     """
-    # list e2e scripts
+    TARGET_DIR = REPO_DIR / "tests" / "e2e" / config.test_dir_name
+    CI_BASEURL_FORMAT = f"https://git.speag.com/oSparc/{config.repo_name}/-/pipelines?page=1&scope=all&ref={{branch_name}}"
+
+    # list test scripts
     scripts = [
         script_path
         for script_path in TARGET_DIR.glob("*.js")
@@ -36,7 +45,10 @@ def main():
         f"[{p.stem}]": f"https://github.com/ITISFoundation/osparc-simcore/blob/master/{p.relative_to(REPO_DIR)}"
         for p in scripts
     }
-    refs.update({"[parallel_w_jupyters]": refs["[jupyters]"]})
+    try:
+        refs.update({"[parallel_w_jupyters]": refs["[jupyters]"]})
+    except KeyError:
+        pass
 
     # Template for e2e_report.md --------
     print(
@@ -56,6 +68,8 @@ def main():
                 print(ITEM_BULLET, f"[e2e/{p}/{q}]")
         else:
             print(ITEM_BULLET, f"[e2e/{p}]")
+
+    print("## known temporary fix")
 
     print(end="\n" * 2)
 
@@ -79,5 +93,10 @@ def main():
 
 
 if __name__ == "__main__":
+    tutorials = Config(repo_name="e2e-testing", test_dir_name="tutorials")
+    main(tutorials)
 
-    main()
+    print("-" * 10)
+
+    portal = Config(repo_name="e2e-portal-testing", test_dir_name="portal")
+    main(portal)

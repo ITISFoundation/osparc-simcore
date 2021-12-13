@@ -31,6 +31,8 @@ Faker
 alembic
 aio_pika
 aioredis
+bokeh
+dask-gateway-server[local]
 docker
 respx
 
