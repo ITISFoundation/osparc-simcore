@@ -135,7 +135,7 @@ def services_endpoint(
 
 
 @pytest.fixture(scope="module")
-async def simcore_services_ready(
+def simcore_services_ready(
     services_endpoint: Dict[str, URL], monkeypatch_module: MonkeyPatch
 ) -> None:
     """
@@ -155,11 +155,14 @@ async def simcore_services_ready(
     for h in health_endpoints:
         print(f" - {h.name} -> {h.url}")
 
+    async def _check_all_services_are_healthy():
+        await asyncio.gather(
+            *[wait_till_service_healthy(h.name, h.url) for h in health_endpoints],
+            return_exceptions=False,
+        )
+
     # check ready
-    await asyncio.gather(
-        *[wait_till_service_healthy(h.name, h.url) for h in health_endpoints],
-        return_exceptions=False,
-    )
+    asyncio.run(_check_all_services_are_healthy())
 
     # patches environment variables with right host/port per service
     for service, endpoint in services_endpoint.items():

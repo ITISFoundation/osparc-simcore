@@ -15,6 +15,17 @@ import sqlalchemy as sa
 from _helpers import ExpectedResponse, standard_role_response  # type: ignore
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.clusters import (
+    CLUSTER_ADMIN_RIGHTS,
+    CLUSTER_MANAGER_RIGHTS,
+    CLUSTER_NO_RIGHTS,
+    CLUSTER_USER_RIGHTS,
+    Cluster,
+    ExternalClusterAuthentication,
+    JupyterHubTokenAuthentication,
+    KerberosAuthentication,
+    SimpleAuthentication,
+)
 from models_library.users import GroupID
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
@@ -22,11 +33,6 @@ from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.clusters.models import (
-    CLUSTER_ADMIN_RIGHTS,
-    CLUSTER_MANAGER_RIGHTS,
-    CLUSTER_NO_RIGHTS,
-    CLUSTER_USER_RIGHTS,
-    Cluster,
     ClusterAccessRights,
     ClusterCreate,
     ClusterPatch,
@@ -38,18 +44,51 @@ from sqlalchemy.sql.elements import literal_column
 
 
 @pytest.fixture
-def cluster_authentication(faker: Faker) -> Iterable[Callable[[], Dict[str, Any]]]:
+def cluster_simple_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
     def creator() -> Dict[str, Any]:
         simple_auth = {
             "type": "simple",
             "username": faker.user_name(),
             "password": faker.password(),
         }
-        kerberos_auth = {"type": "kerberos"}
-        jupyterhub_auth = {"type": "jupyterhub"}
-        return random.choice([simple_auth, kerberos_auth, jupyterhub_auth])
+        assert SimpleAuthentication.parse_obj(simple_auth)
+        return simple_auth
 
-    yield creator
+    return creator
+
+
+@pytest.fixture
+def cluster_kerberos_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
+    def creator() -> Dict[str, Any]:
+        kerberos_auth = {"type": "kerberos"}
+        assert KerberosAuthentication.parse_obj(kerberos_auth)
+        return kerberos_auth
+
+    return creator
+
+
+@pytest.fixture
+def cluster_jupyterhub_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
+    def creator() -> Dict[str, Any]:
+        jupyterhub_auth = {"type": "jupyterhub", "api_token": faker.pystr()}
+        assert JupyterHubTokenAuthentication.parse_obj(jupyterhub_auth)
+        return jupyterhub_auth
+
+    return creator
+
+
+@pytest.fixture(params=list(ExternalClusterAuthentication.__args__))  # type: ignore
+def cluster_authentication(
+    cluster_simple_authentication,
+    cluster_kerberos_authentication,
+    cluster_jupyterhub_authentication,
+    request,
+) -> Callable[[], Dict[str, Any]]:
+    return {
+        SimpleAuthentication: cluster_simple_authentication,
+        KerberosAuthentication: cluster_kerberos_authentication,
+        JupyterHubTokenAuthentication: cluster_jupyterhub_authentication,
+    }[request.param]
 
 
 @pytest.fixture
@@ -125,9 +164,7 @@ async def second_user(
         yield user
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_list_clusters(
     enable_dev_features: None,
     client: TestClient,
@@ -138,6 +175,7 @@ async def test_list_clusters(
     expected: ExpectedResponse,
 ):
     # check empty clusters
+    assert client.app
     url = client.app.router["list_clusters_handler"].url_for()
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected.ok)
@@ -193,17 +231,7 @@ async def test_list_clusters(
         ]
 
 
-@pytest.mark.parametrize(
-    "authentication",
-    [
-        {"type": "simple", "username": "fake", "password": "sldfkjsl"},
-        {"type": "kerberos"},
-        {"type": "jupyterhub"},
-    ],
-)
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_create_cluster(
     enable_dev_features: None,
     client: TestClient,
@@ -211,15 +239,16 @@ async def test_create_cluster(
     logged_user: Dict[str, Any],
     faker: Faker,
     user_role: UserRole,
-    authentication: Dict[str, Any],
+    cluster_authentication: Callable[[], Dict[str, Any]],
     expected: ExpectedResponse,
 ):
     # check we can create a cluster
+    assert client.app
     url = client.app.router["create_cluster_handler"].url_for()
     cluster_data = json.loads(
         ClusterCreate(
             endpoint=faker.uri(),
-            authentication=authentication,
+            authentication=cluster_authentication(),
             name=faker.name(),
             type=random.choice(list(ClusterType)),
         ).json(by_alias=True, exclude_unset=True)
@@ -264,9 +293,7 @@ async def test_create_cluster(
     postgres_db.execute(clusters.delete().where(clusters.c.id == row[clusters.c.id]))
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_get_cluster(
     enable_dev_features: None,
     client: TestClient,
@@ -278,6 +305,7 @@ async def test_get_cluster(
     expected: ExpectedResponse,
 ):
     # check not found
+    assert client.app
     url = client.app.router["get_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected.not_found)
@@ -336,9 +364,7 @@ async def test_get_cluster(
         data, error = await assert_status(rsp, expected.forbidden)
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_update_cluster(
     enable_dev_features: None,
     client: TestClient,
@@ -352,6 +378,7 @@ async def test_update_cluster(
 ):
     _PATCH_EXPORT = {"by_alias": True, "exclude_unset": True, "exclude_none": True}
     # check modifying invalid returns not found
+    assert client.app
     url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.patch(
         f"{url}",
@@ -377,6 +404,7 @@ async def test_update_cluster(
         ClusterPatch(authentication=cluster_authentication()),
     ]:
         jsonable_cluster_patch = json.loads(cluster_patch.json(**_PATCH_EXPORT))
+        print(f"--> patching cluster with {jsonable_cluster_patch}")
         rsp = await client.patch(f"{url}", json=jsonable_cluster_patch)
         data, error = await assert_status(rsp, expected.ok)
         expected_admin_cluster = expected_admin_cluster.copy(
@@ -553,9 +581,7 @@ async def test_update_cluster(
         data, error = await assert_status(rsp, expected.forbidden)
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_delete_cluster(
     enable_dev_features: None,
     client: TestClient,

@@ -8,7 +8,7 @@ aiodocker==0.21.0
     # via -r requirements/_base.in
 aiofiles==0.7.0
     # via -r requirements/_base.in
-aiohttp==3.7.4.post0
+aiohttp==3.8.1
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
@@ -19,13 +19,15 @@ aiohttp==3.7.4.post0
     #   -r requirements/_base.in
     #   aiodocker
     #   jupyter-server-proxy
+aiosignal==1.2.0
+    # via aiohttp
 anyio==3.2.0
     # via jupyter-server
 argon2-cffi==20.1.0
     # via jupyter-server
 async-generator==1.10
     # via nbclient
-async-timeout==3.0.1
+async-timeout==4.0.1
     # via aiohttp
 attrs==20.2.0
     # via
@@ -42,10 +44,10 @@ certifi==2021.5.30
     # via requests
 cffi==1.14.5
     # via argon2-cffi
-chardet==3.0.4
-    # via aiohttp
 charset-normalizer==2.0.6
-    # via requests
+    # via
+    #   aiohttp
+    #   requests
 click==7.1.2
     # via distributed
 cloudpickle==1.6.0
@@ -69,6 +71,10 @@ email-validator==1.1.1
     # via pydantic
 entrypoints==0.3
     # via nbconvert
+frozenlist==1.2.0
+    # via
+    #   aiohttp
+    #   aiosignal
 fsspec==2021.10.1
     # via
     #   -c requirements/constraints.txt
@@ -105,7 +111,9 @@ jinja2==2.11.3
     #   jupyter-server
     #   nbconvert
 jsonschema==3.2.0
-    # via nbformat
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   nbformat
 jupyter-client==6.1.12
     # via
     #   jupyter-server
@@ -213,6 +221,7 @@ pyyaml==5.4.1
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/_base.in
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -272,10 +281,10 @@ typing-extensions==3.10.0.2 ; python_version < "3.9"
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   aiodocker
-    #   aiohttp
+    #   async-timeout
     #   bokeh
     #   pydantic
-urllib3==1.26.5
+urllib3==1.26.7
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt

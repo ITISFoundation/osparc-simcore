@@ -2,6 +2,13 @@ from typing import Dict, List, Optional, Set
 
 import sqlalchemy as sa
 from aiopg.sa.result import ResultProxy
+from models_library.clusters import (
+    CLUSTER_ADMIN_RIGHTS,
+    CLUSTER_MANAGER_RIGHTS,
+    CLUSTER_NO_RIGHTS,
+    CLUSTER_USER_RIGHTS,
+    Cluster,
+)
 from models_library.users import GroupID
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
@@ -10,16 +17,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ..db_base_repository import BaseRepository
 from .exceptions import ClusterAccessForbidden, ClusterNotFoundError
-from .models import (
-    CLUSTER_ADMIN_RIGHTS,
-    CLUSTER_MANAGER_RIGHTS,
-    CLUSTER_NO_RIGHTS,
-    CLUSTER_USER_RIGHTS,
-    Cluster,
-    ClusterAccessRights,
-    ClusterCreate,
-    ClusterPatch,
-)
+from .models import ClusterAccessRights, ClusterCreate, ClusterPatch
 
 # Cluster access rights:
 # All group comes first, then standard groups, then primary group

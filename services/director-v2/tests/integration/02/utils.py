@@ -151,7 +151,7 @@ async def assert_start_service(
     }
 
     result = await director_v2_client.post(
-        "/dynamic_services", json=data, headers=headers, allow_redirects=True
+        "/v2/dynamic_services", json=data, headers=headers, allow_redirects=True
     )
     assert result.status_code == httpx.codes.CREATED, result.text
 
@@ -164,7 +164,7 @@ async def get_service_data(
 
     # result =
     response = await director_v2_client.get(
-        f"/dynamic_services/{service_uuid}", allow_redirects=False
+        f"/v2/dynamic_services/{service_uuid}", allow_redirects=False
     )
     if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
         # NOTE: so we have a redirect, and it seems the director_v2_client does not like it at all
@@ -227,7 +227,7 @@ async def assert_retrieve_service(
     }
 
     result = await director_v2_client.post(
-        f"/dynamic_services/{service_uuid}:retrieve",
+        f"/v2/dynamic_services/{service_uuid}:retrieve",
         json=dict(port_keys=[]),
         headers=headers,
         allow_redirects=True,
@@ -245,7 +245,7 @@ async def assert_stop_service(
     director_v2_client: httpx.AsyncClient, service_uuid: str
 ) -> None:
     result = await director_v2_client.delete(
-        f"/dynamic_services/{service_uuid}", allow_redirects=True
+        f"/v2/dynamic_services/{service_uuid}", allow_redirects=True
     )
     assert result.status_code == httpx.codes.NO_CONTENT
     assert result.text == ""

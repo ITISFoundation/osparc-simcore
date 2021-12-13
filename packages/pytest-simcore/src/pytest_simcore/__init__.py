@@ -1,4 +1,8 @@
 # Collection of tests fixtures for integration testing
+import pkg_resources
+
+__version__: str = pkg_resources.get_distribution("pytest-simcore").version
+
 
 def pytest_addoption(parser):
     group = parser.getgroup("simcore")
@@ -10,4 +14,4 @@ def pytest_addoption(parser):
     )
 
     # DUMMY
-    parser.addini('HELLO', 'Dummy pytest.ini setting')
+    parser.addini("HELLO", "Dummy pytest.ini setting")

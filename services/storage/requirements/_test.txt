@@ -202,7 +202,7 @@ typing-extensions==3.10.0.2
     #   aiohttp
     #   astroid
     #   pylint
-urllib3==1.26.6
+urllib3==1.26.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

@@ -66,17 +66,17 @@ build build-nc build-devel build-devel-nc: ## builds docker image in many flavou
 
 .PHONY: shell
 shell: ## runs shell inside $(APP_NAME) container
-	docker exec -it $(shell docker ps -f "name=$(APP_NAME)*" --format {{.ID}}) /bin/bash
+	docker exec -it $(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}}) /bin/bash
 
 
-.PHONY: tail
-tail: ## tails log of $(APP_NAME) container
-	docker logs --follow $(shell docker ps --filter "name=$(APP_NAME)*" --format {{.ID}}) 2>&1
+.PHONY: tail logs
+tail logs: ## tails log of $(APP_NAME) container
+	docker logs --follow $(shell docker ps --filter "name=simcore_$(APP_NAME)*" --format {{.ID}}) 2>&1
 
 
 .PHONY: stats
 stats: ## display live stream of $(APP_NAME) container resource usage statistics
-	docker stats $(shell docker ps -f "name=$(APP_NAME)*" --format {{.ID}})
+	docker stats $(shell docker ps -f "name=simcore_$(APP_NAME)*" --format {{.ID}})
 
 
 .PHONY: info
@@ -105,6 +105,7 @@ _run-test-dev: _check_venv_active
 		--color=yes \
 		--cov-config=.coveragerc \
 		--cov-report=term-missing \
+		--cov-report=xml \
 		--cov=$(APP_PACKAGE_NAME) \
 		--durations=10 \
 		--exitfirst \

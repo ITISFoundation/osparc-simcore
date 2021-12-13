@@ -512,6 +512,7 @@ info: ## displays setup information
 	@echo ' python        : $(shell python3 --version)'
 	@echo ' node          : $(shell node --version 2> /dev/null || echo ERROR nodejs missing)'
 	@echo ' docker        : $(shell docker --version)'
+	@echo ' docker buildx : $(shell docker buildx version)'
 	@echo ' docker-compose: $(shell docker-compose --version)'
 
 

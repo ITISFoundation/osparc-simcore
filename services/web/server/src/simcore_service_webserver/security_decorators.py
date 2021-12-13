@@ -1,7 +1,7 @@
 from functools import wraps
-from typing import Callable
 
 from aiohttp import web
+from servicelib.aiohttp.typing_extension import Handler
 
 from .security_api import check_permission
 
@@ -16,7 +16,7 @@ def permission_required(permissions: str):
     raises HTTPForbidden.
     """
 
-    def decorator(handler: Callable):
+    def decorator(handler: Handler):
         @wraps(handler)
         async def wrapped(request: web.Request):
             await check_permission(request, permissions)
