@@ -83,23 +83,21 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       );
       const contBtn = new qx.ui.toolbar.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
       contBtn.addListener("execute", () => {
-        osparc.data.Resources.get("statics")
-          .then(statics => {
-            const fbNewIssueUrl = osparc.utils.issue.Fogbugz.getNewIssueUrl(statics);
-            if (fbNewIssueUrl) {
-              window.open(fbNewIssueUrl);
-              issueConfirmationWindow.close();
-            }
-          });
+        const statics = this.__serverStatics;
+        if (statics) {
+          const fbNewIssueUrl = osparc.utils.issue.Fogbugz.getNewIssueUrl(statics);
+          if (fbNewIssueUrl) {
+            window.open(fbNewIssueUrl);
+            issueConfirmationWindow.close();
+          }
+        }
       }, this);
       const loginBtn = new qx.ui.toolbar.Button(qx.locale.Manager.tr("Log in in Fogbugz"), "@FontAwesome5Solid/external-link-alt/12");
       loginBtn.addListener("execute", () => {
-        osparc.data.Resources.get("statics")
-          .then(statics => {
-            if (statics && statics.fogbugzLoginUrl) {
-              window.open(statics.fogbugzLoginUrl);
-            }
-          });
+        const statics = this.__serverStatics;
+        if (statics && statics.fogbugzLoginUrl) {
+          window.open(statics.fogbugzLoginUrl);
+        }
       }, this);
       issueConfirmationWindow.addButton(contBtn);
       issueConfirmationWindow.addButton(loginBtn);

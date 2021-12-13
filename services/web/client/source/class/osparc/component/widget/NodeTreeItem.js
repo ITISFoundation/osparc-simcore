@@ -44,8 +44,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     this.base(arguments);
 
     this.set({
-      indent: 8,
-      alignY: "middle"
+      indent: 8
     });
 
     this.getContentElement().setStyles({
@@ -87,7 +86,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "fullscreen-button": {
           control = new qx.ui.form.Button().set({
-            icon: "@MaterialIcons/fullscreen/12",
+            icon: "@MaterialIcons/fullscreen/14",
             backgroundColor: "transparent",
             toolTipText: this.tr("Full Screen"),
             alignY: "middle",
@@ -104,7 +103,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
           });
           control = new qx.ui.form.MenuButton().set({
             menu: optionsMenu,
-            icon: "@FontAwesome5Solid/ellipsis-v/8",
+            icon: "@FontAwesome5Solid/ellipsis-v/9",
             allowGrowX: false,
             alignY: "middle"
           });
@@ -144,7 +143,8 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "node-id": {
           control = new qx.ui.basic.Label().set({
-            maxWidth: 70
+            maxWidth: 70,
+            alignY: "middle"
           });
           this.bind("nodeId", control, "value", {
             converter: value => value && value.substring(0, 8)
