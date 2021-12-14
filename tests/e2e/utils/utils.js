@@ -12,13 +12,13 @@ function parseCommandLineArguments(args) {
   }
 
   const url = args[0];
-  const enableDemoMode = args.includes("--demo");
   const {
     user,
     pass,
     newUser
   } = getUserAndPass(args);
-  const startTimeout = args[3];
+  const startTimeout = args.length > 3 ? args[3] : ourTimeout;
+  const enableDemoMode = args.includes("--demo");
 
   return {
     url,
