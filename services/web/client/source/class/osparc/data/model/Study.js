@@ -262,23 +262,6 @@ qx.Class.define("osparc.data.model.Study", {
       } else if (osparc.data.Permissions.getInstance().isTester()) {
         console.log("Ignored ws 'nodeUpdated' msg", nodeUpdatedData);
       }
-    },
-
-    computeStudyProgress: function(study) {
-      const nodes = study["workbench"];
-      let nCompNodes = 0;
-      let overallProgress = 0;
-      Object.values(nodes).forEach(node => {
-        const metadata = osparc.utils.Services.getMetaData(node.key, node.version);
-        if (osparc.data.model.Node.isComputational(metadata)) {
-          overallProgress += "progress" in node ? node["progress"] : 0;
-          nCompNodes++;
-        }
-      });
-      if (nCompNodes === 0) {
-        return null;
-      }
-      return overallProgress/nCompNodes;
     }
   },
 
@@ -375,6 +358,23 @@ qx.Class.define("osparc.data.model.Study", {
             reject(err);
           });
       });
+    },
+
+    computeStudyProgress: function() {
+      const nodes = this.getWorkbench().getNodes();
+      let nCompNodes = 0;
+      let overallProgress = 0;
+      Object.values(nodes).forEach(node => {
+        if (node.isComputational()) {
+          const progress = node.getStatus().getProgress();
+          overallProgress += progress ? progress : 0;
+          nCompNodes++;
+        }
+      });
+      if (nCompNodes === 0) {
+        return null;
+      }
+      return overallProgress/nCompNodes;
     },
 
     getPipelineState: function() {
