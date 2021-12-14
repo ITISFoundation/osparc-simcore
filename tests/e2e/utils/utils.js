@@ -2,6 +2,7 @@ const pathLib = require('path');
 const URL = require('url').URL;
 
 const SCREENSHOTS_DIR = "../screenshots/";
+const DEFAULT_TIMEOUT = 60000;
 
 function parseCommandLineArguments(args) {
   // node $tutorial.js [url] [user] [password] [--demo]
@@ -17,7 +18,7 @@ function parseCommandLineArguments(args) {
     pass,
     newUser
   } = getUserAndPass(args);
-  const startTimeout = args.length > 3 ? args[3] : ourTimeout;
+  const startTimeout = args.length > 3 ? args[3] : DEFAULT_TIMEOUT;
   const enableDemoMode = args.includes("--demo");
 
   return {
