@@ -81,6 +81,7 @@ def eval_wcopy_project_id(
     worbench blueprint. Nonetheless, this could be refined in the future since we could use this
     knowledge to reuse results.
     """
-    if isinstance(repo_project_uuid, ProjectIDStr):
+    if isinstance(repo_project_uuid, str):
         repo_project_uuid = UUID(repo_project_uuid)
+
     return uuid3(repo_project_uuid, snapshot_checksum)

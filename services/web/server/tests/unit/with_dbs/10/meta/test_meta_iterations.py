@@ -232,8 +232,28 @@ async def test_iterators_workflow(
     ref_ids = data["ref_ids"]
     assert len(ref_ids) == 4
 
+    # get iterations -----------------------------------------------------------------
     # check iters 1, 2 and 3 share working copies
     #
+    resp = await client.get(f"/v0/repos/projects/{project_uuid}/checkpoints/HEAD")
+    body = await resp.json()
+    head_ref_id = body["data"]["id"]
+
+    assert head_ref_id == 5
+
+    resp = await client.get(
+        f"/v0/projects/{project_uuid}/checkpoint/{head_ref_id}/iterations?offset=0"
+    )
+    body = await resp.json()
+    second_iterlist = Page[ProjectIterationAsItem].parse_obj(body).data
+
+    assert len(second_iterlist) == 4
+    assert len(set(it.wcopy_project_id for it in second_iterlist)) == len(
+        second_iterlist
+    ), "unique"
+
+    for i in range(len(first_iterlist)):
+        assert second_iterlist[i].wcopy_project_id == first_iterlist[i].wcopy_project_id
 
     # TODO: checkout i
 
