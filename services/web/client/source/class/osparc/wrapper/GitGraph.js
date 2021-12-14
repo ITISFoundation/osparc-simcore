@@ -246,19 +246,19 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       this.__commit(master, "Changes after iterations");
     },
 
-    __createBranch: function(id, name) {
+    __createBranch: function(lastCommit, fromBranch, name) {
       if (name === undefined) {
         name = "b-"+this.__branches.length.toString();
       }
-      const branch = this.__gitgraph.branch(name);
-      branch["lastCommit"] = id;
+      const branch = fromBranch ? fromBranch.branch(name) : this.__gitgraph.branch(name);
+      branch["lastCommit"] = lastCommit;
       this.__branches.push(branch);
       return branch;
     },
 
     __getBranch: function(commitData) {
       if (commitData["parents_ids"] === null) {
-        const master = this.__createBranch(commitData["id"], "master");
+        const master = this.__createBranch(commitData["id"], null, "master");
         return master;
       }
       const branchFound = this.__branches.find(branch => branch.lastCommit === commitData["parents_ids"][0]);
@@ -285,7 +285,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
         }
       });
       sortedSnapshots.forEach((snapshot, i) => {
-        const branch = this.__getBranch(snapshot);
+        const currentBranch = this.__getBranch(snapshot);
         const snapshotDate = new Date(snapshot["created_at"]);
         const commitData = {
           id: snapshot["id"],
@@ -294,12 +294,12 @@ qx.Class.define("osparc.wrapper.GitGraph", {
           createdAt: osparc.utils.Utils.formatDateAndTime(snapshotDate),
           parentsIDs: snapshot["parents_ids"]
         };
-        this.__commit(branch, commitData, snapshot["id"] === currentSnapshot["id"]);
+        this.__commit(currentBranch, commitData, snapshot["id"] === currentSnapshot["id"]);
 
         // create as many branches as necessary
         let idx = this.__parentIDs.indexOf(snapshot["id"]);
         while (idx > -1) {
-          this.__createBranch(snapshot["id"]);
+          this.__createBranch(snapshot["id"], currentBranch);
           this.__parentIDs.splice(idx, 1);
           idx = this.__parentIDs.indexOf(snapshot["id"]);
         }
