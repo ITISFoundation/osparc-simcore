@@ -247,23 +247,6 @@ qx.Class.define("osparc.data.model.Study", {
       return null;
     },
 
-    nodeUpdated: function(study, nodeUpdatedData) {
-      const nodeId = nodeUpdatedData["node_id"];
-      const nodeData = nodeUpdatedData["data"];
-      const workbench = study.getWorkbench();
-      const node = workbench.getNode(nodeId);
-      if (node && nodeData) {
-        node.setOutputData(nodeData.outputs);
-        if ("progress" in nodeData) {
-          const progress = Number.parseInt(nodeData["progress"]);
-          node.getStatus().setProgress(progress);
-        }
-        node.populateStates(nodeData);
-      } else if (osparc.data.Permissions.getInstance().isTester()) {
-        console.log("Ignored ws 'nodeUpdated' msg", nodeUpdatedData);
-      }
-    },
-
     computeStudyProgress: function(studyData) {
       const nodes = studyData["workbench"];
       let nCompNodes = 0;
@@ -376,6 +359,23 @@ qx.Class.define("osparc.data.model.Study", {
             reject(err);
           });
       });
+    },
+
+    nodeUpdated: function(nodeUpdatedData) {
+      const nodeId = nodeUpdatedData["node_id"];
+      const nodeData = nodeUpdatedData["data"];
+      const workbench = this.getWorkbench();
+      const node = workbench.getNode(nodeId);
+      if (node && nodeData) {
+        node.setOutputData(nodeData.outputs);
+        if ("progress" in nodeData) {
+          const progress = Number.parseInt(nodeData["progress"]);
+          node.getStatus().setProgress(progress);
+        }
+        node.populateStates(nodeData);
+      } else if (osparc.data.Permissions.getInstance().isTester()) {
+        console.log("Ignored ws 'nodeUpdated' msg", nodeUpdatedData);
+      }
     },
 
     computeStudyProgress: function() {

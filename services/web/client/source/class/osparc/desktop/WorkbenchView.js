@@ -618,7 +618,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           if (studyId !== this.getStudy().getUuid()) {
             return;
           }
-          osparc.data.model.Study.nodeUpdated(this.getStudy(), d);
+          this.getStudy().nodeUpdated(d);
         }, this);
       }
 
