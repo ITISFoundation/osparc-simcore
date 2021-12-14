@@ -30,7 +30,8 @@ qx.Class.define("osparc.data.model.NodeStatus", {
   properties: {
     progress: {
       check: "Number",
-      init: 0,
+      nullable: true,
+      init: null,
       event: "changeProgress"
     },
 

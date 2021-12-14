@@ -1032,7 +1032,6 @@ qx.Class.define("osparc.data.model.Node", {
         this.fireDataEvent("showInLogger", msgData);
 
         const status = this.getStatus();
-        status.setProgress(0);
         status.setInteractive("starting");
 
         this.__nodeState();
@@ -1175,6 +1174,7 @@ qx.Class.define("osparc.data.model.Node", {
       });
       pingRequest.send();
     },
+
     __serviceReadyIn: function(srvUrl) {
       this.setServiceUrl(srvUrl);
       this.getStatus().setInteractive("ready");
@@ -1184,8 +1184,6 @@ qx.Class.define("osparc.data.model.Node", {
         msg: msg
       };
       this.fireDataEvent("showInLogger", msgData);
-
-      this.getStatus().setProgress(100);
 
       // FIXME: Apparently no all services are inmediately ready when they publish the port
       // ping the service until it is accessible through the platform
