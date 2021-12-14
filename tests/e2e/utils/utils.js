@@ -7,7 +7,7 @@ function parseCommandLineArguments(args) {
   // node $tutorial.js [url] [user] [password] [--demo]
 
   if (args.length < 1) {
-    console.log('More arguments expected:  $tutorial.js [url] [user] [password] [--demo]');
+    console.log('More arguments expected:  $tutorial.js [url] [user] [password] [start_timeout] [--demo]');
     process.exit(1);
   }
 
@@ -18,12 +18,14 @@ function parseCommandLineArguments(args) {
     pass,
     newUser
   } = getUserAndPass(args);
+  const startTimeout = args[3];
 
   return {
     url,
     user,
     pass,
     newUser,
+    startTimeout,
     enableDemoMode
   }
 }
@@ -31,18 +33,20 @@ function parseCommandLineArguments(args) {
 function parseCommandLineArgumentsTemplate(args) {
   // node $template.js [url] [template_uuid] [--demo]
 
-  if (args.length < 2) {
-    console.log('More arguments expected: $template.js [url_prefix] [template_uuid] [--demo]');
+  if (args.length < 3) {
+    console.log('More arguments expected: $template.js [url_prefix] [template_uuid] [start_timeout] [--demo]');
     process.exit(1);
   }
 
   const urlPrefix = args[0];
   const templateUuid = args[1];
+  const startTimeout = args[2];
   const enableDemoMode = args.includes("--demo");
 
   return {
     urlPrefix,
     templateUuid,
+    startTimeout,
     enableDemoMode
   }
 }
@@ -50,8 +54,8 @@ function parseCommandLineArgumentsTemplate(args) {
 function parseCommandLineArgumentsStudyDispatcherParams(args) {
   // [url] [download_link] [file_size] [--demo]
 
-  if (args.length < 3) {
-    console.log('More arguments expected: [url] [download_link] [file_size] [--demo]');
+  if (args.length < 4) {
+    console.log('More arguments expected: [url] [download_link] [file_size] [start_timeout] [--demo]');
     process.exit(1);
   }
 
@@ -59,11 +63,13 @@ function parseCommandLineArgumentsStudyDispatcherParams(args) {
   const params = {};
   params["download_link"] = args[1];
   params["file_size"] = args[2];
+  const startTimeout = args[2];
   const enableDemoMode = args.includes("--demo");
 
   return {
     urlPrefix,
     params,
+    startTimeout,
     enableDemoMode
   }
 }
