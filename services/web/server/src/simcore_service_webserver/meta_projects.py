@@ -18,8 +18,8 @@ from models_library.projects import ProjectID
 
 from ._meta import api_version_prefix as VTAG
 from .director_v2_api import AbstractProjectRunPolicy
-from .meta_db import CommitID, VersionControlForMetaModeling
 from .meta_iterations import get_or_create_runnable_projects, get_runnable_projects_ids
+from .meta_version_control import CommitID, VersionControlForMetaModeling
 from .projects.projects_handlers import RQ_REQUESTED_REPO_PROJECT_UUID_KEY
 
 log = logging.getLogger(__name__)

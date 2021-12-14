@@ -18,8 +18,8 @@ from models_library.services import ServiceDockerData
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 
-from .meta_db import CommitID, ProjectDict, VersionControlForMetaModeling
 from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
+from .meta_version_control import CommitID, ProjectDict, VersionControlForMetaModeling
 from .utils import compute_sha1
 
 log = logging.getLogger(__file__)
