@@ -148,17 +148,17 @@ qx.Class.define("osparc.data.model.Study", {
       nullable: true
     },
 
-    state: {
-      check: "Object",
-      nullable: true,
-      event: "changeState"
-    },
-
     quality: {
       check: "Object",
       init: {},
       event: "changeQuality",
       nullable: true
+    },
+
+    state: {
+      check: "Object",
+      nullable: true,
+      event: "changeState"
     },
 
     readOnly: {
@@ -170,6 +170,15 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   statics: {
+    IgnoreSerializationProps: [
+      "state",
+      "readOnly"
+    ],
+
+    IgnoreModelizationProps: [
+      "dev"
+    ],
+
     createMyNewStudyObject: function() {
       let myNewStudyObject = {};
       const props = qx.util.PropertyUtil.getProperties(osparc.data.model.Study);
@@ -422,7 +431,7 @@ qx.Class.define("osparc.data.model.Study", {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
-        if (["state", "readOnly"].includes(key)) {
+        if (this.self().IgnoreSerializationProps.includes(key)) {
           return;
         }
         if (key === "workbench") {
@@ -464,9 +473,12 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     __updateModel: function(data) {
-      if ("dev" in data) {
-        delete data["dev"];
-      }
+      Object.keys(data).forEach(key => {
+        if (this.self().IgnoreModelizationProps.includes(key)) {
+          delete data[key];
+        }
+      });
+
       this.set({
         ...data,
         creationDate: new Date(data.creationDate),
