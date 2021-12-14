@@ -159,8 +159,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const metaData = node.getMetaData();
       this._createPorts(true, Boolean((metaData && metaData.inputs && Object.keys(metaData.inputs).length) || this.getNode().isContainer()));
       this._createPorts(false, Boolean((metaData && metaData.outputs && Object.keys(metaData.outputs).length) || this.getNode().isContainer()));
-      if (node.isComputational() || node.isFilePicker()) {
-        node.getStatus().bind("progress", this.__progressBar, "value");
+      if (node.isComputational()) {
+        node.getStatus().bind("progress", this.__progressBar, "value", {
+          converter: val => val === null ? 0 : val
+        });
       }
       if (node.isFilePicker()) {
         this.setType("file");
