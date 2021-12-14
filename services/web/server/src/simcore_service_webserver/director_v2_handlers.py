@@ -62,7 +62,10 @@ async def start_pipeline(request: web.Request) -> web.Response:
             project_vc_commits,
         ) = await run_policy.get_or_create_runnable_projects(request, project_id)
         log.debug(
-            "Project %s will start %d variants", project_id, len(running_project_ids)
+            "Project %s will start %d variants: %s",
+            f"{project_id=}",
+            len(running_project_ids),
+            f"{running_project_ids=}",
         )
 
         assert running_project_ids  # nosec
