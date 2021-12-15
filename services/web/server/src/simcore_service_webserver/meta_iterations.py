@@ -18,7 +18,11 @@ from models_library.services import ServiceDockerData
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 
-from .meta_funcs import SERVICE_CATALOG, SERVICE_TO_CALLABLES
+from .meta_funcs import (
+    SERVICE_CATALOG,
+    SERVICE_TO_CALLABLES,
+    create_param_node_from_iterator_with_outputs,
+)
 from .meta_version_control import CommitID, ProjectDict, VersionControlForMetaModeling
 from .utils import compute_sha1
 
@@ -87,9 +91,13 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
             assert 1 <= len(node_results) <= len(node_def.outputs)  # nosec
 
             # override outputs with the parametrization results
-            _node = updated_nodes[node_id] = deepcopy(project_nodes[node_id])
-            _node.outputs = _node.outputs or {}
-            _node.outputs.update(node_results)
+            _iter_node = deepcopy(project_nodes[node_id])
+            _iter_node.outputs = _iter_node.outputs or {}
+            _iter_node.outputs.update(node_results)
+
+            # TODO: tmp we replace iter_node by a param_node
+            _param_node = create_param_node_from_iterator_with_outputs(_iter_node)
+            updated_nodes[node_id] = _param_node
 
         # FIXME: here we yield.
         parameters_per_iter.append(parameters)

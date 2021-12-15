@@ -144,7 +144,7 @@ async def test_iterators_workflow(
         return [
             {"key": s["key"], "version": s["version"]}
             for _, s in project_data["workbench"].items()
-        ]
+        ] + [{"key": "simcore/services/frontend/parameter/integer", "version": "1.0.0"}]
 
     mocker.patch(
         "simcore_service_webserver.catalog.get_services_for_user_in_product",
