@@ -29,33 +29,39 @@ log = logging.getLogger(__name__)
 #
 #  https://github.com/ITISFoundation/osparc-simcore/blob/master/services/web/server/src/simcore_service_webserver/api/v0/openapi.yaml#L8563
 #
-URL_PATTERN = re.compile(rf"^\/{VTAG}\/projects\/({UUID_RE})[\/.]{1}")
+URL_PATTERN = re.compile(rf"^\/{VTAG}\/projects\/({UUID_RE})[\/]{{0,1}}")
 
 
 @web.middleware
 async def projects_redirection_middleware(request: web.Request, handler: _Handler):
-    """Intercepts /project/{project_id}* requests and redirect them to the copy @HEAD"""
+    """Intercepts /projects/{project_id}* requests and redirect them to the copy @HEAD"""
 
-    if match := URL_PATTERN.match(str(request.rel_url)):
-        assert match.group(1) == request.match_info["project_id"]  # nosec
+    if URL_PATTERN.match(f"{request.rel_url}"):
+        #
+        # FIXME: because hierarchical design is not guaranteed, we find ourselevs with
+        # entries like /v0/computation/pipeline/{project_id}:start which might also neeed
+        # indirection
+        #
+        if project_id := request.match_info.get("project_id"):
+            # FIXME: need to ensure path exact key. Used 'project_id' and also 'project_uuid'
 
-        project_id = ProjectID(request.match_info["project_id"])
+            vc_repo = VersionControlForMetaModeling(request)
 
-        vc_repo = VersionControlForMetaModeling(request)
-        if repo_id := await vc_repo.get_repo_id(project_id):
-            # Changes resolved project_id parameter with working copy instead
-            #
-            # TODO: optimize db calls
-            wcopy_project_id = await vc_repo.get_wcopy_project_id(repo_id)
-            request.match_info["project_id"] = str(wcopy_project_id)
+            if repo_id := await vc_repo.get_repo_id(ProjectID(project_id)):
+                # Changes resolved project_id parameter with working copy instead
+                #
+                # TODO: optimize db calls
+                #
+                wcopy_project_id = await vc_repo.get_wcopy_project_id(repo_id)
+                request.match_info["project_id"] = f"{wcopy_project_id}"
 
-            if wcopy_project_id != project_id:
-                request[RQ_REQUESTED_REPO_PROJECT_UUID_KEY] = wcopy_project_id
-                log.debug(
-                    "Redirecting request with %s to working copy %s",
-                    f"{project_id=}",
-                    f"{wcopy_project_id=}",
-                )
+                if f"{wcopy_project_id}" != f"{project_id}":
+                    request[RQ_REQUESTED_REPO_PROJECT_UUID_KEY] = wcopy_project_id
+                    log.debug(
+                        "Redirecting request with %s to working copy %s",
+                        f"{project_id=}",
+                        f"{wcopy_project_id=}",
+                    )
 
     response = await handler(request)
 

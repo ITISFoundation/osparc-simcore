@@ -28,6 +28,8 @@ from models_library.projects_nodes import (
 from models_library.projects_nodes_io import NodeID, PortLink
 from models_library.services import ServiceDockerData
 from simcore_service_webserver.meta_experimental import PROPTYPE_2_PYTYPE, SumDiffDef
+from simcore_service_webserver.meta_funcs import SERVICE_TO_CALLABLES, ServiceDockerData
+from simcore_service_webserver.meta_projects import URL_PATTERN
 
 ## HELPERS -------------------------------------------------
 
@@ -209,7 +211,59 @@ def project_nodes(faker: Faker) -> Dict[NodeID, Node]:
 ## TESTS -------------------------------------------------
 
 
-def test_it(project_nodes: Dict[NodeID, Node]):
+@pytest.mark.parametrize(
+    "rel_url",
+    (
+        "/v0/projects/7a0951b4-7cb1-45ac-9f42-60bb3cf122e0",
+        "/v0/projects/7a0951b4-7cb1-45ac-9f42-60bb3cf122e0/subresource/some1234?id=33",
+    ),
+)
+def test_middleware_re_match(rel_url: str):
+
+    match = URL_PATTERN.match(rel_url)
+    assert match is not None
+    assert match.groups()[0] == "7a0951b4-7cb1-45ac-9f42-60bb3cf122e0"
+
+
+@pytest.mark.skip(reason="DEV")
+def test_replace_any_source_node_by_param_node():
+
+    # for meta in SERVICES_CATALOG.values():
+    #    if not meta.inputs:
+    #        for okey, output_schema in meta.outputs.items():
+    #            output_schema.property_type
+
+    iter_node = Node.parse_obj(
+        {
+            "key": "simcore/services/frontend/data-iterator/int-range",
+            "version": "1.0.0",
+            "label": "X",
+            "inputs": {
+                "linspace_start": 0,
+                "linspace_stop": 3,
+                "linspace_step": 1,
+            },
+            "inputNodes": [],
+            "parent": None,
+            "thumbnail": "",
+        }
+    )
+
+    output_value = 0
+
+    param_node = Node(
+        key="simcore/services/frontend/parameter/integer",
+        version="1.0.0",
+        label=iter_node.label,
+        inputs={},
+        inputNodes=[],
+        thumbnail="",
+        outputs={"out_1": output_value},
+    )
+
+
+@pytest.mark.skip(reason="DEV")
+def test_it1(project_nodes: Dict[NodeID, Node]):
 
     # select iterable nodes
     iterable_nodes_defs: List[ServiceDockerData] = []  # schemas of iterable nodes
