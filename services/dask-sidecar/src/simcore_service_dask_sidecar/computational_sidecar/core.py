@@ -85,6 +85,8 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 destination_path = task_volumes.inputs_folder / (
                     input_params.file_mapping or URL(input_params.url).path.strip("/")
                 )
+                # NOTE: only 'task_volumes.inputs_folder' part of 'destination_path' is guaranteed
+                destination_path.parent.mkdir(parents=True, exist_ok=True)
                 download_tasks.append(
                     pull_file_from_remote(
                         input_params.url, destination_path, self._publish_sidecar_log
