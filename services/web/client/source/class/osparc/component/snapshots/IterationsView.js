@@ -119,7 +119,16 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       const iterationData = this.__iterations[idx];
       const iteration = new osparc.data.model.Study(iterationData);
       iteration.buildWorkbench();
+      iteration.setReadOnly(true);
       iteration.nodeUpdated(dataUpdate);
+
+      if (this.__selectedIterationId === iteration.getUuid()) {
+        this.__iterationPreview.set({
+          study: iteration
+        });
+        this.__iterationPreview.loadModel(iteration.getWorkbench());
+      }
+
       const iterationDataUpdated = iteration.serialize(false);
       this.__iterations.splice(idx, 1, iterationDataUpdated);
       this.__iterationsTable.iterationsToTable(this.__iterations);
