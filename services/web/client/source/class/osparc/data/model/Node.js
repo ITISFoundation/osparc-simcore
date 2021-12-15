@@ -67,22 +67,7 @@ qx.Class.define("osparc.data.model.Node", {
       status: new osparc.data.model.NodeStatus(this)
     });
 
-    const metaData = this.__metaData = osparc.utils.Services.getMetaData(key, version);
-    if (metaData) {
-      if (metaData.name) {
-        this.setLabel(metaData.name);
-      }
-      if (metaData.inputsDefault) {
-        this.__addInputsDefault(metaData.inputsDefault);
-      }
-      if (metaData.inputs) {
-        this.__addInputs(metaData.inputs);
-      }
-      if (metaData.outputs) {
-        this.setOutputs(metaData.outputs);
-        this.__addOutputWidget();
-      }
-    }
+    this.populateWithMetadata();
   },
 
   properties: {
@@ -95,7 +80,8 @@ qx.Class.define("osparc.data.model.Node", {
 
     key: {
       check: "String",
-      nullable: true
+      nullable: true,
+      event: "changeKey"
     },
 
     version: {
@@ -403,6 +389,25 @@ qx.Class.define("osparc.data.model.Node", {
       const exposedInnerNodes = this.getExposedInnerNodes();
       const exposedNodeIDs = exposedInnerNodes.map(exposedInnerNode => exposedInnerNode.getNodeId());
       return exposedNodeIDs;
+    },
+
+    populateWithMetadata: function() {
+      const metaData = this.__metaData = osparc.utils.Services.getMetaData(this.getKey(), this.getVersion());
+      if (metaData) {
+        if (metaData.name) {
+          this.setLabel(metaData.name);
+        }
+        if (metaData.inputsDefault) {
+          this.__addInputsDefault(metaData.inputsDefault);
+        }
+        if (metaData.inputs) {
+          this.__addInputs(metaData.inputs);
+        }
+        if (metaData.outputs) {
+          this.setOutputs(metaData.outputs);
+          this.__addOutputWidget();
+        }
+      }
     },
 
     populateNodeData: function(nodeData) {
