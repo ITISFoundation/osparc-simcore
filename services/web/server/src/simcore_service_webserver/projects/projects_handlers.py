@@ -281,6 +281,7 @@ async def get_project(request: web.Request):
             formatted_services = ", ".join(
                 f"{service}:{version}" for service, version in unavilable_services
             )
+            # TODO: lack of permissions should be notified with https://httpstatuses.com/403 web.HTTPForbidden
             raise web.HTTPNotFound(
                 reason=(
                     f"Project '{project_uuid}' uses unavailable services. Please ask "
