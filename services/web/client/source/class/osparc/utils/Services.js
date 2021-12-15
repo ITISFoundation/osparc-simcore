@@ -43,23 +43,23 @@ qx.Class.define("osparc.utils.Services", {
         icon: "@FontAwesome5Solid/file/",
         sorting: 1
       },
+      iterator: {
+        label: "",
+        icon: "@FontAwesome5Solid/copy/",
+        sorting: 2
+      },
       computational: {
         label: "Computational",
         icon: "@FontAwesome5Solid/cogs/",
-        sorting: 2
+        sorting: 3
       },
       dynamic: {
         label: "Interactive",
         icon: "@FontAwesome5Solid/mouse-pointer/",
-        sorting: 3
-      },
-      iterator: {
-        label: "Iterator",
-        icon: "@FontAwesome5Solid/copy/",
         sorting: 4
       },
-      "iterator-consumer": {
-        label: "Probe",
+      probe: {
+        label: "",
         icon: "@FontAwesome5Solid/thermometer/",
         sorting: 5
       }

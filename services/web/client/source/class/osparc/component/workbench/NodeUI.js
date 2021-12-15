@@ -54,11 +54,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   properties: {
     node: {
       check: "osparc.data.model.Node",
-      nullable: false
+      nullable: false,
+      apply: "__applyNode"
     },
 
     type: {
-      check: ["normal", "file", "parameter", "iterator", "iterator-consumer"],
+      check: ["normal", "file", "parameter", "iterator", "probe"],
       init: "normal",
       nullable: false,
       apply: "__applyType"
@@ -103,7 +104,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           if (this.getNode().isIterator()) {
             nodeType = "iterator";
           } else if (this.getNode().isProbe()) {
-            nodeType = "iterator-consumer";
+            nodeType = "probe";
           }
           const type = osparc.utils.Services.getType(nodeType);
           if (type) {
@@ -172,7 +173,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.__svgWorkbenchCanvas = svgWorkbenchCanvas;
         this.setType("iterator");
       } else if (node.isProbe()) {
-        this.setType("iterator-consumer");
+        this.setType("probe");
       }
     },
 
@@ -200,7 +201,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         case "iterator":
           this.__turnIntoIteratorUI();
           break;
-        case "iterator-consumer":
+        case "probe":
           this.__turnIntoProbeUI();
           break;
       }
