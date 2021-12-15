@@ -708,12 +708,23 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    getOutputData: function(outputKey) {
+    __getOutputData: function(outputKey) {
       const outputs = this.getOutputs();
       if (outputKey in outputs && "value" in outputs[outputKey]) {
         return outputs[outputKey]["value"];
       }
       return null;
+    },
+
+    __getOutputsData: function() {
+      const outputsData = {};
+      Object.keys(this.getOutputs()).forEach(outKey => {
+        const outData = this.__getOutputData(outKey);
+        if (outData !== null) {
+          outputsData[outKey] = outData;
+        }
+      });
+      return outputsData;
     },
 
     // post edge creation routine
@@ -923,7 +934,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __initParameter: function() {
-      if (this.isParameter() && this.getOutputData("out_1") === null) {
+      if (this.isParameter() && this.__getOutputData("out_1") === null) {
         const type = osparc.component.node.ParameterEditor.getParameterOutputType(this);
         // set default values if none
         let val = null;
@@ -1258,6 +1269,7 @@ qx.Class.define("osparc.data.model.Node", {
       };
       if (!clean) {
         nodeEntry.progress = this.getStatus().getProgress();
+        nodeEntry.outputs = this.__getOutputsData();
       }
 
       if (this.isContainer()) {
@@ -1266,12 +1278,7 @@ qx.Class.define("osparc.data.model.Node", {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
       } else if (this.isParameter()) {
-        const paramOutKey = "out_1";
-        if (this.getOutputData(paramOutKey) !== null) {
-          const output = {};
-          output[paramOutKey] = this.getOutputData(paramOutKey);
-          nodeEntry.outputs = output;
-        }
+        nodeEntry.outputs = this.__getOutputsData();
       }
 
       // remove null entries from the payload

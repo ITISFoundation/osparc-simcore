@@ -88,7 +88,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
             Promise.all(iterationPromises)
               .then(values => {
                 this.__iterations = values;
-                // this.__listenToNodeUpdates();
+                this.__listenToNodeUpdates();
                 this.__rebuildIterationsTable();
               });
           }
@@ -100,21 +100,29 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       const slotName = "nodeUpdated";
       // if (!socket.slotExists(slotName)) {
       socket.on(slotName, data => {
-        const d = JSON.parse(data);
-        const studyId = d["project_id"];
-        const idx = this.__iterations.findIndex(it => it["uuid"] === studyId);
+        const dataUpdate = JSON.parse(data);
+        const idx = this.__iterations.findIndex(it => it["uuid"] === dataUpdate["project_id"]);
         if (idx === -1) {
           return;
         }
-
-        const iterationData = this.__iterations[idx];
-        const iteration = new osparc.data.model.Study(iterationData);
-        iteration.buildWorkbench();
-        iteration.nodeUpdated(d);
-        this.__iterations.splice(idx, 1, iteration.serialize());
-        this.__iterationsTable.iterationsToTable(this.__iterations);
+        this.__iterationUpdated(dataUpdate);
       }, this);
       // }
+    },
+
+    __iterationUpdated: function(dataUpdate) {
+      const idx = this.__iterations.findIndex(it => it["uuid"] === dataUpdate["project_id"]);
+      if (idx === -1) {
+        return;
+      }
+
+      const iterationData = this.__iterations[idx];
+      const iteration = new osparc.data.model.Study(iterationData);
+      iteration.buildWorkbench();
+      iteration.nodeUpdated(dataUpdate);
+      const iterationDataUpdated = iteration.serialize(false);
+      this.__iterations.splice(idx, 1, iterationDataUpdated);
+      this.__iterationsTable.iterationsToTable(this.__iterations);
     },
 
     __rebuildIterationsTable: function() {
@@ -126,7 +134,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
         this.__iterationsSection.remove(this.__iterationsTable);
       }
 
-      const iterationsTable = this.__iterationsTable = new osparc.component.snapshots.Iterations(this.__study.serialize());
+      const iterationsTable = this.__iterationsTable = new osparc.component.snapshots.Iterations(this.__study.serialize(false));
       iterationsTable.populateTable(this.__iterations);
       iterationsTable.addListener("cellTap", e => {
         const selectedRow = e.getRow();
