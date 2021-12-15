@@ -64,7 +64,7 @@ qx.Class.define("osparc.data.model.Node", {
       key,
       version,
       nodeId: uuid || osparc.utils.Utils.uuidv4(),
-      status: new osparc.data.model.NodeStatus()
+      status: new osparc.data.model.NodeStatus(this)
     });
 
     const metaData = this.__metaData = osparc.utils.Services.getMetaData(key, version);
@@ -453,21 +453,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     populateStates: function(nodeData) {
       if ("state" in nodeData) {
-        if ("dependencies" in nodeData.state) {
-          this.getStatus().setDependencies(nodeData.state.dependencies);
-        }
-        if ("currentStatus" in nodeData.state && this.isComputational()) {
-          // currentStatus is only applicable to computational services
-          this.getStatus().setRunning(nodeData.state.currentStatus);
-        }
-        if ("modified" in nodeData.state) {
-          if (this.getStatus().getHasOutputs()) {
-            // File Picker can't have a modified output
-            this.getStatus().setModified((nodeData.state.modified || this.getStatus().hasDependencies()) && !this.isFilePicker());
-          } else {
-            this.getStatus().setModified(null);
-          }
-        }
+        this.getStatus().setState(nodeData.state);
       }
     },
 
@@ -1270,6 +1256,7 @@ qx.Class.define("osparc.data.model.Node", {
       if (!clean) {
         nodeEntry.progress = this.getStatus().getProgress();
         nodeEntry.outputs = this.__getOutputsData();
+        nodeEntry.state = this.getStatus().serialize();
       }
 
       if (this.isContainer()) {
