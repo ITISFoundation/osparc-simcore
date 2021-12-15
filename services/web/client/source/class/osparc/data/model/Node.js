@@ -1244,7 +1244,7 @@ qx.Class.define("osparc.data.model.Node", {
       };
     },
 
-    serialize: function() {
+    serialize: function(clean = true) {
       // node generic
       let nodeEntry = {
         key: this.getKey(),
@@ -1256,6 +1256,9 @@ qx.Class.define("osparc.data.model.Node", {
         parent: this.getParentNodeId(),
         thumbnail: this.getThumbnail()
       };
+      if (!clean) {
+        nodeEntry.progress = this.getStatus().getProgress();
+      }
 
       if (this.isContainer()) {
         nodeEntry.outputNodes = this.getExposedNodeIDs();

@@ -462,7 +462,7 @@ qx.Class.define("osparc.data.model.Study", {
       return !this.getUi().getSlideshow().isEmpty();
     },
 
-    serialize: function() {
+    serialize: function(clean = true) {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
@@ -470,7 +470,7 @@ qx.Class.define("osparc.data.model.Study", {
           return;
         }
         if (key === "workbench") {
-          jsonObject[key] = this.getWorkbench().serialize();
+          jsonObject[key] = this.getWorkbench().serialize(clean);
           return;
         }
         if (key === "ui") {
