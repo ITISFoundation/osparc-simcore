@@ -51,7 +51,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       this._add(iterationsSection, {
         flex: 1
       });
-      this.__rebuildIterations();
+      this.__buildIterations();
       this.__buildIterationsPreview();
 
       const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox());
@@ -67,7 +67,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       buttonsSection.add(openIterationBtn);
     },
 
-    __rebuildIterations: function() {
+    __buildIterations: function() {
       const loadingTable = this.__loadingTable = new osparc.component.snapshots.Loading(this.tr("iterations"));
       this.__iterationsSection.addAt(loadingTable, 0, {
         width: "50%"
@@ -98,7 +98,6 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     __listenToNodeUpdates: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
       const slotName = "nodeUpdated";
-      // if (!socket.slotExists(slotName)) {
       socket.on(slotName, data => {
         const dataUpdate = JSON.parse(data);
         const idx = this.__iterations.findIndex(it => it["uuid"] === dataUpdate["project_id"]);
@@ -107,7 +106,6 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
         }
         this.__iterationUpdated(dataUpdate);
       }, this);
-      // }
     },
 
     __iterationUpdated: function(dataUpdate) {
@@ -208,6 +206,12 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       if (this.__openIterationBtn) {
         this.__openIterationBtn.setEnabled(true);
       }
+    },
+
+    unlistenToNodeUpdates: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      const slotName = "nodeUpdated";
+      socket.removeSlot(slotName);
     }
   }
 });

@@ -609,18 +609,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }, this);
       }
 
-      // callback for node updates
-      const slotName3 = "nodeUpdated";
-      if (!socket.slotExists(slotName3)) {
-        socket.on(slotName3, data => {
-          const d = JSON.parse(data);
-          const studyId = d["project_id"];
-          if (studyId !== this.getStudy().getUuid()) {
-            return;
-          }
-          this.getStudy().nodeUpdated(d);
-        }, this);
-      }
+      this.listenToNodeUpdated();
 
       // callback for events
       const slotName4 = "event";
@@ -639,6 +628,22 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             const text = `New inputs for service ${label}. Please reload to refresh service.`;
             osparc.component.message.FlashMessenger.getInstance().logAs(text, "INFO");
           }
+        }, this);
+      }
+    },
+
+    listenToNodeUpdated: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+
+      const slotName = "nodeUpdated";
+      if (!socket.slotExists(slotName)) {
+        socket.on(slotName, data => {
+          const d = JSON.parse(data);
+          const studyId = d["project_id"];
+          if (studyId !== this.getStudy().getUuid()) {
+            return;
+          }
+          this.getStudy().nodeUpdated(d);
         }, this);
       }
     },

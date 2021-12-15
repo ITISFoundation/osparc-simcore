@@ -499,6 +499,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         const studyId = e.getData();
         this.fireDataEvent("startIteration", studyId);
       });
+      win.addListener("close", () => {
+        iterations.unlistenToNodeUpdates();
+        this.__workbenchView.listenToNodeUpdated();
+      }, this);
     },
 
     __startAutoSaveTimer: function() {
