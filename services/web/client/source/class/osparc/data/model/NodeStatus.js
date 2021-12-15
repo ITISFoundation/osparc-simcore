@@ -134,7 +134,7 @@ qx.Class.define("osparc.data.model.NodeStatus", {
 
     serialize: function() {
       const state = {};
-      state["dependencies"] = this.getDepencies() ? this.getDepencies() : [];
+      state["dependencies"] = this.getDependencies() ? this.getDependencies() : [];
       if (this.getNode().isComputational()) {
         state["currentStatus"] = this.getRunning();
       }
