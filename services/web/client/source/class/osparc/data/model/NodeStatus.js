@@ -115,6 +115,9 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     },
 
     setState: function(state) {
+      if (state == undefined || state === null) {
+        return;
+      }
       if ("dependencies" in state) {
         this.setDependencies(state.dependencies);
       }
