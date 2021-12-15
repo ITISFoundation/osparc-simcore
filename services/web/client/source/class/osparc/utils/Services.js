@@ -34,32 +34,32 @@ qx.Class.define("osparc.utils.Services", {
   statics: {
     TYPES: {
       parameter: {
-        label: "",
+        label: qx.locale.Manager.tr("Parameter"),
         icon: "@FontAwesome5Solid/sliders-h/",
         sorting: 0
       },
       file: {
-        label: "",
+        label: qx.locale.Manager.tr("File"),
         icon: "@FontAwesome5Solid/file/",
         sorting: 1
       },
       iterator: {
-        label: "",
+        label: qx.locale.Manager.tr("Iterator"),
         icon: "@FontAwesome5Solid/copy/",
         sorting: 2
       },
       computational: {
-        label: "Computational",
+        label: qx.locale.Manager.tr("Computational"),
         icon: "@FontAwesome5Solid/cogs/",
         sorting: 3
       },
       dynamic: {
-        label: "Interactive",
+        label: qx.locale.Manager.tr("Interactive"),
         icon: "@FontAwesome5Solid/mouse-pointer/",
         sorting: 4
       },
       probe: {
-        label: "",
+        label: qx.locale.Manager.tr("Probe"),
         icon: "@FontAwesome5Solid/thermometer/",
         sorting: 5
       }
