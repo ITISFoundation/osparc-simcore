@@ -119,16 +119,36 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       iteration.buildWorkbench();
       iteration.setReadOnly(true);
       iteration.nodeUpdated(dataUpdate);
+      const iterationDataUpdated = iteration.serialize(false);
+      this.__iterations.splice(idx, 1, iterationDataUpdated);
 
-      if (this.__selectedIterationId === iteration.getUuid()) {
-        this.__iterationPreview.set({
-          study: iteration
-        });
+      // update maximum once every 2"
+      const throttleTime = 2000;
+      let throttleTimer;
+      const throttle = (callback, time) => {
+        if (throttleTimer) {
+          return;
+        }
+        throttleTimer = true;
+        setTimeout(() => {
+          callback();
+          throttleTimer = false;
+        }, time);
+      };
+      throttle(this.__updateNewData.bind(this), throttleTime);
+    },
+
+    __updateNewData: function() {
+      const idx = this.__iterations.findIndex(it => it["uuid"] === this.__selectedIterationId);
+      if (idx > -1) {
+        const iterationData = this.__iterations[idx];
+        const iteration = new osparc.data.model.Study(iterationData);
+        iteration.buildWorkbench();
+        iteration.setReadOnly(true);
+        this.__iterationPreview.setStudy(iteration);
         this.__iterationPreview.loadModel(iteration.getWorkbench());
       }
 
-      const iterationDataUpdated = iteration.serialize(false);
-      this.__iterations.splice(idx, 1, iterationDataUpdated);
       this.__iterationsTable.iterationsToTable(this.__iterations);
     },
 
