@@ -46,6 +46,17 @@ async def pull_file_from_remote(
     await log_publishing_cb(
         f"Downloading '{src_url.path.strip('/')}' into local file '{dst_path.name}'..."
     )
+    logger.debug(
+        "Pulling file from %s -> %s [%s]",
+        f"{src_url=}",
+        f"{dst_path=}",
+        f"{dst_path.parent.exists()=}",
+    )
+    if not dst_path.parent.exists():
+        raise ValueError(
+            f"{dst_path.parent=} does not exist. It must be created by the caller"
+        )
+
     src_mime_type, _ = mimetypes.guess_type(f"{src_url.path}")
     dst_mime_type, _ = mimetypes.guess_type(dst_path)
 

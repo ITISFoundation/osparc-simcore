@@ -30,10 +30,14 @@ class TaskSharedVolumes:
                     "The path %s already exists. It will be wiped out now.", folder_path
                 )
                 shutil.rmtree(folder_path, onerror=_log_error)
+            # NOTE: PC->SAN: if rmtree fails, there is a risk of rewriting i/os that can start from here
+            # we should guarantee at this point that these folders exists and are empty
             folder_path.mkdir(parents=True, exist_ok=True)
             logger.debug(
-                "created inputs,outputs,logs folders in %s",
-                self.base_path,
+                "created %s in %s [%s]",
+                f"{folder=}",
+                f"{self.base_path=}",
+                f"{folder_path.exists()=}",
             )
 
     @property
