@@ -57,7 +57,10 @@ class FilePortSchema(PortSchema):
 
 class FileUrl(BaseModel):
     url: AnyUrl
-    file_mapping: Optional[str] = None
+    file_mapping: Optional[str] = Field(
+        None,
+        description="Local file relpath name (if given), otherwise it takes the url filename",
+    )
 
     class Config:
         extra = Extra.forbid
@@ -73,7 +76,6 @@ class FileUrl(BaseModel):
 
 PortKey = Annotated[str, Field(regex=PROPERTY_KEY_RE)]
 PortValue = Union[StrictBool, StrictInt, StrictFloat, StrictStr, FileUrl, None]
-PortSchemaValue = Union[PortSchema, FilePortSchema]
 
 
 class TaskInputData(DictModel[PortKey, PortValue]):
@@ -91,7 +93,12 @@ class TaskInputData(DictModel[PortKey, PortValue]):
         }
 
 
+PortSchemaValue = Union[PortSchema, FilePortSchema]
+
+
 class TaskOutputDataSchema(DictModel[PortKey, PortSchemaValue]):
+    # This describes
+    #
     class Config(DictModel.Config):
         schema_extra = {
             "examples": [

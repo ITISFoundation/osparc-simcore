@@ -151,6 +151,12 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
                 f"some_file_input_{index+1}": FileUrl(url=f"{file}")
                 for index, file in enumerate(ftp_server)
             },
+            **{
+                f"some_file_input_with_mapping{index+1}": FileUrl(
+                    url=f"{file}", file_mapping=f"{index+1}/some_file_input"
+                )
+                for index, file in enumerate(ftp_server)
+            },
         }
     )
     # check in the console that the expected files are present in the expected INPUT folder (set as ${INPUT_FOLDER} in the service)
@@ -158,11 +164,11 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
     list_of_commands = [
         "echo User: $(id $(whoami))",
         "echo Inputs:",
-        "ls -tlah ${INPUT_FOLDER}",
+        "ls -tlah -R ${INPUT_FOLDER}",
         "echo Outputs:",
-        "ls -tlah ${OUTPUT_FOLDER}",
+        "ls -tlah -R ${OUTPUT_FOLDER}",
         "echo Logs:",
-        "ls -tlah ${LOG_FOLDER}",
+        "ls -tlah -R ${LOG_FOLDER}",
     ]
     list_of_commands += [
         f"(test -f ${{INPUT_FOLDER}}/{file} || (echo ${{INPUT_FOLDER}}/{file} does not exists && exit 1))"
@@ -197,7 +203,12 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
                     "required": True,
                     "mapping": "a_outputfile",
                     "url": f"{output_file_url}",
-                }
+                },
+                "pytest_file_with_mapping": {
+                    "required": True,
+                    "mapping": "subfolder/a_outputfile",
+                    "url": f"{output_file_url}",
+                },
             },
         }
     )
@@ -208,7 +219,11 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
                 "pytest_file": {
                     "url": f"{output_file_url}",
                     "file_mapping": "a_outputfile",
-                }
+                },
+                "pytest_file_with_mapping": {
+                    "url": f"{output_file_url}",
+                    "file_mapping": "subfolder/a_outputfile",
+                },
             },
         }
     )
