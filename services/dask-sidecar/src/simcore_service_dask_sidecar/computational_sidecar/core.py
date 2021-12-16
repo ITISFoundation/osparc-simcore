@@ -27,6 +27,7 @@ from models_library.projects_state import RunningState
 from packaging import version
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
+from yarl import URL
 
 from ..boot_mode import BootMode
 from ..dask_utils import create_dask_worker_logger, publish_event
@@ -82,12 +83,19 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
 
         for input_key, input_params in self.input_data.items():
             if isinstance(input_params, FileUrl):
-                destination_path = task_volumes.inputs_folder / (
-                    input_params.file_mapping or input_key
+                file_name = (
+                    input_params.file_mapping
+                    or Path(URL(input_params.url).path.strip("/")).name
                 )
+                assert (  # nosec
+                    len(URL(input_params.url).path.strip("/").split("/")) == 4
+                ), f"{URL(input_params.url).path=} expected bucket/project/node/filename.ext"
+
+                destination_path = task_volumes.inputs_folder / file_name
+
                 if destination_path.parent != task_volumes.inputs_folder:
                     # NOTE: only 'task_volumes.inputs_folder' part of 'destination_path' is guaranteed,
-                    # if extra subfolders (e.g. file-mapping allows subfolders),
+                    # if extra subfolders via file-mapping,
                     # then we make them first
                     destination_path.parent.mkdir(parents=True)
 
@@ -117,8 +125,9 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             )
             logger.debug(
                 "following outputs will be searched for:\n%s",
-                pformat(self.output_data_keys.dict()),
+                self.output_data_keys.json(indent=1),
             )
+
             output_data = TaskOutputData.from_task_output(
                 self.output_data_keys,
                 task_volumes.outputs_folder,
@@ -126,11 +135,13 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 if integration_version > LEGACY_INTEGRATION_VERSION
                 else "output.json",
             )
+
             upload_tasks = []
-            for output_key, output_params in output_data.items():
+            for output_params in output_data.values():
                 if isinstance(output_params, FileUrl):
                     src_path = task_volumes.outputs_folder / (
-                        output_params.file_mapping or output_key
+                        output_params.file_mapping
+                        or Path(URL(output_params.url).path.strip("/")).name
                     )
                     upload_tasks.append(
                         push_file_to_remote(
@@ -138,8 +149,9 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                         )
                     )
             await asyncio.gather(*upload_tasks)
+
             await self._publish_sidecar_log("All the output data were uploaded.")
-            logger.info("retrieved outputs data:\n%s", pformat(output_data.dict()))
+            logger.info("retrieved outputs data:\n%s", output_data.json(indent=1))
             return output_data
 
         except ValidationError as exc:
