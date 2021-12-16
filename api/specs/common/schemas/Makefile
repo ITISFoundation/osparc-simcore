@@ -17,7 +17,8 @@ all: check $(outputs)
 
 # target: check – Checks whether tool is installed
 check:
-	@echo "$(TOOL_IMAGE_NAME) is in place" \
+	@docker history $(TOOL_IMAGE_NAME) 2>/dev/null \
+	&& echo "$(TOOL_IMAGE_NAME) is in place" \
 	|| echo "MISSING $(TOOL_IMAGE_NAME) tool. SEE "scripts/$(TOOL_IMAGE_NAME)" to build it"
 
 # target: clean – Cleans all *-converted.yaml

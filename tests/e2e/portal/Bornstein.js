@@ -7,6 +7,7 @@ const args = process.argv.slice(2);
 const {
   urlPrefix,
   templateUuid,
+  startTimeout,
   enableDemoMode
 } = utils.parseCommandLineArgumentsTemplate(args);
 
@@ -24,7 +25,7 @@ async function runTutorial () {
     console.log("Study ID:", studyId);
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
-    await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]]);
+    await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]], startTimeout);
 
     await tutorial.waitFor(60000, 'Some time for starting the service');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');

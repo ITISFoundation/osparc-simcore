@@ -139,24 +139,36 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
+    getOutputFileMetadata: function(node) {
+      return new Promise((resolve, reject) => {
+        const outValue = osparc.file.FilePicker.getOutput(node.getOutputs());
+        const params = {
+          url: {
+            locationId: outValue.store,
+            datasetId: outValue.dataset
+          }
+        };
+        osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
+          .then(files => {
+            const fileMetadata = files.find(file => file.file_id === outValue.path);
+            if (fileMetadata) {
+              resolve(fileMetadata);
+            } else {
+              reject();
+            }
+          })
+          .catch(() => reject());
+      });
+    },
+
     buildFileFromStoreInfoView: function(node, form) {
-      const outValue = osparc.file.FilePicker.getOutput(node.getOutputs());
-      const params = {
-        url: {
-          locationId: outValue.store,
-          datasetId: outValue.dataset
-        }
-      };
-      osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
-        .then(files => {
-          const fileMetadata = files.find(file => file.file_uuid === outValue.path);
-          if (fileMetadata) {
-            for (let [key, value] of Object.entries(fileMetadata)) {
-              const entry = new qx.ui.form.TextField();
-              form.add(entry, key, null, key);
-              if (value) {
-                entry.setValue(value.toString());
-              }
+      this.self().getOutputFileMetadata(node)
+        .then(fileMetadata => {
+          for (let [key, value] of Object.entries(fileMetadata)) {
+            const entry = new qx.ui.form.TextField();
+            form.add(entry, key, null, key);
+            if (value) {
+              entry.setValue(value.toString());
             }
           }
         });
@@ -189,6 +201,17 @@ qx.Class.define("osparc.file.FilePicker", {
       }
 
       return new qx.ui.form.renderer.Single(form);
+    },
+
+    downloadOutput: function(node) {
+      this.self().getOutputFileMetadata(node)
+        .then(fileMetadata => {
+          if ("location_id" in fileMetadata && "file_id" in fileMetadata) {
+            const locationId = fileMetadata["location_id"];
+            const fileId = fileMetadata["file_id"];
+            osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId);
+          }
+        });
     },
 
     serializeOutput: function(outputs) {

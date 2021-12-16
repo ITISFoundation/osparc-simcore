@@ -2,11 +2,9 @@ import logging
 from typing import List
 
 from aiohttp import web
+from models_library.rest_pagination import DEFAULT_NUMBER_OF_ITEMS_PER_PAGE, Page
+from models_library.rest_pagination_utils import paginate_data
 from pydantic.decorator import validate_arguments
-from servicelib.rest_pagination_utils import (
-    DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
-    PageResponseLimitOffset,
-)
 
 from ._meta import api_version_prefix as VTAG
 from .login.decorators import login_required
@@ -90,14 +88,17 @@ async def _list_repos_handler(request: web.Request):
         for row in repos_rows
     ]
 
-    return web.Response(
-        text=PageResponseLimitOffset.paginate_data(
-            data=repos_list,
+    page = Page[RepoApiModel].parse_obj(
+        paginate_data(
+            chunk=repos_list,
             request_url=request.url,
             total=total_number_of_repos,
             limit=_limit,
             offset=_offset,
-        ).json(**RESPONSE_MODEL_POLICY),
+        )
+    )
+    return web.Response(
+        text=page.json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )
 
@@ -168,14 +169,17 @@ async def _list_checkpoints_handler(request: web.Request):
         for checkpoint in checkpoints
     ]
 
-    return web.Response(
-        text=PageResponseLimitOffset.paginate_data(
-            data=checkpoints_list,
+    page = Page[CheckpointApiModel].parse_obj(
+        paginate_data(
+            chunk=checkpoints_list,
             request_url=request.url,
             total=total,
-            limit=_limit or total,
+            limit=_limit,
             offset=_offset,
-        ).json(**RESPONSE_MODEL_POLICY),
+        )
+    )
+    return web.Response(
+        text=page.json(**RESPONSE_MODEL_POLICY),
         content_type="application/json",
     )
 

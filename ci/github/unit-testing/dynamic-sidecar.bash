@@ -20,7 +20,9 @@ codestyle() {
 }
 
 test() {
-  pytest --cov=simcore_service_dynamic_sidecar --durations=10 --cov-append \
+  pytest --log-format="%(asctime)s %(levelname)s %(message)s" \
+    --log-date-format="%Y-%m-%d %H:%M:%S" \
+    --cov=simcore_service_dynamic_sidecar --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
     -v -m "not travis" services/dynamic-sidecar/tests/unit
 }

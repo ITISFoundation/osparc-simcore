@@ -102,9 +102,29 @@ SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),N
 
 .PHONY: build build-nc rebuild build-devel build-devel-nc
 
+# docker buildx cache location
+DOCKER_BUILDX_CACHE_FROM ?= /tmp/.buildx-cache
+DOCKER_BUILDX_CACHE_TO ?= /tmp/.buildx-cache
+DOCKER_TARGET_PLATFORMS ?= linux/amd64
+comma := ,
+
 define _docker_compose_build
 export BUILD_TARGET=$(if $(findstring -devel,$@),development,production);\
-pushd services && docker buildx bake --file docker-compose-build.yml $(if $(target),$(target),) && popd;
+pushd services &&\
+$(foreach service, $(SERVICES_LIST),\
+	$(if $(push),\
+		export $(subst -,_,$(shell echo $(service) | tr a-z A-Z))_VERSION=$(shell cat services/$(service)/VERSION);\
+	,) \
+)\
+docker buildx bake \
+	$(if $(findstring -devel,$@),,\
+	--set *.platform=$(DOCKER_TARGET_PLATFORMS) \
+	)\
+	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,--set *.output="type=docker$(comma)push=false") \
+	$(if $(push),--push,) \
+	$(if $(push),--file docker-bake.hcl,) --file docker-compose-build.yml $(if $(target),$(target),) \
+	$(if $(findstring -nc,$@),--no-cache,) &&\
+popd;
 endef
 
 rebuild: build-nc # alias
@@ -512,12 +532,13 @@ info: ## displays setup information
 	@echo ' python        : $(shell python3 --version)'
 	@echo ' node          : $(shell node --version 2> /dev/null || echo ERROR nodejs missing)'
 	@echo ' docker        : $(shell docker --version)'
+	@echo ' docker buildx : $(shell docker buildx version)'
 	@echo ' docker-compose: $(shell docker-compose --version)'
 
 
 define show-meta
 	$(foreach iid,$(shell docker images */$(1):* -q | sort | uniq),\
-		docker image inspect $(iid) | jq '.[0] | .RepoTags, .ContainerConfig.Labels';)
+		docker image inspect $(iid) | jq '.[0] | .RepoTags, .Config.Labels, .Architecture';)
 endef
 
 info-images:  ## lists tags and labels of built images. To display one: 'make target=webserver info-images'

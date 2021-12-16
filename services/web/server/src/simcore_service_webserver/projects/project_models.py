@@ -1,7 +1,10 @@
 from enum import Enum
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from simcore_postgres_database.models.projects import ProjectType
+
+# TODO: extend
+ProjectDict = Dict[str, Any]
 
 
 class ProjectTypeAPI(str, Enum):

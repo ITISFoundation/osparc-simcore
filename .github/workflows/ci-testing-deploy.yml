@@ -596,7 +596,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.8, 3.9, "3.10"]
+        python: [3.8, 3.9]
         os: [ubuntu-20.04]
         docker_buildx: [v0.5.1]
         docker_compose: [1.29.1]
@@ -2380,24 +2380,25 @@ jobs:
   deploy:
     name: deploy to dockerhub
     if: github.event_name == 'push'
-    needs:
-      [
+    needs: [
+        unit-test-api-server,
         unit-test-api,
         unit-test-catalog,
-        unit-test-datcore-adapter,
-        unit-test-director,
-        unit-test-director-v2,
-        unit-test-dynamic-sidecar,
-        unit-test-dask-task-models-library,
         unit-test-dask-sidecar,
+        unit-test-dask-task-models-library,
+        unit-test-datcore-adapter,
+        unit-test-director-v2,
+        unit-test-director,
+        unit-test-dynamic-sidecar,
         unit-test-frontend,
+        unit-test-models-library,
+        unit-test-postgres-database,
+        unit-test-python-linting,
         unit-test-service-integration,
         unit-test-service-library,
         unit-test-settings-library,
-        unit-test-models-library,
         unit-test-simcore-sdk,
         unit-test-storage,
-        unit-test-webserver-isolated,
         unit-test-webserver-01,
         unit-test-webserver-02,
         unit-test-webserver-03,
@@ -2408,11 +2409,12 @@ jobs:
         unit-test-webserver-08,
         unit-test-webserver-09,
         unit-test-webserver-10,
-        integration-test-webserver-01,
-        integration-test-webserver-02,
+        unit-test-webserver-isolated,
         integration-test-director-v2-01,
         integration-test-director-v2-02,
         integration-test-simcore-sdk,
+        integration-test-webserver-01,
+        integration-test-webserver-02,
         system-test-public-api,
         system-test-swarm-deploy,
       ]
