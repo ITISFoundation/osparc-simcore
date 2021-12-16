@@ -27,7 +27,6 @@ from models_library.projects_state import RunningState
 from packaging import version
 from pydantic import ValidationError
 from pydantic.networks import AnyUrl
-from yarl import URL
 
 from ..boot_mode import BootMode
 from ..dask_utils import create_dask_worker_logger, publish_event
@@ -80,13 +79,18 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         )
         input_data = {}
         download_tasks = []
+
         for input_key, input_params in self.input_data.items():
             if isinstance(input_params, FileUrl):
                 destination_path = task_volumes.inputs_folder / (
-                    input_params.file_mapping or URL(input_params.url).path.strip("/")
+                    input_params.file_mapping or input_key
                 )
-                # NOTE: only 'task_volumes.inputs_folder' part of 'destination_path' is guaranteed
-                destination_path.parent.mkdir(parents=True, exist_ok=True)
+                if destination_path.parent != task_volumes.inputs_folder:
+                    # NOTE: only 'task_volumes.inputs_folder' part of 'destination_path' is guaranteed,
+                    # if extra subfolders (e.g. file-mapping allows subfolders),
+                    # then we make them first
+                    destination_path.parent.mkdir(parents=True)
+
                 download_tasks.append(
                     pull_file_from_remote(
                         input_params.url, destination_path, self._publish_sidecar_log
@@ -123,11 +127,10 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 else "output.json",
             )
             upload_tasks = []
-            for output_params in output_data.values():
+            for output_key, output_params in output_data.items():
                 if isinstance(output_params, FileUrl):
                     src_path = task_volumes.outputs_folder / (
-                        output_params.file_mapping
-                        or URL(output_params.url).path.strip("/")
+                        output_params.file_mapping or output_key
                     )
                     upload_tasks.append(
                         push_file_to_remote(
