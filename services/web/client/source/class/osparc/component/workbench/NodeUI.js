@@ -192,11 +192,17 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
 
     __applyNode: function(node) {
       if (node.getKey().includes("parameter/int")) {
-        const makeIterator = new qx.ui.menu.Button(this.tr("Convert to Iterator"));
+        const makeIterator = new qx.ui.menu.Button().set({
+          label: this.tr("Convert to Iterator"),
+          icon: "@FontAwesome5Solid/sync-alt/10"
+        });
         makeIterator.addListener("execute", () => node.convertToIterator("int"), this);
         this._optionsMenu.add(makeIterator);
       } else if (node.getKey().includes("data-iterator/int-range")) {
-        const convertToParameter = new qx.ui.menu.Button(this.tr("Convert to Parameter"));
+        const convertToParameter = new qx.ui.menu.Button().set({
+          label: this.tr("Convert to Parameter"),
+          icon: "@FontAwesome5Solid/sync-alt/10"
+        });
         convertToParameter.addListener("execute", () => node.convertToParameter("int"), this);
         this._optionsMenu.add(convertToParameter);
       }

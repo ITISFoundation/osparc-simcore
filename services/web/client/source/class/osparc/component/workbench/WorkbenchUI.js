@@ -475,6 +475,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       const nodeUI = new osparc.component.workbench.NodeUI(node);
       this.bind("scale", nodeUI, "scale");
+      node.addListener("keyChanged", () => this.activeNodeChanged(nodeUI), this);
       nodeUI.populateNodeLayout(this.__svgLayer);
       nodeUI.addListener("renameNode", e => this.__openNodeRenamer(e.getData()), this);
       nodeUI.addListener("infoNode", e => this.__openNodeInfo(e.getData()), this);
