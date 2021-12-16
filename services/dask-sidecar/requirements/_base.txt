@@ -59,7 +59,7 @@ cloudpickle==1.6.0
     #   distributed
 cytoolz==0.11.0
     # via -r requirements/_base.in
-dask==2021.10.0
+dask==2021.12.0
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -69,7 +69,7 @@ dask-gateway==0.9.0
     # via -r requirements/_base.in
 defusedxml==0.7.1
     # via nbconvert
-distributed==2021.10.0
+distributed==2021.12.0
     # via
     #   dask
     #   dask-gateway
