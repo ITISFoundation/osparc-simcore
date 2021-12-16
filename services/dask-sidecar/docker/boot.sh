@@ -35,17 +35,20 @@ fi
 
 if [ ${DASK_START_AS_SCHEDULER+x} ]; then
   SCHEDULER_VERSION=$(dask-scheduler --version)
-
-  echo "$INFO" "Starting as ${SCHEDULER_VERSION}..."
+  DASK_SCHEDULER_OPTIONS="${DASK_SCHEDULER_OPTIONS:-}"
+  echo "$INFO" "Starting as ${SCHEDULER_VERSION}, using ${DASK_SCHEDULER_OPTIONS}..."
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-
-    exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
-      dask-scheduler
+    exec watchmedo auto-restart \
+      --recursive \
+      --pattern="*.py;*/src/*" \
+      --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \
+      --ignore-directories -- \
+      dask-scheduler \
+      "${DASK_SCHEDULER_OPTIONS}"
 
   else
-
-    exec dask-scheduler
-
+    exec dask-scheduler \
+      "${DASK_SCHEDULER_OPTIONS[@]}"
   fi
 else
   DASK_WORKER_VERSION=$(dask-worker --version)
