@@ -61,9 +61,9 @@ qx.Class.define("osparc.data.model.Node", {
       this.setStudy(study);
     }
     this.set({
+      nodeId: uuid || osparc.utils.Utils.uuidv4(),
       key,
       version,
-      nodeId: uuid || osparc.utils.Utils.uuidv4(),
       status: new osparc.data.model.NodeStatus(this)
     });
 
@@ -80,8 +80,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     key: {
       check: "String",
-      nullable: true,
-      event: "changeKey"
+      nullable: true
     },
 
     version: {
@@ -202,6 +201,7 @@ qx.Class.define("osparc.data.model.Node", {
 
   events: {
     "retrieveInputs": "qx.event.type.Data",
+    "reloadModel": "qx.event.type.Event",
     "fileRequested": "qx.event.type.Data",
     "parameterRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
