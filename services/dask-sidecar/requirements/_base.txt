@@ -83,7 +83,7 @@ frozenlist==1.2.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2021.10.1
+fsspec==2021.11.1
     # via
     #   -c requirements/constraints.txt
     #   dask
