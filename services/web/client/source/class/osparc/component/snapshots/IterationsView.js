@@ -45,6 +45,9 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     __iterationPreview: null,
     __openIterationBtn: null,
     __selectedIterationId: null,
+    // throttling
+    __lastUpdate: null,
+    __lastFunc: null,
 
     __buildLayout: function() {
       const iterationsSection = this.__iterationsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -124,18 +127,24 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
 
       // update maximum once every 2"
       const throttleTime = 2000;
-      let throttleTimer;
-      const throttle = (callback, time) => {
-        if (throttleTimer) {
-          return;
+      this.__throttleUpdate(this.__updateNewData.bind(this), throttleTime);
+    },
+
+    __throttleUpdate: function(callback, time) {
+      if (this.__lastUpdate) {
+        if (this.__lastFunc) {
+          clearTimeout(this.__lastFunc);
         }
-        throttleTimer = true;
-        setTimeout(() => {
-          callback();
-          throttleTimer = false;
-        }, time);
-      };
-      throttle(this.__updateNewData.bind(this), throttleTime);
+        this.__lastFunc = setTimeout(() => {
+          if ((Date.now() - this.__lastUpdate) >= time) {
+            callback();
+            this.__lastUpdate = Date.now();
+          }
+        }, time - (Date.now() - this.__lastUpdate));
+      } else {
+        callback();
+        this.__lastUpdate = Date.now();
+      }
     },
 
     __updateNewData: function() {
