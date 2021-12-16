@@ -87,9 +87,6 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     input_params.file_mapping
                     or Path(URL(input_params.url).path.strip("/")).name
                 )
-                assert (  # nosec
-                    len(URL(input_params.url).path.strip("/").split("/")) == 4
-                ), f"{URL(input_params.url).path=} expected bucket/project/node/filename.ext"
 
                 destination_path = task_volumes.inputs_folder / file_name
 
@@ -139,10 +136,11 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             upload_tasks = []
             for output_params in output_data.values():
                 if isinstance(output_params, FileUrl):
-                    src_path = task_volumes.outputs_folder / (
+                    assert (  # nosec
                         output_params.file_mapping
-                        or Path(URL(output_params.url).path.strip("/")).name
-                    )
+                    ), f"{output_params.json(indent=1)} expected resolved in TaskOutputData.from_task_output"
+
+                    src_path = task_volumes.outputs_folder / output_params.file_mapping
                     upload_tasks.append(
                         push_file_to_remote(
                             src_path, output_params.url, self._publish_sidecar_log

@@ -248,6 +248,8 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
     list_of_commands += [
         f"echo {jsonized_outputs} > ${{OUTPUT_FOLDER}}/{output_json_file_name}",
         "echo 'some data for the output file' > ${OUTPUT_FOLDER}/a_outputfile",
+        "mkdir -p ${OUTPUT_FOLDER}/subfolder",
+        "echo 'some data for the output file' > ${OUTPUT_FOLDER}/subfolder/a_outputfile",
     ]
 
     log_file_url = parse_obj_as(
@@ -258,8 +260,8 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         docker_basic_auth=DockerBasicAuth(
             server_address="docker.io", username="pytest", password=""
         ),
-        service_key="ubuntu",
-        service_version="latest",
+        service_key="itisfoundation/sleeper",
+        service_version="2.1.2",
         command=[
             "/bin/bash",
             "-c",

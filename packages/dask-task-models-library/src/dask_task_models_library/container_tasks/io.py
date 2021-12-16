@@ -141,11 +141,14 @@ class TaskOutputData(DictModel[PortKey, PortValue]):
 
         for output_key, output_params in schema.items():
             if isinstance(output_params, FilePortSchema):
-                file_path = output_folder / (output_params.mapping or output_key)
+                file_relpath = output_params.mapping or output_key
+                # TODO: file_path is built here, saved truncated in file_mapping and
+                # then rebuild again int _retrieve_output_data. Review.
+                file_path = output_folder / file_relpath
                 if file_path.exists():
                     data[output_key] = {
                         "url": f"{output_params.url}",
-                        "file_mapping": file_path.name,
+                        "file_mapping": file_relpath,
                     }
                 elif output_params.required:
                     raise ValueError(
