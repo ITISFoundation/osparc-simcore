@@ -6,20 +6,25 @@ import asyncio
 import hashlib
 import itertools
 import os
+import pathlib
 import random
 import secrets
 import string
 import tempfile
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, Iterable, List, Set, Tuple
 
 import pytest
 from servicelib.archiving_utils import archive_dir, unarchive_dir
 
+from test_utils import print_tree
+
+# FIXTURES
+
 
 @pytest.fixture
-def dir_with_random_content() -> Path:
+def dir_with_random_content() -> Iterable[Path]:
     def random_string(length: int) -> str:
         return "".join(secrets.choice(string.ascii_letters) for i in range(length))
 
@@ -72,6 +77,32 @@ def dir_with_random_content() -> Path:
                 )
 
         yield temp_dir_path
+
+
+@pytest.fixture
+def file_content() -> str:
+    return "test" * 10
+
+
+@pytest.fixture
+def well_known_dir(tmp_path: Path, file_content: str) -> Path:
+    """Directory with well known structure"""
+    base_dir = tmp_path / "well_known_dir"
+    base_dir.mkdir()
+    (base_dir / "empty").mkdir()
+    (base_dir / "d1").mkdir()
+    (base_dir / "d1" / "f1").write_text(file_content)
+    (base_dir / "d1" / "f2.txt").write_text(file_content)
+    (base_dir / "d1" / "sd1").mkdir()
+    (base_dir / "d1" / "sd1" / "f1").write_text(file_content)
+    (base_dir / "d1" / "sd1" / "f2.txt").write_text(file_content)
+
+    print("well_known_dir ---")
+    print_tree(base_dir)
+    return base_dir
+
+
+# UTILS
 
 
 def strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
@@ -132,6 +163,7 @@ async def assert_same_directory_content(
     unsupported_replace: bool = False,
 ) -> None:
     def _relative_path(input_path: Path) -> Path:
+        assert inject_relative_path is not None
         return Path(str(inject_relative_path / str(input_path))[1:])
 
     input_set = get_all_files_in_dir(dir_to_compress)
@@ -206,6 +238,9 @@ def assert_unarchived_paths(
     if unsupported_replace:
         expected_tails = {_escape_undecodable_str(x) for x in expected_tails}
     assert got_tails == expected_tails
+
+
+# TESTS
 
 
 @pytest.mark.parametrize(
@@ -340,3 +375,68 @@ async def test_regression_unsupported_characters(
         inject_relative_path=None if store_relative_path else dir_to_archive,
         unsupported_replace=True,
     )
+
+
+@pytest.mark.parametrize(
+    "exclude_paths",
+    [
+        [Path("/d1")],
+        [Path("d1")],
+        [Path(".txt")],
+        [Path("/absolute/path/does/not/exist")],
+        [Path("/../../this/is/ignored")],
+        [Path("relative/path/does/not/exist")],
+    ],
+)
+async def test_archive_unarchive_check_exclude(
+    exclude_paths: List[Path], well_known_dir: Path, tmp_path: Path
+):
+    temp_dir_one = tmp_path / "one"
+    temp_dir_two = tmp_path / "two"
+
+    temp_dir_one.mkdir()
+    temp_dir_two.mkdir()
+
+    archive_file = temp_dir_one / "archive.zip"
+
+    await archive_dir(
+        dir_to_compress=well_known_dir,
+        destination=archive_file,
+        store_relative_path=True,
+        compress=False,
+        exclude_paths=exclude_paths,
+    )
+
+    unarchived_paths: Set[Path] = await unarchive_dir(
+        archive_to_extract=archive_file, destination_folder=temp_dir_two
+    )
+
+    def _filter_source_paths() -> Set[Path]:
+        results: Set[Path] = set()
+        source_paths: Set[Path] = {
+            x.relative_to(well_known_dir)
+            for x in well_known_dir.rglob("*")
+            if x.is_file()
+        }
+
+        for path in source_paths:
+            should_add = True
+            for exclude_path in exclude_paths:
+                if exclude_path.is_absolute():
+                    if f"{path}".startswith(f"{exclude_path}"):
+                        should_add = False
+                        break
+                else:
+                    if f"{path}".endswith(f"{exclude_path}"):
+                        should_add = False
+                        break
+            if should_add:
+                results.add(path)
+
+        return results
+
+    relative_unarchived_paths = {x.relative_to(temp_dir_two) for x in unarchived_paths}
+
+    assert (
+        relative_unarchived_paths == _filter_source_paths()
+    ), f"Exclude rules: {exclude_paths}"
