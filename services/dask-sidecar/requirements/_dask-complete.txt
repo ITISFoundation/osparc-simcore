@@ -12,7 +12,7 @@ click==7.1.2
     # via
     #   -c requirements/./_base.txt
     #   distributed
-cloudpickle==1.6.0
+cloudpickle==2.0.0
     # via
     #   -c requirements/./_base.txt
     #   dask

@@ -53,7 +53,7 @@ charset-normalizer==2.0.6
     #   requests
 click==7.1.2
     # via distributed
-cloudpickle==1.6.0
+cloudpickle==2.0.0
     # via
     #   dask
     #   distributed
