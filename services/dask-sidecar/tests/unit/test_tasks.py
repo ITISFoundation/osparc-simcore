@@ -260,6 +260,11 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         docker_basic_auth=DockerBasicAuth(
             server_address="docker.io", username="pytest", password=""
         ),
+        #
+        # NOTE: we use sleeper because it defines a user
+        # that can write in outputs and the
+        # sidecar can remove the outputs dirs
+        #
         service_key="itisfoundation/sleeper",
         service_version="2.1.2",
         command=[
