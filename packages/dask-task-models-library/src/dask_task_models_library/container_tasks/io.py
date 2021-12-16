@@ -97,7 +97,11 @@ PortSchemaValue = Union[PortSchema, FilePortSchema]
 
 
 class TaskOutputDataSchema(DictModel[PortKey, PortSchemaValue]):
-    # This describes
+    #
+    # NOTE: Expected output data is only determined at runtime. A possibility
+    # would be to create pydantic models dynamically but dask serialization
+    # does not work well in that case. For that reason, the schema is
+    # sent as a json-schema instead of with a dynamically-created model class
     #
     class Config(DictModel.Config):
         schema_extra = {
