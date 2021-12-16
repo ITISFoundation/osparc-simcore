@@ -1246,30 +1246,43 @@ qx.Class.define("osparc.data.model.Node", {
       };
     },
 
+    // "number", "boolean", "integer"
     convertToParameter: function(type) {
-      const value = this.__getInputData()["linspace_start"];
-      const label = this.getLabel();
-      this.setKey("simcore/services/frontend/parameter/integer");
-      this.populateWithMetadata();
-      this.populateNodeData();
-      this.setLabel(label);
-      osparc.component.node.ParameterEditor.setParameterOutputValue(this, value);
-      this.fireEvent("reloadModel");
+      if (!["int"].includes(type)) {
+        return;
+      }
+      const newMetadata = osparc.utils.Services.getParameterMetadata("integer");
+      if (newMetadata) {
+        const value = this.__getInputData()["linspace_start"];
+        const label = this.getLabel();
+        this.setKey(newMetadata["key"]);
+        this.populateWithMetadata();
+        this.populateNodeData();
+        this.setLabel(label);
+        osparc.component.node.ParameterEditor.setParameterOutputValue(this, value);
+        this.fireEvent("reloadModel");
+      }
     },
 
     convertToIterator: function(type) {
-      const value = this.__getOutputData("out_1");
-      const label = this.getLabel();
-      this.setKey("simcore/services/frontend/data-iterator/int-range");
-      this.populateWithMetadata();
-      this.populateNodeData();
-      this.setLabel(label);
-      this.setInputData({
-        "linspace_start": value,
-        "linspace_stop": value,
-        "linspace_step": 1
-      });
-      this.fireEvent("reloadModel");
+      if (!["int"].includes(type)) {
+        return;
+      }
+      const newKey = "simcore/services/frontend/data-iterator/int-range";
+      if (newKey in osparc.utils.Services.servicesCached) {
+        const value = this.__getOutputData("out_1");
+        const label = this.getLabel();
+        this.setKey(newKey);
+        this.populateWithMetadata();
+        this.populateNodeData();
+        this.setLabel(label);
+        this.setInputData({
+          "linspace_start": value,
+          "linspace_stop": value,
+          "linspace_step": 1
+        });
+        this.fireEvent("reloadModel");
+      }
     },
 
     serialize: function(clean = true) {

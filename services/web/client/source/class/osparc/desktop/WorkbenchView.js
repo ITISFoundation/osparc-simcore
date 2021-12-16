@@ -1128,7 +1128,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }
         this.__workbenchUI.clearNode(nodeId);
       }
-      if (this.__nodesTree.getCurrentNodeId() === this.__currentNodeId) {
+      if ([this.__currentNodeId, null].includes(this.__nodesTree.getCurrentNodeId())) {
         this.nodeSelected(this.getStudy().getUuid());
       }
     },

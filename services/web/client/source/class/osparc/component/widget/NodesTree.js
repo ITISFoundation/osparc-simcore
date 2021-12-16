@@ -184,6 +184,8 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               if (node.isDynamic()) {
                 item.getChildControl("fullscreen-button").show();
               }
+
+              node.addListener("reloadModel", () => this.populateTree(), this);
             }
           },
           configureItem: item => {
