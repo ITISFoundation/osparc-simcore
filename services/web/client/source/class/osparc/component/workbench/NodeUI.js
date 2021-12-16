@@ -190,6 +190,18 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
     },
 
+    __applyNode: function(node) {
+      if (node.getKey().includes("parameter/int")) {
+        const makeIterator = new qx.ui.menu.Button(this.tr("Convert to Iterator"));
+        makeIterator.addListener("execute", () => node.convertToIterator("int"), this);
+        this._optionsMenu.add(makeIterator);
+      } else if (node.getKey().includes("data-iterator/int-range")) {
+        const convertToParameter = new qx.ui.menu.Button(this.tr("Convert to Parameter"));
+        convertToParameter.addListener("execute", () => node.convertToParameter("int"), this);
+        this._optionsMenu.add(convertToParameter);
+      }
+    },
+
     __applyType: function(type) {
       switch (type) {
         case "file":
