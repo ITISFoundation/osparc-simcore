@@ -201,7 +201,7 @@ qx.Class.define("osparc.data.model.Node", {
 
   events: {
     "retrieveInputs": "qx.event.type.Data",
-    "reloadModel": "qx.event.type.Event",
+    "keyChanged": "qx.event.type.Event",
     "fileRequested": "qx.event.type.Data",
     "parameterRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
@@ -1260,7 +1260,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.populateNodeData();
         this.setLabel(label);
         osparc.component.node.ParameterEditor.setParameterOutputValue(this, value);
-        this.fireEvent("reloadModel");
+        this.fireEvent("keyChanged");
       }
     },
 
@@ -1281,7 +1281,7 @@ qx.Class.define("osparc.data.model.Node", {
           "linspace_stop": value,
           "linspace_step": 1
         });
-        this.fireEvent("reloadModel");
+        this.fireEvent("keyChanged");
       }
     },
 
