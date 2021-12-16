@@ -39,8 +39,13 @@ echo "$INFO" "Selected config $APP_CONFIG"
 if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
   # NOTE: needs ptvsd installed
   echo "$INFO" "PTVSD Debugger initializing in port 3000 with ${APP_CONFIG}"
-  eval "$entrypoint" python3 -m ptvsd --host 0.0.0.0 --port 3000 -m \
-    simcore_service_webserver --config $APP_CONFIG
+  # exec python3 -m ptvsd --host 0.0.0.0 --port 3000 -m \
+  exec gunicorn simcore_service_webserver.cli:app_factory \
+      --bind 0.0.0.0:8080 \
+      --worker-class aiohttp.GunicornWebWorker \
+      --workers=2
+    # simcore_service_webserver --config $APP_CONFIG
+
 else
   exec simcore-service-webserver --config $APP_CONFIG
 fi

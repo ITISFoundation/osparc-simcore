@@ -20,7 +20,9 @@ import sys
 from argparse import ArgumentParser
 from typing import Dict, List, Optional
 
-from .application import run_service
+from aiohttp import web
+
+from .application import create_app, run_service
 from .application_config import CLI_DEFAULT_CONFIGFILE, app_schema
 from .cli_config import add_cli_options, config_from_options
 from .log import setup_logging
@@ -115,3 +117,22 @@ def main(args: Optional[List] = None):
 
     # run
     run_service(config)
+
+
+async def app_factory(args: Optional[List] = None) -> web.Application:
+    # parse & config file
+    args = ["--config", "server-docker-prod.yaml"]
+
+    parser = ArgumentParser(description="Service to manage data webserver in simcore.")
+    setup_parser(parser)
+    config = parse(args, parser)
+    config["tracing"]["enabled"] = False
+    log.error("%s", config)
+
+    # service log level
+    slow_duration = float(
+        os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0)
+    )  # TODO: move to settings.py::ApplicationSettings
+    setup_logging(level=config["main"]["log_level"], slow_duration=slow_duration)
+
+    return create_app(config)
