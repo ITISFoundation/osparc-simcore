@@ -32,6 +32,7 @@ def _get_environment_variables(
         "DY_SIDECAR_STATE_PATHS": json_dumps(
             [f"{x}" for x in scheduler_data.paths_mapping.state_paths]
         ),
+        "DY_SIDECAR_STATE_EXCLUDE": f"{scheduler_data.paths_mapping.state_exclude}",
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
         "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
         "DY_SIDECAR_NODE_ID": f"{scheduler_data.node_uuid}",
@@ -169,7 +170,7 @@ def get_dynamic_sidecar_spec(
             "paths_mapping": scheduler_data.paths_mapping.json(),
             "compose_spec": json_dumps(scheduler_data.compose_spec),
             "container_http_entry": scheduler_data.container_http_entry,
-            "restart_policy": scheduler_data.restart_policy
+            "restart_policy": scheduler_data.restart_policy,
         },
         "name": scheduler_data.service_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],

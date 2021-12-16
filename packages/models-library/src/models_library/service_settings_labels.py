@@ -95,6 +95,10 @@ class PathMappingsLabel(BaseModel):
         [],
         description="optional list of paths which contents need to be persisted",
     )
+    state_exclude: List[Path] = Field(
+        [],
+        description="optional list of paths to exclude when saving satate_paths",
+    )
 
     class Config(_BaseConfig):
         schema_extra = {
@@ -102,6 +106,7 @@ class PathMappingsLabel(BaseModel):
                 "outputs_path": "/tmp/outputs",  # nosec
                 "inputs_path": "/tmp/inputs",  # nosec
                 "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # nosec
+                "state_exclude": ["/tmp/save_1", "/tmp_save_2"],  # nosec
             }
         }
 

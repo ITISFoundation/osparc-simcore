@@ -36,11 +36,16 @@ class MountedVolumes:
     """
 
     def __init__(
-        self, inputs_path: Path, outputs_path: Path, state_paths: List[Path]
+        self,
+        inputs_path: Path,
+        outputs_path: Path,
+        state_paths: List[Path],
+        state_exclude: List[Path],
     ) -> None:
         self.inputs_path: Path = inputs_path
         self.outputs_path: Path = outputs_path
         self.state_paths: List[Path] = state_paths
+        self.state_exclude: List[Path] = state_exclude
 
         self._ensure_directories()
 
@@ -104,6 +109,7 @@ def setup_mounted_fs() -> MountedVolumes:
         inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
         outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
         state_paths=settings.DY_SIDECAR_STATE_PATHS,
+        state_exclude=settings.DY_SIDECAR_STATE_EXCLUDE,
     )
 
     return _mounted_volumes
