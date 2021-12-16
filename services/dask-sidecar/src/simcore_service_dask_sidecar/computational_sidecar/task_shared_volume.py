@@ -3,22 +3,14 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Optional, Type
+from typing import Optional, Type
 
 from ..dask_utils import create_dask_worker_logger
 
 logger = create_dask_worker_logger(__name__)
 
 
-def _log_error(_: Any, path: Any, excinfo: Any) -> None:
-    logger.error(
-        "Failed to remove %s [reason: %s]. Please check if there are permission issues.",
-        path,
-        excinfo,
-    )
-
-
-@dataclass
+@dataclass(frozen=True)
 class TaskSharedVolumes:
     base_path: Path
 
@@ -29,15 +21,14 @@ class TaskSharedVolumes:
                 logger.warning(
                     "The path %s already exists. It will be wiped out now.", folder_path
                 )
-                shutil.rmtree(folder_path, onerror=_log_error)
-            # NOTE: PC->SAN: if rmtree fails, there is a risk of rewriting i/os that can start from here
-            # we should guarantee at this point that these folders exists and are empty
-            folder_path.mkdir(parents=True, exist_ok=True)
+                self.cleanup()
+
+            assert not folder_path.exists()  # nosec
+            folder_path.mkdir(parents=True)
             logger.debug(
-                "created %s in %s [%s]",
+                "created %s in %s",
                 f"{folder=}",
                 f"{self.base_path=}",
-                f"{folder_path.exists()=}",
             )
 
     @property
@@ -53,7 +44,15 @@ class TaskSharedVolumes:
         return self.base_path / "logs"
 
     def cleanup(self) -> None:
-        shutil.rmtree(self.base_path, onerror=_log_error)
+        try:
+            shutil.rmtree(self.base_path)
+        except OSError:
+            logger.exception(
+                "Unexpected failure removing '%s'."
+                "TIP: Please check if there are permission issues.",
+                self.base_path,
+            )
+            raise
 
     async def __aenter__(self) -> "TaskSharedVolumes":
         return self

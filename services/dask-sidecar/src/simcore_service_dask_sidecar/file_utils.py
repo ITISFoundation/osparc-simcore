@@ -7,6 +7,7 @@ from pprint import pformat
 from typing import Awaitable, Callable, Final
 
 import aiofiles
+import aiofiles.tempfile
 import fsspec
 from pydantic import ByteSize
 from pydantic.networks import AnyUrl
@@ -45,12 +46,6 @@ async def pull_file_from_remote(
 ) -> None:
     await log_publishing_cb(
         f"Downloading '{src_url.path.strip('/')}' into local file '{dst_path.name}'..."
-    )
-    logger.debug(
-        "Pulling file from %s -> %s [%s]",
-        f"{src_url=}",
-        f"{dst_path=}",
-        f"{dst_path.parent.exists()=}",
     )
     if not dst_path.parent.exists():
         raise ValueError(
@@ -110,6 +105,8 @@ async def pull_file_from_remote(
 async def push_file_to_remote(
     src_path: Path, dst_url: AnyUrl, log_publishing_cb: LogPublishingCB
 ) -> None:
+    if not src_path.exists():
+        raise ValueError(f"{src_path=} does not exist")
 
     async with aiofiles.tempfile.TemporaryDirectory() as tmp_dir:
         file_to_upload = src_path
@@ -135,9 +132,8 @@ async def push_file_to_remote(
                 f"Compression of '{src_path.name}' to '{archive_file_path.name}' complete."
             )
 
-        await log_publishing_cb(
-            f"Uploading '{file_to_upload.name}' to '{dst_url.path.strip('/')}'..."
-        )
+        await log_publishing_cb(f"Uploading '{file_to_upload.name}' to '{dst_url}'...")
+
         if dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
             logger.debug("destination is a http presigned link")
             # NOTE: special case for http scheme when uploading. this is typically a S3 put presigned link.
