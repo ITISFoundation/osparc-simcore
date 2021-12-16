@@ -7,6 +7,8 @@ IFS=$'\n\t'
 
 image_name="$(basename "$0"):latest"
 
+# FIXME: current version of mypy is pinned to 0.910 because 0.920 fails with pydantic plugin
+
 docker buildx build --tag "$image_name" - &>/dev/null <<EOF
 FROM python:3.8.10-slim-buster
 RUN pip install --upgrade pip \
