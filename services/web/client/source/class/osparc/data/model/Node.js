@@ -302,7 +302,7 @@ qx.Class.define("osparc.data.model.Node", {
       return this.__metaData;
     },
 
-    getInputValues: function() {
+    __getInputData: function() {
       if (this.isPropertyInitialized("propsForm") && this.getPropsForm()) {
         return this.getPropsForm().getValues();
       }
@@ -607,7 +607,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     removeNodePortConnections: function(inputNodeId) {
-      let inputs = this.getInputValues();
+      let inputs = this.__getInputData();
       for (const portId in inputs) {
         if (inputs[portId] && Object.prototype.hasOwnProperty.call(inputs[portId], "nodeUuid")) {
           if (inputs[portId]["nodeUuid"] === inputNodeId) {
@@ -1246,13 +1246,39 @@ qx.Class.define("osparc.data.model.Node", {
       };
     },
 
+    convertToParameter: function(type) {
+      const value = this.__getInputData()["linspace_start"];
+      const label = this.getLabel();
+      this.setKey("simcore/services/frontend/parameter/integer");
+      this.populateWithMetadata();
+      this.populateNodeData();
+      this.setLabel(label);
+      osparc.component.node.ParameterEditor.setParameterOutputValue(this, value);
+      this.fireEvent("reloadModel");
+    },
+
+    convertToIterator: function(type) {
+      const value = this.__getOutputData("out_1");
+      const label = this.getLabel();
+      this.setKey("simcore/services/frontend/data-iterator/int-range");
+      this.populateWithMetadata();
+      this.populateNodeData();
+      this.setLabel(label);
+      this.setInputData({
+        "linspace_start": value,
+        "linspace_stop": value,
+        "linspace_step": 1
+      });
+      this.fireEvent("reloadModel");
+    },
+
     serialize: function(clean = true) {
       // node generic
       let nodeEntry = {
         key: this.getKey(),
         version: this.getVersion(),
         label: this.getLabel(),
-        inputs: this.getInputValues(),
+        inputs: this.__getInputData(),
         inputAccess: this.getInputAccess(),
         inputNodes: this.getInputNodes(),
         parent: this.getParentNodeId(),
