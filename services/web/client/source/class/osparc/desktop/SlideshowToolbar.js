@@ -76,7 +76,21 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
           break;
         }
         case "breadcrumbs-scroll":
-          control = new qx.ui.container.Scroll();
+          control = new qx.ui.container.SlideBar().set({
+            maxHeight: 32
+          });
+          [
+            control.getChildControl("button-backward"),
+            control.getChildControl("button-forward")
+          ].forEach(btn => {
+            btn.set({
+              marginLeft: 5,
+              marginRight: 5,
+              icon: "@FontAwesome5Solid/ellipsis-h/24",
+              backgroundColor: "transparent"
+            });
+          });
+          control.setLayout(new qx.ui.layout.HBox());
           this._add(control, {
             flex: 1
           });
