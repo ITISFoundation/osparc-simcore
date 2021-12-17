@@ -34,7 +34,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
   },
 
   statics: {
-    HEADER_HEIGHT: 35,
+    HEADER_HEIGHT: 28,
 
     createSettingsGroupBox: function(label) {
       const settingsGroupBox = new qx.ui.groupbox.GroupBox(label).set({
