@@ -50,6 +50,10 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
 
     __createBtn: function(nodeId) {
       const btn = this._createNodeBtn(nodeId);
+      btn.set({
+        iconPosition: "left",
+        gap: 6
+      });
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const slideshow = study.getUi().getSlideshow().getData();
       const node = study.getWorkbench().getNode(nodeId);
