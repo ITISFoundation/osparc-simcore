@@ -81,7 +81,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
             flex: 1
           });
           break;
-        case "breadcrumb-navigation": {
+        case "breadcrumbs-navigation": {
           control = new osparc.navigation.BreadcrumbsSlideshow();
           control.addListener("nodeSelected", e => this.fireDataEvent("nodeSelected", e.getData()), this);
           const scroll = this.getChildControl("breadcrumbs-scroll");
@@ -94,7 +94,7 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
             flex: 1
           });
           break;
-        case "breadcrumb-navigation-edit": {
+        case "breadcrumbs-navigation-edit": {
           control = new osparc.navigation.BreadcrumbsSlideshowEdit();
           [
             "addServiceBetween",
@@ -133,8 +133,8 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
       });
 
       this.getChildControl("edit-slideshow-buttons");
-      this.getChildControl("breadcrumb-navigation");
-      this.getChildControl("breadcrumb-navigation-edit");
+      this.getChildControl("breadcrumbs-navigation");
+      this.getChildControl("breadcrumbs-navigation-edit");
 
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -165,8 +165,8 @@ qx.Class.define("osparc.desktop.SlideshowToolbar", {
         }
 
         const nodeIds = study.getUi().getSlideshow().getSortedNodeIds();
-        this.getChildControl("breadcrumb-navigation").populateButtons(nodeIds);
-        this.getChildControl("breadcrumb-navigation-edit").populateButtons(study);
+        this.getChildControl("breadcrumbs-navigation").populateButtons(nodeIds);
+        this.getChildControl("breadcrumbs-navigation-edit").populateButtons(study);
         this.__evalButtonsIfEditing();
       }
     },
