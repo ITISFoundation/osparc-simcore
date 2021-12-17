@@ -50,6 +50,17 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
 
     __createBtn: function(nodeId) {
       const btn = this._createNodeBtn(nodeId);
+      const colorManager = qx.theme.manager.Color.getInstance();
+      btn.getContentElement().setStyles({
+        "border-radius": "6px",
+        "box-shadow": "none",
+        "border": "1px solid " + colorManager.resolve("text")
+      });
+      colorManager.addListener("changeTheme", () => {
+        btn.getContentElement().setStyles({
+          "border": "1px solid " + colorManager.resolve("text")
+        });
+      }, this);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const slideshow = study.getUi().getSlideshow().getData();
       const node = study.getWorkbench().getNode(nodeId);
