@@ -14,6 +14,7 @@ from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
 from .shared_handlers import on_shutdown_handler
 from .utils import login_registry
+from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,7 @@ def assemble_application() -> FastAPI:
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
     )
+    override_fastapi_openapi_method(application)
 
     # store "settings"  and "shared_store" for later usage
     application.state.settings = dynamic_sidecar_settings

@@ -10,7 +10,7 @@ import tempfile
 import uuid
 from pathlib import Path
 from typing import Any, AsyncGenerator, AsyncIterable, Iterator, List
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import aiodocker
 import pytest
@@ -197,3 +197,18 @@ def mock_containers_get(mocker: MockerFixture) -> int:
 @pytest.fixture
 def tests_dir() -> Path:
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+
+@pytest.fixture
+def mock_dir_watcher_on_any_event(
+    app: FastAPI, monkeypatch: MonkeyPatch
+) -> Iterator[Mock]:
+
+    mock = Mock(return_value=None)
+
+    monkeypatch.setattr(
+        app.state.dir_watcher.outputs_event_handle,
+        "_call_trigger_async_invoke_push_mapped_data",
+        mock,
+    )
+    yield mock

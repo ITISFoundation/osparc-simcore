@@ -279,6 +279,13 @@ class ServiceOutput(ServiceProperty):
                     "type": "number",
                     "unit": "second",
                 },
+                # folder
+                {
+                    "label": "Output files 1",
+                    "displayOrder": 4.0,
+                    "description": "Output files uploaded from the outputs folder",
+                    "type": "data:*/*",
+                },
             ]
         }
 
