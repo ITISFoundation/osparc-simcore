@@ -456,6 +456,7 @@ async def test_run_pipeline_and_check_state(
             assert "state" in data
             assert "value" in data["state"]
             received_study_state = RunningState(data["state"]["value"])
+            print(f"--> project computation state {received_study_state=}")
             assert (
                 running_state_order_lookup[received_study_state]
                 >= running_state_order_lookup[previous_state]
