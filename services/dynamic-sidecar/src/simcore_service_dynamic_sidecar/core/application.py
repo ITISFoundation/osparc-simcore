@@ -2,6 +2,7 @@ import logging
 from typing import Any, Callable, Coroutine
 
 from fastapi import FastAPI
+from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
 from .._meta import API_VTAG, __version__
 from ..api import main_router
@@ -14,7 +15,6 @@ from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
 from .shared_handlers import on_shutdown_handler
 from .utils import login_registry
-from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
 logger = logging.getLogger(__name__)
 

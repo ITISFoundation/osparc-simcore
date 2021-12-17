@@ -445,14 +445,14 @@ async def test_directory_watcher_disabling(
             f"/{API_VTAG}/containers/directory-watcher:disable"
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-        assert response.json() is None
+        assert response.text == ""
 
     async def _assert_enable_directory_watcher() -> None:
         response = await test_client.post(
             f"/{API_VTAG}/containers/directory-watcher:enable"
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-        assert response.json() is None
+        assert response.text == ""
 
     def _create_random_dir_in_inputs() -> int:
         mounted_volumes: MountedVolumes = get_mounted_volumes()
