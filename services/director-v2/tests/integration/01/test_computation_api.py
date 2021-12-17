@@ -193,7 +193,6 @@ class PartialComputationParams:
     exp_node_states_after_force_run: Dict[int, Dict[str, Any]]
 
 
-@pytest.mark.skip(reason="FIXME: currently fails")
 @pytest.mark.parametrize(
     "params",
     [
@@ -473,7 +472,6 @@ async def test_run_partial_computation(
     )
 
 
-@pytest.mark.skip(reason="FIXME: temporary disabled")
 async def test_run_computation(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
@@ -579,7 +577,6 @@ async def test_run_computation(
     )
 
 
-@pytest.mark.skip(reason="FIXME: temporary disabled")
 async def test_abort_computation(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
