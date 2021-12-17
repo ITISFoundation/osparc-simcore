@@ -80,11 +80,22 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         )
         input_data = {}
         download_tasks = []
+
         for input_key, input_params in self.input_data.items():
             if isinstance(input_params, FileUrl):
-                destination_path = task_volumes.inputs_folder / (
-                    input_params.file_mapping or URL(input_params.url).path.strip("/")
+                file_name = (
+                    input_params.file_mapping
+                    or Path(URL(input_params.url).path.strip("/")).name
                 )
+
+                destination_path = task_volumes.inputs_folder / file_name
+
+                if destination_path.parent != task_volumes.inputs_folder:
+                    # NOTE: only 'task_volumes.inputs_folder' part of 'destination_path' is guaranteed,
+                    # if extra subfolders via file-mapping,
+                    # then we make them first
+                    destination_path.parent.mkdir(parents=True)
+
                 download_tasks.append(
                     pull_file_from_remote(
                         input_params.url, destination_path, self._publish_sidecar_log
@@ -111,8 +122,9 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             )
             logger.debug(
                 "following outputs will be searched for:\n%s",
-                pformat(self.output_data_keys.dict()),
+                self.output_data_keys.json(indent=1),
             )
+
             output_data = TaskOutputData.from_task_output(
                 self.output_data_keys,
                 task_volumes.outputs_folder,
@@ -120,21 +132,24 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                 if integration_version > LEGACY_INTEGRATION_VERSION
                 else "output.json",
             )
+
             upload_tasks = []
             for output_params in output_data.values():
                 if isinstance(output_params, FileUrl):
-                    src_path = task_volumes.outputs_folder / (
+                    assert (  # nosec
                         output_params.file_mapping
-                        or URL(output_params.url).path.strip("/")
-                    )
+                    ), f"{output_params.json(indent=1)} expected resolved in TaskOutputData.from_task_output"
+
+                    src_path = task_volumes.outputs_folder / output_params.file_mapping
                     upload_tasks.append(
                         push_file_to_remote(
                             src_path, output_params.url, self._publish_sidecar_log
                         )
                     )
             await asyncio.gather(*upload_tasks)
+
             await self._publish_sidecar_log("All the output data were uploaded.")
-            logger.info("retrieved outputs data:\n%s", pformat(output_data.dict()))
+            logger.info("retrieved outputs data:\n%s", output_data.json(indent=1))
             return output_data
 
         except ValidationError as exc:

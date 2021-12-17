@@ -248,7 +248,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __createTabPage: function(icon, tooltip, widget, backgroundColor = "background-main") {
       const tabPage = new qx.ui.tabview.Page().set({
-        layout: new qx.ui.layout.VBox(5),
+        layout: new qx.ui.layout.VBox(10),
         backgroundColor,
         icon: icon+"/24"
       });
@@ -894,7 +894,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         const view = osparc.file.FilePicker.buildInfoView(filePicker);
         view.setEnabled(false);
+
         this.__infoPage.add(view);
+
+        const downloadFileBtn = new qx.ui.form.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/14").set({
+          allowGrowX: false
+        });
+        downloadFileBtn.addListener("execute", () => osparc.file.FilePicker.downloadOutput(filePicker));
+        this.__infoPage.add(downloadFileBtn);
       } else {
         // empty File Picker
         const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");

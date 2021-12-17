@@ -5,14 +5,14 @@ set -o nounset
 set -o pipefail
 IFS=$'\n\t'
 
-
 image_name="$(basename "$0"):latest"
 
+# FIXME: current version of mypy is pinned to 0.910 because 0.920 fails with pydantic plugin
 
-docker buildx build --tag "$image_name" &>/dev/null -<<EOF
+docker buildx build --tag "$image_name" - &>/dev/null <<EOF
 FROM python:3.8.10-slim-buster
 RUN pip install --upgrade pip \
-    && pip install mypy \
+    && pip install mypy==0.910 \
                   pydantic[email] \
                   types-aiofiles \
                   types-PyYAML \
@@ -20,7 +20,6 @@ RUN pip install --upgrade pip \
                   types-setuptools
 ENTRYPOINT ["mypy"]
 EOF
-
 
 target_path=$(realpath "${1:-Please give target path as argument}")
 cd "$(dirname "$0")"
@@ -37,5 +36,5 @@ docker run --rm \
   --volume "${target_path}":/src \
   --workdir=/src \
   "$image_name" \
-    --config-file /config/mypy.ini \
-    /src
+  --config-file /config/mypy.ini \
+  /src
