@@ -27,9 +27,13 @@ logger = logging.getLogger(__name__)
 class DaskClientsPool:
     app: FastAPI
     settings: DaskSchedulerSettings
-    _client_acquisition_lock: asyncio.Lock = asyncio.Lock()
+    _client_acquisition_lock: asyncio.Lock = field(init=False)
     _cluster_to_client_map: Dict[ClusterID, DaskClient] = field(default_factory=dict)
     _task_handlers: Optional[TaskHandlers] = None
+
+    def __post_init__(self):
+        # NOTE: to ensure the correct loop is used
+        self._client_acquisition_lock = asyncio.Lock()
 
     @staticmethod
     def default_cluster(settings: DaskSchedulerSettings):
