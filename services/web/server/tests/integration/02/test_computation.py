@@ -5,7 +5,17 @@
 import asyncio
 import json
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Type, Union
+from typing import (
+    Any,
+    AsyncContextManager,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Tuple,
+    Type,
+    Union,
+)
 
 import pytest
 import sqlalchemy as sa
@@ -16,6 +26,7 @@ from models_library.settings.redis import RedisConfig
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.webserver_models import (
     NodeClass,
     StateType,
@@ -25,6 +36,7 @@ from simcore_postgres_database.webserver_models import (
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.diagnostics import setup_diagnostics
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.projects.module_setup import setup_projects
@@ -37,7 +49,7 @@ from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.module_setup import setup_socketio
 from simcore_service_webserver.users import setup_users
-from tenacity import retry
+from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -136,6 +148,10 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
 @pytest.fixture
 def client(
     loop: asyncio.AbstractEventLoop,
+    postgres_session: sa.orm.session.Session,
+    rabbit_service: RabbitConfig,
+    redis_service: RedisConfig,
+    simcore_services_ready: None,
     aiohttp_client: Callable,
     app_config: Dict[str, Any],  ## waits until swarm with *_services are up
     mocker: MockerFixture,
@@ -152,6 +168,7 @@ def client(
     setup_session(app)
     setup_security(app)
     setup_rest(app)
+    setup_diagnostics(app)
     setup_login(app)
     setup_users(app)
     setup_socketio(app)
@@ -227,93 +244,98 @@ def _assert_db_contents(
         assert task_db.image["tag"] == mock_pipeline[task_db.node_id]["version"]
 
 
-def _assert_sleeper_services_completed(
+async def _assert_sleeper_services_completed(
     project_id: str,
     postgres_session: sa.orm.session.Session,
     expected_state: StateType,
     fake_workbench_payload: Dict[str, Any],
 ):
     # pylint: disable=no-member
-    TIMEOUT_SECONDS = 60
-    WAIT_TIME = 1
+    TIMEOUT_SECONDS = 120
+    WAIT_TIME = 5
     NUM_COMP_TASKS_TO_WAIT_FOR = len(
         [x for x in fake_workbench_payload.values() if "/comp/" in x["key"]]
     )
 
-    @retry(
+    async for attempt in AsyncRetrying(
         reraise=True,
         stop=stop_after_delay(TIMEOUT_SECONDS),
         wait=wait_fixed(WAIT_TIME),
         retry=retry_if_exception_type(AssertionError),
-    )
-    def check_pipeline_results():
-        # this check is only there to check the comp_pipeline is there
-        assert (
-            postgres_session.query(comp_pipeline)
-            .filter(comp_pipeline.c.project_id == project_id)
-            .one()
-        ), f"missing pipeline in the database under comp_pipeline {project_id}"
-
-        # get the tasks that should be completed either by being aborted, successfuly completed or failed
-        tasks_db = (
-            postgres_session.query(comp_tasks)
-            .filter(
-                (comp_tasks.c.project_id == project_id)
-                & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
-                & (
-                    # these are the options of a completed pipeline
-                    (comp_tasks.c.state == StateType.ABORTED)
-                    | (comp_tasks.c.state == StateType.SUCCESS)
-                    | (comp_tasks.c.state == StateType.FAILED)
-                )
+    ):
+        with attempt:
+            print(
+                f"--> waiting for pipeline to complete attenpt {attempt.retry_state.attempt_number}..."
             )
-            .all()
-        )
-        # check that all computational tasks are completed
-        assert (
-            len(tasks_db) == NUM_COMP_TASKS_TO_WAIT_FOR
-        ), f"all tasks have not finished, expected {NUM_COMP_TASKS_TO_WAIT_FOR}, got {len(tasks_db)}"
-        # get the different states in a set of states
-        set_of_states = {task_db.state for task_db in tasks_db}
-        if expected_state in [StateType.ABORTED, StateType.FAILED]:
-            # only one is necessary
+            # this check is only there to check the comp_pipeline is there
             assert (
-                expected_state in set_of_states
-            ), f"{expected_state} not found in {set_of_states}"
-        else:
-            assert not any(
-                x in set_of_states
-                for x in [
-                    StateType.PUBLISHED,
-                    StateType.PENDING,
-                    StateType.NOT_STARTED,
-                ]
-            ), f"pipeline did not start yet... {set_of_states}"
+                postgres_session.query(comp_pipeline)
+                .filter(comp_pipeline.c.project_id == project_id)
+                .one()
+            ), f"missing pipeline in the database under comp_pipeline {project_id}"
 
+            # get the tasks that should be completed either by being aborted, successfuly completed or failed
+            tasks_db = (
+                postgres_session.query(comp_tasks)
+                .filter(
+                    (comp_tasks.c.project_id == project_id)
+                    & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+                    & (
+                        # these are the options of a completed pipeline
+                        (comp_tasks.c.state == StateType.ABORTED)
+                        | (comp_tasks.c.state == StateType.SUCCESS)
+                        | (comp_tasks.c.state == StateType.FAILED)
+                    )
+                )
+                .all()
+            )
+            # check that all computational tasks are completed
+            print(f"--> tasks from DB: {tasks_db=}")
             assert (
-                len(set_of_states) == 1
-            ), f"there are more than one state in {set_of_states}"
+                len(tasks_db) == NUM_COMP_TASKS_TO_WAIT_FOR
+            ), f"all tasks have not finished, expected {NUM_COMP_TASKS_TO_WAIT_FOR}, got {len(tasks_db)}"
+            # get the different states in a set of states
+            set_of_states = {task_db.state for task_db in tasks_db}
+            print(f"--> states found: {set_of_states=}")
+            if expected_state in [StateType.ABORTED, StateType.FAILED]:
+                # only one is necessary
+                assert (
+                    expected_state in set_of_states
+                ), f"{expected_state} not found in {set_of_states}"
+            else:
+                assert not any(
+                    x in set_of_states
+                    for x in [
+                        StateType.PUBLISHED,
+                        StateType.PENDING,
+                        StateType.NOT_STARTED,
+                    ]
+                ), f"pipeline did not start yet... {set_of_states}"
 
-            assert (
-                expected_state in set_of_states
-            ), f"{expected_state} not found in {set_of_states}"
+                assert (
+                    len(set_of_states) == 1
+                ), f"there are more than one state in {set_of_states}"
 
-    check_pipeline_results()
+                assert (
+                    expected_state in set_of_states
+                ), f"{expected_state} not found in {set_of_states}"
+            print(
+                f"--> pipeline completed! That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
+            )
 
 
 # TESTS ------------------------------------------
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_start_pipeline(
+    client: TestClient,
     sleeper_service: Dict[str, str],
     postgres_session: sa.orm.session.Session,
     rabbit_service: RabbitConfig,
     redis_service: RedisConfig,
     simcore_services_ready: None,
-    client: TestClient,
     logged_user: Dict[str, Any],
     user_project: Dict[str, Any],
     fake_workbench_adjacency_list: Dict[str, Any],
-    # parametrization
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
@@ -343,11 +365,14 @@ async def test_start_pipeline(
             check_outputs=False,
         )
         # wait for the computation to stop
-        _assert_sleeper_services_completed(
+        await _assert_sleeper_services_completed(
             project_id, postgres_session, StateType.SUCCESS, fake_workbench_payload
         )
-        # restart the computation
+        # restart the computation, this should produce a 422 since the computation was complete
         resp = await client.post(f"{url_start}")
+        assert resp.status == web.HTTPUnprocessableEntity.status_code
+        # force restart the computation
+        resp = await client.post(f"{url_start}", json={"force_restart": True})
         data, error = await assert_status(resp, expected.created)
         assert not error
 
@@ -362,6 +387,8 @@ async def test_start_pipeline(
     data, error = await assert_status(resp, expected.no_content)
     if not error:
         # now wait for it to stop
-        _assert_sleeper_services_completed(
+        await _assert_sleeper_services_completed(
             project_id, postgres_session, StateType.ABORTED, fake_workbench_payload
         )
+        # leave some time for properly stopping the tasks
+        await asyncio.sleep(10)
