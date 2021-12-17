@@ -50,10 +50,6 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
 
     __createBtn: function(nodeId) {
       const btn = this._createNodeBtn(nodeId);
-      btn.set({
-        iconPosition: "left",
-        gap: 6
-      });
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const slideshow = study.getUi().getSlideshow().getData();
       const node = study.getWorkbench().getNode(nodeId);
@@ -87,7 +83,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
           converter: output => osparc.utils.StatusUI.getColor(output)
         }, this);
         // eslint-disable-next-line no-underscore-dangle
-        btn._add(statusIcon);
+        btn._addAt(statusIcon, 0);
 
         const statusUI = new osparc.ui.basic.NodeStatusUI(node);
         const statusLabel = statusUI.getChildControl("label");
