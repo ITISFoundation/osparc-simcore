@@ -585,6 +585,12 @@ async def test_abort_computation(
     fake_workbench_without_outputs: Dict[str, Any],
     fake_workbench_computational_pipeline_details: PipelineDetails,
 ):
+    # we need long running tasks to ensure cancellation is done properly
+    for node in fake_workbench_without_outputs.values():
+        if "sleeper" in node["key"]:
+            node["inputs"].setdefault("in_2", 120)
+            if not isinstance(node["inputs"]["in_2"], dict):
+                node["inputs"]["in_2"] = 120
     sleepers_project = project(workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
     response = await create_pipeline(
@@ -648,6 +654,8 @@ async def test_abort_computation(
         wait_for_states=[RunningState.ABORTED],
     )
     assert task_out.state == RunningState.ABORTED
+    # FIXME: Here ideally we should connect to the dask scheduler and check
+    # that the task is really aborted
 
 
 async def test_update_and_delete_computation(
