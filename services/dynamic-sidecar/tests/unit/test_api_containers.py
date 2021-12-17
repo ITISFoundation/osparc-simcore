@@ -501,7 +501,7 @@ async def test_container_create_outputs_dirs(
         json={"outputs_labels": json_outputs_labels},
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-    assert response.json() is None
+    assert response.text == ""
 
     mounted_volumes: MountedVolumes = get_mounted_volumes()
     for dir_name in mock_outputs_labels.keys():
