@@ -5,6 +5,7 @@ of a record in comp_task table is changed.
 import asyncio
 import json
 import logging
+from contextlib import suppress
 from pprint import pformat
 from typing import Dict, Optional
 
@@ -107,7 +108,7 @@ async def listen(app: web.Application, db_engine: Engine):
             # get the data and the info on what changed
             payload: Dict = json.loads(notification.payload)
 
-            # FIXME: this part should be replaced by a pydantic CompTaskAtDB once it moves to director-v2
+            # FIXME: all this should move to rabbitMQ instead of this
             task_data = payload.get("data", {})
             task_changes = payload.get("changes", [])
 
@@ -178,7 +179,8 @@ async def comp_tasks_listening_task(app: web.Application) -> None:
             await listen(app, db_engine)
         except asyncio.CancelledError:
             # we are closing the app..
-            return
+            log.info("cancelled comp_tasks events")
+            raise
         except Exception:  # pylint: disable=broad-except
             log.exception(
                 "caught unhandled comp_task db listening task exception, restarting...",
@@ -193,8 +195,12 @@ async def setup_comp_tasks_listening_task(app: web.Application):
         comp_tasks_listening_task(app), name="computation db listener"
     )
     yield
+    log.debug("cancelling comp_tasks db listening task...")
     task.cancel()
-    await task
+    log.debug("waiting for comp_tasks db listening task to stop")
+    with suppress(asyncio.CancelledError):
+        await task
+    log.debug("waiting for comp_tasks db listening task to stop completed")
 
 
 def setup(app: web.Application):
