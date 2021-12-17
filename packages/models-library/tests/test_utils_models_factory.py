@@ -1,27 +1,47 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import json
 from typing import Callable, Dict, Optional
 
+import pytest
+from faker import Faker
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
-from models_library.utils.models_factory import copy_model
+from models_library.rest_pagination_utils import PageDict, paginate_data
+from models_library.utils.models_factory import _collect_fields, copy_model
 from pydantic import BaseModel, validator
 from pydantic.types import PositiveInt
+from yarl import URL
 
-# HELPERS -----
-
-
-def update_dict(obj: Dict, **updates):
-    for key, value in updates.items():
-        if callable(value):
-            value = value(obj[key])
-        obj.update({key: value})
-    return obj
+# HELPERS ---------------------------------------------------------------
 
 
-def validators_factory() -> Callable:
+def assert_same_fields(model_cls, reference_model_cls):
+
+    got_fields = _collect_fields(model_cls)
+    expected_fields = _collect_fields(reference_model_cls)
+
+    assert set(got_fields.keys()) == set(expected_fields.keys())
+
+    # FIXME: can be tmp used to debug but cannot compare uuids of
+    assert got_fields == expected_fields
+
+
+def _trim_desc(schema: Dict):
+    data = {}
+    for key in schema:
+        if key not in ("description", "title"):
+            value = schema[key]
+            if isinstance(value, dict):
+                value = _trim_desc(value)
+            data[key] = value
+    return data
+
+
+def _validators_factory() -> Callable:
     """Common validators"""
 
     def name_must_contain_space(v):
@@ -54,16 +74,39 @@ def validators_factory() -> Callable:
     return _create
 
 
-create_validator_for = validators_factory()
+create_validator_for = _validators_factory()
 
-
+#
+# NOTE: Rationale of this test-suite
+#
+# Below we represent different views of a 'user' resource represented with
+# different models depending on the context. We have a domain model, that
+# is used to exchange internally in the business logic, as well as different
+# views used in the request body or response payload of CRUD entrypoints in an API.
+#
+# Note that every context asks for a different collection of fields but also
+# different constraints. Those will depend on nature of the the parsed data sources
+# as well as the guarantees defined on the data captured in the model.
+#
+# This approach should be applicable to any resource but we find that
+# 'user' is a good use case that naturally incorporates many of the variants
+# that we have typically encountered
+#
+# All these variants have many features in common so the idea is to implement a minimalistic
+# policy-based tools that can safely compose them all
+#
+# Good examples on how to use model polices can be found
+#  in https://fastapi-crudrouter.awtkns.com/schemas or
+#  in https://fastapi.tiangolo.com/tutorial/body-updates/#body-updates
+#
+#
 class User(BaseModel):
     """Domain model"""
 
     id: PositiveInt
     display_name: str
     username: str
-    password: str
+    password_hash: str
 
     # validators when model created in code
     _name_must_contain_space = create_validator_for("display_name")
@@ -105,7 +148,7 @@ UserReplace = UserCreate
 class UserGet(BaseModel):
     """<- out Detailed model for response in GET /users/{id}"""
 
-    id: int
+    id: PositiveInt
     display_name: str
     username: str
 
@@ -118,52 +161,134 @@ UserGetEnveloped = Envelope[UserGet]
 class UserListItem(BaseModel):
     """<- out Item model for response in GET /users"""
 
-    id: int
+    id: PositiveInt
     username: str
 
     # parses from User
 
 
-UsersList = Page[UserListItem]
+# FIXTURES ---------------------------------------------------------------
 
 
-# TESTS --------------------------------------------------------
-
-
-def test_build_create_model():
-
-    _BaseUserCreate = copy_model(User, name="_BaseUserCreate", exclude={"id"})
-
-    class _UserCreate(_BaseUserCreate):
-        """in -> Model for body of POST /users"""
-
-        password2: str
-
-        _passwords_match = create_validator_for("password2")
-
-    # assert UserCreate.__fields__ == _UserCreate.__fields__
-    # assert UserCreate.__get_validators__() == _UserCreate.__get_validators__()
-
-    assert UserCreate.schema() == update_dict(
-        _UserCreate.schema(), title=lambda v: v.lstrip("_")
+@pytest.fixture
+def stored_user(faker: Faker) -> User:
+    return User(
+        id=faker.pyint(min_value=1),
+        display_name=faker.name(),
+        username=faker.user_name(),
+        password_hash=faker.md5(),
     )
 
 
-def test_build_update_model():
-    pass
+# TESTS ------------------------------------------------------------------
 
 
-def test_build_replace_model():
-    pass
+def test_build_UserCreate_model():
+    # In UserCreate, we exclude the primary key
+    _BaseUserCreate = copy_model(
+        User, name="_BaseUserCreate", exclude={"id", "password_hash"}
+    )
+
+    # With the new base, we have everything in User (including validators)
+    # except for the primary key, then we just need to extend it to include
+    # the second password
+    class _UserCreate(_BaseUserCreate):
+        """in -> Model for body of POST /users"""
+
+        password: str
+        password2: str
+        _passwords_match = create_validator_for("password2")
+
+    assert _trim_desc(UserCreate.schema()) == _trim_desc(_UserCreate.schema())
+
+    assert_same_fields(_UserCreate, UserCreate)
 
 
-def test_build_get_model():
-    pass
+def test_build_UserUpdate_model(faker: Faker):
+    # model for request body Update method https://google.aip.dev/134 (PATCH)
+
+    # in UserUpdate, is as UserCreate but all optional
+    _UserUpdate = copy_model(UserCreate, name="UserUpdate", as_update_model=True)
+
+    assert _trim_desc(UserUpdate.schema()) == _trim_desc(_UserUpdate.schema())
+    #
+    # SEE insight on how to partially update a model
+    # in https://fastapi.tiangolo.com/tutorial/body-updates/#partial-updates-with-patch
+    #
+
+    update_change_display = _UserUpdate(display_name=faker.name())
+    update_reset_password = _UserUpdate(password="secret", password2="secret")
+    update_username = _UserUpdate(username=faker.user_name())
 
 
-def test_build_list_item_model():
-    pass
+def test_build_UserReplace_model():
+    # model for request body Replace method https://google.aip.dev/134
+
+    # Replace is like create but w/o primary key (if it would be defined on the client)
+    class _UserReplace(copy_model(User, exclude={"id", "password_hash"})):
+        password: str
+        password2: str
+        _passwords_match = create_validator_for("password2")
+
+    assert _trim_desc(UserReplace.schema()) == _trim_desc(_UserReplace.schema())
+    #
+    # SEE insights on how to replace a model in
+    # https://fastapi.tiangolo.com/tutorial/body-updates/#update-replacing-with-put
+    #
 
 
-def test_build_page_model():
-    pass
+def test_build_UserGet_model(stored_user: User):
+    # model for response payload of Get method https://google.aip.dev/131
+
+    # if the source is User domain model, then the data
+    # is already guaranteed (and we could skip validators)
+    # or alternative use UserGet.construct()
+    #
+    _UserGet = copy_model(
+        User,
+        name="UserGet",
+        exclude={"password_hash"},
+        skip_validators=True,
+    )
+
+    assert _trim_desc(UserGet.schema()) == _trim_desc(_UserGet.schema())
+
+    payload_user: Dict = _UserGet.parse_obj(stored_user).dict(exclude_unset=True)
+
+    # NOTE: this would be the solid way to get a jsonable dict ... but requires fastapi!
+    # from fastapi.encoders import jsonable_encoder
+    # jsonable_encoder(payload_user)
+    #
+    print(json.dumps({"data": payload_user}, indent=1))
+
+
+def test_build_UserListItem_model(stored_user: User, faker: Faker):
+    # model for response payload of List method https://google.aip.dev/132)
+
+    # Typically a light version of the Get model
+    _UserListItem = copy_model(
+        UserGet,
+        name="UserListItem",
+        exclude={"display_name"},
+        skip_validators=True,
+    )
+
+    assert _trim_desc(UserListItem.schema()) == _trim_desc(_UserListItem.schema())
+
+    #  to build the pagination model, simply apply the Page generic
+    assert _trim_desc(Page[_UserListItem].schema()) == _trim_desc(
+        Page[UserListItem].schema()
+    )
+
+    # parse stored data
+    item_user = _UserListItem.parse_obj(stored_user).dict(exclude_unset=True)
+
+    page: PageDict = paginate_data(
+        chunk=[item_user],
+        request_url=URL(faker.url()).with_path("/users"),
+        total=100,
+        limit=1,
+        offset=0,
+    )
+    page_users = Page[_UserListItem].parse_obj(page)
+    print(page_users.json(indent=2, exclude_unset=True))
