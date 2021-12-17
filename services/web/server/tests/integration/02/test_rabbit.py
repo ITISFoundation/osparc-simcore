@@ -8,14 +8,11 @@ import logging
 from asyncio import sleep
 from collections import namedtuple
 from typing import Any, Awaitable, Callable, Dict, List, NamedTuple, Tuple
-from unittest.mock import call
-from uuid import uuid4
 
 import aio_pika
 import pytest
 import socketio
 import sqlalchemy as sa
-from faker.generator import Generator
 from faker.proxy import Faker
 from models_library.projects_state import RunningState
 from models_library.rabbitmq_messages import (
@@ -31,6 +28,7 @@ from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.diagnostics import setup_diagnostics
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.projects.module_setup import setup_projects
@@ -172,6 +170,7 @@ def client(
     setup_session(app)
     setup_security(app)
     setup_rest(app)
+    setup_diagnostics(app)
     setup_login(app)
     setup_projects(app)
     setup_computation(app)
