@@ -95,7 +95,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         height: this.self().HEADER_HEIGHT
       });
 
-      const infoBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/14");
+      const infoBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/14").set({
+        tooltipText: this.tr("Information")
+      });
       infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
       header.add(infoBtn);
 
@@ -107,7 +109,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       nodeStatusUI.getChildControl("label").setFont("text-14");
       header.add(nodeStatusUI);
 
-      const retrieveBtn = this.__retrieveButton = new qx.ui.form.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
+      const retrieveBtn = this.__retrieveButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/spinner/14").set({
+        tooltipText: this.tr("Retrieve")
+      });
       retrieveBtn.addListener("execute", () => this.getNode().callRetrieveInputs(), this);
       header.add(retrieveBtn);
 
@@ -115,7 +119,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
-      const outputsBtn = this._outputsBtn = new qx.ui.form.ToggleButton(this.tr("Outputs"), "@FontAwesome5Solid/sign-out-alt/14");
+      const outputsBtn = this._outputsBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sign-out-alt/14").set({
+        tooltipText: this.tr("Outputs")
+      });
       header.add(outputsBtn);
 
       return header;
