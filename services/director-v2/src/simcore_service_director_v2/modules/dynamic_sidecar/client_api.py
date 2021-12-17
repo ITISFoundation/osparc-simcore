@@ -228,6 +228,82 @@ class DynamicSidecarClient:
             log_httpx_http_error(url, "POST", traceback.format_exc())
             raise e
 
+    async def service_disable_dir_watcher(self, dynamic_sidecar_endpoint: str) -> None:
+        url = get_url(
+            dynamic_sidecar_endpoint, "/v1/containers/directory-watcher:disable"
+        )
+        try:
+            response = await self._client.post(url)
+            if response.status_code != status.HTTP_204_NO_CONTENT:
+                message = (
+                    f"ERROR while restoring service state: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise DynamicSchedulerException(message)
+        except httpx.HTTPError as e:
+            log_httpx_http_error(url, "POST", traceback.format_exc())
+            raise e
+
+    async def service_enable_dir_watcher(self, dynamic_sidecar_endpoint: str) -> None:
+        url = get_url(
+            dynamic_sidecar_endpoint, "/v1/containers/directory-watcher:enable"
+        )
+        try:
+            response = await self._client.post(url)
+            if response.status_code != status.HTTP_204_NO_CONTENT:
+                message = (
+                    f"ERROR while restoring service state: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise DynamicSchedulerException(message)
+        except httpx.HTTPError as e:
+            log_httpx_http_error(url, "POST", traceback.format_exc())
+            raise e
+
+    async def service_outputs_create_dirs(
+        self, dynamic_sidecar_endpoint: str, outputs_labels: Dict[str, Any]
+    ) -> None:
+        url = get_url(
+            dynamic_sidecar_endpoint, "/v1/containers/ports/outputs:create-dirs"
+        )
+        try:
+            response = await self._client.post(
+                url, json=dict(outputs_labels=outputs_labels)
+            )
+            if response.status_code != status.HTTP_204_NO_CONTENT:
+                message = (
+                    f"ERROR while restoring service state: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise DynamicSchedulerException(message)
+        except httpx.HTTPError as e:
+            log_httpx_http_error(url, "POST", traceback.format_exc())
+            raise e
+
+    async def service_pull_output_ports(
+        self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
+    ) -> int:
+        port_keys = [] if port_keys is None else port_keys
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/outputs:pull")
+        try:
+            response = await self._client.post(
+                url, json=port_keys, timeout=self._save_restore_timeout
+            )
+            if response.status_code != status.HTTP_200_OK:
+                message = (
+                    f"ERROR while restoring service state: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise DynamicSchedulerException(message)
+            return int(response.text)
+        except httpx.HTTPError as e:
+            log_httpx_http_error(url, "POST", traceback.format_exc())
+            raise e
+
     async def service_push_output_ports(
         self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
     ) -> None:

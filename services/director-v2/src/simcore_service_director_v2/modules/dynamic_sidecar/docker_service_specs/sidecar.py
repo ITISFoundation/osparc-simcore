@@ -103,7 +103,7 @@ def get_dynamic_sidecar_spec(
         mounts.append(
             DynamicSidecarVolumesPathsResolver.mount_entry(
                 compose_namespace=compose_namespace,
-                state_path=path_to_mount,
+                path=path_to_mount,
                 node_uuid=f"{scheduler_data.node_uuid}",
             )
         )
