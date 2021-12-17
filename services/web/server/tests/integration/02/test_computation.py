@@ -5,22 +5,13 @@
 import asyncio
 import json
 from pathlib import Path
-from typing import (
-    Any,
-    AsyncContextManager,
-    Callable,
-    Dict,
-    List,
-    NamedTuple,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Type, Union
 
 import pytest
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from models_library.projects_state import RunningState
 from models_library.settings.rabbit import RabbitConfig
 from models_library.settings.redis import RedisConfig
 from pytest_mock import MockerFixture
@@ -50,7 +41,7 @@ from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.module_setup import setup_socketio
 from simcore_service_webserver.users import setup_users
 from tenacity._asyncio import AsyncRetrying
-from tenacity.retry import retry_if_exception_type
+from tenacity.retry import retry_if_exception_type, retry_if_result
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
@@ -86,6 +77,7 @@ class ExpectedResponse(NamedTuple):
     will have no access, therefore ExpectedResponse.ok = HTTPUnauthorized
     """
 
+    ok: Union[Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPOk]]
     created: Union[
         Type[web.HTTPUnauthorized], Type[web.HTTPForbidden], Type[web.HTTPCreated]
     ]
@@ -109,6 +101,7 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
             (
                 UserRole.ANONYMOUS,
                 ExpectedResponse(
+                    ok=web.HTTPUnauthorized,
                     created=web.HTTPUnauthorized,
                     no_content=web.HTTPUnauthorized,
                     forbidden=web.HTTPUnauthorized,
@@ -117,6 +110,7 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
             (
                 UserRole.GUEST,
                 ExpectedResponse(
+                    ok=web.HTTPOk,
                     created=web.HTTPCreated,
                     no_content=web.HTTPNoContent,
                     forbidden=web.HTTPForbidden,
@@ -125,6 +119,7 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
             (
                 UserRole.USER,
                 ExpectedResponse(
+                    ok=web.HTTPOk,
                     created=web.HTTPCreated,
                     no_content=web.HTTPNoContent,
                     forbidden=web.HTTPForbidden,
@@ -133,6 +128,7 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
             (
                 UserRole.TESTER,
                 ExpectedResponse(
+                    ok=web.HTTPOk,
                     created=web.HTTPCreated,
                     no_content=web.HTTPNoContent,
                     forbidden=web.HTTPForbidden,
@@ -250,22 +246,19 @@ async def _assert_sleeper_services_completed(
     expected_state: StateType,
     fake_workbench_payload: Dict[str, Any],
 ):
-    # pylint: disable=no-member
-    TIMEOUT_SECONDS = 120
-    WAIT_TIME = 5
     NUM_COMP_TASKS_TO_WAIT_FOR = len(
         [x for x in fake_workbench_payload.values() if "/comp/" in x["key"]]
     )
 
     async for attempt in AsyncRetrying(
         reraise=True,
-        stop=stop_after_delay(TIMEOUT_SECONDS),
-        wait=wait_fixed(WAIT_TIME),
+        stop=stop_after_delay(120),
+        wait=wait_fixed(5),
         retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
             print(
-                f"--> waiting for pipeline to complete attenpt {attempt.retry_state.attempt_number}..."
+                f"--> waiting for pipeline to complete attempt {attempt.retry_state.attempt_number}..."
             )
             # this check is only there to check the comp_pipeline is there
             assert (
@@ -326,13 +319,10 @@ async def _assert_sleeper_services_completed(
 
 # TESTS ------------------------------------------
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
-async def test_start_pipeline(
+async def test_start_stop_pipeline(
     client: TestClient,
     sleeper_service: Dict[str, str],
     postgres_session: sa.orm.session.Session,
-    rabbit_service: RabbitConfig,
-    redis_service: RedisConfig,
-    simcore_services_ready: None,
     logged_user: Dict[str, Any],
     user_project: Dict[str, Any],
     fake_workbench_adjacency_list: Dict[str, Any],
@@ -392,3 +382,85 @@ async def test_start_pipeline(
         )
         # leave some time for properly stopping the tasks
         await asyncio.sleep(10)
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_run_pipeline_and_check_state(
+    client: TestClient,
+    sleeper_service: Dict[str, str],
+    postgres_session: sa.orm.session.Session,
+    logged_user: Dict[str, Any],
+    user_project: Dict[str, Any],
+    fake_workbench_adjacency_list: Dict[str, Any],
+    user_role: UserRole,
+    expected: ExpectedResponse,
+):
+    project_id = user_project["uuid"]
+    fake_workbench_payload = user_project["workbench"]
+
+    url_start = client.app.router["start_pipeline"].url_for(project_id=project_id)
+    assert url_start == URL(f"/{API_VTAG}/computation/pipeline/{project_id}:start")
+
+    # POST /v0/computation/pipeline/{project_id}:start
+    resp = await client.post(f"{url_start}")
+    data, error = await assert_status(resp, expected.created)
+
+    if error:
+        return
+
+    assert "pipeline_id" in data
+    assert data["pipeline_id"] == project_id
+
+    _assert_db_contents(
+        project_id,
+        postgres_session,
+        fake_workbench_payload,
+        fake_workbench_adjacency_list,
+        check_outputs=False,
+    )
+
+    url_project_state = client.app.router["state_project"].url_for(
+        project_id=project_id
+    )
+    assert url_project_state == URL(f"/{API_VTAG}/projects/{project_id}/state")
+
+    running_state_order_lookup = {
+        RunningState.UNKNOWN: 0,
+        RunningState.NOT_STARTED: 1,
+        RunningState.PUBLISHED: 2,
+        RunningState.PENDING: 3,
+        RunningState.STARTED: 4,
+        RunningState.RETRY: 5,
+        RunningState.SUCCESS: 6,
+        RunningState.FAILED: 6,
+        RunningState.ABORTED: 6,
+    }
+
+    assert all(  # pylint: disable=use-a-generator
+        [k in running_state_order_lookup for k in RunningState.__members__]
+    ), "there are missing members in the order lookup, please complete!"
+
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        stop=stop_after_delay(120),
+        wait=wait_fixed(0.1),
+        retry=retry_if_result(lambda result: result == True),
+    ):
+        previous_state = RunningState.UNKNOWN
+        with attempt:
+            print(
+                f"--> waiting for pipeline to complete attempt {attempt.retry_state.attempt_number}..."
+            )
+            resp = await client.get(f"{url_project_state}")
+            data, error = await assert_status(resp, expected.ok)
+            assert "state" in data
+            assert "value" in data["state"]
+            received_study_state = RunningState(data["state"]["value"])
+            assert (
+                running_state_order_lookup[received_study_state]
+                >= running_state_order_lookup[previous_state]
+            ), (
+                f"the received state {received_study_state} shall be greater "
+                f"or equal to the previous state {previous_state}"
+            )
+            return received_study_state == RunningState.SUCCESS
