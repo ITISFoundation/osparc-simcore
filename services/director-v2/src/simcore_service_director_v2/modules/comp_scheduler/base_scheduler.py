@@ -339,7 +339,8 @@ class BaseCompScheduler(ABC):
         running_tasks = [
             t
             for t in tasks_to_stop.values()
-            if t.state in [RunningState.STARTED, RunningState.RETRY]
+            if t.state
+            in [RunningState.STARTED, RunningState.RETRY, RunningState.PENDING]
         ]
         try:
             await self._stop_tasks(cluster_id, running_tasks)
