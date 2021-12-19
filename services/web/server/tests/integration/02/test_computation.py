@@ -4,6 +4,7 @@
 # pylint:disable=too-many-arguments
 import asyncio
 import json
+import time
 from pathlib import Path
 from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Type, Union
 
@@ -41,7 +42,7 @@ from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.module_setup import setup_socketio
 from simcore_service_webserver.users import setup_users
 from tenacity._asyncio import AsyncRetrying
-from tenacity.retry import retry_if_exception_type, retry_if_result
+from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
@@ -440,13 +441,15 @@ async def test_run_pipeline_and_check_state(
         [k in running_state_order_lookup for k in RunningState.__members__]
     ), "there are missing members in the order lookup, please complete!"
 
+    pipeline_state = RunningState.UNKNOWN
+
+    start = time.monotonic()
     async for attempt in AsyncRetrying(
         reraise=True,
         stop=stop_after_delay(120),
         wait=wait_fixed(0.1),
-        retry=retry_if_result(lambda result: result == True),
+        retry=retry_if_exception_type(ValueError),
     ):
-        previous_state = RunningState.UNKNOWN
         with attempt:
             print(
                 f"--> waiting for pipeline to complete attempt {attempt.retry_state.attempt_number}..."
@@ -459,9 +462,17 @@ async def test_run_pipeline_and_check_state(
             print(f"--> project computation state {received_study_state=}")
             assert (
                 running_state_order_lookup[received_study_state]
-                >= running_state_order_lookup[previous_state]
+                >= running_state_order_lookup[pipeline_state]
             ), (
                 f"the received state {received_study_state} shall be greater "
-                f"or equal to the previous state {previous_state}"
+                f"or equal to the previous state {pipeline_state}"
             )
-            return received_study_state == RunningState.SUCCESS
+            assert received_study_state not in [
+                RunningState.ABORTED,
+                RunningState.FAILED,
+            ], "the pipeline did not end up successfully"
+            pipeline_state = received_study_state
+            if received_study_state != RunningState.SUCCESS:
+                raise ValueError
+    assert pipeline_state == RunningState.SUCCESS
+    print(f"<-- pipeline completed successfully in {time.monotonic() - start} seconds")
