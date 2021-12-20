@@ -230,6 +230,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         });
         view.getMainView().set({
           backgroundColor: "contrasted-background+",
+          paddingTop: 6,
           paddingLeft: 10,
           paddingRight: 10
         });
