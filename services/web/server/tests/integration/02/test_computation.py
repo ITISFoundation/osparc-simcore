@@ -241,11 +241,44 @@ def _assert_db_contents(
         assert task_db.image["tag"] == mock_pipeline[task_db.node_id]["version"]
 
 
+NodeIdStr = str
+
+
+def _get_computational_tasks_from_db(
+    project_id: str,
+    postgres_session: sa.orm.session.Session,
+) -> Dict[NodeIdStr, Any]:
+    # this check is only there to check the comp_pipeline is there
+    assert (
+        postgres_session.query(comp_pipeline)
+        .filter(comp_pipeline.c.project_id == project_id)
+        .one()
+    ), f"missing pipeline in the database under comp_pipeline {project_id}"
+
+    # get the tasks that should be completed either by being aborted, successfuly completed or failed
+    tasks_db = (
+        postgres_session.query(comp_tasks)
+        .filter(
+            (comp_tasks.c.project_id == project_id)
+            & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+            & (
+                # these are the options of a completed pipeline
+                (comp_tasks.c.state == StateType.ABORTED)
+                | (comp_tasks.c.state == StateType.SUCCESS)
+                | (comp_tasks.c.state == StateType.FAILED)
+            )
+        )
+        .all()
+    )
+    print(f"--> tasks from DB: {tasks_db=}")
+    return {t.node_id: t for t in tasks_db}
+
+
 async def _assert_sleeper_services_completed(
     project_id: str,
     postgres_session: sa.orm.session.Session,
     expected_state: StateType,
-    fake_workbench_payload: Dict[str, Any],
+    fake_workbench_payload: Dict[NodeIdStr, Any],
 ):
     NUM_COMP_TASKS_TO_WAIT_FOR = len(
         [x for x in fake_workbench_payload.values() if "/comp/" in x["key"]]
@@ -261,35 +294,14 @@ async def _assert_sleeper_services_completed(
             print(
                 f"--> waiting for pipeline to complete attempt {attempt.retry_state.attempt_number}..."
             )
-            # this check is only there to check the comp_pipeline is there
-            assert (
-                postgres_session.query(comp_pipeline)
-                .filter(comp_pipeline.c.project_id == project_id)
-                .one()
-            ), f"missing pipeline in the database under comp_pipeline {project_id}"
-
-            # get the tasks that should be completed either by being aborted, successfuly completed or failed
-            tasks_db = (
-                postgres_session.query(comp_tasks)
-                .filter(
-                    (comp_tasks.c.project_id == project_id)
-                    & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
-                    & (
-                        # these are the options of a completed pipeline
-                        (comp_tasks.c.state == StateType.ABORTED)
-                        | (comp_tasks.c.state == StateType.SUCCESS)
-                        | (comp_tasks.c.state == StateType.FAILED)
-                    )
-                )
-                .all()
+            tasks_db: Dict[str, Any] = _get_computational_tasks_from_db(
+                project_id, postgres_session
             )
-            # check that all computational tasks are completed
-            print(f"--> tasks from DB: {tasks_db=}")
             assert (
                 len(tasks_db) == NUM_COMP_TASKS_TO_WAIT_FOR
             ), f"all tasks have not finished, expected {NUM_COMP_TASKS_TO_WAIT_FOR}, got {len(tasks_db)}"
             # get the different states in a set of states
-            set_of_states = {task_db.state for task_db in tasks_db}
+            set_of_states = {t.state for t in tasks_db.values()}
             print(f"--> states found: {set_of_states=}")
             if expected_state in [StateType.ABORTED, StateType.FAILED]:
                 # only one is necessary
@@ -475,4 +487,11 @@ async def test_run_pipeline_and_check_state(
             if received_study_state != RunningState.SUCCESS:
                 raise ValueError
     assert pipeline_state == RunningState.SUCCESS
+    comp_tasks_in_db: Dict[NodeIdStr, Any] = _get_computational_tasks_from_db(
+        project_id, postgres_session
+    )
+    assert all(  # pylint: disable=use-a-generator
+        [t.state == StateType.SUCCESS for t in comp_tasks_in_db.values()]
+    )
+
     print(f"<-- pipeline completed successfully in {time.monotonic() - start} seconds")
