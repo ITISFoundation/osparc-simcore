@@ -196,20 +196,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             view = new osparc.component.node.FilePickerNodeView();
           } else {
             view = new osparc.component.node.NodeView();
+            view.getSettingsLayout().setVisibility(node.isDynamic() && this.getPageContext() === "app" ? "excluded" : "visible");
           }
           view.setNode(node);
-          if (this.getPageContext() === "app") {
-            if (node.isComputational()) {
-              view.getHeaderLayout().show();
-              view.getSettingsLayout().show();
-            } else if (node.isDynamic()) {
-              view.getHeaderLayout().show();
-              view.getSettingsLayout().exclude();
-            } else {
-              view.getHeaderLayout().exclude();
-              view.getSettingsLayout().exclude();
-            }
-          }
         }
 
         if (node.isDynamic()) {
