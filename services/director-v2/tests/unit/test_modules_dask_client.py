@@ -18,12 +18,16 @@ from _dask_helpers import DaskGatewayServer
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import get_worker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.events import TaskStateEvent
+from dask_task_models_library.container_tasks.events import (
+    TaskCancelEvent,
+    TaskStateEvent,
+)
 from dask_task_models_library.container_tasks.io import (
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
 )
+from distributed import Sub
 from distributed.deploy.spec import SpecCluster
 from fastapi.applications import FastAPI
 from models_library.clusters import NoAuthentication, SimpleAuthentication
@@ -389,13 +393,24 @@ async def test_abort_send_computation_task(
         command: List[str],
         expected_annotations: Dict[str, Any],
     ) -> TaskOutputData:
-        # sleep a bit in case someone is aborting us
-        time.sleep(1)
+        sub = Sub(TaskCancelEvent.topic_name())
         # get the task data
         worker = get_worker()
         task = worker.tasks.get(worker.get_current_task())
         assert task is not None
+        print(f"--> task {task=} started")
         assert task.annotations == expected_annotations
+        # sleep a bit in case someone is aborting us
+        print("--> waiting for task to be aborted...")
+        for msg in sub:
+            assert msg
+            print(f"--> received cancellation msg: {msg=}")
+            cancel_event = TaskCancelEvent.parse_raw(msg)
+            assert cancel_event
+            if cancel_event.job_id == task.key:
+                print("--> raising cancellation error now")
+                raise asyncio.CancelledError("task cancelled")
+
         return TaskOutputData.parse_obj({"some_output_key": 123})
 
     await dask_client.send_computation_tasks(
@@ -411,9 +426,11 @@ async def test_abort_send_computation_task(
     assert (
         len(dask_client._taskid_to_future_map) == 1
     ), "dask client did not store the future of the task sent"
+    # let the task start
+    await asyncio.sleep(2)
 
-    job_id, future = list(dask_client._taskid_to_future_map.items())[0]
     # now let's abort the computation
+    job_id, future = list(dask_client._taskid_to_future_map.items())[0]
     assert future.key == job_id
     await dask_client.abort_computation_tasks([job_id])
     assert future.cancelled() == True
