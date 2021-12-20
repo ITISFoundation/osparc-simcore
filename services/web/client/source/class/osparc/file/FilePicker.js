@@ -251,8 +251,7 @@ qx.Class.define("osparc.file.FilePicker", {
         case "tree-folder-layout":
           control = new qx.ui.splitpane.Pane("horizontal");
           control.getChildControl("splitter").set({
-            width: 2,
-            backgroundColor: "scrollbar-passive"
+            width: 2
           });
           this._addAt(control, this.self().POS.FILES_TREE, {
             flex: 1
@@ -261,7 +260,7 @@ qx.Class.define("osparc.file.FilePicker", {
         case "files-tree": {
           const treeFolderLayout = this.getChildControl("tree-folder-layout");
           control = new osparc.file.FilesTree().set({
-            backgroundColor: "background-main-lighter+",
+            backgroundColor: "contrasted-background",
             showLeafs: false,
             minWidth: 150,
             width: 250
@@ -276,9 +275,7 @@ qx.Class.define("osparc.file.FilePicker", {
           break;
         }
         case "select-toolbar":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
-            backgroundColor: "background-main-lighter+"
-          });
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._addAt(control, this.self().POS.TOOLBAR);
           break;
         case "files-add": {
