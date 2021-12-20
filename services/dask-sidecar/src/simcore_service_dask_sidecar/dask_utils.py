@@ -2,7 +2,7 @@ import asyncio
 import contextlib
 import logging
 from contextlib import asynccontextmanager, suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, AsyncIterator, Awaitable, Dict, Optional, cast
 
@@ -67,11 +67,16 @@ def get_current_task_resources() -> Dict[str, Any]:
     return {}
 
 
-@dataclass(frozen=True, order=True)
+@dataclass()
 class TaskPublisher:
-    state = distributed.Pub(TaskStateEvent.topic_name())
-    progress = distributed.Pub(TaskProgressEvent.topic_name())
-    logs = distributed.Pub(TaskLogEvent.topic_name())
+    state: distributed.Pub = field(init=False)
+    progress: distributed.Pub = field(init=False)
+    logs: distributed.Pub = field(init=False)
+
+    def __post_init__(self):
+        self.state = distributed.Pub(TaskStateEvent.topic_name())
+        self.progress = distributed.Pub(TaskProgressEvent.topic_name())
+        self.logs = distributed.Pub(TaskLogEvent.topic_name())
 
 
 _TASK_ABORTION_INTERVAL_CHECK_S: int = 2
