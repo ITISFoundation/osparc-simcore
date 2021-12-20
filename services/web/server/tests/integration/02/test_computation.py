@@ -379,7 +379,7 @@ async def test_start_stop_pipeline(
         data, error = await assert_status(resp, expected.created)
         assert not error
 
-    # give time to run a bit ... before stoppinng
+    # give time to run a bit ... before stopping
     await asyncio.sleep(2)
 
     # now stop the pipeline
