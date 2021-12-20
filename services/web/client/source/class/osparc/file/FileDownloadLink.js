@@ -23,8 +23,8 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filesAdd = new osparc.file.FileDownloadLink();
- *   this.getRoot().add(filesAdd);
+ *   let typeDownloadLink = new osparc.file.FileDownloadLink();
+ *   this.getRoot().add(typeDownloadLink);
  * </pre>
  */
 
