@@ -12,8 +12,8 @@ from models_library.service_settings_labels import (
 from models_library.services import BootOptionMode, EnvVarKey, ServiceKeyVersion
 
 from ....api.dependencies.director_v0 import DirectorV0Client
-from ..errors import DynamicSidecarError
 from ..constants import CONTAINER_NAME
+from ..errors import DynamicSidecarError
 
 # Notes on below env var names:
 # - SIMCORE_REGISTRY will be replaced by the url of the simcore docker registry

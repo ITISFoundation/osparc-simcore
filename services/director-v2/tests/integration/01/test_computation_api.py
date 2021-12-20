@@ -579,6 +579,7 @@ async def test_run_computation(
         exp_pipeline_details=fake_workbench_computational_pipeline_details_completed,
     )
 
+
 @pytest.mark.skip(reason="FIXME: temporary disabled")
 async def test_abort_computation(
     minimal_configuration: None,

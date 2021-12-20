@@ -1,17 +1,16 @@
-import logging
 import json
+import logging
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, Type
-from pathlib import Path
 
 import httpx
 from fastapi import FastAPI
+from models_library.projects import ProjectAtDB
 from models_library.service_settings_labels import (
-    SimcoreServiceSettingsLabel,
     SimcoreServiceLabels,
+    SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
-from models_library.projects import ProjectAtDB
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
@@ -19,6 +18,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential, wait_fixed
 
+from ....api.dependencies.database import fetch_repo_no_request
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.dynamic_services import (
     DockerContainerInspect,
@@ -26,9 +26,8 @@ from ....models.schemas.dynamic_services import (
     SchedulerData,
 )
 from ....modules.director_v0 import DirectorV0Client
-from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ...db.repositories.projects import ProjectsRepository
-from ....api.dependencies.database import fetch_repo_no_request
+from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     create_network,
     create_service_and_get_id,
@@ -51,9 +50,7 @@ from ..errors import (
     EntrypointContainerNotFoundError,
     GenericDockerError,
 )
-from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
 from .abc import DynamicSchedulerEvent
-
 
 logger = logging.getLogger(__name__)
 
