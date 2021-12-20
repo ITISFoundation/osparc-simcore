@@ -152,7 +152,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         enabled: false
       });
       infoPart.add(selectBox);
-      const infoBtn = this.__infoBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/info-circle/16").set({
+      const infoBtn = this.__infoBtn = new qx.ui.toolbar.Button(null, "@MaterialIcons/info_outline/16").set({
         enabled: false
       });
       infoBtn.addListener("execute", function() {

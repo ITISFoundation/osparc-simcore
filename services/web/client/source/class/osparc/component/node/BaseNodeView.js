@@ -95,7 +95,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         height: this.self().HEADER_HEIGHT
       });
 
-      const infoBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/14").set({
+      const infoBtn = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16").set({
         toolTipText: this.tr("Information")
       });
       infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
