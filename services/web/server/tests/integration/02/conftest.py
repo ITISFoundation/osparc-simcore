@@ -4,7 +4,7 @@
 
 import json
 from pathlib import Path
-from typing import Dict
+from typing import AsyncIterator, Dict
 
 import pytest
 from pytest_simcore.helpers.utils_projects import NewProject
@@ -27,7 +27,9 @@ def fake_project(fake_data_dir: Path, fake_workbench_payload: Dict) -> Dict:
 
 
 @pytest.fixture
-async def user_project(client, fake_project: Dict, logged_user: Dict) -> Dict:
+async def user_project(
+    client, fake_project: Dict, logged_user: Dict
+) -> AsyncIterator[Dict]:
     fake_project["prjOwner"] = logged_user["name"]
 
     async with NewProject(

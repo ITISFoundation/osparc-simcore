@@ -89,11 +89,9 @@ class ExpectedResponse(NamedTuple):
         Type[web.HTTPUnauthorized],
         Type[web.HTTPForbidden],
     ]
-
+    # pylint: disable=no-member
     def __str__(self) -> str:
-        items = ", ".join(  # pylint: disable=no-member
-            f"{k}={v.__name__}" for k, v in self._asdict().items()
-        )
+        items = ", ".join(f"{k}={v.__name__}" for k, v in self._asdict().items())
         return f"{self.__class__.__name__}({items})"
 
 
