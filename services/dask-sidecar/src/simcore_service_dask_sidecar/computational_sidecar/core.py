@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 import socket
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from pprint import pformat
 from types import TracebackType
