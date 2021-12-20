@@ -194,6 +194,7 @@ async def setup_comp_tasks_listening_task(app: web.Application):
     task = asyncio.create_task(
         comp_tasks_listening_task(app), name="computation db listener"
     )
+    log.debug("comp_tasks db listening task created %s", f"{task=}")
     yield
     log.debug("cancelling comp_tasks db listening task...")
     task.cancel()
