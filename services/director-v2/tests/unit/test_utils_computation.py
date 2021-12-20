@@ -237,9 +237,18 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
             id="any number of success and 1 aborted = aborted",
         ),
         pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.PENDING),
+                (RunningState.NOT_STARTED),
+            ],
+            RunningState.STARTED,
+            id="any number of success and 1 aborted = aborted",
+        ),
+        pytest.param(
             [],
-            RunningState.NOT_STARTED,
-            id="empty tasks (empty project or full of dynamic services) = not_started",
+            RunningState.UNKNOWN,
+            id="empty tasks (empty project or full of dynamic services) = unknown",
         ),
     ],
 )
