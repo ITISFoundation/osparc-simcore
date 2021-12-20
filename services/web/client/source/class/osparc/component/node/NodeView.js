@@ -62,7 +62,7 @@ qx.Class.define("osparc.component.node.NodeView", {
       }
       this.__checkSettingsVisibility();
 
-      this._addToMainView(this._settingsLayout);
+      this._mainView.add(this._settingsLayout);
     },
 
     // overridden
@@ -83,7 +83,7 @@ qx.Class.define("osparc.component.node.NodeView", {
         });
       }
 
-      this._addToMainView(this._iFrameLayout, {
+      this._mainView.add(this._iFrameLayout, {
         flex: 1
       });
     },

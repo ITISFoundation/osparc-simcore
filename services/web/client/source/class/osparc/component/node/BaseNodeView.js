@@ -132,9 +132,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
       const mainView = this._mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const groupBox = this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
-      this.bind("backgroundColor", groupBox, "backgroundColor");
-      this.bind("backgroundColor", groupBox.getChildControl("frame"), "backgroundColor");
+      const settingsBox = this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
+      mainView.bind("backgroundColor", settingsBox, "backgroundColor");
+      mainView.bind("backgroundColor", settingsBox.getChildControl("frame"), "backgroundColor");
 
       this._iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
@@ -152,14 +152,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       hBox.add(outputsLayout);
 
       return hBox;
-    },
-
-    _addToMainView: function(view, options = {}) {
-      if (view.hasChildren()) {
-        this._mainView.add(view, options);
-      } else if (qx.ui.core.Widget.contains(this._mainView, view)) {
-        this._mainView.remove(view);
-      }
     },
 
     __openNodeDataManager: function() {
