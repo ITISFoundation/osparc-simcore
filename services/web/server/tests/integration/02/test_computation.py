@@ -492,6 +492,9 @@ async def test_run_pipeline_and_check_state(
     )
     assert all(  # pylint: disable=use-a-generator
         [t.state == StateType.SUCCESS for t in comp_tasks_in_db.values()]
+    ), (
+        "the individual computational services are not finished! "
+        f"Expected to be completed, got {comp_tasks_in_db=}"
     )
 
     print(f"<-- pipeline completed successfully in {time.monotonic() - start} seconds")
