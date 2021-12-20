@@ -96,6 +96,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       });
 
       const infoBtn = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16").set({
+        backgroundColor: "transparent",
         toolTipText: this.tr("Information")
       });
       infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
@@ -105,11 +106,14 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
-      const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI();
+      const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI().set({
+        backgroundColor: "contrasted-background+"
+      });
       nodeStatusUI.getChildControl("label").setFont("text-14");
       header.add(nodeStatusUI);
 
       const retrieveBtn = this.__retrieveButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/spinner/14").set({
+        backgroundColor: "transparent",
         toolTipText: this.tr("Retrieve")
       });
       retrieveBtn.addListener("execute", () => this.getNode().callRetrieveInputs(), this);
@@ -120,6 +124,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       });
 
       const outputsBtn = this._outputsBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sign-out-alt/14").set({
+        backgroundColor: "transparent",
         toolTipText: this.tr("Outputs")
       });
       header.add(outputsBtn);
