@@ -737,15 +737,22 @@ async def _get_project_lock_state(
     """returns the lock state of a project
     1. If a project is locked for any reason, first return the project as locked and STATUS defined by lock
     2. If a client_session_id is passed, then first check to see if the project is currently opened by this very user/tab combination, if yes returns the project as Locked and OPENED.
-    3. If any other user that user_id is using the project (even disconnected before the TTL is finished) then the project is Locked and OPENED.
+    3. If any other user than user_id is using the project (even disconnected before the TTL is finished) then the project is Locked and OPENED.
     4. If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked and OPENED.
     5. If the same user is using the project with NO socket id (meaning there is no current tab active) then the project is Unlocked and OPENED. which means the user can open it again.
     """
-    log.debug("getting project [%s] lock state for user [%s]...", project_uuid, user_id)
+    log.debug(
+        "getting project [%s] lock state for user [%s]...",
+        f"{project_uuid=}",
+        f"{user_id=}",
+    )
     prj_locked_state: Optional[ProjectLocked] = await get_project_locked_state(
         app, project_uuid
     )
     if prj_locked_state:
+        log.debug(
+            "project [%s] is locked: %s", f"{project_uuid=}", f"{prj_locked_state=}"
+        )
         return prj_locked_state
 
     # let's now check if anyone has the project in use somehow
@@ -761,7 +768,7 @@ async def _get_project_lock_state(
 
     if not set_user_ids:
         # no one has the project, so it is unlocked and closed.
-        log.debug("project [%s] is not in use", project_uuid)
+        log.debug("project [%s] is not in use", f"{project_uuid=}")
         return ProjectLocked(value=False, status=ProjectStatus.CLOSED)
 
     log.debug(
@@ -789,8 +796,8 @@ async def _get_project_lock_state(
     # the project is opened in another tab or browser, or by another user, both case resolves to the project being locked, and opened
     log.debug(
         "project [%s] is in use by another user [%s], so it is locked",
-        project_uuid,
-        set_user_ids,
+        f"{project_uuid=}",
+        f"{set_user_ids=}",
     )
     return ProjectLocked(
         value=True,
@@ -824,17 +831,21 @@ async def add_project_states_for_user(
     is_template: bool,
     app: web.Application,
 ) -> Dict[str, Any]:
-
+    log.debug(
+        "adding project states for %s with project %s",
+        f"{user_id=}",
+        f"{project['uuid']=}",
+    )
     # for templates: the project is never locked and never opened. also the running state is always unknown
     lock_state = ProjectLocked(value=False, status=ProjectStatus.CLOSED)
     running_state = RunningState.UNKNOWN
-    if not is_template:
-        lock_state, computation_task = await logged_gather(
-            _get_project_lock_state(user_id, project["uuid"], app),
-            director_v2_api.get_computation_task(app, user_id, project["uuid"]),
-        )
 
-        if computation_task:
+    if not is_template:
+        lock_state = await _get_project_lock_state(user_id, project["uuid"], app)
+
+        if computation_task := await director_v2_api.get_computation_task(
+            app, user_id, project["uuid"]
+        ):
             # get the running state
             running_state = computation_task.state
             # get the nodes individual states
