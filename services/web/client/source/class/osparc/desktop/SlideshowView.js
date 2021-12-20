@@ -184,10 +184,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__currentNodeId = nodeId;
         this.getStudy().getUi().setCurrentNodeId(nodeId);
 
+        // build layout
         let view;
         if (node.isParameter()) {
           view = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
-          view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
           const renderer = new osparc.component.node.ParameterEditor(node);
           renderer.buildForm(false);
           view.add(renderer);
@@ -201,6 +201,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           view.setNode(node);
         }
 
+        // connect maximize/restore
         if (node.isDynamic()) {
           const loadingPage = node.getLoadingPage();
           const iFrame = node.getIFrame();
@@ -215,19 +216,24 @@ qx.Class.define("osparc.desktop.SlideshowView", {
               }
             });
           }
-        } else {
-          view.set({
-            maxWidth: 800
-          });
         }
+
+        // style layout
         view.getContentElement().setStyles({
           "border-radius": "12px"
         });
         view.set({
           backgroundColor: "background-main-lighter+",
+          maxWidth: node.isDynamic() ? null : 800,
           padding: 10,
           margin: 6
         });
+        view.getMainView().set({
+          backgroundColor: "contrasted-background+"
+        });
+        if (node.isParameter()) {
+          view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
+        }
 
         // If the current node is moving forward do some run checks:
         const studyUI = this.getStudy().getUi();
