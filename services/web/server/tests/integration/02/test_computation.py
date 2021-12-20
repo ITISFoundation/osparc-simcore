@@ -91,7 +91,9 @@ class ExpectedResponse(NamedTuple):
     ]
 
     def __str__(self) -> str:
-        items = ", ".join(f"{k}={v.__name__}" for k, v in self._asdict().items())
+        items = ", ".join(  # pylint: disable=no-member
+            f"{k}={v.__name__}" for k, v in self._asdict().items()
+        )
         return f"{self.__class__.__name__}({items})"
 
 
