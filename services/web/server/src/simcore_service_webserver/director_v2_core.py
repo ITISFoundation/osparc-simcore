@@ -12,7 +12,7 @@ from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
-from tenacity import AsyncRetrying
+from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_exponential
 from yarl import URL
@@ -208,9 +208,7 @@ async def create_or_update_pipeline(
 async def get_computation_task(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> Optional[ComputationTask]:
-
     settings: Directorv2Settings = get_settings(app)
-
     backend_url = URL(f"{settings.endpoint}/computations/{project_id}").update_query(
         user_id=user_id
     )
@@ -221,12 +219,15 @@ async def get_computation_task(
             app, "GET", backend_url, expected_status=web.HTTPAccepted
         )
         task_out = ComputationTask.parse_obj(computation_task_out_dict)
+        log.debug("found computation task: %s", f"{task_out=}")
         return task_out
     except DirectorServiceError as exc:
         if exc.status == web.HTTPNotFound.status_code:
             # the pipeline might not exist and that is ok
             return
-        log.warning("getting pipeline for project %s failed: %s.", project_id, exc)
+        log.warning(
+            "getting pipeline for project %s failed: %s.", f"{project_id=}", exc
+        )
 
 
 @log_decorator(logger=log)
