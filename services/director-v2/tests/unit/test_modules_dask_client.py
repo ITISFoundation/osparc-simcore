@@ -405,7 +405,7 @@ async def test_abort_send_computation_task(
         for msg in sub:
             assert msg
             print(f"--> received cancellation msg: {msg=}")
-            cancel_event = TaskCancelEvent.parse_raw(msg)
+            cancel_event = TaskCancelEvent.parse_raw(msg)  # type: ignore
             assert cancel_event
             if cancel_event.job_id == task.key:
                 print("--> raising cancellation error now")
