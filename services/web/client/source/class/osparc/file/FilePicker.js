@@ -303,12 +303,18 @@ qx.Class.define("osparc.file.FilePicker", {
           break;
         }
         case "file-download-link": {
-          const groupBox = new qx.ui.groupbox.GroupBox(this.tr("Or provide a Download Link")).set({
-            layout: new qx.ui.layout.VBox(5)
+          const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+            alignY: "middle"
+          }));
+          const label = new qx.ui.basic.Label(this.tr("Or provide a Download Link"));
+          layout.add(label);
+          control = new osparc.file.FileDownloadLink().set({
+            allowGrowY: false
           });
-          control = new osparc.file.FileDownloadLink();
-          groupBox.add(control);
-          this._addAt(groupBox, this.self().POS.DOWNLOAD_LINK);
+          layout.add(control, {
+            flex: 1
+          });
+          this._addAt(layout, this.self().POS.DOWNLOAD_LINK);
           break;
         }
       }
