@@ -31,57 +31,198 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
     return CompTaskAtDB.parse_file(fake_task_file)
 
 
+# NOTE: these parametrizations are made to mimic something like a sleepers project
 @pytest.mark.parametrize(
     "task_states, exp_pipeline_state",
     [
         pytest.param(
             [
-                (RunningState.PUBLISHED),
-                (RunningState.PENDING),
-                (RunningState.PUBLISHED),
+                (RunningState.UNKNOWN),
+                (RunningState.UNKNOWN),
+                (RunningState.UNKNOWN),
+                (RunningState.UNKNOWN),
+                (RunningState.UNKNOWN),
             ],
-            RunningState.PENDING,
-            id="unconnected published/pending tasks = pending",
+            RunningState.UNKNOWN,
+            id="initial task states unknown = unknown state",
         ),
         pytest.param(
             [
+                (RunningState.NOT_STARTED),
+                (RunningState.NOT_STARTED),
+                (RunningState.NOT_STARTED),
+                (RunningState.NOT_STARTED),
+                (RunningState.NOT_STARTED),
+            ],
+            RunningState.NOT_STARTED,
+            id="not_started tasks = not_started pipeline",
+        ),
+        pytest.param(
+            [
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
+                (RunningState.NOT_STARTED),
+                (RunningState.NOT_STARTED),
+                (RunningState.NOT_STARTED),
+            ],
+            RunningState.PUBLISHED,
+            id="not_started tasks transitioning to published = not_started pipeline",
+        ),
+        pytest.param(
+            [
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
                 (RunningState.PUBLISHED),
                 (RunningState.PUBLISHED),
                 (RunningState.PUBLISHED),
             ],
             RunningState.PUBLISHED,
-            id="unconnected published tasks = published",
+            id="published tasks  = published pipeline",
         ),
         pytest.param(
             [
-                (RunningState.NOT_STARTED),
-                (RunningState.NOT_STARTED),
+                (RunningState.PENDING),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
             ],
-            RunningState.NOT_STARTED,
-            id="unconnected not_started tasks = not_started",
+            RunningState.PENDING,
+            id="published transitioning to pending tasks = pending",
         ),
         pytest.param(
             [
+                (RunningState.STARTED),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
+            ],
+            RunningState.STARTED,
+            id="1 task started = started pipeline",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
+            ],
+            RunningState.STARTED,
+            id="1 task completed = started pipeline",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.PENDING),
+                (RunningState.PENDING),
+                (RunningState.PUBLISHED),
+                (RunningState.PUBLISHED),
+            ],
+            RunningState.STARTED,
+            id="1 task completed, other pending = started pipeline",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.SUCCESS),
+                (RunningState.PENDING),
+                (RunningState.PENDING),
+                (RunningState.PUBLISHED),
+            ],
+            RunningState.STARTED,
+            id="2 tasks completed, continuing = started pipeline",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.SUCCESS),
+                (RunningState.SUCCESS),
+                (RunningState.SUCCESS),
+                (RunningState.PUBLISHED),
+            ],
+            RunningState.STARTED,
+            id="4 tasks completed, continuing = started pipeline",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.SUCCESS),
+                (RunningState.SUCCESS),
+                (RunningState.SUCCESS),
+                (RunningState.PENDING),
+            ],
+            RunningState.STARTED,
+            id="4 tasks completed, 1 pending = started pipeline",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.SUCCESS),
+                (RunningState.SUCCESS),
                 (RunningState.SUCCESS),
                 (RunningState.SUCCESS),
             ],
             RunningState.SUCCESS,
-            id="unconnected successfull tasks = success",
+            id="5 tasks completed  = completed pipeline",
         ),
         pytest.param(
             [
-                (RunningState.PENDING),
+                (RunningState.SUCCESS),
+                (RunningState.FAILED),
+                (RunningState.SUCCESS),
+                (RunningState.STARTED),
+                (RunningState.PUBLISHED),
+            ],
+            RunningState.STARTED,
+            id="2 tasks completed, 1 task failed, 1 started, 1 published  = started pipeline",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.FAILED),
+                (RunningState.ABORTED),
+                (RunningState.STARTED),
+            ],
+            RunningState.STARTED,
+            id="if any task in published, started, pending  = started pipeline",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.FAILED),
+                (RunningState.ABORTED),
+                (RunningState.PUBLISHED),
+            ],
+            RunningState.STARTED,
+            id="if any task in published, started, pending  = started pipeline",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.FAILED),
+                (RunningState.ABORTED),
                 (RunningState.PENDING),
             ],
-            RunningState.PENDING,
-            id="unconnected pending tasks = pending",
+            RunningState.STARTED,
+            id="if any task in published, started, pending  = started pipeline",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.FAILED),
+                (RunningState.ABORTED),
+                (RunningState.RETRY),
+            ],
+            RunningState.STARTED,
+            id="any number of success and 1 retry = started",
         ),
         pytest.param(
             [
                 (RunningState.SUCCESS),
                 (RunningState.SUCCESS),
                 (RunningState.FAILED),
-                (RunningState.ABORTED),
             ],
             RunningState.FAILED,
             id="any number of success and 1 failed = failed",
@@ -90,60 +231,10 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
             [
                 (RunningState.SUCCESS),
                 (RunningState.SUCCESS),
-                (RunningState.PENDING),
-                (RunningState.FAILED),
-                (RunningState.FAILED),
-                (RunningState.PENDING),
-                (RunningState.PUBLISHED),
-                (RunningState.ABORTED),
-            ],
-            RunningState.STARTED,
-            id="any number of unconnected success and failed failed with pending/published = started",
-        ),
-        pytest.param(
-            [
-                (RunningState.STARTED),
-                (RunningState.FAILED),
-            ],
-            RunningState.STARTED,
-            id="any number of unconnected success and failed failed with pending/published = started",
-        ),
-        pytest.param(
-            [
-                (RunningState.SUCCESS),
-                (RunningState.PENDING),
-                (RunningState.PENDING),
-            ],
-            RunningState.STARTED,
-            id="any number of unconnected success and failed failed with pending/published = started",
-        ),
-        pytest.param(
-            [
-                (RunningState.SUCCESS),
-                (RunningState.PENDING),
-                (RunningState.PUBLISHED),
-            ],
-            RunningState.STARTED,
-            id="any number of unconnected success and failed failed with pending/published = started",
-        ),
-        pytest.param(
-            [
-                (RunningState.SUCCESS),
-                (RunningState.ABORTED),
-                (RunningState.FAILED),
-                (RunningState.PENDING),
-            ],
-            RunningState.STARTED,
-            id="any number of unconnected success and failed failed with pending/published = started",
-        ),
-        pytest.param(
-            [
-                (RunningState.SUCCESS),
-                (RunningState.ABORTED),
                 (RunningState.ABORTED),
             ],
             RunningState.ABORTED,
-            id="any number of unconnected success and aborted without pending/published = aborted",
+            id="any number of success and 1 aborted = aborted",
         ),
         pytest.param(
             [],

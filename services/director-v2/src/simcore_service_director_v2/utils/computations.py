@@ -21,6 +21,8 @@ def get_pipeline_state_from_task_states(tasks: List[CompTaskAtDB]) -> RunningSta
             # this is typically for success, pending, published
             the_state = next(iter(set_states))
             return the_state
+        if set_states.issubset({RunningState.NOT_STARTED, RunningState.PUBLISHED}):
+            return RunningState.PUBLISHED
 
         if set_states.issubset({RunningState.PENDING, RunningState.PUBLISHED}):
             # a pending pipeline has nodes either in PENDING or PUBLISHED state
