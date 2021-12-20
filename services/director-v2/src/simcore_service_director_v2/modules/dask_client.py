@@ -377,6 +377,11 @@ class DaskClient:
         return list_of_node_id_to_job_id
 
     async def abort_computation_tasks(self, job_ids: List[str]) -> None:
+        # Dask future may be cancelled, but only a future that was not already taken by
+        # a sidecar can be cancelled that way.
+        # If the sidecar has already taken the job, then the cancellation must be user-defined.
+        # therefore the dask PUB is used, and the dask-sidecar will then let the abort
+        # process, and report when it is finished and properly cancelled.
         logger.debug("cancelling tasks with job_ids: [%s]", job_ids)
         for job_id in job_ids:
             task_future = self._taskid_to_future_map.get(job_id)
