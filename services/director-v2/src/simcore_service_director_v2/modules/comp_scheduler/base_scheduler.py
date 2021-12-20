@@ -230,6 +230,8 @@ class BaseCompScheduler(ABC):
         pipeline_dag = nx.DiGraph()
         pipeline_tasks: Dict[str, CompTaskAtDB] = {}
         pipeline_result: RunningState = RunningState.UNKNOWN
+        tasks_to_start: Set[NodeID] = set()
+
         # 1. Update the run states
         try:
             pipeline_dag = await self._get_pipeline_dag(project_id)
@@ -326,8 +328,8 @@ class BaseCompScheduler(ABC):
         comp_tasks_repo: CompTasksRepository = get_repository(
             self.db_engine, CompTasksRepository
         )  # type: ignore
-        await comp_tasks_repo.mark_project_tasks_as_aborted(project_id)
-        # stop any remaining running task
+        await comp_tasks_repo.mark_project_published_tasks_as_aborted(project_id)
+        # stop any remaining running task, these are already submitted
         running_tasks = [
             t
             for t in tasks_to_stop.values()
