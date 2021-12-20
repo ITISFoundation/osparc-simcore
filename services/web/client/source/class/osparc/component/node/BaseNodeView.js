@@ -178,6 +178,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       return this._header;
     },
 
+    getMainView: function() {
+      return this._mainView;
+    },
+
     getSettingsLayout: function() {
       return this._settingsLayout;
     },
@@ -226,7 +230,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       if (this.__retrieveButton) {
         this.__retrieveButton.setVisibility(node.isDynamic() ? "visible" : "excluded");
       }
-
 
       this._mainView.removeAll();
       this._addSettings();
