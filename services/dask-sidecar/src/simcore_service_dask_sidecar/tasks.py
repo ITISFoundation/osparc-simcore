@@ -7,20 +7,24 @@ from typing import List
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.events import TaskLogEvent, TaskStateEvent
 from dask_task_models_library.container_tasks.io import (
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
 )
 from distributed.worker import logger
+from models_library.projects_state import RunningState
 from pydantic.networks import AnyUrl
 
 from .computational_sidecar.core import ComputationalSidecar
 from .dask_utils import (
+    TaskPublisher,
     create_dask_worker_logger,
     get_current_task_boot_mode,
     get_current_task_resources,
     monitor_task_abortion,
+    publish_event,
 )
 from .meta import print_banner
 from .settings import Settings
@@ -49,6 +53,7 @@ class GracefulKiller:
             pformat([t.get_name() for t in tasks]),
         )
         self.kill_now = True
+        assert self.worker  # nosec
         asyncio.ensure_future(self.worker.close(timeout=5))
 
 
@@ -86,6 +91,9 @@ async def _run_computational_sidecar_async(
     log_file_url: AnyUrl,
     command: List[str],
 ) -> TaskOutputData:
+
+    task_publishers = TaskPublisher()
+
     log.debug(
         "run_computational_sidecar %s",
         f"{docker_auth=}, {service_key=}, {service_version=}, {input_data=}, {output_data_keys=}, {command=}",
@@ -109,11 +117,20 @@ async def _run_computational_sidecar_async(
                 docker_auth=docker_auth,
                 boot_mode=sidecar_bootmode,
                 task_max_resources=task_max_resources,
+                task_publishers=task_publishers,
             ) as sidecar:
                 output_data = await sidecar.run(command=command)
             log.debug("completed run of sidecar with result %s", f"{output_data=}")
             return output_data
     except asyncio.CancelledError:
+        publish_event(
+            task_publishers.logs,
+            TaskLogEvent.from_dask_worker(log="[sidecar] task run was aborted"),
+        )
+        publish_event(
+            task_publishers.state,
+            TaskStateEvent.from_dask_worker(state=RunningState.ABORTED),
+        )
         log.info(
             "run of sidecar for %s was cancelled", f"{service_key}:{service_version}"
         )

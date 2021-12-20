@@ -11,18 +11,13 @@ from uuid import uuid4
 
 from aiodocker import Docker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
-from dask_task_models_library.container_tasks.events import (
-    TaskLogEvent,
-    TaskProgressEvent,
-    TaskStateEvent,
-)
+from dask_task_models_library.container_tasks.events import TaskLogEvent, TaskStateEvent
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from distributed import Pub
 from models_library.projects_state import RunningState
 from packaging import version
 from pydantic import ValidationError
@@ -30,7 +25,7 @@ from pydantic.networks import AnyUrl
 from yarl import URL
 
 from ..boot_mode import BootMode
-from ..dask_utils import create_dask_worker_logger, publish_event
+from ..dask_utils import TaskPublisher, create_dask_worker_logger, publish_event
 from ..file_utils import pull_file_from_remote, push_file_to_remote
 from ..settings import Settings
 from .docker_utils import (
@@ -59,15 +54,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
     log_file_url: AnyUrl
     boot_mode: BootMode
     task_max_resources: Dict[str, Any]
-    _state_pub: Pub = field(init=False)
-    _progress_pub: Pub = field(init=False)
-    _logs_pub: Pub = field(init=False)
-
-    def __post_init__(self) -> None:
-        # NOTE: this must be created after the task is started to ensure we do have a dask worker
-        self._state_pub = Pub(name=TaskStateEvent.topic_name())
-        self._progress_pub = Pub(name=TaskProgressEvent.topic_name())
-        self._logs_pub = Pub(name=TaskLogEvent.topic_name())
+    task_publishers: TaskPublisher
 
     async def _write_input_data(
         self,
@@ -159,7 +146,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
 
     async def _publish_sidecar_log(self, log: str) -> None:
         publish_event(
-            self._logs_pub,
+            self.task_publishers.logs,
             TaskLogEvent.from_dask_worker(log=f"[sidecar] {log}"),
         )
         logger.info(log)
@@ -168,7 +155,7 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
         self, state: RunningState, msg: Optional[str] = None
     ) -> None:
         publish_event(
-            self._state_pub,
+            self.task_publishers.state,
             TaskStateEvent.from_dask_worker(state=state, msg=msg),
         )
 
@@ -215,8 +202,8 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                     container=container,
                     service_key=self.service_key,
                     service_version=self.service_version,
-                    progress_pub=self._progress_pub,
-                    logs_pub=self._logs_pub,
+                    progress_pub=self.task_publishers.progress,
+                    logs_pub=self.task_publishers.logs,
                     integration_version=integration_version,
                     task_volumes=task_volumes,
                     log_file_url=self.log_file_url,

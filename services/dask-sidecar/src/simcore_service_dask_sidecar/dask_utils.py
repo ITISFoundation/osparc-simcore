@@ -2,6 +2,7 @@ import asyncio
 import contextlib
 import logging
 from contextlib import asynccontextmanager, suppress
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, AsyncIterator, Awaitable, Dict, Optional, cast
 
@@ -11,6 +12,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskCancelEvent,
     TaskLogEvent,
     TaskProgressEvent,
+    TaskStateEvent,
 )
 from distributed.worker import TaskState, get_worker
 
@@ -65,6 +67,13 @@ def get_current_task_resources() -> Dict[str, Any]:
     return {}
 
 
+@dataclass(frozen=True, order=True)
+class TaskPublisher:
+    state = distributed.Pub(TaskStateEvent.topic_name())
+    progress = distributed.Pub(TaskProgressEvent.topic_name())
+    logs = distributed.Pub(TaskLogEvent.topic_name())
+
+
 _TASK_ABORTION_INTERVAL_CHECK_S: int = 2
 
 
@@ -79,7 +88,7 @@ async def monitor_task_abortion(task_name: str) -> AsyncIterator[Awaitable[None]
                 task.cancel()
                 break
 
-    async def perdiodicaly_check_if_aborted(task_name: str) -> None:
+    async def periodicaly_check_if_aborted(task_name: str) -> None:
         try:
             logger.debug(
                 "starting task to check for task cancellation for '%s'", f"{task_name=}"
@@ -98,7 +107,7 @@ async def monitor_task_abortion(task_name: str) -> AsyncIterator[Awaitable[None]
     periodically_checking_task = None
     try:
         periodically_checking_task = asyncio.create_task(
-            perdiodicaly_check_if_aborted(task_name)
+            periodicaly_check_if_aborted(task_name)
         )
 
         yield periodically_checking_task
