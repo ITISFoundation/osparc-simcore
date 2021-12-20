@@ -315,7 +315,7 @@ class BaseCompScheduler(ABC):
         # 4. Schedule the next tasks,
         # let's schedule the tasks, mark them as PENDING so the sidecar will take them
         await self._schedule_next_tasks(
-            user_id, project_id, cluster_id, pipeline_tasks, [t for t in tasks_to_start]
+            user_id, project_id, cluster_id, pipeline_tasks, list(tasks_to_start)
         )
 
     async def _schedule_tasks_to_stop(
