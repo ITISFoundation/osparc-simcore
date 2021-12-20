@@ -9,7 +9,7 @@ from uuid import uuid4
 
 import yaml
 from service_integration.compose_spec_model import Service, ServiceVolume
-from service_integration.osparc_config import PathsMapping, SettingsItem
+from service_integration.osparc_config import PathMappingsLabel, SettingsItem
 
 
 def test_create_runtime_spec_impl(tests_data_dir: Path):
@@ -19,8 +19,8 @@ def test_create_runtime_spec_impl(tests_data_dir: Path):
 
     osparc_spec: Dict = yaml.safe_load((tests_data_dir / "runtime.yml").read_text())
 
-    pm_spec1 = PathsMapping.parse_obj(osparc_spec["paths-mapping"])
-    pm_spec2 = PathsMapping.parse_obj(
+    pm_spec1 = PathMappingsLabel.parse_obj(osparc_spec["paths-mapping"])
+    pm_spec2 = PathMappingsLabel.parse_obj(
         {
             "outputs_path": "/outputs",
             "inputs_path": "/inputs",
