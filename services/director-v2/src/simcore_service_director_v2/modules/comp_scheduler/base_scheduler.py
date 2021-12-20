@@ -250,7 +250,6 @@ class BaseCompScheduler(ABC):
             tasks_to_schedule = [node_id for node_id, degree in pipeline_dag.in_degree() if degree == 0]  # type: ignore
 
             tasks_to_mark_as_aborted: Set[NodeID] = set()
-            tasks_to_start: Set[NodeID] = set()
             for node_id in tasks_to_schedule:
                 if pipeline_tasks[str(node_id)].state == RunningState.FAILED:
                     tasks_to_mark_as_aborted.update(nx.bfs_tree(pipeline_dag, node_id))
@@ -312,16 +311,9 @@ class BaseCompScheduler(ABC):
             return
 
         # 4. Schedule the next tasks,
-        # these tasks are in PUBLISHED state and all their preceeding tasks are completed
-        next_tasks: List[NodeID] = [
-            node_id
-            for node_id, degree in pipeline_dag.in_degree()  # type: ignore
-            if degree == 0 and pipeline_tasks[node_id].state == RunningState.PUBLISHED
-        ]
-
         # let's schedule the tasks, mark them as PENDING so the sidecar will take them
         await self._schedule_next_tasks(
-            user_id, project_id, cluster_id, pipeline_tasks, next_tasks
+            user_id, project_id, cluster_id, pipeline_tasks, [t for t in tasks_to_start]
         )
 
     async def _schedule_tasks_to_stop(
