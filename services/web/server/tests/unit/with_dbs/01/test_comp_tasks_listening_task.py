@@ -10,6 +10,7 @@ from unittest import mock
 
 import aiopg.sa
 import pytest
+from aiohttp.test_utils import TestClient
 from aiopg.sa.result import RowProxy
 from pytest_mock.plugin import MockerFixture
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -51,12 +52,11 @@ async def mock_project_subsystem(
 
 @pytest.fixture
 async def comp_task_listening_task(
-    loop, mock_project_subsystem: Dict, client
+    loop, mock_project_subsystem: Dict, client: TestClient
 ) -> AsyncIterator:
-    await setup_comp_tasks_listening_task(client.app).__anext__()
-    yield
-    # cleanup
-    await setup_comp_tasks_listening_task(client.app).__anext__()
+    async for _comp_task in setup_comp_tasks_listening_task(client.app):
+        # first call creates the task, second call cleans it
+        yield
 
 
 @pytest.mark.parametrize(
