@@ -225,11 +225,13 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         view.set({
           backgroundColor: "background-main-lighter+",
           maxWidth: node.isDynamic() ? null : 800,
-          padding: 10,
+          paddingTop: 6,
           margin: 6
         });
         view.getMainView().set({
-          backgroundColor: "contrasted-background+"
+          backgroundColor: "contrasted-background+",
+          paddingLeft: 10,
+          paddingRight: 10
         });
         if (node.isParameter()) {
           view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
