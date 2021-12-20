@@ -146,6 +146,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         padding: 5,
         width: 250
       });
+      mainView.bind("backgroundColor", outputsLayout, "backgroundColor");
       this._outputsBtn.bind("value", outputsLayout, "visibility", {
         converter: value => value ? "visible" : "excluded"
       });
