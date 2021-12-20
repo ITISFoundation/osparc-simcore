@@ -255,18 +255,12 @@ def _get_computational_tasks_from_db(
         .one()
     ), f"missing pipeline in the database under comp_pipeline {project_id}"
 
-    # get the tasks that should be completed either by being aborted, successfuly completed or failed
+    # get the computational tasks
     tasks_db = (
         postgres_session.query(comp_tasks)
         .filter(
             (comp_tasks.c.project_id == project_id)
             & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
-            & (
-                # these are the options of a completed pipeline
-                (comp_tasks.c.state == StateType.ABORTED)
-                | (comp_tasks.c.state == StateType.SUCCESS)
-                | (comp_tasks.c.state == StateType.FAILED)
-            )
         )
         .all()
     )
@@ -326,7 +320,7 @@ async def _assert_sleeper_services_completed(
                     expected_state in set_of_states
                 ), f"{expected_state} not found in {set_of_states}"
             print(
-                f"--> pipeline completed! That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
+                f"--> pipeline completed with state {set_of_states=} and expected was {expected_state}! That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
             )
 
 
@@ -486,6 +480,9 @@ async def test_run_pipeline_and_check_state(
             pipeline_state = received_study_state
             if received_study_state != RunningState.SUCCESS:
                 raise ValueError
+            print(
+                f"--> pipeline completed with state {received_study_state=}! That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
+            )
     assert pipeline_state == RunningState.SUCCESS
     comp_tasks_in_db: Dict[NodeIdStr, Any] = _get_computational_tasks_from_db(
         project_id, postgres_session
