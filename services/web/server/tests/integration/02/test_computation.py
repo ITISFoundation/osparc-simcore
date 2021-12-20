@@ -453,7 +453,7 @@ async def test_run_pipeline_and_check_state(
     async for attempt in AsyncRetrying(
         reraise=True,
         stop=stop_after_delay(120),
-        wait=wait_fixed(0.1),
+        wait=wait_fixed(1),
         retry=retry_if_exception_type(ValueError),
     ):
         with attempt:
