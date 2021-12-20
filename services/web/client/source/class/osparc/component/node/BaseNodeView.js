@@ -171,6 +171,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       return this._header;
     },
 
+    getOutputsButtons: function() {
+      return this._outputsBtn;
+    },
+
     getMainView: function() {
       return this._mainView;
     },
