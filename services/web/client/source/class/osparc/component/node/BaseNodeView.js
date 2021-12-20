@@ -67,7 +67,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
   },
 
   members: {
-    __header: null,
+    _header: null,
     __nodeStatusUI: null,
     __retrieveButton: null,
     _mainView: null,
@@ -77,7 +77,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
     __buildLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      const header = this.__buildHeader();
+      const header = this._header = this._buildHeader();
       layout.add(header);
 
       const mainView = this.__buildMainView();
@@ -88,8 +88,8 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this.add(layout, 1);
     },
 
-    __buildHeader: function() {
-      const header = this.__header = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+    _buildHeader: function() {
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignX: "center"
       })).set({
         height: this.self().HEADER_HEIGHT
@@ -175,7 +175,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     getHeaderLayout: function() {
-      return this.__header;
+      return this._header;
     },
 
     getSettingsLayout: function() {
@@ -219,15 +219,19 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __applyNode: function(node) {
-      this.__nodeStatusUI.setNode(node);
-      this.__retrieveButton.setVisibility(this.getNode().isDynamic() ? "visible" : "excluded");
+      if (this.__nodeStatusUI) {
+        this.__nodeStatusUI.setNode(node);
+      }
+
+      if (this.__retrieveButton) {
+        this.__retrieveButton.setVisibility(node.isDynamic() ? "visible" : "excluded");
+      }
+
 
       this._mainView.removeAll();
       this._addSettings();
       this._addIFrame();
-
       this._addOutputs();
-
       this._addLogger();
     }
   }
