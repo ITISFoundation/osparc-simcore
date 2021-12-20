@@ -138,9 +138,7 @@ async def create_computation(
 
         return ComputationTaskOut(
             id=job.project_id,
-            state=RunningState.PUBLISHED
-            if job.start_pipeline
-            else RunningState.NOT_STARTED,
+            state=get_pipeline_state_from_task_states(inserted_comp_tasks),
             pipeline_details=await compute_pipeline_details(
                 complete_dag, computational_dag, inserted_comp_tasks
             ),
@@ -185,15 +183,15 @@ async def get_computation(
         pipeline_dag: nx.DiGraph = pipeline_at_db.get_graph()
 
         # get the project task states
-        all_comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_all_tasks(
+        all_tasks: List[CompTaskAtDB] = await computation_tasks.get_all_tasks(
             project_id
         )
         # create the complete DAG graph
-        complete_dag = create_complete_dag_from_tasks(all_comp_tasks)
+        complete_dag = create_complete_dag_from_tasks(all_tasks)
 
         # filter the tasks by the effective pipeline
         filtered_tasks = [
-            t for t in all_comp_tasks if str(t.node_id) in list(pipeline_dag.nodes())
+            t for t in all_tasks if str(t.node_id) in list(pipeline_dag.nodes())
         ]
         pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
@@ -208,7 +206,7 @@ async def get_computation(
             id=project_id,
             state=pipeline_state,
             pipeline_details=await compute_pipeline_details(
-                complete_dag, pipeline_dag, all_comp_tasks
+                complete_dag, pipeline_dag, all_tasks
             ),
             url=f"{request.url.remove_query_params('user_id')}",
             stop_url=f"{request.url.remove_query_params('user_id')}:stop"
