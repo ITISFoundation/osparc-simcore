@@ -113,6 +113,14 @@ async def create_computation(
             list(computational_dag.nodes()) if job.start_pipeline else [],
         )
 
+        # filter the tasks by the effective pipeline
+        filtered_tasks = [
+            t
+            for t in inserted_comp_tasks
+            if f"{t.node_id}" in list(computational_dag.nodes())
+        ]
+        pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
+
         if job.start_pipeline:
             if not computational_dag.nodes():
                 # 2 options here: either we have cycles in the graph or it's really done
@@ -137,7 +145,7 @@ async def create_computation(
 
         return ComputationTaskOut(
             id=job.project_id,
-            state=get_pipeline_state_from_task_states(inserted_comp_tasks),
+            state=pipeline_state,
             pipeline_details=await compute_pipeline_details(
                 complete_dag, computational_dag, inserted_comp_tasks
             ),
