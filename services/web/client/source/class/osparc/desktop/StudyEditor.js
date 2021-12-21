@@ -216,9 +216,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           } else {
             console.error(err);
             msg = this.tr("Error opening study");
-            const errorMsg = osparc.data.Resources.getErrorMsg(err);
-            if (errorMsg) {
-              msg += "<br>" + errorMsg;
+            if ("message" in err) {
+              msg += "<br>" + err["message"];
             }
           }
           osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
