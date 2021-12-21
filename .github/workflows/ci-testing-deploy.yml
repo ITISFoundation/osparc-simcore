@@ -33,6 +33,47 @@ env:
   DEFAULT_MAX_MEMORY: 268435456
 
 jobs:
+  build-test-images:
+    # this step comes first, so that it is executed as first job in push calls
+    # in PR calls this step is anyway skipped
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python: [3.8]
+        os: [ubuntu-20.04]
+        docker_buildx: [v0.5.1]
+        docker_compose: [1.29.1]
+        include:
+          - docker_compose: 1.29.1
+            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
+      fail-fast: false
+    name: "[build] docker images"
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup docker buildx
+        if: github.event_name == 'push'
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+        with:
+          version: ${{ matrix.docker_buildx }}
+          driver: docker
+      - name: setup docker-compose
+        if: github.event_name == 'push'
+        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: show system environs
+        if: github.event_name == 'push'
+        run: ./ci/helpers/show_system_versions.bash
+      - name: build images
+        if: github.event_name == 'push'
+        run: ./ci/build/test-images.bash build_images
+      - name: set owner variable
+        if: github.event_name == 'push'
+        run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
+      - name: push images
+        # only pushes have access to the docker credentials
+        if: github.event_name == 'push'
+        run: ./ci/deploy/dockerhub-test-images.bash
+
   unit-test-api:
     timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] api"
@@ -1661,46 +1702,6 @@ jobs:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
-  build-test-images:
-    # make PR faster by executing this one straight as PR cannot push to the registry anyway
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python: [3.8]
-        os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
-        docker_compose: [1.29.1]
-        include:
-          - docker_compose: 1.29.1
-            docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
-      fail-fast: false
-    name: "[build] docker images"
-    steps:
-      - uses: actions/checkout@v2
-      - name: setup docker buildx
-        if: github.event_name == 'push'
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-        with:
-          version: ${{ matrix.docker_buildx }}
-          driver: docker
-      - name: setup docker-compose
-        if: github.event_name == 'push'
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
-      - name: show system environs
-        if: github.event_name == 'push'
-        run: ./ci/helpers/show_system_versions.bash
-      - name: build images
-        if: github.event_name == 'push'
-        run: ./ci/build/test-images.bash build_images
-      - name: set owner variable
-        if: github.event_name == 'push'
-        run: echo "OWNER=${GITHUB_REPOSITORY%/*}" >> $GITHUB_ENV
-      - name: push images
-        # only pushes have access to the docker credentials
-        if: github.event_name == 'push'
-        run: ./ci/deploy/dockerhub-test-images.bash
-
   integration-test-webserver-01:
     timeout-minutes: 30 # if this timeout gets too small, then split the tests
     name: "[int] webserver 01"
@@ -2379,7 +2380,8 @@ jobs:
   deploy:
     name: deploy to dockerhub
     if: github.event_name == 'push'
-    needs: [
+    needs:
+      [
         unit-test-api-server,
         unit-test-api,
         unit-test-catalog,

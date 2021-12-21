@@ -41,8 +41,8 @@ from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_ip
 from shared_comp_utils import (
+    assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
-    assert_pipeline_status,
     create_pipeline,
 )
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
@@ -794,7 +794,7 @@ async def test_nodeports_integration(
     )
 
     # wait for the computation to start
-    await assert_pipeline_status(
+    await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
         user_db["id"],
@@ -803,7 +803,7 @@ async def test_nodeports_integration(
     )
 
     # wait for the computation to finish (either by failing, success or abort)
-    task_out = await assert_pipeline_status(
+    task_out = await assert_and_wait_for_pipeline_status(
         async_client, task_out.url, user_db["id"], current_study.uuid
     )
 

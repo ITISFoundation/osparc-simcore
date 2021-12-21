@@ -5,9 +5,9 @@
 import asyncio
 import json
 import time
-import unittest.mock as mock
 from copy import deepcopy
-from typing import Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
+from unittest import mock
 from unittest.mock import call
 
 import pytest
@@ -27,7 +27,6 @@ from models_library.projects_state import (
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-from servicelib import async_utils
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import catalog
 from simcore_service_webserver.db import setup_db
@@ -62,8 +61,18 @@ DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
 
 
 @pytest.fixture
+def mock_garbage_collector_task(mocker):
+    """patch the setup of the garbage collector so we can call it manually"""
+    mocker.patch(
+        "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
+        return_value="",
+    )
+
+
+@pytest.fixture
 def client(
     loop,
+    mock_garbage_collector_task,
     aiohttp_client,
     app_cfg,
     postgres_db,
@@ -370,7 +379,7 @@ async def _connect_websocket(
     client,
     client_id: str,
     events: Optional[Dict[str, Callable]] = None,
-) -> socketio.AsyncClient:
+) -> Optional[socketio.AsyncClient]:
     try:
         sio = await socketio_client_factory(client_id, client)
         assert sio.sid
@@ -1195,3 +1204,56 @@ async def test_open_shared_project_at_same_time(
                 ]
 
         assert num_assertions == NUMBER_OF_ADDITIONAL_CLIENTS
+
+
+@pytest.mark.parametrize(*standard_role_response())
+async def test_opened_project_can_still_be_opened_after_refreshing_tab(
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    user_project: Dict[str, Any],
+    client_session_id_factory: Callable,
+    socketio_client_factory: Callable,
+    user_role: UserRole,
+    expected: ExpectedResponse,
+    mocked_director_v2_api: Dict[str, mock.MagicMock],
+    disable_gc_manual_guest_users,
+):
+    """Simulating a refresh goes as follows:
+    The user opens a project, then hit the F5 refresh page.
+    The browser disconnects the websocket, reconnects but the
+    client_session_id remains the same
+    """
+
+    client_session_id = client_session_id_factory()
+    sio = await _connect_websocket(
+        socketio_client_factory,
+        user_role != UserRole.ANONYMOUS,
+        client,
+        client_session_id,
+    )
+    url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
+    resp = await client.post(f"{url}", json=client_session_id)
+    await assert_status(
+        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
+    )
+    if resp.status != web.HTTPOk.status_code:
+        return
+
+    # the project is opened, now let's simulate a refresh
+    assert sio
+    await sio.disconnect()
+    # give some time
+    await asyncio.sleep(1)
+    # re-connect using the same client session id
+    sio2 = await _connect_websocket(
+        socketio_client_factory,
+        user_role != UserRole.ANONYMOUS,
+        client,
+        client_session_id,
+    )
+    assert sio2
+    # re-open the project
+    resp = await client.post(f"{url}", json=client_session_id)
+    await assert_status(
+        resp, expected.ok if user_role != UserRole.GUEST else web.HTTPOk
+    )

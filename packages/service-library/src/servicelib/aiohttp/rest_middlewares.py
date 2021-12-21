@@ -91,6 +91,7 @@ def error_middleware_factory(api_version: str, log_exceptions=True) -> Middlewar
                     logs=[
                         LogMessageType(message=err.reason, level="ERROR"),
                     ],
+                    message=err.reason,
                 )
                 err.text = EnvelopeFactory(error=error).as_text()
 
