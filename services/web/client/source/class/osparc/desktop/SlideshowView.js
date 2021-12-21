@@ -197,9 +197,11 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             view.getOutputsButton().hide();
           } else {
             view = new osparc.component.node.NodeView();
-            view.getSettingsLayout().setVisibility(node.isDynamic() && this.getPageContext() === "app" ? "excluded" : "visible");
           }
           view.setNode(node);
+          if (node.isDynamic()) {
+            view.getSettingsLayout().setVisibility(this.getPageContext() === "app" ? "excluded" : "visible");
+          }
         }
 
         // connect maximize/restore
