@@ -205,11 +205,6 @@ def user_id(faker: Faker) -> int:
 
 
 @pytest.fixture
-def project_id(faker: Faker) -> str:
-    return faker.uuid4()
-
-
-@pytest.fixture
 def node_uuid(faker: Faker) -> str:
     return faker.uuid4()
 
@@ -227,10 +222,10 @@ def other_user_id(user_id: int, logged_user: Dict[str, Any]) -> int:
 
 
 @pytest.fixture
-def other_project_id(project_id: UUIDStr, user_project: Dict[str, Any]) -> UUIDStr:
-    other = project_id
-    assert user_project["uuid"] != other
-    return other
+def other_project_id(faker: Faker, user_project: Dict[str, Any]) -> UUIDStr:
+    other_id = faker.uuid4()
+    assert user_project["uuid"] != other_id
+    return other_id
 
 
 @pytest.fixture
@@ -469,24 +464,3 @@ async def test_publish_about_users_projects_node(
     # mock_log_handler.assert_has_calls(log_calls, any_order=True)
     mock_node_update_handler.assert_called()
     assert mock_node_update_handler.call_count == (NUMBER_OF_MESSAGES)
-
-
-@pytest.mark.skip(reason="DEV")
-def test_engineio_pending_tasks(
-    logged_user: Dict[str, Any],
-    socketio_subscriber_handlers: NamedTuple,
-):
-    #
-    # This tests passes but reproduces these logs at the end
-    #
-    #
-    # ERROR: asyncio:Task was destroyed but it is pending!
-    # task: <Task pending name='Task-90' coro=<AsyncServer._service_task() running at engineio/asyncio_server.py:491>
-    # wait_for=<Future pending cb=[<TaskWakeupMethWrapper object >()]>>
-    #  ...
-    #
-    # FIXME: AsyncServer does not exit cleanly
-    # SEE https://github.com/miguelgrinberg/python-socketio/issues/378
-
-    socketio_subscriber_handlers.mock_log_handler.assert_not_called()
-    socketio_subscriber_handlers.mock_node_update_handler.assert_not_called()
