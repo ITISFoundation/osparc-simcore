@@ -131,7 +131,7 @@ async def create_computation(
                 # there is nothing else to be run here, so we are done
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Project {job.project_id} has no computational services, or contains cycles",
+                    detail=f"Project {job.project_id} has no computational services",
                 )
 
             await scheduler.run_new_pipeline(
