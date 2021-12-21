@@ -145,7 +145,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     _applyStudy: function(study) {
       this.__settingStudy = false;
 
-      this._hideLoadingPage();
+      this._showLoadingPage(this.tr("Opening Study"));
 
       osparc.store.Store.getInstance().setCurrentStudy(study);
       study.buildWorkbench();
@@ -213,16 +213,18 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           let msg = "";
           if ("status" in err && err["status"] == 423) { // Locked
             msg = study.getName() + this.tr(" is already opened");
-          } else if ("status" in err && err["status"] == 503) {
-            msg = this.tr("Unexpected error while starting services. Please try again later and/or contact support.");
           } else {
             console.error(err);
             msg = this.tr("Error opening study");
-            msg += "<br>" + osparc.data.Resources.getErrorMsg(err);
+            const errorMsg = osparc.data.Resources.getErrorMsg(err);
+            if (errorMsg) {
+              msg += "<br>" + errorMsg;
+            }
           }
           osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           this.fireEvent("forceBackToDashboard");
-        });
+        })
+        .finally(() => this._hideLoadingPage());
 
       this.__workbenchView.setStudy(study);
       this.__slideshowView.setStudy(study);
