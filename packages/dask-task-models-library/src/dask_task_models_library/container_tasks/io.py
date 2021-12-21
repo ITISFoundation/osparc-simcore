@@ -57,7 +57,10 @@ class FilePortSchema(PortSchema):
 
 class FileUrl(BaseModel):
     url: AnyUrl
-    file_mapping: Optional[str] = None
+    file_mapping: Optional[str] = Field(
+        None,
+        description="Local file relpath name (if given), otherwise it takes the url filename",
+    )
 
     class Config:
         extra = Extra.forbid
@@ -73,7 +76,6 @@ class FileUrl(BaseModel):
 
 PortKey = Annotated[str, Field(regex=PROPERTY_KEY_RE)]
 PortValue = Union[StrictBool, StrictInt, StrictFloat, StrictStr, FileUrl, None]
-PortSchemaValue = Union[PortSchema, FilePortSchema]
 
 
 class TaskInputData(DictModel[PortKey, PortValue]):
@@ -91,7 +93,16 @@ class TaskInputData(DictModel[PortKey, PortValue]):
         }
 
 
+PortSchemaValue = Union[PortSchema, FilePortSchema]
+
+
 class TaskOutputDataSchema(DictModel[PortKey, PortSchemaValue]):
+    #
+    # NOTE: Expected output data is only determined at runtime. A possibility
+    # would be to create pydantic models dynamically but dask serialization
+    # does not work well in that case. For that reason, the schema is
+    # sent as a json-schema instead of with a dynamically-created model class
+    #
     class Config(DictModel.Config):
         schema_extra = {
             "examples": [
@@ -130,11 +141,14 @@ class TaskOutputData(DictModel[PortKey, PortValue]):
 
         for output_key, output_params in schema.items():
             if isinstance(output_params, FilePortSchema):
-                file_path = output_folder / (output_params.mapping or output_key)
+                file_relpath = output_params.mapping or output_key
+                # TODO: file_path is built here, saved truncated in file_mapping and
+                # then rebuild again int _retrieve_output_data. Review.
+                file_path = output_folder / file_relpath
                 if file_path.exists():
                     data[output_key] = {
                         "url": f"{output_params.url}",
-                        "file_mapping": file_path.name,
+                        "file_mapping": file_relpath,
                     }
                 elif output_params.required:
                     raise ValueError(
