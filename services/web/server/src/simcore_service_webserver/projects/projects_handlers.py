@@ -16,6 +16,7 @@ from models_library.rest_pagination_utils import paginate_data
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
+from simcore_service_webserver.director_v2_core import DirectorServiceError
 
 from .. import catalog, director_v2_api
 from .._meta import api_version_prefix as VTAG
@@ -519,6 +520,19 @@ async def open_project(request: web.Request) -> web.Response:
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
+    except DirectorServiceError as exc:
+        # there was an issue while accessing the director-v2/director-v0
+        # ensure the project is closed again
+        await projects_api.try_close_project_for_user(
+            user_id=user_id,
+            project_uuid=project_uuid,
+            client_session_id=client_session_id,
+            app=request.app,
+        )
+        raise web.HTTPServiceUnavailable(
+            reason="Unexpected error while starting services. Please try"
+            " again later and/or contact support."
+        ) from exc
 
 
 @routes.post(f"/{VTAG}/projects/{{project_uuid}}:close")
