@@ -369,6 +369,7 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
 
 
 # TESTS ------------------------------------------
+@pytest.mark.skip(reason="FIXME: still not bullet proof")
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_start_stop_pipeline(
     client: TestClient,

@@ -577,6 +577,7 @@ async def test_run_computation(
     )
 
 
+@pytest.mark.skip(reason="FIXME: still not bullet proof")
 async def test_abort_computation(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
