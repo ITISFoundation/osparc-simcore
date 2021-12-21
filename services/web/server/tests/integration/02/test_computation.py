@@ -268,16 +268,16 @@ def _get_computational_tasks_from_db(
     return {t.node_id: t for t in tasks_db}
 
 
-async def _assert_sleeper_services_completed(
+async def _assert_and_wait_for_pipeline_state(
+    client: TestClient,
     project_id: str,
-    postgres_session: sa.orm.session.Session,
-    expected_state: StateType,
-    fake_workbench_payload: Dict[NodeIdStr, Any],
+    expected_state: RunningState,
+    expected_api_response: ExpectedResponse,
 ):
-    NUM_COMP_TASKS_TO_WAIT_FOR = len(
-        [x for x in fake_workbench_payload.values() if "/comp/" in x["key"]]
+    url_project_state = client.app.router["state_project"].url_for(
+        project_id=project_id
     )
-
+    assert url_project_state == URL(f"/{API_VTAG}/projects/{project_id}/state")
     async for attempt in AsyncRetrying(
         reraise=True,
         stop=stop_after_delay(120),
@@ -288,39 +288,16 @@ async def _assert_sleeper_services_completed(
             print(
                 f"--> waiting for pipeline to complete attempt {attempt.retry_state.attempt_number}..."
             )
-            tasks_db: Dict[str, Any] = _get_computational_tasks_from_db(
-                project_id, postgres_session
-            )
-            assert (
-                len(tasks_db) == NUM_COMP_TASKS_TO_WAIT_FOR
-            ), f"all tasks have not finished, expected {NUM_COMP_TASKS_TO_WAIT_FOR}, got {len(tasks_db)}"
-            # get the different states in a set of states
-            set_of_states = {t.state for t in tasks_db.values()}
-            print(f"--> states found: {set_of_states=}")
-            if expected_state in [StateType.ABORTED, StateType.FAILED]:
-                # only one is necessary
-                assert (
-                    expected_state in set_of_states
-                ), f"{expected_state} not found in {set_of_states}"
-            else:
-                assert not any(
-                    x in set_of_states
-                    for x in [
-                        StateType.PUBLISHED,
-                        StateType.PENDING,
-                        StateType.NOT_STARTED,
-                    ]
-                ), f"pipeline did not start yet... {set_of_states}"
-
-                assert (
-                    len(set_of_states) == 1
-                ), f"there are more than one state in {set_of_states}"
-
-                assert (
-                    expected_state in set_of_states
-                ), f"{expected_state} not found in {set_of_states}"
+            resp = await client.get(f"{url_project_state}")
+            data, error = await assert_status(resp, expected_api_response.ok)
+            assert "state" in data
+            assert "value" in data["state"]
+            received_study_state = RunningState(data["state"]["value"])
+            print(f"<-- received pipeline state: {received_study_state=}")
+            assert received_study_state == expected_state
             print(
-                f"--> pipeline completed with state {set_of_states=} and expected was {expected_state}! That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
+                f"--> pipeline completed with state {received_study_state=}! "
+                f"That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
             )
 
 
@@ -362,9 +339,10 @@ async def test_start_stop_pipeline(
             check_outputs=False,
         )
         # wait for the computation to stop
-        await _assert_sleeper_services_completed(
-            project_id, postgres_session, StateType.SUCCESS, fake_workbench_payload
+        await _assert_and_wait_for_pipeline_state(
+            client, project_id, RunningState.SUCCESS, expected
         )
+
         # restart the computation, this should produce a 422 since the computation was complete
         resp = await client.post(f"{url_start}")
         assert resp.status == web.HTTPUnprocessableEntity.status_code
@@ -384,11 +362,9 @@ async def test_start_stop_pipeline(
     data, error = await assert_status(resp, expected.no_content)
     if not error:
         # now wait for it to stop
-        await _assert_sleeper_services_completed(
-            project_id, postgres_session, StateType.ABORTED, fake_workbench_payload
+        await _assert_and_wait_for_pipeline_state(
+            client, project_id, RunningState.ABORTED, expected
         )
-        # leave some time for properly stopping the tasks
-        await asyncio.sleep(10)
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
