@@ -28,8 +28,8 @@ from pydantic.types import PositiveInt
 from pytest_mock.plugin import MockerFixture
 from shared_comp_utils import (
     COMPUTATION_URL,
+    assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
-    assert_pipeline_status,
     create_pipeline,
 )
 from simcore_sdk.node_ports_common import config as node_ports_config
@@ -405,7 +405,7 @@ async def test_run_partial_computation(
     )
 
     # now wait for the computation to finish
-    task_out = await assert_pipeline_status(
+    task_out = await assert_and_wait_for_pipeline_status(
         async_client, task_out.url, user_id, sleepers_project.uuid
     )
     expected_pipeline_details_after_run = _convert_to_pipeline_details(
@@ -467,7 +467,7 @@ async def test_run_partial_computation(
     )
 
     # now wait for the computation to finish
-    task_out = await assert_pipeline_status(
+    task_out = await assert_and_wait_for_pipeline_status(
         async_client, task_out.url, user_id, sleepers_project.uuid
     )
 
@@ -503,7 +503,7 @@ async def test_run_computation(
     )
 
     # wait for the computation to start
-    await assert_pipeline_status(
+    await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
         user_id,
@@ -512,7 +512,7 @@ async def test_run_computation(
     )
 
     # wait for the computation to finish (either by failing, success or abort)
-    task_out = await assert_pipeline_status(
+    task_out = await assert_and_wait_for_pipeline_status(
         async_client, task_out.url, user_id, sleepers_project.uuid
     )
 
@@ -565,7 +565,7 @@ async def test_run_computation(
     )
 
     # wait for the computation to finish
-    task_out = await assert_pipeline_status(
+    task_out = await assert_and_wait_for_pipeline_status(
         async_client, task_out.url, user_id, sleepers_project.uuid
     )
     await assert_computation_task_out_obj(
@@ -612,7 +612,7 @@ async def test_abort_computation(
     )
 
     # wait until the pipeline is started
-    task_out = await assert_pipeline_status(
+    task_out = await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
         user_id,
@@ -646,7 +646,7 @@ async def test_abort_computation(
     assert task_out.stop_url == None
 
     # check that the pipeline is aborted/stopped
-    task_out = await assert_pipeline_status(
+    task_out = await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
         user_id,
@@ -744,7 +744,7 @@ async def test_update_and_delete_computation(
     )
 
     # wait until the pipeline is started
-    task_out = await assert_pipeline_status(
+    task_out = await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
         user_id,

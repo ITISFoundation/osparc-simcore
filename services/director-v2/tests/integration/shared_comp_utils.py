@@ -64,7 +64,7 @@ async def assert_computation_task_out_obj(
     assert task_out.pipeline_details.dict() == exp_pipeline_details.dict()
 
 
-async def assert_pipeline_status(
+async def assert_and_wait_for_pipeline_status(
     client: httpx.AsyncClient,
     url: AnyHttpUrl,
     user_id: PositiveInt,
