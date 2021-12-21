@@ -19,6 +19,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.json_serialization import json_dumps
+from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.webserver_models import (
     NodeClass,
     StateType,
@@ -268,6 +269,24 @@ def _get_computational_tasks_from_db(
     return {t.node_id: t for t in tasks_db}
 
 
+def _get_project_workbench_from_db(
+    project_id: str,
+    postgres_session: sa.orm.session.Session,
+) -> Dict[str, Any]:
+    # this check is only there to check the comp_pipeline is there
+    print(f"--> looking for project {project_id=} in projects table...")
+    project_in_db = (
+        postgres_session.query(projects).filter(projects.c.uuid == project_id).one()
+    )
+    assert (
+        project_in_db
+    ), f"missing pipeline in the database under comp_pipeline {project_id}"
+    print(
+        f"<-- found following workbench: {json_dumps( project_in_db.workbench, indent=2)}"
+    )
+    return project_in_db.workbench
+
+
 async def _assert_and_wait_for_pipeline_state(
     client: TestClient,
     project_id: str,
@@ -297,6 +316,52 @@ async def _assert_and_wait_for_pipeline_state(
             assert received_study_state == expected_state
             print(
                 f"--> pipeline completed with state {received_study_state=}! "
+                f"That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
+            )
+
+
+async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
+    project_id: str,
+    postgres_session: sa.orm.session.Session,
+):
+
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        stop=stop_after_delay(120),
+        wait=wait_fixed(5),
+        retry=retry_if_exception_type(AssertionError),
+    ):
+        with attempt:
+            print(
+                f"--> waiting for pipeline results to move to projects table, attempt {attempt.retry_state.attempt_number}..."
+            )
+            comp_tasks_in_db: Dict[NodeIdStr, Any] = _get_computational_tasks_from_db(
+                project_id, postgres_session
+            )
+            workbench_in_db: Dict[NodeIdStr, Any] = _get_project_workbench_from_db(
+                project_id, postgres_session
+            )
+            for node_id, node_values in comp_tasks_in_db.items():
+                assert (
+                    node_id in workbench_in_db
+                ), f"node {node_id=} is missing from workbench {json_dumps(workbench_in_db, indent=2)}"
+
+                node_in_project_table = workbench_in_db[node_id]
+
+                # if this one is in, the other should also be but let's check it carefully
+                assert node_values.run_hash
+                assert "runHash" in node_in_project_table
+                assert node_values.run_hash == node_in_project_table["runHash"]
+
+                assert node_values.state
+                assert "state" in node_in_project_table
+                assert "currentStatus" in node_in_project_table["state"]
+                assert (
+                    node_values.state.value
+                    == node_in_project_table["state"]["currentStatus"]
+                )
+            print(
+                "--> tasks were properly transferred! "
                 f"That's great: {json_dumps(attempt.retry_state.retry_object.statistics)}",
             )
 
@@ -342,7 +407,10 @@ async def test_start_stop_pipeline(
         await _assert_and_wait_for_pipeline_state(
             client, project_id, RunningState.SUCCESS, expected
         )
-
+        # we need to wait until the webserver has updated the projects DB
+        await _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
+            project_id, postgres_session
+        )
         # restart the computation, this should produce a 422 since the computation was complete
         resp = await client.post(f"{url_start}")
         assert resp.status == web.HTTPUnprocessableEntity.status_code
@@ -352,7 +420,7 @@ async def test_start_stop_pipeline(
         assert not error
 
     # give time to run a bit ... before stopping
-    await asyncio.sleep(2)
+    await asyncio.sleep(5)
 
     # now stop the pipeline
     # POST /v0/computation/pipeline/{project_id}:stop
@@ -364,6 +432,10 @@ async def test_start_stop_pipeline(
         # now wait for it to stop
         await _assert_and_wait_for_pipeline_state(
             client, project_id, RunningState.ABORTED, expected
+        )
+        # we need to wait until the webserver has updated the projects DB
+        await _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
+            project_id, postgres_session
         )
 
 
@@ -468,6 +540,10 @@ async def test_run_pipeline_and_check_state(
     ), (
         "the individual computational services are not finished! "
         f"Expected to be completed, got {comp_tasks_in_db=}"
+    )
+    # we need to wait until the webserver has updated the projects DB
+    await _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
+        project_id, postgres_session
     )
 
     print(f"<-- pipeline completed successfully in {time.monotonic() - start} seconds")
