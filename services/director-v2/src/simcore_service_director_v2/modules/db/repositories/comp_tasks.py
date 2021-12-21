@@ -243,7 +243,6 @@ class CompTasksRepository(BaseRepository):
     async def set_project_tasks_state(
         self, project_id: ProjectID, tasks: List[NodeID], state: RunningState
     ) -> None:
-        # block all pending tasks, so the sidecars stop taking them
         async with self.db_engine.acquire() as conn:
             await conn.execute(
                 sa.update(comp_tasks)
