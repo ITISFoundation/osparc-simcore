@@ -38,7 +38,7 @@ DEFAULT_RETRY_POLICY = dict(
 
 
 DataType = Dict[str, Any]
-DataBody = Union[DataType, List[DataType]]
+DataBody = Union[DataType, List[DataType], None]
 
 # base/ERRORS ------------------------------------------------
 
@@ -116,12 +116,10 @@ async def _request_director_v2(
                     # - `sometimes director-v0` (via redirects) replies
                     #   in plain text and this is considered an error
                     # - `director-v2` and `director-v0` can reply with 204 no content
-                    if response.status != expected_status.status_code or (
-                        response.status != web.HTTPNoContent
-                        and isinstance(payload, str)
+                    if response.status != expected_status.status_code or isinstance(
+                        payload, str
                     ):
                         raise DirectorServiceError(response.status, reason=f"{payload}")
-                    assert isinstance(payload, (dict, list))  # nosec
                     return payload
 
     # TODO: enrich with https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
