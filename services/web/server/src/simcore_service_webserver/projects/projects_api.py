@@ -671,9 +671,14 @@ async def try_open_project_for_user(
                     user_session.user_id for user_session in user_session_id_list
                 }
                 if set_user_ids.issubset({user_id}):
-                    # we are the only user
+                    # we are the only user, remove this session from the list
                     if not await _user_has_another_client_open(
-                        user_session_id_list, app
+                        [
+                            uid
+                            for uid in user_session_id_list
+                            if uid != UserSessionID(user_id, client_session_id)
+                        ],
+                        app,
                     ):
                         # steal the project
                         await rt.add(PROJECT_ID_KEY, project_uuid)
