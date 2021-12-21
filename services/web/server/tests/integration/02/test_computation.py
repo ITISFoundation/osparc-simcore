@@ -28,6 +28,7 @@ from simcore_postgres_database.webserver_models import (
 )
 from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.computation import setup_computation
+from simcore_service_webserver.computation_utils import DB_TO_RUNNING_STATE
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.diagnostics import setup_diagnostics
 from simcore_service_webserver.director_v2 import setup_director_v2
@@ -305,7 +306,7 @@ async def _assert_and_wait_for_pipeline_state(
     ):
         with attempt:
             print(
-                f"--> waiting for pipeline to complete attempt {attempt.retry_state.attempt_number}..."
+                f"--> waiting for pipeline to complete with {expected_state=} attempt {attempt.retry_state.attempt_number}..."
             )
             resp = await client.get(f"{url_project_state}")
             data, error = await assert_status(resp, expected_api_response.ok)
@@ -356,8 +357,9 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
                 assert node_values.state
                 assert "state" in node_in_project_table
                 assert "currentStatus" in node_in_project_table["state"]
+                # NOTE: beware that the comp_tasks has StateType and Workbench has RunningState (sic)
                 assert (
-                    node_values.state.value
+                    DB_TO_RUNNING_STATE[node_values.state].value
                     == node_in_project_table["state"]["currentStatus"]
                 )
             print(
@@ -403,11 +405,11 @@ async def test_start_stop_pipeline(
             fake_workbench_adjacency_list,
             check_outputs=False,
         )
-        # wait for the computation to stop
+        # wait for the computation to complete successfully
         await _assert_and_wait_for_pipeline_state(
             client, project_id, RunningState.SUCCESS, expected
         )
-        # we need to wait until the webserver has updated the projects DB
+        # we need to wait until the webserver has updated the projects DB before starting another round
         await _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
             project_id, postgres_session
         )
@@ -419,7 +421,7 @@ async def test_start_stop_pipeline(
         data, error = await assert_status(resp, expected.created)
         assert not error
 
-    # give time to run a bit ... before stopping
+    # give it time to run a bit ... before cancelling the run
     await asyncio.sleep(5)
 
     # now stop the pipeline
