@@ -83,6 +83,7 @@ async def create_computation(
         project: ProjectAtDB = await project_repo.get_project(job.project_id)
 
         # FIXME: this could not be valid anymore if the user deletes the project in between right?
+
         # check if current state allow to modify the computation
         comp_tasks: List[CompTaskAtDB] = await computation_tasks.get_comp_tasks(
             job.project_id
@@ -97,32 +98,29 @@ async def create_computation(
         # create the complete DAG graph
         complete_dag = create_complete_dag(project.workbench)
         # find the minimal viable graph to be run
-        computational_dag = await create_minimal_computational_graph_based_on_selection(
-            complete_dag=complete_dag,
-            selected_nodes=job.subgraph or [],
-            force_restart=job.force_restart or False,
+        minimal_computational_dag = (
+            await create_minimal_computational_graph_based_on_selection(
+                complete_dag=complete_dag,
+                selected_nodes=job.subgraph or [],
+                force_restart=job.force_restart or False,
+            )
         )
 
         # ok so put the tasks in the db
         await computation_pipelines.upsert_pipeline(
-            job.user_id, project.uuid, computational_dag, job.start_pipeline or False
+            job.user_id,
+            project.uuid,
+            minimal_computational_dag,
+            job.start_pipeline or False,
         )
         inserted_comp_tasks = await computation_tasks.upsert_tasks_from_project(
             project,
             director_client,
-            list(computational_dag.nodes()) if job.start_pipeline else [],
+            list(minimal_computational_dag.nodes()) if job.start_pipeline else [],
         )
 
-        # filter the tasks by the effective pipeline
-        filtered_tasks = [
-            t
-            for t in inserted_comp_tasks
-            if f"{t.node_id}" in list(computational_dag.nodes())
-        ]
-        pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
-
         if job.start_pipeline:
-            if not computational_dag.nodes():
+            if not minimal_computational_dag.nodes():
                 # 2 options here: either we have cycles in the graph or it's really done
                 list_of_cycles = find_computational_node_cycles(complete_dag)
                 if list_of_cycles:
@@ -143,11 +141,19 @@ async def create_computation(
                 or request.app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
             )
 
+        # filter the tasks by the effective pipeline
+        filtered_tasks = [
+            t
+            for t in inserted_comp_tasks
+            if f"{t.node_id}" in list(minimal_computational_dag.nodes())
+        ]
+        pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
+
         return ComputationTaskOut(
             id=job.project_id,
             state=pipeline_state,
             pipeline_details=await compute_pipeline_details(
-                complete_dag, computational_dag, inserted_comp_tasks
+                complete_dag, minimal_computational_dag, inserted_comp_tasks
             ),
             url=f"{request.url}/{job.project_id}",
             stop_url=f"{request.url}/{job.project_id}:stop"

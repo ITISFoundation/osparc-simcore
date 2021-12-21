@@ -21,17 +21,24 @@ _TASK_TO_PIPELINE_CONVERSIONS = {
         RunningState.PUBLISHED,
         RunningState.NOT_STARTED,
     ): RunningState.PENDING,
-    # if there are only completed states without FAILED
+    # if there are only completed states without FAILED and NOT_STARTED -> ABORTED
+    (
+        RunningState.SUCCESS,
+        RunningState.ABORTED,
+    ): RunningState.ABORTED,
+    # if there are only completed states without FAILED -> NOT_STARTED
     (
         RunningState.SUCCESS,
         RunningState.ABORTED,
         RunningState.NOT_STARTED,
-    ): RunningState.ABORTED,
+    ): RunningState.NOT_STARTED,
     # if there are only completed states with FAILED --> FAILED
+    (*_COMPLETED_STATES,): RunningState.FAILED,
+    # if there are only completed states with FAILED --> NOT_STARTED
     (
         *_COMPLETED_STATES,
         RunningState.NOT_STARTED,
-    ): RunningState.FAILED,
+    ): RunningState.NOT_STARTED,
     # the generic case where we have a combination of completed states, running states,
     # or published/pending tasks, not_started is a started pipeline
     (
