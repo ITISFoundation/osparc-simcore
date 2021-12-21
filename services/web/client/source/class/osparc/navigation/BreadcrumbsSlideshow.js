@@ -48,8 +48,52 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
       }
     },
 
+    __setButtonStyle: function(btn) {
+      btn.getContentElement().setStyles({
+        "border-radius": "6px",
+        "box-shadow": "none"
+      });
+
+      const updateStyle = button => {
+        const colorManager = qx.theme.manager.Color.getInstance();
+        if (button.getEnabled() === false) {
+          // disabled
+          button.set({
+            textColor: "text-disabled",
+            backgroundColor: "transparent"
+          });
+          button.getContentElement().setStyles({
+            "border": "1px solid " + colorManager.resolve("text")
+          });
+        } else if (button.getValue() === false) {
+          // enabled but not current
+          button.set({
+            textColor: "text",
+            backgroundColor: "transparent"
+          });
+          button.getContentElement().setStyles({
+            "border": "1px solid " + colorManager.resolve("text")
+          });
+        } else {
+          // current
+          button.set({
+            textColor: "text",
+            backgroundColor: "background-main+"
+          });
+          button.getContentElement().setStyles({
+            "border": "0px"
+          });
+        }
+      };
+
+      updateStyle(btn);
+      btn.addListener("changeValue", () => updateStyle(btn), this);
+      btn.addListener("changeEnabled", () => updateStyle(btn), this);
+    },
+
     __createBtn: function(nodeId) {
       const btn = this._createNodeBtn(nodeId);
+      this.__setButtonStyle(btn);
       const colorManager = qx.theme.manager.Color.getInstance();
       btn.getContentElement().setStyles({
         "border-radius": "6px",
