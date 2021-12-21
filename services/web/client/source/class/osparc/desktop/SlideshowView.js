@@ -194,7 +194,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         } else {
           if (node.isFilePicker()) {
             view = new osparc.component.node.FilePickerNodeView();
-            view.getOutputsButtons().exclude();
+            view.getOutputsButton().hide();
           } else {
             view = new osparc.component.node.NodeView();
             view.getSettingsLayout().setVisibility(node.isDynamic() && this.getPageContext() === "app" ? "excluded" : "visible");
