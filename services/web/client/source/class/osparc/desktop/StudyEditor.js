@@ -213,6 +213,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           let msg = "";
           if ("status" in err && err["status"] == 423) { // Locked
             msg = study.getName() + this.tr(" is already opened");
+          } else if ("status" in err && err["status"] == 503) {
+            msg = this.tr("Unexpected error while starting services. Please try again later and/or contact support.");
           } else {
             console.error(err);
             msg = this.tr("Error opening study");
