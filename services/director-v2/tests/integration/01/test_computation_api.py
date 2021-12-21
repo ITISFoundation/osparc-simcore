@@ -630,6 +630,8 @@ async def test_abort_computation(
         task_out.stop_url
         == f"{async_client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
     )
+    # wait a bit till it has some momentum
+    await asyncio.sleep(5)
 
     # now abort the pipeline
     response = await async_client.post(
