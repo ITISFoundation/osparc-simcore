@@ -78,7 +78,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
           // current
           button.set({
             textColor: "text",
-            backgroundColor: "background-main+"
+            backgroundColor: "background-main-lighter+"
           });
           button.getContentElement().setStyles({
             "border": "0px"
@@ -89,22 +89,13 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
       updateStyle(btn);
       btn.addListener("changeValue", () => updateStyle(btn), this);
       btn.addListener("changeEnabled", () => updateStyle(btn), this);
+      const colorManager = qx.theme.manager.Color.getInstance();
+      colorManager.addListener("changeTheme", () => updateStyle(btn), this);
     },
 
     __createBtn: function(nodeId) {
       const btn = this._createNodeBtn(nodeId);
       this.__setButtonStyle(btn);
-      const colorManager = qx.theme.manager.Color.getInstance();
-      btn.getContentElement().setStyles({
-        "border-radius": "6px",
-        "box-shadow": "none",
-        "border": "1px solid " + colorManager.resolve("text")
-      });
-      colorManager.addListener("changeTheme", () => {
-        btn.getContentElement().setStyles({
-          "border": "1px solid " + colorManager.resolve("text")
-        });
-      }, this);
       const study = osparc.store.Store.getInstance().getCurrentStudy();
       const slideshow = study.getUi().getSlideshow().getData();
       const node = study.getWorkbench().getNode(nodeId);
