@@ -12,7 +12,7 @@ from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
-from tenacity import retry
+from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_random
@@ -90,7 +90,6 @@ def set_client(app: web.Application, obj: DirectorV2ApiClient):
     app[_APP_DIRECTOR_V2_CLIENT_KEY] = obj
 
 
-@retry(*DEFAULT_RETRY_POLICY)
 async def _request_director_v2(
     app: web.Application,
     method: str,
@@ -101,27 +100,29 @@ async def _request_director_v2(
     **kwargs,
 ) -> DataBody:
 
-    session = get_client_session(app)
     try:
-        async with session.request(
-            method, url, headers=headers, json=data, **kwargs
-        ) as response:
-            payload = (
-                await response.json()
-                if response.content_type == "application/json"
-                else await response.text()
-            )
-
-            # NOTE:
-            # - `sometimes director-v0` (via redirects) replies
-            #   in plain text and this is considered an error
-            # - `director-v2` and `director-v0` can reply with 204 no content
-            if response.status != expected_status.status_code or (
-                response.status != web.HTTPNoContent and isinstance(payload, str)
-            ):
-                raise DirectorServiceError(response.status, reason=f"{payload}")
-            assert isinstance(payload, (dict, list))  # nosec
-            return payload
+        async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
+            with attempt:
+                session = get_client_session(app)
+                async with session.request(
+                    method, url, headers=headers, json=data, **kwargs
+                ) as response:
+                    payload = (
+                        await response.json()
+                        if response.content_type == "application/json"
+                        else await response.text()
+                    )
+                    # NOTE:
+                    # - `sometimes director-v0` (via redirects) replies
+                    #   in plain text and this is considered an error
+                    # - `director-v2` and `director-v0` can reply with 204 no content
+                    if response.status != expected_status.status_code or (
+                        response.status != web.HTTPNoContent
+                        and isinstance(payload, str)
+                    ):
+                        raise DirectorServiceError(response.status, reason=f"{payload}")
+                    assert isinstance(payload, (dict, list))  # nosec
+                    return payload
 
     # TODO: enrich with https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
     except asyncio.TimeoutError as err:
@@ -135,6 +136,9 @@ async def _request_director_v2(
             web.HTTPServiceUnavailable.status_code,
             reason=f"request to director-v2 service unexpected error {err}",
         ) from err
+    raise DirectorServiceError(
+        web.HTTPClientError.status_code, reason="Unexpected client error"
+    )
 
 
 # POLICY ------------------------------------------------
