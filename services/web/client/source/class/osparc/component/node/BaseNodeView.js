@@ -34,7 +34,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
   },
 
   statics: {
-    HEADER_HEIGHT: 28,
+    HEADER_HEIGHT: 32,
 
     createSettingsGroupBox: function(label) {
       const settingsGroupBox = new qx.ui.groupbox.GroupBox(label).set({
@@ -74,9 +74,11 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     _settingsLayout: null,
     _iFrameLayout: null,
     _outputsLayout: null,
+    __progressBar: null,
 
     __buildLayout: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
+
       const header = this._header = this._buildHeader();
       layout.add(header);
 
@@ -85,6 +87,14 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
+      const progressBar = this.__progressBar = new qx.ui.core.Widget().set({
+        visibility: "excluded",
+        backgroundColor: "ready-green",
+        allowGrowX: true,
+        height: 6
+      });
+      layout.add(progressBar);
+
       this.add(layout, 1);
     },
 
@@ -92,6 +102,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignX: "center"
       })).set({
+        padding: 6,
         height: this.self().HEADER_HEIGHT
       });
 
@@ -237,6 +248,19 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this._addSettings();
       this._addIFrame();
       this._addOutputs();
+
+      if (this.__progressBar) {
+        this.__progressBar.setVisibility(node.isComputational() ? "visible" : "excluded");
+        this.__progressBar.getContentElement().setStyles({
+          width: node.getStatus().getProgress() + "%"
+        });
+        node.getStatus().addListener("changeProgress", () => {
+          this.__progressBar.getContentElement().setStyles({
+            width: node.getStatus().getProgress() + "%"
+          });
+        }, this);
+      }
+
       this._addLogger();
     }
   }
