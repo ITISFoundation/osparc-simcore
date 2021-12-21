@@ -12,9 +12,10 @@ from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
-from tenacity._asyncio import AsyncRetrying
+from tenacity import retry
+from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_exponential
+from tenacity.wait import wait_random
 from yarl import URL
 
 from .director_v2_abc import AbstractProjectRunPolicy
@@ -29,7 +30,10 @@ SERVICE_RETRIEVE_HTTP_TIMEOUT = ClientTimeout(
     total=60 * 60, connect=None, sock_connect=5  # type:ignore
 )
 DEFAULT_RETRY_POLICY = dict(
-    wait=wait_exponential(), stop=stop_after_attempt(3), reraise=True
+    wait=wait_random(0, 1),
+    stop=stop_after_attempt(2),
+    reraise=True,
+    before_sleep=before_sleep_log(log, logging.WARNING),
 )
 
 
@@ -86,6 +90,7 @@ def set_client(app: web.Application, obj: DirectorV2ApiClient):
     app[_APP_DIRECTOR_V2_CLIENT_KEY] = obj
 
 
+@retry(*DEFAULT_RETRY_POLICY)
 async def _request_director_v2(
     app: web.Application,
     method: str,
@@ -101,7 +106,7 @@ async def _request_director_v2(
         async with session.request(
             method, url, headers=headers, json=data, **kwargs
         ) as response:
-            payload: Union[Dict, str] = (
+            payload = (
                 await response.json()
                 if response.content_type == "application/json"
                 else await response.text()
@@ -114,8 +119,8 @@ async def _request_director_v2(
             if response.status != expected_status.status_code or (
                 response.status != web.HTTPNoContent and isinstance(payload, str)
             ):
-                raise DirectorServiceError(response.status, reason=str(payload))
-
+                raise DirectorServiceError(response.status, reason=f"{payload}")
+            assert isinstance(payload, (dict, list))  # nosec
             return payload
 
     # TODO: enrich with https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
@@ -401,13 +406,9 @@ async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
     settings: Directorv2Settings = get_settings(app)
     backend_url = URL(settings.endpoint) / "dynamic_services" / f"{node_uuid}"
 
-    # sometimes the director-v2 cannot be reached causing the service to fail
-    # retrying 3 times before giving up for good
-    async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
-        with attempt:
-            service_state = await _request_director_v2(
-                app, "GET", backend_url, expected_status=web.HTTPOk
-            )
+    service_state = await _request_director_v2(
+        app, "GET", backend_url, expected_status=web.HTTPOk
+    )
 
     assert isinstance(service_state, dict)  # nosec
     return service_state
@@ -427,18 +428,14 @@ async def retrieve(
     )
     body = dict(port_keys=port_keys)
 
-    # sometimes the director-v2 cannot be reached causing the service to fail
-    # retrying 3 times before giving up for good
-    async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
-        with attempt:
-            retry_result = await _request_director_v2(
-                app,
-                "POST",
-                backend_url,
-                expected_status=web.HTTPOk,
-                data=body,
-                timeout=timeout,
-            )
+    retry_result = await _request_director_v2(
+        app,
+        "POST",
+        backend_url,
+        expected_status=web.HTTPOk,
+        data=body,
+        timeout=timeout,
+    )
 
     assert isinstance(retry_result, dict)  # nosec
     return retry_result
@@ -455,14 +452,10 @@ async def restart(app: web.Application, node_uuid: str) -> None:
         URL(director2_settings.endpoint) / "dynamic_services" / f"{node_uuid}:restart"
     )
 
-    # sometimes the director-v2 cannot be reached causing the service to fail
-    # retrying 3 times before giving up for good
-    async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
-        with attempt:
-            await _request_director_v2(
-                app,
-                "POST",
-                backend_url,
-                expected_status=web.HTTPOk,
-                timeout=timeout,
-            )
+    await _request_director_v2(
+        app,
+        "POST",
+        backend_url,
+        expected_status=web.HTTPOk,
+        timeout=timeout,
+    )
