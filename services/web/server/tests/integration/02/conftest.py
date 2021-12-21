@@ -38,7 +38,7 @@ async def user_project(
     client, fake_project: Dict, logged_user: Dict, project_id: ProjectID
 ) -> AsyncIterator[Dict]:
     fake_project["prjOwner"] = logged_user["name"]
-    fake_project["uuid"] = project_id
+    fake_project["uuid"] = f"{project_id}"
 
     async with NewProject(
         fake_project, client.app, user_id=logged_user["id"]
