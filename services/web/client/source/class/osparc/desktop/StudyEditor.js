@@ -145,7 +145,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     _applyStudy: function(study) {
       this.__settingStudy = false;
 
-      this._showLoadingPage(this.tr("Opening Study"));
+      this._showLoadingPage(this.tr("Opening ") + (study.getName() || this.tr("Study")));
 
       osparc.store.Store.getInstance().setCurrentStudy(study);
       study.buildWorkbench();
