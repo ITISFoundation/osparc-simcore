@@ -49,7 +49,7 @@ def _raise_if_symlink_not_valid(path: Path) -> None:
     if symlink_target_path.is_absolute():
         message = (
             f"Absolute symlinks are not supported: "
-            "{path} points to {symlink_target_path} "
+            f"{path} points to {symlink_target_path} "
             "Try with relative symlinks!"
         )
         log.error(message)
@@ -188,6 +188,12 @@ class Port(ServiceProperty):
             converted_value: ItemConcreteValue = self._py_value_converter(new_value)
 
             if isinstance(converted_value, Path):
+                if (
+                    not port_utils.is_file_type(self.property_type)
+                    or not converted_value.exists()
+                    or converted_value.is_dir()
+                ):
+                    raise InvalidItemTypeError(self.property_type, f"{new_value}")
                 _raise_if_symlink_not_valid(converted_value)
                 final_value = await port_utils.push_file_to_store(
                     file=converted_value,

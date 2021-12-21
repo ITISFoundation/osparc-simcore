@@ -13,7 +13,7 @@ import tempfile
 import threading
 from collections import namedtuple
 from pathlib import Path
-from typing import Any, Dict, Iterator, Optional, Type, Union
+from typing import Any, Callable, Dict, Iterator, Optional, Type, Union
 
 import pytest
 from aiohttp.client import ClientSession
@@ -89,7 +89,8 @@ def symlink_to_file_with_data() -> Iterator[Path]:
 
     file_path.write_text("some dummy data")
     assert file_path.exists()
-    os.symlink(file_path, symlink_path)
+    # using a relative symlink, only these are supported
+    os.symlink(os.path.relpath(file_path, "."), symlink_path)
     assert symlink_path.exists()
 
     yield symlink_path
@@ -107,14 +108,6 @@ def dy_volumes_overwrite(tmp_path: Path) -> Path:
     return dy_volumes
 
 
-@pytest.fixture
-def patch_dy_volumes(
-    dy_volumes_overwrite: Path, mocker: MockerFixture
-) -> Iterator[Path]:
-    mocker.patch.object(port_module, "DY_VOLUMES", f"{dy_volumes_overwrite}")
-    yield dy_volumes_overwrite
-
-
 @pytest.fixture(params=[True, False])
 def relative_path(request):
     return request.param
@@ -126,34 +119,6 @@ def pointed_fie_path(relative_path: bool, tmp_path: Path) -> Path:
         return Path("real_file_")
     else:
         return tmp_path / "real_file"
-
-
-@pytest.fixture
-def symlink_to_dy_volumes(
-    patch_dy_volumes: Path, pointed_fie_path: Path
-) -> Iterator[Path]:
-    symlink_path = patch_dy_volumes / "symlink"
-    assert not symlink_path.exists()
-
-    file_path = pointed_fie_path
-    assert not file_path.exists()
-    file_path.write_text("some dummy data")
-    assert file_path.exists()
-    # make sure the "dy_volumes" path exists
-    dy_sidecar_real_vile_path = patch_dy_volumes / f"{file_path}".strip("/")
-    dy_sidecar_real_vile_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy(file_path, dy_sidecar_real_vile_path)
-    assert dy_sidecar_real_vile_path.exists()
-
-    os.symlink(file_path, symlink_path)
-    assert symlink_path.exists()
-
-    yield symlink_path
-
-    symlink_path.unlink()
-    assert not symlink_path.exists()
-    file_path.unlink()
-    assert not file_path.exists()
 
 
 @pytest.fixture
@@ -758,7 +723,10 @@ def test_invalid_port(common_fixtures: None, port_cfg: Dict[str, Any]):
 async def test_invalid_file_type_setter(
     common_fixtures: None, project_id: str, node_uuid: str, port_cfg: Dict[str, Any]
 ):
+    from unittest.mock import AsyncMock
+
     port = Port(**port_cfg)
+    port._node_ports = AsyncMock()
     # set a file that does not exist
     with pytest.raises(exceptions.InvalidItemTypeError):
         await port.set("some/dummy/file/name")
@@ -767,15 +735,10 @@ async def test_invalid_file_type_setter(
     with pytest.raises(exceptions.InvalidItemTypeError):
         await port.set(Path(__file__).parent)
 
+    # set a file that does not exist
+    with pytest.raises(exceptions.InvalidItemTypeError):
+        await port.set_value("some/dummy/file/name")
 
-def test_add_dy_volumes_to_target(
-    patch_dy_volumes: Path, symlink_to_dy_volumes: Path
-) -> None:
-    symlink_target_before = Path(os.readlink(symlink_to_dy_volumes))
-    changed_pointer = port_module.add_dy_volumes_to_target(symlink_to_dy_volumes)
-    assert changed_pointer == symlink_to_dy_volumes
-    assert changed_pointer.relative_to(patch_dy_volumes)
-    symlink_target_after = Path(os.readlink(changed_pointer))
-    assert (
-        patch_dy_volumes / f"{symlink_target_before}".strip("/") == symlink_target_after
-    )
+    # set a folder fails too
+    with pytest.raises(exceptions.InvalidItemTypeError):
+        await port.set_value(Path(__file__).parent)
