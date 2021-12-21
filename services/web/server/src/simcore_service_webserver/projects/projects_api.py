@@ -144,15 +144,18 @@ async def start_project_interactive_services(
     # first get the services if they already exist
     log.debug(
         "getting running interactive services of project %s for user %s",
-        project["uuid"],
-        user_id,
+        f"{project['uuid']=}",
+        f"{user_id=}",
     )
     running_services = await director_v2_api.get_services(
         request.app, user_id, project["uuid"]
     )
-    log.debug("Running services %s", running_services)
+    log.debug(
+        "Currently running services %s for user %s",
+        f"{running_services=}",
+        f"{user_id=}",
+    )
 
-    # TODO: move this filter logic to director-v2?
     running_service_uuids = [x["service_uuid"] for x in running_services]
     # now start them if needed
     project_needed_services = {
@@ -161,7 +164,7 @@ async def start_project_interactive_services(
         if _is_node_dynamic(service["key"])
         and service_uuid not in running_service_uuids
     }
-    log.debug("Services to start %s", project_needed_services)
+    log.debug("Starting services: %s", f"{project_needed_services=}")
 
     start_service_tasks = [
         director_v2_api.start_service(
@@ -176,19 +179,15 @@ async def start_project_interactive_services(
         )
         for service_uuid, service in project_needed_services.items()
     ]
-
-    result = await logged_gather(*start_service_tasks, reraise=True)
-    log.debug("Services start result %s", result)
-    for entry in result:
+    results = await logged_gather(*start_service_tasks, reraise=True)
+    log.debug("Services start result %s", results)
+    for entry in results:
         if entry:
-            # if the status is present in the results fo the start_service
+            # if the status is present in the results for the start_service
             # it means that the API call failed
             # also it is enforced that the status is different from 200 OK
-            if "status" not in entry:
-                continue
-
-            if entry["status"] != 200:
-                log.error("Error while starting dynamic service %s", entry)
+            if entry.get("status", 200) != 200:
+                log.error("Error while starting dynamic service %s", f"{entry=}")
 
 
 async def delete_project(app: web.Application, project_uuid: str, user_id: int) -> None:
@@ -414,7 +413,7 @@ async def update_project_node_state(
         project_id,
         user_id,
     )
-    partial_workbench_data = {
+    partial_workbench_data: Dict[str, Any] = {
         node_id: {"state": {"currentStatus": new_state}},
     }
     if RunningState(new_state) in [
