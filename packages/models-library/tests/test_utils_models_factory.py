@@ -80,20 +80,21 @@ create_validator_for = _validators_factory()
 # NOTE: Rationale of this test-suite
 #
 # Below we represent different views of a 'user' resource represented with
-# different models depending on the context. We have a domain model, that
+# different models depending on the context. We have a domain model 'User', that
 # is used to exchange internally in the business logic, as well as different
-# views used in the request body or response payload of CRUD entrypoints in an API.
+# views used in the request body (e.g. 'UserCreate', 'UserUpdate', ...) or response payload
+# (e.g. 'UserGet', 'UserListItem', ...) for CRUD entrypoints in an API.
 #
-# Note that every context asks for a different collection of fields but also
-# different constraints. Those will depend on nature of the the parsed data sources
+# Note that every context demands not only a different set of fields but also
+# different constraints. Those will depend on nature of the parsed data sources
 # as well as the guarantees defined on the data captured in the model.
 #
 # This approach should be applicable to any resource but we find that
 # 'user' is a good use case that naturally incorporates many of the variants
-# that we have typically encountered
+# that we have typically encountered.
 #
 # All these variants have many features in common so the idea is to implement a minimalistic
-# policy-based tools that can safely compose them all
+# policy-based tools that can safely compose them all.
 #
 # Good examples on how to use model polices can be found
 #  in https://fastapi-crudrouter.awtkns.com/schemas or
@@ -153,9 +154,6 @@ class UserGet(BaseModel):
     username: str
 
     # parses from User (i.e. validated domain model)
-
-
-UserGetEnveloped = Envelope[UserGet]
 
 
 class UserListItem(BaseModel):

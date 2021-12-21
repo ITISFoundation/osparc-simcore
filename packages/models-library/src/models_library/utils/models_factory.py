@@ -54,19 +54,34 @@ def _eval_selection(
     return selection
 
 
-def _extract_fields(
+def _extract_field_definitions(
     model_cls: Type[BaseModel],
     *,
     include: Optional[Set[str]] = None,
     exclude: Optional[Set[str]] = None,
     all_optional: bool = False,
 ) -> Dict[str, Tuple]:
+    """
+    field_definitions: fields of the model
+        in the format
 
+        `<name>=(<type>, <default default>)` or `<name>=<default value>`,
+         e.g.
+        `foobar=(str, ...)` or `foobar=123`,
+
+        or, for complex use-cases, in the format
+        `<name>=<FieldInfo>`,
+        e.g.
+        `foo=Field(default_factory=datetime.utcnow, alias='bar')`
+
+    """
     selection = _eval_selection(model_cls.__fields__.keys(), include, exclude)
 
     return {
         field.name: (
+            # <type>
             field.type_,
+            # <default value>
             field.default
             or field.default_factory
             or (None if all_optional or not field.required else ...),
@@ -111,22 +126,25 @@ def copy_model(
     validators
     """
     name = name or f"_Base{reference_cls.__name__.upper()}"
-    fields = _extract_fields(
+    fields_definitions = _extract_field_definitions(
         reference_cls, exclude=exclude, include=include, all_optional=as_update_model
+    )
+    validators = (
+        {
+            f"{f}_validator": vals[0]
+            for f, vals in reference_cls.__validators__.items()
+            if f in fields_definitions.keys() and vals
+        }
+        if not skip_validators
+        else None
     )
 
     new_model_cls = create_model(
         __model_name=name,
         __base__=BaseModel,
         __module__=reference_cls.__module__,
-        __validators__=None
-        if skip_validators
-        else {
-            f: classmethod(v)
-            for f, v in reference_cls.__validators__.items()
-            if f in fields
-        },
-        **fields,
+        __validators__=validators,
+        **fields_definitions,
     )
-    new_model_cls.__doc__ = reference_cls.__doc__
+    # new_model_cls.__doc__ = reference_cls.__doc__
     return new_model_cls
