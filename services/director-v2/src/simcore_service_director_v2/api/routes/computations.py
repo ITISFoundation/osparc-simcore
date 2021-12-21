@@ -6,7 +6,6 @@ from typing import Any, List
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.projects import ProjectAtDB, ProjectID
-from models_library.projects_state import RunningState
 from servicelib.async_utils import run_sequentially_in_context
 from starlette import status
 from starlette.requests import Request
