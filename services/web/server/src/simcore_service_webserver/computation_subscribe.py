@@ -20,6 +20,7 @@ from servicelib.aiohttp.monitor_services import (
 )
 from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
+from servicelib.utils import logged_gather
 from tenacity import retry
 
 from .computation_config import ComputationSettings
@@ -233,7 +234,7 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     consumer_running = False
     for task in consumer_tasks:
         task.cancel()
-    await asyncio.gather(*consumer_tasks, return_exceptions=True)
+    await logged_gather(*consumer_tasks, reraise=False, log=log)
 
     log.info("Closing connections...")
     await channel_pool.close()
