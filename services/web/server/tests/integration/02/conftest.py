@@ -5,8 +5,10 @@
 import json
 from pathlib import Path
 from typing import AsyncIterator, Dict
+from uuid import uuid4
 
 import pytest
+from models_library.projects import ProjectID
 from pytest_simcore.helpers.utils_projects import NewProject
 
 
@@ -27,10 +29,16 @@ def fake_project(fake_data_dir: Path, fake_workbench_payload: Dict) -> Dict:
 
 
 @pytest.fixture
+def project_id() -> ProjectID:
+    return uuid4()
+
+
+@pytest.fixture
 async def user_project(
-    client, fake_project: Dict, logged_user: Dict
+    client, fake_project: Dict, logged_user: Dict, project_id: ProjectID
 ) -> AsyncIterator[Dict]:
     fake_project["prjOwner"] = logged_user["name"]
+    fake_project["uuid"] = project_id
 
     async with NewProject(
         fake_project, client.app, user_id=logged_user["id"]
