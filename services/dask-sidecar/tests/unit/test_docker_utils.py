@@ -77,6 +77,8 @@ async def test_create_container_config(
                 "OUTPUT_FOLDER=/outputs",
                 "LOG_FOLDER=/logs",
                 f"SC_COMP_SERVICES_SCHEDULED_AS={boot_mode.value}",
+                f"SIMCORE_NANO_CPUS_LIMIT={task_max_resources.get('CPU', 1) * 1e9:.0f}",
+                f"SIMCORE_MEMORY_BYTES_LIMIT={task_max_resources.get('RAM', 1024 ** 3)}",
             ],
             "Cmd": command,
             "Image": f"{docker_registry}/{service_key}:{service_version}",

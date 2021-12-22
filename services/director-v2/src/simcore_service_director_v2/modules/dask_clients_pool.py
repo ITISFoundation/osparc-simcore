@@ -27,8 +27,13 @@ logger = logging.getLogger(__name__)
 class DaskClientsPool:
     app: FastAPI
     settings: DaskSchedulerSettings
+    _client_acquisition_lock: asyncio.Lock = field(init=False)
     _cluster_to_client_map: Dict[ClusterID, DaskClient] = field(default_factory=dict)
     _task_handlers: Optional[TaskHandlers] = None
+
+    def __post_init__(self):
+        # NOTE: to ensure the correct loop is used
+        self._client_acquisition_lock = asyncio.Lock()
 
     @staticmethod
     def default_cluster(settings: DaskSchedulerSettings):
@@ -66,25 +71,36 @@ class DaskClientsPool:
 
     @asynccontextmanager
     async def acquire(self, cluster: Cluster) -> AsyncIterator[DaskClient]:
-        dask_client = self._cluster_to_client_map.get(cluster.id)
-        try:
-            # we create a new client if that cluster was never used before
-            logger.debug(
-                "acquiring connection to cluster %s:%s", cluster.id, cluster.name
-            )
-            if not dask_client:
-                self._cluster_to_client_map[
-                    cluster.id
-                ] = dask_client = await DaskClient.create(
-                    app=self.app,
-                    settings=self.settings,
-                    endpoint=cluster.endpoint,
-                    authentication=cluster.authentication,
-                )
-                if self._task_handlers:
-                    dask_client.register_handlers(self._task_handlers)
+        async def _concurently_safe_acquire_client() -> DaskClient:
+            async with self._client_acquisition_lock:
+                dask_client = self._cluster_to_client_map.get(cluster.id)
 
-            assert dask_client  # nosec
+                # we create a new client if that cluster was never used before
+                logger.debug(
+                    "acquiring connection to cluster %s:%s", cluster.id, cluster.name
+                )
+                if not dask_client:
+                    self._cluster_to_client_map[
+                        cluster.id
+                    ] = dask_client = await DaskClient.create(
+                        app=self.app,
+                        settings=self.settings,
+                        endpoint=cluster.endpoint,
+                        authentication=cluster.authentication,
+                    )
+                    if self._task_handlers:
+                        dask_client.register_handlers(self._task_handlers)
+
+                    logger.debug("created new client to cluster %s", f"{cluster=}")
+                    logger.debug(
+                        "list of clients: %s", f"{self._cluster_to_client_map=}"
+                    )
+
+                assert dask_client  # nosec
+                return dask_client
+
+        try:
+            dask_client = await _concurently_safe_acquire_client()
             yield dask_client
         except (
             MissingComputationalResourcesError,
