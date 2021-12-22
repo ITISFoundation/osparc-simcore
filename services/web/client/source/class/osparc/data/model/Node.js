@@ -399,9 +399,6 @@ qx.Class.define("osparc.data.model.Node", {
           this.setLabel(nodeData.label);
         }
         this.populateInputOutputData(nodeData);
-        if ("progress" in nodeData) {
-          this.getStatus().setProgress(nodeData.progress);
-        }
         this.populateStates(nodeData);
         if (nodeData.thumbnail) {
           this.setThumbnail(nodeData.thumbnail);
@@ -440,18 +437,23 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     populateStates: function(nodeData) {
+      if ("progress" in nodeData) {
+        const progress = Number.parseInt(nodeData["progress"]);
+        this.getStatus().setProgress(progress);
+      }
       if ("state" in nodeData) {
-        if ("dependencies" in nodeData.state) {
-          this.getStatus().setDependencies(nodeData.state.dependencies);
+        const state = nodeData.state;
+        if ("dependencies" in state) {
+          this.getStatus().setDependencies(state.dependencies);
         }
-        if ("currentStatus" in nodeData.state && this.isComputational()) {
+        if ("currentStatus" in state && this.isComputational()) {
           // currentStatus is only applicable to computational services
-          this.getStatus().setRunning(nodeData.state.currentStatus);
+          this.getStatus().setRunning(state.currentStatus);
         }
-        if ("modified" in nodeData.state) {
+        if ("modified" in state) {
           if (this.getStatus().getHasOutputs()) {
             // File Picker can't have a modified output
-            this.getStatus().setModified((nodeData.state.modified || this.getStatus().hasDependencies()) && !this.isFilePicker());
+            this.getStatus().setModified((state.modified || this.getStatus().hasDependencies()) && !this.isFilePicker());
           } else {
             this.getStatus().setModified(null);
           }
