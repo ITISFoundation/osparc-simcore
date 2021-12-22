@@ -210,6 +210,7 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   events: {
+    "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
     "fileRequested": "qx.event.type.Data",
     "parameterRequested": "qx.event.type.Data",
