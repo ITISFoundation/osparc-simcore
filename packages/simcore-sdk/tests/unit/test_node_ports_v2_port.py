@@ -13,7 +13,7 @@ import tempfile
 import threading
 from collections import namedtuple
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, Optional, Type, Union
+from typing import Any, Dict, Iterator, Optional, Type, Union
 from unittest.mock import AsyncMock
 import pytest
 from aiohttp.client import ClientSession
@@ -21,7 +21,6 @@ from attr import dataclass
 from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
 from simcore_sdk.node_ports_v2 import exceptions, node_config
-from simcore_sdk.node_ports_v2 import port as port_module
 from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
 from simcore_sdk.node_ports_v2.port import Port
 from utils_port_v2 import create_valid_port_config
@@ -117,8 +116,8 @@ def relative_path(request):
 def pointed_fie_path(relative_path: bool, tmp_path: Path) -> Path:
     if relative_path:
         return Path("real_file_")
-    else:
-        return tmp_path / "real_file"
+
+    return tmp_path / "real_file"
 
 
 @pytest.fixture

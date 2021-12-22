@@ -6,7 +6,6 @@ import asyncio
 import hashlib
 import itertools
 import os
-import pathlib
 import random
 import secrets
 import string
@@ -18,7 +17,7 @@ from typing import Dict, Iterable, List, Set, Tuple
 import pytest
 from servicelib.archiving_utils import archive_dir, unarchive_dir
 
-from test_utils import print_tree
+from test_utils import print_tree  # pylint:disable=no-name-in-module
 
 # FIXTURES
 

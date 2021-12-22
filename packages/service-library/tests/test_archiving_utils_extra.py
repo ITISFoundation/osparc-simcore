@@ -14,7 +14,7 @@ from servicelib.archiving_utils import (
 )
 
 
-from test_utils import print_tree
+from test_utils import print_tree  # pylint:disable=no-name-in-module
 
 
 @pytest.fixture
