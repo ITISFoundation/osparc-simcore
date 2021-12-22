@@ -40,7 +40,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "breadcrumb-navigation": {
+        case "breadcrumbs-navigation": {
           const breadcrumbNavigation = this.__navNodes = new osparc.navigation.BreadcrumbsWorkbench();
           breadcrumbNavigation.addListener("nodeSelected", e => {
             this.fireDataEvent("nodeSelected", e.getData());
@@ -86,7 +86,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
     // overridden
     _buildLayout: function() {
-      this._createChildControl("breadcrumb-navigation");
+      this._createChildControl("breadcrumbs-navigation");
 
       const startStopBtns = this.__startStopBtns = this.getChildControl("start-stop-btns");
       startStopBtns.exclude();
