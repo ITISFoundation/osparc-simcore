@@ -119,9 +119,9 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
             const elem = target.getContentElement();
             const state = source.get(check);
             if (["busy", "starting", "pulling", "pending", "connecting"].includes(state)) {
-              elem.addClass("rotate");
+              osparc.ui.basic.NodeStatusUI.addClass(elem, "rotate");
             } else {
-              elem.removeClass("rotate");
+              osparc.ui.basic.NodeStatusUI.removeClass(elem, "rotate");
             }
           }
         });

@@ -132,7 +132,6 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
         onUpdate: (source, target) => {
           const props = qx.util.PropertyUtil.getProperties(osparc.data.model.NodeStatus);
           const state = source.getInteractive();
-          console.log("update source", state);
           if (["starting", "pulling", "pending", "connecting"].includes(state)) {
             this.self().addClass(this.__icon.getContentElement(), "rotate");
           } else {
