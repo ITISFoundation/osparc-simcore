@@ -108,7 +108,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           });
           break;
         }
-        case "progress-bar":
+        case "progress":
           control = new qx.ui.indicator.ProgressBar().set({
             height: 10,
             margin: 4
