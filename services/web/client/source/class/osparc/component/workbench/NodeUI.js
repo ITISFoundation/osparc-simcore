@@ -78,9 +78,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   },
 
   members: {
-    __progressBar: null,
     __thumbnail: null,
-
     getNodeType: function() {
       return "service";
     },
@@ -108,7 +106,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           });
           break;
         }
-        case "progress":
+        case "progress-bar":
           control = new qx.ui.indicator.ProgressBar().set({
             height: 10,
             margin: 4
@@ -126,16 +124,18 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     // overridden
     _createWindowLayout: function() {
       const node = this.getNode();
+
       if (node.getThumbnail()) {
         this.setThumbnail(node.getThumbnail());
       }
-      const chipContainer = this.getChildControl("chips");
-      if (node.isComputational() || node.isFilePicker()) {
-        this.__progressBar = this.getChildControl("progress");
-      }
 
       const nodeStatus = new osparc.ui.basic.NodeStatusUI(node);
+      const chipContainer = this.getChildControl("chips");
       chipContainer.add(nodeStatus);
+
+      if (node.isComputational() || node.isFilePicker()) {
+        this._createChildControl("progress-bar");
+      }
     },
 
     populateNodeLayout: function() {
@@ -149,7 +149,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this._createPorts(true, Boolean((metaData && metaData.inputs && Object.keys(metaData.inputs).length) || this.getNode().isContainer()));
       this._createPorts(false, Boolean((metaData && metaData.outputs && Object.keys(metaData.outputs).length) || this.getNode().isContainer()));
       if (node.isComputational() || node.isFilePicker()) {
-        node.getStatus().bind("progress", this.__progressBar, "value");
+        node.getStatus().bind("progress", this.getChildControl("progress-bar"), "value");
       }
       if (node.isFilePicker()) {
         this.setType("file");
@@ -162,8 +162,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const chipContainer = this.getChildControl("chips");
       chipContainer.exclude();
 
-      if (this.__progressBar) {
-        this.__progressBar.exclude();
+      if (this.hasChildControl("progress-bar")) {
+        this.getChildControl("progress-bar").exclude();
       }
 
       if (this._inputLayout && "ui" in this._inputLayout) {

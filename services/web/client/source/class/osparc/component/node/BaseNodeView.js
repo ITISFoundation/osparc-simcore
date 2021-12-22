@@ -89,7 +89,6 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
       const progressBar = this.__progressBar = new qx.ui.core.Widget().set({
         visibility: "excluded",
-        backgroundColor: "ready-green",
         allowGrowX: true,
         height: 6
       });
@@ -250,15 +249,31 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       this._addOutputs();
 
       if (this.__progressBar) {
+        const updateProgress = () => {
+          const running = node.getStatus().getRunning();
+          const progress = node.getStatus().getProgress();
+          if (["PENDING", "PUBLISHED"].includes(running) ||
+            (["STARTED"].includes(running) && progress === 0)) {
+            this.__progressBar.setBackgroundColor("busy-orange");
+            this.__progressBar.getContentElement().setStyles({
+              width: "100%"
+            });
+          } else if (["FAILED", "ABORTED"].includes(running)) {
+            this.__progressBar.setBackgroundColor("failed-red");
+            this.__progressBar.getContentElement().setStyles({
+              width: "100%"
+            });
+          } else {
+            this.__progressBar.setBackgroundColor("ready-green");
+            this.__progressBar.getContentElement().setStyles({
+              width: progress + "%"
+            });
+          }
+        };
         this.__progressBar.setVisibility(node.isComputational() ? "visible" : "excluded");
-        this.__progressBar.getContentElement().setStyles({
-          width: node.getStatus().getProgress() + "%"
-        });
-        node.getStatus().addListener("changeProgress", () => {
-          this.__progressBar.getContentElement().setStyles({
-            width: node.getStatus().getProgress() + "%"
-          });
-        }, this);
+        updateProgress();
+        node.getStatus().addListener("changeRunning", () => updateProgress(), this);
+        node.getStatus().addListener("changeProgress", () => updateProgress(), this);
       }
 
       this._addLogger();
