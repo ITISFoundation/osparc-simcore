@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import shutil
 import sys
 import tempfile
@@ -33,7 +34,16 @@ logger = logging.getLogger(__name__)
 
 def _get_size_of_value(value: ItemConcreteValue) -> int:
     if isinstance(value, Path):
-        size_bytes = value.stat().st_size
+        # if symlink we need to fetch the pointer to the file
+        # relative symlink need to know which their parent is
+        # in oder to properly resolve the path since the workdir
+        # does not equal to their parent dir
+        path = (
+            Path(value.parent) / Path(os.readlink(value))
+            if value.is_symlink()
+            else value
+        )
+        size_bytes = path.stat().st_size
         return size_bytes
     return sys.getsizeof(value)
 
@@ -155,6 +165,21 @@ async def _get_data_from_port(port: Port) -> Tuple[Port, ItemConcreteValue]:
 
 
 async def download_inputs(inputs_path: Path, port_keys: List[str]) -> ByteSize:
+    return await _download_target_port(
+        port_type_name="inputs", target_path=inputs_path, port_keys=port_keys
+    )
+
+
+async def download_outputs(outputs_path: Path, port_keys: List[str]) -> ByteSize:
+    return await _download_target_port(
+        port_type_name="outputs", target_path=outputs_path, port_keys=port_keys
+    )
+
+
+async def _download_target_port(
+    port_type_name: str, target_path: Path, port_keys: List[str]
+) -> ByteSize:
+    assert port_type_name in {"inputs", "outputs"}
     logger.info("retrieving data from simcore...")
     start_time = time.perf_counter()
 
@@ -168,13 +193,13 @@ async def download_inputs(inputs_path: Path, port_keys: List[str]) -> ByteSize:
 
     # let's gather all the data
     download_tasks = []
-    for node_input in (await PORTS.inputs).values():
+    for port_value in (await getattr(PORTS, port_type_name)).values():
         # if port_keys contains some keys only download them
-        logger.info("Checking node %s", node_input.key)
-        if port_keys and node_input.key not in port_keys:
+        logger.info("Checking node %s", port_value.key)
+        if port_keys and port_value.key not in port_keys:
             continue
         # collect coroutines
-        download_tasks.append(_get_data_from_port(node_input))
+        download_tasks.append(_get_data_from_port(port_value))
     logger.info("retrieving %s data", len(download_tasks))
 
     transfer_bytes = 0
@@ -192,7 +217,7 @@ async def download_inputs(inputs_path: Path, port_keys: List[str]) -> ByteSize:
 
                 # if there are files, move them to the final destination
                 downloaded_file: Optional[Path] = cast(Optional[Path], value)
-                dest_path: Path = inputs_path / port.key
+                dest_path: Path = target_path / port.key
 
                 if not downloaded_file or not downloaded_file.exists():
                     # the link may be empty
@@ -233,7 +258,7 @@ async def download_inputs(inputs_path: Path, port_keys: List[str]) -> ByteSize:
 
     # create/update the json file with the new values
     if data:
-        data_file = inputs_path / _KEY_VALUE_FILE_NAME
+        data_file = target_path / _KEY_VALUE_FILE_NAME
         if data_file.exists():
             current_data = json.loads(data_file.read_text())
             # merge data

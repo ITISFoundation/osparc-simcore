@@ -13,15 +13,15 @@ import tempfile
 import threading
 from collections import namedtuple
 from pathlib import Path
-from typing import Any, Dict, Iterator, Optional, Type, Union
-
-
+from typing import Any, Callable, Dict, Iterator, Optional, Type, Union
+from unittest.mock import AsyncMock
 import pytest
 from aiohttp.client import ClientSession
 from attr import dataclass
 from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
 from simcore_sdk.node_ports_v2 import exceptions, node_config
+from simcore_sdk.node_ports_v2 import port as port_module
 from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
 from simcore_sdk.node_ports_v2.port import Port
 from utils_port_v2 import create_valid_port_config
@@ -89,7 +89,8 @@ def symlink_to_file_with_data() -> Iterator[Path]:
 
     file_path.write_text("some dummy data")
     assert file_path.exists()
-    os.symlink(file_path, symlink_path)
+    # using a relative symlink, only these are supported
+    os.symlink(os.path.relpath(file_path, "."), symlink_path)
     assert symlink_path.exists()
 
     yield symlink_path
@@ -98,6 +99,26 @@ def symlink_to_file_with_data() -> Iterator[Path]:
     assert not symlink_path.exists()
     file_path.unlink()
     assert not file_path.exists()
+
+
+@pytest.fixture
+def dy_volumes_overwrite(tmp_path: Path) -> Path:
+    dy_volumes = tmp_path / "dy_volumes"
+    dy_volumes.mkdir(exist_ok=True, parents=True)
+    return dy_volumes
+
+
+@pytest.fixture(params=[True, False])
+def relative_path(request):
+    return request.param
+
+
+@pytest.fixture
+def pointed_fie_path(relative_path: bool, tmp_path: Path) -> Path:
+    if relative_path:
+        return Path("real_file_")
+    else:
+        return tmp_path / "real_file"
 
 
 @pytest.fixture
@@ -703,6 +724,7 @@ async def test_invalid_file_type_setter(
     common_fixtures: None, project_id: str, node_uuid: str, port_cfg: Dict[str, Any]
 ):
     port = Port(**port_cfg)
+    port._node_ports = AsyncMock()
     # set a file that does not exist
     with pytest.raises(exceptions.InvalidItemTypeError):
         await port.set("some/dummy/file/name")
@@ -710,3 +732,11 @@ async def test_invalid_file_type_setter(
     # set a folder fails too
     with pytest.raises(exceptions.InvalidItemTypeError):
         await port.set(Path(__file__).parent)
+
+    # set a file that does not exist
+    with pytest.raises(exceptions.InvalidItemTypeError):
+        await port.set_value("some/dummy/file/name")
+
+    # set a folder fails too
+    with pytest.raises(exceptions.InvalidItemTypeError):
+        await port.set_value(Path(__file__).parent)

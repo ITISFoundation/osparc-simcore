@@ -2,6 +2,7 @@ import logging
 from typing import Any, Callable, Coroutine
 
 from fastapi import FastAPI
+from servicelib.fastapi.openapi import override_fastapi_openapi_method
 
 from .._meta import API_VTAG, __version__
 from ..api import main_router
@@ -53,6 +54,7 @@ def assemble_application() -> FastAPI:
         openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
     )
+    override_fastapi_openapi_method(application)
 
     # store "settings"  and "shared_store" for later usage
     application.state.settings = dynamic_sidecar_settings

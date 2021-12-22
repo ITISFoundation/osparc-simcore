@@ -117,12 +117,12 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DY_VOLUMES} ${DY_VOLUMES}
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
-# more agressive checking helps with detecting the searvice is ready
-HEALTHCHECK --interval=30s \
-  --timeout=1s \
-  --start-period=5s \
-  --retries=3 \
-  CMD ["python3", "services/dynamic-sidecar/docker/healthcheck.py", "http://localhost:8000/health"]
+# improoving boot times by disabling the healtcheck
+# in oder to have similar performance a more aggressive healethcek
+# would be required.
+# since the director-v2 already keeps track of this service
+# removing the healthchek is not an issue
+HEALTHCHECK NONE
 
 EXPOSE 8000
 

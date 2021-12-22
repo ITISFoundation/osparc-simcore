@@ -19,7 +19,10 @@ from fastapi import (
     status,
 )
 from fastapi.responses import PlainTextResponse
+from models_library.services import ServiceOutput
+from pydantic.main import BaseModel
 from servicelib.utils import logged_gather
+from simcore_sdk.node_ports_common.data_items_utils import is_file_type
 
 from ..core.dependencies import (
     get_application,
@@ -40,13 +43,17 @@ from ..core.validation import (
 )
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
-from ..modules import nodeports
+from ..modules import directory_watcher, nodeports
 from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
 from ..modules.mounted_fs import MountedVolumes, get_mounted_volumes
 
 logger = logging.getLogger(__name__)
 
 containers_router = APIRouter(tags=["containers"])
+
+
+class CreateDirsRequestItem(BaseModel):
+    outputs_labels: Dict[str, ServiceOutput]
 
 
 async def _send_message(rabbitmq: RabbitMQ, message: str) -> None:
@@ -398,7 +405,9 @@ async def save_state(rabbitmq: RabbitMQ = Depends(get_rabbitmq)) -> Response:
 
     for state_path in mounted_volumes.disk_state_paths():
         await _send_message(rabbitmq, f"Saving state for {state_path}")
-        awaitables.append(upload_path_if_exists(state_path))
+        awaitables.append(
+            upload_path_if_exists(state_path, mounted_volumes.state_exclude)
+        )
 
     await logged_gather(*awaitables)
 
@@ -425,6 +434,71 @@ async def pull_input_ports(
         mounted_volumes.disk_inputs_path, port_keys=port_keys
     )
     await _send_message(rabbitmq, "Finished pulling inputs")
+    return transferred_bytes
+
+
+@containers_router.post(
+    "/containers/directory-watcher:disable",
+    summary="Disable directory-watcher event propagation",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def disable_directory_watcher(
+    app: FastAPI = Depends(get_application),
+) -> Response:
+    directory_watcher.disable_directory_watcher(app)
+    # SEE https://github.com/tiangolo/fastapi/issues/2253
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@containers_router.post(
+    "/containers/directory-watcher:enable",
+    summary="Enable directory-watcher event propagation",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def enable_directory_watcher(app: FastAPI = Depends(get_application)) -> Response:
+    directory_watcher.enable_directory_watcher(app)
+    # SEE https://github.com/tiangolo/fastapi/issues/2253
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@containers_router.post(
+    "/containers/ports/outputs:create-dirs",
+    summary="Creates the output directories declared by the labels",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def create_output_dirs(request_mode: CreateDirsRequestItem) -> Response:
+    mounted_volumes: MountedVolumes = get_mounted_volumes()
+    outputs_path = mounted_volumes.disk_outputs_path
+    for port_key, service_output in request_mode.outputs_labels.items():
+        if is_file_type(service_output.property_type):
+            dir_to_create = outputs_path / port_key
+            dir_to_create.mkdir(parents=True, exist_ok=True)
+
+    # SEE https://github.com/tiangolo/fastapi/issues/2253
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@containers_router.post(
+    "/containers/ports/outputs:pull",
+    summary="Pull input ports data",
+    response_model=None,
+    status_code=status.HTTP_200_OK,
+)
+async def pull_output_ports(
+    port_keys: Optional[List[str]] = None,
+    rabbitmq: RabbitMQ = Depends(get_rabbitmq),
+) -> int:
+    port_keys = [] if port_keys is None else port_keys
+    mounted_volumes: MountedVolumes = get_mounted_volumes()
+
+    await _send_message(rabbitmq, f"Pulling output for {port_keys}")
+    transferred_bytes = await nodeports.download_outputs(
+        mounted_volumes.disk_outputs_path, port_keys=port_keys
+    )
+    await _send_message(rabbitmq, "Finished pulling output")
     return transferred_bytes
 
 

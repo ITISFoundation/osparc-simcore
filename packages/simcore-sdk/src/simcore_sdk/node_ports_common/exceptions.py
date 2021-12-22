@@ -123,3 +123,11 @@ class NodeNotFound(NodeportsException):
 
     def __init__(self, node_uuid):
         super().__init__(f"the node id {node_uuid} was not found")
+
+
+class SymlinkToSymlinkNotSupportedException(NodeportsException):
+    """Not possible to upload a symlink to a symlink"""
+
+
+class SymlinkWithAbsolutePathNotSupportedException(NodeportsException):
+    """Not possible to upload a symlink to a symlink"""
