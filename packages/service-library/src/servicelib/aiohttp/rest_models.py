@@ -40,6 +40,7 @@ class ErrorType:
     logs: typing.List[LogMessageType] = attr.Factory(list)
     errors: typing.List[ErrorItemType] = attr.Factory(list)
     status: int = 400
+    message: str = "Unexpected client error"
 
 
 @attr.s(auto_attribs=True)

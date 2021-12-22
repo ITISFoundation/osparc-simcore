@@ -65,10 +65,11 @@
     "version": "1.0.0",
     "label": "sleeper 3 - elem3",
     "inputs": {
-      "in_2": {
+      "in_1": {
         "nodeUuid": "8902d36c-bc65-5b0d-848f-88aed72d7849",
         "output": "outFile"
-      }
+      },
+      "in_2": 2
     },
     "inputNodes": [
       "8902d36c-bc65-5b0d-848f-88aed72d7849"

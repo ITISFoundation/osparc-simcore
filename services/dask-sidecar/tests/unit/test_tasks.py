@@ -101,7 +101,7 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, MockerFixture]:
     )
     # mock dask event publishing
     dask_utils_publish_event_mock = mocker.patch(
-        "simcore_service_dask_sidecar.computational_sidecar.core.Pub",
+        "simcore_service_dask_sidecar.dask_utils.distributed.Pub",
         autospec=True,
     )
     mocker.patch(
