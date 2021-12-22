@@ -130,28 +130,18 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
       this.getNode().getStatus().bind("interactive", this.__icon, "source", {
         converter: state => osparc.utils.StatusUI.getIconSource(state),
         onUpdate: (source, target) => {
+          const props = qx.util.PropertyUtil.getProperties(osparc.data.model.NodeStatus);
           const state = source.getInteractive();
-          switch (state) {
-            case "ready":
-            case "failed":
-              this.self().removeClass(this.__icon.getContentElement(), "rotate");
-              target.setTextColor(osparc.utils.StatusUI.getColor(state));
-              break;
-            case "idle":
-              this.self().removeClass(this.__icon.getContentElement(), "rotate");
-              target.setTextColor(osparc.utils.StatusUI.getColor(state));
-              break;
-            case "starting":
-            case "pulling":
-            case "pending":
-            case "connecting":
-              this.self().addClass(this.__icon.getContentElement(), "rotate");
-              target.setTextColor(osparc.utils.StatusUI.getColor(state));
-              break;
-            default:
-              this.self().removeClass(this.__icon.getContentElement(), "rotate");
-              target.resetTextColor();
-              break;
+          console.log("update source", state);
+          if (["starting", "pulling", "pending", "connecting"].includes(state)) {
+            this.self().addClass(this.__icon.getContentElement(), "rotate");
+          } else {
+            this.self().removeClass(this.__icon.getContentElement(), "rotate");
+          }
+          if (props["interactive"]["check"].includes(state)) {
+            target.setTextColor(osparc.utils.StatusUI.getColor(state));
+          } else {
+            target.resetTextColor();
           }
         }
       });

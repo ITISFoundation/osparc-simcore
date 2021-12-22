@@ -263,10 +263,15 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
             this.__progressBar.getContentElement().setStyles({
               width: "100%"
             });
-          } else {
+          } else if (["SUCCESS"].includes(running)) {
             this.__progressBar.setBackgroundColor("ready-green");
             this.__progressBar.getContentElement().setStyles({
               width: progress + "%"
+            });
+          } else {
+            this.__progressBar.setBackgroundColor("transparent");
+            this.__progressBar.getContentElement().setStyles({
+              width: "100%"
             });
           }
         };
