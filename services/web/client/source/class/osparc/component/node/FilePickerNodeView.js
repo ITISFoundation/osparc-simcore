@@ -27,8 +27,6 @@ qx.Class.define("osparc.component.node.FilePickerNodeView", {
   },
 
   members: {
-    __filePicker: null,
-
     // overridden
     isSettingsGroupShowable: function() {
       return false;
@@ -56,13 +54,14 @@ qx.Class.define("osparc.component.node.FilePickerNodeView", {
       }
       this.base(arguments, node);
     },
+
     __buildMyLayout: function() {
       const node = this.getNode();
       if (!node) {
         return;
       }
 
-      const filePicker = this.__filePicker = new osparc.file.FilePicker(node);
+      const filePicker = new osparc.file.FilePicker(node);
       filePicker.buildLayout();
       filePicker.init();
       filePicker.addListener("itemSelected", () => this.fireEvent("itemSelected"));
