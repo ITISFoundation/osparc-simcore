@@ -121,6 +121,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     }
   },
 
+  statics: {
+    CARD_MARGIN: 6
+  },
+
   members: {
     __slideshowToolbar: null,
     __collapseWithUserMenu: null,
@@ -228,7 +232,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         view.set({
           backgroundColor: "background-main-lighter+",
           maxWidth: node.isDynamic() ? null : 800,
-          margin: 6
+          margin: this.self().CARD_MARGIN
         });
         view.getMainView().set({
           backgroundColor: "contrasted-background+",
@@ -288,8 +292,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       ].forEach(widget => widget.setVisibility(maximize ? "excluded" : "visible"));
 
       this.__nodeView.set({
-        padding: maximize ? 0 : 10,
-        margin: maximize ? 0 : 6
+        margin: maximize ? 0 : this.self().CARD_MARGIN
       });
     },
 
