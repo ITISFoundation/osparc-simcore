@@ -47,13 +47,6 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
       check: "osparc.data.model.Node",
       apply: "__applyNode",
       nullable: false
-    },
-
-    nextState: {
-      check: ["ready", "busy", "run", "select-file"],
-      apply: "__updateNextButtonState",
-      nullable: false,
-      init: null
     }
   },
 
@@ -96,6 +89,39 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
       node.getStatus().addListener("changeOutput", () => this.__updatePrevNextButtons(), this);
     },
 
+    __updatePrevNextButtons: function() {
+      const studyUI = this.getStudy().getUi();
+      const currentNodeId = studyUI.getCurrentNodeId();
+      const nodesIds = studyUI.getSlideshow().getSortedNodeIds();
+      const currentIdx = nodesIds.indexOf(currentNodeId);
+      const isFirst = currentIdx === 0;
+      const isLast = currentIdx === nodesIds.length-1;
+
+      this.__prvsBtn.setEnabled(!isFirst);
+      // this.__nextBtn.setEnabled();
+
+      const currentNode = this.getStudy().getWorkbench().getNode(nodesIds[currentIdx]);
+      if (currentNode) {
+        const currentNodeStatus = currentNode.getStatus();
+        const currentNodeStatusOutput = currentNodeStatus.getOutput();
+        if (["busy"].includes(currentNodeStatusOutput)) {
+          this.__updateNextButtonState("busy");
+        } else if (currentNode.isFilePicker() && ["not-available"].includes(currentNodeStatusOutput)) {
+          this.__updateNextButtonState("select-file");
+        } else if (currentNode.isComputational() && ["not-available", "out-of-date"].includes(currentNodeStatusOutput)) {
+          this.__updateNextButtonState("run");
+        } else {
+          this.__updateNextButtonState("ready");
+          this.__nextBtn.setEnabled(!isLast);
+        }
+      } else {
+        this.__updateNextButtonState("ready");
+      }
+    },
+
+    /*
+     * @param state {String} "ready"|"busy"|"run"|"select-file"
+     */
     __updateNextButtonState: function(state) {
       let icon = "@FontAwesome5Solid/arrow-right/32";
       let toolTipText = qx.locale.Manager.tr("Next");
@@ -127,39 +153,18 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
           textColor,
           enabled
         });
+        // Hack: Show tooltip if button is disabled
+        if (enabled) {
+          this.__nextBtn.getContentElement().removeAttribute("title");
+        } else {
+          this.__nextBtn.getContentElement().setAttribute("title", toolTipText);
+        }
         const btnIcon = this.__nextBtn.getChildControl("icon").getContentElement();
         if (animate) {
           osparc.ui.basic.NodeStatusUI.addClass(btnIcon, "rotate");
         } else {
           osparc.ui.basic.NodeStatusUI.removeClass(btnIcon, "rotate");
         }
-      }
-    },
-
-    __updatePrevNextButtons: function() {
-      const studyUI = this.getStudy().getUi();
-      const currentNodeId = studyUI.getCurrentNodeId();
-      const nodesIds = studyUI.getSlideshow().getSortedNodeIds();
-      const currentIdx = nodesIds.indexOf(currentNodeId);
-
-      this.__prvsBtn.setEnabled(currentIdx > 0);
-      // this.__nextBtn.setEnabled(currentIdx < nodesIds.length-1);
-
-      const currentNode = this.getStudy().getWorkbench().getNode(nodesIds[currentIdx]);
-      if (currentNode) {
-        const currentNodeStatus = currentNode.getStatus();
-        const currentNodeStatusOutput = currentNodeStatus.getOutput();
-        if (["busy"].includes(currentNodeStatusOutput)) {
-          this.setNextState("busy");
-        } else if (currentNode.isFilePicker() && ["not-available"].includes(currentNodeStatusOutput)) {
-          this.setNextState("select-file");
-        } else if (currentNode.isComputational() && ["not-available", "out-of-date"].includes(currentNodeStatusOutput)) {
-          this.setNextState("run");
-        } else {
-          this.setNextState("ready");
-        }
-      } else {
-        this.setNextState("ready");
       }
     },
 
