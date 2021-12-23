@@ -43,7 +43,7 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
   exec gunicorn simcore_service_webserver.cli:app_factory \
       --bind 0.0.0.0:8080 \
       --worker-class aiohttp.GunicornWebWorker \
-      --workers=2
+      --workers="${WEBSERVER_GUNICORN_WORKERS:-1}"
     # simcore_service_webserver --config $APP_CONFIG
 
 else
