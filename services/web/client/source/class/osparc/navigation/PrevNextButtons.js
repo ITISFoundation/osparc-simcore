@@ -153,7 +153,7 @@ qx.Class.define("osparc.navigation.PrevNextButtons", {
           this.setNextState("busy");
         } else if (currentNode.isFilePicker() && ["not-available"].includes(currentNodeStatusOutput)) {
           this.setNextState("select-file");
-        } else if (["not-available", "out-of-date"].includes(currentNodeStatusOutput)) {
+        } else if (currentNode.isComputational() && ["not-available", "out-of-date"].includes(currentNodeStatusOutput)) {
           this.setNextState("run");
         } else {
           this.setNextState("ready");
