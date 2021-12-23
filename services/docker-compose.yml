@@ -191,7 +191,9 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_retry.retry.attempts=2
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`) && (Path(`/`) ||  PathPrefix(`/v0`,`/socket.io`,`/static-frontend-data.json`))
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`)
+          && (Path(`/`)
+          ||  PathPrefix(`/v0`,`/socket.io`,`/static-frontend-data.json`))
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=1
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker,
@@ -381,7 +383,7 @@ services:
       retries: 50
 
   traefik:
-    image: traefik:v2.4.13
+    image: traefik:v2.5.6
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     command:
@@ -390,8 +392,8 @@ services:
       - "--ping=true"
       - "--entryPoints.ping.address=:9082"
       - "--ping.entryPoint=ping"
-      - "--log.level=DEBUG"
-      - "--accesslog=true"
+      - "--log.level=WARNING"
+      - "--accesslog=false"
       - "--metrics.prometheus=true"
       - "--metrics.prometheus.addEntryPointsLabels=true"
       - "--metrics.prometheus.addServicesLabels=true"
