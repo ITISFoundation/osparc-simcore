@@ -121,6 +121,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     }
   },
 
+  statics: {
+    CARD_MARGIN: 6
+  },
+
   members: {
     __slideshowToolbar: null,
     __collapseWithUserMenu: null,
@@ -184,34 +188,27 @@ qx.Class.define("osparc.desktop.SlideshowView", {
         this.__currentNodeId = nodeId;
         this.getStudy().getUi().setCurrentNodeId(nodeId);
 
+        // build layout
         let view;
         if (node.isParameter()) {
           view = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
-          view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
           const renderer = new osparc.component.node.ParameterEditor(node);
           renderer.buildForm(false);
           view.add(renderer);
         } else {
           if (node.isFilePicker()) {
             view = new osparc.component.node.FilePickerNodeView();
+            view.getOutputsButton().hide();
           } else {
             view = new osparc.component.node.NodeView();
           }
           view.setNode(node);
-          if (this.getPageContext() === "app") {
-            if (node.isComputational()) {
-              view.getHeaderLayout().show();
-              view.getSettingsLayout().show();
-            } else if (node.isDynamic()) {
-              view.getHeaderLayout().show();
-              view.getSettingsLayout().exclude();
-            } else {
-              view.getHeaderLayout().exclude();
-              view.getSettingsLayout().exclude();
-            }
+          if (node.isDynamic()) {
+            view.getSettingsLayout().setVisibility(this.getPageContext() === "app" ? "excluded" : "visible");
           }
         }
 
+        // connect maximize/restore
         if (node.isDynamic()) {
           const loadingPage = node.getLoadingPage();
           const iFrame = node.getIFrame();
@@ -226,19 +223,25 @@ qx.Class.define("osparc.desktop.SlideshowView", {
               }
             });
           }
-        } else {
-          view.set({
-            maxWidth: 800
-          });
         }
+
+        // style layout
         view.getContentElement().setStyles({
           "border-radius": "12px"
         });
         view.set({
           backgroundColor: "background-main-lighter+",
-          padding: 10,
-          margin: 6
+          maxWidth: node.isDynamic() ? null : 800,
+          margin: this.self().CARD_MARGIN
         });
+        view.getMainView().set({
+          backgroundColor: "contrasted-background+",
+          padding: 10,
+          paddingBottom: 0
+        });
+        if (node.isParameter()) {
+          view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
+        }
 
         // If the current node is moving forward do some run checks:
         const studyUI = this.getStudy().getUi();
@@ -289,8 +292,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       ].forEach(widget => widget.setVisibility(maximize ? "excluded" : "visible"));
 
       this.__nodeView.set({
-        padding: maximize ? 0 : 10,
-        margin: maximize ? 0 : 6
+        margin: maximize ? 0 : this.self().CARD_MARGIN
       });
     },
 
