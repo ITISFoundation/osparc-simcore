@@ -52,7 +52,6 @@ pyyaml==5.4.1
     #   -c requirements/_packages.txt
     #   -c requirements/_test.txt
     #   pre-commit
-    #   watchdog
 regex==2021.11.10
     # via black
 six==1.16.0
@@ -78,8 +77,6 @@ typing-extensions==3.10.0.2
     #   black
 virtualenv==20.10.0
     # via pre-commit
-watchdog==2.1.6
-    # via -r requirements/_tools.in
 wheel==0.37.0
     # via pip-tools
 

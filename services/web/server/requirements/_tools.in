@@ -4,6 +4,3 @@
 --constraint _test.txt
 
 --requirement ../../../../requirements/devenv.txt
-
-# basic dev tools
-watchdog[watchmedo]
