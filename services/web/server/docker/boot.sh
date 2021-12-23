@@ -25,12 +25,8 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   pip list | sed 's/^/    /'
 
   APP_CONFIG=server-docker-dev.yaml
-  echo "$INFO" "Setting entrypoint to use watchmedo autorestart..."
-  entrypoint='watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories --'
-
 elif [ "${SC_BUILD_TARGET}" = "production" ]; then
   APP_CONFIG=server-docker-prod.yaml
-  entrypoint=""
 fi
 
 # RUNNING application ----------------------------------------
@@ -43,9 +39,15 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
   exec gunicorn simcore_service_webserver.cli:app_factory \
       --bind 0.0.0.0:8080 \
       --worker-class aiohttp.GunicornWebWorker \
-      --workers="${WEBSERVER_GUNICORN_WORKERS:-1}"
+      --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
+      --reload
+
     # simcore_service_webserver --config $APP_CONFIG
 
 else
-  exec simcore-service-webserver --config $APP_CONFIG
+  exec gunicorn simcore_service_webserver.cli:app_factory \
+    --bind 0.0.0.0:8080 \
+    --worker-class aiohttp.GunicornWebWorker \
+    --workers="${WEBSERVER_GUNICORN_WORKERS:-1}"
+  # exec simcore-service-webserver --config $APP_CONFIG
 fi
