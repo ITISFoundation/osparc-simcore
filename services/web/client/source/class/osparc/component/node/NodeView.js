@@ -62,7 +62,7 @@ qx.Class.define("osparc.component.node.NodeView", {
       }
       this.__checkSettingsVisibility();
 
-      this._addToMainView(this._settingsLayout);
+      this._mainView.add(this._settingsLayout);
     },
 
     // overridden
@@ -83,7 +83,7 @@ qx.Class.define("osparc.component.node.NodeView", {
         });
       }
 
-      this._addToMainView(this._iFrameLayout, {
+      this._mainView.add(this._iFrameLayout, {
         flex: 1
       });
     },
@@ -104,7 +104,7 @@ qx.Class.define("osparc.component.node.NodeView", {
         enabled: this.getNode().hasOutputs() > 0
       });
       const outputsTree = new osparc.component.widget.inputs.NodeOutputTree(this.getNode(), this.getNode().getMetaData().outputs);
-      this.bind("backgroundColor", outputsTree, "backgroundColor");
+      this._mainView.bind("backgroundColor", outputsTree, "backgroundColor");
       this._outputsLayout.add(outputsTree, {
         flex: 1
       });
