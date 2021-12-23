@@ -432,7 +432,12 @@ class TutorialBase {
   }
 
   async waitFor(waitFor, reason) {
-    console.log(`Waiting for ${waitFor}ms. Reason: ${reason}`)
+    if (reason) {
+      console.log(`Waiting for ${waitFor}ms. Reason: ${reason}`);
+    }
+    else {
+      console.log(`Waiting for ${waitFor}ms.`);
+    }
     await utils.sleep(waitFor);
     await this.takeScreenshot('waitFor_finished')
   }
