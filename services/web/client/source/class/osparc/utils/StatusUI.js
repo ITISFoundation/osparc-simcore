@@ -30,13 +30,13 @@ qx.Class.define("osparc.utils.StatusUI", {
         case "UNKNOWN":
         case "NOT_STARTED":
           return "";
-        case "SUCCESS":
-          return "@FontAwesome5Solid/check/12";
         case "PENDING":
         case "PUBLISHED":
         case "STARTED":
         case "RETRY":
           return "@FontAwesome5Solid/circle-notch/12";
+        case "SUCCESS":
+          return "@FontAwesome5Solid/check/12";
         case "FAILED":
         case "ABORTED":
           return "@FontAwesome5Solid/exclamation-circle/12";
