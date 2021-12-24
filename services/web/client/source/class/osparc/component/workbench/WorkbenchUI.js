@@ -612,12 +612,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
             nodeId: nodeBId
           });
           this.__removeTempEdge();
-          qx.bom.Element.removeListener(
-            this.__desktop,
-            evType,
-            this.__updateTempEdge,
-            this
-          );
+          this.__removePointerMoveListener();
         }
       }, this);
 
@@ -634,12 +629,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.__tempEdgeIsInput === true ? srvCat.setContext(null, dragNodeId) : srvCat.setContext(dragNodeId, null);
           srvCat.addListener("close", () => this.__removeTempEdge(), this);
         }
-        qx.bom.Element.removeListener(
-          this.__desktop,
-          evType,
-          this.__updateTempEdge,
-          this
-        );
+        this.__removePointerMoveListener();
       }, this);
     },
 
@@ -866,6 +856,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__tempEdgeNodeId = null;
       this.__tempEdgeIsInput = null;
       this.__pointerPos = null;
+    },
+
+    __removePointerMoveListener: function() {
+      qx.bom.Element.removeListener(
+        this.__desktop,
+        "pointermove",
+        this.__updateTempEdge,
+        this
+      );
     },
 
     __getEdgePoints: function(node1, port1, node2, port2) {
@@ -1350,6 +1349,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         } else if (keyEvent.getKeyIdentifier() === "Delete" && this.__isSelectedItemAnEdge()) {
           this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
           this.__selectedItemChanged(null);
+        } else if (keyEvent.getKeyIdentifier() === "Escape") {
+          this.__removeTempEdge();
+          this.__removePointerMoveListener();
         }
       }, this);
 
