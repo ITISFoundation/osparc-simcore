@@ -234,13 +234,18 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           maxWidth: node.isDynamic() ? null : 800,
           margin: this.self().CARD_MARGIN
         });
-        view.getMainView().set({
-          backgroundColor: "contrasted-background+",
-          padding: 10,
-          paddingBottom: 0
-        });
         if (node.isParameter()) {
           view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
+          view.set({
+            backgroundColor: "contrasted-background+",
+            padding: 10
+          });
+        } else {
+          view.getMainView().set({
+            backgroundColor: "contrasted-background+",
+            padding: 10,
+            paddingBottom: 0
+          });
         }
 
         // If the current node is moving forward do some run checks:
@@ -266,6 +271,8 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             return;
           }
         }
+
+        this.__prevNextButtons.setNode(node);
 
         if (view) {
           if (this.__nodeView && this.__mainView.getChildren().includes(this.__nodeView)) {
