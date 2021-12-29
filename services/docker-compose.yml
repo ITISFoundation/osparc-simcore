@@ -147,7 +147,9 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.middlewares.${SWARM_STACK_NAME}_static_webserver_retry.retry.attempts=2
-        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=hostregexp(`{host:.+}`) && (PathPrefix(`/osparc`) || PathPrefix(`/s4l`) || PathPrefix(`/tis`) || PathPrefix(`/transpiled`) || PathPrefix(`/resource`))
+        - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=hostregexp(`{host:.+}`)
+          && (PathPrefix(`/osparc`) || PathPrefix(`/s4l`) || PathPrefix(`/tis`)
+          || PathPrefix(`/transpiled`) || PathPrefix(`/resource`))
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.priority=2
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker,${SWARM_STACK_NAME}_static_webserver_retry
@@ -189,10 +191,15 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_retry.retry.attempts=2
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`) && (PathPrefix(`/`) || PathPrefix(`/v0`) || PathPrefix(`/socket.io`) || PathPrefix(`/static-frontend-data.json`))
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.service=${SWARM_STACK_NAME}_webserver
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`)
+          && (Path(`/`)
+          ||  PathPrefix(`/v0`,`/socket.io`,`/static-frontend-data.json`))
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.entrypoints=http
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=1
-        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker, ${SWARM_STACK_NAME}_webserver_retry
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.priority=2
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker,
+          ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker,
+          ${SWARM_STACK_NAME}_webserver_retry
     networks:
       - default
       - interactive_services_subnet
@@ -307,7 +314,8 @@ services:
       - default
 
   postgres:
-    image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f"
+    image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27\
+      c02d8adb8feb20f"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
@@ -362,7 +370,8 @@ services:
       ]
 
   redis:
-    image: "redis:5.0.9-alpine@sha256:b011c1ca7fa97ed92d6c5995e5dd752dc37fe157c1b60ce96a6e35701851dabc"
+    image: "redis:5.0.9-alpine@sha256:b011c1ca7fa97ed92d6c5995e5dd752dc37fe157c1b60\
+      ce96a6e35701851dabc"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     networks:
@@ -375,7 +384,7 @@ services:
       retries: 50
 
   traefik:
-    image: traefik:v2.4.13
+    image: traefik:v2.5.6
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     command:
@@ -403,7 +412,8 @@ services:
       # https://github.com/traefik/traefik/issues/7886
       - "--providers.docker.swarmModeRefreshSeconds=1"
       - "--providers.docker.exposedByDefault=false"
-      - "--providers.docker.constraints=Label(`io.simcore.zone`, `${TRAEFIK_SIMCORE_ZONE}`)"
+      - "--providers.docker.constraints=Label(`io.simcore.zone`,
+        `${TRAEFIK_SIMCORE_ZONE}`)"
       - "--tracing=true"
       - "--tracing.jaeger=true"
       - "--tracing.jaeger.samplingServerURL=http://jaeger:5778/sampling"
@@ -424,6 +434,16 @@ services:
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.burst=10
         # X-Forwarded-For header extracts second IP from the right, count starts at one
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.sourcecriterion.ipstrategy.depth=2
+        # catchall service
+        - traefik.http.routers.${SWARM_STACK_NAME}_catchall.service=${SWARM_STACK_NAME}_catchall
+        - traefik.http.routers.${SWARM_STACK_NAME}_catchall.priority=1
+        - traefik.http.routers.${SWARM_STACK_NAME}_catchall.entrypoints=http
+        - traefik.http.routers.${SWARM_STACK_NAME}_catchall.rule=hostregexp(`{host:.+}`)
+          && PathPrefix(`/`)
+        - traefik.http.services.${SWARM_STACK_NAME}_catchall.loadbalancer.server.port=0
+        - traefik.http.services.${SWARM_STACK_NAME}_catchall.loadbalancer.healthcheck.path=/some/invalid/path/to/generate/a/503
+        - traefik.http.services.${SWARM_STACK_NAME}_catchall.loadbalancer.healthcheck.interval=500s
+        - traefik.http.services.${SWARM_STACK_NAME}_catchall.loadbalancer.healthcheck.timeout=1ms
     networks:
       - default
       - interactive_services_subnet
