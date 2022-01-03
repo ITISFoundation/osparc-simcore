@@ -23,8 +23,7 @@ aiopg==1.2.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
-aiozipkin==0.7.1
-    # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
+aiozipkin==1.1.1
 alembic==1.7.4
     # via -r requirements/../../../../packages/postgres-database/requirements/_base.in
 async-timeout==3.0.1
