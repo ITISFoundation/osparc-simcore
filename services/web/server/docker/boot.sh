@@ -57,7 +57,7 @@ else
     --worker-class aiohttp.GunicornWebWorker \
     --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
     --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
-    --log-level="${LOG_LEVEL:-info}" \
+    --log-level="${LOG_LEVEL:-warning}" \
     --access-logfile='-' \
     --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
   # exec simcore-service-webserver --config $APP_CONFIG
