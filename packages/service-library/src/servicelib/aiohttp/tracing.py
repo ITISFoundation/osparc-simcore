@@ -6,12 +6,20 @@ import logging
 from typing import Iterable, Optional, Union
 
 import aiozipkin as az
+import nest_asyncio
 from aiohttp import web
 from aiohttp.web import AbstractRoute
 from aiozipkin.tracer import Tracer
 from yarl import URL
 
 log = logging.getLogger(__name__)
+
+# TODO: This is currently used here in order to call an async function
+# inside the synchronous setup_tracing function.
+# WE should move to using OpenTelemetry instead (recommended by Jaeger, Zipkin, etc)
+# https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/asgi/asgi.html
+
+nest_asyncio.apply()
 
 
 def setup_tracing(
@@ -30,7 +38,7 @@ def setup_tracing(
     zipkin_address = URL(f"{jaeger_base_url}") / "api/v2/spans"
 
     log.debug(
-        "Settings up tracing for %s at %s:%d -> %s",
+        "Setting up tracing for %s at %s:%d -> %s",
         service_name,
         host,
         port,
