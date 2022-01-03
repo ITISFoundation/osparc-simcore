@@ -197,6 +197,8 @@ redis==3.5.3
     # via celery
 semantic-version==2.8.5
     # via -r requirements/_base.in
+setproctitle==1.2.2
+    # via gunicorn
 six==1.16.0
     # via
     #   click-repl
