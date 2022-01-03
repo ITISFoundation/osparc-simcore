@@ -11,6 +11,7 @@ lazy-object-proxy~=1.4.3 # cannot upgrade due to contraints in openapi-core
 
 aiohttp
 aiopg[sa]
+nest_asyncio # used for aiozipkin initialization (we should move to OpenTelemetry)
 jsonschema
 prometheus_client
 attrs
