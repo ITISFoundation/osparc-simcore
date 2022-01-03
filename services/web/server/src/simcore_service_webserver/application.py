@@ -93,27 +93,15 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_exporter(app)
     setup_clusters(app)
 
-    return app
-
-
-def create_app(config: Dict[str, Any]) -> web.Application:
-    app = create_application(config)
-
-    async def welcome_banner(_app: web.Application):
-        print(WELCOME_MSG, flush=True)
-
-    app.on_startup.append(welcome_banner)
-    return app
-
-
-def run_service(config: Dict[str, Any]):
-    app = create_application(config)
-
     async def welcome_banner(_app: web.Application):
         print(WELCOME_MSG, flush=True)
 
     app.on_startup.append(welcome_banner)
 
+    return app
+
+
+def run_service(app: web.Application, config: Dict[str, Any]):
     web.run_app(
         app,
         host=config["main"]["host"],
