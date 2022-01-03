@@ -2,6 +2,7 @@ import functools
 import inspect
 import logging
 from datetime import datetime
+from distutils.util import strtobool
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Protocol
 
@@ -42,14 +43,14 @@ class DependencyError(ApplicationSetupError):
 
 def _is_app_module_enabled(cfg: Dict, parts: List[str], section) -> bool:
     # navigates app_config (cfg) searching for section
+    enabled = False
     for part in parts:
         if section and part == "enabled":
             # if section exists, no need to explicitly enable it
-            cfg = cfg.get(part, True)
+            enabled = strtobool(f"{cfg.get(part, True)}")
         else:
-            cfg = cfg[part]
-    assert isinstance(cfg, bool)  # nosec
-    return cfg
+            enabled = cfg[part]
+    return enabled
 
 
 def app_module_setup(
