@@ -1,6 +1,7 @@
 import functools
 import inspect
 import logging
+from copy import deepcopy
 from datetime import datetime
 from distutils.util import strtobool
 from enum import Enum
@@ -43,14 +44,14 @@ class DependencyError(ApplicationSetupError):
 
 def _is_app_module_enabled(cfg: Dict, parts: List[str], section) -> bool:
     # navigates app_config (cfg) searching for section
-    enabled = False
+    searched_config = deepcopy(cfg)
     for part in parts:
         if section and part == "enabled":
             # if section exists, no need to explicitly enable it
-            enabled = strtobool(f"{cfg.get(part, True)}")
-        else:
-            enabled = cfg[part]
-    return enabled
+            return strtobool(f"{searched_config.get(part, True)}")
+        searched_config = searched_config[part]
+    assert isinstance(searched_config, bool)  # nosec
+    return searched_config
 
 
 def app_module_setup(
