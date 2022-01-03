@@ -4,3 +4,6 @@
 --constraint _test.txt
 
 --requirement ../../../../requirements/devenv.txt
+
+# for gunicorn reloading mechanism
+inotify
