@@ -66,6 +66,10 @@ class TutorialBase {
 
     await auto.acceptCookies(this.__page);
     await this.takeScreenshot("postCookies_" + domain);
+
+    // eslint-disable-next-line no-undef
+    const commit = await this.__page.evaluate(() => qx.core.Environment.get("osparc.vcsRef"));
+    console.log("commit", commit);
   }
 
   async start() {
