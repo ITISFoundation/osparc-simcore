@@ -35,10 +35,8 @@ echo "$INFO" "Selected config $APP_CONFIG"
 # NOTE: the number of workers ```(2 x $num_cores) + 1``` is the official recommendation [https://docs.gunicorn.org/en/latest/design.html#how-many-workers]
 
 if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-  # NOTE: needs ptvsd installed
-  echo "$INFO" "PTVSD Debugger initializing in port 3000 with ${APP_CONFIG}"
-  # exec python3 -m ptvsd --host 0.0.0.0 --port 3000 -m \
-
+  # NOTE: ptvsd is programmatically enabled inside of the service
+  # this way we can have reload in place as well
   exec gunicorn simcore_service_webserver.cli:app_factory \
     --bind 0.0.0.0:8080 \
     --worker-class aiohttp.GunicornWebWorker \

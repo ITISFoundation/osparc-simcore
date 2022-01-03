@@ -25,6 +25,7 @@ from .login.module_setup import setup_login
 from .products import setup_products
 from .projects.module_setup import setup_projects
 from .publications import setup_publications
+from .remote_debug import setup_remote_debugging
 from .resource_manager.module_setup import setup_resource_manager
 from .rest import setup_rest
 from .security import setup_security
@@ -56,7 +57,7 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     )
 
     app = create_safe_application(config)
-
+    setup_remote_debugging()
     setup_settings(app)
 
     # TODO: create dependency mechanism
