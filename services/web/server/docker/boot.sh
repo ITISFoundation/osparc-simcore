@@ -44,8 +44,11 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     --worker-class aiohttp.GunicornWebWorker \
     --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
     --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
+    --log-level="${LOG_LEVEL:-info}" \
+    --access-logfile='-' \
+    --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"' \
     --reload
-
+  #
   # simcore_service_webserver --config $APP_CONFIG
 
 else
@@ -53,6 +56,9 @@ else
     --bind 0.0.0.0:8080 \
     --worker-class aiohttp.GunicornWebWorker \
     --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
-    --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$"
+    --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
+    --log-level="${LOG_LEVEL:-info}" \
+    --access-logfile='-' \
+    --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
   # exec simcore-service-webserver --config $APP_CONFIG
 fi

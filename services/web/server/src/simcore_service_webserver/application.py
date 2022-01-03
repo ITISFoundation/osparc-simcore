@@ -117,7 +117,8 @@ def run_service(config: Dict[str, Any]):
         app,
         host=config["main"]["host"],
         port=config["main"]["port"],
-        access_log_format='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"',
+        # this gets overriden by the gunicorn config if any
+        access_log_format='%a %t "%r" %s %b --- [%Dus] "%{Referer}i" "%{User-Agent}i"',
     )
 
 
