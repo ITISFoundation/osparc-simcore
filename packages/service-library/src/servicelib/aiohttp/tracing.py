@@ -45,6 +45,7 @@ def setup_tracing(
     # inside the synchronous setup_tracing function.
     # WE should move to using OpenTelemetry instead (recommended by Jaeger, Zipkin, etc)
     # https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/asgi/asgi.html
+    # see issue [#2715](https://github.com/ITISFoundation/osparc-simcore/issues/2715)
     nest_asyncio.apply()
     tracer: Tracer = asyncio.get_event_loop().run_until_complete(
         az.create(f"{zipkin_address}", endpoint, sample_rate=1.0)
