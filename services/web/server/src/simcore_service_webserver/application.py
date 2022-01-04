@@ -57,13 +57,13 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     )
 
     app = create_safe_application(config)
-    setup_remote_debugging()
+
     setup_settings(app)
 
     # TODO: create dependency mechanism
     # and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
     #
-
+    setup_remote_debugging(app)
     setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
     setup_statics(app)
     setup_db(app)
