@@ -1,15 +1,17 @@
 """ Adds aiohttp middleware for tracing using zipkin server instrumentation.
 
 """
-import asyncio
 import logging
 from typing import Iterable, Optional, Union
 
 import aiozipkin as az
-import nest_asyncio
 from aiohttp import web
 from aiohttp.web import AbstractRoute
-from aiozipkin.tracer import Tracer
+from aiozipkin.aiohttp_helpers import (
+    APP_AIOZIPKIN_KEY,
+    REQUEST_AIOZIPKIN_KEY,
+    middleware_maker,
+)
 from yarl import URL
 
 log = logging.getLogger(__name__)
@@ -41,18 +43,32 @@ def setup_tracing(
     endpoint = az.create_endpoint(service_name, ipv4=host, port=port)
 
     # TODO: move away from aiozipkin to OpenTelemetrySDK
-    # TODO: This is currently used here in order to call an async function
-    # inside the synchronous setup_tracing function.
-    # WE should move to using OpenTelemetry instead (recommended by Jaeger, Zipkin, etc)
     # https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/asgi/asgi.html
     # see issue [#2715](https://github.com/ITISFoundation/osparc-simcore/issues/2715)
-    nest_asyncio.apply()
-    tracer: Tracer = asyncio.get_event_loop().run_until_complete(
-        az.create(f"{zipkin_address}", endpoint, sample_rate=1.0)
-    )
+    # creates / closes tracer
+    async def _tracer_cleanup_context(app: web.Application):
 
-    # WARNING: adds a middleware that should be the outermost since
-    # it expects stream responses while we allow data returns from a handler
-    az.setup(app, tracer, skip_routes=skip_routes)
+        app[APP_AIOZIPKIN_KEY] = await az.create(
+            f"{zipkin_address}", endpoint, sample_rate=1.0
+        )
+
+        yield
+
+        if APP_AIOZIPKIN_KEY in app:
+            await app[APP_AIOZIPKIN_KEY].close()
+
+    app.cleanup_ctx.append(_tracer_cleanup_context)
+
+    # adds middleware to tag spans (when used, tracer should be ready)
+    m = middleware_maker(
+        skip_routes=skip_routes,
+        tracer_key=APP_AIOZIPKIN_KEY,
+        request_key=REQUEST_AIOZIPKIN_KEY,
+    )
+    app.middlewares.append(m)
+
+    # # WARNING: adds a middleware that should be the outermost since
+    # # it expects stream responses while we allow data returns from a handler
+    # az.setup(app, tracer, skip_routes=skip_routes)
 
     return True
