@@ -32,7 +32,9 @@ fi
 # RUNNING application ----------------------------------------
 echo "$INFO" "Selected config $APP_CONFIG"
 
-# NOTE: the number of workers ```(2 x $num_cores) + 1``` is the official recommendation [https://docs.gunicorn.org/en/latest/design.html#how-many-workers]
+# NOTE: the number of workers ```(2 x $num_cores) + 1``` is
+# the official recommendation [https://docs.gunicorn.org/en/latest/design.html#how-many-workers]
+# For now we set it to 1 to check what happens with websockets
 
 if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
   # NOTE: ptvsd is programmatically enabled inside of the service
