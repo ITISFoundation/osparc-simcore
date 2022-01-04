@@ -39,3 +39,6 @@ codecov
 coveralls
 ptvsd
 pylint
+
+# FIXME: deprecated
+trafaret_config
