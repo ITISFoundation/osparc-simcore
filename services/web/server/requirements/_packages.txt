@@ -169,8 +169,6 @@ tenacity==8.0.1
     # via
     #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
-trafaret==2.1.0
-    # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
