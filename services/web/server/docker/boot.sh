@@ -46,8 +46,6 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     --access-logfile='-' \
     --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"' \
     --reload
-  #
-  # simcore_service_webserver --config $APP_CONFIG
 
 else
   exec gunicorn simcore_service_webserver.cli:app_factory \
@@ -58,5 +56,4 @@ else
     --log-level="${LOG_LEVEL:-warning}" \
     --access-logfile='-' \
     --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
-  # exec simcore-service-webserver --config $APP_CONFIG
 fi
