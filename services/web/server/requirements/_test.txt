@@ -94,18 +94,18 @@ idna==2.10
     #   -c requirements/_packages.txt
     #   requests
     #   yarl
-importlib-metadata==4.8.1
+importlib-metadata==4.10.0
     # via
     #   -c requirements/_packages.txt
     #   alembic
-importlib-resources==5.3.0 ; python_version < "3.9"
+importlib-resources==5.4.0 ; python_version < "3.9"
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_packages.txt
     #   alembic
 iniconfig==1.1.1
     # via pytest
-isodate==0.6.0
+isodate==0.6.1
     # via
     #   -c requirements/_packages.txt
     #   openapi-schema-validator
@@ -122,7 +122,7 @@ lazy-object-proxy==1.4.3
     # via
     #   -c requirements/_packages.txt
     #   astroid
-mako==1.1.5
+mako==1.1.6
     # via
     #   -c requirements/_packages.txt
     #   alembic
@@ -139,7 +139,7 @@ multidict==5.1.0
     #   -c requirements/_packages.txt
     #   aiohttp
     #   yarl
-openapi-schema-validator==0.1.5
+openapi-schema-validator==0.1.6
     # via
     #   -c requirements/_packages.txt
     #   openapi-spec-validator
@@ -288,7 +288,7 @@ yarl==1.5.1
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   aiohttp
-zipp==3.6.0
+zipp==3.7.0
     # via
     #   -c requirements/_packages.txt
     #   importlib-metadata
