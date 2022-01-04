@@ -6,6 +6,7 @@ import logging
 from typing import Dict, Optional
 
 from aiohttp import web
+from models_library.basic_types import BootModeEnum, BuildTargetEnum
 from pydantic import BaseSettings, Field
 
 from ._meta import API_VERSION, APP_NAME
@@ -29,9 +30,13 @@ class ApplicationSettings(BaseSettings):
     vcs_url: Optional[str] = Field(None, env="SC_VCS_URL")
     vcs_ref: Optional[str] = Field(None, env="SC_VCS_REF")
     build_date: Optional[str] = Field(None, env="SC_BUILD_DATE")
-    build_target: Optional[str] = Field("production", env="SC_BUILD_TARGET")
+    build_target: Optional[BuildTargetEnum] = Field(
+        BuildTargetEnum.PRODUCTION, env="SC_BUILD_TARGET"
+    )
 
-    boot_mode: Optional[str] = Field("prod", env="SC_BOOT_MODE")
+    boot_mode: Optional[BootModeEnum] = Field(
+        BootModeEnum.PRODUCTION, env="SC_BOOT_MODE"
+    )
     user_name: Optional[str] = Field(None, env="SC_USER_NAME")
     user_id: Optional[int] = Field(None, env="SC_USER_ID")
 

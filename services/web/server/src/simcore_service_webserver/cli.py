@@ -21,6 +21,7 @@ from argparse import ArgumentParser
 from typing import Dict, List, Optional, Tuple
 
 from aiohttp import web
+from models_library.basic_types import BuildTargetEnum
 
 from .application import create_application, run_service
 from .application_config import CLI_DEFAULT_CONFIGFILE, app_schema
@@ -134,7 +135,7 @@ async def app_factory() -> web.Application:
     args = [
         "--config",
         "server-docker-dev.yaml"
-        if app_settings.build_target.lower() == "development"
+        if app_settings.boot_mode == BuildTargetEnum.DEVELOPMENT
         else "server-docker-prod.yaml",
     ]
     app, _ = _setup_app(args)

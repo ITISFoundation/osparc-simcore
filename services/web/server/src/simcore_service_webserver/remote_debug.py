@@ -4,6 +4,7 @@
 import logging
 
 from aiohttp import web
+from models_library.basic_types import BootModeEnum
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .constants import APP_SETTINGS_KEY
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 def setup_remote_debugging(app: web.Application):
     application_settings: ApplicationSettings = app[APP_SETTINGS_KEY]
     assert application_settings.boot_mode  # nosec
-    if "DEBUG" in application_settings.boot_mode.upper():
+    if application_settings.boot_mode == BootModeEnum.DEBUG:
         try:
             logger.debug("Enabling attach ptvsd ...")
             #
