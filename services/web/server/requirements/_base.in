@@ -80,3 +80,4 @@ yarl<1.6
 
 # FIXME: deprecated
 trafaret==2.1.0
+trafaret_config

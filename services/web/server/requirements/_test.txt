@@ -263,7 +263,6 @@ pyyaml==5.4.1
     #   -c requirements/_packages.txt
     #   docker-compose
     #   openapi-spec-validator
-    #   trafaret-config
 redis==3.5.3
     # via
     #   -c requirements/_base.txt
@@ -311,11 +310,7 @@ toml==0.10.2
 tomli==1.2.2
     # via coverage
 trafaret==2.1.0
-    # via
-    #   -c requirements/_base.txt
-    #   trafaret-config
-trafaret-config==2.0.2
-    # via -r requirements/_test.in
+    # via -c requirements/_base.txt
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
