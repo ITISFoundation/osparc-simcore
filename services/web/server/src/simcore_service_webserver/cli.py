@@ -26,6 +26,7 @@ from .application import create_application, run_service
 from .application_config import CLI_DEFAULT_CONFIGFILE, app_schema
 from .cli_config import add_cli_options, config_from_options
 from .log import setup_logging
+from .settings import ApplicationSettings
 from .utils import search_osparc_repo_dir
 
 # ptsvd cause issues with ProcessPoolExecutor
@@ -125,12 +126,17 @@ def main(args: Optional[List] = None):
     run_service(app, config)
 
 
-async def app_factory(args: Optional[List] = None) -> web.Application:
+async def app_factory() -> web.Application:
     # parse & config file
-    if not args:
-        args = []
-    log.debug("Received arguments: %s", f"{args=}")
-    args.extend(["--config", "server-docker-prod.yaml"])
+    app_settings = ApplicationSettings()
+    assert app_settings.build_target  # nosec
+    log.info("Application settings: %s", f"{app_settings.json(indent=2)}")
+    args = [
+        "--config",
+        "server-docker-dev.yaml"
+        if app_settings.build_target.lower() == "development"
+        else "server-docker-prod.yaml",
+    ]
     app, _ = _setup_app(args)
 
     return app
