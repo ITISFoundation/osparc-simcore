@@ -14,6 +14,5 @@ aiopg[sa]
 jsonschema
 prometheus_client
 attrs
-trafaret
 
 werkzeug
