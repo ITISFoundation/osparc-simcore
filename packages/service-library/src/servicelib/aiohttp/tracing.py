@@ -14,13 +14,6 @@ from yarl import URL
 
 log = logging.getLogger(__name__)
 
-# TODO: This is currently used here in order to call an async function
-# inside the synchronous setup_tracing function.
-# WE should move to using OpenTelemetry instead (recommended by Jaeger, Zipkin, etc)
-# https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/asgi/asgi.html
-
-nest_asyncio.apply()
-
 
 def setup_tracing(
     app: web.Application,
@@ -47,6 +40,12 @@ def setup_tracing(
 
     endpoint = az.create_endpoint(service_name, ipv4=host, port=port)
 
+    # TODO: move away from aiozipkin to OpenTelemetrySDK
+    # TODO: This is currently used here in order to call an async function
+    # inside the synchronous setup_tracing function.
+    # WE should move to using OpenTelemetry instead (recommended by Jaeger, Zipkin, etc)
+    # https://opentelemetry-python-contrib.readthedocs.io/en/latest/instrumentation/asgi/asgi.html
+    nest_asyncio.apply()
     tracer: Tracer = asyncio.get_event_loop().run_until_complete(
         az.create(f"{zipkin_address}", endpoint, sample_rate=1.0)
     )
