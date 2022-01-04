@@ -148,17 +148,17 @@ qx.Class.define("osparc.data.model.Study", {
       nullable: true
     },
 
-    state: {
-      check: "Object",
-      nullable: true,
-      event: "changeState"
-    },
-
     quality: {
       check: "Object",
       init: {},
       event: "changeQuality",
       nullable: true
+    },
+
+    state: {
+      check: "Object",
+      nullable: true,
+      event: "changeState"
     },
 
     readOnly: {
@@ -170,6 +170,15 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   statics: {
+    IgnoreSerializationProps: [
+      "state",
+      "readOnly"
+    ],
+
+    IgnoreModelizationProps: [
+      "dev"
+    ],
+
     createMyNewStudyObject: function() {
       let myNewStudyObject = {};
       const props = qx.util.PropertyUtil.getProperties(osparc.data.model.Study);
@@ -236,6 +245,24 @@ qx.Class.define("osparc.data.model.Study", {
         return studyData["workbench"][nodeId]["outputs"][portId];
       }
       return null;
+    },
+
+    computeStudyProgress: function(studyData) {
+      const nodes = studyData["workbench"];
+      let nCompNodes = 0;
+      let overallProgress = 0;
+      Object.values(nodes).forEach(node => {
+        const metaData = osparc.utils.Services.getMetaData(node["key"], node["version"]);
+        if (osparc.data.model.Node.isComputational(metaData)) {
+          const progress = "progress" in node ? node["progress"] : 0;
+          overallProgress += progress;
+          nCompNodes++;
+        }
+      });
+      if (nCompNodes === 0) {
+        return null;
+      }
+      return overallProgress/nCompNodes;
     }
   },
 
@@ -334,6 +361,40 @@ qx.Class.define("osparc.data.model.Study", {
       });
     },
 
+    nodeUpdated: function(nodeUpdatedData) {
+      const nodeId = nodeUpdatedData["node_id"];
+      const nodeData = nodeUpdatedData["data"];
+      const workbench = this.getWorkbench();
+      const node = workbench.getNode(nodeId);
+      if (node && nodeData) {
+        node.setOutputData(nodeData.outputs);
+        if ("progress" in nodeData) {
+          const progress = Number.parseInt(nodeData["progress"]);
+          node.getStatus().setProgress(progress);
+        }
+        node.populateStates(nodeData);
+      } else if (osparc.data.Permissions.getInstance().isTester()) {
+        console.log("Ignored ws 'nodeUpdated' msg", nodeUpdatedData);
+      }
+    },
+
+    computeStudyProgress: function() {
+      const nodes = this.getWorkbench().getNodes();
+      let nCompNodes = 0;
+      let overallProgress = 0;
+      Object.values(nodes).forEach(node => {
+        if (node.isComputational()) {
+          const progress = node.getStatus().getProgress();
+          overallProgress += progress ? progress : 0;
+          nCompNodes++;
+        }
+      });
+      if (nCompNodes === 0) {
+        return null;
+      }
+      return overallProgress/nCompNodes;
+    },
+
     getPipelineState: function() {
       if (this.getState() && "state" in this.getState()) {
         return this.getState()["state"]["value"];
@@ -401,15 +462,15 @@ qx.Class.define("osparc.data.model.Study", {
       return !this.getUi().getSlideshow().isEmpty();
     },
 
-    serialize: function() {
+    serialize: function(clean = true) {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
-        if (["state", "readOnly"].includes(key)) {
+        if (this.self().IgnoreSerializationProps.includes(key)) {
           return;
         }
         if (key === "workbench") {
-          jsonObject[key] = this.getWorkbench().serialize();
+          jsonObject[key] = this.getWorkbench().serialize(clean);
           return;
         }
         if (key === "ui") {
@@ -447,9 +508,12 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     __updateModel: function(data) {
-      if ("dev" in data) {
-        delete data["dev"];
-      }
+      Object.keys(data).forEach(key => {
+        if (this.self().IgnoreModelizationProps.includes(key)) {
+          delete data[key];
+        }
+      });
+
       this.set({
         ...data,
         creationDate: new Date(data.creationDate),

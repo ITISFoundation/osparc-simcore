@@ -18,7 +18,7 @@
 qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   extend: osparc.desktop.Toolbar,
 
-  construct: function () {
+  construct: function() {
     this.base(arguments);
 
     this.__attachEventHandlers();
@@ -27,14 +27,17 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   events: {
     "startPipeline": "qx.event.type.Event",
     "startPartialPipeline": "qx.event.type.Event",
-    "stopPipeline": "qx.event.type.Event"
+    "stopPipeline": "qx.event.type.Event",
+    "zoomIn": "qx.event.type.Event",
+    "zoomOut": "qx.event.type.Event",
+    "zoomReset": "qx.event.type.Event"
   },
 
   members: {
     __navNodes: null,
     __startStopBtns: null,
 
-    _createChildControlImpl: function (id) {
+    _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "breadcrumbs-navigation": {
@@ -63,20 +66,40 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
           this._add(control);
           break;
         }
+        case "zoom-btns": {
+          control = new osparc.desktop.ZoomButtons();
+          [
+            "zoomIn",
+            "zoomOut",
+            "zoomReset"
+          ].forEach(signalName => {
+            control.addListener(signalName, () => {
+              this.fireEvent(signalName);
+            }, this);
+          });
+          this._add(control);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
 
     // overridden
-    _buildLayout: function () {
+    _buildLayout: function() {
       this._createChildControl("breadcrumbs-navigation");
 
       const startStopBtns = this.__startStopBtns = this.getChildControl("start-stop-btns");
       startStopBtns.exclude();
+
+      this._add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
+      this._createChildControl("zoom-btns");
     },
 
     // overridden
-    _applyStudy: function (study) {
+    _applyStudy: function(study) {
       this.base(arguments, study);
 
       if (study) {
@@ -85,7 +108,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
     },
 
     // overridden
-    _populateNodesNavigationLayout: function () {
+    _populateNodesNavigationLayout: function() {
       const study = this.getStudy();
       if (study) {
         const nodeIds = study.getWorkbench().getPathIds(study.getUi().getCurrentNodeId());
@@ -93,11 +116,11 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       }
     },
 
-    getStartStopButtons: function () {
+    getStartStopButtons: function() {
       return this.__startStopBtns;
     },
 
-    __attachEventHandlers: function () {
+    __attachEventHandlers: function() {
       qx.event.message.Bus.subscribe("changeWorkbenchSelection", e => {
         const selectedNodes = e.getData();
         const selectedNodeIds = [];

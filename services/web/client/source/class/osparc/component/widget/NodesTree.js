@@ -70,6 +70,10 @@ qx.Class.define("osparc.component.widget.NodesTree", {
         return osparc.utils.Services.getSorting("file");
       } else if (node.isParameter()) {
         return osparc.utils.Services.getSorting("parameter");
+      } else if (node.isIterator()) {
+        return osparc.utils.Services.getSorting("iterator");
+      } else if (node.isProbe()) {
+        return osparc.utils.Services.getSorting("probe");
       }
       return osparc.utils.Services.getSorting(node.getMetaData().type);
     },
@@ -155,7 +159,7 @@ qx.Class.define("osparc.component.widget.NodesTree", {
                 const icon = osparc.utils.Services.getIcon("iterator");
                 item.setIcon(icon+"14");
               } else if (node.isProbe()) {
-                const icon = osparc.utils.Services.getIcon("iterator-consumer");
+                const icon = osparc.utils.Services.getIcon("probe");
                 item.setIcon(icon+"14");
               } else {
                 const icon = osparc.utils.Services.getIcon(node.getMetaData().type);
@@ -180,6 +184,8 @@ qx.Class.define("osparc.component.widget.NodesTree", {
               if (node.isDynamic()) {
                 item.getChildControl("fullscreen-button").show();
               }
+
+              node.addListener("keyChanged", () => this.populateTree(), this);
             }
           },
           configureItem: item => {

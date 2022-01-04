@@ -45,13 +45,16 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     __iterationPreview: null,
     __openIterationBtn: null,
     __selectedIterationId: null,
+    // throttling
+    __lastUpdate: null,
+    __lastFunc: null,
 
     __buildLayout: function() {
       const iterationsSection = this.__iterationsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       this._add(iterationsSection, {
         flex: 1
       });
-      this.__rebuildIterations();
+      this.__buildIterations();
       this.__buildIterationsPreview();
 
       const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox());
@@ -67,7 +70,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       buttonsSection.add(openIterationBtn);
     },
 
-    __rebuildIterations: function() {
+    __buildIterations: function() {
       const loadingTable = this.__loadingTable = new osparc.component.snapshots.Loading(this.tr("iterations"));
       this.__iterationsSection.addAt(loadingTable, 0, {
         width: "50%"
@@ -88,10 +91,74 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
             Promise.all(iterationPromises)
               .then(values => {
                 this.__iterations = values;
+                this.__listenToNodeUpdates();
                 this.__rebuildIterationsTable();
               });
           }
         });
+    },
+
+    __listenToNodeUpdates: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      const slotName = "nodeUpdated";
+      socket.on(slotName, data => {
+        const dataUpdate = JSON.parse(data);
+        const idx = this.__iterations.findIndex(it => it["uuid"] === dataUpdate["project_id"]);
+        if (idx === -1) {
+          return;
+        }
+        this.__iterationUpdated(dataUpdate);
+      }, this);
+    },
+
+    __iterationUpdated: function(dataUpdate) {
+      const idx = this.__iterations.findIndex(it => it["uuid"] === dataUpdate["project_id"]);
+      if (idx === -1) {
+        return;
+      }
+
+      const iterationData = this.__iterations[idx];
+      const iteration = new osparc.data.model.Study(iterationData);
+      iteration.buildWorkbench();
+      iteration.setReadOnly(true);
+      iteration.nodeUpdated(dataUpdate);
+      const iterationDataUpdated = iteration.serialize(false);
+      this.__iterations.splice(idx, 1, iterationDataUpdated);
+
+      // update maximum once every 2"
+      const throttleTime = 2000;
+      this.__throttleUpdate(this.__updateNewData.bind(this), throttleTime);
+    },
+
+    __throttleUpdate: function(callback, time) {
+      if (this.__lastUpdate) {
+        if (this.__lastFunc) {
+          clearTimeout(this.__lastFunc);
+        }
+        this.__lastFunc = setTimeout(() => {
+          if ((Date.now() - this.__lastUpdate) >= time) {
+            callback();
+            this.__lastUpdate = Date.now();
+          }
+        }, time - (Date.now() - this.__lastUpdate));
+      } else {
+        callback();
+        this.__lastUpdate = Date.now();
+      }
+    },
+
+    __updateNewData: function() {
+      const idx = this.__iterations.findIndex(it => it["uuid"] === this.__selectedIterationId);
+      if (idx > -1) {
+        const iterationData = this.__iterations[idx];
+        const iteration = new osparc.data.model.Study(iterationData);
+        iteration.buildWorkbench();
+        iteration.setReadOnly(true);
+        this.__iterationPreview.setStudy(iteration);
+        this.__iterationPreview.loadModel(iteration.getWorkbench());
+      }
+
+      this.__iterationsTable.iterationsToTable(this.__iterations);
     },
 
     __rebuildIterationsTable: function() {
@@ -103,7 +170,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
         this.__iterationsSection.remove(this.__iterationsTable);
       }
 
-      const iterationsTable = this.__iterationsTable = new osparc.component.snapshots.Iterations(this.__study.serialize());
+      const iterationsTable = this.__iterationsTable = new osparc.component.snapshots.Iterations(this.__study.serialize(false));
       iterationsTable.populateTable(this.__iterations);
       iterationsTable.addListener("cellTap", e => {
         const selectedRow = e.getRow();
@@ -168,6 +235,12 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       if (this.__openIterationBtn) {
         this.__openIterationBtn.setEnabled(true);
       }
+    },
+
+    unlistenToNodeUpdates: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      const slotName = "nodeUpdated";
+      socket.removeSlot(slotName);
     }
   }
 });

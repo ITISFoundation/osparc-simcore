@@ -29,7 +29,8 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
       statusBarVisible: false
     });
 
-    this.setColumnWidth(this.self().T_POS.NAME.col, 200);
+    this.setColumnWidth(this.self().T_POS.NAME.col, 150);
+    this.setColumnWidth(this.self().T_POS.PROGRESS.col, 70);
   },
 
   statics: {
@@ -41,6 +42,10 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
       NAME: {
         col: 1,
         label: qx.locale.Manager.tr("Name")
+      },
+      PROGRESS: {
+        col: 2,
+        label: qx.locale.Manager.tr("Progress")
       }
     },
 
@@ -128,7 +133,8 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
       const columnModel = this.getTableColumnModel();
       columnModel.setDataCellRenderer(this.self().T_POS.ID.col, new qx.ui.table.cellrenderer.Number());
       columnModel.setDataCellRenderer(this.self().T_POS.NAME.col, new qx.ui.table.cellrenderer.String());
-      let countFormat = this.self().T_POS.NAME.col+1;
+      columnModel.setDataCellRenderer(this.self().T_POS.PROGRESS.col, new qx.ui.table.cellrenderer.String());
+      let countFormat = this.self().T_POS.PROGRESS.col+1;
       iteratorsInMeta.forEach(() => {
         columnModel.setDataCellRenderer(countFormat, new qx.ui.table.cellrenderer.String());
         countFormat++;
@@ -149,7 +155,9 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
         const row = [];
         row[this.self().T_POS.ID.col] = iteration["uuid"];
         row[this.self().T_POS.NAME.col] = iteration["name"];
-        let countRow = this.self().T_POS.NAME.col+1;
+        const studyProgress = osparc.data.model.Study.computeStudyProgress(iteration);
+        row[this.self().T_POS.PROGRESS.col] = studyProgress+"%";
+        let countRow = this.self().T_POS.PROGRESS.col+1;
         iterators.forEach(iterator => {
           const itOut = this.self().extractIteratorOutput(iterator);
           if (itOut === null) {

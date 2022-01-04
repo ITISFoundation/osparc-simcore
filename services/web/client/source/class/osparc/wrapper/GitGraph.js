@@ -94,6 +94,9 @@ qx.Class.define("osparc.wrapper.GitGraph", {
     __gitGraphCanvas: null,
     __gitgraph: null,
     __selectedCommit: null,
+    __commits: null,
+    __branches: null,
+    __parentIDs: null,
 
     init: function(gitGraphCanvas, gitGraphInteract) {
       return new Promise((resolve, reject) => {
@@ -139,7 +142,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       return gitgraph;
     },
 
-    commit: function(branch, commitData, isCurrent = false) {
+    __commit: function(branch, commitData, isCurrent = false) {
       if (isCurrent) {
         branch.commit({
           subject: commitData["tags"],
@@ -228,45 +231,61 @@ qx.Class.define("osparc.wrapper.GitGraph", {
 
     buildExample: function() {
       const master = this.__gitgraph.branch("master");
-      this.commit(master, "Initial commit");
-      this.commit(master, "Some changes");
+      this.__commit(master, "Initial commit");
+      this.__commit(master, "Some changes");
 
       const it1 = master.branch("iteration-1");
-      this.commit(it1, "x=1");
+      this.__commit(it1, "x=1");
 
       const it2 = master.branch("iteration-2");
-      this.commit(it2, "x=2");
+      this.__commit(it2, "x=2");
 
       const it3 = master.branch("iteration-3");
-      this.commit(it3, "x=3");
+      this.__commit(it3, "x=3");
 
-      this.commit(master, "Changes after iterations");
+      this.__commit(master, "Changes after iterations");
+    },
+
+    __createBranch: function(lastCommit, fromBranch, name) {
+      if (name === undefined) {
+        name = "b-"+this.__branches.length.toString();
+      }
+      const branch = fromBranch ? fromBranch.branch(name) : this.__gitgraph.branch(name);
+      branch["lastCommit"] = lastCommit;
+      this.__branches.push(branch);
+      return branch;
     },
 
     __getBranch: function(commitData) {
       if (commitData["parents_ids"] === null) {
-        const master = this.__gitgraph.branch("master");
-        this.__branches.push(master);
+        const master = this.__createBranch(commitData["id"], null, "master");
         return master;
       }
-      const myBranch = this.__branches.find(branch => branch.lastCommit === commitData["parents_ids"][0]);
-      if (myBranch) {
-        return myBranch;
+      const branchFound = this.__branches.find(branch => branch.lastCommit === commitData["parents_ids"][0]);
+      if (branchFound) {
+        return branchFound;
       }
       const myOnHoldBranch = this.__branches.find(branch => branch.waitingFor === commitData["id"]);
       if (myOnHoldBranch) {
         return myOnHoldBranch;
       }
-      const newBranch = this.__gitgraph.branch("it-"+this.__branches.length);
-      this.__branches.push(newBranch);
+      const newBranch = this.__createBranch(commitData["id"]);
       return newBranch;
     },
 
     populateGraph: function(snapshots, currentSnapshot) {
       this.__branches = [];
+      this.__parentIDs = [];
+      console.log("snapshots", snapshots);
       const snapshotsClone = JSON.parse(JSON.stringify(snapshots));
-      snapshotsClone.reverse().forEach((snapshot, i) => {
-        const branch = this.__getBranch(snapshot);
+      const sortedSnapshots = snapshotsClone.reverse();
+      sortedSnapshots.forEach(snapshot => {
+        if ("parents_ids" in snapshot && snapshot["parents_ids"]) {
+          snapshot["parents_ids"].forEach(parentID => this.__parentIDs.push(parentID));
+        }
+      });
+      sortedSnapshots.forEach((snapshot, i) => {
+        const currentBranch = this.__getBranch(snapshot);
         const snapshotDate = new Date(snapshot["created_at"]);
         const commitData = {
           id: snapshot["id"],
@@ -275,8 +294,16 @@ qx.Class.define("osparc.wrapper.GitGraph", {
           createdAt: osparc.utils.Utils.formatDateAndTime(snapshotDate),
           parentsIDs: snapshot["parents_ids"]
         };
-        this.commit(branch, commitData, snapshot["id"] === currentSnapshot["id"]);
+        this.__commit(currentBranch, commitData, snapshot["id"] === currentSnapshot["id"]);
 
+        // create as many branches as necessary
+        let idx = this.__parentIDs.indexOf(snapshot["id"]);
+        while (idx > -1) {
+          this.__createBranch(snapshot["id"], currentBranch);
+          this.__parentIDs.splice(idx, 1);
+          idx = this.__parentIDs.indexOf(snapshot["id"]);
+        }
+        /*
         // due to this bug https://github.com/nicoespeon/gitgraph.js/issues/270
         // check if more branches need to be created now
         const needBranchedNow = snapshots.filter((snapshotCheck, j) => {
@@ -290,6 +317,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
           branchOnHold["waitingFor"] = snapshotOnHold["id"];
           this.__branches.push(branchOnHold);
         });
+        */
       });
     }
   }

@@ -54,11 +54,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   properties: {
     node: {
       check: "osparc.data.model.Node",
-      nullable: false
+      nullable: false,
+      apply: "__applyNode"
     },
 
     type: {
-      check: ["normal", "file", "parameter", "iterator", "iterator-consumer"],
+      check: ["normal", "file", "parameter", "iterator", "probe"],
       init: "normal",
       nullable: false,
       apply: "__applyType"
@@ -103,12 +104,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           if (this.getNode().isIterator()) {
             nodeType = "iterator";
           } else if (this.getNode().isProbe()) {
-            nodeType = "iterator-consumer";
+            nodeType = "probe";
           }
           const type = osparc.utils.Services.getType(nodeType);
           if (type) {
             const chip = new osparc.ui.basic.Chip().set({
-              icon: type.icon + "18",
+              icon: type.icon + "14",
               toolTipText: type.label
             });
             control.add(chip);
@@ -159,8 +160,10 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const metaData = node.getMetaData();
       this._createPorts(true, Boolean((metaData && metaData.inputs && Object.keys(metaData.inputs).length) || this.getNode().isContainer()));
       this._createPorts(false, Boolean((metaData && metaData.outputs && Object.keys(metaData.outputs).length) || this.getNode().isContainer()));
-      if (node.isComputational() || node.isFilePicker()) {
-        node.getStatus().bind("progress", this.__progressBar, "value");
+      if (node.isComputational()) {
+        node.getStatus().bind("progress", this.__progressBar, "value", {
+          converter: val => val === null ? 0 : val
+        });
       }
       if (node.isFilePicker()) {
         this.setType("file");
@@ -170,7 +173,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.__svgWorkbenchCanvas = svgWorkbenchCanvas;
         this.setType("iterator");
       } else if (node.isProbe()) {
-        this.setType("iterator-consumer");
+        this.setType("probe");
       }
     },
 
@@ -187,6 +190,24 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
     },
 
+    __applyNode: function(node) {
+      if (node.getKey().includes("parameter/int")) {
+        const makeIterator = new qx.ui.menu.Button().set({
+          label: this.tr("Convert to Iterator"),
+          icon: "@FontAwesome5Solid/sync-alt/10"
+        });
+        makeIterator.addListener("execute", () => node.convertToIterator("int"), this);
+        this._optionsMenu.add(makeIterator);
+      } else if (node.getKey().includes("data-iterator/int-range")) {
+        const convertToParameter = new qx.ui.menu.Button().set({
+          label: this.tr("Convert to Parameter"),
+          icon: "@FontAwesome5Solid/sync-alt/10"
+        });
+        convertToParameter.addListener("execute", () => node.convertToParameter("int"), this);
+        this._optionsMenu.add(convertToParameter);
+      }
+    },
+
     __applyType: function(type) {
       switch (type) {
         case "file":
@@ -198,7 +219,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         case "iterator":
           this.__turnIntoIteratorUI();
           break;
-        case "iterator-consumer":
+        case "probe":
           this.__turnIntoProbeUI();
           break;
       }

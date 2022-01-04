@@ -280,6 +280,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     __createNode: function(study, key, version, uuid) {
       const node = new osparc.data.model.Node(study, key, version, uuid);
+      node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
       return node;
@@ -823,7 +824,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.removeNode(nodesGroup.getNodeId());
     },
 
-    serialize: function() {
+    serialize: function(clean = true) {
       if (this.__workbenchInitData !== null) {
         // workbench is not initialized
         return this.__workbenchInitData;
@@ -832,7 +833,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);
       for (const node of nodes) {
-        const data = node.serialize();
+        const data = node.serialize(clean);
         if (data) {
           workbench[node.getNodeId()] = data;
         }
