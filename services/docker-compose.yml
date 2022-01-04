@@ -148,11 +148,34 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_static_webserver.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.middlewares.${SWARM_STACK_NAME}_static_webserver_retry.retry.attempts=2
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.rule=hostregexp(`{host:.+}`)
-          && (PathPrefix(`/osparc`) || PathPrefix(`/s4l`) || PathPrefix(`/tis`)
-          || PathPrefix(`/transpiled`) || PathPrefix(`/resource`))
+          && (PathPrefix(`/osparc`,`/s4l`,`/tis`,`/transpiled`,`/resource`))
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.priority=2
         - traefik.http.routers.${SWARM_STACK_NAME}_static_webserver.middlewares=${SWARM_STACK_NAME}_gzip@docker,${SWARM_STACK_NAME}_static_webserver_retry
+        # catchall for legacy services (this happens if a backend disappears and a frontend tries to reconnect, the right return value is a 503)
+        - traefik.http.routers.${SWARM_STACK_NAME}_legacy_services_catchall.service=${SWARM_STACK_NAME}_legacy_services_catchall
+        - traefik.http.routers.${SWARM_STACK_NAME}_legacy_services_catchall.priority=1
+        - traefik.http.routers.${SWARM_STACK_NAME}_legacy_services_catchall.entrypoints=http
+        - traefik.http.routers.${SWARM_STACK_NAME}_legacy_services_catchall.rule=hostregexp(`{host:.+}`)
+          && PathPrefix(`/x`)
+        # this tricks traefik into a 502 since the service does not exist on this port
+        - traefik.http.services.${SWARM_STACK_NAME}_legacy_services_catchall.loadbalancer.server.port=0
+        # this tricks traefik into returning a 503 since the healthcheck will always return false
+        - traefik.http.services.${SWARM_STACK_NAME}_legacy_services_catchall.loadbalancer.healthcheck.path=/some/invalid/path/to/generate/a/503
+        - traefik.http.services.${SWARM_STACK_NAME}_legacy_services_catchall.loadbalancer.healthcheck.interval=500s
+        - traefik.http.services.${SWARM_STACK_NAME}_legacy_services_catchall.loadbalancer.healthcheck.timeout=1ms
+        # catchall for modern services (this happens if a backend disappears and a frontend tries to reconnect, the right return value is a 503)
+        - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.service=${SWARM_STACK_NAME}_modern_services_catchall
+        - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.priority=1
+        - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.entrypoints=http
+        - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.rule=hostregexp(`{host:.+}`)
+          && PathPrefix(`/x`)
+        # this tricks traefik into a 502 since the service does not exist on this port
+        - traefik.http.services.${SWARM_STACK_NAME}_modern_services_catchall.loadbalancer.server.port=0
+        # this tricks traefik into returning a 503 since the healthcheck will always return false
+        - traefik.http.services.${SWARM_STACK_NAME}_modern_services_catchall.loadbalancer.healthcheck.path=/some/invalid/path/to/generate/a/503
+        - traefik.http.services.${SWARM_STACK_NAME}_modern_services_catchall.loadbalancer.healthcheck.interval=500s
+        - traefik.http.services.${SWARM_STACK_NAME}_modern_services_catchall.loadbalancer.healthcheck.timeout=1ms
     networks:
       - default
 
@@ -434,16 +457,7 @@ services:
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.burst=10
         # X-Forwarded-For header extracts second IP from the right, count starts at one
         - traefik.http.middlewares.ratelimit-${SWARM_STACK_NAME}_api-server.ratelimit.sourcecriterion.ipstrategy.depth=2
-        # catchall service
-        - traefik.http.routers.${SWARM_STACK_NAME}_catchall.service=${SWARM_STACK_NAME}_catchall
-        - traefik.http.routers.${SWARM_STACK_NAME}_catchall.priority=1
-        - traefik.http.routers.${SWARM_STACK_NAME}_catchall.entrypoints=http
-        - traefik.http.routers.${SWARM_STACK_NAME}_catchall.rule=hostregexp(`{host:.+}`)
-          && PathPrefix(`/`)
-        - traefik.http.services.${SWARM_STACK_NAME}_catchall.loadbalancer.server.port=0
-        - traefik.http.services.${SWARM_STACK_NAME}_catchall.loadbalancer.healthcheck.path=/some/invalid/path/to/generate/a/503
-        - traefik.http.services.${SWARM_STACK_NAME}_catchall.loadbalancer.healthcheck.interval=500s
-        - traefik.http.services.${SWARM_STACK_NAME}_catchall.loadbalancer.healthcheck.timeout=1ms
+
     networks:
       - default
       - interactive_services_subnet
