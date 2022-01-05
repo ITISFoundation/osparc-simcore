@@ -1,12 +1,12 @@
 from enum import Enum
 from typing import Any, Dict, Optional, Tuple
 
-from aiopg.sa.result import ResultProxy
+from aiopg.sa.result import RowProxy
 from simcore_postgres_database.models.projects import ProjectType
 
 # TODO: extend
 ProjectDict = Dict[str, Any]
-ProjectProxy = ResultProxy
+ProjectProxy = RowProxy
 
 
 class ProjectTypeAPI(str, Enum):
