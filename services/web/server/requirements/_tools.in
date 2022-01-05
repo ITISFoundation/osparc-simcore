@@ -5,5 +5,5 @@
 
 --requirement ../../../../requirements/devenv.txt
 
-# basic dev tools
-watchdog[watchmedo]
+# for gunicorn reloading mechanism
+inotify

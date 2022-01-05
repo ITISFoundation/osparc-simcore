@@ -3,7 +3,7 @@
 #
 include ../../scripts/common.Makefile
 
-LOCUST_VERSION=1.5.3
+LOCUST_VERSION=2.5.1
 export LOCUST_VERSION
 # UTILS
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
