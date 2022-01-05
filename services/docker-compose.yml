@@ -158,9 +158,9 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_legacy_services_catchall.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_legacy_services_catchall.rule=hostregexp(`{host:.+}`)
           && PathPrefix(`/x`)
-        # this tricks traefik into a 502 since the service does not exist on this port
+        # this tricks traefik into a 502 (bad gateway) since the service does not exist on this port
         - traefik.http.services.${SWARM_STACK_NAME}_legacy_services_catchall.loadbalancer.server.port=0
-        # this tricks traefik into returning a 503 since the healthcheck will always return false
+        # this tricks traefik into returning a 503 (service unavailable) since the healthcheck will always return false
         - traefik.http.services.${SWARM_STACK_NAME}_legacy_services_catchall.loadbalancer.healthcheck.path=/some/invalid/path/to/generate/a/503
         - traefik.http.services.${SWARM_STACK_NAME}_legacy_services_catchall.loadbalancer.healthcheck.interval=500s
         - traefik.http.services.${SWARM_STACK_NAME}_legacy_services_catchall.loadbalancer.healthcheck.timeout=1ms
@@ -172,9 +172,9 @@ services:
         # - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.entrypoints=http
         # - traefik.http.routers.${SWARM_STACK_NAME}_modern_services_catchall.rule=hostregexp(`{host:.+}`)
         #   && PathPrefix(`/x`)
-        # # this tricks traefik into a 502 since the service does not exist on this port
+        # this tricks traefik into a 502 (bad gateway) since the service does not exist on this port
         # - traefik.http.services.${SWARM_STACK_NAME}_modern_services_catchall.loadbalancer.server.port=0
-        # # this tricks traefik into returning a 503 since the healthcheck will always return false
+        # this tricks traefik into returning a 503 (service unavailable) since the healthcheck will always return false
         # - traefik.http.services.${SWARM_STACK_NAME}_modern_services_catchall.loadbalancer.healthcheck.path=/some/invalid/path/to/generate/a/503
         # - traefik.http.services.${SWARM_STACK_NAME}_modern_services_catchall.loadbalancer.healthcheck.interval=500s
         # - traefik.http.services.${SWARM_STACK_NAME}_modern_services_catchall.loadbalancer.healthcheck.timeout=1ms
