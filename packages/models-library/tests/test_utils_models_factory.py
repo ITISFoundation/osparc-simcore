@@ -11,7 +11,7 @@ from faker import Faker
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import PageDict, paginate_data
-from models_library.utils.models_factory import _collect_fields, copy_model
+from models_library.utils.models_factory import _collect_fields_attrs, copy_model
 from pydantic import BaseModel, validator
 from pydantic.types import PositiveInt
 from yarl import URL
@@ -21,8 +21,8 @@ from yarl import URL
 
 def assert_same_fields(model_cls, reference_model_cls):
 
-    got_fields = _collect_fields(model_cls)
-    expected_fields = _collect_fields(reference_model_cls)
+    got_fields = _collect_fields_attrs(model_cls)
+    expected_fields = _collect_fields_attrs(reference_model_cls)
 
     assert set(got_fields.keys()) == set(expected_fields.keys())
 
@@ -30,19 +30,19 @@ def assert_same_fields(model_cls, reference_model_cls):
     assert got_fields == expected_fields
 
 
-def _trim_desc(schema: Dict):
+def _trim_descriptions(schema: Dict):
     data = {}
     for key in schema:
         if key not in ("description", "title"):
             value = schema[key]
             if isinstance(value, dict):
-                value = _trim_desc(value)
+                value = _trim_descriptions(value)
             data[key] = value
     return data
 
 
 def _validators_factory() -> Callable:
-    """Common validators"""
+    """Common validator functions"""
 
     def name_must_contain_space(v):
         if " " not in v:
@@ -169,7 +169,8 @@ class UserListItem(BaseModel):
 
 
 @pytest.fixture
-def stored_user(faker: Faker) -> User:
+def fake_user(faker: Faker) -> User:
+    """a fake domain model of a User resource"""
     return User(
         id=faker.pyint(min_value=1),
         display_name=faker.name(),
@@ -197,7 +198,9 @@ def test_build_UserCreate_model():
         password2: str
         _passwords_match = create_validator_for("password2")
 
-    assert _trim_desc(UserCreate.schema()) == _trim_desc(_UserCreate.schema())
+    assert _trim_descriptions(UserCreate.schema()) == _trim_descriptions(
+        _UserCreate.schema()
+    )
 
     assert_same_fields(_UserCreate, UserCreate)
 
@@ -208,7 +211,9 @@ def test_build_UserUpdate_model(faker: Faker):
     # in UserUpdate, is as UserCreate but all optional
     _UserUpdate = copy_model(UserCreate, name="UserUpdate", as_update_model=True)
 
-    assert _trim_desc(UserUpdate.schema()) == _trim_desc(_UserUpdate.schema())
+    assert _trim_descriptions(UserUpdate.schema()) == _trim_descriptions(
+        _UserUpdate.schema()
+    )
     #
     # SEE insight on how to partially update a model
     # in https://fastapi.tiangolo.com/tutorial/body-updates/#partial-updates-with-patch
@@ -228,14 +233,16 @@ def test_build_UserReplace_model():
         password2: str
         _passwords_match = create_validator_for("password2")
 
-    assert _trim_desc(UserReplace.schema()) == _trim_desc(_UserReplace.schema())
+    assert _trim_descriptions(UserReplace.schema()) == _trim_descriptions(
+        _UserReplace.schema()
+    )
     #
     # SEE insights on how to replace a model in
     # https://fastapi.tiangolo.com/tutorial/body-updates/#update-replacing-with-put
     #
 
 
-def test_build_UserGet_model(stored_user: User):
+def test_build_UserGet_model(fake_user: User):
     # model for response payload of Get method https://google.aip.dev/131
 
     # if the source is User domain model, then the data
@@ -249,10 +256,10 @@ def test_build_UserGet_model(stored_user: User):
         skip_validators=True,
     )
 
-    assert _trim_desc(UserGet.schema()) == _trim_desc(_UserGet.schema())
+    assert _trim_descriptions(UserGet.schema()) == _trim_descriptions(_UserGet.schema())
 
     payload_user: Dict = (
-        Envelope[_UserGet].parse_data(stored_user).dict(exclude_unset=True)
+        Envelope[_UserGet].parse_data(fake_user).dict(exclude_unset=True)
     )
 
     # NOTE: this would be the solid way to get a jsonable dict ... but requires fastapi!
@@ -262,7 +269,7 @@ def test_build_UserGet_model(stored_user: User):
     print(json.dumps(payload_user, indent=1))
 
 
-def test_build_UserListItem_model(stored_user: User, faker: Faker):
+def test_build_UserListItem_model(fake_user: User, faker: Faker):
     # model for response payload of List method https://google.aip.dev/132)
 
     # Typically a light version of the Get model
@@ -273,15 +280,17 @@ def test_build_UserListItem_model(stored_user: User, faker: Faker):
         skip_validators=True,
     )
 
-    assert _trim_desc(UserListItem.schema()) == _trim_desc(_UserListItem.schema())
+    assert _trim_descriptions(UserListItem.schema()) == _trim_descriptions(
+        _UserListItem.schema()
+    )
 
     #  to build the pagination model, simply apply the Page generic
-    assert _trim_desc(Page[_UserListItem].schema()) == _trim_desc(
+    assert _trim_descriptions(Page[_UserListItem].schema()) == _trim_descriptions(
         Page[UserListItem].schema()
     )
 
     # parse stored data
-    item_user = _UserListItem.parse_obj(stored_user).dict(exclude_unset=True)
+    item_user = _UserListItem.parse_obj(fake_user).dict(exclude_unset=True)
 
     page: PageDict = paginate_data(
         chunk=[item_user],

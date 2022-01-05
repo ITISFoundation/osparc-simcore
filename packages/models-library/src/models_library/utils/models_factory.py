@@ -27,7 +27,7 @@ from pydantic import BaseModel, create_model
 from pydantic.fields import ModelField
 
 
-def _collect_fields(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, str]]:
+def _collect_fields_attrs(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, str]]:
     """
     Example:
         >> print(json.dumps(_collect_fields(MyModel), indent=1))
@@ -51,7 +51,8 @@ def _collect_fields(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, str]]:
 
     return {
         field.name: {
-            name: stringify(getattr(field, name)) for name in ModelField.__slots__
+            attr_name: stringify(getattr(field, attr_name))
+            for attr_name in ModelField.__slots__
         }
         for field in model_cls.__fields__.values()
     }

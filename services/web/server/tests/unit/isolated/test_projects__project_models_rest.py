@@ -23,6 +23,14 @@ from pytest_simcore.simcore_webserver_projects_rest_api import (
 )
 from simcore_service_webserver.projects._project_models_rest import SimcoreProject
 
+
+def test_pydantic_model_in_sync_with_json_schema():
+
+    assert_compatible_json_schemas(
+        SimcoreProject.schema_json(),
+    )
+
+
 # TODO: how could we implement all the model variants provided SimcoreProject as base???
 #
 # https://github.com/samuelcolvin/pydantic/issues/830#issuecomment-534141136
