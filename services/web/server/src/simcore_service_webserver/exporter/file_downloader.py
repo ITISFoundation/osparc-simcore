@@ -35,8 +35,8 @@ class ParallelDownloader:
             }
         )
 
-        log.debug("Download results %s", results)
+        log.debug("Download %s using %s", f"{results=}", f"{self.downloader=}")
         if len(results) != self.total_files_added or len(results.errors) > 0:
-            raise ExporterException(
-                f"Not all files were downloaded. Please check the logs above. Errors: {results.errors}"
-            )
+            message = f"Not all files were downloaded see: {results.errors=}"
+            log.error(message)
+            raise ExporterException(message)
