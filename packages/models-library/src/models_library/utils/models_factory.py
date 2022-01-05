@@ -1,20 +1,21 @@
 """ Collection of functions to create BaseModel subclasses
 
 
-Maintaining large models representing resource can be challenging, specially when every interface needs a slightly
-different variation of the original domain model. For instance, assume we want to implement an API with CRUD routes on a resource R.
-This needs similar models for the request bodies and response payloads to represent R. A careful analysis reveals that
-these models are all basically variants that include/exclude fields and/or changes constraints on them (e.g. read-only,
+Maintaining large models representing a resource can be challenging, specially when every interface (e.g. i/o rest API, i/o db, ...)
+needs a slightly different variation of the original domain model. For instance, assume we want to implement an API with CRUD
+routes on a resource R. This needs similar models for the request bodies and response payloads to represent R. A careful analysis
+reveals that these models are all basically variants that include/exclude fields and/or changes constraints on them (e.g. read-only,
 nullable, optional/required, etc).
 
-This is typically achived by splitting common fields into smaller models and using inheritance to compose them back and/or override
-constraints. Nonetheless, this approach can be very tedious to maintain: it is very verbose and difficult to see the final model
-layout. In addition, new variants that exclude fields will force to redesign how all models were split in the first place.
+These variants are typically achived by splitting common fields into smaller models and using inheritance to compose them back
+and/or override constraints. Nonetheless, this approach can be very tedious to maintain: it is very verbose and difficult to
+see the final model layout. In addition, new variants that exclude fields will force to redesign how all models were split in
+the first place.
 
-In order to overcome these contraints, this model presents here a functional approach base on a model's factory that can "copy"
-necessary parts from a base model and create a new model class of out of it.
+In order to overcome these drawbacks, we propose here a functional approach based on a model's factory that can "copy the
+necessary parts" from a "reference" model and build a new pydantic model that can be either used as new base or as is.
 
-The design should remain as close to pydantic's jargon/naming as possible to reduce maintenance costs
+The design should remain as close to pydantic's conventions as possible to reduce maintenance costs
 since we are aware that future releases of pydantic will address part of the features we implement here (e.g. exclude fields)
 
 Usage of these tools are demonstrated in packages/models-library/tests/test_utils_models_factory.py
@@ -64,14 +65,21 @@ def collect_fields_attrs(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, str]
 
 
 def _eval_selection(
-    all_fiedls: Iterable, include: Optional[Set[str]], exclude: Optional[Set[str]]
+    model_fields: Iterable[ModelField],
+    include: Optional[Set[str]],
+    exclude: Optional[Set[str]],
+    exclude_optionals: bool,
 ) -> Set[str]:
     # TODO: use dict for deep include/exclude!
-    # SEE
+
     if include is None:
-        include = set(all_fiedls)
+        include = set(f.name for f in model_fields)
     if exclude is None:
         exclude = set()
+    if exclude_optionals:
+        exclude = exclude.union(
+            set(f.name for f in model_fields if f.required == False)
+        )
 
     selection = include - exclude
     return selection
@@ -80,14 +88,13 @@ def _eval_selection(
 def _extract_field_definitions(
     model_cls: Type[BaseModel],
     *,
-    include: Optional[Set[str]] = None,
-    exclude: Optional[Set[str]] = None,
-    all_optional: bool = False,
+    include: Optional[Set[str]],
+    exclude: Optional[Set[str]],
+    exclude_optionals: bool,
+    set_all_optional: bool,
 ) -> Dict[str, Tuple]:
     """
-    field_definitions: fields of the model
-        in the format
-
+    Returns field_definitions: fields of the model in the format
         `<name>=(<type>, <default default>)` or `<name>=<default value>`,
          e.g.
         `foobar=(str, ...)` or `foobar=123`,
@@ -98,20 +105,22 @@ def _extract_field_definitions(
         `foo=Field(default_factory=datetime.utcnow, alias='bar')`
 
     """
-    selection = _eval_selection(model_cls.__fields__.keys(), include, exclude)
+    field_names = _eval_selection(
+        model_cls.__fields__.values(), include, exclude, exclude_optionals
+    )
+    field_definitions = {}
 
-    return {
-        field.name: (
-            # <type>
-            field.type_,
-            # <default value>
-            field.default
-            or field.default_factory
-            or (None if all_optional or not field.required else ...),
-        )
-        for field in model_cls.__fields__.values()
-        if field.name in selection
-    }
+    for field in model_cls.__fields__.values():
+        if field.name in field_names:
+            field_definitions[field.name] = (
+                # <type>
+                field.type_,
+                # <default value>
+                field.default
+                or field.default_factory
+                or (None if set_all_optional or not field.required else ...),
+            )
+    return field_definitions
 
 
 # from pydantic.main import inherit_config
@@ -138,6 +147,7 @@ def copy_model(
     name: str = None,
     include: Optional[Set[str]] = None,
     exclude: Optional[Set[str]] = None,
+    exclude_optionals: bool = False,
     as_update_model: bool = False,
     skip_validators: bool = False,
 ) -> Type[BaseModel]:
@@ -150,22 +160,26 @@ def copy_model(
     """
     name = name or f"_Base{reference_cls.__name__.upper()}"
     fields_definitions = _extract_field_definitions(
-        reference_cls, exclude=exclude, include=include, all_optional=as_update_model
+        reference_cls,
+        exclude=exclude,
+        include=include,
+        exclude_optionals=exclude_optionals,
+        set_all_optional=as_update_model,
     )
 
     # A dict of method names and @validator class methods
-    validators_defs: Dict[str, classmethod] = {}
+    validators_funs: Dict[str, classmethod] = {}
     if not skip_validators and reference_cls != BaseModel:
         validators = inherit_validators(extract_validators(reference_cls.__dict__), {})
         vg = ValidatorGroup(validators)
         vg.check_for_unused()
-        validators_defs = vg.validators
+        validators_funs = vg.validators
 
     new_model_cls = create_model(
         __model_name=name,
         __base__=BaseModel,
         __module__=reference_cls.__module__,
-        __validators__=validators_defs,
+        __validators__=validators_funs,
         **fields_definitions,
     )
     # new_model_cls.__doc__ = reference_cls.__doc__
