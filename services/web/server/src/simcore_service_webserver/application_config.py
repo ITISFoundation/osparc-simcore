@@ -91,6 +91,7 @@ def create_schema() -> T.Dict:
             addon_section("groups", optional=True): minimal_addon_schema(),
             addon_section("products", optional=True): minimal_addon_schema(),
             addon_section("publications", optional=True): minimal_addon_schema(),
+            addon_section("remote_debug", optional=True): minimal_addon_schema(),
             addon_section("security", optional=True): minimal_addon_schema(),
             addon_section("statics", optional=True): minimal_addon_schema(),
             addon_section("studies_access", optional=True): minimal_addon_schema(),

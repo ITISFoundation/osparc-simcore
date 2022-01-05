@@ -107,6 +107,8 @@ et-xmlfile==1.1.0
     # via openpyxl
 expiringdict==1.2.1
     # via -r requirements/_base.in
+gunicorn==20.1.0
+    # via -r requirements/_base.in
 hiredis==2.0.0
     # via aioredis
 idna==2.10
@@ -195,6 +197,8 @@ redis==3.5.3
     # via celery
 semantic-version==2.8.5
     # via -r requirements/_base.in
+setproctitle==1.2.2
+    # via gunicorn
 six==1.16.0
     # via
     #   click-repl
