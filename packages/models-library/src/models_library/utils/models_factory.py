@@ -34,15 +34,15 @@ def _collect_fields_attrs(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, str
 
     """
 
-    def stringify(obj):
+    def _stringify(obj):
         if callable(obj):
             return f"{getattr(obj, '__class__', None)} - {obj.__name__}"
-        elif isinstance(obj, dict):
+        if isinstance(obj, dict):
             return json.dumps(
-                {f"{key}": stringify(value) for key, value in obj.items()}
+                {f"{key}": _stringify(value) for key, value in obj.items()}
             )
-        elif isinstance(obj, list):
-            return json.dumps([stringify(item) for item in obj])
+        if isinstance(obj, list):
+            return json.dumps([_stringify(item) for item in obj])
 
         msg = f"{obj}"
         if "object" in msg:
@@ -51,7 +51,7 @@ def _collect_fields_attrs(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, str
 
     return {
         field.name: {
-            attr_name: stringify(getattr(field, attr_name))
+            attr_name: _stringify(getattr(field, attr_name))
             for attr_name in ModelField.__slots__
         }
         for field in model_cls.__fields__.values()
