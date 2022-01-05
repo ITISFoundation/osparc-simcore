@@ -13,15 +13,6 @@ from .utils import makedirs
 log = logging.getLogger(__name__)
 
 
-if parfive.__version__ != "1.0.2":
-    raise RuntimeError(
-        "Parfive was upgraded, please make sure this version supports "
-        "aiofiles otherwise it will block the main loop while downloading files. "
-        "If such condition is not met please do not upgrade! "
-        "A PR to parfive will be submitted by GitHK and this should be no longer required."
-    )
-
-
 class ParallelDownloader:
     def __init__(self):
         self.downloader = Downloader(
@@ -38,19 +29,16 @@ class ParallelDownloader:
 
     async def download_files(self, app: Application):
         """starts the download and waits for all files to finish"""
-
-        # run this async, parfive will support aiofiles in the future as stated above
-        wrapped_function = aiofiles_os.wrap(self.downloader.download)
         exporter_settings = get_settings(app)
-        results = await wrapped_function(
+        results = await self.downloader.run_download(
             timeouts={
                 "total": exporter_settings.downloader_max_timeout_seconds,
                 "sock_read": 90,  # default as in parfive code
             }
         )
-        log.debug("Download results %s", results)
 
-        if len(results) != self.total_files_added:
+        log.debug("Download results %s", results)
+        if len(results) != self.total_files_added or len(results.errors) > 0:
             raise ExporterException(
-                "Not all files were downloaded. Please check the logs above."
+                f"Not all files were downloaded. Please check the logs above. Errors: {results}"
             )

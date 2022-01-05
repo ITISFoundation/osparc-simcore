@@ -67,7 +67,7 @@ expiringdict
 semantic_version
 
 # import/export excel
-parfive==1.0.2 ## See note  in simcore_service_webserver/exporter/file_downloader.py
+parfive
 openpyxl
 python-magic
 

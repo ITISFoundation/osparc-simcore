@@ -63,6 +63,7 @@ asyncpg==0.23.0
     # via -r requirements/_base.in
 attrs==20.3.0
     # via
+    #   -c requirements/../../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/_aiohttp.in
     #   aiohttp
@@ -112,6 +113,7 @@ idna==2.10
     # via
     #   -c requirements/../../../../packages/models-library/requirements/_base.in
     #   -c requirements/../../../../packages/postgres-database/requirements/_base.in
+    #   -c requirements/../../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/./constraints.txt
     #   email-validator
     #   yarl
@@ -146,7 +148,7 @@ orjson==3.5.3
     # via -r requirements/_base.in
 pamqp==2.3.0
     # via aiormq
-parfive==1.0.2
+parfive==1.5.0
     # via -r requirements/_base.in
 passlib==1.7.4
     # via -r requirements/_base.in
@@ -183,6 +185,7 @@ pyyaml==5.4.1
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -c requirements/../../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/_base.in
