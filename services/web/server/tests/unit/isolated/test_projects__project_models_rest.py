@@ -2,102 +2,83 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-#
-# These tests were build following requests/reponse calls from the front-end
-# i.e. it captures models created by the front-end and response models by the backend
-#
 
+import json
+from typing import Any, Callable, Dict
 
-from typing import Any, Dict
-
-from pydantic import create_model
-from pytest_simcore.simcore_webserver_projects_rest_api import (
-    CLOSE_PROJECT,
-    GET_PROJECT,
-    LIST_PROJECTS,
-    NEW_PROJECT,
-    OPEN_PROJECT,
-    REPLACE_PROJECT,
-    REPLACE_PROJECT_ON_MODIFIED,
-    RUN_PROJECT,
-)
+import pytest
+from models_library.generics import Envelope
+from models_library.utils.models_factory import copy_model
+from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.projects._project_models_rest import SimcoreProject
+from simcore_service_webserver.resources import resources
+
+## FIXTURES --------------------------------------------------
 
 
-def test_pydantic_model_in_sync_with_json_schema():
+@pytest.fixture
+def project_jsonschema():
+    with resources.stream(f"api/{API_VTAG}/schemas/project-v0.0.1.json") as fh:
+        return json.load(fh)
 
-    assert_compatible_json_schemas(
-        SimcoreProject.schema_json(),
-    )
 
-
-# TODO: how could we implement all the model variants provided SimcoreProject as base???
+## TESTS ----------------------------------------------------
 #
-# https://github.com/samuelcolvin/pydantic/issues/830#issuecomment-534141136
+# These tests uses requests/reponse calls (pytest_simcore.simcore_webserver_projects_rest_api)
+# captured from the front-end (i.e. copy&pasted from browser devtols) and emulate workflows
+# that parse data at different interfaces and directions.
 #
-# 1. Use create_model to create your models "dynamically" (even if you actually do it un-dynamically)
-# 2. Make the extra fields optional so they can be ignored.
 #
-# but there is a new __exclude_fields__ feature coming with https://github.com/samuelcolvin/pydantic/pull/2231
-
-
-CreateProject = create_model(
-    "CreateProject",
-    **{
-        name: (
-            field.type_,
-            field.default or field.default_factory or (... if field.required else None),
-        )
-        for name, field in SimcoreProject.__fields__.items()
-        if name
-        in {
-            "name",
-            "description",
-            "thumbnail",
-            "prj_owner",
-            "access_rights",
-        }
-    }
-)
-
-
-# class ProjectInNew(BaseModel):
-#    pass
-
-# name:
-# description:
-# thumbnail:
-# prj_owner:
-# access_rights:
-
-
-#    name: SimcoreProject.__fields__[]
-
-
-class ProjectAsBody(SimcoreProject):
-    pass
 
 
 def test_models_when_creating_new_empty_project():
 
-    project_in_new = ProjectAsBody.parse_obj(NEW_PROJECT.request_payload)
-    assert NEW_PROJECT.response_body
-    project_as_body = ProjectAsBody.parse_obj(NEW_PROJECT.response_body["data"])
-
-
-def test_models_when_replacing_an_opened_project():
-
-    project_in_replace = ProjectAsBody.parse_obj(REPLACE_PROJECT.request_payload)
-    assert REPLACE_PROJECT.response_body
-    project_as_body = ProjectAsBody.parse_obj(REPLACE_PROJECT.response_body["data"])
-
-
-def test_models_when_saving_after_project_change():
-
-    project_in_replace = ProjectAsBody.parse_obj(
-        REPLACE_PROJECT_ON_MODIFIED.request_payload
+    _ProjectCreate = copy_model(
+        SimcoreProject,
+        name="ProjectCreate",
+        exclude_optionals=True,
     )
-    assert REPLACE_PROJECT_ON_MODIFIED.response_body
-    project_as_body = ProjectAsBody.parse_obj(
-        REPLACE_PROJECT_ON_MODIFIED.response_body["data"]
+
+    # use _ProjectCreate to parse request payload in POST /projects
+    project_req_payload = _ProjectCreate.parse_obj(NEW_PROJECT.request_payload)
+
+    # we insert a row in the db and fetch it back (w/ a primary-key, ...)
+    _ProjectFetch = copy_model(SimcoreProject, name="ProjectFetch")
+
+    project_new = _ProjectFetch()
+
+    # compose other parts into response
+    _ProjectGet = copy_model(
+        SimcoreProject,
+        name="ProjectGet",
     )
+
+    project_new = _ProjectGet.parse_obj(project_new.dict())
+
+    project_resp_body = Envelope.parse_data(project_new)
+    assert project_resp_body.dict() == NEW_PROJECT.response_body
+
+
+def test_generated_model_in_sync_with_json_schema_specs(
+    diff_json_schemas: Callable, project_jsonschema: Dict[str, Any]
+):
+    def assert_equivalent_schemas(lhs: Dict, rhs: Dict):
+
+        process_completion = diff_json_schemas(lhs, rhs)
+
+        assert (
+            process_completion.returncode == 0
+        ), f"Exit code {process_completion.returncode}\n{process_completion.stdout.decode('utf-8')}"
+
+        # https://www.npmjs.com/package/json-schema-diff returns true (at least in WSL whatever the result)
+        # ```false``` is returned at the end of the stdout
+        assert "No differences found" in process_completion.stdout.decode(
+            "utf-8"
+        ), process_completion.stdout.decode("utf-8")
+
+    # run one direction original schema encompass generated one
+    assert_equivalent_schemas(project_jsonschema, SimcoreProject.schema())
+
+    # run other way direction:  generated one encompass original schema
+    assert_equivalent_schemas(SimcoreProject.schema(), project_jsonschema)
