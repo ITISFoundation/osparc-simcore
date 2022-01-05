@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aio-pika==6.8.0
+aio_pika==6.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in

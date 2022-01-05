@@ -3,16 +3,26 @@
     - config-file schema
     - settings
 """
-from typing import Dict
+from typing import Dict, Optional
 
 import trafaret as T
 from aiohttp.web import Application
-from pydantic import BaseSettings
-from typing import Optional
-
 from models_library.settings.postgres import PostgresSettings
+from pydantic import BaseSettings
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
-from simcore_sdk.config.db import CONFIG_SCHEMA as _PG_SCHEMA
+
+_PG_SCHEMA = T.Dict(
+    {
+        "database": T.String(),
+        "user": T.String(),
+        "password": T.String(),
+        T.Key("minsize", default=1, optional=True): T.ToInt(),
+        T.Key("maxsize", default=4, optional=True): T.ToInt(),
+        "host": T.Or(T.String, T.Null),
+        "port": T.Or(T.ToInt, T.Null),
+        "endpoint": T.Or(T.String, T.Null),
+    }
+)
 
 CONFIG_SECTION_NAME = "db"
 

@@ -89,8 +89,6 @@ sqlalchemy==1.4.27
     #   aiopg
 strict-rfc3339==0.7
     # via openapi-core
-trafaret==2.1.0
-    # via -r requirements/_aiohttp.in
 typing-extensions==4.0.0
     # via async-timeout
 werkzeug==2.0.2
