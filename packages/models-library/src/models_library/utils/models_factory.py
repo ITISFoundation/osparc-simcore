@@ -1,10 +1,27 @@
 """ Collection of functions to create BaseModel subclasses
 
-See rationale and usage of these functions in packages/models-library/tests/test_utils_models_factory.py
+
+Maintaining large models representing resource can be challenging, specially when every interface needs a slightly
+different variation of the original domain model. For instance, assume we want to implement an API with CRUD routes on a resource R.
+This needs similar models for the request bodies and response payloads to represent R. A careful analysis reveals that
+these models are all basically variants that include/exclude fields and/or changes constraints on them (e.g. read-only,
+nullable, optional/required, etc).
+
+This is typically achived by splitting common fields into smaller models and using inheritance to compose them back and/or override
+constraints. Nonetheless, this approach can be very tedious to maintain: it is very verbose and difficult to see the final model
+layout. In addition, new variants that exclude fields will force to redesign how all models were split in the first place.
+
+In order to overcome these contraints, this model presents here a functional approach base on a model's factory that can "copy"
+necessary parts from a base model and create a new model class of out of it.
+
+The design should remain as close to pydantic's jargon/naming as possible to reduce maintenance costs
+since we are aware that future releases of pydantic will address part of the features we implement here (e.g. exclude fields)
+
+Usage of these tools are demonstrated in packages/models-library/tests/test_utils_models_factory.py
 """
 
 import json
-from typing import Any, Dict, Iterable, Optional, Set, Tuple, Type
+from typing import Dict, Iterable, Optional, Set, Tuple, Type
 
 from pydantic import BaseModel, create_model
 from pydantic.fields import ModelField

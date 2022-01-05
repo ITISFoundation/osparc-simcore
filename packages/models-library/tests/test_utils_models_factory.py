@@ -251,13 +251,15 @@ def test_build_UserGet_model(stored_user: User):
 
     assert _trim_desc(UserGet.schema()) == _trim_desc(_UserGet.schema())
 
-    payload_user: Dict = _UserGet.parse_obj(stored_user).dict(exclude_unset=True)
+    payload_user: Dict = (
+        Envelope[_UserGet].parse_data(stored_user).dict(exclude_unset=True)
+    )
 
     # NOTE: this would be the solid way to get a jsonable dict ... but requires fastapi!
     # from fastapi.encoders import jsonable_encoder
     # jsonable_encoder(payload_user)
     #
-    print(json.dumps({"data": payload_user}, indent=1))
+    print(json.dumps(payload_user, indent=1))
 
 
 def test_build_UserListItem_model(stored_user: User, faker: Faker):
