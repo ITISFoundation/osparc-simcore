@@ -1,8 +1,6 @@
 import logging
 from pathlib import Path
 
-import parfive
-from aiofiles import os as aiofiles_os
 from aiohttp.web import Application
 from parfive.downloader import Downloader
 
