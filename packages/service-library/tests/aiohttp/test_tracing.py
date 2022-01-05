@@ -73,8 +73,6 @@ def client(
 
 
 async def test_setup_tracing(client: TestClient):
-    # NOTE: version aiozipkin 1.1.0 did not pass this test
-
     res: ClientResponse
 
     # on error

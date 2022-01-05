@@ -19,7 +19,6 @@ from aiohttp.web import Application
 from models_library.basic_types import LogLevel, PortInt
 from pydantic import BaseSettings, Field
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
-from servicelib.aiohttp.config_schema_utils import addon_section, minimal_addon_schema
 from trafaret_config.simple import read_and_validate
 
 from . import (
@@ -43,6 +42,16 @@ log = logging.getLogger(__name__)
 
 CLI_DEFAULT_CONFIGFILE = "server-defaults.yaml"
 assert resources.exists("config/" + CLI_DEFAULT_CONFIGFILE)  # nosec
+
+
+def addon_section(name: str, optional: bool = False) -> T.Key:
+    if optional:
+        return T.Key(name, default=dict(enabled=True), optional=optional)
+    return T.Key(name)
+
+
+def minimal_addon_schema() -> T.Dict:
+    return T.Dict({T.Key("enabled", default=True, optional=True): T.Bool()})
 
 
 def create_schema() -> T.Dict:
@@ -91,6 +100,7 @@ def create_schema() -> T.Dict:
             addon_section("groups", optional=True): minimal_addon_schema(),
             addon_section("products", optional=True): minimal_addon_schema(),
             addon_section("publications", optional=True): minimal_addon_schema(),
+            addon_section("remote_debug", optional=True): minimal_addon_schema(),
             addon_section("security", optional=True): minimal_addon_schema(),
             addon_section("statics", optional=True): minimal_addon_schema(),
             addon_section("studies_access", optional=True): minimal_addon_schema(),

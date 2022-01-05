@@ -13,7 +13,7 @@ aiohttp==3.7.4.post0
     #   pytest-aiohttp
 aioresponses==0.7.2
     # via -r requirements/_test.in
-alembic==1.7.4
+alembic==1.7.5
     # via
     #   -c requirements/_packages.txt
     #   -r requirements/_test.in
@@ -309,6 +309,8 @@ toml==0.10.2
     #   pytest
 tomli==1.2.2
     # via coverage
+trafaret==2.1.0
+    # via -c requirements/_base.txt
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
