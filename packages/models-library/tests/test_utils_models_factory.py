@@ -11,7 +11,7 @@ from faker import Faker
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import PageDict, paginate_data
-from models_library.utils.models_factory import _collect_fields_attrs, copy_model
+from models_library.utils.models_factory import collect_fields_attrs, copy_model
 from pydantic import BaseModel, validator
 from pydantic.types import PositiveInt
 from yarl import URL
@@ -21,8 +21,8 @@ from yarl import URL
 
 def assert_same_fields(model_cls, reference_model_cls):
 
-    got_fields = _collect_fields_attrs(model_cls)
-    expected_fields = _collect_fields_attrs(reference_model_cls)
+    got_fields = collect_fields_attrs(model_cls)
+    expected_fields = collect_fields_attrs(reference_model_cls)
 
     assert set(got_fields.keys()) == set(expected_fields.keys())
 

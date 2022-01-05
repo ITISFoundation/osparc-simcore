@@ -24,10 +24,15 @@ import json
 from typing import Dict, Iterable, Optional, Set, Tuple, Type
 
 from pydantic import BaseModel, create_model
+from pydantic.class_validators import (
+    ValidatorGroup,
+    extract_validators,
+    inherit_validators,
+)
 from pydantic.fields import ModelField
 
 
-def _collect_fields_attrs(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, str]]:
+def collect_fields_attrs(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, str]]:
     """
     Example:
         >> print(json.dumps(_collect_fields(MyModel), indent=1))
@@ -147,21 +152,20 @@ def copy_model(
     fields_definitions = _extract_field_definitions(
         reference_cls, exclude=exclude, include=include, all_optional=as_update_model
     )
-    validators = (
-        {
-            f"{f}_validator": vals[0]
-            for f, vals in reference_cls.__validators__.items()
-            if f in fields_definitions.keys() and vals
-        }
-        if not skip_validators
-        else None
-    )
+
+    # A dict of method names and @validator class methods
+    validators_defs: Dict[str, classmethod] = {}
+    if not skip_validators and reference_cls != BaseModel:
+        validators = inherit_validators(extract_validators(reference_cls.__dict__), {})
+        vg = ValidatorGroup(validators)
+        vg.check_for_unused()
+        validators_defs = vg.validators
 
     new_model_cls = create_model(
         __model_name=name,
         __base__=BaseModel,
         __module__=reference_cls.__module__,
-        __validators__=validators,
+        __validators__=validators_defs,
         **fields_definitions,
     )
     # new_model_cls.__doc__ = reference_cls.__doc__
