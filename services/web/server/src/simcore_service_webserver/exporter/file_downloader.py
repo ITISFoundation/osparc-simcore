@@ -18,14 +18,14 @@ class ParallelDownloader:
         )
         self.total_files_added = 0
 
-    async def append_file(self, link: str, download_path: Path):
+    async def append_file(self, link: str, download_path: Path) -> None:
         await makedirs(download_path.parent, exist_ok=True)
         self.downloader.enqueue_file(
             url=link, path=download_path.parent, filename=download_path.name
         )
         self.total_files_added += 1
 
-    async def download_files(self, app: Application):
+    async def download_files(self, app: Application) -> None:
         """starts the download and waits for all files to finish"""
         exporter_settings = get_settings(app)
         results = await self.downloader.run_download(
@@ -37,6 +37,6 @@ class ParallelDownloader:
 
         log.debug("Download %s using %s", f"{results=}", f"{self.downloader=}")
         if len(results) != self.total_files_added or len(results.errors) > 0:
-            message = f"Not all files were downloaded see: {results.errors=}"
+            message = f"Not all files were downloaded: {results.errors=}"
             log.error(message)
             raise ExporterException(message)
