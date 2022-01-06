@@ -9,8 +9,8 @@ async def remove_directory(
     if not path.exists():
         if missing_ok:
             return
-        else:
-            raise FileNotFoundError(f"No such file or directory {path}")
+
+        raise FileNotFoundError(f"No such file or directory {path}")
 
     if not path.is_dir():
         raise NotADirectoryError(f"Provided path={path} must be a directory")
