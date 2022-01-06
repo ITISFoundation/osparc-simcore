@@ -3,9 +3,9 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
+from pathlib import Path
 
 import pytest
-from pathlib import Path
 from servicelib.utils import logged_gather
 
 

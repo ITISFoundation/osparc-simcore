@@ -1,10 +1,10 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-import pytest
+
 from asyncio import AbstractEventLoop
 from pathlib import Path
+import pytest
 from faker import Faker
-
 from servicelib.file_utils import remove_directory
 
 

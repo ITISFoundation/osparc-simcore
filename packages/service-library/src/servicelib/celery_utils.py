@@ -7,8 +7,7 @@ log = logging.getLogger(__file__)
 
 
 class CeleryRetryPolicyUponInitialization:
-    """ Retry policy upon service initialization
-    """
+    """Retry policy upon service initialization"""
 
     WAIT_SECS = 2
     ATTEMPTS_COUNT = 20
