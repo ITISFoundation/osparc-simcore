@@ -83,8 +83,8 @@ class DynamicSidecarSettings(BaseCustomSettings):
     DY_SIDECAR_STATE_PATHS: List[Path] = Field(
         ..., description="list of additional paths to be synced"
     )
-    DY_SIDECAR_STATE_EXCLUDE: List[Path] = Field(
-        ..., description="list of paths to exclude when saving states"
+    DY_SIDECAR_STATE_EXCLUDE: List[str] = Field(
+        ..., description="list of patterns to exclude files when saving states"
     )
     DY_SIDECAR_USER_ID: UserID
     DY_SIDECAR_PROJECT_ID: ProjectID

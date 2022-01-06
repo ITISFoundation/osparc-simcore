@@ -1,10 +1,9 @@
 import asyncio
-from collections import deque
+import fnmatch
 import logging
 import zipfile
-import re
 from pathlib import Path
-from typing import Deque, Iterator, Optional, Set, Tuple, Union, List
+from typing import Iterator, List, Optional, Set, Tuple, Union
 
 from servicelib.pools import non_blocking_process_pool_executor
 
@@ -17,29 +16,19 @@ def _strip_undecodable_in_path(path: Path) -> Path:
     return Path(str(path).encode(errors="replace").decode("utf-8"))
 
 
-def _get_exclude_regex_rules(exclude_paths: List[Path]) -> List[str]:
-    results: Deque[str] = deque()
-    for path in exclude_paths:
-        if path.is_absolute():
-            results.append(rf"^{path}.*")  # match starts with
-        else:
-            results.append(rf"(.*){path}$")  # match ends with
-    return list(results)
-
-
-def _should_exclude(regex_rules: List[str], path: Path) -> bool:
-    for rule in regex_rules:
-        if re.match(rule, f"{path}"):
+def _should_exclude(path: Path, exclude_patterns: List[str]) -> bool:
+    for match_rule in exclude_patterns:
+        if fnmatch.fnmatch(f"{path}", match_rule):
             return False
     return True
 
 
 def _full_file_path_from_dir_and_subdirs(
-    dir_path: Path, exclude_paths: List[Path] = None
+    dir_path: Path, exclude_patterns: List[str] = None
 ) -> Iterator[Path]:
-    regex_rules = _get_exclude_regex_rules(exclude_paths if exclude_paths else [])
+    exclude_patterns = exclude_patterns if exclude_patterns else []
     for path in dir_path.rglob("*"):
-        if path.is_file() and _should_exclude(regex_rules, path):
+        if path.is_file() and _should_exclude(path, exclude_patterns):
             yield path
 
 
@@ -147,7 +136,7 @@ def _serial_add_to_archive(
     destination: Path,
     compress: bool,
     store_relative_path: bool,
-    exclude_paths: List[Path] = None,
+    exclude_patterns: List[str] = None,
 ) -> Optional[Exception]:
     try:
         compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
@@ -155,7 +144,7 @@ def _serial_add_to_archive(
             destination, "w", compression=compression
         ) as zip_file_handler:
             files_to_compress_generator = _full_file_path_from_dir_and_subdirs(
-                dir_to_compress, exclude_paths
+                dir_to_compress, exclude_patterns
             )
             for file_to_add in files_to_compress_generator:
                 try:
@@ -185,7 +174,7 @@ async def archive_dir(
     destination: Path,
     compress: bool,
     store_relative_path: bool,
-    exclude_paths: List[Path] = None,
+    exclude_patterns: List[str] = None,
 ) -> None:
     """
     When archiving, undecodable bytes in filenames will be escaped,
@@ -193,10 +182,8 @@ async def archive_dir(
     When unarchiveing, the **escaped version** of the file names
     will be created.
 
-    The **exclude_paths** is a list of paths of absolute or relative
-    files which will be match respectively the begining or the end
-    of a file. If such a match exists that file will be excluded
-    form the archive.
+    The **exclude_patterns** is a list of patterns created using
+    Unix shell-style wildcards to exclude files and directories.
     """
     with non_blocking_process_pool_executor(max_workers=1) as pool:
         add_to_archive_error: Union[
@@ -208,7 +195,7 @@ async def archive_dir(
             destination,
             compress,
             store_relative_path,
-            exclude_paths,
+            exclude_patterns,
         )
 
         if isinstance(add_to_archive_error, Exception):
