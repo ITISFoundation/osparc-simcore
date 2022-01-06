@@ -409,7 +409,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Creates the output directories declared by the labels",
+        "summary": "Creates the output directories declared by the labels. Since the dynamic-sidecar cannot retrieve the labels from the image, these must be provided by the director-v2. This API is called after the outputs directory was pulled",
         "operationId": "create_output_dirs_v1_containers_ports_outputs_create_dirs_post",
         "requestBody": {
           "content": {
