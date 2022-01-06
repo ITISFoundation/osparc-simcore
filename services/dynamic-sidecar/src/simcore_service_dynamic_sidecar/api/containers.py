@@ -465,7 +465,12 @@ async def enable_directory_watcher(app: FastAPI = Depends(get_application)) -> R
 
 @containers_router.post(
     "/containers/ports/outputs:create-dirs",
-    summary="Creates the output directories declared by the labels",
+    summary=(
+        "Creates the output directories declared by the labels. "
+        "Since the dynamic-sidecar cannot retrieve the labels "
+        "from the image, these must be provided by the "
+        "director-v2. This API is called after the outputs directory was pulled"
+    ),
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
