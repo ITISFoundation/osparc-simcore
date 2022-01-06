@@ -461,28 +461,28 @@ async def test_directory_watcher_disabling(
         dir_count = len([1 for x in mounted_volumes.disk_outputs_path.glob("*")])
         return dir_count
 
-    EVENTS_PER_DIR_CREATEION = 2
+    EVENTS_PER_DIR_CREATION = 2
 
     # by default it is enabled
     assert mock_dir_watcher_on_any_event.call_count == 0
     dir_count = _create_random_dir_in_inputs()
     assert dir_count == 1
     await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
-    assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATEION
+    assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATION
 
     # disable and wait for events should have the same count as before
     await _assert_disable_directory_watcher()
     dir_count = _create_random_dir_in_inputs()
     assert dir_count == 2
     await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
-    assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATEION
+    assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATION
 
     # enable and wait for events
     await _assert_enable_directory_watcher()
     dir_count = _create_random_dir_in_inputs()
     assert dir_count == 3
     await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
-    assert mock_dir_watcher_on_any_event.call_count == 2 * EVENTS_PER_DIR_CREATEION
+    assert mock_dir_watcher_on_any_event.call_count == 2 * EVENTS_PER_DIR_CREATION
 
 
 async def test_container_create_outputs_dirs(
