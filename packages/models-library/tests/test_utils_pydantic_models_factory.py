@@ -11,7 +11,10 @@ from faker import Faker
 from models_library.generics import Envelope
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import PageDict, paginate_data
-from models_library.utils.models_factory import collect_fields_attrs, copy_model
+from models_library.utils.pydantic_models_factory import (
+    collect_fields_attrs,
+    copy_model,
+)
 from pydantic import BaseModel, validator
 from pydantic.types import PositiveInt
 from yarl import URL

@@ -173,7 +173,7 @@ def copy_model(
         validators = inherit_validators(extract_validators(reference_cls.__dict__), {})
         vg = ValidatorGroup(validators)
         vg.check_for_unused()
-        validators_funs = vg.validators
+        validators_funs = vg.validators  # pylint: disable=no-member
 
     new_model_cls = create_model(
         __model_name=name,
