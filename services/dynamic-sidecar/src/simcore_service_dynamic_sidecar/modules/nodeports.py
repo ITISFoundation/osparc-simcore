@@ -222,7 +222,9 @@ async def _download_target_port(
                 if not downloaded_file or not downloaded_file.exists():
                     # the link may be empty
                     # remove files all files from disk when disconnecting port
-                    await remove_directory(dest_path, only_children=True)
+                    await remove_directory(
+                        dest_path, only_children=True, missing_ok=True
+                    )
                     continue
 
                 transfer_bytes = transfer_bytes + downloaded_file.stat().st_size

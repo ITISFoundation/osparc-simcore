@@ -44,7 +44,7 @@ async def test_remove_directory(
     loop: AbstractEventLoop, some_dir: Path, only_children: bool
 ) -> None:
     assert some_dir.exists() is True
-    await remove_directory(path=some_dir, only_children=only_children)
+    await remove_directory(path=some_dir, only_children=only_children, missing_ok=True)
     assert some_dir.exists() is only_children
 
 
@@ -59,9 +59,21 @@ async def test_remove_fail_fails(
     assert excinfo.value.args[0] == f"Provided path={a_file} must be a directory"
 
 
-async def test_remove_none_existingdirectory(
+async def test_remove_not_existing_directory(
     loop: AbstractEventLoop, faker: Faker, only_children: bool
 ) -> None:
     missing_path = Path(faker.file_path())
     assert missing_path.exists() is False
-    await remove_directory(path=missing_path, only_children=only_children)
+    await remove_directory(
+        path=missing_path, only_children=only_children, missing_ok=True
+    )
+
+async def test_remove_not_existing_directory_rasing_error(
+    loop: AbstractEventLoop, faker: Faker, only_children: bool
+) -> None:
+    missing_path = Path(faker.file_path())
+    assert missing_path.exists() is False
+    with pytest.raises(FileNotFoundError):
+        await remove_directory(
+            path=missing_path, only_children=only_children, missing_ok=False
+        )
