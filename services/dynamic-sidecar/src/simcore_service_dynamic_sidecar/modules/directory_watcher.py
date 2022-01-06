@@ -105,13 +105,10 @@ class UnifyingEventHandler(FileSystemEventHandler):
     def set_enabled(self, is_enabled: bool) -> None:
         self._is_enabled = is_enabled
 
-    def _call_trigger_async_invoke_push_mapped_data(self) -> None:
-        trigger_async_invoke_push_mapped_data(self.loop, self.directory_path)
-
     def on_any_event(self, event: FileSystemEvent) -> None:
         super().on_any_event(event)
         if self._is_enabled:
-            self._call_trigger_async_invoke_push_mapped_data()
+            trigger_async_invoke_push_mapped_data(self.loop, self.directory_path)
 
 
 class DirectoryWatcherObservers:
