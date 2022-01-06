@@ -38,11 +38,9 @@ def _get_size_of_value(value: ItemConcreteValue) -> int:
         # relative symlink need to know which their parent is
         # in oder to properly resolve the path since the workdir
         # does not equal to their parent dir
-        path = (
-            Path(value.parent) / Path(os.readlink(value))
-            if value.is_symlink()
-            else value
-        )
+        path = value
+        if value.is_symlink():
+            path = Path(value.parent) / Path(os.readlink(value))
         size_bytes = path.stat().st_size
         return size_bytes
     return sys.getsizeof(value)
