@@ -50,7 +50,6 @@ attrs==20.3.0
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
     #   aiohttp
 certifi==2020.12.5
@@ -242,7 +241,6 @@ pyyaml==5.4.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   fastapi
-    #   trafaret-config
     #   uvicorn
 requests==2.25.1
     # via fastapi
@@ -296,10 +294,6 @@ tornado==6.1
     #   jaeger-client
     #   threadloop
 tqdm==4.60.0
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-trafaret==2.1.0
-    # via trafaret-config
-trafaret-config==2.0.2
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 typer==0.4.0
     # via -r requirements/../../../packages/settings-library/requirements/_base.in

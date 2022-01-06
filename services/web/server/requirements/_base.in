@@ -10,6 +10,7 @@
 #
 --constraint ../../../../packages/models-library/requirements/_base.in
 --constraint ../../../../packages/postgres-database/requirements/_base.in
+# simcore-service-library[aiohttp]
 --constraint ../../../../packages/service-library/requirements/_base.in
 --constraint ../../../../packages/service-library/requirements/_aiohttp.in
 
@@ -75,3 +76,8 @@ python-magic
 
 # SEE services/web/server/tests/unit/isolated/test_utils.py::test_yarl_url_compose_changed_with_latest_release
 yarl<1.6
+
+
+# FIXME: deprecated
+trafaret==2.1.0
+trafaret_config

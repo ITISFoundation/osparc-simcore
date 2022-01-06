@@ -328,7 +328,6 @@ pyyaml==5.4.1
     #   dask
     #   distributed
     #   fastapi
-    #   trafaret-config
     #   uvicorn
 redis==3.5.3
     # via celery
@@ -406,10 +405,6 @@ tornado==6.1
     #   jaeger-client
     #   threadloop
 tqdm==4.62.3
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-trafaret==2.1.0
-    # via trafaret-config
-trafaret-config==2.0.2
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 typer==0.4.0
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
