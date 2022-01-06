@@ -94,6 +94,8 @@ fi
 chown --verbose --recursive "$SC_USER_NAME":"$GROUPNAME" "${DY_VOLUMES}"
 # Allow owner and group to edit write and execute
 # files from all the subdirectories
+# When the service access files downloaded by the dynamic-sidecar 
+# it uses group permissions
 chmod --verbose --recursive 774 "${DY_VOLUMES}"
 
 echo "$INFO Starting $* ..."
