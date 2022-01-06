@@ -275,7 +275,7 @@ class ServiceOutput(ServiceProperty):
                     "type": "number",
                     "unit": "second",
                 },
-                # folder
+                # file data type
                 {
                     "label": "Output files 1",
                     "displayOrder": 4.0,
