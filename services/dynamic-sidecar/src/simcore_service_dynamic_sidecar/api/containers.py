@@ -56,6 +56,10 @@ class CreateDirsRequestItem(BaseModel):
     outputs_labels: Dict[str, ServiceOutput]
 
 
+class PatchDirectoryWatcherItem(BaseModel):
+    is_enabled: bool
+
+
 async def _send_message(rabbitmq: RabbitMQ, message: str) -> None:
     logger.info(message)
     await rabbitmq.post_log_message(f"[sidecar] {message}")
@@ -431,26 +435,20 @@ async def pull_input_ports(
     return transferred_bytes
 
 
-@containers_router.post(
-    "/containers/directory-watcher:disable",
-    summary="Disable directory-watcher event propagation",
+@containers_router.patch(
+    "/containers/directory-watcher",
+    summary="Enable/disable directory-watcher event propagation",
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def disable_directory_watcher(
+    patch_directory_watcher_item: PatchDirectoryWatcherItem,
     app: FastAPI = Depends(get_application),
 ) -> None:
-    directory_watcher.disable_directory_watcher(app)
-
-
-@containers_router.post(
-    "/containers/directory-watcher:enable",
-    summary="Enable directory-watcher event propagation",
-    response_class=Response,
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def enable_directory_watcher(app: FastAPI = Depends(get_application)) -> None:
-    directory_watcher.enable_directory_watcher(app)
+    if patch_directory_watcher_item.is_enabled:
+        directory_watcher.enable_directory_watcher(app)
+    else:
+        directory_watcher.disable_directory_watcher(app)
 
 
 @containers_router.post(

@@ -376,30 +376,36 @@
         }
       }
     },
-    "/v1/containers/directory-watcher:disable": {
-      "post": {
+    "/v1/containers/directory-watcher": {
+      "patch": {
         "tags": [
           "containers"
         ],
-        "summary": "Disable directory-watcher event propagation",
-        "operationId": "disable_directory_watcher_v1_containers_directory_watcher_disable_post",
+        "summary": "Enable/disable directory-watcher event propagation",
+        "operationId": "disable_directory_watcher_v1_containers_directory_watcher_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchDirectoryWatcherItem"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "204": {
             "description": "Successful Response"
-          }
-        }
-      }
-    },
-    "/v1/containers/directory-watcher:enable": {
-      "post": {
-        "tags": [
-          "containers"
-        ],
-        "summary": "Enable directory-watcher event propagation",
-        "operationId": "enable_directory_watcher_v1_containers_directory_watcher_enable_post",
-        "responses": {
-          "204": {
-            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
@@ -409,7 +415,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Creates the output directories declared by the labels. Since the dynamic-sidecar cannot retrieve the labels from the image, these must be provided by the director-v2. This API is called after the outputs directory was pulled",
+        "summary": "Creates the output directories declared by the docker images's labels. Since the dynamic-sidecar cannot retrieve the labels from the image, these must be provided by the director-v2. This API is called after the outputs directory was pulled",
         "operationId": "create_output_dirs_v1_containers_ports_outputs_create_dirs_post",
         "requestBody": {
           "content": {
@@ -598,6 +604,19 @@
             "items": {
               "$ref": "#/components/schemas/ValidationError"
             }
+          }
+        }
+      },
+      "PatchDirectoryWatcherItem": {
+        "title": "PatchDirectoryWatcherItem",
+        "required": [
+          "is_enabled"
+        ],
+        "type": "object",
+        "properties": {
+          "is_enabled": {
+            "title": "Is Enabled",
+            "type": "boolean"
           }
         }
       },
