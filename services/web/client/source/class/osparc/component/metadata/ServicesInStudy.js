@@ -66,52 +66,34 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
 
     __updateService: function(nodeId, newVersion, button) {
       this.setEnabled(false);
-      const workbench = this.__studyData["workbench"];
-      for (const id in workbench) {
+      for (const id in this.__studyData["workbench"]) {
         if (id === nodeId) {
-          workbench[nodeId]["version"] = newVersion;
+          this.__studyData["workbench"][nodeId]["version"] = newVersion;
         }
       }
-
-      const params = {
-        url: {
-          "studyId": this.__studyData["uuid"]
-        },
-        data: this.__studyData
-      };
-      button.setFetching(true);
-      osparc.data.Resources.fetch("studies", "put", params)
-        .then(updatedData => {
-          this.fireDataEvent("updateServices", updatedData);
-          this.__studyData = osparc.data.model.Study.deepCloneStudyObject(updatedData);
-          this.__populateLayout();
-        })
-        .catch(err => {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating the Service"), "ERROR");
-          console.error(err);
-        })
-        .finally(() => {
-          button.setFetching(false);
-          this.setEnabled(true);
-        });
+      this.__updateStudy(button);
     },
 
-    __updateAllServices: function(nodeId, newVersion, button) {
+    __updateAllServices: function(nodeIds, button) {
       this.setEnabled(false);
-      const workbench = this.__studyData["workbench"];
-      for (const id in workbench) {
-        if (id === nodeId) {
-          workbench[nodeId]["version"] = newVersion;
+      for (const nodeId in this.__studyData["workbench"]) {
+        if (nodeIds.includes(nodeId)) {
+          const node = this.__studyData["workbench"][nodeId];
+          const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this.__services, node["key"], node["version"]);
+          this.__studyData["workbench"][nodeId]["version"] = latestCompatibleMetadata;
         }
       }
+      this.__updateStudy(button);
+    },
 
+    __updateStudy: function(fetchButton) {
+      fetchButton.setFetching(true);
       const params = {
         url: {
           "studyId": this.__studyData["uuid"]
         },
         data: this.__studyData
       };
-      button.setFetching(true);
       osparc.data.Resources.fetch("studies", "put", params)
         .then(updatedData => {
           this.fireDataEvent("updateServices", updatedData);
@@ -123,7 +105,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           console.error(err);
         })
         .finally(() => {
-          button.setFetching(false);
+          fetchButton.setFetching(false);
           this.setEnabled(true);
         });
     },
@@ -170,8 +152,9 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         column: this.self().gridPos.latestVersion
       });
 
+      const updatableServices = [];
       const updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"), "@MaterialIcons/update/14");
-      updateAllButton.addListener("execute", () => this.__updateAllServices(updateAllButton), this);
+      updateAllButton.addListener("execute", () => this.__updateAllServices(updatableServices, updateAllButton), this);
       this._add(updateAllButton, {
         row: i,
         column: this.self().gridPos.updateButton
@@ -179,14 +162,15 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
 
       i++;
 
-      let allUpdatable = false;
       for (const nodeId in workbench) {
         const node = workbench[nodeId];
 
         const nodeMetaData = osparc.utils.Services.getFromObject(this.__services, node["key"], node["version"]);
         const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this.__services, node["key"], node["version"]);
         const updatable = node["version"] !== latestCompatibleMetadata["version"];
-        allUpdatable = allUpdatable || updatable;
+        if (updatable) {
+          updatableServices.push(nodeId);
+        }
 
         const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
         infoButton.addListener("execute", () => {
@@ -256,7 +240,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         i++;
       }
 
-      updateAllButton.setEnabled(allUpdatable);
+      updateAllButton.setEnabled(updatableServices.length);
     }
   }
 });
