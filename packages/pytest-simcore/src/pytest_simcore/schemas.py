@@ -88,3 +88,30 @@ def random_json_from_schema(
         return json.loads(generated_json_path.read_text())
 
     yield _generator
+
+
+@pytest.fixture(scope="session")
+def json_diff_script(osparc_simcore_scripts_dir: Path) -> Path:
+    json_diff_script = osparc_simcore_scripts_dir / "json-schema-diff.bash"
+    assert json_diff_script.exists()
+    return json_diff_script
+
+
+@pytest.fixture(scope="session")
+def diff_json_schemas(json_diff_script: Path, tmp_path_factory) -> Callable:
+    def _run_diff(schema_lhs: Dict, schema_rhs: Dict) -> subprocess.CompletedProcess:
+        tmpdir = tmp_path_factory.mktemp(basename=__name__, numbered=True)
+        schema_lhs_path = tmpdir / "schema_lhs.json"
+        schema_lhs_path.write_text(json.dumps(schema_lhs, indent=1))
+        schema_rhs_path = tmpdir / "schema_rhs.json"
+        schema_rhs_path.write_text(json.dumps(schema_rhs, indent=1))
+
+        return subprocess.run(
+            [json_diff_script, schema_lhs_path, schema_rhs_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+            cwd=tmpdir,
+        )
+
+    return _run_diff

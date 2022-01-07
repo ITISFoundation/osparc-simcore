@@ -281,6 +281,7 @@ async def get_project(request: web.Request):
             formatted_services = ", ".join(
                 f"{service}:{version}" for service, version in unavilable_services
             )
+            # TODO: lack of permissions should be notified with https://httpstatuses.com/403 web.HTTPForbidden
             raise web.HTTPNotFound(
                 reason=(
                     f"Project '{project_uuid}' uses unavailable services. Please ask "
@@ -354,13 +355,19 @@ async def replace_project(request: web.Request):
         project_uuid = ProjectID(request.match_info["project_id"])
         new_project = await request.json()
 
+        # Prune state field (just in case)
+        new_project.pop("state", None)
+
+    except AttributeError as err:
+        # NOTE: if new_project is not a dict, .pop will raise this error
+        raise web.HTTPBadRequest(
+            reason="Invalid request payload, expected a project model"
+        ) from err
+
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
     except json.JSONDecodeError as exc:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
-
-    # Prune state field (just in case)
-    new_project.pop("state", None)
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
     await check_permission(
