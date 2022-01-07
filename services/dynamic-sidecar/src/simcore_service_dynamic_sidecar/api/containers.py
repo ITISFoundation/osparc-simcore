@@ -456,7 +456,7 @@ async def enable_directory_watcher(app: FastAPI = Depends(get_application)) -> N
 @containers_router.post(
     "/containers/ports/outputs:create-dirs",
     summary=(
-        "Creates the output directories declared by the labels. "
+        "Creates the output directories declared by the docker images's labels. "
         "Since the dynamic-sidecar cannot retrieve the labels "
         "from the image, these must be provided by the "
         "director-v2. This API is called after the outputs directory was pulled"
