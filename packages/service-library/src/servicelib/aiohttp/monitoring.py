@@ -55,9 +55,15 @@ def middleware_factory(app_name):
         # See https://prometheus.io/docs/concepts/metric_types
         resp = None
         try:
+            log.debug("ENTERING monitoring middleware for %s", f"{request=}")
             request["start_time"] = time.time()
 
             resp = await handler(request)
+            log.debug(
+                "EXITING monitoring middleware for %s with %s",
+                f"{request=}",
+                f"{resp=}",
+            )
 
         except web.HTTPException as exc:
             # Captures raised reponses (success/failures accounted with resp.status)
@@ -83,7 +89,8 @@ def middleware_factory(app_name):
 
         finally:
             # metrics on the same request
-            if resp:
+            log.debug("REQUEST RESPONSE %s", f"{resp=}")
+            if resp is not None:
                 request.app["REQUEST_COUNT"].labels(
                     app_name, request.method, request.path, resp.status
                 ).inc()
