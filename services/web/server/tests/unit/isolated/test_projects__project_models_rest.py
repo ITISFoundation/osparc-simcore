@@ -2,16 +2,20 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-
 import json
 from typing import Any, Callable, Dict
 
 import pytest
 from models_library.generics import Envelope
+from models_library.utils.database_models_factory import (
+    create_pydantic_model_from_sa_table,
+)
 from models_library.utils.pydantic_models_factory import copy_model
+from pydantic import validator
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from simcore_service_webserver._meta import API_VTAG
-from simcore_service_webserver.projects._project_models_rest import SimcoreProject
+from simcore_service_webserver.projects._project_models_rest import ProjectSchema
+from simcore_service_webserver.projects.projects_db import projects as projects_table
 from simcore_service_webserver.resources import resources
 
 ## FIXTURES --------------------------------------------------
@@ -30,27 +34,78 @@ def project_jsonschema():
 # that parse data at different interfaces and directions.
 #
 #
+# TODO: ANE's input: group namespace for all model variantes
+#  of a resource model incluing default definitions
+#
+# e.g.
+#   ProjectCRUDModels = ModelsCRUDGroup[ProjectSchema]
+#   ProjectCRUDModels.Create(include={
+#             "name",
+#             "description",
+#             "prjOwner",
+#             "thumbnail",
+#             "workbench",
+#         },)
+#   ProjectCRUDModels.Update()
+#   ...
+#
+#
+# TODO: ANE's input: add trace of reference class (e.g. __copy_model_ref__)
+#
 
 
+@pytest.mark.skip(reason="DEV")
 def test_models_when_creating_new_empty_project():
+    class _ProjectCreate(
+        copy_model(
+            ProjectSchema,
+            name="ProjectCreateBase",
+            include={
+                "name",
+                "description",
+                "prjOwner",
+                "thumbnail",
+                "workbench",
+            },
+            # defaults to Extra.ignore
+        )
+    ):
+        @validator("thumbnail", pre=True)
+        @classmethod
+        def default_thumbnail(cls, v):
+            if not v:
+                return None
 
-    _ProjectCreate = copy_model(
-        SimcoreProject,
-        name="ProjectCreate",
-        exclude_optionals=True,
-    )
-
-    # use _ProjectCreate to parse request payload in POST /projects
+    # use _ProjectCreate to parse & validate request payload in POST /projects
     project_req_payload = _ProjectCreate.parse_obj(NEW_PROJECT.request_payload)
 
+    assert project_req_payload.dict(exclude_unset=True) == {
+        "name": "New Study",
+        "description": "",
+        "thumbnail": None,
+        "workbench": {},
+    }
+
+    # Model to insert
+    # - exclude all fields that have to be defined on the server side:
+    #   - id: primary key and handled by server
+    #   - creation_date, last_change_date: defined on server sdie
+
+    #
+    #
+    #
+    _ProjectInsert = create_pydantic_model_from_sa_table(
+        table=projects_table,
+    )
+
     # we insert a row in the db and fetch it back (w/ a primary-key, ...)
-    _ProjectFetch = copy_model(SimcoreProject, name="ProjectFetch")
+    _ProjectFetch = copy_model(ProjectSchema, name="ProjectFetch")
 
     project_new = _ProjectFetch()
 
     # compose other parts into response
     _ProjectGet = copy_model(
-        SimcoreProject,
+        ProjectSchema,
         name="ProjectGet",
     )
 
@@ -60,6 +115,7 @@ def test_models_when_creating_new_empty_project():
     assert project_resp_body.dict() == NEW_PROJECT.response_body
 
 
+@pytest.mark.skip(reason="DEV")
 def test_generated_model_in_sync_with_json_schema_specs(
     diff_json_schemas: Callable, project_jsonschema: Dict[str, Any]
 ):
@@ -78,7 +134,7 @@ def test_generated_model_in_sync_with_json_schema_specs(
         ), process_completion.stdout.decode("utf-8")
 
     # run one direction original schema encompass generated one
-    assert_equivalent_schemas(project_jsonschema, SimcoreProject.schema())
+    assert_equivalent_schemas(project_jsonschema, ProjectSchema.schema())
 
     # run other way direction:  generated one encompass original schema
-    assert_equivalent_schemas(SimcoreProject.schema(), project_jsonschema)
+    assert_equivalent_schemas(ProjectSchema.schema(), project_jsonschema)

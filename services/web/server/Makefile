@@ -40,7 +40,11 @@ _project_models_rest.py: ## auto-generates pydantic model for project rest API m
 		--output $@
 
 
-	echo ProjectAsBody = SimcoreProject >> $@
+
+	echo import warnings  >> $@
+	echo "warnings.warn('DO NOT USE IN PRODUCTION, STILL UNDER DEVELOPMENT')"  >> $@
+
+	echo ProjectSchema = SimcoreProject >> $@
 	# formats and moves
 	black $@
 	mv $@ src/simcore_service_webserver/projects/$@
