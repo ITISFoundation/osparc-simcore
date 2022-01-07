@@ -201,5 +201,5 @@ def copy_model(
         __validators__=validators_funs,
         **fields_definitions,
     )
-    # new_model_cls.__doc__ = reference_cls.__doc__
+
     return new_model_cls

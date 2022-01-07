@@ -25,6 +25,8 @@ def test_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):
     assert route.path.startswith(f"/{VX}")
     path = route.path.replace(f"/{VX}", "")
 
+    assert path in openapi_specs.paths, "path in router not defined in openapi"
+
     assert (
         route.method.lower() in openapi_specs.paths[path].operations
     ), f"operation {route.method} undefined in OAS"
