@@ -10,20 +10,20 @@ from aiofiles.os import wrap as sync_to_async
 _shutil_rmtree = sync_to_async(shutil.rmtree)
 
 
-async def _rm(path: Path):
+async def _rm(path: Path, ignore_errors: bool = False):
     """Removes file or directory"""
     try:
         await remove(path)
     except IsADirectoryError:
-        await _shutil_rmtree(path, ignore_errors=True)
+        await _shutil_rmtree(path, ignore_errors=ignore_errors)
 
 
 async def remove_directory(
-    path: Path, only_children: bool = False, missing_ok: bool = False
+    path: Path, only_children: bool = False, ignore_errors: bool = False
 ) -> None:
     """Optional parameter allows to remove all children and keep directory"""
     if not path.exists():
-        if missing_ok:
+        if ignore_errors:
             return
 
         raise FileNotFoundError(f"No such file or directory {path}")
@@ -34,4 +34,4 @@ async def remove_directory(
     if only_children:
         await asyncio.gather(*[_rm(child) for child in path.glob("*")])
     else:
-        await _shutil_rmtree(path, onerror=missing_ok)
+        await _shutil_rmtree(path, ignore_errors=ignore_errors)
