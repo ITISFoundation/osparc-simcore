@@ -39,25 +39,10 @@ def _check_if_symlink_is_valid(symlink: Path) -> None:
 
     symlink_target_path = Path(os.readlink(symlink))
     if symlink_target_path.is_symlink():
-        message = (
-            f"'{symlink}' is pointing to '{symlink_target_path}' "
-            "which is itself a symlink. This is not supported!"
-        )
-        log.error(message)
-        raise SymlinkToSymlinkIsNotUploadableException(
-            message, symlink, symlink_target_path
-        )
+        raise SymlinkToSymlinkIsNotUploadableException(symlink, symlink_target_path)
 
     if symlink_target_path.is_absolute():
-        message = (
-            f"Absolute symlinks are not supported: "
-            f"{symlink} points to {symlink_target_path} "
-            "Try with relative symlinks!"
-        )
-        log.error(message)
-        raise AbsoluteSymlinkIsNotUploadableException(
-            message, symlink, symlink_target_path
-        )
+        raise AbsoluteSymlinkIsNotUploadableException(symlink, symlink_target_path)
 
 
 class Port(ServiceProperty):
