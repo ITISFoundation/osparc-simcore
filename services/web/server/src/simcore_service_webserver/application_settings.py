@@ -8,6 +8,7 @@ from settings_library.base import BaseCustomSettings
 
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, APP_NAME
+from .db_settings import PostgresSettings
 from .utils import snake_to_camel
 
 log = logging.getLogger(__name__)
@@ -42,6 +43,9 @@ class ApplicationSettings(BaseCustomSettings):
 
     # CONTAINER RUN  ---
     # settings defined from environs defined when container runs
+
+    # POSTGRES
+    WEBSERVER_POSTGRES: Optional[PostgresSettings]
 
     WEBSERVER_DEV_FEATURES_ENABLED: bool = Field(
         False,
