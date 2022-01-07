@@ -31,7 +31,11 @@ from ..users_api import get_user_name
 from . import projects_api
 from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
-from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
+from .projects_exceptions import (
+    HTTPLocked,
+    ProjectInvalidRightsError,
+    ProjectNotFoundError,
+)
 from .projects_utils import (
     clone_project_document,
     get_project_unavailable_services,
@@ -483,11 +487,6 @@ async def delete_project(request: web.Request):
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from err
 
     raise web.HTTPNoContent(content_type="application/json")
-
-
-class HTTPLocked(web.HTTPClientError):
-    # pylint: disable=too-many-ancestors
-    status_code = 423
 
 
 @routes.post(f"/{VTAG}/projects/{{project_uuid}}:open")
