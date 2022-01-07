@@ -33,7 +33,7 @@ def project_jsonschema():
 # captured from the front-end (i.e. copy&pasted from browser devtols) and emulate workflows
 # that parse data at different interfaces and directions.
 #
-#
+# TODO: see https://github.com/ITISFoundation/osparc-simcore/issues/2725
 # TODO: ANE's input: group namespace for all model variantes
 #  of a resource model incluing default definitions
 #

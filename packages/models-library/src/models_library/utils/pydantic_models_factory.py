@@ -21,8 +21,8 @@ since we are aware that future releases of pydantic will address part of the fea
 
 Usage of these tools are demonstrated in packages/models-library/tests/test_utils_models_factory.py
 """
-# TODO:
 #
+# SEE https://github.com/ITISFoundation/osparc-simcore/issues/2725
 
 import json
 from typing import Dict, Iterable, Optional, Set, Tuple, Type
@@ -34,13 +34,40 @@ from pydantic.class_validators import (
     inherit_validators,
 )
 from pydantic.fields import ModelField
+from pydantic.main import BaseConfig
 
 
 def collect_fields_attrs(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, str]]:
     """
-    Example:
-        >> print(json.dumps(_collect_fields(MyModel), indent=1))
 
+    >>> class MyModel(BaseModel):
+    ...    x : int
+    ...
+    >>> print(json.dumps(collect_fields_attrs(MyModel), indent=1))
+    {
+        "x": {
+            "type_": "<class 'type'> - int",
+            "outer_type_": "<class 'type'> - int",
+            "sub_fields": "None",
+            "key_field": "None",
+            "validators": "[\"<class 'cython_function_or_method'> - int_validator\"]",
+            "pre_validators": "None",
+            "post_validators": "None",
+            "default": "None",
+            "default_factory": "None",
+            "required": "True",
+            "model_config": "<class 'type'> - Config",
+            "name": "x",
+            "alias": "x",
+            "has_alias": "False",
+            "field_info": "default=PydanticUndefined extra={}",
+            "validate_always": "False",
+            "allow_none": "False",
+            "shape": "1",
+            "class_validators": "{}",
+            "parse_json": "False"
+        }
+    }
     """
 
     def _stringify(obj):
@@ -131,24 +158,6 @@ def _extract_field_definitions(
     return field_definitions
 
 
-# from pydantic.main import inherit_config
-
-# def _extract_config(
-#     model_cls: Type[BaseModel],
-#     *,
-#     include: Optional[Set[str]] = None,
-#     exclude: Optional[Set[str]] = None
-# ):
-#     selection = _eval_selection(model_cls.__fields__.keys(), include, exclude)
-
-#     # TODO: trim all fields based on selection!
-#     namespace = {}
-#     namespace["fields"] =
-#     namespace["schema_extra"] =
-
-#     return inherit_config(model_cls.__config__, model_cls.__config__, **namespace)
-
-
 def copy_model(
     reference_cls: Type[BaseModel],
     *,
@@ -158,6 +167,7 @@ def copy_model(
     exclude_optionals: bool = False,
     as_update_model: bool = False,
     skip_validators: bool = False,
+    __config__: Type[BaseConfig] = None,
 ) -> Type[BaseModel]:
     """
     Creates a clone of `reference_cls` with a different name and a subset of fields
@@ -184,7 +194,8 @@ def copy_model(
         validators_funs = vg.validators  # pylint: disable=no-member
 
     new_model_cls = create_model(
-        __model_name=name,
+        name,
+        __config__=__config__,
         __base__=BaseModel,
         __module__=reference_cls.__module__,
         __validators__=validators_funs,
