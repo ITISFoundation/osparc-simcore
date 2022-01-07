@@ -124,7 +124,18 @@ qx.Class.define("osparc.wrapper.Svg", {
       return rect;
     },
 
-    updateRect: function(rect, x, y) {
+    drawFilledRect: function(draw, width, height, x, y) {
+      const rect = draw.rect(width, height)
+        .fill("blue")
+        .stroke({
+          width: 1,
+          color: "red"
+        })
+        .move(x, y);
+      return rect;
+    },
+
+    updateRectPos: function(rect, x, y) {
       rect.move(x, y);
     },
 

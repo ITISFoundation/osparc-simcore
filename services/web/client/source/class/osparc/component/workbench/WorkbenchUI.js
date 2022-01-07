@@ -127,6 +127,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __selectedItemId: null,
     __startHint: null,
     __dropMe: null,
+    __rectInitPos: null,
+    __rectRepr: null,
     __panning: null,
     __isDraggingFile: null,
     __isDraggingLink: null,
@@ -1124,19 +1126,25 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __mouseDown: function(e) {
-      if (e.isRightPressed()) {
-        this.__openContextMenu(e);
+      if (e.isLeftPressed()) {
+        this.__rectInitPos = this.__pointerEventToWorkbenchPos(e);
       } else if (e.isMiddlePressed()) {
         this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
         this.__panning = true;
         this.set({
           cursor: "move"
         });
+      } else if (e.isRightPressed()) {
+        this.__openContextMenu(e);
       }
     },
 
     __mouseMove: function(e) {
-      if (this.__panning && e.isMiddlePressed()) {
+      if (this.__isDraggingLink) {
+        this.__draggingLink(e, true);
+      } else if (this.__tempEdgeRepr === null && this.__rectInitPos && e.isLeftPressed()) {
+        this.__drawingRect(e);
+      } else if (this.__panning && e.isMiddlePressed()) {
         const oldPos = this.__pointerPos;
         const newPos = this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
         const moveX = parseInt((oldPos.x-newPos.x) * this.getScale());
@@ -1146,12 +1154,17 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.set({
           cursor: "move"
         });
-      } else if (this.__isDraggingLink) {
-        this.__draggingLink(e, true);
       }
     },
 
     __mouseUp: function(e) {
+      if (this.__rectInitPos) {
+        this.__rectInitPos = null;
+      }
+      if (this.__rectRepr) {
+        osparc.component.workbench.SvgWidget.removeRect(this.__rectRepr);
+      }
+
       if (this.__panning) {
         this.__panning = false;
         this.set({
@@ -1320,39 +1333,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     _addEventListeners: function() {
       this.addListener("appear", () => {
-        // Reset filters and sidebars
-        // osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
-        // osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "visible");
-
-        // qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", false);
-
         this.addListener("resize", () => this.__updateAllEdges(), this);
-      });
-
-      this.addListener("keypress", keyEvent => {
-        const selectedNodeIDs = this.getSelectedNodeIDs();
-        if (selectedNodeIDs.length === 1) {
-          switch (keyEvent.getKeyIdentifier()) {
-            case "F2":
-              this.__openNodeRenamer(selectedNodeIDs[0]);
-              break;
-            case "I":
-              this.__openNodeInfo(selectedNodeIDs[0]);
-              break;
-            case "Delete":
-              this.fireDataEvent("removeNode", selectedNodeIDs[0]);
-              break;
-            case "Escape":
-              this.resetSelectedNodes();
-              break;
-          }
-        } else if (keyEvent.getKeyIdentifier() === "Delete" && this.__isSelectedItemAnEdge()) {
-          this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
-          this.__selectedItemChanged(null);
-        } else if (keyEvent.getKeyIdentifier() === "Escape") {
-          this.__removeTempEdge();
-          this.__removePointerMoveListener();
-        }
       }, this);
 
       this.addListenerOnce("appear", () => {
@@ -1387,11 +1368,31 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.addListener("mouseup", this.__mouseUp, this);
       });
 
-      this.addListener("disappear", () => {
-        // Reset filters
-        // osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
-        // osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
-      });
+      this.addListener("keypress", keyEvent => {
+        const selectedNodeIDs = this.getSelectedNodeIDs();
+        if (selectedNodeIDs.length === 1) {
+          switch (keyEvent.getKeyIdentifier()) {
+            case "F2":
+              this.__openNodeRenamer(selectedNodeIDs[0]);
+              break;
+            case "I":
+              this.__openNodeInfo(selectedNodeIDs[0]);
+              break;
+            case "Delete":
+              this.fireDataEvent("removeNode", selectedNodeIDs[0]);
+              break;
+            case "Escape":
+              this.resetSelectedNodes();
+              break;
+          }
+        } else if (keyEvent.getKeyIdentifier() === "Delete" && this.__isSelectedItemAnEdge()) {
+          this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
+          this.__selectedItemChanged(null);
+        } else if (keyEvent.getKeyIdentifier() === "Escape") {
+          this.__removeTempEdge();
+          this.__removePointerMoveListener();
+        }
+      }, this);
 
       this.__workbenchLayout.addListener("tap", () => {
         this.resetSelectedNodes();
@@ -1489,11 +1490,25 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           top: posY - parseInt(dropMeBounds.height/2)- parseInt(boxHeight/2)
         });
         if ("rect" in dropMe) {
-          osparc.component.workbench.SvgWidget.updateRect(dropMe.rect, posX - boxWidth, posY - boxHeight);
+          osparc.component.workbench.SvgWidget.updateRectPos(dropMe.rect, posX - boxWidth, posY - boxHeight);
         }
       } else {
         this.__removeDropHint();
       }
+    },
+
+    __drawingRect: function(e) {
+      console.log("drawingRect");
+      const initPos = this.__rectInitPos;
+      const currentPos = this.__pointerEventToWorkbenchPos(e);
+      const x = Math.min(initPos.x, currentPos.x);
+      const y = Math.min(initPos.y, currentPos.y);
+      const width = Math.abs(initPos.x - currentPos.x);
+      const height = Math.abs(initPos.y - currentPos.y);
+      if (this.__rectRepr) {
+        osparc.component.workbench.SvgWidget.removeRect(this.__rectRepr);
+      }
+      this.__rectRepr = this.__svgLayer.drawFilledRect(width, height, x, y);
     },
 
     __dropFile: function(e) {
