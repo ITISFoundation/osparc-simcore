@@ -80,7 +80,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         if (nodeIds.includes(nodeId)) {
           const node = this.__studyData["workbench"][nodeId];
           const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this.__services, node["key"], node["version"]);
-          this.__studyData["workbench"][nodeId]["version"] = latestCompatibleMetadata;
+          this.__studyData["workbench"][nodeId]["version"] = latestCompatibleMetadata["version"];
         }
       }
       this.__updateStudy(button);
@@ -165,7 +165,6 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       for (const nodeId in workbench) {
         const node = workbench[nodeId];
 
-        const nodeMetaData = osparc.utils.Services.getFromObject(this.__services, node["key"], node["version"]);
         const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this.__services, node["key"], node["version"]);
         const updatable = node["version"] !== latestCompatibleMetadata["version"];
         if (updatable) {
@@ -194,6 +193,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           column: this.self().gridPos.label
         });
 
+        const nodeMetaData = osparc.utils.Services.getFromObject(this.__services, node["key"], node["version"]);
         const nameLabel = new qx.ui.basic.Label(nodeMetaData["name"]).set({
           font: "text-14",
           toolTipText: node["key"]
@@ -240,7 +240,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         i++;
       }
 
-      updateAllButton.setEnabled(updatableServices.length);
+      updateAllButton.setEnabled(Boolean(updatableServices.length));
     }
   }
 });
