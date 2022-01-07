@@ -114,6 +114,7 @@ async def events_message_parser(app: web.Application, data: bytes) -> None:
 
 
 APP_RABBITMQ_POOL_KEY = f"{__name__}.pool"
+_RABBITMQ_INTERVAL_BEFORE_RESTARTING_CONSUMER_S = 2
 
 
 async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
@@ -196,6 +197,10 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
                     "restarting..." if consumer_running else "stopping",
                     exc_info=True,
                 )
+                if consumer_running:
+                    await asyncio.sleep(_RABBITMQ_INTERVAL_BEFORE_RESTARTING_CONSUMER_S)
+
+    # TODO
 
     consumer_tasks = []
     for exchange_name, message_parser, consumer_kwargs in [
