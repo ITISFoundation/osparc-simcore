@@ -12,9 +12,11 @@ from aiohttp import web
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     Counter,
+    Gauge,
     GCCollector,
     PlatformCollector,
     ProcessCollector,
+    Summary,
 )
 from prometheus_client.registry import CollectorRegistry
 from servicelib.aiohttp.typing_extension import Handler
@@ -42,6 +44,8 @@ log = logging.getLogger(__name__)
 
 kSTART_TIME = f"{__name__}.start_time"
 kREQUEST_COUNT = f"{__name__}.request_count"
+kINFLIGHTREQUESTS = f"{__name__}.in_flight_requests"
+kRESPONSELATENCY = f"{__name__}.in_response_latency"
 kCANCEL_COUNT = f"{__name__}.cancel_count"
 
 kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"
@@ -81,11 +85,23 @@ def middleware_factory(app_name: str, excluded_paths: Optional[List[str]] = None
         resp: web.StreamResponse = web.HTTPInternalServerError(
             reason="Unexpected exception"
         )
+        canonical_endpoint = request.path
+        if request.match_info.route.resource:
+            canonical_endpoint = request.match_info.route.resource.canonical
+
         try:
             log.debug("ENTERING monitoring middleware for %s", f"{request=}")
             request[kSTART_TIME] = time.time()
 
-            resp = await handler(request)
+            in_flight_gauge = request.app[kINFLIGHTREQUESTS]
+            response_summary = request.app[kRESPONSELATENCY]
+
+            with in_flight_gauge.labels(
+                app_name, request.method, canonical_endpoint
+            ).track_inprogress(), response_summary.labels(
+                app_name, request.method, canonical_endpoint
+            ).time():
+                resp = await handler(request)
 
             assert isinstance(  # nosec
                 resp, web.StreamResponse
@@ -122,9 +138,7 @@ def middleware_factory(app_name: str, excluded_paths: Optional[List[str]] = None
             request.app[kREQUEST_COUNT].labels(
                 app_name,
                 request.method,
-                request.match_info.route.resource.canonical
-                if request.match_info.route.resource
-                else "undef",
+                canonical_endpoint,
                 resp.status,
             ).inc()
 
@@ -152,19 +166,34 @@ def middleware_factory(app_name: str, excluded_paths: Optional[List[str]] = None
 
 def setup_monitoring(app: web.Application, app_name: str):
     # app-scope registry
-    app[kCOLLECTOR_REGISTRY] = reg = CollectorRegistry(auto_describe=True)
+    app[kCOLLECTOR_REGISTRY] = reg = CollectorRegistry(auto_describe=False)
     app[kPROCESS_COLLECTOR] = ProcessCollector(registry=reg)
     app[kPLATFORM_COLLECTOR] = PlatformCollector(registry=reg)
     app[kGC_COLLECTOR] = GCCollector(registry=reg)
 
     # Total number of requests processed
     app[kREQUEST_COUNT] = Counter(
-        name="http_requests_total",
-        documentation="Total Request Count",
+        name="http_requests",
+        documentation="Total requests count",
         labelnames=["app_name", "method", "endpoint", "http_status"],
         registry=reg,
     )
 
+    app[kINFLIGHTREQUESTS] = Gauge(
+        name="http_in_flight_requests",
+        documentation="Number of requests in process",
+        labelnames=["app_name", "method", "endpoint"],
+        registry=reg,
+    )
+
+    app[kRESPONSELATENCY] = Summary(
+        name="http_request_latency_seconds",
+        documentation="Time processing a request",
+        labelnames=["app_name", "method", "endpoint"],
+        registry=reg,
+    )
+
+    log.error("Currently registered metrics: %s", f"{reg.get_target_info()}")
     # WARNING: ensure ERROR middleware is over this one
     #
     # non-API request/response (e.g /metrics, /x/*  ...)
