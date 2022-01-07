@@ -18,7 +18,7 @@ attrs==21.2.0
     # via aiohttp
 billiard==3.6.4.0
     # via celery
-celery==5.2.1
+celery==5.2.2
     # via -r requirements.in
 certifi==2021.10.8
     # via requests
