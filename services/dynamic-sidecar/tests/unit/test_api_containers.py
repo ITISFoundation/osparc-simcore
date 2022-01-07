@@ -441,15 +441,15 @@ async def test_directory_watcher_disabling(
     test_client: TestClient, mock_dir_watcher_on_any_event: AsyncMock
 ) -> None:
     async def _assert_disable_directory_watcher() -> None:
-        response = await test_client.post(
-            f"/{API_VTAG}/containers/directory-watcher:disable"
+        response = await test_client.patch(
+            f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=False)
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
         assert response.text == ""
 
     async def _assert_enable_directory_watcher() -> None:
-        response = await test_client.post(
-            f"/{API_VTAG}/containers/directory-watcher:enable"
+        response = await test_client.patch(
+            f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=True)
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
         assert response.text == ""
