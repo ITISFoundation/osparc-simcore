@@ -15,10 +15,10 @@
 # installs this repo's packages
 --editable ../../../packages/models-library/
 --editable ../../../packages/postgres-database/
---editable ../../../packages/settings-library/
---editable ../../../packages/simcore-sdk/
---editable ../../../packages/service-library[aiohttp]
 --editable ../../../packages/pytest-simcore/
+--editable ../../../packages/service-library[aiohttp]
+--editable ../../../packages/settings-library
+--editable ../../../packages/simcore-sdk/
 
 # installs current package
 --editable .

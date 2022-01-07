@@ -16,6 +16,7 @@
 ../../../packages/postgres-database/
 ../../../packages/settings-library/
 ../../../packages/simcore-sdk/
+../../../packages/settings-library
 ../../../packages/service-library[aiohttp]
 ../../../packages/pytest-simcore/
 
