@@ -96,6 +96,38 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         });
     },
 
+    __updateAllServices: function(nodeId, newVersion, button) {
+      this.setEnabled(false);
+      const workbench = this.__studyData["workbench"];
+      for (const id in workbench) {
+        if (id === nodeId) {
+          workbench[nodeId]["version"] = newVersion;
+        }
+      }
+
+      const params = {
+        url: {
+          "studyId": this.__studyData["uuid"]
+        },
+        data: this.__studyData
+      };
+      button.setFetching(true);
+      osparc.data.Resources.fetch("studies", "put", params)
+        .then(updatedData => {
+          this.fireDataEvent("updateServices", updatedData);
+          this.__studyData = osparc.data.model.Study.deepCloneStudyObject(updatedData);
+          this.__populateLayout();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating the Service"), "ERROR");
+          console.error(err);
+        })
+        .finally(() => {
+          button.setFetching(false);
+          this.setEnabled(true);
+        });
+    },
+
     __populateLayout: function() {
       this._removeAll();
 
@@ -137,13 +169,24 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         row: i,
         column: this.self().gridPos.latestVersion
       });
+
+      const updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"), "@MaterialIcons/update/14");
+      updateAllButton.addListener("execute", () => this.__updateAllServices(updateAllButton), this);
+      this._add(updateAllButton, {
+        row: i,
+        column: this.self().gridPos.updateButton
+      });
+
       i++;
 
+      let allUpdatable = false;
       for (const nodeId in workbench) {
         const node = workbench[nodeId];
 
         const nodeMetaData = osparc.utils.Services.getFromObject(this.__services, node["key"], node["version"]);
         const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this.__services, node["key"], node["version"]);
+        const updatable = node["version"] !== latestCompatibleMetadata["version"];
+        allUpdatable = allUpdatable || updatable;
 
         const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
         infoButton.addListener("execute", () => {
@@ -178,7 +221,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
 
         const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
           font: "title-14",
-          backgroundColor: qx.theme.manager.Color.getInstance().resolve(node["version"] === latestCompatibleMetadata["version"] ? "ready-green" : "warning-yellow")
+          backgroundColor: qx.theme.manager.Color.getInstance().resolve(updatable ? "warning-yellow" : "ready-green")
         });
         this._add(currentVersionLabel, {
           row: i,
@@ -200,12 +243,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         if (osparc.data.Permissions.getInstance().canDo("study.service.update") && canIWrite) {
           const updateButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/update/14");
           updateButton.set({
-            label: node["version"] === latestCompatibleMetadata["version"] ? this.tr("Up-to-date") : this.tr("Update"),
-            enabled: node["version"] !== latestCompatibleMetadata["version"]
+            label: updatable ? this.tr("Update") : this.tr("Up-to-date"),
+            enabled: updatable
           });
-          updateButton.addListener("execute", () => {
-            this.__updateService(nodeId, latestCompatibleMetadata["version"], updateButton);
-          }, this);
+          updateButton.addListener("execute", () => this.__updateService(nodeId, latestCompatibleMetadata["version"], updateButton), this);
           this._add(updateButton, {
             row: i,
             column: this.self().gridPos.updateButton
@@ -214,6 +255,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
 
         i++;
       }
+
+      updateAllButton.setEnabled(allUpdatable);
     }
   }
 });
