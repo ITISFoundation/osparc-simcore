@@ -452,7 +452,7 @@ async def disable_directory_watcher(
 
 
 @containers_router.post(
-    "/containers/ports/outputs:create-dirs",
+    "/containers/ports/outputs/dirs",
     summary=(
         "Creates the output directories declared by the docker images's labels. "
         "Since the dynamic-sidecar cannot retrieve the labels "

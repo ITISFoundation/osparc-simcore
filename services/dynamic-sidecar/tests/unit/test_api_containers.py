@@ -497,7 +497,7 @@ async def test_container_create_outputs_dirs(
         k: v.dict(by_alias=True) for k, v in mock_outputs_labels.items()
     }
     response = await test_client.post(
-        f"/{API_VTAG}/containers/ports/outputs:create-dirs",
+        f"/{API_VTAG}/containers/ports/outputs/dirs",
         json={"outputs_labels": json_outputs_labels},
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
