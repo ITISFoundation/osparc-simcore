@@ -1,6 +1,7 @@
 import functools
 import inspect
 import logging
+import warnings
 from copy import deepcopy
 from datetime import datetime
 from distutils.util import strtobool
@@ -9,9 +10,10 @@ from typing import Any, Callable, Dict, List, Optional, Protocol
 
 from aiohttp import web
 
-from .application_keys import APP_CONFIG_KEY
+from .application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
+
 
 APP_SETUP_KEY = f"{__name__ }.setup"
 
@@ -136,18 +138,31 @@ def app_module_setup(
                 app[APP_SETUP_KEY] = []
 
             if category == ModuleCategory.ADDON:
-                # NOTE: ONLY addons can be enabled/disabled
-                # TODO: sometimes section is optional, check in config schema
-                cfg = app[APP_CONFIG_KEY]
-
+                # Addons can be disabled
                 try:
-                    is_enabled = _is_app_module_enabled(
-                        cfg, config_enabled.split("."), section
+                    settings = app[APP_SETTINGS_KEY]
+                    is_enabled = bool(getattr(settings, config_enabled))
+
+                except (KeyError, AttributeError):
+                    warnings.warn(
+                        "FIXME: should ONLY be enabled via settings"
+                        "dict configs are replaced settings-library settings",
+                        DeprecationWarning,
+                        stacklevel=2,
                     )
-                except KeyError as ee:
-                    raise ApplicationSetupError(
-                        f"Cannot find required option '{config_enabled}' in app config's section '{ee}'"
-                    ) from ee
+
+                    # NOTE: ONLY addons can be enabled/disabled
+                    # TODO: sometimes section is optional, check in config schema
+                    cfg = app[APP_CONFIG_KEY]
+
+                    try:
+                        is_enabled = _is_app_module_enabled(
+                            cfg, config_enabled.split("."), section
+                        )
+                    except KeyError as ee:
+                        raise ApplicationSetupError(
+                            f"Cannot find required option '{config_enabled}' in app config's section '{ee}'"
+                        ) from ee
 
                 if not is_enabled:
                     logger.info(
