@@ -21,20 +21,26 @@ since we are aware that future releases of pydantic will address part of the fea
 
 Usage of these tools are demonstrated in packages/models-library/tests/test_utils_models_factory.py
 """
-#
-# SEE https://github.com/ITISFoundation/osparc-simcore/issues/2725
-
 import json
+import warnings
 from typing import Dict, Iterable, Optional, Set, Tuple, Type
 
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel, create_model, validator
 from pydantic.class_validators import (
     ValidatorGroup,
     extract_validators,
     inherit_validators,
 )
-from pydantic.fields import ModelField
+from pydantic.fields import ModelField, Undefined
 from pydantic.main import BaseConfig
+
+warnings.warn(
+    "This is still a concept under development. "
+    "SEE https://github.com/ITISFoundation/osparc-simcore/issues/2725"
+    "Currently only inteded for testing. "
+    "DO NOT USE in production.",
+    category=UserWarning,
+)
 
 
 def collect_fields_attrs(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, str]]:
@@ -153,7 +159,7 @@ def _extract_field_definitions(
                 # <default value>
                 field.default
                 or field.default_factory
-                or (None if set_all_optional or not field.required else ...),
+                or (None if set_all_optional or not field.required else Undefined),
             )
     return field_definitions
 
@@ -177,6 +183,8 @@ def copy_model(
     validators
     """
     name = name or f"_Base{reference_cls.__name__.upper()}"
+
+    # FIELDS
     fields_definitions = _extract_field_definitions(
         reference_cls,
         exclude=exclude,
@@ -185,13 +193,17 @@ def copy_model(
         set_all_optional=as_update_model,
     )
 
-    # A dict of method names and @validator class methods
+    # VALIDATORS
+
     validators_funs: Dict[str, classmethod] = {}
+    # A dict of method names and @validator class methods
+    # SEE example in https://pydantic-docs.helpmanual.io/usage/models/#dynamic-model-creation
     if not skip_validators and reference_cls != BaseModel:
-        validators = inherit_validators(extract_validators(reference_cls.__dict__), {})
-        vg = ValidatorGroup(validators)
-        vg.check_for_unused()
-        validators_funs = vg.validators  # pylint: disable=no-member
+        for n, vals in reference_cls.__validators__.items():
+            for i, v in enumerate(vals):
+                validators_funs[f"{n}_validator_{i}"] = validator(n, allow_reuse=True)(
+                    v.func
+                )
 
     new_model_cls = create_model(
         name,
