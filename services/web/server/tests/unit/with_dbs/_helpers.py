@@ -2,7 +2,7 @@ from typing import List, NamedTuple, Tuple, Type, Union
 from unittest import mock
 
 from aiohttp import web
-from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
+from simcore_service_webserver.projects.projects_exceptions import HTTPLocked
 from simcore_service_webserver.security_roles import UserRole
 
 
