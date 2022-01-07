@@ -4,8 +4,8 @@ from typing import Optional
 from aiohttp import web
 
 from . import catalog_client
+from .catalog__constants import KCATALOG_ORIGIN, KCATALOG_VERSION_PREFIX
 from .catalog_client import to_backend_service
-from .catalog_config import KCATALOG_ORIGIN, KCATALOG_VERSION_PREFIX
 from .constants import RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required

@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
     logger=logger,
 )
 def setup_catalog(app: web.Application, *, disable_auth=False):
+
     # ----------------------------------------------
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas

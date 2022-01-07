@@ -19,12 +19,9 @@ from yarl import URL
 
 from ._constants import X_PRODUCT_NAME_HEADER
 from ._meta import api_version_prefix
+from .catalog__constants import KCATALOG_ORIGIN, KCATALOG_VERSION_PREFIX
 
 logger = logging.getLogger(__name__)
-
-
-KCATALOG_ORIGIN = f"{__name__}.catalog_origin"
-KCATALOG_VERSION_PREFIX = f"{__name__}.catalog_version_prefix"
 
 
 async def is_service_responsive(app: web.Application):
