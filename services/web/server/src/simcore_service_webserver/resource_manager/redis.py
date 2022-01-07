@@ -11,11 +11,10 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from .config import (
+from ._constants import (
     APP_CLIENT_REDIS_CLIENT_KEY,
     APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY,
     APP_CLIENT_REDIS_LOCK_MANAGER_KEY,
-    CONFIG_SECTION_NAME,
 )
 
 log = logging.getLogger(__name__)
@@ -27,7 +26,7 @@ _WAIT_SECS = 2
 
 
 async def redis_client(app: web.Application):
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    cfg = app[APP_CONFIG_KEY]["resource_manager"]
     endpoint = DSN.format(**cfg["redis"])
 
     async def create_client(url) -> aioredis.Redis:

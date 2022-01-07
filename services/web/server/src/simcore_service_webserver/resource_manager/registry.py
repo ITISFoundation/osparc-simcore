@@ -19,7 +19,7 @@ from typing import Dict, List, Tuple
 import aioredis
 from aiohttp import web
 
-from .config import APP_CLIENT_SOCKET_REGISTRY_KEY
+from ._constants import APP_CLIENT_SOCKET_REGISTRY_KEY
 from .redis import get_redis_client
 
 log = logging.getLogger(__name__)

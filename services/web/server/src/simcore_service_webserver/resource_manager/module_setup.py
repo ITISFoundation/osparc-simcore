@@ -11,11 +11,7 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .config import (
-    APP_CLIENT_SOCKET_REGISTRY_KEY,
-    APP_RESOURCE_MANAGER_TASKS_KEY,
-    assert_valid_config,
-)
+from ._constants import APP_CLIENT_SOCKET_REGISTRY_KEY, APP_RESOURCE_MANAGER_TASKS_KEY
 from .garbage_collector import setup_garbage_collector
 from .redis import setup_redis_client
 from .registry import RedisResourceRegistry
@@ -30,6 +26,8 @@ def setup_resource_manager(app: web.Application) -> bool:
     """Sets up resource manager subsystem in the application"""
 
     # ----------------------------------------------
+    from .config import assert_valid_config
+
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas
     assert_valid_config(app)

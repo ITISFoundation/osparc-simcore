@@ -21,13 +21,21 @@ from typing import Dict, Iterator, List, Optional, Union
 
 from aiohttp import web
 
-from .config import get_service_deletion_timeout
+from ..constants import APP_CONFIG_KEY
 from .registry import get_registry
 
 log = logging.getLogger(__file__)
 
 SOCKET_ID_KEY = "socket_id"
 PROJECT_ID_KEY = "project_id"
+
+
+def get_service_deletion_timeout(app: web.Application) -> int:
+    timeout = app[APP_CONFIG_KEY]["resource_manager"][
+        "resource_deletion_timeout_seconds"
+    ]
+    # NOTE: timeout is INT not FLOAT (timeout in expire arg at aioredis)
+    return int(timeout)
 
 
 @dataclass(order=True, frozen=True)
