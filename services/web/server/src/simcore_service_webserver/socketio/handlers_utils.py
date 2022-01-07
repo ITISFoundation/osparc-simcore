@@ -4,8 +4,12 @@ from types import ModuleType
 from typing import Callable
 
 from aiohttp import web
+from socketio import AsyncServer
 
-from .config import APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY, get_socket_server
+from ._contants import (
+    APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY,
+    APP_CLIENT_SOCKET_SERVER_KEY,
+)
 
 socketio_handlers_registry = []
 
@@ -35,7 +39,7 @@ def has_socket_io_handler_signature(fun) -> bool:
 
 
 def register_handlers(app: web.Application, module: ModuleType):
-    sio = get_socket_server(app)
+    sio: AsyncServer = app[APP_CLIENT_SOCKET_SERVER_KEY]
     member_fcts = [
         fct for fct in socketio_handlers_registry if inspect.getmodule(fct) == module
     ]

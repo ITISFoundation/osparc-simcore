@@ -9,9 +9,10 @@ from typing import Any, Dict, List, Sequence, TypedDict
 from aiohttp.web import Application
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import fire_and_forget_task, logged_gather
+from socketio import AsyncServer
 
 from ..resource_manager.websocket_manager import managed_resource
-from .config import AsyncServer, get_socket_server
+from ._contants import APP_CLIENT_SOCKET_SERVER_KEY
 
 log = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ class SocketMessageDict(TypedDict):
 async def send_messages(
     app: Application, user_id: str, messages: Sequence[SocketMessageDict]
 ) -> None:
-    sio: AsyncServer = get_socket_server(app)
+    sio: AsyncServer = app[APP_CLIENT_SOCKET_SERVER_KEY]
 
     socket_ids: List[str] = []
     with managed_resource(user_id, None, app) as rt:
@@ -60,7 +61,7 @@ async def post_group_messages(
 async def send_group_messages(
     app: Application, room: str, messages: Sequence[SocketMessageDict]
 ) -> None:
-    sio: AsyncServer = get_socket_server(app)
+    sio: AsyncServer = app[APP_CLIENT_SOCKET_SERVER_KEY]
     send_tasks = [
         sio.emit(message["event_type"], json_dumps(message["data"]), room=room)
         for message in messages

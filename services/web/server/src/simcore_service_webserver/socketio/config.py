@@ -11,9 +11,7 @@ from pydantic import BaseSettings
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from socketio import AsyncServer
 
-CONFIG_SECTION_NAME = "socketio"
-APP_CLIENT_SOCKET_SERVER_KEY = __name__ + ".socketio_socketio"
-APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY = __name__ + ".socketio_handlers"
+from ._contants import APP_CLIENT_SOCKET_SERVER_KEY, CONFIG_SECTION_NAME
 
 schema = T.Dict(
     {

@@ -19,7 +19,7 @@ from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionErro
 from ..groups_api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
-from .config import get_socket_server
+from ._contants import APP_CLIENT_SOCKET_SERVER_KEY
 from .events import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
 from .handlers_utils import register_socketio_handler
 
@@ -86,7 +86,7 @@ async def authenticate_user(
         log.error("Tab ID is not available!")
         raise web.HTTPUnauthorized(reason="missing tab id")
 
-    sio = get_socket_server(app)
+    sio: AsyncServer = app[APP_CLIENT_SOCKET_SERVER_KEY]
     # here we keep the original HTTP request in the socket session storage
     async with sio.session(sid) as socketio_session:
         socketio_session["user_id"] = user_id
@@ -103,7 +103,7 @@ async def set_user_in_rooms(
     user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
     primary_group, user_groups, all_group = await list_user_groups(app, user_id)
     groups = [primary_group] + user_groups + ([all_group] if bool(all_group) else [])
-    sio = get_socket_server(app)
+    sio: AsyncServer = app[APP_CLIENT_SOCKET_SERVER_KEY]
     # TODO: check if it is necessary to leave_room when socket disconnects
     for group in groups:
         sio.enter_room(sid, f"{group['gid']}")
@@ -130,7 +130,7 @@ async def on_user_logout(
 ) -> None:
     log.debug("user %s must be disconnected", user_id)
     # find the sockets related to the user
-    sio: AsyncServer = get_socket_server(app)
+    sio: AsyncServer = app[APP_CLIENT_SOCKET_SERVER_KEY]
     with managed_resource(user_id, client_session_id, app) as rt:
         # start by disconnecting this client if possible
         if client_session_id:
@@ -162,7 +162,7 @@ async def disconnect(sid: str, app: web.Application) -> None:
         app {web.Application} -- the aiohttp app
     """
     log.debug("client in room %s disconnecting", sid)
-    sio = get_socket_server(app)
+    sio: AsyncServer = app[APP_CLIENT_SOCKET_SERVER_KEY]
     async with sio.session(sid) as socketio_session:
         if "user_id" in socketio_session:
             user_id = socketio_session["user_id"]
@@ -194,7 +194,7 @@ async def client_heartbeat(sid: str, _: Any, app: web.Application) -> None:
         _ {Any} -- the data is ignored for this handler
         app {web.Application} -- the aiohttp app
     """
-    sio = get_socket_server(app)
+    sio: AsyncServer = app[APP_CLIENT_SOCKET_SERVER_KEY]
     async with sio.session(sid) as socketio_session:
         if "user_id" not in socketio_session:
             return

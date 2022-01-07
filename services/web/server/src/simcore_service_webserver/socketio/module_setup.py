@@ -9,7 +9,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from socketio import AsyncServer
 
 from . import handlers, handlers_utils
-from .config import APP_CLIENT_SOCKET_SERVER_KEY, assert_valid_config
+from ._contants import APP_CLIENT_SOCKET_SERVER_KEY
 
 log = logging.getLogger(__name__)
 
@@ -19,6 +19,8 @@ log = logging.getLogger(__name__)
 )
 def setup_socketio(app: web.Application):
     # ----------------------------------------------
+    from .config import assert_valid_config
+
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas
     assert_valid_config(app)
