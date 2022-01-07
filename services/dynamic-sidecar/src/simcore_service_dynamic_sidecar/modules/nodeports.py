@@ -221,7 +221,7 @@ async def _download_target_port(
                     # the link may be empty
                     # remove files all files from disk when disconnecting port
                     await remove_directory(
-                        dest_path, only_children=True, missing_ok=True
+                        dest_path, only_children=True, ignore_errors=True
                     )
                     continue
 
