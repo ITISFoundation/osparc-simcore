@@ -9,7 +9,6 @@ from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
 
 from ..login.decorators import login_required
-from .config import CONFIG_SECTION_NAME
 
 
 async def query_prometheus(session, url, query):
@@ -45,7 +44,7 @@ async def get_status(request: aiohttp.web.Request):
     session = get_client_session(request.app)
     user_id = request.get(RQT_USERID_KEY, -1)
 
-    config = request.app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    config = request.app[APP_CONFIG_KEY]["activity"]
     url = URL.build(
         scheme="http",
         host=config["prometheus_host"],

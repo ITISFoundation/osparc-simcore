@@ -10,9 +10,6 @@ from models_library.basic_types import PortInt, VersionTag
 from pydantic import BaseSettings
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
-CONFIG_SECTION_NAME = "activity"
-
-
 schema = T.Dict(
     {
         T.Key("enabled", default=True, optional=True): T.Bool(),
@@ -37,6 +34,6 @@ class ActivitySettings(BaseSettings):
 
 
 def assert_valid_config(app: Application) -> Dict:
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+    cfg = app[APP_CONFIG_KEY]["activity"]
     _settings = ActivitySettings(**cfg)
     return cfg
