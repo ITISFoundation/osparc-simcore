@@ -92,7 +92,10 @@ def middleware_factory(app_name):
             log.debug("REQUEST RESPONSE %s", f"{resp=}")
             if resp is not None:
                 request.app["REQUEST_COUNT"].labels(
-                    app_name, request.method, request.path, resp.status
+                    app_name,
+                    request.method,
+                    request.match_info.get_info().get("formatter", "undef"),
+                    resp.status,
                 ).inc()
 
         return resp
