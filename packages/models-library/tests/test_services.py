@@ -84,8 +84,6 @@ def test_service_port_units(project_tests_dir: Path):
     for input_nameid, input_meta in service_meta.inputs.items():
         assert input_nameid
 
-        assert input_meta.unit
-
         # validation
         valid_unit: Unit = ureg.parse_units(input_meta.unit)
         assert isinstance(valid_unit, Unit)
