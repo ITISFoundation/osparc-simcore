@@ -1,21 +1,23 @@
-"""
+""" Enables monitoring of some quantities needed for diagnostics
 
-    UNDER DEVELOPMENT for issue #784 (see web/server/diagnostics_monitoring.py)
-
-    Based on https://github.com/amitsaha/aiohttp-prometheus
-
-    Clients:
-    - https://github.com/prometheus/client_python
-    - TODO: see https://github.com/claws/aioprometheus
 """
 
 import asyncio
 import logging
 import time
+from typing import List, Optional
 
 import prometheus_client
 from aiohttp import web
-from prometheus_client import CONTENT_TYPE_LATEST, Counter
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    Counter,
+    GCCollector,
+    PlatformCollector,
+    ProcessCollector,
+)
+from prometheus_client.registry import CollectorRegistry
+from servicelib.aiohttp.typing_extension import Handler, Middleware
 
 log = logging.getLogger(__name__)
 
@@ -38,43 +40,80 @@ log = logging.getLogger(__name__)
 #
 
 
-# TODO: the endpoint label on the http_requests_total Counter is a candidate to be removed. as endpoints also contain all kind of UUIDs
+kSTART_TIME = f"{__name__}.start_time"
+kREQUEST_COUNT = f"{__name__}.request_count"
+kCANCEL_COUNT = f"{__name__}.cancel_count"
+
+kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"
+kPROCESS_COLLECTOR = f"{__name__}.collector_process"
+kPLATFORM_COLLECTOR = f"{__name__}.collector_platform"
+kGC_COLLECTOR = f"{__name__}.collector_gc"
 
 
-async def metrics_handler(_request: web.Request):
-    # TODO: prometheus_client.generate_latest blocking! no asyhc solutin?
-    # TODO: prometheus_client access to a singleton registry! can be instead created and pass to every metric wrapper
-    resp = web.Response(body=prometheus_client.generate_latest())
-    resp.content_type = CONTENT_TYPE_LATEST
-    return resp
+def get_collector_registry(app: web.Application) -> CollectorRegistry:
+    return app[kCOLLECTOR_REGISTRY]
 
 
-def middleware_factory(app_name):
+async def metrics_handler(request: web.Request):
+    registry = get_collector_registry(request.app)
+
+    # NOTE: Cannot use ProcessPoolExecutor because registry is not pickable
+    result = await request.loop.run_in_executor(
+        None, prometheus_client.generate_latest, registry
+    )
+    response = web.Response(body=result)
+    response.content_type = CONTENT_TYPE_LATEST
+    return response
+
+
+def middleware_factory(app_name: str, excluded_paths: Optional[List[str]] = None):
+    if not excluded_paths:
+        excluded_paths = []
+
     @web.middleware
-    async def middleware_handler(request: web.Request, handler):
+    async def middleware_handler(request: web.Request, handler: Handler):
         # See https://prometheus.io/docs/concepts/metric_types
-        resp = None
+
+        log_exception = None
+        if request.rel_url.path in excluded_paths:
+            return await handler(request)
+
+        resp: web.StreamResponse = web.HTTPInternalServerError(
+            reason="Unexpected exception"
+        )
         try:
             log.debug("ENTERING monitoring middleware for %s", f"{request=}")
-            request["start_time"] = time.time()
+            request[kSTART_TIME] = time.time()
 
             resp = await handler(request)
+
+            assert isinstance(  # nosec
+                resp, web.StreamResponse
+            ), "Forgot envelope middleware?"
+
             log.debug(
                 "EXITING monitoring middleware for %s with %s",
                 f"{request=}",
                 f"{resp=}",
             )
-
-        except web.HTTPException as exc:
-            # Captures raised reponses (success/failures accounted with resp.status)
+        except web.HTTPServerError as exc:
+            # Transforms exception into response object and log exception
             resp = exc
-            raise
+            log_exception = exc
+        except web.HTTPException as exc:
+            # Transforms non-HTTPServerError exceptions into response object
+            resp = exc
+            log_exception = None
         except asyncio.CancelledError as exc:
-            # python 3.8 cancellederror is a subclass of BaseException and NOT Exception
-            resp = web.HTTPRequestTimeout(reason=str(exc))
-        except BaseException as exc:  # pylint: disable=broad-except
+            # Mostly for logging
+            resp = web.HTTPInternalServerError(reason=f"{exc}")
+            log_exception = exc
+            raise
+        except Exception as exc:  # pylint: disable=broad-except
             # Prevents issue #1025.
-            resp = web.HTTPInternalServerError(reason=str(exc))
+            resp = web.HTTPInternalServerError(reason=f"{exc}")
+            resp.__cause__ = exc
+            log_exception = exc
 
             # NOTE: all access to API (i.e. and not other paths as /socket, /x, etc) shall return web.HTTPErrors since processed by error_middleware_factory
             log.exception(
@@ -88,65 +127,71 @@ def middleware_factory(app_name):
             )
 
         finally:
-            # metrics on the same request
-            log.debug("REQUEST RESPONSE %s", f"{resp=}")
-            if resp is not None:
-                request.app["REQUEST_COUNT"].labels(
-                    app_name,
+            resp_time_secs: float = time.time() - request[kSTART_TIME]
+
+            # prometheus probes
+            request.app[kREQUEST_COUNT].labels(
+                app_name,
+                request.method,
+                request.match_info.get_info().get("formatter", "undef"),
+                resp.status,
+            ).inc()
+
+            if log_exception:
+                log.error(
+                    'Unexpected server error "%s" from access: %s "%s %s" done '
+                    "in %3.2f secs. Responding with status %s",
+                    type(log_exception),
+                    request.remote,
                     request.method,
-                    request.match_info.get_info().get("formatter", "undef"),
+                    request.path,
+                    resp_time_secs,
                     resp.status,
-                ).inc()
+                    exc_info=log_exception,
+                    stack_info=True,
+                )
 
         return resp
 
+    # adds identifier
     middleware_handler.__middleware_name__ = __name__  # SEE check_outermost_middleware
+
     return middleware_handler
 
 
-async def check_outermost_middleware(
-    app: web.Application, *, log_failure: bool = True
-) -> bool:
-    try:
-        ok = app.middlewares[0].__middleware_name__ == __name__
-    except (IndexError, AttributeError):
-        ok = False
-
-    if not ok and log_failure:
-
-        def _view(m) -> str:
-            try:
-                return f"{m.__middleware_name__} [{m}]"
-            except AttributeError:
-                return str(m)
-
-        log.critical(
-            "Monitoring middleware expected in the outermost layer. "
-            "Middleware stack: %s. "
-            "TIP: Check setup order",
-            [_view(m) for m in app.middlewares],
-        )
-    return ok
-
-
 def setup_monitoring(app: web.Application, app_name: str):
-    # NOTE: prometheus_client registers metrics in **globals**. Therefore
-    # tests might fail when fixtures get re-created
+    # app-scope registry
+    app[kCOLLECTOR_REGISTRY] = reg = CollectorRegistry(auto_describe=True)
+    app[kPROCESS_COLLECTOR] = ProcessCollector(registry=reg)
+    app[kPLATFORM_COLLECTOR] = PlatformCollector(registry=reg)
+    app[kGC_COLLECTOR] = GCCollector(registry=reg)
 
     # Total number of requests processed
-    app["REQUEST_COUNT"] = Counter(
-        "http_requests_total",
-        "Total Request Count",
-        ["app_name", "method", "endpoint", "http_status"],
+    app[kREQUEST_COUNT] = Counter(
+        name="http_requests_total",
+        documentation="Total Request Count",
+        labelnames=["app_name", "method", "endpoint", "http_status"],
+        registry=reg,
     )
+
+    # WARNING: ensure ERROR middleware is over this one
+    #
+    # non-API request/response (e.g /metrics, /x/*  ...)
+    #                                 |
+    # API request/response (/v0/*)    |
+    #       |                         |
+    #       |                         |
+    #       v                         |
+    # ===== monitoring-middleware =====
+    # == rest-error-middlewarer ====  |
+    # ==           ...            ==  |
+    # == rest-envelope-middleware ==  v
+    #
+    #
 
     # ensures is first layer but cannot guarantee the order setup is applied
     app.middlewares.insert(0, middleware_factory(app_name))
 
-    # FIXME: this in the front-end has to be protected!
     app.router.add_get("/metrics", metrics_handler)
-
-    # Checks that middleware is in the outermost layer
-    app.on_startup.append(check_outermost_middleware)
 
     return True
