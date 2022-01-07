@@ -1,5 +1,5 @@
-from typing import List, Optional, Union
 from enum import Enum
+from typing import List, Optional, Union
 
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
