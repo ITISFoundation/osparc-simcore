@@ -5,7 +5,7 @@
 import asyncio
 import logging
 import time
-from typing import List, Optional
+from typing import Awaitable, Callable, List, Optional
 
 import prometheus_client
 from aiohttp import web
@@ -70,7 +70,14 @@ async def metrics_handler(request: web.Request):
     return response
 
 
-def middleware_factory(app_name: str, excluded_paths: Optional[List[str]] = None):
+def middleware_factory(
+    app_name: str,
+    excluded_paths: Optional[List[str]] = None,
+    enter_middleware_cb: Optional[Callable[[web.Request], Awaitable[None]]] = None,
+    exit_middleware_cb: Optional[
+        Callable[[web.Request, web.StreamResponse], Awaitable[None]]
+    ] = None,
+):
     if not excluded_paths:
         excluded_paths = []
 
@@ -91,6 +98,8 @@ def middleware_factory(app_name: str, excluded_paths: Optional[List[str]] = None
 
         try:
             log.debug("ENTERING monitoring middleware for %s", f"{request=}")
+            if enter_middleware_cb:
+                await enter_middleware_cb(request)
             request[kSTART_TIME] = time.time()
 
             in_flight_gauge = request.app[kINFLIGHTREQUESTS]
@@ -142,6 +151,9 @@ def middleware_factory(app_name: str, excluded_paths: Optional[List[str]] = None
                 resp.status,
             ).inc()
 
+            if exit_middleware_cb:
+                await exit_middleware_cb(request, resp)
+
             if log_exception:
                 log.error(
                     'Unexpected server error "%s" from access: %s "%s %s" done '
@@ -159,12 +171,19 @@ def middleware_factory(app_name: str, excluded_paths: Optional[List[str]] = None
         return resp
 
     # adds identifier
-    middleware_handler.__middleware_name__ = __name__  # SEE check_outermost_middleware
+    middleware_handler.__middleware_name__ = f"{__name__}.monitor_{app_name}"
 
     return middleware_handler
 
 
-def setup_monitoring(app: web.Application, app_name: str):
+def setup_monitoring(
+    app: web.Application,
+    app_name: str,
+    enter_middleware_cb: Optional[Callable[[web.Request], Awaitable[None]]] = None,
+    exit_middleware_cb: Optional[
+        Callable[[web.Request, web.StreamResponse], Awaitable[None]]
+    ] = None,
+):
     # app-scope registry
     app[kCOLLECTOR_REGISTRY] = reg = CollectorRegistry(auto_describe=False)
     app[kPROCESS_COLLECTOR] = ProcessCollector(registry=reg)
@@ -193,7 +212,6 @@ def setup_monitoring(app: web.Application, app_name: str):
         registry=reg,
     )
 
-    log.error("Currently registered metrics: %s", f"{reg.get_target_info()}")
     # WARNING: ensure ERROR middleware is over this one
     #
     # non-API request/response (e.g /metrics, /x/*  ...)
@@ -210,7 +228,14 @@ def setup_monitoring(app: web.Application, app_name: str):
     #
 
     # ensures is first layer but cannot guarantee the order setup is applied
-    app.middlewares.insert(0, middleware_factory(app_name))
+    app.middlewares.insert(
+        0,
+        middleware_factory(
+            app_name,
+            enter_middleware_cb=enter_middleware_cb,
+            exit_middleware_cb=exit_middleware_cb,
+        ),
+    )
 
     app.router.add_get("/metrics", metrics_handler)
 
