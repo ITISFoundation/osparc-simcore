@@ -18,7 +18,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
-from .. import catalog, director_v2_api
+from .. import catalog_client, director_v2_api
 from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
 from ..director_v2_core import DirectorServiceError
@@ -230,7 +230,7 @@ async def list_projects(request: web.Request):
 
     user_available_services: List[
         Dict
-    ] = await catalog.get_services_for_user_in_product(
+    ] = await catalog_client.get_services_for_user_in_product(
         request.app, user_id, product_name, only_key_versions=True
     )
 
@@ -269,7 +269,7 @@ async def get_project(request: web.Request):
 
     user_available_services: List[
         Dict
-    ] = await catalog.get_services_for_user_in_product(
+    ] = await catalog_client.get_services_for_user_in_product(
         request.app, user_id, product_name, only_key_versions=True
     )
 

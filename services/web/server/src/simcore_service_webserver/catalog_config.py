@@ -14,8 +14,6 @@ from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "catalog"
 
-KCATALOG_ORIGIN = f"{__name__}.catalog_origin"
-KCATALOG_VERSION_PREFIX = f"{__name__}.catalog_version_prefix"
 
 _default_values = {
     "host": os.environ.get("CATALOG_HOST", "catalog"),

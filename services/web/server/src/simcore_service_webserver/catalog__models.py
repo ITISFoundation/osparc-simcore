@@ -1,30 +1,33 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import orjson
 from models_library.services import (
-    KEY_RE,
-    VERSION_RE,
     PropertyName,
     ServiceInput,
+    ServiceKey,
     ServiceOutput,
+    ServiceVersion,
 )
-from pydantic import Extra, Field, constr
+from pydantic import Extra, Field
 from pydantic.main import BaseModel
 
 from .utils import snake_to_camel
 
-ServiceKey = constr(regex=KEY_RE)
-ServiceVersion = constr(regex=VERSION_RE)
 ServiceInputKey = PropertyName
 ServiceOutputKey = PropertyName
 
+
+__all__: Tuple[str, ...] = (
+    "ServiceKey",
+    "ServiceVersion",
+)
 
 # TODO: will be replaced by pynt functionality
 FAKE_UNIT_TO_FORMATS = {"SECOND": ("s", "seconds"), "METER": ("m", "meters")}
 
 
 class CannotFormatUnitError(ValueError):
-    """ Either unit is not provided or is invalid or is not registered """
+    """Either unit is not provided or is invalid or is not registered"""
 
 
 def get_formatted_unit(data: dict):
@@ -143,7 +146,7 @@ class ServiceOutputApiOut(ServiceOutput, _BaseCommonApiExtension):
 
 
 def replace_service_input_outputs(service: Dict[str, Any], **export_options):
-    """ Thin wrapper to replace i/o ports in returned service model """
+    """Thin wrapper to replace i/o ports in returned service model"""
     # This is a fast solution until proper models are available for the web API
 
     for input_key in service["inputs"]:

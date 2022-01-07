@@ -25,7 +25,7 @@ import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
 import sqlalchemy as sa
-import trafaret_config
+import yaml
 from _helpers import MockedStorageSubsystem  # type: ignore
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
@@ -75,8 +75,8 @@ def default_app_cfg(osparc_simcore_root_dir: Path) -> Dict[str, Any]:
         }
     )
 
-    # validates and fills all defaults/optional entries that normal load would not do
-    cfg_dict = trafaret_config.read_and_validate(cfg_path, app_schema, vars=variables)
+    cfg_dict = yaml.safe_load(cfg_path.read_text())
+    # FIXME: variables are NOT considered
 
     # WARNING: changes to this fixture during testing propagates to other tests. Use cfg = deepcopy(cfg_dict)
     # FIXME:  free cfg_dict but deepcopy shall be r/w
