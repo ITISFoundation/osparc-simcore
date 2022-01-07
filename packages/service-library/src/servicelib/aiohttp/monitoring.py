@@ -17,7 +17,7 @@ from prometheus_client import (
     ProcessCollector,
 )
 from prometheus_client.registry import CollectorRegistry
-from servicelib.aiohttp.typing_extension import Handler, Middleware
+from servicelib.aiohttp.typing_extension import Handler
 
 log = logging.getLogger(__name__)
 
@@ -115,17 +115,6 @@ def middleware_factory(app_name: str, excluded_paths: Optional[List[str]] = None
             resp.__cause__ = exc
             log_exception = exc
 
-            # NOTE: all access to API (i.e. and not other paths as /socket, /x, etc) shall return web.HTTPErrors since processed by error_middleware_factory
-            log.exception(
-                'Unexpected server error "%s" from access: %s "%s %s" done in %3.2f secs. Responding with status %s',
-                type(exc),
-                request.remote,
-                request.method,
-                request.path,
-                time.time() - request["start_time"],
-                resp.status,
-            )
-
         finally:
             resp_time_secs: float = time.time() - request[kSTART_TIME]
 
@@ -133,7 +122,9 @@ def middleware_factory(app_name: str, excluded_paths: Optional[List[str]] = None
             request.app[kREQUEST_COUNT].labels(
                 app_name,
                 request.method,
-                request.match_info.get_info().get("formatter", "undef"),
+                request.match_info.route.resource.canonical
+                if request.match_info.route.resource
+                else "undef",
                 resp.status,
             ).inc()
 
