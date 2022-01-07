@@ -160,7 +160,10 @@ class UserGet(BaseModel):
 
 
 class UserListItem(BaseModel):
-    """<- out Item model for response in GET /users"""
+    """<- out Item model for response in GET /users
+
+    Usage:  Page[UserListItem]
+    """
 
     id: PositiveInt
     username: str

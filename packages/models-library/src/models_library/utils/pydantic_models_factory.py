@@ -16,7 +16,8 @@ In order to overcome these drawbacks, we propose here a functional approach base
 necessary parts" from a "reference" model and build a new pydantic model that can be either used as new base or as is.
 
 The design should remain as close to pydantic's conventions as possible to reduce maintenance costs
-since we are aware that future releases of pydantic will address part of the features we implement here (e.g. exclude fields)
+since we are aware that future releases of pydantic will address part of the features we implement here
+(e.g. exclude fields)
 
 Usage of these tools are demonstrated in packages/models-library/tests/test_utils_models_factory.py
 """
