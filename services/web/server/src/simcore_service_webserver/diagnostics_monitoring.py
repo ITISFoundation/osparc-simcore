@@ -31,20 +31,15 @@ log = logging.getLogger(__name__)
 # https://grafana.com/docs/grafana-cloud/how-do-i/control-prometheus-metrics-usage/usage-analysis-explore/
 #
 
-# TODO: the endpoint label on the http_requests_total Counter is a candidate to be removed. as endpoints also contain all kind of UUIDs
 
 kSTART_TIME = f"{__name__}.start_time"
-kREQUEST_COUNT = f"{__name__}.request_count"
-kCANCEL_COUNT = f"{__name__}.cancel_count"
-
-kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"
 
 
 async def enter_middleware_cb(request: web.Request):
     request[kSTART_TIME] = time.time()
 
 
-async def exit_middleware_cb(request: web.Request, response: web.StreamResponse):
+async def exit_middleware_cb(request: web.Request, _response: web.StreamResponse):
     resp_time_secs: float = time.time() - request[kSTART_TIME]
     if not str(request.path).startswith("/socket.io") and is_sensing_enabled(
         request.app

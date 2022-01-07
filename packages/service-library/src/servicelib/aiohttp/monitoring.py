@@ -5,7 +5,7 @@
 import asyncio
 import logging
 import time
-from typing import Awaitable, Callable, List, Optional
+from typing import Awaitable, Callable, Optional
 
 import prometheus_client
 from aiohttp import web
@@ -70,25 +70,20 @@ async def metrics_handler(request: web.Request):
     return response
 
 
+EnterMiddlewareCB = Callable[[web.Request], Awaitable[None]]
+ExitMiddlewareCB = Callable[[web.Request, web.StreamResponse], Awaitable[None]]
+
+
 def middleware_factory(
     app_name: str,
-    excluded_paths: Optional[List[str]] = None,
-    enter_middleware_cb: Optional[Callable[[web.Request], Awaitable[None]]] = None,
-    exit_middleware_cb: Optional[
-        Callable[[web.Request, web.StreamResponse], Awaitable[None]]
-    ] = None,
+    enter_middleware_cb: Optional[EnterMiddlewareCB],
+    exit_middleware_cb: Optional[ExitMiddlewareCB],
 ):
-    if not excluded_paths:
-        excluded_paths = []
-
     @web.middleware
     async def middleware_handler(request: web.Request, handler: Handler):
         # See https://prometheus.io/docs/concepts/metric_types
 
         log_exception = None
-        if request.rel_url.path in excluded_paths:
-            return await handler(request)
-
         resp: web.StreamResponse = web.HTTPInternalServerError(
             reason="Unexpected exception"
         )
@@ -179,10 +174,8 @@ def middleware_factory(
 def setup_monitoring(
     app: web.Application,
     app_name: str,
-    enter_middleware_cb: Optional[Callable[[web.Request], Awaitable[None]]] = None,
-    exit_middleware_cb: Optional[
-        Callable[[web.Request, web.StreamResponse], Awaitable[None]]
-    ] = None,
+    enter_middleware_cb: Optional[EnterMiddlewareCB] = None,
+    exit_middleware_cb: Optional[ExitMiddlewareCB] = None,
 ):
     # app-scope registry
     app[kCOLLECTOR_REGISTRY] = reg = CollectorRegistry(auto_describe=False)
