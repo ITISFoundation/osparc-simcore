@@ -21,6 +21,8 @@ since we are aware that future releases of pydantic will address part of the fea
 
 Usage of these tools are demonstrated in packages/models-library/tests/test_utils_models_factory.py
 """
+# TODO:
+#
 
 import json
 from typing import Dict, Iterable, Optional, Set, Tuple, Type
@@ -43,18 +45,21 @@ def collect_fields_attrs(model_cls: Type[BaseModel]) -> Dict[str, Dict[str, str]
 
     def _stringify(obj):
         if callable(obj):
-            return f"{getattr(obj, '__class__', None)} - {obj.__name__}"
-        if isinstance(obj, dict):
-            return json.dumps(
+            obj_str = f"{getattr(obj, '__class__', None)} - {obj.__name__}"
+        elif isinstance(obj, dict):
+            obj_str = json.dumps(
                 {f"{key}": _stringify(value) for key, value in obj.items()}
             )
-        if isinstance(obj, list):
-            return json.dumps([_stringify(item) for item in obj])
+        elif isinstance(obj, list):
+            obj_str = json.dumps([_stringify(item) for item in obj])
 
-        msg = f"{obj}"
-        if "object" in msg:
-            return msg.split("object")[0]
-        return msg
+        else:
+            obj_str = f"{obj}"
+            if "object" in obj_str:
+                obj_str = obj_str.split("object")[0]
+
+        assert obj_str  # nosec
+        return obj_str
 
     return {
         field.name: {
@@ -71,7 +76,7 @@ def _eval_selection(
     exclude: Optional[Set[str]],
     exclude_optionals: bool,
 ) -> Set[str]:
-    # TODO: use dict for deep include/exclude!
+    # TODO: use dict for deep include/exclude! SEE https://pydantic-docs.helpmanual.io/usage/exporting_models/
 
     if include is None:
         include = set(f.name for f in model_fields)

@@ -61,7 +61,7 @@ def _eval_checksum(repo, project: ProjectProxy) -> SHA1Str:
         # invalid -> recompute
         checksum = compute_workbench_checksum(project.workbench)
         # TODO: cache
-    assert checksum
+    assert checksum  # nosec
     return checksum
 
 
