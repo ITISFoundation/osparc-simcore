@@ -110,11 +110,13 @@ def _extract_field_definitions(
     )
     field_definitions = {}
 
+    field: ModelField
+
     for field in model_cls.__fields__.values():
         if field.name in field_names:
             field_definitions[field.name] = (
                 # <type>
-                field.type_,
+                field.type_ if field.type_ == field.outer_type_ else field.outer_type_,
                 # <default value>
                 field.default
                 or field.default_factory
