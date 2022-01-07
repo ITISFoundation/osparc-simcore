@@ -8,6 +8,7 @@ const args = process.argv.slice(2);
 const {
   urlPrefix,
   params,
+  startTimeout,
   enableDemoMode
 } = utils.parseCommandLineArgumentsStudyDispatcherParams(args);
 
@@ -39,7 +40,7 @@ async function runTutorial () {
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     const nodeIdViewer = workbenchData["nodeIds"][1];
-    await tutorial.waitForServices(workbenchData["studyId"], [nodeIdViewer]);
+    await tutorial.waitForServices(workbenchData["studyId"], [nodeIdViewer], startTimeout);
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
     // Some time for setting up service's frontend

@@ -7,5 +7,5 @@ RUN pip3 --version && \
   pip3 install \
   faker \
   python-dotenv \
-  locust-plugins==1.2.0 &&\
+  locust-plugins==2.1.1 &&\
   pip3 freeze --verbose

@@ -6,8 +6,8 @@ import logging
 from typing import Any, Dict
 
 from aiohttp import web
+from models_library.rest_pagination import monkey_patch_pydantic_url_regex
 from servicelib.aiohttp.application import create_safe_application
-from servicelib.rest_pagination_utils import monkey_patch_pydantic_url_regex
 
 from ._meta import WELCOME_MSG
 from .activity.module_setup import setup_activity
@@ -25,6 +25,7 @@ from .login.module_setup import setup_login
 from .products import setup_products
 from .projects.module_setup import setup_projects
 from .publications import setup_publications
+from .remote_debug import setup_remote_debugging
 from .resource_manager.module_setup import setup_resource_manager
 from .rest import setup_rest
 from .security import setup_security
@@ -62,7 +63,7 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     # TODO: create dependency mechanism
     # and compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
     #
-
+    setup_remote_debugging(app)
     setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
     setup_statics(app)
     setup_db(app)
@@ -92,22 +93,21 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_exporter(app)
     setup_clusters(app)
 
-    return app
-
-
-def run_service(config: Dict[str, Any]):
-    app = create_application(config)
-
     async def welcome_banner(_app: web.Application):
         print(WELCOME_MSG, flush=True)
 
     app.on_startup.append(welcome_banner)
 
+    return app
+
+
+def run_service(app: web.Application, config: Dict[str, Any]):
     web.run_app(
         app,
         host=config["main"]["host"],
         port=config["main"]["port"],
-        access_log_format='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"',
+        # this gets overriden by the gunicorn config if any
+        access_log_format='%a %t "%r" %s %b --- [%Dus] "%{Referer}i" "%{User-Agent}i"',
     )
 
 

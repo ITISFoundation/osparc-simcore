@@ -145,10 +145,6 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
     __leftPart: null,
     __rightPart: null,
 
-    __getTextColor: function() {
-      return qx.theme.manager.Color.getInstance().resolve("text");
-    },
-
     __getBGColor: function(decoratorName) {
       const decorator = qx.theme.manager.Decoration.getInstance().resolve(decoratorName);
       if (decorator) {
@@ -277,10 +273,10 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
         } else if (lineControls) {
           stroke = osparc.wrapper.Svg.drawLine(this.__canvas, lineControls);
         }
-        const color = this.__getTextColor();
+        const color = qx.theme.manager.Color.getInstance().resolve("text");
         osparc.wrapper.Svg.updateStrokeColor(stroke, color);
         rightWidget.addListener("changeDecorator", e => {
-          const newColor = this.__getTextColor();
+          const newColor = qx.theme.manager.Color.getInstance().resolve("text");
           osparc.wrapper.Svg.updateStrokeColor(stroke, newColor);
         }, this);
       }

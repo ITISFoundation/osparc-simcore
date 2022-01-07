@@ -10,9 +10,9 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.projects import Project
+from models_library.rest_pagination import Page
 from pydantic.main import BaseModel
 from pytest_simcore.helpers.utils_assert import assert_status
-from servicelib.rest_pagination_utils import PageResponseLimitOffset
 from simcore_service_webserver._meta import API_VTAG as VX
 from simcore_service_webserver.version_control_models import (
     CheckpointApiModel,
@@ -28,12 +28,15 @@ ProjectDict = Dict[str, Any]
 
 
 async def assert_resp_page(
-    resp: aiohttp.ClientResponse, expected_total: int, expected_count: int
-) -> PageResponseLimitOffset:
+    resp: aiohttp.ClientResponse,
+    expected_page_cls: Type[Page],
+    expected_total: int,
+    expected_count: int,
+):
     assert resp.status == web.HTTPOk.status_code, f"Got {await resp.text()}"
     body = await resp.json()
 
-    page = PageResponseLimitOffset.parse_obj(body)
+    page = expected_page_cls.parse_obj(body)
     assert page.meta.total == expected_total
     assert page.meta.count == expected_count
     return page
@@ -86,7 +89,9 @@ async def test_workflow(
     #
     # this project now has a repo
     resp = await client.get(f"/{VX}/repos/projects")
-    page = await assert_resp_page(resp, expected_total=1, expected_count=1)
+    page = await assert_resp_page(
+        resp, expected_page_cls=Page[ProjectDict], expected_total=1, expected_count=1
+    )
 
     repo = RepoApiModel.parse_obj(page.data[0])
     assert repo.project_uuid == UUID(project_uuid)
@@ -113,7 +118,12 @@ async def test_workflow(
 
     # LIST checkpoints
     resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints")
-    page = await assert_resp_page(resp, expected_total=1, expected_count=1)
+    page = await assert_resp_page(
+        resp,
+        expected_page_cls=Page[CheckpointApiModel],
+        expected_total=1,
+        expected_count=1,
+    )
 
     assert CheckpointApiModel.parse_obj(page.data[0]) == checkpoint1
 
@@ -220,14 +230,24 @@ async def test_delete_project_and_repo(
 
     # LIST
     resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints")
-    await assert_resp_page(resp, expected_total=1, expected_count=1)
+    await assert_resp_page(
+        resp,
+        expected_page_cls=Page[CheckpointApiModel],
+        expected_total=1,
+        expected_count=1,
+    )
 
     # DELETE project -> projects_vc_*  deletion follow
     await do_delete_user_project(project_uuid)
 
     # LIST empty
     resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/checkpoints")
-    await assert_resp_page(resp, expected_total=0, expected_count=0)
+    await assert_resp_page(
+        resp,
+        expected_page_cls=Page[CheckpointApiModel],
+        expected_total=0,
+        expected_count=0,
+    )
 
     # GET HEAD
     resp = await client.get(f"/{VX}/repos/projects/{project_uuid}/HEAD")

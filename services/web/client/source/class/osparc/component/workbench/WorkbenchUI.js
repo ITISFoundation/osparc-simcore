@@ -34,7 +34,6 @@
  */
 
 const BUTTON_SIZE = 38;
-const ZOOM_BUTTON_SIZE = 24;
 const NODE_INPUTS_WIDTH = 210;
 
 qx.Class.define("osparc.component.workbench.WorkbenchUI", {
@@ -193,7 +192,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __addExtras: function() {
       this.__addStartHint();
-      this.__addZoomToolbar();
       this.__addUnlinkButton();
     },
 
@@ -211,21 +209,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__workbenchLayout.add(this.__startHint);
     },
 
-    __addZoomToolbar: function() {
-      const zoomToolbar = new qx.ui.toolbar.ToolBar().set({
-        spacing: 0,
-        opacity: 0.8
-      });
-      zoomToolbar.add(this.__getZoomOutButton());
-      zoomToolbar.add(this.__getZoomResetButton());
-      zoomToolbar.add(this.__getZoomInButton());
-
-      this.__workbenchLayer.add(zoomToolbar, {
-        left: 10,
-        bottom: 10
-      });
-    },
-
     __addUnlinkButton: function() {
       const unlinkButton = this.__unlinkButton = new qx.ui.form.Button().set({
         icon: "@FontAwesome5Solid/unlink/18",
@@ -234,7 +217,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         visibility: "excluded"
       });
       unlinkButton.addListener("execute", () => {
-        if (this.__selectedItemId && this.__isSelectedItemAnEdge()) {
+        if (this.__isSelectedItemAnEdge()) {
           this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
           this.__selectedItemChanged(null);
         }
@@ -248,41 +231,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __getWorkbench: function() {
       return this.getStudy().getWorkbench();
-    },
-
-    __getZoomBtn: function(icon, tooltip) {
-      const btn = new qx.ui.toolbar.Button(null, icon+"/18").set({
-        width: ZOOM_BUTTON_SIZE,
-        height: ZOOM_BUTTON_SIZE
-      });
-      if (tooltip) {
-        btn.setToolTipText(tooltip);
-      }
-      return btn;
-    },
-
-    __getZoomInButton: function() {
-      const btn = this.__getZoomBtn("@MaterialIcons/zoom_in", this.tr("Zoom In"));
-      btn.addListener("execute", () => {
-        this.__zoom(true);
-      }, this);
-      return btn;
-    },
-
-    __getZoomOutButton: function() {
-      const btn = this.__getZoomBtn("@MaterialIcons/zoom_out", this.tr("Zoom Out"));
-      btn.addListener("execute", () => {
-        this.__zoom(false);
-      }, this);
-      return btn;
-    },
-
-    __getZoomResetButton: function() {
-      const btn = this.__getZoomBtn("@MaterialIcons/find_replace", this.tr("Reset Zoom"));
-      btn.addListener("execute", () => {
-        this.setScale(1);
-      }, this);
-      return btn;
     },
 
     __createInputOutputNodesLayout: function(isInput) {
@@ -370,19 +318,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         bottom: 0
       };
       this.__nodesUI.forEach(nodeUI => {
-        const nodeBounds = nodeUI.getBounds();
-        /*
-        // nodeBounds postion might be wrong
-        bounds.left = Math.max(bounds.left, nodeBounds.left);
-        bounds.top = Math.max(bounds.top, nodeBounds.top);
-        bounds.right = Math.max(bounds.right, nodeBounds.left + nodeBounds.width);
-        bounds.bottom = Math.max(bounds.bottom, nodeBounds.top + nodeBounds.height);
-        */
         const nodePos = nodeUI.getNode().getPosition();
         bounds.left = Math.max(bounds.left, nodePos.x);
         bounds.top = Math.max(bounds.top, nodePos.y);
-        bounds.right = Math.max(bounds.right, nodePos.x + nodeBounds.width);
-        bounds.bottom = Math.max(bounds.bottom, nodePos.y + nodeBounds.height);
+        bounds.right = Math.max(bounds.right, nodePos.x + osparc.component.workbench.NodeUI.NODE_WIDTH);
+        bounds.bottom = Math.max(bounds.bottom, nodePos.y + osparc.component.workbench.NodeUI.NODE_HEIGHT);
       });
       return bounds;
     },
@@ -672,12 +612,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
             nodeId: nodeBId
           });
           this.__removeTempEdge();
-          qx.bom.Element.removeListener(
-            this.__desktop,
-            evType,
-            this.__updateTempEdge,
-            this
-          );
+          this.__removePointerMoveListener();
         }
       }, this);
 
@@ -694,12 +629,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.__tempEdgeIsInput === true ? srvCat.setContext(null, dragNodeId) : srvCat.setContext(dragNodeId, null);
           srvCat.addListener("close", () => this.__removeTempEdge(), this);
         }
-        qx.bom.Element.removeListener(
-          this.__desktop,
-          evType,
-          this.__updateTempEdge,
-          this
-        );
+        this.__removePointerMoveListener();
       }, this);
     },
 
@@ -928,6 +858,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__pointerPos = null;
     },
 
+    __removePointerMoveListener: function() {
+      qx.bom.Element.removeListener(
+        this.__desktop,
+        "pointermove",
+        this.__updateTempEdge,
+        this
+      );
+    },
+
     __getEdgePoints: function(node1, port1, node2, port2) {
       // swap node-ports to have node1 as input and node2 as output
       if (port1.isInput) {
@@ -1049,14 +988,16 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           nodeUIs.push(nodeUI);
         }
 
-        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-        const allNodesVisible = nodeUIss => nodeUIss.every(nodeUI => nodeUI.getCurrentBounds() !== null);
-
         let tries = 0;
-        while (!allNodesVisible(nodeUIs) && tries < 10) {
-          await sleep(50);
+        const maxTries = 20;
+        const sleepFor = 100;
+        const allNodesVisible = nodeUIss => nodeUIss.every(nodeUI => nodeUI.getCurrentBounds() !== null);
+        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+        while (!allNodesVisible(nodeUIs) && tries < maxTries) {
+          await sleep(100);
           tries++;
         }
+        console.log("nodes visible", nodeUIs.length, tries*sleepFor);
 
         // create edges
         for (const nodeId in nodes) {
@@ -1115,7 +1056,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __isSelectedItemAnEdge: function() {
-      return Boolean(this.__getEdgeUI(this.__selectedItemId));
+      return Boolean(this.__selectedItemId && this.__getEdgeUI(this.__selectedItemId));
     },
 
     __scaleCoordinates: function(x, y) {
@@ -1159,7 +1100,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         "text": "\uf00e", // search-plus
         "action": () => {
           this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
-          this.__zoom(true);
+          this.zoom(true);
         }
       }, {
         "text": "\uf002", // search
@@ -1170,7 +1111,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         "text": "\uf010", // search-minus
         "action": () => {
           this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
-          this.__zoom(false);
+          this.zoom(false);
         }
       }];
       let rotation = 3 * Math.PI / 2;
@@ -1224,10 +1165,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __mouseWheel: function(e) {
       this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
       const zoomIn = e.getWheelDelta() < 0;
-      this.__zoom(zoomIn);
+      this.zoom(zoomIn);
     },
 
-    __zoom: function(zoomIn = true) {
+    zoom: function(zoomIn = true) {
       const zoomValues = this.self().ZOOM_VALUES;
       const nextItem = () => {
         const i = zoomValues.indexOf(this.getScale());
@@ -1246,26 +1187,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       const newScale = zoomIn ? nextItem() : prevItem();
       this.setScale(newScale);
-    },
-
-    __zoomAll: function() {
-      const zoomValues = this.self().ZOOM_VALUES;
-      const nodeBounds = this.__getNodesBounds();
-      if (nodeBounds === null) {
-        return;
-      }
-      const screenWidth = this.getBounds().width - 10; // scrollbar
-      const screenHeight = this.getBounds().height - 10; // scrollbar
-      if (nodeBounds.right < screenWidth && nodeBounds.bottom < screenHeight) {
-        return;
-      }
-
-      const minScale = Math.min(screenWidth/nodeBounds.right, screenHeight/nodeBounds.bottom);
-      const posibleZooms = zoomValues.filter(zoomValue => zoomValue < minScale);
-      const zoom = Math.max(...posibleZooms);
-      if (zoom) {
-        this.setScale(zoom);
-      }
     },
 
     __applyScale: function(value) {
@@ -1425,6 +1346,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
               this.resetSelectedNodes();
               break;
           }
+        } else if (keyEvent.getKeyIdentifier() === "Delete" && this.__isSelectedItemAnEdge()) {
+          this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
+          this.__selectedItemChanged(null);
+        } else if (keyEvent.getKeyIdentifier() === "Escape") {
+          this.__removeTempEdge();
+          this.__removePointerMoveListener();
         }
       }, this);
 

@@ -28,7 +28,7 @@ qx.Class.define("osparc.desktop.WorkbenchPanel", {
     toolbar.set({
       margin: 5
     });
-    toolbar.getChildControl("breadcrumb-navigation").exclude();
+    toolbar.getChildControl("breadcrumbs-navigation").exclude();
     toolbar.getContentElement().setStyles({
       "border-radius": "12px"
     });
@@ -38,6 +38,16 @@ qx.Class.define("osparc.desktop.WorkbenchPanel", {
     this._add(workbenchUI, {
       flex: 1
     });
+
+    toolbar.addListener("zoomIn", () => {
+      workbenchUI.zoom(true);
+    }, this);
+    toolbar.addListener("zoomOut", () => {
+      workbenchUI.zoom(false);
+    }, this);
+    toolbar.addListener("zoomReset", () => {
+      workbenchUI.setScale(1);
+    }, this);
   },
 
   members: {

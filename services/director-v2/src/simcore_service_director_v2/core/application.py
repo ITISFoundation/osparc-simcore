@@ -5,7 +5,6 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.tracing import setup_tracing
-from simcore_service_director_v2.modules import dask_client
 from starlette import status
 from starlette.exceptions import HTTPException
 
@@ -19,7 +18,7 @@ from ..meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
 from ..modules import (
     celery,
     comp_scheduler,
-    dask_client,
+    dask_clients_pool,
     db,
     director_v0,
     dynamic_services,
@@ -37,7 +36,7 @@ logger = logging.getLogger(__name__)
 def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings is None:
         settings = AppSettings.create_from_envs()
-
+    assert settings  # nosec
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
     logger.debug(settings.json(indent=2))
@@ -79,7 +78,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         dynamic_sidecar.setup(app)
 
     if settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_CLIENT_ENABLED:
-        dask_client.setup(app, settings.DASK_SCHEDULER)
+        dask_clients_pool.setup(app, settings.DASK_SCHEDULER)
 
     if settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_SCHEDULER_ENABLED:
         rabbitmq.setup(app)

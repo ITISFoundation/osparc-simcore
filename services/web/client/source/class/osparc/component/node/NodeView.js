@@ -37,6 +37,8 @@ qx.Class.define("osparc.component.node.NodeView", {
   extend: osparc.component.node.BaseNodeView,
 
   statics: {
+    LOGGER_HEIGHT: 28,
+
     isPropsFormShowable: function(node) {
       if (node && ("getPropsForm" in node) && node.getPropsForm()) {
         return node.getPropsForm().hasVisibleInputs();
@@ -62,7 +64,7 @@ qx.Class.define("osparc.component.node.NodeView", {
       }
       this.__checkSettingsVisibility();
 
-      this._addToMainView(this._settingsLayout);
+      this._mainView.add(this._settingsLayout);
     },
 
     // overridden
@@ -83,7 +85,7 @@ qx.Class.define("osparc.component.node.NodeView", {
         });
       }
 
-      this._addToMainView(this._iFrameLayout, {
+      this._mainView.add(this._iFrameLayout, {
         flex: 1
       });
     },
@@ -104,7 +106,7 @@ qx.Class.define("osparc.component.node.NodeView", {
         enabled: this.getNode().hasOutputs() > 0
       });
       const outputsTree = new osparc.component.widget.inputs.NodeOutputTree(this.getNode(), this.getNode().getMetaData().outputs);
-      this.bind("backgroundColor", outputsTree, "backgroundColor");
+      this._mainView.bind("backgroundColor", outputsTree, "backgroundColor");
       this._outputsLayout.add(outputsTree, {
         flex: 1
       });
@@ -115,11 +117,12 @@ qx.Class.define("osparc.component.node.NodeView", {
       const loggerView = this.getNode().getLogger();
       loggerView.getChildControl("pin-node").exclude();
       const loggerPanel = this.__loggerPanel = new osparc.desktop.PanelView(this.tr("Logger"), loggerView).set({
-        minHeight: 24,
+        padding: 3,
+        minHeight: this.self().LOGGER_HEIGHT-1,
         collapsed: true
       });
       loggerPanel.bind("collapsed", loggerPanel, "maxHeight", {
-        converter: collapsed => collapsed ? 25 : null
+        converter: collapsed => collapsed ? this.self().LOGGER_HEIGHT : null
       });
       this.add(loggerPanel, 0);
     },

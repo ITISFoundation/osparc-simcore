@@ -1,5 +1,4 @@
 import asyncio
-import contextlib
 import logging
 import os
 import socket
@@ -21,6 +20,7 @@ from servicelib.aiohttp.monitor_services import (
 )
 from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
+from servicelib.utils import logged_gather
 from tenacity import retry
 
 from .computation_config import ComputationSettings
@@ -28,9 +28,9 @@ from .computation_config import get_settings as get_computation_settings
 from .projects import projects_api
 from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 from .socketio.events import (
+    SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
-    SOCKET_IO_EVENT,
     SocketMessageDict,
     send_messages,
 )
@@ -191,8 +191,9 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
                 raise
             except Exception:  # pylint: disable=broad-except
                 log.warning(
-                    "unexpected error in consumer for %s, restarting",
+                    "unexpected error in consumer for %s, %s",
                     exchange_name,
+                    "restarting..." if consumer_running else "stopping",
                     exc_info=True,
                 )
 
@@ -233,9 +234,8 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     consumer_running = False
     for task in consumer_tasks:
         task.cancel()
-    with contextlib.suppress(asyncio.CancelledError):
-        for task in consumer_tasks:
-            await task
+    await logged_gather(*consumer_tasks, reraise=False, log=log)
+
     log.info("Closing connections...")
     await channel_pool.close()
     await connection_pool.close()

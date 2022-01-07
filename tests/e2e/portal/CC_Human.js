@@ -7,6 +7,7 @@ const args = process.argv.slice(2);
 const {
   urlPrefix,
   templateUuid,
+  startTimeout,
   enableDemoMode
 } = utils.parseCommandLineArgumentsTemplate(args);
 
@@ -27,7 +28,7 @@ async function runTutorial () {
     await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
 
     await tutorial.runPipeline();
-    await tutorial.waitForStudyDone(studyId, 1800000);
+    await tutorial.waitForStudyDone(studyId, startTimeout);
 
     const outFiles0 = [
       "vm_1Hz.txt",

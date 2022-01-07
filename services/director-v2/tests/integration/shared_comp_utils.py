@@ -1,4 +1,5 @@
 import json
+import time
 from typing import List
 from uuid import UUID
 
@@ -8,12 +9,13 @@ from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from pydantic.networks import AnyHttpUrl
 from pydantic.types import PositiveInt
+from pytest_simcore.helpers.constants import MINUTE
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_random
+from tenacity.wait import wait_fixed
 
 COMPUTATION_URL: str = "v2/computations"
 
@@ -62,7 +64,7 @@ async def assert_computation_task_out_obj(
     assert task_out.pipeline_details.dict() == exp_pipeline_details.dict()
 
 
-async def assert_pipeline_status(
+async def assert_and_wait_for_pipeline_status(
     client: httpx.AsyncClient,
     url: AnyHttpUrl,
     user_id: PositiveInt,
@@ -75,8 +77,7 @@ async def assert_pipeline_status(
             RunningState.FAILED,
             RunningState.ABORTED,
         ]
-
-    MAX_TIMEOUT_S = 60
+    MAX_TIMEOUT_S = 5 * MINUTE
 
     async def check_pipeline_state() -> ComputationTaskOut:
         response = await client.get(url, params={"user_id": user_id})
@@ -87,26 +88,29 @@ async def assert_pipeline_status(
         assert task_out.id == project_uuid
         assert task_out.url == f"{client.base_url}/v2/computations/{project_uuid}"
         print(
-            f"Pipeline '{project_uuid}' current state is '{task_out.state}'",
+            f"Pipeline '{project_uuid=}' current task out is '{task_out=}'",
         )
+        assert wait_for_states
         assert (
             task_out.state in wait_for_states
         ), f"current task state is '{task_out.state}', not in any of {wait_for_states}"
         return task_out
 
+    start = time.monotonic()
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(MAX_TIMEOUT_S),
-        wait=wait_random(0, 2),
+        wait=wait_fixed(2),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
     ):
+        elapsed_s = time.monotonic() - start
         with attempt:
             print(
-                f"Waiting for pipeline '{project_uuid}' state to be one of: {wait_for_states}, attempt={attempt.retry_state.attempt_number}"
+                f"Waiting for pipeline '{project_uuid=}' state to be one of: {wait_for_states=}, attempt={attempt.retry_state.attempt_number}, time={elapsed_s}s"
             )
             task_out = await check_pipeline_state()
             print(
-                f"Pipeline '{project_uuid}' state succesfuly became '{task_out.state}'\n{json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}"
+                f"Pipeline '{project_uuid=}' state succesfuly became '{task_out.state}'\n{json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}, time={elapsed_s}s"
             )
 
             return task_out

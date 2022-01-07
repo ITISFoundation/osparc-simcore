@@ -173,7 +173,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         const nodeMetaData = osparc.utils.Services.getFromObject(this.__services, node["key"], node["version"]);
         const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(this.__services, node["key"], node["version"]);
 
-        const infoButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/14");
+        const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
         infoButton.addListener("execute", () => {
           const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
           const serviceDetails = new osparc.servicecard.Large(metadata);
