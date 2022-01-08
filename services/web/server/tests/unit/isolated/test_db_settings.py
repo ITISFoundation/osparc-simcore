@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 import os
-from typing import Any, Dict
 
 import pytest
 from simcore_service_webserver.application_settings import ApplicationSettings
