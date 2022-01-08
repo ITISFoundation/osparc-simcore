@@ -6,7 +6,7 @@ import trafaret as T
 from simcore_service_webserver import tracing_config_schema
 from trafaret_config.simple import read_and_validate
 
-from . import email_config_schema, storage_config_schema, tracing_config_schema
+from . import email_config_schema, tracing_config_schema
 from .activity import config_schema as activity_config_schema
 from .director import config_schema as director_config_schema
 from .login import config_schema as login_config_schema
@@ -55,7 +55,6 @@ def create_schema() -> T.Dict:
             # db_config_schema.CONFIG_SECTION_NAME: db_config_schema.schema,
             director_config_schema.CONFIG_SECTION_NAME: director_config_schema.schema,
             email_config_schema.CONFIG_SECTION_NAME: email_config_schema.schema,
-            storage_config_schema.CONFIG_SECTION_NAME: storage_config_schema.schema,
             addon_section(
                 login_config_schema.CONFIG_SECTION_NAME, optional=True
             ): login_config_schema.schema,

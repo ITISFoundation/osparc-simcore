@@ -4,30 +4,17 @@
 import asyncio
 import logging
 from pprint import pformat
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 
-from aiohttp import ClientError, ClientSession, ClientTimeout, web
+from aiohttp import ClientError, ClientTimeout, web
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.rest_responses import unwrap_envelope
-from yarl import URL
 
-from .storage_config import get_client_session, get_storage_config
+from .storage_utils import get_storage_client_pair
 
 log = logging.getLogger(__name__)
 
 TOTAL_TIMEOUT_TO_COPY_DATA_SECS = 60 * 60
-
-
-def _get_storage_client(app: web.Application) -> Tuple[ClientSession, URL]:
-    cfg = get_storage_config(app)
-
-    # storage service API endpoint
-    endpoint = URL.build(scheme="http", host=cfg["host"], port=cfg["port"]).with_path(
-        cfg["version"]
-    )
-
-    session = get_client_session(app)
-    return session, endpoint
 
 
 async def copy_data_folders_from_project(
@@ -38,7 +25,7 @@ async def copy_data_folders_from_project(
     user_id: int,
 ):
     # TODO: optimize if project has actualy data or not before doing the call
-    client, api_endpoint = _get_storage_client(app)
+    client, api_endpoint = get_storage_client_pair(app)
     log.debug("Coying %d nodes", len(nodes_map))
 
     # /simcore-s3/folders:
@@ -79,7 +66,7 @@ async def _delete(session, target_url):
 
 async def delete_data_folders_of_project(app, project_id, user_id):
     # SEE api/specs/storage/v0/openapi.yaml
-    session, api_endpoint = _get_storage_client(app)
+    session, api_endpoint = get_storage_client_pair(app)
     url = (api_endpoint / f"simcore-s3/folders/{project_id}").with_query(
         user_id=user_id
     )
@@ -91,7 +78,7 @@ async def delete_data_folders_of_project_node(
     app, project_id: str, node_id: str, user_id: PositiveInt
 ):
     # SEE api/specs/storage/v0/openapi.yaml
-    session, api_endpoint = _get_storage_client(app)
+    session, api_endpoint = get_storage_client_pair(app)
     url = (api_endpoint / f"simcore-s3/folders/{project_id}").with_query(
         user_id=user_id, node_id=node_id
     )
@@ -101,7 +88,7 @@ async def delete_data_folders_of_project_node(
 
 async def is_healthy(app: web.Application) -> bool:
     try:
-        client, api_endpoint = _get_storage_client(app)
+        client, api_endpoint = get_storage_client_pair(app)
         await client.get(
             url=(api_endpoint / ""),
             raise_for_status=True,
@@ -116,7 +103,7 @@ async def is_healthy(app: web.Application) -> bool:
 
 
 async def get_app_status(app: web.Application) -> Dict[str, Any]:
-    client, api_endpoint = _get_storage_client(app)
+    client, api_endpoint = get_storage_client_pair(app)
 
     data = {}
     async with client.get(

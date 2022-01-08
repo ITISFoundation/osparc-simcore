@@ -11,6 +11,7 @@ from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, APP_NAME
 from .catalog_settings import CatalogSettings
 from .db_settings import PostgresSettings
+from .storage_settings import StorageSettings
 from .utils import snake_to_camel
 
 log = logging.getLogger(__name__)
@@ -57,7 +58,7 @@ class ApplicationSettings(BaseCustomSettings):
 
     # SERVICES with http API
     WEBSERVER_CATALOG: Optional[CatalogSettings]
-    # WEBSERVER_STORAGE: Optional[StorageSettings]
+    WEBSERVER_STORAGE: Optional[StorageSettings]
     # WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings]
     # WEBSERVER_TRACING: Optional[TracingSettings]
 

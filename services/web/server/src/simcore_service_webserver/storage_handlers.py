@@ -7,25 +7,19 @@ import urllib
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from aiohttp import web
-from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
+from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from servicelib.aiohttp.rest_utils import extract_and_validate
+from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
 
 from .login.decorators import login_required
 from .security_decorators import permission_required
-from .storage_config import get_client_session, get_storage_config
+from .storage_settings import StorageSettings
+from .storage_utils import get_storage_client_pair
 
 log = logging.getLogger(__name__)
-
-
-def _get_base_storage_url(app: web.Application) -> URL:
-    cfg = get_storage_config(app)
-
-    # storage service API endpoint
-    return URL.build(scheme="http", host=cfg["host"], port=cfg["port"]).with_path(
-        cfg["version"]
-    )
 
 
 def _resolve_storage_url(request: web.Request) -> URL:
@@ -33,7 +27,8 @@ def _resolve_storage_url(request: web.Request) -> URL:
     userid = request[RQT_USERID_KEY]
 
     # storage service API endpoint
-    endpoint = _get_base_storage_url(request.app)
+    settings: StorageSettings = request.app[APP_SETTINGS_KEY].WEBSERVER_STORAGE
+    base_url = settings.base_url
 
     BASEPATH_INDEX = 3
     # strip basepath from webserver API path (i.e. webserver api version)
@@ -42,7 +37,7 @@ def _resolve_storage_url(request: web.Request) -> URL:
     suffix = "/".join(request.url.raw_parts[BASEPATH_INDEX:])
 
     # TODO: check request.query to storage! unsafe!?
-    url = (endpoint / suffix).with_query(request.query).update_query(user_id=userid)
+    url = (base_url / suffix).with_query(request.query).update_query(user_id=userid)
     return url
 
 
@@ -164,9 +159,9 @@ async def synchronise_meta_data_table(request: web.Request):
 async def get_storage_locations_for_user(
     app: web.Application, user_id: int
 ) -> List[Dict[str, Any]]:
-    session = get_client_session(app)
+    session, base_url = get_storage_client_pair(app)
 
-    url: URL = _get_base_storage_url(app) / "locations"
+    url: URL = base_url / "locations"
     params = dict(user_id=user_id)
     async with session.get(url, ssl=False, params=params) as resp:
         data, _ = cast(List[Dict[str, Any]], await safe_unwrap(resp))
@@ -176,11 +171,10 @@ async def get_storage_locations_for_user(
 async def get_project_files_metadata(
     app: web.Application, location_id: str, uuid_filter: str, user_id: int
 ) -> List[Dict[str, Any]]:
-    session = get_client_session(app)
 
-    url: URL = (
-        _get_base_storage_url(app) / "locations" / location_id / "files" / "metadata"
-    )
+    session, base_url = get_storage_client_pair(app)
+
+    url: URL = base_url / "locations" / location_id / "files" / "metadata"
     params = dict(user_id=user_id, uuid_filter=uuid_filter)
     async with session.get(url, ssl=False, params=params) as resp:
         data, _ = await safe_unwrap(resp)
@@ -198,10 +192,10 @@ async def get_project_files_metadata(
 async def get_file_download_url(
     app: web.Application, location_id: str, fileId: str, user_id: int
 ) -> str:
-    session = get_client_session(app)
+    session, base_url = get_storage_client_pair(app)
 
     url: URL = (
-        _get_base_storage_url(app)
+        base_url
         / "locations"
         / location_id
         / "files"
@@ -216,10 +210,10 @@ async def get_file_download_url(
 async def get_file_upload_url(
     app: web.Application, location_id: str, fileId: str, user_id: int
 ) -> str:
-    session = get_client_session(app)
+    session, base_url = get_storage_client_pair(app)
 
     url: URL = (
-        _get_base_storage_url(app)
+        base_url
         / "locations"
         / location_id
         / "files"
