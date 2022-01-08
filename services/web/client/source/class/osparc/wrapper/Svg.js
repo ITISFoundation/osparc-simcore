@@ -135,6 +135,12 @@ qx.Class.define("osparc.wrapper.Svg", {
       return rect;
     },
 
+    updateRect: function(rect, w, h, x, y) {
+      rect.width(w);
+      rect.height(h);
+      rect.move(x, y);
+    },
+
     updateRectPos: function(rect, x, y) {
       rect.move(x, y);
     },

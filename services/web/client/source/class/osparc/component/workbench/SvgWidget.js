@@ -88,6 +88,10 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
       osparc.wrapper.Svg.removeCurve(curve);
     },
 
+    updateRect: function(rect, w, h, x, y) {
+      osparc.wrapper.Svg.updateRect(rect, w, h, x, y);
+    },
+
     updateRectPos: function(rect, x, y) {
       osparc.wrapper.Svg.updateRectPos(rect, x, y);
     },

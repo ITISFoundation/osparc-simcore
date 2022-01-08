@@ -1508,9 +1508,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const width = Math.abs(initPos.x - currentPos.x);
       const height = Math.abs(initPos.y - currentPos.y);
       if (this.__rectRepr) {
-        osparc.component.workbench.SvgWidget.removeRect(this.__rectRepr);
+        osparc.component.workbench.SvgWidget.updateRect(this.__rectRepr, width, height, x, y);
+      } else {
+        this.__rectRepr = this.__svgLayer.drawFilledRect(width, height, x, y);
       }
-      this.__rectRepr = this.__svgLayer.drawFilledRect(width, height, x, y);
     },
 
     __dropFile: function(e) {
