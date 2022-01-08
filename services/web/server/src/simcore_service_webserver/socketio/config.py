@@ -1,23 +1,11 @@
-""" socketio subsystem's configuration
-
-    - config-file schema
-    - settings
-"""
 from typing import Dict, Optional
 
-import trafaret as T
 from aiohttp.web import Application
 from pydantic import BaseSettings
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from socketio import AsyncServer
 
 from ._contants import APP_CLIENT_SOCKET_SERVER_KEY, CONFIG_SECTION_NAME
-
-schema = T.Dict(
-    {
-        T.Key("enabled", default=True, optional=True): T.Or(T.Bool(), T.ToInt()),
-    }
-)
 
 
 class SocketIOSettings(BaseSettings):
