@@ -9,7 +9,6 @@ from servicelib.aiohttp.rest_routing import (
 
 from .._constants import APP_OPENAPI_SPECS_KEY
 from . import handlers
-from .config import assert_valid_config
 
 logger = logging.getLogger(__name__)
 
@@ -17,16 +16,11 @@ logger = logging.getLogger(__name__)
 @app_module_setup(
     "simcore_service_webserver.activity",
     category=ModuleCategory.ADDON,
+    config_section="WEBSERVER_PROMETHEUS",
     depends=["simcore_service_webserver.rest"],
     logger=logger,
 )
 def setup_activity(app: web.Application):
-
-    # ----------------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    assert_valid_config(app)
-    # ---------------------------------------------
 
     # setup routes ------------
     specs = app[APP_OPENAPI_SPECS_KEY]

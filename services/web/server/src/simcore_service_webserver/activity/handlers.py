@@ -1,13 +1,15 @@
 import asyncio
 from collections import defaultdict
+from typing import Dict
 
 import aiohttp
 import aiohttp.web
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.request_keys import RQT_USERID_KEY
-from yarl import URL
+from simcore_service_webserver.activity.settings import ActivitySettings
 
+from ..constants import APP_SETTINGS_KEY
 from ..login.decorators import login_required
 
 
@@ -44,13 +46,9 @@ async def get_status(request: aiohttp.web.Request):
     session = get_client_session(request.app)
     user_id = request.get(RQT_USERID_KEY, -1)
 
-    config = request.app[APP_CONFIG_KEY]["activity"]
-    url = URL.build(
-        scheme="http",
-        host=config["prometheus_host"],
-        port=config["prometheus_port"],
-        path=f"/api/{config['prometheus_api_version']}/query",
-    )
+    settings: ActivitySettings = request.app[APP_SETTINGS_KEY].WEBSERVER_ACTIVITY
+    url = settings.ACTIVITY_PROMETHEUS.base_url
+
     results = await asyncio.gather(
         get_cpu_usage(session, url, user_id),
         get_memory_usage(session, url, user_id),

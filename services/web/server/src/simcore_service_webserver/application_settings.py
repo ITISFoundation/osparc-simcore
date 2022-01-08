@@ -10,6 +10,7 @@ from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, APP_NAME
+from .activity.settings import ActivitySettings
 from .catalog_settings import CatalogSettings
 from .db_settings import PostgresSettings
 from .director.settings import DirectorSettings
@@ -67,6 +68,8 @@ class ApplicationSettings(BaseCustomSettings):
     WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings]
     WEBSERVER_DIRECTOR: Optional[DirectorSettings]
     WEBSERVER_STORAGE: Optional[StorageSettings]
+
+    WEBSERVER_ACTIVITY: Optional[ActivitySettings]
 
     WEBSERVER_STUDIES_ACCESS_ENABLED: bool
 

@@ -6,7 +6,6 @@ import trafaret as T
 from trafaret_config.simple import read_and_validate
 
 from . import email_config_schema
-from .activity import config_schema as activity_config_schema
 from .login import config_schema as login_config_schema
 from .resource_manager import config_schema as resource_manager_config_schema
 from .resources import resources
@@ -51,7 +50,6 @@ def create_schema() -> T.Dict:
             addon_section(
                 login_config_schema.CONFIG_SECTION_NAME, optional=True
             ): login_config_schema.schema,
-            activity_config_schema.CONFIG_SECTION_NAME: activity_config_schema.schema,
             resource_manager_config_schema.CONFIG_SECTION_NAME: resource_manager_config_schema.schema,
             # BELOW HERE minimal sections until more options are needed
             addon_section("clusters", optional=True): minimal_addon_schema(),
