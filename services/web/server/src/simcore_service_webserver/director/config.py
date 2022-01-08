@@ -5,7 +5,6 @@
 """
 from typing import Dict, Optional, Tuple
 
-import trafaret as T
 from aiohttp.web import Application
 from models_library.basic_types import PortInt, VersionTag
 from pydantic import AnyHttpUrl, BaseSettings, Field, validator
@@ -14,21 +13,6 @@ from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 APP_DIRECTOR_API_KEY = __name__ + ".director_api"
 
 CONFIG_SECTION_NAME = "director"
-
-# TODO: deprecate trafaret schema
-schema = T.Dict(
-    {
-        T.Key("enabled", default=True, optional=True): T.Bool(),
-        T.Key(
-            "host",
-            default="director",
-        ): T.String(),
-        T.Key("port", default=8001): T.ToInt(),
-        T.Key("version", default="v0"): T.Regexp(
-            regexp=r"^v\d+"
-        ),  # director API version basepath
-    }
-)
 
 
 class DirectorSettings(BaseSettings):
