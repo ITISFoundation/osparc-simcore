@@ -11,10 +11,10 @@ from servicelib.aiohttp.rest_routing import iter_path_operations
 from yarl import URL
 
 from . import catalog__handlers
-from ._constants import APP_OPENAPI_SPECS_KEY
+from ._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from .catalog__handlers_revproxy import reverse_proxy_handler
 from .catalog_client import KCATALOG_ORIGIN, KCATALOG_VERSION_PREFIX
-from .catalog_config import assert_valid_config
+from .catalog_settings import CatalogSettings
 
 logger = logging.getLogger(__name__)
 
@@ -30,15 +30,12 @@ logger = logging.getLogger(__name__)
 )
 def setup_catalog(app: web.Application, *, disable_auth=False):
 
-    # ----------------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    cfg = assert_valid_config(app).copy()
-    # ---------------------------------------------
+    settings: CatalogSettings = app[APP_SETTINGS_KEY].WEBSERVER_CATALOG
 
+    # TODO: this could direclty be access via WEBSERVER_CATALOG!
     # resolve url
-    app[KCATALOG_ORIGIN] = URL.build(scheme="http", host=cfg["host"], port=cfg["port"])
-    app[KCATALOG_VERSION_PREFIX] = cfg["version"]
+    app[KCATALOG_ORIGIN] = URL(settings.origin)
+    app[KCATALOG_VERSION_PREFIX] = settings.CATALOG_VTAG
 
     specs = app[APP_OPENAPI_SPECS_KEY]  # validated openapi specs
 

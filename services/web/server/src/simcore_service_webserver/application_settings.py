@@ -9,6 +9,7 @@ from settings_library.base import BaseCustomSettings
 
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, APP_NAME
+from .catalog_settings import CatalogSettings
 from .db_settings import PostgresSettings
 from .utils import snake_to_camel
 
@@ -53,6 +54,12 @@ class ApplicationSettings(BaseCustomSettings):
     WEBSERVER_SESSION_SECRET_KEY: SecretStr(min_length=32) = Field(  # type: ignore
         ..., description="Secret key to encrypt cookies"
     )
+
+    # SERVICES with http API
+    WEBSERVER_CATALOG: Optional[CatalogSettings]
+    # WEBSERVER_STORAGE: Optional[StorageSettings]
+    # WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings]
+    # WEBSERVER_TRACING: Optional[TracingSettings]
 
     class Config(BaseCustomSettings.Config):
         fields = {
