@@ -1,17 +1,10 @@
-""" session subsystem's configuration
-
-    - config-file schema
-    - settings
-"""
-import trafaret as T
-from pydantic import BaseSettings, constr
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
-from aiohttp.web import Application
 from typing import Dict
 
-CONFIG_SECTION_NAME = "session"
+from aiohttp.web import Application
+from pydantic import BaseSettings, constr
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
-schema = T.Dict({"secret_key": T.String})
+CONFIG_SECTION_NAME = "session"
 
 
 class SessionSettings(BaseSettings):
