@@ -6,7 +6,7 @@ from models_library.basic_types import BootModeEnum, BuildTargetEnum, PortInt
 from pydantic import Field
 from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
-from settings_library.service_utils import DEFAULT_AIOHTTP_PORT
+from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, APP_NAME

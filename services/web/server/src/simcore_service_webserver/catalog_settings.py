@@ -2,7 +2,7 @@ from functools import cached_property
 
 from models_library.basic_types import PortInt, VersionTag
 from settings_library.base import BaseCustomSettings
-from settings_library.service_utils import MixinServiceSettings
+from settings_library.utils_service import MixinServiceSettings
 
 
 class CatalogSettings(BaseCustomSettings, MixinServiceSettings):
