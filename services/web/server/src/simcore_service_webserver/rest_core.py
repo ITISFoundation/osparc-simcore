@@ -7,12 +7,12 @@ import yaml
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from simcore_service_webserver.resources import resources
 
-from ._meta import api_version_prefix
+from ._meta import API_VTAG
 
 
 def get_openapi_specs_path(api_version_dir: Optional[str] = None) -> Path:
     if api_version_dir is None:
-        api_version_dir = api_version_prefix
+        api_version_dir = API_VTAG
 
     return resources.get_path(f"api/{api_version_dir}/openapi.yaml")
 

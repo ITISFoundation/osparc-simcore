@@ -3,6 +3,7 @@
 # pylint:disable=no-name-in-module
 
 import json
+import time
 
 import jsonschema
 import jsonschema.validators
@@ -32,10 +33,9 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
     MAX_DELAY_SECS_ALLOWED = 1  # secs
 
     async def slow_handler(request: web.Request):
-        import time
 
         time.sleep(MAX_DELAY_SECS_ALLOWED * 1.1)
-        raise web.HTTPOk()
+        return web.HTTPOk()
 
     server_kwargs = {"port": aiohttp_unused_port(), "host": "localhost"}
     # fake config

@@ -19,7 +19,8 @@ from servicelib.aiohttp.rest_middlewares import (
 
 from . import rest_routes
 from ._constants import APP_OPENAPI_SPECS_KEY
-from ._meta import api_version_prefix
+from ._meta import API_VTAG, api_version_prefix
+from .constants import APP_OPENAPI_SPECS_KEY
 from .diagnostics_config import get_diagnostics_config
 from .rest_config import assert_valid_config
 from .rest_utils import get_openapi_specs_path, load_openapi_specs
@@ -34,14 +35,8 @@ log = logging.getLogger(__name__)
     logger=log,
 )
 def setup_rest(app: web.Application, *, swagger_doc_enabled: bool = True):
-    # ----------------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    cfg = assert_valid_config(app)
-    # ---------------------------------------------
 
-    api_version_dir = cfg["version"]
-    spec_path = get_openapi_specs_path(api_version_dir)
+    spec_path = get_openapi_specs_path(api_version_dir=API_VTAG)
 
     # validated openapi specs
     app[APP_OPENAPI_SPECS_KEY] = specs = load_openapi_specs(spec_path)
@@ -55,9 +50,9 @@ def setup_rest(app: web.Application, *, swagger_doc_enabled: bool = True):
             f"REST API basepath {base_path} does not fit openapi.yml version {specs.info.version}"
         )
 
-    if api_version_prefix != f"v{major}":
+    if API_VTAG != f"v{major}":
         raise ValueError(
-            f"__version__.api_version_prefix {api_version_prefix} does not fit openapi.yml version {specs.info.version}"
+            f"__version__.API_VTAG {API_VTAG} does not fit openapi.yml version {specs.info.version}"
         )
 
     # diagnostics routes
@@ -70,10 +65,10 @@ def setup_rest(app: web.Application, *, swagger_doc_enabled: bool = True):
     app.middlewares.extend(
         [
             error_middleware_factory(
-                api_version_prefix,
+                API_VTAG,
                 log_exceptions=not is_diagnostics_enabled,
             ),
-            envelope_middleware_factory(api_version_prefix),
+            envelope_middleware_factory(API_VTAG),
         ]
     )
 

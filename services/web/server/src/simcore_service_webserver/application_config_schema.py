@@ -9,7 +9,6 @@ from trafaret_config.simple import read_and_validate
 from . import (
     catalog_config_schema,
     email_config_schema,
-    rest_config_schema,
     session_config_schema,
     storage_config_schema,
     tracing_config_schema,
@@ -63,7 +62,6 @@ def create_schema() -> T.Dict:
             ): tracing_config_schema.schema,
             # db_config_schema.CONFIG_SECTION_NAME: db_config_schema.schema,
             director_config_schema.CONFIG_SECTION_NAME: director_config_schema.schema,
-            rest_config_schema.CONFIG_SECTION_NAME: rest_config_schema.schema,
             projects_config_schema.CONFIG_SECTION_NAME: projects_config_schema.schema,
             email_config_schema.CONFIG_SECTION_NAME: email_config_schema.schema,
             storage_config_schema.CONFIG_SECTION_NAME: storage_config_schema.schema,
