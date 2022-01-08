@@ -1,11 +1,5 @@
-""" rest subsystem's configuration
-
-    - config-file schema
-    - settings
-"""
 from typing import Dict, Optional
 
-import trafaret as T
 from aiohttp import web
 from models_library.basic_types import VersionTag
 from pydantic import BaseSettings, Field
@@ -14,13 +8,6 @@ from ._constants import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
 from ._meta import API_VTAG
 
 CONFIG_SECTION_NAME = "rest"
-
-schema = T.Dict(
-    {
-        T.Key("enabled", default=True, optional=True): T.Bool(),
-        "version": T.Enum("v0"),
-    }
-)
 
 
 class RestApiSettings(BaseSettings):
