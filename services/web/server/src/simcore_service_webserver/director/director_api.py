@@ -15,7 +15,7 @@ from servicelib.utils import logged_gather
 from yarl import URL
 
 from . import director_exceptions
-from .config import get_config
+from .settings import DirectorSettings, get_settings
 
 log = logging.getLogger(__name__)
 
@@ -23,14 +23,10 @@ warnings.warn("Director-v0 is deprecated, please use Director-v2", DeprecationWa
 
 
 def _get_director_client(app: web.Application) -> Tuple[ClientSession, URL]:
-    cfg: Dict[str, Any] = get_config(app)
-
-    api_endpoint = URL.build(
-        scheme="http", host=cfg["host"], port=cfg["port"]
-    ).with_path(cfg["version"])
+    settings: DirectorSettings = get_settings(app)
 
     session = get_client_session(app)
-    return session, api_endpoint
+    return session, settings.base_url
 
 
 async def get_running_interactive_services(

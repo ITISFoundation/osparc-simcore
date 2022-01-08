@@ -8,7 +8,6 @@ from trafaret_config.simple import read_and_validate
 
 from . import email_config_schema, tracing_config_schema
 from .activity import config_schema as activity_config_schema
-from .director import config_schema as director_config_schema
 from .login import config_schema as login_config_schema
 from .resource_manager import config_schema as resource_manager_config_schema
 from .resources import resources
@@ -52,7 +51,6 @@ def create_schema() -> T.Dict:
             addon_section(
                 tracing_config_schema.CONFIG_SECTION_NAME, optional=True
             ): tracing_config_schema.schema,
-            director_config_schema.CONFIG_SECTION_NAME: director_config_schema.schema,
             email_config_schema.CONFIG_SECTION_NAME: email_config_schema.schema,
             addon_section(
                 login_config_schema.CONFIG_SECTION_NAME, optional=True

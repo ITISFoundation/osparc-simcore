@@ -13,7 +13,7 @@ from servicelib.aiohttp.rest_routing import (
 )
 
 from .._constants import APP_OPENAPI_SPECS_KEY
-from .config import APP_DIRECTOR_API_KEY, assert_valid_config
+from .settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +31,7 @@ def setup_director(
 
     disable_* options are for testing purpuses
     """
-    # ----------------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    _, settings = assert_valid_config(app)
-    # ---------------------------------------------
-
-    # director service API base url, e.g. http://director:8081/v0
-    app[APP_DIRECTOR_API_KEY] = str(settings.url)
+    assert get_settings(app)  # nosec
 
     # setup routes ------------
     if not disable_routes:
