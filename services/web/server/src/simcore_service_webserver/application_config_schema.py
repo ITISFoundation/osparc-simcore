@@ -52,7 +52,6 @@ def create_schema() -> T.Dict:
             addon_section(
                 tracing_config_schema.CONFIG_SECTION_NAME, optional=True
             ): tracing_config_schema.schema,
-            # db_config_schema.CONFIG_SECTION_NAME: db_config_schema.schema,
             director_config_schema.CONFIG_SECTION_NAME: director_config_schema.schema,
             email_config_schema.CONFIG_SECTION_NAME: email_config_schema.schema,
             addon_section(

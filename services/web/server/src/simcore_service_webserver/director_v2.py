@@ -8,10 +8,9 @@ from servicelib.aiohttp.rest_routing import (
 )
 
 from . import director_v2_handlers
-from ._constants import APP_OPENAPI_SPECS_KEY
+from ._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from .director_v2_abc import set_project_run_policy
 from .director_v2_core import DefaultProjectRunPolicy, DirectorV2ApiClient, set_client
-from .director_v2_settings import CONFIG_SECTION_NAME, create_settings
 
 log = logging.getLogger(__file__)
 
@@ -19,13 +18,12 @@ log = logging.getLogger(__file__)
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
-    config_section=CONFIG_SECTION_NAME,
+    config_section="WEBSERVER_DIRECTOR_V2",
     depends=["simcore_service_webserver.rest"],
     logger=log,
 )
 def setup_director_v2(app: web.Application):
-    # create settings and injects in app
-    create_settings(app)
+    assert app[APP_SETTINGS_KEY].WEBSERVER_DIRECTOR_V2  # nosec
 
     set_project_run_policy(app, DefaultProjectRunPolicy())
 
