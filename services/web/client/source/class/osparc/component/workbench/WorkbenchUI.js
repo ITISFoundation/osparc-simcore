@@ -1126,9 +1126,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __mouseDown: function(e) {
-      if (e.isLeftPressed()) {
-        this.__rectInitPos = this.__pointerEventToWorkbenchPos(e);
-      } else if (e.isMiddlePressed()) {
+      if (e.isMiddlePressed()) {
         this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
         this.__panning = true;
         this.set({
@@ -1139,10 +1137,17 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
+    __mouseDownOnSVG: function(e) {
+      if (e.isLeftPressed()) {
+        this.__rectInitPos = this.__pointerEventToWorkbenchPos(e);
+      }
+    },
+
     __mouseMove: function(e) {
       if (this.__isDraggingLink) {
         this.__draggingLink(e, true);
       } else if (this.__tempEdgeRepr === null && this.__rectInitPos && e.isLeftPressed()) {
+        console.log("drawingRect", this.__tempEdgeRepr);
         this.__drawingRect(e);
       } else if (this.__panning && e.isMiddlePressed()) {
         const oldPos = this.__pointerPos;
@@ -1398,12 +1403,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.resetSelectedNodes();
         this.__selectedItemChanged(null);
       }, this);
-
-      this.__workbenchLayout.addListener("dbltap", e => {
-        this.__openServiceCatalog(e);
-      }, this);
-
+      this.__workbenchLayout.addListener("dbltap", e => this.__openServiceCatalog(e), this);
       this.__workbenchLayout.addListener("resize", () => this.__updateHint(), this);
+
+      this.__svgLayer.addListener("mousedown", this.__mouseDownOnSVG, this);
     },
 
     __allowDragFile: function(e) {
@@ -1498,7 +1501,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __drawingRect: function(e) {
-      console.log("drawingRect");
       const initPos = this.__rectInitPos;
       const currentPos = this.__pointerEventToWorkbenchPos(e);
       const x = Math.min(initPos.x, currentPos.x);
