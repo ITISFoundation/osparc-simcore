@@ -1168,6 +1168,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
       if (this.__rectRepr) {
         osparc.component.workbench.SvgWidget.removeRect(this.__rectRepr);
+        this.__rectRepr = null;
       }
 
       if (this.__panning) {
@@ -1507,10 +1508,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const y = Math.min(initPos.y, currentPos.y);
       const width = Math.abs(initPos.x - currentPos.x);
       const height = Math.abs(initPos.y - currentPos.y);
-      if (this.__rectRepr) {
-        osparc.component.workbench.SvgWidget.updateRect(this.__rectRepr, width, height, x, y);
-      } else {
+      if (this.__rectRepr === null) {
         this.__rectRepr = this.__svgLayer.drawFilledRect(width, height, x, y);
+      } else {
+        osparc.component.workbench.SvgWidget.updateRect(this.__rectRepr, width, height, x, y);
       }
     },
 
