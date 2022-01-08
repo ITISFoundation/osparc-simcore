@@ -44,7 +44,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     this.__nodesUI = [];
     this.__edgesUI = [];
-    this.__selectedNodes = [];
+    this.__selectedNodeUIs = [];
 
     this._setLayout(new qx.ui.layout.HBox());
 
@@ -112,7 +112,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __unlinkButton: null,
     __nodesUI: null,
     __edgesUI: null,
-    __selectedNodes: null,
+    __selectedNodeUIs: null,
     __inputNodesLayout: null,
     __outputNodesLayout: null,
     __workbenchLayer: null,
@@ -428,40 +428,47 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     getSelectedNodes: function() {
-      return this.__selectedNodes;
+      return this.__selectedNodeUIs;
     },
 
     getSelectedNodeIDs: function() {
       const selectedNodeIDs = [];
-      this.__selectedNodes.forEach(nodeUI => {
+      this.__selectedNodeUIs.forEach(nodeUI => {
         selectedNodeIDs.push(nodeUI.getNodeId());
       });
       return selectedNodeIDs;
     },
 
     resetSelectedNodes: function() {
-      this.__selectedNodes.forEach(node => node.removeState("selected"));
-      this.__selectedNodes = [];
-      qx.event.message.Bus.dispatchByName("changeWorkbenchSelection", []);
+      this.__setSelectedNodes([]);
     },
 
-    activeNodeChanged: function(activeNode, isControlPressed = false) {
+    __setSelectedNodes: function(selectedNodeUIs) {
+      this.__selectedNodeUIs.forEach(node => {
+        if (!selectedNodeUIs.includes(node)) {
+          node.removeState("selected");
+        }
+      });
+      selectedNodeUIs.forEach(selectedNode => selectedNode.addState("selected"));
+      this.__selectedNodeUIs = selectedNodeUIs;
+      qx.event.message.Bus.dispatchByName("changeWorkbenchSelection", selectedNodeUIs.map(selected => selected.getNode()));
+    },
+
+    activeNodeChanged: function(activeNodeUI, isControlPressed = false) {
       if (isControlPressed) {
-        if (this.__selectedNodes.includes(activeNode)) {
-          const index = this.__selectedNodes.indexOf(activeNode);
-          this.__selectedNodes.splice(index, 1);
-          activeNode.removeState("selected");
+        const index = this.__selectedNodeUIs.indexOf(activeNodeUI);
+        if (index > -1) {
+          activeNodeUI.removeState("selected");
+          this.__selectedNodeUIs.splice(index, 1);
         } else {
-          this.__selectedNodes.push(activeNode);
-          activeNode.addState("selected");
+          activeNodeUI.addState("selected");
+          this.__selectedNodeUIs.push(activeNodeUI);
+          this.__selectedItemChanged(activeNodeUI.getNodeId());
         }
       } else {
-        this.__selectedNodes.forEach(node => node.removeState("selected"));
-        this.__selectedNodes = [activeNode];
-        activeNode.addState("selected");
+        this.__setSelectedNodes([activeNodeUI]);
+        this.__selectedItemChanged(activeNodeUI.getNodeId());
       }
-      this.__selectedItemChanged(activeNode.getNodeId());
-      qx.event.message.Bus.dispatchByName("changeWorkbenchSelection", this.__selectedNodes.map(selected => selected.getNode()));
     },
 
     _createNodeUI: function(nodeId) {
