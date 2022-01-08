@@ -5,14 +5,11 @@
 """
 from typing import Dict, Optional
 
-import trafaret as T
 from aiohttp.web import Application
 from pydantic import BaseSettings
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "projects"
-
-schema = T.Dict({T.Key("enabled", default=True, optional=True): T.Bool()})
 
 
 class ProjectSettings(BaseSettings):
