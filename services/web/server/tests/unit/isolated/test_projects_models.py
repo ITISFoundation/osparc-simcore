@@ -13,6 +13,8 @@ from simcore_service_webserver.projects.projects_db import (
     _convert_to_schema_names,
 )
 
+# FIXTURES
+
 
 @pytest.fixture
 def fake_schema_dict():
@@ -67,6 +69,9 @@ def mock_pg_engine(mocker):
     engine = mocker.Mock(name="Engine")
     engine.acquire.return_value = mc
     return engine, connection
+
+
+# TESTS
 
 
 async def test_add_projects(fake_project, mock_pg_engine):

@@ -5,7 +5,6 @@
 """
 import json
 import logging
-from pprint import pformat
 
 from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_JSONSCHEMA_SPECS_KEY
@@ -17,9 +16,9 @@ from servicelib.aiohttp.rest_routing import (
 )
 
 from .._constants import APP_OPENAPI_SPECS_KEY
+from .._meta import API_VTAG
 from ..resources import resources
 from . import projects_handlers, projects_nodes_handlers, projects_tags_handlers
-from .config import CONFIG_SECTION_NAME, assert_valid_config
 from .projects_access import setup_projects_access
 from .projects_db import setup_projects_db
 
@@ -50,7 +49,7 @@ def _create_routes(tag, specs, *handlers_module, disable_login: bool = False):
     )
 
     if disable_login:
-        logger.debug("%s:\n%s", CONFIG_SECTION_NAME, pformat(routes))
+        logger.debug("projects:\n%s", json.dumps(routes, indent=1))
 
     return routes
 
@@ -62,12 +61,6 @@ def _create_routes(tag, specs, *handlers_module, disable_login: bool = False):
     logger=logger,
 )
 def setup_projects(app: web.Application) -> bool:
-    # ----------------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    assert_valid_config(app)
-    # ---------------------------------------------
-
     # API routes
     specs = app[APP_OPENAPI_SPECS_KEY]
 
@@ -91,13 +84,12 @@ def setup_projects(app: web.Application) -> bool:
     # app.router.add_routes( _create_routes("node", specs, nodes_handlers) )
 
     # json-schemas for projects datasets
-    # FIXME: schemas are hard-coded to api/V0!!!
-    with resources.stream("api/v0/schemas/project-v0.0.1.json") as fh:
+    with resources.stream(f"api/{API_VTAG}/schemas/project-v0.0.1.json") as fh:
         project_schema = json.load(fh)
 
     if APP_JSONSCHEMA_SPECS_KEY in app:
-        app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME] = project_schema
+        app[APP_JSONSCHEMA_SPECS_KEY]["projects"] = project_schema
     else:
-        app[APP_JSONSCHEMA_SPECS_KEY] = {CONFIG_SECTION_NAME: project_schema}
+        app[APP_JSONSCHEMA_SPECS_KEY] = {"projects": project_schema}
 
     return True

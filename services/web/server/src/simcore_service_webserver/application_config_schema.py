@@ -15,7 +15,6 @@ from . import (
 from .activity import config_schema as activity_config_schema
 from .director import config_schema as director_config_schema
 from .login import config_schema as login_config_schema
-from .projects import config_schema as projects_config_schema
 from .resource_manager import config_schema as resource_manager_config_schema
 from .resources import resources
 
@@ -60,7 +59,6 @@ def create_schema() -> T.Dict:
             ): tracing_config_schema.schema,
             # db_config_schema.CONFIG_SECTION_NAME: db_config_schema.schema,
             director_config_schema.CONFIG_SECTION_NAME: director_config_schema.schema,
-            projects_config_schema.CONFIG_SECTION_NAME: projects_config_schema.schema,
             email_config_schema.CONFIG_SECTION_NAME: email_config_schema.schema,
             storage_config_schema.CONFIG_SECTION_NAME: storage_config_schema.schema,
             addon_section(

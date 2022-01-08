@@ -5,19 +5,22 @@
 import json
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, Set
+from typing import Any, Dict, List, Set
 
 import jsonschema
 import pytest
 from jsonschema import ValidationError
+from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_utils import (
     clone_project_document,
     project_get_depending_nodes,
 )
 from simcore_service_webserver.resources import resources
 
+# HELPERS
 
-def load_template_projects() -> Dict[str, Any]:
+
+def load_template_projects() -> List[ProjectDict]:
     projects = []
     projects_names = [
         name for name in resources.listdir("data") if "template-projects" in name
@@ -28,11 +31,17 @@ def load_template_projects() -> Dict[str, Any]:
     return projects
 
 
+# FIXTURES
+
+
 @pytest.fixture
 def project_schema(project_schema_file: Path) -> Dict[str, Any]:
     with open(project_schema_file) as fh:
         schema = json.load(fh)
     return schema
+
+
+# TESTS
 
 
 @pytest.mark.parametrize(
