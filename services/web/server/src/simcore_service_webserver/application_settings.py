@@ -15,6 +15,7 @@ from .catalog_settings import CatalogSettings
 from .db_settings import PostgresSettings
 from .director.settings import DirectorSettings
 from .director_v2_settings import DirectorV2Settings
+from .email_settings import SmtpSettings
 from .storage_settings import StorageSettings
 from .tracing_settings import TracingSettings
 from .utils import snake_to_camel
@@ -70,6 +71,7 @@ class ApplicationSettings(BaseCustomSettings):
     WEBSERVER_STORAGE: Optional[StorageSettings]
 
     WEBSERVER_ACTIVITY: Optional[ActivitySettings]
+    WEBSERVER_EMAIL: Optional[SmtpSettings]
 
     WEBSERVER_STUDIES_ACCESS_ENABLED: bool
 

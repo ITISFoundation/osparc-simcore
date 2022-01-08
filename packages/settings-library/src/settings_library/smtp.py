@@ -8,6 +8,8 @@ from .basic_types import PortInt
 class SmtpSettings(BaseCustomSettings):
     """Simple Mail Transfer Protocol"""
 
+    SMTP_SENDER: str = "OSPARC support <support@osparc.io>"
+
     SMTP_HOST: str
     SMTP_PORT: PortInt
 

@@ -5,7 +5,6 @@ from typing import Dict
 import trafaret as T
 from trafaret_config.simple import read_and_validate
 
-from . import email_config_schema
 from .login import config_schema as login_config_schema
 from .resource_manager import config_schema as resource_manager_config_schema
 from .resources import resources
@@ -46,7 +45,6 @@ def create_schema() -> T.Dict:
                     ),
                 }
             ),
-            email_config_schema.CONFIG_SECTION_NAME: email_config_schema.schema,
             addon_section(
                 login_config_schema.CONFIG_SECTION_NAME, optional=True
             ): login_config_schema.schema,
