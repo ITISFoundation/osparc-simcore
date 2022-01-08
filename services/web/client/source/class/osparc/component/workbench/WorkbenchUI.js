@@ -87,6 +87,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
   events: {
     "nodeSelected": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
+    "removeNodes": "qx.event.type.Data",
     "removeEdge": "qx.event.type.Data",
     "changeSelectedNode": "qx.event.type.Data"
   },
@@ -1400,6 +1401,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         } else if (keyEvent.getKeyIdentifier() === "Delete" && this.__isSelectedItemAnEdge()) {
           this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
           this.__selectedItemChanged(null);
+        } else if (keyEvent.getKeyIdentifier() === "Delete") {
+          this.fireDataEvent("removeNodes", selectedNodeIDs);
         } else if (keyEvent.getKeyIdentifier() === "Escape") {
           this.resetSelectedNodes();
           this.__removeTempEdge();
