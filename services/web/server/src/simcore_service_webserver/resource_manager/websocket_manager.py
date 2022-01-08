@@ -20,22 +20,15 @@ from dataclasses import dataclass
 from typing import Dict, Iterator, List, Optional, Union
 
 from aiohttp import web
+from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
+from simcore_service_webserver.resource_manager.settings import ResourceManagerSettings
 
-from ..constants import APP_CONFIG_KEY
 from .registry import get_registry
 
 log = logging.getLogger(__file__)
 
 SOCKET_ID_KEY = "socket_id"
 PROJECT_ID_KEY = "project_id"
-
-
-def get_service_deletion_timeout(app: web.Application) -> int:
-    timeout = app[APP_CONFIG_KEY]["resource_manager"][
-        "resource_deletion_timeout_seconds"
-    ]
-    # NOTE: timeout is INT not FLOAT (timeout in expire arg at aioredis)
-    return int(timeout)
 
 
 @dataclass(order=True, frozen=True)
@@ -61,6 +54,10 @@ class WebsocketRegistry:
     client_session_id: Optional[str]
     app: web.Application
 
+    @property
+    def _settings(self) -> ResourceManagerSettings:
+        return self.app[APP_SETTINGS_KEY].WEBSERVER_RESOURCE_MANAGER
+
     def _resource_key(self) -> Dict[str, str]:
         return {
             "user_id": f"{self.user_id}",
@@ -78,9 +75,11 @@ class WebsocketRegistry:
         )
         registry = get_registry(self.app)
         await registry.set_resource(self._resource_key(), (SOCKET_ID_KEY, socket_id))
+
         # NOTE: hearthbeat is not emulated in tests, make sure that with very small GC intervals
         # the resources do not expire; this value is usually in the order of minutes
-        timeout = max(3, get_service_deletion_timeout(self.app))
+        # TODO: move this constraint to the settings instead
+        timeout = max(3, self._settings.RESOURCE_MANAGER_RESOURCE_TTL_S)
         await registry.set_key_alive(self._resource_key(), timeout)
 
     async def get_socket_id(self) -> Optional[str]:
@@ -108,14 +107,16 @@ class WebsocketRegistry:
         registry = get_registry(self.app)
         await registry.remove_resource(self._resource_key(), SOCKET_ID_KEY)
         await registry.set_key_alive(
-            self._resource_key(), get_service_deletion_timeout(self.app)
+            self._resource_key(),
+            self._settings.RESOURCE_MANAGER_RESOURCE_TTL_S,
         )
 
     async def set_heartbeat(self) -> None:
         """Extends TTL to avoid expiration of all resources under this session"""
         registry = get_registry(self.app)
         await registry.set_key_alive(
-            self._resource_key(), get_service_deletion_timeout(self.app)
+            self._resource_key(),
+            self._settings.RESOURCE_MANAGER_RESOURCE_TTL_S,
         )
 
     async def find_socket_ids(self) -> List[str]:

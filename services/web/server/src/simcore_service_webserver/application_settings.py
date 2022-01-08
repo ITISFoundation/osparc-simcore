@@ -6,7 +6,9 @@ from models_library.basic_types import BootModeEnum, BuildTargetEnum, PortInt
 from pydantic import Field
 from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
+from settings_library.redis import RedisSettings
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
+from simcore_service_webserver.resource_manager.settings import ResourceManagerSettings
 
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, APP_NAME
@@ -74,6 +76,10 @@ class ApplicationSettings(BaseCustomSettings):
     WEBSERVER_EMAIL: Optional[SmtpSettings]
 
     WEBSERVER_STUDIES_ACCESS_ENABLED: bool
+
+    WEBSERVER_RESOURCE_MANAGER: Optional[ResourceManagerSettings]
+
+    WEBSERVER_REDIS: Optional[RedisSettings]
 
     class Config(BaseCustomSettings.Config):
         fields = {

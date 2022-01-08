@@ -17,7 +17,7 @@ from pydantic import BaseModel
 from ..login.cfg import get_storage
 from ..login.handlers import ACTIVE, GUEST
 from ..login.utils import get_client_ip, get_random_string
-from ..resource_manager.config import GUEST_USER_RC_LOCK_FORMAT
+from ..resource_manager.constants import GUEST_USER_RC_LOCK_FORMAT
 from ..resource_manager.redis import get_redis_lock_manager
 from ..security_api import authorized_userid, encrypt_password, is_anonymous, remember
 from ..users_api import get_user

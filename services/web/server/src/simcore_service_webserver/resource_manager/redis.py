@@ -5,36 +5,36 @@ from typing import Optional
 import aioredis
 from aiohttp import web
 from aioredlock import Aioredlock
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from ._constants import (
+from ..constants import APP_SETTINGS_KEY
+from .constants import (
     APP_CLIENT_REDIS_CLIENT_KEY,
     APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY,
     APP_CLIENT_REDIS_LOCK_MANAGER_KEY,
 )
+from .settings import ResourceManagerSettings
 
 log = logging.getLogger(__name__)
 
-THIS_SERVICE_NAME = "redis"
-DSN = "redis://{host}:{port}"
+
 _MINUTE = 60
-_WAIT_SECS = 2
 
 
 async def redis_client(app: web.Application):
-    cfg = app[APP_CONFIG_KEY]["resource_manager"]
-    endpoint = DSN.format(**cfg["redis"])
+    settings: ResourceManagerSettings = app[APP_SETTINGS_KEY].WEBSERVER_RESOURCE_MANAGER
+    endpoint = settings.RESOURCE_MANAGER_REDIS.dsn
 
     async def create_client(url) -> aioredis.Redis:
         # create redis client
         client: Optional[aioredis.Redis] = None
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(1 * _MINUTE),
-            wait=wait_fixed(_WAIT_SECS),
+            wait=wait_fixed(2),
             before_sleep=before_sleep_log(log, logging.WARNING),
             reraise=True,
         ):
@@ -87,15 +87,6 @@ async def redis_client(app: web.Application):
 
 def setup_redis_client(app: web.Application):
     app[APP_CLIENT_REDIS_CLIENT_KEY] = None
-
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-
-    if not cfg["redis"]["enabled"]:
-        return
-
-    # app is created at this point but not yet started
-    log.debug("Setting up %s [service: %s] ...", __name__, THIS_SERVICE_NAME)
-
     app.cleanup_ctx.append(redis_client)
 
 

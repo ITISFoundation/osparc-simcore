@@ -11,6 +11,7 @@ from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 
 from .. import director_v2_api, users_exceptions
+from ..constants import APP_SETTINGS_KEY
 from ..db_models import GroupType
 from ..director.director_exceptions import DirectorException, ServiceNotFoundError
 from ..groups_api import get_group_from_gid
@@ -32,8 +33,9 @@ from ..users_api import (
     is_user_guest,
 )
 from ..users_to_groups_api import get_users_for_gid
-from .config import GUEST_USER_RC_LOCK_FORMAT, get_garbage_collector_interval
+from .constants import GUEST_USER_RC_LOCK_FORMAT
 from .registry import RedisResourceRegistry, get_registry
+from .settings import ResourceManagerSettings
 
 logger = logging.getLogger(__name__)
 database_errors = (
@@ -89,11 +91,12 @@ def setup_garbage_collector(app: web.Application):
 
 
 async def collect_garbage_periodically(app: web.Application):
+    settings: ResourceManagerSettings = app[APP_SETTINGS_KEY].WEBSERVER_RESOURCE_MANAGER
 
     while True:
         logger.info("Starting garbage collector...")
         try:
-            interval = get_garbage_collector_interval(app)
+            interval = settings.RESOURCE_MANAGER_GARBAGE_COLLECTION_INTERVAL_S
             while True:
                 await collect_garbage(app)
 
