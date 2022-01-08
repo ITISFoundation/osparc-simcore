@@ -134,6 +134,7 @@ qx.Class.define("osparc.wrapper.Svg", {
           color: edgeColor
         })
         .move(x, y);
+      rect.back();
       return rect;
     },
 
