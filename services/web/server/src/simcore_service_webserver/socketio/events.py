@@ -12,7 +12,7 @@ from servicelib.utils import fire_and_forget_task, logged_gather
 from socketio import AsyncServer
 
 from ..resource_manager.websocket_manager import managed_resource
-from ._contants import APP_CLIENT_SOCKET_SERVER_KEY
+from .contants import APP_CLIENT_SOCKET_SERVER_KEY
 
 log = logging.getLogger(__name__)
 

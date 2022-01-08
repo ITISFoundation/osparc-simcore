@@ -9,22 +9,15 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from socketio import AsyncServer
 
 from . import handlers, handlers_utils
-from ._contants import APP_CLIENT_SOCKET_SERVER_KEY
+from .contants import APP_CLIENT_SOCKET_SERVER_KEY
 
 log = logging.getLogger(__name__)
 
 
 @app_module_setup(
-    "simcore_service_webserver.socketio", ModuleCategory.SYSTEM, logger=log
+    "simcore_service_webserver.socketio", ModuleCategory.ADDON, logger=log
 )
 def setup_socketio(app: web.Application):
-    # ----------------------------------------------
-    from .config import assert_valid_config
-
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    assert_valid_config(app)
-    # ---------------------------------------------
 
     # SEE https://github.com/miguelgrinberg/python-socketio/blob/v4.6.1/docs/server.rst#aiohttp
     # TODO: ujson to speed up?

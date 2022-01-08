@@ -18,7 +18,6 @@ from .login import config_schema as login_config_schema
 from .projects import config_schema as projects_config_schema
 from .resource_manager import config_schema as resource_manager_config_schema
 from .resources import resources
-from .socketio import config_schema as socketio_config_schema
 
 log = logging.getLogger(__name__)
 
@@ -67,9 +66,6 @@ def create_schema() -> T.Dict:
             addon_section(
                 login_config_schema.CONFIG_SECTION_NAME, optional=True
             ): login_config_schema.schema,
-            addon_section(
-                socketio_config_schema.CONFIG_SECTION_NAME, optional=True
-            ): socketio_config_schema.schema,
             activity_config_schema.CONFIG_SECTION_NAME: activity_config_schema.schema,
             resource_manager_config_schema.CONFIG_SECTION_NAME: resource_manager_config_schema.schema,
             # BELOW HERE minimal sections until more options are needed

@@ -6,7 +6,7 @@ from typing import Callable
 from aiohttp import web
 from socketio import AsyncServer
 
-from ._contants import (
+from .contants import (
     APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY,
     APP_CLIENT_SOCKET_SERVER_KEY,
 )
