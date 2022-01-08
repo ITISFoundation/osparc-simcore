@@ -3,33 +3,14 @@
     - config-file schema
     - settings
 """
-from typing import Optional
+from typing import Dict, Optional
 
-import trafaret as T
+from aiohttp.web import Application
 from models_library.basic_types import PortInt
 from pydantic import BaseSettings
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
-from typing import Dict
-
-from aiohttp.web import Application
-
-
 CONFIG_SECTION_NAME = "smtp"
-
-
-schema = T.Dict(
-    {
-        T.Key(
-            "sender", default="OSPARC support <support@osparc.io>"
-        ): T.String(),  # FIXME: email format
-        "host": T.String(),
-        "port": T.ToInt(),
-        T.Key("tls", default=False): T.Or(T.Bool(), T.ToInt),
-        T.Key("username", default=None): T.Or(T.String, T.Null),
-        T.Key("password", default=None): T.Or(T.String, T.Null),
-    }
-)
 
 
 class EmailSettings(BaseSettings):
