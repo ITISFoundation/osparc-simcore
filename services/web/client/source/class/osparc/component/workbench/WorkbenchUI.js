@@ -1186,6 +1186,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       } else if (this.__isDraggingLink) {
         this.__dropLink(e);
       }
+
+      this.activate();
     },
 
     __mouseWheel: function(e) {
