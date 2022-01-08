@@ -18,15 +18,14 @@
 """
 import base64
 import logging
+from typing import Tuple
 
 import aiohttp_session
 from aiohttp import web
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from cryptography import fernet
-
+from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-
-from .session_config import assert_valid_config
 
 logger = logging.getLogger(__file__)
 
@@ -43,21 +42,17 @@ def setup_session(app: web.Application):
     """
     Inits and registers a session middleware in aiohttp.web.Application
     """
-    # ----------------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    cfg = assert_valid_config(app)
-    # ---------------------------------------------
 
     # secret key needed by EncryptedCookieStorage: is *bytes* key with length of *32*
-    secret_key_bytes = cfg["secret_key"].encode("utf-8")
-    if len(secret_key_bytes) == 0:
-        raise ValueError("Empty %s.secret_key in config. Expected at least length 32")
-
-    while len(secret_key_bytes) < 32:
-        secret_key_bytes += secret_key_bytes
+    secret_key_bytes = (
+        app[APP_SETTINGS_KEY]
+        .WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
+        .encode("utf-8")
+    )
+    assert len(secret_key_bytes) >= 32  # nosec
 
     # EncryptedCookieStorage urlsafe_b64decode inside if passes bytes
+    # NOTE: truncates secret_key_bytes to 32!!
     storage = EncryptedCookieStorage(
         secret_key=secret_key_bytes[:32], cookie_name="osparc.WEBAPI_SESSION"
     )
@@ -69,4 +64,4 @@ def setup_session(app: web.Application):
 get_session = aiohttp_session.get_session
 
 
-__all__ = ("setup_session", "get_session")
+__all__: Tuple[str, ...] = ("setup_session", "get_session")

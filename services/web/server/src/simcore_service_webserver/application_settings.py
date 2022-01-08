@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 from aiohttp import web
 from models_library.basic_types import BootModeEnum, BuildTargetEnum
 from pydantic import Field
+from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
 
 from ._constants import APP_SETTINGS_KEY
@@ -16,40 +17,41 @@ log = logging.getLogger(__name__)
 
 class ApplicationSettings(BaseCustomSettings):
     # CODE STATICS ---
-    # settings defined by the code
-
-    APP_NAME: str = APP_NAME
     API_VERSION: str = API_VERSION
+    APP_NAME: str = APP_NAME
 
-    # IMAGE BUILD ---
-    # settings defined when docker image is built
-    #
-    SC_VCS_URL: Optional[str] = None
-    SC_VCS_REF: Optional[str] = None
+    # IMAGE BUILDTIME ---
     SC_BUILD_DATE: Optional[str] = None
     SC_BUILD_TARGET: Optional[BuildTargetEnum] = None
+    SC_VCS_REF: Optional[str] = None
+    SC_VCS_URL: Optional[str] = None
 
-    # DOCKER
+    # @Dockerfile
     SC_BOOT_MODE: Optional[BootModeEnum]
-
-    SC_USER_NAME: Optional[str] = None
-    SC_USER_ID: Optional[int] = None
-
-    SC_HEATHCHECK_RETRY: Optional[int] = None
     SC_HEATCHECK_INTEVAL: Optional[int] = None
+    SC_HEATHCHECK_RETRY: Optional[int] = None
+    SC_USER_ID: Optional[int] = None
+    SC_USER_NAME: Optional[str] = None
 
-    # stack name defined upon deploy (see main Makefile)
-    SWARM_STACK_NAME: Optional[str] = None
-
-    # CONTAINER RUN  ---
+    # RUNTIME  ---
     # settings defined from environs defined when container runs
+    # NOTE: keep alphabetically if possible
 
-    # POSTGRES
-    WEBSERVER_POSTGRES: Optional[PostgresSettings]
+    SWARM_STACK_NAME: Optional[str] = Field(
+        None, description="stack name defined upon deploy (see main Makefile)"
+    )
 
     WEBSERVER_DEV_FEATURES_ENABLED: bool = Field(
         False,
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
+    )
+
+    # POSTGRES
+    WEBSERVER_POSTGRES: Optional[PostgresSettings]
+
+    # SESSION
+    WEBSERVER_SESSION_SECRET_KEY: SecretStr(min_length=32) = Field(  # type: ignore
+        ..., description="Secret key to encrypt cookies"
     )
 
     class Config(BaseCustomSettings.Config):

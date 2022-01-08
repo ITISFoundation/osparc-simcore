@@ -9,7 +9,6 @@ from trafaret_config.simple import read_and_validate
 from . import (
     catalog_config_schema,
     email_config_schema,
-    session_config_schema,
     storage_config_schema,
     tracing_config_schema,
 )
@@ -71,7 +70,6 @@ def create_schema() -> T.Dict:
             addon_section(
                 socketio_config_schema.CONFIG_SECTION_NAME, optional=True
             ): socketio_config_schema.schema,
-            session_config_schema.CONFIG_SECTION_NAME: session_config_schema.schema,
             activity_config_schema.CONFIG_SECTION_NAME: activity_config_schema.schema,
             resource_manager_config_schema.CONFIG_SECTION_NAME: resource_manager_config_schema.schema,
             # BELOW HERE minimal sections until more options are needed
