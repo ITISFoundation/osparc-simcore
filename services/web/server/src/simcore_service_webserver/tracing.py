@@ -1,32 +1,29 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.tracing import setup_tracing
 
-CONFIG_SECTION_NAME = "tracing"
+from .application_settings import ApplicationSettings
+from .constants import APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
 
 
-@app_module_setup(__name__, ModuleCategory.ADDON, logger=log)
+@app_module_setup(
+    __name__, ModuleCategory.ADDON, config_section="WEBSERVER_TRACING", logger=log
+)
 def setup_app_tracing(app: web.Application):
 
-    # TODO: this should be part of app settings but
-    # temporary here until https://github.com/ITISFoundation/osparc-simcore/pull/2376 is completed
-    config = app[APP_CONFIG_KEY]
-    host = config["main"]["host"]
-    port = config["main"]["port"]
-    cfg = config[CONFIG_SECTION_NAME]
-    zipkin_endpoint = cfg["zipkin_endpoint"]
-    assert cfg["enabled"]  # nosec
+    settings: ApplicationSettings = app[APP_SETTINGS_KEY]
+    assert settings.WEBSERVER_TRACING  # nosec
+
     return setup_tracing(
         app,
         service_name="simcore_service_webserver",
-        host=host,
-        port=port,
-        jaeger_base_url=zipkin_endpoint,
+        host="0.0.0.0",  # nosec
+        port=settings.WEBSERVER_PORT,
+        jaeger_base_url=str(settings.WEBSERVER_TRACING.TRACING_ZIPKIN_ENDPOINT),
         # TODO: skip all routes that are ouside vX ??
         skip_routes=None,
     )

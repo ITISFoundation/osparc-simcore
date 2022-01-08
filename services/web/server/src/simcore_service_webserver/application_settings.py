@@ -2,10 +2,11 @@ import logging
 from typing import Any, Dict, Optional
 
 from aiohttp import web
-from models_library.basic_types import BootModeEnum, BuildTargetEnum
+from models_library.basic_types import BootModeEnum, BuildTargetEnum, PortInt
 from pydantic import Field
 from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
+from settings_library.service_utils import DEFAULT_AIOHTTP_PORT
 
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, APP_NAME
@@ -14,6 +15,7 @@ from .db_settings import PostgresSettings
 from .director.settings import DirectorSettings
 from .director_v2_settings import DirectorV2Settings
 from .storage_settings import StorageSettings
+from .tracing_settings import TracingSettings
 from .utils import snake_to_camel
 
 log = logging.getLogger(__name__)
@@ -45,25 +47,28 @@ class ApplicationSettings(BaseCustomSettings):
         None, description="stack name defined upon deploy (see main Makefile)"
     )
 
+    WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
+
     WEBSERVER_DEV_FEATURES_ENABLED: bool = Field(
         False,
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
     )
 
-    # POSTGRES
     WEBSERVER_POSTGRES: Optional[PostgresSettings]
 
-    # SESSION
     WEBSERVER_SESSION_SECRET_KEY: SecretStr(min_length=32) = Field(  # type: ignore
         ..., description="Secret key to encrypt cookies"
     )
 
-    # SERVICES with http API
+    WEBSERVER_TRACING: Optional[TracingSettings]
+
+    # SERVICES is osparc-stack with http API
     WEBSERVER_CATALOG: Optional[CatalogSettings]
-    WEBSERVER_STORAGE: Optional[StorageSettings]
-    WEBSERVER_DIRECTOR: Optional[DirectorSettings]
     WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings]
-    # WEBSERVER_TRACING: Optional[TracingSettings]
+    WEBSERVER_DIRECTOR: Optional[DirectorSettings]
+    WEBSERVER_STORAGE: Optional[StorageSettings]
+
+    WEBSERVER_STUDIES_ACCESS_ENABLED: bool
 
     class Config(BaseCustomSettings.Config):
         fields = {
@@ -108,3 +113,7 @@ class ApplicationSettings(BaseCustomSettings):
 def setup_settings(app: web.Application):
     app[APP_SETTINGS_KEY] = ApplicationSettings()
     log.info("Captured app settings:\n%s", app[APP_SETTINGS_KEY].json(indent=2))
+
+
+def get_settings(app: web.Application) -> ApplicationSettings:
+    return app[APP_SETTINGS_KEY]
