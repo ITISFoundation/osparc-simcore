@@ -1154,7 +1154,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__isDraggingLink) {
         this.__draggingLink(e, true);
       } else if (this.__tempEdgeRepr === null && this.__rectInitPos && e.isLeftPressed()) {
-        console.log("drawingRect", this.__tempEdgeRepr);
         this.__drawingRect(e);
       } else if (this.__panning && e.isMiddlePressed()) {
         const oldPos = this.__pointerPos;
@@ -1509,6 +1508,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __drawingRect: function(e) {
+      // draw rect
       const initPos = this.__rectInitPos;
       const currentPos = this.__pointerEventToWorkbenchPos(e);
       const x = Math.min(initPos.x, currentPos.x);
@@ -1520,6 +1520,24 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       } else {
         osparc.component.workbench.SvgWidget.updateRect(this.__rectRepr, width, height, x, y);
       }
+
+      // select nodes
+      const nodeUIs = [];
+      this.__nodesUI.forEach(nodeUI => {
+        const nodeBounds = nodeUI.getCurrentBounds();
+        if (nodeBounds) {
+          const nodePos = nodeUI.getNode().getPosition();
+          const nodePosX = nodePos.x + nodeBounds.width/2;
+          const nodePosY = nodePos.y + nodeBounds.height/2;
+          if (nodePosX > x &&
+            nodePosX < x+width &&
+            nodePosY > y &&
+            nodePosY < y+height) {
+            nodeUIs.push(nodeUI);
+          }
+        }
+      });
+      this.__setSelectedNodes(nodeUIs);
     },
 
     __dropFile: function(e) {
