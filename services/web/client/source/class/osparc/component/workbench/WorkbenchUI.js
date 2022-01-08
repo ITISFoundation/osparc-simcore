@@ -1401,6 +1401,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
           this.__selectedItemChanged(null);
         } else if (keyEvent.getKeyIdentifier() === "Escape") {
+          this.resetSelectedNodes();
           this.__removeTempEdge();
           this.__removePointerMoveListener();
         }
