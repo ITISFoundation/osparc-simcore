@@ -1,28 +1,11 @@
-""" storage subsystem's configuration
-
-    - config-file schema
-    - settings
-"""
 from typing import Dict, Optional, Tuple
 
-import trafaret as T
 from aiohttp import ClientSession, web
 from models_library.basic_types import PortInt, VersionTag
-from pydantic import BaseSettings, Field, AnyHttpUrl, validator
+from pydantic import AnyHttpUrl, BaseSettings, Field, validator
 from servicelib.aiohttp.application_keys import APP_CLIENT_SESSION_KEY, APP_CONFIG_KEY
 
 CONFIG_SECTION_NAME = "storage"
-
-schema = T.Dict(
-    {
-        T.Key("enabled", default=True, optional=True): T.Bool(),
-        T.Key("host", default="storage"): T.String(),
-        T.Key("port", default=11111): T.ToInt(),
-        T.Key("version", default="v0"): T.Regexp(
-            regexp=r"^v\d+"
-        ),  # storage API version basepath
-    }
-)
 
 
 class StorageSettings(BaseSettings):
