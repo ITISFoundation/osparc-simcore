@@ -29,3 +29,11 @@ def copy_from_dict(data: Dict[str, Any], *, include: Optional[Union[Set, Dict]] 
     assert isinstance(include, dict)  # nosec
 
     return {key: copy_from_dict(data[key], include=include[key]) for key in include}
+
+
+def update_dict(obj: Dict, **updates):
+    for key, update_value in updates.items():
+        if callable(update_value):
+            update_value = update_value(obj[key])
+        obj.update({key: update_value})
+    return obj

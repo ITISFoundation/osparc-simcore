@@ -491,18 +491,6 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * HEALTHCHECK
-       */
-      "healthCheck": {
-        useCache: false,
-        endpoints: {
-          get: {
-            method: "GET",
-            url: statics.API + "/"
-          }
-        }
-      },
-      /*
        * AUTH
        */
       "auth": {

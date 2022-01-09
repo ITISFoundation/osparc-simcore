@@ -1,3 +1,4 @@
+import json
 import logging
 from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -8,6 +9,7 @@ from aiopg.sa import SAConnection
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectIDStr
 from pydantic.types import NonNegativeInt, PositiveInt
+from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_version_control import (
     projects_vc_branches,
@@ -189,9 +191,6 @@ class VersionControlRepository(BaseRepository):
         project: Union[RowProxy, SimpleNamespace],
         conn: SAConnection,
     ):
-        import json
-
-        from servicelib.json_serialization import json_dumps
 
         # has changes wrt previous commit
         assert project_checksum  # nosec
@@ -528,8 +527,6 @@ class VersionControlRepository(BaseRepository):
         raise NotFoundError(name="snapshot for commit", value=(repo_id, commit_id))
 
     async def get_workbench_view(self, repo_id: int, commit_id: int) -> Dict[str, Any]:
-        # FIXME: q&d fix!!!
-        # TODO: move to VersionControlRepositoryInternalAPI
         async with self.engine.acquire() as conn:
             if (
                 commit := await self.CommitsOrm(conn)

@@ -1,9 +1,9 @@
 import warnings
-from typing_extensions import TypedDict
 
 from pydantic import BaseSettings, Extra
 from pydantic.networks import AnyUrl
 from pydantic.types import PositiveInt, SecretStr
+from typing_extensions import TypedDict
 
 
 class Channels(TypedDict):
