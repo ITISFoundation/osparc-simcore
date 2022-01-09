@@ -14,6 +14,7 @@
 ../../packages/models-library/
 ../../packages/postgres-database/
 ../../packages/pytest-simcore/
+../../packages/simcore-sdk
 ../../packages/service-library[fastapi]
 ../../packages/settings-library/
 

@@ -7,18 +7,16 @@ import time
 
 import pytest
 from servicelib.aiohttp import monitor_slow_callbacks
-from servicelib.aiohttp.aiopg_utils import (
-    DatabaseError,
-    postgres_service_retry_policy_kwargs,
-    retry,
-)
+from servicelib.aiohttp.aiopg_utils import DatabaseError, retry
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 
 async def slow_task(delay):
     time.sleep(delay)
 
 
-@retry(**postgres_service_retry_policy_kwargs)
+@retry(wait=wait_fixed(1), stop=stop_after_attempt(2))
 async def fails_to_reach_pg_db():
     raise DatabaseError
 

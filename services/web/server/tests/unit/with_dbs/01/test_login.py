@@ -5,6 +5,7 @@
 
 import pytest
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
@@ -15,10 +16,10 @@ from simcore_service_webserver.login.cfg import cfg
 EMAIL, PASSWORD = "tester@test.com", "password"
 
 
-async def test_login_with_unknown_email(client):
+async def test_login_with_unknown_email(client: TestClient):
     url = client.app.router["auth_login"].url_for()
     r = await client.post(
-        url, json={"email": "unknown@email.com", "password": "wrong."}
+        f"{url}", json={"email": "unknown@email.com", "password": "wrong."}
     )
     payload = await r.json()
 
@@ -27,16 +28,17 @@ async def test_login_with_unknown_email(client):
     assert cfg.MSG_UNKNOWN_EMAIL in await r.text()
 
 
-async def test_login_with_wrong_password(client):
+async def test_login_with_wrong_password(client: TestClient):
     url = client.app.router["auth_login"].url_for()
-    r = await client.get(url)
+
+    r = await client.post(f"{url}")
     payload = await r.json()
 
     assert cfg.MSG_WRONG_PASSWORD not in await r.text(), str(payload)
 
     async with NewUser() as user:
         r = await client.post(
-            url,
+            f"{url}",
             json={
                 "email": user["email"],
                 "password": "wrong.",
@@ -48,14 +50,14 @@ async def test_login_with_wrong_password(client):
     assert cfg.MSG_WRONG_PASSWORD in await r.text()
 
 
-async def test_login_banned_user(client):
+async def test_login_banned_user(client: TestClient):
     url = client.app.router["auth_login"].url_for()
-    r = await client.get(url)
+    r = await client.post(f"{url}")
     assert cfg.MSG_USER_BANNED not in await r.text()
 
     async with NewUser({"status": UserStatus.BANNED.name}) as user:
         r = await client.post(
-            url, json={"email": user["email"], "password": user["raw_password"]}
+            f"{url}", json={"email": user["email"], "password": user["raw_password"]}
         )
         payload = await r.json()
 
@@ -64,26 +66,26 @@ async def test_login_banned_user(client):
     assert cfg.MSG_USER_BANNED in payload["error"]["errors"][0]["message"]
 
 
-async def test_login_inactive_user(client):
+async def test_login_inactive_user(client: TestClient):
     url = client.app.router["auth_login"].url_for()
-    r = await client.get(url)
+    r = await client.post(f"{url}")
     assert cfg.MSG_ACTIVATION_REQUIRED not in await r.text()
 
     async with NewUser({"status": UserStatus.CONFIRMATION_PENDING.name}) as user:
         r = await client.post(
-            url, json={"email": user["email"], "password": user["raw_password"]}
+            f"{url}", json={"email": user["email"], "password": user["raw_password"]}
         )
     assert r.status == web.HTTPUnauthorized.status_code
     assert r.url_obj.path == url.path
     assert cfg.MSG_ACTIVATION_REQUIRED in await r.text()
 
 
-async def test_login_successfully(client):
+async def test_login_successfully(client: TestClient):
     url = client.app.router["auth_login"].url_for()
 
     async with NewUser() as user:
         r = await client.post(
-            url, json={"email": user["email"], "password": user["raw_password"]}
+            f"{url}", json={"email": user["email"], "password": user["raw_password"]}
         )
     assert r.status == 200
     data, error = unwrap_envelope(await r.json())
@@ -96,7 +98,7 @@ async def test_login_successfully(client):
 @pytest.mark.parametrize(
     "cookie_enabled,expected", [(True, web.HTTPOk), (False, web.HTTPUnauthorized)]
 )
-async def test_proxy_login(client, cookie_enabled, expected):
+async def test_proxy_login(client: TestClient, cookie_enabled, expected):
 
     restricted_url = client.app.router["get_my_profile"].url_for()
     assert str(restricted_url) == "/v0/me"

@@ -107,7 +107,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._studiesContainer.nextRequest = null;
     },
 
-    // overriden
+    // overridden
     _initResources: function() {
       this._showLoadingPage(this.tr("Starting..."));
 
@@ -575,14 +575,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(saveAsTemplateButton);
       }
 
-      if (osparc.data.model.Study.hasSlideshow(studyData) && osparc.data.Permissions.getInstance().canDo("study.slides")) {
-        const startAsGuidedModeButton = this.__getStartAsGuidedModeButton(studyData);
-        menu.add(startAsGuidedModeButton);
-
-        const startAsAppButton = this.__getStartAsAppButton(studyData);
-        menu.add(startAsAppButton);
-      }
-
       const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
       if (deleteButton) {
         menu.addSeparator();
@@ -677,7 +669,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getSaveAsTemplateMenuButton: function(studyData) {
       const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Publish as Template"));
       saveAsTemplateButton.addListener("execute", () => {
-        const saveAsTemplateView = new osparc.component.study.SaveAsTemplate(studyData.uuid, studyData);
+        const saveAsTemplateView = new osparc.component.study.SaveAsTemplate(studyData);
         const title = this.tr("Publish as Template");
         const window = osparc.ui.window.Window.popUpInWindow(saveAsTemplateView, title, 400, 300);
         saveAsTemplateView.addListener("finished", e => {
@@ -689,22 +681,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }, this);
       }, this);
       return saveAsTemplateButton;
-    },
-
-    __getStartAsGuidedModeButton: function(studyData) {
-      const startAsGuidedModeButton = new qx.ui.menu.Button(this.tr("Start Guided mode"));
-      startAsGuidedModeButton.addListener("execute", () => {
-        this._startStudy(studyData, "guided");
-      }, this);
-      return startAsGuidedModeButton;
-    },
-
-    __getStartAsAppButton: function(studyData) {
-      const startAsAppButton = new qx.ui.menu.Button(this.tr("Start App mode"));
-      startAsAppButton.addListener("execute", () => {
-        this._startStudy(studyData, "app");
-      }, this);
-      return startAsAppButton;
     },
 
     __getDeleteStudyMenuButton: function(studyData) {

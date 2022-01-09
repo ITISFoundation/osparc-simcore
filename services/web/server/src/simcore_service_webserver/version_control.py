@@ -1,20 +1,14 @@
-""" Version control app module
+""" An add-on on projects module
 
-    Manages version control of studies, both the project document and the associated data
+    Adds version control to projects
 
 """
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import (
-    ModuleCategory,
-    SkipModuleSetup,
-    app_module_setup,
-)
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import version_control_handlers, version_control_handlers_snapshots
-from .constants import APP_SETTINGS_KEY
-from .settings import ApplicationSettings
+from . import version_control_handlers
 
 log = logging.getLogger(__name__)
 
@@ -22,14 +16,11 @@ log = logging.getLogger(__name__)
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
-    depends=["simcore_service_webserver.projects"],
+    depends=[
+        "simcore_service_webserver.projects",
+    ],
     logger=log,
 )
 def setup_version_control(app: web.Application):
 
-    settings: ApplicationSettings = app[APP_SETTINGS_KEY]
-    if not settings.WEBSERVER_DEV_FEATURES_ENABLED:
-        raise SkipModuleSetup(reason="Development feature")
-
     app.add_routes(version_control_handlers.routes)
-    app.add_routes(version_control_handlers_snapshots.routes)

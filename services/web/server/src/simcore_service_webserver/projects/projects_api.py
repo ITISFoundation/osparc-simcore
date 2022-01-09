@@ -8,6 +8,7 @@
 """
 # pylint: disable=too-many-arguments
 
+import asyncio
 import contextlib
 import json
 import logging
@@ -29,6 +30,7 @@ from models_library.projects_state import (
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.aiohttp.jsonschema_validation import validate_instance
+from servicelib.json_serialization import json_dumps
 from servicelib.observer import observe
 from servicelib.utils import fire_and_forget_task, logged_gather
 
@@ -41,8 +43,9 @@ from ..resource_manager.websocket_manager import (
 from ..socketio.events import (
     SOCKET_IO_NODE_UPDATED_EVENT,
     SOCKET_IO_PROJECT_UPDATED_EVENT,
-    post_group_messages,
-    post_messages,
+    SocketMessageDict,
+    send_group_messages,
+    send_messages,
 )
 from ..storage_api import (
     delete_data_folders_of_project,
@@ -50,7 +53,12 @@ from ..storage_api import (
 )
 from ..users_api import get_user_name, is_user_guest
 from .config import CONFIG_SECTION_NAME
-from .project_lock import ProjectLockError, get_project_locked_state, lock_project
+from .project_lock import (
+    ProjectLockError,
+    UserNameDict,
+    get_project_locked_state,
+    lock_project,
+)
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_utils import extract_dns_without_default_port
 
@@ -63,9 +71,11 @@ def _is_node_dynamic(node_key: str) -> bool:
     return "/dynamic/" in node_key
 
 
-def validate_project(app: web.Application, project: Dict):
+async def validate_project(app: web.Application, project: Dict):
     project_schema = app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME]
-    validate_instance(project, project_schema)  # TODO: handl
+    await asyncio.get_event_loop().run_in_executor(
+        None, validate_instance, project, project_schema
+    )
 
 
 async def get_project_for_user(
@@ -78,7 +88,7 @@ async def get_project_for_user(
 ) -> Dict:
     """Returns a VALID project accessible to user
 
-    :raises web.HTTPNotFound: if no match found
+    :raises ProjectNotFoundError: if no match found
     :return: schema-compliant project data
     :rtype: Dict
     """
@@ -100,7 +110,7 @@ async def get_project_for_user(
 
     # TODO: how to handle when database has an invalid project schema???
     # Notice that db model does not include a check on project schema.
-    validate_project(app, project)
+    await validate_project(app, project)
     return project
 
 
@@ -134,13 +144,17 @@ async def start_project_interactive_services(
     # first get the services if they already exist
     log.debug(
         "getting running interactive services of project %s for user %s",
-        project["uuid"],
-        user_id,
+        f"{project['uuid']=}",
+        f"{user_id=}",
     )
     running_services = await director_v2_api.get_services(
         request.app, user_id, project["uuid"]
     )
-    log.debug("Running services %s", running_services)
+    log.debug(
+        "Currently running services %s for user %s",
+        f"{running_services=}",
+        f"{user_id=}",
+    )
 
     running_service_uuids = [x["service_uuid"] for x in running_services]
     # now start them if needed
@@ -150,7 +164,7 @@ async def start_project_interactive_services(
         if _is_node_dynamic(service["key"])
         and service_uuid not in running_service_uuids
     }
-    log.debug("Services to start %s", project_needed_services)
+    log.debug("Starting services: %s", f"{project_needed_services=}")
 
     start_service_tasks = [
         director_v2_api.start_service(
@@ -165,28 +179,25 @@ async def start_project_interactive_services(
         )
         for service_uuid, service in project_needed_services.items()
     ]
-
-    result = await logged_gather(*start_service_tasks, reraise=True)
-    log.debug("Services start result %s", result)
-    for entry in result:
-        # if the status is present in the results fo the start_service
-        # it means that the API call failed
-        # also it is enforced that the status is different from 200 OK
-        if "status" not in entry:
-            continue
-
-        if entry["status"] != 200:
-            log.error("Error while starting dynamic service %s", entry)
+    results = await logged_gather(*start_service_tasks, reraise=True)
+    log.debug("Services start result %s", results)
+    for entry in results:
+        if entry:
+            # if the status is present in the results for the start_service
+            # it means that the API call failed
+            # also it is enforced that the status is different from 200 OK
+            if entry.get("status", 200) != 200:
+                log.error("Error while starting dynamic service %s", f"{entry=}")
 
 
 async def delete_project(app: web.Application, project_uuid: str, user_id: int) -> None:
-    await delete_project_from_db(app, project_uuid, user_id)
+    await _delete_project_from_db(app, project_uuid, user_id)
 
     async def _remove_services_and_data():
         await remove_project_interactive_services(
             user_id, project_uuid, app, notify_users=False
         )
-        await delete_project_data(app, project_uuid, user_id)
+        await delete_data_folders_of_project(app, project_uuid, user_id)
 
     fire_and_forget_task(_remove_services_and_data())
 
@@ -227,7 +238,7 @@ async def lock_with_notification(
     project_uuid: str,
     status: ProjectStatus,
     user_id: int,
-    user_name: Dict[str, str],
+    user_name: UserNameDict,
     notify_users: bool = True,
 ):
     try:
@@ -238,40 +249,58 @@ async def lock_with_notification(
             user_id,
             user_name,
         ):
+            log.debug(
+                "Project [%s] lock acquired",
+                f"{project_uuid=}",
+            )
             if notify_users:
                 await retrieve_and_notify_project_locked_state(
                     user_id, project_uuid, app
                 )
             yield
-
+        log.debug(
+            "Project [%s] lock released",
+            f"{project_uuid=}",
+        )
+    except ProjectLockError:
+        # someone else has already the lock?
+        prj_states: ProjectState = await get_project_states_for_user(
+            user_id, project_uuid, app
+        )
+        log.error(
+            "Project [%s] already locked in state '%s'. Please check with support.",
+            f"{project_uuid=}",
+            f"{prj_states.locked.status=}",
+        )
+        raise
     finally:
         if notify_users:
             await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
 
 
 async def remove_project_interactive_services(
-    user_id: int, project_uuid: str, app: web.Application, notify_users: bool = True
+    user_id: int,
+    project_uuid: str,
+    app: web.Application,
+    notify_users: bool = True,
+    user_name: Optional[UserNameDict] = None,
 ) -> None:
     # NOTE: during the closing process, which might take awhile,
     # the project is locked so no one opens it at the same time
+    log.debug(
+        "removing project interactive services for project [%s] and user [%s]",
+        project_uuid,
+        user_id,
+    )
     try:
-        log.debug(
-            "removing project interactive services for project [%s] and user [%s]",
-            project_uuid,
-            user_id,
-        )
-        async with await lock_project(
+        async with lock_with_notification(
             app,
             project_uuid,
             ProjectStatus.CLOSING,
             user_id,
-            await get_user_name(app, user_id),
+            user_name or await get_user_name(app, user_id),
+            notify_users=notify_users,
         ):
-            if notify_users:
-                await retrieve_and_notify_project_locked_state(
-                    user_id, project_uuid, app
-                )
-
             # save the state if the user is not a guest. if we do not know we save in any case.
             with suppress(director_v2_api.DirectorServiceError):
                 # here director exceptions are suppressed. in case the service is not found to preserve old behavior
@@ -284,40 +313,16 @@ async def remove_project_interactive_services(
                     else True,
                 )
     except ProjectLockError:
-        # maybe the someone else is already closing
-        prj_states: ProjectState = await get_project_states_for_user(
-            user_id, project_uuid, app
-        )
-        if prj_states.locked.status not in [
-            ProjectStatus.CLOSED,
-            ProjectStatus.CLOSING,
-        ]:
-            log.error(
-                "lock for project [%s] was already taken, current state is %s. project could not be closed please check.",
-                project_uuid,
-                prj_states.locked.status,
-            )
-    finally:
-        # notify when done and the project is closed
-        if notify_users:
-            await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
+        pass
 
 
-async def delete_project_data(
+async def _delete_project_from_db(
     app: web.Application, project_uuid: str, user_id: int
 ) -> None:
-    # requests storage to delete all project's stored data
-    await delete_data_folders_of_project(app, project_uuid, user_id)
-
-
-async def delete_project_from_db(
-    app: web.Application, project_uuid: str, user_id: int
-) -> None:
+    log.debug("deleting project '%s' for user '%s' in database", project_uuid, user_id)
     db = app[APP_PROJECT_DBAPI]
     await director_v2_api.delete_pipeline(app, user_id, UUID(project_uuid))
     await db.delete_user_project(user_id, project_uuid)
-    # requests storage to delete all project's stored data
-    await delete_data_folders_of_project(app, project_uuid, user_id)
 
 
 ## PROJECT NODES -----------------------------------------------------
@@ -408,7 +413,7 @@ async def update_project_node_state(
         project_id,
         user_id,
     )
-    partial_workbench_data = {
+    partial_workbench_data: Dict[str, Any] = {
         node_id: {"state": {"currentStatus": new_state}},
     }
     if RunningState(new_state) in [
@@ -473,10 +478,10 @@ async def update_project_node_outputs(
         node_id,
         project_id,
         user_id,
-        pformat(new_outputs),
+        json_dumps(new_outputs),
         new_run_hash,
     )
-    new_outputs: Dict[str, Any] = new_outputs or {}
+    new_outputs = new_outputs or {}
 
     partial_workbench_data = {
         node_id: {"outputs": new_outputs, "runHash": new_run_hash},
@@ -526,15 +531,18 @@ async def notify_project_state_update(
     project: Dict,
     notify_only_user: Optional[int] = None,
 ) -> None:
-    messages = {
-        SOCKET_IO_PROJECT_UPDATED_EVENT: {
-            "project_uuid": project["uuid"],
-            "data": project["state"],
+    messages: List[SocketMessageDict] = [
+        {
+            "event_type": SOCKET_IO_PROJECT_UPDATED_EVENT,
+            "data": {
+                "project_uuid": project["uuid"],
+                "data": project["state"],
+            },
         }
-    }
+    ]
 
     if notify_only_user:
-        await post_messages(app, user_id=str(notify_only_user), messages=messages)
+        await send_messages(app, user_id=str(notify_only_user), messages=messages)
     else:
         rooms_to_notify = [
             f"{gid}"
@@ -542,7 +550,7 @@ async def notify_project_state_update(
             if rights["read"]
         ]
         for room in rooms_to_notify:
-            await post_group_messages(app, room, messages)
+            await send_group_messages(app, room, messages)
 
 
 async def notify_project_node_update(
@@ -552,15 +560,19 @@ async def notify_project_node_update(
         f"{gid}" for gid, rights in project["accessRights"].items() if rights["read"]
     ]
 
-    messages = {
-        SOCKET_IO_NODE_UPDATED_EVENT: {
-            "Node": node_id,
-            "data": project["workbench"][node_id],
+    messages: List[SocketMessageDict] = [
+        {
+            "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
+            "data": {
+                "project_id": project["uuid"],
+                "node_id": node_id,
+                "data": project["workbench"][node_id],
+            },
         }
-    }
+    ]
 
     for room in rooms_to_notify:
-        await post_group_messages(app, room, messages)
+        await send_group_messages(app, room, messages)
 
 
 async def post_trigger_connected_service_retrieve(**kwargs) -> None:
@@ -608,23 +620,27 @@ async def _user_has_another_client_open(
     user_session_id_list: List[UserSessionID], app: web.Application
 ) -> bool:
     # NOTE if there is an active socket in use, that means the client is active
-    for user_id, client_session_id in user_session_id_list:
-        with managed_resource(user_id, client_session_id, app) as rt:
+    for user_session in user_session_id_list:
+        with managed_resource(
+            user_session.user_id, user_session.client_session_id, app
+        ) as rt:
             if await rt.get_socket_id() is not None:
                 return True
     return False
 
 
 async def _clean_user_disconnected_clients(
-    user_session_id_list: List[Tuple[int, str]], app: web.Application
+    user_session_id_list: List[UserSessionID], app: web.Application
 ):
-    for user_id, client_session_id in user_session_id_list:
-        with managed_resource(user_id, client_session_id, app) as rt:
+    for user_session in user_session_id_list:
+        with managed_resource(
+            user_session.user_id, user_session.client_session_id, app
+        ) as rt:
             if await rt.get_socket_id() is None:
                 log.debug(
                     "removing disconnected project of user %s/%s",
-                    user_id,
-                    client_session_id,
+                    user_session.user_id,
+                    user_session.client_session_id,
                 )
                 await rt.remove(PROJECT_ID_KEY)
 
@@ -633,20 +649,18 @@ async def try_open_project_for_user(
     user_id: int, project_uuid: str, client_session_id: str, app: web.Application
 ) -> bool:
     try:
-        async with await lock_project(
+        async with lock_with_notification(
             app,
             project_uuid,
             ProjectStatus.OPENING,
             user_id,
             await get_user_name(app, user_id),
+            notify_users=False,
         ):
-            log.debug(
-                "project [%s] lock acquired, now checking if project is available",
-                project_uuid,
-            )
+
             with managed_resource(user_id, client_session_id, app) as rt:
                 user_session_id_list: List[
-                    Tuple[int, str]
+                    UserSessionID
                 ] = await rt.find_users_of_resource(PROJECT_ID_KEY, project_uuid)
 
                 if not user_session_id_list:
@@ -654,11 +668,18 @@ async def try_open_project_for_user(
                     await rt.add(PROJECT_ID_KEY, project_uuid)
                     return True
 
-                set_user_ids = {uid for uid, _ in user_session_id_list}
+                set_user_ids = {
+                    user_session.user_id for user_session in user_session_id_list
+                }
                 if set_user_ids.issubset({user_id}):
-                    # we are the only user
+                    # we are the only user, remove this session from the list
                     if not await _user_has_another_client_open(
-                        user_session_id_list, app
+                        [
+                            uid
+                            for uid in user_session_id_list
+                            if uid != UserSessionID(user_id, client_session_id)
+                        ],
+                        app,
                     ):
                         # steal the project
                         await rt.add(PROJECT_ID_KEY, project_uuid)
@@ -684,7 +705,7 @@ async def try_close_project_for_user(
             PROJECT_ID_KEY, project_uuid
         )
         # first check we have it opened now
-        if (user_id, client_session_id) not in user_to_session_ids:
+        if UserSessionID(user_id, client_session_id) not in user_to_session_ids:
             # nothing to do the project is already closed
             log.warning(
                 "project [%s] is already closed for user [%s].",
@@ -709,7 +730,7 @@ async def try_close_project_for_user(
         log.warning(
             "project [%s] is used by other users: [%s]. This should not be possible",
             project_uuid,
-            {uid for uid, _ in user_to_session_ids},
+            {user_session.user_id for user_session in user_to_session_ids},
         )
 
 
@@ -721,15 +742,22 @@ async def _get_project_lock_state(
     """returns the lock state of a project
     1. If a project is locked for any reason, first return the project as locked and STATUS defined by lock
     2. If a client_session_id is passed, then first check to see if the project is currently opened by this very user/tab combination, if yes returns the project as Locked and OPENED.
-    3. If any other user that user_id is using the project (even disconnected before the TTL is finished) then the project is Locked and OPENED.
+    3. If any other user than user_id is using the project (even disconnected before the TTL is finished) then the project is Locked and OPENED.
     4. If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked and OPENED.
     5. If the same user is using the project with NO socket id (meaning there is no current tab active) then the project is Unlocked and OPENED. which means the user can open it again.
     """
-    log.debug("getting project [%s] lock state for user [%s]...", project_uuid, user_id)
+    log.debug(
+        "getting project [%s] lock state for user [%s]...",
+        f"{project_uuid=}",
+        f"{user_id=}",
+    )
     prj_locked_state: Optional[ProjectLocked] = await get_project_locked_state(
         app, project_uuid
     )
     if prj_locked_state:
+        log.debug(
+            "project [%s] is locked: %s", f"{project_uuid=}", f"{prj_locked_state=}"
+        )
         return prj_locked_state
 
     # let's now check if anyone has the project in use somehow
@@ -737,7 +765,7 @@ async def _get_project_lock_state(
         user_session_id_list: List[UserSessionID] = await rt.find_users_of_resource(
             PROJECT_ID_KEY, project_uuid
         )
-    set_user_ids = {x for x, _ in user_session_id_list}
+    set_user_ids = {user_session.user_id for user_session in user_session_id_list}
 
     assert (  # nosec
         len(set_user_ids) <= 1
@@ -745,15 +773,15 @@ async def _get_project_lock_state(
 
     if not set_user_ids:
         # no one has the project, so it is unlocked and closed.
-        log.debug("project [%s] is not in use", project_uuid)
+        log.debug("project [%s] is not in use", f"{project_uuid=}")
         return ProjectLocked(value=False, status=ProjectStatus.CLOSED)
 
     log.debug(
         "project [%s] might be used by the following users: [%s]",
-        project_uuid,
-        set_user_ids,
+        f"{project_uuid=}",
+        f"{set_user_ids=}",
     )
-    usernames: List[Dict[str, str]] = [
+    usernames: List[UserNameDict] = [
         await get_user_name(app, uid) for uid in set_user_ids
     ]
     # let's check if the project is opened by the same user, maybe already opened or closed in a orphaned session
@@ -762,8 +790,8 @@ async def _get_project_lock_state(
             # in this case the project is re-openable by the same user until it gets closed
             log.debug(
                 "project [%s] is in use by the same user [%s] that is currently disconnected, so it is unlocked for this specific user and opened",
-                project_uuid,
-                set_user_ids,
+                f"{project_uuid=}",
+                f"{set_user_ids=}",
             )
             return ProjectLocked(
                 value=False,
@@ -773,8 +801,8 @@ async def _get_project_lock_state(
     # the project is opened in another tab or browser, or by another user, both case resolves to the project being locked, and opened
     log.debug(
         "project [%s] is in use by another user [%s], so it is locked",
-        project_uuid,
-        set_user_ids,
+        f"{project_uuid=}",
+        f"{set_user_ids=}",
     )
     return ProjectLocked(
         value=True,
@@ -808,17 +836,21 @@ async def add_project_states_for_user(
     is_template: bool,
     app: web.Application,
 ) -> Dict[str, Any]:
-
+    log.debug(
+        "adding project states for %s with project %s",
+        f"{user_id=}",
+        f"{project['uuid']=}",
+    )
     # for templates: the project is never locked and never opened. also the running state is always unknown
     lock_state = ProjectLocked(value=False, status=ProjectStatus.CLOSED)
     running_state = RunningState.UNKNOWN
-    if not is_template:
-        lock_state, computation_task = await logged_gather(
-            _get_project_lock_state(user_id, project["uuid"], app),
-            director_v2_api.get_computation_task(app, user_id, project["uuid"]),
-        )
 
-        if computation_task:
+    if not is_template:
+        lock_state = await _get_project_lock_state(user_id, project["uuid"], app)
+
+        if computation_task := await director_v2_api.get_computation_task(
+            app, user_id, project["uuid"]
+        ):
             # get the running state
             running_state = computation_task.state
             # get the nodes individual states

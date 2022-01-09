@@ -1,23 +1,34 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=too-many-arguments
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+import asyncio
 import json
-import time
+import logging
 from asyncio import sleep
-from typing import Any, Callable, Dict, Tuple
-from unittest.mock import call
-from uuid import uuid4
+from collections import namedtuple
+from typing import Any, Awaitable, Callable, Dict, List, NamedTuple, Tuple
 
 import aio_pika
 import pytest
+import socketio
 import sqlalchemy as sa
+from faker.proxy import Faker
+from models_library.projects_state import RunningState
+from models_library.rabbitmq_messages import (
+    InstrumentationRabbitMessage,
+    LoggerRabbitMessage,
+    ProgressRabbitMessage,
+)
 from models_library.settings.rabbit import RabbitConfig
+from models_library.users import UserID
+from pytest_mock import MockerFixture
+from pytest_simcore.rabbit_service import RabbitExchanges
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.computation import setup_computation
-from simcore_service_webserver.computation_config import CONFIG_SECTION_NAME
 from simcore_service_webserver.db import setup_db
+from simcore_service_webserver.diagnostics import setup_diagnostics
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.projects.module_setup import setup_projects
@@ -29,29 +40,126 @@ from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.module_setup import setup_socketio
-
-API_VERSION = "v0"
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 # Selection of core and tool services started in this swarm fixture (integration)
 pytest_simcore_core_services_selection = [
+    "migration",
     "postgres",
-    "redis",
     "rabbit",
+    "redis",
 ]
 
 pytest_simcore_ops_services_selection = []
 
 
+# HELPERS ------------------------------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
+
+UUIDStr = str
+RabbitMessage = Dict[str, Any]
+LogMessages = List[LoggerRabbitMessage]
+InstrumMessages = List[InstrumentationRabbitMessage]
+ProgressMessages = List[ProgressRabbitMessage]
+
+
+async def _publish_in_rabbit(
+    user_id: int,
+    project_id: UUIDStr,
+    node_uuid: UUIDStr,
+    num_messages: int,
+    rabbit_exchanges: RabbitExchanges,
+) -> Tuple[LogMessages, ProgressMessages, InstrumMessages]:
+
+    log_messages = [
+        LoggerRabbitMessage(
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_uuid,
+            messages=[f"log number {n}"],
+        )
+        for n in range(num_messages)
+    ]
+    progress_messages = [
+        ProgressRabbitMessage(
+            user_id=user_id,
+            project_id=project_id,
+            node_id=node_uuid,
+            progress=float(n) / float(num_messages),
+        )
+        for n in range(num_messages)
+    ]
+
+    # indicate container is started
+    instrumentation_start_message = (
+        instrumentation_stop_message
+    ) = InstrumentationRabbitMessage(
+        metrics="service_started",
+        user_id=user_id,
+        project_id=project_id,
+        node_id=node_uuid,
+        service_uuid=node_uuid,
+        service_type="COMPUTATIONAL",
+        service_key="some/service/awesome/key",
+        service_tag="some-awesome-tag",
+    )
+    instrumentation_stop_message.metrics = "service_stopped"
+    instrumentation_stop_message.result = RunningState.SUCCESS
+    instrumentation_messages = [
+        instrumentation_start_message,
+        instrumentation_stop_message,
+    ]
+    await rabbit_exchanges.instrumentation.publish(
+        aio_pika.Message(
+            body=instrumentation_start_message.json().encode(),
+            content_type="text/json",
+        ),
+        routing_key="",
+    )
+
+    for n in range(num_messages):
+        await rabbit_exchanges.logs.publish(
+            aio_pika.Message(
+                body=log_messages[n].json().encode(), content_type="text/json"
+            ),
+            routing_key="",
+        )
+
+        await rabbit_exchanges.progress.publish(
+            aio_pika.Message(
+                body=progress_messages[n].json().encode(), content_type="text/json"
+            ),
+            routing_key="",
+        )
+
+    # indicate container is stopped
+    await rabbit_exchanges.instrumentation.publish(
+        aio_pika.Message(
+            body=instrumentation_stop_message.json().encode(),
+            content_type="text/json",
+        ),
+        routing_key="",
+    )
+
+    return (log_messages, progress_messages, instrumentation_messages)
+
+
+# FIXTURES ------------------------------------------------------------------------------------
+
+
 @pytest.fixture
 def client(
-    loop,
-    aiohttp_client,
-    app_config,  ## waits until swarm with *_services are up
-    rabbit_service: RabbitConfig,  ## waits until rabbit is responsive
+    loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable,
+    app_config: Dict[str, Any],  ## waits until swarm with *_services are up
+    rabbit_service: RabbitConfig,  ## waits until rabbit is responsive and set env vars
     postgres_db: sa.engine.Engine,
+    mocker: MockerFixture,
 ):
-    assert app_config["rest"]["version"] == API_VERSION
-
     app_config["storage"]["enabled"] = False
 
     # fake config
@@ -62,14 +170,25 @@ def client(
     setup_session(app)
     setup_security(app)
     setup_rest(app)
+    setup_diagnostics(app)
     setup_login(app)
     setup_projects(app)
     setup_computation(app)
     setup_director_v2(app)
     setup_socketio(app)
+
+    # GC not relevant for these test-suite,
+    mocker.patch(
+        "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
+        side_effect=lambda app: print(
+            f"PATCH @{__name__}:"
+            "Garbage collector disabled."
+            "Mock bypasses setup_garbage_collector to skip initializing the GC"
+        ),
+    )
     setup_resource_manager(app)
 
-    yield loop.run_until_complete(
+    return loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={
@@ -80,199 +199,268 @@ def client(
     )
 
 
-# ------------------------------------------
-
-
-def _create_rabbit_message(
-    message_name: str, node_uuid: str, user_id: str, project_id: str, param: Any
-) -> Dict:
-    message = {
-        "Channel": message_name.title(),
-        "Node": node_uuid,
-        "user_id": user_id,
-        "project_id": project_id,
-    }
-
-    if message_name == "log":
-        message["Messages"] = param
-    if message_name == "progress":
-        message["Progress"] = param
-    return message
+@pytest.fixture
+def user_id(faker: Faker) -> int:
+    return faker.pyint(min_value=1)
 
 
 @pytest.fixture
-def client_session_id() -> str:
-    return str(uuid4())
+def node_uuid(faker: Faker) -> str:
+    return faker.uuid4()
 
 
-async def _publish_messages(
-    num_messages: int,
-    node_uuid: str,
-    user_id: str,
-    project_id: str,
-    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
-) -> Tuple[Dict, Dict, Dict]:
-    log_messages = [
-        _create_rabbit_message("log", node_uuid, user_id, project_id, f"log number {n}")
-        for n in range(num_messages)
-    ]
-    progress_messages = [
-        _create_rabbit_message(
-            "progress", node_uuid, user_id, project_id, n / num_messages
-        )
-        for n in range(num_messages)
-    ]
-    # send the messages over rabbit
-    logs_exchange, instrumentation_exchange = rabbit_exchange
-
-    # indicate container is started
-    instrumentation_start_message = instrumentation_stop_message = {
-        "metrics": "service_started",
-        "user_id": user_id,
-        "project_id": project_id,
-        "service_uuid": node_uuid,
-        "service_type": "COMPUTATIONAL",
-        "service_key": "some/service/awesome/key",
-        "service_tag": "some-awesome-tag",
-    }
-    instrumentation_stop_message["metrics"] = "service_stopped"
-    instrumentation_stop_message["result"] = "SUCCESS"
-    instrumentation_messages = [
-        instrumentation_start_message,
-        instrumentation_stop_message,
-    ]
-    await instrumentation_exchange.publish(
-        aio_pika.Message(
-            body=json.dumps(instrumentation_start_message).encode(),
-            content_type="text/json",
-        ),
-        routing_key="",
-    )
-
-    for n in range(num_messages):
-        await logs_exchange.publish(
-            aio_pika.Message(
-                body=json.dumps(log_messages[n]).encode(), content_type="text/json"
-            ),
-            routing_key="",
-        )
-
-        await logs_exchange.publish(
-            aio_pika.Message(
-                body=json.dumps(progress_messages[n]).encode(), content_type="text/json"
-            ),
-            routing_key="",
-        )
-
-    # indicate container is stopped
-    await instrumentation_exchange.publish(
-        aio_pika.Message(
-            body=json.dumps(instrumentation_stop_message).encode(),
-            content_type="text/json",
-        ),
-        routing_key="",
-    )
-
-    return (log_messages, progress_messages, instrumentation_messages)
+@pytest.fixture
+def client_session_id(faker: Faker) -> UUIDStr:
+    return faker.uuid4()
 
 
-async def _wait_until(pred: Callable, timeout: int):
-    max_wait_time = time.time() + timeout
-    while time.time() < max_wait_time:
-        if pred():
-            return
-        await sleep(1)
-    pytest.fail("waited too long for getting websockets events")
+@pytest.fixture
+def other_user_id(user_id: int, logged_user: Dict[str, Any]) -> int:
+    other = user_id
+    assert logged_user["id"] != other
+    return other
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [
-        (UserRole.GUEST),
-        (UserRole.USER),
-        (UserRole.TESTER),
-    ],
-)
-async def test_rabbit_websocket_computation(
-    director_v2_service_mock,
-    mock_orphaned_services,
-    logged_user,
-    user_project,
+@pytest.fixture
+def other_project_id(faker: Faker, user_project: Dict[str, Any]) -> UUIDStr:
+    other_id = faker.uuid4()
+    assert user_project["uuid"] != other_id
+    return other_id
+
+
+@pytest.fixture
+def other_node_uuid(node_uuid: UUIDStr, user_project: Dict[str, Any]) -> UUIDStr:
+    other = node_uuid
+    node_uuid = list(user_project["workbench"])[0]
+    assert node_uuid != other
+    return other
+
+
+@pytest.fixture
+async def socketio_subscriber_handlers(
     socketio_client_factory: Callable,
-    client_session_id: str,
-    mocker,
-    rabbit_exchange: Tuple[aio_pika.Exchange, aio_pika.Exchange],
-    node_uuid: str,
-    user_id: str,
-    project_id: str,
-):
+    client_session_id: UUIDStr,
+    mocker: MockerFixture,
+) -> NamedTuple:
 
-    # corresponding websocket event names
-    websocket_log_event = "logger"
-    websocket_node_update_event = "nodeUpdated"
-    # connect websocket
-    sio = await socketio_client_factory(client_session_id)
-    # register mock websocket handler functions
-    mock_log_handler_fct = mocker.Mock()
-    mock_node_update_handler_fct = mocker.Mock()
-    sio.on(websocket_log_event, handler=mock_log_handler_fct)
-    sio.on(websocket_node_update_event, handler=mock_node_update_handler_fct)
-    # publish messages with wrong user id
-    NUMBER_OF_MESSAGES = 1
-    TIMEOUT_S = 20
+    """socketio SUBSCRIBER
 
-    await _publish_messages(
-        NUMBER_OF_MESSAGES, node_uuid, user_id, project_id, rabbit_exchange
+    Somehow this emulates the logic of the front-end:
+    it connects to a session (client_session_id) and
+    registers two event handlers that are be called
+    when a message is received
+    """
+    # connect to websocket session
+    # NOTE: will raise socketio.exceptions.ConnectionError: Unexpected status code 401 in server response
+    # if client does not hold an authentication token
+    sio: socketio.AsyncClient = await socketio_client_factory(client_session_id)
+
+    WEBSOCKET_LOG_EVENTNAME = "logger"
+    # called when log messages are received
+    mock_log_handler = mocker.Mock()
+    sio.on(WEBSOCKET_LOG_EVENTNAME, handler=mock_log_handler)
+
+    WEBSOCKET_NODE_UPDATE_EVENTNAME = "nodeUpdated"
+    # called when a node was updated (e.g. progress)
+    mock_node_update_handler = mocker.Mock()
+    sio.on(WEBSOCKET_NODE_UPDATE_EVENTNAME, handler=mock_node_update_handler)
+
+    return namedtuple("_MockHandlers", "log_handler node_update_handler")(
+        mock_log_handler, mock_node_update_handler
     )
-    await sleep(1)
-    mock_log_handler_fct.assert_not_called()
-    mock_node_update_handler_fct.assert_not_called()
+
+
+@pytest.fixture
+def publish_some_messages_in_rabbit(
+    rabbit_exchanges: RabbitExchanges,
+) -> Callable[
+    [UserID, UUIDStr, UUIDStr, int],
+    Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
+]:
+    """rabbitMQ PUBLISHER"""
+
+    async def go(
+        user_id: int,
+        project_id: str,
+        node_uuid: str,
+        num_messages: int,
+    ):
+        return await _publish_in_rabbit(
+            user_id, project_id, node_uuid, num_messages, rabbit_exchanges
+        )
+
+    return go
+
+
+@pytest.fixture
+def user_role() -> UserRole:
+    """provides a default when not override by paramtrization"""
+    return UserRole.USER
+
+
+# TESTS ------------------------------------------------------------------------------------
+#
+#   publisher ---> (rabbitMQ)  ---> webserver --- (socketio) ---> front-end pages
+#
+# - logs, instrumentation and progress are set to rabbitMQ messages
+# - webserver consumes these messages and forwards them to the front-end broadcasting them to socketio
+# - all front-end insteances connected to these channes will get notified when new messages are directed
+#   to them
+#
+
+POLLING_TIME = 0.2
+TIMEOUT_S = 5
+RETRY_POLICY = dict(
+    wait=wait_fixed(POLLING_TIME),
+    stop=stop_after_delay(TIMEOUT_S),
+    before_sleep=before_sleep_log(logger, log_level=logging.WARNING),
+    reraise=True,
+)
+NUMBER_OF_MESSAGES = 1
+USER_ROLES = [
+    UserRole.GUEST,
+    UserRole.USER,
+    UserRole.TESTER,
+]
+
+
+@pytest.mark.parametrize("user_role", USER_ROLES)
+async def test_publish_to_other_user(
+    other_user_id: int,
+    other_project_id: UUIDStr,
+    other_node_uuid: str,
+    #
+    socketio_subscriber_handlers: NamedTuple,
+    publish_some_messages_in_rabbit: Callable[
+        [UserID, UUIDStr, UUIDStr, int],
+        Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
+    ],
+):
+    mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
+
+    # Some other client publishes messages with wrong user id
+    await publish_some_messages_in_rabbit(
+        other_user_id,
+        other_project_id,
+        other_node_uuid,
+        NUMBER_OF_MESSAGES,
+    )
+    await sleep(TIMEOUT_S)
+
+    mock_log_handler.assert_not_called()
+    mock_node_update_handler.assert_not_called()
+
+
+@pytest.mark.parametrize("user_role", USER_ROLES)
+async def test_publish_to_user(
+    logged_user: Dict[str, Any],
+    other_project_id: UUIDStr,
+    other_node_uuid: str,
+    #
+    socketio_subscriber_handlers: NamedTuple,
+    publish_some_messages_in_rabbit: Callable[
+        [UserID, UUIDStr, UUIDStr, int],
+        Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
+    ],
+):
+    mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
 
     # publish messages with correct user id, but no project
-    log_messages, _, _ = await _publish_messages(
-        NUMBER_OF_MESSAGES, node_uuid, logged_user["id"], project_id, rabbit_exchange
+    log_messages, _, _ = await publish_some_messages_in_rabbit(
+        logged_user["id"],
+        other_project_id,
+        other_node_uuid,
+        NUMBER_OF_MESSAGES,
     )
 
-    def predicate() -> bool:
-        return mock_log_handler_fct.call_count == (NUMBER_OF_MESSAGES)
+    async for attempt in AsyncRetrying(**RETRY_POLICY):
+        with attempt:
+            assert mock_log_handler.call_count == (NUMBER_OF_MESSAGES)
 
-    await _wait_until(predicate, TIMEOUT_S)
-    log_calls = [call(json.dumps(message)) for message in log_messages]
-    mock_log_handler_fct.assert_has_calls(log_calls, any_order=True)
-    mock_node_update_handler_fct.assert_not_called()
+    for mock_call, expected_message in zip(
+        mock_log_handler.call_args_list, log_messages
+    ):
+        value = mock_call[0]
+        deserialized_value = json.loads(value[0])
+        assert deserialized_value == json.loads(
+            expected_message.json(include={"node_id", "messages"})
+        )
+    mock_node_update_handler.assert_not_called()
+
+
+@pytest.mark.parametrize("user_role", USER_ROLES)
+async def test_publish_about_users_project(
+    logged_user: Dict[str, Any],
+    user_project: Dict[str, Any],
+    other_node_uuid: str,
+    #
+    socketio_subscriber_handlers: NamedTuple,
+    publish_some_messages_in_rabbit: Callable[
+        [UserID, UUIDStr, UUIDStr, int],
+        Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
+    ],
+):
+    mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
+
     # publish message with correct user id, project but not node
-    mock_log_handler_fct.reset_mock()
-    log_messages, _, _ = await _publish_messages(
-        NUMBER_OF_MESSAGES,
-        node_uuid,
+    log_messages, _, _ = await publish_some_messages_in_rabbit(
         logged_user["id"],
         user_project["uuid"],
-        rabbit_exchange,
+        other_node_uuid,
+        NUMBER_OF_MESSAGES,
     )
-    await _wait_until(predicate, TIMEOUT_S)
-    log_calls = [call(json.dumps(message)) for message in log_messages]
-    mock_log_handler_fct.assert_has_calls(log_calls, any_order=True)
-    mock_node_update_handler_fct.assert_not_called()
-    mock_log_handler_fct.reset_mock()
+
+    async for attempt in AsyncRetrying(**RETRY_POLICY):
+        with attempt:
+            assert mock_log_handler.call_count == (NUMBER_OF_MESSAGES)
+
+    for mock_call, expected_message in zip(
+        mock_log_handler.call_args_list, log_messages
+    ):
+        value = mock_call[0]
+        deserialized_value = json.loads(value[0])
+        assert deserialized_value == json.loads(
+            expected_message.json(include={"node_id", "messages"})
+        )
+    mock_node_update_handler.assert_not_called()
+
+
+@pytest.mark.parametrize("user_role", USER_ROLES)
+async def test_publish_about_users_projects_node(
+    logged_user: Dict[str, Any],
+    user_project: Dict[str, Any],
+    #
+    socketio_subscriber_handlers: NamedTuple,
+    publish_some_messages_in_rabbit: Callable[
+        [UserID, UUIDStr, UUIDStr, int],
+        Awaitable[Tuple[LogMessages, ProgressMessages, InstrumMessages]],
+    ],
+):
+    mock_log_handler, mock_node_update_handler = socketio_subscriber_handlers
 
     # publish message with correct user id, project node
-    mock_log_handler_fct.reset_mock()
     node_uuid = list(user_project["workbench"])[0]
-    log_messages, _, _ = await _publish_messages(
-        NUMBER_OF_MESSAGES,
-        node_uuid,
+    log_messages, _, _ = await publish_some_messages_in_rabbit(
         logged_user["id"],
         user_project["uuid"],
-        rabbit_exchange,
+        node_uuid,
+        NUMBER_OF_MESSAGES,
     )
 
-    def predicate2() -> bool:
-        return mock_log_handler_fct.call_count == (
-            NUMBER_OF_MESSAGES
-        ) and mock_node_update_handler_fct.call_count == (NUMBER_OF_MESSAGES)
+    async for attempt in AsyncRetrying(**RETRY_POLICY):
+        with attempt:
+            assert mock_log_handler.call_count == (NUMBER_OF_MESSAGES)
+            assert mock_node_update_handler.call_count == (NUMBER_OF_MESSAGES)
 
-    await _wait_until(predicate2, TIMEOUT_S)
-    log_calls = [call(json.dumps(message)) for message in log_messages]
-    mock_log_handler_fct.assert_has_calls(log_calls, any_order=True)
-    mock_node_update_handler_fct.assert_called()
-    assert mock_node_update_handler_fct.call_count == (NUMBER_OF_MESSAGES)
+    for mock_call, expected_message in zip(
+        mock_log_handler.call_args_list, log_messages
+    ):
+        value = mock_call[0]
+        deserialized_value = json.loads(value[0])
+        assert deserialized_value == json.loads(
+            expected_message.json(include={"node_id", "messages"})
+        )
+
+    # mock_log_handler.assert_has_calls(log_calls, any_order=True)
+    mock_node_update_handler.assert_called()
+    assert mock_node_update_handler.call_count == (NUMBER_OF_MESSAGES)

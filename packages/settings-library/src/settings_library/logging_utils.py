@@ -1,10 +1,11 @@
 import logging
 from functools import cached_property
+from typing import Any
 
 
 class MixinLoggingSettings:
     @classmethod
-    def validate_log_level(cls, value) -> str:
+    def validate_log_level(cls, value: Any) -> str:
         try:
             getattr(logging, value.upper())
         except AttributeError as err:

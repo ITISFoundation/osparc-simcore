@@ -117,7 +117,7 @@ def _log_arguments(
     }
 
     #  Before to the function execution, log function details.
-    logger_obj.info(
+    logger_obj.debug(
         "Arguments: %s - Begin function",
         formatted_arguments,
         extra=extra_args,

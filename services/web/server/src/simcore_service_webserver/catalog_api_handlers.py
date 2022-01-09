@@ -33,7 +33,7 @@ from .security_decorators import permission_required
 #   live in the catalog service in his final version
 # TODO: define pruning of response policy: e.g. if None, send or not, if unset, send or not ...
 
-VX = f"/{api_version_prefix}"
+VTAG = f"/{api_version_prefix}"
 
 
 routes = RouteTableDef()
@@ -83,7 +83,7 @@ def parameters_validation(request: web.Request):
         raise web.HTTPBadRequest(reason=f"Expected parameter {err}") from err
 
 
-@routes.get(VX + "/catalog/services")
+@routes.get(f"{VTAG}/catalog/services")
 @login_required
 @permission_required("services.catalog.*")
 async def list_services_handler(request: Request):
@@ -95,7 +95,7 @@ async def list_services_handler(request: Request):
     return web.Response(text=enveloped, content_type="application/json")
 
 
-@routes.get(VX + "/catalog/services/{service_key}/{service_version}")
+@routes.get(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}")
 @login_required
 @permission_required("services.catalog.*")
 async def get_service_handler(request: Request):
@@ -112,7 +112,7 @@ async def get_service_handler(request: Request):
     return web.Response(text=enveloped, content_type="application/json")
 
 
-@routes.patch(VX + "/catalog/services/{service_key}/{service_version}")
+@routes.patch(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}")
 @login_required
 @permission_required("services.catalog.*")
 async def update_service_handler(request: Request):
@@ -130,7 +130,7 @@ async def update_service_handler(request: Request):
     return web.Response(text=enveloped, content_type="application/json")
 
 
-@routes.get(VX + "/catalog/services/{service_key}/{service_version}/inputs")
+@routes.get(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/inputs")
 @login_required
 @permission_required("services.catalog.*")
 async def list_service_inputs_handler(request: Request):
@@ -149,7 +149,9 @@ async def list_service_inputs_handler(request: Request):
     return web.Response(text=enveloped, content_type="application/json")
 
 
-@routes.get(VX + "/catalog/services/{service_key}/{service_version}/inputs/{input_key}")
+@routes.get(
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/inputs/{{input_key}}"
+)
 @login_required
 @permission_required("services.catalog.*")
 async def get_service_input_handler(request: Request):
@@ -169,7 +171,7 @@ async def get_service_input_handler(request: Request):
     return web.Response(text=enveloped, content_type="application/json")
 
 
-@routes.get(VX + "/catalog/services/{service_key}/{service_version}/inputs:match")
+@routes.get(f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/inputs:match")
 @login_required
 @permission_required("services.catalog.*")
 async def get_compatible_inputs_given_source_output_handler(request: Request):
@@ -197,7 +199,7 @@ async def get_compatible_inputs_given_source_output_handler(request: Request):
 
 
 @routes.get(
-    VX + "/catalog/services/{service_key}/{service_version}/outputs",
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/outputs",
 )
 @login_required
 @permission_required("services.catalog.*")
@@ -218,7 +220,7 @@ async def list_service_outputs_handler(request: Request):
 
 
 @routes.get(
-    VX + "/catalog/services/{service_key}/{service_version}/outputs/{output_key}"
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/outputs/{{output_key}}"
 )
 @login_required
 @permission_required("services.catalog.*")
@@ -239,7 +241,9 @@ async def get_service_output_handler(request: Request):
     return web.Response(text=enveloped, content_type="application/json")
 
 
-@routes.get(VX + "/catalog/services/{service_key}/{service_version}/outputs:match")
+@routes.get(
+    f"{VTAG}/catalog/services/{{service_key}}/{{service_version}}/outputs:match"
+)
 @login_required
 @permission_required("services.catalog.*")
 async def get_compatible_outputs_given_target_input_handler(request: Request):

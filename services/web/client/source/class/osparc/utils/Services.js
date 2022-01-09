@@ -33,13 +33,25 @@ qx.Class.define("osparc.utils.Services", {
 
   statics: {
     TYPES: {
+      parameter: {
+        label: "",
+        icon: "@FontAwesome5Solid/sliders-h/",
+        sorting: 0
+      },
+      file: {
+        label: "",
+        icon: "@FontAwesome5Solid/file/",
+        sorting: 1
+      },
       computational: {
         label: "Computational",
-        icon: "@FontAwesome5Solid/cogs/"
+        icon: "@FontAwesome5Solid/cogs/",
+        sorting: 2
       },
       dynamic: {
         label: "Interactive",
-        icon: "@FontAwesome5Solid/mouse-pointer/"
+        icon: "@FontAwesome5Solid/mouse-pointer/",
+        sorting: 3
       }
     },
 
@@ -61,6 +73,22 @@ qx.Class.define("osparc.utils.Services", {
 
     getType: function(type) {
       return this.TYPES[type.trim().toLowerCase()];
+    },
+
+    getIcon: function(type) {
+      const typeInfo = this.getType(type);
+      if (typeInfo) {
+        return typeInfo["icon"];
+      }
+      return typeInfo[""];
+    },
+
+    getSorting(type) {
+      const typeInfo = this.getType(type);
+      if (typeInfo) {
+        return typeInfo["sorting"];
+      }
+      return 0;
     },
 
     convertArrayToObject: function(servicesArray) {

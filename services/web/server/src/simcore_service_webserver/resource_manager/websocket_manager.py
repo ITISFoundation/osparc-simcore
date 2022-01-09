@@ -15,11 +15,10 @@
 """
 
 import logging
-from collections import namedtuple
 from contextlib import contextmanager
+from dataclasses import dataclass
 from typing import Dict, Iterator, List, Optional, Union
 
-import attr
 from aiohttp import web
 
 from .config import get_service_deletion_timeout
@@ -31,10 +30,13 @@ SOCKET_ID_KEY = "socket_id"
 PROJECT_ID_KEY = "project_id"
 
 
-UserSessionID = namedtuple("UserSessionID", "user_id client_session_id")
+@dataclass(order=True, frozen=True)
+class UserSessionID:
+    user_id: int
+    client_session_id: str
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class WebsocketRegistry:
     """
     Keeps track of resources allocated for a user's session
@@ -164,7 +166,8 @@ class WebsocketRegistry:
         registry = get_registry(self.app)
         registry_keys = await registry.find_keys((key, value))
         user_session_id_list = [
-            (int(x["user_id"]), x["client_session_id"]) for x in registry_keys
+            UserSessionID(int(x["user_id"]), x["client_session_id"])
+            for x in registry_keys
         ]
         return user_session_id_list
 

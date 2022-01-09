@@ -1,19 +1,21 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
 import asyncio
 import logging
-from typing import Dict, Iterator, List
+from typing import AsyncIterator, Dict, Iterator, List
 
 import aiopg.sa
 import pytest
-import simcore_postgres_database.cli as pg_cli
 import sqlalchemy as sa
 import tenacity
-from simcore_postgres_database.models.base import metadata
 from sqlalchemy.orm import sessionmaker
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 from .helpers.utils_docker import get_service_published_port
+from .helpers.utils_postgres import migrated_pg_tables_context
 
 log = logging.getLogger(__name__)
 
@@ -71,16 +73,9 @@ def drop_template_db(postgres_engine: sa.engine.Engine) -> None:
 
 
 @pytest.fixture(scope="module")
-def loop(request):
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
-@pytest.fixture(scope="module")
 def postgres_with_template_db(
     postgres_db: sa.engine.Engine, postgres_dsn: Dict, postgres_engine: sa.engine.Engine
-) -> sa.engine.Engine:
+) -> Iterator[sa.engine.Engine]:
     create_template_db(postgres_dsn, postgres_engine)
     yield postgres_engine
     drop_template_db(postgres_engine)
@@ -126,9 +121,6 @@ def database_from_template_before_each_function(
 
     execute_queries(drop_db_engine, queries)
 
-    yield
-    # do nothing on teadown
-
 
 @pytest.fixture(scope="module")
 def postgres_dsn(docker_stack: Dict, testing_environ_vars: Dict) -> Dict[str, str]:
@@ -148,7 +140,7 @@ def postgres_dsn(docker_stack: Dict, testing_environ_vars: Dict) -> Dict[str, st
 
 
 @pytest.fixture(scope="module")
-def postgres_engine(postgres_dsn: Dict[str, str]) -> sa.engine.Engine:
+def postgres_engine(postgres_dsn: Dict[str, str]) -> Iterator[sa.engine.Engine]:
     dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
         **postgres_dsn
     )
@@ -168,35 +160,18 @@ def postgres_db(
     postgres_dsn: Dict[str, str],
     postgres_engine: sa.engine.Engine,
 ) -> Iterator[sa.engine.Engine]:
-    """ An postgres database init with empty tables and an sqlalchemy engine connected to it """
+    """An postgres database init with empty tables and an sqlalchemy engine connected to it"""
 
-    # upgrades database from zero
-    kwargs = postgres_dsn.copy()
-    pg_cli.discover.callback(**kwargs)
-    pg_cli.upgrade.callback("head")
-
-    yield postgres_engine
-
-    # downgrades database to zero ---
-    #
-    # NOTE: This step CANNOT be avoided since it would leave the db in an invalid state
-    # E.g. 'alembic_version' table is not deleted and keeps head version or routines
-    # like 'notify_comp_tasks_changed' remain undeleted
-    #
-    pg_cli.downgrade.callback("base")
-    pg_cli.clean.callback()  # just cleans discover cache
-
-    # FIXME: migration downgrade fails to remove User types
-    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
-    # Added drop_all as tmp fix
-    metadata.drop_all(postgres_engine)
+    with migrated_pg_tables_context(postgres_dsn.copy()):
+        yield postgres_engine
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 async def aiopg_engine(
-    postgres_db: sa.engine.Engine, loop
-) -> Iterator[aiopg.sa.engine.Engine]:
-    """ An aiopg engine connected to an initialized database """
+    loop: asyncio.AbstractEventLoop,
+    postgres_db: sa.engine.Engine,
+) -> AsyncIterator[aiopg.sa.engine.Engine]:
+    """An aiopg engine connected to an initialized database"""
     from aiopg.sa import create_engine
 
     engine = await create_engine(str(postgres_db.url))
@@ -234,13 +209,13 @@ def postgres_session(postgres_db: sa.engine.Engine) -> sa.orm.session.Session:
 
 
 @tenacity.retry(
-    wait=tenacity.wait_fixed(5),
-    stop=tenacity.stop_after_attempt(60),
-    before_sleep=tenacity.before_sleep_log(log, logging.INFO),
+    wait=wait_fixed(5),
+    stop=stop_after_attempt(60),
+    before_sleep=before_sleep_log(log, logging.WARNING),
     reraise=True,
 )
 def wait_till_postgres_is_responsive(url: str) -> None:
-    print("Trying", url, "...")
     engine = sa.create_engine(url, isolation_level="AUTOCOMMIT")
     conn = engine.connect()
     conn.close()
+    log.info("Connected with %s", url)

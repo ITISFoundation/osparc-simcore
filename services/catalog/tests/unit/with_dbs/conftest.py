@@ -3,17 +3,21 @@
 # pylint:disable=redefined-outer-name
 
 
+import asyncio
 import itertools
 import random
-from typing import Any, Callable, Dict, Iterator, List, Tuple
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Tuple
 
 import pytest
+import respx
 import sqlalchemy as sa
+from _pytest.monkeypatch import MonkeyPatch
 from aiopg.sa.engine import Engine
 from faker import Faker
 from fastapi import FastAPI
+from pytest_mock.plugin import MockerFixture
+from respx.router import MockRouter
 from simcore_postgres_database.models.products import products
-from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.core.application import init_app
 from simcore_service_catalog.db.tables import (
     groups,
@@ -25,30 +29,38 @@ from starlette.testclient import TestClient
 
 
 @pytest.fixture
-def app(monkeypatch, service_test_environ, postgres_db: sa.engine.Engine) -> FastAPI:
+def app(
+    monkeypatch: MonkeyPatch,
+    mocker: MockerFixture,
+    service_test_environ: None,
+    postgres_db: sa.engine.Engine,
+    postgres_host_config: Dict[str, str],
+) -> Iterable[FastAPI]:
+    monkeypatch.setenv("CATALOG_TRACING", "null")
     app = init_app()
     yield app
 
 
 @pytest.fixture
-def client(app: FastAPI) -> TestClient:
+def client(loop: asyncio.AbstractEventLoop, app: FastAPI) -> Iterable[TestClient]:
     with TestClient(app) as cli:
         # Note: this way we ensure the events are run in the application
         yield cli
 
 
 @pytest.fixture()
-async def director_mockup(loop, app: FastAPI):
-    class FakeDirector:
-        @staticmethod
-        async def get(url: str):
-            return ""
+def director_mockup(app: FastAPI) -> MockRouter:
 
-    app.dependency_overrides[get_director_api] = FakeDirector
-
-    yield
-
-    app.dependency_overrides[get_director_api] = None
+    with respx.mock(
+        base_url=app.state.settings.CATALOG_DIRECTOR.base_url,
+        assert_all_called=False,
+        assert_all_mocked=True,
+    ) as respx_mock:
+        respx_mock.head("/", name="healthcheck").respond(200, json={"health": "OK"})
+        respx_mock.get("/services", name="list_services").respond(
+            200, json={"data": []}
+        )
+        yield respx_mock
 
 
 # DATABASE tables fixtures -----------------------------------

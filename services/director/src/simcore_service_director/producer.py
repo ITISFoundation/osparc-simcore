@@ -13,14 +13,13 @@ from typing import Dict, List, Optional, Tuple
 import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
-
-from servicelib.async_utils import (
+from servicelib.async_utils import (  # pylint: disable=no-name-in-module
     run_sequentially_in_context,
-)  # pylint: disable=no-name-in-module
-from servicelib.monitor_services import (
+)
+from servicelib.monitor_services import (  # pylint: disable=no-name-in-module
     service_started,
     service_stopped,
-)  # pylint: disable=no-name-in-module
+)
 
 from . import config, docker_utils, exceptions, registry_proxy
 from .config import (
@@ -30,6 +29,7 @@ from .config import (
 )
 from .services_common import ServicesCommonSettings
 from .system_utils import get_system_extra_hosts_raw
+from .utils import parse_as_datetime
 
 log = logging.getLogger(__name__)
 
@@ -503,9 +503,6 @@ async def _remove_overlay_network_of_swarm(
         ) from err
 
 
-DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
-
-
 async def _get_service_state(
     client: aiodocker.docker.Docker, service: Dict
 ) -> Tuple[ServiceState, str]:
@@ -532,18 +529,7 @@ async def _get_service_state(
     last_task = sorted(tasks, key=lambda task: task["UpdatedAt"])[-1]
     task_state = last_task["Status"]["State"]
 
-    def _to_datetime(datetime_str: str) -> datetime:
-        # datetime_str is typically '2020-10-09T12:28:14.771034099Z'
-        #  - The T separates the date portion from the time-of-day portion
-        #  - The Z on the end means UTC, that is, an offset-from-UTC
-        # The 099 before the Z is not clear, therefore we will truncate the last part
-        N = len("2020-10-09T12:28:14.7710")
-        if len(datetime_str) > N:
-            datetime_str = datetime_str[:N]
-        return datetime.strptime(datetime_str, "%Y-%m-%dT%H:%M:%S.%f")
-
-    task_state_update_time = _to_datetime(last_task["Status"]["Timestamp"])
-    log.debug("%s %s: time %s", service["ID"], task_state, task_state_update_time)
+    log.debug("%s %s", service["ID"], task_state)
 
     last_task_state = ServiceState.STARTING  # default
     last_task_error_msg = (
@@ -573,7 +559,12 @@ async def _get_service_state(
         last_task_state = ServiceState.STARTING
     elif task_state in ("running"):
         now = datetime.utcnow()
+        # NOTE: task_state_update_time is only used to discrimitate between 'starting' and 'running'
+        task_state_update_time = parse_as_datetime(
+            last_task["Status"]["Timestamp"], default=now
+        )
         time_since_running = now - task_state_update_time
+
         log.debug("Now is %s, time since running mode is %s", now, time_since_running)
         if time_since_running > timedelta(
             seconds=config.DIRECTOR_SERVICES_STATE_MONITOR_S
@@ -581,6 +572,7 @@ async def _get_service_state(
             last_task_state = ServiceState.RUNNING
         else:
             last_task_state = ServiceState.STARTING
+
     elif task_state in ("complete", "shutdown"):
         last_task_state = ServiceState.COMPLETE
     log.debug("service running state is %s", last_task_state)

@@ -126,6 +126,12 @@ qx.Class.define("osparc.data.model.Node", {
       nullable: true
     },
 
+    dynamicV2: {
+      check: "Boolean",
+      init: false,
+      nullable: true
+    },
+
     serviceUrl: {
       check: "String",
       nullable: true,
@@ -204,9 +210,11 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   events: {
+    "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
+    "fileRequested": "qx.event.type.Data",
+    "parameterRequested": "qx.event.type.Data",
     "filePickerRequested": "qx.event.type.Data",
-    "parameterNodeRequested": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data",
     "outputListChanged": "qx.event.type.Event",
     "changeInputNodes": "qx.event.type.Event"
@@ -392,9 +400,6 @@ qx.Class.define("osparc.data.model.Node", {
           this.setLabel(nodeData.label);
         }
         this.populateInputOutputData(nodeData);
-        if ("progress" in nodeData) {
-          this.getStatus().setProgress(nodeData.progress);
-        }
         this.populateStates(nodeData);
         if (nodeData.thumbnail) {
           this.setThumbnail(nodeData.thumbnail);
@@ -433,18 +438,23 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     populateStates: function(nodeData) {
+      if ("progress" in nodeData) {
+        const progress = Number.parseInt(nodeData["progress"]);
+        this.getStatus().setProgress(progress);
+      }
       if ("state" in nodeData) {
-        if ("dependencies" in nodeData.state) {
-          this.getStatus().setDependencies(nodeData.state.dependencies);
+        const state = nodeData.state;
+        if ("dependencies" in state) {
+          this.getStatus().setDependencies(state.dependencies);
         }
-        if ("currentStatus" in nodeData.state && this.isComputational()) {
+        if ("currentStatus" in state && this.isComputational()) {
           // currentStatus is only applicable to computational services
-          this.getStatus().setRunning(nodeData.state.currentStatus);
+          this.getStatus().setRunning(state.currentStatus);
         }
-        if ("modified" in nodeData.state) {
+        if ("modified" in state) {
           if (this.getStatus().getHasOutputs()) {
             // File Picker can't have a modified output
-            this.getStatus().setModified((nodeData.state.modified || this.getStatus().hasDependencies()) && !this.isFilePicker());
+            this.getStatus().setModified((state.modified || this.getStatus().hasDependencies()) && !this.isFilePicker());
           } else {
             this.getStatus().setModified(null);
           }
@@ -544,8 +554,8 @@ qx.Class.define("osparc.data.model.Node", {
       }, this);
 
       [
-        "filePickerRequested",
-        "parameterNodeRequested"
+        "fileRequested",
+        "parameterRequested"
       ].forEach(nodeRequestSignal => {
         propsForm.addListener(nodeRequestSignal, e => {
           const portId = e.getData();
@@ -555,9 +565,18 @@ qx.Class.define("osparc.data.model.Node", {
           });
         }, this);
       });
+
+      propsForm.addListener("filePickerRequested", e => {
+        const data = e.getData();
+        this.fireDataEvent("filePickerRequested", {
+          portId: data.portId,
+          nodeId: this.getNodeId(),
+          file: data.file
+        });
+      }, this);
     },
 
-    __addSettingsEditor: function(inputs) {
+    __addSettingsAccessLevelEditor: function(inputs) {
       const propsForm = this.getPropsForm();
       const form = new osparc.component.form.Auto(inputs);
       form.setData(this.__settingsForm.getData());
@@ -569,7 +588,10 @@ qx.Class.define("osparc.data.model.Node", {
       }, this);
       propsForm.addListener("linkFieldModified", e => {
         const linkFieldModified = e.getData();
-        const {portId, added} = linkFieldModified;
+        const {
+          portId,
+          added
+        } = linkFieldModified;
         if (added) {
           const srcControlLink = propsForm.getControlLink(portId);
           const controlLink = new qx.ui.form.TextField().set({
@@ -619,7 +641,7 @@ qx.Class.define("osparc.data.model.Node", {
 
       if (Object.keys(inputs).length) {
         this.__addSettings(inputs);
-        this.__addSettingsEditor(inputs);
+        this.__addSettingsAccessLevelEditor(inputs);
       }
     },
 
@@ -724,8 +746,9 @@ qx.Class.define("osparc.data.model.Node", {
           .then(compatible => {
             if (compatible) {
               resolve(this.getPropsForm().addPortLink(toPortId, fromNodeId, fromPortId));
+            } else {
+              resolve(false);
             }
-            resolve(false);
           });
       });
     },
@@ -931,14 +954,14 @@ qx.Class.define("osparc.data.model.Node", {
         }
         const srvUrl = this.getServiceUrl();
         if (srvUrl) {
-          let urlUpdate = srvUrl + "/retrieve";
-          urlUpdate = urlUpdate.replace("//retrieve", "/retrieve");
+          const urlRetrieve = this.isDynamicV2() ? osparc.utils.Utils.computeServiceV2RetrieveUrl(this.getStudy().getUuid(), this.getNodeId()) : osparc.utils.Utils.computeServiceRetrieveUrl(srvUrl);
           const updReq = new qx.io.request.Xhr();
           const reqData = {
             "port_keys": portKey ? [portKey] : []
           };
+          updReq.setRequestHeader("Content-Type", "application/json");
           updReq.set({
-            url: urlUpdate,
+            url: urlRetrieve,
             method: "POST",
             requestData: qx.util.Serializer.toJson(reqData)
           });
@@ -955,24 +978,25 @@ qx.Class.define("osparc.data.model.Node", {
               this.getPropsForm().retrievedPortData(portKey, true, sizeBytes);
             }
           }, this);
-          updReq.addListener("fail", e => {
-            const {
-              error
-            } = e.getTarget().getResponse();
-            if (portKey) {
-              this.getPropsForm().retrievedPortData(portKey, false);
-            }
-            console.error("fail", error);
-          }, this);
-          updReq.addListener("error", e => {
-            const {
-              error
-            } = e.getTarget().getResponse();
-            if (portKey) {
-              this.getPropsForm().retrievedPortData(portKey, false);
-            }
-            console.error("error", error);
-          }, this);
+          [
+            "fail",
+            "error"
+          ].forEach(failure => {
+            updReq.addListener(failure, e => {
+              const {
+                error
+              } = e.getTarget().getResponse();
+              if (portKey) {
+                this.getPropsForm().retrievedPortData(portKey, false);
+              }
+              console.error(failure, error);
+              const msgData = {
+                nodeId: this.getNodeId(),
+                msg: "Failed retrieving inputs"
+              };
+              this.fireDataEvent("showInLogger", msgData);
+            }, this);
+          });
           updReq.send();
 
           if (portKey) {
@@ -1018,6 +1042,20 @@ qx.Class.define("osparc.data.model.Node", {
           break;
         }
         case "pending": {
+          if (data["service_message"]) {
+            const serviceId = data["service_uuid"];
+            const serviceName = this.getLabel();
+            const serviceMessage = data["service_message"];
+            const msg = `The service "${serviceName}" is waiting for available ` +
+              `resources. Please inform support and provide the following message ` +
+              `in case this does not resolve in a few minutes: "${serviceId}" ` +
+              `reported "${serviceMessage}"`;
+            const msgData = {
+              nodeId: this.getNodeId(),
+              msg: msg
+            };
+            this.fireDataEvent("showInLogger", msgData);
+          }
           status.setInteractive("pending");
           const interval = 10000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
@@ -1029,20 +1067,13 @@ qx.Class.define("osparc.data.model.Node", {
             return;
           }
 
-          const isDynamicType = data["boot_type"] === "V2" || false;
-          if (isDynamicType) {
-            // dynamic service
-            const srvUrl = window.location.protocol + "//" + nodeId + ".services." + window.location.host;
+          const {
+            srvUrl,
+            isDynamicV2
+          } = osparc.utils.Utils.computeServiceUrl(data);
+          this.setDynamicV2(isDynamicV2);
+          if (srvUrl) {
             this.__waitForServiceReady(srvUrl);
-          } else {
-            // old implementation
-            const servicePath = data["service_basepath"];
-            const entryPointD = data["entry_point"];
-            if (servicePath) {
-              const entryPoint = entryPointD ? ("/" + entryPointD) : "/";
-              const srvUrl = servicePath + entryPoint;
-              this.__waitForServiceReady(srvUrl);
-            }
           }
           break;
         }
@@ -1196,8 +1227,8 @@ qx.Class.define("osparc.data.model.Node", {
 
     getPosition: function() {
       return {
-        x: this.__posX,
-        y: this.__posY
+        x: this.__posX || 0,
+        y: this.__posY || 0
       };
     },
 

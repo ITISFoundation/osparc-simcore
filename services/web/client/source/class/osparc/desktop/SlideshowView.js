@@ -19,11 +19,23 @@ qx.Class.define("osparc.desktop.SlideshowView", {
   extend: qx.ui.core.Widget,
 
   construct: function() {
-    this.base(arguments, "horizontal");
+    this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    const slideshowToolbar = this.__slideshowToolbar = new osparc.desktop.SlideshowToolbar();
+    const slideshowToolbar = this.__slideshowToolbar = new osparc.desktop.SlideshowToolbar().set({
+      backgroundColor: "contrasted-background+"
+    });
+
+    const collapseWithUserMenu = this.__collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
+    [
+      "backToDashboardPressed",
+      "collapseNavBar",
+      "expandNavBar"
+    ].forEach(signalName => collapseWithUserMenu.addListener(signalName, () => this.fireEvent(signalName)), this);
+    // eslint-disable-next-line no-underscore-dangle
+    slideshowToolbar._add(collapseWithUserMenu);
+
     slideshowToolbar.addListener("saveSlideshow", () => {
       if (this.__currentNodeId) {
         const slideshow = this.getStudy().getUi().getSlideshow();
@@ -60,11 +72,39 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const nodeId = e.getData();
       this.__hideNode(nodeId);
     }, this);
+    slideshowToolbar.addListener("slidesStop", () => this.fireEvent("slidesStop"), this);
     this._add(slideshowToolbar);
+
+    const mainView = this.__mainView = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+      alignX: "center"
+    }));
+    this._add(mainView, {
+      flex: 1
+    });
+
+    const prevNextButtons = this.__prevNextButtons = new osparc.navigation.PrevNextButtons();
+    prevNextButtons.addListener("nodeSelected", e => {
+      const nodeId = e.getData();
+      this.nodeSelected(nodeId);
+    }, this);
+    const prevButton = this.__prevButton = prevNextButtons.getPreviousButton().set({
+      alignX: "right",
+      alignY: "middle"
+    });
+    const nextButton = this.__nextButton = prevNextButtons.getNextButton().set({
+      alignX: "left",
+      alignY: "middle"
+    });
+    mainView.add(prevButton);
+    mainView.add(nextButton);
   },
 
   events: {
-    "startPartialPipeline": "qx.event.type.Data"
+    "slidesStop": "qx.event.type.Event",
+    "startPartialPipeline": "qx.event.type.Data",
+    "backToDashboardPressed": "qx.event.type.Event",
+    "collapseNavBar": "qx.event.type.Event",
+    "expandNavBar": "qx.event.type.Event"
   },
 
   properties: {
@@ -81,20 +121,44 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     }
   },
 
-  members: {
-    __currentNodeId: null,
-    __slideshowToolbar: null,
-    __lastView: null,
+  statics: {
+    CARD_MARGIN: 6
+  },
 
-    getStartStopButtons: function() {
-      return this.__slideshowToolbar.getStartStopButtons();
-    },
+  members: {
+    __slideshowToolbar: null,
+    __collapseWithUserMenu: null,
+    __mainView: null,
+    __prevNextButtons: null,
+    __prevButton: null,
+    __nextButton: null,
+    __nodeView: null,
+    __currentNodeId: null,
 
     getSelectedNodeIDs: function() {
       return [this.__currentNodeId];
     },
 
-    __isNodeReady: function(node, oldCurrentNodeId) {
+    getCollapseWithUserMenu: function() {
+      return this.__collapseWithUserMenu;
+    },
+
+    __isLastCurrentNodeReady: function(lastCurrentNodeId) {
+      const node = this.getStudy().getWorkbench().getNode(lastCurrentNodeId);
+      if (node && node.isComputational()) {
+        // run if last run was not succesful
+        let needsRun = node.getStatus().getRunning() !== "SUCCESS";
+        // or inputs changed
+        needsRun = needsRun || node.getStatus().getOutput() === "out-of-date";
+        if (needsRun) {
+          this.fireDataEvent("startPartialPipeline", [lastCurrentNodeId]);
+        }
+        return !needsRun;
+      }
+      return true;
+    },
+
+    __isSelectedNodeReady: function(node, lastCurrentNodeId) {
       const dependencies = node.getStatus().getDependencies();
       if (dependencies && dependencies.length) {
         const msg = this.tr("Do you want to run the required steps?");
@@ -106,10 +170,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
             this.fireDataEvent("startPartialPipeline", dependencies);
           }
           // bring the user back to the old node or to the first dependency
-          if (oldCurrentNodeId === this.__currentNodeId) {
+          if (lastCurrentNodeId === this.__currentNodeId) {
             this.nodeSelected(dependencies[0]);
           } else {
-            this.nodeSelected(oldCurrentNodeId);
+            this.nodeSelected(lastCurrentNodeId);
           }
         }, this);
         return false;
@@ -120,51 +184,123 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     nodeSelected: function(nodeId) {
       const node = this.getStudy().getWorkbench().getNode(nodeId);
       if (node) {
-        const oldCurrentNodeId = this.__currentNodeId;
+        const lastCurrentNodeId = this.__currentNodeId;
         this.__currentNodeId = nodeId;
         this.getStudy().getUi().setCurrentNodeId(nodeId);
 
+        // build layout
         let view;
         if (node.isParameter()) {
-          view = new osparc.component.node.ParameterEditor(node);
-          view.formForSlideshow();
+          view = osparc.component.node.BaseNodeView.createSettingsGroupBox(this.tr("Settings"));
+          const renderer = new osparc.component.node.ParameterEditor(node);
+          renderer.buildForm(false);
+          view.add(renderer);
         } else {
-          if (node.isContainer()) {
-            view = new osparc.component.node.GroupNodeView();
-          } else if (node.isFilePicker()) {
+          if (node.isFilePicker()) {
             view = new osparc.component.node.FilePickerNodeView();
+            view.getOutputsButton().hide();
           } else {
             view = new osparc.component.node.NodeView();
           }
           view.setNode(node);
-          view.populateLayout();
-          view.getInputsView().exclude();
-          view.getOutputsView().exclude();
-          if (this.getPageContext() === "app" && !node.isComputational()) {
-            view.getHeaderLayout().exclude();
-            view.getSettingsLayout().exclude();
+          if (node.isDynamic()) {
+            view.getSettingsLayout().setVisibility(this.getPageContext() === "app" ? "excluded" : "visible");
           }
         }
+
+        // connect maximize/restore
+        if (node.isDynamic()) {
+          const loadingPage = node.getLoadingPage();
+          const iFrame = node.getIFrame();
+          if (loadingPage && iFrame) {
+            [
+              loadingPage,
+              iFrame
+            ].forEach(widget => {
+              if (widget) {
+                widget.addListener("maximize", () => this.__maximizeIframe(true), this);
+                widget.addListener("restore", () => this.__maximizeIframe(false), this);
+              }
+            });
+          }
+        }
+
+        // style layout
+        view.getContentElement().setStyles({
+          "border-radius": "12px"
+        });
+        view.set({
+          backgroundColor: "background-main-lighter+",
+          maxWidth: node.isDynamic() ? null : 800,
+          margin: this.self().CARD_MARGIN
+        });
+        if (node.isParameter()) {
+          view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
+          view.set({
+            backgroundColor: "contrasted-background+",
+            padding: 10
+          });
+        } else {
+          view.getMainView().set({
+            backgroundColor: "contrasted-background+",
+            padding: 10,
+            paddingBottom: 0
+          });
+        }
+
+        // If the current node is moving forward do some run checks:
+        const studyUI = this.getStudy().getUi();
+        let doChecks = false;
+        if (lastCurrentNodeId && nodeId) {
+          const sortedNodeIds = studyUI.getSlideshow().getSortedNodeIds();
+          doChecks = sortedNodeIds.indexOf(lastCurrentNodeId) < sortedNodeIds.indexOf(nodeId);
+        }
+
+        if (doChecks) {
+          // check if lastCurrentNodeId has to be run
+          if (!this.__isLastCurrentNodeReady(lastCurrentNodeId)) {
+            this.__currentNodeId = lastCurrentNodeId;
+            studyUI.setCurrentNodeId(lastCurrentNodeId);
+            return;
+          }
+
+          // check if upstream has to be run
+          if (!this.__isSelectedNodeReady(node, lastCurrentNodeId)) {
+            this.__currentNodeId = lastCurrentNodeId;
+            studyUI.setCurrentNodeId(lastCurrentNodeId);
+            return;
+          }
+        }
+
+        this.__prevNextButtons.setNode(node);
 
         if (view) {
-          if (this.__lastView && this._getChildren().includes(this.__lastView)) {
-            this._remove(this.__lastView);
+          if (this.__nodeView && this.__mainView.getChildren().includes(this.__nodeView)) {
+            this.__mainView.remove(this.__nodeView);
           }
-          this._add(view, {
+          this.__mainView.addAt(view, 1, {
             flex: 1
           });
-          this.__lastView = view;
+          this.__nodeView = view;
         }
-        // check if upstream has to be run
-        if (!this.__isNodeReady(node, oldCurrentNodeId)) {
-          return;
-        }
-      } else if (this.__lastView) {
-        this._remove(this.__lastView);
+      } else if (this.__nodeView) {
+        this.__mainView.remove(this.__nodeView);
       }
       this.getStudy().getUi().setCurrentNodeId(nodeId);
+    },
 
-      this.getStartStopButtons().nodeSelectionChanged([nodeId]);
+    __maximizeIframe: function(maximize) {
+      [
+        this.__slideshowToolbar,
+        this.__prevButton,
+        this.__nextButton,
+        this.__nodeView.getHeaderLayout(),
+        this.__nodeView.getLoggerPanel()
+      ].forEach(widget => widget.setVisibility(maximize ? "excluded" : "visible"));
+
+      this.__nodeView.set({
+        margin: maximize ? 0 : this.self().CARD_MARGIN
+      });
     },
 
     startSlides: function(context = "guided") {
@@ -193,6 +329,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     _applyStudy: function(study) {
       if (study) {
         this.__slideshowToolbar.setStudy(study);
+        this.__prevNextButtons.setStudy(study);
       }
     },
 
@@ -223,52 +360,15 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     __addServiceBetween: function(service, leftNodeId, rightNodeId) {
       const workbench = this.getStudy().getWorkbench();
 
-      // create node
-      const node = workbench.createNode(service.getKey(), service.getVersion());
-      if (!node) {
+      const node = workbench.addServiceBetween(service, leftNodeId, rightNodeId);
+      if (node === null) {
         return;
-      }
-      if (leftNodeId) {
-        const leftNode = workbench.getNode(leftNodeId);
-        node.setPosition(workbench.getFreePosition(leftNode, false));
-      } else if (rightNodeId) {
-        const rightNode = workbench.getNode(rightNodeId);
-        node.setPosition(workbench.getFreePosition(rightNode, true));
-      } else {
-        node.setPosition({
-          x: 20,
-          y: 20
-        });
-      }
-
-      // break previous connection
-      if (leftNodeId && rightNodeId) {
-        const edge = workbench.getEdge(null, leftNodeId, rightNodeId);
-        if (edge) {
-          workbench.removeEdge(edge.getEdgeId());
-        }
-      }
-
-      // create connections
-      if (leftNodeId) {
-        workbench.createEdge(null, leftNodeId, node.getNodeId());
-      }
-      if (rightNodeId) {
-        workbench.createEdge(null, node.getNodeId(), rightNodeId);
       }
 
       // add to the slideshow
       const slideshow = this.getStudy().getUi().getSlideshow();
-      const nodeId = node.getNodeId();
-      if (leftNodeId) {
-        let leftPos = slideshow.getPosition(leftNodeId);
-        slideshow.insertNode(nodeId, leftPos+1);
-      } else if (rightNodeId) {
-        const rightPos = slideshow.getPosition(rightNodeId);
-        slideshow.insertNode(nodeId, rightPos);
-      } else {
-        slideshow.insertNode(nodeId, 0);
-      }
+      slideshow.addNodeToSlideshow(node, leftNodeId, rightNodeId);
+
       this.__slideshowToolbar.populateButtons();
     },
 

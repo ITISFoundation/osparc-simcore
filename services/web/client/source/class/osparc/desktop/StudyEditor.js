@@ -26,14 +26,33 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     const viewsStack = this.__viewsStack = new qx.ui.container.Stack();
 
     const workbenchView = this.__workbenchView = new osparc.desktop.WorkbenchView();
-    workbenchView.addListener("startSnapshot", e => {
-      this.getStudy().removeIFrames();
-      this.fireDataEvent("startSnapshot", e.getData());
-    });
+    [
+      "collapseNavBar",
+      "expandNavBar",
+      "backToDashboardPressed",
+      "slidesEdit",
+      "slidesAppStart"
+    ].forEach(singalName => workbenchView.addListener(singalName, () => this.fireEvent(singalName)));
+    workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
+    workbenchView.addListener("showSnapshots", () => this.__showSnapshots(), this);
     viewsStack.add(workbenchView);
 
     const slideshowView = this.__slideshowView = new osparc.desktop.SlideshowView();
+    [
+      "collapseNavBar",
+      "expandNavBar",
+      "backToDashboardPressed",
+      "slidesStop"
+    ].forEach(singalName => slideshowView.addListener(singalName, () => this.fireEvent(singalName)));
     viewsStack.add(slideshowView);
+
+    const wbAppear = new Promise(resolve => workbenchView.addListenerOnce("appear", resolve, false));
+    const ssAppear = new Promise(resolve => slideshowView.addListenerOnce("appear", resolve, false));
+    Promise.all([wbAppear, ssAppear]).then(() => {
+      // both are ready
+      workbenchView.getCollapseWithUserMenu().bind("collapsed", slideshowView.getCollapseWithUserMenu(), "collapsed");
+      slideshowView.getCollapseWithUserMenu().bind("collapsed", workbenchView.getCollapseWithUserMenu(), "collapsed");
+    });
 
     slideshowView.addListener("startPartialPipeline", e => {
       const partialPipeline = e.getData();
@@ -41,8 +60,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     }, this);
 
     [
-      workbenchView.getStartStopButtons(),
-      slideshowView.getStartStopButtons()
+      workbenchView.getStartStopButtons()
     ].forEach(startStopButtons => {
       startStopButtons.addListener("startPipeline", () => {
         this.__startPipeline([]);
@@ -61,7 +79,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
   events: {
     "forceBackToDashboard": "qx.event.type.Event",
-    "startSnapshot": "qx.event.type.Data"
+    "startSnapshot": "qx.event.type.Data",
+    "collapseNavBar": "qx.event.type.Event",
+    "expandNavBar": "qx.event.type.Event",
+    "backToDashboardPressed": "qx.event.type.Event",
+    "slidesEdit": "qx.event.type.Event",
+    "slidesAppStart": "qx.event.type.Event",
+    "slidesStop": "qx.event.type.Event"
   },
 
   properties: {
@@ -121,7 +145,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     _applyStudy: function(study) {
       this.__settingStudy = false;
 
-      this._hideLoadingPage();
+      this._showLoadingPage(this.tr("Opening ") + (study.getName() || this.tr("Study")));
 
       osparc.store.Store.getInstance().setCurrentStudy(study);
       study.buildWorkbench();
@@ -192,11 +216,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           } else {
             console.error(err);
             msg = this.tr("Error opening study");
-            msg += "<br>" + osparc.data.Resources.getErrorMsg(err);
+            if ("message" in err) {
+              msg += "<br>" + err["message"];
+            }
           }
           osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           this.fireEvent("forceBackToDashboard");
-        });
+        })
+        .finally(() => this._hideLoadingPage());
 
       this.__workbenchView.setStudy(study);
       this.__slideshowView.setStudy(study);
@@ -217,7 +244,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const study = this.getStudy();
       const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(study);
       const title = this.tr("Edit Slideshow");
-      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 500).set({
+      const win = osparc.ui.window.Window.popUpInWindow(nodesSlidesTree, title, 600, 600).set({
         modal: false,
         clickAwayClose: false
       });
@@ -236,9 +263,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
-      const startStopButtonsSS = this.__slideshowView.getStartStopButtons();
       startStopButtonsWB.setRunning(true);
-      startStopButtonsSS.setRunning(true);
       this.updateStudyDocument(true)
         .then(() => {
           this.__requestStartPipeline(this.getStudy().getUuid(), partialPipeline);
@@ -246,7 +271,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         .catch(() => {
           this.__getStudyLogger().error(null, "Run failed");
           startStopButtonsWB.setRunning(false);
-          startStopButtonsSS.setRunning(false);
         });
     },
 
@@ -254,12 +278,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const url = "/computation/pipeline/" + encodeURIComponent(studyId) + ":start";
       const req = new osparc.io.request.ApiRequest(url, "POST");
       const startStopButtonsWB = this.__workbenchView.getStartStopButtons();
-      const startStopButtonsSS = this.__slideshowView.getStartStopButtons();
       req.addListener("success", this.__onPipelinesubmitted, this);
       req.addListener("error", e => {
         this.__getStudyLogger().error(null, "Error submitting pipeline");
         startStopButtonsWB.setRunning(false);
-        startStopButtonsSS.setRunning(false);
       }, this);
       req.addListener("fail", e => {
         if (e.getTarget().getStatus() == "403") {
@@ -279,7 +301,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__getStudyLogger().error(null, "Failed submitting pipeline");
         }
         startStopButtonsWB.setRunning(false);
-        startStopButtonsSS.setRunning(false);
       }, this);
 
       const requestData = {
@@ -354,9 +375,11 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __updatePipelineAndRetrieve: function(node, portKey = null) {
       this.updateStudyDocument(false)
         .then(() => {
-          this.__getStudyLogger().debug(null, "Retrieveing inputs");
           if (node) {
+            this.__getStudyLogger().debug(node.getNodeId(), "Retrieving inputs");
             node.retrieveInputs(portKey);
+          } else {
+            this.__getStudyLogger().debug(null, "Retrieving inputs");
           }
         });
       this.__getStudyLogger().debug(null, "Updating pipeline");
@@ -365,14 +388,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     // overridden
     _showMainLayout: function(show) {
       this.__viewsStack.setVisibility(show ? "visible" : "excluded");
-    },
-
-    /**
-     * Destructor
-     */
-    destruct: function() {
-      osparc.store.Store.getInstance().setCurrentStudy(null);
-      this.__stopAutoSaveTimer();
     },
 
     nodeSelected: function(nodeId) {
@@ -396,6 +411,51 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__slideshowView.startSlides(newCtxt);
           break;
       }
+    },
+
+    __takeSnapshot: function() {
+      const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
+      const tagCtrl = editSnapshotView.getChildControl("tags");
+      const study = this.getStudy();
+      study.getSnapshots()
+        .then(snapshots => {
+          tagCtrl.setValue("V"+snapshots.length);
+        });
+      const title = this.tr("Take Snapshot");
+      const win = osparc.ui.window.Window.popUpInWindow(editSnapshotView, title, 400, 180);
+      editSnapshotView.addListener("takeSnapshot", () => {
+        const tag = editSnapshotView.getTag();
+        const message = editSnapshotView.getMessage();
+        const params = {
+          url: {
+            "studyId": study.getUuid()
+          },
+          data: {
+            "tag": tag,
+            "message": message
+          }
+        };
+        osparc.data.Resources.fetch("snapshots", "takeSnapshot", params)
+          .then(data => {
+            this.__workbenchView.evalSnapshotsButtons();
+          })
+          .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
+
+        win.close();
+      }, this);
+      editSnapshotView.addListener("cancel", () => win.close(), this);
+    },
+
+    __showSnapshots: function() {
+      const study = this.getStudy();
+      const snapshots = new osparc.component.snapshots.SnapshotsView(study);
+      const title = this.tr("Snapshots");
+      const win = osparc.ui.window.Window.popUpInWindow(snapshots, title, 1000, 500);
+      snapshots.addListener("openSnapshot", e => {
+        win.close();
+        const snapshotId = e.getData();
+        this.fireDataEvent("startSnapshot", snapshotId);
+      });
     },
 
     __startAutoSaveTimer: function() {
@@ -465,6 +525,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       if (this.getStudy()) {
         this.getStudy().stopStudy();
       }
+    },
+
+    /**
+     * Destructor
+     */
+    destruct: function() {
+      osparc.store.Store.getInstance().setCurrentStudy(null);
+      this.__stopAutoSaveTimer();
     }
   }
 });

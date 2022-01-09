@@ -14,7 +14,10 @@
 # make install-dev
 # make python-client
 #
---editable ../../services/api-server/client
+# --editable ../../services/api-server/client
+
+osparc @ git+https://github.com/ITISFoundation/osparc-simcore-python-client.git@master
+
 
 # installs base + tests requirements
 --requirement _test.txt

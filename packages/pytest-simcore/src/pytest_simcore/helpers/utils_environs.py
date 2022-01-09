@@ -4,9 +4,11 @@
 import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import yaml
+
+EnvVarsDict = Dict[str, Union[str, None]]
 
 VARIABLE_SUBSTITUTION = re.compile(r"\$\{(\w+)(?:(:{0,1}[-?]{0,1})(.*))?\}$")
 
@@ -106,7 +108,7 @@ def eval_service_environ(
     image_environ: Dict = None,
     *,
     use_env_devel=True
-) -> Dict:
+) -> EnvVarsDict:
     """Deduces a service environment with it runs in a stack from confirmation
 
     :param docker_compose_path: path to stack configuration
@@ -133,7 +135,7 @@ def eval_service_environ(
     image_environ = image_environ or {}
 
     # Environ expected in a running service
-    service_environ = {}
+    service_environ: EnvVarsDict = {}
     service_environ.update(image_environ)
     service_environ.update(service["environment"])
     return service_environ

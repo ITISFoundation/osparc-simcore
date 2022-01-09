@@ -3,11 +3,13 @@
 # pylint: disable=unused-import
 
 import sys
+from copy import deepcopy
 from pathlib import Path
-from typing import Dict
+from typing import Any, Dict
 
 import pytest
 import servicelib
+from faker import Faker
 
 pytest_plugins = [
     "pytest_simcore.repository_paths",
@@ -34,3 +36,16 @@ def osparc_simcore_root_dir(here) -> Path:
         "%s not look like rootdir" % root_dir
     )
     return root_dir
+
+
+@pytest.fixture
+def fake_data_dict(faker: Faker) -> Dict[str, Any]:
+    data = {
+        "uuid_as_UUID": faker.uuid4(cast_to=None),
+        "uuid_as_str": faker.uuid4(),
+        "int": faker.pyint(),
+        "float": faker.pyfloat(),
+        "str": faker.pystr(),
+    }
+    data["object"] = deepcopy(data)
+    return data

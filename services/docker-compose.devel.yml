@@ -13,13 +13,12 @@ services:
       - DEBUG=true
     volumes:
       - ./api-server:/devel/services/api-server
-      - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
 
   catalog:
     environment:
       - SC_BOOT_MODE=debug-ptvsd
-      - LOG_LEVEL=debug
+      - LOG_LEVEL=DEBUG
       - DEBUG=true
       - DYNAMIC_SIDECAR_MOUNT_PATH_DEV=${PWD}/services/dynamic-sidecar
     volumes:
@@ -72,8 +71,6 @@ services:
   dask-sidecar:
     volumes: &dev-dask-sidecar-volumes
       - ./dask-sidecar:/devel/services/dask-sidecar
-      - ./sidecar:/devel/services/sidecar
-      - ./storage/client-sdk:/devel/services/storage/client-sdk
       - ../packages:/devel/packages
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
     environment:

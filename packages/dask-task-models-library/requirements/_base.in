@@ -1,0 +1,15 @@
+#
+# Specifies third-party dependencies for 'dask-task-models-library'
+#
+--constraint ../../../requirements/constraints.txt
+--requirement ../../../packages/models-library/requirements/_base.in
+
+dask[distributed]
+pydantic[email]
+# for the Annotated type
+typing_extensions; python_version < '3.9'
+
+#There are incompatible versions in the resolved dependencies:
+#  idna==3.1 (from -c requirements/_base.txt (line 13))
+#  idna<3,>=2.5 (from requests==2.25.1->coveralls==3.0.1->-r requirements/_test.in (line 24))
+idna<3,>=2.5

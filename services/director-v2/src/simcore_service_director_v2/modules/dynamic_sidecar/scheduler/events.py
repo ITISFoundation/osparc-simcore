@@ -1,10 +1,16 @@
 import logging
 from collections import deque
-from pprint import pformat
 from typing import Any, Deque, Dict, List, Optional, Type
 
 import httpx
 from fastapi import FastAPI
+from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from servicelib.json_serialization import json_dumps
+from servicelib.utils import logged_gather
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_exponential, wait_fixed
 
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.dynamic_services import (
@@ -13,13 +19,16 @@ from ....models.schemas.dynamic_services import (
     SchedulerData,
 )
 from ....modules.director_v0 import DirectorV0Client
-from ..client_api import get_dynamic_sidecar_client
+from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
-    are_services_missing,
     create_network,
     create_service_and_get_id,
     get_node_id_from_task_for_service,
     get_swarm_network,
+    is_dynamic_sidecar_missing,
+    remove_dynamic_sidecar_network,
+    remove_dynamic_sidecar_stack,
+    remove_dynamic_sidecar_volumes,
 )
 from ..docker_compose_specs import assemble_spec
 from ..docker_service_specs import (
@@ -28,7 +37,11 @@ from ..docker_service_specs import (
     get_dynamic_sidecar_spec,
     merge_settings_before_use,
 )
-from ..errors import DynamicSidecarNetworkError
+from ..errors import (
+    DynamicSidecarNetworkError,
+    EntrypointContainerNotFoundError,
+    GenericDockerError,
+)
 from .abc import DynamicSchedulerEvent
 
 logger = logging.getLogger(__name__)
@@ -58,12 +71,12 @@ class CreateSidecars(DynamicSchedulerEvent):
 
     @classmethod
     async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
-        # the are_services_missing is expensive, if the proxy
-        # was already started just skip this event
-        if scheduler_data.dynamic_sidecar.were_services_created:
+        # the call to is_dynamic_sidecar_missing is expensive
+        # if the dynamic sidecar was started skip
+        if scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started:
             return False
 
-        return await are_services_missing(
+        return await is_dynamic_sidecar_missing(
             node_uuid=scheduler_data.node_uuid,
             dynamic_sidecar_settings=app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR,
         )
@@ -78,7 +91,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         # the provided docker-compose spec
         # also other encodes the env vars to target the proper container
         director_v0_client: DirectorV0Client = _get_director_v0_client(app)
-        settings = await merge_settings_before_use(
+        settings: SimcoreServiceSettingsLabel = await merge_settings_before_use(
             director_v0_client=director_v0_client,
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
@@ -106,41 +119,22 @@ class CreateSidecars(DynamicSchedulerEvent):
         swarm_network_name: str = swarm_network["Name"]
 
         # start dynamic-sidecar and run the proxy on the same node
-        dynamic_sidecar_create_service_params = await get_dynamic_sidecar_spec(
+        dynamic_sidecar_create_service_params = get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
             dynamic_sidecar_network_id=dynamic_sidecar_network_id,
             swarm_network_id=swarm_network_id,
             settings=settings,
+            app_settings=app.state.settings,
         )
         logger.debug(
             "dynamic-sidecar create_service_params %s",
-            pformat(dynamic_sidecar_create_service_params),
+            json_dumps(dynamic_sidecar_create_service_params),
         )
 
         dynamic_sidecar_id = await create_service_and_get_id(
             dynamic_sidecar_create_service_params
         )
-
-        dynamic_sidecar_node_id = await get_node_id_from_task_for_service(
-            dynamic_sidecar_id, dynamic_sidecar_settings
-        )
-
-        dynamic_sidecar_proxy_create_service_params = await get_dynamic_proxy_spec(
-            scheduler_data=scheduler_data,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
-            dynamic_sidecar_network_id=dynamic_sidecar_network_id,
-            swarm_network_id=swarm_network_id,
-            swarm_network_name=swarm_network_name,
-            dynamic_sidecar_node_id=dynamic_sidecar_node_id,
-        )
-        logger.debug(
-            "dynamic-sidecar-proxy create_service_params %s",
-            pformat(dynamic_sidecar_proxy_create_service_params),
-        )
-
-        # no need for the id any longer
-        await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
 
         # update service_port and assing it to the status
         # needed by CreateUserServices action
@@ -149,7 +143,13 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
 
         # finally mark services created
-        scheduler_data.dynamic_sidecar.were_services_created = True
+        scheduler_data.dynamic_sidecar.dynamic_sidecar_id = dynamic_sidecar_id
+        scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id = (
+            dynamic_sidecar_network_id
+        )
+        scheduler_data.dynamic_sidecar.swarm_network_id = swarm_network_id
+        scheduler_data.dynamic_sidecar.swarm_network_name = swarm_network_name
+        scheduler_data.dynamic_sidecar.was_dynamic_sidecar_started = True
 
 
 class GetStatus(DynamicSchedulerEvent):
@@ -194,11 +194,13 @@ class GetStatus(DynamicSchedulerEvent):
         )
 
 
-class CreateUserServices(DynamicSchedulerEvent):
+class PrepareServicesEnvironment(DynamicSchedulerEvent):
     """
     Triggered when the dynamic-sidecar is responding to http requests.
-    The docker compose spec for the service is assembled.
-    The dynamic-sidecar is asked to start a service for that service spec.
+    This step runs before CreateUserServices.
+
+    Sets up the environment on the host required by the service.
+    - restores service state
     """
 
     @classmethod
@@ -206,6 +208,32 @@ class CreateUserServices(DynamicSchedulerEvent):
         return (
             scheduler_data.dynamic_sidecar.status.current == DynamicSidecarStatus.OK
             and scheduler_data.dynamic_sidecar.is_available == True
+            and scheduler_data.dynamic_sidecar.service_environment_prepared == False
+        )
+
+    @classmethod
+    async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+        dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+
+        logger.info("Calling into dynamic-sidecar to restore state")
+        await dynamic_sidecar_client.service_restore_state(dynamic_sidecar_endpoint)
+        logger.info("State restored by dynamic-sidecar")
+
+        scheduler_data.dynamic_sidecar.service_environment_prepared = True
+
+
+class CreateUserServices(DynamicSchedulerEvent):
+    """
+    Triggered when the the environment was prepared.
+    The docker compose spec for the service is assembled.
+    The dynamic-sidecar is asked to start a service for that service spec.
+    """
+
+    @classmethod
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        return (
+            scheduler_data.dynamic_sidecar.service_environment_prepared
             and scheduler_data.dynamic_sidecar.compose_spec_submitted == False
         )
 
@@ -218,8 +246,9 @@ class CreateUserServices(DynamicSchedulerEvent):
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
+        # Starts dynamic SIDECAR -------------------------------------
         # creates a docker compose spec given the service key and tag
-        compose_spec = await assemble_spec(
+        compose_spec = assemble_spec(
             app=app,
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
@@ -227,15 +256,185 @@ class CreateUserServices(DynamicSchedulerEvent):
             compose_spec=scheduler_data.compose_spec,
             container_http_entry=scheduler_data.container_http_entry,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
-            simcore_traefik_zone=scheduler_data.simcore_traefik_zone,
-            service_port=scheduler_data.service_port,
         )
 
         await dynamic_sidecar_client.start_service_creation(
             dynamic_sidecar_endpoint, compose_spec
         )
 
+        # Starts PROXY -----------------------------------------------
+        # The entrypoint container name was now computed
+        # continue starting the proxy
+
+        # check values have been set by previous step
+        if (
+            scheduler_data.dynamic_sidecar.dynamic_sidecar_id is None
+            or scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id is None
+            or scheduler_data.dynamic_sidecar.swarm_network_id is None
+            or scheduler_data.dynamic_sidecar.swarm_network_name is None
+        ):
+            raise ValueError(
+                (
+                    "Expected a value for all the following values: "
+                    f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_id=} "
+                    f"{scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id=} "
+                    f"{scheduler_data.dynamic_sidecar.swarm_network_id=} "
+                    f"{scheduler_data.dynamic_sidecar.swarm_network_name=}"
+                )
+            )
+
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
+
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(
+                dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START
+            ),
+            wait=wait_fixed(1),
+            retry_error_cls=EntrypointContainerNotFoundError,
+            before_sleep=before_sleep_log(logger, logging.WARNING),
+        ):
+            with attempt:
+                if scheduler_data.dynamic_sidecar.service_removal_state.was_removed:
+                    # the service was removed while waiting for the operation to finish
+                    logger.warning(
+                        "Stopping `get_entrypoint_container_name` operation. "
+                        "Will no try to start the service."
+                    )
+                    return
+
+                entrypoint_container = await dynamic_sidecar_client.get_entrypoint_container_name(
+                    dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+                    dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+                )
+                logger.info(
+                    "Fetched container entrypoint name %s", entrypoint_container
+                )
+
+        dynamic_sidecar_node_id = await get_node_id_from_task_for_service(
+            scheduler_data.dynamic_sidecar.dynamic_sidecar_id, dynamic_sidecar_settings
+        )
+
+        dynamic_sidecar_proxy_create_service_params = get_dynamic_proxy_spec(
+            scheduler_data=scheduler_data,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            dynamic_sidecar_network_id=scheduler_data.dynamic_sidecar.dynamic_sidecar_network_id,
+            swarm_network_id=scheduler_data.dynamic_sidecar.swarm_network_id,
+            swarm_network_name=scheduler_data.dynamic_sidecar.swarm_network_name,
+            dynamic_sidecar_node_id=dynamic_sidecar_node_id,
+            entrypoint_container_name=entrypoint_container,
+            service_port=scheduler_data.service_port,
+        )
+
+        logger.debug(
+            "dynamic-sidecar-proxy create_service_params %s",
+            json_dumps(dynamic_sidecar_proxy_create_service_params),
+        )
+
+        # no need for the id any longer
+        await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
+        scheduler_data.dynamic_sidecar.were_services_created = True
+
         scheduler_data.dynamic_sidecar.was_compose_spec_submitted = True
+
+
+class RemoveUserCreatedServices(DynamicSchedulerEvent):
+    """
+    Triggered when the service is marked for removal.
+
+    The state of the service will be stored. If dynamic-sidecar
+        is not reachable a warning is logged.
+    The outputs of the service wil be pushed. If dynamic-sidecar
+        is not reachable a warning is logged.
+    The dynamic-sidcar together with spawned containers
+    and dedicated network will be removed.
+    The scheduler will no longer track the service.
+    """
+
+    @classmethod
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        return scheduler_data.dynamic_sidecar.service_removal_state.can_remove
+
+    @classmethod
+    async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        # invoke container cleanup at this point
+        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(app)
+
+        try:
+            await dynamic_sidecar_client.begin_service_destruction(
+                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
+            )
+        except Exception as e:  # pylint: disable=broad-except
+            logger.warning(
+                "Could not contact dynamic-sidecar to begin destruction of %s\n%s",
+                scheduler_data.service_name,
+                str(e),
+            )
+
+        dynamic_sidecar_settings: DynamicSidecarSettings = (
+            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        )
+
+        if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
+            dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+            dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+
+            logger.info(
+                "Calling into dynamic-sidecar to save state and pushing data to nodeports"
+            )
+            try:
+                await logged_gather(
+                    dynamic_sidecar_client.service_push_output_ports(
+                        dynamic_sidecar_endpoint,
+                    ),
+                    dynamic_sidecar_client.service_save_state(
+                        dynamic_sidecar_endpoint,
+                    ),
+                )
+                logger.info("State saved by dynamic-sidecar")
+            except Exception as e:  # pylint: disable=broad-except
+                logger.warning(
+                    (
+                        "Could not contact dynamic-sidecar to save service "
+                        "state and upload outputs %s\n%s"
+                    ),
+                    scheduler_data.service_name,
+                    str(e),
+                )
+
+        # remove the 2 services
+        await remove_dynamic_sidecar_stack(
+            node_uuid=scheduler_data.node_uuid,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+        )
+        # remove network
+        await remove_dynamic_sidecar_network(
+            scheduler_data.dynamic_sidecar_network_name
+        )
+
+        # remove created inputs and outputs volumes
+        async for attempt in AsyncRetrying(
+            wait=wait_exponential(min=1),
+            stop=stop_after_delay(20),
+            retry_error_cls=GenericDockerError,
+        ):
+            with attempt:
+                logger.info(
+                    "Trying to remove volumes for %s", scheduler_data.service_name
+                )
+                await remove_dynamic_sidecar_volumes(scheduler_data.node_uuid)
+
+        logger.debug(
+            "Removed dynamic-sidecar created services for '%s'",
+            scheduler_data.service_name,
+        )
+
+        await app.state.dynamic_sidecar_scheduler.finish_service_removal(
+            scheduler_data.node_uuid
+        )
+
+        scheduler_data.dynamic_sidecar.service_removal_state.mark_removed()
 
 
 # register all handlers defined in this module here
@@ -243,5 +442,7 @@ class CreateUserServices(DynamicSchedulerEvent):
 REGISTERED_EVENTS: List[Type[DynamicSchedulerEvent]] = [
     CreateSidecars,
     GetStatus,
+    PrepareServicesEnvironment,
     CreateUserServices,
+    RemoveUserCreatedServices,
 ]

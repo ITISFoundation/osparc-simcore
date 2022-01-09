@@ -4,24 +4,25 @@
 # TIP: Use _base.txt to create a pure-dask installation compatible with the dask-sidecar
 #
 --constraint ../../../requirements/constraints.txt
+--constraint constraints.txt
 
 # intra-repo packages CONSTRAINTS
 #   - Input-requirements on intra-repo packages are tested using latest updates
 #   - Added as constraints instead of requirements in order to avoid polluting base.txt
 #   - Will be installed when prod.txt or dev.txt
 #
+--constraint ../../../packages/dask-task-models-library/requirements/_base.in
 --constraint ../../../packages/models-library/requirements/_base.in
 --constraint ../../../packages/settings-library/requirements/_base.in
---constraint ../../../packages/postgres-database/requirements/_base.in
 --constraint ../../../packages/service-library/requirements/_base.in
---constraint ../../../packages/simcore-sdk/requirements/_base.in
 
-# WARNING: this keeps compatibility with sidecar service requirements
---constraint ../../../services/sidecar/requirements/_base.txt
 
 aiodocker
-
+aiofiles
+aiohttp
+requests
 dask[complete]
+pydantic[email,dotenv]
 
 # compression
 blosc

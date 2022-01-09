@@ -3,14 +3,13 @@ import os
 import sys
 from pathlib import Path
 
-import pandas as pd
+import pandas
 import requests
 import sqlalchemy as sa
 from simcore_service_storage.models import (
     FileMetaData,
     file_meta_data,
     groups,
-    metadata,
     projects,
     user_to_groups,
     users,
@@ -63,33 +62,6 @@ def is_responsive(url, code=200) -> bool:
     return False
 
 
-def is_postgres_responsive(url) -> bool:
-    """Check if something responds to ``url``"""
-    try:
-        engine = sa.create_engine(url)
-        conn = engine.connect()
-        conn.close()
-    except sa.exc.OperationalError:
-        return False
-    return True
-
-
-def create_tables(url, engine=None):
-    if not engine:
-        engine = sa.create_engine(url)
-
-    metadata.drop_all(bind=engine)
-    metadata.create_all(bind=engine, tables=PG_TABLES_NEEDED_FOR_STORAGE)
-    return engine
-
-
-def drop_tables(url, engine=None):
-    if not engine:
-        engine = sa.create_engine(url)
-
-    metadata.drop_all(bind=engine)
-
-
 def insert_metadata(url: str, fmd: FileMetaData):
     # FIXME: E1120:No value for argument 'dml' in method call
     # pylint: disable=E1120
@@ -112,6 +84,7 @@ def insert_metadata(url: str, fmd: FileMetaData):
         created_at=fmd.created_at,
         last_modified=fmd.last_modified,
         file_size=fmd.file_size,
+        entity_tag=fmd.entity_tag,
     )
 
     engine = sa.create_engine(url)
@@ -123,14 +96,16 @@ def insert_metadata(url: str, fmd: FileMetaData):
 
 
 def fill_tables_from_csv_files(url):
-    engine = sa.create_engine(url)
+    engine = None
 
     try:
+        engine = sa.create_engine(url)
         for table in ["users", "file_meta_data", "projects"]:
             with open(DATA_DIR / f"{table}.csv", "r") as file:
-                data_df = pd.read_csv(file)
+                data_df = pandas.read_csv(file)
                 data_df.to_sql(
                     table, con=engine, index=False, index_label="id", if_exists="append"
                 )
     finally:
-        engine.dispose()
+        if engine is not None:
+            engine.dispose()

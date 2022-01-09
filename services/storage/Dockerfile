@@ -10,10 +10,10 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=mguidon
 
-RUN set -eux; \
-  apt-get update; \
-  apt-get install -y gosu; \
-  rm -rf /var/lib/apt/lists/*; \
+RUN set -eux && \
+  apt-get update && \
+  apt-get install -y gosu && \
+  rm -rf /var/lib/apt/lists/* && \
   # verify that the binary works
   gosu nobody true
 
@@ -75,7 +75,7 @@ RUN apt-get update \
 RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN pip --no-cache-dir install --upgrade \
-  pip~=21.2.3  \
+  pip~=21.3  \
   wheel \
   setuptools
 

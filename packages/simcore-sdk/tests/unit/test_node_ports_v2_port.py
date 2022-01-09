@@ -6,18 +6,21 @@
 # pylint:disable=too-many-arguments
 
 
+import os
 import re
 import shutil
 import tempfile
 import threading
 from collections import namedtuple
 from pathlib import Path
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Iterator, Optional, Type, Union
+
 
 import pytest
 from aiohttp.client import ClientSession
 from attr import dataclass
 from pydantic.error_wrappers import ValidationError
+from pytest_mock.plugin import MockerFixture
 from simcore_sdk.node_ports_v2 import exceptions, node_config
 from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
 from simcore_sdk.node_ports_v2.port import Port
@@ -77,17 +80,52 @@ def e_tag() -> str:
 
 
 @pytest.fixture
-def this_node_file(tmp_path: Path) -> Path:
-    file_path = this_node_file_name()
+def symlink_to_file_with_data() -> Iterator[Path]:
+    file_name: Path = this_node_file_name()
+    symlink_path = file_name
+    assert not symlink_path.exists()
+    file_path = file_name.parent / f"source_{file_name.name}"
+    assert not file_path.exists()
+
     file_path.write_text("some dummy data")
     assert file_path.exists()
-    yield file_path
-    if file_path.exists():
-        file_path.unlink()
+    os.symlink(file_path, symlink_path)
+    assert symlink_path.exists()
+
+    yield symlink_path
+
+    symlink_path.unlink()
+    assert not symlink_path.exists()
+    file_path.unlink()
+    assert not file_path.exists()
 
 
 @pytest.fixture
-def another_node_file() -> Path:
+def file_with_data() -> Iterator[Path]:
+    file_name: Path = this_node_file_name()
+    file_path = file_name
+    assert not file_path.exists()
+    file_path.write_text("some dummy data")
+    assert file_path.exists()
+
+    yield file_path
+
+    file_path.unlink()
+    assert not file_path.exists()
+
+
+@pytest.fixture(
+    params=[
+        pytest.lazy_fixture("symlink_to_file_with_data"),
+        pytest.lazy_fixture("file_with_data"),
+    ]
+)
+def this_node_file(request) -> Iterator[Path]:
+    yield request.param
+
+
+@pytest.fixture
+def another_node_file() -> Iterator[Path]:
     file_path = another_node_file_name()
     file_path.write_text("some dummy data")
     assert file_path.exists()
@@ -97,7 +135,7 @@ def another_node_file() -> Path:
 
 
 @pytest.fixture
-def download_file_folder() -> Path:
+def download_file_folder() -> Iterator[Path]:
     destination_path = download_file_folder_name()
     destination_path.mkdir(parents=True, exist_ok=True)
     yield destination_path
@@ -128,7 +166,7 @@ def user_id_fixture() -> int:
 
 @pytest.fixture
 async def mock_download_file(
-    monkeypatch,
+    mocker: MockerFixture,
     this_node_file: Path,
     project_id: str,
     node_uuid: str,
@@ -137,8 +175,8 @@ async def mock_download_file(
     async def mock_download_file_from_link(
         download_link: URL,
         local_folder: Path,
-        session: Optional[ClientSession] = None,
         file_name: Optional[str] = None,
+        client_session: Optional[ClientSession] = None,
     ) -> Path:
         assert str(local_folder).startswith(str(download_file_folder))
         destination_path = local_folder / this_node_file.name
@@ -146,10 +184,14 @@ async def mock_download_file(
         shutil.copy(this_node_file, destination_path)
         return destination_path
 
-    from simcore_sdk.node_ports_common import filemanager
+    mocker.patch(
+        "simcore_sdk.node_ports_common.filemanager.get_download_link_from_s3",
+        return_value="a fake link",
+    )
 
-    monkeypatch.setattr(
-        filemanager, "download_file_from_link", mock_download_file_from_link
+    mocker.patch(
+        "simcore_sdk.node_ports_common.filemanager.download_file_from_link",
+        side_effect=mock_download_file_from_link,
     )
 
 
@@ -553,14 +595,20 @@ async def test_valid_port(
 
         @classmethod
         async def _node_ports_creator_cb(cls, node_uuid: str) -> "FakeNodePorts":
-            return cls(user_id=user_id, project_id=project_id, node_uuid=node_uuid)
+            return cls(
+                user_id=user_id,
+                project_id=project_id,
+                node_uuid=node_uuid,
+            )
 
         @staticmethod
         async def save_to_db_cb(node_ports):
             return
 
     fake_node_ports = FakeNodePorts(
-        user_id=user_id, project_id=project_id, node_uuid=node_uuid
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
     )
     port = Port(**port_cfg)
     port._node_ports = fake_node_ports

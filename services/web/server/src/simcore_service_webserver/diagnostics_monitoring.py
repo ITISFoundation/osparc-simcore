@@ -7,10 +7,10 @@ from asyncio.exceptions import CancelledError
 
 import prometheus_client
 from aiohttp import web
-from aiohttp.web_middlewares import _Handler, _Middleware
 from prometheus_client import CONTENT_TYPE_LATEST, Counter
 from prometheus_client.registry import CollectorRegistry
 from servicelib.aiohttp.monitor_services import add_instrumentation
+from servicelib.aiohttp.typing_extension import Handler, Middleware
 
 from .diagnostics_core import DelayWindowProbe, is_sensing_enabled, kLATENCY_PROBE
 
@@ -59,9 +59,9 @@ async def metrics_handler(request: web.Request):
     return response
 
 
-def middleware_factory(app_name: str) -> _Middleware:
+def middleware_factory(app_name: str) -> Middleware:
     @web.middleware
-    async def _middleware_handler(request: web.Request, handler: _Handler):
+    async def _middleware_handler(request: web.Request, handler: Handler):
         if request.rel_url.path == "/socket.io/":
             return await handler(request)
 
@@ -95,6 +95,7 @@ def middleware_factory(app_name: str) -> _Middleware:
             resp = web.HTTPInternalServerError(reason=str(exc))
             resp.__cause__ = exc
             log_exception = exc
+
         except CancelledError as exc:
             # Mostly for logging
             resp = web.HTTPInternalServerError(reason=str(exc))

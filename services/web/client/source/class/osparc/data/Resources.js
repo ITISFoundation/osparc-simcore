@@ -92,7 +92,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           postToTemplate: {
             method: "POST",
-            url: statics.API + "/projects?as_template={study_id}"
+            url: statics.API + "/projects?as_template={study_id}&copy_data={copy_data}"
           },
           open: {
             method: "POST",
@@ -475,18 +475,6 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * HEALTHCHECK
-       */
-      "healthCheck": {
-        useCache: false,
-        endpoints: {
-          get: {
-            method: "GET",
-            url: statics.API + "/"
-          }
-        }
-      },
-      /*
        * AUTH
        */
       "auth": {
@@ -717,7 +705,7 @@ qx.Class.define("osparc.data.Resources", {
           }
           res.dispose();
           if ([404, 503].includes(status)) {
-            message += "<br>Please, try again later";
+            message += "<br>Please, try again later and/or contact support";
           }
           const err = Error(message ? message : `Error while trying to fetch ${endpoint} ${resource}`);
           if (status) {

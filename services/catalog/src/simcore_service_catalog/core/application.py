@@ -8,6 +8,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from starlette import status
 from starlette.exceptions import HTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from ..api.errors.http_error import (
     http_error_handler,
@@ -16,7 +17,7 @@ from ..api.errors.http_error import (
 from ..api.errors.validation_error import http422_error_handler
 from ..api.root import router as api_router
 from ..api.routes.health import router as health_router
-from ..meta import api_version, api_vtag
+from ..meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
 from ..services.frontend_services import setup_frontend_services
 from .events import (
     create_start_app_handler,
@@ -31,24 +32,25 @@ logger = logging.getLogger(__name__)
 
 def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings is None:
-        settings = AppSettings.create_default()
+        settings = AppSettings.create_from_envs()
 
-    logging.basicConfig(level=settings.loglevel)
-    logging.root.setLevel(settings.loglevel)
+    logging.basicConfig(level=settings.CATALOG_LOG_LEVEL.value)
+    logging.root.setLevel(settings.CATALOG_LOG_LEVEL.value)
+    logger.debug(settings.json(indent=2))
 
     app = FastAPI(
-        debug=settings.debug,
-        title="Components Catalog Service",
-        description="Manages and maintains a **catalog** of all published components (e.g. macro-algorithms, scripts, etc)",
-        version=api_version,
-        openapi_url=f"/api/{api_vtag}/openapi.json",
+        debug=settings.SC_BOOT_MODE
+        in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
+        title=PROJECT_NAME,
+        description=SUMMARY,
+        version=API_VERSION,
+        openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled
     )
     override_fastapi_openapi_method(app)
 
-    logger.debug("App settings:%s", settings.json(indent=2))
-
+    logger.debug(settings)
     app.state.settings = settings
 
     setup_frontend_services(app)
@@ -83,18 +85,18 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     app.include_router(health_router)
 
     # api under /v*
-    app.include_router(api_router, prefix=f"/{api_vtag}")
-
+    app.include_router(api_router, prefix=f"/{API_VTAG}")
     # middleware to time requests (ONLY for development)
-    if settings.boot_mode != BootModeEnum.PRODUCTION:
+    if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
 
-        @app.middleware("http")
         async def _add_process_time_header(request: Request, call_next: Callable):
             start_time = time.time()
             response = await call_next(request)
             process_time = time.time() - start_time
             response.headers["X-Process-Time"] = str(process_time)
             return response
+
+        app.add_middleware(BaseHTTPMiddleware, dispatch=_add_process_time_header)
 
     # gzip middleware
     app.add_middleware(GZipMiddleware)

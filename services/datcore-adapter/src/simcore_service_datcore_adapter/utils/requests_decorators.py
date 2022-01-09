@@ -15,13 +15,21 @@ _DEFAULT_CHECK_INTERVAL_S: float = 0.5
 async def _cancel_task_if_client_disconnected(
     request: Request, task: asyncio.Task, interval: float = _DEFAULT_CHECK_INTERVAL_S
 ) -> None:
-    with suppress(CancelledError):
+    try:
         while True:
+            if task.done():
+                logger.debug("task %s is done", task)
+                break
             if await request.is_disconnected():
                 logger.warning("client %s disconnected!", request.client)
                 task.cancel()
                 break
             await asyncio.sleep(interval)
+    except CancelledError:
+        logger.debug("task was cancelled")
+        raise
+    finally:
+        logger.debug("task completed")
 
 
 def cancellable_request(handler: Callable[..., Coroutine[Any, Any, Optional[Any]]]):
@@ -56,5 +64,7 @@ def cancellable_request(handler: Callable[..., Coroutine[Any, Any, Optional[Any]
             return Response("Oh No!", status_code=499)
         finally:
             auto_cancel_task.cancel()
+            with suppress(CancelledError):
+                await auto_cancel_task
 
     return decorator

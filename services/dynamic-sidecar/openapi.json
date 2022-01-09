@@ -87,6 +87,9 @@
                 "schema": {}
               }
             }
+          },
+          "422": {
+            "description": "Cannot validate submitted compose spec"
           }
         }
       }
@@ -124,15 +127,11 @@
               }
             }
           },
+          "404": {
+            "description": "No compose spec found"
+          },
           "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
+            "description": "Error while shutting down containers"
           }
         }
       }
@@ -220,6 +219,45 @@
         }
       }
     },
+    "/v1/containers/name": {
+      "get": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Get Entrypoint Container Name",
+        "description": "Searches for the container's name given the network\non which the proxy communicates with it.\nSupported filters:\n    network: name of the network",
+        "operationId": "get_entrypoint_container_name_v1_containers_name_get",
+        "parameters": [
+          {
+            "description": "JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters",
+            "required": true,
+            "schema": {
+              "title": "Filters",
+              "type": "string",
+              "description": "JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters"
+            },
+            "name": "filters",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "No entrypoint container found or spec is not yet present"
+          },
+          "422": {
+            "description": "Filters could not be parsed"
+          }
+        }
+      }
+    },
     "/v1/containers/{id}": {
       "get": {
         "tags": [
@@ -267,93 +305,145 @@
         }
       }
     },
-    "/push": {
+    "/v1/containers/state:restore": {
       "post": {
         "tags": [
-          "Mocked frontend calls"
+          "containers"
         ],
-        "summary": "Ignored Push Post",
-        "operationId": "ignored_push_post_push_post",
+        "summary": "Restores the state of the dynamic service",
+        "description": "When restoring the state:\n- pull inputs via nodeports\n- pull all the extra state paths",
+        "operationId": "restore_state_v1_containers_state_restore_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/v1/containers/state:save": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Stores the state of the dynamic service",
+        "operationId": "save_state_v1_containers_state_save_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/v1/containers/ports/inputs:pull": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Pull input ports data",
+        "operationId": "pull_input_ports_v1_containers_ports_inputs_pull_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Port Keys",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
         }
       }
     },
-    "/retrieve": {
-      "get": {
+    "/v1/containers/ports/outputs:push": {
+      "post": {
         "tags": [
-          "Mocked frontend calls"
+          "containers"
         ],
-        "summary": "Ignored Port Data Load",
-        "operationId": "ignored_port_data_load_retrieve_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
+        "summary": "Push output ports data",
+        "operationId": "push_output_ports_v1_containers_ports_outputs_push_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Port Keys",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               }
             }
           }
-        }
-      },
-      "post": {
-        "tags": [
-          "Mocked frontend calls"
-        ],
-        "summary": "Ignored Port Data Save",
-        "operationId": "ignored_port_data_save_retrieve_post",
+        },
         "responses": {
-          "200": {
-            "description": "Successful Response",
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
         }
       }
     },
-    "/state": {
-      "get": {
-        "tags": [
-          "Mocked frontend calls"
-        ],
-        "summary": "Ignored Load Service State State",
-        "operationId": "ignored_load_service_state_state_state_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      },
+    "/v1/containers:restart": {
       "post": {
         "tags": [
-          "Mocked frontend calls"
+          "containers"
         ],
-        "summary": "Ignored Save Service State State",
-        "operationId": "ignored_save_service_state_state_state_post",
+        "summary": "Restarts Containers",
+        "description": "Removes the previously started service\nand returns the docker-compose output",
+        "operationId": "restarts_containers_v1_containers_restart_post",
+        "parameters": [
+          {
+            "description": "docker-compose stop command timeout default",
+            "required": false,
+            "schema": {
+              "title": "Command Timeout",
+              "type": "number",
+              "description": "docker-compose stop command timeout default",
+              "default": 10.0
+            },
+            "name": "command_timeout",
+            "in": "query"
+          }
+        ],
         "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Container does not exist"
+          },
+          "422": {
+            "description": "Error while running docker-compose command"
           }
         }
       }

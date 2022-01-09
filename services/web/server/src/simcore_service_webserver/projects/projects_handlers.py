@@ -2,6 +2,7 @@
 
 """
 
+import asyncio
 import json
 import logging
 from typing import Any, Coroutine, Dict, List, Optional, Set
@@ -9,13 +10,16 @@ from typing import Any, Coroutine, Dict, List, Optional, Set
 from aiohttp import web
 from jsonschema import ValidationError
 from models_library.projects import ProjectID
-from models_library.projects_state import ProjectState
-from servicelib.rest_pagination_utils import PageResponseLimitOffset
+from models_library.projects_state import ProjectState, ProjectStatus
+from models_library.rest_pagination import Page
+from models_library.rest_pagination_utils import paginate_data
+from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
+from simcore_service_webserver.director_v2_core import DirectorServiceError
 
 from .. import catalog, director_v2_api
-from .._meta import api_version_prefix as vtag
+from .._meta import api_version_prefix as VTAG
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
@@ -25,7 +29,7 @@ from ..security_decorators import permission_required
 from ..storage_api import copy_data_folders_from_project
 from ..users_api import get_user_name
 from . import projects_api
-from .project_models import ProjectTypeAPI
+from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import (
@@ -43,82 +47,86 @@ OVERRIDABLE_DOCUMENT_KEYS = [
 ]
 # TODO: validate these against api/specs/webserver/v0/components/schemas/project-v0.0.1.json
 
+
 log = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
 
-@routes.post(f"/{vtag}/projects")
+@routes.post(f"/{VTAG}/projects")
 @login_required
 @permission_required("project.create")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
-async def create_projects(request: web.Request):
-    # TODO: keep here since is async and parser thinks it is a handler
-
+async def create_projects(
+    request: web.Request,
+):  # pylint: disable=too-many-branches, too-many-statements
     user_id: int = request[RQT_USERID_KEY]
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
-
     template_uuid = request.query.get("from_template")
     as_template = request.query.get("as_template")
+    copy_data: bool = bool(
+        request.query.get("copy_data", "true") in [1, "true", "True"]
+    )
     hidden: bool = bool(request.query.get("hidden", False))
 
+    new_project = {}
+    new_project_was_hidden_before_data_was_copied = hidden
     try:
-        project = {}
         clone_data_coro: Optional[Coroutine] = None
-
+        source_project: Optional[Dict[str, Any]] = None
         if as_template:  # create template from
             await check_permission(request, "project.template.create")
-
             source_project = await projects_api.get_project_for_user(
                 request.app,
                 project_uuid=as_template,
                 user_id=user_id,
                 include_templates=False,
             )
-            # clone user project as tempalte
-            project, nodes_map = clone_project_document(
-                source_project, forced_copy_project_id=None
-            )
-            clone_data_coro = copy_data_folders_from_project(
-                request.app, source_project, project, nodes_map, user_id
-            )
-
         elif template_uuid:  # create from template
             source_project = await db.get_template_project(template_uuid)
             if not source_project:
                 raise web.HTTPNotFound(
                     reason="Invalid template uuid {}".format(template_uuid)
                 )
+        if source_project:
             # clone template as user project
-            project, nodes_map = clone_project_document(
-                source_project, forced_copy_project_id=None
+            new_project, nodes_map = clone_project_document(
+                source_project,
+                forced_copy_project_id=None,
+                clean_output_data=(copy_data == False),
             )
-            clone_data_coro = copy_data_folders_from_project(
-                request.app, source_project, project, nodes_map, user_id
+            if template_uuid:
+                # remove template access rights
+                new_project["accessRights"] = {}
+            # the project is to be hidden until the data is copied
+            hidden = copy_data
+            clone_data_coro = (
+                copy_data_folders_from_project(
+                    request.app, source_project, new_project, nodes_map, user_id
+                )
+                if copy_data
+                else None
             )
-
-            # remove template access rights
-            project["accessRights"] = {}
             # FIXME: parameterized inputs should get defaults provided by service
 
         # overrides with body
         if request.has_body:
             predefined = await request.json()
-            if project:
+            if new_project:
                 for key in OVERRIDABLE_DOCUMENT_KEYS:
                     non_null_value = predefined.get(key)
                     if non_null_value:
-                        project[key] = non_null_value
+                        new_project[key] = non_null_value
             else:
                 # TODO: take skeleton and fill instead
-                project = predefined
+                new_project = predefined
 
         # re-validate data
-        projects_api.validate_project(request.app, project)
+        await projects_api.validate_project(request.app, new_project)
 
         # update metadata (uuid, timestamps, ownership) and save
-        project = await db.add_project(
-            project,
+        new_project = await db.add_project(
+            new_project,
             user_id,
             force_as_template=as_template is not None,
             hidden=hidden,
@@ -126,17 +134,35 @@ async def create_projects(request: web.Request):
 
         # copies the project's DATA IF cloned
         if clone_data_coro:
-            await clone_data_coro
+            assert source_project  # nosec
+            if as_template:
+                # we need to lock the original study while copying the data
+                async with projects_api.lock_with_notification(
+                    request.app,
+                    source_project["uuid"],
+                    ProjectStatus.CLONING,
+                    user_id,
+                    await get_user_name(request.app, user_id),
+                ):
+
+                    await clone_data_coro
+            else:
+                await clone_data_coro
+            # unhide the project if needed since it is now complete
+            if not new_project_was_hidden_before_data_was_copied:
+                await db.update_project_without_checking_permissions(
+                    new_project, new_project["uuid"], hidden=False
+                )
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_api.create_or_update_pipeline(
-            request.app, user_id, project["uuid"]
+            request.app, user_id, new_project["uuid"]
         )
 
         # Appends state
-        project = await projects_api.add_project_states_for_user(
+        new_project = await projects_api.add_project_states_for_user(
             user_id=user_id,
-            project=project,
+            project=new_project,
             is_template=as_template is not None,
             app=request.app,
         )
@@ -147,12 +173,20 @@ async def create_projects(request: web.Request):
         raise web.HTTPNotFound(reason="Project not found") from exc
     except ProjectInvalidRightsError as exc:
         raise web.HTTPUnauthorized from exc
-
+    except asyncio.CancelledError:
+        log.warning(
+            "cancelled creation of project for user '%s', cleaning up", f"{user_id=}"
+        )
+        await projects_api.delete_project(request.app, new_project["uuid"], user_id)
+        raise
     else:
-        raise web.HTTPCreated(text=json.dumps(project), content_type="application/json")
+        log.debug("project created successfuly")
+        raise web.HTTPCreated(
+            text=json.dumps(new_project), content_type="application/json"
+        )
 
 
-@routes.get(f"/{vtag}/projects")
+@routes.get(f"/{VTAG}/projects")
 @login_required
 @permission_required("project.read")
 async def list_projects(request: web.Request):
@@ -202,16 +236,19 @@ async def list_projects(request: web.Request):
         include_hidden=show_hidden,
     )
     await set_all_project_states(projects, project_types)
-    return PageResponseLimitOffset.paginate_data(
-        data=projects,
-        request_url=request.url,
-        total=total_number_projects,
-        limit=limit,
-        offset=offset,
-    ).dict(**RESPONSE_MODEL_POLICY)
+    page = Page[ProjectDict].parse_obj(
+        paginate_data(
+            chunk=projects,
+            request_url=request.url,
+            total=total_number_projects,
+            limit=limit,
+            offset=offset,
+        )
+    )
+    return page.dict(**RESPONSE_MODEL_POLICY)
 
 
-@routes.get(f"/{vtag}/projects/{{project_uuid}}")
+@routes.get(f"/{VTAG}/projects/{{project_uuid}}")
 @login_required
 @permission_required("project.read")
 async def get_project(request: web.Request):
@@ -244,6 +281,7 @@ async def get_project(request: web.Request):
             formatted_services = ", ".join(
                 f"{service}:{version}" for service, version in unavilable_services
             )
+            # TODO: lack of permissions should be notified with https://httpstatuses.com/403 web.HTTPForbidden
             raise web.HTTPNotFound(
                 reason=(
                     f"Project '{project_uuid}' uses unavailable services. Please ask "
@@ -260,7 +298,7 @@ async def get_project(request: web.Request):
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
-@routes.get(f"/{vtag}/projects/active")
+@routes.get(f"/{VTAG}/projects/active")
 @login_required
 @permission_required("project.read")
 async def get_active_project(request: web.Request) -> web.Response:
@@ -271,7 +309,6 @@ async def get_active_project(request: web.Request) -> web.Response:
 
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
-
     try:
         project = None
         user_active_projects = []
@@ -288,13 +325,13 @@ async def get_active_project(request: web.Request) -> web.Response:
                 include_state=True,
             )
 
-        return web.json_response({"data": project})
+        return web.json_response({"data": project}, dumps=json_dumps)
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason="Project not found") from exc
 
 
-@routes.put(f"/{vtag}/projects/{{project_uuid}}")
+@routes.put(f"/{VTAG}/projects/{{project_uuid}}")
 @login_required
 @permission_required("project.update")
 @permission_required("services.pipeline.*")  # due to update_pipeline_db
@@ -318,13 +355,19 @@ async def replace_project(request: web.Request):
         project_uuid = ProjectID(request.match_info["project_id"])
         new_project = await request.json()
 
+        # Prune state field (just in case)
+        new_project.pop("state", None)
+
+    except AttributeError as err:
+        # NOTE: if new_project is not a dict, .pop will raise this error
+        raise web.HTTPBadRequest(
+            reason="Invalid request payload, expected a project model"
+        ) from err
+
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
     except json.JSONDecodeError as exc:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
-
-    # Prune state field (just in case)
-    new_project.pop("state", None)
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
     await check_permission(
@@ -339,7 +382,7 @@ async def replace_project(request: web.Request):
     )
 
     try:
-        projects_api.validate_project(request.app, new_project)
+        await projects_api.validate_project(request.app, new_project)
 
         current_project = await projects_api.get_project_for_user(
             request.app,
@@ -382,7 +425,7 @@ async def replace_project(request: web.Request):
     return {"data": new_project}
 
 
-@routes.delete(f"/{vtag}/projects/{{project_uuid}}")
+@routes.delete(f"/{VTAG}/projects/{{project_uuid}}")
 @login_required
 @permission_required("project.delete")
 async def delete_project(request: web.Request):
@@ -403,8 +446,8 @@ async def delete_project(request: web.Request):
         project_users: Set[int] = set()
         with managed_resource(user_id, None, request.app) as rt:
             project_users = {
-                uid
-                for uid, _ in await rt.find_users_of_resource(
+                user_session.user_id
+                for user_session in await rt.find_users_of_resource(
                     PROJECT_ID_KEY, project_uuid
                 )
             }
@@ -437,7 +480,7 @@ class HTTPLocked(web.HTTPClientError):
     status_code = 423
 
 
-@routes.post(f"/{vtag}/projects/{{project_uuid}}:open")
+@routes.post(f"/{VTAG}/projects/{{project_uuid}}:open")
 @login_required
 @permission_required("project.open")
 async def open_project(request: web.Request) -> web.Response:
@@ -480,13 +523,25 @@ async def open_project(request: web.Request) -> web.Response:
 
         await projects_api.notify_project_state_update(request.app, project)
 
-        return web.json_response({"data": project})
+        return web.json_response({"data": project}, dumps=json_dumps)
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
+    except DirectorServiceError as exc:
+        # there was an issue while accessing the director-v2/director-v0
+        # ensure the project is closed again
+        await projects_api.try_close_project_for_user(
+            user_id=user_id,
+            project_uuid=project_uuid,
+            client_session_id=client_session_id,
+            app=request.app,
+        )
+        raise web.HTTPServiceUnavailable(
+            reason="Unexpected error while starting services."
+        ) from exc
 
 
-@routes.post(f"/{vtag}/projects/{{project_uuid}}:close")
+@routes.post(f"/{VTAG}/projects/{{project_uuid}}:close")
 @login_required
 @permission_required("project.close")
 async def close_project(request: web.Request) -> web.Response:
@@ -517,7 +572,7 @@ async def close_project(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
 
 
-@routes.get(f"/{vtag}/projects/{{project_uuid}}/state")
+@routes.get(f"/{VTAG}/projects/{{project_uuid}}/state")
 @login_required
 @permission_required("project.read")
 async def state_project(request: web.Request) -> web.Response:
@@ -537,4 +592,4 @@ async def state_project(request: web.Request) -> web.Response:
         include_state=True,
     )
     project_state = ProjectState(**validated_project["state"])
-    return web.json_response({"data": project_state.dict()})
+    return web.json_response({"data": project_state.dict()}, dumps=json_dumps)

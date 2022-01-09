@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, AsyncIterable, Callable, Dict, List, Optional, Type, Union
 
 import pytest
 from aiohttp import web
@@ -151,7 +151,7 @@ async def shared_project(client, fake_project, logged_user, all_group):
 @pytest.fixture
 async def template_project(
     client, fake_project, logged_user, all_group: Dict[str, str]
-):
+) -> AsyncIterable[Dict[str, Any]]:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
     project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"

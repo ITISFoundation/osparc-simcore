@@ -25,7 +25,7 @@ qx.Class.define("osparc.ui.hint.InfoHint", {
    * @extends osparc.ui.basic.IconButton
    */
   construct: function(hint) {
-    this.base(arguments, "@FontAwesome5Solid/info-circle/14");
+    this.base(arguments, "@MaterialIcons/info_outline/14");
 
     this.bind("hintText", this, "visibility", {
       converter: hintText => (hintText && hintText !== "") ? "visible" : "excluded"
@@ -61,12 +61,7 @@ qx.Class.define("osparc.ui.hint.InfoHint", {
 
         // Make hint "modal" when info button is clicked
         const tapListener = event => {
-          const hintElement = hint.getContentElement().getDomElement();
-          const boundRect = hintElement.getBoundingClientRect();
-          if (event.x > boundRect.x &&
-            event.y > boundRect.y &&
-            event.x < (boundRect.x + boundRect.width) &&
-            event.y < (boundRect.y + boundRect.height)) {
+          if (osparc.utils.Utils.isMouseOnElement(hint, event)) {
             return;
           }
           hideHint();

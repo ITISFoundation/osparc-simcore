@@ -36,12 +36,8 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
     add: function(child, options) {
       if (child instanceof qx.ui.form.ToggleButton) {
         this.base(arguments, child, options);
-        child.addListener("changeValue", e => {
-          this.fireDataEvent("changeSelection", this.getSelection());
-        }, this);
-        child.addListener("changeVisibility", e => {
-          this.fireDataEvent("changeVisibility", this.getVisibles());
-        }, this);
+        child.addListener("changeValue", () => this.fireDataEvent("changeSelection", this.getSelection()), this);
+        child.addListener("changeVisibility", () => this.fireDataEvent("changeVisibility", this.getVisibles()), this);
         if (this.getMode() === "list") {
           const width = this.getBounds().width - 15;
           child.setWidth(width);
@@ -57,6 +53,7 @@ qx.Class.define("osparc.component.form.ToggleButtonContainer", {
     resetSelection: function() {
       this.getChildren().map(button => button.setValue(false));
       this.__lastSelectedIdx = null;
+      this.fireDataEvent("changeSelection", this.getSelection());
     },
 
     /**

@@ -31,7 +31,9 @@ class PostgresSettings(BaseCustomSettings):
     )
 
     POSTGRES_CLIENT_NAME: Optional[str] = Field(
-        None, description="Name of the application connecting the postgres database"
+        None,
+        description="Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)",
+        env=["HOST", "HOSTNAME", "POSTGRES_CLIENT_NAME"],
     )
 
     @validator("POSTGRES_MAXSIZE")

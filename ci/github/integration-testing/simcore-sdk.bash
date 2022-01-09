@@ -17,11 +17,12 @@ install() {
   # pull the test images if registry is set up, else build the images
   make pull-version || (make build tag-version)
   make info-images
-  # pip3 install services/storage/client-sdk/python
 }
 
 test() {
-  pytest --cov=simcore_sdk --durations=10 --cov-append \
+  pytest --log-format="%(asctime)s %(levelname)s %(message)s" \
+    --log-date-format="%Y-%m-%d %H:%M:%S" \
+    --cov=simcore_sdk --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
     -v -m "not travis" packages/simcore-sdk/tests/integration --log-level=DEBUG
 }

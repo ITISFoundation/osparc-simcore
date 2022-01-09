@@ -17,8 +17,10 @@ from pydantic import AnyHttpUrl, Field, PositiveFloat, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.celery import CelerySettings as BaseCelerySettings
 from settings_library.docker_registry import RegistrySettings
+from settings_library.http_client_request import ClientRequestSettings
 from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
+from settings_library.tracing import TracingSettings
 
 from ..meta import API_VTAG
 from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE, ClusterID
@@ -37,34 +39,6 @@ ORG_LABELS_TO_SCHEMA_LABELS: Dict[str, str] = {
 }
 
 SUPPORTED_TRAEFIK_LOG_LEVELS: Set[str] = {"info", "debug", "warn", "error"}
-
-
-class ClientRequestSettings(BaseCustomSettings):
-    # NOTE: when updating the defaults please make sure to search for the env vars
-    # in all the project, they also need to be updated inside the service-library
-    HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT: Optional[int] = Field(
-        default=20,
-        description="timeout used for outgoing http requests",
-    )
-
-    HTTP_CLIENT_REQUEST_AIOHTTP_CONNECT_TIMEOUT: Optional[int] = Field(
-        default=None,
-        description=(
-            "Maximal number of seconds for acquiring a connection"
-            " from pool. The time consists connection establishment"
-            " for a new connection or waiting for a free connection"
-            " from a pool if pool connection limits are exceeded. "
-            "For pure socket connection establishment time use sock_connect."
-        ),
-    )
-
-    HTTP_CLIENT_REQUEST_AIOHTTP_SOCK_CONNECT_TIMEOUT: Optional[int] = Field(
-        default=5,
-        description=(
-            "aiohttp specific field used in ClientTimeout, timeout for connecting to a "
-            "peer for a new connection not given a pool"
-        ),
-    )
 
 
 class DirectorV0Settings(BaseCustomSettings):
@@ -93,32 +67,11 @@ class CelerySettings(BaseCelerySettings):
     CELERY_PUBLICATION_TIMEOUT: int = 60
 
 
-class DynamicSidecarTraefikSettings(BaseCustomSettings):
-    DYNAMIC_SIDECAR_TRAEFIK_VERSION: str = Field(
-        "v2.4.13",
-        description="current version of the Traefik image to be pulled and used from dockerhub",
+class DynamicSidecarProxySettings(BaseCustomSettings):
+    DYNAMIC_SIDECAR_CADDY_VERSION: str = Field(
+        "2.4.5-alpine",
+        description="current version of the Caddy image to be pulled and used from dockerhub",
     )
-    DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL: str = Field(
-        "warn", description="set Treafik's loglevel to be used"
-    )
-
-    DYNAMIC_SIDECAR_TRAEFIK_ACCESS_LOG: bool = Field(
-        False, description="enables or disables access log"
-    )
-
-    @validator("DYNAMIC_SIDECAR_TRAEFIK_LOGLEVEL", pre=True)
-    @classmethod
-    def validate_log_level(cls, v) -> str:
-        if v not in SUPPORTED_TRAEFIK_LOG_LEVELS:
-            message = (
-                "Got log level '{v}', expected one of '{SUPPORTED_TRAEFIK_LOG_LEVELS}'"
-            )
-            raise ValueError(message)
-        return v
-
-    @cached_property
-    def access_log_as_string(self) -> str:
-        return str(self.DYNAMIC_SIDECAR_TRAEFIK_ACCESS_LOG).lower()
 
 
 class DynamicSidecarSettings(BaseCustomSettings):
@@ -144,6 +97,10 @@ class DynamicSidecarSettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_EXPOSE_PORT: bool = Field(
         False,
         description="exposes the service on localhost for debuging and testing",
+    )
+    PROXY_EXPOSE_PORT: bool = Field(
+        False,
+        description="exposes the proxy on localhost for debuging and testing",
     )
 
     SIMCORE_SERVICES_NETWORK_NAME: str = Field(
@@ -173,6 +130,30 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "twards the dynamic-sidecar, as is the case with the above timeout field."
         ),
     )
+    DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: PositiveFloat = Field(
+        60.0 * MINS,
+        description=(
+            "When saving and restoring the state of a dynamic service, depending on the payload "
+            "some services take longer or shorter to save and restore. Across the "
+            "platform this value is set to 1 hour."
+        ),
+    )
+    DYNAMIC_SIDECAR_API_RESTART_CONTAINERS_TIMEOUT: PositiveFloat = Field(
+        1.0 * MINS,
+        description=(
+            "Restarts all started containers. During this operation, no data "
+            "stored in the container will be lost as docker-compose restart "
+            "will not alter the state of the files on the disk nor its environment."
+        ),
+    )
+    DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START: PositiveFloat = Field(
+        60.0 * MINS,
+        description=(
+            "After running `docker-compose up`, images might need to be pulled "
+            "before everything is started. Using default 1hour timeout to let this "
+            "operation finish."
+        ),
+    )
 
     TRAEFIK_SIMCORE_ZONE: str = Field(
         ...,
@@ -184,9 +165,11 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
     )
 
-    DYNAMIC_SIDECAR_TRAEFIK_SETTINGS: DynamicSidecarTraefikSettings
+    DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings
 
-    REGISTRY: RegistrySettings
+    DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
+        "3.8", description="docker-compose version used in the compose-specs"
+    )
 
     @validator("DYNAMIC_SIDECAR_IMAGE", pre=True)
     @classmethod
@@ -247,10 +230,6 @@ class DaskSchedulerSettings(BaseCustomSettings):
         description="Address of the scheduler to register (only if started as worker )",
     )
     DASK_SCHEDULER_PORT: PortInt = 8786
-
-    DASK_CLUSTER_ID_PREFIX: Optional[str] = Field(
-        "CLUSTER_", description="This defines the cluster name prefix"
-    )
 
     DASK_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
         0, description="This defines the default cluster id when none is defined"
@@ -322,6 +301,10 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     CELERY_SCHEDULER: CelerySchedulerSettings
 
     DASK_SCHEDULER: DaskSchedulerSettings
+
+    DIRECTOR_V2_TRACING: Optional[TracingSettings] = None
+
+    DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings
 
     @validator("LOG_LEVEL", pre=True)
     @classmethod

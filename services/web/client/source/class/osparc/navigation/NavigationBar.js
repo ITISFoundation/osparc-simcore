@@ -62,11 +62,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   },
 
   events: {
-    "dashboardPressed": "qx.event.type.Event",
-    "slidesGuidedStart": "qx.event.type.Event",
-    "slidesAppStart": "qx.event.type.Event",
-    "slidesStop": "qx.event.type.Event",
-    "slidesEdit": "qx.event.type.Event"
+    "backToDashboardPressed": "qx.event.type.Event"
   },
 
   properties: {
@@ -96,56 +92,24 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     PAGE_CONTEXT: {
       0: "dashboard",
       1: "workbench",
-      2: "guided",
-      3: "app"
+      2: "app"
     }
   },
 
   members: {
     __serverStatics: null,
-    __startSlidesButton: null,
-    __startAppButton: null,
-    __EditSlidesButton: null,
 
     buildLayout: function() {
       this.getChildControl("logo");
 
-      this._add(new qx.ui.core.Spacer(20));
+      this._add(new qx.ui.core.Spacer(30));
 
       this.getChildControl("dashboard-button");
       this.getChildControl("dashboard-label");
 
-      this._add(new qx.ui.core.Spacer(20));
-
-      this.getChildControl("slideshow-menu-button").set({
-        visibility: "excluded"
-      });
-      this.getChildControl("slideshow-stop").set({
-        visibility: "excluded"
-      });
-
-      this._add(new qx.ui.core.Spacer(20));
+      this._add(new qx.ui.core.Spacer(30));
 
       this.getChildControl("read-only-icon");
-
-      const studyTitle = this.getChildControl("study-title");
-      studyTitle.addListener("editValue", evt => {
-        if (evt.getData() !== studyTitle.getValue()) {
-          studyTitle.setFetching(true);
-          const params = {
-            name: evt.getData()
-          };
-          this.getStudy().updateStudy(params)
-            .then(() => {
-              studyTitle.setFetching(false);
-            })
-            .catch(err => {
-              studyTitle.setFetching(false);
-              console.error(err);
-              osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("There was an error while updating the title."), "ERROR");
-            });
-        }
-      }, this);
 
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -163,20 +127,17 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "logo": {
+        case "logo":
           control = osparc.component.widget.LogoOnOff.getInstance();
           this._add(control);
           break;
-        }
         case "dashboard-button":
           control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16").set({
             ...this.self().BUTTON_OPTIONS,
             font: "title-14"
           });
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
-          control.addListener("execute", () => {
-            this.fireEvent("dashboardPressed");
-          }, this);
+          control.addListener("execute", () => this.fireEvent("backToDashboardPressed"), this);
           this._add(control);
           break;
         case "dashboard-label":
@@ -193,28 +154,10 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           this._add(control);
           break;
-        case "slideshow-menu-button":
-          control = this.__createSlideMenuBtn();
-          this._add(control);
-          break;
-        case "slideshow-stop":
-          control = this.__createSlideStopBtn();
-          this._add(control);
-          break;
-        case "study-title":
-          control = new osparc.ui.form.EditLabel().set({
-            visibility: "excluded",
-            labelFont: "title-14",
-            inputFont: "text-14",
-            editable: osparc.data.Permissions.getInstance().canDo("study.update")
-          });
-          this._add(control);
-          break;
-        case "tasks-button": {
+        case "tasks-button":
           control = new osparc.component.task.TasksButton();
           this._add(control);
           break;
-        }
         case "manual":
           control = this.__createManualMenuBtn();
           control.set(this.self().BUTTON_OPTIONS);
@@ -226,11 +169,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this._add(control);
           break;
         case "theme-switch":
-          control = new osparc.ui.switch.ThemeSwitcher();
+          control = new osparc.ui.switch.ThemeSwitcherFormBtn();
+          control.set(this.self().BUTTON_OPTIONS);
           this._add(control);
           break;
         case "user-menu":
-          control = this.__createUserMenuBtn();
+          control = new osparc.navigation.UserMenuButton();
+          control.populateSimpleMenu();
           control.set(this.self().BUTTON_OPTIONS);
           this._add(control);
           break;
@@ -244,86 +189,14 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("dashboard-label").show();
           this.getChildControl("dashboard-button").exclude();
           this.getChildControl("read-only-icon").exclude();
-          this.__resetSlidesBtnsVis();
-          this.getChildControl("study-title").exclude();
           break;
         case "workbench":
         case "guided":
         case "app":
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
-          this.__resetSlidesBtnsVis();
-          this.getChildControl("study-title").show();
           break;
       }
-    },
-
-    __resetSlidesBtnsVis: function() {
-      const slideshowMenuBtn = this.getChildControl("slideshow-menu-button");
-      const slideshowStopBtn = this.getChildControl("slideshow-stop");
-      const slidesBtnsVisible = ["workbench", "guided", "app"].includes(this.getPageContext());
-      if (slidesBtnsVisible) {
-        const study = this.getStudy();
-        const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
-        if (areSlidesEnabled) {
-          this.__startSlidesButton.setEnabled(study.hasSlideshow());
-          this.__startAppButton.setEnabled(study.getWorkbench().isPipelineLinear());
-          const isOwner = osparc.data.model.Study.isOwner(study);
-          this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
-
-          if (["guided", "app"].includes(this.getPageContext())) {
-            slideshowMenuBtn.exclude();
-            slideshowStopBtn.show();
-          } else if (this.getPageContext() === "workbench") {
-            slideshowMenuBtn.show();
-            slideshowStopBtn.exclude();
-          }
-        }
-      } else {
-        slideshowMenuBtn.exclude();
-        slideshowStopBtn.exclude();
-      }
-    },
-
-    __createSlideMenuBtn: function() {
-      const slidesMenuBtn = new qx.ui.form.MenuButton(this.tr("Slideshow"), "@FontAwesome5Solid/caret-square-right/16").set({
-        ...this.self().BUTTON_OPTIONS,
-        iconPosition: "left"
-      });
-      const splitButtonMenu = new qx.ui.menu.Menu();
-      slidesMenuBtn.setMenu(splitButtonMenu);
-
-      const startGuidedBtn = this.__startSlidesButton = new qx.ui.menu.Button(this.tr("Start Guided Mode"));
-      startGuidedBtn.addListener("execute", () => {
-        this.fireEvent("slidesGuidedStart");
-      }, this);
-      splitButtonMenu.add(startGuidedBtn);
-
-      const startAppBtn = this.__startAppButton = new qx.ui.menu.Button(this.tr("Start App Mode"));
-      startAppBtn.addListener("execute", () => {
-        this.fireEvent("slidesAppStart");
-      });
-      splitButtonMenu.add(startAppBtn);
-
-      splitButtonMenu.addSeparator();
-
-      const editSlidesBtn = this.__editSlidesButton = new qx.ui.menu.Button(this.tr("Edit Slideshow"));
-      editSlidesBtn.addListener("execute", () => {
-        this.fireEvent("slidesEdit");
-      }, this);
-      splitButtonMenu.add(editSlidesBtn);
-
-      return slidesMenuBtn;
-    },
-
-    __createSlideStopBtn: function() {
-      const stopBtn = new qx.ui.form.Button(this.tr("Slideshow"), "@FontAwesome5Solid/stop/16").set({
-        ...this.self().BUTTON_OPTIONS
-      });
-      stopBtn.addListener("execute", () => {
-        this.fireEvent("slidesStop");
-      }, this);
-      return stopBtn;
     },
 
     __createManualMenuBtn: function() {
@@ -376,12 +249,12 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       });
 
       const newGHIssueBtn = new qx.ui.menu.Button(this.tr("Issue in GitHub"));
-      newGHIssueBtn.addListener("execute", this.__openGithubIssueInfoDialog, this);
+      newGHIssueBtn.addListener("execute", () => osparc.navigation.UserMenuButton.openGithubIssueInfoDialog(), this);
       menu.add(newGHIssueBtn);
 
       if (osparc.utils.Utils.isInZ43()) {
         const newFogbugzIssueBtn = new qx.ui.menu.Button(this.tr("Issue in Fogbugz"));
-        newFogbugzIssueBtn.addListener("execute", this.__openFogbugzIssueInfoDialog, this);
+        newFogbugzIssueBtn.addListener("execute", () => osparc.navigation.UserMenuButton.openFogbugzIssueInfoDialog(), this);
         menu.add(newFogbugzIssueBtn);
       }
 
@@ -399,130 +272,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       return feedbackBtn;
     },
 
-    __createUserMenuBtn: function() {
-      const menu = new qx.ui.menu.Menu().set({
-        font: "text-14"
-      });
-
-      const activityManager = new qx.ui.menu.Button(this.tr("Activity manager"));
-      activityManager.addListener("execute", this.__openActivityManager, this);
-      menu.add(activityManager);
-
-      const preferences = new qx.ui.menu.Button(this.tr("Preferences"));
-      preferences.addListener("execute", this.__onOpenAccountSettings, this);
-      osparc.utils.Utils.setIdToWidget(preferences, "userMenuPreferencesBtn");
-      menu.add(preferences);
-
-      menu.addSeparator();
-
-      const aboutBtn = new qx.ui.menu.Button(this.tr("About"));
-      aboutBtn.addListener("execute", () => osparc.About.getInstance().open());
-      osparc.utils.Utils.setIdToWidget(aboutBtn, "userMenuAboutBtn");
-      menu.add(aboutBtn);
-
-      menu.addSeparator();
-
-      const logout = new qx.ui.menu.Button(this.tr("Logout"));
-      logout.addListener("execute", e => {
-        qx.core.Init.getApplication().logout();
-      });
-      osparc.utils.Utils.setIdToWidget(logout, "userMenuLogoutBtn");
-      menu.add(logout);
-
-      const userEmail = osparc.auth.Data.getInstance().getEmail() || "bizzy@itis.ethz.ch";
-      const userName = osparc.auth.Data.getInstance().getUserName() || "bizzy";
-      const userBtn = new qx.ui.form.MenuButton(null, null, menu);
-      userBtn.getChildControl("icon").getContentElement()
-        .setStyles({
-          "border-radius": "16px"
-        });
-      userBtn.set({
-        icon: osparc.utils.Avatar.getUrl(userEmail, 32),
-        label: userName
-      });
-      osparc.utils.Utils.setIdToWidget(userBtn, "userMenuMainBtn");
-
-      return userBtn;
-    },
-
-    __onOpenAccountSettings: function() {
-      const preferencesWindow = new osparc.desktop.preferences.PreferencesWindow();
-      preferencesWindow.center();
-      preferencesWindow.open();
-    },
-
-    __openActivityManager: function() {
-      const activityWindow = new osparc.ui.window.SingletonWindow("activityManager", this.tr("Activity manager")).set({
-        height: 600,
-        width: 800,
-        layout: new qx.ui.layout.Grow(),
-        appearance: "service-window",
-        showMinimize: false,
-        contentPadding: 0
-      });
-      activityWindow.add(new osparc.component.service.manager.ActivityManager());
-      activityWindow.center();
-      activityWindow.open();
-    },
-
-    __openGithubIssueInfoDialog: function() {
-      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
-        this.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
-      );
-      const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
-      contBtn.addListener("execute", () => {
-        window.open(osparc.utils.issue.Github.getNewIssueUrl());
-        issueConfirmationWindow.close();
-      }, this);
-      const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in GitHub"), "@FontAwesome5Solid/external-link-alt/12");
-      loginBtn.addListener("execute", () => window.open("https://github.com/login"), this);
-      issueConfirmationWindow.addButton(contBtn);
-      issueConfirmationWindow.addButton(loginBtn);
-      issueConfirmationWindow.addCancelButton();
-      issueConfirmationWindow.open();
-    },
-
-    __openFogbugzIssueInfoDialog: function() {
-      const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
-        this.tr("To create an issue in Fogbugz, you must have an account in Fogbugz and be already logged-in.")
-      );
-      const contBtn = new qx.ui.toolbar.Button(this.tr("Continue"), "@FontAwesome5Solid/external-link-alt/12");
-      contBtn.addListener("execute", () => {
-        const statics = this.__serverStatics;
-        if (statics) {
-          const fbNewIssueUrl = osparc.utils.issue.Fogbugz.getNewIssueUrl(statics);
-          if (fbNewIssueUrl) {
-            window.open(fbNewIssueUrl);
-            issueConfirmationWindow.close();
-          }
-        }
-      }, this);
-      const loginBtn = new qx.ui.toolbar.Button(this.tr("Log in in Fogbugz"), "@FontAwesome5Solid/external-link-alt/12");
-      loginBtn.addListener("execute", () => {
-        const statics = this.__serverStatics;
-        if (statics && statics.fogbugzLoginUrl) {
-          window.open(statics.fogbugzLoginUrl);
-        }
-      }, this);
-      issueConfirmationWindow.addButton(contBtn);
-      issueConfirmationWindow.addButton(loginBtn);
-      issueConfirmationWindow.addCancelButton();
-      issueConfirmationWindow.open();
-    },
-
     _applyStudy: function(study) {
       if (study) {
-        study.bind("name", this.getChildControl("study-title"), "value");
         study.bind("readOnly", this.getChildControl("read-only-icon"), "visibility", {
           converter: value => value ? "visible" : "excluded"
         });
-        study.getWorkbench().addListener("pipelineChanged", () => {
-          this.__resetSlidesBtnsVis();
-        });
-        study.getUi().getSlideshow().addListener("changeSlideshow", () => {
-          this.__resetSlidesBtnsVis();
-        });
-        this.__resetSlidesBtnsVis();
       }
     }
   }

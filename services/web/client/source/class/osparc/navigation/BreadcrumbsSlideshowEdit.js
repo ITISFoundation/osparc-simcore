@@ -72,7 +72,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshowEdit", {
           });
         } else {
           btn.set({
-            label: currentPos+1 + " - " + nodeLabel
+            label: currentPos+1 + ": " + nodeLabel
           });
         }
         btn.nodeId = nodeId;
@@ -97,6 +97,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshowEdit", {
       const newServiceBtn = new qx.ui.form.Button().set({
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
         icon: "@FontAwesome5Solid/plus-circle/24",
+        backgroundColor: "contrasted-background+",
         textColor: "ready-green"
       });
       newServiceBtn.getContentElement()

@@ -1,12 +1,15 @@
 """ Utils to check, convert and compose server responses for the RESTApi
 
 """
+import inspect
+import json
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 import attr
-from aiohttp import web
+from aiohttp import web, web_exceptions
+from aiohttp.web_exceptions import HTTPError, HTTPException
 
-from .rest_codecs import json, jsonify
+from ..json_serialization import json_dumps
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 
 ENVELOPE_KEYS = ("data", "error")
@@ -14,6 +17,8 @@ OFFSET_PAGINATION_KEYS = ("_meta", "_links")
 JSON_CONTENT_TYPE = "application/json"
 
 JsonLikeModel = Union[Dict[str, Any], List[Dict[str, Any]]]
+
+_DataType = Union[str, Dict[str, Any], List[Any]]
 
 
 def is_enveloped_from_map(payload: Mapping) -> bool:
@@ -64,7 +69,7 @@ def unwrap_envelope(payload: Dict[str, Any]) -> Tuple:
 
 
 def create_data_response(
-    data: Union[Mapping, str], *, skip_internal_error_details=False
+    data: _DataType, *, skip_internal_error_details=False
 ) -> web.Response:
     response = None
     try:
@@ -73,7 +78,7 @@ def create_data_response(
         else:
             payload = data
 
-        response = web.json_response(payload, dumps=jsonify)
+        response = web.json_response(payload, dumps=json_dumps)
     except (TypeError, ValueError) as err:
         response = create_error_response(
             [
@@ -89,10 +94,10 @@ def create_data_response(
 def create_error_response(
     errors: Union[List[Exception], Exception],
     reason: Optional[str] = None,
-    http_error_cls: Type[web.HTTPError] = web.HTTPInternalServerError,
+    http_error_cls: Type[HTTPError] = web.HTTPInternalServerError,
     *,
-    skip_internal_error_details: bool = False
-) -> web.HTTPError:
+    skip_internal_error_details: bool = False,
+) -> HTTPError:
     """
     - Response body conforms OAS schema model
     - Can skip internal details when 500 status e.g. to avoid transmitting server
@@ -119,7 +124,7 @@ def create_error_response(
     payload = wrap_as_envelope(error=attr.asdict(error))
 
     response = http_error_cls(
-        reason=reason, text=jsonify(payload), content_type=JSON_CONTENT_TYPE
+        reason=reason, text=json_dumps(payload), content_type=JSON_CONTENT_TYPE
     )
 
     return response
@@ -132,5 +137,38 @@ def create_log_response(msg: str, level: str) -> web.Response:
     """
     # TODO: DEPRECATE
     msg = LogMessageType(msg, level)
-    response = web.json_response(data={"data": attr.asdict(msg), "error": None})
+    response = web.json_response(
+        data={"data": attr.asdict(msg), "error": None}, dumps=json_dumps
+    )
     return response
+
+
+# Inverse map from code to HTTPException classes
+def _collect_http_exceptions(exception_cls: Type[HTTPException] = HTTPException):
+    def _pred(obj) -> bool:
+        return (
+            inspect.isclass(obj)
+            and issubclass(obj, exception_cls)
+            and getattr(obj, "status_code", 0) > 0
+        )
+
+    found: List[Tuple[str, Any]] = inspect.getmembers(web_exceptions, _pred)
+    assert found  # nosec
+
+    http_statuses = {cls.status_code: cls for _, cls in found}
+    assert len(http_statuses) == len(found), "No duplicates"  # nosec
+
+    return http_statuses
+
+
+_STATUS_CODE_TO_HTTP_ERRORS: Dict[int, Type[HTTPError]] = _collect_http_exceptions(
+    HTTPError
+)
+
+
+def get_http_error(status_code: int) -> Optional[Type[HTTPError]]:
+    """Returns aiohttp error class corresponding to a 4XX or 5XX status code
+
+    NOTICE that any non-error code (i.e. 2XX, 3XX and 4XX) will return None
+    """
+    return _STATUS_CODE_TO_HTTP_ERRORS.get(status_code)

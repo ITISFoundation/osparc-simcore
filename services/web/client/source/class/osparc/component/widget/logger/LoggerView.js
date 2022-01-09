@@ -196,7 +196,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
 
       const pinNode = this.getChildControl("pin-node");
       pinNode.addListener("changeValue", e => {
-        this.currectNodeClicked(e.getData());
+        this.__currentNodeClicked(e.getData());
       }, this);
 
       const textFilterField = this.__textFilterField = this.getChildControl("filter-text");
@@ -251,7 +251,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       this.getChildControl("pin-node").setValue(false);
     },
 
-    currectNodeClicked: function(checked) {
+    __currentNodeClicked: function(checked) {
       const currentNodeId = this.getCurrentNodeId();
       if (checked) {
         this.__nodeSelected(currentNodeId);

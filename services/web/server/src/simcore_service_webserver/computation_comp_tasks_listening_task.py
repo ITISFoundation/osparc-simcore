@@ -5,14 +5,13 @@ of a record in comp_task table is changed.
 import asyncio
 import json
 import logging
+from contextlib import suppress
 from pprint import pformat
 from typing import Dict, Optional
 
 from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
-from models_library.projects import ProjectID
-from models_library.projects_nodes import NodeID
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
@@ -29,9 +28,7 @@ log = logging.getLogger(__name__)
 
 
 @log_decorator(logger=log)
-async def _get_project_owner(
-    conn: SAConnection, project_uuid: ProjectID
-) -> PositiveInt:
+async def _get_project_owner(conn: SAConnection, project_uuid: str) -> PositiveInt:
     the_project_owner = await conn.scalar(
         select([projects.c.prj_owner]).where(projects.c.uuid == project_uuid)
     )
@@ -44,8 +41,8 @@ async def _get_project_owner(
 async def _update_project_state(
     app: web.Application,
     user_id: PositiveInt,
-    project_uuid: ProjectID,
-    node_uuid: NodeID,
+    project_uuid: str,
+    node_uuid: str,
     new_state: RunningState,
 ) -> None:
     project = await projects_api.update_project_node_state(
@@ -59,8 +56,8 @@ async def _update_project_state(
 async def _update_project_outputs(
     app: web.Application,
     user_id: PositiveInt,
-    project_uuid: ProjectID,
-    node_uuid: NodeID,
+    project_uuid: str,
+    node_uuid: str,
     outputs: Dict,
     run_hash: Optional[str],
 ) -> None:
@@ -74,9 +71,9 @@ async def _update_project_outputs(
         new_run_hash=run_hash,
     )
 
-    await projects_api.notify_project_node_update(app, project, node_uuid)
+    await projects_api.notify_project_node_update(app, project, f"{node_uuid}")
     # get depending node and notify for these ones as well
-    depending_node_uuids = await project_get_depending_nodes(project, node_uuid)
+    depending_node_uuids = await project_get_depending_nodes(project, f"{node_uuid}")
     await logged_gather(
         *[
             projects_api.notify_project_node_update(app, project, n)
@@ -111,7 +108,7 @@ async def listen(app: web.Application, db_engine: Engine):
             # get the data and the info on what changed
             payload: Dict = json.loads(notification.payload)
 
-            # FIXME: this part should be replaced by a pydantic CompTaskAtDB once it moves to director-v2
+            # FIXME: all this should move to rabbitMQ instead of this
             task_data = payload.get("data", {})
             task_changes = payload.get("changes", [])
 
@@ -123,8 +120,8 @@ async def listen(app: web.Application, db_engine: Engine):
                 log.error("no changes but still triggered: %s", pformat(payload))
                 continue
 
-            project_uuid = task_data.get("project_id", None)
-            node_uuid = task_data.get("node_id", None)
+            project_uuid = task_data.get("project_id", "undefined")
+            node_uuid = task_data.get("node_id", "undefined")
 
             # FIXME: we do not know who triggered these changes. we assume the user had the rights to do so
             # therefore we'll use the prj_owner user id. This should be fixed when the new sidecar comes in
@@ -182,7 +179,8 @@ async def comp_tasks_listening_task(app: web.Application) -> None:
             await listen(app, db_engine)
         except asyncio.CancelledError:
             # we are closing the app..
-            return
+            log.info("cancelled comp_tasks events")
+            raise
         except Exception:  # pylint: disable=broad-except
             log.exception(
                 "caught unhandled comp_task db listening task exception, restarting...",
@@ -193,10 +191,17 @@ async def comp_tasks_listening_task(app: web.Application) -> None:
 
 
 async def setup_comp_tasks_listening_task(app: web.Application):
-    task = asyncio.create_task(comp_tasks_listening_task(app))
+    task = asyncio.create_task(
+        comp_tasks_listening_task(app), name="computation db listener"
+    )
+    log.debug("comp_tasks db listening task created %s", f"{task=}")
     yield
+    log.debug("cancelling comp_tasks db listening task...")
     task.cancel()
-    await task
+    log.debug("waiting for comp_tasks db listening task to stop")
+    with suppress(asyncio.CancelledError):
+        await task
+    log.debug("waiting for comp_tasks db listening task to stop completed")
 
 
 def setup(app: web.Application):

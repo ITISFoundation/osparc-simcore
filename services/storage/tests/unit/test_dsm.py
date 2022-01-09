@@ -9,30 +9,26 @@
 import copy
 import datetime
 import filecmp
-import io
-import json
 import os
-import urllib
+import urllib.request
 import uuid
 from pathlib import Path
 from shutil import copyfile
-from typing import Any, Dict, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
-import attr
 import pytest
 import tests.utils
+from simcore_service_storage.access_layer import InvalidFileIdentifier
 from simcore_service_storage.constants import DATCORE_STR, SIMCORE_S3_ID, SIMCORE_S3_STR
 from simcore_service_storage.dsm import DataStorageManager
-from simcore_service_storage.models import FileMetaData
+from simcore_service_storage.models import FileMetaData, FileMetaDataEx
 from simcore_service_storage.s3wrapper.s3_client import MinioClientWrapper
 from tests.utils import BUCKET_NAME, USER_ID, has_datcore_tokens
 
 
-def test_mockup(dsm_mockup_db):
-    assert len(dsm_mockup_db) == 100
-
-
-async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
+async def test_dsm_s3(
+    dsm_mockup_db: Dict[str, FileMetaData], dsm_fixture: DataStorageManager
+):
     id_name_map = {}
     id_file_count = {}
     for d in dsm_mockup_db.keys():
@@ -45,25 +41,15 @@ async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
 
     dsm = dsm_fixture
 
-    data_as_dict = []
-    write_data = False
     # list files for every user
     for _id in id_file_count:
         data = await dsm.list_files(user_id=_id, location=SIMCORE_S3_STR)
         assert len(data) == id_file_count[_id]
-        if write_data:
-            for dx in data:
-                d = dx.fmd
-                data_as_dict.append(attr.asdict(d))
-
-    if write_data:
-        with open("example.json", "w") as _f:
-            json.dump(data_as_dict, _f)
 
     # Get files from bob from the project biology
     bob_id = 0
-    for _id in id_name_map.keys():
-        if id_name_map[_id] == "bob":
+    for _id, _name in id_name_map.items():
+        if _name == "bob":
             bob_id = _id
             break
     assert not bob_id == 0
@@ -109,13 +95,15 @@ async def test_dsm_s3(dsm_mockup_db, dsm_fixture):
     assert len(dsm_mockup_db) == new_size + len(bobs_biostromy_files)
 
 
-def _create_file_meta_for_s3(postgres_url, s3_client, tmp_file):
+def _create_file_meta_for_s3(
+    postgres_url: str, s3_client: MinioClientWrapper, tmp_file: Path
+) -> FileMetaData:
 
     bucket_name = BUCKET_NAME
     s3_client.create_bucket(bucket_name, delete_contents_if_exists=True)
 
     # create file and upload
-    filename = os.path.basename(tmp_file)
+    filename = tmp_file.name
     project_id = "api"  # "357879cc-f65d-48b2-ad6c-074e2b9aa1c7"
     project_name = "battlestar"
     node_name = "galactica"
@@ -124,7 +112,7 @@ def _create_file_meta_for_s3(postgres_url, s3_client, tmp_file):
     file_uuid = os.path.join(str(project_id), str(node_id), str(file_name))
     display_name = os.path.join(str(project_name), str(node_name), str(file_name))
     created_at = str(datetime.datetime.now())
-    file_size = 1234
+    file_size = tmp_file.stat().st_size
 
     d = {
         "object_name": os.path.join(str(project_id), str(node_id), str(file_name)),
@@ -152,23 +140,119 @@ def _create_file_meta_for_s3(postgres_url, s3_client, tmp_file):
     return fmd
 
 
-async def test_links_s3(
-    postgres_service_url, s3_client, mock_files_factory, dsm_fixture
-):
-
-    tmp_file = mock_files_factory(1)[0]
-    fmd = _create_file_meta_for_s3(postgres_service_url, s3_client, tmp_file)
-
-    dsm = dsm_fixture
-
-    up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
-    with io.open(tmp_file, "rb") as fp:
+async def _upload_file(
+    dsm: DataStorageManager, file_metadata: FileMetaData, file_path: Path
+) -> FileMetaData:
+    up_url = await dsm.upload_link(file_metadata.user_id, file_metadata.file_uuid)
+    assert file_path.exists()
+    with file_path.open("rb") as fp:
         d = fp.read()
         req = urllib.request.Request(up_url, data=d, method="PUT")
         with urllib.request.urlopen(req) as _f:
-            pass
+            entity_tag = _f.headers.get("ETag")
+    assert entity_tag is not None
+    file_metadata.entity_tag = entity_tag.strip('"')
+    return file_metadata
 
-    tmp_file2 = tmp_file + ".rec"
+
+async def test_update_metadata_from_storage(
+    postgres_service_url: str,
+    s3_client: MinioClientWrapper,
+    mock_files_factory: Callable[[int], List[Path]],
+    dsm_fixture: DataStorageManager,
+):
+    tmp_file = mock_files_factory(1)[0]
+    fmd: FileMetaData = _create_file_meta_for_s3(
+        postgres_service_url, s3_client, tmp_file
+    )
+    fmd = await _upload_file(dsm_fixture, fmd, Path(tmp_file))
+
+    assert (
+        await dsm_fixture.try_update_database_from_storage(  # pylint: disable=protected-access
+            "some_fake_uuid", fmd.bucket_name, fmd.object_name
+        )
+        is None
+    )
+
+    assert (
+        await dsm_fixture.try_update_database_from_storage(  # pylint: disable=protected-access
+            fmd.file_uuid, "some_fake_bucket", fmd.object_name
+        )
+        is None
+    )
+
+    assert (
+        await dsm_fixture.try_update_database_from_storage(  # pylint: disable=protected-access
+            fmd.file_uuid, fmd.bucket_name, "some_fake_object"
+        )
+        is None
+    )
+
+    file_metadata: Optional[
+        FileMetaDataEx
+    ] = await dsm_fixture.try_update_database_from_storage(  # pylint: disable=protected-access
+        fmd.file_uuid, fmd.bucket_name, fmd.object_name
+    )
+    assert file_metadata is not None
+    assert file_metadata.fmd.file_size == Path(tmp_file).stat().st_size
+    assert file_metadata.fmd.entity_tag == fmd.entity_tag
+
+
+async def test_links_s3(
+    postgres_service_url: str,
+    s3_client: MinioClientWrapper,
+    mock_files_factory: Callable[[int], List[Path]],
+    dsm_fixture: DataStorageManager,
+):
+
+    tmp_file = mock_files_factory(1)[0]
+    fmd: FileMetaData = _create_file_meta_for_s3(
+        postgres_service_url, s3_client, tmp_file
+    )
+
+    dsm = dsm_fixture
+
+    fmd = await _upload_file(dsm_fixture, fmd, Path(tmp_file))
+
+    # test wrong user
+    assert await dsm.list_file("654654654", fmd.location, fmd.file_uuid) is None
+
+    # test wrong location
+    assert await dsm.list_file(fmd.user_id, "whatever_location", fmd.file_uuid) is None
+
+    # test wrong file uuid
+    with pytest.raises(InvalidFileIdentifier):
+        await dsm.list_file(fmd.user_id, fmd.location, "some_fake_uuid")
+    # use correctly
+    file_metadata: Optional[FileMetaDataEx] = await dsm.list_file(
+        fmd.user_id, fmd.location, fmd.file_uuid
+    )
+    assert file_metadata is not None
+    excluded_fields = [
+        "project_id",
+        "project_name",
+        "node_name",
+        "user_name",
+        "display_file_path",
+        "created_at",
+        "last_modified",
+    ]
+    for field in FileMetaData.__attrs_attrs__:
+        if field.name not in excluded_fields:
+            if field.name == "location_id":
+                assert int(
+                    file_metadata.fmd.__getattribute__(field.name)
+                ) == fmd.__getattribute__(
+                    field.name
+                ), f"{field.name}: expected {fmd.__getattribute__(field.name)} vs {file_metadata.fmd.__getattribute__(field.name)}"
+            else:
+                assert file_metadata.fmd.__getattribute__(
+                    field.name
+                ) == fmd.__getattribute__(
+                    field.name
+                ), f"{field.name}: expected {fmd.__getattribute__(field.name)} vs {file_metadata.fmd.__getattribute__(field.name)}"
+
+    tmp_file2 = f"{tmp_file}.rec"
     user_id = 0
     down_url = await dsm.download_link_s3(fmd.file_uuid, user_id)
 
@@ -178,7 +262,10 @@ async def test_links_s3(
 
 
 async def test_copy_s3_s3(
-    postgres_service_url, s3_client, mock_files_factory, dsm_fixture
+    postgres_service_url: str,
+    s3_client: MinioClientWrapper,
+    mock_files_factory: Callable[[int], List[Path]],
+    dsm_fixture: DataStorageManager,
 ):
 
     tmp_file = mock_files_factory(1)[0]
@@ -190,7 +277,7 @@ async def test_copy_s3_s3(
 
     # upload the file
     up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
-    with io.open(tmp_file, "rb") as fp:
+    with tmp_file.open("rb") as fp:
         d = fp.read()
         req = urllib.request.Request(up_url, data=d, method="PUT")
         with urllib.request.urlopen(req) as _f:
@@ -251,11 +338,11 @@ async def test_dsm_datcore(
 
 @pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_dsm_s3_to_datcore(
-    postgres_service_url,
-    s3_client,
-    mock_files_factory,
-    dsm_fixture,
-    datcore_structured_testbucket,
+    postgres_service_url: str,
+    s3_client: MinioClientWrapper,
+    mock_files_factory: Callable[[int], List[Path]],
+    dsm_fixture: DataStorageManager,
+    datcore_structured_testbucket: str,
 ):
     tmp_file = mock_files_factory(1)[0]
 
@@ -264,14 +351,14 @@ async def test_dsm_s3_to_datcore(
     dsm = dsm_fixture
 
     up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
-    with io.open(tmp_file, "rb") as fp:
+    with tmp_file.open("rb") as fp:
         d = fp.read()
         req = urllib.request.Request(up_url, data=d, method="PUT")
         with urllib.request.urlopen(req) as _f:
             pass
 
     # given the fmd, upload to datcore
-    tmp_file2 = tmp_file + ".fordatcore"
+    tmp_file2 = f"{tmp_file}.fordatcore"
     user_id = USER_ID
     down_url = await dsm.download_link_s3(fmd.file_uuid)
     urllib.request.urlretrieve(down_url, tmp_file2)
@@ -303,7 +390,10 @@ async def test_dsm_s3_to_datcore(
 
 @pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_dsm_datcore_to_local(
-    postgres_service_url, dsm_fixture, mock_files_factory, datcore_structured_testbucket
+    postgres_service_url,
+    dsm_fixture: DataStorageManager,
+    mock_files_factory: Callable[[int], List[Path]],
+    datcore_structured_testbucket,
 ):
 
     dsm = dsm_fixture
@@ -318,7 +408,7 @@ async def test_dsm_datcore_to_local(
     )
 
     tmp_file = mock_files_factory(1)[0]
-    tmp_file2 = tmp_file + ".fromdatcore"
+    tmp_file2 = f"{tmp_file}.fromdatcore"
 
     urllib.request.urlretrieve(url, tmp_file2)
 
@@ -327,11 +417,11 @@ async def test_dsm_datcore_to_local(
 
 @pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_dsm_datcore_to_S3(
-    postgres_service_url,
-    s3_client,
-    dsm_fixture,
-    mock_files_factory,
-    datcore_structured_testbucket,
+    postgres_service_url: str,
+    s3_client: MinioClientWrapper,
+    dsm_fixture: DataStorageManager,
+    mock_files_factory: Callable[[int], List[Path]],
+    datcore_structured_testbucket: str,
 ):
     # create temporary file
     tmp_file = mock_files_factory(1)[0]
@@ -362,14 +452,14 @@ async def test_dsm_datcore_to_S3(
     assert len(s3_data) == 1
 
     # now download the original file
-    tmp_file1 = tmp_file + ".fromdatcore"
+    tmp_file1 = f"{tmp_file}.fromdatcore"
     down_url_dc, filename = await dsm.download_link_datcore(
         user_id, datcore_structured_testbucket["file_id1"]
     )
     urllib.request.urlretrieve(down_url_dc, tmp_file1)
 
     # and the one on s3
-    tmp_file2 = tmp_file + ".fromS3"
+    tmp_file2 = f"{tmp_file}.fromS3"
     down_url_s3 = await dsm.download_link_s3(dest_uuid)
     urllib.request.urlretrieve(down_url_s3, tmp_file2)
 
@@ -378,11 +468,11 @@ async def test_dsm_datcore_to_S3(
 
 @pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_copy_datcore(
-    postgres_service_url,
-    s3_client,
-    dsm_fixture,
-    mock_files_factory,
-    datcore_structured_testbucket,
+    postgres_service_url: str,
+    s3_client: MinioClientWrapper,
+    dsm_fixture: DataStorageManager,
+    mock_files_factory: Callable[[int], List[Path]],
+    datcore_structured_testbucket: str,
 ):
     # the fixture should provide 3 files
     dsm = dsm_fixture
@@ -397,7 +487,7 @@ async def test_copy_datcore(
     fmd = _create_file_meta_for_s3(postgres_service_url, s3_client, tmp_file)
 
     up_url = await dsm.upload_link(fmd.user_id, fmd.file_uuid)
-    with io.open(tmp_file, "rb") as fp:
+    with tmp_file.open("rb") as fp:
         d = fp.read()
         req = urllib.request.Request(up_url, data=d, method="PUT")
         with urllib.request.urlopen(req) as _f:
@@ -449,7 +539,10 @@ def test_fmd_build():
     assert fmd.bucket_name == "test-bucket"
 
 
-async def test_dsm_complete_db(dsm_fixture, dsm_mockup_complete_db):
+async def test_dsm_complete_db(
+    dsm_fixture: DataStorageManager,
+    dsm_mockup_complete_db: Tuple[Dict[str, str], Dict[str, str]],
+):
     dsm = dsm_fixture
     _id = "21"
     dsm.has_project_db = True
@@ -464,7 +557,10 @@ async def test_dsm_complete_db(dsm_fixture, dsm_mockup_complete_db):
         assert d.raw_file_path
 
 
-async def test_delete_data_folders(dsm_fixture, dsm_mockup_complete_db):
+async def test_delete_data_folders(
+    dsm_fixture: DataStorageManager,
+    dsm_mockup_complete_db: Tuple[Dict[str, str], Dict[str, str]],
+):
     file_1, file_2 = dsm_mockup_complete_db
     _id = "21"
     data = await dsm_fixture.list_files(user_id=_id, location=SIMCORE_S3_STR)
@@ -634,14 +730,19 @@ async def test_sync_table_meta_data(
 
 
 @pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
-async def test_dsm_list_datasets_datcore(dsm_fixture, datcore_structured_testbucket):
+async def test_dsm_list_datasets_datcore(
+    dsm_fixture: DataStorageManager, datcore_structured_testbucket: str
+):
     datasets = await dsm_fixture.list_datasets(user_id=USER_ID, location=DATCORE_STR)
 
     assert len(datasets)
     assert any(BUCKET_NAME in d.display_name for d in datasets)
 
 
-async def test_dsm_list_dataset_files_s3(dsm_fixture, dsm_mockup_complete_db):
+async def test_dsm_list_dataset_files_s3(
+    dsm_fixture: DataStorageManager,
+    dsm_mockup_complete_db: Tuple[Dict[str, str], Dict[str, str]],
+):
     dsm_fixture.has_project_db = True
 
     datasets = await dsm_fixture.list_datasets(user_id="21", location=SIMCORE_S3_STR)
@@ -672,7 +773,7 @@ async def test_dsm_list_dataset_files_s3(dsm_fixture, dsm_mockup_complete_db):
 
 @pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_dsm_list_dataset_files_datcore(
-    dsm_fixture, datcore_structured_testbucket
+    dsm_fixture: DataStorageManager, datcore_structured_testbucket: str
 ):
     datasets = await dsm_fixture.list_datasets(user_id=USER_ID, location=DATCORE_STR)
 
@@ -690,12 +791,14 @@ async def test_dsm_list_dataset_files_datcore(
 @pytest.mark.skip(reason="develop only")
 @pytest.mark.skipif(not has_datcore_tokens(), reason="no datcore tokens")
 async def test_download_links(
-    datcore_structured_testbucket, s3_client, mock_files_factory
+    datcore_structured_testbucket: str,
+    s3_client: MinioClientWrapper,
+    mock_files_factory: Callable[[int], List[Path]],
 ):
     s3_client.create_bucket(BUCKET_NAME, delete_contents_if_exists=True)
-    _file = mock_files_factory(count=1)[0]
+    _file = mock_files_factory(1)[0]
 
-    s3_client.upload_file(BUCKET_NAME, "test.txt", _file)
+    s3_client.upload_file(BUCKET_NAME, "test.txt", f"{_file}")
     link = s3_client.create_presigned_get_url(BUCKET_NAME, "test.txt")
     print(link)
 
@@ -705,7 +808,6 @@ async def test_download_links(
     counter = 1
     for e in endings:
         file_name = "test{}.{}".format(counter, e)
-        file2 = str(Path(_file).parent / file_name)
         copyfile(_file, file_name)
         dataset_id = datcore_structured_testbucket["dataset_id"]
         file_id = await dcw.upload_file_to_id(dataset_id, file_name)

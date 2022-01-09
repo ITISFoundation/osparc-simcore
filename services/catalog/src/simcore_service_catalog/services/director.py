@@ -1,33 +1,55 @@
 import asyncio
 import functools
 import logging
-from contextlib import suppress
 from typing import Callable, Dict, List, Optional, Union
 
+import httpx
 from fastapi import FastAPI, HTTPException
-from httpx import AsyncClient, Response, codes
+from servicelib.json_serialization import json_dumps
 from starlette import status
-
-from ..core.settings import DirectorSettings
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_random
 
 logger = logging.getLogger(__name__)
 
+MINUTE = 60
 
-def setup_director(app: FastAPI) -> None:
-    settings: DirectorSettings = app.state.settings.director
+director_startup_retry_policy = dict(
+    # Random service startup order in swarm.
+    # wait_random prevents saturating other services while startup
+    #
+    wait=wait_random(2, 5),
+    stop=stop_after_delay(2 * MINUTE),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,
+)
 
-    # init client-api
-    logger.debug("Setup director at %s...", settings.base_url)
-    app.state.director_api = DirectorApi(base_url=settings.base_url, app=app)
 
-    # does NOT communicate with director service
+async def setup_director(app: FastAPI) -> None:
+    if settings := app.state.settings.CATALOG_DIRECTOR:
+        # init client-api
+        logger.debug("Setup director at %s...", settings.base_url)
+        director_client = DirectorApi(base_url=settings.base_url, app=app)
+
+        # check that the director is accessible
+        async for attempt in AsyncRetrying(**director_startup_retry_policy):
+            with attempt:
+                if not await director_client.is_responsive():
+                    raise ValueError("Director-v0 is not responsive")
+
+                logger.info(
+                    "Connection to director-v0 succeded [%s]",
+                    json_dumps(attempt.retry_state.retry_object.statistics),
+                )
+
+        app.state.director_api = director_client
 
 
 async def close_director(app: FastAPI) -> None:
-    with suppress(AttributeError):
-        client: AsyncClient = app.state.director_client.client
-        await client.aclose()
-        del app.state.director_client
+    if director_api := app.state.director_api:
+        await director_api.delete()
 
     logger.debug("Director client closed successfully")
 
@@ -41,7 +63,7 @@ def safe_request(request_func: Callable):
     """
     assert asyncio.iscoroutinefunction(request_func)
 
-    def _unenvelope_or_raise_error(resp: Response) -> Union[List, Dict]:
+    def _unenvelope_or_raise_error(resp: httpx.Response) -> Union[List, Dict]:
         """
         Director responses are enveloped
         If successful response, we un-envelop it and return data as a dict
@@ -53,7 +75,7 @@ def safe_request(request_func: Callable):
         data = body.get("data")
         error = body.get("error")
 
-        if codes.is_server_error(resp.status_code):
+        if httpx.codes.is_server_error(resp.status_code):
             logger.error(
                 "director error %d [%s]: %s",
                 resp.status_code,
@@ -62,7 +84,7 @@ def safe_request(request_func: Callable):
             )
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        if codes.is_client_error(resp.status_code):
+        if httpx.codes.is_client_error(resp.status_code):
             msg = error or resp.reason_phrase
             raise HTTPException(resp.status_code, detail=msg)
 
@@ -101,10 +123,14 @@ class DirectorApi:
     """
 
     def __init__(self, base_url: str, app: FastAPI):
-        self.client = AsyncClient(
-            base_url=base_url, timeout=app.state.settings.client_request.total_timeout
+        self.client = httpx.AsyncClient(
+            base_url=base_url,
+            timeout=app.state.settings.CATALOG_CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
-        self.vtag = app.state.settings.director.vtag
+        self.vtag = app.state.settings.CATALOG_DIRECTOR.DIRECTOR_VTAG
+
+    async def delete(self):
+        await self.client.aclose()
 
     # OPERATIONS
     # TODO: policy to retry if NetworkError/timeout?
@@ -118,3 +144,13 @@ class DirectorApi:
     @safe_request
     async def put(self, path: str, body: Dict) -> Optional[Dict]:
         return await self.client.put(path, json=body)
+
+    async def is_responsive(self) -> bool:
+        try:
+            logger.debug("checking director-v0 is responsive")
+            health_check_path: str = "/"
+            result = await self.client.head(health_check_path, timeout=1.0)
+            result.raise_for_status()
+            return True
+        except (httpx.HTTPStatusError, httpx.RequestError, httpx.TimeoutException):
+            return False

@@ -6,14 +6,26 @@
 # pylint:disable=too-many-statements
 
 
+import json
 import random
-from typing import Any, Callable, Coroutine, Dict, Iterable
+from typing import Any, AsyncIterable, Callable, Coroutine, Dict, Iterable
 
 import pytest
 import sqlalchemy as sa
-from _helpers import ExpectedResponse, standard_role_response
+from _helpers import ExpectedResponse, standard_role_response  # type: ignore
 from aiohttp.test_utils import TestClient
 from faker import Faker
+from models_library.clusters import (
+    CLUSTER_ADMIN_RIGHTS,
+    CLUSTER_MANAGER_RIGHTS,
+    CLUSTER_NO_RIGHTS,
+    CLUSTER_USER_RIGHTS,
+    Cluster,
+    ExternalClusterAuthentication,
+    JupyterHubTokenAuthentication,
+    KerberosAuthentication,
+    SimpleAuthentication,
+)
 from models_library.users import GroupID
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
@@ -21,11 +33,6 @@ from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.clusters.models import (
-    CLUSTER_ADMIN_RIGHTS,
-    CLUSTER_MANAGER_RIGHTS,
-    CLUSTER_NO_RIGHTS,
-    CLUSTER_USER_RIGHTS,
-    Cluster,
     ClusterAccessRights,
     ClusterCreate,
     ClusterPatch,
@@ -37,8 +44,58 @@ from sqlalchemy.sql.elements import literal_column
 
 
 @pytest.fixture
+def cluster_simple_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
+    def creator() -> Dict[str, Any]:
+        simple_auth = {
+            "type": "simple",
+            "username": faker.user_name(),
+            "password": faker.password(),
+        }
+        assert SimpleAuthentication.parse_obj(simple_auth)
+        return simple_auth
+
+    return creator
+
+
+@pytest.fixture
+def cluster_kerberos_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
+    def creator() -> Dict[str, Any]:
+        kerberos_auth = {"type": "kerberos"}
+        assert KerberosAuthentication.parse_obj(kerberos_auth)
+        return kerberos_auth
+
+    return creator
+
+
+@pytest.fixture
+def cluster_jupyterhub_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
+    def creator() -> Dict[str, Any]:
+        jupyterhub_auth = {"type": "jupyterhub", "api_token": faker.pystr()}
+        assert JupyterHubTokenAuthentication.parse_obj(jupyterhub_auth)
+        return jupyterhub_auth
+
+    return creator
+
+
+@pytest.fixture(params=list(ExternalClusterAuthentication.__args__))  # type: ignore
+def cluster_authentication(
+    cluster_simple_authentication,
+    cluster_kerberos_authentication,
+    cluster_jupyterhub_authentication,
+    request,
+) -> Callable[[], Dict[str, Any]]:
+    return {
+        SimpleAuthentication: cluster_simple_authentication,
+        KerberosAuthentication: cluster_kerberos_authentication,
+        JupyterHubTokenAuthentication: cluster_jupyterhub_authentication,
+    }[request.param]
+
+
+@pytest.fixture
 def cluster(
-    postgres_db: sa.engine.Engine, faker: Faker
+    postgres_db: sa.engine.Engine,
+    faker: Faker,
+    cluster_authentication: Callable[[], Dict[str, Any]],
 ) -> Iterable[
     Callable[
         [GroupID, Dict[GroupID, ClusterAccessRights]], Coroutine[Any, Any, Cluster]
@@ -56,12 +113,14 @@ def cluster(
                 "type": random.choice(list(ClusterType)),
                 "owner": gid,
                 "access_rights": cluster_access_rights or {},
+                "endpoint": faker.uri(),
+                "authentication": cluster_authentication(),
             }
         )
 
         result = postgres_db.execute(
             clusters.insert()
-            .values(new_cluster.dict(by_alias=True, exclude={"id", "access_rights"}))
+            .values(new_cluster.to_clusters_db(only_update=False))
             .returning(literal_column("*"))
         )
         cluster_in_db = result.first()
@@ -98,14 +157,14 @@ def cluster(
 
 
 @pytest.fixture(scope="function")
-async def second_user(client: TestClient) -> Callable[..., Dict[str, Any]]:
+async def second_user(
+    client: TestClient,
+) -> AsyncIterable[Dict[str, Any]]:
     async with NewUser({"name": "Second User", "role": "USER"}, client.app) as user:
         yield user
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_list_clusters(
     enable_dev_features: None,
     client: TestClient,
@@ -116,6 +175,7 @@ async def test_list_clusters(
     expected: ExpectedResponse,
 ):
     # check empty clusters
+    assert client.app
     url = client.app.router["list_clusters_handler"].url_for()
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected.ok)
@@ -171,9 +231,7 @@ async def test_list_clusters(
         ]
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_create_cluster(
     enable_dev_features: None,
     client: TestClient,
@@ -181,13 +239,20 @@ async def test_create_cluster(
     logged_user: Dict[str, Any],
     faker: Faker,
     user_role: UserRole,
+    cluster_authentication: Callable[[], Dict[str, Any]],
     expected: ExpectedResponse,
 ):
     # check we can create a cluster
+    assert client.app
     url = client.app.router["create_cluster_handler"].url_for()
-    cluster_data = ClusterCreate(
-        name=faker.name(), type=random.choice(list(ClusterType))
-    ).dict(by_alias=True, exclude_unset=True)
+    cluster_data = json.loads(
+        ClusterCreate(
+            endpoint=faker.uri(),
+            authentication=cluster_authentication(),
+            name=faker.name(),
+            type=random.choice(list(ClusterType)),
+        ).json(by_alias=True, exclude_unset=True)
+    )
     rsp = await client.post(f"{url}", json=cluster_data)
     data, error = await assert_status(
         rsp,
@@ -216,6 +281,8 @@ async def test_create_cluster(
             id=row[clusters.c.id],
             name=cluster_data["name"],
             type=row[clusters.c.type],
+            endpoint=row[clusters.c.endpoint],
+            authentication=row[clusters.c.authentication],
             owner=logged_user["primary_gid"],
             access_rights={logged_user["primary_gid"]: CLUSTER_ADMIN_RIGHTS},
         )
@@ -226,9 +293,7 @@ async def test_create_cluster(
     postgres_db.execute(clusters.delete().where(clusters.c.id == row[clusters.c.id]))
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_get_cluster(
     enable_dev_features: None,
     client: TestClient,
@@ -240,6 +305,7 @@ async def test_get_cluster(
     expected: ExpectedResponse,
 ):
     # check not found
+    assert client.app
     url = client.app.router["get_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected.not_found)
@@ -298,9 +364,7 @@ async def test_get_cluster(
         data, error = await assert_status(rsp, expected.forbidden)
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_update_cluster(
     enable_dev_features: None,
     client: TestClient,
@@ -310,11 +374,15 @@ async def test_update_cluster(
     cluster: Callable[..., Coroutine[Any, Any, Cluster]],
     user_role: UserRole,
     expected: ExpectedResponse,
+    cluster_authentication: Callable[[], Dict[str, Any]],
 ):
+    _PATCH_EXPORT = {"by_alias": True, "exclude_unset": True, "exclude_none": True}
     # check modifying invalid returns not found
+    assert client.app
     url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.patch(
-        f"{url}", json=ClusterPatch().dict(by_alias=True, exclude_unset=True)
+        f"{url}",
+        json=ClusterPatch().dict(**_PATCH_EXPORT),
     )
     data, error = await assert_status(rsp, expected.not_found)
     if error and user_role in [UserRole.ANONYMOUS, UserRole.GUEST]:
@@ -332,13 +400,15 @@ async def test_update_cluster(
         ClusterPatch(description="My patched cluster description"),
         ClusterPatch(type=ClusterType.ON_PREMISE),
         ClusterPatch(thumbnail="https://placeimg.com/640/480/nature"),
+        ClusterPatch(endpoint="https://some_other_endpoint.com"),
+        ClusterPatch(authentication=cluster_authentication()),
     ]:
-        rsp = await client.patch(
-            f"{url}", json=cluster_patch.dict(by_alias=True, exclude_unset=True)
-        )
+        jsonable_cluster_patch = json.loads(cluster_patch.json(**_PATCH_EXPORT))
+        print(f"--> patching cluster with {jsonable_cluster_patch}")
+        rsp = await client.patch(f"{url}", json=jsonable_cluster_patch)
         data, error = await assert_status(rsp, expected.ok)
         expected_admin_cluster = expected_admin_cluster.copy(
-            update=cluster_patch.dict(by_alias=True, exclude_unset=True)
+            update=cluster_patch.dict(**_PATCH_EXPORT)
         )
         assert Cluster.parse_obj(data) == expected_admin_cluster
 
@@ -352,7 +422,7 @@ async def test_update_cluster(
         cluster_patch = ClusterPatch(accessRights={second_user["primary_gid"]: rights})
         rsp = await client.patch(
             f"{url}",
-            json=cluster_patch.dict(by_alias=True, exclude_unset=True),
+            json=cluster_patch.dict(**_PATCH_EXPORT),
         )
         data, error = await assert_status(rsp, expected.ok)
         expected_admin_cluster.access_rights[second_user["primary_gid"]] = rights
@@ -362,7 +432,7 @@ async def test_update_cluster(
     cluster_patch = ClusterPatch(owner=second_user["primary_gid"])
     rsp = await client.patch(
         f"{url}",
-        json=cluster_patch.dict(by_alias=True, exclude_unset=True),
+        json=cluster_patch.dict(**_PATCH_EXPORT),
     )
     data, error = await assert_status(rsp, expected.ok)
     expected_admin_cluster.owner = second_user["primary_gid"]
@@ -377,7 +447,7 @@ async def test_update_cluster(
     )
     rsp = await client.patch(
         f"{url}",
-        json=cluster_patch.dict(by_alias=True, exclude_unset=True),
+        json=cluster_patch.dict(**_PATCH_EXPORT),
     )
     data, error = await assert_status(rsp, expected.forbidden)
 
@@ -409,9 +479,7 @@ async def test_update_cluster(
         url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{cl.id}")
         rsp = await client.patch(
             f"{url}",
-            json=ClusterPatch(name="I prefer this new name here").dict(
-                by_alias=True, exclude_unset=True
-            ),
+            json=ClusterPatch(name="I prefer this new name here").dict(**_PATCH_EXPORT),
         )
         data, error = await assert_status(rsp, expected.ok)
 
@@ -421,9 +489,7 @@ async def test_update_cluster(
     )
     rsp = await client.patch(
         f"{url}",
-        json=ClusterPatch(owner=logged_user["primary_gid"]).dict(
-            by_alias=True, exclude_unset=True
-        ),
+        json=ClusterPatch(owner=logged_user["primary_gid"]).dict(**_PATCH_EXPORT),
     )
     data, error = await assert_status(rsp, expected.forbidden)
 
@@ -435,7 +501,7 @@ async def test_update_cluster(
         f"{url}",
         json=ClusterPatch(
             accessRights={logged_user["primary_gid"]: CLUSTER_ADMIN_RIGHTS}
-        ).dict(by_alias=True, exclude_unset=True),
+        ).dict(**_PATCH_EXPORT),
     )
     data, error = await assert_status(rsp, expected.forbidden)
 
@@ -453,7 +519,7 @@ async def test_update_cluster(
                     all_group["gid"]: CLUSTER_USER_RIGHTS,
                 },
             },
-        ).dict(by_alias=True, exclude_unset=True),
+        ).dict(**_PATCH_EXPORT),
     )
     data, error = await assert_status(rsp, expected.ok)
 
@@ -468,7 +534,7 @@ async def test_update_cluster(
                 logged_user["primary_gid"]: CLUSTER_MANAGER_RIGHTS,
                 all_group["gid"]: CLUSTER_NO_RIGHTS,
             }
-        ).dict(by_alias=True, exclude_unset=True),
+        ).dict(**_PATCH_EXPORT),
     )
     data, error = await assert_status(rsp, expected.ok)
 
@@ -482,7 +548,7 @@ async def test_update_cluster(
             accessRights={
                 logged_user["primary_gid"]: CLUSTER_MANAGER_RIGHTS,
             }
-        ).dict(by_alias=True, exclude_unset=True),
+        ).dict(**_PATCH_EXPORT),
     )
     data, error = await assert_status(rsp, expected.ok)
 
@@ -494,7 +560,7 @@ async def test_update_cluster(
         rsp = await client.patch(
             f"{url}",
             json=ClusterPatch(accessRights={all_group["gid"]: rights}).dict(
-                by_alias=True, exclude_unset=True
+                **_PATCH_EXPORT
             ),
         )
         data, error = await assert_status(rsp, expected.forbidden)
@@ -510,14 +576,12 @@ async def test_update_cluster(
             f"{url}",
             json=ClusterPatch(
                 name="I prefer this new name here, but I am not allowed"
-            ).dict(by_alias=True, exclude_unset=True),
+            ).dict(**_PATCH_EXPORT),
         )
         data, error = await assert_status(rsp, expected.forbidden)
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_delete_cluster(
     enable_dev_features: None,
     client: TestClient,

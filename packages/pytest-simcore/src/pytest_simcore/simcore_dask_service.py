@@ -11,7 +11,7 @@ from .helpers.utils_docker import get_service_published_port
 
 
 @pytest.fixture(scope="function")
-async def dask_scheduler_service(simcore_services, monkeypatch) -> Dict[str, Any]:
+async def dask_scheduler_service(simcore_services_ready, monkeypatch) -> Dict[str, Any]:
     # the dask scheduler has a UI for the dashboard and a secondary port for the API
     # simcore_services fixture already ensure the dask-scheduler is up and running
     dask_scheduler_api_port = get_service_published_port(

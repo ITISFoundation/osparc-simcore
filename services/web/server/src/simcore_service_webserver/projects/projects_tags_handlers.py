@@ -6,7 +6,7 @@ import logging
 
 from aiohttp import web
 
-from .._meta import api_version_prefix as vtag
+from .._meta import api_version_prefix as VTAG
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-@routes.put(f"/{vtag}/projects/{{project_uuid}}/tags/{{tag_id}}")
+@routes.put(f"/{VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}")
 @login_required
 @permission_required("project.tag.*")
 async def add_tag(request: web.Request):
@@ -37,7 +37,7 @@ async def add_tag(request: web.Request):
     )
 
 
-@routes.delete(f"/{vtag}/projects/{{project_uuid}}/tags/{{tag_id}}")
+@routes.delete(f"/{VTAG}/projects/{{project_uuid}}/tags/{{tag_id}}")
 @login_required
 @permission_required("project.tag.*")
 async def remove_tag(request: web.Request):

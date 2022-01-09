@@ -14,7 +14,7 @@ async def write_file_and_run_command(
     settings: DynamicSidecarSettings,
     file_content: Optional[str],
     command: str,
-    command_timeout: float,
+    command_timeout: Optional[float],
 ) -> Tuple[bool, str]:
     """The command which accepts {file_path} as an argument for string formatting"""
 
@@ -22,8 +22,8 @@ async def write_file_and_run_command(
     async with write_to_tmp_file(file_content) as file_path:
         formatted_command = command.format(
             file_path=file_path,
-            project=settings.compose_namespace,
-            stop_and_remove_timeout=settings.stop_and_remove_timeout,
+            project=settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE,
+            stop_and_remove_timeout=settings.DYNAMIC_SIDECAR_STOP_AND_REMOVE_TIMEOUT,
         )
         logger.debug("Will run command\n'%s':\n%s", formatted_command, file_content)
         return await async_command(formatted_command, command_timeout)
@@ -39,7 +39,7 @@ async def remove_the_compose_spec(
 
     command = (
         "docker-compose -p {project} -f {file_path} "
-        "down --remove-orphans -t {stop_and_remove_timeout}"
+        "down --volumes --remove-orphans -t {stop_and_remove_timeout}"
     )
     result = await write_file_and_run_command(
         settings=settings,
@@ -62,6 +62,6 @@ async def on_shutdown_handler(app: FastAPI) -> None:
     result = await remove_the_compose_spec(
         shared_store=shared_store,
         settings=settings,
-        command_timeout=settings.docker_compose_down_timeout,
+        command_timeout=settings.DYNAMIC_SIDECAR_DOCKER_COMPOSE_DOWN_TIMEOUT,
     )
     logging.info("Container removal did_succeed=%s\n%s", result[0], result[1])

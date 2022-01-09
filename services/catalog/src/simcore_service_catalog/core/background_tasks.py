@@ -11,7 +11,7 @@
 
 import asyncio
 import logging
-from asyncio import CancelledError
+from contextlib import suppress
 from pprint import pformat
 from typing import Dict, Set, Tuple
 
@@ -182,10 +182,10 @@ async def _ensure_published_templates_accessible(
 
 
 async def sync_registry_task(app: FastAPI) -> None:
-    default_product: str = app.state.settings.access_rights_default_product_name
+    default_product: str = app.state.settings.CATALOG_ACCESS_RIGHTS_DEFAULT_PRODUCT_NAME
     engine: Engine = app.state.engine
 
-    while True:
+    while app.state.registry_syncer_running:
         try:
             logger.debug("Syncing services between registry and database...")
 
@@ -196,25 +196,42 @@ async def sync_registry_task(app: FastAPI) -> None:
             # (templates are published to GUESTs, so their services must be also accessible)
             await _ensure_published_templates_accessible(engine, default_product)
 
-            await asyncio.sleep(app.state.settings.background_task_rest_time)
+            await asyncio.sleep(app.state.settings.CATALOG_BACKGROUND_TASK_REST_TIME)
 
-        except CancelledError:
+        except asyncio.CancelledError:
             # task is stopped
-            logger.debug("Catalog background task cancelled", exc_info=True)
-            return
+            logger.info("registry syncing task cancelled")
+            raise
 
         except Exception:  # pylint: disable=broad-except
-            logger.exception("Error while processing services entry")
+            if not app.state.registry_syncer_running:
+                logger.warning("registry syncing task forced to stop")
+                break
+            logger.exception(
+                "Unexpected error while syncing registry entries, restarting now..."
+            )
             # wait a bit before retrying, so it does not block everything until the director is up
-            await asyncio.sleep(app.state.settings.background_task_wait_after_failure)
+            await asyncio.sleep(
+                app.state.settings.CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE
+            )
 
 
 async def start_registry_sync_task(app: FastAPI) -> None:
-    task = asyncio.ensure_future(sync_registry_task(app))
+    # FIXME: added this variable to overcome the state in which the
+    # task cancelation is ignored and the exceptions enter in a loop
+    # that never stops the background task. This flag is an additional
+    # mechanism to enforce stopping the background task
+    app.state.registry_syncer_running = True
+    task = asyncio.create_task(sync_registry_task(app))
     app.state.registry_sync_task = task
+    logger.info("registry syncing task started")
 
 
 async def stop_registry_sync_task(app: FastAPI) -> None:
-    task = app.state.registry_sync_task
-    task.cancel()
-    await task
+    if task := app.state.registry_sync_task:
+        with suppress(asyncio.CancelledError):
+            app.state.registry_syncer_running = False
+            task.cancel()
+            await task
+        app.state.registry_sync_task = None
+    logger.info("registry syncing task stopped")

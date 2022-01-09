@@ -1,5 +1,7 @@
+import asyncio
 from concurrent.futures import ProcessPoolExecutor
 from contextlib import contextmanager
+from typing import Any, Callable
 
 # only gets created on use and is guaranteed to be the s
 # ame for the entire lifetime of the application
@@ -35,3 +37,10 @@ def non_blocking_process_pool_executor(**kwargs) -> ProcessPoolExecutor:
         # FIXME: uncomment below line when the issue is fixed
         # executor.shutdown(wait=False)
         pass
+
+
+async def async_on_threadpool(callable_function: Callable, *args: Any) -> Any:
+    """Ensures blocking operation runs on shared thread pool"""
+    return await asyncio.get_event_loop().run_in_executor(
+        None, callable_function, *args
+    )

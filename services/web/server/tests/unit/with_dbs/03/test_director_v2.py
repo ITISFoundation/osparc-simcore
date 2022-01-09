@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 
-from typing import Dict
+from typing import AsyncIterator, Dict
 from uuid import UUID, uuid4
 
 import pytest
@@ -21,7 +21,7 @@ from simcore_service_webserver.db_models import UserRole
 async def auto_mock_director_v2(
     loop,
     director_v2_service_mock: aioresponses,
-) -> aioresponses:
+) -> AsyncIterator[aioresponses]:
     yield director_v2_service_mock
 
 
@@ -35,9 +35,7 @@ def project_id() -> UUID:
     return uuid4()
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_start_pipeline(
     client,
     logged_user: Dict,
@@ -60,9 +58,7 @@ async def test_start_pipeline(
         ), f"received pipeline id: {data['pipeline_id']}, expected {project_id}"
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_start_partial_pipeline(
     client,
     logged_user: Dict,
@@ -87,9 +83,7 @@ async def test_start_partial_pipeline(
         ), f"received pipeline id: {data['pipeline_id']}, expected {project_id}"
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_stop_pipeline(
     client,
     logged_user: Dict,
@@ -108,7 +102,7 @@ async def test_create_pipeline(client, user_id: PositiveInt, project_id: UUID):
     task_out = await director_v2_api.create_or_update_pipeline(
         client.app, user_id, project_id
     )
-
+    assert task_out
     assert task_out["state"] == RunningState.NOT_STARTED
 
 
@@ -120,11 +114,9 @@ async def test_get_computation_task(
     task_out = await director_v2_api.get_computation_task(
         client.app, user_id, project_id
     )
-
+    assert task_out
     assert task_out.state == RunningState.NOT_STARTED
 
 
 async def test_delete_pipeline(client, user_id: PositiveInt, project_id: UUID):
-    project_running_state = await director_v2_api.delete_pipeline(
-        client.app, user_id, project_id
-    )
+    await director_v2_api.delete_pipeline(client.app, user_id, project_id)

@@ -19,7 +19,13 @@ async def test_load(
     default_configuration: Dict[str, Any],
 ):
     db_manager: DBManager = mock_db_manager(default_configuration)
-    node_ports = await load(db_manager, user_id, project_id, node_uuid, auto_update)
+    node_ports = await load(
+        db_manager=db_manager,
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+        auto_update=auto_update,
+    )
     assert node_ports.db_manager == db_manager
     assert node_ports.node_uuid == node_uuid
     # pylint: disable=comparison-with-callable
@@ -37,7 +43,12 @@ async def test_load_with_invalid_cfg(
     invalid_config = {"bad_key": "bad_value"}
     db_manager: DBManager = mock_db_manager(invalid_config)
     with pytest.raises(exceptions.InvalidProtocolError):
-        _ = await load(db_manager, user_id, project_id, node_uuid)
+        _ = await load(
+            db_manager=db_manager,
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+        )
 
 
 async def test_dump(
@@ -48,6 +59,11 @@ async def test_dump(
     default_configuration: Dict[str, Any],
 ):
     db_manager: DBManager = mock_db_manager(default_configuration)
-    node_ports = await load(db_manager, user_id, project_id, node_uuid)
+    node_ports = await load(
+        db_manager=db_manager,
+        user_id=user_id,
+        project_id=project_id,
+        node_uuid=node_uuid,
+    )
 
     await dump(node_ports)

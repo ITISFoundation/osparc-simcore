@@ -4,14 +4,8 @@
 --constraint ../../../requirements/constraints.txt
 --constraint ./constraints.txt
 
-ujson
-
-pydantic
-pyyaml
-
-# misc
 aiodebug
-tenacity
-
-# used for monitoring of slow callbacks
+pydantic
 pyinstrument
+pyyaml
+tenacity

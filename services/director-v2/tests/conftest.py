@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint:disable=no-value-for-parameter
 
-import asyncio
 import json
 import logging
 import os
@@ -12,17 +11,15 @@ from datetime import datetime
 from pathlib import Path
 from pprint import pformat
 from random import randint
-from typing import Any, Callable, Dict, Iterator, List
+from typing import Any, AsyncIterable, Callable, Dict, Iterable, List
 from uuid import uuid4
 
 import dotenv
 import httpx
-import nest_asyncio
 import pytest
 import simcore_service_director_v2
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
-from aiohttp.test_utils import loop_context
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.projects import Node, ProjectAtDB, Workbench
@@ -38,25 +35,26 @@ from simcore_service_director_v2.models.domains.comp_pipelines import CompPipeli
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.utils.computations import to_node_class
 from sqlalchemy import literal_column
+from sqlalchemy.sql.expression import select
 from starlette.testclient import TestClient
-
-nest_asyncio.apply()
-
 
 pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.environment_configs",
+    "pytest_simcore.minio_service",
+    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
-    "pytest_simcore.simcore_services",
-    "pytest_simcore.tmp_path_extra",
     "pytest_simcore.simcore_dask_service",
+    "pytest_simcore.simcore_services",
+    "pytest_simcore.simcore_storage_service",
+    "pytest_simcore.tmp_path_extra",
 ]
 
 logger = logging.getLogger(__name__)
@@ -95,12 +93,6 @@ def project_env_devel_environment(
     return deepcopy(project_env_devel_dict)
 
 
-@pytest.fixture(scope="module")
-def loop() -> asyncio.AbstractEventLoop:
-    with loop_context() as loop:
-        yield loop
-
-
 @pytest.fixture(scope="function")
 def mock_env(monkeypatch: MonkeyPatch) -> None:
     # Works as below line in docker.compose.yml
@@ -109,11 +101,9 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
     registry = os.environ.get("DOCKER_REGISTRY", "local")
     image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
 
-    image_name = f"{registry}/dynamic-sidecar:{image_tag}"
-
-    logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
-
+    monkeypatch.setenv(
+        "DYNAMIC_SIDECAR_IMAGE", f"{registry}/dynamic-sidecar:{image_tag}"
+    )
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
@@ -121,6 +111,11 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
+
+    monkeypatch.setenv("REGISTRY_AUTH", "false")
+    monkeypatch.setenv("REGISTRY_USER", "test")
+    monkeypatch.setenv("REGISTRY_PW", "test")
+    monkeypatch.setenv("REGISTRY_SSL", "false")
 
     monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
     monkeypatch.setenv("POSTGRES_USER", "mocked_user")
@@ -130,9 +125,12 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
 
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
+    # disable tracing as together with LifespanManager, it does not remove itself nicely
+    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
+
 
 @pytest.fixture(scope="function")
-def client(loop: asyncio.AbstractEventLoop, mock_env: None) -> TestClient:
+def client(loop, mock_env: None) -> Iterable[TestClient]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     print("Application settings\n", pformat(settings))
@@ -143,14 +141,7 @@ def client(loop: asyncio.AbstractEventLoop, mock_env: None) -> TestClient:
 
 
 @pytest.fixture(scope="function")
-async def initialized_app(monkeypatch: MonkeyPatch) -> Iterator[FastAPI]:
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "itisfoundation/dynamic-sidecar:MOCK")
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
-    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
-
+async def initialized_app(mock_env: None) -> AsyncIterable[FastAPI]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     async with LifespanManager(app):
@@ -158,7 +149,7 @@ async def initialized_app(monkeypatch: MonkeyPatch) -> Iterator[FastAPI]:
 
 
 @pytest.fixture(scope="function")
-async def async_client(initialized_app: FastAPI) -> httpx.AsyncClient:
+async def async_client(initialized_app: FastAPI) -> AsyncIterable[httpx.AsyncClient]:
 
     async with httpx.AsyncClient(
         app=initialized_app,
@@ -253,13 +244,15 @@ def fake_workbench_complete_adjacency(
 
 @pytest.fixture(scope="session")
 def user_id() -> PositiveInt:
-    return randint(0, 10000)
+    return randint(1, 10000)
 
 
 @pytest.fixture(scope="module")
 def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
     with postgres_db.connect() as con:
-        result = con.execute(
+        # removes all users before continuing
+        con.execute(users.delete())
+        con.execute(
             users.insert()
             .values(
                 id=user_id,
@@ -271,16 +264,19 @@ def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
             )
             .returning(literal_column("*"))
         )
-
+        # this is needed to get the primary_gid correctly
+        result = con.execute(select([users]).where(users.c.id == user_id))
         user = result.first()
 
         yield dict(user)
 
-        con.execute(users.delete().where(users.c.id == user["id"]))
+        con.execute(users.delete().where(users.c.id == user_id))
 
 
 @pytest.fixture
-def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable[..., ProjectAtDB]:
+def project(
+    postgres_db: sa.engine.Engine, user_db: Dict
+) -> Iterable[Callable[..., ProjectAtDB]]:
     created_project_ids: List[str] = []
 
     def creator(**overrides) -> ProjectAtDB:
@@ -314,7 +310,9 @@ def project(postgres_db: sa.engine.Engine, user_db: Dict) -> Callable[..., Proje
 
 
 @pytest.fixture
-def pipeline(postgres_db: sa.engine.Engine) -> Callable[..., CompPipelineAtDB]:
+def pipeline(
+    postgres_db: sa.engine.Engine,
+) -> Iterable[Callable[..., CompPipelineAtDB]]:
     created_pipeline_ids: List[str] = []
 
     def creator(**overrides) -> CompPipelineAtDB:
@@ -346,7 +344,7 @@ def pipeline(postgres_db: sa.engine.Engine) -> Callable[..., CompPipelineAtDB]:
 
 
 @pytest.fixture
-def tasks(postgres_db: sa.engine.Engine) -> Callable[..., List[CompTaskAtDB]]:
+def tasks(postgres_db: sa.engine.Engine) -> Iterable[Callable[..., List[CompTaskAtDB]]]:
     created_task_ids: List[int] = []
 
     def creator(project: ProjectAtDB, **overrides) -> List[CompTaskAtDB]:

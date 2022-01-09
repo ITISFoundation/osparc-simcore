@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Mapping, Optional, TypedDict
 
 from aiopg.sa.result import RowProxy
 
@@ -16,6 +16,12 @@ GROUPS_SCHEMA_TO_DB = {
     "accessRights": "access_rights",
     "inclusionRules": "inclusion_rules",
 }
+
+
+class AccessRightsDict(TypedDict):
+    read: bool
+    write: bool
+    delete: bool
 
 
 def check_group_permissions(
@@ -47,9 +53,9 @@ def convert_groups_schema_to_db(schema: Dict) -> Dict:
     }
 
 
-def convert_user_in_group_to_schema(row: Union[RowProxy, Dict]) -> Dict[str, str]:
-    group_user = convert_user_db_to_schema(row)
+def convert_user_in_group_to_schema(user: Mapping[str, Any]) -> Dict[str, str]:
+    group_user = convert_user_db_to_schema(user)
     group_user.pop("role")
-    group_user["accessRights"] = row["access_rights"]
-    group_user["gid"] = row["primary_gid"]
+    group_user["accessRights"] = user["access_rights"]
+    group_user["gid"] = user["primary_gid"]
     return group_user

@@ -41,7 +41,6 @@
     "./services/catalog/src",
     "./services/director-v2/src",
     "./services/director/src",
-    "./services/sidecar/src",
     "./services/storage/src",
     "./services/web/server/src",
     "./services/web/server/tests/unit/with_dbs",

@@ -11,13 +11,12 @@
 --requirement _test.txt
 
 # installs this repo's packages
-../postgres-database/[migration]
+../postgres-database
 ../pytest-simcore/
 ../models-library/
 
 # FIXME: these dependencies should be removed
 ../service-library/
-../../services/storage/client-sdk/python/ # Needed ONLY for testing
 
 
 # installs current package

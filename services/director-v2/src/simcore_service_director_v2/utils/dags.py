@@ -145,7 +145,6 @@ async def create_minimal_computational_graph_based_on_selection(
     complete_dag: nx.DiGraph, selected_nodes: List[NodeID], force_restart: bool
 ) -> nx.DiGraph:
     nodes_data_view: nx.classes.reportviews.NodeDataView = complete_dag.nodes.data()
-
     try:
         # first pass, traversing in topological order to correctly get the dependencies, set the nodes states
         await _set_computational_nodes_states(complete_dag)
@@ -154,7 +153,7 @@ async def create_minimal_computational_graph_based_on_selection(
         return nx.DiGraph()
 
     # second pass, detect all the nodes that need to be run
-    minimal_nodes_selection: Set[NodeID] = set()
+    minimal_nodes_selection: Set[str] = set()
     if not selected_nodes:
         # fully automatic detection, we want anything that is waiting for dependencies or outdated
         minimal_nodes_selection.update(
@@ -171,11 +170,15 @@ async def create_minimal_computational_graph_based_on_selection(
             minimal_nodes_selection.update(
                 set(
                     n
-                    for n in nx.bfs_tree(complete_dag, str(node), reverse=True)
+                    for n in nx.bfs_tree(complete_dag, f"{node}", reverse=True)
                     if _is_node_computational(nodes_data_view[n]["key"])
-                    and (force_restart or node_needs_computation(nodes_data_view, n))
+                    and node_needs_computation(nodes_data_view, n)
                 )
             )
+            if force_restart and _is_node_computational(
+                nodes_data_view[f"{node}"]["key"]
+            ):
+                minimal_nodes_selection.add(f"{node}")
 
     return complete_dag.subgraph(minimal_nodes_selection)
 

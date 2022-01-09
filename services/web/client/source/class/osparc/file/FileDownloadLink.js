@@ -23,8 +23,8 @@
  * Here is a little example of how to use the widget.
  *
  * <pre class='javascript'>
- *   let filesAdd = new osparc.file.FileDownloadLink();
- *   this.getRoot().add(filesAdd);
+ *   let typeDownloadLink = new osparc.file.FileDownloadLink();
+ *   this.getRoot().add(typeDownloadLink);
  * </pre>
  */
 
@@ -98,7 +98,7 @@ qx.Class.define("osparc.file.FileDownloadLink", {
           });
           break;
         case "checkButton":
-          control = new qx.ui.toolbar.Button(this.tr("Validate"));
+          control = new qx.ui.form.Button(this.tr("Validate"));
           this._add(control);
           break;
         case "checkLink":
@@ -109,7 +109,7 @@ qx.Class.define("osparc.file.FileDownloadLink", {
           this._add(control);
           break;
         case "selectButton":
-          control = new qx.ui.toolbar.Button(this.tr("Select"));
+          control = new qx.ui.form.Button(this.tr("Select"));
           this._add(control);
           break;
       }

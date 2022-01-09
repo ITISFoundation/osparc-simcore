@@ -54,7 +54,7 @@ class StorageApi(BaseServiceClientApi):
     #     return await self.client.get(path, *args, **kwargs)
 
     async def list_files(self, user_id: int) -> List[StorageFileMetaData]:
-        """ Lists metadata of all s3 objects name as api/* from a given user"""
+        """Lists metadata of all s3 objects name as api/* from a given user"""
         resp = await self.client.post(
             "/simcore-s3/files/metadata:search",
             params={
@@ -108,7 +108,7 @@ class StorageApi(BaseServiceClientApi):
         )
 
         presigned_link = PresignedLink.parse_obj(resp.json()["data"])
-        return presigned_link.link
+        return f"{presigned_link.link}"
 
     async def create_soft_link(
         self, user_id: int, target_s3_path: str, as_file_id: UUID

@@ -18,9 +18,7 @@
 /**
  * Widget that shows workbench hierarchy in tree view.
  *
- * It contains:
- * - Toolbar for adding, removing or renaming nodes
- * - VirtualTree populated with NodeTreeItems
+ * VirtualTree populated with NodeTreeItems
  *
  *   Helps the user navigating through nodes and gives a hierarchical view of containers. Also allows
  * some operations.
@@ -36,23 +34,26 @@
  */
 
 qx.Class.define("osparc.component.widget.NodesTree", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.tree.VirtualTree,
 
   construct: function() {
-    this.base(arguments);
+    this.base(arguments, null, "label", "children");
 
-    this._setLayout(new qx.ui.layout.VBox());
-
-    this.__tree = this._createChildControlImpl("tree");
+    this.set({
+      decorator: "service-tree",
+      openMode: "none",
+      contentPadding: 0,
+      padding: 0
+    });
+    osparc.utils.Utils.setIdToWidget(this, "nodesTree");
 
     this.__attachEventHandlers();
   },
 
   events: {
     "nodeSelected": "qx.event.type.Data",
-    "removeNode": "qx.event.type.Data",
-    "exportNode": "qx.event.type.Data",
-    "changeSelectedNode": "qx.event.type.Data"
+    "fullscreenNode": "qx.event.type.Data",
+    "removeNode": "qx.event.type.Data"
   },
 
   properties: {
@@ -64,19 +65,27 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   },
 
   statics: {
+    getSortingValue: function(node) {
+      if (node.isFilePicker()) {
+        return osparc.utils.Services.getSorting("file");
+      } else if (node.isParameter()) {
+        return osparc.utils.Services.getSorting("parameter");
+      }
+      return osparc.utils.Services.getSorting(node.getMetaData().type);
+    },
+
     convertModel: function(nodes) {
-      let children = [];
+      const children = [];
       for (let nodeId in nodes) {
         const node = nodes[nodeId];
-        let nodeInTree = {
-          label: "",
-          nodeId: node.getNodeId()
+        const nodeInTree = {
+          label: node.getLabel(),
+          children: node.isContainer() ? this.convertModel(node.getInnerNodes()) : [],
+          isContainer: node.isContainer(),
+          nodeId: node.getNodeId(),
+          sortingValue: this.self().getSortingValue(node),
+          statusColor: null
         };
-        nodeInTree.label = node.getLabel();
-        nodeInTree.isContainer = node.isContainer();
-        if (node.isContainer()) {
-          nodeInTree.children = this.convertModel(node.getInnerNodes());
-        }
         children.push(nodeInTree);
       }
       return children;
@@ -84,107 +93,139 @@ qx.Class.define("osparc.component.widget.NodesTree", {
   },
 
   members: {
-    __tree: null,
     __currentNodeId: null,
-
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "tree":
-          control = this.__buildTree();
-          this._add(control, {
-            flex: 1
-          });
-          break;
-      }
-
-      return control || this.base(arguments, id);
-    },
 
     _applyStudy: function() {
       this.populateTree();
     },
+
+    getCurrentNodeId: function() {
+      return this.__currentNodeId;
+    },
+
 
     setCurrentNodeId: function(nodeId) {
       this.__currentNodeId = nodeId;
     },
 
     __getOneSelectedRow: function() {
-      const selection = this.__tree.getSelection();
+      const selection = this.getSelection();
       if (selection && selection.toArray().length > 0) {
         return selection.toArray()[0];
       }
       return null;
     },
 
-    __buildTree: function() {
-      const tree = new qx.ui.tree.VirtualTree(null, "label", "children").set({
-        decorator: "service-tree",
-        openMode: "none",
-        contentPadding: 0,
-        padding: 0
-      });
-      osparc.utils.Utils.setIdToWidget(tree, "nodesTree");
-      return tree;
-    },
-
     populateTree: function() {
-      const study = this.getStudy();
-      const topLevelNodes = study.getWorkbench().getNodes();
-      let data = {
-        label: study.getName(),
-        children: this.self().convertModel(topLevelNodes),
-        nodeId: study.getUuid(),
-        isContainer: true
-      };
+      const data = this.__getModelData();
       let newModel = qx.data.marshal.Json.createModel(data, true);
-      let oldModel = this.__tree.getModel();
+      let oldModel = this.getModel();
       if (JSON.stringify(newModel) !== JSON.stringify(oldModel)) {
+        const study = this.getStudy();
         study.bind("name", newModel, "label");
-        this.__tree.setModel(newModel);
-        this.__tree.setDelegate({
+        this.setModel(newModel);
+        this.setDelegate({
           createItem: () => {
-            const nodeTreeItem = new osparc.component.widget.NodeTreeItem(study);
-            nodeTreeItem.addListener("openNode", e => this.__openItem(e.getData()));
+            const nodeTreeItem = new osparc.component.widget.NodeTreeItem();
+            nodeTreeItem.addListener("fullscreenNode", e => this.__openFullscreen(e.getData()));
             nodeTreeItem.addListener("renameNode", e => this.__openItemRenamer(e.getData()));
+            nodeTreeItem.addListener("infoNode", e => this.__openNodeInfo(e.getData()));
             nodeTreeItem.addListener("deleteNode", e => this.__deleteNode(e.getData()));
-            const readOnly = study.isReadOnly();
-            // disable rename and delete button if the study is read only
-            nodeTreeItem.getChildControl("rename-btn").setEnabled(!readOnly);
-            nodeTreeItem.getChildControl("delete-btn").setEnabled(!readOnly);
             return nodeTreeItem;
           },
           bindItem: (c, item, id) => {
             c.bindDefaultProperties(item, id);
             c.bindProperty("nodeId", "nodeId", null, item, id);
-            const node = study.getWorkbench().getNode(item.getModel().getNodeId());
-            if (node) {
-              node.bind("label", item.getModel(), "label");
-            }
             c.bindProperty("label", "label", null, item, id);
+            const node = study.getWorkbench().getNode(item.getModel().getNodeId());
+            if (item.getModel().getNodeId() === study.getUuid()) {
+              item.setIcon("@FontAwesome5Solid/home/14");
+              item.getChildControl("options-delete-button").exclude();
+            } else if (node) {
+              node.bind("label", item.getModel(), "label");
+
+              // set icon
+              if (node.isFilePicker()) {
+                const icon = osparc.utils.Services.getIcon("file");
+                item.setIcon(icon+"14");
+              } else if (node.isParameter()) {
+                const icon = osparc.utils.Services.getIcon("parameter");
+                item.setIcon(icon+"14");
+              } else {
+                const icon = osparc.utils.Services.getIcon(node.getMetaData().type);
+                if (icon) {
+                  item.setIcon(icon+"14");
+                }
+              }
+
+              // "bind" running/interactive status to icon color
+              if (node.isDynamic()) {
+                node.getStatus().addListener("changeInteractive", e => this.__updateColor(node.getNodeId(), e.getData()));
+                this.__updateColor(node.getNodeId(), node.getStatus().getInteractive());
+              } else if (node.isComputational()) {
+                node.getStatus().addListener("changeRunning", e => this.__updateColor(node.getNodeId(), e.getData()));
+                this.__updateColor(node.getNodeId(), node.getStatus().getRunning());
+              }
+              c.bindProperty("statusColor", "textColor", {
+                converter: statusColor => osparc.utils.StatusUI.getColor(statusColor)
+              }, item.getChildControl("icon"), id);
+
+              // add fullscreen
+              if (node.isDynamic()) {
+                item.getChildControl("fullscreen-button").show();
+              }
+            }
           },
           configureItem: item => {
-            item.addListener("dbltap", () => {
-              this.__openItem(item.getModel().getNodeId());
-              this.__selectedItem(item);
-            }, this);
             item.addListener("tap", () => {
-              this.__selectedItem(item);
+              this.__openItem(item.getModel().getNodeId());
               this.nodeSelected(item.getModel().getNodeId());
             }, this);
-          }
+            // This is needed to keep the label flexible
+            item.addListener("resize", e => item.setMaxWidth(100), this);
+          },
+          sorter: (itemA, itemB) => itemA.getSortingValue() - itemB.getSortingValue()
         });
+        const nChildren = newModel.getChildren().length;
+        this.setHeight(nChildren*21 + 12);
       }
     },
 
-    __getNodeInTree: function(model, nodeId) {
+    __getModelData: function() {
+      const study = this.getStudy();
+      const topLevelNodes = study.getWorkbench().getNodes();
+      const data = this.__getRootModelData();
+      data.children = this.self().convertModel(topLevelNodes);
+      return data;
+    },
+
+    __getRootModelData: function() {
+      const study = this.getStudy();
+      const data = {
+        label: study.getName(),
+        children: [],
+        isContainer: true,
+        nodeId: study.getUuid(),
+        sortingValue: 0
+      };
+      return data;
+    },
+
+    __updateColor: function(nodeId, status) {
+      const nodeInTree = this.__getNodeModel(this.getModel(), nodeId);
+      if (nodeInTree) {
+        nodeInTree.setStatusColor(status);
+      }
+    },
+
+    __getNodeModel: function(model, nodeId) {
       if (model.getNodeId() === nodeId) {
         return model;
       } else if (model.getIsContainer() && model.getChildren() !== null) {
         let node = null;
         let children = model.getChildren().toArray();
         for (let i = 0; node === null && i < children.length; i++) {
-          node = this.__getNodeInTree(children[i], nodeId);
+          node = this.__getNodeModel(children[i], nodeId);
         }
         return node;
       }
@@ -192,29 +233,12 @@ qx.Class.define("osparc.component.widget.NodesTree", {
     },
 
     __getSelection: function() {
-      let treeSelection = this.__tree.getSelection();
+      let treeSelection = this.getSelection();
       if (treeSelection.length < 1) {
         return null;
       }
       let selectedItem = treeSelection.toArray()[0];
       return selectedItem;
-    },
-
-    __selectedItem: function(item) {
-      const nodeId = item.getModel().getNodeId();
-      this.fireDataEvent("changeSelectedNode", nodeId);
-    },
-
-    __exportDAG: function() {
-      const selectedItem = this.__getSelection();
-      if (selectedItem) {
-        if (selectedItem.getIsContainer()) {
-          const nodeId = selectedItem.getNodeId();
-          this.fireDataEvent("exportNode", nodeId);
-        } else {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only Groups can be exported."), "ERROR");
-        }
-      }
     },
 
     __openItem: function(nodeId) {
@@ -223,27 +247,29 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       }
     },
 
+    __openFullscreen: function(nodeId) {
+      if (nodeId) {
+        this.fireDataEvent("fullscreenNode", nodeId);
+      }
+    },
+
     __openItemRenamer: function(nodeId) {
-      const renameItem = nodeId === undefined ? this.__getSelection() : this.__getNodeInTree(this.__tree.getModel(), nodeId);
-      if (renameItem) {
-        const treeItemRenamer = new osparc.component.widget.Renamer(renameItem.getLabel());
+      if (nodeId === undefined && this.__getSelection()) {
+        nodeId = this.__getSelection().getNodeId();
+      }
+      if (nodeId) {
+        const study = this.getStudy();
+        const node = study.getWorkbench().getNode(nodeId);
+        const oldLabel = nodeId === study.getUuid() ? study.getName() : node.getLabel();
+        const treeItemRenamer = new osparc.component.widget.Renamer(oldLabel);
         treeItemRenamer.addListener("labelChanged", e => {
           const {
             newLabel
           } = e.getData();
-          const selectedNodeId = renameItem.getNodeId();
-          const study = this.getStudy();
-          if (selectedNodeId === study.getUuid() && osparc.data.Permissions.getInstance().canDo("study.update", true)) {
-            const params = {
-              name: newLabel
-            };
-            study.updateStudy(params);
-          } else if (osparc.data.Permissions.getInstance().canDo("study.node.rename", true)) {
-            renameItem.setLabel(newLabel);
-            const node = study.getWorkbench().getNode(selectedNodeId);
-            if (node) {
-              node.renameNode(newLabel);
-            }
+          if (nodeId === study.getUuid() && osparc.data.Permissions.getInstance().canDo("study.update", true)) {
+            study.setName(newLabel);
+          } else if (node && osparc.data.Permissions.getInstance().canDo("study.node.rename", true)) {
+            node.setLabel(newLabel);
           }
           treeItemRenamer.close();
         }, this);
@@ -253,37 +279,58 @@ qx.Class.define("osparc.component.widget.NodesTree", {
       }
     },
 
-    __deleteNode: function(nodeId) {
-      if (nodeId === undefined) {
-        const selectedItem = this.__getSelection();
-        if (selectedItem === null) {
-          return;
+    __openNodeInfo: function(nodeId) {
+      if (nodeId === undefined && this.__getSelection()) {
+        nodeId = this.__getSelection().getNodeId();
+      }
+      if (nodeId) {
+        const study = this.getStudy();
+        if (nodeId === study.getUuid()) {
+          const studyDetails = new osparc.studycard.Large(study);
+          const title = this.tr("Study Details");
+          const width = 500;
+          const height = 500;
+          osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
+        } else {
+          const node = study.getWorkbench().getNode(nodeId);
+          const serviceDetails = new osparc.servicecard.Large(node.getMetaData());
+          const title = this.tr("Service information");
+          const width = 600;
+          const height = 700;
+          osparc.ui.window.Window.popUpInWindow(serviceDetails, title, width, height);
         }
-        this.fireDataEvent("removeNode", selectedItem.getNodeId());
-      } else {
+      }
+    },
+
+    __deleteNode: function(nodeId) {
+      if (nodeId === undefined && this.__getSelection()) {
+        nodeId = this.__getSelection().getNodeId();
+      }
+      if (nodeId) {
         this.fireDataEvent("removeNode", nodeId);
       }
     },
 
     nodeSelected: function(nodeId) {
-      const dataModel = this.__tree.getModel();
-      const item = this.__getNodeInTree(dataModel, nodeId);
+      const item = this.__getNodeModel(this.getModel(), nodeId);
       if (item) {
-        this.__tree.openNodeAndParents(item);
-        this.__tree.setSelection(new qx.data.Array([item]));
+        this.openNodeAndParents(item);
+        this.setSelection(new qx.data.Array([item]));
       }
     },
 
     __attachEventHandlers: function() {
-      this.addListener("keypress", function(keyEvent) {
-        if (keyEvent.getKeyIdentifier() === "Delete") {
-          this.__deleteNode();
-        }
-      }, this);
-
-      this.addListener("keypress", function(keyEvent) {
-        if (keyEvent.getKeyIdentifier() === "F2") {
-          this.__openItemRenamer();
+      this.addListener("keypress", keyEvent => {
+        switch (keyEvent.getKeyIdentifier()) {
+          case "F2":
+            this.__openItemRenamer();
+            break;
+          case "I":
+            this.__openNodeInfo();
+            break;
+          case "Delete":
+            this.__deleteNode();
+            break;
         }
       }, this);
     }

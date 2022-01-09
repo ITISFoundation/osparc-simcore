@@ -13,6 +13,7 @@
 ../../packages/models-library
 ../../packages/postgres-database/
 ../../packages/service-library[fastapi]
+../../packages/settings-library
 
 # installs current package
 .

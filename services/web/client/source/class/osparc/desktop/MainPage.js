@@ -65,61 +65,34 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __createNavigationBar: function() {
       const navBar = new osparc.navigation.NavigationBar();
-
-      navBar.addListener("dashboardPressed", () => {
-        if (!osparc.data.Permissions.getInstance().canDo("studies.user.create", true)) {
-          return;
-        }
-        if (this.__studyEditor) {
-          const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
-          if (preferencesSettings.getConfirmBackToDashboard()) {
-            const msg = this.tr("Do you really want to close the study?");
-            const win = new osparc.ui.window.Confirmation(msg);
-            const confirmButton = win.getConfirmButton();
-            osparc.utils.Utils.setIdToWidget(confirmButton, "confirmDashboardBtn");
-            win.center();
-            win.open();
-            win.addListener("close", () => {
-              if (win.getConfirmed()) {
-                this.__backToDashboard();
-              }
-            }, this);
-          } else {
-            this.__backToDashboard();
-          }
-        } else {
-          this.__showDashboard();
-        }
-      }, this);
-
-      navBar.addListener("slidesGuidedStart", () => {
-        if (this.__studyEditor) {
-          navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]);
-          this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]);
-        }
-      }, this);
-
-      navBar.addListener("slidesAppStart", () => {
-        if (this.__studyEditor) {
-          navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[3]);
-          this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[3]);
-        }
-      }, this);
-
-      navBar.addListener("slidesStop", () => {
-        if (this.__studyEditor) {
-          navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
-          this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
-        }
-      }, this);
-
-      navBar.addListener("slidesEdit", () => {
-        if (this.__studyEditor) {
-          this.__studyEditor.editSlides();
-        }
-      }, this);
-
+      navBar.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
       return navBar;
+    },
+
+    __backToDashboardPressed: function() {
+      if (!osparc.data.Permissions.getInstance().canDo("studies.user.create", true)) {
+        return;
+      }
+      if (this.__studyEditor) {
+        const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+        if (preferencesSettings.getConfirmBackToDashboard()) {
+          const msg = this.tr("Do you really want to close the study?");
+          const win = new osparc.ui.window.Confirmation(msg);
+          const confirmButton = win.getConfirmButton();
+          osparc.utils.Utils.setIdToWidget(confirmButton, "confirmDashboardBtn");
+          win.center();
+          win.open();
+          win.addListener("close", () => {
+            if (win.getConfirmed()) {
+              this.__backToDashboard();
+            }
+          }, this);
+        } else {
+          this.__backToDashboard();
+        }
+      } else {
+        this.__showDashboard();
+      }
     },
 
     __backToDashboard: function() {
@@ -161,11 +134,26 @@ qx.Class.define("osparc.desktop.MainPage", {
     },
 
     __createDashboardStack: function() {
-      const nStudyItemsPerRow = 5;
-      const dashboard = this.__dashboard = new osparc.dashboard.Dashboard().set({
-        width: nStudyItemsPerRow * (osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING) + 8 // padding + scrollbar
+      const dashboard = this.__dashboard = new osparc.dashboard.Dashboard();
+      const minNStudyItemsPerRow = 5;
+      const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
+      dashboard.setMinWidth(minNStudyItemsPerRow * itemWidth + 8);
+      const sideSearch = new osparc.dashboard.SideSearch().set({
+        maxWidth: 330,
+        minWidth: 220
       });
-      const sideSearch = new osparc.dashboard.SideSearch();
+      const fitResourceCards = () => {
+        const w = document.documentElement.clientWidth;
+        const nStudies = Math.floor((w - 2*sideSearch.getSizeHint().width - 8) / itemWidth);
+        const newWidth = nStudies * itemWidth + 8;
+        if (newWidth > dashboard.getMinWidth()) {
+          dashboard.setWidth(newWidth);
+        } else {
+          dashboard.setWidth(dashboard.getMinWidth());
+        }
+      };
+      fitResourceCards();
+      window.addEventListener("resize", () => fitResourceCards());
       dashboard.bind("selection", sideSearch, "visibility", {
         converter: value => {
           const tabIndex = dashboard.getChildren().indexOf(value[0]);
@@ -209,8 +197,10 @@ qx.Class.define("osparc.desktop.MainPage", {
       }
 
       this.__mainStack.setSelection([this.__dashboardLayout]);
+      this.__navBar.show();
       this.__navBar.setStudy(null);
       this.__navBar.setPageContext("dashboard");
+      this.__dashboard.getStudyBrowser().resetSelection();
       if (this.__studyEditor) {
         this.__studyEditor.destruct();
       }
@@ -358,10 +348,6 @@ qx.Class.define("osparc.desktop.MainPage", {
       this.__navBar.setStudy(study);
       this.__navBar.setPageContext(pageContext);
       studyEditor.setPageContext(pageContext);
-
-      this.__studyEditor.addListener("forceBackToDashboard", () => {
-        this.__showDashboard();
-      }, this);
     },
 
     __getStudyEditor: function() {
@@ -372,6 +358,21 @@ qx.Class.define("osparc.desktop.MainPage", {
       studyEditor.addListener("startSnapshot", e => {
         const snapshotId = e.getData();
         this.__startSnapshot(this.__studyEditor.getStudy().getUuid(), snapshotId);
+      }, this);
+      studyEditor.addListener("expandNavBar", () => this.__navBar.show());
+      studyEditor.addListener("collapseNavBar", () => this.__navBar.exclude());
+      studyEditor.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
+      studyEditor.addListener("forceBackToDashboard", () => this.__showDashboard(), this);
+      studyEditor.addListener("slidesEdit", () => {
+        studyEditor.editSlides();
+      }, this);
+      studyEditor.addListener("slidesAppStart", () => {
+        this.__navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]);
+        studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[2]);
+      }, this);
+      studyEditor.addListener("slidesStop", () => {
+        this.__navBar.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
+        this.__studyEditor.setPageContext(osparc.navigation.NavigationBar.PAGE_CONTEXT[1]);
       }, this);
       return studyEditor;
     },

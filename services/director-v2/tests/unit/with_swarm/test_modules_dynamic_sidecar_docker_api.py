@@ -1,7 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-from asyncio import BaseEventLoop
+import asyncio
 from typing import Any, AsyncIterator, Dict, List
 from uuid import UUID, uuid4
 
@@ -27,14 +27,14 @@ from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     GenericDockerError,
 )
 
-pytestmark = pytest.mark.asyncio
+MAX_INT64 = 9223372036854775807
 
 # FIXTURES
 
 
 @pytest.fixture
 async def async_docker_client(
-    loop: BaseEventLoop,
+    loop: asyncio.AbstractEventLoop,
     docker_swarm: None,
 ) -> AsyncIterator[aiodocker.docker.Docker]:
     async with aiodocker.Docker() as client:
@@ -47,6 +47,9 @@ def dynamic_sidecar_settings(
 ) -> DynamicSidecarSettings:
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
+    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
     return DynamicSidecarSettings.create_from_envs()
 
 
@@ -61,11 +64,10 @@ def network_config(simcore_services_network_name: str) -> Dict[str, Any]:
 
 @pytest.fixture
 async def ensure_swarm_network(
-    loop: BaseEventLoop,
     network_config: Dict[str, Any],
     async_docker_client: aiodocker.docker.Docker,
     docker_swarm: None,
-) -> None:
+) -> AsyncIterator[None]:
     network_id = None
     try:
         network_id = await docker_api.create_network(network_config)
@@ -78,11 +80,10 @@ async def ensure_swarm_network(
 
 @pytest.fixture
 async def cleanup_swarm_network(
-    loop: BaseEventLoop,
     simcore_services_network_name: str,
     async_docker_client: aiodocker.docker.Docker,
     docker_swarm: None,
-) -> None:
+) -> AsyncIterator[None]:
     yield
     docker_network = await async_docker_client.networks.get(
         simcore_services_network_name
@@ -112,11 +113,10 @@ def service_spec(test_service_name: str) -> Dict[str, Any]:
 
 @pytest.fixture
 async def cleanup_test_service_name(
-    loop: BaseEventLoop,
     test_service_name: str,
     async_docker_client: aiodocker.docker.Docker,
     docker_swarm: None,
-) -> None:
+) -> AsyncIterator[None]:
     yield
 
     assert await async_docker_client.services.delete(test_service_name) is True
@@ -145,6 +145,7 @@ def dynamic_sidecar_service_spec(
             "paths_mapping": sample["paths_mapping"].json(),
             "compose_spec": sample["compose_spec"],
             "container_http_entry": sample["container_http_entry"],
+            "restart_policy": sample["restart_policy"],
             "traefik.docker.network": "",
             "io.simcore.zone": "",
             "service_port": "80",
@@ -156,10 +157,9 @@ def dynamic_sidecar_service_spec(
 
 @pytest.fixture
 async def cleanup_test_dynamic_sidecar_service(
-    loop: BaseEventLoop,
     dynamic_sidecar_service_name: str,
     async_docker_client: aiodocker.docker.Docker,
-) -> None:
+) -> AsyncIterator[None]:
     yield
     assert (
         await async_docker_client.services.delete(dynamic_sidecar_service_name) is True
@@ -220,10 +220,9 @@ def dynamic_sidecar_stack_specs(
 
 @pytest.fixture
 async def cleanup_dynamic_sidecar_stack(
-    loop: BaseEventLoop,
     dynamic_sidecar_stack_specs: List[Dict[str, Any]],
     async_docker_client: aiodocker.docker.Docker,
-) -> None:
+) -> AsyncIterator[None]:
     yield
     for dynamic_sidecar_spec in dynamic_sidecar_stack_specs:
         assert (
@@ -262,6 +261,12 @@ async def _count_services_in_stack(
     return len(services)
 
 
+def _inject_impossible_resources(dynamic_sidecar_service_spec: Dict[str, Any]) -> None:
+    dynamic_sidecar_service_spec["task_template"]["Resources"] = {
+        "Reservations": {"NanoCPUs": MAX_INT64, "MemoryBytes": MAX_INT64}
+    }
+
+
 # TESTS
 
 
@@ -278,6 +283,8 @@ def test_valid_network_names(
 ) -> None:
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", simcore_services_network_name)
+    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
     dynamic_sidecar_settings = DynamicSidecarSettings.create_from_envs()
     assert dynamic_sidecar_settings
 
@@ -392,7 +399,29 @@ async def test_dynamic_sidecar_in_running_state_and_node_id_is_recovered(
     assert dynamic_sidecar_state == (ServiceState.RUNNING, "")
 
 
-async def test_are_services_missing(
+async def test_dynamic_sidecar_get_dynamic_sidecar_sate_fail_to_schedule(
+    dynamic_sidecar_service_spec: Dict[str, Any],
+    dynamic_sidecar_settings: DynamicSidecarSettings,
+    cleanup_test_dynamic_sidecar_service: None,
+    docker_swarm: None,
+) -> None:
+    _inject_impossible_resources(dynamic_sidecar_service_spec)
+    service_id = await docker_api.create_service_and_get_id(
+        dynamic_sidecar_service_spec
+    )
+    assert service_id
+
+    # wait for the service to get scheduled
+    await asyncio.sleep(0.2)
+
+    dynamic_sidecar_state = await docker_api.get_dynamic_sidecar_state(service_id)
+    assert dynamic_sidecar_state == (
+        ServiceState.PENDING,
+        "no suitable node (insufficient resources on 1 node)",
+    )
+
+
+async def test_is_dynamic_sidecar_missing(
     node_uuid: UUID,
     dynamic_sidecar_settings: DynamicSidecarSettings,
     dynamic_sidecar_stack_specs: List[Dict[str, Any]],
@@ -400,7 +429,7 @@ async def test_are_services_missing(
     docker_swarm: None,
 ) -> None:
 
-    services_are_missing = await docker_api.are_services_missing(
+    services_are_missing = await docker_api.is_dynamic_sidecar_missing(
         node_uuid, dynamic_sidecar_settings
     )
     assert services_are_missing == True
@@ -410,7 +439,7 @@ async def test_are_services_missing(
         service_id = await docker_api.create_service_and_get_id(dynamic_sidecar_stack)
         assert service_id
 
-    services_are_missing = await docker_api.are_services_missing(
+    services_are_missing = await docker_api.is_dynamic_sidecar_missing(
         node_uuid, dynamic_sidecar_settings
     )
     assert services_are_missing == False
