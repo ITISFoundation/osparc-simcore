@@ -28,7 +28,10 @@ from models_library.projects_nodes import (
 from models_library.projects_nodes_io import NodeID, PortLink
 from models_library.services import ServiceDockerData
 from simcore_service_webserver.meta_experimental import PROPTYPE_2_PYTYPE, SumDiffDef
-from simcore_service_webserver.meta_funcs import SERVICE_TO_CALLABLES, ServiceDockerData
+from simcore_service_webserver.meta_function_nodes import (
+    FRONTEND_SERVICE_TO_CALLABLE,
+    ServiceDockerData,
+)
 from simcore_service_webserver.meta_projects import URL_PATTERN
 
 ## HELPERS -------------------------------------------------
@@ -144,7 +147,7 @@ SERVICES_CATALOG: Dict[Tuple[str, str], ServiceDockerData] = {
     **{(s.key, s.version): s for s in iter_service_docker_data()},
 }
 
-SERVICE_TO_CALLABLES: Dict[Tuple[str, str], Callable] = {
+FRONTEND_SERVICE_TO_CALLABLE: Dict[Tuple[str, str], Callable] = {
     # ensure inputs/outputs map function signature
     (
         f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/int-range",
@@ -286,7 +289,7 @@ def test_it1(project_nodes: Dict[NodeID, Node]):
         assert node.inputs
         assert node_def.inputs
 
-        node_call = SERVICE_TO_CALLABLES[(node.key, node.version)]
+        node_call = FRONTEND_SERVICE_TO_CALLABLE[(node.key, node.version)]
         g = node_call(**{name: node.inputs[name] for name in node_def.inputs})
         assert isinstance(g, Iterator)
         nodes_generators.append(g)

@@ -18,11 +18,7 @@ from models_library.services import ServiceDockerData
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 
-from .meta_funcs import (
-    SERVICE_CATALOG,
-    SERVICE_TO_CALLABLES,
-    create_param_node_from_iterator_with_outputs,
-)
+from .meta_function_nodes import FRONTEND_SERVICE_TO_CALLABLE, FRONTEND_SERVICES_CATALOG
 from .meta_version_control import CommitID, ProjectDict, VersionControlForMetaModeling
 from .utils import compute_sha1
 
@@ -53,7 +49,7 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
 
     for node_id, node in project_nodes.items():
         if is_iterator_service(node.key):
-            node_def = SERVICE_CATALOG[(node.key, node.version)]
+            node_def = FRONTEND_SERVICES_CATALOG[(node.key, node.version)]
             # save
             iterable_nodes_defs.append(node_def)
             iterable_nodes.append(node)
@@ -67,7 +63,7 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
         assert node.inputs  # nosec
         assert node_def.inputs  # nosec
 
-        node_call = SERVICE_TO_CALLABLES[(node.key, node.version)]
+        node_call = FRONTEND_SERVICE_TO_CALLABLE[(node.key, node.version)]
         g: Generator[NodeOutputsDict, None, None] = node_call(
             **{name: node.inputs[name] for name in node_def.inputs}
         )
@@ -95,11 +91,13 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
             _iter_node.outputs = _iter_node.outputs or {}
             _iter_node.outputs.update(node_results)
 
-            # TODO: tmp we replace iter_node by a param_node
-            _param_node = create_param_node_from_iterator_with_outputs(_iter_node)
-            updated_nodes[node_id] = _param_node
+            # TODO: Replacing iter_node by a param_node, it avoid re-running matching iterations
+            #       Currently it does not work because front-end needs to change
+            # _param_node = create_param_node_from_iterator_with_outputs(_iter_node)
+            # updated_nodes[node_id] = _param_node
+            updated_nodes[node_id] = _iter_node
 
-        # FIXME: here we yield.
+        # TODO: here we can yield.
         parameters_per_iter.append(parameters)
         updated_nodes_per_iter.append(updated_nodes)
 

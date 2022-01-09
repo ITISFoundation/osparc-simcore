@@ -188,6 +188,7 @@ _FACTORY_FUNCTIONS = [
 def iter_service_docker_data() -> Iterator[ServiceDockerData]:
     for create in _FACTORY_FUNCTIONS:
         model_instance = create()
+        assert is_frontend_service(model_instance.key)  # nosec
         yield model_instance
 
 
