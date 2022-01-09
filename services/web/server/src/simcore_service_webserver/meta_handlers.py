@@ -24,7 +24,7 @@ from .version_control_tags import parse_wcopy_project_tag_name
 log = logging.getLogger(__name__)
 
 
-# HANDLER'S CORE ------------------------------------------------------------
+# HANDLER'S CORE IMPLEMENTATION ------------------------------------------------------------
 
 IterationTuple = Tuple[ProjectID, CommitID]
 
@@ -267,10 +267,10 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
     return envelope_json_response(iterations_items, web.HTTPCreated)
 
 
-# TODO:
+# TODO: registry as route when implemented. Currently iteration is retrieved via GET /projects/{wcopy_project_id}
 # @routes.get(
 #     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}",
 #     name=f"{__name__}._get_meta_project_iterations_handler",
 # )
-# async def _get_meta_project_iterations_handler(request: web.Request) -> web.Response:
-#     raise NotImplementedError
+async def _get_meta_project_iterations_handler(request: web.Request) -> web.Response:
+    raise NotImplementedError
