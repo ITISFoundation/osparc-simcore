@@ -2,19 +2,12 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import json
 from http import HTTPStatus
-from pathlib import Path
-from typing import Dict, Union
 
 import pytest
 from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient
 from faker import Faker
-from models_library.database_project_models import (
-    ProjectForPgInsert,
-    load_projects_exported_as_csv,
-)
 from models_library.projects import Project
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import AUserDict
@@ -49,9 +42,9 @@ async def context_with_logged_user(client: TestClient, logged_user: AUserDict):
 
     yield
 
+    assert client.app
     engine = client.app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
-
         # cascade deletes everything except projects_vc_snapshot
         await conn.execute(projects.delete())
 
@@ -59,16 +52,18 @@ async def context_with_logged_user(client: TestClient, logged_user: AUserDict):
 # TESTS ----------------------------------
 
 
+@pytest.mark.acceptance_test
 async def test_iterators_workflow(
     client: TestClient, context_with_logged_user: None, mocker, faker: Faker
 ):
     resp: ClientResponse
 
     # check init meta is correct
+    assert client.app
     assert projects_redirection_middleware in client.app.middlewares
     assert get_project_run_policy(client.app) == meta_project_policy
 
-    # new project --------------------------------------------------------------
+    # NEW project --------------------------------------------------------------
     mocker.patch(
         "simcore_service_webserver.director_v2_api.create_or_update_pipeline",
         return_value=None,
@@ -87,7 +82,7 @@ async def test_iterators_workflow(
     project_data: ProjectDict = body["data"]
     project_uuid = project_data["uuid"]
 
-    # create meta-project: iterator 0:3 -> sleeper -> sleeper_2 ---------------
+    # CREATE meta-project: iterator 0:3 -> sleeper -> sleeper_2 ---------------
     modifications = REPLACE_PROJECT_ON_MODIFIED.request_payload
     assert modifications
     project_data.update({key: modifications[key] for key in ("workbench", "ui")})
@@ -101,7 +96,7 @@ async def test_iterators_workflow(
 
     # TODO: create iterations, so user could explore parametrizations?
 
-    # run metaproject ----------------------------------------------------------
+    # RUN metaproject ----------------------------------------------------------
     async def _mock_start(project_id, user_id, **options):
         return f"{project_id}"
 
@@ -122,9 +117,9 @@ async def test_iterators_workflow(
 
     # TODO: check: has auto-commited
     # TODO: check: has iterations as branches
-    # TODO:retrieve results of iter1
+    # TODO: retrieve results of iter1
 
-    # get iterations ----------------------------------------------------------
+    # GET iterations ----------------------------------------------------------
     resp = await client.get(f"/v0/repos/projects/{project_uuid}/checkpoints/HEAD")
     body = await resp.json()
     head_ref_id = body["data"]["id"]
@@ -139,7 +134,7 @@ async def test_iterators_workflow(
 
     assert len(first_iterlist) == 3
 
-    # get wcopy project for iter 0 ----------------------------------------------
+    # GET wcopy project for iter 0 ----------------------------------------------
     async def _mock_catalog_get(app, user_id, product_name, only_key_versions):
         return [
             {"key": s["key"], "version": s["version"]}
@@ -169,8 +164,8 @@ async def test_iterators_workflow(
 
     # ----------------------------------------------
 
-    # get project and modify iterator----------------------------------------------
-    # TODO: change iterations from 0:4 -> HEAD+1
+    # GET project and MODIFY iterator values----------------------------------------------
+    #  - Change iterations from 0:4 -> HEAD+1
     resp = await client.get(f"/v0/projects/{project_uuid}")
     assert resp.status == HTTPStatus.OK, await resp.text()
     body = await resp.json()
@@ -185,7 +180,7 @@ async def test_iterators_workflow(
     new_project = project.copy(
         update={
             # FIXME: HACK to overcome export from None -> string
-            # SOLUTION 1: thumbnail should not be required
+            # SOLUTION 1: thumbnail should not be required (check with team!)
             # SOLUTION 2: make thumbnail nullable
             "thumbnail": faker.image_url(),
         }
@@ -202,27 +197,7 @@ async def test_iterators_workflow(
     )
     assert resp.status == HTTPStatus.OK, await resp.text()
 
-    # create iterations ------------------------------------------------------------------
-    if 0:
-        # TODO: still not implemented
-        resp = await client.post(
-            f"/v0/projects/{project_uuid}/checkpoint/HEAD/iterations"
-        )
-        assert resp.status == HTTPStatus.NOT_IMPLEMENTED, await resp.text()
-
-        # check new auto-commit
-        # check four new branches
-        #
-
-        # retrieve iterations ---------------------------------------------------------------
-        resp = await client.get(
-            f"/v0/projects/{project_uuid}/checkpoint/HEAD/iterations?offset=0"
-        )
-        body = await resp.json()
-        iterlist_b = Page[ProjectIterationAsItem].parse_obj(body).data
-        assert len(iterlist_b) == 4
-
-    # run them ---------------------------------------------------------------------------
+    # RUN again them ---------------------------------------------------------------------------
     resp = await client.post(
         f"/v0/computation/pipeline/{project_uuid}:start",
         json=RUN_PROJECT.request_payload,
@@ -232,7 +207,7 @@ async def test_iterators_workflow(
     ref_ids = data["ref_ids"]
     assert len(ref_ids) == 4
 
-    # get iterations -----------------------------------------------------------------
+    # GET iterations -----------------------------------------------------------------
     # check iters 1, 2 and 3 share working copies
     #
     resp = await client.get(f"/v0/repos/projects/{project_uuid}/checkpoints/HEAD")
@@ -254,87 +229,3 @@ async def test_iterators_workflow(
 
     for i in range(len(first_iterlist)):
         assert second_iterlist[i].wcopy_project_id == first_iterlist[i].wcopy_project_id
-
-    # TODO: checkout i
-
-
-@pytest.mark.skip(reason="DEV")
-def test_it1():
-    JSON_KWARGS = dict(indent=2, sort_keys=True)
-
-    respath = Path("/home/crespo/Downloads/response_1633600264408.json")
-    csvpath = Path("/home/crespo/Downloads/projects.csv")
-
-    reponse_body = json.loads(respath.read_text())
-
-    project_api_dict = reponse_body["data"]
-
-    with open("project_api_dict.json", "wt") as fh:
-        print(json.dumps(project_api_dict, **JSON_KWARGS), file=fh)
-
-    project_api_model = Project.parse_obj(project_api_dict)
-    with open("project_api_model.json", "wt") as fh:
-        print(
-            project_api_model.json(by_alias=True, exclude_unset=True, **JSON_KWARGS),
-            file=fh,
-        )
-
-    project_db_model = load_projects_exported_as_csv(csvpath, delimiter=";")[0]
-    with open("project_db_model.json", "wt") as fh:
-        print(
-            project_db_model.json(by_alias=True, exclude_unset=True, **JSON_KWARGS),
-            file=fh,
-        )
-
-    # given a api_project_model -> convert it into a db project model
-
-    obj = project_api_model.dict(exclude_unset=True)
-    obj["prj_owner"] = 3  # email -> int
-    new_project_db_model = ProjectForPgInsert.parse_obj(obj)
-
-    with open("new_project_db_model.json", "wt") as fh:
-        print(
-            new_project_db_model.to_values(**JSON_KWARGS),
-            file=fh,
-        )
-
-    # obj.dict(exclude=)
-
-    # elimitate excess
-    # ProjectAtDB.Config.extra = Extra.allow
-
-    # transform email -> id
-    obj["prj_owner"] = 1
-
-    # add in db but not in obj?
-    # id is not required
-    #
-
-    # m = ProjectAtDB.parse_obj({  ,**api_project_model.dict()})
-
-    # with open("db_project_model2.json", "wt") as fh:
-    #     print(
-    #         m.json(
-    #             by_alias=True, exclude_unset=True, **JSON_KWARGS
-    #         ),
-    #         file=fh,
-    #     )
-
-
-@pytest.mark.skip(reason="DEV")
-def test_it2():
-    from pydantic import BaseModel, Json
-
-    class S(BaseModel):
-        json_obj: Union[Dict, Json]
-
-    ss = S(json_obj='{"x": 3, "y": {"z": 2}}')
-    print(ss.json_obj, type(ss.json_obj))
-
-    ss = S(json_obj={"x": 3, "y": {"z": 2}})
-    print(ss.json_obj, type(ss.json_obj))
-
-    ss = S(json_obj="[1, 2, 3 ]")
-    print(ss.json_obj, type(ss.json_obj))
-    ss = S(json_obj=[1, 2, 3])
-    print(ss.json_obj, type(ss.json_obj))
