@@ -1,4 +1,5 @@
-"""
+""" Implements parts of the pre-run stage that iterates a meta-project and versions every iteration
+
     TODO: refactor logic into different modules
 """
 
@@ -109,15 +110,13 @@ def extract_parameters(
     project_uuid: ProjectID,
     commit_id: CommitID,
 ) -> Parameters:
+    raise NotImplementedError()
     # TODO: get snapshot
-
     # TODO: iter nodes, if iter, read&save outputs
     # - order?  = order( project_nodes.keys() )
 
-    raise NotImplementedError()
 
-
-# DOMAIN MODEL for project iteration -----
+# DOMAIN MODEL for project iteration ------------------------------------------------------------
 
 
 class ProjectIteration(BaseModel):
@@ -184,7 +183,7 @@ def parse_iteration_tag_name(name: str) -> Dict[str, Any]:
     return {}
 
 
-# GET/CREATE iterations -----------
+# GET/CREATE iterations ------------------------------------------------------------
 
 
 async def get_or_create_runnable_projects(
@@ -326,8 +325,8 @@ async def get_runnable_projects_ids(
         runnable_project_ids.append(project_uuid)
         return runnable_project_ids
 
+    raise NotImplementedError()
     # meta-project
     # TODO: find branches of current head that represents iterations
     # tags: - one to identify it as iteration with given parameters
     #       - one to associate runnable project uuid
-    raise NotImplementedError()

@@ -1,3 +1,7 @@
+""" Access to the to version_control add-on
+
+"""
+
 import logging
 from types import SimpleNamespace
 from typing import List, Optional

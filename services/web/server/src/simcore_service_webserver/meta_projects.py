@@ -1,10 +1,9 @@
-#
-#
-# TODO: middlewares capturing /project/{project_id} or override routers?
-#
-#  - intercepts /project/{project_uuid}* requests
-#  - transforms project_uuid into the correct project's version (project working copy or pwc ).
-#
+""" Access to the to projects module
+
+    - Adds a middleware to intercept /projects/* requests
+    - Implements a MetaProjectRunPolicy policy (see director_v2_abc.py) to define how meta-projects run
+
+"""
 
 
 import logging
@@ -25,10 +24,7 @@ from .projects.projects_handlers import RQ_REQUESTED_REPO_PROJECT_UUID_KEY
 log = logging.getLogger(__name__)
 
 
-# SEE OAS
-#
-#  https://github.com/ITISFoundation/osparc-simcore/blob/master/services/web/server/src/simcore_service_webserver/api/v0/openapi.yaml#L8563
-#
+# SEE https://github.com/ITISFoundation/osparc-simcore/blob/master/services/web/server/src/simcore_service_webserver/api/v0/openapi.yaml#L8563
 URL_PATTERN = re.compile(rf"^\/{VTAG}\/projects\/({UUID_RE})[\/]{{0,1}}")
 
 
@@ -38,7 +34,7 @@ async def projects_redirection_middleware(request: web.Request, handler: _Handle
 
     if URL_PATTERN.match(f"{request.rel_url}"):
         #
-        # FIXME: because hierarchical design is not guaranteed, we find ourselevs with
+        # FIXME: because hierarchical design is not guaranteed, we find ourselves with
         # entries like /v0/computation/pipeline/{project_id}:start which might also neeed
         # indirection
         #
@@ -64,8 +60,6 @@ async def projects_redirection_middleware(request: web.Request, handler: _Handle
                     )
 
     response = await handler(request)
-
-    # TODO: A solution would be to have project/*/workbench  instead?
 
     return response
 
