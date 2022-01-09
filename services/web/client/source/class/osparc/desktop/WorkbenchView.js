@@ -22,7 +22,7 @@
 qx.Class.define("osparc.desktop.WorkbenchView", {
   extend: qx.ui.splitpane.Pane,
 
-  construct: function () {
+  construct: function() {
     this.base(arguments, "horizontal");
 
     this.setOffset(2);
@@ -40,7 +40,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
   statics: {
     TAB_BUTTON_HEIGHT: 50,
 
-    decorateSplitter: function (splitter) {
+    decorateSplitter: function(splitter) {
       const colorManager = qx.theme.manager.Color.getInstance();
       const binaryColor = osparc.utils.Utils.getRoundedBinaryColor(colorManager.resolve("background-main"));
       splitter.set({
@@ -53,7 +53,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }, this);
     },
 
-    decorateSlider: function (slider) {
+    decorateSlider: function(slider) {
       slider.set({
         width: 2,
         backgroundColor: "#007fd4", // Visual Studio blue
@@ -103,7 +103,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __editSlidesButton: null,
     __collapseWithUserMenu: null,
 
-    _createChildControlImpl: function (id) {
+    _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "side-panels": {
@@ -166,8 +166,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             // switch flex to 1 if the secondary pane gets collapsed
             const collapsed = e.getData();
             const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
-            collapsibleViewLeft.setLayoutProperties({ flex: collapsed ? 1 : 0 });
-            control.setLayoutProperties({ flex: collapsed ? 0 : 1 });
+            collapsibleViewLeft.setLayoutProperties({flex: collapsed ? 1 : 0});
+            control.setLayoutProperties({flex: collapsed ? 0 : 1});
 
             // if both panes are collapsed set the maxWidth of the layout to 2*15
             if (collapsed && collapsibleViewLeft.isCollapsed()) {
@@ -214,7 +214,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return control || this.base(arguments, id);
     },
 
-    __getSidePanelsNewWidth: function (collapsed, sidePanels, collapsibleView) {
+    __getSidePanelsNewWidth: function(collapsed, sidePanels, collapsibleView) {
       const content = collapsibleView.getContent();
       if (sidePanels && sidePanels.getBounds() && content && content.getBounds()) {
         const oldWidth = sidePanels.getBounds().width;
@@ -225,7 +225,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return null;
     },
 
-    _applyStudy: function (study) {
+    _applyStudy: function(study) {
       if (study) {
         this.__initViews();
         this.__connectEvents();
@@ -245,7 +245,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__workbenchPanel.getToolbar().setStudy(study);
     },
 
-    __createTabPage: function (icon, tooltip, widget, backgroundColor = "background-main") {
+    __createTabPage: function(icon, tooltip, widget, backgroundColor = "background-main") {
       const tabPage = new qx.ui.tabview.Page().set({
         layout: new qx.ui.layout.VBox(10),
         backgroundColor,
@@ -273,7 +273,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return tabPage;
     },
 
-    __initViews: function () {
+    __initViews: function() {
       const study = this.getStudy();
       if (study === null) {
         return;
@@ -283,7 +283,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__initMainView();
     },
 
-    __initPrimaryColumn: function () {
+    __initPrimaryColumn: function() {
       const primaryColumnBGColor = "background-main-lighter+";
       const study = this.getStudy();
 
@@ -355,7 +355,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__addTopBarSpacer(topBar);
     },
 
-    __initSecondaryColumn: function () {
+    __initSecondaryColumn: function() {
       const tabViewSecondary = this.getChildControl("side-panel-right-tabs");
       this.__removePages(tabViewSecondary);
 
@@ -392,7 +392,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__populateSecondPanel();
     },
 
-    __initMainView: function () {
+    __initMainView: function() {
       const study = this.getStudy();
 
       const tabViewMain = this.getChildControl("main-panel-tabs");
@@ -430,11 +430,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       topBar.add(collapseWithUserMenu);
     },
 
-    getCollapseWithUserMenu: function () {
+    getCollapseWithUserMenu: function() {
       return this.__collapseWithUserMenu;
     },
 
-    __removePages: function (tabView) {
+    __removePages: function(tabView) {
       const pages = tabView.getChildren();
       // remove pages
       for (let i = pages.length - 1; i >= 0; i--) {
@@ -445,7 +445,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       topBar.removeAll();
     },
 
-    __addTopBarSpacer: function (tabViewTopBar) {
+    __addTopBarSpacer: function(tabViewTopBar) {
       const spacer = new qx.ui.core.Widget().set({
         backgroundColor: "contrasted-background+"
       });
@@ -454,7 +454,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __createCollapsibleViewSpacer: function () {
+    __createCollapsibleViewSpacer: function() {
       const spacer = new qx.ui.core.Widget().set({
         backgroundColor: "contrasted-background+",
         height: this.self().TAB_BUTTON_HEIGHT
@@ -462,7 +462,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return spacer;
     },
 
-    __connectEvents: function () {
+    __connectEvents: function() {
       const studyTreeItem = this.__studyTreeItem;
       const nodesTree = this.__nodesTree;
       const workbenchUI = this.__workbenchUI;
@@ -568,7 +568,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }, this);
     },
 
-    __attachSocketEventHandlers: function () {
+    __attachSocketEventHandlers: function() {
       // Listen to socket
       const socket = osparc.wrapper.WebSocket.getInstance();
 
@@ -648,7 +648,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    listenToNodeUpdated: function () {
+    listenToNodeUpdated: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
 
       const slotName = "nodeUpdated";
@@ -664,22 +664,22 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    getStartStopButtons: function () {
+    getStartStopButtons: function() {
       return this.__workbenchPanel.getToolbar().getStartStopButtons();
     },
 
-    getSelectedNodes: function () {
+    getSelectedNodes: function() {
       return this.__workbenchUI.getSelectedNodes();
     },
 
-    getSelectedNodeIDs: function () {
+    getSelectedNodeIDs: function() {
       if (this.__workbenchPanel.getMainView() === this.__workbenchUI) {
         return this.__workbenchUI.getSelectedNodeIDs();
       }
       return [this.__currentNodeId];
     },
 
-    nodeSelected: function (nodeId) {
+    nodeSelected: function(nodeId) {
       const study = this.getStudy();
       if (nodeId === null || nodeId === undefined) {
         nodeId = study.getUuid();
@@ -700,7 +700,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __evalIframe: function (node) {
+    __evalIframe: function(node) {
       if (node && node.getIFrame()) {
         this.__iframePage.getChildControl("button").set({
           enabled: true
@@ -713,12 +713,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __openWorkbenchTab: function () {
+    __openWorkbenchTab: function() {
       const tabViewMain = this.getChildControl("main-panel-tabs");
       tabViewMain.setSelection([this.__workbenchPanelPage]);
     },
 
-    __openIframeTab: function (node) {
+    __openIframeTab: function(node) {
       this.__evalIframe(node);
       const tabViewMain = this.getChildControl("main-panel-tabs");
       if (node && node.getIFrame()) {
@@ -728,7 +728,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __maximizeIframe: function (maximize) {
+    __maximizeIframe: function(maximize) {
       this.getBlocker().setStyles({
         display: maximize ? "none" : "block"
       });
@@ -740,7 +740,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       mainViewtopBar.setVisibility(maximize ? "excluded" : "visible");
     },
 
-    __addIframe: function (node) {
+    __addIframe: function(node) {
       this.__iframePage.removeAll();
 
       const loadingPage = node.getLoadingPage();
@@ -766,7 +766,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __iFrameChanged: function (node) {
+    __iFrameChanged: function(node) {
       this.__iframePage.removeAll();
 
       const loadingPage = node.getLoadingPage();
@@ -778,7 +778,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __populateSecondPanel: function (node) {
+    __populateSecondPanel: function(node) {
       [
         this.__studyOptionsPage,
         this.__infoPage,
@@ -803,7 +803,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __populateSecondPanelStudy: function (study) {
+    __populateSecondPanelStudy: function(study) {
       this.__studyOptionsPage.getChildControl("button").show();
       this.getChildControl("side-panel-right-tabs").setSelection([this.__studyOptionsPage]);
 
@@ -815,7 +815,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__studyOptionsPage.add(this.__getIterationsSection());
     },
 
-    __getSlideshowSection: function () {
+    __getSlideshowSection: function() {
       const slideshowSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       slideshowSection.add(new qx.ui.basic.Label(this.tr("App Mode")).set({
         font: "title-14"
@@ -847,7 +847,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return slideshowSection;
     },
 
-    __evalSlidesButtons: function () {
+    __evalSlidesButtons: function() {
       const study = this.getStudy();
       if (study && this.__editSlidesButton) {
         const areSlidesEnabled = osparc.data.Permissions.getInstance().canDo("study.slides");
@@ -857,7 +857,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __getSnapshotsSection: function () {
+    __getSnapshotsSection: function() {
       const snapshotSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       snapshotSection.add(new qx.ui.basic.Label(this.tr("Snapshots")).set({
         font: "title-14"
@@ -889,7 +889,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return snapshotSection;
     },
 
-    __getIterationsSection: function () {
+    __getIterationsSection: function() {
       const iterationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
       iterationsSection.add(new qx.ui.basic.Label(this.tr("Iterations")).set({
         font: "title-14"
@@ -922,7 +922,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return iterationsSection;
     },
 
-    __populateSecondPanelFilePicker: function (filePicker) {
+    __populateSecondPanelFilePicker: function(filePicker) {
       if (osparc.file.FilePicker.hasOutputAssigned(filePicker.getOutputs())) {
         this.__infoPage.getChildControl("button").show();
         this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
@@ -977,7 +977,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __populateSecondPanelParameter: function (parameter) {
+    __populateSecondPanelParameter: function(parameter) {
       this.__settingsPage.getChildControl("button").show();
       this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
 
@@ -988,7 +988,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __populateSecondPanelNode: function (node) {
+    __populateSecondPanelNode: function(node) {
       this.__settingsPage.getChildControl("button").show();
       this.__outputsPage.getChildControl("button").show();
       if (![this.__settingsPage, this.__outputsPage].includes(this.getChildControl("side-panel-right-tabs").getSelection()[0])) {
@@ -1018,11 +1018,11 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__outputsPage.add(outputFilesBtn);
     },
 
-    getLogger: function () {
+    getLogger: function() {
       return this.__loggerView;
     },
 
-    __getNodeLogger: function (nodeId) {
+    __getNodeLogger: function(nodeId) {
       const nodes = this.getStudy().getWorkbench().getNodes(true);
       for (const node of Object.values(nodes)) {
         if (nodeId === node.getNodeId()) {
@@ -1032,7 +1032,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return null;
     },
 
-    __editSlides: function () {
+    __editSlides: function() {
       const uiData = this.getStudy().getUi();
       const nodesSlidesTree = new osparc.component.widget.NodesSlidesTree(uiData.getSlideshow());
       const title = this.tr("Edit Slideshow");
@@ -1045,14 +1045,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
     },
 
-    __isSelectionEmpty: function (selectedNodeUIs) {
+    __isSelectionEmpty: function(selectedNodeUIs) {
       if (selectedNodeUIs === null || selectedNodeUIs.length === 0) {
         return true;
       }
       return false;
     },
 
-    __groupSelection: function () {
+    __groupSelection: function() {
       // Some checks
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         return;
@@ -1078,7 +1078,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__workbenchUI.resetSelectedNodes();
     },
 
-    __ungroupSelection: function () {
+    __ungroupSelection: function() {
       // Some checks
       if (!osparc.data.Permissions.getInstance().canDo("study.node.create", true)) {
         return;
@@ -1108,7 +1108,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__workbenchUI.resetSelectedNodes();
     },
 
-    __attachEventHandlers: function () {
+    __attachEventHandlers: function() {
       const maximizeIframeCb = msg => {
         this.__maximizeIframe(msg.getData());
       };
@@ -1123,7 +1123,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
 
-    __removeNode: function (nodeId) {
+    __removeNode: function(nodeId) {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete node?");
@@ -1140,7 +1140,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __doRemoveNode: function (nodeId) {
+    __doRemoveNode: function(nodeId) {
       const workbench = this.getStudy().getWorkbench();
       const connectedEdges = workbench.getConnectedEdges(nodeId);
       if (workbench.removeNode(nodeId)) {
@@ -1156,7 +1156,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __removeEdge: function (edgeId) {
+    __removeEdge: function(edgeId) {
       const workbench = this.getStudy().getWorkbench();
       const currentNode = workbench.getNode(this.__currentNodeId);
       const edge = workbench.getEdge(edgeId);
@@ -1183,12 +1183,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __workbenchChanged: function () {
+    __workbenchChanged: function() {
       this.__nodesTree.populateTree();
       this.__nodesTree.nodeSelected(this.__currentNodeId);
     },
 
-    openFirstNode: function () {
+    openFirstNode: function() {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getAutoOpenNode()) {
         const nodes = this.getStudy().getWorkbench().getNodes(true);
