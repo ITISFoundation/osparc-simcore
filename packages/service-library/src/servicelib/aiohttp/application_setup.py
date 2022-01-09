@@ -44,16 +44,47 @@ class DependencyError(ApplicationSetupError):
     pass
 
 
-def _is_app_module_enabled(cfg: Dict, parts: List[str], section) -> bool:
-    # navigates app_config (cfg) searching for section
-    searched_config = deepcopy(cfg)
-    for part in parts:
-        if section and part == "enabled":
-            # if section exists, no need to explicitly enable it
-            return strtobool(f"{searched_config.get(part, True)}")
-        searched_config = searched_config[part]
-    assert isinstance(searched_config, bool)  # nosec
-    return searched_config
+def check_addon_enabled(
+    app: web.Application, config_enabled: str, is_option_in_section: bool
+) -> bool:
+    """ONLY addons can be enabled/disabled"""
+    # TODO: sometimes section is optional, check in config schema
+
+    def _get_value(config: Dict[str, Any], dotted_key: str) -> bool:
+        """Returns value in nested-dict config"""
+        sub_config = deepcopy(config)
+        for part in dotted_key.split("."):
+            if is_option_in_section and part == "enabled":
+                # if section exists, no need to explicitly enable it
+                return strtobool(f"{sub_config.get(part, True)}")
+            sub_config = sub_config[part]
+        assert isinstance(sub_config, bool)  # nosec
+        return sub_config
+
+    # ----
+
+    try:
+        # NEW APPROACH: settings-library settings classes
+        settings = app[APP_SETTINGS_KEY]
+        is_enabled = bool(getattr(settings, config_enabled))
+
+    except (KeyError, AttributeError):
+        # LEGACY: trafaret config dicts
+        warnings.warn(
+            "dict configs are replaced settings-library settings",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        cfg = app[APP_CONFIG_KEY]
+
+        try:
+            is_enabled = _get_value(config=cfg, dotted_key=config_enabled)
+        except KeyError as ee:
+            raise ApplicationSetupError(
+                f"Cannot find required option '{config_enabled}' in app config's section '{ee}'"
+            ) from ee
+
+    return is_enabled
 
 
 def app_module_setup(
@@ -107,7 +138,7 @@ def app_module_setup(
         # if passes config_enabled, invalidates info on section
         section = None
 
-    def _decorate(setup_func: _SetupFunc):
+    def _decorator(setup_func: _SetupFunc):
 
         if "setup" not in setup_func.__name__:
             logger.warning("Rename '%s' to contain 'setup'", setup_func.__name__)
@@ -121,7 +152,6 @@ def app_module_setup(
                 "config_enabled": config_enabled,
             }
 
-        # wrapper
         @functools.wraps(setup_func)
         def _wrapper(app: web.Application, *args, **kargs) -> bool:
             # pre-setup
@@ -138,31 +168,9 @@ def app_module_setup(
                 app[APP_SETUP_KEY] = []
 
             if category == ModuleCategory.ADDON:
-                # Addons can be disabled
-                try:
-                    settings = app[APP_SETTINGS_KEY]
-                    is_enabled = bool(getattr(settings, config_enabled))
-
-                except (KeyError, AttributeError):
-                    warnings.warn(
-                        "FIXME: should ONLY be enabled via settings"
-                        "dict configs are replaced settings-library settings",
-                        DeprecationWarning,
-                        stacklevel=2,
-                    )
-
-                    # NOTE: ONLY addons can be enabled/disabled
-                    # TODO: sometimes section is optional, check in config schema
-                    cfg = app[APP_CONFIG_KEY]
-
-                    try:
-                        is_enabled = _is_app_module_enabled(
-                            cfg, config_enabled.split("."), section
-                        )
-                    except KeyError as ee:
-                        raise ApplicationSetupError(
-                            f"Cannot find required option '{config_enabled}' in app config's section '{ee}'"
-                        ) from ee
+                is_enabled = check_addon_enabled(
+                    app, config_enabled, is_option_in_section=section is not None
+                )
 
                 if not is_enabled:
                     logger.info(
@@ -216,7 +224,7 @@ def app_module_setup(
 
         return _wrapper
 
-    return _decorate
+    return _decorator
 
 
 def is_setup_function(fun):
