@@ -84,9 +84,6 @@ async def list_project_iterations(
             if not iteration:
                 raise ValueError("No iteration tag found")
 
-            total_number_of_iterations = max(
-                total_number_of_iterations, iteration.total_count
-            )
             iterations.append((wcopy_id, iteration.iter_index))
 
         except ValueError as err:
