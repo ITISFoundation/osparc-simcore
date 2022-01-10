@@ -23,7 +23,7 @@ def _get_environment_variables(
     compose_namespace: str, scheduler_data: SchedulerData, app_settings: AppSettings
 ) -> Dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
-    rabbit_settings = app_settings.CELERY.CELERY_RABBIT
+    rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
     return {
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,

@@ -123,7 +123,7 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     # e.g. CRITICAL:pika.adapters.base_connection:Could not get addresses to use: [Errno -2] Name or service not known (rabbit)
     # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
     comp_settings: ComputationSettings = get_computation_settings(app)
-    rabbit_broker = comp_settings.broker_url
+    rabbit_broker = comp_settings.dsn
 
     log.info("Creating pika connection pool for %s", rabbit_broker)
     await wait_till_rabbitmq_responsive(f"{rabbit_broker}")
@@ -206,22 +206,22 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     consumer_tasks = []
     for exchange_name, message_parser, consumer_kwargs in [
         (
-            comp_settings.rabbit.channels["log"],
+            comp_settings.RABBIT_CHANNELS["log"],
             log_message_parser,
             {"no_ack": True},
         ),
         (
-            comp_settings.rabbit.channels["progress"],
+            comp_settings.RABBIT_CHANNELS["progress"],
             progress_message_parser,
             {"no_ack": True},
         ),
         (
-            comp_settings.rabbit.channels["instrumentation"],
+            comp_settings.RABBIT_CHANNELS["instrumentation"],
             instrumentation_message_parser,
             {"no_ack": False},
         ),
         (
-            comp_settings.rabbit.channels["events"],
+            comp_settings.RABBIT_CHANNELS["events"],
             events_message_parser,
             {"no_ack": False},
         ),
