@@ -109,8 +109,8 @@ def e_tag() -> str:
 
 
 @pytest.fixture
-def symlink_path() -> Iterable[Path]:
-    file_name: Path = Path(tempfile.gettempdir()) / f"test_file_{Path(__file__).name}"
+def symlink_path(tmp_path: Path) -> Iterable[Path]:
+    file_name: Path = Path(tmp_path) / f"test_file_{Path(__file__).name}"
     symlink_path = file_name
     assert not symlink_path.exists()
     file_path = file_name.parent / f"source_{file_name.name}"
