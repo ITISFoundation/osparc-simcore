@@ -46,6 +46,7 @@ from ..models.schemas.application_health import ApplicationHealth
 from ..modules import directory_watcher, nodeports
 from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
 from ..modules.mounted_fs import MountedVolumes, get_mounted_volumes
+from ..models.schemas.ports import PortTypeName
 
 logger = logging.getLogger(__name__)
 
@@ -427,8 +428,8 @@ async def pull_input_ports(
     mounted_volumes: MountedVolumes = get_mounted_volumes()
 
     await _send_message(rabbitmq, f"Pulling inputs for {port_keys}")
-    transferred_bytes = await nodeports.download_inputs(
-        mounted_volumes.disk_inputs_path, port_keys=port_keys
+    transferred_bytes = await nodeports.download_target_port(
+        PortTypeName.INPUTS, mounted_volumes.disk_inputs_path, port_keys=port_keys
     )
     await _send_message(rabbitmq, "Finished pulling inputs")
     return transferred_bytes
@@ -483,8 +484,8 @@ async def pull_output_ports(
     mounted_volumes: MountedVolumes = get_mounted_volumes()
 
     await _send_message(rabbitmq, f"Pulling output for {port_keys}")
-    transferred_bytes = await nodeports.download_outputs(
-        mounted_volumes.disk_outputs_path, port_keys=port_keys
+    transferred_bytes = await nodeports.download_target_port(
+        PortTypeName.OUTPUTS, mounted_volumes.disk_outputs_path, port_keys=port_keys
     )
     await _send_message(rabbitmq, "Finished pulling output")
     return transferred_bytes

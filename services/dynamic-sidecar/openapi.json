@@ -449,7 +449,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Pull input ports data",
+        "summary": "Pull output ports data",
         "operationId": "pull_output_ports_v1_containers_ports_outputs_pull_post",
         "requestBody": {
           "content": {

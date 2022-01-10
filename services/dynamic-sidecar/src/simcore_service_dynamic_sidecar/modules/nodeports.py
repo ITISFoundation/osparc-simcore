@@ -23,6 +23,7 @@ from simcore_service_dynamic_sidecar.core.settings import (
     DynamicSidecarSettings,
     get_settings,
 )
+from ..models.schemas.ports import PortTypeName
 
 _FILE_TYPE_PREFIX = "data:"
 _KEY_VALUE_FILE_NAME = "key_values.json"
@@ -162,22 +163,9 @@ async def _get_data_from_port(port: Port) -> Tuple[Port, ItemConcreteValue]:
     return (port, ret)
 
 
-async def download_inputs(inputs_path: Path, port_keys: List[str]) -> ByteSize:
-    return await _download_target_port(
-        port_type_name="inputs", target_path=inputs_path, port_keys=port_keys
-    )
-
-
-async def download_outputs(outputs_path: Path, port_keys: List[str]) -> ByteSize:
-    return await _download_target_port(
-        port_type_name="outputs", target_path=outputs_path, port_keys=port_keys
-    )
-
-
-async def _download_target_port(
-    port_type_name: str, target_path: Path, port_keys: List[str]
+async def download_target_port(
+    port_type_name: PortTypeName, target_path: Path, port_keys: List[str]
 ) -> ByteSize:
-    assert port_type_name in {"inputs", "outputs"}
     logger.info("retrieving data from simcore...")
     start_time = time.perf_counter()
 
@@ -191,7 +179,7 @@ async def _download_target_port(
 
     # let's gather all the data
     download_tasks = []
-    for port_value in (await getattr(PORTS, port_type_name)).values():
+    for port_value in (await getattr(PORTS, port_type_name.value)).values():
         # if port_keys contains some keys only download them
         logger.info("Checking node %s", port_value.key)
         if port_keys and port_value.key not in port_keys:
@@ -276,4 +264,4 @@ async def _download_target_port(
     return transferred
 
 
-__all__ = ["dispatch_update_for_directory", "upload_outputs", "download_inputs"]
+__all__ = ["dispatch_update_for_directory", "download_target_port"]

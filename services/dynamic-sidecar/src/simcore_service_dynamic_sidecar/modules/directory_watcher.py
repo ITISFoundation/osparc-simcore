@@ -77,21 +77,19 @@ def async_run_once_after_event_chain(
     return internal
 
 
-async def push_directory_via_nodeports(directory_path: Path) -> None:
+async def push_directory(directory_path: Path) -> None:
     await nodeports.dispatch_update_for_directory(directory_path)
 
 
 @async_run_once_after_event_chain(detection_interval=DETECTION_INTERVAL)
-async def invoke_push_directory_via_nodeports(directory_path: Path) -> None:
-    await push_directory_via_nodeports(directory_path)
+async def invoke_push_directory(directory_path: Path) -> None:
+    await push_directory(directory_path)
 
 
 def trigger_async_invoke_push_mapped_data(
     loop: AbstractEventLoop, directory_path: Path
 ) -> None:
-    loop.create_task(
-        invoke_push_directory_via_nodeports(directory_path), name=TASK_NAME_FOR_CLEANUP
-    )
+    loop.create_task(invoke_push_directory(directory_path), name=TASK_NAME_FOR_CLEANUP)
 
 
 class UnifyingEventHandler(FileSystemEventHandler):
