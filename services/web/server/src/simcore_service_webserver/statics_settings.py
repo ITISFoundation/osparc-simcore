@@ -34,12 +34,6 @@ def discover_osparc_dependencies() -> List[OsparcDependency]:
             thumbnail="https://www.adminer.org/static/images/logo.png",
         ),
         OsparcDependency(
-            name="celery",
-            version="-",
-            url="https://docs.celeryproject.org/en/stable/",
-            thumbnail="https://www.fullstackpython.com/img/logos/celery.png",
-        ),
-        OsparcDependency(
             name="dask",
             version="-",
             url="https://docs.dask.org/en/latest/scheduler-overview.html",
