@@ -10,11 +10,14 @@ from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectIDStr
 
 from .projects.project_models import ProjectDict
-from .version_control_changes import compute_workbench_checksum, eval_wcopy_project_id
+from .version_control_changes import (
+    compute_workbench_checksum,
+    eval_workcopy_project_id,
+)
 from .version_control_db import VersionControlRepository
 from .version_control_errors import UserUndefined
 from .version_control_models import CommitID, TagProxy
-from .version_control_tags import compose_wcopy_project_tag_name
+from .version_control_tags import compose_workcopy_project_tag_name
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +26,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
 
     # TODO: eval inheritace vs composition?
 
-    async def get_wcopy_project_id(
+    async def get_workcopy_project_id(
         self, repo_id: int, commit_id: Optional[int] = None
     ) -> ProjectIDStr:
         async with self.engine.acquire() as conn:
@@ -33,11 +36,11 @@ class VersionControlForMetaModeling(VersionControlRepository):
                 commit_id = commit.id
                 assert commit_id
 
-            return await self._fetch_wcopy_project_id(repo_id, commit_id, conn)
+            return await self._fetch_workcopy_project_id(repo_id, commit_id, conn)
 
-    async def get_wcopy_project(self, repo_id: int, commit_id: int) -> ProjectDict:
+    async def get_workcopy_project(self, repo_id: int, commit_id: int) -> ProjectDict:
         async with self.engine.acquire() as conn:
-            project_id = await self._fetch_wcopy_project_id(repo_id, commit_id, conn)
+            project_id = await self._fetch_workcopy_project_id(repo_id, commit_id, conn)
             project = await self.ProjectsOrm(conn).set_filter(uuid=project_id).fetch()
             assert project  # nosec
             return dict(project.items())
@@ -76,7 +79,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
                 project_as_dict["thumbnail"] = project_as_dict["thumbnail"] or ""
             return project_as_dict
 
-    async def force_branch_and_wcopy(
+    async def force_branch_and_workcopy(
         self,
         repo_id: int,
         start_commit_id: int,
@@ -96,7 +99,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
             if tag := await self.TagsOrm(conn).set_filter(name=tag_name).fetch():
                 return tag.commit_id
 
-            # get wcopy for start_commit_id and update with 'project'
+            # get workcopy for start_commit_id and update with 'project'
             repo = (
                 await self.ReposOrm(conn).set_filter(id=repo_id).fetch("project_uuid")
             )
@@ -123,7 +126,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
                 assert isinstance(commit_id, int)  # nosec
 
                 # creates unique identifier for variant
-                project["uuid"] = eval_wcopy_project_id(
+                project["uuid"] = eval_workcopy_project_id(
                     repo.project_uuid, snapshot_checksum
                 )
 
@@ -143,7 +146,10 @@ class VersionControlForMetaModeling(VersionControlRepository):
                 )
                 assert isinstance(branch, RowProxy)  # nosec
 
-                for tag in [tag_name, compose_wcopy_project_tag_name(project["uuid"])]:
+                for tag in [
+                    tag_name,
+                    compose_workcopy_project_tag_name(project["uuid"]),
+                ]:
                     await self.TagsOrm(conn).insert(
                         repo_id=repo_id,
                         commit_id=commit_id,

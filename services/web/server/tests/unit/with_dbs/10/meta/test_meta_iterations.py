@@ -134,7 +134,7 @@ async def test_iterators_workflow(
 
     assert len(first_iterlist) == 3
 
-    # GET wcopy project for iter 0 ----------------------------------------------
+    # GET workcopy project for iter 0 ----------------------------------------------
     async def _mock_catalog_get(app, user_id, product_name, only_key_versions):
         return [
             {"key": s["key"], "version": s["version"]}
@@ -148,7 +148,7 @@ async def test_iterators_workflow(
 
     # extract outputs
     for i, prj_iter in enumerate(first_iterlist):
-        resp = await client.get(prj_iter.wcopy_project_url.path)
+        resp = await client.get(prj_iter.workcopy_project_url.path)
         assert resp.status == HTTPStatus.OK
 
         body = await resp.json()
@@ -223,10 +223,10 @@ async def test_iterators_workflow(
     second_iterlist = Page[ProjectIterationAsItem].parse_obj(body).data
 
     assert len(second_iterlist) == 4
-    assert len(set(it.wcopy_project_id for it in second_iterlist)) == len(
+    assert len(set(it.workcopy_project_id for it in second_iterlist)) == len(
         second_iterlist
     ), "unique"
 
     # TODO: cached iterations will be implemented in next PR
     # for i in range(len(first_iterlist)):
-    #    assert second_iterlist[i].wcopy_project_id == first_iterlist[i].wcopy_project_id
+    #    assert second_iterlist[i].workcopy_project_id == first_iterlist[i].workcopy_project_id

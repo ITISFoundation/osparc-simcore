@@ -19,7 +19,7 @@ from .rest_utils import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 from .utils_aiohttp import create_url_for_function, envelope_json_response
 from .version_control_models import CheckpointID, CommitID, TagProxy
-from .version_control_tags import parse_wcopy_project_tag_name
+from .version_control_tags import parse_workcopy_project_tag_name
 
 log = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ async def list_project_iterations(
     total_number_of_iterations = 0  # count number of iterations
 
     # Search all subsequent commits (i.e. children) and retrieve their tags
-    # Select range on those tagged as iterations and returned their assigned wcopy id
+    # Select range on those tagged as iterations and returned their assigned workcopy id
     # Can also check all associated project uuids and see if they exists
     # FIXME: do all these operations in database
     tags_per_child: List[List[TagProxy]] = await vc_repo.get_children_tags(
@@ -61,7 +61,7 @@ async def list_project_iterations(
         # not certain if tags we need
         try:
             iteration: Optional[ProjectIteration] = None
-            wcopy_id: Optional[ProjectID] = None
+            workcopy_id: Optional[ProjectID] = None
 
             for tag in tags:
                 if pim := ProjectIteration.from_tag_name(
@@ -72,19 +72,21 @@ async def list_project_iterations(
                             f"This entry has more than one iteration {tag=}"
                         )
                     iteration = pim
-                elif pid := parse_wcopy_project_tag_name(tag.name):
-                    if wcopy_id:
-                        raise ValueError(f"This entry has more than one wcopy  {tag=}")
-                    wcopy_id = pid
+                elif pid := parse_workcopy_project_tag_name(tag.name):
+                    if workcopy_id:
+                        raise ValueError(
+                            f"This entry has more than one workcopy  {tag=}"
+                        )
+                    workcopy_id = pid
                 else:
                     log.debug("Got %s for children of %s", f"{tag=}", f"{commit_id=}")
 
-            if not wcopy_id:
+            if not workcopy_id:
                 raise ValueError("No working copy found")
             if not iteration:
                 raise ValueError("No iteration tag found")
 
-            iterations.append((wcopy_id, iteration.iter_index))
+            iterations.append((workcopy_id, iteration.iter_index))
 
         except ValueError as err:
             log.debug("Skipping child %s: %s", n, err)
@@ -126,13 +128,13 @@ class ProjectIterationAsItem(BaseModel):
         ..., description="Reference to the the meta-project that created this iteration"
     )
 
-    wcopy_project_id: ProjectID = Field(
+    workcopy_project_id: ProjectID = Field(
         ...,
         description="ID to this iteration's working copy."
         "A working copy is a real project where this iteration is run",
     )
 
-    wcopy_project_url: HttpUrl = Field(
+    workcopy_project_url: HttpUrl = Field(
         ..., description="reference to working copy project"
     )
     url: HttpUrl = Field(..., description="self reference")
@@ -190,8 +192,8 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
         ProjectIterationAsItem(
             name=f"projects/{_project_uuid}/checkpoint/{commit_id}/iterations/{iter_id}",
             parent=ParentMetaProjectRef(project_id=_project_uuid, ref_id=commit_id),
-            wcopy_project_id=wcp_id,
-            wcopy_project_url=url_for(
+            workcopy_project_id=wcp_id,
+            workcopy_project_url=url_for(
                 "get_project",
                 project_id=wcp_id,
             ),
@@ -249,8 +251,8 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
         ProjectIterationAsItem(
             name=f"projects/{_project_uuid}/checkpoint/{commit_id}/iterations/{iter_id}",
             parent=ParentMetaProjectRef(project_id=_project_uuid, ref_id=commit_id),
-            wcopy_project_id=wcp_id,
-            wcopy_project_url=url_for(
+            workcopy_project_id=wcp_id,
+            workcopy_project_url=url_for(
                 "get_project",
                 project_id=wcp_id,
             ),
@@ -266,7 +268,7 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
     return envelope_json_response(iterations_items, web.HTTPCreated)
 
 
-# TODO: registry as route when implemented. Currently iteration is retrieved via GET /projects/{wcopy_project_id}
+# TODO: registry as route when implemented. Currently iteration is retrieved via GET /projects/{workcopy_project_id}
 # @routes.get(
 #     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}",
 #     name=f"{__name__}._get_meta_project_iterations_handler",

@@ -3012,8 +3012,8 @@ paths:
                       required:
                         - name
                         - parent
-                        - wcopy_project_id
-                        - wcopy_project_url
+                        - workcopy_project_id
+                        - workcopy_project_url
                         - url
                       type: object
                       properties:
@@ -3038,13 +3038,13 @@ paths:
                                   title: Ref Id
                                   type: integer
                           description: Reference to the the meta-project that defines this iteration
-                        wcopy_project_id:
-                          title: Wcopy Project Id
+                        workcopy_project_id:
+                          title: Workcopy's Project Id
                           type: string
                           description: ID to this iteration's working copy.A working copy is a real project where this iteration is run
                           format: uuid
-                        wcopy_project_url:
-                          title: Wcopy Project Url
+                        workcopy_project_url:
+                          title: Workcopy's Project Url
                           maxLength: 2083
                           minLength: 1
                           type: string

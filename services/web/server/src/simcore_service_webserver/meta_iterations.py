@@ -121,7 +121,7 @@ def extract_parameters(
 
 class ProjectIteration(BaseModel):
     """
-    - Keeps a reference of the version: vc repo/commit and wcopy
+    - Keeps a reference of the version: vc repo/commit and workcopy
     - Keeps a reference of the interation: order, parameters (for the moment, only hash), ...
 
     - de/serializes from/to a vc tag
@@ -283,7 +283,7 @@ async def get_or_create_runnable_projects(
         # tag to identify this iteration
         branch_name = tag_name = project_iteration.to_tag_name()
 
-        commit_id = await vc_repo.force_branch_and_wcopy(
+        commit_id = await vc_repo.force_branch_and_workcopy(
             repo_id,
             start_commit_id=main_commit_id,
             project=project,
@@ -292,9 +292,9 @@ async def get_or_create_runnable_projects(
             tag_message=json.dumps(parameters),
         )
 
-        wcopy_project_id = await vc_repo.get_wcopy_project_id(repo_id, commit_id)
+        workcopy_project_id = await vc_repo.get_workcopy_project_id(repo_id, commit_id)
 
-        runnable_project_ids.append(ProjectID(wcopy_project_id))
+        runnable_project_ids.append(ProjectID(workcopy_project_id))
         runnable_project_vc_commits.append(commit_id)
 
     return runnable_project_ids, runnable_project_vc_commits

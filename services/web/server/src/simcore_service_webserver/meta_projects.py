@@ -48,15 +48,15 @@ async def projects_redirection_middleware(request: web.Request, handler: _Handle
                 #
                 # TODO: optimize db calls
                 #
-                wcopy_project_id = await vc_repo.get_wcopy_project_id(repo_id)
-                request.match_info["project_id"] = f"{wcopy_project_id}"
+                workcopy_project_id = await vc_repo.get_workcopy_project_id(repo_id)
+                request.match_info["project_id"] = f"{workcopy_project_id}"
 
-                if f"{wcopy_project_id}" != f"{project_id}":
-                    request[RQ_REQUESTED_REPO_PROJECT_UUID_KEY] = wcopy_project_id
+                if f"{workcopy_project_id}" != f"{project_id}":
+                    request[RQ_REQUESTED_REPO_PROJECT_UUID_KEY] = workcopy_project_id
                     log.debug(
                         "Redirecting request with %s to working copy %s",
                         f"{project_id=}",
-                        f"{wcopy_project_id=}",
+                        f"{workcopy_project_id=}",
                     )
 
     response = await handler(request)
