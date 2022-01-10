@@ -80,22 +80,17 @@ def dir_with_random_content() -> Iterable[Path]:
 
 
 @pytest.fixture
-def file_content(faker: Faker) -> str:
-    return faker.text()
-
-
-@pytest.fixture
-def exclude_patterns_validation_dir(tmp_path: Path, file_content: str) -> Path:
+def exclude_patterns_validation_dir(tmp_path: Path, faker: Faker) -> Path:
     """Directory with well known structure"""
     base_dir = tmp_path / "exclude_patterns_validation_dir"
     base_dir.mkdir()
     (base_dir / "empty").mkdir()
     (base_dir / "d1").mkdir()
-    (base_dir / "d1" / "f1").write_text(file_content)
-    (base_dir / "d1" / "f2.txt").write_text(file_content)
+    (base_dir / "d1" / "f1").write_text(faker.text())
+    (base_dir / "d1" / "f2.txt").write_text(faker.text())
     (base_dir / "d1" / "sd1").mkdir()
-    (base_dir / "d1" / "sd1" / "f1").write_text(file_content)
-    (base_dir / "d1" / "sd1" / "f2.txt").write_text(file_content)
+    (base_dir / "d1" / "sd1" / "f1").write_text(faker.text())
+    (base_dir / "d1" / "sd1" / "f2.txt").write_text(faker.text())
 
     print("exclude_patterns_validation_dir ---")
     print_tree(base_dir)
