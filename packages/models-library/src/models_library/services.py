@@ -253,14 +253,12 @@ class ServiceOutput(ServiceProperty):
     class Config(ServiceProperty.Config):
         schema_extra = {
             "examples": [
-                # v1
                 {
                     "displayOrder": 2,
                     "label": "Time Slept",
                     "description": "Time the service waited before completion",
                     "type": "number",
                 },
-                # v2
                 {
                     "displayOrder": 2,
                     "label": "Time Slept",
@@ -268,18 +266,16 @@ class ServiceOutput(ServiceProperty):
                     "type": "number",
                     "unit": "second",
                 },
-                # latest:
                 {
                     "label": "Time Slept",
                     "description": "Time the service waited before completion",
                     "type": "number",
                     "unit": "second",
                 },
-                # file data type
                 {
-                    "label": "Output files 1",
+                    "label": "Output file 1",
                     "displayOrder": 4.0,
-                    "description": "Output files uploaded from the outputs folder",
+                    "description": "Output file uploaded from the outputs folder",
                     "type": "data:*/*",
                 },
             ]
