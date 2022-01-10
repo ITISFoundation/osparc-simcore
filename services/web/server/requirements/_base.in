@@ -38,8 +38,7 @@ asyncpg
 aioredis
 aioredlock
 
-# scheduling, queues and AMQP client
-celery[redis]
+# RabbitMQ client
 aio-pika
 
 # email
