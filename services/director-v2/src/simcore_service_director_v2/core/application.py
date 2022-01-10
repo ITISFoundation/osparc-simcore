@@ -16,6 +16,7 @@ from ..api.errors.http_error import (
 from ..api.errors.validation_error import http422_error_handler
 from ..meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
 from ..modules import (
+    comp_scheduler,
     dask_clients_pool,
     db,
     director_v0,
@@ -77,6 +78,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     if settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_SCHEDULER_ENABLED:
         rabbitmq.setup(app)
+        comp_scheduler.setup(app)
 
     if settings.DIRECTOR_V2_TRACING:
         setup_tracing(app, settings.DIRECTOR_V2_TRACING)

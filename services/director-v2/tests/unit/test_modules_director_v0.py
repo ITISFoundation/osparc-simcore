@@ -32,7 +32,6 @@ def minimal_director_config(project_env_devel_environment, monkeypatch):
     """set a minimal configuration for testing the director connection only"""
     monkeypatch.setenv("DIRECTOR_ENABLED", "1")
     monkeypatch.setenv("POSTGRES_ENABLED", "0")
-    monkeypatch.setenv("CELERY_ENABLED", "0")
     monkeypatch.setenv("REGISTRY_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V0_ENABLED", "1")
