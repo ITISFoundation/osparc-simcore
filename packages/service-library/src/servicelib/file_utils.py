@@ -22,6 +22,10 @@ async def remove_directory(
     path: Path, only_children: bool = False, ignore_errors: bool = False
 ) -> None:
     """Optional parameter allows to remove all children and keep directory"""
+
+    # below checks should not be required, since they are not raised
+    # by the underlying libraries, will continue to check and raise in
+    # the context of this function.
     if not path.exists():
         if ignore_errors:
             return
