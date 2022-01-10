@@ -207,6 +207,6 @@ def mock_dir_watcher_on_any_event(
     mock = Mock(return_value=None)
 
     monkeypatch.setattr(
-        app.state.dir_watcher.outputs_event_handle, "_invoke_trigger", mock
+        app.state.dir_watcher.outputs_event_handle, "_invoke_push_directory", mock
     )
     yield mock

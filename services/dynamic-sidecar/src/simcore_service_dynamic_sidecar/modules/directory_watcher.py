@@ -82,14 +82,14 @@ async def push_directory(directory_path: Path) -> None:
 
 
 @async_run_once_after_event_chain(detection_interval=DETECTION_INTERVAL)
-async def invoke_push_directory(directory_path: Path) -> None:
+async def push_directory_after_event_chain(directory_path: Path) -> None:
     await push_directory(directory_path)
 
 
-def trigger_async_invoke_push_mapped_data(
-    loop: AbstractEventLoop, directory_path: Path
-) -> None:
-    loop.create_task(invoke_push_directory(directory_path), name=TASK_NAME_FOR_CLEANUP)
+def async_run_push_directory(loop: AbstractEventLoop, directory_path: Path) -> None:
+    loop.create_task(
+        push_directory_after_event_chain(directory_path), name=TASK_NAME_FOR_CLEANUP
+    )
 
 
 class UnifyingEventHandler(FileSystemEventHandler):
@@ -103,14 +103,15 @@ class UnifyingEventHandler(FileSystemEventHandler):
     def set_enabled(self, is_enabled: bool) -> None:
         self._is_enabled = is_enabled
 
-    def _invoke_trigger(self) -> None:
-        # this function to function call helps with testing
-        trigger_async_invoke_push_mapped_data(self.loop, self.directory_path)
+    def _invoke_push_directory(self) -> None:
+        # wrapping the function call in the object
+        # helps with testing, it is simplet to mock
+        async_run_push_directory(self.loop, self.directory_path)
 
     def on_any_event(self, event: FileSystemEvent) -> None:
         super().on_any_event(event)
         if self._is_enabled:
-            self._invoke_trigger()
+            self._invoke_push_directory()
 
 
 class DirectoryWatcherObservers:
