@@ -906,7 +906,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const resetFileBtn = new qx.ui.form.Button(this.tr("Reset"), "@FontAwesome5Solid/sync-alt/14").set({
           allowGrowX: false
         });
-        resetFileBtn.addListener("execute", () => osparc.file.FilePicker.resetOutputValue(filePicker));
+        resetFileBtn.addListener("execute", () => {
+          osparc.file.FilePicker.resetOutputValue(filePicker);
+          this.getStudy().getWorkbench().giveUniqueNameToNode(filePicker, "File Picker");
+          this.__populateSecondPanel(filePicker);
+          this.getStudy().getWorkbench().fireEvent("reloadModel");
+        }, this);
         hbox.add(resetFileBtn);
         this.__infoPage.add(hbox);
       } else {
