@@ -897,7 +897,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         this.__infoPage.add(view);
 
-        const hbox = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+        const hbox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
         const downloadFileBtn = new qx.ui.form.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/14").set({
           allowGrowX: false
         });
@@ -906,7 +906,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const resetFileBtn = new qx.ui.form.Button(this.tr("Reset"), "@FontAwesome5Solid/sync-alt/14").set({
           allowGrowX: false
         });
-        resetFileBtn.addListener("execute", () => console.log("reset file"));
+        resetFileBtn.addListener("execute", () => osparc.file.FilePicker.resetOutputValue(filePicker));
         hbox.add(resetFileBtn);
         this.__infoPage.add(hbox);
       } else {

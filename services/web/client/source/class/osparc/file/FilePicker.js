@@ -108,13 +108,13 @@ qx.Class.define("osparc.file.FilePicker", {
       outputs["outFile"]["value"] = outputValue;
       node.setOutputs({});
       node.setOutputs(outputs);
-      node.getStatus().setHasOutputs(true);
+      node.getStatus().setHasOutputs(Boolean(outputValue));
       node.getStatus().setModified(false);
       const outLabel = osparc.file.FilePicker.getOutputLabel(outputs);
       if (outLabel) {
         node.setLabel(outputValue.label);
       }
-      node.getStatus().setProgress(100);
+      node.getStatus().setProgress(outputValue ? 100 : 0);
     },
 
     setOutputValueFromStore: function(node, store, dataset, path, label) {
@@ -137,6 +137,11 @@ qx.Class.define("osparc.file.FilePicker", {
           label: label ? label : ""
         });
       }
+    },
+
+    resetOutputValue: function(node) {
+      // eslint-disable-next-line no-underscore-dangle
+      osparc.file.FilePicker.__setOutputValue(node, null);
     },
 
     getOutputFileMetadata: function(node) {
