@@ -192,7 +192,7 @@ def iter_service_docker_data() -> Iterator[ServiceDockerData]:
         yield model_instance
 
 
-# VALIDATORS --------------------------------------
+# HELPER --------------------------------------
 
 
 def is_frontend_service(service_key: str) -> bool:
