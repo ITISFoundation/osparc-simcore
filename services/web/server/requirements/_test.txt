@@ -17,7 +17,7 @@ alembic==1.7.5
     # via
     #   -c requirements/_packages.txt
     #   -r requirements/_test.in
-amqp==5.0.6
+amqp==5.0.9
     # via
     #   -c requirements/_base.txt
     #   kombu
@@ -42,7 +42,7 @@ billiard==3.6.4.0
     # via
     #   -c requirements/_base.txt
     #   celery
-celery==5.1.2
+celery==5.2.2
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
@@ -61,7 +61,7 @@ chardet==4.0.0
     #   aiohttp
 charset-normalizer==2.0.8
     # via requests
-click==7.1.2
+click==8.0.3
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -146,7 +146,7 @@ jsonschema==3.2.0
     #   docker-compose
     #   openapi-schema-validator
     #   openapi-spec-validator
-kombu==5.1.0
+kombu==5.2.3
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -309,8 +309,6 @@ toml==0.10.2
     #   pytest
 tomli==1.2.2
     # via coverage
-trafaret==2.1.0
-    # via -c requirements/_base.txt
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
