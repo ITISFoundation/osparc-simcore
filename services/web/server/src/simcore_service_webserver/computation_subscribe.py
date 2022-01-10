@@ -206,22 +206,22 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     consumer_tasks = []
     for exchange_name, message_parser, consumer_kwargs in [
         (
-            comp_settings.rabbit.channels["log"],
+            comp_settings.RABBIT_CHANNELS["log"],
             log_message_parser,
             {"no_ack": True},
         ),
         (
-            comp_settings.rabbit.channels["progress"],
+            comp_settings.RABBIT_CHANNELS["progress"],
             progress_message_parser,
             {"no_ack": True},
         ),
         (
-            comp_settings.rabbit.channels["instrumentation"],
+            comp_settings.RABBIT_CHANNELS["instrumentation"],
             instrumentation_message_parser,
             {"no_ack": False},
         ),
         (
-            comp_settings.rabbit.channels["events"],
+            comp_settings.RABBIT_CHANNELS["events"],
             events_message_parser,
             {"no_ack": False},
         ),
