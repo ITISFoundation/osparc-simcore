@@ -44,7 +44,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     this.__nodesUI = [];
     this.__edgesUI = [];
-    this.__selectedNodes = [];
+    this.__selectedNodeUIs = [];
 
     this._setLayout(new qx.ui.layout.HBox());
 
@@ -87,6 +87,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
   events: {
     "nodeSelected": "qx.event.type.Data",
     "removeNode": "qx.event.type.Data",
+    "removeNodes": "qx.event.type.Data",
     "removeEdge": "qx.event.type.Data",
     "changeSelectedNode": "qx.event.type.Data"
   },
@@ -112,7 +113,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __unlinkButton: null,
     __nodesUI: null,
     __edgesUI: null,
-    __selectedNodes: null,
+    __selectedNodeUIs: null,
     __inputNodesLayout: null,
     __outputNodesLayout: null,
     __workbenchLayer: null,
@@ -127,6 +128,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __selectedItemId: null,
     __startHint: null,
     __dropMe: null,
+    __rectInitPos: null,
+    __rectRepr: null,
     __panning: null,
     __isDraggingFile: null,
     __isDraggingLink: null,
@@ -426,40 +429,47 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     getSelectedNodes: function() {
-      return this.__selectedNodes;
+      return this.__selectedNodeUIs;
     },
 
     getSelectedNodeIDs: function() {
       const selectedNodeIDs = [];
-      this.__selectedNodes.forEach(nodeUI => {
+      this.__selectedNodeUIs.forEach(nodeUI => {
         selectedNodeIDs.push(nodeUI.getNodeId());
       });
       return selectedNodeIDs;
     },
 
     resetSelectedNodes: function() {
-      this.__selectedNodes.forEach(node => node.removeState("selected"));
-      this.__selectedNodes = [];
-      qx.event.message.Bus.dispatchByName("changeWorkbenchSelection", []);
+      this.__setSelectedNodes([]);
     },
 
-    activeNodeChanged: function(activeNode, isControlPressed = false) {
+    __setSelectedNodes: function(selectedNodeUIs) {
+      this.__selectedNodeUIs.forEach(node => {
+        if (!selectedNodeUIs.includes(node)) {
+          node.removeState("selected");
+        }
+      });
+      selectedNodeUIs.forEach(selectedNode => selectedNode.addState("selected"));
+      this.__selectedNodeUIs = selectedNodeUIs;
+      qx.event.message.Bus.dispatchByName("changeWorkbenchSelection", selectedNodeUIs.map(selected => selected.getNode()));
+    },
+
+    activeNodeChanged: function(activeNodeUI, isControlPressed = false) {
       if (isControlPressed) {
-        if (this.__selectedNodes.includes(activeNode)) {
-          const index = this.__selectedNodes.indexOf(activeNode);
-          this.__selectedNodes.splice(index, 1);
-          activeNode.removeState("selected");
+        const index = this.__selectedNodeUIs.indexOf(activeNodeUI);
+        if (index > -1) {
+          activeNodeUI.removeState("selected");
+          this.__selectedNodeUIs.splice(index, 1);
         } else {
-          this.__selectedNodes.push(activeNode);
-          activeNode.addState("selected");
+          activeNodeUI.addState("selected");
+          this.__selectedNodeUIs.push(activeNodeUI);
+          this.__selectedItemChanged(activeNodeUI.getNodeId());
         }
       } else {
-        this.__selectedNodes.forEach(node => node.removeState("selected"));
-        this.__selectedNodes = [activeNode];
-        activeNode.addState("selected");
+        this.__setSelectedNodes([activeNodeUI]);
+        this.__selectedItemChanged(activeNodeUI.getNodeId());
       }
-      this.__selectedItemChanged(activeNode.getNodeId());
-      qx.event.message.Bus.dispatchByName("changeWorkbenchSelection", this.__selectedNodes.map(selected => selected.getNode()));
     },
 
     _createNodeUI: function(nodeId) {
@@ -1124,19 +1134,29 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __mouseDown: function(e) {
-      if (e.isRightPressed()) {
-        this.__openContextMenu(e);
-      } else if (e.isMiddlePressed()) {
+      if (e.isMiddlePressed()) {
         this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
         this.__panning = true;
         this.set({
           cursor: "move"
         });
+      } else if (e.isRightPressed()) {
+        this.__openContextMenu(e);
+      }
+    },
+
+    __mouseDownOnSVG: function(e) {
+      if (e.isLeftPressed()) {
+        this.__rectInitPos = this.__pointerEventToWorkbenchPos(e);
       }
     },
 
     __mouseMove: function(e) {
-      if (this.__panning && e.isMiddlePressed()) {
+      if (this.__isDraggingLink) {
+        this.__draggingLink(e, true);
+      } else if (this.__tempEdgeRepr === null && this.__rectInitPos && e.isLeftPressed()) {
+        this.__drawingRect(e);
+      } else if (this.__panning && e.isMiddlePressed()) {
         const oldPos = this.__pointerPos;
         const newPos = this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
         const moveX = parseInt((oldPos.x-newPos.x) * this.getScale());
@@ -1146,12 +1166,18 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.set({
           cursor: "move"
         });
-      } else if (this.__isDraggingLink) {
-        this.__draggingLink(e, true);
       }
     },
 
     __mouseUp: function(e) {
+      if (this.__rectInitPos) {
+        this.__rectInitPos = null;
+      }
+      if (this.__rectRepr) {
+        osparc.component.workbench.SvgWidget.removeRect(this.__rectRepr);
+        this.__rectRepr = null;
+      }
+
       if (this.__panning) {
         this.__panning = false;
         this.set({
@@ -1160,6 +1186,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       } else if (this.__isDraggingLink) {
         this.__dropLink(e);
       }
+
+      this.activate();
     },
 
     __mouseWheel: function(e) {
@@ -1320,39 +1348,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     _addEventListeners: function() {
       this.addListener("appear", () => {
-        // Reset filters and sidebars
-        // osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
-        // osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "visible");
-
-        // qx.event.message.Bus.getInstance().dispatchByName("maximizeIframe", false);
-
         this.addListener("resize", () => this.__updateAllEdges(), this);
-      });
-
-      this.addListener("keypress", keyEvent => {
-        const selectedNodeIDs = this.getSelectedNodeIDs();
-        if (selectedNodeIDs.length === 1) {
-          switch (keyEvent.getKeyIdentifier()) {
-            case "F2":
-              this.__openNodeRenamer(selectedNodeIDs[0]);
-              break;
-            case "I":
-              this.__openNodeInfo(selectedNodeIDs[0]);
-              break;
-            case "Delete":
-              this.fireDataEvent("removeNode", selectedNodeIDs[0]);
-              break;
-            case "Escape":
-              this.resetSelectedNodes();
-              break;
-          }
-        } else if (keyEvent.getKeyIdentifier() === "Delete" && this.__isSelectedItemAnEdge()) {
-          this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
-          this.__selectedItemChanged(null);
-        } else if (keyEvent.getKeyIdentifier() === "Escape") {
-          this.__removeTempEdge();
-          this.__removePointerMoveListener();
-        }
       }, this);
 
       this.addListenerOnce("appear", () => {
@@ -1387,22 +1383,43 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.addListener("mouseup", this.__mouseUp, this);
       });
 
-      this.addListener("disappear", () => {
-        // Reset filters
-        // osparc.component.filter.UIFilterController.getInstance().resetGroup("workbench");
-        // osparc.component.filter.UIFilterController.getInstance().setContainerVisibility("workbench", "excluded");
-      });
+      this.addListener("keypress", keyEvent => {
+        const selectedNodeIDs = this.getSelectedNodeIDs();
+        if (selectedNodeIDs.length === 1) {
+          switch (keyEvent.getKeyIdentifier()) {
+            case "F2":
+              this.__openNodeRenamer(selectedNodeIDs[0]);
+              break;
+            case "I":
+              this.__openNodeInfo(selectedNodeIDs[0]);
+              break;
+            case "Delete":
+              this.fireDataEvent("removeNode", selectedNodeIDs[0]);
+              break;
+            case "Escape":
+              this.resetSelectedNodes();
+              break;
+          }
+        } else if (keyEvent.getKeyIdentifier() === "Delete" && this.__isSelectedItemAnEdge()) {
+          this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
+          this.__selectedItemChanged(null);
+        } else if (keyEvent.getKeyIdentifier() === "Delete") {
+          this.fireDataEvent("removeNodes", selectedNodeIDs);
+        } else if (keyEvent.getKeyIdentifier() === "Escape") {
+          this.resetSelectedNodes();
+          this.__removeTempEdge();
+          this.__removePointerMoveListener();
+        }
+      }, this);
 
       this.__workbenchLayout.addListener("tap", () => {
         this.resetSelectedNodes();
         this.__selectedItemChanged(null);
       }, this);
-
-      this.__workbenchLayout.addListener("dbltap", e => {
-        this.__openServiceCatalog(e);
-      }, this);
-
+      this.__workbenchLayout.addListener("dbltap", e => this.__openServiceCatalog(e), this);
       this.__workbenchLayout.addListener("resize", () => this.__updateHint(), this);
+
+      this.__svgLayer.addListener("mousedown", this.__mouseDownOnSVG, this);
     },
 
     __allowDragFile: function(e) {
@@ -1489,11 +1506,44 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           top: posY - parseInt(dropMeBounds.height/2)- parseInt(boxHeight/2)
         });
         if ("rect" in dropMe) {
-          osparc.component.workbench.SvgWidget.updateRect(dropMe.rect, posX - boxWidth, posY - boxHeight);
+          osparc.component.workbench.SvgWidget.updateRectPos(dropMe.rect, posX - boxWidth, posY - boxHeight);
         }
       } else {
         this.__removeDropHint();
       }
+    },
+
+    __drawingRect: function(e) {
+      // draw rect
+      const initPos = this.__rectInitPos;
+      const currentPos = this.__pointerEventToWorkbenchPos(e);
+      const x = Math.min(initPos.x, currentPos.x);
+      const y = Math.min(initPos.y, currentPos.y);
+      const width = Math.abs(initPos.x - currentPos.x);
+      const height = Math.abs(initPos.y - currentPos.y);
+      if (this.__rectRepr === null) {
+        this.__rectRepr = this.__svgLayer.drawFilledRect(width, height, x, y);
+      } else {
+        osparc.component.workbench.SvgWidget.updateRect(this.__rectRepr, width, height, x, y);
+      }
+
+      // select nodes
+      const nodeUIs = [];
+      this.__nodesUI.forEach(nodeUI => {
+        const nodeBounds = nodeUI.getCurrentBounds();
+        if (nodeBounds) {
+          const nodePos = nodeUI.getNode().getPosition();
+          const nodePosX = nodePos.x + nodeBounds.width/2;
+          const nodePosY = nodePos.y + nodeBounds.height/2;
+          if (nodePosX > x &&
+            nodePosX < x+width &&
+            nodePosY > y &&
+            nodePosY < y+height) {
+            nodeUIs.push(nodeUI);
+          }
+        }
+      });
+      this.__setSelectedNodes(nodeUIs);
     },
 
     __dropFile: function(e) {
