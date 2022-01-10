@@ -132,8 +132,10 @@ class ProjectIterationAsItem(BaseModel):
         "A working copy is a real project where this iteration is run",
     )
 
-    wcopy_project_url: HttpUrl  # should be read-only!
-    url: HttpUrl  # self
+    wcopy_project_url: HttpUrl = Field(
+        ..., description="reference to working copy project"
+    )
+    url: HttpUrl = Field(..., description="self reference")
 
 
 # ROUTES ------------------------------------------------------------
