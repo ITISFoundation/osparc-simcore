@@ -9,10 +9,10 @@ from servicelib.aiohttp import monitor_services
 from servicelib.aiohttp.monitoring import get_collector_registry
 from servicelib.aiohttp.monitoring import setup_monitoring as service_lib_setup
 
+from . import _meta
 from .diagnostics_core import DelayWindowProbe, is_sensing_enabled, kLATENCY_PROBE
 
 log = logging.getLogger(__name__)
-
 
 #
 # CAUTION CAUTION CAUTION NOTE:
@@ -50,13 +50,14 @@ async def exit_middleware_cb(request: web.Request, _response: web.StreamResponse
 def setup_monitoring(app: web.Application):
     service_lib_setup(
         app,
-        "simcore_service_webserver",
+        _meta.APP_NAME,
         enter_middleware_cb=enter_middleware_cb,
         exit_middleware_cb=exit_middleware_cb,
+        version=f"{_meta.version}",
     )
 
     monitor_services.add_instrumentation(
-        app, get_collector_registry(app), "simcore_service_webserver"
+        app, get_collector_registry(app), _meta.APP_NAME
     )
 
     # on-the fly stats
