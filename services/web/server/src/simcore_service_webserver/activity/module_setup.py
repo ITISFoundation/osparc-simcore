@@ -8,7 +8,7 @@ from servicelib.aiohttp.rest_routing import (
 )
 
 from ..constants import APP_OPENAPI_SPECS_KEY
-from . import celery_client, handlers
+from . import handlers
 from .config import assert_valid_config
 
 logger = logging.getLogger(__name__)
@@ -41,5 +41,3 @@ def setup_activity(app: web.Application):
         handlers_dict, filter(include_path, iter_path_operations(specs)), strict=True
     )
     app.router.add_routes(routes)
-
-    celery_client.setup(app)

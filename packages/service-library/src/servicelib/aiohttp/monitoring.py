@@ -243,7 +243,7 @@ def setup_monitoring(
     **app_info_kwargs,
 ):
     # app-scope registry
-    target_info = {"application name": app_name}
+    target_info = {"application_name": app_name}
     target_info.update(app_info_kwargs)
     app[kCOLLECTOR_REGISTRY] = reg = CollectorRegistry(
         auto_describe=False, target_info=target_info

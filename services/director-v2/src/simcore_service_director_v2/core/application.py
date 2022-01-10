@@ -16,7 +16,6 @@ from ..api.errors.http_error import (
 from ..api.errors.validation_error import http422_error_handler
 from ..meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
 from ..modules import (
-    celery,
     comp_scheduler,
     dask_clients_pool,
     db,
@@ -65,9 +64,6 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings.POSTGRES.DIRECTOR_V2_POSTGRES_ENABLED:
         db.setup(app, settings.POSTGRES)
 
-    if settings.CELERY.DIRECTOR_V2_CELERY_ENABLED:
-        celery.setup(app, settings.CELERY)
-
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
         dynamic_services.setup(app, settings.DYNAMIC_SERVICES)
 
@@ -82,11 +78,6 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     if settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_SCHEDULER_ENABLED:
         rabbitmq.setup(app)
-
-    if (
-        settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED
-        or settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_SCHEDULER_ENABLED
-    ):
         comp_scheduler.setup(app)
 
     if settings.DIRECTOR_V2_TRACING:

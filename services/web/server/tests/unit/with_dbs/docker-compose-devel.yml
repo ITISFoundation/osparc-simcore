@@ -49,6 +49,6 @@ services:
     restart: always
     environment:
       - REDIS_HOSTS=redis
-      - REDIS_HOSTS=resources:redis:6379:0,locks:redis:6379:1,celery_backend:redis:6379:2
+      - REDIS_HOSTS=resources:redis:6379:0,locks:redis:6379:1
     ports:
       - "18081:8081"

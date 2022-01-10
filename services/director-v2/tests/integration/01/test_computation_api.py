@@ -48,7 +48,7 @@ pytest_simcore_core_services_selection = [
     "redis",
     "storage",
 ]
-pytest_simcore_ops_services_selection = ["minio", "adminer", "flower"]
+pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
 # FIXTURES ---------------------------------------
@@ -57,8 +57,6 @@ pytest_simcore_ops_services_selection = ["minio", "adminer", "flower"]
 @pytest.fixture(scope="function")
 def mock_env(monkeypatch: MonkeyPatch) -> None:
     # used by the client fixture
-    monkeypatch.setenv("DIRECTOR_V2_CELERY_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
