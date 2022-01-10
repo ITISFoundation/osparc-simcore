@@ -119,6 +119,7 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
           control = new osparc.file.FileLabelWithActions().set({
             alignY: "middle"
           });
+          control.getChildControl("reset-button").exclude();
           this._add(control);
           break;
       }
@@ -231,7 +232,7 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
         this.__userFilesTree.resetSelection();
       }
       if (selectionData) {
-        this.__selectedFileLayout.itemSelected(selectionData);
+        this.__selectedFileLayout.setItemSelected(selectionData);
       }
     }
   }

@@ -290,6 +290,7 @@ qx.Class.define("osparc.file.FilePicker", {
           control = new osparc.file.FileLabelWithActions().set({
             alignY: "middle"
           });
+          control.getChildControl("delete-button").exclude();
           const mainButtons = this.getChildControl("select-toolbar");
           mainButtons.add(control, {
             flex: 1
@@ -398,8 +399,7 @@ qx.Class.define("osparc.file.FilePicker", {
         filesTree.loadFilePath(this.__getOutputFile()["value"]);
       }, this);
 
-      const selectedFileLayout = this.__selectedFileLayout = this.getChildControl("selected-file-layout");
-      selectedFileLayout.getChildControl("delete-button").exclude();
+      this.__selectedFileLayout = this.getChildControl("selected-file-layout");
 
       const selectBtn = this.getChildControl("select-button");
       selectBtn.setEnabled(false);
@@ -442,7 +442,7 @@ qx.Class.define("osparc.file.FilePicker", {
       const isFile = osparc.file.FilesTree.isFile(selectedItem);
       this.getChildControl("select-button").setEnabled(isFile);
 
-      this.__selectedFileLayout.itemSelected(selectedItem);
+      this.__selectedFileLayout.setItemSelected(selectedItem);
     },
 
     __itemSelected: function() {

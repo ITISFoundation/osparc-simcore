@@ -42,20 +42,22 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     this._setLayout(new qx.ui.layout.HBox(5));
 
     const downloadBtn = this.getChildControl("download-button");
-    downloadBtn.addListener("execute", e => {
-      this.__retrieveURLAndDownload();
-    }, this);
+    downloadBtn.addListener("execute", () => this.__retrieveURLAndDownload(), this);
 
     const deleteBtn = this.getChildControl("delete-button");
-    deleteBtn.addListener("execute", e => {
-      this.__deleteFile();
-    }, this);
+    deleteBtn.addListener("execute", () => this.__deleteFile(), this);
+
+    this.getChildControl("selected-label");
+
+    const resetBtn = this.getChildControl("reset-button");
+    resetBtn.addListener("execute", () => this.fireEvent("fileReset"), this);
 
     this.getChildControl("selected-label");
   },
 
   events: {
-    "fileDeleted": "qx.event.type.Data"
+    "fileDeleted": "qx.event.type.Data",
+    "fileReset": "qx.event.type.Event"
   },
 
   members: {
@@ -71,22 +73,28 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           break;
         case "delete-button":
           control = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash-alt/16");
-          osparc.utils.Utils.setIdToWidget(control, "filesTreeDeleteBtn");
           this._add(control);
           break;
         case "selected-label":
           control = new osparc.ui.toolbar.Label();
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "reset-button":
+          control = new qx.ui.toolbar.Button(this.tr("Reset"), "@FontAwesome5Solid/sync-alt/16");
           this._add(control);
           break;
       }
       return control || this.base(arguments, id);
     },
 
-    itemSelected: function(selectedItem) {
+    setItemSelected: function(selectedItem) {
       const isFile = osparc.file.FilesTree.isFile(selectedItem);
       this.getChildControl("download-button").setEnabled(isFile);
       this.getChildControl("delete-button").setEnabled(isFile);
       const selectedLabel = this.getChildControl("selected-label");
+      this.getChildControl("reset-button").setEnabled(isFile);
       if (isFile) {
         this.__selection = selectedItem;
         selectedLabel.set({
