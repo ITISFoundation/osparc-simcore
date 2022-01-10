@@ -58,7 +58,13 @@ services:
       - interactive_services_subnet
       - computational_services_subnet
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:9000/minio/health/live"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "--fail",
+          "http://localhost:9000/minio/health/live"
+        ]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -70,20 +76,6 @@ services:
       - REDIS_HOSTS=resources:${REDIS_HOST}:${REDIS_PORT}:0,locks:${REDIS_HOST}:${REDIS_PORT}:1,celery_backend:${REDIS_HOST}:${REDIS_PORT}:2
     ports:
       - "18081:8081"
-    networks:
-      - simcore_default
-
-  flower:
-    # NOTE: latest with DIGEST 9bcc31818a1c7 is broken!
-    # SEE https://github.com/mher/flower/issues/1029
-    image: mher/flower:0.9.5
-    init: true
-    environment:
-      - CELERY_BROKER_URL=amqp://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:${RABBIT_PORT}
-      - FLOWER_BROKER_API=http://${RABBIT_USER}:${RABBIT_PASSWORD}@${RABBIT_HOST}:15672/api/
-      - FLOWER_PORT=5555
-    ports:
-      - "49555:5555"
     networks:
       - simcore_default
 
