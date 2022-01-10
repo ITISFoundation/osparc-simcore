@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 import pytest
 from aiohttp import web
-
 from pytest_simcore.helpers.utils_assert import assert_error, assert_status
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp.rest_responses import unwrap_envelope
@@ -137,7 +136,7 @@ async def test_registration_with_invitation(
     client, is_invitation_required, has_valid_invitation, expected_response
 ):
     from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
-    from simcore_service_webserver.login.config import CONFIG_SECTION_NAME
+    from simcore_service_webserver.login.cfg_utils import CONFIG_SECTION_NAME
 
     client.app[APP_CONFIG_KEY][CONFIG_SECTION_NAME] = {
         "registration_confirmation_required": False,

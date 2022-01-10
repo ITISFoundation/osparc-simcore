@@ -7,8 +7,8 @@ import importlib
 import inspect
 import unittest.mock as mock
 from pathlib import Path
-from types import FunctionType, ModuleType
-from typing import Dict, List, Optional, Set
+from types import ModuleType
+from typing import Dict, List, Set
 
 import pytest
 import trafaret
@@ -21,8 +21,10 @@ from simcore_service_webserver.db_config import CONFIG_SECTION_NAME as DB_SECTIO
 from simcore_service_webserver.email_config import CONFIG_SECTION_NAME as SMTP_SECTION
 from simcore_service_webserver.login.cfg import DEFAULTS as CONFIG_DEFAULTS
 from simcore_service_webserver.login.cfg import Cfg
-from simcore_service_webserver.login.config import CONFIG_SECTION_NAME as LOGIN_SECTION
-from simcore_service_webserver.login.config import create_login_internal_config
+from simcore_service_webserver.login.cfg_utils import (
+    CONFIG_SECTION_NAME as LOGIN_SECTION,
+)
+from simcore_service_webserver.login.cfg_utils import create_login_internal_config
 from simcore_service_webserver.resources import resources
 
 config_yaml_filenames = [str(name) for name in resources.listdir("config")]

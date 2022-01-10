@@ -2,17 +2,16 @@ import logging
 from typing import Dict
 
 from aiohttp import web
-from yarl import URL
-
 from servicelib import observer
 from servicelib.aiohttp.rest_utils import extract_and_validate
 from simcore_service_webserver.utils_rate_limiting import global_rate_limit_route
+from yarl import URL
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..groups_api import auto_add_user_to_groups
 from ..security_api import check_password, encrypt_password, forget, remember
 from .cfg import APP_LOGIN_CONFIG, cfg, get_storage
-from .config import get_login_config
+from .cfg_utils import get_login_config
 from .confirmation import (
     is_confirmation_allowed,
     make_confirmation_link,
@@ -34,7 +33,7 @@ log = logging.getLogger(__name__)
 
 
 def to_names(enum_cls, names):
-    """ ensures names are in enum be retrieving each of them """
+    """ensures names are in enum be retrieving each of them"""
     # FIXME: with asyncpg need to user NAMES
     return [getattr(enum_cls, att).name for att in names.split()]
 

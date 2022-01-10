@@ -8,7 +8,6 @@ from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.redis import RedisSettings
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
-from simcore_service_webserver.resource_manager.settings import ResourceManagerSettings
 
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, APP_NAME
@@ -18,6 +17,8 @@ from .db_settings import PostgresSettings
 from .director.settings import DirectorSettings
 from .director_v2_settings import DirectorV2Settings
 from .email_settings import SmtpSettings
+from .login.settings import LoginSettings
+from .resource_manager.settings import ResourceManagerSettings
 from .storage_settings import StorageSettings
 from .tracing_settings import TracingSettings
 from .utils import snake_to_camel
@@ -80,6 +81,8 @@ class ApplicationSettings(BaseCustomSettings):
     WEBSERVER_RESOURCE_MANAGER: Optional[ResourceManagerSettings]
 
     WEBSERVER_REDIS: Optional[RedisSettings]
+
+    WEBSERVER_LOGIN: Optional[LoginSettings]
 
     class Config(BaseCustomSettings.Config):
         fields = {

@@ -4,15 +4,16 @@ from typing import Dict
 
 import asyncpg
 from aiohttp import web
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.common_aiopg_utils import DSN
 
 from .._constants import APP_OPENAPI_SPECS_KEY, INDEX_RESOURCE_NAME
 from ..db_config import CONFIG_SECTION_NAME as DB_SECTION
+from ..db_settings import PostgresSettings
 from .cfg import APP_LOGIN_CONFIG, cfg
-from .config import assert_valid_config, create_login_internal_config
+from .cfg_utils import create_login_internal_config
 from .routes import create_routes
+from .settings import LoginSettings
 from .storage import AsyncpgStorage
 
 log = logging.getLogger(__name__)
@@ -30,12 +31,13 @@ async def _setup_config_and_pgpool(app: web.Application):
     :type app: web.Application
     """
     db_cfg: Dict = app[APP_CONFIG_KEY][DB_SECTION]["postgres"]
+    pg_settings: PostgresSettings = app[APP_SETTINGS_KEY].WEBSERVER_POSTGRES
 
     # db
     pool: asyncpg.pool.Pool = await asyncpg.create_pool(
-        dsn=DSN.format(**db_cfg) + f"?application_name={__name__}_{id(app)}",
-        min_size=db_cfg["minsize"],
-        max_size=db_cfg["maxsize"],
+        dsn=pg_settings.dsn_with_query,
+        min_size=pg_settings.POSTGRES_MINSIZE,
+        max_size=pg_settings.POSTGRES_MAXSIZE,
         loop=asyncio.get_event_loop(),
     )  # type: ignore
 
@@ -67,17 +69,16 @@ async def _setup_config_and_pgpool(app: web.Application):
 
 @app_module_setup(
     "simcore_service_webserver.login",
-    ModuleCategory.ADDON,
-    depends=[f"simcore_service_webserver.{mod}" for mod in ("rest", "db")],
+    ModuleCategory.SYSTEM,
+    config_section="WEBSERVER_LOGIN",
+    depends=["simcore_service_webserver.rest", "simcore_service_webserver.db"],
     logger=log,
 )
 def setup_login(app: web.Application):
     """Setting up login subsystem in application"""
-    # --------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    assert_valid_config(app)
-    # --------------------------------------
+
+    settings: LoginSettings = app[APP_SETTINGS_KEY].WEBSERVER_LOGIN
+    assert settings  # nosec
 
     # routes
     specs = app[APP_OPENAPI_SPECS_KEY]
