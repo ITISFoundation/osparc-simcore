@@ -88,12 +88,10 @@ async def test_has_login_required(loop, client):
 
 
 async def test_monitoring_up(loop, mocked_login_required, mocked_monitoring, client):
-    QUEUED_NODE_ID = "35f95ad4-67b8-4ed8-bd55-84a5d600e687"
     RUNNING_NODE_ID = "894dd8d5-de3b-4767-950c-7c3ed8f51d8c"
 
     resp = await client.get("/v0/activity/status")
     data, _ = await assert_status(resp, web.HTTPOk)
-    assert QUEUED_NODE_ID in data, "Queued node not present"
     assert RUNNING_NODE_ID in data, "Running node not present"
 
     prometheus = data.get(RUNNING_NODE_ID, {})
