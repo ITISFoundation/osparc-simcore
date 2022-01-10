@@ -11,11 +11,12 @@
       "request": "launch",
       "module": "pytest",
       "args": [
-        "-sx",
-        "--log-cli-level=INFO",
         "--ff",
-        "--keep-docker-up",
+        "--log-cli-level=INFO",
+        "--pdb",
         "--setup-show",
+        "-sx",
+        "-vv",
         "${file}"
       ],
       "cwd": "${workspaceFolder}",

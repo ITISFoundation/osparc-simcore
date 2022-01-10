@@ -65,3 +65,7 @@ class Envelope(GenericModel, Generic[DataT]):
     data: Optional[DataT]
     error: Optional[Any]
     # TODO: this needs to be more concreate e.g. { "error": { "reason": "Invalid" , "exception": "ValueError" } }
+
+    @classmethod
+    def parse_data(cls, obj):
+        return cls.parse_obj({"data": obj})
