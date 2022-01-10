@@ -10,6 +10,7 @@
 #
 --constraint ../../../../packages/models-library/requirements/_base.in
 --constraint ../../../../packages/postgres-database/requirements/_base.in
+--constraint ../../../../packages/settings-library/requirements/_base.in
 # simcore-service-library[aiohttp]
 --constraint ../../../../packages/service-library/requirements/_base.in
 --constraint ../../../../packages/service-library/requirements/_aiohttp.in
@@ -38,8 +39,7 @@ asyncpg
 aioredis
 aioredlock
 
-# scheduling, queues and AMQP client
-celery[redis]
+# RabbitMQ client
 aio-pika
 
 # email

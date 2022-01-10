@@ -23,7 +23,7 @@ def _get_environment_variables(
     compose_namespace: str, scheduler_data: SchedulerData, app_settings: AppSettings
 ) -> Dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
-    rabbit_settings = app_settings.CELERY.CELERY_RABBIT
+    rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
     return {
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
@@ -169,7 +169,7 @@ def get_dynamic_sidecar_spec(
             "paths_mapping": scheduler_data.paths_mapping.json(),
             "compose_spec": json_dumps(scheduler_data.compose_spec),
             "container_http_entry": scheduler_data.container_http_entry,
-            "restart_policy": scheduler_data.restart_policy
+            "restart_policy": scheduler_data.restart_policy,
         },
         "name": scheduler_data.service_name,
         "networks": [swarm_network_id, dynamic_sidecar_network_id],
