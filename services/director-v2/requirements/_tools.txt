@@ -15,7 +15,6 @@ cfgv==3.3.1
 click==7.1.2
     # via
     #   -c requirements/_base.txt
-    #   -c requirements/_test.txt
     #   black
     #   pip-tools
 distlib==0.3.3
