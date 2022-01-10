@@ -16,19 +16,14 @@ def _strip_undecodable_in_path(path: Path) -> Path:
     return Path(str(path).encode(errors="replace").decode("utf-8"))
 
 
-def _should_include(path: Path, exclude_patterns: List[str]) -> bool:
-    for match_rule in exclude_patterns:
-        if fnmatch.fnmatch(f"{path}", match_rule):
-            return False
-    return True
-
-
 def _iter_files_to_compress(
     dir_path: Path, exclude_patterns: List[str] = None
 ) -> Iterator[Path]:
     exclude_patterns = exclude_patterns if exclude_patterns else []
     for path in dir_path.rglob("*"):
-        if path.is_file() and _should_include(path, exclude_patterns):
+        if path.is_file() and not any(
+            fnmatch.fnmatch(f"{path}", x) for x in exclude_patterns
+        ):
             yield path
 
 
