@@ -23,9 +23,6 @@ log = logging.getLogger(__name__)
 
 
 class VersionControlForMetaModeling(VersionControlRepository):
-
-    # TODO: eval inheritace vs composition?
-
     async def get_workcopy_project_id(
         self, repo_id: int, commit_id: Optional[int] = None
     ) -> ProjectIDStr:
@@ -48,8 +45,8 @@ class VersionControlForMetaModeling(VersionControlRepository):
     async def get_project(self, project_id: ProjectIDStr) -> ProjectDict:
         async with self.engine.acquire() as conn:
             if self.user_id is None:
-                # TODO: add message
-                raise UserUndefined
+                raise UserUndefined()
+
             project = (
                 await self.ProjectsOrm(conn)
                 .set_filter(uuid=str(project_id), prj_owner=self.user_id)
