@@ -469,4 +469,4 @@ async def test_archive_unarchive_check_exclude(
 
     assert (
         relative_unarchived_paths == expected_result
-    ), f"Exclude rules: {exclude_patterns}"
+    ), f"Exclude rules: {exclude_patterns=}"
