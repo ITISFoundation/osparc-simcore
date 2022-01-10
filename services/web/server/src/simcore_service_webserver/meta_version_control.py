@@ -71,12 +71,13 @@ class VersionControlForMetaModeling(VersionControlRepository):
             )
             assert project  # nosec
             project_as_dict = dict(project.items())
-            # FIXME: hack to avoid validation error
+            # FIXME: hack to avoid validation error. Revisit when models_library.utils.pydantic_models_factory is
+            # used to create a reliable project's model to validate http API
             if "thumbnail" in project_as_dict:
                 project_as_dict["thumbnail"] = project_as_dict["thumbnail"] or ""
             return project_as_dict
 
-    async def force_branch_and_workcopy(
+    async def create_workcopy_and_branch_from_commit(
         self,
         repo_id: int,
         start_commit_id: int,
@@ -85,10 +86,7 @@ class VersionControlForMetaModeling(VersionControlRepository):
         tag_name: str,
         tag_message: str,
     ) -> CommitID:
-        """Forces a new branch with an explicit working copy 'project' on 'start_commit_id'
-
-        For internal operation
-        """
+        """Creates a new branch with an explicit working copy 'project' on 'start_commit_id'"""
         IS_INTERNAL_OPERATION = True
 
         async with self.engine.acquire() as conn:

@@ -283,7 +283,7 @@ async def get_or_create_runnable_projects(
         # tag to identify this iteration
         branch_name = tag_name = project_iteration.to_tag_name()
 
-        commit_id = await vc_repo.force_branch_and_workcopy(
+        commit_id = await vc_repo.create_workcopy_and_branch_from_commit(
             repo_id,
             start_commit_id=main_commit_id,
             project=project,
