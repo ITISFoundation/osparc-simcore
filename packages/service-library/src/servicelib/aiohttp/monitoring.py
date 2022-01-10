@@ -21,7 +21,7 @@ from prometheus_client import (
 from prometheus_client.registry import CollectorRegistry
 from servicelib.aiohttp.typing_extension import Handler
 
-from ..logging_utils import catch_log_exceptions
+from ..logging_utils import log_catch
 
 log = logging.getLogger(__name__)
 
@@ -156,7 +156,7 @@ def middleware_factory(
         try:
             log.debug("ENTERING monitoring middleware for %s", f"{request=}")
             if enter_middleware_cb:
-                with catch_log_exceptions(logger=log, reraise=False):
+                with log_catch(logger=log, reraise=False):
                     await enter_middleware_cb(request)
 
             in_flight_gauge = request.app[kINFLIGHTREQUESTS]
@@ -209,7 +209,7 @@ def middleware_factory(
             ).inc()
 
             if exit_middleware_cb:
-                with catch_log_exceptions(logger=log, reraise=False):
+                with log_catch(logger=log, reraise=False):
                     await exit_middleware_cb(request, resp)
 
             if log_exception:

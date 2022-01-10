@@ -176,7 +176,7 @@ def log_decorator(logger=None, level: int = logging.DEBUG):
 
 
 @contextmanager
-def catch_log_exceptions(logger: logging.Logger, reraise: bool = True):
+def log_catch(logger: logging.Logger, reraise: bool = True):
     try:
         yield
     except asyncio.CancelledError:
