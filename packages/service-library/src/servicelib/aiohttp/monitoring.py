@@ -21,6 +21,8 @@ from prometheus_client import (
 from prometheus_client.registry import CollectorRegistry
 from servicelib.aiohttp.typing_extension import Handler
 
+from ..logging_utils import catch_log_exceptions
+
 log = logging.getLogger(__name__)
 
 
@@ -42,11 +44,9 @@ log = logging.getLogger(__name__)
 #
 
 
-kSTART_TIME = f"{__name__}.start_time"
 kREQUEST_COUNT = f"{__name__}.request_count"
 kINFLIGHTREQUESTS = f"{__name__}.in_flight_requests"
 kRESPONSELATENCY = f"{__name__}.in_response_latency"
-kCANCEL_COUNT = f"{__name__}.cancel_count"
 
 kCOLLECTOR_REGISTRY = f"{__name__}.collector_registry"
 kPROCESS_COLLECTOR = f"{__name__}.collector_process"
@@ -93,12 +93,12 @@ def middleware_factory(
         canonical_endpoint = request.path
         if request.match_info.route.resource:
             canonical_endpoint = request.match_info.route.resource.canonical
-
+        start_time = time.time()
         try:
             log.debug("ENTERING monitoring middleware for %s", f"{request=}")
             if enter_middleware_cb:
-                await enter_middleware_cb(request)
-            request[kSTART_TIME] = time.time()
+                with catch_log_exceptions(logger=log, reraise=False):
+                    await enter_middleware_cb(request)
 
             in_flight_gauge = request.app[kINFLIGHTREQUESTS]
             response_summary = request.app[kRESPONSELATENCY]
@@ -139,7 +139,7 @@ def middleware_factory(
             log_exception = exc
 
         finally:
-            resp_time_secs: float = time.time() - request[kSTART_TIME]
+            resp_time_secs: float = time.time() - start_time
 
             # prometheus probes
             request.app[kREQUEST_COUNT].labels(
@@ -150,7 +150,8 @@ def middleware_factory(
             ).inc()
 
             if exit_middleware_cb:
-                await exit_middleware_cb(request, resp)
+                with catch_log_exceptions(logger=log, reraise=False):
+                    await exit_middleware_cb(request, resp)
 
             if log_exception:
                 log.error(
@@ -181,9 +182,15 @@ def setup_monitoring(
     exit_middleware_cb: Optional[ExitMiddlewareCB] = None,
 ):
     # app-scope registry
-    app[kCOLLECTOR_REGISTRY] = reg = CollectorRegistry(auto_describe=False)
+    app[kCOLLECTOR_REGISTRY] = reg = CollectorRegistry(
+        auto_describe=False, target_info={"name": app_name}
+    )
+    # automatically collects process metrics see [https://github.com/prometheus/client_python]
     app[kPROCESS_COLLECTOR] = ProcessCollector(registry=reg)
+    # automatically collects python_info metrics see [https://github.com/prometheus/client_python]
     app[kPLATFORM_COLLECTOR] = PlatformCollector(registry=reg)
+    # automatically collects python garbage collector metrics see [https://github.com/prometheus/client_python]
+    # prefixed with python_gc_
     app[kGC_COLLECTOR] = GCCollector(registry=reg)
 
     # Total number of requests processed

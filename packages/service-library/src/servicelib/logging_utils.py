@@ -1,11 +1,13 @@
 """
 This codes originates from this article (https://medium.com/swlh/add-log-decorators-to-your-python-project-84094f832181)
 """
+import asyncio
 import functools
 import logging
 import os
 import sys
 from asyncio import iscoroutinefunction
+from contextlib import contextmanager
 from inspect import getframeinfo, stack
 from typing import Callable, Dict, Optional
 
@@ -171,3 +173,16 @@ def log_decorator(logger=None, level: int = logging.DEBUG):
         return log_decorator_wrapper
 
     return log_decorator_info
+
+
+@contextmanager
+def catch_log_exceptions(logger: logging.Logger, reraise: bool = True):
+    try:
+        yield
+    except asyncio.CancelledError:
+        logger.debug("call was cancelled")
+        raise
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.error("Unhandled exception: %s", f"{exc}", exc_info=True)
+        if reraise:
+            raise exc from exc
