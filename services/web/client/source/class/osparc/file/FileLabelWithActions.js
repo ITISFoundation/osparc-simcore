@@ -48,16 +48,10 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
     deleteBtn.addListener("execute", () => this.__deleteFile(), this);
 
     this.getChildControl("selected-label");
-
-    const resetBtn = this.getChildControl("reset-button");
-    resetBtn.addListener("execute", () => this.fireEvent("fileReset"), this);
-
-    this.getChildControl("selected-label");
   },
 
   events: {
-    "fileDeleted": "qx.event.type.Data",
-    "fileReset": "qx.event.type.Event"
+    "fileDeleted": "qx.event.type.Data"
   },
 
   members: {
@@ -81,10 +75,6 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
             flex: 1
           });
           break;
-        case "reset-button":
-          control = new qx.ui.toolbar.Button(this.tr("Reset"), "@FontAwesome5Solid/sync-alt/16");
-          this._add(control);
-          break;
       }
       return control || this.base(arguments, id);
     },
@@ -94,7 +84,6 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       this.getChildControl("download-button").setEnabled(isFile);
       this.getChildControl("delete-button").setEnabled(isFile);
       const selectedLabel = this.getChildControl("selected-label");
-      this.getChildControl("reset-button").setEnabled(isFile);
       if (isFile) {
         this.__selection = selectedItem;
         selectedLabel.set({

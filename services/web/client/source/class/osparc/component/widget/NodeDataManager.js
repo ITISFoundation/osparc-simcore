@@ -119,7 +119,6 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
           control = new osparc.file.FileLabelWithActions().set({
             alignY: "middle"
           });
-          control.getChildControl("reset-button").exclude();
           this._add(control);
           break;
       }

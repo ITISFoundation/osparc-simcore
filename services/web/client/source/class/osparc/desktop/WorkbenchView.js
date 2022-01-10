@@ -897,11 +897,18 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         this.__infoPage.add(view);
 
+        const hbox = new qx.ui.container.Composite(new qx.ui.layout.HBox());
         const downloadFileBtn = new qx.ui.form.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/14").set({
           allowGrowX: false
         });
         downloadFileBtn.addListener("execute", () => osparc.file.FilePicker.downloadOutput(filePicker));
-        this.__infoPage.add(downloadFileBtn);
+        hbox.add(downloadFileBtn);
+        const resetFileBtn = new qx.ui.form.Button(this.tr("Reset"), "@FontAwesome5Solid/sync-alt/14").set({
+          allowGrowX: false
+        });
+        resetFileBtn.addListener("execute", () => console.log("reset file"));
+        hbox.add(resetFileBtn);
+        this.__infoPage.add(hbox);
       } else {
         // empty File Picker
         const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
