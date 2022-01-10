@@ -17,7 +17,7 @@ def _strip_undecodable_in_path(path: Path) -> Path:
 
 
 def _iter_files_to_compress(
-    dir_path: Path, exclude_patterns: List[str]
+    dir_path: Path, exclude_patterns: List[str] = None
 ) -> Iterator[Path]:
     exclude_patterns = exclude_patterns if exclude_patterns else []
     for path in dir_path.rglob("*"):
