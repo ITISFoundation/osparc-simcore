@@ -6,6 +6,7 @@ import aioredis
 from aiohttp import web
 from aioredlock import Aioredlock
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
+from settings_library.redis import RedisSettings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -17,7 +18,6 @@ from .constants import (
     APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY,
     APP_CLIENT_REDIS_LOCK_MANAGER_KEY,
 )
-from .settings import ResourceManagerSettings
 
 log = logging.getLogger(__name__)
 
@@ -26,8 +26,8 @@ _MINUTE = 60
 
 
 async def redis_client(app: web.Application):
-    settings: ResourceManagerSettings = app[APP_SETTINGS_KEY].WEBSERVER_RESOURCE_MANAGER
-    endpoint = settings.RESOURCE_MANAGER_REDIS.dsn
+    settings: RedisSettings = app[APP_SETTINGS_KEY].WEBSERVER_REDIS
+    endpoint = settings.dsn
 
     async def create_client(url) -> aioredis.Redis:
         # create redis client

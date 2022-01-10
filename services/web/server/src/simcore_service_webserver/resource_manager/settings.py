@@ -1,6 +1,5 @@
 from pydantic import Field, PositiveInt
 from settings_library.base import BaseCustomSettings
-from settings_library.redis import RedisSettings
 
 CONFIG_SECTION_NAME = "resource_manager"
 
@@ -24,5 +23,3 @@ class ResourceManagerSettings(BaseCustomSettings):
         # legacy
         env=["WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS"],
     )
-
-    RESOURCE_MANAGER_REDIS: RedisSettings
