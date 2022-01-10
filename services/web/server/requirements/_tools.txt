@@ -14,6 +14,7 @@ cfgv==3.3.1
     # via pre-commit
 click==8.0.3
     # via
+    #   -c requirements/_packages.txt
     #   -c requirements/_test.txt
     #   black
     #   pip-tools

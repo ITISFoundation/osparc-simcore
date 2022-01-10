@@ -14,6 +14,7 @@
 # installs this repo's packages
 ../../../packages/models-library/
 ../../../packages/postgres-database/
+../../../packages/settings-library/
 ../../../packages/simcore-sdk/
 ../../../packages/service-library[aiohttp]
 ../../../packages/pytest-simcore/

@@ -50,7 +50,9 @@ chardet==4.0.0
 charset-normalizer==2.0.8
     # via requests
 click==8.0.3
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/_packages.txt
+    #   -r requirements/_test.in
 codecov==2.1.12
     # via -r requirements/_test.in
 coverage==6.1.2
