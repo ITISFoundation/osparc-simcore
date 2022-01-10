@@ -418,7 +418,6 @@ async def save_state(rabbitmq: RabbitMQ = Depends(get_rabbitmq)) -> None:
 @containers_router.post(
     "/containers/ports/inputs:pull",
     summary="Pull input ports data",
-    response_model=None,
     status_code=status.HTTP_200_OK,
 )
 async def pull_input_ports(
@@ -473,8 +472,7 @@ async def create_output_dirs(request_mode: CreateDirsRequestItem) -> None:
 
 @containers_router.post(
     "/containers/ports/outputs:pull",
-    summary="Pull input ports data",
-    response_model=None,
+    summary="Pull output ports data",
     status_code=status.HTTP_200_OK,
 )
 async def pull_output_ports(
