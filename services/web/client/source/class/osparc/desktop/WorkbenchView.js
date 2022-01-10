@@ -545,6 +545,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
+      workbenchUI.addListener("removeNodes", e => {
+        const nodeIds = e.getData();
+        this.__removeNodes(nodeIds);
+      }, this);
       workbenchUI.addListener("removeEdge", e => {
         const edgeId = e.getData();
         this.__removeEdge(edgeId);
@@ -1126,7 +1130,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __removeNode: function(nodeId) {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
-        const msg = this.tr("Are you sure you want to delete node?");
+        const msg = this.tr("Are you sure you want to delete the selected node?");
         const win = new osparc.ui.window.Confirmation(msg);
         win.center();
         win.open();
@@ -1137,6 +1141,23 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }, this);
       } else {
         this.__doRemoveNode(nodeId);
+      }
+    },
+
+    __removeNodes: function(nodeIds) {
+      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      if (preferencesSettings.getConfirmDeleteNode()) {
+        const msg = this.tr("Are you sure you want to delete the selected ") + nodeIds.length + " nodes?";
+        const win = new osparc.ui.window.Confirmation(msg);
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            nodeIds.forEach(nodeId => this.__doRemoveNode(nodeId));
+          }
+        }, this);
+      } else {
+        nodeIds.forEach(nodeId => this.__doRemoveNode(nodeId));
       }
     },
 

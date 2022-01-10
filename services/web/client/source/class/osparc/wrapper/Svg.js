@@ -124,6 +124,20 @@ qx.Class.define("osparc.wrapper.Svg", {
       return rect;
     },
 
+    drawFilledRect: function(draw, width, height, x, y) {
+      const fillColor = qx.theme.manager.Color.getInstance().resolve("background-main-lighter");
+      const edgeColor = qx.theme.manager.Color.getInstance().resolve("background-main-lighter+");
+      const rect = draw.rect(width, height)
+        .fill(fillColor)
+        .stroke({
+          width: 1,
+          color: edgeColor
+        })
+        .move(x, y);
+      rect.back();
+      return rect;
+    },
+
     drawNodeUI: function(draw, width, height, radius, x, y) {
       const nodeUIColor = qx.theme.manager.Color.getInstance().getTheme().colors["window-border"];
       const rect = draw.rect(width, height)
@@ -140,7 +154,13 @@ qx.Class.define("osparc.wrapper.Svg", {
       return rect;
     },
 
-    updateRect: function(rect, x, y) {
+    updateRect: function(rect, w, h, x, y) {
+      rect.width(w);
+      rect.height(h);
+      rect.move(x, y);
+    },
+
+    updateRectPos: function(rect, x, y) {
       rect.move(x, y);
     },
 
