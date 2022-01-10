@@ -22,9 +22,9 @@ services:
     #   - net.ipv4.tcp_keepalive_probes=9
     #   - net.ipv4.tcp_keepalive_time=600
     command: |
-      postgres 
-      -c tcp_keepalives_idle=600 
-      -c tcp_keepalives_interval=600 
+      postgres
+      -c tcp_keepalives_idle=600
+      -c tcp_keepalives_interval=600
       -c tcp_keepalives_count=5
   adminer:
     image: adminer:4.8.0
@@ -49,6 +49,6 @@ services:
     restart: always
     environment:
       - REDIS_HOSTS=redis
-      - REDIS_HOSTS=resources:redis:6379:0,locks:redis:6379:1,celery_backend:redis:6379:2
+      - REDIS_HOSTS=resources:redis:6379:0,locks:redis:6379:1
     ports:
       - "18081:8081"

@@ -18,4 +18,3 @@ pytest-lazy-fixture
 
 # support testing features built on frameworks
 # pytest-docker
-# pytest-celery

@@ -1,5 +1,5 @@
 """The scheduler shall be run as a background task.
-Based on oSparc pipelines, it monitors when to start the next celery task(s), either one at a time or as a group of tasks.
+Based on oSparc pipelines, it monitors when to start the next worker task(s), either one at a time or as a group of tasks.
 
 In principle the Scheduler maintains the comp_runs table in the database.
 It contains how the pipeline was run and by whom.
