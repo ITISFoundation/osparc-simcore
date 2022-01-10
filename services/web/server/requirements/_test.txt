@@ -49,7 +49,7 @@ chardet==4.0.0
     #   aiohttp
 charset-normalizer==2.0.8
     # via requests
-click==7.1.2
+click==8.0.3
     # via -r requirements/_test.in
 codecov==2.1.12
     # via -r requirements/_test.in

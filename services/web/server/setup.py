@@ -28,6 +28,7 @@ INSTALL_REQUIREMENTS = tuple(
         "simcore-postgres-database",
         "simcore-service-library",
         "simcore-service-library[aiohttp]>=1.2.0",
+        "simcore-settings-library",
     }
 )
 TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
