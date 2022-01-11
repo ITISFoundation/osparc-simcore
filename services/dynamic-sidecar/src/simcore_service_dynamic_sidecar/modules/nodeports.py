@@ -23,6 +23,7 @@ from simcore_service_dynamic_sidecar.core.settings import (
     DynamicSidecarSettings,
     get_settings,
 )
+
 from ..models.schemas.ports import PortTypeName
 
 _FILE_TYPE_PREFIX = "data:"

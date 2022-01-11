@@ -43,10 +43,10 @@ from ..core.validation import (
 )
 from ..models.domains.shared_store import SharedStore
 from ..models.schemas.application_health import ApplicationHealth
+from ..models.schemas.ports import PortTypeName
 from ..modules import directory_watcher, nodeports
 from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
 from ..modules.mounted_fs import MountedVolumes, get_mounted_volumes
-from ..models.schemas.ports import PortTypeName
 
 logger = logging.getLogger(__name__)
 
