@@ -241,7 +241,7 @@ class PrunableFolder:
 
         for p in to_delete:
             path = self.basedir / p
-            assert path.exists()
+            assert path.exists()  # nosec
 
             if path.is_file():
                 path.unlink()
