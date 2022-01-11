@@ -428,7 +428,7 @@ async def pull_input_ports(
     mounted_volumes: MountedVolumes = get_mounted_volumes()
 
     await _send_message(rabbitmq, f"Pulling inputs for {port_keys}")
-    transferred_bytes = await nodeports.download_target_port(
+    transferred_bytes = await nodeports.download_target_ports(
         PortTypeName.INPUTS, mounted_volumes.disk_inputs_path, port_keys=port_keys
     )
     await _send_message(rabbitmq, "Finished pulling inputs")
@@ -484,7 +484,7 @@ async def pull_output_ports(
     mounted_volumes: MountedVolumes = get_mounted_volumes()
 
     await _send_message(rabbitmq, f"Pulling output for {port_keys}")
-    transferred_bytes = await nodeports.download_target_port(
+    transferred_bytes = await nodeports.download_target_ports(
         PortTypeName.OUTPUTS, mounted_volumes.disk_outputs_path, port_keys=port_keys
     )
     await _send_message(rabbitmq, "Finished pulling output")

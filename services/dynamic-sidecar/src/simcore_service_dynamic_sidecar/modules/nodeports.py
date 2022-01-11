@@ -163,7 +163,7 @@ async def _get_data_from_port(port: Port) -> Tuple[Port, ItemConcreteValue]:
     return (port, ret)
 
 
-async def download_target_port(
+async def download_target_ports(
     port_type_name: PortTypeName, target_path: Path, port_keys: List[str]
 ) -> ByteSize:
     logger.info("retrieving data from simcore...")
@@ -264,4 +264,4 @@ async def download_target_port(
     return transferred
 
 
-__all__ = ["dispatch_update_for_directory", "download_target_port"]
+__all__ = ["dispatch_update_for_directory", "download_target_ports"]

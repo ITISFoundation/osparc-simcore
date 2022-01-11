@@ -152,7 +152,7 @@ def mock_nodeports(mocker: MockerFixture) -> None:
         return_value=None,
     )
     mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.nodeports.download_target_port",
+        "simcore_service_dynamic_sidecar.modules.nodeports.download_target_ports",
         return_value=42,
     )
 
