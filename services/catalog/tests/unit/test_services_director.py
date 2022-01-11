@@ -15,7 +15,7 @@ from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.core.application import init_app
 from simcore_service_catalog.services.director import DirectorApi
-from starlette.testclient import TestClient
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture
@@ -25,6 +25,7 @@ def minimal_app(
     # disable a couple of subsystems
     monkeypatch.setenv("CATALOG_POSTGRES", "null")
     monkeypatch.setenv("CATALOG_TRACING", "null")
+    monkeypatch.setenv("SC_BOOT_MODE", "local-development")
 
     app = init_app()
 
