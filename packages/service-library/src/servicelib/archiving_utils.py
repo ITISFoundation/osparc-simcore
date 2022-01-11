@@ -126,7 +126,7 @@ async def unarchive_dir(
             )
 
 
-def _serial_add_to_archive(
+def _add_to_archive(
     dir_to_compress: Path,
     destination: Path,
     compress: bool,
@@ -185,7 +185,7 @@ async def archive_dir(
             None, Exception
         ] = await asyncio.get_event_loop().run_in_executor(
             pool,
-            _serial_add_to_archive,
+            _add_to_archive,
             dir_to_compress,
             destination,
             compress,
