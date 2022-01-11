@@ -41,7 +41,9 @@ alembic==1.7.4
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
 anyio==3.3.4
-    # via httpcore
+    # via
+    #   httpcore
+    #   starlette
 async-generator==1.10
     # via -r requirements/_base.in
 async-timeout==3.0.1
@@ -116,7 +118,7 @@ docopt==0.6.2
     # via docker-compose
 email-validator==1.1.3
     # via pydantic
-fastapi==0.68.1
+fastapi==0.71.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -281,7 +283,7 @@ sqlalchemy==1.3.24
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
-starlette==0.14.2
+starlette==0.17.1
     # via fastapi
 tenacity==8.0.1
     # via

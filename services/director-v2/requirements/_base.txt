@@ -14,9 +14,7 @@ aiodebug==1.1.2
 aiodocker==0.19.1
     # via -r requirements/_base.in
 aiofiles==0.5.0
-    # via
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-    #   fastapi
+    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -45,14 +43,10 @@ alembic==1.7.5
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
-aniso8601==7.0.0
-    # via graphene
 anyio==3.2.1
-    # via httpcore
-async-exit-stack==1.0.1
-    # via fastapi
-async-generator==1.10
-    # via fastapi
+    # via
+    #   httpcore
+    #   starlette
 async-timeout==3.0.1
     # via
     #   aiohttp
@@ -106,7 +100,7 @@ email-validator==1.1.3
     # via
     #   fastapi
     #   pydantic
-fastapi==0.68.1
+fastapi==0.71.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -117,14 +111,6 @@ fsspec==2021.10.1
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
-graphene==2.1.8
-    # via fastapi
-graphql-core==2.3.2
-    # via
-    #   graphene
-    #   graphql-relay
-graphql-relay==2.0.1
-    # via graphene
 h11==0.12.0
     # via
     #   httpcore
@@ -233,10 +219,6 @@ partd==1.2.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
-promise==2.3
-    # via
-    #   graphql-core
-    #   graphql-relay
 psutil==5.8.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -314,14 +296,9 @@ requests==2.25.1
     # via fastapi
 rfc3986==1.4.0
     # via httpx
-rx==1.6.1
-    # via graphql-core
 six==1.15.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
-    #   graphene
-    #   graphql-core
-    #   graphql-relay
     #   packaging
     #   python-multipart
     #   tenacity
@@ -353,7 +330,7 @@ sqlalchemy==1.3.24
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
-starlette==0.14.2
+starlette==0.17.1
     # via fastapi
 tblib==1.7.0
     # via

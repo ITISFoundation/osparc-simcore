@@ -8,20 +8,14 @@ aiodebug==1.1.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-aiofiles==0.5.0
-    # via fastapi
 aiopg==1.2.1
     # via -r requirements/_base.in
 alembic==1.7.4
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
-aniso8601==7.0.0
-    # via graphene
 anyio==3.5.0
-    # via httpcore
-async-exit-stack==1.0.1
-    # via fastapi
-async-generator==1.10
-    # via fastapi
+    # via
+    #   httpcore
+    #   starlette
 async-timeout==3.0.1
     # via aiopg
 certifi==2020.12.5
@@ -43,21 +37,13 @@ email-validator==1.1.2
     # via
     #   fastapi
     #   pydantic
-fastapi==0.68.1
+fastapi==0.71.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
     #   fastapi-contrib
 fastapi-contrib==0.2.11
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-graphene==2.1.8
-    # via fastapi
-graphql-core==2.3.2
-    # via
-    #   graphene
-    #   graphql-relay
-graphql-relay==2.0.1
-    # via graphene
 h11==0.12.0
     # via
     #   httpcore
@@ -119,10 +105,6 @@ orjson==3.4.8
     # via fastapi
 packaging==20.9
     # via -r requirements/_base.in
-promise==2.3
-    # via
-    #   graphql-core
-    #   graphql-relay
 psycopg2-binary==2.8.6
     # via
     #   aiopg
@@ -172,13 +154,8 @@ requests==2.25.1
     # via fastapi
 rfc3986==1.4.0
     # via httpx
-rx==1.6.1
-    # via graphql-core
 six==1.15.0
     # via
-    #   graphene
-    #   graphql-core
-    #   graphql-relay
     #   python-multipart
     #   tenacity
     #   thrift
@@ -198,7 +175,7 @@ sqlalchemy==1.3.23
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
-starlette==0.14.2
+starlette==0.17.1
     # via fastapi
 tenacity==6.3.1
     # via
