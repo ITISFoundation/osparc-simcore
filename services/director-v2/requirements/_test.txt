@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aio_pika==6.8.0
+aio-pika==6.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -267,7 +267,7 @@ requests==2.25.1
     #   coveralls
     #   docker
     #   docker-compose
-respx==0.17.1
+respx==0.19.1
     # via -r requirements/_test.in
 rfc3986==1.4.0
     # via
