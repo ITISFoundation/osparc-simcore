@@ -162,7 +162,10 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_legacy_services_catchall.priority=1
         - traefik.http.routers.${SWARM_STACK_NAME}_legacy_services_catchall.entrypoints=http
         - traefik.http.routers.${SWARM_STACK_NAME}_legacy_services_catchall.rule=hostregexp(`{host:.+}`)
-          && PathPrefix(`/x`)
+          &&
+          (Path(`/x/{node_uuid:\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b}`)
+          ||
+          PathPrefix(`/x/{node_uuid:\b[0-9a-f]{8}\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\b[0-9a-f]{12}\b}/`))
         # this tricks traefik into a 502 (bad gateway) since the service does not exist on this port
         - traefik.http.services.${SWARM_STACK_NAME}_legacy_services_catchall.loadbalancer.server.port=0
         # this tricks traefik into returning a 503 (service unavailable) since the healthcheck will always return false
