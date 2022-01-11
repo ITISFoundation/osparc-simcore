@@ -21,7 +21,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.healthcheck.timeout=1000ms
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.rule=hostregexp(`{host:.+}`)
-          && (Path(`/`) ||  PathPrefix(`/v0`))
+          && (Path(`/`, `/v0`) ||  PathPrefix(`/v0/`))
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcore_api
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.priority=1
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@docker,ratelimit-${SWARM_STACK_NAME}_api-server
