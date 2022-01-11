@@ -20,10 +20,13 @@ botocore==1.20.104
     #   s3transfer
 certifi==2021.5.30
     # via
+    #   httpcore
     #   httpx
     #   requests
 chardet==4.0.0
     # via requests
+charset-normalizer==2.0.10
+    # via httpx
 click==7.1.2
     # via
     #   typer
@@ -62,11 +65,11 @@ h2==3.2.0
     # via httpx
 hpack==3.0.0
     # via h2
-httpcore==0.13.6
+httpcore==0.14.4
     # via httpx
 httptools==0.1.2
     # via uvicorn
-httpx==0.18.2
+httpx==0.21.3
     # via -r requirements/_base.in
 hyperframe==5.2.0
     # via h2

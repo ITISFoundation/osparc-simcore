@@ -37,6 +37,8 @@ alembic==1.7.4
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
 aniso8601==7.0.0
     # via graphene
+anyio==3.5.0
+    # via httpcore
 async-exit-stack==1.0.1
     # via fastapi
 async-generator==1.10
@@ -54,6 +56,7 @@ attrs==20.3.0
     #   aiohttp
 certifi==2020.12.5
     # via
+    #   httpcore
     #   httpx
     #   requests
 cffi==1.14.5
@@ -62,6 +65,8 @@ chardet==4.0.0
     # via
     #   aiohttp
     #   requests
+charset-normalizer==2.0.10
+    # via httpx
 click==7.1.2
     # via
     #   typer
@@ -104,11 +109,11 @@ h11==0.12.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==0.13.3
+httpcore==0.14.4
     # via httpx
 httptools==0.1.2
     # via uvicorn
-httpx==0.18.1
+httpx==0.21.3
     # via -r requirements/_base.in
 idna==2.10
     # via
@@ -119,6 +124,7 @@ idna==2.10
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+    #   anyio
     #   email-validator
     #   requests
     #   rfc3986
@@ -258,6 +264,7 @@ six==1.16.0
     #   thrift
 sniffio==1.2.0
     # via
+    #   anyio
     #   httpcore
     #   httpx
 sqlalchemy==1.3.24
