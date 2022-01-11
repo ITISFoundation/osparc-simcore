@@ -72,7 +72,7 @@ toml==0.10.2
     # via pytest
 tomli==1.2.2
     # via coverage
-types-aiofiles==0.7.0
+types-aiofiles==0.8.2
     # via -r requirements/_test.in
 types-pkg-resources==0.1.3
     # via -r requirements/_test.in

@@ -102,62 +102,6 @@ def symlink_to_file_with_data() -> Iterator[Path]:
 
 
 @pytest.fixture
-def dy_volumes_overwrite(tmp_path: Path) -> Path:
-    dy_volumes = tmp_path / "dy_volumes"
-    dy_volumes.mkdir(exist_ok=True, parents=True)
-    return dy_volumes
-
-
-@pytest.fixture
-def patch_dy_volumes(
-    dy_volumes_overwrite: Path, mocker: MockerFixture
-) -> Iterator[Path]:
-    mocker.patch.object(port_module, "DY_VOLUMES", f"{dy_volumes_overwrite}")
-    yield dy_volumes_overwrite
-
-
-@pytest.fixture(params=[True, False])
-def relative_path(request):
-    return request.param
-
-
-@pytest.fixture
-def pointed_fie_path(relative_path: bool, tmp_path: Path) -> Path:
-    if relative_path:
-        return Path("real_file_")
-
-    return tmp_path / "real_file"
-
-
-@pytest.fixture
-def symlink_to_dy_volumes(
-    patch_dy_volumes: Path, pointed_fie_path: Path
-) -> Iterator[Path]:
-    symlink_path = patch_dy_volumes / "symlink"
-    assert not symlink_path.exists()
-
-    file_path = pointed_fie_path
-    assert not file_path.exists()
-    file_path.write_text("some dummy data")
-    assert file_path.exists()
-    # make sure the "dy_volumes" path exists
-    dy_sidecar_real_vile_path = patch_dy_volumes / f"{file_path}".strip("/")
-    dy_sidecar_real_vile_path.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy(file_path, dy_sidecar_real_vile_path)
-    assert dy_sidecar_real_vile_path.exists()
-
-    os.symlink(file_path, symlink_path)
-    assert symlink_path.exists()
-
-    yield symlink_path
-
-    symlink_path.unlink()
-    assert not symlink_path.exists()
-    file_path.unlink()
-    assert not file_path.exists()
-
-
-@pytest.fixture
 def file_with_data() -> Iterator[Path]:
     file_name: Path = this_node_file_name()
     file_path = file_name

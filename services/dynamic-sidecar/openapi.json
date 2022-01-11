@@ -415,7 +415,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Creates the output directories declared by the docker images's labels. Since the dynamic-sidecar cannot retrieve the labels from the image, these must be provided by the director-v2. This API is called after the outputs directory was pulled",
+        "summary": "Creates the output directories declared by the docker images's labels. It is more convenient to pass the labels from director-v2, since it already has all the machinery to call into director-v0 to retrieve them.",
         "operationId": "create_output_dirs_v1_containers_ports_outputs_dirs_post",
         "requestBody": {
           "content": {
