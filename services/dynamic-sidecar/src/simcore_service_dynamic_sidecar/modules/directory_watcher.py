@@ -10,9 +10,7 @@ from typing import Any, Awaitable, Callable, Deque, Optional
 
 from fastapi import FastAPI
 from servicelib.utils import logged_gather
-from simcore_service_dynamic_sidecar.modules.nodeports import (
-    dispatch_update_for_directory,
-)
+from simcore_service_dynamic_sidecar.modules import nodeports
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
@@ -22,8 +20,6 @@ DETECTION_INTERVAL: float = 1.0
 TASK_NAME_FOR_CLEANUP = f"{name}.InvokeTask"
 
 logger = logging.getLogger(__name__)
-
-_dir_watcher: Optional["DirectoryWatcherObservers"] = None
 
 
 class AsyncLockedFloat:
@@ -81,20 +77,18 @@ def async_run_once_after_event_chain(
     return internal
 
 
-async def push_directory_via_nodeports(directory_path: Path) -> None:
-    await dispatch_update_for_directory(directory_path)
+async def _push_directory(directory_path: Path) -> None:
+    await nodeports.dispatch_update_for_directory(directory_path)
 
 
 @async_run_once_after_event_chain(detection_interval=DETECTION_INTERVAL)
-async def invoke_push_directory_via_nodeports(directory_path: Path) -> None:
-    await push_directory_via_nodeports(directory_path)
+async def _push_directory_after_event_chain(directory_path: Path) -> None:
+    await _push_directory(directory_path)
 
 
-def trigger_async_invoke_push_mapped_data(
-    loop: AbstractEventLoop, directory_path: Path
-) -> None:
+def async_push_directory(loop: AbstractEventLoop, directory_path: Path) -> None:
     loop.create_task(
-        invoke_push_directory_via_nodeports(directory_path), name=TASK_NAME_FOR_CLEANUP
+        _push_directory_after_event_chain(directory_path), name=TASK_NAME_FOR_CLEANUP
     )
 
 
@@ -104,10 +98,20 @@ class UnifyingEventHandler(FileSystemEventHandler):
 
         self.loop: AbstractEventLoop = loop
         self.directory_path: Path = directory_path
+        self._is_enabled: bool = True
+
+    def set_enabled(self, is_enabled: bool) -> None:
+        self._is_enabled = is_enabled
+
+    def _invoke_push_directory(self) -> None:
+        # wrapping the function call in the object
+        # helps with testing, it is simplet to mock
+        async_push_directory(self.loop, self.directory_path)
 
     def on_any_event(self, event: FileSystemEvent) -> None:
         super().on_any_event(event)
-        trigger_async_invoke_push_mapped_data(self.loop, self.directory_path)
+        if self._is_enabled:
+            self._invoke_push_directory()
 
 
 class DirectoryWatcherObservers:
@@ -120,15 +124,24 @@ class DirectoryWatcherObservers:
 
         self._keep_running: bool = True
         self._blocking_task: Optional[Awaitable[Any]] = None
+        self.outputs_event_handle: Optional[UnifyingEventHandler] = None
 
     def observe_directory(self, directory_path: Path, recursive: bool = True) -> None:
         path = directory_path.absolute()
-        outputs_event_handle = UnifyingEventHandler(
+        self.outputs_event_handle = UnifyingEventHandler(
             loop=asyncio.get_event_loop(), directory_path=path
         )
         observer = Observer()
-        observer.schedule(outputs_event_handle, str(path), recursive=recursive)
+        observer.schedule(self.outputs_event_handle, str(path), recursive=recursive)
         self._observers.append(observer)
+
+    def enable_event_propagation(self) -> None:
+        if self.outputs_event_handle is not None:
+            self.outputs_event_handle.set_enabled(True)
+
+    def disable_event_propagation(self) -> None:
+        if self.outputs_event_handle is not None:
+            self.outputs_event_handle.set_enabled(False)
 
     async def _runner(self) -> None:
         try:
@@ -179,20 +192,32 @@ class DirectoryWatcherObservers:
 
 def setup_directory_watcher(app: FastAPI) -> None:
     async def on_startup() -> None:
-        global _dir_watcher  # pylint: disable=global-statement
-
         mounted_volumes: MountedVolumes = setup_mounted_fs()
 
-        _dir_watcher = DirectoryWatcherObservers()
-        _dir_watcher.observe_directory(mounted_volumes.disk_outputs_path)
-        _dir_watcher.start()
+        app.state.dir_watcher = DirectoryWatcherObservers()
+        app.state.dir_watcher.observe_directory(mounted_volumes.disk_outputs_path)
+        app.state.dir_watcher.start()
 
     async def on_shutdown() -> None:
-        if _dir_watcher is not None:
-            await _dir_watcher.stop()
+        if app.state.dir_watcher is not None:
+            await app.state.dir_watcher.stop()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
 
 
-__all__ = ["setup_directory_watcher"]
+def disable_directory_watcher(app: FastAPI) -> None:
+    if app.state.dir_watcher is not None:
+        app.state.dir_watcher.disable_event_propagation()
+
+
+def enable_directory_watcher(app: FastAPI) -> None:
+    if app.state.dir_watcher is not None:
+        app.state.dir_watcher.enable_event_propagation()
+
+
+__all__ = [
+    "disable_directory_watcher",
+    "enable_directory_watcher",
+    "setup_directory_watcher",
+]
