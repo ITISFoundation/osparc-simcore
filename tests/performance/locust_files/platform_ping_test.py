@@ -6,6 +6,7 @@ import logging
 import os
 from typing import NamedTuple
 
+import locust_plugins # necessary to use --check-fail-ratio 
 from dotenv import load_dotenv
 from locust import task
 from locust.contrib.fasthttp import FastHttpUser
