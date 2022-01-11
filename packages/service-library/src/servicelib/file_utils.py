@@ -22,20 +22,7 @@ async def remove_directory(
     path: Path, only_children: bool = False, ignore_errors: bool = False
 ) -> None:
     """Optional parameter allows to remove all children and keep directory"""
-
-    # below checks should not be required, since they are not raised
-    # by the underlying libraries, will continue to check and raise in
-    # the context of this function.
-    if not path.exists():
-        if ignore_errors:
-            return
-
-        raise FileNotFoundError(f"No such file or directory {path}")
-
-    if not path.is_dir():
-        raise NotADirectoryError(f"Provided path={path} must be a directory")
-
     if only_children:
         await asyncio.gather(*[_rm(child, ignore_errors) for child in path.glob("*")])
     else:
-        await _shutil_rmtree(path, ignore_errors=ignore_errors)
+        shutil.rmtree(path, ignore_errors=ignore_errors)
