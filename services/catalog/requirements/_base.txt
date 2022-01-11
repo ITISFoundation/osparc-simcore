@@ -8,6 +8,11 @@ aiodebug==1.1.2
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
+aiofiles==0.5.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   fastapi
 aiopg==1.2.1
     # via -r requirements/_base.in
 alembic==1.7.4

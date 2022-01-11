@@ -376,6 +376,116 @@
         }
       }
     },
+    "/v1/containers/directory-watcher": {
+      "patch": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Enable/disable directory-watcher event propagation",
+        "operationId": "disable_directory_watcher_v1_containers_directory_watcher_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchDirectoryWatcherItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/ports/outputs/dirs": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Creates the output directories declared by the docker images's labels. It is more convenient to pass the labels from director-v2, since it already has all the machinery to call into director-v0 to retrieve them.",
+        "operationId": "create_output_dirs_v1_containers_ports_outputs_dirs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDirsRequestItem"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/ports/outputs:pull": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Pull output ports data",
+        "operationId": "pull_output_ports_v1_containers_ports_outputs_pull_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Port Keys",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/containers/ports/outputs:push": {
       "post": {
         "tags": [
@@ -468,6 +578,22 @@
           }
         }
       },
+      "CreateDirsRequestItem": {
+        "title": "CreateDirsRequestItem",
+        "required": [
+          "outputs_labels"
+        ],
+        "type": "object",
+        "properties": {
+          "outputs_labels": {
+            "title": "Outputs Labels",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ServiceOutput"
+            }
+          }
+        }
+      },
       "HTTPValidationError": {
         "title": "HTTPValidationError",
         "type": "object",
@@ -480,6 +606,140 @@
             }
           }
         }
+      },
+      "PatchDirectoryWatcherItem": {
+        "title": "PatchDirectoryWatcherItem",
+        "required": [
+          "is_enabled"
+        ],
+        "type": "object",
+        "properties": {
+          "is_enabled": {
+            "title": "Is Enabled",
+            "type": "boolean"
+          }
+        }
+      },
+      "SelectBox": {
+        "title": "SelectBox",
+        "required": [
+          "structure"
+        ],
+        "type": "object",
+        "properties": {
+          "structure": {
+            "title": "Structure",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Structure"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceOutput": {
+        "title": "ServiceOutput",
+        "required": [
+          "label",
+          "description",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "displayOrder": {
+            "title": "Displayorder",
+            "type": "number",
+            "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
+            "deprecated": true
+          },
+          "label": {
+            "title": "Label",
+            "type": "string",
+            "description": "short name for the property",
+            "example": "Age"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "description of the property",
+            "example": "Age in seconds since 1970"
+          },
+          "type": {
+            "title": "Type",
+            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "type": "string",
+            "description": "data type expected on this input glob matching for data type is allowed"
+          },
+          "fileToKeyMap": {
+            "title": "Filetokeymap",
+            "type": "object",
+            "description": "Place the data associated with the named keys in files"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string",
+            "description": "Units, when it refers to a physical quantity"
+          },
+          "widget": {
+            "title": "Widget",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Widget"
+              }
+            ],
+            "description": "custom widget to use instead of the default one determined from the data-type",
+            "deprecated": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Metadata on a service input or output port"
+      },
+      "Structure": {
+        "title": "Structure",
+        "required": [
+          "key",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TextArea": {
+        "title": "TextArea",
+        "required": [
+          "minHeight"
+        ],
+        "type": "object",
+        "properties": {
+          "minHeight": {
+            "title": "Minheight",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "description": "minimum Height of the textarea",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
       },
       "ValidationError": {
         "title": "ValidationError",
@@ -506,6 +766,45 @@
             "type": "string"
           }
         }
+      },
+      "Widget": {
+        "title": "Widget",
+        "required": [
+          "type",
+          "details"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WidgetType"
+              }
+            ],
+            "description": "type of the property"
+          },
+          "details": {
+            "title": "Details",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TextArea"
+              },
+              {
+                "$ref": "#/components/schemas/SelectBox"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "WidgetType": {
+        "title": "WidgetType",
+        "enum": [
+          "TextArea",
+          "SelectBox"
+        ],
+        "type": "string",
+        "description": "An enumeration."
       }
     }
   }
