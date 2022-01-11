@@ -24,6 +24,8 @@ from simcore_service_dynamic_sidecar.core.settings import (
     get_settings,
 )
 
+from ..models.schemas.ports import PortTypeName
+
 _FILE_TYPE_PREFIX = "data:"
 _KEY_VALUE_FILE_NAME = "key_values.json"
 
@@ -38,11 +40,9 @@ def _get_size_of_value(value: ItemConcreteValue) -> int:
         # relative symlink need to know which their parent is
         # in oder to properly resolve the path since the workdir
         # does not equal to their parent dir
-        path = (
-            Path(value.parent) / Path(os.readlink(value))
-            if value.is_symlink()
-            else value
-        )
+        path = value
+        if value.is_symlink():
+            path = Path(value.parent) / Path(os.readlink(value))
         size_bytes = path.stat().st_size
         return size_bytes
     return sys.getsizeof(value)
@@ -164,7 +164,9 @@ async def _get_data_from_port(port: Port) -> Tuple[Port, ItemConcreteValue]:
     return (port, ret)
 
 
-async def download_inputs(inputs_path: Path, port_keys: List[str]) -> ByteSize:
+async def download_target_ports(
+    port_type_name: PortTypeName, target_path: Path, port_keys: List[str]
+) -> ByteSize:
     logger.info("retrieving data from simcore...")
     start_time = time.perf_counter()
 
@@ -178,13 +180,13 @@ async def download_inputs(inputs_path: Path, port_keys: List[str]) -> ByteSize:
 
     # let's gather all the data
     download_tasks = []
-    for node_input in (await PORTS.inputs).values():
+    for port_value in (await getattr(PORTS, port_type_name.value)).values():
         # if port_keys contains some keys only download them
-        logger.info("Checking node %s", node_input.key)
-        if port_keys and node_input.key not in port_keys:
+        logger.info("Checking node %s", port_value.key)
+        if port_keys and port_value.key not in port_keys:
             continue
         # collect coroutines
-        download_tasks.append(_get_data_from_port(node_input))
+        download_tasks.append(_get_data_from_port(port_value))
     logger.info("retrieving %s data", len(download_tasks))
 
     transfer_bytes = 0
@@ -202,12 +204,14 @@ async def download_inputs(inputs_path: Path, port_keys: List[str]) -> ByteSize:
 
                 # if there are files, move them to the final destination
                 downloaded_file: Optional[Path] = cast(Optional[Path], value)
-                dest_path: Path = inputs_path / port.key
+                dest_path: Path = target_path / port.key
 
                 if not downloaded_file or not downloaded_file.exists():
                     # the link may be empty
                     # remove files all files from disk when disconnecting port
-                    await remove_directory(dest_path, only_children=True)
+                    await remove_directory(
+                        dest_path, only_children=True, ignore_errors=True
+                    )
                     continue
 
                 transfer_bytes = transfer_bytes + downloaded_file.stat().st_size
@@ -243,7 +247,7 @@ async def download_inputs(inputs_path: Path, port_keys: List[str]) -> ByteSize:
 
     # create/update the json file with the new values
     if data:
-        data_file = inputs_path / _KEY_VALUE_FILE_NAME
+        data_file = target_path / _KEY_VALUE_FILE_NAME
         if data_file.exists():
             current_data = json.loads(data_file.read_text())
             # merge data
@@ -261,4 +265,4 @@ async def download_inputs(inputs_path: Path, port_keys: List[str]) -> ByteSize:
     return transferred
 
 
-__all__ = ["dispatch_update_for_directory", "upload_outputs", "download_inputs"]
+__all__ = ["dispatch_update_for_directory", "download_target_ports"]

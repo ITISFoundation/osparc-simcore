@@ -9,8 +9,8 @@ from pydantic import AnyUrl, Field, PrivateAttr, validator
 
 from ..node_ports_common.exceptions import (
     InvalidItemTypeError,
-    SymlinkToSymlinkNotSupportedException,
-    SymlinkWithAbsolutePathNotSupportedException,
+    SymlinkToSymlinkIsNotUploadableException,
+    AbsoluteSymlinkIsNotUploadableException,
 )
 from . import port_utils
 from .links import (
@@ -33,27 +33,16 @@ TYPE_TO_PYTYPE: Dict[str, Type[ItemConcreteValue]] = {
 }
 
 
-def _raise_if_symlink_not_valid(path: Path) -> None:
-    if not path.is_symlink():
+def _check_if_symlink_is_valid(symlink: Path) -> None:
+    if not symlink.is_symlink():
         return
 
-    symlink_target_path = Path(os.readlink(path))
+    symlink_target_path = Path(os.readlink(symlink))
     if symlink_target_path.is_symlink():
-        message = (
-            f"'{path}' is pointing to '{symlink_target_path}' "
-            "which is itself a symlink. This is not supported!"
-        )
-        log.error(message)
-        raise SymlinkToSymlinkNotSupportedException(message)
+        raise SymlinkToSymlinkIsNotUploadableException(symlink, symlink_target_path)
 
     if symlink_target_path.is_absolute():
-        message = (
-            f"Absolute symlinks are not supported: "
-            "{path} points to {symlink_target_path} "
-            "Try with relative symlinks!"
-        )
-        log.error(message)
-        raise SymlinkWithAbsolutePathNotSupportedException(message)
+        raise AbsoluteSymlinkIsNotUploadableException(symlink, symlink_target_path)
 
 
 class Port(ServiceProperty):
@@ -188,7 +177,15 @@ class Port(ServiceProperty):
             converted_value: ItemConcreteValue = self._py_value_converter(new_value)
 
             if isinstance(converted_value, Path):
-                _raise_if_symlink_not_valid(converted_value)
+                if (
+                    not port_utils.is_file_type(self.property_type)
+                    or not converted_value.exists()
+                    or converted_value.is_dir()
+                ):
+                    raise InvalidItemTypeError(self.property_type, f"{new_value}")
+
+                _check_if_symlink_is_valid(converted_value)
+
                 final_value = await port_utils.push_file_to_store(
                     file=converted_value,
                     user_id=self._node_ports.user_id,
