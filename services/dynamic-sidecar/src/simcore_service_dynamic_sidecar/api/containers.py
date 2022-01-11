@@ -455,9 +455,9 @@ async def disable_directory_watcher(
     "/containers/ports/outputs/dirs",
     summary=(
         "Creates the output directories declared by the docker images's labels. "
-        "Since the dynamic-sidecar cannot retrieve the labels "
-        "from the image, these must be provided by the "
-        "director-v2. This API is called after the outputs directory was pulled"
+        "It is more convenient to pass the labels from director-v2, "
+        "since it already has all the machinery to call into director-v0 "
+        "to retrieve them."
     ),
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
