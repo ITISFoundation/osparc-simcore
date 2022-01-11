@@ -125,8 +125,8 @@ def relative_path(request):
 def pointed_fie_path(relative_path: bool, tmp_path: Path) -> Path:
     if relative_path:
         return Path("real_file_")
-    else:
-        return tmp_path / "real_file"
+
+    return tmp_path / "real_file"
 
 
 @pytest.fixture

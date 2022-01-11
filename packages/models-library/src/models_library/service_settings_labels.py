@@ -96,7 +96,7 @@ class PathMappingsLabel(BaseModel):
         description="optional list of paths which contents need to be persisted",
     )
 
-    state_exclude: Optional[List[Path]] = Field(
+    state_exclude: Optional[List[str]] = Field(
         None,
         description="optional list unix shell rules used to exclude files from the state",
     )
