@@ -257,6 +257,7 @@ qx.Class.define("osparc.data.model.Workbench", {
     __createNode: function(study, key, version, uuid) {
       const node = new osparc.data.model.Node(study, key, version, uuid);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
+      node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
       return node;
     },
 

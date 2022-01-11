@@ -13,4 +13,3 @@ packaging
 pydantic[email]
 tenacity
 tqdm
-trafaret-config

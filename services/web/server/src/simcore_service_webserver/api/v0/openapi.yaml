@@ -1543,8 +1543,7 @@ paths:
                 force_restart:
                   type: boolean
                   default: false
-                  description: DEPRECATED if true will force re-running all dependent nodes
-                  deprecated: true
+                  description: if true will force re-running all dependent nodes
                 cluster_id:
                   type: integer
                   description: 'the computation shall use the cluster described by its id, 0 is the default cluster'
@@ -3201,6 +3200,36 @@ paths:
                       message:
                         title: Message
                         type: string
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1repos~1projects/get/responses/422/content/application~1json/schema'
+  '/repos/projects/{project_uuid}/checkpoints/HEAD':
+    get:
+      tags:
+        - repository
+      summary: Gets HEAD (i.e. current) checkpoint
+      description: Get current commit
+      operationId: simcore_service_webserver.version_control_handlers._get_checkpoint_handler_head
+      parameters:
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1repos~1projects~1%7Bproject_uuid%7D~1checkpoints/post/responses/201/content/application~1json/schema'
         '422':
           description: Validation Error
           content:

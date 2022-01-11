@@ -248,7 +248,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __createTabPage: function(icon, tooltip, widget, backgroundColor = "background-main") {
       const tabPage = new qx.ui.tabview.Page().set({
-        layout: new qx.ui.layout.VBox(5),
+        layout: new qx.ui.layout.VBox(10),
         backgroundColor,
         icon: icon+"/24"
       });
@@ -546,6 +546,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
       }, this);
+      workbenchUI.addListener("removeNodes", e => {
+        const nodeIds = e.getData();
+        this.__removeNodes(nodeIds);
+      }, this);
       workbenchUI.addListener("removeEdge", e => {
         const edgeId = e.getData();
         this.__removeEdge(edgeId);
@@ -621,10 +625,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           const node = workbench.getNode(nodeId);
           if (node && nodeData) {
             node.setOutputData(nodeData.outputs);
-            if ("progress" in nodeData) {
-              const progress = Number.parseInt(nodeData["progress"]);
-              node.getStatus().setProgress(progress);
-            }
             node.populateStates(nodeData);
           } else if (osparc.data.Permissions.getInstance().isTester()) {
             console.log("Ignored ws 'nodeUpdated' msg", d);
@@ -894,7 +894,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         const view = osparc.file.FilePicker.buildInfoView(filePicker);
         view.setEnabled(false);
+
         this.__infoPage.add(view);
+
+        const downloadFileBtn = new qx.ui.form.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/14").set({
+          allowGrowX: false
+        });
+        downloadFileBtn.addListener("execute", () => osparc.file.FilePicker.downloadOutput(filePicker));
+        this.__infoPage.add(downloadFileBtn);
       } else {
         // empty File Picker
         const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
@@ -1084,7 +1091,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __removeNode: function(nodeId) {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
-        const msg = this.tr("Are you sure you want to delete node?");
+        const msg = this.tr("Are you sure you want to delete the selected node?");
         const win = new osparc.ui.window.Confirmation(msg);
         win.center();
         win.open();
@@ -1095,6 +1102,23 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }, this);
       } else {
         this.__doRemoveNode(nodeId);
+      }
+    },
+
+    __removeNodes: function(nodeIds) {
+      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      if (preferencesSettings.getConfirmDeleteNode()) {
+        const msg = this.tr("Are you sure you want to delete the selected ") + nodeIds.length + " nodes?";
+        const win = new osparc.ui.window.Confirmation(msg);
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            nodeIds.forEach(nodeId => this.__doRemoveNode(nodeId));
+          }
+        }, this);
+      } else {
+        nodeIds.forEach(nodeId => this.__doRemoveNode(nodeId));
       }
     },
 

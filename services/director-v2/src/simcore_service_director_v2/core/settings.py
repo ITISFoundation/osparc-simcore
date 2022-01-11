@@ -15,11 +15,11 @@ from models_library.basic_types import (
 from models_library.services import SERVICE_NETWORK_RE
 from pydantic import AnyHttpUrl, Field, PositiveFloat, validator
 from settings_library.base import BaseCustomSettings
-from settings_library.celery import CelerySettings as BaseCelerySettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
+from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 
 from ..meta import API_VTAG
@@ -58,13 +58,6 @@ class DirectorV0Settings(BaseCustomSettings):
             port=f"{self.DIRECTOR_PORT}",
             path=f"/{self.DIRECTOR_V0_VTAG}",
         )
-
-
-class CelerySettings(BaseCelerySettings):
-    DIRECTOR_V2_CELERY_ENABLED: bool = Field(
-        True, description="Enables/Disables connection with service"
-    )
-    CELERY_PUBLICATION_TIMEOUT: int = 60
 
 
 class DynamicSidecarProxySettings(BaseCustomSettings):
@@ -212,12 +205,6 @@ class PGSettings(PostgresSettings):
     )
 
 
-class CelerySchedulerSettings(BaseCustomSettings):
-    DIRECTOR_V2_CELERY_SCHEDULER_ENABLED: bool = Field(
-        False, description="Enables/Disables the scheduler", deprecated=True
-    )
-
-
 class DaskSchedulerSettings(BaseCustomSettings):
     DIRECTOR_V2_DASK_SCHEDULER_ENABLED: bool = Field(
         True,
@@ -286,19 +273,17 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # App modules settings ---------------------
 
-    CELERY: CelerySettings
-
     DIRECTOR_V0: DirectorV0Settings
 
     DYNAMIC_SERVICES: DynamicServicesSettings
 
     POSTGRES: PGSettings
 
+    DIRECTOR_V2_RABBITMQ: RabbitSettings
+
     STORAGE_ENDPOINT: str = Field("storage:8080", env="STORAGE_ENDPOINT")
 
     TRAEFIK_SIMCORE_ZONE: str = Field("internal_simcore_stack")
-
-    CELERY_SCHEDULER: CelerySchedulerSettings
 
     DASK_SCHEDULER: DaskSchedulerSettings
 
@@ -310,15 +295,3 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     @classmethod
     def _validate_loglevel(cls, value) -> str:
         return cls.validate_log_level(value)
-
-    @validator("DASK_SCHEDULER")
-    @classmethod
-    def _check_only_one_comp_scheduler_enabled(cls, v, values) -> DaskSchedulerSettings:
-        celery_settings: CelerySchedulerSettings = values["CELERY_SCHEDULER"]
-        dask_settings: DaskSchedulerSettings = v
-        if (
-            celery_settings.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED
-            and dask_settings.DIRECTOR_V2_DASK_SCHEDULER_ENABLED
-        ):
-            celery_settings.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED = False
-        return v

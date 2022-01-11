@@ -1,6 +1,6 @@
-import json
-
 # pylint: disable=unsubscriptable-object
+
+import json
 from enum import Enum
 from functools import cached_property
 from pathlib import Path

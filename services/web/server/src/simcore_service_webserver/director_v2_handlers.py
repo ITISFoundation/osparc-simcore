@@ -8,7 +8,6 @@ from models_library.users import UserID
 from pydantic.types import NonNegativeInt
 from servicelib.aiohttp.rest_responses import create_error_response, get_http_error
 from servicelib.json_serialization import json_dumps
-from servicelib.logging_utils import log_decorator
 
 from ._meta import api_version_prefix as VTAG
 from .director_v2_abc import get_project_run_policy
@@ -28,7 +27,6 @@ routes = web.RouteTableDef()
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
-@log_decorator(logger=log)
 async def start_pipeline(request: web.Request) -> web.Response:
     client = DirectorV2ApiClient(request.app)
 
@@ -64,7 +62,10 @@ async def start_pipeline(request: web.Request) -> web.Response:
             project_vc_commits,
         ) = await run_policy.get_or_create_runnable_projects(request, project_id)
         log.debug(
-            "Project %s will start %d variants", project_id, len(running_project_ids)
+            "Project %s will start %d variants: %s",
+            f"{project_id=}",
+            len(running_project_ids),
+            f"{running_project_ids=}",
         )
 
         assert running_project_ids  # nosec
@@ -107,7 +108,6 @@ async def start_pipeline(request: web.Request) -> web.Response:
 @login_required
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
-@log_decorator(logger=log)
 async def stop_pipeline(request: web.Request) -> web.Response:
     client = DirectorV2ApiClient(request.app)
     run_policy = get_project_run_policy(request.app)

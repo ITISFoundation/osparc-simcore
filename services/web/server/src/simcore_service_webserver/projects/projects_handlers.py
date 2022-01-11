@@ -16,6 +16,7 @@ from models_library.rest_pagination_utils import paginate_data
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
+from simcore_service_webserver.director_v2_core import DirectorServiceError
 
 from .. import catalog, director_v2_api
 from .._meta import api_version_prefix as VTAG
@@ -280,6 +281,7 @@ async def get_project(request: web.Request):
             formatted_services = ", ".join(
                 f"{service}:{version}" for service, version in unavilable_services
             )
+            # TODO: lack of permissions should be notified with https://httpstatuses.com/403 web.HTTPForbidden
             raise web.HTTPNotFound(
                 reason=(
                     f"Project '{project_uuid}' uses unavailable services. Please ask "
@@ -353,13 +355,19 @@ async def replace_project(request: web.Request):
         project_uuid = ProjectID(request.match_info["project_id"])
         new_project = await request.json()
 
+        # Prune state field (just in case)
+        new_project.pop("state", None)
+
+    except AttributeError as err:
+        # NOTE: if new_project is not a dict, .pop will raise this error
+        raise web.HTTPBadRequest(
+            reason="Invalid request payload, expected a project model"
+        ) from err
+
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
     except json.JSONDecodeError as exc:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
-
-    # Prune state field (just in case)
-    new_project.pop("state", None)
 
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
     await check_permission(
@@ -519,6 +527,18 @@ async def open_project(request: web.Request) -> web.Response:
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
+    except DirectorServiceError as exc:
+        # there was an issue while accessing the director-v2/director-v0
+        # ensure the project is closed again
+        await projects_api.try_close_project_for_user(
+            user_id=user_id,
+            project_uuid=project_uuid,
+            client_session_id=client_session_id,
+            app=request.app,
+        )
+        raise web.HTTPServiceUnavailable(
+            reason="Unexpected error while starting services."
+        ) from exc
 
 
 @routes.post(f"/{VTAG}/projects/{{project_uuid}}:close")

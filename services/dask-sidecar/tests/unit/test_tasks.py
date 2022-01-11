@@ -101,7 +101,7 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, MockerFixture]:
     )
     # mock dask event publishing
     dask_utils_publish_event_mock = mocker.patch(
-        "simcore_service_dask_sidecar.computational_sidecar.core.Pub",
+        "simcore_service_dask_sidecar.dask_utils.distributed.Pub",
         autospec=True,
     )
     mocker.patch(
@@ -151,6 +151,12 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
                 f"some_file_input_{index+1}": FileUrl(url=f"{file}")
                 for index, file in enumerate(ftp_server)
             },
+            **{
+                f"some_file_input_with_mapping{index+1}": FileUrl(
+                    url=f"{file}", file_mapping=f"{index+1}/some_file_input"
+                )
+                for index, file in enumerate(ftp_server)
+            },
         }
     )
     # check in the console that the expected files are present in the expected INPUT folder (set as ${INPUT_FOLDER} in the service)
@@ -158,11 +164,11 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
     list_of_commands = [
         "echo User: $(id $(whoami))",
         "echo Inputs:",
-        "ls -tlah ${INPUT_FOLDER}",
+        "ls -tlah -R ${INPUT_FOLDER}",
         "echo Outputs:",
-        "ls -tlah ${OUTPUT_FOLDER}",
+        "ls -tlah -R ${OUTPUT_FOLDER}",
         "echo Logs:",
-        "ls -tlah ${LOG_FOLDER}",
+        "ls -tlah -R ${LOG_FOLDER}",
     ]
     list_of_commands += [
         f"(test -f ${{INPUT_FOLDER}}/{file} || (echo ${{INPUT_FOLDER}}/{file} does not exists && exit 1))"
@@ -197,7 +203,12 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
                     "required": True,
                     "mapping": "a_outputfile",
                     "url": f"{output_file_url}",
-                }
+                },
+                "pytest_file_with_mapping": {
+                    "required": True,
+                    "mapping": "subfolder/a_outputfile",
+                    "url": f"{output_file_url}",
+                },
             },
         }
     )
@@ -208,7 +219,11 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
                 "pytest_file": {
                     "url": f"{output_file_url}",
                     "file_mapping": "a_outputfile",
-                }
+                },
+                "pytest_file_with_mapping": {
+                    "url": f"{output_file_url}",
+                    "file_mapping": "subfolder/a_outputfile",
+                },
             },
         }
     )
@@ -233,6 +248,8 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
     list_of_commands += [
         f"echo {jsonized_outputs} > ${{OUTPUT_FOLDER}}/{output_json_file_name}",
         "echo 'some data for the output file' > ${OUTPUT_FOLDER}/a_outputfile",
+        "mkdir -p ${OUTPUT_FOLDER}/subfolder",
+        "echo 'some data for the output file' > ${OUTPUT_FOLDER}/subfolder/a_outputfile",
     ]
 
     log_file_url = parse_obj_as(
@@ -243,8 +260,13 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         docker_basic_auth=DockerBasicAuth(
             server_address="docker.io", username="pytest", password=""
         ),
-        service_key="ubuntu",
-        service_version="latest",
+        #
+        # NOTE: we use sleeper because it defines a user
+        # that can write in outputs and the
+        # sidecar can remove the outputs dirs
+        #
+        service_key="itisfoundation/sleeper",
+        service_version="2.1.2",
         command=[
             "/bin/bash",
             "-c",

@@ -10,48 +10,64 @@ from ..modules.db.tables import NodeClass
 
 log = logging.getLogger(__file__)
 
+_COMPLETED_STATES = (RunningState.ABORTED, RunningState.FAILED, RunningState.SUCCESS)
+_RUNNING_STATES = (RunningState.STARTED, RunningState.RETRY)
+_TASK_TO_PIPELINE_CONVERSIONS = {
+    # tasks are initially in NOT_STARTED state, then they transition to published
+    (RunningState.PUBLISHED, RunningState.NOT_STARTED): RunningState.PUBLISHED,
+    # if there are PENDING states that means the pipeline was published and is awaiting sidecars
+    (
+        RunningState.PENDING,
+        RunningState.PUBLISHED,
+        RunningState.NOT_STARTED,
+    ): RunningState.PENDING,
+    # if there are only completed states without FAILED and NOT_STARTED -> ABORTED
+    (
+        RunningState.SUCCESS,
+        RunningState.ABORTED,
+    ): RunningState.ABORTED,
+    # if there are only completed states without FAILED -> NOT_STARTED
+    (
+        RunningState.SUCCESS,
+        RunningState.ABORTED,
+        RunningState.NOT_STARTED,
+    ): RunningState.NOT_STARTED,
+    # if there are only completed states with FAILED --> FAILED
+    (*_COMPLETED_STATES,): RunningState.FAILED,
+    # if there are only completed states with FAILED --> NOT_STARTED
+    (
+        *_COMPLETED_STATES,
+        RunningState.NOT_STARTED,
+    ): RunningState.NOT_STARTED,
+    # the generic case where we have a combination of completed states, running states,
+    # or published/pending tasks, not_started is a started pipeline
+    (
+        *_COMPLETED_STATES,
+        *_RUNNING_STATES,
+        RunningState.PUBLISHED,
+        RunningState.PENDING,
+        RunningState.NOT_STARTED,
+    ): RunningState.STARTED,
+}
+
 
 def get_pipeline_state_from_task_states(tasks: List[CompTaskAtDB]) -> RunningState:
 
     # compute pipeline state from task states
-    if tasks:
-        # put in a set of unique values
-        set_states: Set[RunningState] = {task.state for task in tasks}
-        if len(set_states) == 1:
-            # this is typically for success, pending, published
-            the_state = next(iter(set_states))
-            return the_state
+    if not tasks:
+        return RunningState.UNKNOWN
+    # put in a set of unique values
+    set_states: Set[RunningState] = {task.state for task in tasks}
+    if len(set_states) == 1:
+        # there is only one state, so it's the one
+        the_state = next(iter(set_states))
+        return the_state
 
-        if set_states.issubset({RunningState.PENDING, RunningState.PUBLISHED}):
-            # a pending pipeline has nodes either in PENDING or PUBLISHED state
-            return RunningState.PENDING
+    for option, result in _TASK_TO_PIPELINE_CONVERSIONS.items():
+        if set_states.issubset(option):
+            return result
 
-        if set_states.issubset({RunningState.SUCCESS, RunningState.ABORTED}):
-            # if only ABORTED and SUCCESS --> then it is aborted
-            return RunningState.ABORTED
-
-        if set_states.issubset(
-            {RunningState.SUCCESS, RunningState.FAILED, RunningState.ABORTED}
-        ):
-            # if there are also failed state in there --> failed
-            return RunningState.FAILED
-
-        if set_states.issubset(
-            {
-                RunningState.PENDING,
-                RunningState.PUBLISHED,
-                RunningState.STARTED,
-                RunningState.SUCCESS,
-                RunningState.RETRY,
-                RunningState.FAILED,
-                RunningState.ABORTED,
-            }
-        ):
-            # a running pipeline has typically any number of nodes
-            # in STARTED, PENDING and PUBLISHED state
-            return RunningState.STARTED
-
-    return RunningState.NOT_STARTED
+    return RunningState.UNKNOWN
 
 
 _node_key_re = re.compile(SERVICE_KEY_RE)

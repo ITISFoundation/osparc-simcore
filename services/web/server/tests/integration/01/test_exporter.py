@@ -31,6 +31,7 @@ import aiopg
 import aiopg.sa
 import aioredis
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.test_utils import TestClient
 from models_library.settings.redis import RedisConfig
 from pytest_simcore.docker_registry import _pull_push_service
@@ -607,3 +608,57 @@ async def test_import_export_import_duplicate(
         duplicated_files_checksums,
         condition_operator=operator.eq,
     )
+
+
+@pytest.fixture
+def mock_file_downloader(monkeypatch: MonkeyPatch) -> None:
+    original_append_file = ParallelDownloader.append_file
+
+    async def mock_append_file(self, link: str, download_path: Path) -> None:
+        # making the download fail
+        link = "http://localhost/missing"
+        await original_append_file(self, link, download_path)
+
+    monkeypatch.setattr(ParallelDownloader, "append_file", mock_append_file)
+
+
+async def test_download_error_reporting(
+    client: TestClient,
+    push_services_to_registry: None,
+    aiopg_engine: aiopg.sa.engine.Engine,
+    redis_client: aioredis.Redis,
+    simcore_services_ready: None,
+    grant_access_rights: None,
+    mock_file_downloader: None,
+):
+    await login_user(client)
+
+    # not testing agains all versions, results will be the same
+    export_version = get_exported_projects()[0]
+    export_file_name = export_version.name
+    version_from_name = export_file_name.split("#")[0]
+
+    assert_error = (
+        f"The '{version_from_name}' version' is not present in the supported versions: "
+        f"{SUPPORTED_EXPORTER_VERSIONS}. If it's a new version please remember to add it."
+    )
+    assert version_from_name in SUPPORTED_EXPORTER_VERSIONS, assert_error
+
+    imported_project_uuid = await import_study_from_file(client, export_version)
+
+    headers = {X_PRODUCT_NAME_HEADER: "osparc"}
+
+    # export newly imported project
+    url_export = client.app.router["export_project"].url_for(
+        project_id=imported_project_uuid
+    )
+
+    assert url_export == URL(API_PREFIX + f"/projects/{imported_project_uuid}:xport")
+    async with await client.post(
+        f"{url_export}", headers=headers, timeout=10
+    ) as export_response:
+        assert export_response.status == 400, await export_response.text()
+        json_response = await export_response.json()
+        assert json_response["error"]["logs"][0]["message"].startswith(
+            "Not all files were downloaded: "
+        )

@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import re
-from copy import deepcopy
+from pathlib import Path
 from pprint import pformat
 from typing import Any, Callable, Dict, List
 
@@ -73,17 +73,15 @@ def test_node_with_thumbnail(minimal_service_common_data: Dict[str, Any]):
     )
 
 
-def test_service_port_units(osparc_simcore_root_dir):
+def test_service_port_units(project_tests_dir: Path):
     ureg = UnitRegistry()
 
-    data = yaml.safe_load(
-        (
-            osparc_simcore_root_dir / "packages/models-library/tests/image-meta.yaml"
-        ).read_text()
-    )
+    data = yaml.safe_load((project_tests_dir / "data" / "image-meta.yaml").read_text())
     print(ServiceDockerData.schema_json(indent=2))
 
     service_meta = ServiceDockerData.parse_obj(data)
+    assert service_meta.inputs
+
     for input_nameid, input_meta in service_meta.inputs.items():
         assert input_nameid
 

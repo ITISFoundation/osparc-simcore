@@ -26,6 +26,7 @@ PROD_REQUIREMENTS = tuple(
     | {
         "simcore-models-library",
         "simcore-postgres-database",
+        "simcore-sdk>=1.1.0",
         "simcore-service-library[fastapi]",
         "simcore-settings-library",
     }

@@ -16,7 +16,13 @@ log = logging.getLogger(__file__)
 
 
 @app_module_setup(
-    __name__, ModuleCategory.ADDON, config_section=CONFIG_SECTION_NAME, logger=log
+    __name__,
+    ModuleCategory.ADDON,
+    config_section=CONFIG_SECTION_NAME,
+    logger=log,
+    depends=[
+        "simcore_service_webserver.diagnostics"
+    ],  # depends on diagnostics for setting the instrumentation
 )
 def setup_computation(app: web.Application):
     # create settings and injects in app

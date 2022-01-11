@@ -120,10 +120,3 @@ def test_graceful_restart_services(
     #   1 root      0:00 /sbin/docker-init -- /bin/sh services/storage/docker/entry
     #   6 scu       0:02 {simcore-service} /usr/local/bin/python /usr/local/bin/sim
     #  54 root      0:00 ps ax
-
-    # $ docker exec -it $(docker ps | grep sidecar | awk '{print $1}') /bin/sh -c 'ps ax'
-    # PID   USER     TIME  COMMAND
-    #  1 root      0:00 /sbin/docker-init -- /bin/sh services/sidecar/docker/entry
-    #  6 scu       0:00 {celery} /usr/local/bin/python /usr/local/bin/celery worke
-    # 26 scu       0:00 {celery} /usr/local/bin/python /usr/local/bin/celery worke
-    # 27 scu       0:00 {celery} /usr/local/bin/python /usr/local/bin/celery worke

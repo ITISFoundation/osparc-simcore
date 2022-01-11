@@ -72,7 +72,7 @@ class NodeSchema(BaseModel):
 class CompTaskAtDB(BaseModel):
     project_id: ProjectID
     node_id: NodeID
-    job_id: Optional[str] = Field(None, description="The celery job ID")
+    job_id: Optional[str] = Field(None, description="The worker job ID")
     node_schema: NodeSchema = Field(..., alias="schema")
     inputs: Optional[Inputs] = Field(..., description="the inputs payload")
     outputs: Optional[Outputs] = Field({}, description="the outputs payload")

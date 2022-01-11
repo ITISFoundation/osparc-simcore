@@ -1,5 +1,4 @@
 import asyncio
-import contextlib
 import logging
 import os
 import socket
@@ -21,6 +20,7 @@ from servicelib.aiohttp.monitor_services import (
 )
 from servicelib.json_serialization import json_dumps
 from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
+from servicelib.utils import logged_gather
 from tenacity import retry
 
 from .computation_config import ComputationSettings
@@ -28,9 +28,9 @@ from .computation_config import get_settings as get_computation_settings
 from .projects import projects_api
 from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 from .socketio.events import (
+    SOCKET_IO_EVENT,
     SOCKET_IO_LOG_EVENT,
     SOCKET_IO_NODE_UPDATED_EVENT,
-    SOCKET_IO_EVENT,
     SocketMessageDict,
     send_messages,
 )
@@ -54,6 +54,7 @@ async def progress_message_parser(app: web.Application, data: bytes) -> None:
                 {
                     "event_type": SOCKET_IO_NODE_UPDATED_EVENT,
                     "data": {
+                        "project_id": project["uuid"],
                         "node_id": rabbit_message.node_id,
                         "data": project["workbench"][f"{rabbit_message.node_id}"],
                     },
@@ -114,6 +115,7 @@ async def events_message_parser(app: web.Application, data: bytes) -> None:
 
 
 APP_RABBITMQ_POOL_KEY = f"{__name__}.pool"
+_RABBITMQ_INTERVAL_BEFORE_RESTARTING_CONSUMER_S = 2
 
 
 async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
@@ -121,7 +123,7 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     # e.g. CRITICAL:pika.adapters.base_connection:Could not get addresses to use: [Errno -2] Name or service not known (rabbit)
     # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
     comp_settings: ComputationSettings = get_computation_settings(app)
-    rabbit_broker = comp_settings.broker_url
+    rabbit_broker = comp_settings.dsn
 
     log.info("Creating pika connection pool for %s", rabbit_broker)
     await wait_till_rabbitmq_responsive(f"{rabbit_broker}")
@@ -191,30 +193,35 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
                 raise
             except Exception:  # pylint: disable=broad-except
                 log.warning(
-                    "unexpected error in consumer for %s, restarting",
+                    "unexpected error in consumer for %s, %s",
                     exchange_name,
+                    "restarting..." if consumer_running else "stopping",
                     exc_info=True,
                 )
+                if consumer_running:
+                    await asyncio.sleep(_RABBITMQ_INTERVAL_BEFORE_RESTARTING_CONSUMER_S)
+
+    # TODO
 
     consumer_tasks = []
     for exchange_name, message_parser, consumer_kwargs in [
         (
-            comp_settings.rabbit.channels["log"],
+            comp_settings.RABBIT_CHANNELS["log"],
             log_message_parser,
             {"no_ack": True},
         ),
         (
-            comp_settings.rabbit.channels["progress"],
+            comp_settings.RABBIT_CHANNELS["progress"],
             progress_message_parser,
             {"no_ack": True},
         ),
         (
-            comp_settings.rabbit.channels["instrumentation"],
+            comp_settings.RABBIT_CHANNELS["instrumentation"],
             instrumentation_message_parser,
             {"no_ack": False},
         ),
         (
-            comp_settings.rabbit.channels["events"],
+            comp_settings.RABBIT_CHANNELS["events"],
             events_message_parser,
             {"no_ack": False},
         ),
@@ -233,9 +240,8 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     consumer_running = False
     for task in consumer_tasks:
         task.cancel()
-    with contextlib.suppress(asyncio.CancelledError):
-        for task in consumer_tasks:
-            await task
+    await logged_gather(*consumer_tasks, reraise=False, log=log)
+
     log.info("Closing connections...")
     await channel_pool.close()
     await connection_pool.close()

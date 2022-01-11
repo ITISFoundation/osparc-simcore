@@ -54,7 +54,6 @@ attrs==20.3.0
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aiohttp
     #   jsonschema
 bcrypt==3.2.0
@@ -246,7 +245,6 @@ pyyaml==5.4.1
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
     #   docker-compose
-    #   trafaret-config
 requests==2.25.1
     # via
     #   docker
@@ -301,10 +299,6 @@ tornado==6.1
     #   jaeger-client
     #   threadloop
 tqdm==4.62.3
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-trafaret==2.1.0
-    # via trafaret-config
-trafaret-config==2.0.2
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 typer==0.4.0
     # via -r requirements/../../../packages/settings-library/requirements/_base.in

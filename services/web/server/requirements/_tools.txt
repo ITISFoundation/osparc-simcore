@@ -12,9 +12,9 @@ bump2version==1.0.1
     # via -r requirements/../../../../requirements/devenv.txt
 cfgv==3.3.1
     # via pre-commit
-click==7.1.2
+click==8.0.3
     # via
-    #   -c requirements/_base.txt
+    #   -c requirements/_packages.txt
     #   -c requirements/_test.txt
     #   black
     #   pip-tools
@@ -24,6 +24,8 @@ filelock==3.4.0
     # via virtualenv
 identify==2.4.0
     # via pre-commit
+inotify==0.2.10
+    # via -r requirements/_tools.in
 isort==5.10.1
     # via
     #   -c requirements/_test.txt
@@ -32,6 +34,8 @@ mypy-extensions==0.4.3
     # via black
 nodeenv==1.6.0
     # via pre-commit
+nose==1.3.7
+    # via inotify
 pathspec==0.9.0
     # via black
 pep517==0.12.0
@@ -52,7 +56,6 @@ pyyaml==5.4.1
     #   -c requirements/_packages.txt
     #   -c requirements/_test.txt
     #   pre-commit
-    #   watchdog
 regex==2021.11.10
     # via black
 six==1.16.0
@@ -78,8 +81,6 @@ typing-extensions==3.10.0.2
     #   black
 virtualenv==20.10.0
     # via pre-commit
-watchdog==2.1.6
-    # via -r requirements/_tools.in
 wheel==0.37.0
     # via pip-tools
 
