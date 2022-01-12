@@ -8,9 +8,9 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from . import meta_handlers
+from . import metaml_handlers
 from .director_v2_api import get_project_run_policy, set_project_run_policy
-from .meta_projects import meta_project_policy, projects_redirection_middleware
+from .metaml_projects import meta_project_policy, projects_redirection_middleware
 
 log = logging.getLogger(__name__)
 
@@ -24,8 +24,8 @@ log = logging.getLogger(__name__)
     ],
     logger=log,
 )
-def setup_meta(app: web.Application):
-    app.add_routes(meta_handlers.routes)
+def setup_metamdl(app: web.Application):
+    app.add_routes(metaml_handlers.routes)
     app.middlewares.append(projects_redirection_middleware)
 
     # Overrides run-policy from directorv2

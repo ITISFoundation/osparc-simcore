@@ -23,7 +23,7 @@ from .email import setup_email
 from .exporter.module_setup import setup_exporter
 from .groups import setup_groups
 from .login.module_setup import setup_login
-from .meta import setup_meta
+from .metaml import setup_metamdl
 from .products import setup_products
 from .projects.module_setup import setup_projects
 from .publications import setup_publications
@@ -94,7 +94,7 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     # project add-ons
     if settings.WEBSERVER_DEV_FEATURES_ENABLED:
         setup_version_control(app)
-        setup_meta(app)
+        setup_metamdl(app)
     else:
         log.info("Skipping add-ons under development: version-control and meta")
 

@@ -13,8 +13,8 @@ from pydantic.fields import Field
 from pydantic.networks import HttpUrl
 
 from ._meta import api_version_prefix as VTAG
-from .meta_iterations import ProjectIteration
-from .meta_version_control import VersionControlForMetaModeling
+from .metaml_iterations import ProjectIteration
+from .metaml_version_control import VersionControlForMetaModeling
 from .rest_utils import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 from .utils_aiohttp import create_url_for_function, envelope_json_response

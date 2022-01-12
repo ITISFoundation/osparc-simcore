@@ -18,8 +18,11 @@ from models_library.services import ServiceDockerData
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 
-from .meta_function_nodes import FRONTEND_SERVICE_TO_CALLABLE, FRONTEND_SERVICES_CATALOG
-from .meta_version_control import CommitID, ProjectDict, VersionControlForMetaModeling
+from .metaml_function_nodes import (
+    FRONTEND_SERVICE_TO_CALLABLE,
+    FRONTEND_SERVICES_CATALOG,
+)
+from .metaml_version_control import CommitID, ProjectDict, VersionControlForMetaModeling
 from .utils import compute_sha1_on_small_dataset, now_str
 
 log = logging.getLogger(__file__)
