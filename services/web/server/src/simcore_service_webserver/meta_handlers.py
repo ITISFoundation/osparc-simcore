@@ -2,7 +2,7 @@
 
 """
 import logging
-from typing import List, Optional, Tuple
+from typing import List, NamedTuple, Optional, Tuple
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -36,26 +36,27 @@ class _TagInfoError(Exception):
     ...
 
 
-async def list_project_iterations(
+class _IterationsRange(NamedTuple):
+    items: List[IterationTuple]
+    total_count: int
+
+
+async def _get_project_iterations_range(
     vc_repo: VersionControlForMetaModeling,
     project_uuid: ProjectID,
     commit_id: CommitID,
     offset: int = 0,
     limit: Optional[int] = None,
-) -> Tuple[List[IterationTuple], int]:
-
+) -> _IterationsRange:
     assert offset >= 0  # nosec
 
     repo_id = await vc_repo.get_repo_id(project_uuid)
     assert repo_id is not None
 
-    total_number_of_iterations = 0  # count number of iterations
+    total_number_of_iterations = 0
 
-    # Search all subsequent commits (i.e. children) and retrieve their tags
-    # Select range on those tagged as iterations and returned their assigned workcopy id
-    # Can also check all associated project uuids and see if they exists
-
-    # FIXME: do all these operations in database
+    # Searches all subsequent commits (i.e. children) and retrieve their tags
+    # FIXME: do all these operations in database.
     tags_per_child: List[List[TagProxy]] = await vc_repo.get_children_tags(
         repo_id, commit_id
     )
@@ -101,15 +102,21 @@ async def list_project_iterations(
                 "Skipping %d-th child due to a wrong/inconsistent tag: %s", n, err
             )
 
+    # Selects range on those tagged as iterations and returned their assigned workcopy id
     total_number_of_iterations = len(iterations)
 
     # sort and select. If requested interval is outside of range, it returns empty
     iterations.sort(key=lambda tup: tup[1])
 
     if limit is None:
-        return iterations[offset:], total_number_of_iterations
+        return _IterationsRange(
+            items=iterations[offset:], total_count=total_number_of_iterations
+        )
 
-    return iterations[offset : (offset + limit)], total_number_of_iterations
+    return _IterationsRange(
+        items=iterations[offset : (offset + limit)],
+        total_count=total_number_of_iterations,
+    )
 
 
 async def create_or_get_project_iterations(
@@ -183,22 +190,19 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
         ) from err
 
     # core function ----
-    (
-        selected_project_iterations,
-        total_number_of_iterations,
-    ) = await list_project_iterations(
+    iterations = await _get_project_iterations_range(
         vc_repo, _project_uuid, commit_id, offset=_offset, limit=_limit
     )
 
-    if total_number_of_iterations == 0:
+    if iterations.total_count == 0:
         raise web.HTTPNotFound(
             reason=f"No iterations found for project {_project_uuid=}/{commit_id=}"
         )
 
-    assert len(selected_project_iterations) <= _limit  # nosec
+    assert len(iterations.items) <= _limit  # nosec
 
     # parse and validate response ----
-    iterations_items = [
+    page_items = [
         ProjectIterationAsItem(
             name=f"projects/{_project_uuid}/checkpoint/{commit_id}/iterations/{iter_id}",
             parent=ParentMetaProjectRef(project_id=_project_uuid, ref_id=commit_id),
@@ -213,14 +217,14 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
                 ref_id=commit_id,
             ),
         )
-        for wcp_id, iter_id in selected_project_iterations
+        for wcp_id, iter_id in iterations.items
     ]
 
     page = Page[ProjectIterationAsItem].parse_obj(
         paginate_data(
-            chunk=iterations_items,
+            chunk=page_items,
             request_url=request.url,
-            total=total_number_of_iterations,
+            total=iterations.total_count,
             limit=_limit,
             offset=_offset,
         )
@@ -231,10 +235,11 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
     )
 
 
-@routes.post(
-    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
-    name=f"{__name__}._create_meta_project_iterations_handler",
-)
+# TODO: Enable when create_or_get_project_iterations is implemented
+# @routes.post(
+#    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
+#    name=f"{__name__}._create_meta_project_iterations_handler",
+# )
 @permission_required("project.snapshot.create")
 async def _create_meta_project_iterations_handler(request: web.Request) -> web.Response:
     # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]

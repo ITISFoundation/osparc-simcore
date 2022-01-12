@@ -63,69 +63,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
-    post:
-      tags:
-        - meta-projects
-      summary: Create Project Iterations
-      description: "Gets or creates projects iterations
-
-        If the number of iterations is not bound (e.g. in an optimization) then it responds
-        when the requested range (offset: offset+limits)
-        "
-      operationId: "simcore_service_webserver.meta_handlers._create_meta_project_iterations_handler"
-      parameters:
-        - description: Project unique identifier
-          required: true
-          schema:
-            title: Project Uuid
-            type: string
-            description: Project unique identifier
-            format: uuid
-          name: project_uuid
-          in: path
-        - required: true
-          schema:
-            title: Ref Id
-            anyOf:
-              - type: integer
-              - type: string
-          name: ref_id
-          in: path
-        - description: index to the first item to return (pagination)
-          required: false
-          schema:
-            title: Offset
-            exclusiveMinimum: false
-            type: integer
-            description: index to the first item to return (pagination)
-            default: 0
-            minimum: 0
-          name: offset
-          in: query
-        - description: maximum number of items to return (pagination)
-          required: false
-          schema:
-            title: Limit
-            maximum: 50.0
-            minimum: 1.0
-            type: integer
-            description: maximum number of items to return (pagination)
-            default: 20
-          name: limit
-          in: query
-      responses:
-        "200":
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Page_IterationAsItem_"
-        "422":
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HTTPValidationError"
 components:
   schemas:
     HTTPValidationError:
