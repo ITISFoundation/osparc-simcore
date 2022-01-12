@@ -95,6 +95,8 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
 
             # TODO: Replacing iter_node by a param_node, it avoid re-running matching iterations
             #       Currently it does not work because front-end needs to change
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
+            #
             # _param_node = create_param_node_from_iterator_with_outputs(_iter_node)
             # updated_nodes[node_id] = _param_node
             updated_nodes[node_id] = _iter_node

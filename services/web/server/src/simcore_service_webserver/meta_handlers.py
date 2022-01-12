@@ -169,7 +169,8 @@ routes = web.RouteTableDef()
 )
 @permission_required("project.snapshot.read")
 async def _list_meta_project_iterations_handler(request: web.Request) -> web.Response:
-    # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]
+    # TODO: check access to non owned projects user_id = request[RQT_USERID_KEY]
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
 
     # parse and validate request ----
     url_for = create_url_for_function(request)
@@ -236,13 +237,17 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
 
 
 # TODO: Enable when create_or_get_project_iterations is implemented
+# SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
+#
 # @routes.post(
 #    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
 #    name=f"{__name__}._create_meta_project_iterations_handler",
 # )
 @permission_required("project.snapshot.create")
 async def _create_meta_project_iterations_handler(request: web.Request) -> web.Response:
-    # FIXME: check access to non owned projects user_id = request[RQT_USERID_KEY]
+    # TODO: check access to non owned projects user_id = request[RQT_USERID_KEY]
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
+
     url_for = create_url_for_function(request)
     vc_repo = VersionControlForMetaModeling(request)
 
@@ -288,5 +293,6 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
 #     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}",
 #     name=f"{__name__}._get_meta_project_iterations_handler",
 # )
+# SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
 async def _get_meta_project_iterations_handler(request: web.Request) -> web.Response:
     raise NotImplementedError

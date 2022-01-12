@@ -56,8 +56,10 @@ async def context_with_logged_user(client: TestClient, logged_user: AUserDict):
 async def test_iterators_workflow(
     client: TestClient, context_with_logged_user: None, mocker, faker: Faker
 ):
-
+    #
     # NOTE: all TODOs below shall be addressed in next version of the iterator
+    # SEE SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
+    #
 
     resp: ClientResponse
 
