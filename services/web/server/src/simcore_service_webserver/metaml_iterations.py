@@ -17,6 +17,7 @@ from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
 from models_library.services import ServiceDockerData
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
+from simcore_service_webserver.version_control_errors import UserUndefined
 
 from .metaml_function_nodes import (
     FRONTEND_SERVICE_TO_CALLABLE,
@@ -201,8 +202,10 @@ async def get_or_create_runnable_projects(
     vc_repo = VersionControlForMetaModeling(request)
     assert vc_repo.user_id  # nosec
 
-    # TODO:  handle UserUndefined and translate into web.HTTPForbidden
-    project: ProjectDict = await vc_repo.get_project(str(project_uuid))
+    try:
+        project: ProjectDict = await vc_repo.get_project(str(project_uuid))
+    except UserUndefined as err:
+        raise web.HTTPForbidden(reason="Unauthenticated request") from err
 
     project_nodes: Dict[NodeID, Node] = {
         nid: Node.parse_obj(n) for nid, n in project["workbench"].items()
