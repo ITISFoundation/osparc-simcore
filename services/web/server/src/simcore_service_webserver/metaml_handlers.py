@@ -29,9 +29,10 @@ log = logging.getLogger(__name__)
 IterationTuple = Tuple[ProjectID, CommitID]
 
 
-class _TagInfoError(Exception):
-    """Local error related with the information
-    (workcopy or iteration) embedded in a vc tag"""
+class NotTaggedAsIteration(Exception):
+    """A commit does not contain the tags
+    to be identified as an iterator
+    """
 
     ...
 
@@ -56,18 +57,15 @@ async def _get_project_iterations_range(
     total_number_of_iterations = 0
 
     # Searches all subsequent commits (i.e. children) and retrieve their tags
+
     # FIXME: do all these operations in database.
+    # FIXME: implement real pagination https://github.com/ITISFoundation/osparc-simcore/issues/2735
     tags_per_child: List[List[TagProxy]] = await vc_repo.get_children_tags(
         repo_id, commit_id
     )
 
     iterations: List[Tuple[ProjectID, CommitID]] = []
     for n, tags in enumerate(tags_per_child):
-
-        # FIXME: the db query did not guarantee
-        # not sorted
-        # not limited
-        # not certain if tags we need
         try:
             iteration: Optional[ProjectIteration] = None
             workcopy_id: Optional[ProjectID] = None
@@ -77,29 +75,33 @@ async def _get_project_iterations_range(
                     tag.name, return_none_if_fails=True
                 ):
                     if iteration:
-                        raise _TagInfoError(
-                            f"This entry has more than one iteration {tag=}"
+                        raise NotTaggedAsIteration(
+                            f"This {commit_id=} has more than one iteration {tag=}"
                         )
                     iteration = pim
                 elif pid := parse_workcopy_project_tag_name(tag.name):
                     if workcopy_id:
-                        raise _TagInfoError(
-                            f"This entry has more than one workcopy  {tag=}"
+                        raise NotTaggedAsIteration(
+                            f"This {commit_id=} has more than one workcopy  {tag=}"
                         )
                     workcopy_id = pid
                 else:
                     log.debug("Got %s for children of %s", f"{tag=}", f"{commit_id=}")
 
             if not workcopy_id:
-                raise _TagInfoError(f"No workcopy tag found in {tags=}")
+                raise NotTaggedAsIteration(f"No workcopy tag found in {tags=}")
             if not iteration:
-                raise _TagInfoError(f"No iteration tag found in {tags=}")
+                raise NotTaggedAsIteration(f"No iteration tag found in {tags=}")
 
             iterations.append((workcopy_id, iteration.iter_index))
 
-        except _TagInfoError as err:
+        except NotTaggedAsIteration as err:
             log.warning(
-                "Skipping %d-th child due to a wrong/inconsistent tag: %s", n, err
+                "Skipping %d-th child since is not tagged as an iteration of %s/%s: %s",
+                n,
+                f"{repo_id=}",
+                f"{commit_id=}",
+                f"{err=}",
             )
 
     # Selects range on those tagged as iterations and returned their assigned workcopy id

@@ -105,7 +105,6 @@ class VersionControlForMetaModeling(VersionControlRepository):
                 # take snapshot of forced project
                 snapshot_checksum = compute_workbench_checksum(project["workbench"])
 
-                # TODO: check snapshot in parent_commit_id != snapshot_checksum
                 await self._upsert_snapshot(
                     snapshot_checksum, SimpleNamespace(**project), conn
                 )
@@ -124,8 +123,6 @@ class VersionControlForMetaModeling(VersionControlRepository):
                 project["uuid"] = eval_workcopy_project_id(
                     repo.project_uuid, snapshot_checksum
                 )
-
-                # FIXME: File-picker takes project uuid. replace!
                 project["hidden"] = True
 
                 # creates runnable version in project
