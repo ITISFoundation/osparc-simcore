@@ -107,7 +107,7 @@ class PathMappingsLabel(BaseModel):
                 "outputs_path": "/tmp/outputs",  # nosec
                 "inputs_path": "/tmp/inputs",  # nosec
                 "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # nosec
-                "state_paths": ["/tmp/strip_me/*", "*.py"],  # nosec
+                "state_exclude": ["/tmp/strip_me/*", "*.py"],  # nosec
             }
         }
 
