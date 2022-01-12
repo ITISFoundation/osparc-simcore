@@ -52,7 +52,7 @@ projects:
   enabled: False
 version_control:
   enabled: False
-meta:
+metaml:
   enabled: False
 session:
   # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
