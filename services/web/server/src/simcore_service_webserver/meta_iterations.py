@@ -32,8 +32,8 @@ _ParametersNodesPair = Tuple[Parameters, NodesDict]
 
 
 def _compute_params_checksum(parameters: Parameters) -> MD5Str:
-    # TODO: test non-std OutputTypes
-    # NOTE: parameters are within a project's dataset which can be considered small (based on test_compute_sh1_on_small_dataset)
+    # NOTE: parameters are within a project's dataset which can
+    # be considered small (based on test_compute_sh1_on_small_dataset)
     return compute_sha1_on_small_dataset(parameters)
 
 
@@ -112,9 +112,7 @@ def extract_parameters(
     commit_id: CommitID,
 ) -> Parameters:
     raise NotImplementedError()
-    # TODO: get snapshot
-    # TODO: iter nodes, if iter, read&save outputs
-    # - order?  = order( project_nodes.keys() )
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
 
 
 # DOMAIN MODEL for project iteration ------------------------------------------------------------
@@ -326,7 +324,4 @@ async def get_runnable_projects_ids(
         return runnable_project_ids
 
     raise NotImplementedError()
-    # meta-project
-    # TODO: find branches of current head that represents iterations
-    # tags: - one to identify it as iteration with given parameters
-    #       - one to associate runnable project uuid
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
