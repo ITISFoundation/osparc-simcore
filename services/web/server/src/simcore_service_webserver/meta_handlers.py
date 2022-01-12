@@ -29,6 +29,13 @@ log = logging.getLogger(__name__)
 IterationTuple = Tuple[ProjectID, CommitID]
 
 
+class _TagInfoError(Exception):
+    """Local error related with the information
+    (workcopy or iteration) embedded in a vc tag"""
+
+    ...
+
+
 async def list_project_iterations(
     vc_repo: VersionControlForMetaModeling,
     project_uuid: ProjectID,
@@ -47,6 +54,7 @@ async def list_project_iterations(
     # Search all subsequent commits (i.e. children) and retrieve their tags
     # Select range on those tagged as iterations and returned their assigned workcopy id
     # Can also check all associated project uuids and see if they exists
+
     # FIXME: do all these operations in database
     tags_per_child: List[List[TagProxy]] = await vc_repo.get_children_tags(
         repo_id, commit_id
@@ -68,13 +76,13 @@ async def list_project_iterations(
                     tag.name, return_none_if_fails=True
                 ):
                     if iteration:
-                        raise ValueError(
+                        raise _TagInfoError(
                             f"This entry has more than one iteration {tag=}"
                         )
                     iteration = pim
                 elif pid := parse_workcopy_project_tag_name(tag.name):
                     if workcopy_id:
-                        raise ValueError(
+                        raise _TagInfoError(
                             f"This entry has more than one workcopy  {tag=}"
                         )
                     workcopy_id = pid
@@ -82,14 +90,16 @@ async def list_project_iterations(
                     log.debug("Got %s for children of %s", f"{tag=}", f"{commit_id=}")
 
             if not workcopy_id:
-                raise ValueError("No working copy found")
+                raise _TagInfoError(f"No workcopy tag found in {tags=}")
             if not iteration:
-                raise ValueError("No iteration tag found")
+                raise _TagInfoError(f"No iteration tag found in {tags=}")
 
             iterations.append((workcopy_id, iteration.iter_index))
 
-        except ValueError as err:
-            log.debug("Skipping child %s: %s", n, err)
+        except _TagInfoError as err:
+            log.warning(
+                "Skipping %d-th child due to a wrong/inconsistent tag: %s", n, err
+            )
 
     total_number_of_iterations = len(iterations)
 
