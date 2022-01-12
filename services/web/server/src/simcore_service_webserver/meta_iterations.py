@@ -21,7 +21,7 @@ from pydantic.fields import Field
 
 from .meta_function_nodes import FRONTEND_SERVICE_TO_CALLABLE, FRONTEND_SERVICES_CATALOG
 from .meta_version_control import CommitID, ProjectDict, VersionControlForMetaModeling
-from .utils import compute_sha1_on_small_dataset
+from .utils import compute_sha1_on_small_dataset, now_str
 
 log = logging.getLogger(__file__)
 
@@ -99,7 +99,6 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
             # updated_nodes[node_id] = _param_node
             updated_nodes[node_id] = _iter_node
 
-        # TODO: here we can yield.
         parameters_per_iter.append(parameters)
         updated_nodes_per_iter.append(updated_nodes)
 
@@ -160,6 +159,10 @@ class ProjectIteration(BaseModel):
         )
 
 
+# NOTE: compose_/parse_ functions are basically serialization functions for ProjectIteration
+#       into/from string tags. An alternative approach would be simply using json.dump/load
+#       but we should guarantee backwards compatibilty with old tags
+#
 def compose_iteration_tag_name(
     repo_commit_id: CommitID,
     iter_index: int,
@@ -167,9 +170,6 @@ def compose_iteration_tag_name(
     parameters_checksum: SHA1Str,
 ) -> str:
     """Composes unique tag name for iter_index-th iteration of repo_commit_id out of total_count"""
-    # NOTE: prefers to a json dump because it allows regex search?
-    # should be searchable e.g. get repo/*/*/*
-    # can do the same with json since it is a str!?
     return (
         f"iteration:{repo_commit_id}/{iter_index}/{total_count}/{parameters_checksum}"
     )
@@ -222,7 +222,7 @@ async def get_or_create_runnable_projects(
     main_commit_id = await vc_repo.commit(
         repo_id,
         tag=f"auto:main/{project_uuid}",
-        message="auto-commit at get_or_create_runnable_projects",
+        message=f"auto-commit {now_str()}",
     )
     runnable_project_vc_commits.append(main_commit_id)
 
