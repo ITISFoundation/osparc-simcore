@@ -21,7 +21,6 @@ from attr import dataclass
 from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
 from simcore_sdk.node_ports_v2 import exceptions, node_config
-from simcore_sdk.node_ports_v2 import port as port_module
 from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
 from simcore_sdk.node_ports_v2.port import Port
 from utils_port_v2 import create_valid_port_config

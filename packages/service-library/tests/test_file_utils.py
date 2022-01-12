@@ -6,7 +6,6 @@ from pathlib import Path
 from faker import Faker
 
 import pytest
-from faker import Faker
 from servicelib.file_utils import remove_directory
 
 

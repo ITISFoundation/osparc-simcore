@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import re
+from copy import deepcopy
 from pathlib import Path
 from pprint import pformat
 from typing import Any, Callable, Dict, List
