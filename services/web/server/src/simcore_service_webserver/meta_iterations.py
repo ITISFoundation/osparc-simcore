@@ -57,7 +57,6 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
             iterable_nodes_ids.append(node_id)
 
     # for each iterable node create generator
-    # NOTE: override branches or keep all?
     nodes_generators = []
 
     for node, node_def in zip(iterable_nodes, iterable_nodes_defs):

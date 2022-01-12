@@ -129,7 +129,6 @@ class VersionControlForMetaModeling(VersionControlRepository):
                 project["hidden"] = True
 
                 # creates runnable version in project
-                # raises ?? if same uuid
                 await self.ProjectsOrm(conn).insert(**project)
 
                 # create branch and set head to last commit_id
