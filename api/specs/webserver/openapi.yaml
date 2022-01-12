@@ -221,7 +221,7 @@ paths:
   # META-PROJECTS -------------------------------------------------------------------------
 
   /projects/{project_uuid}/checkpoint/{ref_id}/iterations:
-    $ref: "./openapi-meta-projects.yaml#/paths/projects__project_uuid__checkpoint__ref_id__iterations"
+    $ref: "./openapi-meta-projects.yaml#/paths/~1projects~1{project_uuid}~1checkpoint~1{ref_id}~1iterations"
 
   # REPOSITORY -------------------------------------------------------------------------
   /repos/projects:

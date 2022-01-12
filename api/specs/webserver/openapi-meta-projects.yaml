@@ -1,6 +1,5 @@
 paths:
-  # projects/{project_uuid}/checkpoint/{ref_id}/iterations:
-  projects__project_uuid__checkpoint__ref_id__iterations:
+  /projects/{project_uuid}/checkpoint/{ref_id}/iterations:
     get:
       tags:
         - meta-projects
@@ -70,11 +69,9 @@ paths:
       summary: Create Project Iterations
       description: "Gets or creates projects iterations
 
-
-        If the number of iterations is not bound (e.g. in an optimization) then it
-        responds
-
-        when the requested range (offset: offset+limits)"
+        If the number of iterations is not bound (e.g. in an optimization) then it responds
+        when the requested range (offset: offset+limits)
+        "
       operationId: "simcore_service_webserver.meta_handlers._create_meta_project_iterations_handler"
       parameters:
         - description: Project unique identifier

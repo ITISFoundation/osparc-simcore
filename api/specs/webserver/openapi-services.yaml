@@ -1,7 +1,7 @@
 paths:
   /computation/pipeline/{project_id}/start:
     post:
-      description: Starts a pipeline(s) of a given (meta) project
+      description: Starts the pipeline(s) of a given (meta) project
       tags:
         - service
       operationId: start_pipeline

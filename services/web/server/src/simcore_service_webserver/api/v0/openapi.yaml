@@ -1527,7 +1527,7 @@ paths:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/computation/pipeline/{project_id}:start':
     post:
-      description: Starts a pipeline(s) of a given (meta) project
+      description: Starts the pipeline(s) of a given (meta) project
       tags:
         - service
       operationId: start_pipeline
@@ -3093,9 +3093,7 @@ paths:
       summary: Create Project Iterations
       description: |-
         Gets or creates projects iterations
-
-        If the number of iterations is not bound (e.g. in an optimization) then it responds
-        when the requested range (offset: offset+limits)
+        If the number of iterations is not bound (e.g. in an optimization) then it responds when the requested range (offset: offset+limits)
       operationId: simcore_service_webserver.meta_handlers._create_meta_project_iterations_handler
       parameters:
         - description: Project unique identifier

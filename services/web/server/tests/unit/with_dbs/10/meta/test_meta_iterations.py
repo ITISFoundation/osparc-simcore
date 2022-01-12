@@ -56,6 +56,9 @@ async def context_with_logged_user(client: TestClient, logged_user: AUserDict):
 async def test_iterators_workflow(
     client: TestClient, context_with_logged_user: None, mocker, faker: Faker
 ):
+
+    # NOTE: all TODOs below shall be addressed in next version of the iterator
+
     resp: ClientResponse
 
     # check init meta is correct
@@ -170,11 +173,11 @@ async def test_iterators_workflow(
     assert resp.status == HTTPStatus.OK, await resp.text()
     body = await resp.json()
 
-    # TODO: updating a project fields can be daunting because
+    # NOTE: updating a project fields can be daunting because
     # it combines nested field attributes with dicts and from the
     # json you cannot distinguish easily what-is-what automatically
     # Dict keys are usually some sort of identifier, typically a UUID or
-    # and index but nothing prevents a dict from user other type of key types
+    # and index but nothing prevents a dict from using any other type of key types
     #
     project = Project.parse_obj(body["data"])
     new_project = project.copy(
