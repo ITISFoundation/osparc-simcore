@@ -1,6 +1,5 @@
 """ Implements parts of the pre-run stage that iterates a meta-project and versions every iteration
 
-    TODO: refactor logic into different modules
 """
 
 import itertools
