@@ -10,7 +10,7 @@ import tempfile
 import uuid
 from pathlib import Path
 from typing import Any, AsyncGenerator, AsyncIterable, Iterator, List
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import aiodocker
 import pytest
@@ -65,6 +65,11 @@ def state_paths_dirs(io_temp_dir: Path) -> List[Path]:
     return [io_temp_dir / f"dir_{x}" for x in range(4)]
 
 
+@pytest.fixture(scope="session")
+def state_exclude_dirs(io_temp_dir: Path) -> List[Path]:
+    return [io_temp_dir / f"dir_exclude_{x}" for x in range(4)]
+
+
 @pytest.fixture(scope="module")
 def mock_environment(
     monkeypatch_module: MonkeyPatch,
@@ -73,6 +78,7 @@ def mock_environment(
     inputs_dir: Path,
     outputs_dir: Path,
     state_paths_dirs: List[Path],
+    state_exclude_dirs: List[Path],
 ) -> None:
     monkeypatch_module.setenv("SC_BOOT_MODE", "production")
     monkeypatch_module.setenv("DYNAMIC_SIDECAR_compose_namespace", compose_namespace)
@@ -87,6 +93,9 @@ def mock_environment(
     monkeypatch_module.setenv("DY_SIDECAR_PATH_OUTPUTS", str(outputs_dir))
     monkeypatch_module.setenv(
         "DY_SIDECAR_STATE_PATHS", json.dumps([str(x) for x in state_paths_dirs])
+    )
+    monkeypatch_module.setenv(
+        "DY_SIDECAR_STATE_EXCLUDE", json.dumps([str(x) for x in state_exclude_dirs])
     )
     monkeypatch_module.setenv("RABBIT_SETTINGS", "null")
 
@@ -188,3 +197,16 @@ def mock_containers_get(mocker: MockerFixture) -> int:
 @pytest.fixture
 def tests_dir() -> Path:
     return Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
+
+@pytest.fixture
+def mock_dir_watcher_on_any_event(
+    app: FastAPI, monkeypatch: MonkeyPatch
+) -> Iterator[Mock]:
+
+    mock = Mock(return_value=None)
+
+    monkeypatch.setattr(
+        app.state.dir_watcher.outputs_event_handle, "_invoke_push_directory", mock
+    )
+    yield mock
