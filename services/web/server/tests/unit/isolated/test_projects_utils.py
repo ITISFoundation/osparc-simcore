@@ -61,12 +61,6 @@ def test_clone_project_document(
         pytest.fail(f"Invalid clone of '{name}': {err.message}")
 
 
-@pytest.fixture(scope="session")
-def fake_project_data(fake_data_dir: Path) -> Dict[str, Any]:
-    with (fake_data_dir / "fake-project.json").open() as fp:
-        return json.load(fp)
-
-
 @pytest.mark.parametrize(
     "node_uuid, expected_dependencies",
     [

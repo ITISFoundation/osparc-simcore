@@ -21,7 +21,7 @@ from pydantic.fields import Field
 
 from .meta_function_nodes import FRONTEND_SERVICE_TO_CALLABLE, FRONTEND_SERVICES_CATALOG
 from .meta_version_control import CommitID, ProjectDict, VersionControlForMetaModeling
-from .utils import compute_sha1
+from .utils import compute_sha1_on_small_dataset
 
 log = logging.getLogger(__file__)
 
@@ -34,7 +34,8 @@ _ParametersNodesPair = Tuple[Parameters, NodesDict]
 
 def _compute_params_checksum(parameters: Parameters) -> MD5Str:
     # TODO: test non-std OutputTypes
-    return compute_sha1(parameters)
+    # NOTE: parameters are within a project's dataset which can be considered small (based on test_compute_sh1_on_small_dataset)
+    return compute_sha1_on_small_dataset(parameters)
 
 
 def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodesPair]:
@@ -195,8 +196,6 @@ async def get_or_create_runnable_projects(
     If project_uuid is a std-project, then it returns itself
     If project_uuid is a meta-project, then it returns iterations
     """
-
-    # FIXME: what happens if not
 
     vc_repo = VersionControlForMetaModeling(request)
     assert vc_repo.user_id  # nosec

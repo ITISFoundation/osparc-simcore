@@ -145,7 +145,7 @@ class ProjectIterationAsItem(BaseModel):
     )
 
     workcopy_project_url: HttpUrl = Field(
-        ..., description="reference to working copy project"
+        ..., description="reference to a working copy project"
     )
     url: HttpUrl = Field(..., description="self reference")
 

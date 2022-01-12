@@ -17,7 +17,7 @@ from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
 
 from .projects.project_models import ProjectProxy
-from .utils import compute_sha1
+from .utils import compute_sha1_on_small_dataset
 
 
 def compute_workbench_checksum(workbench: Dict[str, Any]) -> SHA1Str:
@@ -32,7 +32,7 @@ def compute_workbench_checksum(workbench: Dict[str, Any]) -> SHA1Str:
         str(k): (Node.parse_obj(v) if not isinstance(v, Node) else v)
         for k, v in workbench.items()
     }
-    checksum = compute_sha1(
+    checksum = compute_sha1_on_small_dataset(
         {
             k: node.dict(
                 exclude_unset=True,
