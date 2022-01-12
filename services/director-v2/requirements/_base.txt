@@ -15,6 +15,9 @@ aiodocker==0.19.1
     # via -r requirements/_base.in
 aiofiles==0.5.0
     # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   fastapi
 aiohttp==3.7.4.post0
@@ -45,8 +48,6 @@ alembic==1.7.5
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
-amqp==5.0.6
-    # via kombu
 aniso8601==7.0.0
     # via graphene
 anyio==3.2.1
@@ -65,10 +66,6 @@ attrs==20.3.0
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
     #   aiohttp
-billiard==3.6.4.0
-    # via celery
-celery==5.1.2
-    # via -r requirements/_base.in
 certifi==2021.5.30
     # via
     #   httpx
@@ -80,19 +77,9 @@ chardet==4.0.0
 click==7.1.2
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
-    #   celery
-    #   click-didyoumean
-    #   click-plugins
-    #   click-repl
     #   distributed
     #   typer
     #   uvicorn
-click-didyoumean==0.0.3
-    # via celery
-click-plugins==1.1.1
-    # via celery
-click-repl==0.1.6
-    # via celery
 cloudpickle==1.6.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -206,8 +193,6 @@ jinja2==2.11.3
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
     #   fastapi
-kombu==5.1.0
-    # via celery
 locket==0.2.1
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -252,8 +237,6 @@ promise==2.3
     # via
     #   graphql-core
     #   graphql-relay
-prompt-toolkit==3.0.19
-    # via click-repl
 psutil==5.8.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -302,8 +285,6 @@ python-dotenv==0.18.0
     #   uvicorn
 python-multipart==0.0.5
     # via fastapi
-pytz==2021.1
-    # via celery
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -329,8 +310,6 @@ pyyaml==5.4.1
     #   distributed
     #   fastapi
     #   uvicorn
-redis==3.5.3
-    # via celery
 requests==2.25.1
     # via fastapi
 rfc3986==1.4.0
@@ -340,7 +319,6 @@ rx==1.6.1
 six==1.15.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
-    #   click-repl
     #   graphene
     #   graphql-core
     #   graphql-relay
@@ -448,15 +426,8 @@ uvicorn==0.13.4
     #   fastapi
 uvloop==0.15.2
     # via uvicorn
-vine==5.0.0
-    # via
-    #   amqp
-    #   celery
-    #   kombu
 watchgod==0.7
     # via uvicorn
-wcwidth==0.2.5
-    # via prompt-toolkit
 websockets==8.1
     # via uvicorn
 yarl==1.7.2

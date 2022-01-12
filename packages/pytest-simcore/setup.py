@@ -24,7 +24,6 @@ SETUP = dict(
             "aio-pika",
             "aiohttp",
             "aioredis",
-            "celery",
             "docker",
             "python-socketio",
             "PyYAML",

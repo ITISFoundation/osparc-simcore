@@ -18,7 +18,6 @@ pytest-cov
 pytest-mock
 pytest-runner
 pytest-docker
-pytest-celery
 pytest-xdist
 pytest-icdiff
 async-asgi-testclient
