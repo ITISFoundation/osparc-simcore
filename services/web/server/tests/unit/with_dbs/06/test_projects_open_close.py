@@ -302,6 +302,7 @@ async def _new_project(
             "ui": {},
             "dev": {},
             "quality": {},
+            "bootOptions": {},
         }
         if project:
             project_data.update(project)
