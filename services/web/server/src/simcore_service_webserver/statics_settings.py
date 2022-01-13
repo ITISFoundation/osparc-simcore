@@ -2,9 +2,9 @@
 
     Typically dumped in statics.json
 """
-from typing import Dict, Optional, List
+from typing import Dict, List, Optional
 
-from pydantic import AnyHttpUrl, BaseSettings, Field, HttpUrl, BaseModel
+from pydantic import AnyHttpUrl, BaseModel, BaseSettings, Field, HttpUrl
 
 from .utils import snake_to_camel
 
@@ -34,12 +34,6 @@ def discover_osparc_dependencies() -> List[OsparcDependency]:
             thumbnail="https://www.adminer.org/static/images/logo.png",
         ),
         OsparcDependency(
-            name="celery",
-            version="-",
-            url="https://docs.celeryproject.org/en/stable/",
-            thumbnail="https://www.fullstackpython.com/img/logos/celery.png",
-        ),
-        OsparcDependency(
             name="dask",
             version="-",
             url="https://docs.dask.org/en/latest/scheduler-overview.html",
@@ -50,11 +44,6 @@ def discover_osparc_dependencies() -> List[OsparcDependency]:
             version="-",
             url="https://www.docker.com/",
             thumbnail="https://www.docker.com/sites/default/files/d8/2019-07/horizontal-logo-monochromatic-white.png",
-        ),
-        OsparcDependency(
-            name="flower",
-            version="0.9.5",
-            url="https://github.com/mher/flower",
         ),
         OsparcDependency(
             name="github",

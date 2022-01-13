@@ -36,7 +36,7 @@ comp_tasks = sa.Table(
         sa.Enum(NodeClass),
         doc="Classification of the node associated to this task",
     ),
-    sa.Column("job_id", sa.String, doc="Celery ID for this task"),
+    sa.Column("job_id", sa.String, doc="Worker job ID for this task"),
     sa.Column("internal_id", sa.Integer, doc="DEV: only for development. From 1 to N"),
     sa.Column("schema", sa.JSON, doc="Schema for inputs and outputs"),
     sa.Column("inputs", sa.JSON, doc="Input values"),

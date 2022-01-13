@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import asyncio
+from pathlib import Path
 
 import pytest
 from servicelib.utils import logged_gather
@@ -83,3 +84,10 @@ async def test_logged_gather_wo_raising(coros, mock_logger):
     assert isinstance(results[3], RuntimeError)
     assert isinstance(results[4], ValueError)
     assert results[5] == 5
+
+
+def print_tree(path: Path, level=0):
+    tab = " " * level
+    print(f"{tab}{'+' if path.is_dir() else '-'} {path if level==0 else path.name}")
+    for p in path.glob("*"):
+        print_tree(p, level + 1)

@@ -35,9 +35,7 @@ def patch_directory_watcher(monkeypatch: MonkeyPatch) -> Iterator[AsyncMock]:
     mocked_upload_data = AsyncMock(return_value=None)
 
     monkeypatch.setattr(directory_watcher, "DETECTION_INTERVAL", TICK_INTERVAL)
-    monkeypatch.setattr(
-        directory_watcher, "push_directory_via_nodeports", mocked_upload_data
-    )
+    monkeypatch.setattr(directory_watcher, "_push_directory", mocked_upload_data)
 
     yield mocked_upload_data
 
