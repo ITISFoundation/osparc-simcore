@@ -211,10 +211,13 @@ pydantic==1.8.2
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
-pyinstrument==4.1.1
+pyinstrument==3.4.2
     # via
     #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
+pyinstrument-cext==0.2.4
+    # via pyinstrument
 pyrsistent==0.18.0
     # via jsonschema
 python-engineio==3.14.2

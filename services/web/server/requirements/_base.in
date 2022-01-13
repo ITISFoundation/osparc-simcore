@@ -101,3 +101,12 @@ trafaret_config
 #   jsonschema<5.0.0,>=4.0.0 (from openapi-schema-validator==0.2.0->openapi-spec-validator==0.3.1->openapi-core==0.12.0->-r requirements/../../../../packages/service-library/requirements/_aiohttp.in (line 8))
 jsonschema<4
 openapi-schema-validator<0.2.0
+
+
+# BREAKING CHANGES:
+# -> tests will fail with
+#   RuntimeError: There is already a profiler running.
+#   You cannot run multiple profilers in the same thread or async context, unless you disable async support.
+#
+# SEE https://github.com/joerick/pyinstrument#v400release
+pyinstrument<4
