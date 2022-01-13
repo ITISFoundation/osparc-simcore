@@ -5,10 +5,10 @@ from .base import BaseCustomSettings
 from .basic_types import PortInt
 
 
-class SmtpSettings(BaseCustomSettings):
-    """SMPT = Simple Mail Transfer Protocol"""
+class SMTPSettings(BaseCustomSettings):
+    """Simple Mail Transfer Protocol"""
 
-    SMTP_SENDER: str = "OSPARC support <support@osparc.io>"
+    SMTP_SENDER: str = "@".join(["O2SPARC support <support", "osparc.io>"])
 
     SMTP_HOST: str
     SMTP_PORT: PortInt
