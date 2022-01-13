@@ -7,15 +7,15 @@ import importlib
 import inspect
 import unittest.mock as mock
 from pathlib import Path
-from types import FunctionType, ModuleType
-from typing import Dict, List, Optional, Set
+from types import ModuleType
+from typing import Dict, List, Set
 
 import pytest
 import trafaret
 from pytest_simcore.helpers.utils_environs import eval_service_environ
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import is_setup_function
-from simcore_service_webserver.application_config import create_schema
+from simcore_service_webserver.application__schema import create_schema
 from simcore_service_webserver.cli import parse, setup_parser
 from simcore_service_webserver.db_config import CONFIG_SECTION_NAME as DB_SECTION
 from simcore_service_webserver.email_config import CONFIG_SECTION_NAME as SMTP_SECTION

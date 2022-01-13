@@ -27,7 +27,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
 from pytest_simcore.helpers.utils_docker import get_service_published_port
 from pytest_simcore.helpers.utils_login import NewUser
-from simcore_service_webserver.application_config import app_schema
+from simcore_service_webserver.application__schema import app_schema
 from simcore_service_webserver.cli import create_environ
 from simcore_service_webserver.groups_api import (
     add_user_in_group,

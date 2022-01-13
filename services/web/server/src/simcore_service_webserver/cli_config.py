@@ -54,7 +54,7 @@ def config_from_options(
 
 
 def read_and_validate(filepath, vars=None):  # pylint: disable=W0622
-    from .application_config import app_schema
+    from .application__schema import app_schema
 
     if vars is None:
         vars = os.environ
@@ -70,7 +70,7 @@ def config_from_file(filepath) -> dict:
 
     Raises trafaret_config.ConfigError
     """
-    from .application_config import app_schema
+    from .application__schema import app_schema
 
     config = trafaret_config.read_and_validate(filepath, app_schema, vars=os.environ)
     return config
