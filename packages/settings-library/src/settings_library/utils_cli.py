@@ -7,8 +7,8 @@ import typer
 from pydantic import ValidationError
 from pydantic.env_settings import BaseSettings
 
+from ._constants import HEADER_STR
 from .base import BaseCustomSettings
-from .constants import HEADER_STR
 
 
 def print_as_envfile(settings_obj, *, compact, verbose):
