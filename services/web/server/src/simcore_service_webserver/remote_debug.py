@@ -7,8 +7,8 @@ from aiohttp import web
 from models_library.basic_types import BootModeEnum
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ._constants import APP_SETTINGS_KEY
 from .application_settings import ApplicationSettings
-from .constants import APP_SETTINGS_KEY
 
 logger = logging.getLogger(__name__)
 

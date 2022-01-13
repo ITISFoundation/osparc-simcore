@@ -21,7 +21,7 @@ from aioredlock import Aioredlock
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .constants import INDEX_RESOURCE_NAME
+from ._constants import INDEX_RESOURCE_NAME
 from .login.decorators import login_required
 from .resource_manager.config import GUEST_USER_RC_LOCK_FORMAT
 from .resource_manager.redis import get_redis_lock_manager

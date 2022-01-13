@@ -34,9 +34,9 @@ from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KE
 from servicelib.common_aiopg_utils import DSN
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver import rest
+from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_config import app_schema as app_schema
-from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,

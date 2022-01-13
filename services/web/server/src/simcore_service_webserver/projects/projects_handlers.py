@@ -19,8 +19,8 @@ from simcore_postgres_database.webserver_models import ProjectType as ProjectTyp
 from simcore_service_webserver.director_v2_core import DirectorServiceError
 
 from .. import catalog, director_v2_api
+from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
-from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
 from ..rest_constants import RESPONSE_MODEL_POLICY

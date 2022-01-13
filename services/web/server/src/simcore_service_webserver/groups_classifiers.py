@@ -17,7 +17,7 @@ from aiopg.sa.result import RowProxy
 from pydantic import BaseModel, Field, HttpUrl, ValidationError, constr, validator
 from simcore_postgres_database.models.classifiers import group_classifiers
 
-from .constants import APP_DB_ENGINE_KEY
+from ._constants import APP_DB_ENGINE_KEY
 from .scicrunch.db import ResearchResourceRepository
 from .scicrunch.service_client import SciCrunch
 
