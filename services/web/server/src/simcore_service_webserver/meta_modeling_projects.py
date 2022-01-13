@@ -31,6 +31,15 @@ log = logging.getLogger(__name__)
 URL_PATTERN = re.compile(rf"^\/{VTAG}\/projects\/({UUID_RE})[\/]{{0,1}}")
 
 
+def _match_project_id(request: web.Request):
+    # TODO: need to enforce unique path params since
+    # OAS uses both 'project_id' and also 'project_uuid'
+    for path_param in ("project_id", "project_uuid"):
+        if project_id := request.match_info.get(path_param):
+            return project_id, path_param
+    return None, None
+
+
 @web.middleware
 async def projects_redirection_middleware(request: web.Request, handler: _Handler):
     """Intercepts /projects/{project_id}* requests and redirect them to the copy @HEAD
@@ -53,33 +62,24 @@ async def projects_redirection_middleware(request: web.Request, handler: _Handle
         # indirection
         #
 
-        for path_param in ("project_id", "project_uuid"):
-            # TODO: need to enforce unique path params since
-            # OAS uses both 'project_id' and also 'project_uuid'
+        project_id, path_param = _match_project_id(request)
+        if project_id and path_param:
+            vc_repo = VersionControlForMetaModeling(request)
 
-            if project_id := request.match_info.get(path_param):
+            if repo_id := await vc_repo.get_repo_id(ProjectID(project_id)):
+                # Changes resolved project_id parameter with working copy instead
+                # TODO: optimize db calls
+                #
+                workcopy_project_id = await vc_repo.get_workcopy_project_id(repo_id)
+                request.match_info[path_param] = f"{workcopy_project_id}"
 
-                vc_repo = VersionControlForMetaModeling(request)
-
-                if repo_id := await vc_repo.get_repo_id(ProjectID(project_id)):
-                    # Changes resolved project_id parameter with working copy instead
-                    #
-                    # TODO: optimize db calls
-                    #
-                    workcopy_project_id = await vc_repo.get_workcopy_project_id(repo_id)
-                    request.match_info[path_param] = f"{workcopy_project_id}"
-
-                    if f"{workcopy_project_id}" != f"{project_id}":
-                        request[
-                            RQ_REQUESTED_REPO_PROJECT_UUID_KEY
-                        ] = workcopy_project_id
-                        log.debug(
-                            "Redirecting request with %s to working copy %s",
-                            f"{project_id=}",
-                            f"{workcopy_project_id=}",
-                        )
-
-                    break
+                if f"{workcopy_project_id}" != f"{project_id}":
+                    request[RQ_REQUESTED_REPO_PROJECT_UUID_KEY] = workcopy_project_id
+                    log.debug(
+                        "Redirecting request with %s to working copy %s",
+                        f"{project_id=}",
+                        f"{workcopy_project_id=}",
+                    )
 
     response = await handler(request)
 

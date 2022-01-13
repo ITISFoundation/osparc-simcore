@@ -72,8 +72,10 @@ def create_param_node_from_iterator_with_outputs(iterator_node: Node) -> Node:
     # that can replace any node with equivalent param-node with outputs
     #
 
-    assert iterator_node.key == f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/int-range"
-    assert iterator_node.version == "1.0.0"
+    assert (
+        iterator_node.key == f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/int-range"
+    )  # nosec
+    assert iterator_node.version == "1.0.0"  # nosec
 
     return Node(
         key="simcore/services/frontend/parameter/integer",
