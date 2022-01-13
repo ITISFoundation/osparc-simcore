@@ -124,7 +124,43 @@ qx.Class.define("osparc.wrapper.Svg", {
       return rect;
     },
 
-    updateRect: function(rect, x, y) {
+    drawFilledRect: function(draw, width, height, x, y) {
+      const fillColor = qx.theme.manager.Color.getInstance().resolve("background-main-lighter");
+      const edgeColor = qx.theme.manager.Color.getInstance().resolve("background-main-lighter+");
+      const rect = draw.rect(width, height)
+        .fill(fillColor)
+        .stroke({
+          width: 1,
+          color: edgeColor
+        })
+        .move(x, y);
+      rect.back();
+      return rect;
+    },
+
+    drawNodeUI: function(draw, width, height, radius, x, y) {
+      const nodeUIColor = qx.theme.manager.Color.getInstance().getTheme().colors["window-border"];
+      const rect = draw.rect(width, height)
+        .fill(nodeUIColor)
+        .stroke({
+          width: 0.2,
+          color: "black"
+        })
+        .move(x, y)
+        .attr({
+          rx: radius,
+          ry: radius
+        });
+      return rect;
+    },
+
+    updateRect: function(rect, w, h, x, y) {
+      rect.width(w);
+      rect.height(h);
+      rect.move(x, y);
+    },
+
+    updateRectPos: function(rect, x, y) {
       rect.move(x, y);
     },
 
@@ -177,10 +213,29 @@ qx.Class.define("osparc.wrapper.Svg", {
       return polyline;
     },
 
-    updatePolylineColor: function(polyline, color) {
+    updateStrokeColor: function(polyline, color) {
       polyline.stroke({
         color: color
       });
+    },
+
+    updateNodeUI: function(nodeUI, x, y) {
+      nodeUI.move(x, y);
+    },
+
+    removeNodeUI: function(nodeUI) {
+      nodeUI.remove();
+    },
+
+    drawLine: function(draw, controls) {
+      const line = draw.line(controls.join())
+        .fill("none")
+        .stroke({
+          color: "#BFBFBF",
+          width: 1
+        })
+        .move(0, 0);
+      return line;
     },
 
     drawPath: function(draw, controls) {

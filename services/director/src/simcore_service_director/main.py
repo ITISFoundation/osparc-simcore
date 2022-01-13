@@ -1,30 +1,18 @@
 #!/usr/bin/env python3
 import logging
-import os
 
 from aiohttp import web
 
-
-from servicelib.client_session import (  # pylint: disable=no-name-in-module
-    persistent_client_session,
-)
-from servicelib.tracing import setup_tracing  # pylint: disable=no-name-in-module
-
-from simcore_service_director import config, registry_cache_task, resources
-from simcore_service_director.rest import routing
+# NOTE: notice that servicelib is frozen to c8669fb52659b684514fefa4f3b4599f57f276a0
+# pylint: disable=no-name-in-module
+from servicelib.client_session import persistent_client_session
+from simcore_service_director import registry_cache_task, resources
 from simcore_service_director.monitoring import setup_app_monitoring
+from simcore_service_director.rest import routing
+
+from .registry_proxy import setup_registry
 
 log = logging.getLogger(__name__)
-
-
-def setup_app_tracing(app: web.Application, app_name: str) -> bool:
-    host = "0.0.0.0" if os.environ.get("SC_BUILD_TARGET") else "127.0.0.1"  # nosec
-    port = 8080
-    cfg = {
-        "enabled": config.TRACING_ENABLED,
-        "zipkin_endpoint": config.TRACING_ZIPKIN_ENDPOINT,
-    }
-    return setup_tracing(app, app_name, host, port, cfg)
 
 
 def setup_app() -> web.Application:
@@ -33,12 +21,14 @@ def setup_app() -> web.Application:
 
     # NOTE: ensure client session is context is run first, then any further get_client_sesions will be correctly closed
     app.cleanup_ctx.append(persistent_client_session)
+    app.cleanup_ctx.append(setup_registry)
 
     registry_cache_task.setup(app)
 
     setup_app_monitoring(app, "simcore_service_director")
 
-    setup_app_tracing(app, "simcore_service_director")
+    # NOTE: removed tracing from director. Users old version of servicelib and
+    # in any case this service will be completely replaced
 
     return app
 

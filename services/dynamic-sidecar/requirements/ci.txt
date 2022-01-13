@@ -12,9 +12,11 @@
 
 # installs this repo's packages
 ../../packages/models-library/
-../../packages/settings-library/
 ../../packages/postgres-database/
 ../../packages/pytest-simcore/
+../../packages/simcore-sdk
+../../packages/service-library[fastapi]
+../../packages/settings-library/
 
 # installs current package
 .

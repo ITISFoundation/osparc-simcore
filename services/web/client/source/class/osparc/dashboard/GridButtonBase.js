@@ -58,7 +58,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
       TITLE: 0,
       SUBTITLE: 1,
       THUMBNAIL: 2,
-      TSR: 3,
+      TSR_MODE: 3,
       TAGS: 4
     }
   },

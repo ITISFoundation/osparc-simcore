@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -10,7 +11,7 @@ from typing import Any, Dict
 from urllib.parse import quote
 
 import pytest
-import simcore_service_storage.meta
+import simcore_service_storage._meta
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from simcore_service_storage.access_layer import AccessRights
@@ -49,6 +50,7 @@ def client(
     aiohttp_unused_port,
     aiohttp_client: TestClient,
     postgres_service,
+    postgres_service_url,
     minio_service,
     osparc_api_specs_dir,
     monkeypatch,
@@ -60,10 +62,10 @@ def client(
     pg_config.pop("database")
 
     for key, value in pg_config.items():
-        monkeypatch.setenv(f"POSTGRES_{key.upper()}", value)
+        monkeypatch.setenv(f"POSTGRES_{key.upper()}", f"{value}")
 
     for key, value in minio_service.items():
-        monkeypatch.setenv(f"S3_{key.upper()}", value)
+        monkeypatch.setenv(f"S3_{key.upper()}", f"{value}")
 
     monkeypatch.setenv("STORAGE_PORT", str(aiohttp_unused_port()))
     monkeypatch.setenv("STORAGE_LOG_LEVEL", "DEBUG")
@@ -102,8 +104,8 @@ async def test_health_check(client):
     assert not error
 
     app_health = HealthCheck.parse_obj(data)
-    assert app_health.name == simcore_service_storage.meta.app_name
-    assert app_health.version == simcore_service_storage.meta.api_version
+    assert app_health.name == simcore_service_storage._meta.app_name
+    assert app_health.version == simcore_service_storage._meta.api_version
 
 
 async def test_locations(client):

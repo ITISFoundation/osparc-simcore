@@ -53,9 +53,9 @@ MAKE_C := $(MAKE) --no-print-directory --directory
 #
 
 
-.PHONY: help
+.PHONY: hel%
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
-help:
+hel%:
 	@echo "usage: make [target] ..."
 	@echo ""
 	@echo "Targets for '$(notdir $(CURDIR))':"
@@ -95,9 +95,11 @@ inf%: ## displays basic info
 	@echo ' python : $(shell python3 --version)'
 	# installed in .venv
 	@pip list
-	# package
+	# package setup
 	-@echo ' name         : ' $(shell python ${CURDIR}/setup.py --name)
 	-@echo ' version      : ' $(shell python ${CURDIR}/setup.py --version)
+	-@echo ' authors      : ' "$(shell python ${CURDIR}/setup.py --author)"
+	-@echo ' description  : ' "$(shell python ${CURDIR}/setup.py --description)"
 
 
 .PHONY: autoformat
@@ -133,8 +135,8 @@ code-analysis: $(REPO_BASE_DIR)/.codeclimate.yml ## runs code-climate analysis
 
 
 .PHONY: codestyle
-codestyle: ## enforces codestyle (isort & black) finally runs pylint & mypy
-	@$(SCRIPTS_DIR)/codestyle.bash development $(shell basename "${SRC_DIR}")
+codestyle codestyle-ci: ## enforces codestyle (isort & black) finally runs pylint & mypy
+	@$(SCRIPTS_DIR)/codestyle.bash $(if $(findstring -ci,$@),ci,development) $(shell basename "${SRC_DIR}")
 
 .PHONY: github-workflow-job
 github-workflow-job: ## runs a github workflow job using act locally, run using "make github-workflow-job job=JOB_NAME"

@@ -31,7 +31,9 @@ class PostgresSettings(BaseCustomSettings):
     )
 
     POSTGRES_CLIENT_NAME: Optional[str] = Field(
-        None, description="Name of the application connecting the postgres database"
+        None,
+        description="Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)",
+        env=["HOST", "HOSTNAME", "POSTGRES_CLIENT_NAME"],
     )
 
     @validator("POSTGRES_MAXSIZE")
@@ -53,6 +55,12 @@ class PostgresSettings(BaseCustomSettings):
             port=f"{self.POSTGRES_PORT}",
             path=f"/{self.POSTGRES_DB}",
         )
+        return dsn
+
+    @cached_property
+    def dsn_with_query(self) -> str:
+        """Some clients do not support queries in the dsn"""
+        dsn = self.dsn
         if self.POSTGRES_CLIENT_NAME:
             dsn += "?" + urllib.parse.urlencode(
                 {"application_name": self.POSTGRES_CLIENT_NAME}

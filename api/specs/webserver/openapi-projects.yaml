@@ -61,6 +61,12 @@ paths:
           schema:
             type: string
           description: "Option to create a template from existing project: as_template={study_uuid}"
+        - name: copy_data
+          in: query
+          schema:
+            type: boolean
+            default: True
+          description: "Option to copy data when creating from an existing template or as a template, defaults to True"
         - name: hidden
           in: query
           schema:
@@ -395,6 +401,81 @@ paths:
         default:
           $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
 
+  /projects/{project_id}/nodes/{node_id}/retrieve:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: node_id
+        in: path
+        required: true
+        schema:
+          type: string
+
+    post:
+      tags:
+        - project
+      description: Triggers service retrieve
+      operationId: post_retrieve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                port_keys:
+                  description: list of por keys to be retrieved
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "200":
+          description: Returns the amount of transferred bytes when pulling data via nodeports
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: response payload
+                    properties:
+                      size_bytes:
+                        type: integer
+                        description: amount of transferred bytes
+
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /projects/{project_uuid}/nodes/{node_id}/restart:
+    parameters:
+      - name: project_uuid
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: node_id
+        in: path
+        required: true
+        schema:
+          type: string
+
+    post:
+      tags:
+        - project
+      description: Restarts containers started by the dynamic-sidecar
+      operationId: post_restart
+
+      responses:
+        "204":
+          description: Restarts containers started by the dynamic-sidecar
+
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
   /projects/{study_uuid}/tags/{tag_id}:
     parameters:
       - name: tag_id
@@ -435,202 +516,6 @@ paths:
                 $ref: "#/components/schemas/ProjectEnveloped"
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
-
-  projects_snapshots:
-    get:
-      tags:
-        - project
-        - snapshot
-      summary: List Snapshots
-      description: Lists all snapshots taken from a given project
-      operationId: simcore_service_webserver.repos_snapshots_api_handlers.list_snapshots
-      parameters:
-        - required: true
-          schema:
-            title: Project Id
-            type: string
-            format: uuid
-          name: project_id
-          in: path
-        - description: index to the first item to return (pagination)
-          required: false
-          schema:
-            title: Offset
-            exclusiveMinimum: false
-            type: integer
-            description: index to the first item to return (pagination)
-            default: 0
-          name: offset
-          in: query
-        - description: maximum number of items to return (pagination)
-          required: false
-          schema:
-            title: Limit
-            maximum: 50
-            minimum: 1
-            type: integer
-            description: maximum number of items to return (pagination)
-            default: 20
-          name: limit
-          in: query
-      responses:
-        "200":
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                title: Response List Snapshots Projects  Project Id  Snapshots Get
-                type: array
-                items:
-                  $ref: "#/components/schemas/SnapshotResource"
-        "422":
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HTTPValidationError"
-    post:
-      tags:
-        - project
-        - snapshot
-      summary: Create Snapshot
-      description: Takes a snapshot of the project at this time
-      operationId: simcore_service_webserver.repos_snapshots_api_handlers.create_snapshot
-      parameters:
-        - required: true
-          schema:
-            title: Project Id
-            type: string
-            format: uuid
-          name: project_id
-          in: path
-        - required: false
-          schema:
-            title: Snapshot Label
-            type: string
-          name: snapshot_label
-          in: query
-      responses:
-        "201":
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SnapshotResource"
-        "422":
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HTTPValidationError"
-
-  projects_id_snapshots_id:
-    get:
-      tags:
-        - project
-        - snapshot
-      summary: Get Snapshot
-      description: Gets commit info for a given snapshot
-      operationId: simcore_service_webserver.repos_snapshots_api_handlers.get_snapshot
-      parameters:
-        - required: true
-          schema:
-            title: Snapshot Id
-            exclusiveMinimum: false
-            type: integer
-          name: snapshot_id
-          in: path
-        - required: true
-          schema:
-            title: Project Id
-            type: string
-            format: uuid
-          name: project_id
-          in: path
-      responses:
-        "200":
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/SnapshotResource"
-        "422":
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HTTPValidationError"
-    delete:
-      tags:
-        - project
-        - snapshot
-      summary: Delete Snapshot
-      description: Deletes both the commit and the project itself
-      operationId: simcore_service_webserver.repos_snapshots_api_handlers.delete_snapshot
-      parameters:
-        - required: true
-          schema:
-            title: Snapshot Id
-            exclusiveMinimum: false
-            type: integer
-          name: snapshot_id
-          in: path
-        - required: true
-          schema:
-            title: Project Id
-            type: string
-            format: uuid
-          name: project_id
-          in: path
-      responses:
-        "204":
-          description: Successful Response
-        "422":
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HTTPValidationError"
-    patch:
-      tags:
-        - project
-        - snapshot
-      summary: Update Snapshot
-      description: Updates label/name of a snapshot
-      operationId: simcore_service_webserver.repos_snapshots_api_handlers.update_snapshot
-      parameters:
-        - required: true
-          schema:
-            title: Snapshot Id
-            exclusiveMinimum: false
-            type: integer
-          name: snapshot_id
-          in: path
-        - required: true
-          schema:
-            title: Project Id
-            type: string
-            format: uuid
-          name: project_id
-          in: path
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/SnapshotPatchBody"
-        required: true
-      responses:
-        "200":
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-        "422":
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HTTPValidationError"
 
 components:
   schemas:
@@ -684,70 +569,6 @@ components:
           items:
             $ref: "#/components/schemas/ValidationError"
 
-    SnapshotPatchBody:
-      title: SnapshotPatchBody
-      type: object
-      properties:
-        name:
-          title: Name
-          type: string
-          description: Unique human readable display name
-      description: Model to patch a snapshot resource
-
-    SnapshotResource:
-      title: SnapshotResource
-      required:
-        - parent_uuid
-        - project_uuid
-        - url
-        - url_parent
-        - url_project
-      type: object
-      properties:
-        id:
-          title: Id
-
-          type: integer
-          description: Unique snapshot identifier
-        name:
-          title: Name
-          type: string
-          description: Unique human readable display name
-        created_at:
-          title: Created At
-          type: string
-          description: Timestamp of the time snapshot was taken from parent.Notice that
-            parent might change with time
-          format: date-time
-        parent_uuid:
-          title: Parent Uuid
-          type: string
-          description: Parent's project uuid
-          format: uuid
-        project_uuid:
-          title: Project Uuid
-          type: string
-          description: Current project's uuid
-          format: uuid
-        url:
-          title: Url
-          maxLength: 65536
-          minLength: 1
-          type: string
-          format: uri
-        url_parent:
-          title: Url Parent
-          maxLength: 65536
-          minLength: 1
-          type: string
-          format: uri
-        url_project:
-          title: Url Project
-          maxLength: 65536
-          minLength: 1
-          type: string
-          format: uri
-      description: Model for a snapshot API resource
     ValidationError:
       title: ValidationError
       required:

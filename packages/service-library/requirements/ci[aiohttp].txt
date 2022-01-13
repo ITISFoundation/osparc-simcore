@@ -15,4 +15,4 @@
 ../pytest-simcore/
 
 # current module
-.
+.[aiohttp]

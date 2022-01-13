@@ -1,7 +1,7 @@
 import logging
 import re
 from copy import deepcopy
-from typing import Any, AnyStr, Dict, List, Match, Optional, Set, Tuple
+from typing import Any, AnyStr, Dict, List, Match, Optional, Set, Tuple, Union
 from uuid import UUID, uuid1, uuid5
 
 from servicelib.decorators import safe_return
@@ -12,7 +12,10 @@ variable_pattern = re.compile(r"^{{\W*(\w+)\W*}}$")
 
 
 def clone_project_document(
-    project: Dict, *, forced_copy_project_id: Optional[UUID] = None
+    project: Dict,
+    *,
+    forced_copy_project_id: Optional[UUID] = None,
+    clean_output_data: bool = False,
 ) -> Tuple[Dict, Dict]:
     project_copy = deepcopy(project)
 
@@ -38,7 +41,7 @@ def clone_project_document(
 
     project_map = {project["uuid"]: project_copy["uuid"]}
 
-    def _replace_uuids(node):
+    def _replace_uuids(node: Union[str, List, Dict]) -> Union[str, List, Dict]:
         if isinstance(node, str):
             # NOTE: for datasets we get something like project_uuid/node_uuid/file_id
             if "/" in node:
@@ -67,6 +70,13 @@ def clone_project_document(
         project_copy["ui"]["slideshow"] = _replace_uuids(
             project_copy["ui"].get("slideshow", {})
         )
+        if "mode" in project_copy["ui"]:
+            project_copy["ui"]["mode"] = project_copy["ui"]["mode"]
+    if clean_output_data:
+        FIELDS_TO_DELETE = ("outputs", "progress", "runHash")
+        for node_data in project_copy.get("workbench", {}).values():
+            for field in FIELDS_TO_DELETE:
+                node_data.pop(field, None)
     return project_copy, nodes_map
 
 
@@ -172,11 +182,11 @@ async def project_uses_available_services(
     }
 
     # get available services
-    available_services: Set[Tuple[str, str]] = {
+    available_services_set: Set[Tuple[str, str]] = {
         (s["key"], s["version"]) for s in available_services
     }
 
-    return needed_services.issubset(available_services)
+    return needed_services.issubset(available_services_set)
 
 
 def get_project_unavailable_services(

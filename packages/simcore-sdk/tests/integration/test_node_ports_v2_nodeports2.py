@@ -5,21 +5,28 @@
 # pylint:disable=pointless-statement
 
 import filecmp
+import os
 import tempfile
 import threading
+from asyncio import gather
 from pathlib import Path
-from typing import Any, Callable, Dict, Type, Union
+from typing import Any, Callable, Dict, Iterable, Type, Union
 from uuid import uuid4
 
 import np_helpers  # pylint: disable=no-name-in-module
 import pytest
 import sqlalchemy as sa
 from simcore_sdk import node_ports_v2
+from simcore_sdk.node_ports_common.exceptions import UnboundPortError
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.links import ItemConcreteValue
 from simcore_sdk.node_ports_v2.nodeports_v2 import Nodeports
 
-pytest_simcore_core_services_selection = ["postgres", "storage"]
+pytest_simcore_core_services_selection = [
+    "migration",
+    "postgres",
+    "storage",
+]
 
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
@@ -99,6 +106,33 @@ async def check_config_valid(ports: Nodeports, config_dict: Dict):
 @pytest.fixture(scope="session")
 def e_tag() -> str:
     return "123154654684321-1"
+
+
+@pytest.fixture
+def symlink_path(tmp_path: Path) -> Iterable[Path]:
+    file_name: Path = Path(tmp_path) / f"test_file_{Path(__file__).name}"
+    symlink_path = file_name
+    assert not symlink_path.exists()
+    file_path = file_name.parent / f"source_{file_name.name}"
+    assert not file_path.exists()
+
+    file_path.write_text("some dummy data")
+    assert file_path.exists()
+
+    if not symlink_path.exists():
+        # using a relative symlink, only these are supported
+        os.symlink(os.path.relpath(file_path, "."), symlink_path)
+        assert symlink_path.exists()
+
+    yield symlink_path
+
+    if symlink_path.exists():
+        symlink_path.unlink()
+
+
+@pytest.fixture
+def config_value_symlink_path(symlink_path: Path) -> Dict[str, Any]:
+    return {"store": "0", "path": symlink_path}
 
 
 async def test_default_configuration(
@@ -186,6 +220,12 @@ async def test_port_value_accessors(
         ("data:*/*", __file__, Path, {"store": "0", "path": __file__}),
         ("data:text/*", __file__, Path, {"store": "0", "path": __file__}),
         ("data:text/py", __file__, Path, {"store": "0", "path": __file__}),
+        (
+            "data:text/py",
+            pytest.lazy_fixture("symlink_path"),
+            Path,
+            pytest.lazy_fixture("config_value_symlink_path"),
+        ),
     ],
 )
 async def test_port_file_accessors(
@@ -218,7 +258,7 @@ async def test_port_file_accessors(
     )
     await check_config_valid(PORTS, config_dict)
     assert await (await PORTS.outputs)["out_34"].get() is None  # check emptyness
-    with pytest.raises(exceptions.InvalidDownloadLinkError):
+    with pytest.raises(exceptions.StorageInvalidCall):
         await (await PORTS.inputs)["in_1"].get()
 
     # this triggers an upload to S3 + configuration change
@@ -554,3 +594,111 @@ async def test_file_mapping(
     assert received_file_link["path"] == file_id
     # received a new eTag
     assert received_file_link["eTag"]
+
+
+@pytest.fixture
+def int_item_value() -> int:
+    return 42
+
+
+@pytest.fixture
+def parallel_int_item_value() -> int:
+    return 142
+
+
+@pytest.fixture
+def port_count() -> int:
+    # the issue manifests from 4 ports onwards
+    # going for many more ports to be sure issue
+    # always occurs in CI or locally
+    return 20
+
+
+async def test_regression_concurrent_port_update_fails(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    special_configuration: Callable,
+    int_item_value: int,
+    parallel_int_item_value: int,
+    port_count: int,
+) -> None:
+    """
+    when using `await PORTS.outputs` test will fail
+    an unexpected status will end up in the database
+    """
+
+    outputs = [(f"value_{i}", "integer", None) for i in range(port_count)]
+    config_dict, _, _ = special_configuration(inputs=[], outputs=outputs)
+
+    PORTS = await node_ports_v2.ports(
+        user_id=user_id, project_id=project_id, node_uuid=node_uuid
+    )
+    await check_config_valid(PORTS, config_dict)
+
+    # when writing in serial these are expected to work
+    for item_key, _, _ in outputs:
+        await (await PORTS.outputs)[item_key].set(int_item_value)
+        assert (await PORTS.outputs)[item_key].value == int_item_value
+
+    # when writing in parallel and reading back,
+    # they fail, with enough concurrency
+    async def _upload_task(item_key: str) -> None:
+        await (await PORTS.outputs)[item_key].set(parallel_int_item_value)
+
+    # updating in parallel creates a race condition
+    results = await gather(*[_upload_task(item_key) for item_key, _, _ in outputs])
+    assert len(results) == port_count
+
+    # since a race condition was created when uploading values in parallel
+    # it is expected to find at least one mismatching value here
+    with pytest.raises(AssertionError) as exc_info:
+        for item_key, _, _ in outputs:
+            assert (await PORTS.outputs)[item_key].value == parallel_int_item_value
+    assert (
+        exc_info.value.args[0]
+        == f"assert {int_item_value} == {parallel_int_item_value}\n  +{int_item_value}\n  -{parallel_int_item_value}"
+    )
+
+
+async def test_batch_update_inputs_outputs(
+    user_id: int,
+    project_id: str,
+    node_uuid: str,
+    special_configuration: Callable,
+    port_count: int,
+) -> None:
+    outputs = [(f"value_out_{i}", "integer", None) for i in range(port_count)]
+    inputs = [(f"value_in_{i}", "integer", None) for i in range(port_count)]
+    config_dict, _, _ = special_configuration(inputs=inputs, outputs=outputs)
+
+    PORTS = await node_ports_v2.ports(
+        user_id=user_id, project_id=project_id, node_uuid=node_uuid
+    )
+    await check_config_valid(PORTS, config_dict)
+
+    await PORTS.set_multiple(
+        {port.key: k for k, port in enumerate((await PORTS.outputs).values())}
+    )
+    await PORTS.set_multiple(
+        {
+            port.key: k
+            for k, port in enumerate((await PORTS.inputs).values(), start=1000)
+        }
+    )
+
+    ports_outputs = await PORTS.outputs
+    ports_inputs = await PORTS.inputs
+    for k, asd in enumerate(outputs):
+        item_key, _, _ = asd
+        assert ports_outputs[item_key].value == k
+        assert await ports_outputs[item_key].get() == k
+
+    for k, asd in enumerate(inputs, start=1000):
+        item_key, _, _ = asd
+        assert ports_inputs[item_key].value == k
+        assert await ports_inputs[item_key].get() == k
+
+    # test missing key raises error
+    with pytest.raises(UnboundPortError):
+        await PORTS.set_multiple({"missing_key_in_both": 123132})

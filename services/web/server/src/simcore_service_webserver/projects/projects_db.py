@@ -12,7 +12,6 @@ from collections import deque
 from copy import deepcopy
 from datetime import datetime
 from enum import Enum
-from pprint import pformat
 from typing import Any, Dict, List, Mapping, Optional, Set, Tuple
 
 import psycopg2.errors
@@ -22,10 +21,11 @@ from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import RowProxy
 from change_case import ChangeCase
-from models_library.projects import ProjectAtDB
+from models_library.projects import ProjectAtDB, ProjectIDStr
 from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import desc, literal_column
 from sqlalchemy.sql import and_, select
@@ -372,9 +372,8 @@ class ProjectDBAPI:
                 total_number_of_projects,
             )
 
-    async def __load_user_groups(
-        self, conn: SAConnection, user_id: int
-    ) -> List[RowProxy]:
+    @staticmethod
+    async def __load_user_groups(conn: SAConnection, user_id: int) -> List[RowProxy]:
         user_groups: List[RowProxy] = []
         query = (
             select([groups])
@@ -399,27 +398,31 @@ class ProjectDBAPI:
         async for row in conn.execute(query):
             try:
                 _check_project_permissions(row, user_id, user_groups, "read")
-            except ProjectInvalidRightsError:
-                continue
-            try:
 
                 await asyncio.get_event_loop().run_in_executor(
                     None, ProjectAtDB.from_orm, row
                 )
+
+            except ProjectInvalidRightsError:
+                continue
+
             except ValidationError as exc:
                 log.warning(
-                    "project in db with uuid [%s] failed validation, please check. error: %s",
-                    row.get("id"),
+                    "project  %s  failed validation, please check. error: %s",
+                    f"{row.id=}",
                     exc,
                 )
                 continue
+
             prj = dict(row.items())
+
             if filter_by_services:
                 if not await project_uses_available_services(prj, filter_by_services):
                     log.warning(
-                        "project [%s] of user [%s] uses unshared services",
-                        row.get("id"),
-                        user_id,
+                        "Project %s will not be listed for user %s since it has no access rights"
+                        " for one or more of the services that includes.",
+                        f"{row.id=}",
+                        f"{user_id=}",
                     )
                     continue
             db_projects.append(prj)
@@ -618,7 +621,10 @@ class ProjectDBAPI:
                 # update timestamps
                 new_project_data["lastChangeDate"] = now_str()
 
-                log.debug("DB updating with %s", pformat(new_project_data))
+                log.debug(
+                    "DB updating with new_project_data=%s",
+                    json_dumps(dict(new_project_data)),
+                )
                 result = await conn.execute(
                     # pylint: disable=no-value-for-parameter
                     projects.update()
@@ -627,7 +633,10 @@ class ProjectDBAPI:
                     .returning(literal_column("*"))
                 )
                 project: RowProxy = await result.fetchone()
-                log.debug("DB updated returned %s", pformat(project))
+                log.debug(
+                    "DB updated returned row project=%s",
+                    json_dumps(dict(project.items())),
+                )
                 user_email = await self._get_user_email(conn, project.prj_owner)
 
                 tags = await self._get_tags_by_project(
@@ -705,7 +714,9 @@ class ProjectDBAPI:
 
                 # now update it
 
-                log.debug("DB updating with %s", pformat(new_project_data))
+                log.debug(
+                    "DB updating with new_project_data=%s", json_dumps(new_project_data)
+                )
                 result = await conn.execute(
                     # pylint: disable=no-value-for-parameter
                     projects.update()
@@ -714,7 +725,10 @@ class ProjectDBAPI:
                     .returning(literal_column("*"))
                 )
                 project: RowProxy = await result.fetchone()
-                log.debug("DB updated returned %s", pformat(project))
+                log.debug(
+                    "DB updated returned row project=%s",
+                    json_dumps(dict(project.items())),
+                )
                 user_email = await self._get_user_email(conn, project.prj_owner)
 
                 tags = await self._get_tags_by_project(
@@ -723,7 +737,11 @@ class ProjectDBAPI:
                 return _convert_to_schema_names(project, user_email, tags=tags)
 
     async def delete_user_project(self, user_id: int, project_uuid: str):
-        log.info("Deleting project %s for user %s", project_uuid, user_id)
+        log.info(
+            "Deleting project with %s for user with %s",
+            f"{project_uuid=}",
+            f"{user_id}",
+        )
 
         async with self.engine.acquire() as conn:
             async with conn.begin() as _transaction:
@@ -761,7 +779,8 @@ class ProjectDBAPI:
                     break
         return project_uuid
 
-    async def _get_user_email(self, conn: SAConnection, user_id: Optional[int]) -> str:
+    @staticmethod
+    async def _get_user_email(conn: SAConnection, user_id: Optional[int]) -> str:
         if not user_id:
             return "not_a_user@unknown.com"
         email: Optional[str] = await conn.scalar(
@@ -769,9 +788,8 @@ class ProjectDBAPI:
         )
         return email or "Unknown"
 
-    async def _get_user_primary_group_gid(
-        self, conn: SAConnection, user_id: int
-    ) -> int:
+    @staticmethod
+    async def _get_user_primary_group_gid(conn: SAConnection, user_id: int) -> int:
         primary_gid: int = await conn.scalar(
             sa.select([users.c.primary_gid]).where(users.c.id == str(user_id))
         )
@@ -779,7 +797,8 @@ class ProjectDBAPI:
             raise UserNotFoundError(uid=user_id)
         return primary_gid
 
-    async def _get_tags_by_project(self, conn: SAConnection, project_id: str) -> List:
+    @staticmethod
+    async def _get_tags_by_project(conn: SAConnection, project_id: str) -> List:
         query = sa.select([study_tags.c.tag_id]).where(
             study_tags.c.study_id == project_id
         )
@@ -815,8 +834,12 @@ class ProjectDBAPI:
                 result.append(row[0])
             return list(result)
 
-    async def update_project_without_enforcing_checks(
-        self, project_data: Dict, project_uuid: str
+    async def update_project_without_checking_permissions(
+        self,
+        project_data: Dict,
+        project_uuid: ProjectIDStr,
+        *,
+        hidden: Optional[bool] = None,
     ) -> bool:
         """The garbage collector needs to alter the row without passing through the
         permissions layer."""
@@ -824,10 +847,13 @@ class ProjectDBAPI:
             # update timestamps
             project_data["lastChangeDate"] = now_str()
             # now update it
+            updated_values = _convert_to_db_names(project_data)
+            if hidden is not None:
+                updated_values["hidden"] = hidden
             result = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 projects.update()
-                .values(**_convert_to_db_names(project_data))
+                .values(**updated_values)
                 .where(projects.c.uuid == project_uuid)
             )
             return result.rowcount == 1

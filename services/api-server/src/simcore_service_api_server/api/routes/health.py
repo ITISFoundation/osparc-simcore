@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import PlainTextResponse
 from models_library.app_diagnostics import AppStatusCheck
 
-from ..._meta import api_version, project_name
+from ..._meta import API_VERSION, PROJECT_NAME
 from ...modules.catalog import CatalogApi
 from ...modules.director_v2 import DirectorV2Api
 from ...modules.storage import StorageApi
@@ -34,8 +34,8 @@ async def get_service_state(
     heaths: Tuple[bool] = await asyncio.gather(*[api.is_responsive() for api in apis])
 
     current_status = AppStatusCheck(
-        app_name=project_name,
-        version=api_version,
+        app_name=PROJECT_NAME,
+        version=API_VERSION,
         services={
             api.service_name: {
                 "healthy": is_healty,

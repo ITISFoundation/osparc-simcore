@@ -19,7 +19,6 @@ from aiohttp.web import Application
 from models_library.basic_types import LogLevel, PortInt
 from pydantic import BaseSettings, Field
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
-from servicelib.aiohttp.config_schema_utils import addon_section, minimal_addon_schema
 from trafaret_config.simple import read_and_validate
 
 from . import (
@@ -45,6 +44,16 @@ CLI_DEFAULT_CONFIGFILE = "server-defaults.yaml"
 assert resources.exists("config/" + CLI_DEFAULT_CONFIGFILE)  # nosec
 
 
+def addon_section(name: str, optional: bool = False) -> T.Key:
+    if optional:
+        return T.Key(name, default=dict(enabled=True), optional=optional)
+    return T.Key(name)
+
+
+def minimal_addon_schema() -> T.Dict:
+    return T.Dict({T.Key("enabled", default=True, optional=True): T.Bool()})
+
+
 def create_schema() -> T.Dict:
     """
     Build schema for the configuration's file
@@ -65,7 +74,7 @@ def create_schema() -> T.Dict:
                     ),
                 }
             ),
-            addon_section(tracing.tracing_section_name, optional=True): tracing.schema,
+            addon_section(tracing.CONFIG_SECTION_NAME, optional=True): tracing.schema,
             db_config.CONFIG_SECTION_NAME: db_config.schema,
             director_config.CONFIG_SECTION_NAME: director_config.schema,
             rest_config.CONFIG_SECTION_NAME: rest_config.schema,
@@ -82,20 +91,24 @@ def create_schema() -> T.Dict:
             activity_config.CONFIG_SECTION_NAME: activity_config.schema,
             resource_manager_config.CONFIG_SECTION_NAME: resource_manager_config.schema,
             # BELOW HERE minimal sections until more options are needed
-            addon_section("diagnostics", optional=True): minimal_addon_schema(),
-            addon_section("users", optional=True): minimal_addon_schema(),
-            addon_section("groups", optional=True): minimal_addon_schema(),
-            addon_section("tags", optional=True): minimal_addon_schema(),
-            addon_section("publications", optional=True): minimal_addon_schema(),
             addon_section("catalog", optional=True): catalog_config.schema,
-            addon_section("products", optional=True): minimal_addon_schema(),
+            addon_section("clusters", optional=True): minimal_addon_schema(),
             addon_section("computation", optional=True): minimal_addon_schema(),
+            addon_section("diagnostics", optional=True): minimal_addon_schema(),
             addon_section("director-v2", optional=True): minimal_addon_schema(),
+            addon_section("exporter", optional=True): minimal_addon_schema(),
+            addon_section("groups", optional=True): minimal_addon_schema(),
+            addon_section("meta_modeling", optional=True): minimal_addon_schema(),
+            addon_section("products", optional=True): minimal_addon_schema(),
+            addon_section("publications", optional=True): minimal_addon_schema(),
+            addon_section("remote_debug", optional=True): minimal_addon_schema(),
+            addon_section("security", optional=True): minimal_addon_schema(),
+            addon_section("statics", optional=True): minimal_addon_schema(),
             addon_section("studies_access", optional=True): minimal_addon_schema(),
             addon_section("studies_dispatcher", optional=True): minimal_addon_schema(),
-            addon_section("exporter", optional=True): minimal_addon_schema(),
-            addon_section("snapshots", optional=True): minimal_addon_schema(),
-            addon_section("clusters", optional=True): minimal_addon_schema(),
+            addon_section("tags", optional=True): minimal_addon_schema(),
+            addon_section("users", optional=True): minimal_addon_schema(),
+            addon_section("version_control", optional=True): minimal_addon_schema(),
         }
     )
 

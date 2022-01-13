@@ -1,55 +1,33 @@
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
-from models_library.settings.base import BaseCustomSettings
-from models_library.settings.celery import CeleryConfig
-from pydantic import Field, NonNegativeInt
-from simcore_service_sidecar import config
+from models_library.basic_types import LogLevel
+from pydantic import Field, validator
+from settings_library.base import BaseCustomSettings
+from settings_library.logging_utils import MixinLoggingSettings
 
 
-class Settings(BaseCustomSettings):
+class Settings(BaseCustomSettings, MixinLoggingSettings):
     SC_BUILD_TARGET: Optional[str] = None
     SC_BOOT_MODE: Optional[str] = None
+    LOG_LEVEL: LogLevel = Field(
+        LogLevel.INFO.value,
+        env=["DASK_SIDECAR_LOGLEVEL", "SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+    )
 
     # sidecar config ---
 
-    SIDECAR_INPUT_FOLDER: Path = config.SIDECAR_INPUT_FOLDER
-    SIDECAR_OUTPUT_FOLDER: Path = config.SIDECAR_OUTPUT_FOLDER
-    SIDECAR_LOG_FOLDER: Path = config.SIDECAR_LOG_FOLDER
+    SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: str
+    SIDECAR_COMP_SERVICES_SHARED_FOLDER: Path
 
-    SIDECAR_DOCKER_VOLUME_INPUT: str = config.SIDECAR_DOCKER_VOLUME_INPUT
-    SIDECAR_DOCKER_VOLUME_OUTPUT: str = config.SIDECAR_DOCKER_VOLUME_OUTPUT
-    SIDECAR_DOCKER_VOLUME_LOG: str = config.SIDECAR_DOCKER_VOLUME_LOG
+    SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: Optional[int] = 5
 
-    SIDECAR_HOST_HOSTNAME_PATH: Path = config.SIDECAR_HOST_HOSTNAME_PATH
-    SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: int = (
-        config.SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S
-    )
-
-    FORCE_START_CPU_MODE: bool = config.FORCE_START_CPU_MODE
-    FORCE_START_GPU_MODE: bool = config.FORCE_START_GPU_MODE
-
-    TARGET_MPI_NODE_CPU_COUNT: int = Field(
-        config.TARGET_MPI_NODE_CPU_COUNT,
+    TARGET_MPI_NODE_CPU_COUNT: Optional[int] = Field(
+        None,
         description="If a node has this amount of CPUs it will be a candidate an MPI candidate",
     )
 
-    REDLOCK_REFRESH_INTERVAL_SECONDS: float = Field(
-        config.REDLOCK_REFRESH_INTERVAL_SECONDS,
-        description="Used by the mpi lock to ensure the lock is acquired and released in time. Enforce at least 1 sec",
-    )
-
-    CELERY: Optional[CeleryConfig] = config.CELERY_CONFIG
-
     # dask config ----
-
-    DASK_CLUSTER_ID_PREFIX: Optional[str] = Field(
-        "CLUSTER_", description="This defines the cluster name prefix"
-    )
-
-    DASK_DEFAULT_CLUSTER_ID: Optional[NonNegativeInt] = Field(
-        0, description="This defines the default cluster id when none is defined"
-    )
 
     DASK_START_AS_SCHEDULER: Optional[bool] = Field(
         False, description="If this env is set, then the app boots as scheduler"
@@ -69,6 +47,7 @@ class Settings(BaseCustomSettings):
             assert self.DASK_SCHEDULER_HOST is not None  # nosec
         return as_worker
 
+    @validator("LOG_LEVEL", pre=True)
     @classmethod
-    def create_from_envs(cls) -> "Settings":
-        return cls()
+    def _validate_loglevel(cls, value: Any) -> str:
+        return cls.validate_log_level(value)

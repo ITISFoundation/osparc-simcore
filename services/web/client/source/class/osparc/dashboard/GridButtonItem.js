@@ -48,7 +48,12 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "tsr-mode-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          this._mainLayout.addAt(control, osparc.dashboard.GridButtonBase.POS.TSR_MODE);
+          break;
         case "tsr-rating": {
+          const tsrModeLayout = this.getChildControl("tsr-mode-layout");
           const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
             toolTipText: this.tr("Ten Simple Rules")
           });
@@ -56,7 +61,15 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           tsrLayout.add(tsrLabel);
           control = new osparc.ui.basic.StarsRating();
           tsrLayout.add(control);
-          this._mainLayout.addAt(tsrLayout, osparc.dashboard.GridButtonBase.POS.TSR);
+          tsrModeLayout.add(tsrLayout, {
+            flex: 1
+          });
+          break;
+        }
+        case "ui-mode": {
+          const tsrModeLayout = this.getChildControl("tsr-mode-layout");
+          control = new qx.ui.basic.Image();
+          tsrModeLayout.add(control);
           break;
         }
         case "tags":
@@ -169,7 +182,11 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     _applyOwner: function(value, old) {
       if (this.isResourceType("service") || this.isResourceType("template")) {
         const label = this.getChildControl("subtitle-text");
-        label.setValue(value);
+        if (value === osparc.auth.Data.getInstance().getEmail()) {
+          label.setValue(this.tr("me"));
+        } else {
+          label.setValue(value);
+        }
       }
     },
 
@@ -270,23 +287,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
       }
     },
 
-    _applyQuality: function(quality) {
-      if (osparc.component.metadata.Quality.isEnabled(quality)) {
-        const tsrRating = this.getChildControl("tsr-rating");
-        tsrRating.set({
-          nStars: 4,
-          showScore: true
-        });
-        osparc.ui.basic.StarsRating.scoreToStarsRating(quality["tsr_current"], quality["tsr_target"], tsrRating);
-        // Stop propagation of the pointer event in case the tag is inside a button that we don't want to trigger
-        tsrRating.addListener("tap", e => {
-          e.stopPropagation();
-          this.__openQualityEditor();
-        }, this);
-        tsrRating.addListener("pointerdown", e => e.stopPropagation());
-      }
-    },
-
     _applyState: function(state) {
       const locked = ("locked" in state) ? state["locked"]["value"] : false;
       this.setLocked(locked);
@@ -369,21 +369,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         menuButton.setMenu(value);
       }
       menuButton.setVisibility(value ? "visible" : "excluded");
-    },
-
-    __openQualityEditor: function() {
-      const resourceData = this.getResourceData();
-      const qualityEditor = osparc.studycard.Utils.openQuality(resourceData);
-      qualityEditor.addListener("updateQuality", e => {
-        const updatedResourceData = e.getData();
-        if (osparc.utils.Resources.isStudy(resourceData)) {
-          this.fireDataEvent("updateQualityStudy", updatedResourceData);
-        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-          this.fireDataEvent("updateQualityTemplate", updatedResourceData);
-        } else if (osparc.utils.Resources.isService(resourceData)) {
-          this.fireDataEvent("updateQualityService", updatedResourceData);
-        }
-      });
     }
   }
 });

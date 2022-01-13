@@ -13,7 +13,7 @@ import pytest
 @pytest.mark.parametrize(
     "package_name,services",
     [
-        ("ujson", {"director", "director-v2", "webserver", "storage", "catalog"}),
+        ("ujson", {"director"}),
         ("magic", {"webserver"}),
     ],
 )

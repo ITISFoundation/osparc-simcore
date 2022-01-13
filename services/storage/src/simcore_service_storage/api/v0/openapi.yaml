@@ -234,7 +234,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FileMetaDataEnveloped'
+                $ref: '#/components/schemas/FileMetaEnvelope'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     patch:
@@ -262,7 +262,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FileMetaDataEnveloped'
+                $ref: '#/components/schemas/FileMetaEnvelope'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/locations/{location_id}/files/{fileId}':
@@ -469,7 +469,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FileMetaDataEnveloped'
+                $ref: '#/components/schemas/FileMetaEnvelope'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
 components:
@@ -699,7 +699,7 @@ components:
         error:
           nullable: true
           default: null
-    DatasetMetaDataEnveloped:
+    DatasetMetaEnvelope:
       type: object
       required:
         - data
@@ -724,7 +724,7 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/DatasetMetaData'
-    FileMetaDataEnveloped:
+    FileMetaEnvelope:
       type: object
       required:
         - data

@@ -5,13 +5,13 @@
 """
 from typing import Dict, Optional
 
-from ._meta import api_vtag
-
 import trafaret as T
 from aiohttp import web
 from models_library.basic_types import VersionTag
 from pydantic import BaseSettings, Field
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
+
+from ._meta import API_VTAG
+from .constants import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
 
 CONFIG_SECTION_NAME = "rest"
 
@@ -26,7 +26,7 @@ schema = T.Dict(
 class RestApiSettings(BaseSettings):
     enabled: Optional[bool] = True
     vtag: VersionTag = Field(
-        api_vtag, alias="version", description="web-server API's version tag"
+        API_VTAG, alias="version", description="web-server API's version tag"
     )
 
 

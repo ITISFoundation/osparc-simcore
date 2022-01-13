@@ -6,10 +6,13 @@
 --requirement ../../../packages/models-library/requirements/_base.in
 
 aio-pika
+aiodocker
 alembic
 click
 coverage
 docker
+jsonschema
+minio
 pytest
 pytest-aiohttp
 pytest-cov
@@ -20,4 +23,3 @@ pytest-sugar
 python-dotenv
 pyyaml
 tenacity
-minio

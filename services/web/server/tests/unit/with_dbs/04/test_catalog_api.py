@@ -78,7 +78,7 @@ async def test_dag_entrypoints(
     mock_catalog_service_api_responses,
     expected,
 ):
-    vx = api_version_prefix
+    VTAG = api_version_prefix
 
     # list resources
     assert client.app.router
@@ -88,19 +88,19 @@ async def test_dag_entrypoints(
         assert str(url) == expected_url
         return url
 
-    url = assert_route("list_catalog_dags", f"/{vx}/catalog/dags")
+    url = assert_route("list_catalog_dags", f"/{VTAG}/catalog/dags")
     resp = await client.get(url)
     data, errors = await assert_status(resp, expected)
 
     # create resource
-    url = assert_route("create_catalog_dag", f"/{vx}/catalog/dags")
+    url = assert_route("create_catalog_dag", f"/{VTAG}/catalog/dags")
     data = {}  # TODO: some fake data
     resp = await client.post(url, json=data)
     data, errors = await assert_status(resp, expected)
 
     # TODO: get resource
     # dag_id = 1
-    # res = await client.get(f"/{vx}/catalog/dags/{dag_id}")
+    # res = await client.get(f"/{VTAG}/catalog/dags/{dag_id}")
     # data, errors = await assert_status(resp, expected)
 
     # replace resource
@@ -108,19 +108,19 @@ async def test_dag_entrypoints(
     new_data = {}  # TODO: some fake data
 
     url = assert_route(
-        "replace_catalog_dag", f"/{vx}/catalog/dags/{dag_id}", dag_id=dag_id
+        "replace_catalog_dag", f"/{VTAG}/catalog/dags/{dag_id}", dag_id=dag_id
     )
     resp = await client.put(url, json=new_data)
     data, errors = await assert_status(resp, expected)
 
     # TODO: update resource
     # patch_data = {} # TODO: some patch fake
-    # res = await client.patch(f"/{vx}/dags/{dag_id}", json=patch_data)
+    # res = await client.patch(f"/{VTAG}/dags/{dag_id}", json=patch_data)
     # data, errors = await assert_status(resp, expected)
 
     # delete
     url = assert_route(
-        "delete_catalog_dag", f"/{vx}/catalog/dags/{dag_id}", dag_id=dag_id
+        "delete_catalog_dag", f"/{VTAG}/catalog/dags/{dag_id}", dag_id=dag_id
     )
     resp = await client.delete(url)
     data, errors = await assert_status(resp, expected)

@@ -12,11 +12,13 @@
 --requirement _tools.txt
 
 # installs this repo's packages
---editable ../postgres-database/[migration]
---editable ../service-library/
 --editable ../pytest-simcore/
+
+--editable ../postgres-database
 --editable ../models-library/
-../../services/storage/client-sdk/python/ # Needed ONLY for testing
+
+# FIXME: these dependencies should be removed
+--editable ../service-library/
 
 # installs current package
 --editable .

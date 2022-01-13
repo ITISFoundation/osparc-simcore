@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 import aioredlock
 from aiohttp import web
@@ -8,6 +8,8 @@ from simcore_service_webserver.resource_manager.redis import (
     get_redis_lock_manager,
     get_redis_lock_manager_client,
 )
+
+from ..users_api import UserNameDict
 
 PROJECT_REDIS_LOCK_KEY: str = "project:{}"
 
@@ -20,7 +22,7 @@ async def lock_project(
     project_uuid: Union[str, ProjectID],
     status: ProjectStatus,
     user_id: int,
-    user_name: Dict[str, str],
+    user_name: UserNameDict,
 ) -> ProjectLock:
     """returns a distributed redis lock on the project defined by its UUID.
     NOTE: can be used as a context manager

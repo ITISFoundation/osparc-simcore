@@ -62,4 +62,6 @@ class CleanupFileResponse(FileResponse):  # pylint: disable=too-many-ancestors
         try:
             return await super().prepare(request=request)
         finally:
-            await asyncio.get_event_loop().create_task(remove_dir(self._temp_dir))
+            await asyncio.get_event_loop().create_task(
+                remove_dir(self._temp_dir), name=f"remove dir {self._temp_dir}"
+            )

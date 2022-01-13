@@ -10,9 +10,9 @@ from servicelib.aiohttp.application import APP_CONFIG_KEY, create_safe_applicati
 from servicelib.aiohttp.monitoring import setup_monitoring
 from servicelib.aiohttp.tracing import setup_tracing
 
+from ._meta import WELCOME_MSG, app_name, version
 from .db import setup_db
 from .dsm import setup_dsm
-from .meta import WELCOME_MSG
 from .rest import setup_rest
 from .s3 import setup_s3
 from .settings import Settings
@@ -30,21 +30,23 @@ def create(settings: Settings) -> web.Application:
     app = create_safe_application(None)
     app[APP_CONFIG_KEY] = settings
 
-    if settings.STORAGE_TRACING.enabled:
+    if settings.STORAGE_TRACING:
         setup_tracing(
             app,
-            "simcore_service_storage",
-            settings.STORAGE_HOST,
-            settings.STORAGE_PORT,
-            settings.STORAGE_TRACING.dict(),
+            service_name="simcore_service_storage",
+            host=settings.STORAGE_HOST,
+            port=settings.STORAGE_PORT,
+            jaeger_base_url=f"{settings.STORAGE_TRACING.TRACING_ZIPKIN_ENDPOINT}",
+            skip_routes=None,
         )
+
     setup_db(app)  # -> postgres service
     setup_s3(app)  # -> minio service
     setup_dsm(app)  # core subsystem. Needs s3 and db setups done
     setup_rest(app)  # lastly, we expose API to the world
 
     if settings.STORAGE_MONITORING_ENABLED:
-        setup_monitoring(app, "simcore_service_storage")
+        setup_monitoring(app, app_name, version=f"{version}")
 
     return app
 

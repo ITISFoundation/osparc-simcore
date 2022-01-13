@@ -1,4 +1,6 @@
 # wraps all calls to underlying docker engine
+
+
 import asyncio
 import logging
 import time
@@ -27,6 +29,52 @@ NO_PENDING_OVERWRITE = {
 }
 
 log = logging.getLogger(__name__)
+
+
+def _monkey_patch_aiodocker() -> None:
+    """Raises an error once the library is up to date."""
+    from distutils.version import LooseVersion
+
+    from aiodocker import volumes
+    from aiodocker.utils import clean_filters
+    from aiodocker.volumes import DockerVolume
+
+    if LooseVersion(aiodocker.__version__) > LooseVersion("0.21.0"):
+        raise RuntimeError(
+            "Please check that PR https://github.com/aio-libs/aiodocker/pull/623 "
+            "is not part of the current bump version. "
+            "Otherwise, if the current PR is part of this new release "
+            "remove monkey_patch."
+        )
+
+    # pylint: disable=protected-access
+    async def _custom_volumes_list(self, *, filters=None):
+        """
+        Return a list of volumes
+
+        Args:
+            filters: a dict with a list of filters
+
+        Available filters:
+            dangling=<boolean>
+            driver=<volume-driver-name>
+            label=<key> or label=<key>:<value>
+            name=<volume-name>
+        """
+        params = {} if filters is None else {"filters": clean_filters(filters)}
+
+        data = await self.docker._query_json("volumes", params=params)
+        return data
+
+    async def _custom_volumes_get(self, id):  # pylint: disable=redefined-builtin
+        data = await self.docker._query_json("volumes/{id}".format(id=id), method="GET")
+        return DockerVolume(self.docker, data["Name"])
+
+    setattr(volumes.DockerVolumes, "list", _custom_volumes_list)
+    setattr(volumes.DockerVolumes, "get", _custom_volumes_get)
+
+
+_monkey_patch_aiodocker()
 
 
 @asynccontextmanager
@@ -239,8 +287,7 @@ async def get_dynamic_sidecar_state(service_id: str) -> Tuple[ServiceState, str]
         # it is looking for a service or something with no error message
         return _make_pending()
 
-    task_status = last_task["Status"]
-    service_state, message = extract_task_state(task_status=task_status)
+    service_state, message = extract_task_state(task_status=last_task["Status"])
 
     # to avoid creating confusion for the user, always return the status
     # as pending while the dynamic-sidecar is starting, with
@@ -248,10 +295,10 @@ async def get_dynamic_sidecar_state(service_id: str) -> Tuple[ServiceState, str]
     if service_state not in NO_PENDING_OVERWRITE:
         return ServiceState.PENDING, message
 
-    return extract_task_state(task_status=task_status)
+    return service_state, message
 
 
-async def are_services_missing(
+async def is_dynamic_sidecar_missing(
     node_uuid: NodeID, dynamic_sidecar_settings: DynamicSidecarSettings
 ) -> bool:
     """Used to check if the service should be created"""
@@ -321,6 +368,20 @@ async def remove_dynamic_sidecar_network(network_name: str) -> bool:
         )
         log.warning(message)
         return False
+
+
+async def remove_dynamic_sidecar_volumes(node_uuid: NodeID) -> bool:
+    async with docker_client() as client:
+        volumes_response = await client.volumes.list(
+            filters={"label": f"uuid={node_uuid}"}
+        )
+        volumes = volumes_response["Volumes"]
+        for volume_data in volumes:
+            volume = await client.volumes.get(volume_data["Name"])
+            await volume.delete()
+
+        log.debug("Remove volumes: %s", [v["Name"] for v in volumes])
+        return True
 
 
 async def list_dynamic_sidecar_services(

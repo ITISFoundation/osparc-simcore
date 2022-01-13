@@ -1,38 +1,61 @@
-import os
 import re
+import sys
 from pathlib import Path
+from typing import Set
 
 from setuptools import find_packages, setup
 
-current_dir = Path(os.path.dirname(os.path.realpath(__file__)))
+
+def read_reqs(reqs_path: Path) -> Set[str]:
+    return {
+        r
+        for r in re.findall(
+            r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)",
+            reqs_path.read_text(),
+            re.MULTILINE,
+        )
+        if isinstance(r, str)
+    }
 
 
-def read_reqs(reqs_path: Path):
-    return re.findall(r"(^[^#-][\w]+[-~>=<.\w]+)", reqs_path.read_text(), re.MULTILINE)
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-
-# -----------------------------------------------------------------
 # Hard requirements on third-parties and latest for in-repo packages
-install_requires = read_reqs(current_dir / "requirements" / "_base.txt") + [
-    "simcore-models-library",
-    "simcore-settings-library",
-    "simcore-postgres-database",
-]
+PROD_REQUIREMENTS = tuple(
+    read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
+    | {
+        "simcore-models-library",
+        "simcore-postgres-database",
+        "simcore-sdk>=1.1.0",
+        "simcore-service-library[fastapi]",
+        "simcore-settings-library",
+    }
+)
 
-tests_require = read_reqs(current_dir / "requirements" / "_test.txt")
+TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
-current_version = (current_dir / "VERSION").read_text().strip()
 
-setup(
-    name="simcore_service_dynamic_sidecar",
-    version=current_version,
+SETUP = dict(
+    name="simcore-service-dynamic-sidecar",
+    version=(CURRENT_DIR / "VERSION").read_text().strip(),
+    author=", ".join(
+        (
+            "Andrei Neagu (GitHK)",
+            "Sylvain Anderegg (sanderegg)",
+        )
+    ),
+    description="Implements a sidecar service to manage user's dynamic/interactive services",
     packages=find_packages(where="src"),
     package_dir={
         "": "src",
     },
     include_package_data=True,
     python_requires="~=3.8",
-    install_requires=install_requires,
-    tests_require=tests_require,
+    PROD_REQUIREMENTS=PROD_REQUIREMENTS,
+    TEST_REQUIREMENTS=TEST_REQUIREMENTS,
     setup_requires=["setuptools_scm"],
 )
+
+
+if __name__ == "__main__":
+    setup(**SETUP)

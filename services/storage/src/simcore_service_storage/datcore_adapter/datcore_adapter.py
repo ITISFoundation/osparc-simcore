@@ -4,6 +4,7 @@ from math import ceil
 from typing import Any, Callable, Dict, List, Optional, Type, Union, cast
 
 import aiohttp
+from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.client_session import ClientSession, get_client_session
 from yarl import URL
@@ -30,7 +31,7 @@ class _DatcoreAdapterResponseError(DatcoreAdapterException):
 
 
 async def _request(
-    app: aiohttp.web.Application,
+    app: web.Application,
     api_key: str,
     api_secret: str,
     method: str,
@@ -56,16 +57,19 @@ async def _request(
             params=params,
         ) as response:
             return await response.json()
+
     except aiohttp.ClientResponseError as exc:
         raise _DatcoreAdapterResponseError(status=exc.status, reason=f"{exc}") from exc
-    except TimeoutError as exc:
+
+    except asyncio.TimeoutError as exc:
         raise DatcoreAdapterClientError("datcore-adapter server timed-out") from exc
+
     except aiohttp.ClientError as exc:
         raise DatcoreAdapterClientError(f"unexpected client error: {exc}") from exc
 
 
 async def _retrieve_all_pages(
-    app: aiohttp.web.Application,
+    app: web.Application,
     api_key: str,
     api_secret: str,
     method: str,
@@ -96,20 +100,24 @@ async def _retrieve_all_pages(
     return objs
 
 
-async def check_service_health(app: aiohttp.web.Application) -> bool:
+async def check_service_health(app: web.Application) -> bool:
     datcore_adapter_settings = app[APP_CONFIG_KEY].DATCORE_ADAPTER
     url = datcore_adapter_settings.endpoint + "/ready"
     session: ClientSession = get_client_session(app)
     try:
         await session.get(url, raise_for_status=True)
-    except (TimeoutError, aiohttp.ClientError):
+    except (asyncio.TimeoutError, aiohttp.ClientError):
         return False
     return True
 
 
 async def check_user_can_connect(
-    app: aiohttp.web.Application, api_key: str, api_secret: str
+    app: web.Application, api_key: str, api_secret: str
 ) -> bool:
+    if not api_key or not api_secret:
+        # no need to ask, datcore is an authenticated service
+        return False
+
     try:
         await _request(app, api_key, api_secret, "GET", "/user/profile")
         return True
@@ -118,7 +126,7 @@ async def check_user_can_connect(
 
 
 async def list_all_datasets_files_metadatas(
-    app: aiohttp.web.Application, api_key: str, api_secret: str
+    app: web.Application, api_key: str, api_secret: str
 ) -> List[FileMetaDataEx]:
     all_datasets: List[DatasetMetaData] = await list_datasets(app, api_key, api_secret)
     get_dataset_files_tasks = [
@@ -133,7 +141,7 @@ async def list_all_datasets_files_metadatas(
 
 
 async def list_all_files_metadatas_in_dataset(
-    app: aiohttp.web.Application, api_key: str, api_secret: str, dataset_id: str
+    app: web.Application, api_key: str, api_secret: str, dataset_id: str
 ) -> List[FileMetaDataEx]:
     all_files: List[Dict[str, Any]] = cast(
         List[Dict[str, Any]],
@@ -159,14 +167,14 @@ async def list_all_files_metadatas_in_dataset(
                 created_at=d["created_at"],
                 last_modified=d["last_modified_at"],
                 display_file_path=d["name"],
-            ),
+            ),  # type: ignore
         )
         for d in all_files
     ]
 
 
 async def list_datasets(
-    app: aiohttp.web.Application, api_key: str, api_secret: str
+    app: web.Application, api_key: str, api_secret: str
 ) -> List[DatasetMetaData]:
     all_datasets: List[DatasetMetaData] = await _retrieve_all_pages(
         app,
@@ -182,7 +190,7 @@ async def list_datasets(
 
 
 async def get_file_download_presigned_link(
-    app: aiohttp.web.Application, api_key: str, api_secret: str, file_id: str
+    app: web.Application, api_key: str, api_secret: str, file_id: str
 ) -> URL:
     file_download_data = cast(
         Dict[str, Any],
@@ -192,6 +200,6 @@ async def get_file_download_presigned_link(
 
 
 async def delete_file(
-    app: aiohttp.web.Application, api_key: str, api_secret: str, file_id: str
+    app: web.Application, api_key: str, api_secret: str, file_id: str
 ):
     await _request(app, api_key, api_secret, "DELETE", f"/files/{file_id}")

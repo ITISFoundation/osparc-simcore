@@ -69,7 +69,8 @@ qx.Class.define("osparc.desktop.preferences.pages.ProfilePage", {
           role.setSelection([roleItem]);
         }
         role.addListener("changeSelection", function(e) {
-          const newRole = e.getData()[0].getLabel();
+          let newRole = e.getData()[0].getLabel();
+          newRole = newRole.toLowerCase();
           permissions.setRole(newRole);
         }, this);
       } else {

@@ -63,7 +63,12 @@ qx.Class.define("osparc.studycard.Utils", {
       const owner = new qx.ui.basic.Label();
       if (study instanceof osparc.data.model.Study) {
         study.bind("prjOwner", owner, "value", {
-          converter: email => osparc.utils.Utils.getNameFromEmail(email),
+          converter: email => {
+            if (email === osparc.auth.Data.getInstance().getEmail()) {
+              return qx.locale.Manager.tr("me");
+            }
+            return osparc.utils.Utils.getNameFromEmail(email);
+          },
           onUpdate: (source, target) => {
             target.setToolTipText(source.getPrjOwner());
           }

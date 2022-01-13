@@ -26,10 +26,12 @@ from simcore_service_webserver import catalog
 from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.products import setup_products
-from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.resource_manager import setup_resource_manager
+from simcore_service_webserver.projects.module_setup import setup_projects
+from simcore_service_webserver.resource_manager.module_setup import (
+    setup_resource_manager,
+)
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
@@ -41,6 +43,7 @@ API_VERSION = "v0"
 pytest_simcore_core_services_selection = [
     "catalog",
     "director",
+    "migration",
     "postgres",
     "redis",
 ]
@@ -197,7 +200,7 @@ async def _request_delete(client, pid):
 async def test_workflow(
     postgres_db: sa.engine.Engine,
     docker_registry: str,
-    simcore_services,
+    simcore_services_ready,
     fake_project_data,
     catalog_subsystem_mock,
     client,
@@ -286,7 +289,7 @@ async def test_get_invalid_project(
     client,
     postgres_db: sa.engine.Engine,
     docker_registry: str,
-    simcore_services,
+    simcore_services_ready,
     logged_user,
 ):
     url = client.app.router["get_project"].url_for(project_id="some-fake-id")
@@ -300,7 +303,7 @@ async def test_update_invalid_project(
     client,
     postgres_db: sa.engine.Engine,
     docker_registry: str,
-    simcore_services,
+    simcore_services_ready,
     logged_user,
 ):
     url = client.app.router["replace_project"].url_for(project_id="some-fake-id")
@@ -314,7 +317,7 @@ async def test_delete_invalid_project(
     client,
     postgres_db: sa.engine.Engine,
     docker_registry: str,
-    simcore_services,
+    simcore_services_ready,
     logged_user,
 ):
     url = client.app.router["delete_project"].url_for(project_id="some-fake-id")

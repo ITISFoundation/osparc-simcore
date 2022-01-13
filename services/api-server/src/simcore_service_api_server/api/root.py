@@ -12,7 +12,7 @@ def create_router(settings: AppSettings):
     router.include_router(meta.router, tags=["meta"], prefix="/meta")
     router.include_router(users.router, tags=["users"], prefix="/me")
 
-    if settings.dev_features_enabled:
+    if settings.API_SERVER_DEV_FEATURES_ENABLED:
         router.include_router(files.router, tags=["files"], prefix="/files")
         router.include_router(solvers.router, tags=["solvers"], prefix="/solvers")
         router.include_router(solvers_jobs.router, tags=["solvers"], prefix="/solvers")

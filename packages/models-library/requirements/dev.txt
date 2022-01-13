@@ -12,8 +12,8 @@
 --requirement _tools.txt
 
 # installs this repo's packages
---editable ../pytest-simcore/
 --editable ../postgres-database/[migration]
+--editable ../pytest-simcore/
 
 # current module
 --editable .

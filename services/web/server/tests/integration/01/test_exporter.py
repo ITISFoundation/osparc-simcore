@@ -11,13 +11,28 @@ from collections import deque
 from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Coroutine, Dict, List, Set, Tuple
+from typing import (
+    Any,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Set,
+    Tuple,
+)
+from unittest import mock
 
 import aiofiles
-import aiohttp
+import aiohttp.web
 import aiopg
+import aiopg.sa
 import aioredis
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
+from aiohttp.test_utils import TestClient
 from models_library.settings.redis import RedisConfig
 from pytest_simcore.docker_registry import _pull_push_service
 from pytest_simcore.helpers.utils_login import log_client_in
@@ -26,43 +41,46 @@ from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
 )
+from simcore_service_webserver.application import (
+    setup_director,
+    setup_director_v2,
+    setup_exporter,
+    setup_login,
+    setup_products,
+    setup_projects,
+    setup_resource_manager,
+    setup_rest,
+    setup_security,
+    setup_session,
+    setup_socketio,
+    setup_storage,
+    setup_users,
+)
 from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects
-from simcore_service_webserver.director import setup_director
-from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.exporter import setup_exporter
 from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
 from simcore_service_webserver.exporter.file_downloader import ParallelDownloader
-from simcore_service_webserver.login import setup_login
-from simcore_service_webserver.products import setup_products
-from simcore_service_webserver.projects import setup_projects
-from simcore_service_webserver.resource_manager import setup_resource_manager
-from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.scicrunch.submodule_setup import (
     setup_scicrunch_submodule,
 )
-from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
-from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio import setup_socketio
-from simcore_service_webserver.storage import setup_storage
 from simcore_service_webserver.storage_handlers import get_file_download_url
-from simcore_service_webserver.users import setup_users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from yarl import URL
 
 log = logging.getLogger(__name__)
 
 pytest_simcore_core_services_selection = [
-    "redis",
-    "rabbit",
     "catalog",
     "dask-scheduler",
-    "director",
     "director-v2",
+    "director",
+    "migration",
     "postgres",
+    "rabbit",
+    "redis",
     "storage",
 ]
 pytest_simcore_ops_services_selection = ["minio"]
@@ -92,7 +110,9 @@ KEYS_TO_IGNORE_FROM_COMPARISON = {
 
 
 @pytest.fixture(autouse=True)
-def __drop_and_recreate_postgres__(database_from_template_before_each_function) -> None:
+def __drop_and_recreate_postgres__(
+    database_from_template_before_each_function,
+) -> Iterator[None]:
     yield
 
 
@@ -108,38 +128,12 @@ async def __delete_all_redis_keys__(redis_service: RedisConfig):
 
 
 @pytest.fixture
-async def monkey_patch_aiohttp_request_url() -> None:
-    old_request = aiohttp.ClientSession._request
-
-    async def new_request(*args, **kwargs):
-        assert len(args) == 3
-
-        url = args[2]
-        if isinstance(url, str):
-            url = URL(url)
-
-        if url.host == "director-v2":
-            from pytest_simcore.helpers.utils_docker import get_service_published_port
-
-            log.debug("MOCKING _request [before] url=%s", url)
-            new_port = int(get_service_published_port("director-v2", 8000))
-            url = url.with_host("172.17.0.1").with_port(new_port)
-            log.debug("MOCKING _request [after] url=%s kwargs=%s", url, str(kwargs))
-
-            args = args[0], args[1], url
-
-        return await old_request(*args, **kwargs)
-
-    aiohttp.ClientSession._request = new_request
-
-    yield
-
-    aiohttp.ClientSession._request = old_request
-
-
-@pytest.fixture
 def client(
-    loop, aiohttp_client, app_config, postgres_with_template_db, mock_orphaned_services
+    loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable,
+    app_config: Dict,
+    postgres_with_template_db: aiopg.sa.engine.Engine,
+    mock_orphaned_services: mock.Mock,
 ):
     cfg = deepcopy(app_config)
 
@@ -196,7 +190,9 @@ def get_exported_projects() -> List[Path]:
 
 
 @pytest.fixture
-async def apply_access_rights(aiopg_engine: aiopg.sa.Engine) -> Coroutine:
+async def apply_access_rights(
+    aiopg_engine: aiopg.sa.Engine,
+) -> AsyncIterator[Callable[..., Awaitable[None]]]:
     async def grant_rights_to_services(services: List[Tuple[str, str]]) -> None:
         for service_key, service_version in services:
             metada_data_values = dict(
@@ -246,7 +242,9 @@ async def apply_access_rights(aiopg_engine: aiopg.sa.Engine) -> Coroutine:
 
 
 @pytest.fixture
-async def grant_access_rights(apply_access_rights: Coroutine) -> None:
+async def grant_access_rights(
+    apply_access_rights: Callable[..., Awaitable[None]]
+) -> None:
     # services which require access
     services = [
         ("simcore/services/comp/itis/sleeper", "2.0.2"),
@@ -269,7 +267,7 @@ def push_services_to_registry(docker_registry: str, node_meta_schema: Dict) -> N
 
 
 @contextmanager
-def assemble_tmp_file_path(file_name: str) -> Path:
+def assemble_tmp_file_path(file_name: str) -> Iterable[Path]:
     # pylint: disable=protected-access
     # let us all thank codeclimate for this beautiful piece of code
     tmp_store_dir = Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"
@@ -397,7 +395,7 @@ async def extract_download_links_from_storage(
             app=app,
             location_id=location_id,
             fileId=raw_file_path,
-            user_id=user_id,
+            user_id=int(user_id),
         )
         return seq_key, link
 
@@ -482,15 +480,13 @@ async def import_study_from_file(client, file_path: Path) -> str:
     "export_version", get_exported_projects(), ids=(lambda p: p.name)
 )
 async def test_import_export_import_duplicate(
-    loop,
-    client,
-    push_services_to_registry,
-    aiopg_engine,
-    redis_client,
-    export_version,
-    simcore_services,
-    monkey_patch_aiohttp_request_url,
-    grant_access_rights,
+    client: TestClient,
+    push_services_to_registry: None,
+    aiopg_engine: aiopg.sa.engine.Engine,
+    redis_client: aioredis.Redis,
+    export_version: Path,
+    simcore_services_ready: None,
+    grant_access_rights: None,
 ):
     """
     Checks if the full "import -> export -> import -> duplicate" cycle
@@ -518,7 +514,7 @@ async def test_import_export_import_duplicate(
 
     assert url_export == URL(API_PREFIX + f"/projects/{imported_project_uuid}:xport")
     async with await client.post(
-        url_export, headers=headers, timeout=10
+        f"{url_export}", headers=headers, timeout=10
     ) as export_response:
         assert export_response.status == 200, await export_response.text()
 
@@ -545,7 +541,7 @@ async def test_import_export_import_duplicate(
         API_PREFIX + f"/projects/{imported_project_uuid}:duplicate"
     )
     async with await client.post(
-        url_duplicate, headers=headers, timeout=10
+        f"{url_duplicate}", headers=headers, timeout=10
     ) as duplicate_response:
         assert duplicate_response.status == 200, await duplicate_response.text()
         reply_data = await duplicate_response.json()
@@ -612,3 +608,57 @@ async def test_import_export_import_duplicate(
         duplicated_files_checksums,
         condition_operator=operator.eq,
     )
+
+
+@pytest.fixture
+def mock_file_downloader(monkeypatch: MonkeyPatch) -> None:
+    original_append_file = ParallelDownloader.append_file
+
+    async def mock_append_file(self, link: str, download_path: Path) -> None:
+        # making the download fail
+        link = "http://localhost/missing"
+        await original_append_file(self, link, download_path)
+
+    monkeypatch.setattr(ParallelDownloader, "append_file", mock_append_file)
+
+
+async def test_download_error_reporting(
+    client: TestClient,
+    push_services_to_registry: None,
+    aiopg_engine: aiopg.sa.engine.Engine,
+    redis_client: aioredis.Redis,
+    simcore_services_ready: None,
+    grant_access_rights: None,
+    mock_file_downloader: None,
+):
+    await login_user(client)
+
+    # not testing agains all versions, results will be the same
+    export_version = get_exported_projects()[0]
+    export_file_name = export_version.name
+    version_from_name = export_file_name.split("#")[0]
+
+    assert_error = (
+        f"The '{version_from_name}' version' is not present in the supported versions: "
+        f"{SUPPORTED_EXPORTER_VERSIONS}. If it's a new version please remember to add it."
+    )
+    assert version_from_name in SUPPORTED_EXPORTER_VERSIONS, assert_error
+
+    imported_project_uuid = await import_study_from_file(client, export_version)
+
+    headers = {X_PRODUCT_NAME_HEADER: "osparc"}
+
+    # export newly imported project
+    url_export = client.app.router["export_project"].url_for(
+        project_id=imported_project_uuid
+    )
+
+    assert url_export == URL(API_PREFIX + f"/projects/{imported_project_uuid}:xport")
+    async with await client.post(
+        f"{url_export}", headers=headers, timeout=10
+    ) as export_response:
+        assert export_response.status == 400, await export_response.text()
+        json_response = await export_response.json()
+        assert json_response["error"]["logs"][0]["message"].startswith(
+            "Not all files were downloaded: "
+        )

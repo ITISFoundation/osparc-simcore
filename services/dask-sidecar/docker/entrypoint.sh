@@ -8,6 +8,13 @@ INFO="INFO: [$(basename "$0")] "
 WARNING="WARNING: [$(basename "$0")] "
 ERROR="ERROR: [$(basename "$0")] "
 
+# Read self-signed SSH certificates (if applicable)
+#
+# In case storage must access a docker registry in a secure way using
+# non-standard certificates (e.g. such as self-signed certificates), this call is needed.
+# It needs to be executed as root.
+update-ca-certificates
+
 # This entrypoint script:
 #
 # - Executes *inside* of the container upon start as --user [default root]
@@ -20,14 +27,11 @@ echo   Workdir :"$(pwd)"
 echo   scuUser :"$(id scu)"
 
 
-USERNAME=scu
-GROUPNAME=scu
-
 if [ "${SC_BUILD_TARGET}" = "development" ]
 then
     echo "$INFO" "development mode detected..."
     # NOTE: expects docker run ... -v $(pwd):/devel/services/dask-sidecar
-    DEVEL_MOUNT=/devel/services/dask-sidecar
+    DEVEL_MOUNT="/devel/services/dask-sidecar"
 
     stat $DEVEL_MOUNT > /dev/null 2>&1 || \
         (echo "$ERROR" "You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1)
@@ -100,19 +104,15 @@ else
       adduser "$SC_USER_NAME" "$GROUPNAME"
   fi
 
-  echo "$INFO ensuring write rights on folders ..."
-  mkdir --parents "${SIDECAR_INPUT_FOLDER}" "${SIDECAR_OUTPUT_FOLDER}" "${SIDECAR_LOG_FOLDER}"
-  chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_INPUT_FOLDER}"
-  chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_OUTPUT_FOLDER}"
-  chown -R $USERNAME:"$GROUPNAME" "${SIDECAR_LOG_FOLDER}"
+  echo "$INFO ensuring write rights on computational shared folder ..."
+  mkdir --parents "${SIDECAR_COMP_SERVICES_SHARED_FOLDER}"
+  chown --recursive "$SC_USER_NAME":"$GROUPNAME" "${SIDECAR_COMP_SERVICES_SHARED_FOLDER}"
 
 
   echo "$INFO Starting $* as WORKER ..."
   echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
   echo "  local dir : $(ls -al)"
-  echo "  input dir : $(ls -al "${SIDECAR_INPUT_FOLDER}")"
-  echo "  output dir : $(ls -al "${SIDECAR_OUTPUT_FOLDER}")"
-  echo "  log dir : $(ls -al "${SIDECAR_LOG_FOLDER}")"
+  echo "  computational shared data dir : $(ls -al "${SIDECAR_COMP_SERVICES_SHARED_FOLDER}")"
 fi
 
 exec gosu "$SC_USER_NAME" "$@"

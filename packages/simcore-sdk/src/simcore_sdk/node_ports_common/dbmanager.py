@@ -1,18 +1,20 @@
 import json
 import logging
+import os
 import socket
 from typing import Optional
 
 import aiopg.sa
 import tenacity
+from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
-from servicelib.common_aiopg_utils import (
-    DataSourceName,
-    PostgresRetryPolicyUponInitialization,
-    create_pg_engine,
-    is_postgres_responsive,
-)
+from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
+from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
 from simcore_postgres_database.models.comp_tasks import comp_tasks
+from simcore_postgres_database.utils_aiopg import (
+    close_engine,
+    raise_if_migration_not_ready,
+)
 from sqlalchemy import and_
 
 from . import config
@@ -47,9 +49,14 @@ async def _get_node_from_db(
 
 
 @tenacity.retry(**PostgresRetryPolicyUponInitialization().kwargs)
-async def wait_till_postgres_responsive(dsn: DataSourceName) -> None:
-    if not is_postgres_responsive(dsn):
-        raise Exception
+async def _ensure_postgres_ready(dsn: DataSourceName) -> Engine:
+    engine = await create_pg_engine(dsn, minsize=1, maxsize=4)
+    try:
+        await raise_if_migration_not_ready(engine)
+    except Exception:
+        await close_engine(engine)
+        raise
+    return engine
 
 
 class DBContextManager:
@@ -57,17 +64,18 @@ class DBContextManager:
         self._db_engine: Optional[aiopg.sa.Engine] = db_engine
         self._db_engine_created: bool = False
 
-    async def _create_db_engine(self) -> aiopg.sa.Engine:
+    @staticmethod
+    async def _create_db_engine() -> aiopg.sa.Engine:
         dsn = DataSourceName(
-            application_name=f"{__name__}_{id(socket.gethostname())}",
+            application_name=f"{__name__}_{socket.gethostname()}_{os.getpid()}",
             database=config.POSTGRES_DB,
             user=config.POSTGRES_USER,
             password=config.POSTGRES_PW,
             host=config.POSTGRES_ENDPOINT.split(":")[0],
-            port=config.POSTGRES_ENDPOINT.split(":")[1],
-        )
-        await wait_till_postgres_responsive(dsn)
-        engine = await create_pg_engine(dsn, minsize=1, maxsize=4)
+            port=int(config.POSTGRES_ENDPOINT.split(":")[1]),
+        )  # type: ignore
+
+        engine = await _ensure_postgres_ready(dsn)
         return engine
 
     async def __aenter__(self):
@@ -78,8 +86,7 @@ class DBContextManager:
 
     async def __aexit__(self, exc_type, exc, tb):
         if self._db_engine and self._db_engine_created:
-            self._db_engine.close()
-            await self._db_engine.wait_closed()
+            await close_engine(self._db_engine)
             log.debug(
                 "engine '%s' after shutdown: closed=%s, size=%d",
                 self._db_engine.dsn,
@@ -95,7 +102,11 @@ class DBManager:
     async def write_ports_configuration(
         self, json_configuration: str, project_id: str, node_uuid: str
     ):
-        log.debug("Writing ports configuration to database")
+        message = (
+            f"Writing port configuration to database for "
+            f"project={project_id} node={node_uuid}: {json_configuration}"
+        )
+        log.debug(message)
 
         node_configuration = json.loads(json_configuration)
         async with DBContextManager(self._db_engine) as engine:

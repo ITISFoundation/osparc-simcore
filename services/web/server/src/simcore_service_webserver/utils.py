@@ -5,18 +5,17 @@ import asyncio
 import hashlib
 import logging
 import os
-import string
 import sys
 import tracemalloc
 from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
-from secrets import choice
-from typing import Dict, Iterable, List
+from typing import Any, Dict, List
 
-from yarl import URL
+import orjson
+from models_library.basic_types import SHA1Str
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 log = logging.getLogger(__name__)
 
 
@@ -31,7 +30,7 @@ def search_osparc_repo_dir(max_iter=8):
 
     NOTE: assumes this file within repo, i.e. only happens in edit mode!
     """
-    root_dir = current_dir
+    root_dir = CURRENT_DIR
     if "services/web/server" in str(root_dir):
         it = 1
         while not is_osparc_repo_dir(root_dir) and it < max_iter:
@@ -43,73 +42,8 @@ def search_osparc_repo_dir(max_iter=8):
     return None
 
 
-def as_list(obj) -> List:
-    # TODO: disabled because of bug in  https://github.com/PyCQA/pylint/issues/3507
-    if isinstance(obj, Iterable):  # pylint: disable=typecheck
-        return list(obj)
-    return [
-        obj,
-    ]
-
-
 def gravatar_hash(email: str) -> str:
     return hashlib.md5(email.lower().encode("utf-8")).hexdigest()  # nosec
-
-
-def gravatar_url(gravatarhash, size=100, default="identicon", rating="g") -> URL:
-    url = URL(f"https://secure.gravatar.com/avatar/{gravatarhash}")
-    return url.with_query(s=size, d=default, r=rating)
-
-
-def generate_password(length: int = 8, more_secure: bool = False) -> str:
-    """generate random passord
-
-    :param length: password length, defaults to 8
-    :type length: int, optional
-    :param more_secure: if True it adds at least one lowercase, one uppercase and three digits, defaults to False
-    :type more_secure: bool, optional
-    :return: password
-    :rtype: str
-    """
-    # Adapted from https://docs.python.org/3/library/secrets.html#recipes-and-best-practices
-    alphabet = string.ascii_letters + string.digits
-
-    if more_secure:
-        # At least one lowercase, one uppercase and three digits
-        while True:
-            password = "".join(choice(alphabet) for i in range(length))
-            if (
-                any(c.islower() for c in password)
-                and any(c.isupper() for c in password)
-                and sum(c.isdigit() for c in password) >= 3
-            ):
-                break
-    else:
-        password = "".join(choice(alphabet) for i in range(length))
-
-    return password
-
-
-def generate_passphrase(number_of_words=4):
-    # Adapted from https://docs.python.org/3/library/secrets.html#recipes-and-best-practices
-    words = load_words()
-    passphrase = " ".join(choice(words) for i in range(number_of_words))
-    return passphrase
-
-
-def load_words():
-    """
-        ONLY in linux systems
-
-    :return: a list of words
-    :rtype: list of str
-    """
-    # FIXME: alpine does not have this file. Get from https://users.cs.duke.edu/~ola/ap/linuxwords in container
-    if "linux" not in sys.platform:
-        raise OSError("load_words can only run on Linux systems.")
-    with open("/usr/share/dict/words") as f:
-        words = [word.strip() for word in f]
-    return words
 
 
 # -----------------------------------------------
@@ -162,7 +96,7 @@ def get_task_info(task: asyncio.Task) -> Dict:
         type=str(type(task)),
         done=task.done(),
         cancelled=False,
-        stack=None,
+        stack=[],
         exception=None,
     )
 
@@ -212,3 +146,21 @@ def compose_error_msg(msg: str) -> str:
 def snake_to_camel(subject: str) -> str:
     parts = subject.lower().split("_")
     return parts[0] + "".join(x.title() for x in parts[1:])
+
+
+# -----------------------------------------------
+#
+# SERIALIZATION, CHECKSUMS,
+#
+
+
+def compute_sha1_on_small_dataset(d: Any) -> SHA1Str:
+    """
+    This should be used for small datasets, otherwise it should be chuncked
+    and aggregated
+
+    More details in test_utils.py:test_compute_sha1_on_small_dataset
+    """
+    # SEE options in https://github.com/ijl/orjson#option
+    data_bytes = orjson.dumps(d, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS)
+    return hashlib.sha1(data_bytes).hexdigest()  # nosec

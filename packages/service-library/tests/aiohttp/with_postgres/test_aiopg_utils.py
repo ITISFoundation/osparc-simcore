@@ -7,6 +7,7 @@ import asyncio
 import logging
 import sys
 from copy import deepcopy
+from dataclasses import asdict
 from pathlib import Path
 
 import aiopg.sa
@@ -14,7 +15,6 @@ import pytest
 import sqlalchemy as sa
 import sqlalchemy.exc as sa_exceptions
 from aiohttp import web
-from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
 from servicelib.aiohttp.aiopg_utils import (
     DatabaseError,
     PostgresRetryPolicyUponOperation,
@@ -22,6 +22,7 @@ from servicelib.aiohttp.aiopg_utils import (
     is_pg_responsive,
     retry_pg_api,
 )
+from servicelib.common_aiopg_utils import DataSourceName, create_pg_engine
 
 current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -85,7 +86,7 @@ async def test_create_pg_engine(postgres_service_with_fake_data):
     dsn = postgres_service_with_fake_data
 
     # using raw call and dsn.asdict to fill create_engine arguments!
-    engine1 = await aiopg.sa.create_engine(minsize=1, maxsize=5, **dsn.asdict())
+    engine1 = await aiopg.sa.create_engine(minsize=1, maxsize=5, **asdict(dsn))
 
     # just creating engine
     engine2 = await create_pg_engine(dsn)

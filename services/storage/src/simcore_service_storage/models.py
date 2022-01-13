@@ -2,6 +2,7 @@
 
 """
 import datetime
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Tuple, Union
 from uuid import UUID
@@ -48,7 +49,7 @@ def get_location_from_id(location_id: Union[str, int]) -> str:
         return UNDEFINED_LOCATION_TAG
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class DatasetMetaData:
     dataset_id: str = ""
     display_name: str = ""
@@ -155,7 +156,7 @@ attr.s(
 )(FileMetaData)
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class FileMetaDataEx:
     """Extend the base type by some additional attributes that shall not end up in the db"""
 

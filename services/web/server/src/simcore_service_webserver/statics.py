@@ -10,9 +10,18 @@ import json
 import logging
 from typing import Dict
 
-from aiohttp import ClientSession, web
+from aiohttp import web
+from aiohttp.client import ClientSession
+from aiohttp.client_exceptions import ClientConnectionError, ClientError
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.client_session import get_client_session
+from tenacity import (
+    AsyncRetrying,
+    before_log,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_fixed,
+)
 from yarl import URL
 
 from .constants import (
@@ -28,6 +37,9 @@ from .statics_settings import (
     StaticWebserverModuleSettings,
 )
 
+log = logging.getLogger(__name__)
+
+
 STATIC_DIRNAMES = FRONTEND_APPS_AVAILABLE | {"resource", "transpiled"}
 
 APP_FRONTEND_CACHED_INDEXES_KEY = f"{__name__}.cached_indexes"
@@ -36,7 +48,21 @@ APP_FRONTEND_CACHED_STATICS_JSON_KEY = f"{__name__}.cached_statics_json"
 # NOTE: saved as a separate item to config
 STATIC_WEBSERVER_SETTINGS_KEY = f"{__name__}.StaticWebserverModuleSettings"
 
-log = logging.getLogger(__name__)
+#
+# This retry policy aims to overcome the inconvenient fact that the swarm
+# orchestrator does not guaranteed the order in which services are started.
+#
+# Here the web-server needs to pull some files from the web-static service
+# which might still not be ready.
+#
+#
+RETRY_ON_STARTUP_POLICY = dict(
+    stop=stop_after_attempt(5),
+    wait=wait_fixed(1.5),
+    before=before_log(log, logging.WARNING),
+    retry=retry_if_exception_type(ClientConnectionError),
+    reraise=True,
+)
 
 
 def assemble_settings(app: web.Application) -> StaticWebserverModuleSettings:
@@ -65,20 +91,23 @@ async def _assemble_cached_indexes(app: web.Application):
 
     for frontend_name in FRONTEND_APPS_AVAILABLE:
         url = URL(settings.static_web_server_url) / frontend_name
-
         log.info("Fetching index from %s", url)
-        response = await session.get(url)
 
-        body = await response.text()
-        if response.status != 200:
-            message = (
-                f"Could not fetch {str(url)}, got status {response.status}\n{body}"
-            )
-            log.error(message)
-            # Yes this is supposted to fail the boot process
+        try:
+            # web-static server might still not be up
+            async for attempt in AsyncRetrying(**RETRY_ON_STARTUP_POLICY):
+                with attempt:
+                    response = await session.get(url, raise_for_status=True)
+
+            body = await response.text()
+
+        except ClientError as err:
+            log.error("Could not fetch index from static server: %s", err)
+
+            # ANE: Yes this is supposed to fail the boot process
             raise RuntimeError(
                 f"Could not fetch index at {str(url)}. Stopping application boot"
-            )
+            ) from err
 
         # fixes relative paths
         body = body.replace(f"../resource/{frontend_name}", f"resource/{frontend_name}")
@@ -155,7 +184,7 @@ async def get_statics_json(request: web.Request):  # pylint: disable=unused-argu
 def setup_statics(app: web.Application) -> None:
     settings: StaticWebserverModuleSettings = assemble_settings(app)
     if not settings.enabled:
-        log.warning("Static webserver module is disbaled")
+        log.warning("Static webserver module is disabled")
         return
 
     # serves information composed by making 3 http requests (once for each product)

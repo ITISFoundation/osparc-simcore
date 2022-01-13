@@ -6,11 +6,16 @@ import logging
 import re
 from http import HTTPStatus
 from pprint import pformat
-from typing import Any, Dict, List, Tuple
+from typing import Any, AsyncIterator, Dict, List, Tuple
 
 from aiohttp import BasicAuth, ClientSession, client_exceptions, web
+from aiohttp.client import ClientTimeout
 from simcore_service_director import config, exceptions
 from simcore_service_director.cache_request_decorator import cache_requests
+from tenacity import retry
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_result
+from tenacity.wait import wait_fixed
 from yarl import URL
 
 from .config import APP_CLIENT_SESSION_KEY
@@ -28,13 +33,13 @@ logger = logging.getLogger(__name__)
 
 
 class ServiceType(enum.Enum):
-    ALL: str = ""
-    COMPUTATIONAL: str = "comp"
-    DYNAMIC: str = "dynamic"
+    ALL = ""
+    COMPUTATIONAL = "comp"
+    DYNAMIC = "dynamic"
 
 
 async def _basic_auth_registry_request(
-    app: web.Application, path: str, method: str
+    app: web.Application, path: str, method: str, **session_kwargs
 ) -> Tuple[Dict, Dict]:
     if not config.REGISTRY_URL:
         raise exceptions.DirectorException("URL to registry is not defined")
@@ -42,6 +47,7 @@ async def _basic_auth_registry_request(
     url = URL(
         f"{'https' if config.REGISTRY_SSL else 'http'}://{config.REGISTRY_URL}{path}"
     )
+    logger.debug("Requesting registry using %s", url)
     # try the registry with basic authentication first, spare 1 call
     resp_data: Dict = {}
     resp_headers: Dict = {}
@@ -53,12 +59,14 @@ async def _basic_auth_registry_request(
 
     session = app[APP_CLIENT_SESSION_KEY]
     try:
-        async with session.request(method.lower(), url, auth=auth) as response:
+        async with session.request(
+            method.lower(), url, auth=auth, **session_kwargs
+        ) as response:
             if response.status == HTTPStatus.UNAUTHORIZED:
                 logger.debug("Registry unauthorized request: %s", await response.text())
                 # basic mode failed, test with other auth mode
                 resp_data, resp_headers = await _auth_registry_request(
-                    url, method, response.headers, session
+                    url, method, response.headers, session, **session_kwargs
                 )
 
             elif response.status == HTTPStatus.NOT_FOUND:
@@ -85,7 +93,7 @@ async def _basic_auth_registry_request(
 
 
 async def _auth_registry_request(
-    url: URL, method: str, auth_headers: Dict, session: ClientSession
+    url: URL, method: str, auth_headers: Dict, session: ClientSession, **kwargs
 ) -> Tuple[Dict, Dict]:
     if not config.REGISTRY_AUTH or not config.REGISTRY_USER or not config.REGISTRY_PW:
         raise exceptions.RegistryConnectionError(
@@ -114,7 +122,7 @@ async def _auth_registry_request(
         token_url = URL(auth_details["realm"]).with_query(
             service=auth_details["service"], scope=auth_details["scope"]
         )
-        async with session.get(token_url, auth=auth) as token_resp:
+        async with session.get(token_url, auth=auth, **kwargs) as token_resp:
             if not token_resp.status == HTTPStatus.OK:
                 raise exceptions.RegistryConnectionError(
                     "Unknown error while authentifying with registry: {}".format(
@@ -124,7 +132,7 @@ async def _auth_registry_request(
             bearer_code = (await token_resp.json())["token"]
             headers = {"Authorization": "Bearer {}".format(bearer_code)}
             async with getattr(session, method.lower())(
-                url, headers=headers
+                url, headers=headers, **kwargs
             ) as resp_wtoken:
                 if resp_wtoken.status == HTTPStatus.NOT_FOUND:
                     logger.exception("path to registry not found: %s", url)
@@ -140,7 +148,9 @@ async def _auth_registry_request(
                 return (resp_data, resp_headers)
     elif auth_type == "Basic":
         # basic authentication should not be since we tried already...
-        async with getattr(session, method.lower())(url, auth=auth) as resp_wbasic:
+        async with getattr(session, method.lower())(
+            url, auth=auth, **kwargs
+        ) as resp_wbasic:
             if resp_wbasic.status == HTTPStatus.NOT_FOUND:
                 logger.exception("path to registry not found: %s", url)
                 raise exceptions.ServiceNotAvailableError(str(url))
@@ -159,14 +169,47 @@ async def _auth_registry_request(
 
 
 async def registry_request(
-    app: web.Application, path: str, method: str = "GET", no_cache: bool = False
+    app: web.Application,
+    path: str,
+    method: str = "GET",
+    no_cache: bool = False,
+    **session_kwargs,
 ) -> Tuple[Dict, Dict]:
     logger.debug(
         "Request to registry: path=%s, method=%s. no_cache=%s", path, method, no_cache
     )
     return await cache_requests(_basic_auth_registry_request, no_cache)(
-        app, path, method
+        app, path, method, **session_kwargs
     )
+
+
+async def is_registry_responsive(app: web.Application) -> bool:
+    path = "/v2/"
+    try:
+        await registry_request(
+            app, path, no_cache=True, timeout=ClientTimeout(total=1.0)
+        )
+        return True
+    except (exceptions.DirectorException, asyncio.TimeoutError) as exc:
+        logger.debug("Registry not responsive: %s", exc)
+        return False
+
+
+async def setup_registry(app: web.Application) -> AsyncIterator[None]:
+    logger.debug("pinging registry...")
+
+    @retry(
+        wait=wait_fixed(2),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+        retry=retry_if_result(lambda result: result == False),
+        reraise=True,
+    )
+    async def wait_until_registry_responsive(app: web.Application) -> bool:
+        return await is_registry_responsive(app)
+
+    await wait_until_registry_responsive(app)
+    logger.info("Connected to docker registry")
+    yield
 
 
 async def _list_repositories(app: web.Application) -> List[str]:

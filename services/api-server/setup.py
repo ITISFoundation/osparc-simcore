@@ -3,49 +3,50 @@
 import re
 import sys
 from pathlib import Path
+from typing import Set
 
 from setuptools import find_packages, setup
 
-if not (sys.version_info.major == 3 and sys.version_info.minor == 8):
-    raise RuntimeError(
-        "Expected ~=3.8, got %s (Tip: did you forget to 'source .venv/bin/activate' or 'pyenv local'?)"
-        % str(sys.version_info)
-    )
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-
-def read_reqs(reqs_path: Path):
-    return re.findall(
-        r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)", reqs_path.read_text(), re.MULTILINE
-    )
+def read_reqs(reqs_path: Path) -> Set[str]:
+    return {
+        r
+        for r in re.findall(
+            r"(^[^#\n-][\w\[,\]]+[-~>=<.\w]*)",
+            reqs_path.read_text(),
+            re.MULTILINE,
+        )
+        if isinstance(r, str)
+    }
 
 
-readme = (current_dir / "README.md").read_text()
-version = (current_dir / "VERSION").read_text().strip()
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-install_requirements = read_reqs(current_dir / "requirements" / "_base.txt") + [
-    "simcore-models-library",
-    "simcore-postgres-database",
-    "simcore-sdk",
-    "simcore-service-library",
-]
+NAME = "simcore-service-api-server"
+VERSION = (CURRENT_DIR / "VERSION").read_text().strip()
+AUTHORS = "Pedro Crespo-Valero (pcrespov)"
+DESCRIPTION = "Platform's API Server for external clients"
+README = (CURRENT_DIR / "README.md").read_text()
 
-test_requirements = read_reqs(current_dir / "requirements" / "_test.txt")
+PROD_REQUIREMENTS = tuple(
+    read_reqs(CURRENT_DIR / "requirements" / "_base.txt")
+    | {
+        "simcore-models-library",
+        "simcore-postgres-database",
+        "simcore-sdk>=1.1.0",
+        "simcore-service-library[fastapi]",
+        "simcore-settings-library",
+    }
+)
 
+TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 
-setup(
-    name="simcore-service-api-server",
-    version=version,
-    author="Pedro Crespo (pcrespov)",
-    description="Platform's API Server for external clients",
-    classifiers=[
-        "Development Status :: 1 - Planning",
-        "License :: OSI Approved :: MIT License",
-        "Natural Language :: English",
-        "Programming Language :: Python :: 3.8",
-    ],
-    long_description=readme,
+SETUP = dict(
+    name=NAME,
+    version=VERSION,
+    author=AUTHORS,
+    description=DESCRIPTION,
+    long_description=README,
     license="MIT license",
     python_requires="~=3.8",
     packages=find_packages(where="src"),
@@ -58,8 +59,16 @@ setup(
             "mocks/*.y*ml",
         ]
     },
-    install_requires=install_requirements,
+    install_requires=PROD_REQUIREMENTS,
     test_suite="tests",
-    tests_require=test_requirements,
-    extras_require={"test": test_requirements},
+    tests_require=TEST_REQUIREMENTS,
+    extras_require={"test": TEST_REQUIREMENTS},
+    entry_points={
+        "console_scripts": [
+            "simcore-service-api-server = simcore_service_api_server.cli:main",
+        ],
+    },
 )
+
+if __name__ == "__main__":
+    setup(**SETUP)

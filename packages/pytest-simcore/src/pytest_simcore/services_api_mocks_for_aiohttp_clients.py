@@ -7,10 +7,16 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
+from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
+from models_library.api_schemas_storage import FileMetaData
 from models_library.projects_state import RunningState
 from yarl import URL
+
+pytest_plugins = [
+    "pytest_simcore.aioresponses_mocker",
+]
 
 # WARNING: any request done through the client will go through aioresponses. It is
 # unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
@@ -56,25 +62,6 @@ FULL_PROJECT_NODE_STATES: Dict[str, Dict[str, Any]] = {
 }
 
 
-@pytest.fixture
-def aioresponses_mocker() -> AioResponsesMock:
-    """Generick aioresponses mock
-
-    SEE https://github.com/pnuckowski/aioresponses
-
-    Usage
-
-        async def test_this(aioresponses_mocker):
-            aioresponses_mocker.get("https://foo.io")
-
-            async with aiohttp.ClientSession() as session:
-                async with session.get("https://foo.aio") as response:
-                    assert response.status == 200
-    """
-    with AioResponsesMock(passthrough=PASSTHROUGH_REQUESTS_PREFIXES) as mock:
-        yield mock
-
-
 def creation_cb(url, **kwargs) -> CallbackResult:
 
     assert "json" in kwargs, f"missing body in call to {url}"
@@ -112,8 +99,9 @@ def creation_cb(url, **kwargs) -> CallbackResult:
 
     return CallbackResult(
         status=201,
+        # NOTE: aioresponses uses json.dump which does NOT encode serialization of UUIDs
         payload={
-            "id": kwargs["json"]["project_id"],
+            "id": str(kwargs["json"]["project_id"]),
             "state": state,
             "pipeline_details": {
                 "adjacency_list": pipeline,
@@ -161,16 +149,17 @@ async def director_v2_service_mock(
     aioresponses_mocker.post(
         create_computation_pattern,
         callback=creation_cb,
+        status=web.HTTPCreated.status_code,
         repeat=True,
     )
     aioresponses_mocker.post(
         stop_computation_pattern,
-        status=204,
+        status=web.HTTPAccepted.status_code,
         repeat=True,
     )
     aioresponses_mocker.get(
         get_computation_pattern,
-        status=202,
+        status=web.HTTPAccepted.status_code,
         callback=get_computation_cb,
         repeat=True,
     )
@@ -189,10 +178,15 @@ async def storage_v0_service_mock(
         file_id = url.path.rsplit("/files/")[1]
 
         return CallbackResult(
-            status=200, payload={"data": {"link": f"file://{file_id}"}}
+            status=web.HTTPOk.status_code,
+            payload={"data": {"link": f"file://{file_id}"}},
         )
 
-    get_download_link_pattern = re.compile(
+    get_file_metadata_pattern = re.compile(
+        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$"
+    )
+
+    get_upload_link_pattern = get_download_link_pattern = re.compile(
         r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+$"
     )
 
@@ -201,11 +195,20 @@ async def storage_v0_service_mock(
     )
 
     aioresponses_mocker.get(
+        get_file_metadata_pattern,
+        status=web.HTTPOk.status_code,
+        payload={"data": FileMetaData.Config.schema_extra["examples"][0]},
+    )
+    aioresponses_mocker.get(
         get_download_link_pattern, callback=get_download_link_cb, repeat=True
+    )
+    aioresponses_mocker.put(
+        get_upload_link_pattern, callback=get_download_link_cb, repeat=True
     )
     aioresponses_mocker.get(
         get_locations_link_pattern,
-        status=200,
+        status=web.HTTPOk.status_code,
         payload={"data": [{"name": "simcore.s3", "id": "0"}]},
     )
+
     return aioresponses_mocker

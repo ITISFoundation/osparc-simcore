@@ -64,7 +64,13 @@ qx.Class.define("osparc.store.Store", {
     },
     snapshots: {
       check: "Array",
-      init: []
+      init: [],
+      event: "changeSnapshots"
+    },
+    iterations: {
+      check: "Array",
+      init: [],
+      event: "changeIterations"
     },
     config: {
       check: "Object",
@@ -236,14 +242,14 @@ qx.Class.define("osparc.store.Store", {
       }
     },
 
-    getStudyState: function(pipelineId) {
+    getStudyState: function(studyId) {
       osparc.data.Resources.fetch("studies", "state", {
         url: {
-          "studyId": pipelineId
+          "studyId": studyId
         }
       })
         .then(({state}) => {
-          this.setStudyState(pipelineId, state);
+          this.setStudyState(studyId, state);
         });
     },
 
@@ -253,12 +259,10 @@ qx.Class.define("osparc.store.Store", {
       if (idx !== -1) {
         studiesWStateCache[idx]["state"] = state;
       }
-      // Set the state as well in the current study, as a plain property
+
       const currentStudy = this.getCurrentStudy();
       if (currentStudy && currentStudy.getUuid() === studyId) {
         currentStudy.setState(state);
-        this.setCurrentStudy(currentStudy);
-        this.fireDataEvent("changeCurrentStudy", currentStudy);
       }
     },
 

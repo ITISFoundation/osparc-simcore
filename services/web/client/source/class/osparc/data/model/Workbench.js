@@ -50,7 +50,9 @@ qx.Class.define("osparc.data.model.Workbench", {
 
   events: {
     "pipelineChanged": "qx.event.type.Event",
+    "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
+    "fileRequested": "qx.event.type.Data",
     "openNode": "qx.event.type.Data",
     "showInLogger": "qx.event.type.Data"
   },
@@ -61,6 +63,19 @@ qx.Class.define("osparc.data.model.Workbench", {
       init: null,
       nullable: false,
       event: "changeStudy"
+    }
+  },
+
+  statics: {
+    hasIteratorUpstream: function(workbench, node) {
+      const upstreamNodeIDs = workbench.getUpstreamNodes(node);
+      return [...upstreamNodeIDs].some(upstreamNodeID => {
+        const upstreamNode = workbench.getNode(upstreamNodeID);
+        if (upstreamNode) {
+          return upstreamNode.isIterator();
+        }
+        return false;
+      });
     }
   },
 
@@ -90,27 +105,40 @@ qx.Class.define("osparc.data.model.Workbench", {
       return false;
     },
 
+    getUpstreamNodes: function(node, upstreamNodes = new Set()) {
+      upstreamNodes.add(node.getNodeId());
+      const links = node.getLinks();
+      links.forEach(link => {
+        upstreamNodes.add(link["nodeUuid"]);
+        const linkNode = this.getNode(link["nodeUuid"]);
+        this.getUpstreamNodes(linkNode, upstreamNodes);
+      });
+      return upstreamNodes;
+    },
+
     isPipelineLinear: function() {
       const nodes = this.getNodes(true);
-      const nodeIds = [];
       const inputNodeIds = [];
+      const nodesWithoutInputs = [];
       for (const nodeId in nodes) {
         const node = nodes[nodeId];
-        nodeIds.push(node.getNodeId());
-        inputNodeIds.push(...node.getInputNodes());
+        const inputNodes = node.getInputNodes();
+        if (inputNodes.length === 0) {
+          nodesWithoutInputs.push(nodeId);
+        } else if (inputNodes.length > 1) {
+          return false;
+        } else {
+          inputNodeIds.push(...inputNodes);
+        }
       }
+      // if duplicates exist, it means that there is a branching
       const duplicateExists = new Set(inputNodeIds).size !== inputNodeIds.length;
       if (duplicateExists) {
         return false;
       }
-      inputNodeIds.forEach(inputNodeId => {
-        const index = nodeIds.indexOf(inputNodeId);
-        if (index > -1) {
-          nodeIds.splice(index, 1);
-        }
-      });
 
-      return nodeIds.length < 2;
+      // Make sure there are no more than one upstreams nodes
+      return nodesWithoutInputs.length < 2;
     },
 
     getPipelineLinearSorted: function() {
@@ -122,13 +150,13 @@ qx.Class.define("osparc.data.model.Workbench", {
       const nodes = this.getNodes(true);
       for (const nodeId in nodes) {
         const node = nodes[nodeId];
-        const inputNode = node.getInputNodes();
-        if (inputNode.length === 0) {
+        const inputNodes = node.getInputNodes();
+        if (inputNodes.length === 0) {
           // first node
           sortedPipeline.splice(0, 0, nodeId);
         } else {
           // insert right after its input node
-          const idx = sortedPipeline.indexOf(inputNode[0]);
+          const idx = sortedPipeline.indexOf(inputNodes[0]);
           sortedPipeline.splice(idx+1, 0, nodeId);
         }
       }
@@ -250,6 +278,14 @@ qx.Class.define("osparc.data.model.Workbench", {
       nodeRight.setInputConnected(true);
     },
 
+    __createNode: function(study, key, version, uuid) {
+      const node = new osparc.data.model.Node(study, key, version, uuid);
+      node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
+      node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
+      node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
+      return node;
+    },
+
     createNode: function(key, version, uuid, parent) {
       const existingNode = this.getNode(uuid);
       if (existingNode) {
@@ -259,7 +295,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         return null;
       }
 
-      const node = new osparc.data.model.Node(this.getStudy(), key, version, uuid);
+      const node = this.__createNode(this.getStudy(), key, version, uuid);
       this.addNode(node, parent);
 
       this.__initNodeSignals(node);
@@ -292,25 +328,23 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     __initNodeSignals: function(node) {
       if (node) {
-        node.addListener("showInLogger", e => {
-          this.fireDataEvent("showInLogger", e.getData());
-        }, this);
-        node.addListener("retrieveInputs", e => {
-          this.fireDataEvent("retrieveInputs", e.getData());
-        }, this);
-        node.addListener("filePickerRequested", e => {
-          const {
-            portId,
-            nodeId
-          } = e.getData();
-          this.__filePickerRequested(nodeId, portId);
-        }, this);
-        node.addListener("parameterNodeRequested", e => {
+        node.addListener("showInLogger", e => this.fireDataEvent("showInLogger", e.getData()), this);
+        node.addListener("retrieveInputs", e => this.fireDataEvent("retrieveInputs", e.getData()), this);
+        node.addListener("fileRequested", e => this.fireDataEvent("fileRequested", e.getData()), this);
+        node.addListener("parameterRequested", e => {
           const {
             portId,
             nodeId
           } = e.getData();
           this.__parameterNodeRequested(nodeId, portId);
+        }, this);
+        node.addListener("filePickerRequested", e => {
+          const {
+            portId,
+            nodeId,
+            file
+          } = e.getData();
+          this.__filePickerNodeRequested(nodeId, portId, file);
         }, this);
       }
     },
@@ -343,65 +377,51 @@ qx.Class.define("osparc.data.model.Workbench", {
       };
     },
 
-    __filePickerRequested: function(nodeId, portId) {
-      // Create/Reuse File Picker. Reuse it if a File Picker is already
-      // connecteted and it is not used anywhere else
-      const requesterNode = this.getNode(nodeId);
-      const link = requesterNode.getPropsForm().getLink(portId);
-      let isUsed = false;
-      if (link) {
-        const connectedFPID = link["nodeUuid"];
-        // check if it's used by another port
-        const links1 = requesterNode.getPropsForm().getLinks();
-        const matches = links1.filter(link1 => link1["nodeUuid"] === connectedFPID);
-        isUsed = matches.length > 1;
-
-        // check if it's used by other nodes
-        const allNodes = this.getNodes(true);
-        const nodeIds = Object.keys(allNodes);
-        for (let i=0; i<nodeIds.length && !isUsed; i++) {
-          const nodeId2 = nodeIds[i];
-          if (nodeId === nodeId2) {
-            continue;
-          }
-          const node = allNodes[nodeId2];
-          const links2 = node.getPropsForm() ? node.getPropsForm().getLinks() : [];
-          isUsed = links2.some(link2 => link2["nodeUuid"] === connectedFPID);
-        }
-      }
-
-      if (link === null || isUsed) {
+    __connectFilePicker: function(nodeId, portId) {
+      return new Promise((resolve, reject) => {
+        const requesterNode = this.getNode(nodeId);
         const freePos = this.getFreePosition(requesterNode);
 
         // create a new FP
-        const fpMD = osparc.utils.Services.getFilePicker();
+        const filePickerMetadata = osparc.utils.Services.getFilePicker();
         const parentNodeId = requesterNode.getParentNodeId();
         const parent = parentNodeId ? this.getNode(parentNodeId) : null;
-        const fp = this.createNode(fpMD["key"], fpMD["version"], null, parent);
-        fp.setPosition(freePos);
-
-        // remove old connection if any
-        if (link !== null) {
-          requesterNode.getPropsForm().removePortLink(portId);
-        }
+        const filePicker = this.createNode(filePickerMetadata["key"], filePickerMetadata["version"], null, parent);
+        filePicker.setPosition(freePos);
 
         // create connection
-        const fpId = fp.getNodeId();
-        requesterNode.addInputNode(fpId);
-        requesterNode.addPortLink(portId, fpId, "outFile")
+        const filePickerId = filePicker.getNodeId();
+        requesterNode.addInputNode(filePickerId);
+        requesterNode.addPortLink(portId, filePickerId, "outFile")
           .then(success => {
             if (success) {
-              this.fireDataEvent("openNode", fpId);
+              resolve(filePicker);
             } else {
-              this.removeNode(fpId);
+              this.removeNode(filePickerId);
               const msg = qx.locale.Manager.tr("File couldn't be assigned");
               osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
+              reject();
             }
           });
-      } else {
-        const connectedFPID = link["nodeUuid"];
-        this.fireDataEvent("openNode", connectedFPID);
-      }
+      });
+    },
+
+    __filePickerNodeRequested: function(nodeId, portId, file) {
+      this.__connectFilePicker(nodeId, portId)
+        .then(filePicker => {
+          if (file) {
+            const fileObj = file.data;
+            osparc.file.FilePicker.setOutputValueFromStore(
+              filePicker,
+              fileObj.getLocation(),
+              fileObj.getDatasetId(),
+              fileObj.getFileId(),
+              fileObj.getLabel()
+            );
+          }
+          this.fireDataEvent("openNode", filePicker.getNodeId());
+          this.fireEvent("reloadModel");
+        });
     },
 
     __parameterNodeRequested: function(nodeId, portId) {
@@ -426,6 +446,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           .then(success => {
             if (success) {
               this.fireDataEvent("openNode", pmId);
+              this.fireEvent("reloadModel");
             } else {
               this.removeNode(pmId);
               const msg = qx.locale.Manager.tr("Parameter couldn't be assigned");
@@ -444,11 +465,6 @@ qx.Class.define("osparc.data.model.Workbench", {
       }
       node.setParentNodeId(parentNode ? parentNode.getNodeId() : null);
       this.fireEvent("pipelineChanged");
-      if (node.isParameter()) {
-        if (this.getStudy()) {
-          this.getStudy().fireEvent("changeParameters");
-        }
-      }
     },
 
     moveNode: function(node, newParent, oldParent) {
@@ -496,6 +512,45 @@ qx.Class.define("osparc.data.model.Workbench", {
         return true;
       }
       return false;
+    },
+
+    addServiceBetween: function(service, leftNodeId, rightNodeId) {
+      // create node
+      const node = this.createNode(service.getKey(), service.getVersion());
+      if (!node) {
+        return null;
+      }
+      if (leftNodeId) {
+        const leftNode = this.getNode(leftNodeId);
+        node.setPosition(this.getFreePosition(leftNode, false));
+      } else if (rightNodeId) {
+        const rightNode = this.getNode(rightNodeId);
+        node.setPosition(this.getFreePosition(rightNode, true));
+      } else {
+        node.setPosition({
+          x: 20,
+          y: 20
+        });
+      }
+
+      // break previous connection
+      if (leftNodeId && rightNodeId) {
+        const edge = this.getEdge(null, leftNodeId, rightNodeId);
+        if (edge) {
+          this.removeEdge(edge.getEdgeId());
+        }
+      }
+
+      // create connections
+      if (leftNodeId) {
+        this.createEdge(null, leftNodeId, node.getNodeId());
+      }
+      if (rightNodeId) {
+        this.createEdge(null, node.getNodeId(), rightNodeId);
+      }
+      this.fireEvent("reloadModel");
+
+      return node;
     },
 
     removeEdge: function(edgeId) {
@@ -556,7 +611,7 @@ qx.Class.define("osparc.data.model.Workbench", {
             continue;
           }
         }
-        const node = new osparc.data.model.Node(this.getStudy(), nodeData.key, nodeData.version, nodeId);
+        const node = this.__createNode(this.getStudy(), nodeData.key, nodeData.version, nodeId);
         this.__initNodeSignals(node);
         let parentNode = null;
         if (nodeData.parent) {
@@ -769,7 +824,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.removeNode(nodesGroup.getNodeId());
     },
 
-    serialize: function() {
+    serialize: function(clean = true) {
       if (this.__workbenchInitData !== null) {
         // workbench is not initialized
         return this.__workbenchInitData;
@@ -778,7 +833,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);
       for (const node of nodes) {
-        const data = node.serialize();
+        const data = node.serialize(clean);
         if (data) {
           workbench[node.getNodeId()] = data;
         }

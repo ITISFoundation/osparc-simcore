@@ -12,8 +12,10 @@ from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
 from pydantic import BaseModel, Field, constr
+from pydantic.networks import AnyUrl
 
 from .basic_regex import UUID_RE
+from .generics import ListModel
 
 
 # /
@@ -22,11 +24,6 @@ class HealthCheck(BaseModel):
     status: Optional[str]
     api_version: Optional[str]
     version: Optional[str]
-
-
-class HealthCheckEnveloped(BaseModel):
-    data: HealthCheck
-    error: Any
 
 
 # /check/{action}:
@@ -49,19 +46,7 @@ class FileLocation(BaseModel):
         }
 
 
-class FileLocationArray(BaseModel):
-    __root__: List[FileLocation]
-
-
-class FileLocationEnveloped(BaseModel):
-    data: FileLocation
-    error: Any
-
-
-class FileLocationArrayEnveloped(BaseModel):
-    data: FileLocationArray
-    error: Any
-
+FileLocationArray = ListModel[FileLocation]
 
 # /locations/{location_id}/datasets
 
@@ -101,18 +86,7 @@ class DatasetMetaData(BaseModel):
         }
 
 
-class DatasetMetaDataArray(BaseModel):
-    __root__: List[DatasetMetaData] = []
-
-
-class DatasetMetaDataEnveloped(BaseModel):
-    data: DatasetMetaData
-    error: Any
-
-
-class DatasetMetaDataArrayEnveloped(BaseModel):
-    data: DatasetMetaDataArray
-    error: Any
+DatasetMetaDataArray = ListModel[DatasetMetaData]
 
 
 # /locations/{location_id}/files/metadata:
@@ -215,26 +189,11 @@ class FileMetaDataArray(BaseModel):
     __root__: List[FileMetaData] = []
 
 
-class FileMetaDataEnveloped(BaseModel):
-    data: FileMetaData
-    error: Any
-
-
-class FileMetaDataArrayEnveloped(BaseModel):
-    data: FileMetaDataArray
-    error: Any
-
-
 # /locations/{location_id}/files/{fileId}
 
 
 class PresignedLink(BaseModel):
-    link: str
-
-
-class PresignedLinkEnveloped(BaseModel):
-    data: PresignedLink
-    error: Any
+    link: AnyUrl
 
 
 # /simcore-s3/
@@ -279,18 +238,3 @@ class Error(BaseModel):
     logs: Optional[List[LogMessage]] = Field(description="Log messages")
     errors: Optional[List[ErrorItem]] = Field(description="Errors metadata")
     status: Optional[int] = Field(description="HTTP error code")
-
-
-class LogMessageEnveloped(BaseModel):
-    data: LogMessage
-    error: Any
-
-
-class FakeEnveloped(BaseModel):
-    data: Fake
-    error: Any
-
-
-class ErrorEnveloped(BaseModel):
-    data: Any
-    error: Error

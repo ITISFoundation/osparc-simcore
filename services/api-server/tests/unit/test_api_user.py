@@ -6,7 +6,7 @@
 
 import pytest
 from httpx import AsyncClient
-from simcore_service_api_server._meta import api_vtag
+from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.domain.api_keys import ApiKeyInDB
 from simcore_service_api_server.models.schemas.profiles import Profile
 from starlette import status
@@ -26,10 +26,10 @@ def auth(test_api_key: ApiKeyInDB):
 @pytest.mark.skip(reason="fixture under dev")
 async def test_get_profile(client: AsyncClient, auth):
 
-    resp = await client.get(f"/{api_vtag}/meta", auth=auth)
+    resp = await client.get(f"/{API_VTAG}/meta", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
 
-    resp = await client.get(f"/{api_vtag}/me", auth=auth)
+    resp = await client.get(f"/{API_VTAG}/me", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
 
     # validates response
@@ -41,7 +41,7 @@ async def test_get_profile(client: AsyncClient, auth):
 async def test_patch_profile(client: AsyncClient, auth):
 
     resp = await client.patch(
-        f"/{api_vtag}/me",
+        f"/{API_VTAG}/me",
         data={"first_name": "Oliver", "last_name": "Heaviside"},
         auth=auth,
     )

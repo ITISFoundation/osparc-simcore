@@ -92,7 +92,7 @@ qx.Class.define("osparc.data.Resources", {
           },
           postToTemplate: {
             method: "POST",
-            url: statics.API + "/projects?as_template={study_id}"
+            url: statics.API + "/projects?as_template={study_id}&copy_data={copy_data}"
           },
           open: {
             method: "POST",
@@ -162,29 +162,58 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           get: {
             method: "GET",
-            url: statics.API + "/projects/{studyId}/snapshots"
+            url: statics.API + "/repos/projects/{studyId}/checkpoints"
           },
           getPage: {
             method: "GET",
-            url: statics.API + "/projects/{studyId}/snapshots?offset={offset}&limit={limit}"
+            url: statics.API + "/repos/projects/{studyId}/checkpoints?offset={offset}&limit={limit}"
           },
           getOne: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects/{studyId}/snapshots/{snapshotId}"
+            url: statics.API + "/repos/projects/{studyId}/checkpoints/{snapshotId}"
+          },
+          updateSnapshot: {
+            method: "PATCH",
+            url: statics.API + "/repos/projects/{studyId}/checkpoints/{snapshotId}"
+          },
+          currentCommit: {
+            method: "GET",
+            url: statics.API + "/repos/projects/{studyId}/checkpoints/HEAD"
+          },
+          checkout: {
+            method: "POST",
+            url: statics.API + "/repos/projects/{studyId}/checkpoints/{snapshotId}:checkout"
+          },
+          preview: {
+            useCache: false,
+            method: "GET",
+            url: statics.API + "/repos/projects/{studyId}/checkpoints/{snapshotId}/workbench/view"
           },
           getParameters: {
             useCache: false,
             method: "GET",
-            url: statics.API + "/projects/{studyId}/snapshots/{snapshotId}/parameters"
-          },
-          updateSnapshot: {
-            method: "PATCH",
-            url: statics.API + "/projects/{studyId}/snapshots/{snapshotId}"
+            url: statics.API + "/repos/projects/{studyId}/checkpoints/{snapshotId}/parameters"
           },
           takeSnapshot: {
             method: "POST",
-            url: statics.API + "/projects/{studyId}/snapshots?snapshot_label={snapshot_label}"
+            url: statics.API + "/repos/projects/{studyId}/checkpoints"
+          }
+        }
+      },
+      /*
+       * ITERATIONS
+       */
+      "iterations": {
+        idField: "uuid",
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/projects/{studyId}/checkpoint/{snapshotId}/iterations"
+          },
+          createIterations: {
+            method: "POST",
+            url: statics.API + "/projects/{studyId}/checkpoint/{snapshotId}/iterations"
           }
         }
       },
@@ -462,18 +491,6 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * HEALTHCHECK
-       */
-      "healthCheck": {
-        useCache: false,
-        endpoints: {
-          get: {
-            method: "GET",
-            url: statics.API + "/"
-          }
-        }
-      },
-      /*
        * AUTH
        */
       "auth": {
@@ -704,7 +721,7 @@ qx.Class.define("osparc.data.Resources", {
           }
           res.dispose();
           if ([404, 503].includes(status)) {
-            message += "<br>Please, try again later";
+            message += "<br>Please, try again later and/or contact support";
           }
           const err = Error(message ? message : `Error while trying to fetch ${endpoint} ${resource}`);
           if (status) {

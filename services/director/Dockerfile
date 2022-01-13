@@ -10,12 +10,12 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer=sanderegg
 
-RUN set -eux; \
-      apt-get update; \
-      apt-get install -y gosu; \
-      rm -rf /var/lib/apt/lists/*; \
-      # verify that the binary works
-      gosu nobody true
+RUN set -eux && \
+  apt-get update && \
+  apt-get install -y gosu && \
+  rm -rf /var/lib/apt/lists/* && \
+  # verify that the binary works
+  gosu nobody true
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
@@ -30,6 +30,7 @@ RUN adduser \
       --shell /bin/sh \
       --home /home/${SC_USER_NAME} \
       ${SC_USER_NAME}
+
 
 # Sets utf-8 encoding for Python et al
 ENV LANG=C.UTF-8
@@ -75,7 +76,7 @@ RUN apt-get update \
 RUN python -m venv "${VIRTUAL_ENV}"
 
 RUN pip --no-cache-dir install --upgrade \
-      pip~=21.2.3  \
+      pip~=21.3  \
       wheel \
       setuptools
 
@@ -131,7 +132,6 @@ HEALTHCHECK --interval=30s \
       --start-period=30s \
       --retries=3 \
       CMD ["python3", "/home/scu/services/director/docker/healthcheck.py", "http://localhost:8080/v0/"]
-
 ENTRYPOINT [ "services/director/docker/entrypoint.sh" ]
 CMD ["services/director/docker/boot.sh"]
 

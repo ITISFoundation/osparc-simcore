@@ -4,12 +4,17 @@
 #
 #    pip-compile --output-file=requirements/_base.txt --strip-extras requirements/_base.in
 #
-aiofiles==0.7.0
-    # via -r requirements/_base.in
+aiodebug==1.1.2
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+aiofiles==0.8.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
 anyio==3.2.1
     # via httpcore
-asgiref==3.4.1
-    # via uvicorn
 boto3==1.17.104
     # via pennsieve
 botocore==1.20.104
@@ -38,10 +43,14 @@ ecdsa==0.14.1
     # via python-jose
 email-validator==1.1.3
     # via pydantic
-fastapi==0.68.0
+fastapi==0.68.1
     # via
+    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
+    #   fastapi-contrib
     #   fastapi-pagination
+fastapi-contrib==0.2.11
+    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 fastapi-pagination==0.8.0
     # via -r requirements/_base.in
 future==0.18.2
@@ -58,7 +67,7 @@ hpack==3.0.0
     # via h2
 httpcore==0.13.6
     # via httpx
-httptools==0.2.0
+httptools==0.1.2
     # via uvicorn
 httpx==0.18.2
     # via -r requirements/_base.in
@@ -66,15 +75,23 @@ hyperframe==5.2.0
     # via h2
 idna==2.10
     # via
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   anyio
     #   email-validator
     #   requests
     #   rfc3986
+jaeger-client==4.8.0
+    # via fastapi-contrib
 jmespath==0.10.0
     # via
     #   boto3
     #   botocore
+opentracing==2.4.0
+    # via
+    #   fastapi-contrib
+    #   jaeger-client
 pennsieve==6.1.2
     # via -r requirements/_base.in
 protobuf==3.17.3
@@ -88,13 +105,21 @@ pyasn1==0.4.8
 pydantic==1.8.2
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
     #   fastapi
     #   fastapi-pagination
+pyinstrument==4.0.3
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 python-dateutil==2.8.1
     # via
     #   botocore
@@ -110,8 +135,14 @@ pytz==2021.1
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   uvicorn
 requests==2.25.1
     # via pennsieve
@@ -132,6 +163,7 @@ six==1.16.0
     #   python-dateutil
     #   python-jose
     #   python-multipart
+    #   thrift
 sniffio==1.2.0
     # via
     #   anyio
@@ -139,28 +171,48 @@ sniffio==1.2.0
     #   httpx
 starlette==0.14.2
     # via fastapi
-typer==0.3.2
+tenacity==8.0.1
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+threadloop==1.0.2
+    # via jaeger-client
+thrift==0.13.0
+    # via jaeger-client
+tornado==6.1
+    # via
+    #   jaeger-client
+    #   threadloop
+typer==0.4.0
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.2
     # via
     #   fastapi-pagination
     #   pydantic
-urllib3==1.26.6
+urllib3==1.26.7
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore
     #   requests
-uvicorn==0.14.0
-    # via -r requirements/_base.in
+uvicorn==0.13.4
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_base.in
 uvloop==0.15.2
     # via uvicorn
 watchgod==0.7
     # via uvicorn
 websocket-client==1.1.0
     # via pennsieve
-websockets==9.1
+websockets==8.1
     # via uvicorn
 wrapt==1.12.1
     # via deprecated

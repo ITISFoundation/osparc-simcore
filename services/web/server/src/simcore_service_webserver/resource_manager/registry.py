@@ -17,7 +17,6 @@ import logging
 from typing import Dict, List, Tuple
 
 import aioredis
-import attr
 from aiohttp import web
 
 from .config import APP_CLIENT_SOCKET_REGISTRY_KEY
@@ -29,7 +28,6 @@ RESOURCE_SUFFIX = "resources"
 ALIVE_SUFFIX = "alive"
 
 
-@attr.s(auto_attribs=True)
 class RedisResourceRegistry:
     """Keeps a record of connected sockets per user
 
@@ -37,7 +35,12 @@ class RedisResourceRegistry:
     Redis Hash: key=user_id:client_session_id values={server_id socket_id project_id}
     """
 
-    app: web.Application
+    def __init__(self, app: web.Application):
+        self._app = app
+
+    @property
+    def app(self) -> web.Application:
+        return self._app
 
     @classmethod
     def _hash_key(cls, key: Dict[str, str]) -> str:

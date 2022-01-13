@@ -43,6 +43,8 @@ async def load(
         project_id, node_uuid
     )
     port_cfg = json.loads(port_config_str)
+
+    log.debug(f"{port_cfg=}")  # pylint: disable=logging-fstring-interpolation
     if any(k not in port_cfg for k in NODE_REQUIRED_KEYS):
         raise InvalidProtocolError(
             port_cfg, "nodeport in comp_task does not follow protocol"

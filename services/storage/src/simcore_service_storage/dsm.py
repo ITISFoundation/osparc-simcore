@@ -10,22 +10,29 @@ import re
 import tempfile
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Final, List, Optional, Tuple, Union
 
 import aiobotocore
 import attr
+import botocore
 import sqlalchemy as sa
 from aiobotocore.client import AioBaseClient
 from aiobotocore.session import AioSession, ClientCreatorContext
 from aiohttp import web
 from aiopg.sa import Engine
-from aiopg.sa.result import RowProxy
+from aiopg.sa.result import ResultProxy, RowProxy
 from servicelib.aiohttp.aiopg_utils import DBAPIError, PostgresRetryPolicyUponOperation
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import fire_and_forget_task
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.expression import literal_column
 from tenacity import retry
+from tenacity.before_sleep import before_sleep_log
+from tenacity.retry import retry_if_exception_type, retry_if_result
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_exponential
 from yarl import URL
 
 from .access_layer import (
@@ -55,7 +62,11 @@ from .models import (
 )
 from .s3wrapper.s3_client import MinioClientWrapper
 from .settings import Settings
-from .utils import download_to_file_or_raise, expo
+from .utils import download_to_file_or_raise, is_file_entry_valid, to_meta_data_extended
+
+_MINUTE: Final[int] = 60
+_HOUR: Final[int] = 60 * _MINUTE
+
 
 logger = logging.getLogger(__name__)
 
@@ -90,17 +101,7 @@ def setup_dsm(app: web.Application):
     app.cleanup_ctx.append(_cleanup_context)
 
 
-def to_meta_data_extended(row: RowProxy) -> FileMetaDataEx:
-    assert row
-    meta = FileMetaData(**dict(row))  # type: ignore
-    meta_extended = FileMetaDataEx(
-        fmd=meta,
-        parent_id=str(Path(meta.object_name).parent),
-    )  # type: ignore
-    return meta_extended
-
-
-@attr.s(auto_attribs=True)
+@dataclass
 class DatCoreApiToken:
     api_token: Optional[str] = None
     api_secret: Optional[str] = None
@@ -109,8 +110,8 @@ class DatCoreApiToken:
         return (self.api_token, self.api_secret)
 
 
-@attr.s(auto_attribs=True)
-class DataStorageManager:
+@dataclass
+class DataStorageManager:  # pylint: disable=too-many-public-methods
     """Data storage manager
 
     The dsm has access to the database for all meta data and to the actual backend. For now this
@@ -148,15 +149,16 @@ class DataStorageManager:
     pool: ThreadPoolExecutor
     simcore_bucket_name: str
     has_project_db: bool
-    session: AioSession = attr.Factory(aiobotocore.get_session)
-    datcore_tokens: Dict[str, DatCoreApiToken] = attr.Factory(dict)
+    session: AioSession = field(default_factory=aiobotocore.get_session)
+    datcore_tokens: Dict[str, DatCoreApiToken] = field(default_factory=dict)
     app: Optional[web.Application] = None
 
-    def _create_client_context(self) -> ClientCreatorContext:
-        assert hasattr(self.session, "create_client")
+    def _create_aiobotocore_client_context(self) -> ClientCreatorContext:
+        assert hasattr(self.session, "create_client")  # nosec
         # pylint: disable=no-member
 
         # SEE API in https://botocore.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html
+        # SEE https://aiobotocore.readthedocs.io/en/latest/index.html
         return self.session.create_client(
             "s3",
             endpoint_url=self.s3_client.endpoint_url,
@@ -164,7 +166,7 @@ class DataStorageManager:
             aws_secret_access_key=self.s3_client.secret_key,
         )
 
-    def _get_datcore_tokens(self, user_id: str) -> Tuple[str, str]:
+    def _get_datcore_tokens(self, user_id: str) -> Tuple[Optional[str], Optional[str]]:
         # pylint: disable=no-member
         token = self.datcore_tokens.get(user_id, DatCoreApiToken())
         return token.to_tuple()
@@ -175,11 +177,13 @@ class DataStorageManager:
         locs.append(simcore_s3)
 
         api_token, api_secret = self._get_datcore_tokens(user_id)
-        if await datcore_adapter.check_user_can_connect(
-            self.app, api_token, api_secret
-        ):
-            datcore = {"name": DATCORE_STR, "id": DATCORE_ID}
-            locs.append(datcore)
+
+        if api_token and api_secret and self.app:
+            if await datcore_adapter.check_user_can_connect(
+                self.app, api_token, api_secret
+            ):
+                datcore = {"name": DATCORE_STR, "id": DATCORE_ID}
+                locs.append(datcore)
 
         return locs
 
@@ -208,18 +212,29 @@ class DataStorageManager:
                 accesible_projects_ids = await get_readable_project_ids(
                     conn, int(user_id)
                 )
-                has_read_access = (
+                where_statement = (
                     file_meta_data.c.user_id == user_id
                 ) | file_meta_data.c.project_id.in_(accesible_projects_ids)
-
-                query = sa.select([file_meta_data]).where(has_read_access)
+                if uuid_filter:
+                    where_statement &= file_meta_data.c.file_uuid.ilike(
+                        f"%{uuid_filter}%"
+                    )
+                query = sa.select([file_meta_data]).where(where_statement)
 
                 async for row in conn.execute(query):
-                    d = FileMetaData(**dict(row))
-                    dex = FileMetaDataEx(
-                        fmd=d, parent_id=str(Path(d.object_name).parent)
-                    )
-                    data.append(dex)
+                    dex = to_meta_data_extended(row)
+                    if not is_file_entry_valid(dex.fmd):
+                        # NOTE: the file is not updated with the information from S3 backend.
+                        # 1. Either the file exists, but was never updated in the database
+                        # 2. Or the file does not exist or was never completed, and the file_meta_data entry is old and faulty
+                        # we need to update from S3 here since the database is not up-to-date
+                        dex = await self.try_update_database_from_storage(
+                            dex.fmd.file_uuid,
+                            dex.fmd.bucket_name,
+                            dex.fmd.object_name,
+                        )
+                    if dex:
+                        data.append(dex)
 
             if self.has_project_db:
                 uuid_name_dict = {}
@@ -274,6 +289,9 @@ class DataStorageManager:
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
+            assert self.app  # nosec
+            assert api_secret  # nosec
+            assert api_token  # nosec
             return await datcore_adapter.list_all_datasets_files_metadatas(
                 self.app, api_token, api_secret
             )
@@ -316,6 +334,9 @@ class DataStorageManager:
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
             # lists all the files inside the dataset
+            assert self.app  # nosec
+            assert api_secret  # nosec
+            assert api_token  # nosec
             return await datcore_adapter.list_all_files_metadatas_in_dataset(
                 self.app, api_token, api_secret, dataset_id
             )
@@ -354,6 +375,9 @@ class DataStorageManager:
 
         elif location == DATCORE_STR:
             api_token, api_secret = self._get_datcore_tokens(user_id)
+            assert self.app  # nosec
+            assert api_secret  # nosec
+            assert api_token  # nosec
             return await datcore_adapter.list_datasets(self.app, api_token, api_secret)
 
         return data
@@ -374,7 +398,18 @@ class DataStorageManager:
                     )
                     result = await conn.execute(query)
                     row = await result.first()
-                    return to_meta_data_extended(row) if row else None
+                    if not row:
+                        return None
+                    file_metadata = to_meta_data_extended(row)
+                    if is_file_entry_valid(file_metadata.fmd):
+                        return file_metadata
+                    # we need to update from S3 here since the database is not up-to-date
+                    file_metadata = await self.try_update_database_from_storage(
+                        file_metadata.fmd.file_uuid,
+                        file_metadata.fmd.bucket_name,
+                        file_metadata.fmd.object_name,
+                    )
+                    return file_metadata
                 # FIXME: returns None in both cases: file does not exist or use has no access
                 logger.debug("User %s cannot read file %s", user_id, file_uuid)
                 return None
@@ -394,79 +429,70 @@ class DataStorageManager:
     ):
         import warnings
 
-        warnings.warn("NOT IMPLEMENTED!!!")
+        warnings.warn(f"NOT IMPLEMENTED!!! in {self.__class__}")
         # uploads a locally available file to dat core given the storage path, optionally attached some meta data
         # api_token, api_secret = self._get_datcore_tokens(user_id)
         # await dcw.upload_file_to_id(destination_id, local_file_path)
 
-    async def _metadata_file_updater(
+    async def try_update_database_from_storage(
         self,
         file_uuid: str,
         bucket_name: str,
         object_name: str,
-        file_size: int,
-        last_modified: str,
-        max_update_retries: int = 50,
-    ):
-        """
-        Will retry max_update_retries to update the metadata on the file after an upload.
-        If it is not successfull it will exit and log an error.
+        silence_exception: bool = False,
+    ) -> Optional[FileMetaDataEx]:
+        try:
+            async with self._create_aiobotocore_client_context() as aioboto_client:
+                result = await aioboto_client.head_object(
+                    Bucket=bucket_name, Key=object_name
+                )  # type: ignore
 
-        Note: MinIO bucket notifications are not available with S3, that's why we have the
-        following hacky solution
-        """
-        current_iteraction = 0
-
-        async with self._create_client_context() as client:
-            current_iteraction += 1
-            continue_loop = True
-            sleep_generator = expo()
-            update_succeeded = False
-
-            while continue_loop:
-                result = await client.list_objects_v2(
-                    Bucket=bucket_name, Prefix=object_name
-                )
-                sleep_amount = next(sleep_generator)
-                continue_loop = current_iteraction <= max_update_retries
-
-                if "Contents" not in result:
-                    logger.info("File '%s' was not found in the bucket", object_name)
-                    await asyncio.sleep(sleep_amount)
-                    continue
-
-                new_file_size = result["Contents"][0]["Size"]
-                new_last_modified = str(result["Contents"][0]["LastModified"])
-                if file_size == new_file_size or last_modified == new_last_modified:
-                    logger.info("File '%s' did not change yet", object_name)
-                    await asyncio.sleep(sleep_amount)
-                    continue
-
-                file_e_tag = result["Contents"][0]["ETag"].strip('"')
-                # finally update the data in the database and exit
-                continue_loop = False
-
-                logger.info(
-                    "Obtained this from S3: new_file_size=%s new_last_modified=%s file ETag=%s",
-                    new_file_size,
-                    new_last_modified,
-                    file_e_tag,
-                )
+                file_size = result["ContentLength"]  # type: ignore
+                last_modified = result["LastModified"]  # type: ignore
+                entity_tag = result["ETag"].strip('"')  # type: ignore
 
                 async with self.engine.acquire() as conn:
-                    query = (
+                    result: ResultProxy = await conn.execute(
                         file_meta_data.update()
                         .where(file_meta_data.c.file_uuid == file_uuid)
                         .values(
-                            file_size=new_file_size,
-                            last_modified=new_last_modified,
-                            entity_tag=file_e_tag,
+                            file_size=file_size,
+                            last_modified=last_modified,
+                            entity_tag=entity_tag,
                         )
-                    )  # primary key search is faster
-                    await conn.execute(query)
-                    update_succeeded = True
-            if not update_succeeded:
-                logger.error("Could not update file metadata for '%s'", file_uuid)
+                        .returning(literal_column("*"))
+                    )
+                    if not result:
+                        return None
+                    row: Optional[RowProxy] = await result.first()
+                    if not row:
+                        return None
+
+                    return to_meta_data_extended(row)
+        except botocore.exceptions.ClientError:
+            if silence_exception:
+                logger.debug("Error happened while trying to access %s", file_uuid)
+            else:
+                logger.warning(
+                    "Error happened while trying to access %s", file_uuid, exc_info=True
+                )
+            # the file is not existing or some error happened
+            return None
+
+    @retry(
+        stop=stop_after_delay(1 * _HOUR),
+        wait=wait_exponential(multiplier=0.1, exp_base=1.2, max=30),
+        retry=(
+            retry_if_exception_type() | retry_if_result(lambda result: result is None)
+        ),
+        before_sleep=before_sleep_log(logger, logging.INFO),
+    )
+    async def auto_update_database_from_storage_task(
+        self, file_uuid: str, bucket_name: str, object_name: str
+    ):
+        return await self.try_update_database_from_storage(
+            file_uuid, bucket_name, object_name, silence_exception=True
+        )
 
     async def upload_link(self, user_id: str, file_uuid: str):
         """
@@ -495,17 +521,18 @@ class DataStorageManager:
                 fmd.simcore_from_uuid(file_uuid, self.simcore_bucket_name)
                 fmd.user_id = user_id  # NOTE: takes ownership of uploaded data
 
-                query = sa.select([file_meta_data]).where(
-                    file_meta_data.c.file_uuid == file_uuid
-                )
                 # if file already exists, we might want to update a time-stamp
-                exists = await (await conn.execute(query)).scalar()
-                if exists is None:
-                    ins = file_meta_data.insert().values(**vars(fmd))
-                    await conn.execute(ins)
+
+                # upsert file_meta_data
+                insert_stmt = pg_insert(file_meta_data).values(**vars(fmd))
+                do_nothing_stmt = insert_stmt.on_conflict_do_nothing(
+                    index_elements=["file_uuid"]
+                )
+                await conn.execute(do_nothing_stmt)
+
                 return fmd.file_size, fmd.last_modified
 
-        file_size, last_modified = await _init_metadata()
+        await _init_metadata()
 
         bucket_name = self.simcore_bucket_name
         object_name = file_uuid
@@ -513,12 +540,10 @@ class DataStorageManager:
         # a parallel task is tarted which will update the metadata of the updated file
         # once the update has finished.
         fire_and_forget_task(
-            self._metadata_file_updater(
+            self.auto_update_database_from_storage_task(
                 file_uuid=file_uuid,
                 bucket_name=bucket_name,
                 object_name=object_name,
-                file_size=file_size,
-                last_modified=last_modified,
             )
         )
         return self.s3_client.create_presigned_put_url(bucket_name, object_name)
@@ -547,7 +572,7 @@ class DataStorageManager:
             stmt = sa.select([file_meta_data.c.object_name]).where(
                 file_meta_data.c.file_uuid == file_uuid
             )
-            object_name: str = await conn.scalar(stmt)
+            object_name: Optional[str] = await conn.scalar(stmt)
 
             if object_name is None:
                 raise web.HTTPNotFound(
@@ -559,6 +584,9 @@ class DataStorageManager:
 
     async def download_link_datcore(self, user_id: str, file_id: str) -> URL:
         api_token, api_secret = self._get_datcore_tokens(user_id)
+        assert self.app  # nosec
+        assert api_secret  # nosec
+        assert api_token  # nosec
         return await datcore_adapter.get_file_download_presigned_link(
             self.app, api_token, api_secret, file_id
         )
@@ -738,16 +766,30 @@ class DataStorageManager:
             if new_node_id is not None:
                 uuid_name_dict[new_node_id] = src_node["label"]
 
-        async with self._create_client_context() as client:
+        async with self._create_aiobotocore_client_context() as aioboto_client:
+
+            logger.debug(
+                "Listing all items under  %s:%s/",
+                self.simcore_bucket_name,
+                source_folder,
+            )
 
             # Step 1: List all objects for this project replace them with the destination object name
             # and do a copy at the same time collect some names
             # Note: the / at the end of the Prefix is VERY important, makes the listing several order of magnitudes faster
-            response = await client.list_objects_v2(
+            response = await aioboto_client.list_objects_v2(
                 Bucket=self.simcore_bucket_name, Prefix=f"{source_folder}/"
             )
 
-            for item in response.get("Contents", []):
+            contents: List = response.get("Contents", [])
+            logger.debug(
+                "Listed  %s items under %s:%s/",
+                len(contents),
+                self.simcore_bucket_name,
+                source_folder,
+            )
+
+            for item in contents:
                 source_object_name = item["Key"]
                 source_object_parts = Path(source_object_name).parts
 
@@ -768,7 +810,7 @@ class DataStorageManager:
                         Path(dest_folder) / new_node_id / old_filename
                     )
 
-                    await client.copy_object(
+                    copy_kwargs = dict(
                         CopySource={
                             "Bucket": self.simcore_bucket_name,
                             "Key": source_object_name,
@@ -776,6 +818,11 @@ class DataStorageManager:
                         Bucket=self.simcore_bucket_name,
                         Key=dest_object_name,
                     )
+                    logger.debug("Copying %s ...", copy_kwargs)
+
+                    # FIXME: if 5GB, it must use multipart upload Upload Part - Copy API
+                    # SEE https://botocore.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.copy_object
+                    await aioboto_client.copy_object(**copy_kwargs)
 
         # Step 2: List all references in outputs that point to datcore and copy over
         for node_id, node in destination_project["workbench"].items():
@@ -804,11 +851,11 @@ class DataStorageManager:
                     output["path"] = destination
 
         fmds = []
-        async with self._create_client_context() as client:
+        async with self._create_aiobotocore_client_context() as aioboto_client:
 
             # step 3: list files first to create fmds
             # Note: the / at the end of the Prefix is VERY important, makes the listing several order of magnitudes faster
-            response = await client.list_objects_v2(
+            response = await aioboto_client.list_objects_v2(
                 Bucket=self.simcore_bucket_name, Prefix=f"{dest_folder}/"
             )
 
@@ -895,6 +942,9 @@ class DataStorageManager:
         elif location == DATCORE_STR:
             # FIXME: review return inconsistencies
             api_token, api_secret = self._get_datcore_tokens(user_id)
+            assert self.app  # nosec
+            assert api_secret  # nosec
+            assert api_token  # nosec
             await datcore_adapter.delete_file(
                 self.app, api_token, api_secret, file_uuid
             )
@@ -931,9 +981,9 @@ class DataStorageManager:
                 delete_me = delete_me.where(file_meta_data.c.node_id == node_id)
             await conn.execute(delete_me)
 
-        async with self._create_client_context() as client:
+        async with self._create_aiobotocore_client_context() as aioboto_client:
             # Note: the / at the end of the Prefix is VERY important, makes the listing several order of magnitudes faster
-            response = await client.list_objects_v2(
+            response = await aioboto_client.list_objects_v2(
                 Bucket=self.simcore_bucket_name,
                 Prefix=f"{project_id}/{node_id}/" if node_id else f"{project_id}/",
             )
@@ -943,7 +993,7 @@ class DataStorageManager:
                 objects_to_delete.append({"Key": f["Key"]})
 
             if objects_to_delete:
-                response = await client.delete_objects(
+                response = await aioboto_client.delete_objects(
                     Bucket=self.simcore_bucket_name,
                     Delete={"Objects": objects_to_delete},
                 )
@@ -1051,7 +1101,7 @@ class DataStorageManager:
                 "synchronisation of database/s3 storage started, this will take some time..."
             )
 
-            async with self.engine.acquire() as conn, self._create_client_context() as s3_client:
+            async with self.engine.acquire() as conn, self._create_aiobotocore_client_context() as aioboto_client:
 
                 number_of_rows_in_db = await conn.scalar(file_meta_data.count()) or 0
                 logger.warning(
@@ -1059,7 +1109,7 @@ class DataStorageManager:
                     number_of_rows_in_db,
                 )
 
-                assert isinstance(s3_client, AioBaseClient)  # nosec
+                assert isinstance(aioboto_client, AioBaseClient)  # nosec
 
                 async for row in conn.execute(
                     sa.select([file_meta_data.c.object_name])
@@ -1068,7 +1118,7 @@ class DataStorageManager:
 
                     # now check if the file exists in S3
                     # SEE https://www.peterbe.com/plog/fastest-way-to-find-out-if-a-file-exists-in-s3
-                    response = await s3_client.list_objects_v2(
+                    response = await aioboto_client.list_objects_v2(
                         Bucket=self.simcore_bucket_name, Prefix=s3_key
                     )
                     if response.get("KeyCount", 0) == 0:

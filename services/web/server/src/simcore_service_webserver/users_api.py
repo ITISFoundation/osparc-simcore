@@ -6,7 +6,7 @@
 
 import logging
 from collections import deque
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, TypedDict
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -18,7 +18,7 @@ from simcore_service_webserver.login.cfg import get_storage
 from sqlalchemy import and_, literal_column
 
 from .db_models import GroupType, groups, tokens, user_to_groups, users
-from .groups_api import convert_groups_db_to_schema
+from .groups_utils import convert_groups_db_to_schema
 from .login.storage import AsyncpgStorage
 from .security_api import clean_auth_policy_cache
 from .users_exceptions import UserNotFoundError
@@ -153,7 +153,12 @@ async def delete_user(app: web.Application, user_id: int) -> None:
     clean_auth_policy_cache(app)
 
 
-async def get_user_name(app: web.Application, user_id: int) -> Dict[str, str]:
+class UserNameDict(TypedDict):
+    first_name: str
+    last_name: str
+
+
+async def get_user_name(app: web.Application, user_id: int) -> UserNameDict:
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         user_name = await conn.scalar(
@@ -162,7 +167,7 @@ async def get_user_name(app: web.Application, user_id: int) -> Dict[str, str]:
         if not user_name:
             raise UserNotFoundError(uid=user_id)
         parts = user_name.split(".") + [""]
-        return dict(first_name=parts[0], last_name=parts[1])
+        return UserNameDict(first_name=parts[0], last_name=parts[1])
 
 
 async def get_user(app: web.Application, user_id: int) -> Dict:

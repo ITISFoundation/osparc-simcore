@@ -46,7 +46,37 @@ qx.Class.define("osparc.dashboard.CardBase", {
     SERVICE_ICON: "@FontAwesome5Solid/paw/",
     COMP_SERVICE_ICON: "@FontAwesome5Solid/cogs/",
     DYNAMIC_SERVICE_ICON: "@FontAwesome5Solid/mouse-pointer/",
-    PERM_READ: "@FontAwesome5Solid/eye/14"
+    PERM_READ: "@FontAwesome5Solid/eye/14",
+    MODE_WORKBENCH: "@FontAwesome5Solid/cubes/14",
+    MODE_GUIDED: "@FontAwesome5Solid/play/14",
+    MODE_APP: "@FontAwesome5Solid/desktop/14",
+
+    filterText: function(checks, text) {
+      if (text && checks.filter(label => label && label.toLowerCase().trim().includes(text)).length == 0) {
+        return true;
+      }
+      return false;
+    },
+
+    filterTags: function(checks, tags) {
+      if (tags && tags.length) {
+        const tagNames = checks.map(tag => tag.name);
+        if (tags.filter(tag => tagNames.includes(tag)).length == 0) {
+          return true;
+        }
+      }
+      return false;
+    },
+
+    filterClassifiers: function(checks, classifiers) {
+      if (classifiers && classifiers.length) {
+        const classes = osparc.utils.Classifiers.getLeafClassifiers(classifiers);
+        if (classes.filter(clas => checks.includes(clas.data.classifier)).length == 0) {
+          return true;
+        }
+      }
+      return false;
+    }
   },
 
   properties: {
@@ -115,6 +145,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: "Object",
       nullable: true,
       apply: "_applyQuality"
+    },
+
+    uiMode: {
+      check: ["workbench", "guided", "app"],
+      nullable: true,
+      apply: "_applyUiMode"
     },
 
     state: {
@@ -208,7 +244,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
         icon: studyData.thumbnail || defaultThumbnail,
         state: studyData.state ? studyData.state : {},
         classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
-        quality: studyData.quality ? studyData.quality : null
+        quality: studyData.quality ? studyData.quality : null,
+        uiMode: studyData.ui && studyData.ui.mode ? studyData.ui.mode : null
       });
     },
 
@@ -245,7 +282,39 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _applyQuality: function(quality) {
-      throw new Error("Abstract method called!");
+      if (osparc.component.metadata.Quality.isEnabled(quality)) {
+        const tsrRating = this.getChildControl("tsr-rating");
+        tsrRating.set({
+          nStars: 4,
+          showScore: true
+        });
+        osparc.ui.basic.StarsRating.scoreToStarsRating(quality["tsr_current"], quality["tsr_target"], tsrRating);
+        // Stop propagation of the pointer event in case the tag is inside a button that we don't want to trigger
+        tsrRating.addListener("tap", e => {
+          e.stopPropagation();
+          this.__openQualityEditor();
+        }, this);
+        tsrRating.addListener("pointerdown", e => e.stopPropagation());
+      }
+    },
+
+    _applyUiMode: function(uiMode) {
+      let source = null;
+      let toolTipText = null;
+      switch (uiMode) {
+        case "guided":
+        case "app":
+          source = osparc.dashboard.CardBase.MODE_APP;
+          toolTipText = this.tr("App mode");
+          break;
+      }
+      if (source) {
+        const uiModeIcon = this.getChildControl("ui-mode");
+        uiModeIcon.set({
+          source,
+          toolTipText
+        });
+      }
     },
 
     _applyState: function(state) {
@@ -275,6 +344,21 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
+    __openQualityEditor: function() {
+      const resourceData = this.getResourceData();
+      const qualityEditor = osparc.studycard.Utils.openQuality(resourceData);
+      qualityEditor.addListener("updateQuality", e => {
+        const updatedResourceData = e.getData();
+        if (osparc.utils.Resources.isStudy(resourceData)) {
+          this.fireDataEvent("updateQualityStudy", updatedResourceData);
+        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+          this.fireDataEvent("updateQualityTemplate", updatedResourceData);
+        } else if (osparc.utils.Resources.isService(resourceData)) {
+          this.fireDataEvent("updateQualityService", updatedResourceData);
+        }
+      });
+    },
+
     /**
      * Event handler for the pointer over event.
      */
@@ -300,49 +384,33 @@ qx.Class.define("osparc.dashboard.CardBase", {
       this.show();
     },
 
-    __filterText: function(text) {
-      if (text) {
-        const checks = [
-          this.getTitle(),
-          this.getDescription(),
-          this.getOwner()
-        ];
-        if (checks.filter(label => label.toLowerCase().trim().includes(text)).length == 0) {
-          return true;
-        }
-      }
-      return false;
+    _filterText: function(text) {
+      const checks = [
+        this.getTitle(),
+        this.getDescription(),
+        this.getOwner()
+      ];
+      return this.self().filterText(checks, text);
     },
 
-    __filterTags: function(tags) {
-      if (tags && tags.length) {
-        const tagNames = this.getTags().map(tag => tag.name);
-        if (tags.filter(tag => tagNames.includes(tag)).length == 0) {
-          return true;
-        }
-      }
-      return false;
+    _filterTags: function(tags) {
+      const checks = this.getTags().map(tag => tag.name);
+      return this.self().filterTags(checks, tags);
     },
 
-    __filterClassifiers: function(classifiers) {
-      if (classifiers && classifiers.length) {
-        const classes = osparc.utils.Classifiers.getLeafClassifiers(classifiers);
-        const myClassifiers = this.getClassifiers();
-        if (classes.filter(clas => myClassifiers.includes(clas.data.classifier)).length == 0) {
-          return true;
-        }
-      }
-      return false;
+    _filterClassifiers: function(classifiers) {
+      const checks = this.getClassifiers();
+      return this.self().filterClassifiers(checks, classifiers);
     },
 
     _shouldApplyFilter: function(data) {
-      if (this.__filterText(data.text)) {
+      if (this._filterText(data.text)) {
         return true;
       }
-      if (this.__filterTags(data.tags)) {
+      if (this._filterTags(data.tags)) {
         return true;
       }
-      if (this.__filterClassifiers(data.classifiers)) {
+      if (this._filterClassifiers(data.classifiers)) {
         return true;
       }
       return false;

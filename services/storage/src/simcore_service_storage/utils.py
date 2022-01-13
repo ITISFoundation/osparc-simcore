@@ -9,7 +9,10 @@ import aiofiles
 import tenacity
 from aiohttp import ClientSession
 from aiohttp.typedefs import StrOrURL
+from aiopg.sa.result import ResultProxy, RowProxy
 from yarl import URL
+
+from .models import FileMetaData, FileMetaDataEx
 
 logger = logging.getLogger(__name__)
 
@@ -47,23 +50,6 @@ async def assert_enpoint_is_ok(
 
 def is_url(location):
     return bool(URL(str(location)).host)
-
-
-def expo(base=1.2, factor=0.1, max_value=2):
-    """Generator for exponential decay.
-    Args:
-        base: The mathematical base of the exponentiation operation
-        factor: Factor to multiply the exponentation by.
-        max_value: The maximum value until it will yield
-    """
-    n = 0
-    while True:
-        a = factor * base ** n
-        if max_value is None or a < max_value:
-            yield a
-            n += 1
-        else:
-            yield max_value
 
 
 async def download_to_file_or_raise(
@@ -109,3 +95,21 @@ def create_reverse_dns(*resource_name_parts) -> str:
 def create_resource_uuid(*resource_name_parts) -> UUID:
     revers_dns = create_reverse_dns(*resource_name_parts)
     return uuid.uuid5(uuid.NAMESPACE_DNS, revers_dns)
+
+
+def to_meta_data_extended(row: Union[ResultProxy, RowProxy]) -> FileMetaDataEx:
+    assert row  # nosec
+    meta = FileMetaData(**dict(row))  # type: ignore
+    meta_extended = FileMetaDataEx(
+        fmd=meta,
+        parent_id=str(Path(meta.object_name).parent),
+    )  # type: ignore
+    return meta_extended
+
+
+def is_file_entry_valid(file_metadata: FileMetaData) -> bool:
+    return (
+        file_metadata.entity_tag is not None
+        and file_metadata.file_size is not None
+        and file_metadata.file_size > 0
+    )

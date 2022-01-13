@@ -40,7 +40,7 @@ qx.Class.define("osparc.data.Permissions", {
   type : "singleton",
 
   construct() {
-    const initPermissions = this.__getInitPermissions();
+    const initPermissions = osparc.data.Permissions.getInitPermissions();
     for (const role in initPermissions) {
       if (Object.prototype.hasOwnProperty.call(initPermissions, role)) {
         initPermissions[role].forEach(action => {
@@ -74,24 +74,76 @@ qx.Class.define("osparc.data.Permissions", {
         can: [],
         inherits: ["tester"]
       }
+    },
+
+    getInitPermissions: function() {
+      return {
+        "anonymous": [],
+        "guest": [
+          "studies.templates.read",
+          "study.node.data.pull",
+          "study.start",
+          "study.stop",
+          "study.update"
+        ],
+        "user": [
+          "dashboard.read",
+          "studies.user.read",
+          "studies.user.create",
+          "studies.template.create",
+          "studies.template.update",
+          "studies.template.delete",
+          "storage.datcore.read",
+          "user.user.update",
+          "user.apikey.create",
+          "user.apikey.delete",
+          "user.token.create",
+          "user.token.delete",
+          "user.tag",
+          "user.organizations.create",
+          "study.node.create",
+          "study.node.delete",
+          "study.node.update",
+          "study.node.rename",
+          "study.node.start",
+          "study.node.data.push",
+          "study.node.data.delete",
+          "study.node.grouping",
+          "study.node.export",
+          "study.edge.create",
+          "study.edge.delete",
+          "study.classifier",
+          "study.tag",
+          "study.slides"
+        ],
+        "tester": [
+          "studies.template.create.all",
+          "services.all.read",
+          "user.role.update",
+          "user.clusters.create",
+          "study.service.update",
+          "study.snapshot.read",
+          "study.snapshot.create",
+          "study.nodestree.uuid.read",
+          "study.filestree.uuid.read",
+          "study.logger.debug.read",
+          "statics.read"
+        ],
+        "admin": []
+      };
+    }
+  },
+
+  properties: {
+    role: {
+      check: ["anonymous", "guest", "user", "tester", "admin"],
+      init: null,
+      nullable: false,
+      event: "changeRole"
     }
   },
 
   members: {
-    __userRole: null,
-
-    getRole() {
-      return this.__userRole;
-    },
-
-    setRole(role) {
-      role = role.toLowerCase();
-      if (!this.self().ROLES[role]) {
-        return;
-      }
-      this.__userRole = role;
-    },
-
     arePermissionsReady() {
       return this.getRole() !== null;
     },
@@ -119,61 +171,6 @@ qx.Class.define("osparc.data.Permissions", {
         }
       }
       return childrenRoles;
-    },
-
-    __getInitPermissions: function() {
-      return {
-        "anonymous": [],
-        "guest": [
-          "studies.templates.read",
-          "study.node.data.pull",
-          "study.start",
-          "study.stop",
-          "study.update"
-        ],
-        "user": [
-          "studies.user.read",
-          "studies.user.create",
-          "studies.template.create",
-          "studies.template.update",
-          "studies.template.delete",
-          "storage.datcore.read",
-          "user.user.update",
-          "user.apikey.create",
-          "user.apikey.delete",
-          "user.token.create",
-          "user.token.delete",
-          "user.tag",
-          "user.organizations.create",
-          "study.node.create",
-          "study.node.delete",
-          "study.node.update",
-          "study.node.rename",
-          "study.node.start",
-          "study.node.data.push",
-          "study.node.data.delete",
-          "study.node.grouping",
-          "study.node.export",
-          "study.edge.create",
-          "study.edge.delete",
-          "study.classifier",
-          "study.tag"
-        ],
-        "tester": [
-          "studies.template.create.all",
-          "services.all.read",
-          "user.role.update",
-          "user.clusters.create",
-          "study.service.update",
-          "study.snapshot.create",
-          "study.nodestree.uuid.read",
-          "study.filestree.uuid.read",
-          "study.logger.debug.read",
-          "study.slides",
-          "statics.read"
-        ],
-        "admin": []
-      };
     },
 
     __nextAction: function() {
@@ -218,8 +215,8 @@ qx.Class.define("osparc.data.Permissions", {
 
     canDo: function(action, showMsg) {
       let canDo = false;
-      if (this.__userRole) {
-        canDo = this.__canRoleDo(this.__userRole, action);
+      if (this.getRole()) {
+        canDo = this.__canRoleDo(this.getRole(), action);
       }
       if (showMsg && !canDo) {
         osparc.component.message.FlashMessenger.getInstance().logAs("Operation not permitted", "ERROR");
@@ -228,7 +225,7 @@ qx.Class.define("osparc.data.Permissions", {
     },
 
     isTester: function() {
-      return this.__userRole === "tester";
+      return this.getRole() === "tester";
     }
   }
 });

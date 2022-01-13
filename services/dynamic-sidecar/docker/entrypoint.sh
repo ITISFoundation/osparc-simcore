@@ -88,8 +88,19 @@ if stat $DOCKER_MOUNT >/dev/null 2>&1; then
   adduser "$SC_USER_NAME" "$GROUPNAME"
 fi
 
+# Change ownership of volumes mount directory
+# directories are empty at this point
+# each individual subdirectory is a unique volume
+chown --verbose --recursive "$SC_USER_NAME":"$GROUPNAME" "${DY_VOLUMES}"
+# Allow owner and group to edit write and execute
+# files from all the subdirectories
+# When the service access files downloaded by the dynamic-sidecar 
+# it uses group permissions
+chmod --verbose --recursive 774 "${DY_VOLUMES}"
+
 echo "$INFO Starting $* ..."
 echo "  $SC_USER_NAME rights    : $(id "$SC_USER_NAME")"
 echo "  local dir : $(ls -al)"
+echo "  volumes dir : $(ls -al "${DY_VOLUMES}")"
 
 exec gosu "$SC_USER_NAME" "$@"

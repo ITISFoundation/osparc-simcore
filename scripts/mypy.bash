@@ -5,29 +5,36 @@ set -o nounset
 set -o pipefail
 IFS=$'\n\t'
 
+image_name="$(basename "$0"):latest"
 
-image_name="$(basename $0):latest"
+# FIXME: current version of mypy is pinned to 0.910 because 0.920 fails with pydantic plugin
 
-
-docker build --tag "$image_name" -<<EOF
+docker buildx build --tag "$image_name" - &>/dev/null <<EOF
 FROM python:3.8.10-slim-buster
-RUN pip install --upgrade pip && pip install mypy pydantic[email]
+RUN pip install --upgrade pip \
+    && pip install mypy==0.910 \
+                  pydantic[email] \
+                  types-aiofiles \
+                  types-PyYAML \
+                  types-ujson \
+                  types-setuptools
 ENTRYPOINT ["mypy"]
 EOF
 
-
-target_path=$(realpath ${1:-Please give target path as argument})
+target_path=$(realpath "${1:-Please give target path as argument}")
 cd "$(dirname "$0")"
-default_mypy_config="$(dirname ${PWD})/mypy.ini"
-mypy_config=$(realpath ${2:-${default_mypy_config}})
+default_mypy_config="$(git rev-parse --show-toplevel)/mypy.ini"
+mypy_config=$(realpath "${2:-${default_mypy_config}}")
 
-echo mypying ${target_path} using config in ${mypy_config}...
-
-echo $default_mypy_config
+echo mypying "${target_path}" using config in "${mypy_config}"...
+echo using "$(docker run --rm "$image_name" --version)"
 docker run --rm \
-  -v ${mypy_config}:/config/mypy.ini \
-  -v ${target_path}:/src \
+  --volume /etc/passwd:/etc/passwd:ro \
+  --volume /etc/group:/etc/group:ro \
+  --user $(id -u):$(id -g) \
+  --volume "${mypy_config}":/config/mypy.ini \
+  --volume "${target_path}":/src \
   --workdir=/src \
   "$image_name" \
-    --config-file /config/mypy.ini \
-    /src
+  --config-file /config/mypy.ini \
+  /src

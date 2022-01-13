@@ -9,15 +9,13 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import json
 import os
 import sys
 import textwrap
 from copy import deepcopy
-from importlib import reload
 from pathlib import Path
-from typing import Callable, Dict, Iterator, List
-from unittest.mock import patch
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, List
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import aioredis
@@ -28,12 +26,13 @@ import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
 import sqlalchemy as sa
 import trafaret_config
+from _helpers import MockedStorageSubsystem  # type: ignore
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
-from pydantic import BaseSettings
 from pytest_simcore.helpers.utils_login import NewUser
-from servicelib.common_aiopg_utils import DSN
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
+from servicelib.common_aiopg_utils import DSN
+from servicelib.json_serialization import json_dumps
 from simcore_service_webserver import rest
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_config import app_schema as app_schema
@@ -46,15 +45,14 @@ from simcore_service_webserver.groups_api import (
 )
 from yarl import URL
 
-# current directory
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 # DEPLOYED SERVICES FOR TESTSUITE SESSION -----------------------------------
 
 
 @pytest.fixture(autouse=True)
-def disable_swagger_doc_genertion() -> None:
+def disable_swagger_doc_genertion() -> Iterator[None]:
     """
     by not enabling the swagger documentation, 1.8s per test is gained
     """
@@ -65,9 +63,9 @@ def disable_swagger_doc_genertion() -> None:
 
 
 @pytest.fixture(scope="session")
-def default_app_cfg(osparc_simcore_root_dir):
+def default_app_cfg(osparc_simcore_root_dir: Path) -> Dict[str, Any]:
     # NOTE: ONLY used at the session scopes
-    cfg_path = current_dir / "config.yaml"
+    cfg_path = CURRENT_DIR / "config.yaml"
     assert cfg_path.exists()
 
     variables = dict(os.environ)
@@ -86,7 +84,7 @@ def default_app_cfg(osparc_simcore_root_dir):
 
 
 @pytest.fixture(scope="session")
-def docker_compose_file(default_app_cfg, monkeypatch_session):
+def docker_compose_file(default_app_cfg, monkeypatch_session) -> str:
     """Overrides pytest-docker fixture"""
 
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
@@ -96,17 +94,17 @@ def docker_compose_file(default_app_cfg, monkeypatch_session):
     monkeypatch_session.setenv("TEST_POSTGRES_USER", cfg["user"])
     monkeypatch_session.setenv("TEST_POSTGRES_PASSWORD", cfg["password"])
 
-    dc_path = current_dir / "docker-compose-devel.yml"
+    compose_path = CURRENT_DIR / "docker-compose-devel.yml"
 
-    assert dc_path.exists()
-    yield str(dc_path)
+    assert compose_path.exists()
+    return str(compose_path)
 
 
 # WEB SERVER/CLIENT FIXTURES ------------------------------------------------
 
 
-@pytest.fixture(scope="function")
-def app_cfg(default_app_cfg, aiohttp_unused_port) -> Dict:
+@pytest.fixture
+def app_cfg(default_app_cfg, aiohttp_unused_port) -> Dict[str, Any]:
     """Can be overriden in any test module to configure
     the app accordingly
     """
@@ -120,17 +118,6 @@ def app_cfg(default_app_cfg, aiohttp_unused_port) -> Dict:
     return cfg
 
 
-class _BaseSettingEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, BaseSettings):
-            return o.json()
-        elif isinstance(o, Path):
-            return str(o)
-
-        # Let the base class default method raise the TypeError
-        return json.JSONEncoder.default(self, o)
-
-
 @pytest.fixture
 def web_server(
     loop,
@@ -142,7 +129,7 @@ def web_server(
 ) -> TestServer:
     print(
         "Inits webserver with app_cfg",
-        json.dumps(app_cfg, indent=2, cls=_BaseSettingEncoder),
+        json_dumps(app_cfg, indent=2),
     )
 
     # original APP
@@ -224,29 +211,28 @@ def computational_system_mock(mocker):
 
 
 @pytest.fixture
-async def storage_subsystem_mock(loop, mocker):
+async def storage_subsystem_mock(loop, mocker) -> MockedStorageSubsystem:
     """
     Patches client calls to storage service
 
     Patched functions are exposed within projects but call storage subsystem
     """
-    # requests storage to copy data
-    mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.copy_data_folders_from_project"
-    )
 
     async def _mock_copy_data_from_project(*args):
         return args[2]
 
-    mock.side_effect = _mock_copy_data_from_project
+    mock = mocker.patch(
+        "simcore_service_webserver.projects.projects_handlers.copy_data_folders_from_project",
+        autospec=True,
+        side_effect=_mock_copy_data_from_project,
+    )
 
-    # requests storage to delete data
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project",
         side_effect=async_mock,
     )
-    return mock, mock1
+    return MockedStorageSubsystem(mock, mock1)
 
 
 @pytest.fixture
@@ -259,34 +245,34 @@ def asyncpg_storage_system_mock(mocker):
 
 
 @pytest.fixture
-async def mocked_director_v2_api(loop, mocker):
-    mocks = {
-        "director_v2.get_service_state": mocker.patch(
-            "simcore_service_webserver.director_v2.get_service_state",
-            return_value={},
-        ),
-        "director_v2.get_services": mocker.patch(
-            "simcore_service_webserver.director_v2.get_services",
-            return_value="",
-        ),
-        "director_v2.start_service": mocker.patch(
-            "simcore_service_webserver.director_v2.start_service",
-            return_value="",
-        ),
-        "director_v2.stop_service": mocker.patch(
-            "simcore_service_webserver.director_v2.stop_service",
-            return_value="",
-        ),
-    }
+async def mocked_director_v2_api(loop, mocker) -> Dict[str, MagicMock]:
+    mock = {}
 
-    reload(simcore_service_webserver.projects.projects_api)
-    reload(simcore_service_webserver.projects.projects_handlers)
+    #
+    # NOTE: depending on the test, function might have to be patched
+    #  via the director_v2_api or director_v2_core modules
+    #
+    for func_name in (
+        "get_service_state",
+        "get_services",
+        "start_service",
+        "stop_service",
+    ):
+        for mod_name in ("director_v2_api", "director_v2_core"):
+            name = f"{mod_name}.{func_name}"
+            mock[name] = mocker.patch(
+                f"simcore_service_webserver.{name}",
+                autospec=True,
+                return_value={},
+            )
 
-    return mocks
+    return mock
 
 
 @pytest.fixture
-async def mocked_dynamic_service(loop, client, mocked_director_v2_api):
+def create_dynamic_service_mock(
+    loop, client: TestClient, mocked_director_v2_api: Dict
+) -> Callable:
     services = []
 
     async def create(user_id, project_id) -> Dict:
@@ -312,7 +298,8 @@ async def mocked_dynamic_service(loop, client, mocked_director_v2_api):
 
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
-        mocked_director_v2_api["director_v2.get_services"].return_value = services
+        mocked_director_v2_api["director_v2_api.get_services"].return_value = services
+        mocked_director_v2_api["director_v2_core.get_services"].return_value = services
         return running_service_dict
 
     return create
@@ -414,7 +401,9 @@ async def primary_group(client, logged_user) -> Dict[str, str]:
 
 
 @pytest.fixture
-async def standard_groups(client, logged_user: Dict) -> List[Dict[str, str]]:
+async def standard_groups(
+    client, logged_user: Dict
+) -> AsyncIterator[List[Dict[str, str]]]:
     # create a separate admin account to create some standard groups for the logged user
     sparc_group = {
         "gid": "5",  # this will be replaced

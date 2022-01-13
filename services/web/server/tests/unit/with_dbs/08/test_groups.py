@@ -20,7 +20,7 @@ from simcore_service_webserver.groups_api import (
     DEFAULT_GROUP_READ_ACCESS_RIGHTS,
     auto_add_user_to_groups,
 )
-from simcore_service_webserver.login import setup_login
+from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
@@ -89,9 +89,7 @@ def _assert__group_user(
     assert "gid" in actual_user
 
 
-@pytest.mark.parametrize(
-    *standard_role_response(),
-)
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_list_groups(
     client,
     logged_user,

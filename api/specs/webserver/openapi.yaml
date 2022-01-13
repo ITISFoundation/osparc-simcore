@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: "osparc-simcore web API"
-  version: 0.6.0
+  version: 0.7.0
   description: "API designed for the front-end app"
   contact:
     name: IT'IS Foundation
@@ -49,6 +49,7 @@ tags:
       oSPARC users can make publications. Starting from submission of new service candidates, but this could
       end up accepting other types of publications.
   - name: viewer
+  - name: repository
 
 paths:
   # DIAGNOSTICS ---------------------------------------------------------
@@ -199,6 +200,12 @@ paths:
   /projects/{project_id}/nodes/{node_id}:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}"
 
+  /projects/{project_id}/nodes/{node_id}:retrieve:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_id}~1nodes~1{node_id}~1retrieve"
+
+  /projects/{project_uuid}/nodes/{node_id}:restart:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1nodes~1{node_id}~1restart"
+
   /nodes/{nodeInstanceUUID}/outputUi/{outputKey}:
     $ref: "./openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1outputUi~1{outputKey}"
 
@@ -211,11 +218,29 @@ paths:
   /projects/{study_uuid}/tags/{tag_id}:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{study_uuid}~1tags~1{tag_id}"
 
-  /projects/{project_id}/snapshots:
-    $ref: "./openapi-projects.yaml#/paths/projects_snapshots"
+  # META-PROJECTS -------------------------------------------------------------------------
 
-  /projects/{project_id}/snapshots/{snapshot_id}:
-    $ref: "./openapi-projects.yaml#/paths/projects_id_snapshots_id"
+  /projects/{project_uuid}/checkpoint/{ref_id}/iterations:
+    $ref: "./openapi-meta-projects.yaml#/paths/~1projects~1{project_uuid}~1checkpoint~1{ref_id}~1iterations"
+
+  # REPOSITORY -------------------------------------------------------------------------
+  /repos/projects:
+    $ref: "./openapi-version-control.yaml#/paths/~1repos~1projects"
+
+  "/repos/projects/{project_uuid}/checkpoints":
+    $ref: "./openapi-version-control.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints"
+
+  "/repos/projects/{project_uuid}/checkpoints/HEAD":
+    $ref: "./openapi-version-control.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints~1HEAD"
+
+  "/repos/projects/{project_uuid}/checkpoints/{ref_id}":
+    $ref: "./openapi-version-control.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints~1{ref_id}"
+
+  "/repos/projects/{project_uuid}/checkpoints/{ref_id}:checkout":
+    $ref: "./openapi-version-control.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints~1{ref_id}:checkout"
+
+  "/repos/projects/{project_uuid}/checkpoints/{ref_id}/workbench/view":
+    $ref: "./openapi-version-control.yaml#/paths/~1repos~1projects~1{project_uuid}~1checkpoints~1{ref_id}~1workbench~1view"
 
   # ACTIVITY -------------------------------------------------------------------------
   /activity/status:

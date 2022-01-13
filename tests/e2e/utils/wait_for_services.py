@@ -2,22 +2,16 @@ import json
 import logging
 import os
 import sys
-import time
 from datetime import datetime
 from pathlib import Path
-from pdb import Pdb
-from pprint import pformat
 from typing import Dict, List
 
 import docker
 import yaml
-from tenacity import (
-    RetryError,
-    Retrying,
-    before_sleep_log,
-    stop_after_attempt,
-    wait_fixed,
-)
+from tenacity import RetryError, Retrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +81,7 @@ def core_docker_compose_file() -> Path:
 def core_services() -> List[str]:
     with core_docker_compose_file().open() as fp:
         dc_specs = yaml.safe_load(fp)
-        return [x for x in dc_specs["services"].keys()]
+        return list(dc_specs["services"].keys())
 
 
 def ops_docker_compose_file() -> Path:
@@ -97,7 +91,7 @@ def ops_docker_compose_file() -> Path:
 def ops_services() -> List[str]:
     with ops_docker_compose_file().open() as fp:
         dc_specs = yaml.safe_load(fp)
-        return [x for x in dc_specs["services"].keys()]
+        return list(dc_specs["services"].keys())
 
 
 def to_datetime(datetime_str: str) -> datetime:
@@ -124,6 +118,7 @@ def wait_for_services() -> int:
         for attempt in Retrying(
             stop=stop_after_attempt(MAX_RETRY_COUNT),
             wait=wait_fixed(WAIT_BEFORE_RETRY),
+            before_sleep=before_sleep_log(logger, logging.WARNING),
         ):
             with attempt:
                 started_services = sorted(
@@ -167,7 +162,7 @@ def wait_for_services() -> int:
 
                     #
                     # NOTE: a service could set 'ready' as desired-state instead of 'running' if
-                    # it constantly breaks and the swarm desides to "stopy trying".
+                    # it constantly breaks and the swarm desides to "stop trying".
                     #
                     valid_replicas = sum(
                         task["Status"]["State"] == RUNNING_STATE

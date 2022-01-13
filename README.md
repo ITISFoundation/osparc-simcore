@@ -18,7 +18,7 @@
 
 <!-- ADD HERE ALL BADGE URLS. Use https://shields.io/ -->
 [Code style: black]:https://img.shields.io/badge/code%20style-black-000000.svg
-[Requires.io]:https://img.shields.io/requires/github/ITISFoundation/osparc-simcore.svg
+[Requires.io]:https://img.shields.io/requires/github/ITISFoundation/osparc-simcore.svg?branch=master
 [travis-ci]:https://travis-ci.org/ITISFoundation/osparc-simcore.svg?branch=master
 [github.io]:https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
 [itis.dockerhub]:https://img.shields.io/website/https/hub.docker.com/u/itisfoundation.svg?down_color=red&label=dockerhub%20repos&up_color=green

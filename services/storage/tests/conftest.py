@@ -6,6 +6,7 @@
 # pylint: disable=unused-variable
 
 
+import asyncio
 import datetime
 import os
 import sys
@@ -13,13 +14,17 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from random import randrange
-from typing import Any, Dict, Iterator, Tuple
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Tuple
 
 import dotenv
 import pytest
 import simcore_service_storage
 from aiohttp import web
 from aiopg.sa import create_engine
+from pytest_simcore.helpers.utils_postgres import (
+    is_postgres_responsive,
+    migrated_pg_tables_context,
+)
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_storage.constants import SIMCORE_S3_STR
 from simcore_service_storage.dsm import DataStorageManager, DatCoreApiToken
@@ -137,12 +142,12 @@ def postgres_service(docker_services, docker_ip):
 
     # Wait until service is responsive.
     docker_services.wait_until_responsive(
-        check=lambda: tests.utils.is_postgres_responsive(url),
+        check=lambda: is_postgres_responsive(url),
         timeout=30.0,
         pause=0.1,
     )
 
-    postgres_service = {
+    return {
         "user": USER,
         "password": PASS,
         "db": DATABASE,
@@ -153,11 +158,9 @@ def postgres_service(docker_services, docker_ip):
         "maxsize": 4,
     }
 
-    return postgres_service
-
 
 @pytest.fixture(scope="function")
-def postgres_service_url(postgres_service, docker_services, docker_ip):
+def postgres_service_url(postgres_service, docker_services, docker_ip) -> str:
     url = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
         user=USER,
         password=PASS,
@@ -166,11 +169,8 @@ def postgres_service_url(postgres_service, docker_services, docker_ip):
         port=docker_services.port_for("postgres", 5432),
     )
 
-    tests.utils.create_tables(url)
-
-    yield url
-
-    tests.utils.drop_tables(url)
+    with migrated_pg_tables_context(postgres_service) as cfg:
+        yield cfg["dsn"]
 
 
 @pytest.fixture(scope="function")
@@ -229,16 +229,12 @@ def s3_client(minio_service: Dict[str, Any]) -> MinioClientWrapper:
 
 
 @pytest.fixture(scope="function")
-def mock_files_factory(tmpdir_factory):
-    def _create_files(count):
+def mock_files_factory(tmpdir_factory) -> Callable[[int], List[Path]]:
+    def _create_files(count: int) -> List[Path]:
         filepaths = []
         for _i in range(count):
-            name = str(uuid.uuid4())
-            filepath = os.path.normpath(
-                str(tmpdir_factory.mktemp("data").join(name + ".txt"))
-            )
-            with open(filepath, "w") as fout:
-                fout.write("Hello world\n")
+            filepath = Path(tmpdir_factory.mktemp("data")) / f"{uuid.uuid4()}.txt"
+            filepath.write_text("Hello world\n")
             filepaths.append(filepath)
 
         return filepaths
@@ -277,7 +273,9 @@ def dsm_mockup_complete_db(
 
 @pytest.fixture(scope="function")
 def dsm_mockup_db(
-    postgres_service_url, s3_client, mock_files_factory
+    postgres_service_url,
+    s3_client: MinioClientWrapper,
+    mock_files_factory: Callable[[int], List[Path]],
 ) -> Dict[str, FileMetaData]:
 
     # s3 client
@@ -301,7 +299,7 @@ def dsm_mockup_db(
     nodes = ["alpha", "beta", "gamma", "delta"]
 
     N = 100
-    files = mock_files_factory(count=N)
+    files = mock_files_factory(N)
     counter = 0
     data = {}
     for _file in files:
@@ -319,9 +317,13 @@ def dsm_mockup_db(
         file_uuid = Path(object_name).as_posix()
         raw_file_path = file_uuid
         display_file_path = str(Path(project_name) / Path(node) / Path(file_name))
-        created_at = str(datetime.datetime.now())
-        file_size = 1234
+        created_at = str(datetime.datetime.utcnow())
+        file_size = _file.stat().st_size
+
         assert s3_client.upload_file(bucket_name, object_name, _file)
+        s3_meta_data = s3_client.get_metadata(bucket_name, object_name)
+        assert "ETag" in s3_meta_data
+        entity_tag = s3_meta_data["ETag"].strip('"')
 
         d = {
             "file_uuid": file_uuid,
@@ -342,6 +344,7 @@ def dsm_mockup_db(
             "created_at": created_at,
             "last_modified": created_at,
             "file_size": file_size,
+            "entity_tag": entity_tag,
         }
 
         counter = counter + 1
@@ -373,7 +376,9 @@ def moduleless_app(loop, aiohttp_server) -> web.Application:
 
 
 @pytest.fixture(scope="function")
-def dsm_fixture(s3_client, postgres_engine, loop, moduleless_app):
+def dsm_fixture(
+    s3_client, postgres_engine, loop, moduleless_app
+) -> Iterable[DataStorageManager]:
 
     with ThreadPoolExecutor(3) as pool:
         dsm_fixture = DataStorageManager(
@@ -394,7 +399,11 @@ def dsm_fixture(s3_client, postgres_engine, loop, moduleless_app):
 
 
 @pytest.fixture(scope="function")
-async def datcore_structured_testbucket(loop, mock_files_factory, moduleless_app):
+async def datcore_structured_testbucket(
+    loop: asyncio.AbstractEventLoop,
+    mock_files_factory: Callable[[int], List[Path]],
+    moduleless_app,
+):
     api_token = os.environ.get("BF_API_KEY")
     api_secret = os.environ.get("BF_API_SECRET")
 

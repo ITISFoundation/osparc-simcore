@@ -51,27 +51,28 @@ qx.Mixin.define("osparc.ui.tree.MHintInTree", {
     },
 
     __populateInfoButton: function() {
-      const desc = this.getDescription();
-      const desc2 = this.getDescription2();
+      const texts = [];
+      [
+        this.getLabel(),
+        this.getDescription(),
+        this.getDescription2()
+      ].forEach(text => {
+        if (text && text !== "") {
+          texts.push(text);
+        }
+      });
       const url = this.getUrl();
-      const hints = [];
-      if (desc && desc !== "") {
-        hints.push(desc);
-      }
-      if (desc2 && desc2 !== "") {
-        hints.push(desc2);
-      }
       if (url && url !== "") {
         const link = "<a href=" + url + " target='_blank'>More...</a>";
         const linkWithRightColor = link.replace(/^<a /, "<a style=\"color:"+ qx.theme.manager.Color.getInstance().getTheme().colors["link"] + "\"");
-        hints.push(linkWithRightColor);
+        texts.push(linkWithRightColor);
 
         const themeManager = qx.theme.manager.Meta.getInstance();
         themeManager.addListener("changeTheme", () => {
           this.__populateInfoButton();
         }, this);
       }
-      const hint = hints.join("<br>");
+      const hint = texts.join("<br>");
       this.__infoButton.setHintText(hint);
     }
   }

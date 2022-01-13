@@ -24,7 +24,7 @@
 
 /**
  * A qooxdoo wrapper for
- * <a href='https://github.com/benjamine/jsondiffpatch' target='_blank'>JsonDiffPatch</a>
+ * <a href='https://github.com/cure53/DOMPurify' target='_blank'>DOMPurify</a>
  */
 
 qx.Class.define("osparc.wrapper.DOMPurify", {

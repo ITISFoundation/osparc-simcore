@@ -171,29 +171,31 @@ qx.Class.define("osparc.file.FileTreeItem", {
       });
       this.addWidget(sizeWidget);
 
-      if (osparc.data.Permissions.getInstance().canDo("study.filestree.uuid.read")) {
-        this.addWidget(new qx.ui.core.Spacer(10));
 
-        // Add Path
-        const pathWidget = new qx.ui.basic.Label().set({
-          width: 300,
-          maxWidth: 300,
-          textAlign: "right"
-        });
-        this.bind("path", pathWidget, "value");
-        this.addWidget(pathWidget);
+      const permissions = osparc.data.Permissions.getInstance();
+      // Add Path
+      const pathWidget = new qx.ui.basic.Label().set({
+        width: 300,
+        maxWidth: 300,
+        textAlign: "right"
+      });
+      this.bind("path", pathWidget, "value");
+      this.addWidget(pathWidget);
+      permissions.bind("role", pathWidget, "visibility", {
+        converter: () => permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded"
+      });
 
-        this.addWidget(new qx.ui.core.Spacer(10));
-
-        // Add NodeId
-        const fileIdWidget = new qx.ui.basic.Label().set({
-          width: 300,
-          maxWidth: 300,
-          textAlign: "right"
-        });
-        this.bind("fileId", fileIdWidget, "value");
-        this.addWidget(fileIdWidget);
-      }
+      // Add NodeId
+      const fileIdWidget = new qx.ui.basic.Label().set({
+        width: 300,
+        maxWidth: 300,
+        textAlign: "right"
+      });
+      this.bind("fileId", fileIdWidget, "value");
+      this.addWidget(fileIdWidget);
+      permissions.bind("role", fileIdWidget, "visibility", {
+        converter: () => permissions.canDo("study.nodestree.uuid.read") ? "visible" : "excluded"
+      });
     },
 
     // override

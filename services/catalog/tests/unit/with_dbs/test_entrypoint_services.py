@@ -19,6 +19,7 @@ from models_library.services import (
     ServiceType,
 )
 from pydantic.types import PositiveInt
+from respx.router import MockRouter
 from simcore_service_catalog.api.routes import services
 from simcore_service_catalog.db.repositories.groups import GroupsRepository
 from simcore_service_catalog.models.domain.group import GroupAtDB, GroupType
@@ -108,7 +109,8 @@ async def director_mockup(
     monkeypatch.setattr(services, "list_services", return_list_services)
 
     class FakeDirector:
-        async def get(self, url: str):
+        @staticmethod
+        async def get(url: str):
             if url == "/services":
                 return [s.dict(by_alias=True) for s in registry_services]
             if "/service_extras/" in url:
@@ -153,7 +155,10 @@ async def db_mockup(
 
 
 async def test_director_mockup(
-    director_mockup, app: FastAPI, registry_services: List[ServiceOut], user_id: int
+    director_mockup: MockRouter,
+    app: FastAPI,
+    registry_services: List[ServiceOut],
+    user_id: int,
 ):
     assert await services.list_services(user_id) == registry_services
 
@@ -162,7 +167,11 @@ async def test_director_mockup(
     reason="Not ready, depency injection does not work, using monkeypatch. still issue with setting up database"
 )
 async def test_list_services(
-    director_mockup, db_mockup, app: FastAPI, client: TestClient, user_id: int
+    director_mockup: MockRouter,
+    db_mockup: None,
+    app: FastAPI,
+    client: TestClient,
+    user_id: int,
 ):
     await asyncio.sleep(10)
 

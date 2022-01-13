@@ -68,11 +68,28 @@ Every python package specifies its dependencies to the installer via the ``setup
         - Installs target package, simcore-repo  and tests dependencies
      3. **production**: ``pip install -r requirements/prod.txt``
         - Installs target package  and simcore-repo dependencies
-- ``setup.py`` read dependencies into the setup
+- ``setup.py`` read dependencies into the setup (a bit more below)
   - **libraries** (e.g. in [packages/service-lib](../packages/service-library/setup.py)) have *flexible dependencies*, i.e. requirements read from  ``requirements/_base.in``
   - **services** (e.g. in [services/web/server](../services/web/server/setup.py) ) have *strict dependencies* and therefore it reads from ``requirements/_base.txt`` where all versions are pinned.
 
-### Limitations [May 6, 2019]
+
+### Weak *vs* strong requirements & libraries *vs* services requirements
+
+Every package's ``setup.py`` defines the [dependency management](https://setuptools.pypa.io/en/latest/userguide/dependency_management.html#dependencies-management-in-setuptools) under different scenarios, namely ``install_require``,
+``tests_require``, ``extras_require`` and ``setup_require``.
+
+
+The files under ``requirements`` and have ``*.in`` or ``*.txt`` extensions to separate input requirements (w/o many constraints) from frozen requirements (every library is constrainted to a pinned version). Depending on whether we are setting up a library or a service, different listing apply.
+
+Basically, the idea is that *libraries* shall have *weak* constraint requirements while *services* shall have *hard* constraints requirements.  Weak requirements are in the ``*.in`` files while *hard* are in the ``*.txt`` files.
+
+The main reason is that the former are shared among different services and provides more degrees of freedom. In the case of the services, those are final and there is no need for those degrees of freedom.
+
+Libraries requirements are only frozen for testing (therefore ``tests_require= .. txt`` in libraries setup).
+
+
+ ---
+## Limitations [@ May 6, 2019]
 
 1. Needs to install [pip-tools]
    - polutes the venv
@@ -82,6 +99,7 @@ Every python package specifies its dependencies to the installer via the ``setup
    - paths entries in ``requirements/[dev|ci|prod].txt``
    - package names+version in requirements list for ``setup.py``
 1. Cannot use [pip-tools] (e.g. ``pip-sync``) with ``requirements/ci.txt`` or ``requirements/prod.txt`` because of in-place dependencies: ``pip-compile does not support URLs as packages, unless they are editable. Perhaps add -e option? (constraint was: file:///home/crespo/devp/osparc-simcore/packages/s3wrapper (from -r requirements/ci.txt (line 13)))``
+
 
 ### Updates [March 2020]
 
@@ -184,8 +202,6 @@ crespo@8ac9edf78469:~/services/api-server/requirements$ make reqs upgrade=fastap
 crespo@8ac9edf78469:~/services/api-server/requirements$ touch _tests.in
 crespo@8ac9edf78469:~/services/api-server/requirements$ make reqs
 ```
-
-
 ## References
 
 1. [pip] manual

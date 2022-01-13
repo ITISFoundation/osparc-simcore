@@ -126,9 +126,9 @@ def test_file_upload_meta_data(s3_client, bucket, text_files_factory):
 
     metadata2 = s3_client.get_metadata(bucket, object_name)
 
-    assert metadata2["user"] == "guidon"
-    assert metadata2["node_id"] == str(_id)
-    assert metadata2["boom-boom"] == str(42.0)
+    assert metadata2["X-Amz-Meta-User"] == "guidon"
+    assert metadata2["X-Amz-Meta-Node_id"] == str(_id)
+    assert metadata2["X-Amz-Meta-Boom-Boom"] == str(42.0)
 
 
 def test_sub_folders(s3_client, bucket, text_files_factory):
@@ -139,37 +139,6 @@ def test_sub_folders(s3_client, bucket, text_files_factory):
         object_name = bucket_sub_folder + "/" + str(counter)
         assert s3_client.upload_file(bucket, object_name, f)
         counter += 1
-
-
-def test_search(s3_client, bucket, text_files_factory):
-    metadata = [{"User": "alpha"}, {"User": "beta"}, {"User": "gamma"}]
-
-    for i in range(3):
-        bucket_sub_folder = "Folder" + str(i + 1)
-
-        filepaths = text_files_factory(3)
-        counter = 0
-        for f in filepaths:
-            object_name = bucket_sub_folder + "/" + "Data" + str(counter)
-            assert s3_client.upload_file(
-                bucket, object_name, f, metadata=metadata[counter]
-            )
-            counter += 1
-
-    query = "DATA1"
-    results = s3_client.search(bucket, query, recursive=False, include_metadata=False)
-    assert not results
-
-    results = s3_client.search(bucket, query, recursive=True, include_metadata=False)
-    assert len(results) == 3
-
-    query = "alpha"
-    results = s3_client.search(bucket, query, recursive=True, include_metadata=True)
-    assert len(results) == 3
-
-    query = "dat*"
-    results = s3_client.search(bucket, query, recursive=True, include_metadata=False)
-    assert len(results) == 9
 
 
 def test_presigned_put(s3_client, bucket, text_files_factory):
@@ -266,7 +235,7 @@ def test_list_objects(s3_client, bucket, text_files_factory):
 
     listed_objects = s3_client.list_objects(bucket)
     for s3_obj in listed_objects:
-        assert s3_obj.object_name == "level1/" or s3_obj.object_name == "level2/"
+        assert s3_obj.object_name in ("level1/", "level2/")
 
     listed_objects = s3_client.list_objects(bucket, prefix="level1")
     for s3_obj in listed_objects:
@@ -278,7 +247,4 @@ def test_list_objects(s3_client, bucket, text_files_factory):
 
     listed_objects = s3_client.list_objects(bucket, recursive=True)
     for s3_obj in listed_objects:
-        assert (
-            s3_obj.object_name == "level1/level2/1"
-            or s3_obj.object_name == "level2/level2/2"
-        )
+        assert s3_obj.object_name in ("level1/level2/1", "level2/level2/2")

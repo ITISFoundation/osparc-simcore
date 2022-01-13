@@ -64,20 +64,32 @@ qx.Class.define("osparc.component.permissions.Permissions", {
     __collaboratorsModel: null,
     __collaborators: null,
 
-    __buildLayout: function() {
-      const addCollaborator = this.__createAddCollaboratorSection();
-      this._add(addCollaborator);
-
-      const collaboratorsList = this.__createCollaboratorsListSection();
-      this._add(collaboratorsList, {
-        flex: 1
-      });
-
-      // for now, only for studies
-      if ("uuid" in this._serializedData) {
-        const studyLinkSection = this.__createStudyLinkSection();
-        this._add(studyLinkSection);
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "add-collaborator":
+          control = this.__createAddCollaboratorSection();
+          this._add(control);
+          break;
+        case "collaborators-list":
+          control = this.__createCollaboratorsListSection();
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        case "study-link":
+          control = this.__createStudyLinkSection();
+          this._add(control);
+          // excluded by default
+          control.exclude();
       }
+      return control || this.base(arguments, id);
+    },
+
+    __buildLayout: function() {
+      this._createChildControlImpl("add-collaborator");
+      this._createChildControlImpl("collaborators-list");
+      this._createChildControlImpl("study-link");
     },
 
     __createAddCollaboratorSection: function() {

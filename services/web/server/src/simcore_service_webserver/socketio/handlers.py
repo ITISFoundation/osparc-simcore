@@ -11,15 +11,16 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from aiohttp import web
-from servicelib.observer import observe, emit
+from servicelib.observer import emit, observe
 from servicelib.utils import fire_and_forget_task, logged_gather
+from socketio import AsyncServer
 from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionError
 
 from ..groups_api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
 from .config import get_socket_server
-from .events import post_messages
+from .events import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
 from .handlers_utils import register_socketio_handler
 
 ANONYMOUS_USER_ID = -1
@@ -58,7 +59,17 @@ async def connect(sid: str, environ: Dict, app: web.Application) -> bool:
     log.info("Sending set_heartbeat_emit_interval with %s", emit_interval)
 
     user_id = request.get(RQT_USERID_KEY, ANONYMOUS_USER_ID)
-    await post_messages(app, user_id, {"set_heartbeat_emit_interval": emit_interval})
+    heart_beat_messages: List[SocketMessageDict] = [
+        {
+            "event_type": SOCKET_IO_HEARTBEAT_EVENT,
+            "data": {"interval": emit_interval},
+        }
+    ]
+    await send_messages(
+        app,
+        user_id,
+        heart_beat_messages,
+    )
 
     return True
 
@@ -119,12 +130,19 @@ async def on_user_logout(
 ) -> None:
     log.debug("user %s must be disconnected", user_id)
     # find the sockets related to the user
-    sio = get_socket_server(app)
+    sio: AsyncServer = get_socket_server(app)
     with managed_resource(user_id, client_session_id, app) as rt:
         # start by disconnecting this client if possible
         if client_session_id:
             if socket_id := await rt.get_socket_id():
-                await sio.disconnect(sid=socket_id)
+                try:
+                    await sio.disconnect(sid=socket_id)
+                except KeyError as exc:
+                    log.warning(
+                        "Disconnection of socket id '%s' failed. socket id could not be found: [%s]",
+                        socket_id,
+                        exc,
+                    )
             # trigger faster gc on disconnect
             await rt.user_pressed_disconnect()
 

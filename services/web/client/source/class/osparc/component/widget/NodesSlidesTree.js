@@ -15,9 +15,6 @@
 
 ************************************************************************ */
 
-/**
- *
- */
 
 qx.Class.define("osparc.component.widget.NodesSlidesTree", {
   extend: qx.ui.core.Widget,
@@ -30,6 +27,9 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     this.__tree = this.getChildControl("tree");
+
+    this.getChildControl("exposed-settings");
+
     const disable = this.getChildControl("disable");
     disable.addListener("execute", () => this.__disableSlides(), this);
     const enable = this.getChildControl("enable");
@@ -65,8 +65,9 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
   },
 
   members: {
-    __tree: null,
     __study: null,
+    __tree: null,
+    __exposedSettings: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -76,6 +77,17 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           this._add(control, {
             flex: 1
           });
+          break;
+        case "exposed-settings":
+          control = osparc.component.node.BaseNodeView.createSettingsGroupBox("Exposed Settings").set({
+            visibility: "excluded"
+          });
+          control.getChildControl("legend").setFont("title-14");
+          control.getChildControl("frame").set({
+            padding: 10,
+            paddingTop: 15
+          });
+          this._add(control);
           break;
         case "buttons":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
@@ -150,18 +162,11 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
           c.bindProperty("skipNode", "skipNode", null, item, id);
         },
         configureItem: item => {
-          item.addListener("showNode", () => {
-            this.__itemActioned(item, "show");
-          }, this);
-          item.addListener("hideNode", () => {
-            this.__itemActioned(item, "hide");
-          }, this);
-          item.addListener("moveUp", () => {
-            this.__itemActioned(item, "moveUp");
-          }, this);
-          item.addListener("moveDown", () => {
-            this.__itemActioned(item, "moveDown");
-          }, this);
+          item.addListener("showNode", () => this.__itemActioned(item, "show"), this);
+          item.addListener("hideNode", () => this.__itemActioned(item, "hide"), this);
+          item.addListener("moveUp", () => this.__itemActioned(item, "moveUp"), this);
+          item.addListener("moveDown", () => this.__itemActioned(item, "moveDown"), this);
+          // item.addListener("tap", () => this.__populateExposedSettings(item), this);
         }
       });
     },
@@ -291,6 +296,20 @@ qx.Class.define("osparc.component.widget.NodesSlidesTree", {
         }
       }
       this.__tree.refresh();
+    },
+
+    __populateExposedSettings: function(item) {
+      const exposedSettings = this.getChildControl("exposed-settings");
+      exposedSettings.removeAll();
+
+      const nodeId = item.getNodeId();
+      const node = this.__study.getWorkbench().getNode(nodeId);
+      if (node && node.getPropsFormEditor()) {
+        exposedSettings.add(node.getPropsFormEditor());
+        exposedSettings.show();
+      } else {
+        exposedSettings.exclude();
+      }
     },
 
     __serialize: function() {

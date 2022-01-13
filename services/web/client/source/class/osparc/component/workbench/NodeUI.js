@@ -54,11 +54,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   properties: {
     node: {
       check: "osparc.data.model.Node",
-      nullable: false
+      nullable: false,
+      apply: "__applyNode"
     },
 
     type: {
-      check: ["normal", "file", "parameter"],
+      check: ["normal", "file", "parameter", "iterator", "probe"],
       init: "normal",
       nullable: false,
       apply: "__applyType"
@@ -72,7 +73,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   },
 
   statics: {
-    NODE_WIDTH: 200,
+    NODE_WIDTH: 180,
     NODE_HEIGHT: 80,
     CIRCLED_RADIUS: 16
   },
@@ -80,6 +81,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   members: {
     __progressBar: null,
     __thumbnail: null,
+    __svgWorkbenchCanvas: null,
 
     getNodeType: function() {
       return "service";
@@ -93,18 +95,28 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       let control;
       switch (id) {
         case "chips": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3).set({
+            alignY: "middle"
+          })).set({
             margin: [3, 4]
           });
           let nodeType = this.getNode().getMetaData().type;
+          if (this.getNode().isIterator()) {
+            nodeType = "iterator";
+          } else if (this.getNode().isProbe()) {
+            nodeType = "probe";
+          }
           const type = osparc.utils.Services.getType(nodeType);
           if (type) {
-            control.add(new osparc.ui.basic.Chip(type.label, type.icon + "12"));
+            const chip = new osparc.ui.basic.Chip().set({
+              icon: type.icon + "14",
+              toolTipText: type.label
+            });
+            control.add(chip);
           }
           this.add(control, {
-            row: 1,
-            column: 0,
-            colSpan: 3
+            row: 0,
+            column: 1
           });
           break;
         }
@@ -114,7 +126,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             margin: 4
           });
           this.add(control, {
-            row: 2,
+            row: 1,
             column: 0,
             colSpan: 3
           });
@@ -130,7 +142,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         this.setThumbnail(node.getThumbnail());
       }
       const chipContainer = this.getChildControl("chips");
-      if (node.isComputational() || node.isFilePicker()) {
+      if (node.isComputational() || node.isFilePicker() || node.isIterator()) {
         this.__progressBar = this.getChildControl("progress");
       }
 
@@ -138,7 +150,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       chipContainer.add(nodeStatus);
     },
 
-    populateNodeLayout: function() {
+    populateNodeLayout: function(svgWorkbenchCanvas) {
       const node = this.getNode();
       node.bind("label", this, "caption", {
         onUpdate: () => {
@@ -148,13 +160,20 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const metaData = node.getMetaData();
       this._createPorts(true, Boolean((metaData && metaData.inputs && Object.keys(metaData.inputs).length) || this.getNode().isContainer()));
       this._createPorts(false, Boolean((metaData && metaData.outputs && Object.keys(metaData.outputs).length) || this.getNode().isContainer()));
-      if (node.isComputational() || node.isFilePicker()) {
-        node.getStatus().bind("progress", this.__progressBar, "value");
+      if (node.isComputational()) {
+        node.getStatus().bind("progress", this.__progressBar, "value", {
+          converter: val => val === null ? 0 : val
+        });
       }
       if (node.isFilePicker()) {
         this.setType("file");
       } else if (node.isParameter()) {
         this.setType("parameter");
+      } else if (node.isIterator()) {
+        this.__svgWorkbenchCanvas = svgWorkbenchCanvas;
+        this.setType("iterator");
+      } else if (node.isProbe()) {
+        this.setType("probe");
       }
     },
 
@@ -171,6 +190,24 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
     },
 
+    __applyNode: function(node) {
+      if (node.getKey().includes("parameter/int")) {
+        const makeIterator = new qx.ui.menu.Button().set({
+          label: this.tr("Convert to Iterator"),
+          icon: "@FontAwesome5Solid/sync-alt/10"
+        });
+        makeIterator.addListener("execute", () => node.convertToIterator("int"), this);
+        this._optionsMenu.add(makeIterator);
+      } else if (node.getKey().includes("data-iterator/int-range")) {
+        const convertToParameter = new qx.ui.menu.Button().set({
+          label: this.tr("Convert to Parameter"),
+          icon: "@FontAwesome5Solid/sync-alt/10"
+        });
+        convertToParameter.addListener("execute", () => node.convertToParameter("int"), this);
+        this._optionsMenu.add(convertToParameter);
+      }
+    },
+
     __applyType: function(type) {
       switch (type) {
         case "file":
@@ -178,6 +215,12 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           break;
         case "parameter":
           this.__turnIntoParameterUI();
+          break;
+        case "iterator":
+          this.__turnIntoIteratorUI();
+          break;
+        case "probe":
+          this.__turnIntoProbeUI();
           break;
       }
     },
@@ -246,17 +289,86 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         column: 1
       });
 
-      const firstOutput = this.getNode().getFirstOutput();
-      if (firstOutput && "value" in firstOutput) {
-        const value = firstOutput["value"];
-        label.setValue(String(value));
-      }
-      this.getNode().addListener("changeOutputs", e => {
-        const updatedOutputs = e.getData();
-        const newVal = updatedOutputs["out_1"];
-        label.setValue(String(newVal["value"]));
+      this.getNode().bind("outputs", label, "value", {
+        converter: outputs => {
+          if ("out_1" in outputs && "value" in outputs["out_1"]) {
+            return String(outputs["out_1"]["value"]);
+          }
+          return "";
+        }
       });
       this.fireEvent("nodeMoving");
+    },
+
+    __turnIntoIteratorUI: function() {
+      const width = 150;
+      const height = 69;
+      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
+
+      if (this.__svgWorkbenchCanvas) {
+        const nShadows = 2;
+        this.shadows = [];
+        for (let i=0; i<nShadows; i++) {
+          const nodeUIShadow = this.__svgWorkbenchCanvas.drawNodeUI(width, height, this.self().CIRCLED_RADIUS);
+          this.shadows.push(nodeUIShadow);
+        }
+      }
+
+      this.__addIterationValue();
+    },
+
+    __addIterationValue: function() {
+      const label = new qx.ui.basic.Label().set({
+        paddingLeft: 5,
+        font: "text-18"
+      });
+      const chipContainer = this.getChildControl("chips");
+      chipContainer.add(label);
+      this.getNode().bind("outputs", label, "value", {
+        converter: outputs => {
+          const portKey = "out_1";
+          if (portKey in outputs && "value" in outputs[portKey]) {
+            return String(outputs[portKey]["value"]);
+          }
+          return "";
+        }
+      });
+    },
+
+    __turnIntoProbeUI: function() {
+      const width = 150;
+      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
+
+      const label = new qx.ui.basic.Label().set({
+        paddingLeft: 5,
+        font: "text-18"
+      });
+      const chipContainer = this.getChildControl("chips");
+      chipContainer.add(label);
+
+      this.getNode().getPropsForm().addListener("linkFieldModified", () => this.__setProbeValue(label), this);
+      this.__setProbeValue(label);
+    },
+
+    __setProbeValue: function(label) {
+      const link = this.getNode().getPropsForm().getLink("in_1");
+      if (link && "nodeUuid" in link) {
+        const inputNodeId = link["nodeUuid"];
+        const portKey = link["output"];
+        const inputNode = this.getNode().getWorkbench().getNode(inputNodeId);
+        if (inputNode) {
+          inputNode.bind("outputs", label, "value", {
+            converter: outputs => {
+              if (portKey in outputs && "value" in outputs[portKey]) {
+                return String(outputs[portKey]["value"]);
+              }
+              return "";
+            }
+          });
+        }
+      } else {
+        label.setValue("");
+      }
     },
 
     // overridden
@@ -340,22 +452,34 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       });
     },
 
-    // implement osparc.component.filter.IFilterable
-    _shouldApplyFilter: function(data) {
-      if (data.text) {
-        const label = this.getNode().getLabel()
-          .trim()
-          .toLowerCase();
-        if (label.indexOf(data.text) === -1) {
+    __filterText: function(text) {
+      const label = this.getNode().getLabel()
+        .trim()
+        .toLowerCase();
+      if (label.indexOf(text) === -1) {
+        return true;
+      }
+      return false;
+    },
+
+    __filterTags: function(tags) {
+      if (tags && tags.length) {
+        const category = this.getNode().getMetaData().category || "";
+        const type = this.getNode().getMetaData().type || "";
+        if (!tags.includes(osparc.utils.Utils.capitalize(category.trim())) && !tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
           return true;
         }
       }
+      return false;
+    },
+
+    // implement osparc.component.filter.IFilterable
+    _shouldApplyFilter: function(data) {
+      if (data.text) {
+        return this.__filterText(data.text);
+      }
       if (data.tags && data.tags.length) {
-        const category = this.getNode().getMetaData().category || "";
-        const type = this.getNode().getMetaData().type || "";
-        if (!data.tags.includes(osparc.utils.Utils.capitalize(category.trim())) && !data.tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
-          return true;
-        }
+        return this.__filterTags(data.tags);
       }
       return false;
     }

@@ -18,54 +18,43 @@
 qx.Class.define("osparc.component.snapshots.Snapshots", {
   extend: osparc.ui.table.Table,
 
-  construct: function(primaryStudy) {
-    this.__primaryStudy = primaryStudy;
-
+  construct: function() {
     const model = this.__initModel();
 
     this.base(arguments, model, {
       initiallyHiddenColumns: [
-        this.self().T_POS.STUDY_ID.col,
-        this.self().T_POS.SNAPSHOT_ID.col,
-        this.self().T_POS.PARENT_ID.col
+        this.self().T_POS.ID.col
       ],
       statusBarVisible: false
     });
 
-    this.setColumnWidth(this.self().T_POS.NAME.col, 220);
+    this.setColumnWidth(this.self().T_POS.TAGS.col, 100);
+    this.setColumnWidth(this.self().T_POS.MESSAGE.col, 150);
     this.setColumnWidth(this.self().T_POS.DATE.col, 130);
-
-    this.__populateSnapshotsTable();
   },
 
   statics: {
     T_POS: {
-      STUDY_ID: {
+      ID: {
         col: 0,
-        label: "StudyId"
+        label: "Id"
       },
-      NAME: {
+      TAGS: {
         col: 1,
-        label: qx.locale.Manager.tr("Snapshot Name")
+        label: qx.locale.Manager.tr("Tags")
+      },
+      MESSAGE: {
+        col: 2,
+        label: qx.locale.Manager.tr("Message")
       },
       DATE: {
-        col: 2,
-        label: qx.locale.Manager.tr("Created At")
-      },
-      SNAPSHOT_ID: {
         col: 3,
-        label: "SnapshotId"
-      },
-      PARENT_ID: {
-        col: 4,
-        label: "ParentId"
+        label: qx.locale.Manager.tr("Created At")
       }
     }
   },
 
   members: {
-    __primaryStudy: null,
-
     getRowData: function(rowIdx) {
       return this.getTableModel().getRowDataAsMap(rowIdx);
     },
@@ -84,29 +73,34 @@ qx.Class.define("osparc.component.snapshots.Snapshots", {
       return model;
     },
 
-    __populateSnapshotsTable: function() {
-      const columnModel = this.getTableColumnModel();
-      columnModel.setDataCellRenderer(this.self().T_POS.STUDY_ID.col, new qx.ui.table.cellrenderer.String());
-      columnModel.setDataCellRenderer(this.self().T_POS.NAME.col, new qx.ui.table.cellrenderer.String());
-      columnModel.setDataCellRenderer(this.self().T_POS.DATE.col, new qx.ui.table.cellrenderer.Date());
-      columnModel.setDataCellRenderer(this.self().T_POS.SNAPSHOT_ID.col, new qx.ui.table.cellrenderer.String());
-      columnModel.setDataCellRenderer(this.self().T_POS.PARENT_ID.col, new qx.ui.table.cellrenderer.String());
+    setSelection: function(snapshotId) {
+      this.resetSelection();
+      for (let i=0; i<this.getTableModel().getRowCount(); i++) {
+        if (this.getRowData(i)["Id"] === snapshotId) {
+          this.getSelectionModel().setSelectionInterval(i, i);
+          return;
+        }
+      }
+    },
 
-      this.__primaryStudy.getSnapshots()
-        .then(snapshots => {
-          const rows = [];
-          snapshots.reverse().forEach(snapshot => {
-            const row = [];
-            row[this.self().T_POS.STUDY_ID.col] = snapshot["project_uuid"];
-            row[this.self().T_POS.NAME.col] = snapshot["label"];
-            const date = new Date(snapshot["created_at"]);
-            row[this.self().T_POS.DATE.col] = osparc.utils.Utils.formatDateAndTime(date);
-            row[this.self().T_POS.SNAPSHOT_ID.col] = snapshot["id"];
-            row[this.self().T_POS.PARENT_ID.col] = snapshot["parent_uuid"];
-            rows.push(row);
-          });
-          this.getTableModel().setData(rows, false);
-        });
+    populateTable: function(snapshots) {
+      const columnModel = this.getTableColumnModel();
+      columnModel.setDataCellRenderer(this.self().T_POS.ID.col, new qx.ui.table.cellrenderer.Number());
+      columnModel.setDataCellRenderer(this.self().T_POS.TAGS.col, new qx.ui.table.cellrenderer.String());
+      columnModel.setDataCellRenderer(this.self().T_POS.MESSAGE.col, new qx.ui.table.cellrenderer.String());
+      columnModel.setDataCellRenderer(this.self().T_POS.DATE.col, new qx.ui.table.cellrenderer.Date());
+
+      const rows = [];
+      snapshots.forEach(snapshot => {
+        const date = new Date(snapshot["created_at"]);
+        const row = [];
+        row[this.self().T_POS.ID.col] = snapshot["id"];
+        row[this.self().T_POS.TAGS.col] = snapshot["tags"].join(", ");
+        row[this.self().T_POS.MESSAGE.col] = snapshot["message"];
+        row[this.self().T_POS.DATE.col] = osparc.utils.Utils.formatDateAndTime(date);
+        rows.push(row);
+      });
+      this.getTableModel().setData(rows, false);
     }
   }
 });

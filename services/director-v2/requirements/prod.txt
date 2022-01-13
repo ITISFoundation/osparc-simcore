@@ -10,9 +10,12 @@
 --requirement _base.txt
 
 # installs this repo's packages
+../../packages/dask-task-models-library/
 ../../packages/models-library
-../../packages/settings-library/
 ../../packages/postgres-database/
+../../packages/service-library[fastapi]
+../../packages/settings-library/
+../../packages/simcore-sdk/
 
 # installs current package
 .

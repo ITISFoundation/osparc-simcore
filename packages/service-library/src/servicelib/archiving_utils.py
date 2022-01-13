@@ -1,8 +1,9 @@
 import asyncio
+import fnmatch
 import logging
 import zipfile
 from pathlib import Path
-from typing import Iterator, Optional, Set, Tuple, Union
+from typing import Iterator, List, Optional, Set, Tuple, Union
 
 from servicelib.pools import non_blocking_process_pool_executor
 
@@ -15,15 +16,20 @@ def _strip_undecodable_in_path(path: Path) -> Path:
     return Path(str(path).encode(errors="replace").decode("utf-8"))
 
 
-def _full_file_path_from_dir_and_subdirs(dir_path: Path) -> Iterator[Path]:
+def _iter_files_to_compress(
+    dir_path: Path, exclude_patterns: Optional[List[str]]
+) -> Iterator[Path]:
+    exclude_patterns = exclude_patterns if exclude_patterns else []
     for path in dir_path.rglob("*"):
-        if path.is_file():
+        if path.is_file() and not any(
+            fnmatch.fnmatch(f"{path}", x) for x in exclude_patterns
+        ):
             yield path
 
 
 def _strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
-    to_strip = f"{str(to_strip)}/"
-    return Path(str(input_path).replace(to_strip, ""))
+    _to_strip = f"{str(to_strip)}/"
+    return Path(str(input_path).replace(_to_strip, ""))
 
 
 def _read_in_chunks(file_object, chunk_size=1024 * 8):
@@ -120,16 +126,20 @@ async def unarchive_dir(
             )
 
 
-def _serial_add_to_archive(
-    dir_to_compress: Path, destination: Path, compress: bool, store_relative_path: bool
+def _add_to_archive(
+    dir_to_compress: Path,
+    destination: Path,
+    compress: bool,
+    store_relative_path: bool,
+    exclude_patterns: List[str] = None,
 ) -> Optional[Exception]:
     try:
         compression = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
         with zipfile.ZipFile(
             destination, "w", compression=compression
         ) as zip_file_handler:
-            files_to_compress_generator = _full_file_path_from_dir_and_subdirs(
-                dir_to_compress
+            files_to_compress_generator = _iter_files_to_compress(
+                dir_to_compress, exclude_patterns
             )
             for file_to_add in files_to_compress_generator:
                 try:
@@ -155,24 +165,32 @@ def _serial_add_to_archive(
 
 
 async def archive_dir(
-    dir_to_compress: Path, destination: Path, compress: bool, store_relative_path: bool
+    dir_to_compress: Path,
+    destination: Path,
+    compress: bool,
+    store_relative_path: bool,
+    exclude_patterns: List[str] = None,
 ) -> None:
     """
     When archiving, undecodable bytes in filenames will be escaped,
     zipfile does not like them.
     When unarchiveing, the **escaped version** of the file names
     will be created.
+
+    The **exclude_patterns** is a list of patterns created using
+    Unix shell-style wildcards to exclude files and directories.
     """
     with non_blocking_process_pool_executor(max_workers=1) as pool:
         add_to_archive_error: Union[
             None, Exception
         ] = await asyncio.get_event_loop().run_in_executor(
             pool,
-            _serial_add_to_archive,
+            _add_to_archive,
             dir_to_compress,
             destination,
             compress,
             store_relative_path,
+            exclude_patterns,
         )
 
         if isinstance(add_to_archive_error, Exception):
@@ -223,7 +241,7 @@ class PrunableFolder:
 
         for p in to_delete:
             path = self.basedir / p
-            assert path.exists()
+            assert path.exists()  # nosec
 
             if path.is_file():
                 path.unlink()

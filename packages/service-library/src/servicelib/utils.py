@@ -7,7 +7,6 @@ IMPORTANT: lowest level module
 import asyncio
 import logging
 import os
-
 from pathlib import Path
 from typing import Any, Awaitable, Coroutine, List, Optional, Union
 
@@ -79,8 +78,11 @@ def fire_and_forget_task(
 
 # // tasks
 async def logged_gather(
-    *tasks, reraise: bool = True, log: logging.Logger = logger, max_concurrency: int = 0
-) -> List[Any]:
+    *tasks: Awaitable[Any],
+    reraise: bool = True,
+    log: logging.Logger = logger,
+    max_concurrency: int = 0,
+) -> List[Optional[Any]]:
     """
         Thin wrapper around asyncio.gather that allows excuting ALL tasks concurently until the end
         even if any of them fail. Finally, all errors are logged and the first raised (if reraise=True)
@@ -91,18 +93,15 @@ async def logged_gather(
         use directly asyncio.gather(*tasks, return_exceptions=True).
 
     :param reraise: reraises first exception (in order the tasks were passed) concurrent tasks, defaults to True
-    :type reraise: bool, optional
     :param log: passing the logger gives a chance to identify the origin of the gather call, defaults to current submodule's logger
-    :type log: logging.Logger, optional
     :return: list of tasks results and errors e.g. [1, 2, ValueError("task3 went wrong"), 33, "foo"]
-    :rtype: List[Any]
     """
 
     wrapped_tasks = tasks
     if max_concurrency > 0:
         semaphore = asyncio.Semaphore(max_concurrency)
 
-        async def sem_task(task):
+        async def sem_task(task: Awaitable[Any]) -> Any:
             async with semaphore:
                 return await task
 

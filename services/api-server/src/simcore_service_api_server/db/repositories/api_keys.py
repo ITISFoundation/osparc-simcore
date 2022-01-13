@@ -2,8 +2,8 @@ import logging
 from typing import Optional
 
 import sqlalchemy as sa
-from psycopg2 import DatabaseError
 from pydantic.types import PositiveInt
+from simcore_postgres_database.errors import DatabaseError
 
 from .. import tables as tbl
 from ._base import BaseRepository

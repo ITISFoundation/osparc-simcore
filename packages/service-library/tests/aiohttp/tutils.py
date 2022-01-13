@@ -1,15 +1,17 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-import
+# pylint: disable=no-self-use
+
 import asyncio
 import json
+from dataclasses import dataclass
 
-import attr
 from aiohttp import web
-from servicelib.aiohttp.rest_codecs import DataEncoder
+from servicelib.json_serialization import json_dumps
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class Data:
     x: int = 3
     y: str = "foo"
@@ -64,4 +66,4 @@ class Handlers:
         loop = asyncio.get_event_loop()
         data = loop.run_until_complete(coro(None))
 
-        return json.loads(json.dumps(data, cls=DataEncoder)) if process else data
+        return json.loads(json_dumps(data)) if process else data

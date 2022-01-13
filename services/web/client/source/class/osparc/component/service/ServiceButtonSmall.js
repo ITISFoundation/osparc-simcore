@@ -33,6 +33,8 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
     if (serviceModel) {
       this.setServiceModel(serviceModel);
     }
+
+    this.subscribeToFilterGroup("serviceCatalog");
   },
 
   properties: {
@@ -83,6 +85,30 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
           allowGrowY: true
         });
       }
+    },
+
+    _filterText: function(text) {
+      const checks = [
+        this.getServiceModel().getName(),
+        this.getServiceModel().getDescription(),
+        this.getServiceModel().getContact()
+      ];
+      return osparc.dashboard.CardBase.filterText(checks, text);
+    },
+
+    _filterTags: function(tags) {
+      if (tags && tags.length) {
+        const type = this.getServiceModel().getType() || "";
+        if (!tags.includes(osparc.utils.Utils.capitalize(type.trim()))) {
+          return true;
+        }
+      }
+      return false;
+    },
+
+    _filterClassifiers: function(classifiers) {
+      const checks = this.getServiceModel().getClassifiers();
+      return osparc.dashboard.CardBase.filterText(checks, classifiers);
     }
   }
 });

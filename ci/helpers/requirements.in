@@ -1,7 +1,8 @@
 # Minimal packages for install_pylint.bash
 #
-# NOTE: keep frozen since it caused errors in the past
-celery==4.4.7
-docker==4.3.1
-pyjwt==1.7.1
-aiohttp==3.7.4.post0
+# Installing these void e.g. E0611: No name 'UploadFile' in module 'fastapi' (no-name-in-module)
+#
+aiohttp
+docker
+fastapi
+pyjwt

@@ -1,4 +1,5 @@
 --constraint ../../../requirements/constraints.txt
+--constraint ./constraints.txt
 --constraint _base.txt
 
 pytest
@@ -12,3 +13,4 @@ faker
 types-pkg_resources
 types-aiofiles
 types-PyYAML
+pytest-asyncio

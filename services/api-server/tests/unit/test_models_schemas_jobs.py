@@ -11,7 +11,7 @@ from uuid import uuid4
 
 import pytest
 from fastapi import FastAPI
-from simcore_service_api_server._meta import api_vtag
+from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.core.application import init_app
 from simcore_service_api_server.models.schemas.jobs import (
     Job,
@@ -104,4 +104,4 @@ def test_job_resouce_names_has_associated_url(app: FastAPI):
         "get_job", solver_key=solver_key, version=solver_version, job_id=str(job_id)
     )
 
-    assert url_path == f"/{api_vtag}/{urllib.parse.unquote_plus(job_name)}"
+    assert url_path == f"/{API_VTAG}/{urllib.parse.unquote_plus(job_name)}"

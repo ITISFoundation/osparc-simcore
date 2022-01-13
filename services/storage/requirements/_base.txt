@@ -6,8 +6,15 @@
 #
 aiobotocore==1.4.1
     # via -r requirements/_base.in
-aiofiles==0.7.0
-    # via -r requirements/_base.in
+aiodebug==2.3.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+aiofiles==0.8.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
 aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -29,15 +36,10 @@ aiopg==1.3.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_aiohttp.in
     #   -r requirements/_base.in
-aiozipkin==0.7.1
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/../../../packages/service-library/requirements/_aiohttp.in
+aiozipkin==1.1.1
+    # via -r requirements/../../../packages/service-library/requirements/_aiohttp.in
+alembic==1.7.4
+    # via -r requirements/../../../packages/postgres-database/requirements/_base.in
 async-timeout==3.0.1
     # via
     #   aiohttp
@@ -45,6 +47,7 @@ async-timeout==3.0.1
 attrs==20.3.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_aiohttp.in
     #   aiohttp
     #   jsonschema
@@ -64,10 +67,22 @@ email-validator==1.1.3
 idna==2.10
     # via
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   email-validator
     #   yarl
+importlib-metadata==4.8.1
+    # via alembic
+importlib-resources==5.3.0 ; python_version < "3.9"
+    # via
+    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   alembic
 isodate==0.6.0
     # via
     #   openapi-core
@@ -85,6 +100,8 @@ jmespath==0.10.0
     # via botocore
 jsonschema==3.2.0
     # via
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_aiohttp.in
     #   openapi-schema-validator
     #   openapi-spec-validator
@@ -92,10 +109,13 @@ lazy-object-proxy==1.4.3
     # via
     #   -r requirements/../../../packages/service-library/requirements/_aiohttp.in
     #   openapi-core
+mako==1.1.5
+    # via alembic
 markupsafe==1.1.1
     # via
     #   aiohttp-swagger
     #   jinja2
+    #   mako
 minio==7.0.4
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -131,7 +151,12 @@ pydantic==1.8.2
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
+pyinstrument==4.1.1
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 pyrsistent==0.18.0
     # via jsonschema
 python-dateutil==2.8.2
@@ -142,9 +167,12 @@ pyyaml==5.4.1
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   aiohttp-swagger
     #   openapi-spec-validator
 semantic-version==2.8.5
@@ -167,27 +195,26 @@ sqlalchemy==1.3.24
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
+    #   alembic
 strict-rfc3339==0.7
     # via openapi-core
 tenacity==8.0.1
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
-trafaret==2.1.0
-    # via -r requirements/../../../packages/service-library/requirements/_aiohttp.in
 typer==0.4.0
     # via
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
     #   -r requirements/_base.in
-typing-extensions==3.10.0.0
+typing-extensions==3.10.0.2
     # via
+    #   aiodebug
     #   aiohttp
     #   pydantic
 ujson==4.0.2
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/./_base.in
-    #   aiohttp-swagger
-urllib3==1.26.6
+    # via aiohttp-swagger
+urllib3==1.26.7
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -203,9 +230,12 @@ wrapt==1.12.1
     # via aiobotocore
 yarl==1.5.1
     # via
-    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiohttp
+zipp==3.6.0
+    # via
+    #   importlib-metadata
+    #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

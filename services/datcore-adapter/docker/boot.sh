@@ -42,6 +42,5 @@ if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     --reload-dir services/datcore-adapter/src/simcore_service_datcore_adapter
 else
   exec uvicorn simcore_service_datcore_adapter.main:the_app \
-    --host 0.0.0.0 \
-    --reload-dir services/datcore-adapter/src/simcore_service_datcore_adapter
+    --host 0.0.0.0
 fi

@@ -1,15 +1,18 @@
 import re
-from typing import Dict
+from typing import Any, Dict
 
 from aiohttp import web
-from yarl import URL
-
+from aiohttp.test_utils import TestClient
 from simcore_service_webserver.db_models import UserRole, UserStatus
 from simcore_service_webserver.login.cfg import cfg, get_storage
 from simcore_service_webserver.login.registration import create_invitation
 from simcore_service_webserver.login.utils import encrypt_password, get_random_string
+from yarl import URL
 
 from .utils_assert import assert_status
+
+# WARNING: UserDict is already in https://docs.python.org/3/library/collections.html#collections.UserDict
+AUserDict = Dict[str, Any]
 
 TEST_MARKS = re.compile(r"TEST (\w+):(.*)")
 
@@ -32,7 +35,7 @@ def parse_link(text):
     return URL(link).path
 
 
-async def create_user(data=None) -> Dict:
+async def create_user(data=None) -> AUserDict:
     data = data or {}
     password = get_random_string(10)
     params = {
@@ -49,14 +52,16 @@ async def create_user(data=None) -> Dict:
     return user
 
 
-async def log_client_in(client, user_data=None, *, enable_check=True) -> Dict:
+async def log_client_in(
+    client: TestClient, user_data=None, *, enable_check=True
+) -> AUserDict:
     # creates user directly in db
     user = await create_user(user_data)
 
     # login
     url = client.app.router["auth_login"].url_for()
     r = await client.post(
-        url,
+        str(url),
         json={
             "email": user["email"],
             "password": user["raw_password"],
@@ -89,7 +94,7 @@ class LoggedUser(NewUser):
         self.client = client
         self.enable_check = check_if_succeeds
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> AUserDict:
         self.user = await log_client_in(
             self.client, self.params, enable_check=self.enable_check
         )

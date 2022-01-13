@@ -9,7 +9,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services import DYNAMIC_SERVICE_KEY_RE, VERSION_RE
 from pydantic import BaseModel, Field
 
-from ....meta import api_vtag
+from ....meta import API_VTAG
 from ..constants import UserID
 
 
@@ -21,8 +21,8 @@ class ServiceType(Enum):
     These values are attached to the dynamic-sidecar and its relative proxy.
     """
 
-    MAIN = f"main-{api_vtag}"
-    DEPENDENCY = f"dependency-{api_vtag}"
+    MAIN = f"main-{API_VTAG}"
+    DEPENDENCY = f"dependency-{API_VTAG}"
 
 
 class CommonServiceDetails(BaseModel):
@@ -86,15 +86,15 @@ class ServiceState(Enum):
 
     def __lt__(self, other):
         if self.__class__ is other.__class__:
-            comparison_order = self.comparison_order()
+            comparison_order = ServiceState.comparison_order()
             self_index = comparison_order[self]
             other_index = comparison_order[other]
             return self_index < other_index
         return NotImplemented
 
-    @classmethod
+    @staticmethod
     @lru_cache(maxsize=2)
-    def comparison_order(cls) -> Dict["ServiceState", int]:
+    def comparison_order() -> Dict["ServiceState", int]:
         """States are comparable to supportmin() on a list of ServiceState"""
         return {
             ServiceState.FAILED: 0,

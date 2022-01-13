@@ -2,28 +2,31 @@ const pathLib = require('path');
 const URL = require('url').URL;
 
 const SCREENSHOTS_DIR = "../screenshots/";
+const DEFAULT_TIMEOUT = 60000;
 
 function parseCommandLineArguments(args) {
   // node $tutorial.js [url] [user] [password] [--demo]
 
   if (args.length < 1) {
-    console.log('More arguments expected:  $tutorial.js [url] [user] [password] [--demo]');
+    console.log('More arguments expected:  $tutorial.js [url] [user] [password] [start_timeout] [--demo]');
     process.exit(1);
   }
 
   const url = args[0];
-  const enableDemoMode = args.includes("--demo");
   const {
     user,
     pass,
     newUser
   } = getUserAndPass(args);
+  const startTimeout = args.length > 3 ? args[3] : DEFAULT_TIMEOUT;
+  const enableDemoMode = args.includes("--demo");
 
   return {
     url,
     user,
     pass,
     newUser,
+    startTimeout,
     enableDemoMode
   }
 }
@@ -31,18 +34,20 @@ function parseCommandLineArguments(args) {
 function parseCommandLineArgumentsTemplate(args) {
   // node $template.js [url] [template_uuid] [--demo]
 
-  if (args.length < 2) {
-    console.log('More arguments expected: $template.js [url_prefix] [template_uuid] [--demo]');
+  if (args.length < 3) {
+    console.log('More arguments expected: $template.js [url_prefix] [template_uuid] [start_timeout] [--demo]');
     process.exit(1);
   }
 
   const urlPrefix = args[0];
   const templateUuid = args[1];
+  const startTimeout = args[2];
   const enableDemoMode = args.includes("--demo");
 
   return {
     urlPrefix,
     templateUuid,
+    startTimeout,
     enableDemoMode
   }
 }
@@ -50,8 +55,8 @@ function parseCommandLineArgumentsTemplate(args) {
 function parseCommandLineArgumentsStudyDispatcherParams(args) {
   // [url] [download_link] [file_size] [--demo]
 
-  if (args.length < 3) {
-    console.log('More arguments expected: [url] [download_link] [file_size] [--demo]');
+  if (args.length < 4) {
+    console.log('More arguments expected: [url] [download_link] [file_size] [start_timeout] [--demo]');
     process.exit(1);
   }
 
@@ -59,11 +64,13 @@ function parseCommandLineArgumentsStudyDispatcherParams(args) {
   const params = {};
   params["download_link"] = args[1];
   params["file_size"] = args[2];
+  const startTimeout = args[2];
   const enableDemoMode = args.includes("--demo");
 
   return {
     urlPrefix,
     params,
+    startTimeout,
     enableDemoMode
   }
 }
@@ -107,16 +114,15 @@ function getDomain(url) {
 async function getNodeTreeItemIDs(page) {
   const childrenIDs = await page.evaluate((selector) => {
     const children = [];
-    const treeRoot = document.querySelector(selector);
-    if (treeRoot.parentElement) {
-      const tree = treeRoot.parentElement;
-      for (let i = 1; i < tree.children.length; i++) {
-        const child = tree.children[i];
-        children.push(child.getAttribute("osparc-test-id"));
+    const nodeTreeItems = document.querySelectorAll(selector);
+    nodeTreeItems.forEach(nodeTreeItem => {
+      const nodeId = nodeTreeItem.getAttribute("osparc-test-more")
+      if (nodeId !== "root") {
+        children.push(nodeId);
       }
-    }
+    });
     return children;
-  }, '[osparc-test-id="nodeTreeItem_root"]');
+  }, '[osparc-test-id="nodeTreeItem"]');
   return childrenIDs;
 }
 
@@ -299,21 +305,29 @@ async function isServiceConnected(page, studyId, nodeId) {
   return connected;
 }
 
-async function isStudyDone(page, studyId) {
+async function getStudyState(page, studyId) {
   const endPoint = "/projects/" + studyId + "/state";
-  console.log("-- Is study done", endPoint);
+  console.log("-- Get study state", endPoint);
   const resp = await makeRequest(page, endPoint);
 
   if (resp !== null && "state" in resp && "value" in resp["state"]) {
-    const pipelineStatus = resp["state"]["value"];
-    console.log("Pipeline Status:", studyId, pipelineStatus);
+    const state = resp["state"]["value"];
+    console.log("-----> study state", state);
+    return state;
+  }
+  console.log("Unable to parse Pipeline Status:", JSON.stringify(resp));
+  return null;
+}
+
+async function isStudyDone(page, studyId) {
+  const state = await getStudyState(page, studyId);
+  if (state) {
     const stopListening = [
       "SUCCESS",
       "FAILED"
     ];
-    return stopListening.includes(pipelineStatus);
+    return stopListening.includes(state);
   }
-  console.log("Unable to parse Pipeline Status:", JSON.stringify(resp));
   return false;
 }
 
@@ -459,8 +473,8 @@ function isElementVisible(page, selector) {
 }
 
 async function clickLoggerTitle(page) {
-  console.log("Click LoggerTitle");
-  await this.waitAndClick(page, '[osparc-test-id="studyLoggerTitleLabel"]')
+  console.log("Click Logger");
+  await this.waitAndClick(page, '[osparc-test-id="loggerTabButton"]')
 }
 
 
@@ -479,6 +493,7 @@ module.exports = {
   waitForResponse,
   isServiceReady,
   isServiceConnected,
+  getStudyState,
   isStudyDone,
   isStudyUnlocked,
   waitForValidOutputFile,

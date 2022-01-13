@@ -8,6 +8,7 @@
 #
 --constraint _base.txt
 --constraint _aiohttp.txt
+--constraint _fastapi.txt
 
 # testing
 coverage
@@ -20,6 +21,10 @@ pytest-docker
 pytest-mock
 pytest-sugar
 
-# tools
+faker
+
 pylint  # NOTE: The version in pylint at _text.txt is used as a reference for ci/helpers/install_pylint.bash
 coveralls
+
+# openapi validator
+openapi-spec-validator

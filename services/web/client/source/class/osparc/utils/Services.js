@@ -33,17 +33,35 @@ qx.Class.define("osparc.utils.Services", {
 
   statics: {
     TYPES: {
+      parameter: {
+        label: qx.locale.Manager.tr("Parameter"),
+        icon: "@FontAwesome5Solid/sliders-h/",
+        sorting: 0
+      },
+      file: {
+        label: qx.locale.Manager.tr("File"),
+        icon: "@FontAwesome5Solid/file/",
+        sorting: 1
+      },
+      iterator: {
+        label: qx.locale.Manager.tr("Iterator"),
+        icon: "@FontAwesome5Solid/copy/",
+        sorting: 2
+      },
       computational: {
-        label: "Computational",
-        icon: "@FontAwesome5Solid/cogs/"
+        label: qx.locale.Manager.tr("Computational"),
+        icon: "@FontAwesome5Solid/cogs/",
+        sorting: 3
       },
       dynamic: {
-        label: "Interactive",
-        icon: "@FontAwesome5Solid/mouse-pointer/"
+        label: qx.locale.Manager.tr("Interactive"),
+        icon: "@FontAwesome5Solid/mouse-pointer/",
+        sorting: 4
       },
-      container: {
-        label: "Group of nodes",
-        icon: "@FontAwesome5Solid/box-open/"
+      probe: {
+        label: qx.locale.Manager.tr("Probe"),
+        icon: "@FontAwesome5Solid/thermometer/",
+        sorting: 5
       }
     },
 
@@ -65,6 +83,22 @@ qx.Class.define("osparc.utils.Services", {
 
     getType: function(type) {
       return this.TYPES[type.trim().toLowerCase()];
+    },
+
+    getIcon: function(type) {
+      const typeInfo = this.getType(type);
+      if (typeInfo) {
+        return typeInfo["icon"];
+      }
+      return null;
+    },
+
+    getSorting(type) {
+      const typeInfo = this.getType(type);
+      if (typeInfo) {
+        return typeInfo["sorting"];
+      }
+      return 0;
     },
 
     convertArrayToObject: function(servicesArray) {

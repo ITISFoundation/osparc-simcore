@@ -50,18 +50,20 @@ qx.Class.define("osparc.io.WatchDog", {
     const socket = osparc.wrapper.WebSocket.getInstance();
     const socketIoEventName = "set_heartbeat_emit_interval";
     socket.removeSlot(socketIoEventName);
-    socket.on(socketIoEventName, emitIntervalSeconds => {
-      const newInterval = parseInt(emitIntervalSeconds) * 1000;
+    socket.on(socketIoEventName, jsonString => {
+      const data = JSON.parse(jsonString);
+      const newInterval = parseInt(data.interval) * 1000;
       this.setHeartbeatInterval(newInterval);
     }, this);
   },
 
   properties: {
-    onLine: {
+    online: {
       check: "Boolean",
       init: false,
       nullable: false,
-      apply: "_applyOnLine"
+      event: "changeOnline",
+      apply: "_applyOnline"
     },
 
     heartbeatInterval: {
@@ -75,10 +77,10 @@ qx.Class.define("osparc.io.WatchDog", {
   members: {
     __clientHeartbeatWWPinger: null,
 
-    _applyOnLine: function(value) {
+    _applyOnline: function(value) {
       let logo = osparc.component.widget.LogoOnOff.getInstance();
       if (logo) {
-        logo.setOnLine(value);
+        logo.setOnline(value);
       }
 
       if (value) {

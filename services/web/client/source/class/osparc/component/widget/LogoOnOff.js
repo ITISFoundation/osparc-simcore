@@ -62,16 +62,16 @@ qx.Class.define("osparc.component.widget.LogoOnOff", {
   },
 
   properties: {
-    onLine: {
+    online: {
       check: "Boolean",
       init: false,
       nullable: false,
-      apply: "_applyOnLine"
+      apply: "_applyOnline"
     }
   },
 
   members: {
-    _applyOnLine: function(value) {
+    _applyOnline: function(value) {
       this.setSelection([this.getSelectables()[value ? 1 : 0]]);
     }
   }

@@ -54,9 +54,7 @@ qx.Class.define("osparc.navigation.BreadcrumbNavigation", {
         ...osparc.navigation.NavigationBar.BUTTON_OPTIONS,
         maxWidth: 200
       });
-      btn.addListener("execute", () => {
-        this.fireDataEvent("nodeSelected", nodeId);
-      }, this);
+      btn.addListener("execute", () => this.fireDataEvent("nodeSelected", nodeId), this);
       return btn;
     },
 
@@ -76,17 +74,20 @@ qx.Class.define("osparc.navigation.BreadcrumbNavigation", {
           marginLeft: -1,
           marginRight: -1
         });
-        if (breadcrumbSplitter.getReady()) {
-          breadcrumbSplitter.setLeftWidget(thisBtn);
-          if (nextBtn) {
-            breadcrumbSplitter.setRightWidget(nextBtn);
+        const addLeftRightWidgets = (leftBtn, rightBtn) => {
+          if (shape === "separator" && (!leftBtn || !rightBtn)) {
+            return;
           }
+          breadcrumbSplitter.setLeftWidget(leftBtn);
+          if (rightBtn) {
+            breadcrumbSplitter.setRightWidget(rightBtn);
+          }
+        };
+        if (breadcrumbSplitter.getReady()) {
+          addLeftRightWidgets(thisBtn, nextBtn);
         } else {
           breadcrumbSplitter.addListenerOnce("SvgWidgetReady", () => {
-            breadcrumbSplitter.setLeftWidget(thisBtn);
-            if (nextBtn) {
-              breadcrumbSplitter.setRightWidget(nextBtn);
-            }
+            addLeftRightWidgets(thisBtn, nextBtn);
           }, this);
         }
         this._add(breadcrumbSplitter);

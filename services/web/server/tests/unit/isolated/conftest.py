@@ -1,21 +1,18 @@
-from pathlib import Path
-import string
-import secrets
-import random
+import json
 import os
-from typing import Iterator
+import random
+from pathlib import Path
+from typing import Any, Dict
 
 import pytest
+from faker import Faker
 
 
 @pytest.fixture
-def dir_with_random_content(tmpdir) -> Path:
-    def random_string(length: int) -> str:
-        return "".join(secrets.choice(string.ascii_letters) for i in range(length))
-
+def dir_with_random_content(tmpdir, faker: Faker) -> Path:
     def make_files_in_dir(dir_path: Path, file_count: int) -> None:
         for _ in range(file_count):
-            (dir_path / f"{random_string(8)}.bin").write_bytes(
+            (dir_path / f"{faker.file_name(extension='bin')}").write_bytes(
                 os.urandom(random.randint(1, 10))
             )
 
@@ -36,12 +33,11 @@ def dir_with_random_content(tmpdir) -> Path:
         subdirectories_count = random.randint(1, max_subdirectories_count)
         for _ in range(subdirectories_count):
             make_subdirectory_with_content(
-                subdir_name=subdir_name / f"{random_string(4)}",
+                subdir_name=subdir_name / f"{faker.word()}",
                 max_file_count=max_file_count,
             )
 
-    def get_dirs_and_subdris_in_path(path_to_scan: Path) -> Iterator[Path]:
-        return [path for path in path_to_scan.rglob("*") if path.is_dir()]
+    # -----------------------
 
     temp_dir_path = Path(tmpdir)
     data_container = ensure_dir(temp_dir_path / "study_data")
@@ -53,11 +49,21 @@ def dir_with_random_content(tmpdir) -> Path:
 
     # creates a good amount of files
     for _ in range(4):
-        for subdirectory_path in get_dirs_and_subdris_in_path(data_container):
+        for subdirectory_path in (
+            path for path in data_container.glob("*") if path.is_dir()
+        ):
             make_subdirectories_with_content(
                 subdir_name=subdirectory_path,
                 max_subdirectories_count=3,
                 max_file_count=3,
             )
 
-    yield temp_dir_path
+    return temp_dir_path
+
+
+@pytest.fixture
+def fake_project_data(fake_data_dir: Path) -> Dict[str, Any]:
+    # NOTE: avoids 'scope=session' because tests can
+    # change the fixture data.
+    with (fake_data_dir / "fake-project.json").open() as fp:
+        return json.load(fp)

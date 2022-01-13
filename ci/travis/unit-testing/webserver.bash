@@ -1,8 +1,8 @@
 #!/bin/bash
 # http://redsymbol.net/articles/unofficial-bash-strict-mode/
-set -o errexit   # abort on nonzero exitstatus
-set -o nounset   # abort on unbound variable
-set -o pipefail  # don't hide errors within pipes
+set -o errexit  # abort on nonzero exitstatus
+set -o nounset  # abort on unbound variable
+set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 FOLDER_CHECKS=(api/ webserver packages/ services/web .travis.yml)
@@ -33,7 +33,9 @@ before_script() {
 test_isolated() {
   if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}"; then
 
-    pytest --cov=simcore_service_webserver --durations=10 --cov-append \
+    pytest --log-format="%(asctime)s %(levelname)s %(message)s" \
+      --log-date-format="%Y-%m-%d %H:%M:%S" \
+      --cov=simcore_service_webserver --durations=10 --cov-append \
       --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
       -v -m "not travis" services/web/server/tests/unit/isolated
   else
@@ -45,7 +47,9 @@ test_isolated() {
 test_with_db_slow() {
   if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}"; then
 
-    pytest --cov=simcore_service_webserver --durations=10 --cov-append \
+    pytest --log-format="%(asctime)s %(levelname)s %(message)s" \
+      --log-date-format="%Y-%m-%d %H:%M:%S" \
+      --cov=simcore_service_webserver --durations=10 --cov-append \
       --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
       -v -m "not travis" services/web/server/tests/unit/with_dbs/slow
   else
@@ -57,7 +61,9 @@ test_with_db_slow() {
 test_with_db_medium() {
   if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}"; then
 
-    pytest --cov=simcore_service_webserver --durations=10 --cov-append \
+    pytest --log-format="%(asctime)s %(levelname)s %(message)s" \
+      --log-date-format="%Y-%m-%d %H:%M:%S" \
+      --cov=simcore_service_webserver --durations=10 --cov-append \
       --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
       -v -m "not travis" services/web/server/tests/unit/with_dbs/medium
   else
@@ -69,7 +75,9 @@ test_with_db_medium() {
 test_with_db_fast() {
   if bash ci/travis/helpers/test-for-changes.bash "${FOLDER_CHECKS[@]}"; then
 
-    pytest --cov=simcore_service_webserver --durations=10 --cov-append \
+    pytest --log-format="%(asctime)s %(levelname)s %(message)s" \
+      --log-date-format="%Y-%m-%d %H:%M:%S" \
+      --cov=simcore_service_webserver --durations=10 --cov-append \
       --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
       -v -m "not travis" services/web/server/tests/unit/with_dbs/fast
   else

@@ -4,11 +4,12 @@ from typing import Optional
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from httpx import HTTPStatusError
+from servicelib.fastapi.tracing import setup_tracing
 from servicelib.logging_utils import config_all_loggers
 from starlette import status
 from starlette.exceptions import HTTPException
 
-from .._meta import api_version, api_vtag
+from .._meta import API_VERSION, API_VTAG
 from ..api.errors.http_error import (
     http_error_handler,
     make_http_error_handler_for_exception,
@@ -28,10 +29,11 @@ logger = logging.getLogger(__name__)
 
 def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings is None:
-        settings = AppSettings.create_from_env()
+        settings = AppSettings.create_from_envs()
+    assert settings  # nosec
 
-    logging.basicConfig(level=settings.loglevel)
-    logging.root.setLevel(settings.loglevel)
+    logging.basicConfig(level=settings.LOG_LEVEL.value)
+    logging.root.setLevel(settings.LOG_LEVEL.value)
     logger.debug("App settings:\n%s", settings.json(indent=2))
 
     # creates app instance
@@ -39,8 +41,8 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         debug=settings.debug,
         title="osparc.io web API",
         description="osparc-simcore public web API specifications",
-        version=api_version,
-        openapi_url=f"/api/{api_vtag}/openapi.json",
+        version=API_VERSION,
+        openapi_url=f"/api/{API_VTAG}/openapi.json",
         docs_url="/dev/doc",
         redoc_url=None,  # default disabled, see below
     )
@@ -49,20 +51,23 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     app.state.settings = settings
 
     # setup modules
-    if settings.boot_mode == BootModeEnum.DEBUG:
+    if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         remote_debug.setup(app)
 
-    if settings.webserver.enabled:
-        webserver.setup(app, settings.webserver)
+    if settings.API_SERVER_WEBSERVER:
+        webserver.setup(app, settings.API_SERVER_WEBSERVER)
 
-    if settings.catalog.enabled:
-        catalog.setup(app, settings.catalog)
+    if settings.API_SERVER_CATALOG:
+        catalog.setup(app, settings.API_SERVER_CATALOG)
 
-    if settings.storage.enabled:
-        storage.setup(app, settings.storage)
+    if settings.API_SERVER_STORAGE:
+        storage.setup(app, settings.API_SERVER_STORAGE)
 
-    if settings.director_v2.enabled:
-        director_v2.setup(app, settings.director_v2)
+    if settings.API_SERVER_DIRECTOR_V2:
+        director_v2.setup(app, settings.API_SERVER_DIRECTOR_V2)
+
+    if settings.API_SERVER_TRACING:
+        setup_tracing(app, settings.API_SERVER_TRACING)
 
     # setup app
     app.add_event_handler("startup", create_start_app_handler(app))
@@ -85,14 +90,14 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             Exception,
             override_detail_message="Internal error"
-            if settings.boot_mode == BootModeEnum.DEBUG
+            if settings.SC_BOOT_MODE == BootModeEnum.DEBUG
             else None,
         ),
     )
 
     # routing
 
-    # healthcheck at / and at /vX/
+    # healthcheck at / and at /VTAG/
     app.include_router(health_router)
 
     # docs
@@ -101,7 +106,7 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
 
     # api under /v*
     api_router = create_router(settings)
-    app.include_router(api_router, prefix=f"/{api_vtag}")
+    app.include_router(api_router, prefix=f"/{API_VTAG}")
 
     use_route_names_as_operation_ids(app)
     config_all_loggers()

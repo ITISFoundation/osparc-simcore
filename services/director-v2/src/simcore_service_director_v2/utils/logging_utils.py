@@ -10,9 +10,8 @@ import os
 import sys
 from asyncio import iscoroutinefunction
 from inspect import getframeinfo, stack
-from typing import Callable, Dict, Optional
-
-from celery.app.log import Logging
+from logging import Formatter
+from typing import Callable, Dict, Optional, Type
 
 log = logging.getLogger(__name__)
 
@@ -81,7 +80,7 @@ def config_all_loggers():
 
 def set_logging_handler(
     logger: logging.Logger,
-    formatter_base: Optional[Logging] = None,
+    formatter_base: Optional[Type[Formatter]] = None,
     formatting: Optional[str] = None,
 ) -> None:
     if not formatting:
@@ -117,7 +116,7 @@ def _log_arguments(
     }
 
     #  Before to the function execution, log function details.
-    logger_obj.info(
+    logger_obj.debug(
         "Arguments: %s - Begin function",
         formatted_arguments,
         extra=extra_args,

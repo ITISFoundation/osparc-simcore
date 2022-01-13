@@ -19,7 +19,7 @@
  * VirtualTree that is able to build its content.
  *
  *   Elements in the tree also accept Drag and/or Drop mechanisms which are implemented here.
- * "osparc-filePath" type is used for the Drag&Drop.
+ * "osparc-file-link" type is used for the Drag&Drop.
  *
  *   If a file is dropped into a folder, this class will start the copying proccess fireing
  * "fileCopied" event if successful
@@ -207,7 +207,7 @@ qx.Class.define("osparc.file.FilesTree", {
       const treeName = "Node Files";
       this.__resetTree(treeName);
       const rootModel = this.getModel();
-      osparc.file.FilesTree.addLoadingChild(rootModel);
+      this.self().addLoadingChild(rootModel);
 
       const dataStore = osparc.store.Data.getInstance();
       dataStore.getNodeFiles(nodeId)
@@ -242,8 +242,11 @@ qx.Class.define("osparc.file.FilesTree", {
       this.__resetTree(treeName);
       const rootModel = this.getModel();
       rootModel.getChildren().removeAll();
-      osparc.file.FilesTree.addLoadingChild(rootModel);
+      this.self().addLoadingChild(rootModel);
 
+      this.set({
+        hideRoot: true
+      });
       const dataStore = osparc.store.Data.getInstance();
       dataStore.getLocations()
         .then(locations => {
@@ -263,7 +266,7 @@ qx.Class.define("osparc.file.FilesTree", {
         const locationModel = this.__getLocationModel(locationId);
         if (locationModel) {
           locationModel.getChildren().removeAll();
-          osparc.file.FilesTree.addLoadingChild(locationModel);
+          this.self().addLoadingChild(locationModel);
         }
       }
 
@@ -394,7 +397,7 @@ qx.Class.define("osparc.file.FilesTree", {
 
     __filesToRoot: function(files) {
       const currentModel = this.getModel();
-      osparc.file.FilesTree.removeLoadingChild(currentModel);
+      this.self().removeLoadingChild(currentModel);
 
       files.forEach(file => file["pathLabel"] = currentModel.getPathLabel().concat(file["label"]));
       const newModelToAdd = qx.data.marshal.Json.createModel(files, true);
@@ -425,7 +428,7 @@ qx.Class.define("osparc.file.FilesTree", {
         datasetData.loaded = false;
         datasetData["pathLabel"] = locationModel.getPathLabel().concat(datasetData["label"]);
         const datasetModel = qx.data.marshal.Json.createModel(datasetData, true);
-        osparc.file.FilesTree.addLoadingChild(datasetModel);
+        this.self().addLoadingChild(datasetModel);
         locationModel.getChildren().append(datasetModel);
 
         // add cached files
@@ -578,11 +581,16 @@ qx.Class.define("osparc.file.FilesTree", {
     __createDragMechanism: function(treeItem) {
       treeItem.setDraggable(true);
       treeItem.addListener("dragstart", e => {
-        if (osparc.file.FilesTree.isFile(e.getOriginalTarget())) {
+        const origin = e.getOriginalTarget();
+        if (this.self().isFile(origin)) {
           // Register supported actions
           e.addAction("copy");
           // Register supported types
-          e.addType("osparc-filePath");
+          e.addType("osparc-file-link");
+
+          e.addData("osparc-file-link", {
+            dragData: origin.getModel()
+          });
         } else {
           e.preventDefault();
         }
@@ -593,8 +601,8 @@ qx.Class.define("osparc.file.FilesTree", {
       treeItem.setDroppable(true);
       treeItem.addListener("dragover", e => {
         let compatible = false;
-        if (osparc.file.FilesTree.isDir(e.getOriginalTarget())) {
-          if (e.supportsType("osparc-filePath")) {
+        if (this.self().isDir(e.getOriginalTarget())) {
+          if (e.supportsType("osparc-file-link")) {
             compatible = true;
           }
         }
@@ -604,7 +612,7 @@ qx.Class.define("osparc.file.FilesTree", {
       }, this);
 
       treeItem.addListener("drop", e => {
-        if (e.supportsType("osparc-filePath")) {
+        if (e.supportsType("osparc-file-link")) {
           const from = e.getRelatedTarget();
           const to = e.getCurrentTarget();
           const dataStore = osparc.store.Data.getInstance();

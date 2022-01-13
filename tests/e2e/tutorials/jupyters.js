@@ -9,6 +9,7 @@ const {
   user,
   pass,
   newUser,
+  startTimeout,
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
@@ -24,7 +25,7 @@ async function runTutorial() {
     console.log("Study ID:", studyId);
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
-    await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][1], workbenchData["nodeIds"][2]]);
+    await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][1], workbenchData["nodeIds"][2]], startTimeout);
     await tutorial.waitFor(2000);
 
     // open jupyterNB

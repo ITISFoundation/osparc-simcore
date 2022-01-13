@@ -44,7 +44,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     fl.setColumnFlex(this.self().gridPos.info, 0);
     fl.setColumnAlign(this.self().gridPos.info, "left", "middle");
     fl.setColumnFlex(this.self().gridPos.ctrlField, 1);
-    fl.setColumnMinWidth(this.self().gridPos.ctrlField, 130);
+    fl.setColumnMinWidth(this.self().gridPos.ctrlField, 50);
   },
 
   properties: {
@@ -60,14 +60,13 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       info: 1,
       ctrlField: 2,
       unit: 3,
-      fieldOptions: 4
+      fieldLinkUnlink: 4
     },
 
     getDisableables: function() {
       return [
         this.gridPos.label,
-        this.gridPos.ctrlField,
-        this.gridPos.fieldOptions
+        this.gridPos.ctrlField
       ];
     }
   },
@@ -237,16 +236,8 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return this._getLayoutChild(portId, this.self().gridPos.label);
     },
 
-    _getInfoFieldChild: function(portId) {
-      return this._getLayoutChild(portId, this.self().gridPos.info);
-    },
-
     _getCtrlFieldChild: function(portId) {
       return this._getLayoutChild(portId, this.self().gridPos.ctrlField);
-    },
-
-    _getFieldOptsChild: function(portId) {
-      return this._getLayoutChild(portId, this.self().gridPos.fieldOptions);
     }
   }
 });

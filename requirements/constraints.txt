@@ -25,8 +25,6 @@ urllib3>=1.26.5                               # https://github.com/advisories/GH
 # TODO: https://aioredis.readthedocs.io/en/latest/migration/)
 aioredis<2.0.0
 # with new released version 1.0.0 (https://github.com/aio-libs/aiozipkin/releases).
-# TODO: Check again when moving to py3.8-3.9! SEE https://github.com/ITISFoundation/osparc-simcore/pull/2025
-aiozipkin==0.7.1
 # TODO: includes async features https://docs.sqlalchemy.org/en/14/changelog/migration_20.html
 sqlalchemy<2.0
 
@@ -38,10 +36,20 @@ sqlalchemy<2.0
 # FIXME: minio 7.1.0 does not delete objects. SEE
 minio==7.0.4
 
+# FIXME: auto-reload does not work
+uvicorn<0.14.0
 
 #
 # Compatibility/coordination
 #
+
+
+# respx>=0.18.0 requires httpx>=0.21.0 (frozen at 0.18.1 in most services)
+# remove this constraint when updating httpx on the services
+# remove this after upgrading httpx in all libraies
+#   httpx==0.18.1 (from -c requirements/_base.txt (line 118))
+#   httpx>=0.21.0 (from respx==0.19.0->-r requirements/_test.in (line 25))
+respx~=0.17.1
 
 # Keeps all docker compose to the same version. TODO: remove when all synced
 docker-compose==1.29.1

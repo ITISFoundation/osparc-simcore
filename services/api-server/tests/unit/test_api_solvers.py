@@ -23,10 +23,10 @@ def app(project_env_devel_environment, monkeypatch) -> FastAPI:
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
     # settings from environs
-    settings = AppSettings.create_from_env()
-    settings.postgres.enabled = False
-    settings.webserver.enabled = False
-    settings.catalog.enabled = True
+    settings = AppSettings.create_from_envs()
+    settings.API_SERVER_POSTGRES = None
+    settings.API_SERVER_WEBSERVER = None
+    settings.API_SERVER_CATALOG = None
 
     mini_app = init_app(settings)
     return mini_app
@@ -35,7 +35,7 @@ def app(project_env_devel_environment, monkeypatch) -> FastAPI:
 @pytest.fixture
 def mocked_catalog_service_api(app: FastAPI):
     with respx.mock(
-        base_url=app.state.settings.catalog.base_url,
+        base_url=app.state.settings.API_SERVER_CATALOG.base_url,
         assert_all_called=False,
         assert_all_mocked=True,
     ) as respx_mock:

@@ -1,6 +1,7 @@
 """ Storage subsystem's API: responsible of communication with storage service
 
 """
+import asyncio
 import logging
 from pprint import pformat
 from typing import Any, Dict, Tuple
@@ -13,6 +14,8 @@ from yarl import URL
 from .storage_config import get_client_session, get_storage_config
 
 log = logging.getLogger(__name__)
+
+TOTAL_TIMEOUT_TO_COPY_DATA_SECS = 60 * 60
 
 
 def _get_storage_client(app: web.Application) -> Tuple[ClientSession, URL]:
@@ -28,10 +31,15 @@ def _get_storage_client(app: web.Application) -> Tuple[ClientSession, URL]:
 
 
 async def copy_data_folders_from_project(
-    app, source_project, destination_project, nodes_map, user_id
+    app: web.Application,
+    source_project: Dict,
+    destination_project: Dict,
+    nodes_map: Dict,
+    user_id: int,
 ):
     # TODO: optimize if project has actualy data or not before doing the call
     client, api_endpoint = _get_storage_client(app)
+    log.debug("Coying %d nodes", len(nodes_map))
 
     # /simcore-s3/folders:
     url = (api_endpoint / "simcore-s3/folders").with_query(user_id=user_id)
@@ -43,6 +51,8 @@ async def copy_data_folders_from_project(
             "nodes_map": nodes_map,
         },
         ssl=False,
+        # NOTE: extends time for copying operation
+        timeout=ClientTimeout(total=TOTAL_TIMEOUT_TO_COPY_DATA_SECS),
     ) as resp:
         payload = await resp.json()
 
@@ -99,7 +109,7 @@ async def is_healthy(app: web.Application) -> bool:
             timeout=ClientTimeout(total=2, connect=1),
         )
         return True
-    except (ClientError, TimeoutError) as err:
+    except (ClientError, asyncio.TimeoutError) as err:
         # ClientResponseError, ClientConnectionError, ClientPayloadError, InValidURL
         log.debug("Storage is NOT healthy: %s", err)
         return False

@@ -10,13 +10,19 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from .computation_comp_tasks_listening_task import setup as setup_comp_tasks_listener
 from .computation_config import CONFIG_SECTION_NAME
 from .computation_config import create_settings as create_computation_settings
-from .computation_subscribe import subscribe
+from .computation_subscribe import setup_rabbitmq_consumer
 
 log = logging.getLogger(__file__)
 
 
 @app_module_setup(
-    __name__, ModuleCategory.ADDON, config_section=CONFIG_SECTION_NAME, logger=log
+    __name__,
+    ModuleCategory.ADDON,
+    config_section=CONFIG_SECTION_NAME,
+    logger=log,
+    depends=[
+        "simcore_service_webserver.diagnostics"
+    ],  # depends on diagnostics for setting the instrumentation
 )
 def setup_computation(app: web.Application):
     # create settings and injects in app
@@ -24,7 +30,7 @@ def setup_computation(app: web.Application):
 
     # subscribe to rabbit upon startup for logs, progress and other
     # metrics on the execution reported by sidecars
-    app.on_startup.append(subscribe)
+    app.cleanup_ctx.append(setup_rabbitmq_consumer)
 
     # setup comp_task listener
     setup_comp_tasks_listener(app)

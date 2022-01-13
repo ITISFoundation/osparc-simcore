@@ -3,7 +3,7 @@ from typing import Callable
 
 from fastapi import FastAPI
 
-from .._meta import __version__, project_name
+from .._meta import PROJECT_NAME, __version__
 from ..db.events import close_db_connection, connect_to_db
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ WELCOME_MSG = r"""
 
 def create_start_app_handler(app: FastAPI) -> Callable:
     async def on_startup() -> None:
-        if app.state.settings.postgres.enabled:
+        if app.state.settings.API_SERVER_POSTGRES:
             await connect_to_db(app)
 
         print(WELCOME_MSG, flush=True)
@@ -35,7 +35,7 @@ def create_stop_app_handler(app: FastAPI) -> Callable:
     async def on_shutdown() -> None:
         logger.info("Application stopping")
 
-        if app.state.settings.postgres.enabled:
+        if app.state.settings.API_SERVER_POSTGRES:
             try:
                 await close_db_connection(app)
 
@@ -47,7 +47,7 @@ def create_stop_app_handler(app: FastAPI) -> Callable:
                     stack_info=app.state.settings.debug,
                 )
 
-        msg = project_name + f" v{__version__} SHUT DOWN"
+        msg = PROJECT_NAME + f" v{__version__} SHUT DOWN"
         print(f"{msg:=^100}")
 
     return on_shutdown

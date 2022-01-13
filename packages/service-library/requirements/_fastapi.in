@@ -1,0 +1,9 @@
+#
+# Dependencies for exclusive to fastapi-based services
+#
+#
+
+--constraint ./_base.in
+
+fastapi
+fastapi_contrib[jaegertracing]

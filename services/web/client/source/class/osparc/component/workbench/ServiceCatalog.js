@@ -86,7 +86,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
   members: {
     __allServicesList: null,
     __filteredServicesObj: null,
-    __textfield: null,
+    __textFilter: null,
     __contextLeftNodeId: null,
     __contextRightNodeId: null,
     __versionsBox: null,
@@ -101,7 +101,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         spacing: 10
       });
       const filters = new osparc.component.filter.group.ServiceFilterGroup("serviceCatalog");
-      this.__textfield = filters.getTextFilter().getChildControl("textfield", true);
+      this.__textFilter = filters.getTextFilter().getChildControl("textfield", true);
       filterPart.add(filters);
       toolbar.add(filterPart);
 
@@ -152,7 +152,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
         enabled: false
       });
       infoPart.add(selectBox);
-      const infoBtn = this.__infoBtn = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/info-circle/16").set({
+      const infoBtn = this.__infoBtn = new qx.ui.toolbar.Button(null, "@MaterialIcons/info_outline/16").set({
         enabled: false
       });
       infoBtn.addListener("execute", function() {
@@ -304,9 +304,9 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     __attachEventHandlers: function() {
       this.addListener("appear", () => {
         osparc.component.filter.UIFilterController.getInstance().resetGroup("serviceCatalog");
-        this.__textfield.focus();
+        this.__textFilter.focus();
       }, this);
-      this.__textfield.addListener("keypress", e => {
+      this.__textFilter.addListener("keypress", e => {
         if (e.getKeyIdentifier() === "Enter") {
           this.__serviceBrowser.selectFirstVisible();
           const selected = this.__serviceBrowser.getSelected();

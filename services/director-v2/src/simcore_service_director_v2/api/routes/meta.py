@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from ...meta import __version__, api_version, api_vtag
+from ...meta import API_VERSION, API_VTAG, __version__
 from ...models.schemas.meta import Meta
 
 router = APIRouter()
@@ -10,6 +10,6 @@ router = APIRouter()
 async def get_service_metadata():
     return Meta(
         name=__name__.split(".")[0],
-        version=api_version,
-        released={api_vtag: api_version, "v0": "0.1.0"},
+        version=API_VERSION,
+        released={API_VTAG: API_VERSION, "v0": "0.1.0"},
     )

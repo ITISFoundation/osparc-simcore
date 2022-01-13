@@ -7,13 +7,13 @@ import asyncio
 import json
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Tuple
+from urllib.parse import quote_plus
 from uuid import uuid4
 
 import np_helpers
 import pytest
-import requests
-import simcore_service_storage_sdk
 import sqlalchemy as sa
+from aiohttp import ClientSession
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
@@ -136,24 +136,25 @@ def store_link(
         assert file_path.exists()
 
         file_id = create_valid_file_uuid(file_path)
+        async with ClientSession() as session:
+            async with session.put(
+                f"{storage_service}/v0/locations/{s3_simcore_location}/files/{quote_plus(file_id)}",
+                params={"user_id": f"{user_id}"},
+            ) as resp:
+                resp.raise_for_status()
+                presigned_link_enveloped = await resp.json()
+            link = presigned_link_enveloped.get("data", {}).get("link")
+            assert link is not None
 
-        # Get upload presigned link via storage-sdk API (both pg and s3 get updated)
-        user_api = simcore_service_storage_sdk.UsersApi()
-        user_api.api_client.configuration.host = str(storage_service.with_path("/v0"))
-
-        r: simcore_service_storage_sdk.PresignedLinkEnveloped = (
-            await user_api.upload_file(file_id, s3_simcore_location, user_id)
-        )
-
-        # Upload using the link
-        extra_hdr = {
-            "Content-Length": f"{file_path.stat().st_size}",
-            "Content-Type": "application/binary",
-        }
-        upload = requests.put(
-            r.data.link, data=file_path.read_bytes(), headers=extra_hdr
-        )
-        assert upload.status_code == 200, upload.text
+            # Upload using the link
+            extra_hdr = {
+                "Content-Length": f"{file_path.stat().st_size}",
+                "Content-Type": "application/binary",
+            }
+            async with session.put(
+                link, data=file_path.read_bytes(), headers=extra_hdr
+            ) as resp:
+                resp.raise_for_status()
 
         # FIXME: that at this point, S3 and pg have some data that is NOT cleaned up
         return {"store": s3_simcore_location, "path": file_id}

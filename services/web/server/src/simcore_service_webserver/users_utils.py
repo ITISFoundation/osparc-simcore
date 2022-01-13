@@ -1,7 +1,5 @@
 import logging
-from typing import Dict, Optional
-
-from aiopg.sa.result import RowProxy
+from typing import Any, Dict, Mapping, Optional
 
 from .utils import gravatar_hash
 
@@ -9,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 def convert_user_db_to_schema(
-    row: RowProxy, prefix: Optional[str] = ""
+    row: Mapping[str, Any], prefix: Optional[str] = ""
 ) -> Dict[str, str]:
     parts = row[f"{prefix}name"].split(".") + [""]
     return {

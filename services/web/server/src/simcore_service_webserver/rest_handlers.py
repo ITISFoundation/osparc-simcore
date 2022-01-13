@@ -5,12 +5,11 @@
 import logging
 
 from aiohttp import web
-
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.rest_responses import wrap_as_envelope
 from servicelib.aiohttp.rest_utils import body_to_dict, extract_and_validate
 
-from . import __version__
+from ._meta import __version__
 from .settings import APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
@@ -25,9 +24,9 @@ async def check_running(_request: web.Request):
     #
     data = {
         "name": __name__.split(".")[0],
-        "version": str(__version__),
+        "version": f"{__version__}",
         "status": "SERVICE_RUNNING",
-        "api_version": str(__version__),
+        "api_version": f"{__version__}",
     }
     return data
 

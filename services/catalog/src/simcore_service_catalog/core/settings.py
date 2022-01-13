@@ -1,106 +1,51 @@
 import logging
-from enum import Enum
+from functools import cached_property
 from typing import Optional
 
-from models_library.settings.http_clients import ClientRequestSettings
-from models_library.settings.postgres import PostgresSettings
-from pydantic import BaseSettings, Field, validator
-from pydantic.types import PositiveInt
+from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
+from pydantic import Field, PositiveInt
+from settings_library.base import BaseCustomSettings
+from settings_library.http_client_request import ClientRequestSettings
+from settings_library.logging_utils import MixinLoggingSettings
+from settings_library.postgres import PostgresSettings
+from settings_library.tracing import TracingSettings
 
 logger = logging.getLogger(__name__)
 
 
-class BootModeEnum(str, Enum):
-    DEBUG = "debug-ptvsd"
-    PRODUCTION = "production"
-    DEVELOPMENT = "development"
+class DirectorSettings(BaseCustomSettings):
+    DIRECTOR_HOST: str
+    DIRECTOR_PORT: int = 8080
+    DIRECTOR_VTAG: str = "v0"
 
-
-class _CommonConfig:
-    case_sensitive = False
-    env_file = ".env"  # SEE https://pydantic-docs.helpmanual.io/usage/settings/#dotenv-env-support
-
-
-class DirectorSettings(BaseSettings):
-    enabled: bool = Field(
-        True, description="Enables/Disables connection with director service"
-    )
-    host: str
-    port: int = 8080
-    vtag: str = "v0"
-
-    @property
+    @cached_property
     def base_url(self) -> str:
-        return f"http://{self.host}:{self.port}/{self.vtag}"
-
-    class Config(_CommonConfig):
-        env_prefix = "DIRECTOR_"
+        return f"http://{self.DIRECTOR_HOST}:{self.DIRECTOR_PORT}/{self.DIRECTOR_VTAG}"
 
 
-class PGSettings(PostgresSettings):
-    enabled: bool = Field(True, description="Enables/Disables connection with service")
+class AppSettings(BaseCustomSettings, MixinLoggingSettings):
+    # docker environs
+    SC_BOOT_MODE: Optional[BootModeEnum]
+    SC_BOOT_TARGET: Optional[BuildTargetEnum]
 
-    class Config(_CommonConfig, PostgresSettings.Config):
-        env_prefix = "POSTGRES_"
-
-
-class AppSettings(BaseSettings):
-    @classmethod
-    def create_default(cls) -> "AppSettings":
-        # This call triggers parsers
-        return cls(
-            postgres=PGSettings(),
-            director=DirectorSettings(),
-            client_request=ClientRequestSettings(),
-        )
-
-    # pylint: disable=no-self-use
-    # pylint: disable=no-self-argument
-
-    # DOCKER
-    boot_mode: Optional[BootModeEnum] = Field(..., env="SC_BOOT_MODE")
-
-    # LOGGING
-    log_level_name: str = Field("DEBUG", env="LOG_LEVEL")
-
-    @validator("log_level_name")
-    def match_logging_level(cls, value) -> str:
-        try:
-            getattr(logging, value.upper())
-        except AttributeError as err:
-            raise ValueError(f"{value.upper()} is not a valid level") from err
-        return value.upper()
-
-    @property
-    def loglevel(self) -> int:
-        return getattr(logging, self.log_level_name)
-
-    # POSTGRES
-    postgres: PGSettings
-
-    client_request: ClientRequestSettings
-
-    # DIRECTOR SERVICE
-    director: DirectorSettings
-
-    # fastappi app settings
-    debug: bool = False  # If True, debug tracebacks should be returned on errors.
-
-    # BACKGROUND TASK
-    background_task_rest_time: PositiveInt = 60
-    background_task_wait_after_failure: PositiveInt = 5  # secs
-    access_rights_default_product_name: str = "osparc"
-
+    CATALOG_LOG_LEVEL: LogLevel = Field(
+        LogLevel.INFO.value,
+        env=["CATALOG_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+    )
     CATALOG_DEV_FEATURES_ENABLED: bool = Field(
         False,
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
     )
 
-    @validator("CATALOG_DEV_FEATURES_ENABLED")
-    def _warn_dev_features_enabled(cls, v):
-        if v:
-            logger.warning("Development features are ENABLED")
-        return v
+    CATALOG_POSTGRES: Optional[PostgresSettings]
 
-    class Config(_CommonConfig):
-        env_prefix = ""
+    CATALOG_CLIENT_REQUEST: Optional[ClientRequestSettings]
+
+    CATALOG_DIRECTOR: Optional[DirectorSettings]
+
+    # BACKGROUND TASK
+    CATALOG_BACKGROUND_TASK_REST_TIME: PositiveInt = 60
+    CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE: PositiveInt = 5  # secs
+    CATALOG_ACCESS_RIGHTS_DEFAULT_PRODUCT_NAME: str = "osparc"
+
+    CATALOG_TRACING: Optional[TracingSettings] = None

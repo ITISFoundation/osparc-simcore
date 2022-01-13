@@ -87,6 +87,9 @@
                 "schema": {}
               }
             }
+          },
+          "422": {
+            "description": "Cannot validate submitted compose spec"
           }
         }
       }
@@ -124,15 +127,11 @@
               }
             }
           },
+          "404": {
+            "description": "No compose spec found"
+          },
           "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
+            "description": "Error while shutting down containers"
           }
         }
       }
@@ -220,6 +219,45 @@
         }
       }
     },
+    "/v1/containers/name": {
+      "get": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Get Entrypoint Container Name",
+        "description": "Searches for the container's name given the network\non which the proxy communicates with it.\nSupported filters:\n    network: name of the network",
+        "operationId": "get_entrypoint_container_name_v1_containers_name_get",
+        "parameters": [
+          {
+            "description": "JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters",
+            "required": true,
+            "schema": {
+              "title": "Filters",
+              "type": "string",
+              "description": "JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters"
+            },
+            "name": "filters",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "description": "No entrypoint container found or spec is not yet present"
+          },
+          "422": {
+            "description": "Filters could not be parsed"
+          }
+        }
+      }
+    },
     "/v1/containers/{id}": {
       "get": {
         "tags": [
@@ -267,85 +305,165 @@
         }
       }
     },
-    "/push": {
+    "/v1/containers/state:restore": {
       "post": {
         "tags": [
-          "Mocked frontend calls"
+          "containers"
         ],
-        "summary": "Ignored Push Post",
-        "operationId": "ignored_push_post_push_post",
+        "summary": "Restores the state of the dynamic service",
+        "description": "When restoring the state:\n- pull inputs via nodeports\n- pull all the extra state paths",
+        "operationId": "restore_state_v1_containers_state_restore_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/v1/containers/state:save": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Stores the state of the dynamic service",
+        "operationId": "save_state_v1_containers_state_save_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/v1/containers/ports/inputs:pull": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Pull input ports data",
+        "operationId": "pull_input_ports_v1_containers_ports_inputs_pull_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Port Keys",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
         }
       }
     },
-    "/retrieve": {
-      "get": {
+    "/v1/containers/directory-watcher": {
+      "patch": {
         "tags": [
-          "Mocked frontend calls"
+          "containers"
         ],
-        "summary": "Ignored Port Data Load",
-        "operationId": "ignored_port_data_load_retrieve_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
+        "summary": "Enable/disable directory-watcher event propagation",
+        "operationId": "disable_directory_watcher_v1_containers_directory_watcher_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchDirectoryWatcherItem"
               }
             }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Mocked frontend calls"
-        ],
-        "summary": "Ignored Port Data Save",
-        "operationId": "ignored_port_data_save_retrieve_post",
+          },
+          "required": true
+        },
         "responses": {
-          "200": {
-            "description": "Successful Response",
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
         }
       }
     },
-    "/state": {
-      "get": {
+    "/v1/containers/ports/outputs/dirs": {
+      "post": {
         "tags": [
-          "Mocked frontend calls"
+          "containers"
         ],
-        "summary": "Ignored Load Service State State",
-        "operationId": "ignored_load_service_state_state_state_get",
+        "summary": "Creates the output directories declared by the docker images's labels. It is more convenient to pass the labels from director-v2, since it already has all the machinery to call into director-v0 to retrieve them.",
+        "operationId": "create_output_dirs_v1_containers_ports_outputs_dirs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDirsRequestItem"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
-          "200": {
-            "description": "Successful Response",
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
         }
-      },
+      }
+    },
+    "/v1/containers/ports/outputs:pull": {
       "post": {
         "tags": [
-          "Mocked frontend calls"
+          "containers"
         ],
-        "summary": "Ignored Save Service State State",
-        "operationId": "ignored_save_service_state_state_state_post",
+        "summary": "Pull output ports data",
+        "operationId": "pull_output_ports_v1_containers_ports_outputs_pull_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Port Keys",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -354,6 +472,88 @@
                 "schema": {}
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers/ports/outputs:push": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Push output ports data",
+        "operationId": "push_output_ports_v1_containers_ports_outputs_push_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "title": "Port Keys",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/containers:restart": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Restarts Containers",
+        "description": "Removes the previously started service\nand returns the docker-compose output",
+        "operationId": "restarts_containers_v1_containers_restart_post",
+        "parameters": [
+          {
+            "description": "docker-compose stop command timeout default",
+            "required": false,
+            "schema": {
+              "title": "Command Timeout",
+              "type": "number",
+              "description": "docker-compose stop command timeout default",
+              "default": 10.0
+            },
+            "name": "command_timeout",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Container does not exist"
+          },
+          "422": {
+            "description": "Error while running docker-compose command"
           }
         }
       }
@@ -378,6 +578,22 @@
           }
         }
       },
+      "CreateDirsRequestItem": {
+        "title": "CreateDirsRequestItem",
+        "required": [
+          "outputs_labels"
+        ],
+        "type": "object",
+        "properties": {
+          "outputs_labels": {
+            "title": "Outputs Labels",
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ServiceOutput"
+            }
+          }
+        }
+      },
       "HTTPValidationError": {
         "title": "HTTPValidationError",
         "type": "object",
@@ -390,6 +606,140 @@
             }
           }
         }
+      },
+      "PatchDirectoryWatcherItem": {
+        "title": "PatchDirectoryWatcherItem",
+        "required": [
+          "is_enabled"
+        ],
+        "type": "object",
+        "properties": {
+          "is_enabled": {
+            "title": "Is Enabled",
+            "type": "boolean"
+          }
+        }
+      },
+      "SelectBox": {
+        "title": "SelectBox",
+        "required": [
+          "structure"
+        ],
+        "type": "object",
+        "properties": {
+          "structure": {
+            "title": "Structure",
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Structure"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ServiceOutput": {
+        "title": "ServiceOutput",
+        "required": [
+          "label",
+          "description",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "displayOrder": {
+            "title": "Displayorder",
+            "type": "number",
+            "description": "DEPRECATED: new display order is taken from the item position. This will be removed.",
+            "deprecated": true
+          },
+          "label": {
+            "title": "Label",
+            "type": "string",
+            "description": "short name for the property",
+            "example": "Age"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string",
+            "description": "description of the property",
+            "example": "Age in seconds since 1970"
+          },
+          "type": {
+            "title": "Type",
+            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "type": "string",
+            "description": "data type expected on this input glob matching for data type is allowed"
+          },
+          "fileToKeyMap": {
+            "title": "Filetokeymap",
+            "type": "object",
+            "description": "Place the data associated with the named keys in files"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string",
+            "description": "Units, when it refers to a physical quantity"
+          },
+          "widget": {
+            "title": "Widget",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Widget"
+              }
+            ],
+            "description": "custom widget to use instead of the default one determined from the data-type",
+            "deprecated": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Metadata on a service input or output port"
+      },
+      "Structure": {
+        "title": "Structure",
+        "required": [
+          "key",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "title": "Key",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TextArea": {
+        "title": "TextArea",
+        "required": [
+          "minHeight"
+        ],
+        "type": "object",
+        "properties": {
+          "minHeight": {
+            "title": "Minheight",
+            "exclusiveMinimum": true,
+            "type": "integer",
+            "description": "minimum Height of the textarea",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
       },
       "ValidationError": {
         "title": "ValidationError",
@@ -416,6 +766,45 @@
             "type": "string"
           }
         }
+      },
+      "Widget": {
+        "title": "Widget",
+        "required": [
+          "type",
+          "details"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WidgetType"
+              }
+            ],
+            "description": "type of the property"
+          },
+          "details": {
+            "title": "Details",
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TextArea"
+              },
+              {
+                "$ref": "#/components/schemas/SelectBox"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "WidgetType": {
+        "title": "WidgetType",
+        "enum": [
+          "TextArea",
+          "SelectBox"
+        ],
+        "type": "string",
+        "description": "An enumeration."
       }
     }
   }

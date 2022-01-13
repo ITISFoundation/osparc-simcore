@@ -28,7 +28,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     if (study.hasSnapshots()) {
-      this.__primaryStudy = study;
+      this.__study = study;
       this.__buildLayout();
     }
   },
@@ -41,17 +41,21 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
   members: {
     __snapshotsSection: null,
     __snapshotsTable: null,
+    __gitGraphLayout: null,
+    __gitGraphWrapper: null,
     __snapshotPreview: null,
-    __selectedSnapshot: null,
     __editSnapshotBtn: null,
     __openSnapshotBtn: null,
+    __snapshots: null,
+    __currentSnapshot: null,
+    __selectedSnapshotId: null,
 
     __buildLayout: function() {
       const snapshotsSection = this.__snapshotsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       this._add(snapshotsSection, {
         flex: 1
       });
-      this.__rebuildSnapshotsTable();
+      this.__rebuildSnapshots();
       this.__buildSnapshotPreview();
 
       const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox());
@@ -59,17 +63,70 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
 
       const editSnapshotBtn = this.__editSnapshotBtn = this.__createEditSnapshotBtn();
       editSnapshotBtn.setEnabled(false);
-      editSnapshotBtn.addListener("execute", () => this.__editSnapshot());
+      editSnapshotBtn.addListener("execute", () => {
+        if (this.__selectedSnapshotId) {
+          this.__editSnapshot(this.__selectedSnapshotId);
+        }
+      });
       buttonsSection.add(editSnapshotBtn);
 
       const openSnapshotBtn = this.__openSnapshotBtn = this.__createOpenSnapshotBtn();
       openSnapshotBtn.setEnabled(false);
       openSnapshotBtn.addListener("execute", () => {
-        if (this.__selectedSnapshot) {
-          this.fireDataEvent("openSnapshot", this.__selectedSnapshot);
+        if (this.__selectedSnapshotId) {
+          this.fireDataEvent("openSnapshot", this.__selectedSnapshotId);
         }
       });
       buttonsSection.add(openSnapshotBtn);
+    },
+
+    __rebuildSnapshots: function() {
+      Promise.all([
+        this.__study.getSnapshots(),
+        this.__study.getCurrentSnapshot()
+      ])
+        .then(values => {
+          this.__snapshots = values[0];
+          this.__currentSnapshot = values[1];
+          this.__rebuildSnapshotsGraph();
+          this.__rebuildSnapshotsTable();
+        });
+    },
+
+    __rebuildSnapshotsGraph: function() {
+      if (this.__gitGraphLayout) {
+        this.__snapshotsSection.remove(this.__gitGraphLayout);
+      }
+
+      const gitGraphLayout = this.__gitGraphLayout = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      const gitGraphCanvas = new qx.ui.container.Composite(new qx.ui.layout.Canvas());
+      const gitGraphInteract = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+      gitGraphLayout.add(gitGraphCanvas, {
+        top: 20,
+        right: 0,
+        bottom: 0,
+        left: 0
+      });
+      gitGraphLayout.add(gitGraphInteract, {
+        top: 20 + 2,
+        right: 0,
+        bottom: 0,
+        left: 0
+      });
+
+      gitGraphCanvas.addListenerOnce("appear", () => {
+        const gitGraphWrapper = this.__gitGraphWrapper = new osparc.wrapper.GitGraph();
+        gitGraphWrapper.init(gitGraphCanvas, gitGraphInteract)
+          .then(() => gitGraphWrapper.populateGraph(this.__snapshots, this.__currentSnapshot));
+        gitGraphWrapper.addListener("snapshotTap", e => {
+          const snapshotId = e.getData();
+          this.__snapshotSelected(snapshotId);
+        });
+      });
+
+      this.__snapshotsSection.addAt(gitGraphLayout, 0, {
+        width: "20%"
+      });
     },
 
     __rebuildSnapshotsTable: function() {
@@ -77,48 +134,45 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
         this.__snapshotsSection.remove(this.__snapshotsTable);
       }
 
-      const snapshotsTable = this.__snapshotsTable = new osparc.component.snapshots.Snapshots(this.__primaryStudy);
+      const snapshotsTable = this.__snapshotsTable = new osparc.component.snapshots.Snapshots();
+      snapshotsTable.populateTable(this.__snapshots);
       snapshotsTable.addListener("cellTap", e => {
-        this.__snapshotsSelected(e);
+        const selectedRow = e.getRow();
+        const snapshotId = snapshotsTable.getRowData(selectedRow)["Id"];
+        this.__snapshotSelected(snapshotId);
       });
 
-      this.__snapshotsSection.addAt(snapshotsTable, 0, {
-        width: "50%"
+      this.__snapshotsSection.addAt(snapshotsTable, 1, {
+        width: "40%"
       });
     },
 
     __buildSnapshotPreview: function() {
       const snapshotPreview = this.__snapshotPreview = new osparc.component.workbench.WorkbenchUIPreview();
-      this.__snapshotsSection.addAt(snapshotPreview, 1, {
-        width: "50%"
+      this.__snapshotsSection.addAt(snapshotPreview, 2, {
+        width: "40%"
       });
     },
 
-    __loadSnapshotsPreview: function(snapshotData) {
+    __loadSnapshotsPreview: function(snapshotId) {
       const params = {
         url: {
-          "studyId": snapshotData["ParentId"],
-          "snapshotId": snapshotData["SnapshotId"]
+          "studyId": this.__study.getUuid(),
+          "snapshotId": snapshotId
         }
       };
-      osparc.data.Resources.getOne("snapshots", params)
-        .then(snapshotResp => {
-          if (!snapshotResp) {
-            const msg = this.tr("Snapshot not found");
-            throw new Error(msg);
-          }
-          fetch(snapshotResp["url_project"])
-            .then(response => response.json())
-            .then(data => {
-              const studyData = data["data"];
-              const study = new osparc.data.model.Study(studyData);
-              study.buildWorkbench();
-              study.setReadOnly(true);
-              this.__snapshotPreview.set({
-                study: study
-              });
-              this.__snapshotPreview.loadModel(study.getWorkbench());
-            });
+      osparc.data.Resources.fetch("snapshots", "preview", params)
+        .then(data => {
+          const studyData = this.__study.serialize();
+          studyData["workbench"] = data["workbench"];
+          studyData["ui"] = data["ui"];
+          const study = new osparc.data.model.Study(studyData);
+          study.buildWorkbench();
+          study.setReadOnly(true);
+          this.__snapshotPreview.set({
+            study: study
+          });
+          this.__snapshotPreview.loadModel(study.getWorkbench());
         });
     },
 
@@ -136,41 +190,52 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
       return openSnapshotBtn;
     },
 
-    __editSnapshot: function() {
-      if (this.__selectedSnapshot) {
-        const snapshotRenamer = new osparc.component.widget.Renamer(this.__selectedSnapshot["Snapshot Name"]);
-        snapshotRenamer.addListener("labelChanged", e => {
-          const {
-            newLabel
-          } = e.getData();
+    __editSnapshot: function(snapshotId) {
+      const selectedSnapshot = this.__snapshots.find(snapshot => snapshot["id"] === snapshotId);
+      if (selectedSnapshot) {
+        const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
+        const tagCtrl = editSnapshotView.getChildControl("tags");
+        tagCtrl.setValue(selectedSnapshot["tags"][0]);
+        const msgCtrl = editSnapshotView.getChildControl("message");
+        msgCtrl.setValue(selectedSnapshot["message"]);
+        const title = this.tr("Edit Snapshot");
+        const win = osparc.ui.window.Window.popUpInWindow(editSnapshotView, title, 400, 180);
+        editSnapshotView.addListener("takeSnapshot", () => {
           const params = {
             url: {
-              "studyId": this.__selectedSnapshot["ParentId"],
-              "snapshotId": this.__selectedSnapshot["SnapshotId"]
+              "studyId": this.__study.getUuid(),
+              "snapshotId": snapshotId
             },
             data: {
-              "name": newLabel
+              "tag": editSnapshotView.getTag(),
+              "message": editSnapshotView.getMessage()
             }
           };
           osparc.data.Resources.fetch("snapshots", "updateSnapshot", params)
             .then(() => {
-              this.__rebuildSnapshotsTable();
+              this.__rebuildSnapshots();
             })
-            .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"))
-            .finally(() => {
-              snapshotRenamer.close();
-            });
+            .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
+          win.close();
         }, this);
-        snapshotRenamer.center();
-        snapshotRenamer.open();
+        editSnapshotView.addListener("cancel", () => {
+          win.close();
+        }, this);
       }
     },
 
-    __snapshotsSelected: function(e) {
-      const selectedRow = e.getRow();
-      this.__selectedSnapshot = this.__snapshotsTable.getRowData(selectedRow);
+    __snapshotSelected: function(snapshotId) {
+      this.__selectedSnapshotId = snapshotId;
 
-      this.__loadSnapshotsPreview(this.__selectedSnapshot);
+      if (this.__snapshotsTable) {
+        this.__snapshotsTable.setSelection(snapshotId);
+      }
+
+      if (this.__gitGraphWrapper) {
+        this.__gitGraphWrapper.setSelection(snapshotId);
+      }
+
+      this.__loadSnapshotsPreview(snapshotId);
 
       if (this.__editSnapshotBtn) {
         this.__editSnapshotBtn.setEnabled(true);

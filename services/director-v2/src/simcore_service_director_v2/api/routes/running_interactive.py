@@ -47,7 +47,7 @@ async def start_interactive_service(
             "simcore/services/dynamic/3dviewer",
         ],
     ),
-    service_version: str = Query(
+    service_tag: str = Query(
         ...,
         description="The tag/version of the service",
         regex=VERSION_RE,

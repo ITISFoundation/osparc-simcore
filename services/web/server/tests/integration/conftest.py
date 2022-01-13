@@ -8,9 +8,9 @@
   NOTE: services/web/server/tests/conftest.py is pre-loaded
 
 """
+# pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-# pylint: disable=bare-except
-# pylint:disable=redefined-outer-name
+# pylint: disable=unused-variable
 
 import logging
 import sys
@@ -18,10 +18,12 @@ from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
 from typing import Dict, List
+from unittest import mock
 
 import pytest
 import trafaret_config
 import yaml
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
 from pytest_simcore.helpers.utils_docker import get_service_published_port
 from pytest_simcore.helpers.utils_login import NewUser
@@ -35,24 +37,9 @@ from simcore_service_webserver.groups_api import (
 )
 from simcore_service_webserver.resources import resources as app_resources
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-# imports the fixtures for the integration tests
-pytest_plugins = [
-    "pytest_simcore.celery_service",
-    "pytest_simcore.docker_compose",
-    "pytest_simcore.docker_registry",
-    "pytest_simcore.docker_swarm",
-    "pytest_simcore.postgres_service",
-    "pytest_simcore.rabbit_service",
-    "pytest_simcore.redis_service",
-    "pytest_simcore.repository_paths",
-    "pytest_simcore.schemas",
-    "pytest_simcore.services_api_mocks_for_aiohttp_clients",
-    "pytest_simcore.simcore_services",
-    "pytest_simcore.tmp_path_extra",
-    "pytest_simcore.websocket_client",
-]
+# NOTE:
 
 log = logging.getLogger(__name__)
 
@@ -103,7 +90,7 @@ def webserver_environ(
         assert port_key in environ
 
         # to swarm boundary since webserver is installed in the host and therefore outside the swarm's network
-        published_port = get_service_published_port(name, int(environ.get(port_key)))
+        published_port = get_service_published_port(name, int(environ[port_key]))
         environ[host_key] = "127.0.0.1"
         environ[port_key] = published_port
 
@@ -112,7 +99,9 @@ def webserver_environ(
 
 
 @pytest.fixture(scope="module")
-def _webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
+def _webserver_dev_config(
+    webserver_environ: Dict, docker_stack: Dict, temp_folder: Path
+) -> Dict:
     """
     Swarm with integration stack already started
 
@@ -120,7 +109,7 @@ def _webserver_dev_config(webserver_environ: Dict, docker_stack: Dict) -> Dict:
 
     NOTE: Prefer using 'app_config' below instead of this as a function-scoped fixture
     """
-    config_file_path = current_dir / "webserver_dev_config.yaml"
+    config_file_path = temp_folder / "webserver_dev_config.yaml"
 
     # recreate config-file
     with app_resources.stream("config/server-docker-dev.yaml") as f:
@@ -167,7 +156,7 @@ def app_config(_webserver_dev_config: Dict, aiohttp_unused_port) -> Dict:
 
 
 @pytest.fixture
-def mock_orphaned_services(mocker):
+def mock_orphaned_services(mocker: MockerFixture) -> mock.Mock:
     remove_orphaned_services = mocker.patch(
         "simcore_service_webserver.resource_manager.garbage_collector.remove_orphaned_services",
         return_value="",

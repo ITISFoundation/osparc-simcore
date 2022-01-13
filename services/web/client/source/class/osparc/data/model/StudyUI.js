@@ -30,8 +30,9 @@ qx.Class.define("osparc.data.model.StudyUI", {
 
     this.set({
       workbench: studyDataUI && studyDataUI.workbench ? studyDataUI.workbench : this.getWorkbench(),
-      slideshow: new osparc.data.model.SlideShow(studyDataUI && studyDataUI.slideshow ? studyDataUI.slideshow : {}),
-      currentNodeId: studyDataUI && studyDataUI.currentNodeId ? studyDataUI.currentNodeId : this.getCurrentNodeId()
+      slideshow: new osparc.data.model.Slideshow(studyDataUI && studyDataUI.slideshow ? studyDataUI.slideshow : this.getSlideshow()),
+      currentNodeId: studyDataUI && studyDataUI.currentNodeId ? studyDataUI.currentNodeId : this.initCurrentNodeId(),
+      mode: studyDataUI && studyDataUI.mode ? studyDataUI.mode : this.initMode()
     });
   },
 
@@ -43,7 +44,8 @@ qx.Class.define("osparc.data.model.StudyUI", {
     },
 
     slideshow: {
-      check: "osparc.data.model.SlideShow",
+      check: "osparc.data.model.Slideshow",
+      init: {},
       nullable: true
     },
 
@@ -52,16 +54,31 @@ qx.Class.define("osparc.data.model.StudyUI", {
       init: null,
       nullable: true,
       event: "changeCurrentNodeId"
+    },
+
+    mode: {
+      check: ["workbench", "guided", "app"],
+      init: "workbench",
+      nullable: true,
+      event: "changeMode",
+      apply: "__applyMode"
     }
   },
 
   members: {
+    __applyMode: function(mode) {
+      if (mode === "guided") {
+        this.setMode("app");
+      }
+    },
+
     serialize: function() {
       const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
       let jsonObject = {};
       jsonObject["workbench"] = currentStudy ? currentStudy.getWorkbench().serializeUI() : this.getWorkbench();
       jsonObject["slideshow"] = this.getSlideshow().serialize();
-      jsonObject["currentNodeId"] = this.getCurrentNodeId();
+      jsonObject["currentNodeId"] = this.getCurrentNodeId() || "";
+      jsonObject["mode"] = this.getMode();
       return jsonObject;
     }
   }

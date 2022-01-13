@@ -1,12 +1,13 @@
 # pylint: disable=no-value-for-parameter
 # pylint: disable=redefined-outer-name
 
-from typing import Awaitable, Callable
+from typing import AsyncIterable, Awaitable, Callable
 
 import pytest
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy
+from faker import Faker
 from pytest_simcore.helpers.rawdata_fakers import random_user
 from simcore_postgres_database.errors import ForeignKeyViolation, NotNullViolation
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
@@ -15,7 +16,7 @@ from simcore_postgres_database.models.users import users
 
 
 @pytest.fixture(scope="function")
-async def user_id(pg_engine: Engine) -> int:
+async def user_id(pg_engine: Engine) -> AsyncIterable[int]:
     async with pg_engine.acquire() as conn:
         # a 'me' user
         uid = await conn.scalar(
@@ -38,14 +39,18 @@ async def user_group_id(pg_engine: Engine, user_id: int) -> int:
 
 
 @pytest.fixture
-async def create_cluster(pg_engine: Engine) -> Callable[..., Awaitable[int]]:
+async def create_cluster(
+    pg_engine: Engine, faker: Faker
+) -> AsyncIterable[Callable[..., Awaitable[int]]]:
     cluster_ids = []
 
-    async def creator(**overrides) -> Awaitable[int]:
+    async def creator(**overrides) -> int:
         insert_values = {
             "name": "default cluster name",
             "type": ClusterType.ON_PREMISE,
             "description": None,
+            "endpoint": faker.domain_name(),
+            "authentication": faker.pydict(value_types=str),
         }
         insert_values.update(overrides)
         async with pg_engine.acquire() as conn:
@@ -53,6 +58,7 @@ async def create_cluster(pg_engine: Engine) -> Callable[..., Awaitable[int]]:
                 clusters.insert().values(**insert_values).returning(clusters.c.id)
             )
         cluster_ids.append(cluster_id)
+        assert cluster_id
         return cluster_id
 
     yield creator

@@ -43,6 +43,6 @@ def test_dsn_with_query(mock_environment: Dict, monkeypatch):
 
     assert settings_with_app.POSTGRES_CLIENT_NAME
     assert (
-        settings_with_app.dsn
+        settings_with_app.dsn_with_query
         == "postgresql://foo:secret@localhost:5432/foodb?application_name=Some+%2643+funky+name"
     )

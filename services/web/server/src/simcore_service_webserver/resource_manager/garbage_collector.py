@@ -10,12 +10,12 @@ from aioredlock import Aioredlock
 from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 
-from .. import director_v2, users_exceptions
+from .. import director_v2_api, users_exceptions
 from ..db_models import GroupType
 from ..director.director_exceptions import DirectorException, ServiceNotFoundError
 from ..groups_api import get_group_from_gid
 from ..projects.projects_api import (
-    delete_project_from_db,
+    delete_project,
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
@@ -272,7 +272,12 @@ async def remove_disconnected_user_resources(
                             user_id=int(dead_key["user_id"]),
                             project_uuid=resource_value,
                             app=app,
+                            user_name={
+                                "first_name": "garbage",
+                                "last_name": "collector",
+                            },
                         )
+
                     except ProjectNotFoundError as err:
                         logger.warning(
                             (
@@ -312,7 +317,8 @@ async def remove_users_manually_marked_as_guests(
     registry: RedisResourceRegistry, app: web.Application
 ) -> None:
     """
-    Removes all the projects associated with GUEST users in the system.
+    Removes all the projects MANUALLY marked as GUEST users in the system (i.e. does not include
+    those accessing via the front-end).
     If the user defined a TEMPLATE, this one also gets removed.
     """
     lock_manager: Aioredlock = get_redis_lock_manager(app)
@@ -320,22 +326,24 @@ async def remove_users_manually_marked_as_guests(
     # collects all users with registed sessions
     alive_keys, dead_keys = await registry.get_all_resource_keys()
 
-    user_ids_to_ignore = set()
+    skip_users = set()
     for entry in chain(alive_keys, dead_keys):
-        user_ids_to_ignore.add(int(entry["user_id"]))
+        skip_users.add(int(entry["user_id"]))
 
     # Prevent creating this list if a guest user
     guest_users: List[Tuple[int, str]] = await get_guest_user_ids_and_names(app)
-    logger.info("GUEST user candidates to clean %s", guest_users)
 
     for guest_user_id, guest_user_name in guest_users:
-        if guest_user_id in user_ids_to_ignore:
-            logger.info(
-                "Ignoring user '%s' as it previously had alive or dead resource keys ",
-                guest_user_id,
+        # Prevents removing GUEST users that were automatically (NOT manually) created
+        # from the front-end
+        if guest_user_id in skip_users:
+            logger.debug(
+                "Skipping garbage-collecting GUEST user with %s since it still has resources in use",
+                f"{guest_user_id=}",
             )
             continue
 
+        # Prevents removing GUEST users that are initializating
         lock_during_construction: bool = await lock_manager.is_locked(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=guest_user_name)
         )
@@ -346,12 +354,18 @@ async def remove_users_manually_marked_as_guests(
 
         if lock_during_construction or lock_during_initialization:
             logger.debug(
-                "Skipping garbage-collecting user '%s','%s' since it is still locked",
-                guest_user_id,
-                guest_user_name,
+                "Skipping garbage-collecting GUEST user with %s and %s since it is still locked",
+                f"{guest_user_id=}",
+                f"{guest_user_name=}",
             )
             continue
 
+        # Removing
+        logger.info(
+            "Removing user %s and %s with all its resources because it was MARKED as GUEST",
+            f"{guest_user_id=}",
+            f"{guest_user_name=}",
+        )
         await remove_guest_user_with_all_its_resources(
             app=app,
             user_id=guest_user_id,
@@ -375,7 +389,7 @@ async def _remove_single_orphaned_service(
         )
         logger.info(message)
         try:
-            await director_v2.stop_service(app, service_uuid, save_state=False)
+            await director_v2_api.stop_service(app, service_uuid, save_state=False)
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
         return
@@ -414,7 +428,7 @@ async def _remove_single_orphaned_service(
             user_id = int(interactive_service.get("user_id", 0))
 
             save_state = not await is_user_guest(app, user_id) if user_id else True
-            await director_v2.stop_service(app, service_uuid, save_state)
+            await director_v2_api.stop_service(app, service_uuid, save_state)
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
 
@@ -446,8 +460,8 @@ async def remove_orphaned_services(
 
     running_interactive_services: List[Dict[str, Any]] = []
     try:
-        running_interactive_services = await director_v2.get_services(app)
-    except director_v2.DirectorServiceError:
+        running_interactive_services = await director_v2_api.get_services(app)
+    except director_v2_api.DirectorServiceError:
         logger.debug(("Could not fetch running_interactive_services"))
 
     logger.info(
@@ -480,19 +494,26 @@ async def remove_guest_user_with_all_its_resources(
     """Removes a GUEST user with all its associated projects and S3/MinIO files"""
 
     try:
-        logger.debug("Will try to remove resources for user '%s' if GUEST", user_id)
         if not await is_user_guest(app, user_id):
-            logger.debug("User is not GUEST, skipping cleanup")
             return
 
+        logger.debug(
+            "Deleting all projects of user with %s because it is a GUEST",
+            f"{user_id=}",
+        )
         await remove_all_projects_for_user(app=app, user_id=user_id)
+
+        logger.debug(
+            "Deleting user %s because it is a GUEST",
+            f"{user_id=}",
+        )
         await remove_user(app=app, user_id=user_id)
 
-    except database_errors as err:
+    except database_errors as error:
         logger.warning(
-            "Could not remove GUEST with id=%s. Check the logs above for details [%s]",
-            user_id,
-            err,
+            "Failure in database while removing user (%s) and its resources with %s",
+            f"{user_id=}",
+            f"{error}",
         )
 
 
@@ -515,26 +536,25 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
     except users_exceptions.UserNotFoundError:
         logger.warning(
             "Could not recover user data for user '%s', stopping removal of projects!",
-            user_id,
+            f"{user_id=}",
         )
         return
+
     user_primary_gid = int(project_owner["primary_gid"])
 
     # fetch all projects for the user
     user_project_uuids = await app[
         APP_PROJECT_DBAPI
     ].list_all_projects_by_uuid_for_user(user_id=user_id)
+
     logger.info(
-        "Project uuids, to clean, for user '%s': '%s'",
-        user_id,
-        user_project_uuids,
+        "Removing or transfering projects of user with %s, %s: %s",
+        f"{user_id=}",
+        f"{project_owner=}",
+        f"{user_project_uuids=}",
     )
 
     for project_uuid in user_project_uuids:
-        logger.debug(
-            "Removing or transfering project '%s'",
-            project_uuid,
-        )
         try:
             project: Dict = await get_project_for_user(
                 app=app,
@@ -544,10 +564,13 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
             )
         except web.HTTPNotFound:
             logger.warning(
-                "Could not recover project data for project_uuid '%s', skipping...",
-                project_uuid,
+                "Could not find project %s for user with %s to be removed. Skipping.",
+                f"{project_uuid=}",
+                f"{user_id=}",
             )
             continue
+
+        assert project  # nosec
 
         new_project_owner_gid = await get_new_project_owner_gid(
             app=app,
@@ -559,25 +582,38 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
 
         if new_project_owner_gid is None:
             # when no new owner is found just remove the project
-            logger.info(
-                "The project can be removed as is not shared with write access with other users"
-            )
             try:
-                await delete_project_from_db(app, project_uuid, user_id)
+                logger.debug(
+                    "Removing or transfering ownership of project with %s from user with %s",
+                    f"{project_uuid=}",
+                    f"{user_id=}",
+                )
+
+                await delete_project(app, project_uuid, user_id)
+
             except ProjectNotFoundError:
                 logging.warning(
-                    "Project '%s' not found, skipping removal", project_uuid
+                    "Project with %s was not found, skipping removal",
+                    f"{project_uuid=}",
                 )
-            continue
 
-        # Try to change the project owner and remove access rights from the current owner
-        await replace_current_owner(
-            app=app,
-            project_uuid=project_uuid,
-            user_primary_gid=user_primary_gid,
-            new_project_owner_gid=new_project_owner_gid,
-            project=project,
-        )
+        else:
+
+            # Try to change the project owner and remove access rights from the current owner
+            logger.debug(
+                "Transfering ownership of project %s from user %s to %s.",
+                "This project cannot be removed since it is shared with other users"
+                f"{project_uuid=}",
+                f"{user_id}",
+                f"{new_project_owner_gid}",
+            )
+            await replace_current_owner(
+                app=app,
+                project_uuid=project_uuid,
+                user_primary_gid=user_primary_gid,
+                new_project_owner_gid=new_project_owner_gid,
+                project=project,
+            )
 
 
 async def get_new_project_owner_gid(
@@ -714,7 +750,7 @@ async def replace_current_owner(
 
     # syncing back project data
     try:
-        await app[APP_PROJECT_DBAPI].update_project_without_enforcing_checks(
+        await app[APP_PROJECT_DBAPI].update_project_without_checking_permissions(
             project_data=project,
             project_uuid=project_uuid,
         )

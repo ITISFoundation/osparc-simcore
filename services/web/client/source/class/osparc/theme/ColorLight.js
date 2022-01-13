@@ -22,6 +22,10 @@ qx.Theme.define("osparc.theme.ColorLight", {
 
     "loading-page-background-color": "background-main",
     "loading-page-text": "#000000",
-    "loading-page-spinner": "#222222"
+    "loading-page-spinner": "#222222",
+
+    "contrasted-background++": "#BBB",
+    "scrollbar-passive": "contrasted-background+",
+    "scrollbar-active": "contrasted-background++"
   }
 });

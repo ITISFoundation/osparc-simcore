@@ -50,7 +50,8 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
       SHARED: 6,
       LAST_CHANGE: 7,
       TSR: 8,
-      OPTIONS: 9
+      UI_MODE: 9,
+      OPTIONS: 10
     }
   },
 

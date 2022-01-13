@@ -7,10 +7,13 @@
 aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/constraints.txt
     #   pytest-aiohttp
-alembic==1.6.5
-    # via -r requirements/_test.in
-astroid==2.7.3
+alembic==1.7.4
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
+astroid==2.9.0
     # via pylint
 async-timeout==3.0.1
     # via
@@ -29,7 +32,7 @@ certifi==2020.12.5
     #   -c requirements/_base.txt
     #   httpx
     #   requests
-cffi==1.14.6
+cffi==1.15.0
     # via
     #   bcrypt
     #   cryptography
@@ -45,20 +48,20 @@ click==7.1.2
     #   -r requirements/_test.in
 codecov==2.1.12
     # via -r requirements/_test.in
-coverage==5.5
+coverage==6.1.2
     # via
     #   codecov
     #   coveralls
     #   pytest-cov
-coveralls==3.2.0
+coveralls==3.3.1
     # via -r requirements/_test.in
-cryptography==3.4.7
+cryptography==36.0.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   paramiko
 distro==1.6.0
     # via docker-compose
-docker==5.0.0
+docker==5.0.3
     # via
     #   -r requirements/_test.in
     #   docker-compose
@@ -72,7 +75,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==8.11.0
+faker==9.8.3
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -92,9 +95,18 @@ idna==2.10
     #   requests
     #   rfc3986
     #   yarl
+importlib-metadata==4.8.1
+    # via
+    #   -c requirements/_base.txt
+    #   alembic
+importlib-resources==5.3.0 ; python_version < "3.9"
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   alembic
 iniconfig==1.1.1
     # via pytest
-isort==5.9.3
+isort==5.10.1
     # via pylint
 jsonschema==3.2.0
     # via
@@ -102,8 +114,10 @@ jsonschema==3.2.0
     #   docker-compose
 lazy-object-proxy==1.6.0
     # via astroid
-mako==1.1.4
-    # via alembic
+mako==1.1.5
+    # via
+    #   -c requirements/_base.txt
+    #   alembic
 markupsafe==1.1.1
     # via
     #   -c requirements/_base.txt
@@ -119,11 +133,11 @@ packaging==20.9
     # via
     #   -c requirements/_base.txt
     #   pytest
-paramiko==2.7.2
+paramiko==2.8.0
     # via docker
-platformdirs==2.3.0
+platformdirs==2.4.0
     # via pylint
-pluggy==0.13.1
+pluggy==1.0.0
     # via pytest
 psycopg2-binary==2.8.6
     # via
@@ -131,11 +145,11 @@ psycopg2-binary==2.8.6
     #   sqlalchemy
 ptvsd==4.3.2
     # via -r requirements/_test.in
-py==1.10.0
+py==1.11.0
     # via pytest
-pycparser==2.20
+pycparser==2.21
     # via cffi
-pylint==2.10.2
+pylint==2.12.1
     # via -r requirements/_test.in
 pynacl==1.4.0
     # via paramiko
@@ -145,7 +159,7 @@ pyparsing==2.4.7
     #   packaging
 pyrsistent==0.18.0
     # via jsonschema
-pytest==6.2.4
+pytest==6.2.5
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -154,7 +168,7 @@ pytest==6.2.4
     #   pytest-mock
 pytest-aiohttp==0.3.0
     # via -r requirements/_test.in
-pytest-cov==2.12.1
+pytest-cov==3.0.0
     # via -r requirements/_test.in
 pytest-docker==0.10.3
     # via -r requirements/_test.in
@@ -163,15 +177,11 @@ pytest-mock==3.6.1
 pytest-runner==5.3.1
     # via -r requirements/_test.in
 python-dateutil==2.8.2
-    # via
-    #   alembic
-    #   faker
+    # via faker
 python-dotenv==0.15.0
     # via
     #   -c requirements/_base.txt
     #   docker-compose
-python-editor==1.0.4
-    # via alembic
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -185,7 +195,9 @@ requests==2.25.1
     #   docker
     #   docker-compose
 respx==0.17.1
-    # via -r requirements/_test.in
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 rfc3986==1.4.0
     # via
     #   -c requirements/_base.txt
@@ -217,12 +229,15 @@ toml==0.10.2
     # via
     #   pylint
     #   pytest
-    #   pytest-cov
-typing-extensions==3.7.4.3
+tomli==1.2.2
+    # via coverage
+typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-urllib3==1.26.5
+    #   astroid
+    #   pylint
+urllib3==1.26.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -231,12 +246,17 @@ websocket-client==0.59.0
     # via
     #   docker
     #   docker-compose
-wrapt==1.12.1
+wrapt==1.13.3
     # via astroid
 yarl==1.6.3
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+zipp==3.6.0
+    # via
+    #   -c requirements/_base.txt
+    #   importlib-metadata
+    #   importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

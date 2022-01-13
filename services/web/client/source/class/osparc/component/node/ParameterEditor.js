@@ -17,17 +17,15 @@
 
 
 qx.Class.define("osparc.component.node.ParameterEditor", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.form.renderer.Single,
 
   construct: function(node) {
-    this.base(arguments);
-
-    this._setLayout(new qx.ui.layout.VBox());
-
     this.set({
       node
     });
-    this.__buildForm();
+
+    const form = this.__form = new qx.ui.form.Form();
+    this.base(arguments, form);
   },
 
   statics: {
@@ -45,11 +43,6 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
         "out_1": val
       });
     }
-  },
-
-  events: {
-    "editParameter": "qx.event.type.Event",
-    "cancel": "qx.event.type.Event"
   },
 
   properties: {
@@ -95,48 +88,31 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
         case "boolean":
           control = new qx.ui.form.CheckBox();
           break;
-        case "cancel-button": {
-          control = new qx.ui.form.Button(this.tr("Cancel")).set({
-            allowGrowX: false
-          });
-          const commandEsc = new qx.ui.command.Command("Esc");
-          control.setCommand(commandEsc);
-          control.addListener("execute", () => this.fireEvent("cancel"));
-          break;
-        }
-        case "ok-button": {
-          control = new qx.ui.form.Button(this.tr("OK")).set({
-            allowGrowX: false
-          });
-          control.addListener("execute", () => {
-            this.fireEvent("editParameter");
-          });
-          break;
-        }
       }
       return control || this.base(arguments, id);
     },
 
-    __buildForm: function() {
-      const form = this.__form = new qx.ui.form.Form();
-      const renderer = this.__renderer = new qx.ui.form.renderer.Single(form);
-      this._add(renderer);
+    buildForm: function(allSettings = true) {
+      this._removeAll();
 
       const node = this.getNode();
 
-      const label = this.getChildControl("label");
-      form.add(label, "Label", null, "label");
-      label.setValue(node.getLabel());
-
       const type = this.self().getParameterOutputType(node);
-      const typeBox = this.getChildControl("data-type");
-      typeBox.getSelectables().forEach(selectable => {
-        if (selectable.type === type) {
-          typeBox.setSelection([selectable]);
-          typeBox.setEnabled(false);
-        }
-      });
-      form.add(typeBox, "Data Type", null, "type");
+      if (allSettings) {
+        const label = this.getChildControl("label");
+        label.setValue(node.getLabel());
+        label.bind("value", node, "label");
+        this.__form.add(label, "Label", null, "label");
+
+        const typeBox = this.getChildControl("data-type");
+        typeBox.getSelectables().forEach(selectable => {
+          if (selectable.type === type) {
+            typeBox.setSelection([selectable]);
+            typeBox.setEnabled(false);
+          }
+        });
+        this.__form.add(typeBox, "Data Type", null, "type");
+      }
 
       const valueField = this.getChildControl(type);
       const outputs = node.getOutputs();
@@ -147,22 +123,8 @@ qx.Class.define("osparc.component.node.ParameterEditor", {
           valueField.setValue(String(outputs["out_1"]["value"]));
         }
       }
-      form.add(valueField, "Value", null, "value");
-
-      // buttons
-      const cancelButton = this.getChildControl("cancel-button");
-      form.addButton(cancelButton);
-      const okButton = this.getChildControl("ok-button");
-      form.addButton(okButton);
-    },
-
-    getLabel: function() {
-      return this.__form.getItem("label").getValue();
-    },
-
-    getValue: function() {
-      const item = this.__form.getItem("value");
-      return item.getValue();
+      valueField.addListener("changeValue", e => osparc.component.node.ParameterEditor.setParameterOutputValue(node, e.getData()));
+      this.__form.add(valueField, "Value", null, "value");
     }
   }
 });

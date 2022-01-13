@@ -125,8 +125,9 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         repo_orm = ReposOrm(conn)
         repo_id = await repo_orm.insert(project_uuid=project.uuid)
         assert repo_id is not None
+        assert isinstance(repo_id, int)
 
-        repo_orm.set_default(rowid=repo_id)
+        repo_orm.set_filter(rowid=repo_id)
         repo = await repo_orm.fetch()
         assert repo
         assert repo.project_uuid == project.uuid
@@ -137,8 +138,9 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         branches_orm = BranchesOrm(conn)
         branch_id = await branches_orm.insert(repo_id=repo.id)
         assert branch_id is not None
+        assert isinstance(branch_id, int)
 
-        branches_orm.set_default(rowid=branch_id)
+        branches_orm.set_filter(rowid=branch_id)
         main_branch: Optional[RowProxy] = await branches_orm.fetch()
         assert main_branch
         assert main_branch.name == "main", "Expected 'main' as default branch"
@@ -149,7 +151,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         heads_orm = HeadsOrm(conn)
         await heads_orm.insert(repo_id=repo.id, head_branch_id=branch_id)
 
-        heads_orm.set_default(rowid=repo.id)
+        heads_orm.set_filter(rowid=repo.id)
         head = await heads_orm.fetch()
         assert head
 
@@ -160,7 +162,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
     repo = await repo_orm.fetch("id project_uuid project_checksum")
     assert repo
 
-    project_orm = ProjectsOrm(conn).set_default(uuid=repo.project_uuid)
+    project_orm = ProjectsOrm(conn).set_filter(uuid=repo.project_uuid)
     project_wc = await project_orm.fetch()
     assert project_wc
     assert project == project_wc
@@ -176,7 +178,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
 
         # get HEAD = repo.branch_id -> .head_commit_id
         assert head.repo_id == repo.id
-        branches_orm.set_default(head.head_branch_id)
+        branches_orm.set_filter(head.head_branch_id)
         branch = await branches_orm.fetch("head_commit_id name")
         assert branch
         assert branch.name == "main"
@@ -200,18 +202,19 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         await repo_orm.update(project_checksum=snapshot_checksum)
 
     # log history
-    commits = await commits_orm.fetchall()
+    commits = await commits_orm.fetch_all()
     assert len(commits) == 1
     assert commits[0].id == commit_id
 
     # tag
     tag_orm = TagsOrm(conn)
-    tag_id: Optional[int] = await tag_orm.insert(
+    tag_id = await tag_orm.insert(
         repo_id=repo.id,
         commit_id=commit_id,
         name="v1",
     )
     assert tag_id is not None
+    assert isinstance(tag_id, int)
 
     tag = await tag_orm.fetch(rowid=tag_id)
     assert tag
@@ -223,8 +226,8 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
     repo = await repo_orm.fetch()
     assert repo
 
-    project_orm.set_default(uuid=repo.project_uuid)
-    assert project_orm.is_default_set()
+    project_orm.set_filter(uuid=repo.project_uuid)
+    assert project_orm.is_filter_set()
 
     await project_orm.update(
         workbench={
@@ -271,7 +274,7 @@ async def test_basic_workflow(project: RowProxy, conn: SAConnection):
         await branches_orm.update(head_commit_id=commit_id)
 
     # log history
-    commits = await commits_orm.fetchall()
+    commits = await commits_orm.fetch_all()
     assert len(commits) == 2
     assert commits[1].id == commit_id
 

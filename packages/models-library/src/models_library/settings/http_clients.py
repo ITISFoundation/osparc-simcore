@@ -4,11 +4,11 @@ from pydantic import BaseSettings, Field
 
 
 class ClientRequestSettings(BaseSettings):
-    # NOTE: when updating the defaults please make sure to search for the env vars
-    # in all the project, they also need to be updated inside the service-library
+    # NOTE: These entries are used in some old services as well. These need to be updated if these
+    # variable names or defaults are changed.
     total_timeout: Optional[int] = Field(
         default=20,
-        description="timeout used for outgoing http requests",
+        description="timeout in seconds used for outgoing http requests",
         env="HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT",
     )
 

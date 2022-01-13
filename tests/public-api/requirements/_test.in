@@ -5,11 +5,13 @@ pytest-cov
 pytest-asyncio
 faker
 
+
 python-dotenv
 httpx
 
 # pulled by pytest-simcore
+aiohttp
 docker
-tenacity
 jsonschema
 pyyaml
+tenacity

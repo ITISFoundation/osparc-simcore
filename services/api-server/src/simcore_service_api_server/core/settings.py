@@ -1,128 +1,115 @@
-import logging
-from enum import Enum
+from functools import cached_property
 from typing import Optional
 
-from models_library.settings.http_clients import ClientRequestSettings
-from models_library.settings.postgres import PostgresSettings
-from pydantic import BaseSettings, Field, SecretStr, validator
-
-
-class BootModeEnum(str, Enum):
-    DEBUG = "debug-ptvsd"
-    PRODUCTION = "production"
-    DEVELOPMENT = "development"
-
-
-class _CommonConfig:
-    case_sensitive = False
-    env_file = ".env"
-
+from models_library.basic_types import BootModeEnum, LogLevel
+from pydantic import Field, SecretStr
+from pydantic.class_validators import validator
+from pydantic.networks import HttpUrl
+from settings_library.base import BaseCustomSettings
+from settings_library.logging_utils import MixinLoggingSettings
+from settings_library.postgres import PostgresSettings
+from settings_library.tracing import TracingSettings
 
 # SERVICES CLIENTS --------------------------------------------
-class BaseServiceSettings(BaseSettings):
-    enabled: bool = Field(True, description="Enables/Disables connection with service")
-    host: str
-    port: int = 8080
-    vtag: str = "v0"
 
-    @property
+
+class _UrlMixin:
+    def _build_url(self, prefix: str) -> str:
+        prefix = prefix.upper()
+        return HttpUrl.build(
+            scheme="http",
+            host=getattr(self, f"{prefix}_HOST"),
+            port=f"{getattr(self, f'{prefix}_PORT')}",
+            path=f"/{getattr(self, f'{prefix}_VTAG')}",
+        )
+
+
+class WebServerSettings(BaseCustomSettings, _UrlMixin):
+    WEBSERVER_HOST: str = "webserver"
+    WEBSERVER_PORT: int = 8080
+    WEBSERVER_VTAG: str = "v0"
+
+    WEBSERVER_SESSION_SECRET_KEY: SecretStr
+    WEBSERVER_SESSION_NAME: str = "osparc.WEBAPI_SESSION"
+
+    @cached_property
     def base_url(self) -> str:
-        return f"http://{self.host}:{self.port}/{self.vtag}"
-
-
-class WebServerSettings(BaseServiceSettings):
-    session_secret_key: SecretStr
-    session_name: str = "osparc.WEBAPI_SESSION"
-
-    class Config(_CommonConfig):
-        env_prefix = "WEBSERVER_"
+        return self._build_url("WEBSERVER")
 
 
 # TODO: dynamically create types with minimal options?
-class CatalogSettings(BaseServiceSettings):
-    host: str = "catalog"
-    port: int = 8000
+class CatalogSettings(BaseCustomSettings, _UrlMixin):
+    CATALOG_HOST: str = "catalog"
+    CATALOG_PORT: int = 8000
+    CATALOG_VTAG: str = "v0"
 
-    class Config(_CommonConfig):
-        env_prefix = "CATALOG_"
-
-
-class StorageSettings(BaseServiceSettings):
-    host: str = "storage"
-
-    class Config(_CommonConfig):
-        env_prefix = "STORAGE_"
+    @cached_property
+    def base_url(self) -> str:
+        return self._build_url("CATALOG")
 
 
-class DirectorV2Settings(BaseServiceSettings):
-    host: str = "director-v2"
-    port: int = 8000
-    vtag: str = "v2"
+class StorageSettings(BaseCustomSettings, _UrlMixin):
+    STORAGE_HOST: str = "storage"
+    STORAGE_PORT: int = 8080
+    STORAGE_VTAG: str = "v0"
 
-    class Config(_CommonConfig):
-        env_prefix = "DIRECTOR_V2_"
+    @cached_property
+    def base_url(self) -> str:
+        return self._build_url("STORAGE")
 
 
-class PGSettings(PostgresSettings):
-    enabled: bool = Field(True, description="Enables/Disables connection with service")
+class DirectorV2Settings(BaseCustomSettings, _UrlMixin):
+    DIRECTOR_V2_HOST: str = "director-v2"
+    DIRECTOR_V2_PORT: int = 8000
+    DIRECTOR_V2_VTAG: str = "v2"
 
-    class Config(_CommonConfig, PostgresSettings.Config):
-        env_prefix = "POSTGRES_"
+    @cached_property
+    def base_url(self) -> str:
+        return self._build_url("DIRECTOR")
 
 
 # MAIN SETTINGS --------------------------------------------
 
 
-class AppSettings(BaseSettings):
-    @classmethod
-    def create_from_env(cls) -> "AppSettings":
-        # This call triggers parsers
-        return cls(
-            postgres=PGSettings(),
-            webserver=WebServerSettings(),
-            client_request=ClientRequestSettings(),
-            catalog=CatalogSettings(),
-            storage=StorageSettings(),
-            director_v2=DirectorV2Settings(),
-        )
-
+class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     # pylint: disable=no-self-use
     # pylint: disable=no-self-argument
 
     # DOCKER
-    boot_mode: Optional[BootModeEnum] = Field(..., env="SC_BOOT_MODE")
+    SC_BOOT_MODE: Optional[BootModeEnum]
 
     # LOGGING
-    log_level_name: str = Field("DEBUG", env="LOG_LEVEL")
-
-    @validator("log_level_name")
-    def match_logging_level(cls, value) -> str:
-        try:
-            getattr(logging, value.upper())
-            return value.upper()
-        except AttributeError as err:
-            raise ValueError(f"{value.upper()} is not a valid level") from err
-
-    @property
-    def loglevel(self) -> int:
-        return getattr(logging, self.log_level_name)
+    LOG_LEVEL: LogLevel = Field(
+        LogLevel.INFO.value,
+        env=["API_SERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+    )
 
     # POSTGRES
-    postgres: PGSettings
+    API_SERVER_POSTGRES: Optional[PostgresSettings]
 
     # SERVICES with http API
-    webserver: WebServerSettings
-    catalog: CatalogSettings
-    storage: StorageSettings
-    director_v2: DirectorV2Settings
+    API_SERVER_WEBSERVER: Optional[WebServerSettings]
+    API_SERVER_CATALOG: Optional[CatalogSettings]
+    API_SERVER_STORAGE: Optional[StorageSettings]
+    API_SERVER_DIRECTOR_V2: Optional[DirectorV2Settings]
+    API_SERVER_TRACING: Optional[TracingSettings]
 
-    client_request: ClientRequestSettings
-
-    debug: bool = False  # If True, debug tracebacks should be returned on errors.
-    remote_debug_port: int = 3000
-    dev_features_enabled: bool = Field(
+    API_SERVER_DEV_FEATURES_ENABLED: bool = Field(
         False, env=["API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"]
     )
 
-    class Config(_CommonConfig):
-        env_prefix = ""
+    API_SERVER_REMOTE_DEBUG_PORT: int = 3000
+
+    @cached_property
+    def debug(self) -> bool:
+        """If True, debug tracebacks should be returned on errors."""
+        return self.SC_BOOT_MODE in [
+            BootModeEnum.DEBUG,
+            BootModeEnum.DEVELOPMENT,
+            BootModeEnum.LOCAL,
+        ]
+
+    @validator("LOG_LEVEL", pre=True)
+    @classmethod
+    def _validate_loglevel(cls, value) -> str:
+        return cls.validate_log_level(value)

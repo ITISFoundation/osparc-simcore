@@ -36,22 +36,22 @@ def cli(settings_cls: Type[BaseCustomSettings]) -> typer.Typer:
     return main
 
 
-def test_compose_commands(cli, cli_runner):
+def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
     result = cli_runner.invoke(cli, ["--help"])
     print(result.stdout)
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result
 
     # first command
     result = cli_runner.invoke(cli, ["run", "--help"])
     print(result.stdout)
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result
 
     # settings command
     result = cli_runner.invoke(cli, ["settings", "--help"])
     print(result.stdout)
 
     assert "--compact" in result.stdout
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result
 
     def extract_lines(text):
         lines = [line.strip() for line in text.split("\n") if line.strip()]
@@ -66,16 +66,18 @@ HELP = """
     Resolves settings and prints envfile
 
     Options:
-    --as-json / --no-as-json        [default: False]
+    --as-json / --no-as-json        [default: no-as-json]
     --as-json-schema / --no-as-json-schema
-                                    [default: False]
-    --compact / --no-compact        Print compact form  [default: False]
-    --verbose / --no-verbose        [default: False]
+                                    [default: no-as-json-schema]
+    --compact / --no-compact        Print compact form  [default: no-compact]
+    --verbose / --no-verbose        [default: no-verbose]
     --help                          Show this message and exit.
 """
 
 
-def test_settings_as_json(cli, settings_cls, mock_environment, cli_runner):
+def test_settings_as_json(
+    cli: typer.Typer, settings_cls, mock_environment, cli_runner: CliRunner
+):
 
     result = cli_runner.invoke(cli, ["settings", "--as-json"])
     print(result.stdout)
@@ -85,7 +87,9 @@ def test_settings_as_json(cli, settings_cls, mock_environment, cli_runner):
     assert settings_cls.parse_obj(settings)
 
 
-def test_settings_as_env_file(cli, settings_cls, mock_environment, cli_runner):
+def test_settings_as_env_file(
+    cli: typer.Typer, settings_cls, mock_environment, cli_runner: CliRunner
+):
     # ANE -> PC: this test will be left in place but the feature will
     # not be considered for parsing settings via Pudantic as there
     # is no out of the box support

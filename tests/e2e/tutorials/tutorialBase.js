@@ -66,6 +66,10 @@ class TutorialBase {
 
     await auto.acceptCookies(this.__page);
     await this.takeScreenshot("postCookies_" + domain);
+
+    // eslint-disable-next-line no-undef
+    const commit = await this.__page.evaluate(() => qx.core.Environment.get("osparc.vcsRef"));
+    console.log("commit", commit);
   }
 
   async start() {
@@ -255,12 +259,15 @@ class TutorialBase {
       await this.waitFor(5000);
       if (await utils.isStudyDone(this.__page, studyId)) {
         await utils.takeScreenshot(this.__page, 'run_pipeline_done');
+        if (await utils.getStudyState(this.__page, studyId) === "FAILED") {
+          throw new Error("Pipeline failed");
+        }
         return;
       }
     }
     console.log("Timeout reached waiting for study done ", ((new Date().getTime()) - start) / 1000);
     await utils.takeScreenshot(this.__page, 'run_pipeline_timeout_reached');
-    return;
+    throw new Error("Pipeline timed out");
   }
 
   async waitForStudyUnlocked(studyId, timeout = 10000) {
@@ -319,20 +326,7 @@ class TutorialBase {
     await utils.waitAndClick(this.__page, '[osparc-test-id="nodeDataManagerCloseBtn"]');
   }
 
-  async retrieve(waitAfterRetrieve = 5000) {
-    await auto.clickRetrieve(this.__page);
-    await this.waitFor(waitAfterRetrieve);
-  }
-
-  async openNodeRetrieveAndRestart(nodePosInTree = 0) {
-    await this.takeScreenshot("openNodeRetrieveAndRestart_before");
-    await auto.openNode(this.__page, nodePosInTree);
-    await this.retrieve();
-    await auto.clickRestart(this.__page);
-    await this.takeScreenshot("openNodeRetrieveAndRestart_after");
-  }
-
-  async checkNodeOutputs(nodePos, fileNames, checkNFiles=true) {
+  async checkNodeOutputs(nodePos, fileNames, checkNFiles=true, checkFileNames=true) {
     try {
       await this.openNodeFiles(nodePos);
       await this.takeScreenshot("checkNodeOutputs_before");
@@ -342,11 +336,13 @@ class TutorialBase {
         assert(files.length === fileNames.length, 'Number of files is incorrect')
         console.log('Number of files is correct')
       }
-      assert(
-        fileNames.every(fileName => files.some(file => file.includes(fileName))),
-        'File names are incorrect'
-      )
-      console.log('File names are correct')
+      if (checkFileNames) {
+        assert(
+          fileNames.every(fileName => files.some(file => file.includes(fileName))),
+          'File names are incorrect'
+        )
+        console.log('File names are correct')
+      }
     }
     catch (err) {
       console.error("Results don't match", err);
@@ -436,7 +432,12 @@ class TutorialBase {
   }
 
   async waitFor(waitFor, reason) {
-    console.log(`Waiting for ${waitFor}ms. Reason: ${reason}`)
+    if (reason) {
+      console.log(`Waiting for ${waitFor}ms. Reason: ${reason}`);
+    }
+    else {
+      console.log(`Waiting for ${waitFor}ms.`);
+    }
     await utils.sleep(waitFor);
     await this.takeScreenshot('waitFor_finished')
   }

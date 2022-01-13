@@ -5,10 +5,10 @@
 import asyncio
 import logging
 import re
-from asyncio import BaseEventLoop
+import urllib.parse
 from contextlib import asynccontextmanager, contextmanager
 from importlib import reload
-from typing import AsyncGenerator, Callable, Iterator, List, Type, Union
+from typing import AsyncGenerator, AsyncIterator, Callable, Iterator, List, Type, Union
 from unittest.mock import AsyncMock
 
 import httpx
@@ -17,6 +17,7 @@ import respx
 from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
 from respx.router import MockRouter
 from simcore_service_director_v2.core.settings import AppSettings
@@ -26,6 +27,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
     SchedulerData,
     ServiceState,
 )
+from simcore_service_director_v2.modules.director_v0 import DirectorV0Client
 from simcore_service_director_v2.modules.dynamic_sidecar import module_setup
 from simcore_service_director_v2.modules.dynamic_sidecar.client_api import (
     get_url,
@@ -50,8 +52,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler.events import
 # and ensure faster tests
 TEST_SCHEDULER_INTERVAL_SECONDS = 0.01
 SLEEP_TO_AWAIT_SCHEDULER_TRIGGERS = 10 * TEST_SCHEDULER_INTERVAL_SECONDS
-
-pytestmark = pytest.mark.asyncio
 
 log = logging.getLogger(__name__)
 
@@ -87,6 +87,16 @@ def _mock_containers_docker_status(
         yield mock
 
 
+async def _assert_remove_service(
+    scheduler: DynamicSidecarsScheduler, scheduler_data: SchedulerData
+) -> None:
+    # pylint: disable=protected-access
+    await scheduler.mark_service_for_removal(scheduler_data.node_uuid, True)
+    assert scheduler_data.service_name in scheduler._to_observe
+    await scheduler.finish_service_removal(scheduler_data.node_uuid)
+    assert scheduler_data.service_name not in scheduler._to_observe
+
+
 @asynccontextmanager
 async def _assert_get_dynamic_services_mocked(
     scheduler: DynamicSidecarsScheduler,
@@ -102,14 +112,32 @@ async def _assert_get_dynamic_services_mocked(
 
         yield stack_status
 
-        await scheduler.remove_service(scheduler_data.node_uuid, True)
+        await _assert_remove_service(scheduler, scheduler_data)
 
 
 # FIXTURES
 
 
 @pytest.fixture
-def mocked_dynamic_scheduler_events() -> None:
+def mocked_director_v0(
+    dynamic_sidecar_settings: AppSettings, scheduler_data: SchedulerData
+) -> MockRouter:
+    endpoint = dynamic_sidecar_settings.DIRECTOR_V0.endpoint
+
+    with respx.mock as mock:
+        mock.get(
+            re.compile(
+                fr"^{endpoint}/services/{urllib.parse.quote_plus(scheduler_data.key)}/{scheduler_data.version}/labels"
+            ),
+            name="service labels",
+        ).respond(
+            json={"data": SimcoreServiceLabels.Config.schema_extra["examples"][0]}
+        )
+        yield mock
+
+
+@pytest.fixture
+def mocked_dynamic_scheduler_events() -> Iterator[None]:
     class AlwaysTriggersDynamicSchedulerEvent(DynamicSchedulerEvent):
         @classmethod
         async def will_trigger(
@@ -146,7 +174,16 @@ def ensure_scheduler_runs_once() -> Callable:
 
 
 @pytest.fixture
-def dynamic_sidecar_settings(monkeypatch: MonkeyPatch) -> AppSettings:
+def dynamic_sidecar_settings(
+    simcore_services_network_name: str, monkeypatch: MonkeyPatch
+) -> AppSettings:
+    monkeypatch.setenv("REGISTRY_AUTH", "false")
+    monkeypatch.setenv("REGISTRY_USER", "test")
+    monkeypatch.setenv("REGISTRY_PW", "test")
+    monkeypatch.setenv("REGISTRY_SSL", "false")
+    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", simcore_services_network_name)
+    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
+    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", "local/dynamic-sidecar:MOCKED")
     monkeypatch.setenv("POSTGRES_HOST", "mocked_out")
     monkeypatch.setenv("POSTGRES_USER", "mocked_out")
@@ -165,11 +202,21 @@ def dynamic_sidecar_settings(monkeypatch: MonkeyPatch) -> AppSettings:
 
 @pytest.fixture
 async def mocked_app(
-    loop: BaseEventLoop, dynamic_sidecar_settings: AppSettings, docker_swarm: None
-) -> Iterator[FastAPI]:
+    dynamic_sidecar_settings: AppSettings,
+    mocked_director_v0: MockRouter,
+    docker_swarm: None,
+) -> AsyncIterator[FastAPI]:
     app = FastAPI()
     app.state.settings = dynamic_sidecar_settings
+    log.info("AppSettings=%s", dynamic_sidecar_settings)
     try:
+        DirectorV0Client.create(
+            app,
+            client=httpx.AsyncClient(
+                base_url=f"{dynamic_sidecar_settings.DIRECTOR_V0.endpoint}",
+                timeout=dynamic_sidecar_settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
+            ),
+        )
         await setup_api_client(app)
         await setup_scheduler(app)
 
@@ -227,6 +274,7 @@ def mock_max_status_api_duration(monkeypatch: MonkeyPatch) -> Iterator[None]:
 
 
 async def test_scheduler_add_remove(
+    loop: asyncio.AbstractEventLoop,
     ensure_scheduler_runs_once: Callable,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
@@ -240,10 +288,11 @@ async def test_scheduler_add_remove(
     await ensure_scheduler_runs_once()
     assert scheduler_data.dynamic_sidecar.is_available is True
 
-    await scheduler.remove_service(scheduler_data.node_uuid, True)
+    await _assert_remove_service(scheduler, scheduler_data)
 
 
 async def test_scheduler_removes_partially_started_services(
+    loop: asyncio.AbstractEventLoop,
     ensure_scheduler_runs_once: Callable,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
@@ -258,6 +307,7 @@ async def test_scheduler_removes_partially_started_services(
 
 
 async def test_scheduler_is_failing(
+    loop: asyncio.AbstractEventLoop,
     ensure_scheduler_runs_once: Callable,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
@@ -272,6 +322,7 @@ async def test_scheduler_is_failing(
 
 
 async def test_scheduler_health_timing_out(
+    loop: asyncio.AbstractEventLoop,
     ensure_scheduler_runs_once: Callable,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
@@ -284,10 +335,11 @@ async def test_scheduler_health_timing_out(
     await scheduler.add_service(scheduler_data)
     await ensure_scheduler_runs_once()
 
-    assert scheduler_data.dynamic_sidecar.is_available == False
+    assert scheduler_data.dynamic_sidecar.is_available is False
 
 
 async def test_adding_service_two_times(
+    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     docker_swarm: None,
@@ -298,6 +350,7 @@ async def test_adding_service_two_times(
 
 
 async def test_collition_at_global_level(
+    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     docker_swarm: None,
@@ -311,6 +364,7 @@ async def test_collition_at_global_level(
 
 
 async def test_no_service_name(
+    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     docker_swarm: None,
@@ -323,17 +377,19 @@ async def test_no_service_name(
 
 
 async def test_remove_missing_no_error(
+    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     with pytest.raises(DynamicSidecarNotFoundError) as execinfo:
-        await scheduler.remove_service(scheduler_data.node_uuid, True)
+        await scheduler.mark_service_for_removal(scheduler_data.node_uuid, True)
     assert f"node {scheduler_data.node_uuid} not found" == str(execinfo.value)
 
 
 async def test_get_stack_status(
+    loop: asyncio.AbstractEventLoop,
     ensure_scheduler_runs_once: Callable,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
@@ -354,6 +410,7 @@ async def test_get_stack_status(
 
 
 async def test_get_stack_status_missing(
+    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     docker_swarm: None,
@@ -365,6 +422,7 @@ async def test_get_stack_status_missing(
 
 
 async def test_get_stack_status_failing_sidecar(
+    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     docker_swarm: None,
@@ -385,6 +443,7 @@ async def test_get_stack_status_failing_sidecar(
 
 
 async def test_get_stack_status_report_missing_statuses(
+    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mock_service_running: AsyncMock,
@@ -406,6 +465,7 @@ async def test_get_stack_status_report_missing_statuses(
 
 
 async def test_get_stack_status_containers_are_starting(
+    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mock_service_running: AsyncMock,
@@ -427,6 +487,7 @@ async def test_get_stack_status_containers_are_starting(
 
 
 async def test_get_stack_status_ok(
+    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mock_service_running: AsyncMock,
@@ -449,8 +510,10 @@ async def test_get_stack_status_ok(
         )
 
 
-async def test_module_setup(
-    dynamic_sidecar_settings: AppSettings, docker_swarm: None
+def test_module_setup(
+    loop: asyncio.AbstractEventLoop,
+    dynamic_sidecar_settings: AppSettings,
+    docker_swarm: None,
 ) -> None:
     app = FastAPI()
     app.state.settings = dynamic_sidecar_settings

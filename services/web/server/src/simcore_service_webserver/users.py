@@ -4,7 +4,6 @@
 import logging
 
 from aiohttp import web
-
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.rest_routing import (
     get_handlers_from_namespace,
@@ -13,7 +12,7 @@ from servicelib.aiohttp.rest_routing import (
 )
 
 from . import users_handlers
-from .rest_config import APP_OPENAPI_SPECS_KEY
+from .constants import APP_OPENAPI_SPECS_KEY
 
 logger = logging.getLogger(__name__)
 

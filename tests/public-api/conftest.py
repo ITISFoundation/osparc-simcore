@@ -2,27 +2,38 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+import asyncio
+import json
 import logging
 import os
 import time
 from pprint import pformat
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, Iterable, List
 
 import httpx
 import osparc
 import pytest
 from osparc.configuration import Configuration
-from tenacity import Retrying, before_sleep_log, stop_after_attempt, wait_fixed
+from pytest_simcore.helpers.typing_docker import UrlStr
+from tenacity import Retrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 log = logging.getLogger(__name__)
+
+
+_MINUTE: int = 60  # secs
 
 
 pytest_plugins = [
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
+    "pytest_simcore.simcore_services",
     "pytest_simcore.tmp_path_extra",
 ]
 
@@ -38,7 +49,7 @@ def testing_environ_vars(testing_environ_vars: Dict[str, str]) -> Dict[str, str]
 
 @pytest.fixture(scope="module")
 def core_services_selection(simcore_docker_compose: Dict) -> List[str]:
-    """ Selection of services from the simcore stack """
+    """Selection of services from the simcore stack"""
     ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::core_services_selection fixture
     all_core_services = list(simcore_docker_compose["services"].keys())
     return all_core_services
@@ -46,27 +57,42 @@ def core_services_selection(simcore_docker_compose: Dict) -> List[str]:
 
 @pytest.fixture(scope="module")
 def ops_services_selection(ops_docker_compose: Dict) -> List[str]:
-    """ Selection of services from the ops stack """
+    """Selection of services from the ops stack"""
     ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection fixture
     all_ops_services = list(ops_docker_compose["services"].keys())
     return all_ops_services
 
 
 @pytest.fixture(scope="module")
-def simcore_docker_stack_and_registry_ready(
-    docker_stack: Dict,
-    docker_registry,
-) -> Dict:
+def event_loop(request) -> Iterable[asyncio.AbstractEventLoop]:
+    """Overrides pytest_asyncio.event_loop and extends to module scope"""
+    loop = asyncio.get_event_loop_policy().new_event_loop()
+    yield loop
+    loop.close()
 
+
+@pytest.fixture(scope="module")
+def simcore_docker_stack_and_registry_ready(
+    event_loop: asyncio.AbstractEventLoop,
+    docker_registry: UrlStr,
+    docker_stack: Dict,
+    simcore_services_ready: None,
+) -> Dict:
+    # At this point `simcore_services_ready` waited until all services
+    # are running. Let's make one more check on the web-api
     for attempt in Retrying(
-        wait=wait_fixed(5),
-        stop=stop_after_attempt(60),
+        wait=wait_fixed(1),
+        stop=stop_after_delay(0.5 * _MINUTE),
         reraise=True,
         before_sleep=before_sleep_log(log, logging.INFO),
     ):
         with attempt:
             resp = httpx.get("http://127.0.0.1:9081/v0/")
             resp.raise_for_status()
+            log.info(
+                "Connection to osparc-simcore web API succeeded [%s]",
+                json.dumps(attempt.retry_state.retry_object.statistics),
+            )
 
     return docker_stack
 
@@ -205,7 +231,7 @@ def services_registry(
     print(
         f"Catalog should take {wait_for_catalog_to_detect} secs to detect new services ...",
     )
-    time.sleep(wait_for_catalog_to_detect)
+    time.sleep(wait_for_catalog_to_detect + 1)
 
     return {
         "sleeper_service": {
