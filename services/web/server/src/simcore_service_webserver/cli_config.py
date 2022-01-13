@@ -5,7 +5,7 @@ import os
 import trafaret_config
 from trafaret_config import commandline
 
-from .resources import resources
+from ._resources import resources
 
 log = logging.getLogger(__name__)
 

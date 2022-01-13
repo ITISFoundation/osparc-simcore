@@ -26,12 +26,12 @@ from . import (
     storage__schema,
     tracing,
 )
+from ._resources import resources
 from .activity import _schema as activity__schema
 from .director import _schema as director__schema
 from .login import _schema as login__schema
 from .projects import _schema as projects__schema
 from .resource_manager import _schema as resource_manager__schema
-from .resources import resources
 from .socketio import _schema as socketio__schema
 
 log = logging.getLogger(__name__)

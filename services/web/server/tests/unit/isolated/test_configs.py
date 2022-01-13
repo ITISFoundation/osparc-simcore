@@ -15,6 +15,7 @@ import trafaret
 from pytest_simcore.helpers.utils_environs import eval_service_environ
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import is_setup_function
+from simcore_service_webserver._resources import resources
 from simcore_service_webserver.application__schema import create_schema
 from simcore_service_webserver.cli import parse, setup_parser
 from simcore_service_webserver.db_config import CONFIG_SECTION_NAME as DB_SECTION
@@ -23,7 +24,6 @@ from simcore_service_webserver.login.cfg import DEFAULTS as CONFIG_DEFAULTS
 from simcore_service_webserver.login.cfg import Cfg
 from simcore_service_webserver.login.config import CONFIG_SECTION_NAME as LOGIN_SECTION
 from simcore_service_webserver.login.config import create_login_internal_config
-from simcore_service_webserver.resources import resources
 
 config_yaml_filenames = [str(name) for name in resources.listdir("config")]
 

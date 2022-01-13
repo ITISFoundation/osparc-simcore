@@ -14,9 +14,9 @@ from models_library.utils.pydantic_models_factory import copy_model
 from pydantic import validator
 from pytest_simcore.simcore_webserver_projects_rest_api import NEW_PROJECT
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver._resources import resources
 from simcore_service_webserver.projects._project_models_rest import ProjectSchema
 from simcore_service_webserver.projects.projects_db import projects as projects_table
-from simcore_service_webserver.resources import resources
 
 ## FIXTURES --------------------------------------------------
 

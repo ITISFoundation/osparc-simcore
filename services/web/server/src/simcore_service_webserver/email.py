@@ -11,9 +11,9 @@ import jinja_app_loader
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ._resources import resources
 from .email_config import CONFIG_SECTION_NAME
 from .email_settings import assert_valid_config
-from .resources import resources
 
 # TODO: move login/utils.py email functionality here!
 # from email.mime.text import MIMEText
