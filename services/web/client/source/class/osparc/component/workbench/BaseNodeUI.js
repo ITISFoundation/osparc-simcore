@@ -113,6 +113,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
   members: {
     _inputLayout: null,
     _outputLayout: null,
+    _optionsMenu: null,
     __nodeMoving: null,
 
     /**
@@ -123,7 +124,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
     },
 
     __getMenuButton: function() {
-      const optionsMenu = new qx.ui.menu.Menu().set({
+      const optionsMenu = this._optionsMenu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
 

@@ -1,6 +1,8 @@
+import json
 import os
 import random
 from pathlib import Path
+from typing import Any, Dict
 
 import pytest
 from faker import Faker
@@ -57,3 +59,11 @@ def dir_with_random_content(tmpdir, faker: Faker) -> Path:
             )
 
     return temp_dir_path
+
+
+@pytest.fixture
+def fake_project_data(fake_data_dir: Path) -> Dict[str, Any]:
+    # NOTE: avoids 'scope=session' because tests can
+    # change the fixture data.
+    with (fake_data_dir / "fake-project.json").open() as fp:
+        return json.load(fp)
