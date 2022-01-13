@@ -31,9 +31,12 @@ gunicorn[setproctitle]
 # socket_id saved in redis does not correspond to client's sio
 python-socketio~=4.6.1
 
-# databases
+# postgres db
 aiopg[sa]
 asyncpg
+
+# i/o
+aiofiles
 
 # redis
 aioredis
@@ -67,6 +70,7 @@ aiodebug
 change_case
 expiringdict
 semantic_version
+tenacity
 
 # import/export excel
 parfive
@@ -81,3 +85,19 @@ yarl<1.6
 # FIXME: deprecated
 trafaret==2.1.0
 trafaret_config
+
+
+
+# CONSTRAINTS ----------------------------------
+
+
+# Could not find a version that matches jsonschema<4,<5.0.0,>=4.0.0 (from -r requirements/_base.in (line 90))
+# There are incompatible versions in the resolved dependencies:
+#   jsonschema (from -r requirements/../../../../packages/service-library/requirements/_aiohttp.in (line 14))
+#   jsonschema<4 (from -c requirements/../../../../packages/service-library/requirements/././constraints.txt (line 27))
+#   jsonschema<4 (from -c requirements/../../../../packages/service-library/requirements/./constraints.txt (line 27))
+#   jsonschema<4 (from -r requirements/_base.in (line 90))
+#   jsonschema (from openapi-spec-validator==0.3.1->openapi-core==0.12.0->-r requirements/../../../../packages/service-library/requirements/_aiohttp.in (line 8))
+#   jsonschema<5.0.0,>=4.0.0 (from openapi-schema-validator==0.2.0->openapi-spec-validator==0.3.1->openapi-core==0.12.0->-r requirements/../../../../packages/service-library/requirements/_aiohttp.in (line 8))
+jsonschema<4
+openapi-schema-validator<0.2.0
