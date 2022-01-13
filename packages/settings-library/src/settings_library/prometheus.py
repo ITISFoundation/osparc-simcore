@@ -1,9 +1,10 @@
 from functools import cached_property
 
-from models_library.basic_types import PortInt, VersionTag
+from pydantic.networks import HttpUrl
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import MixinServiceSettings
-from yarl import URL
+
+from .basic_types import PortInt, VersionTag
 
 
 class PrometheusSettings(BaseCustomSettings, MixinServiceSettings):
@@ -12,10 +13,10 @@ class PrometheusSettings(BaseCustomSettings, MixinServiceSettings):
     PROMETHEUS_VTAG: VersionTag = "v1"
 
     @cached_property
-    def base_url(self) -> URL:
-        return URL.build(
+    def base_url(self) -> str:
+        return HttpUrl.build(
             scheme="http",
             host=self.PROMETHEUS_HOST,
-            port=self.PROMETHEUS_PORT,
+            port=f"{self.PROMETHEUS_PORT}",
             path=f"/api/{self.PROMETHEUS_VTAG}/query",
         )
