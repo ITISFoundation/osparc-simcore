@@ -818,18 +818,17 @@ async def _get_service_key_version_from_docker_service(
     service_full_name = str(service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"])
     if not service_full_name.startswith(config.REGISTRY_PATH):
         raise exceptions.DirectorException(
-            msg="Invalid service {}".format(service_full_name)
+            msg=f"Invalid service '{service_full_name}', it is missing {config.REGISTRY_PATH}"
         )
 
     service_full_name = service_full_name[len(config.REGISTRY_PATH) :].strip("/")
     service_re_match = _SERVICE_KEY_REGEX.match(service_full_name)
     if not service_re_match:
         raise exceptions.DirectorException(
-            msg=f"service {service_full_name} does not contain valid simcore key"
+            msg=f"Invalid service '{service_full_name}', it does not follow pattern '{_SERVICE_KEY_REGEX.pattern}'"
         )
     service_key = service_re_match.group(1)
     service_tag = service_re_match.group(4)
-    # FIXME: service_key:service_tag@sha256:230498230492834
     return service_key, service_tag
 
 
