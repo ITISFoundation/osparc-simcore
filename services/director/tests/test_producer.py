@@ -7,6 +7,8 @@
 import asyncio
 import time
 import uuid
+from dataclasses import dataclass
+from typing import Dict
 
 import docker
 import pytest
@@ -256,11 +258,6 @@ async def test_dependent_services_have_common_network(run_services):
         )
 
 
-from typing import Dict
-
-from dataclasses import dataclass
-
-
 @dataclass
 class FakeDockerService:
     service_str: str
@@ -272,12 +269,12 @@ class FakeDockerService:
     "fake_service",
     [
         FakeDockerService(
-            "simcore/services/dynamic/some/sub/folder/my_service-key:123.456.3214",
+            f"{config.REGISTRY_PATH}/simcore/services/dynamic/some/sub/folder/my_service-key:123.456.3214",
             "simcore/services/dynamic/some/sub/folder/my_service-key",
             "123.456.3214",
         ),
         FakeDockerService(
-            "simcore/services/dynamic/some/sub/folder/my_service-key:123.456.3214@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f",
+            f"{config.REGISTRY_PATH}/simcore/services/dynamic/some/sub/folder/my_service-key:123.456.3214@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f",
             "simcore/services/dynamic/some/sub/folder/my_service-key",
             "123.456.3214",
         ),
@@ -303,11 +300,11 @@ async def test_get_service_key_version_from_docker_service(
     "fake_service_str",
     [
         "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f",
-        "simcore/postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f",
+        f"{config.REGISTRY_PATH}/simcore/postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f",
         "itisfoundation/postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f",
-        "simcore/services/stuff/postgres:10.11",
-        "simcore/services/dynamic/postgres:10.11",
-        "simcore/services/dynamic/postgres:10",
+        f"{config.REGISTRY_PATH}/simcore/services/stuff/postgres:10.11",
+        f"{config.REGISTRY_PATH}/simcore/services/dynamic/postgres:10.11",
+        f"{config.REGISTRY_PATH}/simcore/services/dynamic/postgres:10",
     ],
 )
 async def test_get_service_key_version_from_docker_service_except_invalid_keys(
