@@ -32,11 +32,7 @@ from ..users_api import get_user_name
 from . import projects_api
 from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
-from .projects_exceptions import (
-    HTTPLocked,
-    ProjectInvalidRightsError,
-    ProjectNotFoundError,
-)
+from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .projects_utils import (
     clone_project_document,
     get_project_unavailable_services,
