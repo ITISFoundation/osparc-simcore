@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 IterationTuple = Tuple[ProjectID, CommitID]
 
 
-class NotTaggedAsIterationException(Exception):
+class _NotTaggedAsIteration(Exception):
     """A commit does not contain the tags
     to be identified as an iterator
     """
@@ -75,13 +75,13 @@ async def _get_project_iterations_range(
                     tag.name, return_none_if_fails=True
                 ):
                     if iteration:
-                        raise NotTaggedAsIterationException(
+                        raise _NotTaggedAsIteration(
                             f"This {commit_id=} has more than one iteration {tag=}"
                         )
                     iteration = pim
                 elif pid := parse_workcopy_project_tag_name(tag.name):
                     if workcopy_id:
-                        raise NotTaggedAsIterationException(
+                        raise _NotTaggedAsIteration(
                             f"This {commit_id=} has more than one workcopy  {tag=}"
                         )
                     workcopy_id = pid
@@ -89,15 +89,13 @@ async def _get_project_iterations_range(
                     log.debug("Got %s for children of %s", f"{tag=}", f"{commit_id=}")
 
             if not workcopy_id:
-                raise NotTaggedAsIterationException(f"No workcopy tag found in {tags=}")
+                raise _NotTaggedAsIteration(f"No workcopy tag found in {tags=}")
             if not iteration:
-                raise NotTaggedAsIterationException(
-                    f"No iteration tag found in {tags=}"
-                )
+                raise _NotTaggedAsIteration(f"No iteration tag found in {tags=}")
 
             iterations.append((workcopy_id, iteration.iter_index))
 
-        except NotTaggedAsIterationException as err:
+        except _NotTaggedAsIteration as err:
             log.warning(
                 "Skipping %d-th child since is not tagged as an iteration of %s/%s: %s",
                 n,
