@@ -52,12 +52,12 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 @pytest.fixture(autouse=True)
-def disable_swagger_doc_genertion() -> Iterator[None]:
+def disable_swagger_doc_generation() -> Iterator[None]:
     """
     by not enabling the swagger documentation, 1.8s per test is gained
     """
     with patch.dict(
-        rest.setup.__wrapped__.__kwdefaults__, {"swagger_doc_enabled": False}
+        rest.setup_rest.__wrapped__.__kwdefaults__, {"swagger_doc_enabled": False}
     ):
         yield
 
