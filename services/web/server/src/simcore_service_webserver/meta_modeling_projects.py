@@ -48,13 +48,13 @@ async def projects_redirection_middleware(request: web.Request, handler: _Handle
 
     if URL_PATTERN.match(f"{request.rel_url}"):
         #
-        # FIXME: because hierarchical design is not guaranteed, we find ourselves with
+        # TODO: because hierarchical design is not guaranteed, we find ourselves with
         # entries like /v0/computation/pipeline/{project_id}:start which might also neeed
         # indirection
         #
 
         for path_param in ("project_id", "project_uuid"):
-            # FIXME: need to enforce unique path params since
+            # TODO: need to enforce unique path params since
             # OAS uses both 'project_id' and also 'project_uuid'
 
             if project_id := request.match_info.get(path_param):

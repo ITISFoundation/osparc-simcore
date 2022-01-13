@@ -71,10 +71,13 @@ class VersionControlForMetaModeling(VersionControlRepository):
             )
             assert project  # nosec
             project_as_dict = dict(project.items())
-            # FIXME: hack to avoid validation error. Revisit when models_library.utils.pydantic_models_factory is
+
+            # -------------
+            # TODO: hack to avoid validation error. Revisit when models_library.utils.pydantic_models_factory is
             # used to create a reliable project's model to validate http API
             if "thumbnail" in project_as_dict:
                 project_as_dict["thumbnail"] = project_as_dict["thumbnail"] or ""
+            # ---------------
             return project_as_dict
 
     async def create_workcopy_and_branch_from_commit(

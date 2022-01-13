@@ -58,8 +58,8 @@ async def _get_project_iterations_range(
 
     # Searches all subsequent commits (i.e. children) and retrieve their tags
 
-    # FIXME: do all these operations in database.
-    # FIXME: implement real pagination https://github.com/ITISFoundation/osparc-simcore/issues/2735
+    # TODO: do all these operations in database.
+    # TODO: implement real pagination https://github.com/ITISFoundation/osparc-simcore/issues/2735
     tags_per_child: List[List[TagProxy]] = await vc_repo.get_children_tags(
         repo_id, commit_id
     )

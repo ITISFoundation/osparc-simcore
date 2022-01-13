@@ -81,6 +81,6 @@ def create_param_node_from_iterator_with_outputs(iterator_node: Node) -> Node:
         label=iterator_node.label,
         inputs={},
         inputNodes=[],
-        thumbnail="",  # FIXME: hack due to issue in projects json-schema
+        thumbnail="",  # TODO: hack due to issue in projects json-schema
         outputs=deepcopy(iterator_node.outputs),
     )

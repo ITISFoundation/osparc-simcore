@@ -33,7 +33,7 @@ from simcore_service_webserver.projects.project_models import ProjectDict
 REQUEST_MODEL_POLICY = {
     "by_alias": True,
     "exclude_defaults": True,
-    "exclude_none": True,  # e.g. thumbnail: None will fail validation FIXME: remove when new project model is in place
+    "exclude_none": True,  # e.g. thumbnail: None will fail validation TODO: remove when new project model is in place. It might lead to wrong errors
     "exclude_unset": True,
 }
 
@@ -187,7 +187,7 @@ async def test_iterators_workflow(
     project = Project.parse_obj(body["data"])
     new_project = project.copy(
         update={
-            # FIXME: HACK to overcome export from None -> string
+            # TODO: HACK to overcome export from None -> string
             # SOLUTION 1: thumbnail should not be required (check with team!)
             # SOLUTION 2: make thumbnail nullable
             "thumbnail": faker.image_url(),
