@@ -5,7 +5,7 @@
 import json
 
 import pytest
-from simcore_service_webserver.settings import (
+from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
     ApplicationSettings,
     setup_settings,

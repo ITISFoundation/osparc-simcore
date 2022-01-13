@@ -11,6 +11,7 @@ from servicelib.aiohttp.application import create_safe_application
 
 from ._meta import WELCOME_MSG
 from .activity.module_setup import setup_activity
+from .application_settings import setup_settings
 from .catalog import setup_catalog
 from .clusters.module_setup import setup_clusters
 from .computation import setup_computation
@@ -32,7 +33,6 @@ from .resource_manager.module_setup import setup_resource_manager
 from .rest import setup_rest
 from .security import setup_security
 from .session import setup_session
-from .settings import ApplicationSettings, setup_settings
 from .socketio.module_setup import setup_socketio
 from .statics import setup_statics
 from .storage import setup_storage
