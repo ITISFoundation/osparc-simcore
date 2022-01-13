@@ -153,8 +153,8 @@ jsonschema==3.2.0
     # via
     #   -c requirements/../../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/./constraints.txt
+    #   -c requirements/./constraints.txt
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
-    #   -r requirements/_base.in
     #   openapi-schema-validator
     #   openapi-spec-validator
 lazy-object-proxy==1.4.3
@@ -176,7 +176,7 @@ openapi-core==0.12.0
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 openapi-schema-validator==0.1.6
     # via
-    #   -r requirements/_base.in
+    #   -c requirements/./constraints.txt
     #   openapi-spec-validator
 openapi-spec-validator==0.3.1
     # via openapi-core
@@ -214,8 +214,8 @@ pydantic==1.8.2
 pyinstrument==3.4.2
     # via
     #   -c requirements/../../../../packages/service-library/requirements/./_base.in
+    #   -c requirements/./constraints.txt
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
-    #   -r requirements/_base.in
 pyinstrument-cext==0.2.4
     # via pyinstrument
 pyrsistent==0.18.0
