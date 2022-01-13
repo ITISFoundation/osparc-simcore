@@ -5,13 +5,13 @@
 
 import pytest
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
-from simcore_service_webserver import metaml_handlers
+from simcore_service_webserver import meta_modeling_handlers
 from simcore_service_webserver._meta import API_VTAG as VX
 
 
 @pytest.mark.parametrize(
     "route",
-    metaml_handlers.routes,
+    meta_modeling_handlers.routes,
     ids=lambda r: f"{r.method.upper()} {r.path}",
 )
 def test_route_against_openapi_specs(route, openapi_specs: OpenApiSpecs):

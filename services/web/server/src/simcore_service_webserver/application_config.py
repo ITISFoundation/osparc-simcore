@@ -98,7 +98,7 @@ def create_schema() -> T.Dict:
             addon_section("director-v2", optional=True): minimal_addon_schema(),
             addon_section("exporter", optional=True): minimal_addon_schema(),
             addon_section("groups", optional=True): minimal_addon_schema(),
-            addon_section("metaml", optional=True): minimal_addon_schema(),
+            addon_section("meta_modeling", optional=True): minimal_addon_schema(),
             addon_section("products", optional=True): minimal_addon_schema(),
             addon_section("publications", optional=True): minimal_addon_schema(),
             addon_section("remote_debug", optional=True): minimal_addon_schema(),

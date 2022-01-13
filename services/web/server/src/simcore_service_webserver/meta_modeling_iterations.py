@@ -19,11 +19,15 @@ from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 from simcore_service_webserver.version_control_errors import UserUndefined
 
-from .metaml_function_nodes import (
+from .meta_modeling_function_nodes import (
     FRONTEND_SERVICE_TO_CALLABLE,
     FRONTEND_SERVICES_CATALOG,
 )
-from .metaml_version_control import CommitID, ProjectDict, VersionControlForMetaModeling
+from .meta_modeling_version_control import (
+    CommitID,
+    ProjectDict,
+    VersionControlForMetaModeling,
+)
 from .utils import compute_sha1_on_small_dataset, now_str
 
 log = logging.getLogger(__file__)
