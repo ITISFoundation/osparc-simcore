@@ -7,7 +7,7 @@
 from aiohttp.web import Application
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 
-from ._schema import CONFIG_SECTION_NAME
+CONFIG_SECTION_NAME = "resource_manager"
 
 APP_CLIENT_REDIS_CLIENT_KEY = __name__ + ".resource_manager.redis_client"
 APP_CLIENT_REDIS_LOCK_MANAGER_KEY = __name__ + ".resource_manager.redis_lock"
