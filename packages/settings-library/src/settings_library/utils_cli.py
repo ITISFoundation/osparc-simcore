@@ -8,8 +8,7 @@ from pydantic import ValidationError
 from pydantic.env_settings import BaseSettings
 
 from .base import BaseCustomSettings
-
-HEADER = "{:-^50}"
+from .constants import HEADER_STR
 
 
 def print_as_envfile(settings_obj, *, compact, verbose):
@@ -71,9 +70,9 @@ def create_settings_command(
                 "Invalid application settings. Typically an environment variable is missing or mistyped :\n%s",
                 "\n".join(
                     [
-                        HEADER.format("detail"),
+                        HEADER_STR.format("detail"),
                         str(err),
-                        HEADER.format("environment variables"),
+                        HEADER_STR.format("environment variables"),
                         pformat(
                             {
                                 k: v
@@ -81,7 +80,7 @@ def create_settings_command(
                                 if k.upper() == k
                             }
                         ),
-                        HEADER.format("json-schema"),
+                        HEADER_STR.format("json-schema"),
                         settings_schema,
                     ]
                 ),
