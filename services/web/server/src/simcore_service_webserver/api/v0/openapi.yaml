@@ -2885,7 +2885,7 @@ paths:
         - meta-projects
       summary: List Project Iterations
       description: Lists current project's iterations
-      operationId: simcore_service_webserver.metaml_handlers._list_meta_project_iterations_handler
+      operationId: simcore_service_webserver.meta_modeling_handlers._list_meta_project_iterations_handler
       parameters:
         - description: Project unique identifier
           required: true
