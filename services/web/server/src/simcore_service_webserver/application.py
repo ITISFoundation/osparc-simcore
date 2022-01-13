@@ -12,7 +12,7 @@ from servicelib.aiohttp.application import create_safe_application
 from ._constants import APP_SETTINGS_KEY
 from ._meta import WELCOME_MSG
 from .activity.module_setup import setup_activity
-from .application_settings import setup_settings
+from .application_settings import ApplicationSettings, setup_settings
 from .catalog import setup_catalog
 from .clusters.module_setup import setup_clusters
 from .computation import setup_computation

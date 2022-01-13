@@ -1,5 +1,4 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
-from aiohttp import web
 
 
 class ProjectsException(Exception):
