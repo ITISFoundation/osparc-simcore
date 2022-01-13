@@ -11,8 +11,9 @@ from servicelib.common_aiopg_utils import DSN
 from .._constants import APP_OPENAPI_SPECS_KEY, INDEX_RESOURCE_NAME
 from ..db_config import CONFIG_SECTION_NAME as DB_SECTION
 from .cfg import APP_LOGIN_CONFIG, cfg
+from .config import create_login_internal_config
 from .routes import create_routes
-from .settings import assert_valid_config, create_login_internal_config
+from .settings import assert_valid_config
 from .storage import AsyncpgStorage
 
 log = logging.getLogger(__name__)
