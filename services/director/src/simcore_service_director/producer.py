@@ -9,7 +9,7 @@ from distutils.version import StrictVersion
 from enum import Enum
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple
-
+import re
 import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
@@ -638,6 +638,12 @@ async def _get_dependant_repos(
     return dependent_repositories
 
 
+_TAG_REGEX = re.compile(r"^\d+\.\d+\.\d+$")
+_SERVICE_KEY_REGEX = re.compile(
+    r"^(simcore/services/(comp|dynamic|frontend)(/[\w/-]+)+):(\d+\.\d+\.\d+).*$"
+)
+
+
 async def _find_service_tag(
     list_of_images: Dict, service_key: str, service_tag: str
 ) -> str:
@@ -646,8 +652,7 @@ async def _find_service_tag(
             service_name=service_key, service_tag=service_tag
         )
     # filter incorrect chars
-    regex = re.compile(r"^\d+\.\d+\.\d+$")
-    filtered_tags_list = filter(regex.search, list_of_images[service_key])
+    filtered_tags_list = filter(_TAG_REGEX.search, list_of_images[service_key])
     # sort them now
     available_tags_list = sorted(filtered_tags_list, key=StrictVersion)
     # not tags available... probably an undefined service there...
@@ -817,7 +822,15 @@ async def _get_service_key_version_from_docker_service(
         )
 
     service_full_name = service_full_name[len(config.REGISTRY_PATH) :].strip("/")
-    return service_full_name.split(":")[0], service_full_name.split(":")[1]
+    service_re_match = _SERVICE_KEY_REGEX.match(service_full_name)
+    if not service_re_match:
+        raise exceptions.DirectorException(
+            msg=f"service {service_full_name} does not contain valid simcore key"
+        )
+    service_key = service_re_match.group(1)
+    service_tag = service_re_match.group(4)
+    # FIXME: service_key:service_tag@sha256:230498230492834
+    return service_key, service_tag
 
 
 async def _get_service_basepath_from_docker_service(service: Dict) -> str:
