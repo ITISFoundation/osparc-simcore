@@ -1,12 +1,17 @@
-#
 # pylint:disable=unused-import
-#
 
 from typing import Final
 
+from servicelib.aiohttp.application_keys import (
+    APP_CONFIG_KEY,
+    APP_DB_ENGINE_KEY,
+    APP_JSONSCHEMA_SPECS_KEY,
+    APP_OPENAPI_SPECS_KEY,
+)
+from servicelib.request_keys import RQT_USERID_KEY
+
 # Application storage keys
 APP_PRODUCTS_KEY: Final[str] = f"{__name__ }.products"
-
 
 # Request storage keys
 RQ_PRODUCT_KEY: Final[str] = f"{__name__}.product"
