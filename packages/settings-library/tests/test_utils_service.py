@@ -5,7 +5,6 @@
 from functools import cached_property
 from typing import Optional
 
-import pytest
 from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
