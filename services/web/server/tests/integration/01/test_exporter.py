@@ -41,6 +41,7 @@ from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
 )
+from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.application import (
     setup_director,
     setup_director_v2,
@@ -57,7 +58,6 @@ from simcore_service_webserver.application import (
     setup_users,
 )
 from simcore_service_webserver.catalog import setup_catalog
-from simcore_service_webserver.constants import X_PRODUCT_NAME_HEADER
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects
 from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum

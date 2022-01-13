@@ -10,8 +10,8 @@ from aiohttp import web
 from models_library.basic_types import VersionTag
 from pydantic import BaseSettings, Field
 
+from ._constants import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
 from ._meta import API_VTAG
-from .constants import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
 
 CONFIG_SECTION_NAME = "rest"
 

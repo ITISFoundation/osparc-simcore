@@ -9,6 +9,7 @@ from models_library.services import ServiceInput, ServiceOutput
 from pydantic import ValidationError
 
 from . import catalog_client
+from ._constants import RQ_PRODUCT_KEY
 from ._meta import api_version_prefix
 from .catalog_api_models import (
     ServiceInputApiOut,
@@ -20,9 +21,8 @@ from .catalog_api_models import (
     json_dumps,
     replace_service_input_outputs,
 )
-from .constants import RQ_PRODUCT_KEY
 from .login.decorators import RQT_USERID_KEY, login_required
-from .rest_utils import RESPONSE_MODEL_POLICY
+from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 
 ###############

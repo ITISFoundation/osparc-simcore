@@ -71,10 +71,10 @@ def handle_errors(service_name: str, logger: logging.Logger):
 
                 if httpx.codes.is_server_error(resp.status_code):  # i.e. 5XX error
                     logger.error(
-                        "%s service error %d [%s]: %s",
+                        "%s service error %s [%s]: %s",
                         service_name,
                         resp.reason_phrase,
-                        resp.status_code,
+                        f"{resp.status_code=}",
                         resp.text,
                     )
                     raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE)

@@ -6,7 +6,7 @@ import datetime
 
 import pytest
 from aiohttp import web
-from simcore_service_webserver.constants import APP_DB_ENGINE_KEY
+from simcore_service_webserver._constants import APP_DB_ENGINE_KEY
 from simcore_service_webserver.projects.projects_db import (
     ProjectDBAPI,
     _convert_to_db_names,
