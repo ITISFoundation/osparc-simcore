@@ -15,7 +15,7 @@ from pydantic.networks import HttpUrl
 from ._meta import api_version_prefix as VTAG
 from .meta_modeling_iterations import ProjectIteration
 from .meta_modeling_version_control import VersionControlForMetaModeling
-from .rest_utils import RESPONSE_MODEL_POLICY
+from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 from .utils_aiohttp import create_url_for_function, envelope_json_response
 from .version_control_models import CheckpointID, CommitID, TagProxy
@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 IterationTuple = Tuple[ProjectID, CommitID]
 
 
-class NotTaggedAsIteration(Exception):
+class NotTaggedAsIterationException(Exception):
     """A commit does not contain the tags
     to be identified as an iterator
     """
@@ -75,13 +75,13 @@ async def _get_project_iterations_range(
                     tag.name, return_none_if_fails=True
                 ):
                     if iteration:
-                        raise NotTaggedAsIteration(
+                        raise NotTaggedAsIterationException(
                             f"This {commit_id=} has more than one iteration {tag=}"
                         )
                     iteration = pim
                 elif pid := parse_workcopy_project_tag_name(tag.name):
                     if workcopy_id:
-                        raise NotTaggedAsIteration(
+                        raise NotTaggedAsIterationException(
                             f"This {commit_id=} has more than one workcopy  {tag=}"
                         )
                     workcopy_id = pid
@@ -89,13 +89,15 @@ async def _get_project_iterations_range(
                     log.debug("Got %s for children of %s", f"{tag=}", f"{commit_id=}")
 
             if not workcopy_id:
-                raise NotTaggedAsIteration(f"No workcopy tag found in {tags=}")
+                raise NotTaggedAsIterationException(f"No workcopy tag found in {tags=}")
             if not iteration:
-                raise NotTaggedAsIteration(f"No iteration tag found in {tags=}")
+                raise NotTaggedAsIterationException(
+                    f"No iteration tag found in {tags=}"
+                )
 
             iterations.append((workcopy_id, iteration.iter_index))
 
-        except NotTaggedAsIteration as err:
+        except NotTaggedAsIterationException as err:
             log.warning(
                 "Skipping %d-th child since is not tagged as an iteration of %s/%s: %s",
                 n,
