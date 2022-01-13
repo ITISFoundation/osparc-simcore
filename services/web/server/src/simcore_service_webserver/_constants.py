@@ -7,6 +7,7 @@ from servicelib.aiohttp.application_keys import (
     APP_DB_ENGINE_KEY,
     APP_JSONSCHEMA_SPECS_KEY,
     APP_OPENAPI_SPECS_KEY,
+    APP_SETTINGS_KEY,
 )
 from servicelib.request_keys import RQT_USERID_KEY
 
