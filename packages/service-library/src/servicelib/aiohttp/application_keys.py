@@ -20,6 +20,7 @@ All keys are constants with a unique name convention:
 #
 
 APP_CONFIG_KEY = f"{__name__ }.config"
+APP_SETTINGS_KEY = f"{__name__ }.settings"
 APP_OPENAPI_SPECS_KEY = f"{__name__ }.openapi_specs"
 APP_JSONSCHEMA_SPECS_KEY = f"{__name__ }.jsonschema_specs"
 
