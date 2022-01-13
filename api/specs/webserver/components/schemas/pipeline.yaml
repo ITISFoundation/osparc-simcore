@@ -6,7 +6,7 @@ components:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/PipelineCreatedSchema'
+          $ref: "#/components/schemas/PipelineCreatedSchema"
         error:
           nullable: true
           default: null
@@ -14,8 +14,13 @@ components:
     PipelineCreatedSchema:
       type: object
       required:
-        - pipeline_id
+        - pipelines_id
       properties:
         pipeline_id:
           type: string
-          example: 123e4567-e89b-12d3-a456-426655440000
+          description: "ID for created pipeline (=project identifier)"
+        ref_ids:
+          type: array
+          items:
+            type: integer
+          description: "Checkpoints IDs for created pipeline"

@@ -477,7 +477,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       const nodeUI = new osparc.component.workbench.NodeUI(node);
       this.bind("scale", nodeUI, "scale");
-      nodeUI.populateNodeLayout();
+      node.addListener("keyChanged", () => this.activeNodeChanged(nodeUI), this);
+      nodeUI.populateNodeLayout(this.__svgLayer);
       nodeUI.addListener("renameNode", e => this.__openNodeRenamer(e.getData()), this);
       nodeUI.addListener("infoNode", e => this.__openNodeInfo(e.getData()), this);
       nodeUI.addListener("removeNode", e => this.fireDataEvent("removeNode", e.getData()), this);
@@ -744,8 +745,23 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
     },
 
+    __updateIteratorShadows: function(nodeUI) {
+      if ("shadows" in nodeUI) {
+        const shadowDiffX = -5;
+        const shadowDiffY = +3;
+        const pos = nodeUI.getNode().getPosition();
+        const nShadows = nodeUI.shadows.length;
+        for (let i=0; i<nShadows; i++) {
+          osparc.component.workbench.SvgWidget.updateNodeUI(nodeUI.shadows[i], pos.x + (nShadows-i)*shadowDiffX, pos.y + (nShadows-i)*shadowDiffY);
+        }
+      }
+    },
+
     __updateNodeUIPos: function(nodeUI) {
       this.__updateEdges(nodeUI);
+      if (nodeUI.getNode && nodeUI.getNode().isIterator()) {
+        this.__updateIteratorShadows(nodeUI);
+      }
 
       this.__updateWorkbenchBounds();
     },
@@ -919,6 +935,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __clearNodeUI: function(nodeUI) {
       if (this.__desktop.getChildren().includes(nodeUI)) {
         this.__desktop.remove(nodeUI);
+      }
+      if ("shadows" in nodeUI) {
+        nodeUI.shadows.forEach(shadow => {
+          osparc.component.workbench.SvgWidget.removeNodeUI(shadow);
+        });
+        delete nodeUI["shadows"];
       }
       let index = this.__nodesUI.indexOf(nodeUI);
       if (index > -1) {

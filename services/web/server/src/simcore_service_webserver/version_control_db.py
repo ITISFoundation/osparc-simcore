@@ -41,7 +41,7 @@ from .version_control_models import (
     SHA1Str,
     TagProxy,
 )
-from .version_control_tags import parse_wcopy_project_tag_name
+from .version_control_tags import parse_workcopy_project_tag_name
 
 log = logging.getLogger(__name__)
 
@@ -136,16 +136,16 @@ class VersionControlRepository(BaseRepository):
             )
             return commit
 
-    async def _fetch_wcopy_project_id(
+    async def _fetch_workcopy_project_id(
         self, repo_id: int, commit_id: int, conn: SAConnection
     ) -> ProjectIDStr:
-        # commit has a wcopy associated?
+        # commit has a workcopy associated?
         found = (
             await self.TagsOrm(conn).set_filter(commit_id=commit_id).fetch_all("name")
         )
         for tag in found:
-            if wcopy_project_id := parse_wcopy_project_tag_name(tag.name):
-                return str(wcopy_project_id)
+            if workcopy_project_id := parse_workcopy_project_tag_name(tag.name):
+                return str(workcopy_project_id)
 
         repo = await self.ReposOrm(conn).set_filter(id=repo_id).fetch("project_uuid")
         assert repo  # nosec
@@ -164,26 +164,26 @@ class VersionControlRepository(BaseRepository):
         assert repo  #  nosec
 
         # fetch working copy
-        wcopy_project_id = await self._fetch_wcopy_project_id(
+        workcopy_project_id = await self._fetch_workcopy_project_id(
             repo_id, head_commit.id if head_commit else -1, conn
         )
-        wcopy_project = (
+        workcopy_project = (
             await self.ProjectsOrm(conn)
-            .set_filter(uuid=wcopy_project_id)
+            .set_filter(uuid=workcopy_project_id)
             .fetch("last_change_date workbench ui uuid")
         )
-        assert wcopy_project  # nosec
+        assert workcopy_project  # nosec
 
         # uses checksum cached in repo table to avoid re-computing checksum
         checksum: Optional[SHA1Str] = repo.project_checksum
         if not checksum or (
-            checksum and repo.modified < wcopy_project.last_change_date
+            checksum and repo.modified < workcopy_project.last_change_date
         ):
-            checksum = compute_workbench_checksum(wcopy_project.workbench)
+            checksum = compute_workbench_checksum(workcopy_project.workbench)
 
             repo = await repo_orm.update(returning_cols, project_checksum=checksum)
             assert repo
-        return repo, head_commit, wcopy_project
+        return repo, head_commit, workcopy_project
 
     @staticmethod
     async def _upsert_snapshot(
@@ -284,7 +284,9 @@ class VersionControlRepository(BaseRepository):
             log.info("On branch %s", branch.name)
 
             # get head commit
-            repo, head_commit, wcopy_project = await self._update_state(repo_id, conn)
+            repo, head_commit, workcopy_project = await self._update_state(
+                repo_id, conn
+            )
 
             if head_commit is None:
                 previous_checksum = None
@@ -297,7 +299,7 @@ class VersionControlRepository(BaseRepository):
                 # take a snapshot if changes
                 if repo.project_checksum != previous_checksum:
                     await self._upsert_snapshot(
-                        repo.project_checksum, wcopy_project, conn
+                        repo.project_checksum, workcopy_project, conn
                     )
 
                     # commit new snapshot in history
@@ -444,7 +446,9 @@ class VersionControlRepository(BaseRepository):
         :rtype: int
         """
         async with self.engine.acquire() as conn:
-            repo, head_commit, wcopy_project = await self._update_state(repo_id, conn)
+            repo, head_commit, workcopy_project = await self._update_state(
+                repo_id, conn
+            )
 
             if head_commit is None:
                 raise NoCommitError(
@@ -470,8 +474,8 @@ class VersionControlRepository(BaseRepository):
                 )
                 assert commit  # nosec
 
-                # restores project snapshot ONLY if main wcopy project
-                if wcopy_project.uuid == repo.project_uuid:
+                # restores project snapshot ONLY if main workcopy project
+                if workcopy_project.uuid == repo.project_uuid:
                     snapshot = (
                         await self.SnapshotsOrm(conn)
                         .set_filter(commit.snapshot_checksum)
@@ -540,19 +544,19 @@ class VersionControlRepository(BaseRepository):
                 )
                 assert repo  # nosec
 
-                # if snapshot differs from wcopy, then show working copy
-                wcopy_project_id = await self._fetch_wcopy_project_id(
+                # if snapshot differs from workcopy, then show working copy
+                workcopy_project_id = await self._fetch_workcopy_project_id(
                     repo_id, commit_id, conn
                 )
 
                 # FIXME: in general this is wrong. For the moment,
-                # all wcopies except for the repo's main wcopy (i.e. repo.project_uuid) are READ-ONLY
+                # all wcopies except for the repo's main workcopy (i.e. repo.project_uuid) are READ-ONLY
                 #
-                if wcopy_project_id != repo.project_uuid:
+                if workcopy_project_id != repo.project_uuid:
                     # FIXME: not aligned with content ...
                     if project := (
                         await self.ProjectsOrm(conn)
-                        .set_filter(uuid=wcopy_project_id)
+                        .set_filter(uuid=workcopy_project_id)
                         .fetch("workbench ui")
                     ):
                         return dict(project.items())
