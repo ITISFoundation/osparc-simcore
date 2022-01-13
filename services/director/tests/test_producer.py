@@ -8,7 +8,6 @@ import asyncio
 import time
 import uuid
 from dataclasses import dataclass
-from typing import Dict
 
 import docker
 import pytest
