@@ -6,7 +6,6 @@
 #  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
 #
 --constraint _base.txt
---constraint _packages.txt
 
 # testing
 
