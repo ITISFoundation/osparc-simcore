@@ -9,7 +9,8 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from socketio import AsyncServer
 
 from . import handlers, handlers_utils
-from .config import APP_CLIENT_SOCKET_SERVER_KEY, assert_valid_config
+from .config import APP_CLIENT_SOCKET_SERVER_KEY
+from .settings import assert_valid_config
 
 log = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 import logging
 
 import typer
-from settings_library.cli_utils import create_settings_command
+from settings_library.utils_cli import create_settings_command
 
 from ._meta import PROJECT_NAME
 from .core.settings import AppSettings

@@ -48,7 +48,7 @@ class ResourcesFacade:
         return resource_path
 
     def get_distribution(self):
-        """ Returns distribution info object """
+        """Returns distribution info object"""
         return pkg_resources.get_distribution(self.distribution_name)
 
 

@@ -12,7 +12,7 @@ from servicelib.aiohttp.rest_routing import (
 )
 
 from . import tags_handlers
-from .constants import APP_OPENAPI_SPECS_KEY
+from ._constants import APP_OPENAPI_SPECS_KEY
 
 logger = logging.getLogger(__name__)
 

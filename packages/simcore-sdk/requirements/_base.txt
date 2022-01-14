@@ -6,8 +6,10 @@
 #
 aiodebug==1.1.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-aiofiles==0.7.0
-    # via -r requirements/_base.in
+aiofiles==0.8.0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
 aiohttp==3.8.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -90,7 +92,6 @@ pyyaml==5.4.1
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-    #   trafaret-config
 sqlalchemy==1.3.24
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -105,10 +106,6 @@ tenacity==8.0.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
 tqdm==4.62.3
-    # via -r requirements/_base.in
-trafaret==2.1.0
-    # via trafaret-config
-trafaret-config==2.0.2
     # via -r requirements/_base.in
 typing-extensions==4.0.0
     # via

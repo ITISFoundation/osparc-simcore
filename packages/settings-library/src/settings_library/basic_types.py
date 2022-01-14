@@ -1,8 +1,17 @@
+#
+# NOTE: This files copies some of the types from models_library.basic_types
+#       This is a minor evil to avoid the maintenance burden that creates
+#       an extra dependency to a larger models_library (intra-repo library)
+
 from enum import Enum
 
-from pydantic import conint
+from pydantic.types import conint, constr
 
+# port number range
 PortInt = conint(gt=0, lt=65535)
+
+# e.g. 'v5'
+VersionTag = constr(regex=r"^v\d$")
 
 
 class LogLevel(str, Enum):

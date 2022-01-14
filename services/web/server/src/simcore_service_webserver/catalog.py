@@ -11,17 +11,14 @@ from servicelib.aiohttp.rest_routing import iter_path_operations
 from yarl import URL
 
 from . import catalog_api_handlers, catalog_client
+from ._constants import APP_OPENAPI_SPECS_KEY, RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
 from .catalog_client import (
     get_services_for_user_in_product,
     is_service_responsive,
     to_backend_service,
 )
-from .catalog_config import (
-    KCATALOG_ORIGIN,
-    KCATALOG_VERSION_PREFIX,
-    assert_valid_config,
-)
-from .constants import APP_OPENAPI_SPECS_KEY, RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
+from .catalog_config import KCATALOG_ORIGIN, KCATALOG_VERSION_PREFIX
+from .catalog_settings import assert_valid_config
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
 

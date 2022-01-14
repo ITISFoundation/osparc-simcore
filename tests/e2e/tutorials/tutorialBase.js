@@ -66,6 +66,10 @@ class TutorialBase {
 
     await auto.acceptCookies(this.__page);
     await this.takeScreenshot("postCookies_" + domain);
+
+    // eslint-disable-next-line no-undef
+    const commit = await this.__page.evaluate(() => qx.core.Environment.get("osparc.vcsRef"));
+    console.log("commit", commit);
   }
 
   async start() {
@@ -428,7 +432,12 @@ class TutorialBase {
   }
 
   async waitFor(waitFor, reason) {
-    console.log(`Waiting for ${waitFor}ms. Reason: ${reason}`)
+    if (reason) {
+      console.log(`Waiting for ${waitFor}ms. Reason: ${reason}`);
+    }
+    else {
+      console.log(`Waiting for ${waitFor}ms.`);
+    }
     await utils.sleep(waitFor);
     await this.takeScreenshot('waitFor_finished')
   }

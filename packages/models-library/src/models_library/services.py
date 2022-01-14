@@ -45,6 +45,9 @@ PropertyName = constr(regex=PROPERTY_KEY_RE)
 FileName = constr(regex=FILENAME_RE)
 GroupId = PositiveInt
 
+ServiceKey = constr(regex=KEY_RE)
+ServiceVersion = constr(regex=VERSION_RE)
+
 
 class ServiceType(str, Enum):
     COMPUTATIONAL = "computational"
@@ -253,14 +256,12 @@ class ServiceOutput(ServiceProperty):
     class Config(ServiceProperty.Config):
         schema_extra = {
             "examples": [
-                # v1
                 {
                     "displayOrder": 2,
                     "label": "Time Slept",
                     "description": "Time the service waited before completion",
                     "type": "number",
                 },
-                # v2
                 {
                     "displayOrder": 2,
                     "label": "Time Slept",
@@ -268,12 +269,17 @@ class ServiceOutput(ServiceProperty):
                     "type": "number",
                     "unit": "second",
                 },
-                # latest:
                 {
                     "label": "Time Slept",
                     "description": "Time the service waited before completion",
                     "type": "number",
                     "unit": "second",
+                },
+                {
+                    "label": "Output file 1",
+                    "displayOrder": 4.0,
+                    "description": "Output file uploaded from the outputs folder",
+                    "type": "data:*/*",
                 },
             ]
         }

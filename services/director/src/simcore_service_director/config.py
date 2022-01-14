@@ -33,7 +33,7 @@ def _from_env_with_default(env: str, python_type, default):
 
 # NOTE: these settings must be in sync with settings-library: comp_services.py (since the director is frozen)
 DEFAULT_MAX_NANO_CPUS: int = _from_env_with_default(
-    "DEFAULT_MAX_NANO_CPUS", int, 4 * pow(10, 9)
+    "DEFAULT_MAX_NANO_CPUS", int, 1 * pow(10, 9)
 )
 DEFAULT_MAX_MEMORY: int = _from_env_with_default(
     "DEFAULT_MAX_MEMORY", int, 2 * pow(1024, 3)

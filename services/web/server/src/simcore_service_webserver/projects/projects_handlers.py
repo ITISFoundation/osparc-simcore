@@ -13,16 +13,18 @@ from models_library.projects import ProjectID
 from models_library.projects_state import ProjectState, ProjectStatus
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
+from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from .. import catalog, director_v2_api
+from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
-from ..constants import RQ_PRODUCT_KEY
+from ..director_v2_core import DirectorServiceError
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
-from ..rest_utils import RESPONSE_MODEL_POLICY
+from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
 from ..security_decorators import permission_required
 from ..storage_api import copy_data_folders_from_project
@@ -286,6 +288,7 @@ async def get_project(request: web.Request):
             formatted_services = ", ".join(
                 f"{service}:{version}" for service, version in unavilable_services
             )
+            # TODO: lack of permissions should be notified with https://httpstatuses.com/403 web.HTTPForbidden
             raise web.HTTPNotFound(
                 reason=(
                     f"Project '{project_uuid}' uses unavailable services. Please ask "
@@ -483,11 +486,6 @@ async def delete_project(request: web.Request):
     raise web.HTTPNoContent(content_type="application/json")
 
 
-class HTTPLocked(web.HTTPClientError):
-    # pylint: disable=too-many-ancestors
-    status_code = 423
-
-
 @routes.post(f"/{VTAG}/projects/{{project_uuid}}:open")
 @login_required
 @permission_required("project.open")
@@ -535,6 +533,18 @@ async def open_project(request: web.Request) -> web.Response:
 
     except ProjectNotFoundError as exc:
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from exc
+    except DirectorServiceError as exc:
+        # there was an issue while accessing the director-v2/director-v0
+        # ensure the project is closed again
+        await projects_api.try_close_project_for_user(
+            user_id=user_id,
+            project_uuid=project_uuid,
+            client_session_id=client_session_id,
+            app=request.app,
+        )
+        raise web.HTTPServiceUnavailable(
+            reason="Unexpected error while starting services."
+        ) from exc
 
 
 @routes.post(f"/{VTAG}/projects/{{project_uuid}}:close")

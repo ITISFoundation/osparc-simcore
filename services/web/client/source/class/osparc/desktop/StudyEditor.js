@@ -148,7 +148,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     _applyStudy: function(study) {
       this.__settingStudy = false;
 
-      this._hideLoadingPage();
+      this._showLoadingPage(this.tr("Opening ") + (study.getName() || this.tr("Study")));
 
       const store = osparc.store.Store.getInstance();
       store.setCurrentStudy(study);
@@ -223,11 +223,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           } else {
             console.error(err);
             msg = this.tr("Error opening study");
-            msg += "<br>" + osparc.data.Resources.getErrorMsg(err);
+            if ("message" in err) {
+              msg += "<br>" + err["message"];
+            }
           }
           osparc.component.message.FlashMessenger.getInstance().logAs(msg, "ERROR");
           this.fireEvent("forceBackToDashboard");
-        });
+        })
+        .finally(() => this._hideLoadingPage());
 
       this.__workbenchView.setStudy(study);
       this.__slideshowView.setStudy(study);

@@ -109,7 +109,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         case "side-panels": {
           control = new qx.ui.splitpane.Pane("horizontal").set({
             offset: 2,
-            width: Math.min(parseInt(window.innerWidth * (0.16+0.24)), 550)
+            width: Math.min(parseInt(window.innerWidth * (0.16 + 0.24)), 550)
           });
           osparc.desktop.WorkbenchView.decorateSplitter(control.getChildControl("splitter"));
           osparc.desktop.WorkbenchView.decorateSlider(control.getChildControl("slider"));
@@ -137,7 +137,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
             const collapsibleViewLeft = this.getChildControl("collapsible-view-right");
             // if both panes are collapsed set the maxWidth of the layout to 2*15
             if (collapsed && collapsibleViewLeft.isCollapsed()) {
-              sidePanels.setMaxWidth(2*15);
+              sidePanels.setMaxWidth(2 * 15);
             } else {
               sidePanels.setMaxWidth(null);
             }
@@ -171,7 +171,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
             // if both panes are collapsed set the maxWidth of the layout to 2*15
             if (collapsed && collapsibleViewLeft.isCollapsed()) {
-              sidePanels.setMaxWidth(2*15);
+              sidePanels.setMaxWidth(2 * 15);
             } else {
               sidePanels.setMaxWidth(null);
             }
@@ -247,9 +247,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __createTabPage: function(icon, tooltip, widget, backgroundColor = "background-main") {
       const tabPage = new qx.ui.tabview.Page().set({
-        layout: new qx.ui.layout.VBox(5),
+        layout: new qx.ui.layout.VBox(10),
         backgroundColor,
-        icon: icon+"/24"
+        icon: icon + "/24"
       });
       const tabPageBtn = tabPage.getChildControl("button").set({
         toolTipText: tooltip,
@@ -437,7 +437,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __removePages: function(tabView) {
       const pages = tabView.getChildren();
       // remove pages
-      for (let i=pages.length-1; i>=0; i--) {
+      for (let i = pages.length - 1; i >= 0; i--) {
         tabView.remove(pages[i]);
       }
       // remove spacers
@@ -544,6 +544,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       workbenchUI.addListener("removeNode", e => {
         const nodeId = e.getData();
         this.__removeNode(nodeId);
+      }, this);
+      workbenchUI.addListener("removeNodes", e => {
+        const nodeIds = e.getData();
+        this.__removeNodes(nodeIds);
       }, this);
       workbenchUI.addListener("removeEdge", e => {
         const edgeId = e.getData();
@@ -913,7 +917,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         const view = osparc.file.FilePicker.buildInfoView(filePicker);
         view.setEnabled(false);
+
         this.__infoPage.add(view);
+
+        const downloadFileBtn = new qx.ui.form.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/14").set({
+          allowGrowX: false
+        });
+        downloadFileBtn.addListener("execute", () => osparc.file.FilePicker.downloadOutput(filePicker));
+        this.__infoPage.add(downloadFileBtn);
       } else {
         // empty File Picker
         const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
@@ -1103,7 +1114,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __removeNode: function(nodeId) {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
-        const msg = this.tr("Are you sure you want to delete node?");
+        const msg = this.tr("Are you sure you want to delete the selected node?");
         const win = new osparc.ui.window.Confirmation(msg);
         win.center();
         win.open();
@@ -1114,6 +1125,23 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }, this);
       } else {
         this.__doRemoveNode(nodeId);
+      }
+    },
+
+    __removeNodes: function(nodeIds) {
+      const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
+      if (preferencesSettings.getConfirmDeleteNode()) {
+        const msg = this.tr("Are you sure you want to delete the selected ") + nodeIds.length + " nodes?";
+        const win = new osparc.ui.window.Confirmation(msg);
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            nodeIds.forEach(nodeId => this.__doRemoveNode(nodeId));
+          }
+        }, this);
+      } else {
+        nodeIds.forEach(nodeId => this.__doRemoveNode(nodeId));
       }
     },
 

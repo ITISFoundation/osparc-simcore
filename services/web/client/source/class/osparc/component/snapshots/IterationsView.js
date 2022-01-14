@@ -83,7 +83,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
             iterations.forEach(iteration => {
               const params = {
                 url: {
-                  "studyId": iteration["wcopy_project_id"]
+                  "studyId": iteration["workcopy_project_id"]
                 }
               };
               iterationPromises.push(osparc.data.Resources.getOne("studies", params));

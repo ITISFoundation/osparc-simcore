@@ -25,22 +25,37 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   pip list | sed 's/^/    /'
 
   APP_CONFIG=server-docker-dev.yaml
-  echo "$INFO" "Setting entrypoint to use watchmedo autorestart..."
-  entrypoint='watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories --'
-
 elif [ "${SC_BUILD_TARGET}" = "production" ]; then
   APP_CONFIG=server-docker-prod.yaml
-  entrypoint=""
 fi
 
 # RUNNING application ----------------------------------------
 echo "$INFO" "Selected config $APP_CONFIG"
 
+# NOTE: the number of workers ```(2 x $num_cores) + 1``` is
+# the official recommendation [https://docs.gunicorn.org/en/latest/design.html#how-many-workers]
+# For now we set it to 1 to check what happens with websockets
+
 if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-  # NOTE: needs ptvsd installed
-  echo "$INFO" "PTVSD Debugger initializing in port 3000 with ${APP_CONFIG}"
-  eval "$entrypoint" python3 -m ptvsd --host 0.0.0.0 --port 3000 -m \
-    simcore_service_webserver --config $APP_CONFIG
+  # NOTE: ptvsd is programmatically enabled inside of the service
+  # this way we can have reload in place as well
+  exec gunicorn simcore_service_webserver.cli:app_factory \
+    --bind 0.0.0.0:8080 \
+    --worker-class aiohttp.GunicornWebWorker \
+    --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
+    --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
+    --log-level="${LOG_LEVEL:-info}" \
+    --access-logfile='-' \
+    --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"' \
+    --reload
+
 else
-  exec simcore-service-webserver --config $APP_CONFIG
+  exec gunicorn simcore_service_webserver.cli:app_factory \
+    --bind 0.0.0.0:8080 \
+    --worker-class aiohttp.GunicornWebWorker \
+    --workers="${WEBSERVER_GUNICORN_WORKERS:-1}" \
+    --name="webserver_$(hostname)_$(date +'%Y-%m-%d_%T')_$$" \
+    --log-level="${LOG_LEVEL:-warning}" \
+    --access-logfile='-' \
+    --access-logformat='%a %t "%r" %s %b [%Dus] "%{Referer}i" "%{User-Agent}i"'
 fi

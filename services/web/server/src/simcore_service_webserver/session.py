@@ -23,10 +23,9 @@ import aiohttp_session
 from aiohttp import web
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from cryptography import fernet
-
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .session_config import assert_valid_config
+from .session_settings import assert_valid_config
 
 logger = logging.getLogger(__file__)
 

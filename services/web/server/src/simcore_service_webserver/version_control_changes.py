@@ -9,15 +9,15 @@ has changed
 
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
+from uuid import UUID, uuid3
 
-from aiopg.sa.result import ResultProxy
 from models_library.basic_types import SHA1Str
+from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes import Node
 
-from .utils import compute_sha1
-
-ProjectProxy = ResultProxy
+from .projects.project_models import ProjectProxy
+from .utils import compute_sha1_on_small_dataset
 
 
 def compute_workbench_checksum(workbench: Dict[str, Any]) -> SHA1Str:
@@ -32,7 +32,7 @@ def compute_workbench_checksum(workbench: Dict[str, Any]) -> SHA1Str:
         str(k): (Node.parse_obj(v) if not isinstance(v, Node) else v)
         for k, v in workbench.items()
     }
-    checksum = compute_sha1(
+    checksum = compute_sha1_on_small_dataset(
         {
             k: node.dict(
                 exclude_unset=True,
@@ -54,12 +54,34 @@ def compute_workbench_checksum(workbench: Dict[str, Any]) -> SHA1Str:
 
 
 def _eval_checksum(repo, project: ProjectProxy) -> SHA1Str:
-    # cached checksum of project wcopy
+    # cached checksum of project workcopy
     checksum: Optional[SHA1Str] = repo.project_checksum
     is_invalid = not checksum or (checksum and repo.modified < project.last_change_date)
     if is_invalid:
         # invalid -> recompute
         checksum = compute_workbench_checksum(project.workbench)
         # TODO: cache
-    assert checksum
+    assert checksum  # nosec
     return checksum
+
+
+def eval_workcopy_project_id(
+    repo_project_uuid: Union[ProjectID, ProjectIDStr], snapshot_checksum: SHA1Str
+) -> ProjectID:
+    """
+    A working copy is a real project associated to a snapshot so it can be operated
+    as a project resource (e.g. run, save, etc).
+
+    The uuid of the workcopy is a composition of the repo-project uuid and the snapshot-checksum
+    i.e. all identical snapshots (e.g. different iterations commits) map to the same project workcopy
+    can avoid re-run
+
+    If a snapshot is identical but associated to two different repos, then it will still be
+    treated as a separate project to avoid colision between e.g. two users having coincidentaly the same
+    worbench blueprint. Nonetheless, this could be refined in the future since we could use this
+    knowledge to reuse results.
+    """
+    if isinstance(repo_project_uuid, str):
+        repo_project_uuid = UUID(repo_project_uuid)
+
+    return uuid3(repo_project_uuid, snapshot_checksum)

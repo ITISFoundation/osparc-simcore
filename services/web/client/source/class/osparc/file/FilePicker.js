@@ -139,24 +139,36 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
+    getOutputFileMetadata: function(node) {
+      return new Promise((resolve, reject) => {
+        const outValue = osparc.file.FilePicker.getOutput(node.getOutputs());
+        const params = {
+          url: {
+            locationId: outValue.store,
+            datasetId: outValue.dataset
+          }
+        };
+        osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
+          .then(files => {
+            const fileMetadata = files.find(file => file.file_id === outValue.path);
+            if (fileMetadata) {
+              resolve(fileMetadata);
+            } else {
+              reject();
+            }
+          })
+          .catch(() => reject());
+      });
+    },
+
     buildFileFromStoreInfoView: function(node, form) {
-      const outValue = osparc.file.FilePicker.getOutput(node.getOutputs());
-      const params = {
-        url: {
-          locationId: outValue.store,
-          datasetId: outValue.dataset
-        }
-      };
-      osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
-        .then(files => {
-          const fileMetadata = files.find(file => file.file_uuid === outValue.path);
-          if (fileMetadata) {
-            for (let [key, value] of Object.entries(fileMetadata)) {
-              const entry = new qx.ui.form.TextField();
-              form.add(entry, key, null, key);
-              if (value) {
-                entry.setValue(value.toString());
-              }
+      this.self().getOutputFileMetadata(node)
+        .then(fileMetadata => {
+          for (let [key, value] of Object.entries(fileMetadata)) {
+            const entry = new qx.ui.form.TextField();
+            form.add(entry, key, null, key);
+            if (value) {
+              entry.setValue(value.toString());
             }
           }
         });
@@ -189,6 +201,17 @@ qx.Class.define("osparc.file.FilePicker", {
       }
 
       return new qx.ui.form.renderer.Single(form);
+    },
+
+    downloadOutput: function(node) {
+      this.self().getOutputFileMetadata(node)
+        .then(fileMetadata => {
+          if ("location_id" in fileMetadata && "file_id" in fileMetadata) {
+            const locationId = fileMetadata["location_id"];
+            const fileId = fileMetadata["file_id"];
+            osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId);
+          }
+        });
     },
 
     serializeOutput: function(outputs) {
@@ -228,8 +251,7 @@ qx.Class.define("osparc.file.FilePicker", {
         case "tree-folder-layout":
           control = new qx.ui.splitpane.Pane("horizontal");
           control.getChildControl("splitter").set({
-            width: 2,
-            backgroundColor: "scrollbar-passive"
+            width: 2
           });
           this._addAt(control, this.self().POS.FILES_TREE, {
             flex: 1
@@ -238,7 +260,7 @@ qx.Class.define("osparc.file.FilePicker", {
         case "files-tree": {
           const treeFolderLayout = this.getChildControl("tree-folder-layout");
           control = new osparc.file.FilesTree().set({
-            backgroundColor: "background-main-lighter+",
+            backgroundColor: "contrasted-background",
             showLeafs: false,
             minWidth: 150,
             width: 250
@@ -253,9 +275,7 @@ qx.Class.define("osparc.file.FilePicker", {
           break;
         }
         case "select-toolbar":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5)).set({
-            backgroundColor: "background-main-lighter+"
-          });
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._addAt(control, this.self().POS.TOOLBAR);
           break;
         case "files-add": {
@@ -283,12 +303,18 @@ qx.Class.define("osparc.file.FilePicker", {
           break;
         }
         case "file-download-link": {
-          const groupBox = new qx.ui.groupbox.GroupBox(this.tr("Or provide a Download Link")).set({
-            layout: new qx.ui.layout.VBox(5)
+          const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+            alignY: "middle"
+          }));
+          const label = new qx.ui.basic.Label(this.tr("Or provide a Download Link"));
+          layout.add(label);
+          control = new osparc.file.FileDownloadLink().set({
+            allowGrowY: false
           });
-          control = new osparc.file.FileDownloadLink();
-          groupBox.add(control);
-          this._addAt(groupBox, this.self().POS.DOWNLOAD_LINK);
+          layout.add(control, {
+            flex: 1
+          });
+          this._addAt(layout, this.self().POS.DOWNLOAD_LINK);
           break;
         }
       }

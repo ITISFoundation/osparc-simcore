@@ -44,6 +44,8 @@ async def create_container_config(
     task_max_resources: Dict[str, Any],
 ) -> DockerContainerConfig:
 
+    nano_cpus_limit = int(task_max_resources.get("CPU", 1) * 1e9)
+    memory_limit = ByteSize(task_max_resources.get("RAM", 1024 ** 3))
     config = DockerContainerConfig(
         Env=[
             *[
@@ -55,6 +57,8 @@ async def create_container_config(
                 ]
             ],
             f"SC_COMP_SERVICES_SCHEDULED_AS={boot_mode.value}",
+            f"SIMCORE_NANO_CPUS_LIMIT={nano_cpus_limit}",
+            f"SIMCORE_MEMORY_BYTES_LIMIT={memory_limit}",
         ],
         Cmd=command,
         Image=f"{docker_registry}/{service_key}:{service_version}",
@@ -65,8 +69,8 @@ async def create_container_config(
                 f"{comp_volume_mount_point}/outputs:/outputs",
                 f"{comp_volume_mount_point}/logs:/logs",
             ],
-            Memory=ByteSize(task_max_resources.get("RAM", 1024 ** 3)),
-            NanoCPUs=int(task_max_resources.get("CPU", 1) * 1e9),
+            Memory=memory_limit,
+            NanoCPUs=nano_cpus_limit,
         ),
     )
     logger.debug("Container configuration: \n%s", pformat(config.dict()))

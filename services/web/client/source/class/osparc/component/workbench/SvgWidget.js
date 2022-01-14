@@ -88,8 +88,12 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
       osparc.wrapper.Svg.removeCurve(curve);
     },
 
-    updateRect: function(rect, x, y) {
-      osparc.wrapper.Svg.updateRect(rect, x, y);
+    updateRect: function(rect, w, h, x, y) {
+      osparc.wrapper.Svg.updateRect(rect, w, h, x, y);
+    },
+
+    updateRectPos: function(rect, x, y) {
+      osparc.wrapper.Svg.updateRectPos(rect, x, y);
     },
 
     removeRect: function(rect) {
@@ -123,6 +127,10 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
 
     drawDashedRect: function(width, height, x = 0, y = 0) {
       return osparc.wrapper.Svg.drawDashedRect(this.__canvas, width, height, x, y);
+    },
+
+    drawFilledRect: function(width, height, x = 0, y = 0) {
+      return osparc.wrapper.Svg.drawFilledRect(this.__canvas, width, height, x, y);
     },
 
     drawNodeUI: function(width = osparc.component.workbench.NodeUI.NODE_WIDTH, height = osparc.component.workbench.NodeUI.NODE_HEIGHT, radius = 3, x = 0, y = 0) {

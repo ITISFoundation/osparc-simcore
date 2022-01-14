@@ -9,7 +9,7 @@ from typing import List
 import pytest
 
 # under test
-from simcore_service_webserver.resources import resources
+from simcore_service_webserver._resources import resources
 
 log = logging.getLogger(__name__)
 

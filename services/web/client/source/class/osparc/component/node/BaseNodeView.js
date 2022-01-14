@@ -34,7 +34,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
   },
 
   statics: {
-    HEADER_HEIGHT: 35,
+    HEADER_HEIGHT: 32,
 
     createSettingsGroupBox: function(label) {
       const settingsGroupBox = new qx.ui.groupbox.GroupBox(label).set({
@@ -67,17 +67,19 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
   },
 
   members: {
-    __header: null,
+    _header: null,
     __nodeStatusUI: null,
     __retrieveButton: null,
     _mainView: null,
     _settingsLayout: null,
     _iFrameLayout: null,
     _outputsLayout: null,
+    __progressBar: null,
 
     __buildLayout: function() {
-      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
-      const header = this.__buildHeader();
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(0));
+
+      const header = this._header = this._buildHeader();
       layout.add(header);
 
       const mainView = this.__buildMainView();
@@ -85,17 +87,28 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
+      const progressBar = this.__progressBar = new qx.ui.core.Widget().set({
+        visibility: "excluded",
+        allowGrowX: true,
+        height: 6
+      });
+      layout.add(progressBar);
+
       this.add(layout, 1);
     },
 
-    __buildHeader: function() {
-      const header = this.__header = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+    _buildHeader: function() {
+      const header = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignX: "center"
       })).set({
+        padding: 6,
         height: this.self().HEADER_HEIGHT
       });
 
-      const infoBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/info-circle/14");
+      const infoBtn = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16").set({
+        backgroundColor: "transparent",
+        toolTipText: this.tr("Information")
+      });
       infoBtn.addListener("execute", () => this.__openServiceDetails(), this);
       header.add(infoBtn);
 
@@ -103,11 +116,16 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
-      const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI();
+      const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI().set({
+        backgroundColor: "contrasted-background+"
+      });
       nodeStatusUI.getChildControl("label").setFont("text-14");
       header.add(nodeStatusUI);
 
-      const retrieveBtn = this.__retrieveButton = new qx.ui.form.Button(this.tr("Retrieve"), "@FontAwesome5Solid/spinner/14");
+      const retrieveBtn = this.__retrieveButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/spinner/14").set({
+        backgroundColor: "transparent",
+        toolTipText: this.tr("Retrieve")
+      });
       retrieveBtn.addListener("execute", () => this.getNode().callRetrieveInputs(), this);
       header.add(retrieveBtn);
 
@@ -115,7 +133,10 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         flex: 1
       });
 
-      const outputsBtn = this._outputsBtn = new qx.ui.form.ToggleButton(this.tr("Outputs"), "@FontAwesome5Solid/sign-out-alt/14");
+      const outputsBtn = this._outputsBtn = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/sign-out-alt/14").set({
+        backgroundColor: "transparent",
+        toolTipText: this.tr("Outputs")
+      });
       header.add(outputsBtn);
 
       return header;
@@ -126,9 +147,9 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
 
       const mainView = this._mainView = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
 
-      const groupBox = this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
-      this.bind("backgroundColor", groupBox, "backgroundColor");
-      this.bind("backgroundColor", groupBox.getChildControl("frame"), "backgroundColor");
+      const settingsBox = this._settingsLayout = this.self().createSettingsGroupBox(this.tr("Settings"));
+      mainView.bind("backgroundColor", settingsBox, "backgroundColor");
+      mainView.bind("backgroundColor", settingsBox.getChildControl("frame"), "backgroundColor");
 
       this._iFrameLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox());
 
@@ -140,20 +161,13 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
         padding: 5,
         width: 250
       });
+      mainView.bind("backgroundColor", outputsLayout, "backgroundColor");
       this._outputsBtn.bind("value", outputsLayout, "visibility", {
         converter: value => value ? "visible" : "excluded"
       });
       hBox.add(outputsLayout);
 
       return hBox;
-    },
-
-    _addToMainView: function(view, options = {}) {
-      if (view.hasChildren()) {
-        this._mainView.add(view, options);
-      } else if (qx.ui.core.Widget.contains(this._mainView, view)) {
-        this._mainView.remove(view);
-      }
     },
 
     __openNodeDataManager: function() {
@@ -169,7 +183,15 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     getHeaderLayout: function() {
-      return this.__header;
+      return this._header;
+    },
+
+    getOutputsButton: function() {
+      return this._outputsBtn;
+    },
+
+    getMainView: function() {
+      return this._mainView;
     },
 
     getSettingsLayout: function() {
@@ -213,14 +235,51 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
     },
 
     __applyNode: function(node) {
-      this.__nodeStatusUI.setNode(node);
-      this.__retrieveButton.setVisibility(this.getNode().isDynamic() ? "visible" : "excluded");
+      if (this.__nodeStatusUI) {
+        this.__nodeStatusUI.setNode(node);
+      }
+
+      if (this.__retrieveButton) {
+        this.__retrieveButton.setVisibility(node.isDynamic() ? "visible" : "excluded");
+      }
 
       this._mainView.removeAll();
       this._addSettings();
       this._addIFrame();
-
       this._addOutputs();
+
+      if (this.__progressBar) {
+        const updateProgress = () => {
+          const running = node.getStatus().getRunning();
+          const progress = node.getStatus().getProgress();
+          if (["PENDING", "PUBLISHED"].includes(running) ||
+            (["STARTED"].includes(running) && progress === 0)) {
+            this.__progressBar.setBackgroundColor("busy-orange");
+            this.__progressBar.getContentElement().setStyles({
+              width: "100%"
+            });
+          } else if (["FAILED", "ABORTED"].includes(running)) {
+            this.__progressBar.setBackgroundColor("failed-red");
+            this.__progressBar.getContentElement().setStyles({
+              width: "100%"
+            });
+          } else if (["SUCCESS"].includes(running)) {
+            this.__progressBar.setBackgroundColor("ready-green");
+            this.__progressBar.getContentElement().setStyles({
+              width: progress + "%"
+            });
+          } else {
+            this.__progressBar.setBackgroundColor("transparent");
+            this.__progressBar.getContentElement().setStyles({
+              width: "100%"
+            });
+          }
+        };
+        this.__progressBar.setVisibility(node.isComputational() ? "visible" : "excluded");
+        updateProgress();
+        node.getStatus().addListener("changeRunning", () => updateProgress(), this);
+        node.getStatus().addListener("changeProgress", () => updateProgress(), this);
+      }
 
       this._addLogger();
     }

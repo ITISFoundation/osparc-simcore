@@ -57,7 +57,7 @@ class RabbitMQClient:
 
     @classmethod
     async def create(cls, app: FastAPI) -> "RabbitMQClient":
-        settings: RabbitSettings = app.state.settings.CELERY.CELERY_RABBIT
+        settings: RabbitSettings = app.state.settings.DIRECTOR_V2_RABBITMQ
         connection: aio_pika.RobustConnection = await aio_pika.connect_robust(
             settings.dsn + f"?name={__name__}_{id(app)}",
             client_properties={"connection_name": f"director-v2_{id(app)}"},

@@ -12,9 +12,10 @@ from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
-from tenacity import AsyncRetrying
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
-from tenacity.wait import wait_exponential
+from tenacity.wait import wait_random
 from yarl import URL
 
 from .director_v2_abc import AbstractProjectRunPolicy
@@ -29,12 +30,15 @@ SERVICE_RETRIEVE_HTTP_TIMEOUT = ClientTimeout(
     total=60 * 60, connect=None, sock_connect=5  # type:ignore
 )
 DEFAULT_RETRY_POLICY = dict(
-    wait=wait_exponential(), stop=stop_after_attempt(3), reraise=True
+    wait=wait_random(0, 1),
+    stop=stop_after_attempt(2),
+    reraise=True,
+    before_sleep=before_sleep_log(log, logging.WARNING),
 )
 
 
 DataType = Dict[str, Any]
-DataBody = Union[DataType, List[DataType]]
+DataBody = Union[DataType, List[DataType], None]
 
 # base/ERRORS ------------------------------------------------
 
@@ -96,27 +100,27 @@ async def _request_director_v2(
     **kwargs,
 ) -> DataBody:
 
-    session = get_client_session(app)
     try:
-        async with session.request(
-            method, url, headers=headers, json=data, **kwargs
-        ) as response:
-            payload: Union[Dict, str] = (
-                await response.json()
-                if response.content_type == "application/json"
-                else await response.text()
-            )
-
-            # NOTE:
-            # - `sometimes director-v0` (via redirects) replies
-            #   in plain text and this is considered an error
-            # - `director-v2` and `director-v0` can reply with 204 no content
-            if response.status != expected_status.status_code or (
-                response.status != web.HTTPNoContent and isinstance(payload, str)
-            ):
-                raise DirectorServiceError(response.status, reason=str(payload))
-
-            return payload
+        async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
+            with attempt:
+                session = get_client_session(app)
+                async with session.request(
+                    method, url, headers=headers, json=data, **kwargs
+                ) as response:
+                    payload = (
+                        await response.json()
+                        if response.content_type == "application/json"
+                        else await response.text()
+                    )
+                    # NOTE:
+                    # - `sometimes director-v0` (via redirects) replies
+                    #   in plain text and this is considered an error
+                    # - `director-v2` and `director-v0` can reply with 204 no content
+                    if response.status != expected_status.status_code or isinstance(
+                        payload, str
+                    ):
+                        raise DirectorServiceError(response.status, reason=f"{payload}")
+                    return payload
 
     # TODO: enrich with https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
     except asyncio.TimeoutError as err:
@@ -130,6 +134,10 @@ async def _request_director_v2(
             web.HTTPServiceUnavailable.status_code,
             reason=f"request to director-v2 service unexpected error {err}",
         ) from err
+    log.error("Unexpected result calling %s, %s", f"{url=}", f"{method=}")
+    raise DirectorServiceError(
+        web.HTTPClientError.status_code, reason="Unexpected client error"
+    )
 
 
 # POLICY ------------------------------------------------
@@ -208,9 +216,7 @@ async def create_or_update_pipeline(
 async def get_computation_task(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> Optional[ComputationTask]:
-
     settings: Directorv2Settings = get_settings(app)
-
     backend_url = URL(f"{settings.endpoint}/computations/{project_id}").update_query(
         user_id=user_id
     )
@@ -221,12 +227,15 @@ async def get_computation_task(
             app, "GET", backend_url, expected_status=web.HTTPAccepted
         )
         task_out = ComputationTask.parse_obj(computation_task_out_dict)
+        log.debug("found computation task: %s", f"{task_out=}")
         return task_out
     except DirectorServiceError as exc:
         if exc.status == web.HTTPNotFound.status_code:
             # the pipeline might not exist and that is ok
             return
-        log.warning("getting pipeline for project %s failed: %s.", project_id, exc)
+        log.warning(
+            "getting pipeline for project %s failed: %s.", f"{project_id=}", exc
+        )
 
 
 @log_decorator(logger=log)
@@ -400,13 +409,9 @@ async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
     settings: Directorv2Settings = get_settings(app)
     backend_url = URL(settings.endpoint) / "dynamic_services" / f"{node_uuid}"
 
-    # sometimes the director-v2 cannot be reached causing the service to fail
-    # retrying 3 times before giving up for good
-    async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
-        with attempt:
-            service_state = await _request_director_v2(
-                app, "GET", backend_url, expected_status=web.HTTPOk
-            )
+    service_state = await _request_director_v2(
+        app, "GET", backend_url, expected_status=web.HTTPOk
+    )
 
     assert isinstance(service_state, dict)  # nosec
     return service_state
@@ -426,18 +431,14 @@ async def retrieve(
     )
     body = dict(port_keys=port_keys)
 
-    # sometimes the director-v2 cannot be reached causing the service to fail
-    # retrying 3 times before giving up for good
-    async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
-        with attempt:
-            retry_result = await _request_director_v2(
-                app,
-                "POST",
-                backend_url,
-                expected_status=web.HTTPOk,
-                data=body,
-                timeout=timeout,
-            )
+    retry_result = await _request_director_v2(
+        app,
+        "POST",
+        backend_url,
+        expected_status=web.HTTPOk,
+        data=body,
+        timeout=timeout,
+    )
 
     assert isinstance(retry_result, dict)  # nosec
     return retry_result
@@ -454,14 +455,10 @@ async def restart(app: web.Application, node_uuid: str) -> None:
         URL(director2_settings.endpoint) / "dynamic_services" / f"{node_uuid}:restart"
     )
 
-    # sometimes the director-v2 cannot be reached causing the service to fail
-    # retrying 3 times before giving up for good
-    async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
-        with attempt:
-            await _request_director_v2(
-                app,
-                "POST",
-                backend_url,
-                expected_status=web.HTTPOk,
-                timeout=timeout,
-            )
+    await _request_director_v2(
+        app,
+        "POST",
+        backend_url,
+        expected_status=web.HTTPOk,
+        timeout=timeout,
+    )

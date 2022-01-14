@@ -71,6 +71,7 @@ def mock_environment(
     inputs_dir: Path,
     outputs_dir: Path,
     state_paths_dirs: List[Path],
+    state_exclude_dirs: List[Path],
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -89,6 +90,9 @@ def mock_environment(
     monkeypatch_module.setenv("DY_SIDECAR_PATH_OUTPUTS", str(outputs_dir))
     monkeypatch_module.setenv(
         "DY_SIDECAR_STATE_PATHS", json.dumps([str(x) for x in state_paths_dirs])
+    )
+    monkeypatch_module.setenv(
+        "DY_SIDECAR_STATE_EXCLUDE", json.dumps([str(x) for x in state_exclude_dirs])
     )
     monkeypatch_module.setenv("RABBIT_HOST", rabbit_service.host)
     monkeypatch_module.setenv("RABBIT_PORT", f"{rabbit_service.port}")

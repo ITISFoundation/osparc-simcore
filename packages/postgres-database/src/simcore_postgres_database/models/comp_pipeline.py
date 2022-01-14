@@ -15,8 +15,6 @@ class StateType(enum.Enum):
     NOTE: these states are the exact same ones as the models-library (RunningState for a project's execution state)
     """
 
-    # TODO: how they map to celery.states?
-    # https://docs.celeryproject.org/en/stable/reference/celery.states.html
     NOT_STARTED = "NOT_STARTED"
     PUBLISHED = "PUBLISHED"
     PENDING = "PENDING"

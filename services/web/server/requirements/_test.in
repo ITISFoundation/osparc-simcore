@@ -6,7 +6,6 @@
 #  - Resulting _text.txt is a frozen list of EXTRA packages for testing, besides _base.txt
 #
 --constraint _base.txt
---constraint _packages.txt
 
 # testing
 
@@ -14,7 +13,6 @@
 coverage
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
-pytest-celery
 pytest-cov
 pytest-docker
 pytest-icdiff

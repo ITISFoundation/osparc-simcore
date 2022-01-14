@@ -1527,7 +1527,7 @@ paths:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/computation/pipeline/{project_id}:start':
     post:
-      description: Starts a pipeline(s) of a given (meta) project
+      description: Starts the pipeline(s) of a given (meta) project
       tags:
         - service
       operationId: start_pipeline
@@ -1543,8 +1543,7 @@ paths:
                 force_restart:
                   type: boolean
                   default: false
-                  description: DEPRECATED if true will force re-running all dependent nodes
-                  deprecated: true
+                  description: if true will force re-running all dependent nodes
                 cluster_id:
                   type: integer
                   description: 'the computation shall use the cluster described by its id, 0 is the default cluster'
@@ -2886,7 +2885,7 @@ paths:
         - meta-projects
       summary: List Project Iterations
       description: Lists current project's iterations
-      operationId: simcore_service_webserver.meta_handlers._list_meta_project_iterations_handler
+      operationId: simcore_service_webserver.meta_modeling_handlers._list_meta_project_iterations_handler
       parameters:
         - description: Project unique identifier
           required: true
@@ -3013,8 +3012,8 @@ paths:
                       required:
                         - name
                         - parent
-                        - wcopy_project_id
-                        - wcopy_project_url
+                        - workcopy_project_id
+                        - workcopy_project_url
                         - url
                       type: object
                       properties:
@@ -3039,13 +3038,13 @@ paths:
                                   title: Ref Id
                                   type: integer
                           description: Reference to the the meta-project that defines this iteration
-                        wcopy_project_id:
-                          title: Wcopy Project Id
+                        workcopy_project_id:
+                          title: Workcopy's Project Id
                           type: string
                           description: ID to this iteration's working copy.A working copy is a real project where this iteration is run
                           format: uuid
-                        wcopy_project_url:
-                          title: Wcopy Project Url
+                        workcopy_project_url:
+                          title: Workcopy's Project Url
                           maxLength: 2083
                           minLength: 1
                           type: string
@@ -3088,69 +3087,6 @@ paths:
                         type:
                           title: Error Type
                           type: string
-    post:
-      tags:
-        - meta-projects
-      summary: Create Project Iterations
-      description: |-
-        Gets or creates projects iterations
-
-        If the number of iterations is not bound (e.g. in an optimization) then it responds
-        when the requested range (offset: offset+limits)
-      operationId: simcore_service_webserver.meta_handlers._create_meta_project_iterations_handler
-      parameters:
-        - description: Project unique identifier
-          required: true
-          schema:
-            title: Project Uuid
-            type: string
-            description: Project unique identifier
-            format: uuid
-          name: project_uuid
-          in: path
-        - required: true
-          schema:
-            title: Ref Id
-            anyOf:
-              - type: integer
-              - type: string
-          name: ref_id
-          in: path
-        - description: index to the first item to return (pagination)
-          required: false
-          schema:
-            title: Offset
-            exclusiveMinimum: false
-            type: integer
-            description: index to the first item to return (pagination)
-            default: 0
-            minimum: 0
-          name: offset
-          in: query
-        - description: maximum number of items to return (pagination)
-          required: false
-          schema:
-            title: Limit
-            maximum: 50
-            minimum: 1
-            type: integer
-            description: maximum number of items to return (pagination)
-            default: 20
-          name: limit
-          in: query
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/200/content/application~1json/schema'
-        '422':
-          description: Validation Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/422/content/application~1json/schema'
   /repos/projects:
     get:
       tags:

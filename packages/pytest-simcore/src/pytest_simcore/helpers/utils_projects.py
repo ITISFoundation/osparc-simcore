@@ -9,11 +9,11 @@ import uuid as uuidlib
 from typing import Dict, Optional
 
 from aiohttp import web
+from simcore_service_webserver._resources import resources
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
     DB_EXCLUSIVE_COLUMNS,
 )
-from simcore_service_webserver.resources import resources
 from simcore_service_webserver.utils import now_str
 
 fake_template_resources = [

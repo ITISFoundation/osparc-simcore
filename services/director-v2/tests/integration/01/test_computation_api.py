@@ -28,8 +28,8 @@ from pydantic.types import PositiveInt
 from pytest_mock.plugin import MockerFixture
 from shared_comp_utils import (
     COMPUTATION_URL,
+    assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
-    assert_pipeline_status,
     create_pipeline,
 )
 from simcore_sdk.node_ports_common import config as node_ports_config
@@ -48,7 +48,7 @@ pytest_simcore_core_services_selection = [
     "redis",
     "storage",
 ]
-pytest_simcore_ops_services_selection = ["minio", "adminer", "flower"]
+pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
 # FIXTURES ---------------------------------------
@@ -57,8 +57,6 @@ pytest_simcore_ops_services_selection = ["minio", "adminer", "flower"]
 @pytest.fixture(scope="function")
 def mock_env(monkeypatch: MonkeyPatch) -> None:
     # used by the client fixture
-    monkeypatch.setenv("DIRECTOR_V2_CELERY_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
@@ -193,7 +191,6 @@ class PartialComputationParams:
     exp_node_states_after_force_run: Dict[int, Dict[str, Any]]
 
 
-@pytest.mark.skip(reason="FIXME: currently fails")
 @pytest.mark.parametrize(
     "params",
     [
@@ -265,81 +262,80 @@ class PartialComputationParams:
             ),
             id="element 0,1",
         ),
-        # SAN: SKIPPED for now as I cannot reproduce it at the moment
-        # pytest.param(
-        #     PartialComputationParams(
-        #         subgraph_elements=[1, 2, 4],
-        #         exp_pipeline_adj_list={1: [2], 2: [4], 3: [4], 4: []},
-        #         exp_node_states={
-        #             1: {
-        #                 "modified": True,
-        #                 "dependencies": [],
-        #                 "currentStatus": RunningState.PUBLISHED,
-        #             },
-        #             2: {
-        #                 "modified": True,
-        #                 "dependencies": [1],
-        #                 "currentStatus": RunningState.PUBLISHED,
-        #             },
-        #             3: {
-        #                 "modified": True,
-        #                 "dependencies": [],
-        #                 "currentStatus": RunningState.PUBLISHED,
-        #             },
-        #             4: {
-        #                 "modified": True,
-        #                 "dependencies": [2, 3],
-        #                 "currentStatus": RunningState.PUBLISHED,
-        #             },
-        #         },
-        #         exp_node_states_after_run={
-        #             1: {
-        #                 "modified": False,
-        #                 "dependencies": [],
-        #                 "currentStatus": RunningState.SUCCESS,
-        #             },
-        #             2: {
-        #                 "modified": False,
-        #                 "dependencies": [],
-        #                 "currentStatus": RunningState.SUCCESS,
-        #             },
-        #             3: {
-        #                 "modified": False,
-        #                 "dependencies": [],
-        #                 "currentStatus": RunningState.SUCCESS,
-        #             },
-        #             4: {
-        #                 "modified": False,
-        #                 "dependencies": [],
-        #                 "currentStatus": RunningState.SUCCESS,
-        #             },
-        #         },
-        #         exp_pipeline_adj_list_after_force_run={1: [2], 2: [4], 4: []},
-        #         exp_node_states_after_force_run={
-        #             1: {
-        #                 "modified": False,
-        #                 "dependencies": [],
-        #                 "currentStatus": RunningState.PUBLISHED,
-        #             },
-        #             2: {
-        #                 "modified": False,
-        #                 "dependencies": [],
-        #                 "currentStatus": RunningState.PUBLISHED,
-        #             },
-        #             3: {
-        #                 "modified": False,
-        #                 "dependencies": [],
-        #                 "currentStatus": RunningState.SUCCESS,
-        #             },
-        #             4: {
-        #                 "modified": False,
-        #                 "dependencies": [],
-        #                 "currentStatus": RunningState.PUBLISHED,
-        #             },
-        #         },
-        #     ),
-        #     id="element 1,2,4",
-        # ),
+        pytest.param(
+            PartialComputationParams(
+                subgraph_elements=[1, 2, 4],
+                exp_pipeline_adj_list={1: [2], 2: [4], 3: [4], 4: []},
+                exp_node_states={
+                    1: {
+                        "modified": True,
+                        "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                    2: {
+                        "modified": True,
+                        "dependencies": [1],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                    3: {
+                        "modified": True,
+                        "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                    4: {
+                        "modified": True,
+                        "dependencies": [2, 3],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                },
+                exp_node_states_after_run={
+                    1: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
+                    },
+                    2: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
+                    },
+                    3: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
+                    },
+                    4: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
+                    },
+                },
+                exp_pipeline_adj_list_after_force_run={1: [2], 2: [4], 4: []},
+                exp_node_states_after_force_run={
+                    1: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                    2: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                    3: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.SUCCESS,
+                    },
+                    4: {
+                        "modified": False,
+                        "dependencies": [],
+                        "currentStatus": RunningState.PUBLISHED,
+                    },
+                },
+            ),
+            id="element 1,2,4",
+        ),
     ],
 )
 async def test_run_partial_computation(
@@ -407,7 +403,7 @@ async def test_run_partial_computation(
     )
 
     # now wait for the computation to finish
-    task_out = await assert_pipeline_status(
+    task_out = await assert_and_wait_for_pipeline_status(
         async_client, task_out.url, user_id, sleepers_project.uuid
     )
     expected_pipeline_details_after_run = _convert_to_pipeline_details(
@@ -469,12 +465,11 @@ async def test_run_partial_computation(
     )
 
     # now wait for the computation to finish
-    task_out = await assert_pipeline_status(
+    task_out = await assert_and_wait_for_pipeline_status(
         async_client, task_out.url, user_id, sleepers_project.uuid
     )
 
 
-@pytest.mark.skip(reason="FIXME: temporary disabled")
 async def test_run_computation(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
@@ -506,7 +501,7 @@ async def test_run_computation(
     )
 
     # wait for the computation to start
-    await assert_pipeline_status(
+    await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
         user_id,
@@ -515,7 +510,7 @@ async def test_run_computation(
     )
 
     # wait for the computation to finish (either by failing, success or abort)
-    task_out = await assert_pipeline_status(
+    task_out = await assert_and_wait_for_pipeline_status(
         async_client, task_out.url, user_id, sleepers_project.uuid
     )
 
@@ -568,7 +563,7 @@ async def test_run_computation(
     )
 
     # wait for the computation to finish
-    task_out = await assert_pipeline_status(
+    task_out = await assert_and_wait_for_pipeline_status(
         async_client, task_out.url, user_id, sleepers_project.uuid
     )
     await assert_computation_task_out_obj(
@@ -580,6 +575,7 @@ async def test_run_computation(
     )
 
 
+@pytest.mark.skip(reason="FIXME: still not bullet proof")
 async def test_abort_computation(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
@@ -588,6 +584,12 @@ async def test_abort_computation(
     fake_workbench_without_outputs: Dict[str, Any],
     fake_workbench_computational_pipeline_details: PipelineDetails,
 ):
+    # we need long running tasks to ensure cancellation is done properly
+    for node in fake_workbench_without_outputs.values():
+        if "sleeper" in node["key"]:
+            node["inputs"].setdefault("in_2", 120)
+            if not isinstance(node["inputs"]["in_2"], dict):
+                node["inputs"]["in_2"] = 120
     sleepers_project = project(workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
     response = await create_pipeline(
@@ -609,7 +611,7 @@ async def test_abort_computation(
     )
 
     # wait until the pipeline is started
-    task_out = await assert_pipeline_status(
+    task_out = await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
         user_id,
@@ -627,6 +629,8 @@ async def test_abort_computation(
         task_out.stop_url
         == f"{async_client.base_url}/v2/computations/{sleepers_project.uuid}:stop"
     )
+    # wait a bit till it has some momentum
+    await asyncio.sleep(5)
 
     # now abort the pipeline
     response = await async_client.post(
@@ -643,7 +647,7 @@ async def test_abort_computation(
     assert task_out.stop_url == None
 
     # check that the pipeline is aborted/stopped
-    task_out = await assert_pipeline_status(
+    task_out = await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
         user_id,
@@ -651,6 +655,8 @@ async def test_abort_computation(
         wait_for_states=[RunningState.ABORTED],
     )
     assert task_out.state == RunningState.ABORTED
+    # FIXME: Here ideally we should connect to the dask scheduler and check
+    # that the task is really aborted
 
 
 async def test_update_and_delete_computation(
@@ -739,7 +745,7 @@ async def test_update_and_delete_computation(
     )
 
     # wait until the pipeline is started
-    task_out = await assert_pipeline_status(
+    task_out = await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
         user_id,

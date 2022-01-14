@@ -11,6 +11,7 @@ const {
   user,
   pass,
   newUser,
+  startTimeout,
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
@@ -28,7 +29,7 @@ async function runTutorial() {
     await tutorial.waitFor(5000, 'Some time for loading the workbench');
 
     await tutorial.runPipeline();
-    await tutorial.waitForStudyDone(studyId, 30000);
+    await tutorial.waitForStudyDone(studyId, startTimeout);
 
     const outFiles = [
       "logs.zip",

@@ -200,6 +200,7 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   events: {
+    "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
     "keyChanged": "qx.event.type.Event",
     "fileRequested": "qx.event.type.Data",
@@ -372,7 +373,7 @@ qx.Class.define("osparc.data.model.Node", {
       const workbench = this.getWorkbench();
 
       let outputNodes = [];
-      for (let i=0; i<this.__exposedNodes.length; i++) {
+      for (let i = 0; i < this.__exposedNodes.length; i++) {
         const outputNode = workbench.getNode(this.__exposedNodes[i]);
         if (outputNode.isContainer()) {
           let myOutputNodes = outputNode.getExposedInnerNodes();
@@ -416,9 +417,6 @@ qx.Class.define("osparc.data.model.Node", {
           this.setLabel(nodeData.label);
         }
         this.populateInputOutputData(nodeData);
-        if ("progress" in nodeData) {
-          this.getStatus().setProgress(nodeData.progress);
-        }
         this.populateStates(nodeData);
         if (nodeData.thumbnail) {
           this.setThumbnail(nodeData.thumbnail);
@@ -457,6 +455,10 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     populateStates: function(nodeData) {
+      if ("progress" in nodeData) {
+        const progress = Number.parseInt(nodeData["progress"]);
+        this.getStatus().setProgress(progress);
+      }
       if ("state" in nodeData) {
         this.getStatus().setState(nodeData.state);
       }
@@ -899,7 +901,7 @@ qx.Class.define("osparc.data.model.Node", {
           // https://github.com/Kitware/visualizer/commit/197acaf
           const srvUrl = this.getServiceUrl();
           let arg = "?serverColorMaps";
-          if (srvUrl[srvUrl.length-1] !== "/") {
+          if (srvUrl[srvUrl.length - 1] !== "/") {
             arg = "/" + arg;
           }
           this.getIFrame().setSource(srvUrl + arg);
@@ -947,7 +949,7 @@ qx.Class.define("osparc.data.model.Node", {
     callRetrieveInputs: function(portKey) {
       if (this.isContainer()) {
         const innerNodes = Object.values(this.getInnerNodes());
-        for (let i=0; i<innerNodes.length; i++) {
+        for (let i = 0; i < innerNodes.length; i++) {
           const data = {
             node: innerNodes[i],
             portKey: null
@@ -1200,7 +1202,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     __removeInnerNodes: function() {
       const innerNodes = Object.values(this.getInnerNodes());
-      for (let i=0; i<innerNodes.length; i++) {
+      for (let i = 0; i < innerNodes.length; i++) {
         innerNodes[i].removeNode();
       }
     },

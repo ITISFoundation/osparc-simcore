@@ -12,8 +12,11 @@ aiodebug==1.1.2
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 aiodocker==0.21.0
     # via -r requirements/_test.in
-aiofiles==0.7.0
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+aiofiles==0.8.0
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiohttp==3.8.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -207,7 +210,6 @@ pyyaml==5.4.1
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_test.in
-    #   trafaret-config
 requests==2.26.0
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
@@ -244,10 +246,6 @@ toml==0.10.2
 tomli==1.2.2
     # via coverage
 tqdm==4.62.3
-    # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-trafaret==2.1.0
-    # via trafaret-config
-trafaret-config==2.0.2
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 typing-extensions==4.0.0
     # via

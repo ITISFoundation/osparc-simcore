@@ -1,7 +1,7 @@
 paths:
   /computation/pipeline/{project_id}/start:
     post:
-      description: Starts a pipeline(s) of a given (meta) project
+      description: Starts the pipeline(s) of a given (meta) project
       tags:
         - service
       operationId: start_pipeline
@@ -17,8 +17,7 @@ paths:
                 force_restart:
                   type: boolean
                   default: false
-                  description: "DEPRECATED if true will force re-running all dependent nodes"
-                  deprecated: true
+                  description: "if true will force re-running all dependent nodes"
                 cluster_id:
                   type: integer
                   description: the computation shall use the cluster described by its id, 0 is the default cluster

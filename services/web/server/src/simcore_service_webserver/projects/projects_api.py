@@ -144,15 +144,18 @@ async def start_project_interactive_services(
     # first get the services if they already exist
     log.debug(
         "getting running interactive services of project %s for user %s",
-        project["uuid"],
-        user_id,
+        f"{project['uuid']=}",
+        f"{user_id=}",
     )
     running_services = await director_v2_api.get_services(
         request.app, user_id, project["uuid"]
     )
-    log.debug("Running services %s", running_services)
+    log.debug(
+        "Currently running services %s for user %s",
+        f"{running_services=}",
+        f"{user_id=}",
+    )
 
-    # TODO: move this filter logic to director-v2?
     running_service_uuids = [x["service_uuid"] for x in running_services]
     # now start them if needed
     project_needed_services = {
@@ -161,7 +164,7 @@ async def start_project_interactive_services(
         if _is_node_dynamic(service["key"])
         and service_uuid not in running_service_uuids
     }
-    log.debug("Services to start %s", project_needed_services)
+    log.debug("Starting services: %s", f"{project_needed_services=}")
 
     start_service_tasks = [
         director_v2_api.start_service(
@@ -176,19 +179,15 @@ async def start_project_interactive_services(
         )
         for service_uuid, service in project_needed_services.items()
     ]
-
-    result = await logged_gather(*start_service_tasks, reraise=True)
-    log.debug("Services start result %s", result)
-    for entry in result:
+    results = await logged_gather(*start_service_tasks, reraise=True)
+    log.debug("Services start result %s", results)
+    for entry in results:
         if entry:
-            # if the status is present in the results fo the start_service
+            # if the status is present in the results for the start_service
             # it means that the API call failed
             # also it is enforced that the status is different from 200 OK
-            if "status" not in entry:
-                continue
-
-            if entry["status"] != 200:
-                log.error("Error while starting dynamic service %s", entry)
+            if entry.get("status", 200) != 200:
+                log.error("Error while starting dynamic service %s", f"{entry=}")
 
 
 async def delete_project(app: web.Application, project_uuid: str, user_id: int) -> None:
@@ -259,10 +258,10 @@ async def lock_with_notification(
                     user_id, project_uuid, app
                 )
             yield
-            log.debug(
-                "Project [%s] lock released",
-                f"{project_uuid=}",
-            )
+        log.debug(
+            "Project [%s] lock released",
+            f"{project_uuid=}",
+        )
     except ProjectLockError:
         # someone else has already the lock?
         prj_states: ProjectState = await get_project_states_for_user(
@@ -414,7 +413,7 @@ async def update_project_node_state(
         project_id,
         user_id,
     )
-    partial_workbench_data = {
+    partial_workbench_data: Dict[str, Any] = {
         node_id: {"state": {"currentStatus": new_state}},
     }
     if RunningState(new_state) in [
@@ -673,9 +672,14 @@ async def try_open_project_for_user(
                     user_session.user_id for user_session in user_session_id_list
                 }
                 if set_user_ids.issubset({user_id}):
-                    # we are the only user
+                    # we are the only user, remove this session from the list
                     if not await _user_has_another_client_open(
-                        user_session_id_list, app
+                        [
+                            uid
+                            for uid in user_session_id_list
+                            if uid != UserSessionID(user_id, client_session_id)
+                        ],
+                        app,
                     ):
                         # steal the project
                         await rt.add(PROJECT_ID_KEY, project_uuid)
@@ -738,15 +742,22 @@ async def _get_project_lock_state(
     """returns the lock state of a project
     1. If a project is locked for any reason, first return the project as locked and STATUS defined by lock
     2. If a client_session_id is passed, then first check to see if the project is currently opened by this very user/tab combination, if yes returns the project as Locked and OPENED.
-    3. If any other user that user_id is using the project (even disconnected before the TTL is finished) then the project is Locked and OPENED.
+    3. If any other user than user_id is using the project (even disconnected before the TTL is finished) then the project is Locked and OPENED.
     4. If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked and OPENED.
     5. If the same user is using the project with NO socket id (meaning there is no current tab active) then the project is Unlocked and OPENED. which means the user can open it again.
     """
-    log.debug("getting project [%s] lock state for user [%s]...", project_uuid, user_id)
+    log.debug(
+        "getting project [%s] lock state for user [%s]...",
+        f"{project_uuid=}",
+        f"{user_id=}",
+    )
     prj_locked_state: Optional[ProjectLocked] = await get_project_locked_state(
         app, project_uuid
     )
     if prj_locked_state:
+        log.debug(
+            "project [%s] is locked: %s", f"{project_uuid=}", f"{prj_locked_state=}"
+        )
         return prj_locked_state
 
     # let's now check if anyone has the project in use somehow
@@ -762,7 +773,7 @@ async def _get_project_lock_state(
 
     if not set_user_ids:
         # no one has the project, so it is unlocked and closed.
-        log.debug("project [%s] is not in use", project_uuid)
+        log.debug("project [%s] is not in use", f"{project_uuid=}")
         return ProjectLocked(value=False, status=ProjectStatus.CLOSED)
 
     log.debug(
@@ -790,8 +801,8 @@ async def _get_project_lock_state(
     # the project is opened in another tab or browser, or by another user, both case resolves to the project being locked, and opened
     log.debug(
         "project [%s] is in use by another user [%s], so it is locked",
-        project_uuid,
-        set_user_ids,
+        f"{project_uuid=}",
+        f"{set_user_ids=}",
     )
     return ProjectLocked(
         value=True,
@@ -825,17 +836,21 @@ async def add_project_states_for_user(
     is_template: bool,
     app: web.Application,
 ) -> Dict[str, Any]:
-
+    log.debug(
+        "adding project states for %s with project %s",
+        f"{user_id=}",
+        f"{project['uuid']=}",
+    )
     # for templates: the project is never locked and never opened. also the running state is always unknown
     lock_state = ProjectLocked(value=False, status=ProjectStatus.CLOSED)
     running_state = RunningState.UNKNOWN
-    if not is_template:
-        lock_state, computation_task = await logged_gather(
-            _get_project_lock_state(user_id, project["uuid"], app),
-            director_v2_api.get_computation_task(app, user_id, project["uuid"]),
-        )
 
-        if computation_task:
+    if not is_template:
+        lock_state = await _get_project_lock_state(user_id, project["uuid"], app)
+
+        if computation_task := await director_v2_api.get_computation_task(
+            app, user_id, project["uuid"]
+        ):
             # get the running state
             running_state = computation_task.state
             # get the nodes individual states
