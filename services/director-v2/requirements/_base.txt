@@ -79,7 +79,7 @@ click==7.1.2
     #   distributed
     #   typer
     #   uvicorn
-cloudpickle==1.6.0
+cloudpickle==2.0.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
@@ -112,7 +112,7 @@ fastapi==0.71.0
     #   fastapi-contrib
 fastapi-contrib==0.2.11
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-fsspec==2021.11.1
+fsspec==2022.1.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
