@@ -4,7 +4,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
   colors: {
     "workbench-edge-comp-active": "#777777",
     "workbench-edge-api-active": "#BBBBBB",
-    "workbench-edge-selected": "#0000FF",
+    "workbench-edge-selected": "#FFFF00",
     "workbench-start-hint": "#505050",
 
     "node-selected-background": "#666666",
