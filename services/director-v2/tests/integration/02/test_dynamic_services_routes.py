@@ -14,7 +14,6 @@ from async_asgi_testclient.response import Response
 from async_timeout import timeout
 from models_library.settings.rabbit import RabbitConfig
 from pydantic import PositiveInt
-from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_ip
 from simcore_service_director_v2.core.application import init_app
@@ -174,6 +173,7 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
     ]:
         mocker.patch(
             f"{class_path}.{function_name}",
+            # pylint: disable=cell-var-from-loop
             side_effect=lambda *args, **kwargs: return_value,
         )
 
