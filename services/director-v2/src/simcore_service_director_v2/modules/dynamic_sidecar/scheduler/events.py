@@ -1,11 +1,16 @@
+import json
 import logging
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, Type
 
 import httpx
 from fastapi import FastAPI
-from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from models_library.projects import ProjectAtDB
+from models_library.service_settings_labels import (
+    SimcoreServiceLabels,
+    SimcoreServiceSettingsLabel,
+)
+from models_library.services import ServiceKeyVersion
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
@@ -13,6 +18,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential, wait_fixed
 
+from ....api.dependencies.database import fetch_repo_no_request
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.dynamic_services import (
     DockerContainerInspect,
@@ -20,9 +26,8 @@ from ....models.schemas.dynamic_services import (
     SchedulerData,
 )
 from ....modules.director_v0 import DirectorV0Client
-from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ...db.repositories.projects import ProjectsRepository
-from ....api.dependencies.database import fetch_repo_no_request
+from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     create_network,
     create_service_and_get_id,
@@ -231,9 +236,43 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
-        logger.info("Calling into dynamic-sidecar to restore state")
-        await dynamic_sidecar_client.service_restore_state(dynamic_sidecar_endpoint)
-        logger.info("State restored by dynamic-sidecar")
+        # disable file system event watcher while writing
+        # the outputs directory to avoid data being pushed
+        # via nodeports upon change
+        await dynamic_sidecar_client.service_disable_dir_watcher(
+            dynamic_sidecar_endpoint
+        )
+
+        # below tasks can take a while, running them in parallel
+        await logged_gather(
+            dynamic_sidecar_client.service_restore_state(dynamic_sidecar_endpoint),
+            dynamic_sidecar_client.service_pull_output_ports(dynamic_sidecar_endpoint),
+        )
+
+        # inside this directory create the missing dirs, fetch those form the labels
+        director_v0_client: DirectorV0Client = _get_director_v0_client(app)
+        simcore_service_labels: SimcoreServiceLabels = (
+            await director_v0_client.get_service_labels(
+                service=ServiceKeyVersion(
+                    key=scheduler_data.key, version=scheduler_data.version
+                )
+            )
+        )
+        service_outputs_labels = json.loads(
+            simcore_service_labels.dict().get("io.simcore.outputs", "{}")
+        ).get("outputs", {})
+        logger.debug(
+            "Creating dirs from service outputs labels: %s", service_outputs_labels
+        )
+        await dynamic_sidecar_client.service_outputs_create_dirs(
+            dynamic_sidecar_endpoint, service_outputs_labels
+        )
+
+        # enable file system event watcher so data from outputs
+        # can be again synced via nodeports upon change
+        await dynamic_sidecar_client.service_enable_dir_watcher(
+            dynamic_sidecar_endpoint
+        )
 
         scheduler_data.dynamic_sidecar.service_environment_prepared = True
 

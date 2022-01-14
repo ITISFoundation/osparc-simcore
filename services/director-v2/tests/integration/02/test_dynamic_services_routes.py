@@ -14,6 +14,7 @@ from async_asgi_testclient.response import Response
 from async_timeout import timeout
 from models_library.settings.rabbit import RabbitConfig
 from pydantic import PositiveInt
+from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_ip
 from simcore_service_director_v2.core.application import init_app
@@ -21,6 +22,8 @@ from simcore_service_director_v2.core.settings import AppSettings
 from utils import ensure_network_cleanup, patch_dynamic_service_url
 
 SERVICE_IS_READY_TIMEOUT = 2 * 60
+
+DIRECTOR_V2_MODULES = "simcore_service_director_v2.modules"
 
 logger = logging.getLogger(__name__)
 
@@ -151,26 +154,28 @@ async def ensure_services_stopped(
 
 
 @pytest.fixture
-def mock_service_state(mocker: MockerFixture) -> None:
-    """because the monitor is disabled some functionality needs to be mocked"""
-
+def mock_project_repository(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.client_api.DynamicSidecarClient.service_save_state",
-        side_effect=lambda *args, **kwargs: None,
-    )
-
-    mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.client_api.DynamicSidecarClient.service_restore_state",
-        side_effect=lambda *args, **kwargs: None,
+        f"{DIRECTOR_V2_MODULES}.db.repositories.projects.ProjectsRepository.get_project",
+        side_effect=lambda *args, **kwargs: Mock(),
     )
 
 
 @pytest.fixture
-def mock_project_repository(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_director_v2.modules.db.repositories.projects.ProjectsRepository.get_project",
-        side_effect=lambda *args, **kwargs: Mock(),
+def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
+    class_path = (
+        f"{DIRECTOR_V2_MODULES}.dynamic_sidecar.client_api.DynamicSidecarClient"
     )
+    for function_name, return_value in [
+        ("service_save_state", None),
+        ("service_restore_state", None),
+        ("service_pull_output_ports", 42),
+        ("service_outputs_create_dirs", None),
+    ]:
+        mocker.patch(
+            f"{class_path}.{function_name}",
+            side_effect=lambda *args, **kwargs: return_value,
+        )
 
 
 # TESTS
@@ -181,8 +186,8 @@ async def test_start_status_stop(
     node_uuid: str,
     start_request_data: Dict[str, Any],
     ensure_services_stopped: None,
-    mock_service_state: None,
     mock_project_repository: None,
+    mock_dynamic_sidecar_api_calls: None,
 ):
     # starting the service
     headers = {
