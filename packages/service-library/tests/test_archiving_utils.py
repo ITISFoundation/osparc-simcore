@@ -10,16 +10,21 @@ import random
 import secrets
 import string
 import tempfile
+from collections import namedtuple
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, Iterable, List, Set, Tuple
 
 import pytest
+from faker import Faker
 from servicelib.archiving_utils import archive_dir, unarchive_dir
+from test_utils import print_tree  # pylint:disable=no-name-in-module
+
+# FIXTURES
 
 
 @pytest.fixture
-def dir_with_random_content() -> Path:
+def dir_with_random_content() -> Iterable[Path]:
     def random_string(length: int) -> str:
         return "".join(secrets.choice(string.ascii_letters) for i in range(length))
 
@@ -72,6 +77,27 @@ def dir_with_random_content() -> Path:
                 )
 
         yield temp_dir_path
+
+
+@pytest.fixture
+def exclude_patterns_validation_dir(tmp_path: Path, faker: Faker) -> Path:
+    """Directory with well known structure"""
+    base_dir = tmp_path / "exclude_patterns_validation_dir"
+    base_dir.mkdir()
+    (base_dir / "empty").mkdir()
+    (base_dir / "d1").mkdir()
+    (base_dir / "d1" / "f1").write_text(faker.text())
+    (base_dir / "d1" / "f2.txt").write_text(faker.text())
+    (base_dir / "d1" / "sd1").mkdir()
+    (base_dir / "d1" / "sd1" / "f1").write_text(faker.text())
+    (base_dir / "d1" / "sd1" / "f2.txt").write_text(faker.text())
+
+    print("exclude_patterns_validation_dir ---")
+    print_tree(base_dir)
+    return base_dir
+
+
+# UTILS
 
 
 def strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
@@ -132,6 +158,7 @@ async def assert_same_directory_content(
     unsupported_replace: bool = False,
 ) -> None:
     def _relative_path(input_path: Path) -> Path:
+        assert inject_relative_path is not None
         return Path(str(inject_relative_path / str(input_path))[1:])
 
     input_set = get_all_files_in_dir(dir_to_compress)
@@ -206,6 +233,9 @@ def assert_unarchived_paths(
     if unsupported_replace:
         expected_tails = {_escape_undecodable_str(x) for x in expected_tails}
     assert got_tails == expected_tails
+
+
+# TESTS
 
 
 @pytest.mark.parametrize(
@@ -340,3 +370,103 @@ async def test_regression_unsupported_characters(
         inject_relative_path=None if store_relative_path else dir_to_archive,
         unsupported_replace=True,
     )
+
+
+EMPTY_SET: Set[Path] = set()
+ALL_ITEMS_SET: Set[Path] = {
+    Path("d1/f2.txt"),
+    Path("d1/f1"),
+    Path("d1/sd1/f1"),
+    Path("d1/sd1/f2.txt"),
+}
+
+TestCase = namedtuple("TestCase", "exclude_patterns, expected_result")
+
+# + /exclude_patterns_validation_dir
+#  + empty
+#  + d1
+#   - f2.txt
+#   + sd1
+#    - f2.txt
+#    - f1
+#   - f1
+@pytest.mark.parametrize(
+    "exclude_patterns, expected_result",
+    [
+        TestCase(
+            exclude_patterns=["/d1*"],
+            expected_result=EMPTY_SET,
+        ),
+        TestCase(
+            exclude_patterns=["/d1/sd1*"],
+            expected_result={
+                Path("d1/f2.txt"),
+                Path("d1/f1"),
+            },
+        ),
+        TestCase(
+            exclude_patterns=["d1*"],
+            expected_result=EMPTY_SET,
+        ),
+        TestCase(
+            exclude_patterns=["*d1*"],
+            expected_result=EMPTY_SET,
+        ),
+        TestCase(
+            exclude_patterns=["*.txt"],
+            expected_result={
+                Path("d1/f1"),
+                Path("d1/sd1/f1"),
+            },
+        ),
+        TestCase(
+            exclude_patterns=["/absolute/path/does/not/exist*"],
+            expected_result=ALL_ITEMS_SET,
+        ),
+        TestCase(
+            exclude_patterns=["/../../this/is/ignored*"],
+            expected_result=ALL_ITEMS_SET,
+        ),
+        TestCase(
+            exclude_patterns=["*relative/path/does/not/exist"],
+            expected_result=ALL_ITEMS_SET,
+        ),
+    ],
+)
+async def test_archive_unarchive_check_exclude(
+    exclude_patterns: List[str],
+    expected_result: Set[Path],
+    exclude_patterns_validation_dir: Path,
+    tmp_path: Path,
+):
+    temp_dir_one = tmp_path / "one"
+    temp_dir_two = tmp_path / "two"
+
+    temp_dir_one.mkdir()
+    temp_dir_two.mkdir()
+
+    archive_file = temp_dir_one / "archive.zip"
+
+    # make exclude_patterns work relative to test directory
+    exclude_patterns = [
+        f"{exclude_patterns_validation_dir}/{x.strip('/') if x.startswith('/') else x}"
+        for x in exclude_patterns
+    ]
+
+    await archive_dir(
+        dir_to_compress=exclude_patterns_validation_dir,
+        destination=archive_file,
+        store_relative_path=True,
+        compress=False,
+        exclude_patterns=exclude_patterns,
+    )
+
+    unarchived_paths: Set[Path] = await unarchive_dir(
+        archive_to_extract=archive_file, destination_folder=temp_dir_two
+    )
+
+    relative_unarchived_paths = {x.relative_to(temp_dir_two) for x in unarchived_paths}
+
+    assert (
+        relative_unarchived_paths == expected_result
+    ), f"Exclude rules: {exclude_patterns=}"

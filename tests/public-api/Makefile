@@ -37,6 +37,7 @@ test-dev: ## runs tests with --keep-docker-up, --pdb and --ff
 	--color=yes \
 	--failed-first \
 	--durations=10 \
+	--cov-report=xml \
 	--pdb \
 	$(CURDIR)
 

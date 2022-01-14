@@ -78,9 +78,6 @@ target/
 # pyenv
 .python-version
 
-# celery beat schedule file
-celerybeat-schedule
-
 # SageMath parsed files
 *.sage.py
 
@@ -113,7 +110,6 @@ node_modules/
 # IDEs config (except templates)
 .vscode/*
 !.vscode/*.template.json
-
 
 # manual overrides
 services/docker-compose.override.yml
@@ -169,3 +165,9 @@ dask*-space/
 
 # produced when mounting volumes on docker and pip installing
 .local/
+
+# Makefile artifacts
+packages/service-integration/compose-spec.json
+
+# temporary files by vscode
+Untitled*

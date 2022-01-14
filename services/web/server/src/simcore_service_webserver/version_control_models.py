@@ -13,13 +13,12 @@ BuiltinTypes = Union[StrictBool, StrictInt, StrictFloat, str]
 # alias for readability
 # SEE https://pydantic-docs.helpmanual.io/usage/models/#orm-mode-aka-arbitrary-class-instances
 
-CommitProxy = RowProxy
 BranchProxy = RowProxy
+CommitProxy = RowProxy
+RepoProxy = RowProxy
 TagProxy = RowProxy
 CommitLog = Tuple[CommitProxy, List[TagProxy]]
 
-ProjectProxy = RowProxy
-ProjectDict = Dict
 
 HEAD = f"{__file__}/ref/HEAD"
 
@@ -27,12 +26,16 @@ CommitID = int
 BranchID = int
 RefID = Union[CommitID, str]
 
+CheckpointID = PositiveInt
+
 
 class Checkpoint(BaseModel):
-    id: PositiveInt
+    id: CheckpointID
     checksum: SHA1Str
     created_at: datetime
     tags: Tuple[str, ...]
+    # TODO: so front-end can proper break tree branches
+    # branches: Tuple[str, ...] = tuple()
 
     message: Optional[str] = None
     parents_ids: Tuple[PositiveInt, ...] = None  # type: ignore

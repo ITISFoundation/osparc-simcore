@@ -111,8 +111,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
     __createLinkOpts: function(field) {
       const optionsMenu = new qx.ui.menu.Menu().set({
         offsetLeft: 2,
-        position: "right-top",
-        backgroundColor: "background-main-lighter+"
+        position: "right-top"
       });
       optionsMenu.getContentElement().setStyles({
         "border-top-right-radius": "6px",
@@ -200,7 +199,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
               });
               paramButton.addListener("execute", () => {
                 this.getNode().addInputNode(inputNodeId);
-                this.getNode().addPortLink(targetPortId, inputNodeId, outputKey);
+                this.getNode().addPortLink(targetPortId, inputNodeId, outputKey)
+                  .then(connected => {
+                    if (connected) {
+                      this.getNode().fireEvent("reloadModel");
+                    }
+                  });
               }, this);
               menu.add(paramButton);
               osparc.utils.Ports.arePortsCompatible(inputNode, outputKey, this.getNode(), targetPortId)
@@ -270,7 +274,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
                 const paramButton = new qx.ui.menu.Button(inputNode.getOutput(outputKey).label);
                 paramButton.addListener("execute", () => {
                   this.getNode().addInputNode(inputNodeId);
-                  this.getNode().addPortLink(targetPortId, inputNodeId, outputKey);
+                  this.getNode().addPortLink(targetPortId, inputNodeId, outputKey)
+                    .then(connected => {
+                      if (connected) {
+                        this.getNode().fireEvent("reloadModel");
+                      }
+                    });
                 }, this);
                 menu.add(paramButton);
                 menuBtn.show();
@@ -296,7 +305,12 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
               paramNode.bind("label", paramButton, "label");
               paramButton.addListener("execute", () => {
                 this.getNode().addInputNode(inputNodeId);
-                this.getNode().addPortLink(targetPortId, inputNodeId, outputKey);
+                this.getNode().addPortLink(targetPortId, inputNodeId, outputKey)
+                  .then(connected => {
+                    if (connected) {
+                      this.getNode().fireEvent("reloadModel");
+                    }
+                  });
               }, this);
               if (!menu.getChildren().some(child => child.nodeId === paramButton.nodeId)) {
                 menu.add(paramButton);

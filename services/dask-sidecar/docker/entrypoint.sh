@@ -8,6 +8,13 @@ INFO="INFO: [$(basename "$0")] "
 WARNING="WARNING: [$(basename "$0")] "
 ERROR="ERROR: [$(basename "$0")] "
 
+# Read self-signed SSH certificates (if applicable)
+#
+# In case storage must access a docker registry in a secure way using
+# non-standard certificates (e.g. such as self-signed certificates), this call is needed.
+# It needs to be executed as root.
+update-ca-certificates
+
 # This entrypoint script:
 #
 # - Executes *inside* of the container upon start as --user [default root]
@@ -24,7 +31,7 @@ if [ "${SC_BUILD_TARGET}" = "development" ]
 then
     echo "$INFO" "development mode detected..."
     # NOTE: expects docker run ... -v $(pwd):/devel/services/dask-sidecar
-    DEVEL_MOUNT=/devel/services/dask-sidecar
+    DEVEL_MOUNT="/devel/services/dask-sidecar"
 
     stat $DEVEL_MOUNT > /dev/null 2>&1 || \
         (echo "$ERROR" "You must mount '$DEVEL_MOUNT' to deduce user and group ids" && exit 1)

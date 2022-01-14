@@ -9,6 +9,7 @@ const {
   user,
   pass,
   newUser,
+  startTimeout,
   enableDemoMode
 } = utils.parseCommandLineArguments(args)
 
@@ -27,7 +28,7 @@ async function runTutorial() {
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     console.log(workbenchData);
-    await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]], 20000);
+    await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]], startTimeout);
 
     await tutorial.waitFor(12000, 'Wait for some time');
   }

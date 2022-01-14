@@ -10,9 +10,9 @@ from servicelib.aiohttp.application import APP_CONFIG_KEY, create_safe_applicati
 from servicelib.aiohttp.monitoring import setup_monitoring
 from servicelib.aiohttp.tracing import setup_tracing
 
+from ._meta import WELCOME_MSG, app_name, version
 from .db import setup_db
 from .dsm import setup_dsm
-from .meta import WELCOME_MSG
 from .rest import setup_rest
 from .s3 import setup_s3
 from .settings import Settings
@@ -46,7 +46,7 @@ def create(settings: Settings) -> web.Application:
     setup_rest(app)  # lastly, we expose API to the world
 
     if settings.STORAGE_MONITORING_ENABLED:
-        setup_monitoring(app, "simcore_service_storage")
+        setup_monitoring(app, app_name, version=f"{version}")
 
     return app
 

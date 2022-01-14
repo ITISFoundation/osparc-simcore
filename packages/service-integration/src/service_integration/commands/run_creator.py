@@ -23,7 +23,7 @@ def get_input_config(metadata_file: Path) -> Dict:
     help="The metadata yaml of the node",
     type=Path,
     required=False,
-    default="metadata/metadata.yml",
+    default=".osparc/metadata.yml",
 )
 @click.option(
     "--runscript",

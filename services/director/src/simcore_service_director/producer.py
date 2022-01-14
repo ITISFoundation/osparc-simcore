@@ -869,7 +869,7 @@ async def start_service(
         if config.MONITORING_ENABLED:
             service_started(
                 app,
-                user_id,
+                "undefined_user",  # NOTE: to prevent high cardinality metrics this is disabled
                 service_key,
                 service_tag,
                 "DYNAMIC",

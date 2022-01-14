@@ -5,14 +5,18 @@
 
 import filecmp
 from pathlib import Path
-from typing import Callable
+from typing import Any, Awaitable, Callable, Optional
 from uuid import uuid4
 
 import np_helpers
 import pytest
 from simcore_sdk.node_ports_common import exceptions, filemanager
 
-pytest_simcore_core_services_selection = ["postgres", "storage"]
+pytest_simcore_core_services_selection = [
+    "migration",
+    "postgres",
+    "storage",
+]
 
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
@@ -125,7 +129,9 @@ async def test_errors_upon_invalid_file_identifiers(
         await filemanager.download_file_from_s3(
             user_id=user_id,
             store_id=store,
-            s3_object=np_helpers.file_uuid("invisible.txt", project_id, f"{uuid4()}"),
+            s3_object=np_helpers.file_uuid(
+                Path("invisible.txt"), project_id, f"{uuid4()}"
+            ),
             local_folder=download_folder,
         )
 
@@ -201,7 +207,36 @@ async def test_valid_metadata(
     assert is_metadata_present is True
 
 
+@pytest.mark.parametrize(
+    "fct",
+    [filemanager.entry_exists, filemanager.delete_file, filemanager.get_file_metadata],
+)
 async def test_invalid_call_raises_exception(
+    tmpdir: Path,
+    bucket: str,
+    filemanager_cfg: None,
+    user_id: int,
+    create_valid_file_uuid: Callable[[Path], str],
+    s3_simcore_location: str,
+    fct: Callable[[int, str, str, Optional[Any]], Awaitable],
+):
+    file_path = Path(tmpdir) / "test.test"
+    file_id = create_valid_file_uuid(file_path)
+    assert file_path.exists() is False
+
+    with pytest.raises(exceptions.StorageInvalidCall):
+        await fct(
+            user_id=None, store_id=s3_simcore_location, s3_object=file_id  # type: ignore
+        )
+    with pytest.raises(exceptions.StorageInvalidCall):
+        await fct(user_id=user_id, store_id=None, s3_object=file_id)  # type: ignore
+    with pytest.raises(exceptions.StorageInvalidCall):
+        await fct(
+            user_id=user_id, store_id=s3_simcore_location, s3_object=None  # type: ignore
+        )
+
+
+async def test_delete_File(
     tmpdir: Path,
     bucket: str,
     filemanager_cfg: None,
@@ -210,18 +245,32 @@ async def test_invalid_call_raises_exception(
     s3_simcore_location: str,
 ):
     file_path = Path(tmpdir) / "test.test"
-    file_id = create_valid_file_uuid(file_path)
-    assert file_path.exists() is False
+    file_path.write_text("I am a test file")
+    assert file_path.exists()
 
-    with pytest.raises(exceptions.StorageInvalidCall):
+    file_id = create_valid_file_uuid(file_path)
+    store_id, e_tag = await filemanager.upload_file(
+        user_id=user_id,
+        store_id=s3_simcore_location,
+        s3_object=file_id,
+        local_file_path=file_path,
+    )
+    assert store_id == s3_simcore_location
+    assert e_tag
+
+    is_metadata_present = await filemanager.entry_exists(
+        user_id=user_id, store_id=store_id, s3_object=file_id
+    )
+    assert is_metadata_present is True
+
+    await filemanager.delete_file(
+        user_id=user_id, store_id=s3_simcore_location, s3_object=file_id
+    )
+
+    # check that it disappeared
+    assert (
         await filemanager.entry_exists(
-            user_id=None, store_id=s3_simcore_location, s3_object=file_id  # type: ignore
+            user_id=user_id, store_id=store_id, s3_object=file_id
         )
-    with pytest.raises(exceptions.StorageInvalidCall):
-        await filemanager.entry_exists(
-            user_id=user_id, store_id=None, s3_object=file_id  # type: ignore
-        )
-    with pytest.raises(exceptions.StorageInvalidCall):
-        await filemanager.entry_exists(
-            user_id=user_id, store_id=s3_simcore_location, s3_object=None  # type: ignore
-        )
+        == False
+    )

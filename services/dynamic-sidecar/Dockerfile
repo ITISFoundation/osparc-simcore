@@ -63,9 +63,9 @@ RUN python -m venv ${VIRTUAL_ENV}
 RUN mkdir -p ${DY_VOLUMES}
 
 RUN pip install --upgrade --no-cache-dir \
-    pip~=21.3  \
-    wheel \
-    setuptools
+  pip~=21.3  \
+  wheel \
+  setuptools
 
 WORKDIR /build
 
@@ -117,12 +117,11 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DY_VOLUMES} ${DY_VOLUMES}
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
-# more agressive checking helps with detecting the searvice is ready
-HEALTHCHECK --interval=1s \
-  --timeout=1s \
-  --start-period=1s \
-  --retries=120 \
-  CMD ["python3", "services/dynamic-sidecar/docker/healthcheck.py", "http://localhost:8000/health"]
+# disabled healthcheck as director-v2 is already taking care of it 
+# in oder to have similar performance a more aggressive healethcek
+# would be required.
+# removing the healthchek would not cause any issues at this point
+HEALTHCHECK NONE
 
 EXPOSE 8000
 

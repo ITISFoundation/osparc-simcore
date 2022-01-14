@@ -23,15 +23,30 @@ from simcore_service_dask_sidecar.dask_utils import (
     monitor_task_abortion,
     publish_event,
 )
+from tenacity._asyncio import AsyncRetrying
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_fixed
 
 
-def test_publish_event(dask_client: distributed.Client):
+async def test_publish_event(dask_client: distributed.Client):
     dask_pub = distributed.Pub("some_topic")
     dask_sub = distributed.Sub("some_topic")
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        retry=retry_if_exception_type(AssertionError),
+        wait=wait_fixed(0.01),
+        stop=stop_after_delay(60),
+    ):
+        with attempt:
+            print(
+                f"waiting for subscribers... attempt={attempt.retry_state.attempt_number}"
+            )
+            assert dask_pub.subscribers
+            print("we do have subscribers!")
 
     event_to_publish = TaskLogEvent(job_id="some_fake_job_id", log="the log")
     publish_event(dask_pub=dask_pub, event=event_to_publish)
-    time.sleep(2)
     # NOTE: this tests runs a sync dask client,
     # and the CI seems to have sometimes difficulties having this run in a reasonable time
     # hence the long time out
@@ -84,7 +99,7 @@ def _some_long_running_task_with_monitoring() -> int:
                 await asyncio.sleep(0.5)
             return 12
 
-    return asyncio.get_event_loop().run_until_complete(_long_running_task_async())
+    return asyncio.run(_long_running_task_async())
 
 
 def test_monitor_task_abortion(dask_client: distributed.Client):

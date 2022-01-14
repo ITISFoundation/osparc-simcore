@@ -148,17 +148,17 @@ qx.Class.define("osparc.data.model.Study", {
       nullable: true
     },
 
-    state: {
-      check: "Object",
-      nullable: true,
-      event: "changeState"
-    },
-
     quality: {
       check: "Object",
       init: {},
       event: "changeQuality",
       nullable: true
+    },
+
+    state: {
+      check: "Object",
+      nullable: true,
+      event: "changeState"
     },
 
     readOnly: {
@@ -170,6 +170,15 @@ qx.Class.define("osparc.data.model.Study", {
   },
 
   statics: {
+    IgnoreSerializationProps: [
+      "state",
+      "readOnly"
+    ],
+
+    IgnoreModelizationProps: [
+      "dev"
+    ],
+
     createMyNewStudyObject: function() {
       let myNewStudyObject = {};
       const props = qx.util.PropertyUtil.getProperties(osparc.data.model.Study);
@@ -202,21 +211,15 @@ qx.Class.define("osparc.data.model.Study", {
       return studyObject;
     },
 
-    isStudySecondary: function(studyData) {
-      if ("dev" in studyData && "sweeper" in studyData["dev"] && "primaryStudyId" in studyData["dev"]["sweeper"]) {
-        return true;
-      }
-      return false;
-    },
-
     isOwner: function(studyData) {
-      if (studyData instanceof osparc.data.model.Study) {
-        const myEmail = osparc.auth.Data.getInstance().getEmail();
-        return studyData.getPrjOwner() === myEmail;
-      }
       const myGid = osparc.auth.Data.getInstance().getGroupId();
-      const aceessRights = studyData["accessRights"];
-      return osparc.component.permissions.Study.canGroupDelete(aceessRights, myGid);
+      let accessRights = {};
+      if (studyData instanceof osparc.data.model.Study) {
+        accessRights = studyData.getAccessRights();
+      } else {
+        accessRights = studyData["accessRights"];
+      }
+      return osparc.component.permissions.Study.canGroupDelete(accessRights, myGid);
     },
 
     hasSlideshow: function(studyData) {
@@ -226,63 +229,40 @@ qx.Class.define("osparc.data.model.Study", {
       return false;
     },
 
-    getSnapshots: function(studyId) {
-      return new Promise((resolve, reject) => {
-        if (!osparc.data.Permissions.getInstance().canDo("study.snapshot.read")) {
-          reject();
-          return;
-        }
-        const params = {
-          url: {
-            "studyId": studyId
-          }
-        };
-        osparc.data.Resources.get("snapshots", params)
-          .then(snapshots => {
-            resolve(snapshots);
-          })
-          .catch(err => {
-            console.error(err);
-            reject(err);
-          });
-      });
-    },
-
-    getCurrentSnapshot: function(studyId) {
-      return new Promise((resolve, reject) => {
-        const params = {
-          url: {
-            "studyId": studyId
-          }
-        };
-        osparc.data.Resources.fetch("snapshots", "current", params)
-          .then(currentSnapshot => {
-            resolve(currentSnapshot);
-          })
-          .catch(err => {
-            console.error(err);
-            reject(err);
-          });
-      });
-    },
-
-    hasSnapshots: function(studyId) {
-      return new Promise((resolve, reject) => {
-        this.self().getSnapshots(studyId)
-          .then(snapshots => {
-            resolve(Boolean(snapshots.length));
-          })
-          .catch(() => {
-            resolve(false);
-          });
-      });
-    },
-
     getUiMode: function(studyData) {
       if ("ui" in studyData && "mode" in studyData["ui"]) {
         return studyData["ui"]["mode"];
       }
       return null;
+    },
+
+    getOutputValue: function(studyData, nodeId, portId) {
+      if ("workbench" in studyData &&
+        nodeId in studyData["workbench"] &&
+        "outputs" in studyData["workbench"][nodeId] &&
+        portId in studyData["workbench"][nodeId]["outputs"]
+      ) {
+        return studyData["workbench"][nodeId]["outputs"][portId];
+      }
+      return null;
+    },
+
+    computeStudyProgress: function(studyData) {
+      const nodes = studyData["workbench"];
+      let nCompNodes = 0;
+      let overallProgress = 0;
+      Object.values(nodes).forEach(node => {
+        const metaData = osparc.utils.Services.getMetaData(node["key"], node["version"]);
+        if (osparc.data.model.Node.isComputational(metaData)) {
+          const progress = "progress" in node ? node["progress"] : 0;
+          overallProgress += progress;
+          nCompNodes++;
+        }
+      });
+      if (nCompNodes === 0) {
+        return null;
+      }
+      return overallProgress/nCompNodes;
     }
   },
 
@@ -300,15 +280,119 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     getSnapshots: function() {
-      return this.self().getSnapshots(this.getUuid());
+      return new Promise((resolve, reject) => {
+        if (!osparc.data.Permissions.getInstance().canDo("study.snapshot.read")) {
+          reject();
+          return;
+        }
+        const params = {
+          url: {
+            "studyId": this.getUuid()
+          }
+        };
+        osparc.data.Resources.get("snapshots", params)
+          .then(snapshots => {
+            resolve(snapshots);
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
     },
 
     getCurrentSnapshot: function() {
-      return this.self().getCurrentSnapshot(this.getUuid());
+      return new Promise((resolve, reject) => {
+        const params = {
+          url: {
+            "studyId": this.getUuid()
+          }
+        };
+        osparc.data.Resources.fetch("snapshots", "currentCommit", params)
+          .then(currentSnapshot => {
+            resolve(currentSnapshot);
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
     },
 
     hasSnapshots: function() {
-      return this.self().hasSnapshots(this.getUuid());
+      return new Promise(resolve => {
+        this.getSnapshots()
+          .then(snapshots => {
+            resolve(Boolean(snapshots.length));
+          })
+          .catch(() => {
+            resolve(false);
+          });
+      });
+    },
+
+    getIterations: function() {
+      return new Promise((resolve, reject) => {
+        if (!osparc.data.Permissions.getInstance().canDo("study.snapshot.read")) {
+          reject();
+          return;
+        }
+        this.getCurrentSnapshot()
+          .then(snapshot => {
+            const params = {
+              url: {
+                studyId: this.getUuid(),
+                snapshotId: snapshot["id"]
+              }
+            };
+            osparc.data.Resources.get("iterations", params)
+              .then(iterations => {
+                resolve(iterations);
+              })
+              .catch(err => {
+                console.error(err);
+                reject(err);
+              });
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+      });
+    },
+
+    nodeUpdated: function(nodeUpdatedData) {
+      const nodeId = nodeUpdatedData["node_id"];
+      const nodeData = nodeUpdatedData["data"];
+      const workbench = this.getWorkbench();
+      const node = workbench.getNode(nodeId);
+      if (node && nodeData) {
+        node.setOutputData(nodeData.outputs);
+        if ("progress" in nodeData) {
+          const progress = Number.parseInt(nodeData["progress"]);
+          node.getStatus().setProgress(progress);
+        }
+        node.populateStates(nodeData);
+      } else if (osparc.data.Permissions.getInstance().isTester()) {
+        console.log("Ignored ws 'nodeUpdated' msg", nodeUpdatedData);
+      }
+    },
+
+    computeStudyProgress: function() {
+      const nodes = this.getWorkbench().getNodes();
+      let nCompNodes = 0;
+      let overallProgress = 0;
+      Object.values(nodes).forEach(node => {
+        if (node.isComputational()) {
+          const progress = node.getStatus().getProgress();
+          overallProgress += progress ? progress : 0;
+          nCompNodes++;
+        }
+      });
+      if (nCompNodes === 0) {
+        return null;
+      }
+      return overallProgress/nCompNodes;
     },
 
     getPipelineState: function() {
@@ -378,15 +462,15 @@ qx.Class.define("osparc.data.model.Study", {
       return !this.getUi().getSlideshow().isEmpty();
     },
 
-    serialize: function() {
+    serialize: function(clean = true) {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
       propertyKeys.forEach(key => {
-        if (["state", "readOnly"].includes(key)) {
+        if (this.self().IgnoreSerializationProps.includes(key)) {
           return;
         }
         if (key === "workbench") {
-          jsonObject[key] = this.getWorkbench().serialize();
+          jsonObject[key] = this.getWorkbench().serialize(clean);
           return;
         }
         if (key === "ui") {
@@ -403,7 +487,7 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     updateStudy: function(params, run = false) {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         osparc.data.Resources.fetch("studies", "put", {
           url: {
             "studyId": this.getUuid(),
@@ -413,18 +497,23 @@ qx.Class.define("osparc.data.model.Study", {
             ...this.serialize(),
             ...params
           }
-        }).then(data => {
-          this.__updateModel(data);
-          qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
-          resolve(data);
-        });
+        })
+          .then(data => {
+            this.__updateModel(data);
+            qx.event.message.Bus.getInstance().dispatchByName("updateStudy", data);
+            resolve(data);
+          })
+          .catch(err => reject(err));
       });
     },
 
     __updateModel: function(data) {
-      if ("dev" in data) {
-        delete data["dev"];
-      }
+      Object.keys(data).forEach(key => {
+        if (this.self().IgnoreModelizationProps.includes(key)) {
+          delete data[key];
+        }
+      });
+
       this.set({
         ...data,
         creationDate: new Date(data.creationDate),

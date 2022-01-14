@@ -4,14 +4,14 @@ type: computational
 integration-version: 1.0.0
 version: 1.1.0
 description: oSparc Python Runner
-contact: anderegg@itis.swiss
+contact: sylvain@foo.com
 authors:
-- name: Sylvain Anderegg
-  email: anderegg@itis.swiss
-  affiliation: IT'IS Foundation
-- name: Pedro Crespo
-  email: 32402063+pcrespov@users.noreply.github.com
-  affiliation: IT'IS Foundation
+  - name: Mr X
+    email: sylvain@foo.com
+    affiliation: Foo & co.
+  - name: Pedro Crespo
+    email: pedro@foo.com
+    affiliation: Foo & co.
 inputs:
   input_1:
     displayOrder: 1

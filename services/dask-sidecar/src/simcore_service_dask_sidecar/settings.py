@@ -2,9 +2,9 @@ from pathlib import Path
 from typing import Any, Optional
 
 from models_library.basic_types import LogLevel
-from pydantic import Field, NonNegativeInt, validator
+from pydantic import Field, validator
 from settings_library.base import BaseCustomSettings
-from settings_library.logging_utils import MixinLoggingSettings
+from settings_library.utils_logging import MixinLoggingSettings
 
 
 class Settings(BaseCustomSettings, MixinLoggingSettings):
@@ -15,18 +15,12 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         env=["DASK_SIDECAR_LOGLEVEL", "SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
 
-    SWARM_STACK_NAME: str = "simcore"
-
     # sidecar config ---
 
     SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME: str
     SIDECAR_COMP_SERVICES_SHARED_FOLDER: Path
 
-    SIDECAR_HOST_HOSTNAME_PATH: Path
     SIDECAR_INTERVAL_TO_CHECK_TASK_ABORTED_S: Optional[int] = 5
-
-    FORCE_START_CPU_MODE: Optional[bool] = False
-    FORCE_START_GPU_MODE: Optional[bool] = False
 
     TARGET_MPI_NODE_CPU_COUNT: Optional[int] = Field(
         None,
@@ -34,14 +28,6 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # dask config ----
-
-    DASK_CLUSTER_ID_PREFIX: Optional[str] = Field(
-        "CLUSTER_", description="This defines the cluster name prefix"
-    )
-
-    DASK_DEFAULT_CLUSTER_ID: Optional[NonNegativeInt] = Field(
-        0, description="This defines the default cluster id when none is defined"
-    )
 
     DASK_START_AS_SCHEDULER: Optional[bool] = Field(
         False, description="If this env is set, then the app boots as scheduler"

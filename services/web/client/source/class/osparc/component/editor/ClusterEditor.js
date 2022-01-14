@@ -20,15 +20,17 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
 
   construct: function(newCluster = true) {
     this.base(arguments);
-
     this._setLayout(new qx.ui.layout.VBox(8));
 
     const manager = this.__validator = new qx.ui.form.validation.Manager();
     const title = this.getChildControl("title");
     title.setRequired(true);
     manager.add(title);
-    this.getChildControl("description");
-    newCluster ? this.getChildControl("create") : this.getChildControl("save");
+    this._createChildControlImpl("endpoint");
+    this._createChildControlImpl("simpleAuthenticationUsername");
+    this._createChildControlImpl("simpleAuthenticationPassword");
+    this._createChildControlImpl("description");
+    newCluster ? this._createChildControlImpl("create") : this._createChildControlImpl("save");
   },
 
   properties: {
@@ -44,6 +46,27 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
       init: "",
       nullable: false,
       event: "changeLabel"
+    },
+
+    endpoint: {
+      check: "String",
+      init: "",
+      nullable: false,
+      event: "changeEndpoint"
+    },
+
+    simpleAuthenticationUsername: {
+      check: "String",
+      init: "",
+      nullable: false,
+      event: "changeSimpleAuthenticationUsername"
+    },
+
+    simpleAuthenticationPassword: {
+      check: "String",
+      init: "",
+      nullable: false,
+      event: "changeSimpleAuthenticationPassword"
     },
 
     description: {
@@ -64,19 +87,64 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "title": {
+        case "title":
           control = new qx.ui.form.TextField().set({
             font: "title-14",
             backgroundColor: "background-main",
-            placeholder: this.tr("Title"),
-            height: 35
+            placeholder: this.tr("Title")
           });
           this.bind("label", control, "value");
           control.bind("value", this, "label");
           this._add(control);
           break;
+        case "endpointLayout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          this._add(control);
+          break;
+        case "endpoint": {
+          const endpointLayout = this.getChildControl("endpointLayout");
+          control = new qx.ui.form.TextField().set({
+            font: "text-14",
+            backgroundColor: "background-main",
+            placeholder: this.tr("Endpoint")
+          });
+          this.bind("endpoint", control, "value");
+          control.bind("value", this, "endpoint");
+          control.setRequired(true);
+          endpointLayout.add(control, {
+            flex: 1
+          });
+          break;
         }
-        case "description": {
+        case "simpleAuthenticationUsername": {
+          const endpointLayout = this.getChildControl("endpointLayout");
+          control = new qx.ui.form.TextField().set({
+            font: "text-14",
+            backgroundColor: "background-main",
+            placeholder: this.tr("Username")
+          });
+          control.getContentElement().setAttribute("autocomplete", "off");
+          this.bind("simpleAuthenticationUsername", control, "value");
+          control.bind("value", this, "simpleAuthenticationUsername");
+          control.setRequired(true);
+          endpointLayout.add(control);
+          break;
+        }
+        case "simpleAuthenticationPassword": {
+          const endpointLayout = this.getChildControl("endpointLayout");
+          control = new qx.ui.form.PasswordField().set({
+            font: "text-14",
+            backgroundColor: "background-main",
+            placeholder: this.tr("Password")
+          });
+          control.getContentElement().setAttribute("autocomplete", "off");
+          this.bind("simpleAuthenticationPassword", control, "value");
+          control.bind("value", this, "simpleAuthenticationPassword");
+          control.setRequired(true);
+          endpointLayout.add(control);
+          break;
+        }
+        case "description":
           control = new qx.ui.form.TextArea().set({
             font: "text-14",
             placeholder: this.tr("Description"),
@@ -86,6 +154,15 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
           });
           this.bind("description", control, "value");
           control.bind("value", this, "description");
+          this._add(control);
+          break;
+        case "buttonsLayout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
+            alignX: "right"
+          }));
+          const cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
+          cancelButton.addListener("execute", () => this.fireEvent("cancel"), this);
+          control.add(cancelButton);
           this._add(control);
           break;
         }
@@ -98,7 +175,7 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
               this.fireEvent("createCluster");
             }
           }, this);
-          buttons.addAt(control, 0);
+          buttons.add(control);
           break;
         }
         case "save": {
@@ -110,17 +187,7 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
               this.fireEvent("updateCluster");
             }
           }, this);
-          buttons.addAt(control, 0);
-          break;
-        }
-        case "buttonsLayout": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
-            alignX: "right"
-          }));
-          const cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
-          cancelButton.addListener("execute", () => this.fireEvent("cancel"), this);
-          control.add(cancelButton);
-          this._add(control);
+          buttons.add(control);
           break;
         }
       }

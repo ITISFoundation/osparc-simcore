@@ -11,6 +11,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import (
     DynamicSidecarServiceLabels,
     PathMappingsLabel,
+    RestartPolicy,
     SimcoreServiceLabels,
 )
 from pydantic import BaseModel, Extra, Field, PositiveInt, PrivateAttr, constr
@@ -263,7 +264,8 @@ class ServiceLabelsStoredData(CommonServiceDetails, DynamicSidecarServiceLabels)
             params["compose_spec"] = labels["compose_spec"]
         if "container_http_entry" in labels:
             params["container_http_entry"] = labels["container_http_entry"]
-
+        if "restart_policy" in labels:
+            params["restart_policy"] = labels["restart_policy"]
         return cls(**params)
 
     class Config:
@@ -285,6 +287,7 @@ class ServiceLabelsStoredData(CommonServiceDetails, DynamicSidecarServiceLabels)
                 "dynamic_sidecar_network_name": "some_network_name",
                 "simcore_traefik_zone": "main",
                 "service_port": 300,
+                "restart_policy": RestartPolicy.NO_RESTART.value,
                 "project_id": UUID("dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe"),
                 "user_id": 234,
             }
@@ -407,6 +410,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             paths_mapping=simcore_service_labels.paths_mapping,
             compose_spec=json.dumps(simcore_service_labels.compose_spec),
             container_http_entry=simcore_service_labels.container_http_entry,
+            restart_policy=simcore_service_labels.restart_policy,
             dynamic_sidecar_network_name=dynamic_sidecar_names.dynamic_sidecar_network_name,
             simcore_traefik_zone=dynamic_sidecar_names.simcore_traefik_zone,
             request_dns=request_dns,
@@ -439,6 +443,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
                 paths_mapping=service_labels_stored_data.paths_mapping,
                 compose_spec=json.dumps(service_labels_stored_data.compose_spec),
                 container_http_entry=service_labels_stored_data.container_http_entry,
+                restart_policy=service_labels_stored_data.restart_policy,
                 dynamic_sidecar_network_name=service_labels_stored_data.dynamic_sidecar_network_name,
                 simcore_traefik_zone=service_labels_stored_data.simcore_traefik_zone,
                 service_port=service_labels_stored_data.service_port,

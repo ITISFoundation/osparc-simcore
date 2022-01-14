@@ -11,6 +11,7 @@ from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects import Node
 from pydantic import PositiveInt
+from pytest_simcore.helpers.utils_docker import get_ip
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
@@ -23,7 +24,7 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
-SERVICES_ARE_READY_TIMEOUT = 10 * 60
+SERVICES_ARE_READY_TIMEOUT = 2 * 60
 SEPARATOR = "=" * 50
 
 
@@ -57,7 +58,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
     Normally director-v2 talks via docker-netwoks with the dynamic-sidecar.
     Since the director-v2 was started outside docker and is not
     running in a container, the service port needs to be exposed and the
-    url needs to be changed to 172.17.0.1 (docker localhost)
+    url needs to be changed to get_ip()
 
     returns: the local endpoint
     """
@@ -85,11 +86,11 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
     async with scheduler._lock:  # pylint: disable=protected-access
         for entry in scheduler._to_observe.values():  # pylint: disable=protected-access
             if entry.scheduler_data.service_name == service_name:
-                entry.scheduler_data.dynamic_sidecar.hostname = "172.17.0.1"
+                entry.scheduler_data.dynamic_sidecar.hostname = f"{get_ip()}"
                 entry.scheduler_data.dynamic_sidecar.port = port
 
                 endpoint = entry.scheduler_data.dynamic_sidecar.endpoint
-                assert endpoint == f"http://172.17.0.1:{port}"
+                assert endpoint == f"http://{get_ip()}:{port}"
                 break
 
     assert endpoint is not None
@@ -101,7 +102,7 @@ async def _get_proxy_port(node_uuid: str) -> PositiveInt:
     Normally director-v2 talks via docker-netwoks with the started proxy.
     Since the director-v2 was started outside docker and is not
     running in a container, the service port needs to be exposed and the
-    url needs to be changed to 172.17.0.1 (docker localhost)
+    url needs to be changed to get_ip()
 
     returns: the local endpoint
     """
@@ -150,7 +151,7 @@ async def assert_start_service(
     }
 
     result = await director_v2_client.post(
-        "/dynamic_services", json=data, headers=headers, allow_redirects=True
+        "/v2/dynamic_services", json=data, headers=headers, allow_redirects=True
     )
     assert result.status_code == httpx.codes.CREATED, result.text
 
@@ -163,7 +164,7 @@ async def get_service_data(
 
     # result =
     response = await director_v2_client.get(
-        f"/dynamic_services/{service_uuid}", allow_redirects=False
+        f"/v2/dynamic_services/{service_uuid}", allow_redirects=False
     )
     if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
         # NOTE: so we have a redirect, and it seems the director_v2_client does not like it at all
@@ -226,7 +227,7 @@ async def assert_retrieve_service(
     }
 
     result = await director_v2_client.post(
-        f"/dynamic_services/{service_uuid}:retrieve",
+        f"/v2/dynamic_services/{service_uuid}:retrieve",
         json=dict(port_keys=[]),
         headers=headers,
         allow_redirects=True,
@@ -244,7 +245,7 @@ async def assert_stop_service(
     director_v2_client: httpx.AsyncClient, service_uuid: str
 ) -> None:
     result = await director_v2_client.delete(
-        f"/dynamic_services/{service_uuid}", allow_redirects=True
+        f"/v2/dynamic_services/{service_uuid}", allow_redirects=True
     )
     assert result.status_code == httpx.codes.NO_CONTENT
     assert result.text == ""
@@ -279,7 +280,7 @@ async def _inspect_service_and_print_logs(
             print(f"{formatted_container_inspect}\n{SEPARATOR}")
 
         logs = await docker_client.services.logs(
-            service_details["ID"], stdout=True, stderr=True
+            service_details["ID"], stderr=True, stdout=True, tail=50
         )
         formatted_logs = "".join(logs)
         print(f"{formatted_logs}\n{SEPARATOR} - {tag}")
@@ -328,9 +329,9 @@ async def assert_service_is_available(  # pylint: disable=redefined-outer-name
     exposed_port: PositiveInt, is_legacy: bool, service_uuid: str
 ) -> None:
     service_address = (
-        f"http://172.17.0.1:{exposed_port}/x/{service_uuid}"
+        f"http://{get_ip()}:{exposed_port}/x/{service_uuid}"
         if is_legacy
-        else f"http://172.17.0.1:{exposed_port}"
+        else f"http://{get_ip()}:{exposed_port}"
     )
     print(f"checking service @ {service_address}")
 

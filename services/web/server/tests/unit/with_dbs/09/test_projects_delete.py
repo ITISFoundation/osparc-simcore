@@ -4,11 +4,17 @@
 # pylint: disable=unused-variable
 
 import asyncio
-from typing import Callable, Dict, Type
-from unittest.mock import call
+from typing import Any, Callable, Dict, Type
+from unittest.mock import MagicMock, call
 
 import pytest
+from _helpers import ExpectedResponse  # type: ignore
+from _helpers import MockedStorageSubsystem  # type: ignore
+from _helpers import standard_role_response  # type: ignore
 from aiohttp import web
+
+# TESTS -----------------------------------------------------------------------------------------
+from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
@@ -27,27 +33,16 @@ async def _delete_project(
     await assert_status(resp, expected)
 
 
-# TESTS -----------------------------------------------------------------------------------------
-
-
-@pytest.mark.parametrize(
-    "user_role,expected",
-    [
-        (UserRole.ANONYMOUS, web.HTTPUnauthorized),
-        (UserRole.GUEST, web.HTTPForbidden),
-        (UserRole.USER, web.HTTPNoContent),
-        (UserRole.TESTER, web.HTTPNoContent),
-    ],
-)
+@pytest.mark.parametrize(*standard_role_response())
 async def test_delete_project(
-    client,
-    logged_user,
-    user_project,
-    expected,
-    storage_subsystem_mock,
-    mocked_director_v2_api,
-    catalog_subsystem_mock,
-    fake_services,
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    user_project: Dict[str, Any],
+    expected: ExpectedResponse,
+    storage_subsystem_mock: MockedStorageSubsystem,
+    mocked_director_v2_api: Dict[str, MagicMock],
+    catalog_subsystem_mock: Callable,
+    fake_services: Callable,
     assert_get_same_project_caller: Callable,
 ):
     # DELETE /v0/projects/{project_id}
@@ -55,10 +50,10 @@ async def test_delete_project(
     fakes = fake_services(5)
     mocked_director_v2_api["director_v2_core.get_services"].return_value = fakes
 
-    await _delete_project(client, user_project, expected)
+    await _delete_project(client, user_project, expected.no_content)
     await asyncio.sleep(2)  # let some time fly for the background tasks to run
 
-    if expected == web.HTTPNoContent:
+    if expected.no_content == web.HTTPNoContent:
         mocked_director_v2_api["director_v2_core.get_services"].assert_called_once()
 
         expected_calls = [

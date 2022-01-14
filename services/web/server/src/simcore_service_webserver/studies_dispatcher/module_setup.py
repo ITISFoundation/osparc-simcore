@@ -7,7 +7,7 @@ from servicelib.aiohttp.rest_routing import (
     map_handlers_with_operations,
 )
 
-from ..constants import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
+from .._constants import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
 from ..login.decorators import login_required
 from .handlers_redirects import get_redirection_to_viewer
 from .handlers_rest import rest_handler_functions

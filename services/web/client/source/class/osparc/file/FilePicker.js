@@ -139,24 +139,36 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
+    getOutputFileMetadata: function(node) {
+      return new Promise((resolve, reject) => {
+        const outValue = osparc.file.FilePicker.getOutput(node.getOutputs());
+        const params = {
+          url: {
+            locationId: outValue.store,
+            datasetId: outValue.dataset
+          }
+        };
+        osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
+          .then(files => {
+            const fileMetadata = files.find(file => file.file_id === outValue.path);
+            if (fileMetadata) {
+              resolve(fileMetadata);
+            } else {
+              reject();
+            }
+          })
+          .catch(() => reject());
+      });
+    },
+
     buildFileFromStoreInfoView: function(node, form) {
-      const outValue = osparc.file.FilePicker.getOutput(node.getOutputs());
-      const params = {
-        url: {
-          locationId: outValue.store,
-          datasetId: outValue.dataset
-        }
-      };
-      osparc.data.Resources.fetch("storageFiles", "getByLocationAndDataset", params)
-        .then(files => {
-          const fileMetadata = files.find(file => file.file_uuid === outValue.path);
-          if (fileMetadata) {
-            for (let [key, value] of Object.entries(fileMetadata)) {
-              const entry = new qx.ui.form.TextField();
-              form.add(entry, key, null, key);
-              if (value) {
-                entry.setValue(value.toString());
-              }
+      this.self().getOutputFileMetadata(node)
+        .then(fileMetadata => {
+          for (let [key, value] of Object.entries(fileMetadata)) {
+            const entry = new qx.ui.form.TextField();
+            form.add(entry, key, null, key);
+            if (value) {
+              entry.setValue(value.toString());
             }
           }
         });
@@ -189,6 +201,17 @@ qx.Class.define("osparc.file.FilePicker", {
       }
 
       return new qx.ui.form.renderer.Single(form);
+    },
+
+    downloadOutput: function(node) {
+      this.self().getOutputFileMetadata(node)
+        .then(fileMetadata => {
+          if ("location_id" in fileMetadata && "file_id" in fileMetadata) {
+            const locationId = fileMetadata["location_id"];
+            const fileId = fileMetadata["file_id"];
+            osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId);
+          }
+        });
     },
 
     serializeOutput: function(outputs) {
@@ -228,8 +251,7 @@ qx.Class.define("osparc.file.FilePicker", {
         case "tree-folder-layout":
           control = new qx.ui.splitpane.Pane("horizontal");
           control.getChildControl("splitter").set({
-            width: 2,
-            backgroundColor: "scrollbar-passive"
+            width: 2
           });
           this._addAt(control, this.self().POS.FILES_TREE, {
             flex: 1
@@ -238,9 +260,10 @@ qx.Class.define("osparc.file.FilePicker", {
         case "files-tree": {
           const treeFolderLayout = this.getChildControl("tree-folder-layout");
           control = new osparc.file.FilesTree().set({
+            backgroundColor: "contrasted-background",
             showLeafs: false,
             minWidth: 150,
-            width: 200
+            width: 250
           });
           treeFolderLayout.add(control, 0);
           break;
@@ -251,7 +274,7 @@ qx.Class.define("osparc.file.FilePicker", {
           treeFolderLayout.add(control, 1);
           break;
         }
-        case "toolbar":
+        case "select-toolbar":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._addAt(control, this.self().POS.TOOLBAR);
           break;
@@ -259,7 +282,7 @@ qx.Class.define("osparc.file.FilePicker", {
           control = new osparc.file.FilesAdd().set({
             node: this.getNode()
           });
-          const mainButtons = this.getChildControl("toolbar");
+          const mainButtons = this.getChildControl("select-toolbar");
           mainButtons.add(control);
           break;
         }
@@ -267,7 +290,7 @@ qx.Class.define("osparc.file.FilePicker", {
           control = new osparc.file.FileLabelWithActions().set({
             alignY: "middle"
           });
-          const mainButtons = this.getChildControl("toolbar");
+          const mainButtons = this.getChildControl("select-toolbar");
           mainButtons.add(control, {
             flex: 1
           });
@@ -275,17 +298,23 @@ qx.Class.define("osparc.file.FilePicker", {
         }
         case "select-button": {
           control = new qx.ui.form.Button(this.tr("Select"));
-          const mainButtons = this.getChildControl("toolbar");
+          const mainButtons = this.getChildControl("select-toolbar");
           mainButtons.add(control);
           break;
         }
         case "file-download-link": {
-          const groupBox = new qx.ui.groupbox.GroupBox(this.tr("Or provide a Download Link")).set({
-            layout: new qx.ui.layout.VBox(5)
+          const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+            alignY: "middle"
+          }));
+          const label = new qx.ui.basic.Label(this.tr("Or provide a Download Link"));
+          layout.add(label);
+          control = new osparc.file.FileDownloadLink().set({
+            allowGrowY: false
           });
-          control = new osparc.file.FileDownloadLink();
-          groupBox.add(control);
-          this._addAt(groupBox, this.self().POS.DOWNLOAD_LINK);
+          layout.add(control, {
+            flex: 1
+          });
+          this._addAt(layout, this.self().POS.DOWNLOAD_LINK);
           break;
         }
       }
@@ -400,11 +429,13 @@ qx.Class.define("osparc.file.FilePicker", {
 
     uploadPendingFiles: function(files) {
       if (files.length > 0) {
-        if (files.length > 1) {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
+        if (files.length === 1) {
+          this.getChildControl("files-add").retrieveUrlAndUpload(files[0]);
+          return true;
         }
-        this.getChildControl("files-add").retrieveUrlAndUpload(files[0]);
+        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
       }
+      return false;
     },
 
     __selectionChanged: function(selectedItem) {

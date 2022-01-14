@@ -11,7 +11,7 @@ def network_name() -> str:
 
 
 @pytest.fixture
-async def ensure_swarm_and_networks(network_name: str, docker_swarm: None) -> None:
+async def ensure_swarm_and_networks(network_name: str, docker_swarm: None):
     """
     Make sure to always have a docker swarm network.
     If one is not present crete one. There can not be more then one.

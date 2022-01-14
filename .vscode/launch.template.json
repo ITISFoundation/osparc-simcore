@@ -6,6 +6,24 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Python: Run Test",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "--ff",
+        "--log-cli-level=INFO",
+        "--pdb",
+        "--setup-show",
+        "-sx",
+        "-vv",
+        "${file}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
       "name": "Python: Remote Attach api-server",
       "type": "python",
       "request": "attach",
@@ -62,45 +80,6 @@
       "type": "python",
       "request": "attach",
       "port": 3001,
-      "host": "127.0.0.1",
-      "pathMappings": [
-        {
-          "localRoot": "${workspaceFolder}",
-          "remoteRoot": "/devel"
-        }
-      ]
-    },
-    {
-      "name": "Python: Remote Attach sidecar",
-      "type": "python",
-      "request": "attach",
-      "port": 3002,
-      "host": "127.0.0.1",
-      "pathMappings": [
-        {
-          "localRoot": "${workspaceFolder}",
-          "remoteRoot": "/devel"
-        }
-      ]
-    },
-    {
-      "name": "Python: Remote Attach sidecar_gpu",
-      "type": "python",
-      "request": "attach",
-      "port": 3007,
-      "host": "127.0.0.1",
-      "pathMappings": [
-        {
-          "localRoot": "${workspaceFolder}",
-          "remoteRoot": "/devel"
-        }
-      ]
-    },
-    {
-      "name": "Python: Remote Attach sidecar_mpi",
-      "type": "python",
-      "request": "attach",
-      "port": 3008,
       "host": "127.0.0.1",
       "pathMappings": [
         {

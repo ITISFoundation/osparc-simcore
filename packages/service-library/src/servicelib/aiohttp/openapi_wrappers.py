@@ -95,7 +95,7 @@ class AiohttpOpenAPIRequest(BaseOpenAPIRequest):
 
     @property
     def body(self) -> str:
-        """ Returns str with body content """
+        """Returns str with body content"""
         return self._body
 
     @property

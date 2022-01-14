@@ -91,6 +91,28 @@ async def get_upload_link_from_storage(
     return parse_obj_as(AnyUrl, f"{link}")
 
 
+async def target_link_exists(
+    user_id: int, project_id: str, node_id: str, file_name: str
+) -> bool:
+    log.debug(
+        "checking if target of link to file from storage for %s exists", file_name
+    )
+    s3_object = data_items_utils.encode_file_id(Path(file_name), project_id, node_id)
+    return await filemanager.entry_exists(
+        user_id=user_id, store_id="0", s3_object=s3_object
+    )
+
+
+async def delete_target_link(
+    user_id: int, project_id: str, node_id: str, file_name: str
+) -> None:
+    log.debug("deleting target of link to file from storage for %s", file_name)
+    s3_object = data_items_utils.encode_file_id(Path(file_name), project_id, node_id)
+    return await filemanager.delete_file(
+        user_id=user_id, store_id="0", s3_object=s3_object
+    )
+
+
 async def pull_file_from_store(
     user_id: int,
     key: str,

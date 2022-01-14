@@ -13,7 +13,11 @@ from uuid import uuid4
 import pytest
 from simcore_sdk.node_data import data_manager
 
-pytest_simcore_core_services_selection = ["postgres", "storage"]
+pytest_simcore_core_services_selection = [
+    "migration",
+    "postgres",
+    "storage",
+]
 
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 

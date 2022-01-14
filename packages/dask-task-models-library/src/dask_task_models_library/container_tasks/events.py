@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Union
 
 from distributed.worker import get_worker
 from models_library.projects_state import RunningState
 from pydantic import BaseModel, Extra, NonNegativeFloat
 
 
-class TaskEvent(BaseModel, ABC):
+class BaseTaskEvent(BaseModel, ABC):
     job_id: str
     msg: Optional[str]
 
@@ -19,12 +19,12 @@ class TaskEvent(BaseModel, ABC):
         extra = Extra.forbid
 
 
-class TaskCancelEvent(TaskEvent):
+class TaskCancelEvent(BaseTaskEvent):
     @staticmethod
     def topic_name() -> str:
         return "task_cancel"
 
-    class Config(TaskEvent.Config):
+    class Config(BaseTaskEvent.Config):
         schema_extra = {
             "examples": [
                 {
@@ -34,7 +34,7 @@ class TaskCancelEvent(TaskEvent):
         }
 
 
-class TaskStateEvent(TaskEvent):
+class TaskStateEvent(BaseTaskEvent):
     state: RunningState
 
     @staticmethod
@@ -47,7 +47,7 @@ class TaskStateEvent(TaskEvent):
     ) -> "TaskStateEvent":
         return cls(job_id=get_worker().get_current_task(), state=state, msg=msg)
 
-    class Config(TaskEvent.Config):
+    class Config(BaseTaskEvent.Config):
         schema_extra = {
             "examples": [
                 {
@@ -63,7 +63,7 @@ class TaskStateEvent(TaskEvent):
         }
 
 
-class TaskProgressEvent(TaskEvent):
+class TaskProgressEvent(BaseTaskEvent):
     progress: NonNegativeFloat
 
     @staticmethod
@@ -74,7 +74,7 @@ class TaskProgressEvent(TaskEvent):
     def from_dask_worker(cls, progress: float) -> "TaskProgressEvent":
         return cls(job_id=get_worker().get_current_task(), progress=progress)
 
-    class Config(TaskEvent.Config):
+    class Config(BaseTaskEvent.Config):
         schema_extra = {
             "examples": [
                 {
@@ -89,7 +89,7 @@ class TaskProgressEvent(TaskEvent):
         }
 
 
-class TaskLogEvent(TaskEvent):
+class TaskLogEvent(BaseTaskEvent):
     log: str
 
     @staticmethod
@@ -100,7 +100,7 @@ class TaskLogEvent(TaskEvent):
     def from_dask_worker(cls, log: str) -> "TaskLogEvent":
         return cls(job_id=get_worker().get_current_task(), log=log)
 
-    class Config(TaskEvent.Config):
+    class Config(BaseTaskEvent.Config):
         schema_extra = {
             "examples": [
                 {
@@ -109,3 +109,6 @@ class TaskLogEvent(TaskEvent):
                 },
             ]
         }
+
+
+DaskTaskEvents = Union[TaskLogEvent, TaskProgressEvent, TaskStateEvent]

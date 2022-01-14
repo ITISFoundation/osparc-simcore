@@ -5,14 +5,14 @@
 from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, parse_link
-from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
+from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.login.cfg import APP_LOGIN_CONFIG
 from yarl import URL
 
 NEW_EMAIL = "new@mail.com"
 
 
-async def test_unauthorized(client):
+async def test_unauthorized_to_change_email(client):
     url = client.app.router["auth_change_email"].url_for()
     rsp = await client.post(
         url,

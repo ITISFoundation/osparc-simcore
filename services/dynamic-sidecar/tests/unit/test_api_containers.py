@@ -2,15 +2,22 @@
 # pylint: disable=unused-argument
 
 
+import asyncio
 import importlib
 import json
-from typing import Any, Dict, List
+from collections import namedtuple
+from typing import Any, Dict, Iterable, List
+from unittest.mock import AsyncMock
+from uuid import uuid4
 
+import aiodocker
 import faker
 import pytest
 import yaml
+from aiodocker.containers import DockerContainer
 from async_asgi_testclient import TestClient
-from fastapi import status
+from fastapi import FastAPI, status
+from models_library.services import ServiceOutput
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
@@ -20,8 +27,15 @@ from simcore_service_dynamic_sidecar.core.shared_handlers import (
 from simcore_service_dynamic_sidecar.core.utils import async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
+from simcore_service_dynamic_sidecar.modules.mounted_fs import (
+    MountedVolumes,
+    get_mounted_volumes,
+)
+
+ContainerTimes = namedtuple("ContainerTimes", "created, started_at, finished_at")
 
 DEFAULT_COMMAND_TIMEOUT = 5.0
+WAIT_FOR_DIRECTORY_WATCHER = 0.1
 
 pytestmark = pytest.mark.asyncio
 
@@ -60,7 +74,7 @@ async def _docker_ps_a_container_names() -> List[str]:
     return stdout.split("\n")
 
 
-async def assert_compose_spec_pulled(
+async def _assert_compose_spec_pulled(
     compose_spec: str, settings: DynamicSidecarSettings
 ) -> None:
     """ensures all containers inside compose_spec are pulled"""
@@ -90,10 +104,29 @@ async def assert_compose_spec_pulled(
     assert len(started_containers) == expected_services_count
 
 
+async def _get_container_timestamps(
+    container_names: List[str],
+) -> Dict[str, ContainerTimes]:
+    container_timestamps: Dict[str, ContainerTimes] = {}
+    async with aiodocker.Docker() as docker_client:
+        for container_name in container_names:
+            container: DockerContainer = await docker_client.containers.get(
+                container_name
+            )
+            container_inspect: Dict[str, Any] = await container.show()
+            container_timestamps[container_name] = ContainerTimes(
+                created=container_inspect["Created"],
+                started_at=container_inspect["State"]["StartedAt"],
+                finished_at=container_inspect["State"]["FinishedAt"],
+            )
+
+    return container_timestamps
+
+
 @pytest.fixture
 async def started_containers(test_client: TestClient, compose_spec: str) -> List[str]:
     settings: DynamicSidecarSettings = test_client.application.state.settings
-    await assert_compose_spec_pulled(compose_spec, settings)
+    await _assert_compose_spec_pulled(compose_spec, settings)
 
     # start containers
     response = await test_client.post(f"/{API_VTAG}/containers", data=compose_spec)
@@ -119,7 +152,7 @@ def mock_nodeports(mocker: MockerFixture) -> None:
         return_value=None,
     )
     mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.nodeports.download_inputs",
+        "simcore_service_dynamic_sidecar.modules.nodeports.download_target_ports",
         return_value=42,
     )
 
@@ -145,6 +178,33 @@ def mock_port_keys() -> List[str]:
     return ["first_port", "second_port"]
 
 
+@pytest.fixture
+def mock_outputs_labels() -> Dict[str, ServiceOutput]:
+    return {
+        "output_port_1": ServiceOutput.parse_obj(
+            ServiceOutput.Config.schema_extra["examples"][3]
+        ),
+        "output_port_2": ServiceOutput.parse_obj(
+            ServiceOutput.Config.schema_extra["examples"][3]
+        ),
+    }
+
+
+@pytest.fixture
+def mutable_settings(test_client: TestClient) -> DynamicSidecarSettings:
+    settings: DynamicSidecarSettings = test_client.application.state.settings
+    # disable mutability for this test
+    settings.__config__.allow_mutation = True
+    settings.__config__.frozen = False
+    return settings
+
+
+@pytest.fixture
+def rabbitmq_mock(mocker, app: FastAPI) -> Iterable[None]:
+    app.state.rabbitmq = mocker.AsyncMock()
+    yield
+
+
 # TESTS
 
 
@@ -152,7 +212,9 @@ def test_ensure_api_vtag_is_v1() -> None:
     assert API_VTAG == "v1"
 
 
-async def test_start_containers_wrong_spec(test_client: TestClient) -> None:
+async def test_start_containers_wrong_spec(
+    test_client: TestClient, rabbitmq_mock: None
+) -> None:
     response = await test_client.post(
         f"/{API_VTAG}/containers", data={"opsie": "shame on me"}
     )
@@ -161,14 +223,13 @@ async def test_start_containers_wrong_spec(test_client: TestClient) -> None:
 
 
 async def test_start_same_space_twice(
-    test_client: TestClient, compose_spec: str
+    compose_spec: str, mutable_settings: DynamicSidecarSettings
 ) -> None:
-    settings: DynamicSidecarSettings = test_client.application.state.settings
-    settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_1"
-    await assert_compose_spec_pulled(compose_spec, settings)
+    mutable_settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_1"
+    await _assert_compose_spec_pulled(compose_spec, mutable_settings)
 
-    settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_2"
-    await assert_compose_spec_pulled(compose_spec, settings)
+    mutable_settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE = "test_name_space_2"
+    await _assert_compose_spec_pulled(compose_spec, mutable_settings)
 
 
 async def test_compose_up(
@@ -372,6 +433,90 @@ async def test_container_pull_input_ports(
     assert response.text == "42"
 
 
+async def test_directory_watcher_disabling(
+    test_client: TestClient, mock_dir_watcher_on_any_event: AsyncMock
+) -> None:
+    async def _assert_disable_directory_watcher() -> None:
+        response = await test_client.patch(
+            f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=False)
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+        assert response.text == ""
+
+    async def _assert_enable_directory_watcher() -> None:
+        response = await test_client.patch(
+            f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=True)
+        )
+        assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+        assert response.text == ""
+
+    def _create_random_dir_in_inputs() -> int:
+        mounted_volumes: MountedVolumes = get_mounted_volumes()
+        dir_name = mounted_volumes.disk_outputs_path / f"{uuid4()}"
+        dir_name.mkdir(parents=True)
+        dir_count = len([1 for x in mounted_volumes.disk_outputs_path.glob("*")])
+        return dir_count
+
+    EVENTS_PER_DIR_CREATION = 2
+
+    # by default it is enabled
+    assert mock_dir_watcher_on_any_event.call_count == 0
+    dir_count = _create_random_dir_in_inputs()
+    assert dir_count == 1
+    await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
+    assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATION
+
+    # disable and wait for events should have the same count as before
+    await _assert_disable_directory_watcher()
+    dir_count = _create_random_dir_in_inputs()
+    assert dir_count == 2
+    await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
+    assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATION
+
+    # enable and wait for events
+    await _assert_enable_directory_watcher()
+    dir_count = _create_random_dir_in_inputs()
+    assert dir_count == 3
+    await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
+    assert mock_dir_watcher_on_any_event.call_count == 2 * EVENTS_PER_DIR_CREATION
+
+
+async def test_container_create_outputs_dirs(
+    test_client: TestClient,
+    mock_outputs_labels: Dict[str, ServiceOutput],
+    mock_dir_watcher_on_any_event: AsyncMock,
+) -> None:
+
+    assert mock_dir_watcher_on_any_event.call_count == 0
+
+    json_outputs_labels = {
+        k: v.dict(by_alias=True) for k, v in mock_outputs_labels.items()
+    }
+    response = await test_client.post(
+        f"/{API_VTAG}/containers/ports/outputs/dirs",
+        json={"outputs_labels": json_outputs_labels},
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+    assert response.text == ""
+
+    mounted_volumes: MountedVolumes = get_mounted_volumes()
+    for dir_name in mock_outputs_labels.keys():
+        assert (mounted_volumes.disk_outputs_path / dir_name).is_dir()
+
+    await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
+    assert mock_dir_watcher_on_any_event.call_count == 2 * len(mock_outputs_labels)
+
+
+async def test_container_pull_output_ports(
+    test_client: TestClient, mock_port_keys: List[str], mock_nodeports: None
+) -> None:
+    response = await test_client.post(
+        f"/{API_VTAG}/containers/ports/outputs:pull", json=mock_port_keys
+    )
+    assert response.status_code == status.HTTP_200_OK, response.text
+    assert response.text == "42"
+
+
 async def test_container_push_output_ports(
     test_client: TestClient, mock_port_keys: List[str], mock_nodeports: None
 ) -> None:
@@ -434,3 +579,33 @@ async def test_containers_entrypoint_name_containers_not_started(
     assert response.json() == {
         "detail": "No container found for network=entrypoint_container_network"
     }
+
+
+async def test_containers_restart(
+    test_client: TestClient, compose_spec: Dict[str, Any]
+) -> None:
+    # store spec first
+    response = await test_client.post(f"/{API_VTAG}/containers", data=compose_spec)
+    assert response.status_code == status.HTTP_202_ACCEPTED, response.text
+    shared_store: SharedStore = test_client.application.state.shared_store
+    container_names = shared_store.container_names
+    assert response.json() == container_names
+
+    container_timestamps_before = await _get_container_timestamps(container_names)
+
+    response = await test_client.post(
+        f"/{API_VTAG}/containers:restart",
+        query_string=dict(command_timeout=DEFAULT_COMMAND_TIMEOUT),
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+    assert response.text == ""
+
+    container_timestamps_after = await _get_container_timestamps(container_names)
+
+    for container_name in container_names:
+        before: ContainerTimes = container_timestamps_before[container_name]
+        after: ContainerTimes = container_timestamps_after[container_name]
+
+        assert before.created == after.created
+        assert before.started_at < after.started_at
+        assert before.finished_at < after.finished_at

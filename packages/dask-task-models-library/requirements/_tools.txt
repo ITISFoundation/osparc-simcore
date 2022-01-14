@@ -4,9 +4,9 @@
 #
 #    pip-compile --output-file=requirements/_tools.txt --strip-extras requirements/_tools.in
 #
-backports.entry-points-selectable==1.1.0
+backports.entry-points-selectable==1.1.1
     # via virtualenv
-black==21.9b0
+black==21.11b1
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
@@ -19,11 +19,11 @@ click==8.0.3
     #   pip-tools
 distlib==0.3.3
     # via virtualenv
-filelock==3.3.1
+filelock==3.4.0
     # via virtualenv
-identify==2.3.1
+identify==2.4.0
     # via pre-commit
-isort==5.9.3
+isort==5.10.1
     # via
     #   -c requirements/_test.txt
     #   -r requirements/../../../requirements/devenv.txt
@@ -50,7 +50,7 @@ pyyaml==6.0
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   pre-commit
-regex==2021.10.23
+regex==2021.11.10
     # via black
 six==1.16.0
     # via
@@ -62,14 +62,15 @@ toml==0.10.2
     #   pre-commit
 tomli==1.2.2
     # via
+    #   -c requirements/_test.txt
     #   black
     #   pep517
-typing-extensions==3.10.0.2 ; python_version < "3.9"
+typing-extensions==4.0.0 ; python_version < "3.9"
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-virtualenv==20.9.0
+virtualenv==20.10.0
     # via pre-commit
 wheel==0.37.0
     # via pip-tools

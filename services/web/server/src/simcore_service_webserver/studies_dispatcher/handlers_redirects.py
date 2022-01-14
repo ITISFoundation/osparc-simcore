@@ -13,7 +13,7 @@ from pydantic import BaseModel, HttpUrl, ValidationError, constr, validator
 from pydantic.types import PositiveInt
 from yarl import URL
 
-from ..constants import INDEX_RESOURCE_NAME
+from .._constants import INDEX_RESOURCE_NAME
 from ._core import StudyDispatcherError, ViewerInfo, validate_requested_viewer
 from ._projects import acquire_project_with_viewer
 from ._users import UserInfo, acquire_user, ensure_authentication

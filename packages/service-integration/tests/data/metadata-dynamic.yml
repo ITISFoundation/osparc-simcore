@@ -1,0 +1,71 @@
+name: my-service
+key: simcore/services/dynamic/myservice-web
+type: dynamic
+integration-version: 1.0.0
+version: 2.0.2
+description: test of a dynamic service
+contact: bar@foo.com
+authors:
+  - name: Mr X
+    email: bar@foo.com
+    affiliation: IT'IS Foundation
+inputs:
+  string_input:
+    displayOrder: 1
+    label: String input
+    description: Test input string with default value
+    type: string
+    defaultValue: lorem ipsum
+  integer_input:
+    displayOrder: 2
+    label: Integer input
+    description: Integer field with a default value
+    type: integer
+    defaultValue: 100
+  boolean_input:
+    displayOrder: 3
+    label: Boolean input
+    description: Boolean field with a default value
+    type: boolean
+    defaultValue: false
+  number_input:
+    displayOrder: 4
+    label: Number input
+    description: Number field with a default value
+    type: number
+    defaultValue: 1.12
+  file_input:
+    displayOrder: 5
+    label: File input
+    description: Empty file input
+    type: data:*/*
+    fileToKeyMap:
+      test_file: file_input
+outputs:
+  string_output:
+    displayOrder: 1
+    label: String output
+    description: String value from input
+    type: string
+  integer_output:
+    displayOrder: 2
+    label: Integer output
+    description: Integer value from input
+    type: integer
+  boolean_output:
+    displayOrder: 3
+    label: Boolean output
+    description: Boolean value from input
+    type: boolean
+  number_output:
+    displayOrder: 4
+    label: Number output
+    description: Number value from input
+    type: number
+  file_output:
+    displayOrder: 5
+    label: File output
+    description: File from input
+    type: data:*/*
+    fileToKeyMap:
+      test_file: file_output

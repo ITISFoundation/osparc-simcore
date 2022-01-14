@@ -255,27 +255,6 @@ jobs:
       after_failure:
         - unbuffer bash ci/travis/unit-testing/director-v2.bash after_failure
 
-    # test python, sidecar ----------------------------------------------------------------------
-    - stage: build / unit-testing
-      name: "[unit] sidecar"
-      language: python
-      python:
-        - "3.6"
-      sudo: required
-      cache: pip
-      before_install:
-        - sudo bash ci/travis/unit-testing/sidecar.bash before_install
-      install:
-        - unbuffer bash ci/travis/unit-testing/sidecar.bash install
-      before_script:
-        - unbuffer bash ci/travis/unit-testing/sidecar.bash before_script
-      script:
-        - unbuffer bash ci/travis/unit-testing/sidecar.bash script
-      after_success:
-        - unbuffer bash ci/travis/unit-testing/sidecar.bash after_success
-      after_failure:
-        - unbuffer bash ci/travis/unit-testing/sidecar.bash after_failure
-
     # test python, service-library ----------------------------------------------------------------------
     - stage: build / unit-testing
       name: "[unit] service-library"
@@ -444,27 +423,6 @@ jobs:
         - unbuffer bash ci/travis/integration-testing/director-v2.bash after_success
       after_failure:
         - unbuffer bash ci/travis/integration-testing/director-v2.bash after_failure
-
-    # integrate sidecar in swarm -------------------------------------------------------------
-    - stage: integration-testing / system-testing
-      name: "[int] sidecar"
-      language: python
-      python:
-        - "3.6"
-      sudo: required
-      cache: pip
-      before_install:
-        - sudo bash ci/travis/integration-testing/sidecar.bash before_install
-      install:
-        - unbuffer bash ci/travis/integration-testing/sidecar.bash install
-      before_script:
-        - unbuffer bash ci/travis/integration-testing/sidecar.bash before_script
-      script:
-        - unbuffer bash ci/travis/integration-testing/sidecar.bash script
-      after_success:
-        - unbuffer bash ci/travis/integration-testing/sidecar.bash after_success
-      after_failure:
-        - unbuffer bash ci/travis/integration-testing/sidecar.bash after_failure
 
     # integrate simcore-sdk in swarm -------------------------------------------------------------
     - stage: integration-testing / system-testing

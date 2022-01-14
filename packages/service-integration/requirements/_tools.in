@@ -3,3 +3,6 @@
 --constraint _test.txt
 
 --requirement ../../../requirements/devenv.txt
+
+# to generate compose_spec_model.py
+datamodel-code-generator[http]

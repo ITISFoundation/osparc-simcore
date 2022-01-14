@@ -5,10 +5,10 @@
 import json
 import logging
 import os
-import urllib
+import urllib.parse
 from argparse import Namespace
 from collections import namedtuple
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, AsyncIterator, Dict, Optional
 from uuid import UUID
 
 import pytest
@@ -30,14 +30,8 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
 from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
     SchedulerData,
 )
-from simcore_service_director_v2.modules.dynamic_sidecar.client_api import (
-    setup_api_client,
-)
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
-    setup_scheduler,
 )
 from starlette import status
 from starlette.testclient import TestClient
@@ -55,11 +49,10 @@ def minimal_config(project_env_devel_environment, monkeypatch: MonkeyPatch) -> N
     monkeypatch.setenv("SC_BOOT_MODE", "default")
     monkeypatch.setenv("DIRECTOR_ENABLED", "1")
     monkeypatch.setenv("POSTGRES_ENABLED", "0")
-    monkeypatch.setenv("CELERY_ENABLED", "0")
     monkeypatch.setenv("REGISTRY_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "0")
+    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
 
 
 @pytest.fixture(scope="session")
@@ -86,10 +79,15 @@ def mock_env(monkeypatch: MonkeyPatch, docker_swarm: None) -> None:
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
-    monkeypatch.setenv("DIRECTOR_V2_CELERY_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
+    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
+
+    monkeypatch.setenv("REGISTRY_AUTH", "false")
+    monkeypatch.setenv("REGISTRY_USER", "test")
+    monkeypatch.setenv("REGISTRY_PW", "test")
+    monkeypatch.setenv("REGISTRY_SSL", "false")
 
     monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
     monkeypatch.setenv("POSTGRES_USER", "mocked_user")
@@ -100,20 +98,14 @@ def mock_env(monkeypatch: MonkeyPatch, docker_swarm: None) -> None:
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
 
-@pytest.fixture(scope="function")
-def minimal_app(client: TestClient) -> FastAPI:
-    # disbale shutdown events, not required for these tests
-    client.app.router.on_shutdown = []
-    return client.app
-
-
 @pytest.fixture
 async def mock_retrieve_features(
     minimal_app: FastAPI,
+    client: TestClient,
     service: Dict[str, Any],
     is_legacy: bool,
     scheduler_data_from_http_request: SchedulerData,
-) -> Iterator[Optional[MockRouter]]:
+) -> AsyncIterator[Optional[MockRouter]]:
     with respx.mock(
         assert_all_called=False,
         assert_all_mocked=True,
@@ -129,9 +121,6 @@ async def mock_retrieve_features(
             yield respx_mock
             # no cleanup required
         else:
-            await setup_scheduler(minimal_app)
-            await setup_api_client(minimal_app)
-
             dynamic_sidecar_scheduler = minimal_app.state.dynamic_sidecar_scheduler
             node_uuid = UUID(service["node_uuid"])
             serice_name = "serice_name"
@@ -241,7 +230,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
         ),
     ],
 )
-async def test_create_dynamic_services(
+def test_create_dynamic_services(
     minimal_config: None,
     mocked_director_v0_service_api: MockRouter,
     docker_swarm: None,
@@ -313,7 +302,7 @@ async def test_create_dynamic_services(
         ),
     ],
 )
-async def test_get_service_status(
+def test_get_service_status(
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
     client: TestClient,
@@ -374,7 +363,7 @@ async def test_get_service_status(
 @pytest.mark.parametrize(
     "can_save, exp_save_state", [(None, True), (True, True), (False, False)]
 )
-async def test_delete_service(
+def test_delete_service(
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
     client: TestClient,
@@ -436,7 +425,7 @@ async def test_delete_service(
         ),
     ],
 )
-async def test_retrieve(
+def test_retrieve(
     mock_retrieve_features: Optional[MockRouter],
     mocked_director_v0_service_api: MockRouter,
     mocked_director_v2_scheduler: None,

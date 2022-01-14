@@ -78,7 +78,7 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       return control || this.base(arguments, id);
     },
 
-    // overriden
+    // overridden
     _applyThumbnail: function(value) {
       if (value === null) {
         const collabType = this.getCollabType();

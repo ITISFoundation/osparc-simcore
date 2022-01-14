@@ -1,8 +1,11 @@
 import functools
 import inspect
 import logging
+from copy import deepcopy
+from datetime import datetime
+from distutils.util import strtobool
 from enum import Enum
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Protocol
 
 from aiohttp import web
 
@@ -11,6 +14,13 @@ from .application_keys import APP_CONFIG_KEY
 log = logging.getLogger(__name__)
 
 APP_SETUP_KEY = f"{__name__ }.setup"
+
+
+class _SetupFunc(Protocol):
+    __name__: str
+
+    def __call__(self, app: web.Application, *args: Any, **kwds: Any) -> bool:
+        ...
 
 
 class ModuleCategory(Enum):
@@ -34,14 +44,14 @@ class DependencyError(ApplicationSetupError):
 
 def _is_app_module_enabled(cfg: Dict, parts: List[str], section) -> bool:
     # navigates app_config (cfg) searching for section
+    searched_config = deepcopy(cfg)
     for part in parts:
         if section and part == "enabled":
             # if section exists, no need to explicitly enable it
-            cfg = cfg.get(part, True)
-        else:
-            cfg = cfg[part]
-    assert isinstance(cfg, bool)  # nosec
-    return cfg
+            return strtobool(f"{searched_config.get(part, True)}")
+        searched_config = searched_config[part]
+    assert isinstance(searched_config, bool)  # nosec
+    return searched_config
 
 
 def app_module_setup(
@@ -95,7 +105,7 @@ def app_module_setup(
         # if passes config_enabled, invalidates info on section
         section = None
 
-    def _decorate(setup_func: Callable):
+    def _decorate(setup_func: _SetupFunc):
 
         if "setup" not in setup_func.__name__:
             logger.warning("Rename '%s' to contain 'setup'", setup_func.__name__)
@@ -113,8 +123,13 @@ def app_module_setup(
         @functools.wraps(setup_func)
         def _wrapper(app: web.Application, *args, **kargs) -> bool:
             # pre-setup
-            logger.debug(
-                "Setting up '%s' [%s; %s] ... ", module_name, category.name, depends
+            head_msg = f"Setup of {module_name}"
+            started = datetime.now()
+            logger.info(
+                "%s (%s, %s) started ... ",
+                head_msg,
+                f"{category.name=}",
+                f"{depends}",
             )
 
             if APP_SETUP_KEY not in app:
@@ -172,8 +187,12 @@ def app_module_setup(
                 logger.warning("Skipping '%s' setup: %s", module_name, exc.reason)
                 completed = False
 
-            logger.debug(
-                "'%s' setup %s", module_name, "completed" if completed else "skipped"
+            elapsed = datetime.now() - started
+            logger.info(
+                "%s %s [Elapsed: %3.1f secs]",
+                head_msg,
+                "completed" if completed else "skipped",
+                elapsed.total_seconds(),
             )
             return completed
 

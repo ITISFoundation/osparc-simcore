@@ -3,20 +3,23 @@
 #
 # NOTE: ALL version constraints MUST be commented
 --constraint ../../../requirements/constraints.txt
+--constraint ./constraints.txt
 
 # NOTE: These input-requirements under packages are tested using latest updates
+# NOTE: Make sure these packages are added in setup.install_requires
 --requirement ../../../packages/models-library/requirements/_base.in
---requirement ../../../packages/settings-library/requirements/_base.in
 --requirement ../../../packages/postgres-database/requirements/_base.in
 # service-library[fastapi]
 --requirement ../../../packages/service-library/requirements/_base.in
 --requirement ../../../packages/service-library/requirements/_fastapi.in
+--requirement ../../../packages/settings-library/requirements/_base.in
 --requirement ../../../packages/simcore-sdk/requirements/_base.in
 
 
 fastapi
 pydantic
 uvicorn
+httpx
 
 docker-compose
 aiodocker
@@ -24,4 +27,5 @@ aiofiles
 PyYAML
 async-timeout
 async_generator
+aio-pika
 watchdog

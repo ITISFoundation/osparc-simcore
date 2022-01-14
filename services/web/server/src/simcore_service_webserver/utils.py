@@ -10,7 +10,10 @@ import tracemalloc
 from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
+
+import orjson
+from models_library.basic_types import SHA1Str
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 log = logging.getLogger(__name__)
@@ -143,3 +146,21 @@ def compose_error_msg(msg: str) -> str:
 def snake_to_camel(subject: str) -> str:
     parts = subject.lower().split("_")
     return parts[0] + "".join(x.title() for x in parts[1:])
+
+
+# -----------------------------------------------
+#
+# SERIALIZATION, CHECKSUMS,
+#
+
+
+def compute_sha1_on_small_dataset(d: Any) -> SHA1Str:
+    """
+    This should be used for small datasets, otherwise it should be chuncked
+    and aggregated
+
+    More details in test_utils.py:test_compute_sha1_on_small_dataset
+    """
+    # SEE options in https://github.com/ijl/orjson#option
+    data_bytes = orjson.dumps(d, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS)
+    return hashlib.sha1(data_bytes).hexdigest()  # nosec

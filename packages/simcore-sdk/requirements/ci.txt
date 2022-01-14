@@ -11,7 +11,7 @@
 --requirement _test.txt
 
 # installs this repo's packages
-../postgres-database/[migration]
+../postgres-database
 ../pytest-simcore/
 ../models-library/
 

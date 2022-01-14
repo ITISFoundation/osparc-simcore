@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 from pprint import pformat
 from typing import Any, Callable, Dict, Optional, Tuple, Type
@@ -6,7 +7,11 @@ from typing import Any, Callable, Dict, Optional, Tuple, Type
 from models_library.services import PROPERTY_KEY_RE, ServiceProperty
 from pydantic import AnyUrl, Field, PrivateAttr, validator
 
-from ..node_ports_common.exceptions import InvalidItemTypeError
+from ..node_ports_common.exceptions import (
+    InvalidItemTypeError,
+    SymlinkToSymlinkIsNotUploadableException,
+    AbsoluteSymlinkIsNotUploadableException,
+)
 from . import port_utils
 from .links import (
     DataItemValue,
@@ -26,6 +31,18 @@ TYPE_TO_PYTYPE: Dict[str, Type[ItemConcreteValue]] = {
     "boolean": bool,
     "string": str,
 }
+
+
+def _check_if_symlink_is_valid(symlink: Path) -> None:
+    if not symlink.is_symlink():
+        return
+
+    symlink_target_path = Path(os.readlink(symlink))
+    if symlink_target_path.is_symlink():
+        raise SymlinkToSymlinkIsNotUploadableException(symlink, symlink_target_path)
+
+    if symlink_target_path.is_absolute():
+        raise AbsoluteSymlinkIsNotUploadableException(symlink, symlink_target_path)
 
 
 class Port(ServiceProperty):
@@ -160,8 +177,15 @@ class Port(ServiceProperty):
             converted_value: ItemConcreteValue = self._py_value_converter(new_value)
 
             if isinstance(converted_value, Path):
-                if not converted_value.exists() or not converted_value.is_file():
-                    raise InvalidItemTypeError(self.property_type, str(new_value))
+                if (
+                    not port_utils.is_file_type(self.property_type)
+                    or not converted_value.exists()
+                    or converted_value.is_dir()
+                ):
+                    raise InvalidItemTypeError(self.property_type, f"{new_value}")
+
+                _check_if_symlink_is_valid(converted_value)
+
                 final_value = await port_utils.push_file_to_store(
                     file=converted_value,
                     user_id=self._node_ports.user_id,

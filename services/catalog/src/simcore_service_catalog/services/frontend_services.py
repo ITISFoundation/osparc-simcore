@@ -2,19 +2,19 @@
     Catalog of i/o metadata for functions implemented in the front-end
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 from fastapi import status
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
 from models_library.frontend_services_catalog import (
     is_frontend_service,
+    is_iterator_consumer_service,
+    is_iterator_service,
     is_parameter_service,
     iter_service_docker_data,
 )
 from models_library.services import ServiceDockerData
-
-__all__ = ["is_frontend_service", "get_frontend_service", "setup_frontend_services"]
 
 
 def _as_dict(model_instance: ServiceDockerData) -> Dict[str, Any]:
@@ -49,9 +49,14 @@ def setup_frontend_services(app: FastAPI):
         def is_included(key) -> bool:
             return (
                 app.state.settings.CATALOG_DEV_FEATURES_ENABLED
-                # STILL UNDER DEVELOPMENT
+                # FIXME: STILL UNDER DEVELOPMENT
                 #  - Parameter services
+                #  - Iterator
+                #  - Iterator consumer
                 or not is_parameter_service(key)
+                or not is_frontend_service(key)
+                or not is_iterator_service(key)
+                or not is_iterator_consumer_service(key)
             )
 
         catalog = [
@@ -62,3 +67,10 @@ def setup_frontend_services(app: FastAPI):
         app.state.frontend_services_catalog = catalog
 
     app.add_event_handler("startup", _on_startup)
+
+
+__all__: Tuple[str, ...] = (
+    "get_frontend_service",
+    "is_frontend_service",
+    "setup_frontend_services",
+)

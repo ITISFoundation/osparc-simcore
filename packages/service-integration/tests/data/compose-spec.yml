@@ -1,0 +1,21 @@
+version: "3.7"
+services:
+  dy-static-file-server-dynamic-sidecar-compose-spec:
+    init: true
+    # - SIMCORE_REGISTRY will be replaced by the url of the simcore docker registry
+    # deployed inside the platform
+    # - SERVICE_VERSION will be replaced by the version of the service
+    # to which this compos spec is attached
+    image: ${SIMCORE_REGISTRY}/simcore/services/dynamic/dy-static-file-server-dynamic-sidecar-compose-spec:${SERVICE_VERSION}
+    environment:
+      - MOCK_VALUE=${POSTGRES_PASSWORD}
+      # app specific
+      - TZ=Europe/Zurich
+      # app specific BUT from a framework configuration
+      - EMAIL=%%OSPARC_SETTINGS.USER_EMAIL%%
+      - PASSWORD=%%OSPARC_SETTINGS.somehting%%
+      - HASHED_PASSWORD= #optional
+      - SUDO_PASSWORD=password #optional
+      - SUDO_PASSWORD_HASH= #optional
+      - PROXY_DOMAIN=code-server.my.domain #optional
+      - USER_ID

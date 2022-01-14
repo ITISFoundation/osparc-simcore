@@ -3,19 +3,16 @@
 #
 #
 
---constraint ../../../requirements/constraints.txt
 --constraint ./_base.in
 
 openapi-core==0.12.0     # frozen until https://github.com/ITISFoundation/osparc-simcore/pull/1396 is CLOSED
 lazy-object-proxy~=1.4.3 # cannot upgrade due to contraints in openapi-core
-aiozipkin~=0.7.1         # 1.X has an issue with no content responses
-
+aiozipkin
 
 aiohttp
 aiopg[sa]
 jsonschema
 prometheus_client
 attrs
-trafaret
 
 werkzeug

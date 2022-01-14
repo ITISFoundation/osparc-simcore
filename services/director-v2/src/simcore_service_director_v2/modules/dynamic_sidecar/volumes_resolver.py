@@ -4,19 +4,17 @@ from typing import Any, Dict
 
 
 class DynamicSidecarVolumesPathsResolver:
-    BASE_PATH: str = "/dy-volumes"
-
-    @classmethod
-    def _name_from_path(cls, path: Path) -> str:
-        return str(path).replace(os.sep, "_")
+    BASE_PATH: Path = Path("/dy-volumes")
 
     @classmethod
     def _target(cls, state_path: Path) -> str:
-        return f"{cls.BASE_PATH}/{cls._name_from_path(state_path).strip('_')}"
+        target_path = cls.BASE_PATH / state_path.relative_to("/")
+        return f"{target_path}"
 
     @classmethod
     def _source(cls, compose_namespace: str, state_path: Path) -> str:
-        return f"{compose_namespace}{cls._name_from_path(state_path)}"
+        volume_name = f"{state_path}".replace(os.sep, "_")
+        return f"{compose_namespace}{volume_name}"
 
     @classmethod
     def mount_entry(

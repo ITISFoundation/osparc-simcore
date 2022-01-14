@@ -15,7 +15,7 @@ from pydantic import ConfigError, ValidationError, validator
 from pydantic.main import BaseModel
 from pydantic.networks import HttpUrl
 from pytest_simcore.helpers.utils_services import list_fake_file_consumers
-from simcore_service_webserver.constants import APP_JSONSCHEMA_SPECS_KEY
+from simcore_service_webserver._constants import APP_JSONSCHEMA_SPECS_KEY
 from simcore_service_webserver.projects import projects_api
 from simcore_service_webserver.studies_dispatcher._projects import (
     UserInfo,
@@ -56,7 +56,7 @@ def test_download_link_validators():
 
 
 @pytest.mark.parametrize("view", list_fake_file_consumers())
-def test_create_project_with_viewer(project_jsonschema, view):
+async def test_create_project_with_viewer(project_jsonschema, view):
 
     view["label"] = view.pop("display_name")
     viewer = ViewerInfo(**view)
@@ -82,7 +82,7 @@ def test_create_project_with_viewer(project_jsonschema, view):
     print(json.dumps(project_in, indent=2))
 
     # This operation is done exactly before adding to the database in projects_handlers.create_projects
-    projects_api.validate_project(
+    await projects_api.validate_project(
         app={APP_JSONSCHEMA_SPECS_KEY: {"projects": project_jsonschema}},
         project=project_in,
     )

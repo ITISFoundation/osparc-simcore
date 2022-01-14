@@ -27,7 +27,6 @@ Makefile                                  @pcrespov, @sanderegg
 /services/director*/                      @sanderegg, @pcrespov
 /services/dynamic-sidecar/                @GitHK
 /services/migration/                      @pcrespov
-/services/sidecar/                        @pcrespov, @mguidon
 /services/storage/                        @mguidon, @pcrespov
 /services/static-webserver                @GitHK
 /services/web/client/                     @odeimaiz, @ignapas

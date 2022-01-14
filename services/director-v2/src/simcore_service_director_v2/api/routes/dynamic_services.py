@@ -13,6 +13,7 @@ from models_library.services import ServiceKeyVersion
 from models_library.sharing_networks import SharingNetworks
 from starlette import status
 from starlette.datastructures import URL
+from pydantic import BaseModel
 
 from ...core.settings import DynamicServicesSettings, DynamicSidecarSettings
 from ...models.domains.dynamic_services import (
@@ -28,7 +29,10 @@ from ...modules.dynamic_sidecar.docker_api import (
     list_dynamic_sidecar_services,
     get_networks_ids,
 )
-from ...modules.dynamic_sidecar.errors import DynamicSidecarNotFoundError
+from ...modules.dynamic_sidecar.errors import (
+    DynamicSidecarNotFoundError,
+    LegacyServiceIsNotSupportedError,
+)
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 from ...utils.logging_utils import log_decorator
 from ...utils.routes import NoContentResponse
@@ -99,11 +103,14 @@ async def create_dynamic_service(
     ),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> Union[DynamicServiceOut, RedirectResponse]:
+
     simcore_service_labels: SimcoreServiceLabels = (
         await director_v0_client.get_service_labels(
             service=ServiceKeyVersion(key=service.key, version=service.version)
         )
     )
+
+    # LEGACY (backwards compatibility)
     if not simcore_service_labels.needs_dynamic_sidecar:
         # forward to director-v0
         redirect_url_with_query = director_v0_client.client.base_url.copy_with(
@@ -120,6 +127,7 @@ async def create_dynamic_service(
         logger.debug("Redirecting %s", redirect_url_with_query)
         return RedirectResponse(str(redirect_url_with_query))
 
+    #
     if not await is_dynamic_service_running(
         service.node_uuid, dynamic_services_settings.DYNAMIC_SIDECAR
     ):
@@ -230,10 +238,7 @@ async def service_retrieve_data_on_ports(
         return RetrieveDataOutEnveloped.parse_obj(response.json())
 
 
-from pydantic import BaseModel
-
-
-class Item(BaseModel):
+class AttachNetworkCreateItem(BaseModel):
     project_id: ProjectID
     sharing_networks: SharingNetworks
 
@@ -251,7 +256,7 @@ class Item(BaseModel):
 )
 @log_decorator(logger=logger)
 async def service_attach_networks_to_containers(
-    item: Item,
+    item: AttachNetworkCreateItem,
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
 ) -> None:
     network_names_to_ids: Dict[str, str] = await get_networks_ids(
@@ -260,3 +265,20 @@ async def service_attach_networks_to_containers(
     await scheduler.attach_networks_to_containers(
         network_names_to_ids, item.sharing_networks
     )
+
+
+@router.post(
+    "/{node_uuid}:restart",
+    summary="Calls the dynamic service's restart containers endpoint",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+@log_decorator(logger=logger)
+async def service_restart_containers(
+    node_uuid: NodeID, scheduler: DynamicSidecarsScheduler = Depends(get_scheduler)
+) -> NoContentResponse:
+    try:
+        await scheduler.restart_containers(node_uuid)
+    except DynamicSidecarNotFoundError as error:
+        raise LegacyServiceIsNotSupportedError() from error
+
+    return NoContentResponse()

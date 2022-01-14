@@ -6,6 +6,7 @@
 --requirement ../../../packages/models-library/requirements/_base.in
 
 aio-pika
+aiodocker
 alembic
 click
 coverage

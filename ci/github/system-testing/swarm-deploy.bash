@@ -27,7 +27,15 @@ install() {
 }
 
 test() {
-  pytest --color=yes --cov-report=term-missing -v tests/swarm-deploy --log-level=DEBUG
+  # WARNING: this test is heavy. Due to limited CI machine power, please do not
+  # add too much overhead (e.g. low log-level etc)
+  pytest \
+    --color=yes \
+    --cov-report=term-missing \
+    -v \
+    --durations=5 \
+    --log-level=INFO \
+    tests/swarm-deploy
 }
 
 clean_up() {

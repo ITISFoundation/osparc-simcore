@@ -107,7 +107,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._studiesContainer.nextRequest = null;
     },
 
-    // overriden
+    // overridden
     _initResources: function() {
       this._showLoadingPage(this.tr("Starting..."));
 
@@ -461,10 +461,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
 
         userStudy["resourceType"] = "study";
-        // do not add secondary studies to the list
-        if (osparc.data.model.Study.isStudySecondary(userStudy)) {
-          return;
-        }
         const idx = studyList.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === userStudy["uuid"]);
         if (idx !== -1) {
           return;
@@ -669,7 +665,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getSaveAsTemplateMenuButton: function(studyData) {
       const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Publish as Template"));
       saveAsTemplateButton.addListener("execute", () => {
-        const saveAsTemplateView = new osparc.component.study.SaveAsTemplate(studyData.uuid, studyData);
+        const saveAsTemplateView = new osparc.component.study.SaveAsTemplate(studyData);
         const title = this.tr("Publish as Template");
         const window = osparc.ui.window.Window.popUpInWindow(saveAsTemplateView, title, 400, 300);
         saveAsTemplateView.addListener("finished", e => {

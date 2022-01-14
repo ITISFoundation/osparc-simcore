@@ -36,3 +36,7 @@ class DynamicSidecarNetworkError(DirectorException):
 
 class EntrypointContainerNotFoundError(DirectorException):
     """Raised while the entrypoint container was nto yet started"""
+
+
+class LegacyServiceIsNotSupportedError(DirectorException):
+    """This API is not implemented by the director-v0"""

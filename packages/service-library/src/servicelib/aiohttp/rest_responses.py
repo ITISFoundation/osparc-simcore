@@ -2,13 +2,14 @@
 
 """
 import inspect
+import json
 from typing import Any, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 import attr
 from aiohttp import web, web_exceptions
 from aiohttp.web_exceptions import HTTPError, HTTPException
 
-from .rest_codecs import json, jsonify
+from ..json_serialization import json_dumps
 from .rest_models import ErrorItemType, ErrorType, LogMessageType
 
 ENVELOPE_KEYS = ("data", "error")
@@ -77,7 +78,7 @@ def create_data_response(
         else:
             payload = data
 
-        response = web.json_response(payload, dumps=jsonify)
+        response = web.json_response(payload, dumps=json_dumps)
     except (TypeError, ValueError) as err:
         response = create_error_response(
             [
@@ -123,7 +124,7 @@ def create_error_response(
     payload = wrap_as_envelope(error=attr.asdict(error))
 
     response = http_error_cls(
-        reason=reason, text=jsonify(payload), content_type=JSON_CONTENT_TYPE
+        reason=reason, text=json_dumps(payload), content_type=JSON_CONTENT_TYPE
     )
 
     return response
@@ -136,7 +137,9 @@ def create_log_response(msg: str, level: str) -> web.Response:
     """
     # TODO: DEPRECATE
     msg = LogMessageType(msg, level)
-    response = web.json_response(data={"data": attr.asdict(msg), "error": None})
+    response = web.json_response(
+        data={"data": attr.asdict(msg), "error": None}, dumps=json_dumps
+    )
     return response
 
 

@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
-from simcore_service_director_v2.modules import dask_client
+from servicelib.fastapi.tracing import setup_tracing
 from starlette import status
 from starlette.exceptions import HTTPException
 
@@ -16,9 +16,8 @@ from ..api.errors.http_error import (
 from ..api.errors.validation_error import http422_error_handler
 from ..meta import API_VERSION, API_VTAG, PROJECT_NAME, SUMMARY
 from ..modules import (
-    celery,
     comp_scheduler,
-    dask_client,
+    dask_clients_pool,
     db,
     director_v0,
     dynamic_services,
@@ -36,7 +35,7 @@ logger = logging.getLogger(__name__)
 def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings is None:
         settings = AppSettings.create_from_envs()
-
+    assert settings  # nosec
     logging.basicConfig(level=settings.LOG_LEVEL.value)
     logging.root.setLevel(settings.LOG_LEVEL.value)
     logger.debug(settings.json(indent=2))
@@ -65,9 +64,6 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings.POSTGRES.DIRECTOR_V2_POSTGRES_ENABLED:
         db.setup(app, settings.POSTGRES)
 
-    if settings.CELERY.DIRECTOR_V2_CELERY_ENABLED:
-        celery.setup(app, settings.CELERY)
-
     if settings.DYNAMIC_SERVICES.DIRECTOR_V2_DYNAMIC_SERVICES_ENABLED:
         dynamic_services.setup(app, settings.DYNAMIC_SERVICES)
 
@@ -78,16 +74,14 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
         dynamic_sidecar.setup(app)
 
     if settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_CLIENT_ENABLED:
-        dask_client.setup(app, settings.DASK_SCHEDULER)
+        dask_clients_pool.setup(app, settings.DASK_SCHEDULER)
 
     if settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_SCHEDULER_ENABLED:
         rabbitmq.setup(app)
-
-    if (
-        settings.CELERY_SCHEDULER.DIRECTOR_V2_CELERY_SCHEDULER_ENABLED
-        or settings.DASK_SCHEDULER.DIRECTOR_V2_DASK_SCHEDULER_ENABLED
-    ):
         comp_scheduler.setup(app)
+
+    if settings.DIRECTOR_V2_TRACING:
+        setup_tracing(app, settings.DIRECTOR_V2_TRACING)
 
     # setup app --
     app.add_event_handler("startup", on_startup)

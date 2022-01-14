@@ -15,10 +15,10 @@ import passlib.hash
 from aiohttp import web
 from aiohttp_jinja2 import render_string
 from passlib import pwd
-
 from servicelib.aiohttp.rest_models import LogMessageType
+from servicelib.json_serialization import json_dumps
 
-from ..resources import resources
+from .._resources import resources
 from .cfg import cfg  # TODO: remove this singleton!!!
 
 log = getLogger(__name__)
@@ -107,7 +107,8 @@ def common_themed(template):
 
 def flash_response(msg: str, level: str = "INFO") -> web.Response:
     response = web.json_response(
-        data={"data": attr.asdict(LogMessageType(msg, level)), "error": None}
+        data={"data": attr.asdict(LogMessageType(msg, level)), "error": None},
+        dumps=json_dumps,
     )
     return response
 

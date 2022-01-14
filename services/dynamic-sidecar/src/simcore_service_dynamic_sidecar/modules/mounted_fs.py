@@ -36,11 +36,16 @@ class MountedVolumes:
     """
 
     def __init__(
-        self, inputs_path: Path, outputs_path: Path, state_paths: List[Path]
+        self,
+        inputs_path: Path,
+        outputs_path: Path,
+        state_paths: List[Path],
+        state_exclude: List[str],
     ) -> None:
         self.inputs_path: Path = inputs_path
         self.outputs_path: Path = outputs_path
         self.state_paths: List[Path] = state_paths
+        self.state_exclude: List[str] = state_exclude
 
         self._ensure_directories()
 
@@ -48,12 +53,12 @@ class MountedVolumes:
     def volume_name_inputs(self) -> str:
         """Same name as the namespace, to easily track components"""
         compose_namespace = get_settings().DYNAMIC_SIDECAR_COMPOSE_NAMESPACE
-        return f"{compose_namespace}_inputs"
+        return f"{compose_namespace}{_name_from_full_path(self.inputs_path)}"
 
     @cached_property
     def volume_name_outputs(self) -> str:
         compose_namespace = get_settings().DYNAMIC_SIDECAR_COMPOSE_NAMESPACE
-        return f"{compose_namespace}_outputs"
+        return f"{compose_namespace}{_name_from_full_path(self.outputs_path)}"
 
     def volume_name_state_paths(self) -> Generator[str, None, None]:
         compose_namespace = get_settings().DYNAMIC_SIDECAR_COMPOSE_NAMESPACE
@@ -62,15 +67,15 @@ class MountedVolumes:
 
     @cached_property
     def disk_inputs_path(self) -> Path:
-        return _ensure_path(DY_VOLUMES / "inputs")
+        return _ensure_path(DY_VOLUMES / self.inputs_path.relative_to("/"))
 
     @cached_property
     def disk_outputs_path(self) -> Path:
-        return _ensure_path(DY_VOLUMES / "outputs")
+        return _ensure_path(DY_VOLUMES / self.outputs_path.relative_to("/"))
 
     def disk_state_paths(self) -> Generator[Path, None, None]:
         for state_path in self.state_paths:
-            yield _ensure_path(DY_VOLUMES / _name_from_full_path(state_path).strip("_"))
+            yield _ensure_path(DY_VOLUMES / state_path.relative_to("/"))
 
     def _ensure_directories(self) -> None:
         """
@@ -104,6 +109,7 @@ def setup_mounted_fs() -> MountedVolumes:
         inputs_path=settings.DY_SIDECAR_PATH_INPUTS,
         outputs_path=settings.DY_SIDECAR_PATH_OUTPUTS,
         state_paths=settings.DY_SIDECAR_STATE_PATHS,
+        state_exclude=settings.DY_SIDECAR_STATE_EXCLUDE,
     )
 
     return _mounted_volumes

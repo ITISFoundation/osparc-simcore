@@ -37,10 +37,10 @@ logger = logging.getLogger(__name__)
 _FRONTEND_SERVICES_CATALOG: Dict[str, ServiceDockerData] = {
     meta.key: meta
     for meta in iter_service_docker_data()
-    if any(name in meta.key for name in ["file-picker", "parameter"])
+    if any(name in meta.key for name in ["file-picker", "parameter", "data-iterator"])
 }
 assert (  # nosec
-    len(_FRONTEND_SERVICES_CATALOG) == 4
+    len(_FRONTEND_SERVICES_CATALOG) == 5
 ), "If this fails, review filter above and update"  # nosec
 
 
@@ -137,7 +137,7 @@ class CompTasksRepository(BaseRepository):
             ):
                 task_db = CompTaskAtDB.from_orm(row)
                 tasks.append(task_db)
-
+        logger.debug("found the tasks: %s", f"{tasks=}")
         return tasks
 
     @log_decorator(logger=logger)
@@ -196,10 +196,16 @@ class CompTasksRepository(BaseRepository):
                 result = await conn.execute(on_update_stmt)
                 row: RowProxy = await result.fetchone()
                 inserted_comp_tasks_db.append(CompTaskAtDB.from_orm(row))
+            logger.debug(
+                "inserted the following tasks in comp_tasks: %s",
+                f"{inserted_comp_tasks_db=}",
+            )
             return inserted_comp_tasks_db
 
     @log_decorator(logger=logger)
-    async def mark_project_tasks_as_aborted(self, project_id: ProjectID) -> None:
+    async def mark_project_published_tasks_as_aborted(
+        self, project_id: ProjectID
+    ) -> None:
         # block all pending tasks, so the sidecars stop taking them
         async with self.db_engine.acquire() as conn:
             await conn.execute(
@@ -207,19 +213,16 @@ class CompTasksRepository(BaseRepository):
                 .where(
                     (comp_tasks.c.project_id == f"{project_id}")
                     & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
-                    & (
-                        (comp_tasks.c.state == StateType.PUBLISHED)
-                        | (comp_tasks.c.state == StateType.PENDING)
-                    )
+                    & (comp_tasks.c.state == StateType.PUBLISHED)
                 )
                 .values(state=StateType.ABORTED)
             )
+        logger.debug("marked project %s published tasks as aborted", f"{project_id=}")
 
     @log_decorator(logger=logger)
     async def set_project_task_job_id(
         self, project_id: ProjectID, task: NodeID, job_id: str
     ) -> None:
-        # block all pending tasks, so the sidecars stop taking them
         async with self.db_engine.acquire() as conn:
             await conn.execute(
                 sa.update(comp_tasks)
@@ -229,12 +232,17 @@ class CompTasksRepository(BaseRepository):
                 )
                 .values(job_id=job_id)
             )
+        logger.debug(
+            "set project %s task %s with job id: %s",
+            f"{project_id=}",
+            f"{task=}",
+            f"{job_id=}",
+        )
 
     @log_decorator(logger=logger)
     async def set_project_tasks_state(
         self, project_id: ProjectID, tasks: List[NodeID], state: RunningState
     ) -> None:
-        # block all pending tasks, so the sidecars stop taking them
         async with self.db_engine.acquire() as conn:
             await conn.execute(
                 sa.update(comp_tasks)
@@ -244,6 +252,12 @@ class CompTasksRepository(BaseRepository):
                 )
                 .values(state=RUNNING_STATE_TO_DB[state])
             )
+        logger.debug(
+            "set project %s tasks %s with state %s",
+            f"{project_id=}",
+            f"{tasks=}",
+            f"{state=}",
+        )
 
     @log_decorator(logger=logger)
     async def delete_tasks_from_project(self, project: ProjectAtDB) -> None:
@@ -253,3 +267,4 @@ class CompTasksRepository(BaseRepository):
                     comp_tasks.c.project_id == str(project.uuid)
                 )
             )
+        logger.debug("deleted tasks from project %s", f"{project.uuid=}")

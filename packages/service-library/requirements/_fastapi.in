@@ -3,7 +3,6 @@
 #
 #
 
---constraint ../../../requirements/constraints.txt
 --constraint ./_base.in
 
 fastapi

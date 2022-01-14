@@ -22,12 +22,9 @@ pytest_simcore_ops_services_selection = [
 def test_read_healthcheck(
     director_mockup: MockRouter, app: FastAPI, client: TestClient
 ):
-    import os
-
-    print(os.environ)
     response = client.get("/")
     assert response.status_code == 200
-    assert response.text == '":-)"'
+    assert response.text
 
 
 def test_read_meta(director_mockup: MockRouter, app: FastAPI, client: TestClient):

@@ -69,9 +69,15 @@ class CompPipelinesRepository(BaseRepository):
             state=RunningState.PUBLISHED if publish else RunningState.NOT_STARTED,
         )
         insert_stmt = insert(comp_pipeline).values(**pipeline_at_db.dict(by_alias=True))
+        # FIXME: This is not a nice thing. this part of the information should be kept in comp_runs.
+        update_exclusion_policy = set()
+        if not dag_graph.nodes():
+            update_exclusion_policy.add("dag_adjacency_list")
         on_update_stmt = insert_stmt.on_conflict_do_update(
             index_elements=[comp_pipeline.c.project_id],
-            set_=pipeline_at_db.dict(by_alias=True, exclude_unset=True),
+            set_=pipeline_at_db.dict(
+                by_alias=True, exclude_unset=True, exclude=update_exclusion_policy
+            ),
         )
         async with self.db_engine.acquire() as conn:
             await conn.execute(on_update_stmt)

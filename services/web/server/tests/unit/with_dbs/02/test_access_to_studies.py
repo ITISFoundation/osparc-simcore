@@ -11,7 +11,7 @@ import logging
 import re
 from copy import deepcopy
 from pprint import pprint
-from typing import Dict
+from typing import AsyncIterator, Dict
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
@@ -24,7 +24,7 @@ from pytest_simcore.helpers.utils_projects import NewProject, delete_all_project
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
-from simcore_service_webserver.projects.projects_api import delete_project_from_db
+from simcore_service_webserver.projects.projects_api import delete_project
 from simcore_service_webserver.users_api import delete_user, is_user_guest
 
 SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
@@ -110,7 +110,7 @@ async def unpublished_project(client, fake_project):
 
 
 @pytest.fixture(autouse=True)
-async def director_v2_mock(director_v2_service_mock) -> aioresponses:
+async def director_v2_mock(director_v2_service_mock) -> AsyncIterator[aioresponses]:
     yield director_v2_service_mock
 
 
@@ -286,7 +286,7 @@ async def test_access_study_anonymously(
 
 
 @pytest.fixture
-async def auto_delete_projects(client) -> None:
+async def auto_delete_projects(client) -> AsyncIterator[None]:
     yield
     await delete_all_projects(client.app)
 
@@ -351,7 +351,7 @@ async def test_access_cookie_of_expired_user(
         assert len(projects) == 1
 
         prj_id = projects[0]["uuid"]
-        await delete_project_from_db(app, prj_id, uid)
+        await delete_project(app, prj_id, uid)
         await delete_user(app, uid)
         return uid
 

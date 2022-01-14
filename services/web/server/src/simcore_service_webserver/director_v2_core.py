@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 from uuid import UUID
 
 import aiohttp
@@ -9,24 +9,37 @@ from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.settings.services_common import ServicesCommonSettings
 from models_library.sharing_networks import SharingNetworks
+from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
-from tenacity import AsyncRetrying, stop_after_attempt, wait_exponential
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_random
 from yarl import URL
 
+from .director_v2_abc import AbstractProjectRunPolicy
 from .director_v2_settings import Directorv2Settings, get_client_session, get_settings
 
 log = logging.getLogger(__file__)
 
+_APP_DIRECTOR_V2_CLIENT_KEY = f"{__name__}.DirectorV2ApiClient"
 
 SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)  # type:ignore
 SERVICE_RETRIEVE_HTTP_TIMEOUT = ClientTimeout(
     total=60 * 60, connect=None, sock_connect=5  # type:ignore
 )
+DEFAULT_RETRY_POLICY = dict(
+    wait=wait_random(0, 1),
+    stop=stop_after_attempt(2),
+    reraise=True,
+    before_sleep=before_sleep_log(log, logging.WARNING),
+)
+
 
 DataType = Dict[str, Any]
-DataBody = Union[DataType, List[DataType]]
+DataBody = Union[DataType, List[DataType], None]
 
 # base/ERRORS ------------------------------------------------
 
@@ -43,6 +56,41 @@ class DirectorServiceError(Exception):
 # base/HELPERS ------------------------------------------------
 
 
+class DirectorV2ApiClient:
+    def __init__(self, app: web.Application) -> None:
+        self._app = app
+        self._settings: Directorv2Settings = get_settings(app)
+        self._base_url = URL(self._settings.endpoint)
+
+    async def start(self, project_id: ProjectID, user_id: UserID, **options) -> str:
+        computation_task_out = await _request_director_v2(
+            self._app,
+            "POST",
+            self._base_url / "computations",
+            expected_status=web.HTTPCreated,
+            data={"user_id": user_id, "project_id": project_id, **options},
+        )
+        assert isinstance(computation_task_out, dict)  # nosec
+        return computation_task_out["id"]
+
+    async def stop(self, project_id: ProjectID, user_id: UserID):
+        await _request_director_v2(
+            self._app,
+            "POST",
+            self._base_url / "computations" / f"{project_id}:stop",
+            expected_status=web.HTTPAccepted,
+            data={"user_id": user_id},
+        )
+
+
+def get_client(app: web.Application) -> Optional[DirectorV2ApiClient]:
+    return app.get(_APP_DIRECTOR_V2_CLIENT_KEY)
+
+
+def set_client(app: web.Application, obj: DirectorV2ApiClient):
+    app[_APP_DIRECTOR_V2_CLIENT_KEY] = obj
+
+
 async def _request_director_v2(
     app: web.Application,
     method: str,
@@ -53,27 +101,27 @@ async def _request_director_v2(
     **kwargs,
 ) -> DataBody:
 
-    session = get_client_session(app)
     try:
-        async with session.request(
-            method, url, headers=headers, json=data, **kwargs
-        ) as response:
-            payload: Union[Dict, str] = (
-                await response.json()
-                if response.content_type == "application/json"
-                else await response.text()
-            )
-
-            # NOTE:
-            # - `sometimes director-v0` (via redirects) replies
-            #   in plain text and this is considered an error
-            # - `director-v2` and `director-v0` can reply with 204 no content
-            if response.status != expected_status.status_code or (
-                response.status != web.HTTPNoContent and isinstance(payload, str)
-            ):
-                raise DirectorServiceError(response.status, reason=str(payload))
-
-            return payload
+        async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
+            with attempt:
+                session = get_client_session(app)
+                async with session.request(
+                    method, url, headers=headers, json=data, **kwargs
+                ) as response:
+                    payload = (
+                        await response.json()
+                        if response.content_type == "application/json"
+                        else await response.text()
+                    )
+                    # NOTE:
+                    # - `sometimes director-v0` (via redirects) replies
+                    #   in plain text and this is considered an error
+                    # - `director-v2` and `director-v0` can reply with 204 no content
+                    if response.status != expected_status.status_code or isinstance(
+                        payload, str
+                    ):
+                        raise DirectorServiceError(response.status, reason=f"{payload}")
+                    return payload
 
     # TODO: enrich with https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
     except asyncio.TimeoutError as err:
@@ -87,9 +135,44 @@ async def _request_director_v2(
             web.HTTPServiceUnavailable.status_code,
             reason=f"request to director-v2 service unexpected error {err}",
         ) from err
+    log.error("Unexpected result calling %s, %s", f"{url=}", f"{method=}")
+    raise DirectorServiceError(
+        web.HTTPClientError.status_code, reason="Unexpected client error"
+    )
 
 
-# CORE FUNCTIONALITY ------------------------------------------------
+# POLICY ------------------------------------------------
+class DefaultProjectRunPolicy(AbstractProjectRunPolicy):
+    # pylint: disable=unused-argument
+
+    async def get_runnable_projects_ids(
+        self,
+        request: web.Request,
+        project_uuid: ProjectID,
+    ) -> List[ProjectID]:
+        return [
+            project_uuid,
+        ]
+
+    async def get_or_create_runnable_projects(
+        self,
+        request: web.Request,
+        project_uuid: ProjectID,
+    ) -> Tuple[List[ProjectID], List[int]]:
+        """
+        Returns ids and refid of projects that can run
+        If project_uuid is a std-project, then it returns itself
+        If project_uuid is a meta-project, then it returns iterations
+        """
+        return (
+            [
+                project_uuid,
+            ],
+            [],
+        )
+
+
+# calls to director-v2 API ------------------------------------------------
 
 
 async def is_healthy(app: web.Application) -> bool:
@@ -134,9 +217,7 @@ async def create_or_update_pipeline(
 async def get_computation_task(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> Optional[ComputationTask]:
-
     settings: Directorv2Settings = get_settings(app)
-
     backend_url = URL(f"{settings.endpoint}/computations/{project_id}").update_query(
         user_id=user_id
     )
@@ -147,12 +228,15 @@ async def get_computation_task(
             app, "GET", backend_url, expected_status=web.HTTPAccepted
         )
         task_out = ComputationTask.parse_obj(computation_task_out_dict)
+        log.debug("found computation task: %s", f"{task_out=}")
         return task_out
     except DirectorServiceError as exc:
         if exc.status == web.HTTPNotFound.status_code:
             # the pipeline might not exist and that is ok
             return
-        log.warning("getting pipeline for project %s failed: %s.", project_id, exc)
+        log.warning(
+            "getting pipeline for project %s failed: %s.", f"{project_id=}", exc
+        )
 
 
 @log_decorator(logger=log)
@@ -321,22 +405,14 @@ async def stop_services(
     await logged_gather(*services_to_stop)
 
 
-def _retry_parameters() -> Dict[str, Any]:
-    return dict(stop=stop_after_attempt(3), wait=wait_exponential(), reraise=True)
-
-
 @log_decorator(logger=log)
 async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
     settings: Directorv2Settings = get_settings(app)
     backend_url = URL(settings.endpoint) / "dynamic_services" / f"{node_uuid}"
 
-    # sometimes the director-v2 cannot be reached causing the service to fail
-    # retrying 3 times before giving up for good
-    async for attempt in AsyncRetrying(**_retry_parameters()):
-        with attempt:
-            service_state = await _request_director_v2(
-                app, "GET", backend_url, expected_status=web.HTTPOk
-            )
+    service_state = await _request_director_v2(
+        app, "GET", backend_url, expected_status=web.HTTPOk
+    )
 
     assert isinstance(service_state, dict)  # nosec
     return service_state
@@ -356,16 +432,14 @@ async def retrieve(
     )
     body = dict(port_keys=port_keys)
 
-    async for attempt in AsyncRetrying(**_retry_parameters()):
-        with attempt:
-            retry_result = await _request_director_v2(
-                app,
-                "POST",
-                backend_url,
-                expected_status=web.HTTPOk,
-                data=body,
-                timeout=timeout,
-            )
+    retry_result = await _request_director_v2(
+        app,
+        "POST",
+        backend_url,
+        expected_status=web.HTTPOk,
+        data=body,
+        timeout=timeout,
+    )
 
     assert isinstance(retry_result, dict)  # nosec
     return retry_result
@@ -389,4 +463,23 @@ async def attach_networks_to_containers(
     log.debug("Request body %s", body)
     await _request_director_v2(
         app, "POST", backend_url, expected_status=web.HTTPOk, data=body, timeout=timeout
+    )
+
+
+async def restart(app: web.Application, node_uuid: str) -> None:
+    # when triggering retrieve endpoint
+    # this will allow to sava bigger datasets from the services
+    timeout = ServicesCommonSettings().restart_containers_timeout
+
+    director2_settings: Directorv2Settings = get_settings(app)
+    backend_url = (
+        URL(director2_settings.endpoint) / "dynamic_services" / f"{node_uuid}:restart"
+    )
+
+    await _request_director_v2(
+        app,
+        "POST",
+        backend_url,
+        expected_status=web.HTTPOk,
+        timeout=timeout,
     )

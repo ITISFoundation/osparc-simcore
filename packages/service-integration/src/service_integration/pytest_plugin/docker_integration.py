@@ -153,13 +153,13 @@ def docker_container(
         )
         response = container.wait()
         if response["StatusCode"] > 0:
-            logs = container.logs(timestamps=True)
+            logs = container.logs(timestamps=True, tail=1000)
             pytest.fail(
                 "The container stopped with exit code {}\n\n\ncommand:\n {}, \n\n\nlog:\n{}".format(
                     response["StatusCode"],
                     "run",
                     pformat(
-                        (container.logs(timestamps=True).decode("UTF-8")).split("\n"),
+                        (logs.decode("UTF-8")).split("\n"),
                         width=200,
                     ),
                 )
@@ -175,7 +175,9 @@ def docker_container(
                 exc.exit_status,
                 exc.command,
                 pformat(
-                    (container.logs(timestamps=True).decode("UTF-8")).split("\n"),
+                    (container.logs(timestamps=True, tail=1000).decode("UTF-8")).split(
+                        "\n"
+                    ),
                     width=200,
                 )
                 if container

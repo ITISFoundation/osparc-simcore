@@ -14,8 +14,8 @@ import sys
 import textwrap
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, List
-from unittest.mock import patch
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, List
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import aioredis
@@ -26,6 +26,7 @@ import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
 import sqlalchemy as sa
 import trafaret_config
+from _helpers import MockedStorageSubsystem  # type: ignore
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pytest_simcore.helpers.utils_login import NewUser
@@ -33,9 +34,9 @@ from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KE
 from servicelib.common_aiopg_utils import DSN
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver import rest
+from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.application_config import app_schema as app_schema
-from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
+from simcore_service_webserver.application__schema import app_schema as app_schema
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
@@ -51,12 +52,12 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 @pytest.fixture(autouse=True)
-def disable_swagger_doc_genertion() -> Iterator[None]:
+def disable_swagger_doc_generation() -> Iterator[None]:
     """
     by not enabling the swagger documentation, 1.8s per test is gained
     """
     with patch.dict(
-        rest.setup.__wrapped__.__kwdefaults__, {"swagger_doc_enabled": False}
+        rest.setup_rest.__wrapped__.__kwdefaults__, {"swagger_doc_enabled": False}
     ):
         yield
 
@@ -210,29 +211,28 @@ def computational_system_mock(mocker):
 
 
 @pytest.fixture
-async def storage_subsystem_mock(loop, mocker):
+async def storage_subsystem_mock(loop, mocker) -> MockedStorageSubsystem:
     """
     Patches client calls to storage service
 
     Patched functions are exposed within projects but call storage subsystem
     """
-    # requests storage to copy data
-    mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.copy_data_folders_from_project"
-    )
 
     async def _mock_copy_data_from_project(*args):
         return args[2]
 
-    mock.side_effect = _mock_copy_data_from_project
+    mock = mocker.patch(
+        "simcore_service_webserver.projects.projects_handlers.copy_data_folders_from_project",
+        autospec=True,
+        side_effect=_mock_copy_data_from_project,
+    )
 
-    # requests storage to delete data
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project",
         side_effect=async_mock,
     )
-    return mock, mock1
+    return MockedStorageSubsystem(mock, mock1)
 
 
 @pytest.fixture
@@ -245,7 +245,7 @@ def asyncpg_storage_system_mock(mocker):
 
 
 @pytest.fixture
-async def mocked_director_v2_api(loop, mocker):
+async def mocked_director_v2_api(loop, mocker) -> Dict[str, MagicMock]:
     mock = {}
 
     #
@@ -401,7 +401,9 @@ async def primary_group(client, logged_user) -> Dict[str, str]:
 
 
 @pytest.fixture
-async def standard_groups(client, logged_user: Dict) -> List[Dict[str, str]]:
+async def standard_groups(
+    client, logged_user: Dict
+) -> AsyncIterator[List[Dict[str, str]]]:
     # create a separate admin account to create some standard groups for the logged user
     sparc_group = {
         "gid": "5",  # this will be replaced
