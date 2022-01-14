@@ -7,14 +7,14 @@ from aiopg.sa.engine import Engine
 from pydantic import BaseModel, ValidationError, validator
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ._meta import API_VTAG
-from .constants import (
+from ._constants import (
     APP_DB_ENGINE_KEY,
     APP_PRODUCTS_KEY,
     RQ_PRODUCT_FRONTEND_KEY,
     RQ_PRODUCT_KEY,
     X_PRODUCT_NAME_HEADER,
 )
+from ._meta import API_VTAG
 from .db_models import products
 from .statics import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
 

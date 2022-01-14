@@ -13,17 +13,18 @@ from models_library.projects import ProjectID
 from models_library.projects_state import ProjectState, ProjectStatus
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
+from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
-from simcore_service_webserver.director_v2_core import DirectorServiceError
 
 from .. import catalog, director_v2_api
+from .._constants import RQ_PRODUCT_KEY
 from .._meta import api_version_prefix as VTAG
-from ..constants import RQ_PRODUCT_KEY
+from ..director_v2_core import DirectorServiceError
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import PROJECT_ID_KEY, managed_resource
-from ..rest_utils import RESPONSE_MODEL_POLICY
+from ..rest_constants import RESPONSE_MODEL_POLICY
 from ..security_api import check_permission
 from ..security_decorators import permission_required
 from ..storage_api import copy_data_folders_from_project
@@ -37,6 +38,12 @@ from .projects_utils import (
     get_project_unavailable_services,
     project_uses_available_services,
 )
+
+# When the user requests a project with a repo, the working copy might differ from
+# the repo project. A middleware in the meta module (if active) will resolve
+# the working copy and redirect to the appropriate project entrypoint. Nonetheless, the
+# response needs to refer to the uuid of the request and this is passed through this request key
+RQ_REQUESTED_REPO_PROJECT_UUID_KEY = f"{__name__}.RQT_REQUESTED_REPO_PROJECT_UUID_KEY"
 
 OVERRIDABLE_DOCUMENT_KEYS = [
     "name",
@@ -288,6 +295,10 @@ async def get_project(request: web.Request):
                     f"for permission for the following services {formatted_services}"
                 )
             )
+
+        if new_uuid := request.get(RQ_REQUESTED_REPO_PROJECT_UUID_KEY):
+            project["uuid"] = new_uuid
+
         return {"data": project}
 
     except ProjectInvalidRightsError as exc:
@@ -473,11 +484,6 @@ async def delete_project(request: web.Request):
         raise web.HTTPNotFound(reason=f"Project {project_uuid} not found") from err
 
     raise web.HTTPNoContent(content_type="application/json")
-
-
-class HTTPLocked(web.HTTPClientError):
-    # pylint: disable=too-many-ancestors
-    status_code = 423
 
 
 @routes.post(f"/{VTAG}/projects/{{project_uuid}}:open")

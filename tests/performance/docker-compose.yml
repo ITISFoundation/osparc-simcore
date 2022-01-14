@@ -4,19 +4,19 @@ services:
   master:
     image: itisfoundation/locust:${LOCUST_VERSION}
     ports:
-     - "8089:8089"
+      - "8089:8089"
     volumes:
       - ./locust_files:/mnt/locust
       - ./locust_report:/reporting
     command: >
-      -f /mnt/locust/${LOCUST_FILE}
-      --host ${TARGET_URL}
-      --html /reporting/locust_html.html
-      ${LOCUST_OPTIONS}
-      --master
+      -f /mnt/locust/${LOCUST_FILE} --host ${TARGET_URL} --html
+      /reporting/locust_html.html ${LOCUST_OPTIONS} --master
 
   worker:
     image: itisfoundation/locust:${LOCUST_VERSION}
     volumes:
       - ./locust_files:/mnt/locust
     command: -f /mnt/locust/${LOCUST_FILE} --worker --master-host master
+    environment:
+      - SC_USER_NAME=${SC_USER_NAME}
+      - SC_PASSWORD=${SC_PASSWORD}

@@ -7,7 +7,7 @@ from servicelib.aiohttp.rest_routing import (
     map_handlers_with_operations,
 )
 
-from ..constants import APP_OPENAPI_SPECS_KEY
+from .._constants import APP_OPENAPI_SPECS_KEY
 from .config import inject_settings
 from .request_handlers import rest_handler_functions
 

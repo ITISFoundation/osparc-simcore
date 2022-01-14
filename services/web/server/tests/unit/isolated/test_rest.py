@@ -9,14 +9,13 @@ import jsonschema.validators
 import pytest
 import yaml
 from aiohttp import web
-
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.resources import resources
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.settings import setup_settings
 
 
 @pytest.fixture

@@ -4,7 +4,7 @@ from typing import Optional
 from pydantic import Field, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import BootMode
-from settings_library.logging_utils import MixinLoggingSettings
+from settings_library.utils_logging import MixinLoggingSettings
 
 
 def test_mixin_logging(monkeypatch):

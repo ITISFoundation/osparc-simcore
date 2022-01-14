@@ -45,6 +45,9 @@ PropertyName = constr(regex=PROPERTY_KEY_RE)
 FileName = constr(regex=FILENAME_RE)
 GroupId = PositiveInt
 
+ServiceKey = constr(regex=KEY_RE)
+ServiceVersion = constr(regex=VERSION_RE)
+
 
 class ServiceType(str, Enum):
     COMPUTATIONAL = "computational"
