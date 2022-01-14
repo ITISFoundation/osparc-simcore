@@ -52,6 +52,8 @@ if [ ${DASK_START_AS_SCHEDULER+x} ]; then
       "$@"
 
   else
+    # exec dask-scheduler --protocol tls --port 0 --host 0.0.0.0 --dashboard-address 0.0.0.0:0 --preload dask_gateway.scheduler_preload --dg-api-address 0.0.0.0:0 --dg-heartbeat-period 15 --dg-adaptive-period 3.0 --dg-idle-timeout 0.0
+    IFS=$(printf ' \n\t')
     exec "$@"
   fi
 
