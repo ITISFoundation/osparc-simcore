@@ -6,7 +6,6 @@ import asyncio
 import hashlib
 import itertools
 import os
-import pathlib
 import random
 import secrets
 import string
@@ -20,10 +19,6 @@ import pytest
 from faker import Faker
 from servicelib.archiving_utils import archive_dir, unarchive_dir
 from test_utils import print_tree  # pylint:disable=no-name-in-module
-
-# FIXTURES
-
-from test_utils import print_tree
 
 # FIXTURES
 
