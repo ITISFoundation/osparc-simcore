@@ -2,8 +2,10 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from asyncio import AbstractEventLoop
 from typing import Callable, Dict, Iterable, List
 
+import httpx
 import pytest
 import sqlalchemy as sa
 from _dask_helpers import DaskGatewayServer
@@ -108,19 +110,21 @@ def cluster(
         )
 
 
-def test_get_default_cluster_entrypoint(clusters_config: None, client: TestClient):
+async def test_get_default_cluster_entrypoint(
+    loop: AbstractEventLoop, clusters_config: None, async_client: httpx.AsyncClient
+):
     # This test checks that the default cluster is accessible
     # the default cluster is the osparc internal cluster available through a dask-scheduler
-    response = client.get("/v2/clusters/default")
+    response = await async_client.get("/v2/clusters/default")
     assert response.status_code == status.HTTP_200_OK
     default_cluster_out = ClusterOut.parse_obj(response.json())
-    response = client.get(f"/v2/clusters/{0}")
+    response = await async_client.get(f"/v2/clusters/{0}")
     assert response.status_code == status.HTTP_200_OK
     assert default_cluster_out == ClusterOut.parse_obj(response.json())
 
 
 async def test_local_dask_gateway_server(
-    loop, local_dask_gateway_server: DaskGatewayServer
+    loop: AbstractEventLoop, local_dask_gateway_server: DaskGatewayServer
 ):
     async with Gateway(
         local_dask_gateway_server.address,
@@ -169,9 +173,10 @@ async def test_local_dask_gateway_server(
                     assert len(cluster.scheduler_info.get("workers", 0)) == 0
 
 
-def test_get_cluster_entrypoint(
+async def test_get_cluster_entrypoint(
+    loop: AbstractEventLoop,
     clusters_config: None,
-    client: TestClient,
+    async_client: httpx.AsyncClient,
     local_dask_gateway_server: DaskGatewayServer,
     cluster: Callable[..., Cluster],
 ):
@@ -181,7 +186,7 @@ def test_get_cluster_entrypoint(
             username="pytest_user", password=local_dask_gateway_server.password
         ).dict(by_alias=True),
     )
-    response = client.get(f"/v2/clusters/{some_cluster.id}")
+    response = await async_client.get(f"/v2/clusters/{some_cluster.id}")
     assert response.status_code == status.HTTP_200_OK
     print(f"<-- received cluster details response {response=}")
     cluster_out = ClusterOut.parse_obj(response.json())
