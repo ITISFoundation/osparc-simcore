@@ -1091,7 +1091,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : this.getStudy().getUuid());
       this.__workbenchChanged();
 
-      this.__workbenchUI.resetSelectedNodes();
+      this.__workbenchUI.resetSelection();
     },
 
     __ungroupSelection: function() {
@@ -1121,7 +1121,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : this.getStudy().getUuid());
       this.__workbenchChanged();
 
-      this.__workbenchUI.resetSelectedNodes();
+      this.__workbenchUI.resetSelection();
     },
 
     __attachEventHandlers: function() {
