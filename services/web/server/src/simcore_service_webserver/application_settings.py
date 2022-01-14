@@ -7,7 +7,8 @@ from typing import Dict, Optional
 
 from aiohttp import web
 from models_library.basic_types import BootModeEnum, BuildTargetEnum
-from pydantic import BaseSettings, Field
+from pydantic import Field
+from settings_library.base import BaseCustomSettings
 
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, APP_NAME
@@ -16,7 +17,7 @@ from .utils import snake_to_camel
 log = logging.getLogger(__name__)
 
 
-class ApplicationSettings(BaseSettings):
+class ApplicationSettings(BaseCustomSettings):
     # CODE STATICS ---
     # settings defined by the code
 
