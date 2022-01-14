@@ -104,12 +104,10 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __setOutputValue: function(node, outputValue) {
+      node.setOutputData({
+        "outFile": outputValue
+      });
       const outputs = node.getOutputs();
-      outputs["outFile"]["value"] = outputValue;
-      node.setOutputs({});
-      node.setOutputs(outputs);
-      node.getStatus().setHasOutputs(Boolean(outputValue));
-      node.getStatus().setModified(false);
       const outLabel = osparc.file.FilePicker.getOutputLabel(outputs);
       if (outLabel) {
         node.setLabel(outputValue.label);
