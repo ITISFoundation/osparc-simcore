@@ -9,7 +9,6 @@ from servicelib.aiohttp import monitor_slow_callbacks
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from . import diagnostics_handlers
-from .diagnostics_config import DiagnosticsSettings
 from .diagnostics_core import (
     IncidentsRegistry,
     kINCIDENTS_REGISTRY,
@@ -19,6 +18,7 @@ from .diagnostics_core import (
     kSTART_SENSING_DELAY_SECS,
 )
 from .diagnostics_monitoring import setup_monitoring
+from .diagnostics_settings import DiagnosticsSettings
 
 log = logging.getLogger(__name__)
 

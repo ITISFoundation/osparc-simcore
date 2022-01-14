@@ -24,7 +24,7 @@ from tenacity import (
 )
 from yarl import URL
 
-from .constants import (
+from ._constants import (
     APP_SETTINGS_KEY,
     INDEX_RESOURCE_NAME,
     RQ_PRODUCT_FRONTEND_KEY,

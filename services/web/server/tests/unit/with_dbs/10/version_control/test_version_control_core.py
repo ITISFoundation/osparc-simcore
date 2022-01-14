@@ -9,7 +9,7 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, make_mocked_request
 from faker import Faker
-from simcore_service_webserver.constants import RQT_USERID_KEY
+from simcore_service_webserver._constants import RQT_USERID_KEY
 from simcore_service_webserver.projects import projects_api
 from simcore_service_webserver.version_control_core import (
     checkout_checkpoint,

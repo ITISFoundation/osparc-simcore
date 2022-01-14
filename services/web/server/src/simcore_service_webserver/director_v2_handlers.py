@@ -18,7 +18,6 @@ from .version_control_db import CommitID
 
 log = logging.getLogger(__file__)
 
-
 # TODO: connect routes
 routes = web.RouteTableDef()
 

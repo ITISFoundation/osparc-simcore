@@ -19,7 +19,7 @@ The design should remain as close to pydantic's conventions as possible to reduc
 since we are aware that future releases of pydantic will address part of the features we implement here
 (e.g. exclude fields)
 
-Usage of these tools are demonstrated in packages/models-library/tests/test_utils_models_factory.py
+Usage of these tools are demonstrated in packages/models-library/tests/test_utils_pydantic_models_factory.py
 """
 import json
 import warnings

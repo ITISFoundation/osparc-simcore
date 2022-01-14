@@ -6,9 +6,9 @@ from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
 from pydantic import Field, PositiveInt
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
-from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.tracing import TracingSettings
+from settings_library.utils_logging import MixinLoggingSettings
 
 logger = logging.getLogger(__name__)
 

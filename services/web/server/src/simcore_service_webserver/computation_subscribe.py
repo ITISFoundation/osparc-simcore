@@ -23,8 +23,8 @@ from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from servicelib.utils import logged_gather
 from tenacity import retry
 
-from .computation_config import ComputationSettings
-from .computation_config import get_settings as get_computation_settings
+from .computation_settings import ComputationSettings
+from .computation_settings import get_settings as get_computation_settings
 from .projects import projects_api
 from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 from .socketio.events import (

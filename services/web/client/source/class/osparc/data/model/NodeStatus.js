@@ -23,14 +23,23 @@
 qx.Class.define("osparc.data.model.NodeStatus", {
   extend: qx.core.Object,
 
-  construct: function() {
+  construct: function(node) {
     this.base(arguments);
+
+    this.setNode(node);
   },
 
   properties: {
+    node: {
+      check: "osparc.data.model.Node",
+      init: null,
+      nullable: false
+    },
+
     progress: {
       check: "Number",
-      init: 0,
+      nullable: true,
+      init: null,
       event: "changeProgress"
     },
 
@@ -102,6 +111,40 @@ qx.Class.define("osparc.data.model.NodeStatus", {
         this.setOutput("up-to-date");
       } else {
         console.error("Unknown output state");
+      }
+    },
+
+    setState: function(state) {
+      if (state == undefined || state === null) {
+        return;
+      }
+      if ("dependencies" in state) {
+        this.setDependencies(state.dependencies);
+      }
+      if ("currentStatus" in state && this.getNode().isComputational()) {
+        // currentStatus is only applicable to computational services
+        this.setRunning(state.currentStatus);
+      }
+      if ("modified" in state) {
+        if (this.getHasOutputs()) {
+          // File Picker can't have a modified output
+          this.setModified((state.modified || this.hasDependencies()) && !this.getNode().isFilePicker());
+        } else {
+          this.setModified(null);
+        }
+      }
+    },
+
+    serialize: function() {
+      const state = {};
+      state["dependencies"] = this.getDependencies() ? this.getDependencies() : [];
+      if (this.getNode().isComputational()) {
+        state["currentStatus"] = this.getRunning();
+      }
+      state["modified"] = null;
+      // File Picker can't have a modified output
+      if (this.getHasOutputs() && !this.getNode().isFilePicker()) {
+        state["modified"] = this.hasDependencies();
       }
     }
   }
