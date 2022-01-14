@@ -5,7 +5,7 @@ import json
 import logging
 import traceback
 from collections import deque
-from typing import Any, Awaitable, Deque, Dict, List, Optional, Union, Set
+from typing import Any, Awaitable, Deque, Dict, List, Optional, Set, Union
 
 from fastapi import (
     APIRouter,
