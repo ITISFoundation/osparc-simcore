@@ -18,7 +18,6 @@ from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from simcore_service_director_v2.models.schemas.clusters import ClusterOut
 from starlette import status
-from starlette.testclient import TestClient
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed

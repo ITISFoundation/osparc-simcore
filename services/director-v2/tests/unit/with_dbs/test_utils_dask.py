@@ -23,7 +23,6 @@ from _helpers import (  # type: ignore
 from _pytest.monkeypatch import MonkeyPatch
 from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
 from faker import Faker
-from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink
 from pydantic.networks import AnyUrl
