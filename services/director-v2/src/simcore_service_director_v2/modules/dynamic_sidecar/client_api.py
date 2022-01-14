@@ -295,9 +295,6 @@ class DynamicSidecarClient:
             log_httpx_http_error(url, "POST", traceback.format_exc())
             raise
 
-
-
-
     async def attach_container_to_network(
         self,
         dynamic_sidecar_endpoint: str,
@@ -322,6 +319,7 @@ class DynamicSidecarClient:
         except httpx.HTTPError as e:
             log_httpx_http_error(url, "POST", traceback.format_exc())
             raise e
+
 
 async def setup_api_client(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client setup")
