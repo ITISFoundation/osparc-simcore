@@ -2,7 +2,6 @@ import asyncio
 import fnmatch
 import logging
 import zipfile
-import re
 from pathlib import Path
 from typing import Iterator, List, Optional, Set, Tuple, Union
 
