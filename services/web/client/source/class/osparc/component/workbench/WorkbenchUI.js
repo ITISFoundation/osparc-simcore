@@ -526,6 +526,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__edgesUI.push(edgeUI);
 
         const that = this;
+        edgeUI.getRepresentation().widerCurve.node.addEventListener("click", e => {
+          // this is needed to get out of the context of svg
+          that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
+          e.stopPropagation();
+        }, this);
         edgeUI.getRepresentation().node.addEventListener("click", e => {
           // this is needed to get out of the context of svg
           that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
