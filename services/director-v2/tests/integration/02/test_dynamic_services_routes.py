@@ -4,6 +4,7 @@
 import asyncio
 import logging
 from typing import Any, AsyncIterable, AsyncIterator, Dict
+from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import aiodocker
@@ -76,11 +77,23 @@ def start_request_data(
 
 
 @pytest.fixture
+def mocked_engine() -> AsyncMock:
+    engine = AsyncMock()
+    engine.maxsize = 100
+    engine.size = 1
+    engine.freesize = 1
+    available_engines = engine.maxsize - (engine.size - engine.freesize)
+    assert type(available_engines) == int
+    return engine
+
+
+@pytest.fixture
 async def test_client(
     loop: asyncio.AbstractEventLoop,
     minimal_configuration: None,
     mock_env: None,
     network_name: str,
+    mocked_engine: AsyncMock,
     monkeypatch,
 ) -> AsyncIterable[TestClient]:
     monkeypatch.setenv("SC_BOOT_MODE", "production")
@@ -105,6 +118,8 @@ async def test_client(
     settings = AppSettings.create_from_envs()
 
     app = init_app(settings)
+
+    app.state.engine = mocked_engine
 
     async with TestClient(app) as client:
         yield client
@@ -150,6 +165,14 @@ def mock_service_state(mocker: MockerFixture) -> None:
     )
 
 
+@pytest.fixture
+def mock_project_repository(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_director_v2.modules.db.repositories.projects.ProjectsRepository.get_project",
+        side_effect=lambda *args, **kwargs: Mock(),
+    )
+
+
 # TESTS
 
 
@@ -159,6 +182,7 @@ async def test_start_status_stop(
     start_request_data: Dict[str, Any],
     ensure_services_stopped: None,
     mock_service_state: None,
+    mock_project_repository: None,
 ):
     # starting the service
     headers = {
