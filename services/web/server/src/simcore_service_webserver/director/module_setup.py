@@ -13,7 +13,8 @@ from servicelib.aiohttp.rest_routing import (
 )
 
 from .._constants import APP_OPENAPI_SPECS_KEY
-from .config import APP_DIRECTOR_API_KEY, assert_valid_config
+from .config import APP_DIRECTOR_API_KEY
+from .settings import assert_valid_config
 
 logger = logging.getLogger(__name__)
 

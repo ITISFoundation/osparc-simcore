@@ -17,11 +17,8 @@ from .catalog_client import (
     is_service_responsive,
     to_backend_service,
 )
-from .catalog_config import (
-    KCATALOG_ORIGIN,
-    KCATALOG_VERSION_PREFIX,
-    assert_valid_config,
-)
+from .catalog_config import KCATALOG_ORIGIN, KCATALOG_VERSION_PREFIX
+from .catalog_settings import assert_valid_config
 from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
 

@@ -13,7 +13,7 @@ from pydantic import Field
 from pydantic.main import BaseModel
 from pydantic.types import NonNegativeInt
 
-from ._config import SciCrunchSettings
+from ._settings import SciCrunchSettings
 
 logger = logging.getLogger(__name__)
 
