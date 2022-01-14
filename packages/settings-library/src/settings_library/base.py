@@ -61,12 +61,13 @@ class BaseCustomSettings(BaseSettings):
         # captures envs here to build defaults for BaseCustomSettings sub-settings
         default_fields = []
         for name, field in cls.__fields__.items():
-            if issubclass(field.type_, BaseCustomSettings):
-                default_fields.append((name, field.type_))
-            elif issubclass(field.type_, BaseSettings):
-                raise ValueError(
-                    f"{name} field class {field.type_} must inherit from BaseCustomSettings"
-                )
+            if field.required:
+                if issubclass(field.type_, BaseCustomSettings):
+                    default_fields.append((name, field.type_))
+                elif issubclass(field.type_, BaseSettings):
+                    raise ValueError(
+                        f"{name} field class models {field.type_} must inherit from BaseCustomSettings"
+                    )
         cls._set_defaults_with_default_constructors(default_fields)
 
         # builds instance

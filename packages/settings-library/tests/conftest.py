@@ -8,7 +8,7 @@ import textwrap
 from collections import deque
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable, ContextManager, Deque, Dict, Generator, Tuple, Type, Union
+from typing import Callable, Deque, Dict, Generator, Optional, Tuple, Type, Union
 
 import pytest
 import settings_library
@@ -97,6 +97,14 @@ def settings_cls() -> Type[BaseCustomSettings]:
         APP_MODULE_1: MyModuleSettings = Field(..., description="Some Module Example")
         APP_MODULE_2: AnotherModuleSettings
 
+        # this is how to enable/disable sub-settings a
+        APP_POSTGRES_OPTIONAL: Optional[PostgresSettings] = Field(
+            ..., description="Set as None to disable"
+        )
+        APP_POSTGRES_DISABLED: Optional[PostgresSettings] = Field(
+            None, description="Disabled by default"
+        )
+
     return Settings
 
 
@@ -123,7 +131,7 @@ def mocked_settings_cls_env() -> str:
 @pytest.fixture
 def mocked_environment(
     monkeypatch: MonkeyPatch,
-) -> Callable[[str], ContextManager[None]]:
+) -> Callable:
     @contextmanager
     def ctx_mngr(env_formatted_string: str) -> Generator[None, None, None]:
         SAMPLE_ENV = textwrap.dedent(env_formatted_string).strip()
@@ -149,4 +157,4 @@ def mocked_environment(
         for key, value in env_vars:
             assert os.environ.get(key, None) is None
 
-    yield ctx_mngr
+    return ctx_mngr

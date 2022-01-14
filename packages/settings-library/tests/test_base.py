@@ -35,8 +35,12 @@ def test_settigs_with_modules_settings(
 
         assert settings.APP_POSTGRES
 
+        # optional
+        assert settings.APP_POSTGRES_OPTIONAL == settings.APP_POSTGRES
+        assert settings.APP_POSTGRES_DISABLED is None
 
-def _get_all_settings_classes():
+
+def _get_all_settings_classes_in_library():
 
     modules = [
         importlib.import_module(f"settings_library.{p.name[:-3]}")
@@ -57,9 +61,9 @@ def _get_all_settings_classes():
 
 
 @pytest.mark.parametrize(
-    "settings_cls", _get_all_settings_classes(), ids=lambda cls: cls.__name__
+    "settings_cls", _get_all_settings_classes_in_library(), ids=lambda cls: cls.__name__
 )
-def test_settings_class_policies(settings_cls):
+def test_polices_in_library_class_settings(settings_cls):
     # must inherit
     assert issubclass(settings_cls, BaseCustomSettings)
 
