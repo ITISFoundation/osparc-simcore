@@ -134,6 +134,7 @@ async def _request_director_v2(
             web.HTTPServiceUnavailable.status_code,
             reason=f"request to director-v2 service unexpected error {err}",
         ) from err
+    log.error("Unexpected result calling %s, %s", f"{url=}", f"{method=}")
     raise DirectorServiceError(
         web.HTTPClientError.status_code, reason="Unexpected client error"
     )

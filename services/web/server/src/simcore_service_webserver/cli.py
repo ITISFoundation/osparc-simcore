@@ -18,10 +18,14 @@ import logging
 import os
 import sys
 from argparse import ArgumentParser
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
-from .application import run_service
-from .application_config import CLI_DEFAULT_CONFIGFILE, app_schema
+from aiohttp import web
+from models_library.basic_types import BuildTargetEnum
+
+from .application import create_application, run_service
+from .application__schema import CLI_DEFAULT_CONFIGFILE, app_schema
+from .application_settings import ApplicationSettings
 from .cli_config import add_cli_options, config_from_options
 from .log import setup_logging
 from .utils import search_osparc_repo_dir
@@ -101,7 +105,7 @@ def parse(args: Optional[List], parser: ArgumentParser) -> Dict:
     return config
 
 
-def main(args: Optional[List] = None):
+def _setup_app(args: Optional[List] = None) -> Tuple[web.Application, Dict]:
     # parse & config file
     parser = ArgumentParser(description="Service to manage data webserver in simcore.")
     setup_parser(parser)
@@ -114,4 +118,26 @@ def main(args: Optional[List] = None):
     setup_logging(level=config["main"]["log_level"], slow_duration=slow_duration)
 
     # run
-    run_service(config)
+    app = create_application(config)
+    return (app, config)
+
+
+def main(args: Optional[List] = None):
+    app, config = _setup_app(args)
+    run_service(app, config)
+
+
+async def app_factory() -> web.Application:
+    # parse & config file
+    app_settings = ApplicationSettings()
+    assert app_settings.build_target  # nosec
+    log.info("Application settings: %s", f"{app_settings.json(indent=2)}")
+    args = [
+        "--config",
+        "server-docker-dev.yaml"
+        if app_settings.boot_mode == BuildTargetEnum.DEVELOPMENT
+        else "server-docker-prod.yaml",
+    ]
+    app, _ = _setup_app(args)
+
+    return app

@@ -22,23 +22,18 @@ from prometheus_client.registry import CollectorRegistry
 # https://grafana.com/docs/grafana-cloud/how-do-i/control-prometheus-metrics-usage/usage-analysis-explore/
 #
 
-# TODO: the user_id label on the http_requests_total Counter is a candidate to be removed. as endpoints also contain all kind of UUIDs
 
 kSERVICE_STARTED = f"{__name__}.services_started"
 kSERVICE_STOPPED = f"{__name__}.services_stopped"
 
 SERVICE_STARTED_LABELS: List[str] = [
-    "user_id",
     "service_key",
     "service_tag",
-    "service_type",
 ]
 
 SERVICE_STOPPED_LABELS: List[str] = [
-    "user_id",
     "service_key",
     "service_tag",
-    "service_type",
     "result",
 ]
 
@@ -79,32 +74,24 @@ class ServiceType(Enum):
 def service_started(
     # pylint: disable=too-many-arguments
     app: web.Application,
-    user_id: str,
     service_key: str,
     service_tag: str,
-    service_type: Union[ServiceType, str],
 ) -> None:
     app[kSERVICE_STARTED].labels(
-        user_id=user_id,
         service_key=service_key,
         service_tag=service_tag,
-        service_type=service_type,
     ).inc()
 
 
 def service_stopped(
     # pylint: disable=too-many-arguments
     app: web.Application,
-    user_id: str,
     service_key: str,
     service_tag: str,
-    service_type: Union[ServiceType, str],
     result: Union[ServiceResult, str],
 ) -> None:
     app[kSERVICE_STOPPED].labels(
-        user_id=user_id,
         service_key=service_key,
         service_tag=service_tag,
-        service_type=service_type,
         result=result.name if isinstance(result, ServiceResult) else result,
     ).inc()

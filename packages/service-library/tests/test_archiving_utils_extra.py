@@ -12,9 +12,7 @@ from servicelib.archiving_utils import (
     is_leaf_path,
     unarchive_dir,
 )
-
-
-from test_utils import print_tree
+from test_utils import print_tree  # pylint:disable=no-name-in-module
 
 
 @pytest.fixture

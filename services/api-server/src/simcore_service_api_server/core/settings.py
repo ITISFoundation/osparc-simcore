@@ -6,9 +6,9 @@ from pydantic import Field, SecretStr
 from pydantic.class_validators import validator
 from pydantic.networks import HttpUrl
 from settings_library.base import BaseCustomSettings
-from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.tracing import TracingSettings
+from settings_library.utils_logging import MixinLoggingSettings
 
 # SERVICES CLIENTS --------------------------------------------
 

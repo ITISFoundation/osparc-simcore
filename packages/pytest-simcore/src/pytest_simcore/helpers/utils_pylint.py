@@ -30,6 +30,8 @@ def assert_pylint_is_passing(pylintrc, package_dir, number_of_jobs: int = AUTODE
 
 
 def assert_no_pdb_in_code(code_dir: Path):
+    # TODO: deprecate since Pylint 2.10 adds 'forgotten-debug-statement'
+    # https://pylint.pycqa.org/en/latest/whatsnew/2.10.html?highlight=forgotten-debug-statement#new-checkers
     for root, dirs, files in os.walk(code_dir):
         for name in files:
             if name.endswith(".py"):

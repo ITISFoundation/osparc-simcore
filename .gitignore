@@ -78,9 +78,6 @@ target/
 # pyenv
 .python-version
 
-# celery beat schedule file
-celerybeat-schedule
-
 # SageMath parsed files
 *.sage.py
 
@@ -171,3 +168,6 @@ dask*-space/
 
 # Makefile artifacts
 packages/service-integration/compose-spec.json
+
+# temporary files by vscode
+Untitled*

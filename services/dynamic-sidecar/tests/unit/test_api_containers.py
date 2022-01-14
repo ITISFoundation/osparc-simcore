@@ -152,7 +152,7 @@ def mock_nodeports(mocker: MockerFixture) -> None:
         return_value=None,
     )
     mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.nodeports.download_inputs",
+        "simcore_service_dynamic_sidecar.modules.nodeports.download_target_ports",
         return_value=42,
     )
     mocker.patch(
@@ -441,15 +441,15 @@ async def test_directory_watcher_disabling(
     test_client: TestClient, mock_dir_watcher_on_any_event: AsyncMock
 ) -> None:
     async def _assert_disable_directory_watcher() -> None:
-        response = await test_client.post(
-            f"/{API_VTAG}/containers/directory-watcher:disable"
+        response = await test_client.patch(
+            f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=False)
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
         assert response.text == ""
 
     async def _assert_enable_directory_watcher() -> None:
-        response = await test_client.post(
-            f"/{API_VTAG}/containers/directory-watcher:enable"
+        response = await test_client.patch(
+            f"/{API_VTAG}/containers/directory-watcher", json=dict(is_enabled=True)
         )
         assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
         assert response.text == ""
@@ -461,28 +461,28 @@ async def test_directory_watcher_disabling(
         dir_count = len([1 for x in mounted_volumes.disk_outputs_path.glob("*")])
         return dir_count
 
-    EVENTS_PER_DIR_CREATEION = 2
+    EVENTS_PER_DIR_CREATION = 2
 
     # by default it is enabled
     assert mock_dir_watcher_on_any_event.call_count == 0
     dir_count = _create_random_dir_in_inputs()
     assert dir_count == 1
     await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
-    assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATEION
+    assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATION
 
     # disable and wait for events should have the same count as before
     await _assert_disable_directory_watcher()
     dir_count = _create_random_dir_in_inputs()
     assert dir_count == 2
     await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
-    assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATEION
+    assert mock_dir_watcher_on_any_event.call_count == EVENTS_PER_DIR_CREATION
 
     # enable and wait for events
     await _assert_enable_directory_watcher()
     dir_count = _create_random_dir_in_inputs()
     assert dir_count == 3
     await asyncio.sleep(WAIT_FOR_DIRECTORY_WATCHER)
-    assert mock_dir_watcher_on_any_event.call_count == 2 * EVENTS_PER_DIR_CREATEION
+    assert mock_dir_watcher_on_any_event.call_count == 2 * EVENTS_PER_DIR_CREATION
 
 
 async def test_container_create_outputs_dirs(
@@ -497,7 +497,7 @@ async def test_container_create_outputs_dirs(
         k: v.dict(by_alias=True) for k, v in mock_outputs_labels.items()
     }
     response = await test_client.post(
-        f"/{API_VTAG}/containers/ports/outputs:create-dirs",
+        f"/{API_VTAG}/containers/ports/outputs/dirs",
         json={"outputs_labels": json_outputs_labels},
     )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text

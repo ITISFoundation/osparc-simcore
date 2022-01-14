@@ -6,6 +6,10 @@
 #
 aiodebug==1.1.2
     # via -r requirements/../../../packages/service-library/requirements/_base.in
+aiofiles==0.8.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 click==7.1.2
     # via
     #   -c requirements/_base.txt

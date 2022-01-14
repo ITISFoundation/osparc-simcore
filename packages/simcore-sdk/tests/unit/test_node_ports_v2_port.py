@@ -13,8 +13,8 @@ import tempfile
 import threading
 from collections import namedtuple
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterator, Optional, Type, Union
-
+from typing import Any, Dict, Iterator, Optional, Type, Union
+from unittest.mock import AsyncMock
 import pytest
 from aiohttp.client import ClientSession
 from attr import dataclass
@@ -723,8 +723,6 @@ def test_invalid_port(common_fixtures: None, port_cfg: Dict[str, Any]):
 async def test_invalid_file_type_setter(
     common_fixtures: None, project_id: str, node_uuid: str, port_cfg: Dict[str, Any]
 ):
-    from unittest.mock import AsyncMock
-
     port = Port(**port_cfg)
     port._node_ports = AsyncMock()
     # set a file that does not exist

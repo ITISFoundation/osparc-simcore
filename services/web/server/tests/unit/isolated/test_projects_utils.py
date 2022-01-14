@@ -10,11 +10,11 @@ from typing import Any, Dict, Set
 import jsonschema
 import pytest
 from jsonschema import ValidationError
+from simcore_service_webserver._resources import resources
 from simcore_service_webserver.projects.projects_utils import (
     clone_project_document,
     project_get_depending_nodes,
 )
-from simcore_service_webserver.resources import resources
 
 
 def load_template_projects() -> Dict[str, Any]:
@@ -59,12 +59,6 @@ def test_clone_project_document(
         jsonschema.validate(instance=clone, schema=project_schema)
     except ValidationError as err:
         pytest.fail(f"Invalid clone of '{name}': {err.message}")
-
-
-@pytest.fixture(scope="session")
-def fake_project_data(fake_data_dir: Path) -> Dict[str, Any]:
-    with (fake_data_dir / "fake-project.json").open() as fp:
-        return json.load(fp)
 
 
 @pytest.mark.parametrize(

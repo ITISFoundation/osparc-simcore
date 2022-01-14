@@ -255,10 +255,15 @@ qx.Class.define("osparc.wrapper.WebSocket", {
     },
 
     removeSlot: function(name) {
-      const index = this.__name.indexOf(name);
+      let index = this.__name.indexOf(name);
       if (index > -1) {
         this.getSocket().removeAllListeners(this.__name[index]);
         this.__name.splice(index, 1);
+        index = this.__name.indexOf(name);
+        while (index > -1) {
+          this.__name.splice(index, 1);
+          index = this.__name.indexOf(name);
+        }
       }
     }
   },

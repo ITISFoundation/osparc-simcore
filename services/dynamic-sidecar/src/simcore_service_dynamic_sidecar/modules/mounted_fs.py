@@ -40,12 +40,12 @@ class MountedVolumes:
         inputs_path: Path,
         outputs_path: Path,
         state_paths: List[Path],
-        state_exclude: List[Path],
+        state_exclude: List[str],
     ) -> None:
         self.inputs_path: Path = inputs_path
         self.outputs_path: Path = outputs_path
         self.state_paths: List[Path] = state_paths
-        self.state_exclude: List[Path] = state_exclude
+        self.state_exclude: List[str] = state_exclude
 
         self._ensure_directories()
 

@@ -376,41 +376,47 @@
         }
       }
     },
-    "/v1/containers/directory-watcher:disable": {
-      "post": {
+    "/v1/containers/directory-watcher": {
+      "patch": {
         "tags": [
           "containers"
         ],
-        "summary": "Disable directory-watcher event propagation",
-        "operationId": "disable_directory_watcher_v1_containers_directory_watcher_disable_post",
+        "summary": "Enable/disable directory-watcher event propagation",
+        "operationId": "disable_directory_watcher_v1_containers_directory_watcher_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchDirectoryWatcherItem"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
         }
       }
     },
-    "/v1/containers/directory-watcher:enable": {
+    "/v1/containers/ports/outputs/dirs": {
       "post": {
         "tags": [
           "containers"
         ],
-        "summary": "Enable directory-watcher event propagation",
-        "operationId": "enable_directory_watcher_v1_containers_directory_watcher_enable_post",
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          }
-        }
-      }
-    },
-    "/v1/containers/ports/outputs:create-dirs": {
-      "post": {
-        "tags": [
-          "containers"
-        ],
-        "summary": "Creates the output directories declared by the labels",
-        "operationId": "create_output_dirs_v1_containers_ports_outputs_create_dirs_post",
+        "summary": "Creates the output directories declared by the docker images's labels. It is more convenient to pass the labels from director-v2, since it already has all the machinery to call into director-v0 to retrieve them.",
+        "operationId": "create_output_dirs_v1_containers_ports_outputs_dirs_post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -443,7 +449,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "Pull input ports data",
+        "summary": "Pull output ports data",
         "operationId": "pull_output_ports_v1_containers_ports_outputs_pull_post",
         "requestBody": {
           "content": {
@@ -598,6 +604,19 @@
             "items": {
               "$ref": "#/components/schemas/ValidationError"
             }
+          }
+        }
+      },
+      "PatchDirectoryWatcherItem": {
+        "title": "PatchDirectoryWatcherItem",
+        "required": [
+          "is_enabled"
+        ],
+        "type": "object",
+        "properties": {
+          "is_enabled": {
+            "title": "Is Enabled",
+            "type": "boolean"
           }
         }
       },

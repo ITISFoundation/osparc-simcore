@@ -117,11 +117,10 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DY_VOLUMES} ${DY_VOLUMES}
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
-# improoving boot times by disabling the healtcheck
+# disabled healthcheck as director-v2 is already taking care of it 
 # in oder to have similar performance a more aggressive healethcek
 # would be required.
-# since the director-v2 already keeps track of this service
-# removing the healthchek is not an issue
+# removing the healthchek would not cause any issues at this point
 HEALTHCHECK NONE
 
 EXPOSE 8000

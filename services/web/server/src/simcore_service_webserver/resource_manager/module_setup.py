@@ -11,14 +11,11 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .config import (
-    APP_CLIENT_SOCKET_REGISTRY_KEY,
-    APP_RESOURCE_MANAGER_TASKS_KEY,
-    assert_valid_config,
-)
+from .config import APP_CLIENT_SOCKET_REGISTRY_KEY, APP_RESOURCE_MANAGER_TASKS_KEY
 from .garbage_collector import setup_garbage_collector
 from .redis import setup_redis_client
 from .registry import RedisResourceRegistry
+from .settings import assert_valid_config
 
 logger = logging.getLogger(__name__)
 

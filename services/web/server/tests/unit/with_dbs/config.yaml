@@ -52,6 +52,8 @@ projects:
   enabled: False
 version_control:
   enabled: False
+meta_modeling:
+  enabled: False
 session:
   # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
   secret_key: "tjwiMSLe0Xd9dwMlAVQT9pYY9JEnr7rcH05fkUcukVs="

@@ -10,11 +10,10 @@ import tracemalloc
 from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 import orjson
 from models_library.basic_types import SHA1Str
-from servicelib.json_serialization import json_dumps
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 log = logging.getLogger(__name__)
@@ -155,18 +154,13 @@ def snake_to_camel(subject: str) -> str:
 #
 
 
-def orjson_dumps(v, *, default=None) -> str:
-    # NOTE: orjson.dumps returns bytes, to match standard
-    # json.dumps we need to decode
-    return orjson.dumps(v, default=default).decode()
+def compute_sha1_on_small_dataset(d: Any) -> SHA1Str:
+    """
+    This should be used for small datasets, otherwise it should be chuncked
+    and aggregated
 
-
-def compute_sha1(data: Any) -> SHA1Str:
+    More details in test_utils.py:test_compute_sha1_on_small_dataset
+    """
     # SEE options in https://github.com/ijl/orjson#option
-    raw_hash = hashlib.sha1(  # nosec
-        orjson.dumps(data, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS)
-    )
-    return raw_hash.hexdigest()
-
-
-__all__: Tuple[str, ...] = ("json_dumps", "orjson_dumps")
+    data_bytes = orjson.dumps(d, option=orjson.OPT_NON_STR_KEYS | orjson.OPT_SORT_KEYS)
+    return hashlib.sha1(data_bytes).hexdigest()  # nosec
