@@ -45,7 +45,8 @@ qx.Class.define("osparc.file.FileDrop", {
       top: 40,
       left: 40
     });
-    dropHere.addListener("appear", () => {
+
+    const centerDropHere = () => {
       // center it
       const dropHereBounds = dropHere.getBounds() || dropHere.getSizeHint();
       const fileDropBounds = this.getBounds() || this.getSizeHint();
@@ -53,7 +54,9 @@ qx.Class.define("osparc.file.FileDrop", {
         top: parseInt((fileDropBounds.height - dropHereBounds.height) / 2),
         left: parseInt((fileDropBounds.width - dropHereBounds.width) / 2)
       });
-    }, this);
+    };
+    dropHere.addListener("appear", centerDropHere);
+    this.addListener("resize", centerDropHere);
 
     const svgLayer = this.__svgLayer = new osparc.component.workbench.SvgWidget();
     this._add(svgLayer, {
