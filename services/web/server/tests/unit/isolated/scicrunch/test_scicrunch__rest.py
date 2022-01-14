@@ -19,7 +19,6 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 from aiohttp import ClientResponseError, ClientSession, web
-from simcore_service_webserver.scicrunch._config import SCICRUNCH_DEFAULT_URL
 from simcore_service_webserver.scicrunch._rest import (
     ListOfResourceHits,
     ResourceView,
@@ -27,6 +26,7 @@ from simcore_service_webserver.scicrunch._rest import (
     get_all_versions,
     get_resource_fields,
 )
+from simcore_service_webserver.scicrunch._settings import SCICRUNCH_DEFAULT_URL
 from simcore_service_webserver.scicrunch.submodule_setup import SciCrunchSettings
 
 from ._citations import NOT_TOOL_CITATIONS, TOOL_CITATIONS
