@@ -17,11 +17,12 @@ from servicelib.aiohttp.rest_routing import (
 )
 
 from .._constants import APP_OPENAPI_SPECS_KEY
-from ..resources import resources
+from .._resources import resources
 from . import projects_handlers, projects_nodes_handlers, projects_tags_handlers
-from .config import CONFIG_SECTION_NAME, assert_valid_config
+from .config import CONFIG_SECTION_NAME
 from .projects_access import setup_projects_access
 from .projects_db import setup_projects_db
+from .settings import assert_valid_config
 
 logger = logging.getLogger(__name__)
 

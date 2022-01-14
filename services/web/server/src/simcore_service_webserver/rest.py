@@ -20,8 +20,8 @@ from servicelib.aiohttp.rest_middlewares import (
 from . import rest_routes
 from ._constants import APP_OPENAPI_SPECS_KEY
 from ._meta import api_version_prefix
-from .diagnostics_config import get_diagnostics_config
-from .rest_config import assert_valid_config
+from .diagnostics_settings import get_diagnostics_config
+from .rest_settings import assert_valid_config
 from .rest_utils import get_openapi_specs_path, load_openapi_specs
 
 log = logging.getLogger(__name__)
