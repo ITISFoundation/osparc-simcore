@@ -104,17 +104,15 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __setOutputValue: function(node, outputValue) {
+      node.setOutputData({
+        "outFile": outputValue
+      });
       const outputs = node.getOutputs();
-      outputs["outFile"]["value"] = outputValue;
-      node.setOutputs({});
-      node.setOutputs(outputs);
-      node.getStatus().setHasOutputs(true);
-      node.getStatus().setModified(false);
       const outLabel = osparc.file.FilePicker.getOutputLabel(outputs);
       if (outLabel) {
         node.setLabel(outputValue.label);
       }
-      node.getStatus().setProgress(100);
+      node.getStatus().setProgress(outputValue ? 100 : 0);
     },
 
     setOutputValueFromStore: function(node, store, dataset, path, label) {
@@ -137,6 +135,11 @@ qx.Class.define("osparc.file.FilePicker", {
           label: label ? label : ""
         });
       }
+    },
+
+    resetOutputValue: function(node) {
+      // eslint-disable-next-line no-underscore-dangle
+      osparc.file.FilePicker.__setOutputValue(node, null);
     },
 
     getOutputFileMetadata: function(node) {
@@ -290,6 +293,7 @@ qx.Class.define("osparc.file.FilePicker", {
           control = new osparc.file.FileLabelWithActions().set({
             alignY: "middle"
           });
+          control.getChildControl("delete-button").exclude();
           const mainButtons = this.getChildControl("select-toolbar");
           mainButtons.add(control, {
             flex: 1
@@ -398,8 +402,7 @@ qx.Class.define("osparc.file.FilePicker", {
         filesTree.loadFilePath(this.__getOutputFile()["value"]);
       }, this);
 
-      const selectedFileLayout = this.__selectedFileLayout = this.getChildControl("selected-file-layout");
-      selectedFileLayout.getChildControl("delete-button").exclude();
+      this.__selectedFileLayout = this.getChildControl("selected-file-layout");
 
       const selectBtn = this.getChildControl("select-button");
       selectBtn.setEnabled(false);
@@ -442,7 +445,7 @@ qx.Class.define("osparc.file.FilePicker", {
       const isFile = osparc.file.FilesTree.isFile(selectedItem);
       this.getChildControl("select-button").setEnabled(isFile);
 
-      this.__selectedFileLayout.itemSelected(selectedItem);
+      this.__selectedFileLayout.setItemSelected(selectedItem);
     },
 
     __itemSelected: function() {

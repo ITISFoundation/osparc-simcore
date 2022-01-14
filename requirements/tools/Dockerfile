@@ -28,8 +28,6 @@ RUN pip --no-cache-dir install --upgrade \
 
 # devenv
 RUN pip install \
-  black \
-  isort \
   pip-tools \
-  bump2version \
-  rope
+  pipreqs \
+  pipdeptree
