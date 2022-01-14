@@ -128,12 +128,12 @@ def _setup_app(args: Optional[List] = None) -> Tuple[web.Application, Dict]:
 async def app_factory() -> web.Application:
     # parse & config file
     app_settings = ApplicationSettings()
-    assert app_settings.build_target  # nosec
+    assert app_settings.SC_BUILD_TARGET  # nosec
     log.info("Application settings: %s", f"{app_settings.json(indent=2)}")
     args = [
         "--config",
         "server-docker-dev.yaml"
-        if app_settings.boot_mode == BuildTargetEnum.DEVELOPMENT
+        if app_settings.SC_BOOT_MODE == BuildTargetEnum.DEVELOPMENT
         else "server-docker-prod.yaml",
     ]
     app, _ = _setup_app(args)

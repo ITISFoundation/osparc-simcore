@@ -25,6 +25,7 @@ logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 
 # imports the fixtures for the integration tests
 pytest_plugins = [
+    "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
