@@ -2,14 +2,12 @@
 
 
 """
-
-
 from pydantic.networks import AnyUrl
 
 from .basic_types import PortInt
 
-DEFAULT_AIOHTTP_PORT: PortInt = 8000
-DEFAULT_FASTAPI_PORT: PortInt = 8080
+DEFAULT_AIOHTTP_PORT: PortInt = 8080
+DEFAULT_FASTAPI_PORT: PortInt = 8000
 
 
 class MixinServiceSettings:
