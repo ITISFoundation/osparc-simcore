@@ -36,7 +36,6 @@ from .version_control_models import (
     CommitID,
     CommitLog,
     CommitProxy,
-    ProjectProxy,
     RefID,
     RepoProxy,
     SHA1Str,
