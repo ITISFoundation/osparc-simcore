@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 @app_module_setup(__name__, ModuleCategory.ADDON, logger=logger, depends=[])
 def setup_remote_debugging(app: web.Application):
     application_settings: ApplicationSettings = app[APP_SETTINGS_KEY]
-    assert application_settings.boot_mode  # nosec
-    if application_settings.boot_mode == BootModeEnum.DEBUG:
+    assert application_settings.SC_BOOT_MODE  # nosec
+    if application_settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
         try:
             logger.debug("Enabling attach ptvsd ...")
             #

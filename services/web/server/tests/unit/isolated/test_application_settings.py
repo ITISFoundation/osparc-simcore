@@ -5,6 +5,7 @@
 import json
 
 import pytest
+from aiohttp import web
 from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
     ApplicationSettings,
@@ -18,7 +19,11 @@ def settings(monkeypatch) -> ApplicationSettings:
     monkeypatch.setenv("SWARM_STACK_NAME", "simcore_stack")
     monkeypatch.setenv("STACK_NAME", "invalid_env")
     monkeypatch.setenv("WEBSERVER_MANUAL_MAIN_URL", "http://some_doc.org")
-    app = {}
+    monkeypatch.setenv("WEBSERVER_POSTGRES", "null")
+    monkeypatch.setenv("WEBSERVER_SESSION_SECRET_KEY", "1" * 32)
+    monkeypatch.setenv("WEBSERVER_STUDIES_ACCESS_ENABLED", "1")
+
+    app = web.Application()
 
     # init and validation happens here
     setup_settings(app)

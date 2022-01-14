@@ -1,92 +1,140 @@
-"""
-TODO: pydantic settings comming soon and replacing trafaret
-
-"""
 import logging
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from aiohttp import web
-from models_library.basic_types import BootModeEnum, BuildTargetEnum
+from models_library.basic_types import BootModeEnum, BuildTargetEnum, PortInt
 from pydantic import Field
+from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
+from settings_library.email import SMTPSettings
+from settings_library.postgres import PostgresSettings
+from settings_library.redis import RedisSettings
+from settings_library.s3 import S3Settings
+from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, APP_NAME
 from .utils import snake_to_camel
+
+# from .activity.settings import ActivitySettings
+# from .catalog_settings import CatalogSettings
+# from .db_settings import PostgresSettings
+# from .director.settings import DirectorSettings
+# from .director_v2_settings import DirectorV2Settings
+# from .email_settings import SmtpSettings
+# from .login.settings import LoginSettings
+# from .resource_manager.settings import ResourceManagerSettings
+# from .storage_settings import StorageSettings
+# from .tracing_settings import TracingSettings
+
 
 log = logging.getLogger(__name__)
 
 
 class ApplicationSettings(BaseCustomSettings):
     # CODE STATICS ---
-    # settings defined by the code
+    API_VERSION: str = API_VERSION
+    APP_NAME: str = APP_NAME
 
-    app_name: str = APP_NAME
-    api_version: str = API_VERSION
+    # IMAGE BUILDTIME ---
+    SC_BUILD_DATE: Optional[str] = None
+    SC_BUILD_TARGET: Optional[BuildTargetEnum] = None
+    SC_VCS_REF: Optional[str] = None
+    SC_VCS_URL: Optional[str] = None
 
-    # IMAGE BUILD ---
-    # settings defined when docker image is built
-    #
+    # @Dockerfile
+    SC_BOOT_MODE: Optional[BootModeEnum]
+    SC_HEATCHECK_INTEVAL: Optional[int] = None
+    SC_HEATHCHECK_RETRY: Optional[int] = None
+    SC_USER_ID: Optional[int] = None
+    SC_USER_NAME: Optional[str] = None
 
-    vcs_url: Optional[str] = Field(None, env="SC_VCS_URL")
-    vcs_ref: Optional[str] = Field(None, env="SC_VCS_REF")
-    build_date: Optional[str] = Field(None, env="SC_BUILD_DATE")
-    build_target: Optional[BuildTargetEnum] = Field(
-        BuildTargetEnum.PRODUCTION, env="SC_BUILD_TARGET"
-    )
-
-    boot_mode: Optional[BootModeEnum] = Field(
-        BootModeEnum.PRODUCTION, env="SC_BOOT_MODE"
-    )
-    user_name: Optional[str] = Field(None, env="SC_USER_NAME")
-    user_id: Optional[int] = Field(None, env="SC_USER_ID")
-
-    heathcheck_retry: Optional[int] = Field(None, env="SC_HEATHCHECK_RETRY")
-    heatcheck_inteval: Optional[int] = Field(None, env="SC_HEATCHECK_INTEVAL")
-
-    # stack name defined upon deploy (see main Makefile)
-    swarm_stack_name: Optional[str] = Field(
-        None, alias="stackName", env="SWARM_STACK_NAME"
-    )
-
-    # CONTAINER RUN  ---
+    # RUNTIME  ---
     # settings defined from environs defined when container runs
+    # NOTE: keep alphabetically if possible
+
+    SWARM_STACK_NAME: Optional[str] = Field(
+        None, description="stack name defined upon deploy (see main Makefile)"
+    )
+
+    WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
 
     WEBSERVER_DEV_FEATURES_ENABLED: bool = Field(
         False,
-        env="WEBSERVER_DEV_FEATURES_ENABLED",
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
     )
 
-    class Config:
-        env_prefix = "WEBSERVER_"
-        case_sensitive = False
-        alias_generator = snake_to_camel
+    WEBSERVER_POSTGRES: Optional[PostgresSettings]
 
-    # ---
+    WEBSERVER_SESSION_SECRET_KEY: SecretStr = Field(  # type: ignore
+        ..., description="Secret key to encrypt cookies", min_length=32
+    )
 
-    def public_dict(self) -> Dict:
+    # WEBSERVER_TRACING: Optional[TracingSettings]
+
+    # SERVICES is osparc-stack with http API
+    # WEBSERVER_CATALOG: Optional[CatalogSettings]
+    # WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings]
+    # WEBSERVER_DIRECTOR: Optional[DirectorSettings]
+    # WEBSERVER_STORAGE: Optional[StorageSettings]
+
+    # WEBSERVER_ACTIVITY: Optional[ActivitySettings]
+    # WEBSERVER_EMAIL: Optional[SmtpSettings]
+
+    WEBSERVER_STUDIES_ACCESS_ENABLED: bool
+
+    # WEBSERVER_RESOURCE_MANAGER: Optional[ResourceManagerSettings]
+
+    WEBSERVER_S3: Optional[S3Settings]
+    WEBSERVER_REDIS: Optional[RedisSettings]
+    WEBSERVER_EMAIL: Optional[SMTPSettings]
+
+    # WEBSERVER_LOGIN: Optional[LoginSettings]
+
+    class Config(BaseCustomSettings.Config):
+        fields = {
+            "SC_VCS_URL": "vcs_url",
+            "SC_VCS_REF": "vcs_ref",
+            "SC_BUILD_DATE": "build_date",
+            "SWARM_STACK_NAME": "stack_name",
+        }
+        alias_generator = lambda s: s.lower()
+
+    def public_dict(self) -> Dict[str, Any]:
         """Data publicaly available"""
         return self.dict(
-            include={"app_name", "api_version", "vcs_url", "vcs_ref", "build_date"},
-            exclude_none=True,
-        )
-
-    def to_client_statics(self) -> Dict:
-        return self.dict(
             include={
-                "app_name",
-                "api_version",
-                "vcs_url",
-                "vcs_ref",
-                "build_date",
-                "swarm_stack_name",
+                "APP_NAME",
+                "API_VERSION",
+                "SC_VCS_URL",
+                "SC_VCS_REF",
+                "SC_BUILD_DATE",
             },
             exclude_none=True,
             by_alias=True,
         )
 
+    def to_client_statics(self) -> Dict[str, Any]:
+        data = self.dict(
+            include={
+                "APP_NAME",
+                "API_VERSION",
+                "SC_VCS_URL",
+                "SC_VCS_REF",
+                "SC_BUILD_DATE",
+                "SWARM_STACK_NAME",
+            },
+            exclude_none=True,
+            by_alias=True,
+        )
+        # Alias MUST be camelcase here
+        return {snake_to_camel(k): v for k, v in data.items()}
+
 
 def setup_settings(app: web.Application):
-    app[APP_SETTINGS_KEY] = ApplicationSettings()
-    log.info("Captured app settings:\n%s", app[APP_SETTINGS_KEY].json(indent=2))
+    app[APP_SETTINGS_KEY] = ApplicationSettings.create_from_envs()
+    log.info("Captured app settings:\n%s", app[APP_SETTINGS_KEY].json(indent=1))
+
+
+def get_settings(app: web.Application) -> ApplicationSettings:
+    return app[APP_SETTINGS_KEY]
