@@ -950,7 +950,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           filePicker.setLabel("File Picker");
           this.getStudy().getWorkbench().giveUniqueNameToNode(filePicker, "File Picker");
           this.__populateSecondPanel(filePicker);
-          this.getStudy().getWorkbench().fireEvent("reloadModel");
         }, this);
         hbox.add(resetFileBtn);
         this.__infoPage.add(hbox);
