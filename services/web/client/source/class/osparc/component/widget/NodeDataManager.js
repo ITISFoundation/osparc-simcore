@@ -231,7 +231,7 @@ qx.Class.define("osparc.component.widget.NodeDataManager", {
         this.__userFilesTree.resetSelection();
       }
       if (selectionData) {
-        this.__selectedFileLayout.itemSelected(selectionData);
+        this.__selectedFileLayout.setItemSelected(selectionData);
       }
     }
   }
