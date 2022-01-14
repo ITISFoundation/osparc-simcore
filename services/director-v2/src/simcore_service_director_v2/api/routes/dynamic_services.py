@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Coroutine, List, Optional, Union, cast, Dict
+from typing import Coroutine, Dict, List, Optional, Union, cast
 from uuid import UUID
 
 import httpx
@@ -11,9 +11,9 @@ from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.sharing_networks import SharingNetworks
+from pydantic import BaseModel
 from starlette import status
 from starlette.datastructures import URL
-from pydantic import BaseModel
 
 from ...core.settings import DynamicServicesSettings, DynamicSidecarSettings
 from ...models.domains.dynamic_services import (
@@ -25,9 +25,9 @@ from ...models.domains.dynamic_services import (
 from ...models.schemas.constants import UserID
 from ...models.schemas.dynamic_services import SchedulerData
 from ...modules.dynamic_sidecar.docker_api import (
+    get_networks_ids,
     is_dynamic_service_running,
     list_dynamic_sidecar_services,
-    get_networks_ids,
 )
 from ...modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,

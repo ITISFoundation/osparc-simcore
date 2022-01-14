@@ -1,27 +1,25 @@
 import asyncio
 import contextlib
 import logging
-from os import altsep
 import traceback
 from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
-from dataclasses import dataclass, field
+from dataclasses import dataclass, fieldaltsep
 from typing import Deque, Dict, List, Optional
 from uuid import UUID
 
 import httpx
 from async_timeout import timeout
 from fastapi import FastAPI
-from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
+from models_library.sharing_networks import SharingNetworks
 
 from ....core.settings import (
     DynamicServicesSchedulerSettings,
     DynamicServicesSettings,
     DynamicSidecarSettings,
 )
-from models_library.sharing_networks import SharingNetworks
 from ....models.domains.dynamic_services import RetrieveDataOutEnveloped
 from ....models.schemas.dynamic_services import (
     AsyncResourceLock,
@@ -306,7 +304,8 @@ class DynamicSidecarsScheduler:
             self.app
         )
 
-        entrypoint_container_name = await dynamic_sidecar_client.get_entrypoint_container_name(
+        # check this
+        _ = await dynamic_sidecar_client.get_entrypoint_container_name(
             dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
         )

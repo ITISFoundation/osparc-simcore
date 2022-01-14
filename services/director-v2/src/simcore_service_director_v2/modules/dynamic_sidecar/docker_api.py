@@ -452,5 +452,5 @@ async def get_networks_ids(
         ids = await logged_gather(
             *[_get_id_from_name(client, network) for network in networks]
         )
-
+    # pylint: disable=unnecessary-comprehension
     return {k: v for k, v in zip(networks, ids)}
