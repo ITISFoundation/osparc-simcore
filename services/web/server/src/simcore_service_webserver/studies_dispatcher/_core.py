@@ -12,7 +12,7 @@ from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
 )
 
-from ..constants import APP_DB_ENGINE_KEY
+from .._constants import APP_DB_ENGINE_KEY
 
 MEGABYTES = 1024 * 1024
 
@@ -50,7 +50,7 @@ class ViewerInfo(BaseModel):
 
     @property
     def title(self) -> str:
-        """ human readable title """
+        """human readable title"""
         return f"{self.label.capitalize()} v{self.version}"
 
     @classmethod

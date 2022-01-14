@@ -10,7 +10,7 @@ from servicelib.aiohttp.rest_responses import wrap_as_envelope
 from servicelib.aiohttp.rest_utils import body_to_dict, extract_and_validate
 
 from ._meta import __version__
-from .settings import APP_SETTINGS_KEY
+from .application_settings import APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
 

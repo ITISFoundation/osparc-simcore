@@ -17,8 +17,11 @@ from typing import Any, Callable, Dict, Iterable
 import pytest
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
 from pytest_simcore.helpers.utils_projects import empty_project_data
-from simcore_service_webserver.resources import resources
-from simcore_service_webserver.rest import get_openapi_specs_path, load_openapi_specs
+from simcore_service_webserver._resources import resources
+from simcore_service_webserver.rest_utils import (
+    get_openapi_specs_path,
+    load_openapi_specs,
+)
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 

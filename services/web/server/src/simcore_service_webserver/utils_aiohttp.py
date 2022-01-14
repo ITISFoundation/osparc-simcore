@@ -8,7 +8,7 @@ from models_library.generics import Envelope
 from servicelib.json_serialization import json_dumps
 from yarl import URL
 
-from .rest_utils import RESPONSE_MODEL_POLICY
+from .rest_constants import RESPONSE_MODEL_POLICY
 
 
 def rename_routes_as_handler_function(routes: RouteTableDef, *, prefix: str):

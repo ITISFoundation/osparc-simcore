@@ -7,7 +7,7 @@ from models_library.projects_state import ProjectStatus
 from simcore_service_webserver.projects.project_lock import lock_project
 from simcore_service_webserver.users_api import get_user_name
 
-from ..constants import RQ_PRODUCT_KEY
+from .._constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..projects.projects_api import retrieve_and_notify_project_locked_state
 from ..security_decorators import permission_required

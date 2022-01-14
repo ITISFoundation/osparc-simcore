@@ -12,7 +12,7 @@ from unittest.mock import call
 
 import pytest
 import socketio
-from _helpers import ExpectedResponse, HTTPLocked, standard_role_response
+from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
@@ -28,6 +28,7 @@ from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from simcore_service_webserver import catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole

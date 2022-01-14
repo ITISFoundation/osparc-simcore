@@ -7,9 +7,9 @@ from servicelib.aiohttp.rest_routing import (
     map_handlers_with_operations,
 )
 
-from ..constants import APP_OPENAPI_SPECS_KEY
+from .._constants import APP_OPENAPI_SPECS_KEY
 from . import handlers
-from .config import assert_valid_config
+from .settings import assert_valid_config
 
 logger = logging.getLogger(__name__)
 

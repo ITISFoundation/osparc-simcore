@@ -11,7 +11,7 @@ import json
 
 import jsondiff
 import pytest
-from simcore_service_webserver.resources import resources
+from simcore_service_webserver._resources import resources
 from simcore_service_webserver.security_access_model import (
     RoleBasedAccessModel,
     check_access,

@@ -9,8 +9,8 @@ from aiohttp import web
 from models_library.basic_types import BootModeEnum, BuildTargetEnum
 from pydantic import BaseSettings, Field
 
+from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, APP_NAME
-from .constants import APP_SETTINGS_KEY
 from .utils import snake_to_camel
 
 log = logging.getLogger(__name__)

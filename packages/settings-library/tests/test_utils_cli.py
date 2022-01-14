@@ -12,7 +12,7 @@ import typer
 from dotenv import dotenv_values
 from pydantic import ValidationError
 from settings_library.base import BaseCustomSettings
-from settings_library.cli_utils import create_settings_command
+from settings_library.utils_cli import create_settings_command
 from typer.testing import CliRunner
 
 log = logging.getLogger(__name__)

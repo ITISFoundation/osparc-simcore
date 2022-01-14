@@ -2,7 +2,7 @@ from pydantic import ByteSize, NonNegativeInt, validator
 from pydantic.tools import parse_raw_as
 from settings_library.base import BaseCustomSettings
 
-from .constants import GB
+from ._constants import GB
 
 _DEFAULT_MAX_NANO_CPUS_VALUE = 1 * pow(10, 9)
 _DEFAULT_MAX_MEMORY_VALUE = 2 * GB

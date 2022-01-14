@@ -3,9 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import pytest
-from yarl import URL
-
-from simcore_service_webserver.constants import (
+from simcore_service_webserver._constants import (
     APP_PRODUCTS_KEY,
     RQ_PRODUCT_KEY,
     X_PRODUCT_NAME_HEADER,
@@ -15,6 +13,7 @@ from simcore_service_webserver.products import (
     Product,
     discover_product_middleware,
 )
+from yarl import URL
 
 
 @pytest.fixture()
