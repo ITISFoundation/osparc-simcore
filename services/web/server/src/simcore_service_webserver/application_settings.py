@@ -37,6 +37,7 @@ class ApplicationSettings(BaseCustomSettings):
     APP_NAME: str = APP_NAME
 
     # IMAGE BUILDTIME ---
+    # @Makefile
     SC_BUILD_DATE: Optional[str] = None
     SC_BUILD_TARGET: Optional[BuildTargetEnum] = None
     SC_VCS_REF: Optional[str] = None
@@ -44,8 +45,8 @@ class ApplicationSettings(BaseCustomSettings):
 
     # @Dockerfile
     SC_BOOT_MODE: Optional[BootModeEnum]
-    SC_HEATCHECK_INTEVAL: Optional[int] = None
-    SC_HEATHCHECK_RETRY: Optional[int] = None
+    SC_HEALTHCHECK_INTERVAL: Optional[int] = None
+    SC_HEALTHCHECK_RETRY: Optional[int] = None
     SC_USER_ID: Optional[int] = None
     SC_USER_NAME: Optional[str] = None
 
@@ -54,7 +55,7 @@ class ApplicationSettings(BaseCustomSettings):
     # NOTE: keep alphabetically if possible
 
     SWARM_STACK_NAME: Optional[str] = Field(
-        None, description="stack name defined upon deploy (see main Makefile)"
+        None, description="Stack name defined upon deploy (see main Makefile)"
     )
 
     WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
@@ -64,7 +65,7 @@ class ApplicationSettings(BaseCustomSettings):
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
     )
 
-    WEBSERVER_POSTGRES: Optional[PostgresSettings]
+    WEBSERVER_POSTGRES: PostgresSettings
 
     WEBSERVER_SESSION_SECRET_KEY: SecretStr = Field(  # type: ignore
         ..., description="Secret key to encrypt cookies", min_length=32
@@ -87,7 +88,7 @@ class ApplicationSettings(BaseCustomSettings):
 
     WEBSERVER_S3: Optional[S3Settings]
     WEBSERVER_REDIS: Optional[RedisSettings]
-    WEBSERVER_EMAIL: Optional[SMTPSettings]
+    WEBSERVER_EMAIL: SMTPSettings
 
     # WEBSERVER_LOGIN: Optional[LoginSettings]
 
@@ -131,9 +132,10 @@ class ApplicationSettings(BaseCustomSettings):
         return {snake_to_camel(k): v for k, v in data.items()}
 
 
-def setup_settings(app: web.Application):
-    app[APP_SETTINGS_KEY] = ApplicationSettings.create_from_envs()
+def setup_settings(app: web.Application) -> ApplicationSettings:
+    app[APP_SETTINGS_KEY] = settings = ApplicationSettings.create_from_envs()
     log.info("Captured app settings:\n%s", app[APP_SETTINGS_KEY].json(indent=1))
+    return settings
 
 
 def get_settings(app: web.Application) -> ApplicationSettings:
