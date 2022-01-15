@@ -4,7 +4,6 @@ qx.Theme.define("osparc.theme.ColorDark", {
   colors: {
     "workbench-edge-comp-active": "#777777",
     "workbench-edge-api-active": "#BBBBBB",
-    "workbench-edge-selected": "#0000FF",
     "workbench-start-hint": "#505050",
 
     "node-selected-background": "#666666",
@@ -13,8 +12,6 @@ qx.Theme.define("osparc.theme.ColorDark", {
 
     "logger-debug-message": "#FFFFFF",
     "logger-info-message": "#FFFFFF",
-    "logger-warning-message": "#FFFF00",
-    "logger-error-message": "#FF0000",
 
     "service-window-hint": "#808080",
 
