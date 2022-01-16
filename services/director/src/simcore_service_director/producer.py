@@ -9,7 +9,7 @@ from distutils.version import StrictVersion
 from enum import Enum
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple
-import re
+
 import aiodocker
 import tenacity
 from aiohttp import ClientConnectionError, ClientSession, web
