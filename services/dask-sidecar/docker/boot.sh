@@ -34,27 +34,36 @@ fi
 #
 
 if [ ${DASK_START_AS_SCHEDULER+x} ]; then
-  SCHEDULER_VERSION=$(dask-scheduler --version)
-  DASK_SCHEDULER_COMMAND="${DASK_SCHEDULER_COMMAND:-dask-scheduler}"
-  for v in ${DASK_SCHEDULER_COMMAND}; do
-    echo "$v"
-    set -- "$@" "$v"
-  done
-
-  echo "$INFO" "Starting as ${SCHEDULER_VERSION}, using $@..."
+  scheduler_version=$(dask-scheduler --version)
+  echo "$INFO" "Starting as dask-scheduler:${scheduler_version}..."
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
     exec watchmedo auto-restart \
-      --recursive \
-      --pattern="*.py;*/src/*" \
-      --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \
-      --ignore-directories -- \
+        --recursive \
+        --pattern="*.py;*/src/*" \
+        --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \
+        --ignore-directories -- \
       dask-scheduler \
-      "$@"
+        --protocol "${DASK_SCHEDULER_PROTOCOL:-tcp}" \
+        --port 0 \
+        --host 0.0.0.0 \
+        --dashboard-address 0.0.0.0:8787 \
+        ${STARTED_FROM_GATEWAY:+--preload=dask_gateway.scheduler_preload} \
+        ${STARTED_FROM_GATEWAY:+--dg-api-address=0.0.0.0:0} \
+        ${STARTED_FROM_GATEWAY:+--dg-heartbeat-period=15} \
+        ${STARTED_FROM_GATEWAY:+--dg-adaptive-period=3.0} \
+        ${STARTED_FROM_GATEWAY:+--dg-idle-timeout=0.0}
 
   else
-    # exec dask-scheduler --protocol tls --port 0 --host 0.0.0.0 --dashboard-address 0.0.0.0:0 --preload dask_gateway.scheduler_preload --dg-api-address 0.0.0.0:0 --dg-heartbeat-period 15 --dg-adaptive-period 3.0 --dg-idle-timeout 0.0
-    IFS=$(printf ' \n\t')
-    exec "$@"
+    exec dask-scheduler \
+      --protocol "${DASK_SCHEDULER_PROTOCOL:-tcp}" \
+      --port 0 \
+      --host 0.0.0.0 \
+      --dashboard-address 0.0.0.0:8787 \
+      ${STARTED_FROM_GATEWAY:+--preload=dask_gateway.scheduler_preload} \
+      ${STARTED_FROM_GATEWAY:+--dg-api-address=0.0.0.0:0} \
+      ${STARTED_FROM_GATEWAY:+--dg-heartbeat-period=15} \
+      ${STARTED_FROM_GATEWAY:+--dg-adaptive-period=3.0} \
+      ${STARTED_FROM_GATEWAY:+--dg-idle-timeout=0.0}
   fi
 
 else
