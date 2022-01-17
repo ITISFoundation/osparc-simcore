@@ -36,7 +36,7 @@ def eval_environs_in_docker_compose(
     docker_compose_dir: Path,
     host_environ: Dict = None,
     *,
-    use_env_devel=True
+    use_env_devel=True,
 ):
     """Resolves environments in docker compose and sets them under 'environment' section
 
@@ -56,7 +56,7 @@ def replace_environs_in_docker_compose_service(
     docker_compose_dir: Path,
     host_environ: Dict = None,
     *,
-    use_env_devel=True
+    use_env_devel=True,
 ):
     """Resolves environments in docker-compose's service section,
     drops any reference to env_file and sets all
@@ -107,7 +107,7 @@ def eval_service_environ(
     host_environ: Dict = None,
     image_environ: Dict = None,
     *,
-    use_env_devel=True
+    use_env_devel=True,
 ) -> EnvVarsDict:
     """Deduces a service environment with it runs in a stack from confirmation
 
