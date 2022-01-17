@@ -8,13 +8,14 @@ import textwrap
 from collections import deque
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable, Deque, Dict, Generator, Optional, Tuple, Type, Union
+from typing import Callable, Deque, Generator, Optional, Tuple, Type
 
 import pytest
 import settings_library
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import dotenv_values
 from pydantic import Field
+from pytest_simcore.helpers.utils_environs import EnvVarsDict
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt
 from settings_library.postgres import PostgresSettings
@@ -57,9 +58,8 @@ def env_file():
 
 
 @pytest.fixture
-def mock_environment(
-    mocks_folder: Path, monkeypatch, env_file: str
-) -> Dict[str, Union[str, None]]:
+def mock_environment(mocks_folder: Path, monkeypatch, env_file: str) -> EnvVarsDict:
+
     env_file_path = mocks_folder / env_file
     assert env_file_path.exists()
     envs = dotenv_values(str(env_file_path))
@@ -71,41 +71,50 @@ def mock_environment(
 
 
 @pytest.fixture
-def settings_cls() -> Type[BaseCustomSettings]:
+def fake_settings_class() -> Type[BaseCustomSettings]:
     """Creates a fake Settings class
 
-    NOTE: Add mock_environment fixture before instanciating this class
+    NOTE: How to use this fixture? BaseCustomSettings captures env vars, therefore
+          make sure the environment is well defined(e.g. add always some monkeypatch based
+          fixture as 'mock_environment') before this fixture.
     """
+    # Some conventions:
+    # NOTE: all int defaults are 42, i.e. the "Answer to the Ultimate Question of Life, the Universe, and Everything"
+    # NOTE: suffixes are used to distinguis different options on the same field (e.g. _OPTIONAL, etc)
 
-    class MyModuleSettings(BaseCustomSettings):
-        """Settings for Module 1"""
+    class _ModuleSettings(BaseCustomSettings):
+        """Settings for a Module"""
 
-        MYMODULE_VALUE: int = Field(..., description="Some value for module 1")
+        MODULE_VALUE: int
 
-    class AnotherModuleSettings(BaseCustomSettings):
-        """Settings for Module 2"""
+        MODULE_VALUE_OPTIONAL: Optional[int]
+        MODULE_VALUE_OPTIONAL_ELLIPSES: Optional[int] = ...  # type:ignore
+        MODULE_VALUE_OPTIONAL_NONE: Optional[int] = None
 
-        MYMODULE2_SOME_OTHER_VALUE: int
+        MODULE_VALUE_FIELD: int = Field(..., description="Some value for module 1")
+        MODULE_VALUE_DEFAULT: int = 42
 
-    class Settings(BaseCustomSettings):
+    class _AppSettings(BaseCustomSettings):
         """The App Settings"""
 
         APP_HOST: str
-        APP_PORT: PortInt = 3
+        APP_PORT: PortInt = 42
 
+        # Different options on how to add section settings 'ModuleSettings'
+        APP_MODULE: _ModuleSettings
+
+        APP_MODULE_OPTIONAL: Optional[_ModuleSettings]
+        APP_MODULE_OPTIONAL_ELLIPSES: Optional[_ModuleSettings] = ...  # type:ignore
+        APP_MODULE_OPTIONAL_NONE: Optional[_ModuleSettings] = None
+
+        APP_MODULE_FIELD: _ModuleSettings = Field(
+            ..., description="Some value for module 1"
+        )
+
+        # Here some real settings
         APP_POSTGRES: PostgresSettings
-        APP_MODULE_1: MyModuleSettings = Field(..., description="Some Module Example")
-        APP_MODULE_2: AnotherModuleSettings
 
-        # this is how to enable/disable sub-settings a
-        APP_POSTGRES_OPTIONAL: Optional[PostgresSettings] = Field(
-            ..., description="Set as None to disable"
-        )
-        APP_POSTGRES_DISABLED: Optional[PostgresSettings] = Field(
-            None, description="Disabled by default"
-        )
-
-    return Settings
+    return _AppSettings
 
 
 @pytest.fixture

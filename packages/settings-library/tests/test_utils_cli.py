@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 
 
 @pytest.fixture
-def cli(settings_cls: Type[BaseCustomSettings]) -> typer.Typer:
+def cli(fake_settings_class: Type[BaseCustomSettings]) -> typer.Typer:
     main = typer.Typer(name="app")
 
     @main.command()
@@ -30,7 +30,7 @@ def cli(settings_cls: Type[BaseCustomSettings]) -> typer.Typer:
         typer.secho("DONE", fg=typer.colors.GREEN)
 
     # adds settings command
-    settings_cmd = create_settings_command(settings_cls, log)
+    settings_cmd = create_settings_command(fake_settings_class, log)
     main.command()(settings_cmd)
 
     return main
@@ -76,7 +76,7 @@ HELP = """
 
 
 def test_settings_as_json(
-    cli: typer.Typer, settings_cls, mock_environment, cli_runner: CliRunner
+    cli: typer.Typer, fake_settings_class, mock_environment, cli_runner: CliRunner
 ):
 
     result = cli_runner.invoke(cli, ["settings", "--as-json"])
@@ -84,11 +84,11 @@ def test_settings_as_json(
 
     # reuse resulting json to build settings
     settings: Dict = json.loads(result.stdout)
-    assert settings_cls.parse_obj(settings)
+    assert fake_settings_class.parse_obj(settings)
 
 
 def test_settings_as_env_file(
-    cli: typer.Typer, settings_cls, mock_environment, cli_runner: CliRunner
+    cli: typer.Typer, fake_settings_class, mock_environment, cli_runner: CliRunner
 ):
     # ANE -> PC: this test will be left in place but the feature will
     # not be considered for parsing settings via Pudantic as there
@@ -107,18 +107,18 @@ def test_settings_as_env_file(
         except json.decoder.JSONDecodeError:
             pass
 
-    assert settings_cls.parse_obj(settings)
+    assert fake_settings_class.parse_obj(settings)
 
 
 def test_supported_parsable_env_formats(
     cli: typer.Typer,
-    settings_cls: Type[BaseCustomSettings],
+    fake_settings_class: Type[BaseCustomSettings],
     cli_runner: CliRunner,
     mocked_settings_cls_env: str,
     mocked_environment: Callable[[str], ContextManager[None]],
 ) -> None:
     with mocked_environment(mocked_settings_cls_env):
-        settings_object = settings_cls.create_from_envs()
+        settings_object = fake_settings_class.create_from_envs()
         assert settings_object
 
         setting_env_content = cli_runner.invoke(
@@ -129,19 +129,19 @@ def test_supported_parsable_env_formats(
 
     # parse standard format
     with mocked_environment(setting_env_content):
-        settings_object = settings_cls.create_from_envs()
+        settings_object = fake_settings_class.create_from_envs()
         assert settings_object
 
 
 def test_unsupported_env_format(
     cli: typer.Typer,
-    settings_cls: Type[BaseCustomSettings],
+    fake_settings_class: Type[BaseCustomSettings],
     cli_runner: CliRunner,
     mocked_settings_cls_env: str,
     mocked_environment: Callable[[str], ContextManager[None]],
 ) -> None:
     with mocked_environment(mocked_settings_cls_env):
-        settings_object = settings_cls.create_from_envs()
+        settings_object = fake_settings_class.create_from_envs()
         assert settings_object
 
         setting_env_content_compact = cli_runner.invoke(
@@ -160,5 +160,5 @@ def test_unsupported_env_format(
 
         # parse compact format
         with mocked_environment(setting_env_content_compact):
-            settings_object = settings_cls.create_from_envs()
+            settings_object = fake_settings_class.create_from_envs()
             assert settings_object
