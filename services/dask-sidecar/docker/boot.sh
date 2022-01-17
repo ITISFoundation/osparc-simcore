@@ -42,28 +42,9 @@ if [ ${DASK_START_AS_SCHEDULER+x} ]; then
         --pattern="*.py;*/src/*" \
         --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \
         --ignore-directories -- \
-      dask-scheduler \
-        --protocol "${DASK_SCHEDULER_PROTOCOL:-tcp}" \
-        --port 0 \
-        --host 0.0.0.0 \
-        --dashboard-address 0.0.0.0:8787 \
-        ${STARTED_FROM_GATEWAY:+--preload=dask_gateway.scheduler_preload} \
-        ${STARTED_FROM_GATEWAY:+--dg-api-address=0.0.0.0:0} \
-        ${STARTED_FROM_GATEWAY:+--dg-heartbeat-period=15} \
-        ${STARTED_FROM_GATEWAY:+--dg-adaptive-period=3.0} \
-        ${STARTED_FROM_GATEWAY:+--dg-idle-timeout=0.0}
-
+      dask-scheduler
   else
-    exec dask-scheduler \
-      --protocol "${DASK_SCHEDULER_PROTOCOL:-tcp}" \
-      --port 0 \
-      --host 0.0.0.0 \
-      --dashboard-address 0.0.0.0:8787 \
-      ${STARTED_FROM_GATEWAY:+--preload=dask_gateway.scheduler_preload} \
-      ${STARTED_FROM_GATEWAY:+--dg-api-address=0.0.0.0:0} \
-      ${STARTED_FROM_GATEWAY:+--dg-heartbeat-period=15} \
-      ${STARTED_FROM_GATEWAY:+--dg-adaptive-period=3.0} \
-      ${STARTED_FROM_GATEWAY:+--dg-idle-timeout=0.0}
+    exec dask-scheduler
   fi
 
 else
