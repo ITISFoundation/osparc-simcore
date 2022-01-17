@@ -208,12 +208,18 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("dashboard-label").show();
           this.getChildControl("dashboard-button").exclude();
           this.getChildControl("read-only-icon").exclude();
+          if (this.__tabButtons) {
+            this.__tabButtons.show();
+          }
           break;
         case "workbench":
         case "guided":
         case "app":
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
+          if (this.__tabButtons) {
+            this.__tabButtons.exclude();
+          }
           break;
       }
     },
@@ -289,6 +295,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         toolTipText: this.tr("Give us feedback")
       });
       return feedbackBtn;
+    },
+
+    addDashboardTabButtons: function(tabButtons) {
+      this.__tabButtons = tabButtons;
+      this.getChildControl("center-items").add(tabButtons);
     },
 
     _applyStudy: function(study) {
