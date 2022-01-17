@@ -215,8 +215,8 @@ async def test_start_status_stop(
 
             status_is_not_running = data.get("service_state", "") != "running"
 
-        # give the service some time to keep up
-        await asyncio.sleep(5)
+            # give the service some time to keep up
+            await asyncio.sleep(5)
 
     assert data["service_state"] == "running"
 
