@@ -218,7 +218,7 @@ class DynamicSidecarClient:
             )
             if response.status_code != status.HTTP_200_OK:
                 message = (
-                    f"ERROR while restoring service state: "
+                    f"ERROR while pulling input ports: "
                     f"status={response.status_code}, body={response.text}"
                 )
                 logging.warning(message)
@@ -234,7 +234,7 @@ class DynamicSidecarClient:
             response = await self._client.patch(url, json=dict(is_enabled=False))
             if response.status_code != status.HTTP_204_NO_CONTENT:
                 message = (
-                    f"ERROR while restoring service state: "
+                    f"ERROR while disabling directory watcher: "
                     f"status={response.status_code}, body={response.text}"
                 )
                 logging.warning(message)
@@ -249,7 +249,7 @@ class DynamicSidecarClient:
             response = await self._client.patch(url, json=dict(is_enabled=True))
             if response.status_code != status.HTTP_204_NO_CONTENT:
                 message = (
-                    f"ERROR while restoring service state: "
+                    f"ERROR while enabling directory watcher: "
                     f"status={response.status_code}, body={response.text}"
                 )
                 logging.warning(message)
@@ -268,7 +268,7 @@ class DynamicSidecarClient:
             )
             if response.status_code != status.HTTP_204_NO_CONTENT:
                 message = (
-                    f"ERROR while restoring service state: "
+                    f"ERROR while creating outputs directory: "
                     f"status={response.status_code}, body={response.text}"
                 )
                 logging.warning(message)
@@ -288,7 +288,7 @@ class DynamicSidecarClient:
             )
             if response.status_code != status.HTTP_200_OK:
                 message = (
-                    f"ERROR while restoring service state: "
+                    f"ERROR while pulling output ports: "
                     f"status={response.status_code}, body={response.text}"
                 )
                 logging.warning(message)
@@ -309,7 +309,7 @@ class DynamicSidecarClient:
             )
             if response.status_code != status.HTTP_204_NO_CONTENT:
                 message = (
-                    f"ERROR while restoring service state: "
+                    f"ERROR while pushing outputs ports: "
                     f"status={response.status_code}, body={response.text}"
                 )
                 logging.warning(message)
