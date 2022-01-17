@@ -68,7 +68,18 @@ qx.Class.define("osparc.wrapper.Svg", {
 
       osparc.wrapper.Svg.curateCurveControls(controls);
 
-      const edge = draw.path()
+      const widerCurve = draw.path()
+        .M(controls[0].x, controls[0].y)
+        .C(controls[1], controls[2], controls[3])
+        .style({
+          cursor: "pointer"
+        })
+        .opacity(0)
+        .stroke({
+          width: edgeWidth*4
+        });
+
+      const curve = draw.path()
         .M(controls[0].x, controls[0].y)
         .C(controls[1], controls[2], controls[3])
         .fill("none")
@@ -80,33 +91,40 @@ qx.Class.define("osparc.wrapper.Svg", {
           color: edgeColor,
           dasharray: dashed ? 5 : 0
         });
+      curve.widerCurve = widerCurve;
 
       const portArrow = draw.marker(arrowSize, arrowSize, add => {
         add.path("M 0 0 V 4 L 2 2 Z")
           .fill(edgeColor)
           .size(arrowSize, arrowSize);
       });
-      edge.marker("end", portArrow);
+      curve.marker("end", portArrow);
+      curve.markers = [portArrow];
 
-      edge.markers = [portArrow];
-
-      return edge;
+      return curve;
     },
 
     updateCurve: function(curve, controls) {
       if (curve.type === "path") {
         let mSegment = curve.getSegment(0);
         mSegment.coords = [controls[0].x, controls[0].y];
-        curve.replaceSegment(0, mSegment);
-
         let cSegment = curve.getSegment(1);
         cSegment.coords = [controls[1].x, controls[1].y, controls[2].x, controls[2].y, controls[3].x, controls[3].y];
+
+        if (curve.widerCurve) {
+          curve.widerCurve.replaceSegment(0, mSegment);
+          curve.widerCurve.replaceSegment(1, cSegment);
+        }
+        curve.replaceSegment(0, mSegment);
         curve.replaceSegment(1, cSegment);
       }
     },
 
     removeCurve: function(curve) {
       if (curve.type === "path") {
+        if (curve.widerCurve) {
+          curve.widerCurve.remove();
+        }
         curve.remove();
       }
     },

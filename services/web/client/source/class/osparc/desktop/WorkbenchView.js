@@ -613,23 +613,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }, this);
       }
 
-      // callback for node updates
-      const slotName3 = "nodeUpdated";
-      if (!socket.slotExists(slotName3)) {
-        socket.on(slotName3, data => {
-          const d = JSON.parse(data);
-          const nodeId = d["node_id"];
-          const nodeData = d["data"];
-          const workbench = this.getStudy().getWorkbench();
-          const node = workbench.getNode(nodeId);
-          if (node && nodeData) {
-            node.setOutputData(nodeData.outputs);
-            node.populateStates(nodeData);
-          } else if (osparc.data.Permissions.getInstance().isTester()) {
-            console.log("Ignored ws 'nodeUpdated' msg", d);
-          }
-        }, this);
-      }
+      this.listenToNodeUpdated();
 
       // callback for events
       const slotName4 = "event";
@@ -1091,7 +1075,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : this.getStudy().getUuid());
       this.__workbenchChanged();
 
-      this.__workbenchUI.resetSelectedNodes();
+      this.__workbenchUI.resetSelection();
     },
 
     __ungroupSelection: function() {
@@ -1121,7 +1105,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : this.getStudy().getUuid());
       this.__workbenchChanged();
 
-      this.__workbenchUI.resetSelectedNodes();
+      this.__workbenchUI.resetSelection();
     },
 
     __attachEventHandlers: function() {
