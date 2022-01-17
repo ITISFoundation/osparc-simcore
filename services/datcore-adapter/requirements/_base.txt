@@ -17,6 +17,8 @@ anyio==3.2.1
     # via
     #   httpcore
     #   starlette
+asgiref==3.4.1
+    # via uvicorn
 boto3==1.17.104
     # via pennsieve
 botocore==1.20.104
@@ -72,7 +74,7 @@ hpack==3.0.0
     # via h2
 httpcore==0.14.4
     # via httpx
-httptools==0.1.2
+httptools==0.3.0
     # via uvicorn
 httpx==0.21.3
     # via -r requirements/_base.in
@@ -203,21 +205,15 @@ urllib3==1.26.7
     #   -c requirements/../../../requirements/constraints.txt
     #   botocore
     #   requests
-uvicorn==0.13.4
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_base.in
+uvicorn==0.17.0
+    # via -r requirements/_base.in
 uvloop==0.15.2
     # via uvicorn
 watchgod==0.7
     # via uvicorn
 websocket-client==1.1.0
     # via pennsieve
-websockets==8.1
+websockets==10.1
     # via uvicorn
 wrapt==1.12.1
     # via deprecated
