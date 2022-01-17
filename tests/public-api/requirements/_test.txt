@@ -43,7 +43,7 @@ h11==0.12.0
     # via httpcore
 httpcore==0.14.3
     # via httpx
-httpx==0.21.1
+httpx==0.21.3
     # via -r requirements/_test.in
 idna==3.3
     # via

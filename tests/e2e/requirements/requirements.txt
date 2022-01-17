@@ -6,7 +6,7 @@
 #
 certifi==2021.10.8
     # via requests
-charset-normalizer==2.0.8
+charset-normalizer==2.0.10
     # via requests
 docker==5.0.3
     # via -r requirements.in
@@ -16,13 +16,13 @@ pyyaml==6.0
     # via
     #   -c ../../../requirements/constraints.txt
     #   -r requirements.in
-requests==2.26.0
+requests==2.27.1
     # via docker
 tenacity==8.0.1
     # via -r requirements.in
-urllib3==1.26.7
+urllib3==1.26.8
     # via
     #   -c ../../../requirements/constraints.txt
     #   requests
-websocket-client==1.2.1
+websocket-client==1.2.3
     # via docker
