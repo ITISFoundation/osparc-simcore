@@ -6,7 +6,7 @@
 #
 backports.entry-points-selectable==1.1.1
     # via virtualenv
-black==21.11b1
+black==21.12b0
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
@@ -49,8 +49,6 @@ pyyaml==6.0
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_test.txt
     #   pre-commit
-regex==2021.11.10
-    # via black
 six==1.16.0
     # via
     #   -c requirements/_test.txt

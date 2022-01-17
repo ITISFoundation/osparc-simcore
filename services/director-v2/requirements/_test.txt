@@ -56,6 +56,7 @@ bokeh==2.4.2
 certifi==2021.5.30
     # via
     #   -c requirements/_base.txt
+    #   httpcore
     #   httpx
     #   minio
     #   requests
@@ -69,6 +70,10 @@ chardet==4.0.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
+charset-normalizer==2.0.10
+    # via
+    #   -c requirements/_base.txt
+    #   httpx
 codecov==2.1.12
     # via -r requirements/_test.in
 colorlog==6.6.0
@@ -113,11 +118,11 @@ h11==0.12.0
     #   httpcore
 hiredis==2.0.0
     # via aioredis
-httpcore==0.13.6
+httpcore==0.14.4
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.18.2
+httpx==0.21.3
     # via
     #   -c requirements/_base.txt
     #   respx
@@ -262,10 +267,8 @@ requests==2.25.1
     #   coveralls
     #   docker
     #   docker-compose
-respx==0.17.1
-    # via
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+respx==0.19.1
+    # via -r requirements/_test.in
 rfc3986==1.4.0
     # via
     #   -c requirements/_base.txt
