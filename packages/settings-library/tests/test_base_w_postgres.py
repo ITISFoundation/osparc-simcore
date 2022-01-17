@@ -235,7 +235,18 @@ def test_with_postgres_envs(monkeypatch, fake_main_settings_with_postgres):
 
     s4 = _MainSettings.AsNullableAutoDefault.create_from_envs()
     assert s4.dict(exclude_unset=True) == {}
-    assert s4.dict() == s3.dict()
+    assert s4.dict() == {
+        "WEBSERVER_POSTGRES": {
+            "POSTGRES_HOST": "pg",
+            "POSTGRES_USER": "test",
+            "POSTGRES_PORT": 5432,
+            "POSTGRES_PASSWORD": "shh",
+            "POSTGRES_DB": "db",
+            "POSTGRES_MAXSIZE": 50,
+            "POSTGRES_MINSIZE": 1,
+            "POSTGRES_CLIENT_NAME": None,
+        }
+    }
 
     s5 = _MainSettings.AsDefaultNone.create_from_envs()
     assert s5.dict(exclude_unset=True) == {}
@@ -275,6 +286,18 @@ def test_with_json_env(monkeypatch, fake_main_settings_with_postgres):
             "POSTGRES_DB": "db2",
         }
     }
+    assert s1.dict() == {
+        "WEBSERVER_POSTGRES": {
+            "POSTGRES_HOST": "pg2",
+            "POSTGRES_USER": "test2",
+            "POSTGRES_PORT": 5432,
+            "POSTGRES_PASSWORD": "shh2",
+            "POSTGRES_DB": "db2",
+            "POSTGRES_MAXSIZE": 50,
+            "POSTGRES_MINSIZE": 1,
+            "POSTGRES_CLIENT_NAME": None,
+        }
+    }
 
     s2 = _MainSettings.AsOptionalUndefined.create_from_envs()
     assert s2.dict(exclude_unset=True) == {
@@ -299,5 +322,103 @@ def test_with_json_env(monkeypatch, fake_main_settings_with_postgres):
             "POSTGRES_USER": "test2",
             "POSTGRES_PASSWORD": "shh2",
             "POSTGRES_DB": "db2",
+        }
+    }
+
+
+def test_with_json_and_postgres_envs(monkeypatch, fake_main_settings_with_postgres):
+
+    _MainSettings = fake_main_settings_with_postgres
+
+    # MIXED environment with json (compact) AND postgres envs
+    monkeypatch_setenvfile(
+        monkeypatch,
+        """
+            WEBSERVER_POSTGRES='{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}'
+        """,
+    )
+    monkeypatch_setenvfile(
+        monkeypatch,
+        """
+            POSTGRES_HOST=pg
+            POSTGRES_USER=test
+            POSTGRES_PASSWORD=ssh
+            POSTGRES_DB=db
+            POSTGRES_CLIENT_NAME=client-name
+        """,
+    )
+
+    # test
+    s1 = _MainSettings.AsRequired.create_from_envs()
+
+    assert s1.dict(exclude_unset=True) == {
+        "WEBSERVER_POSTGRES": {
+            "POSTGRES_HOST": "pg2",
+            "POSTGRES_USER": "test2",
+            "POSTGRES_PASSWORD": "shh2",
+            "POSTGRES_DB": "db2",
+            "POSTGRES_CLIENT_NAME": "client-name",
+        }
+    }
+    assert s1.dict() == {
+        "WEBSERVER_POSTGRES": {
+            "POSTGRES_HOST": "pg2",
+            "POSTGRES_USER": "test2",
+            "POSTGRES_PORT": 5432,
+            "POSTGRES_PASSWORD": "shh2",
+            "POSTGRES_DB": "db2",
+            "POSTGRES_MAXSIZE": 50,
+            "POSTGRES_MINSIZE": 1,
+            "POSTGRES_CLIENT_NAME": "client-name",
+        }
+    }
+
+    s2 = _MainSettings.AsOptionalUndefined.create_from_envs()
+    assert s2.dict(exclude_unset=True) == {
+        "WEBSERVER_POSTGRES": {
+            "POSTGRES_HOST": "pg2",
+            "POSTGRES_USER": "test2",
+            "POSTGRES_PASSWORD": "shh2",
+            "POSTGRES_DB": "db2",
+            "POSTGRES_CLIENT_NAME": "client-name",
+        }
+    }
+
+    s3 = _MainSettings.AsOptionalAutoDefault.create_from_envs()
+    assert s3.dict() == {
+        "WEBSERVER_POSTGRES": {
+            "POSTGRES_HOST": "pg2",
+            "POSTGRES_USER": "test2",
+            "POSTGRES_PORT": 5432,
+            "POSTGRES_PASSWORD": "shh2",
+            "POSTGRES_DB": "db2",
+            "POSTGRES_MAXSIZE": 50,
+            "POSTGRES_MINSIZE": 1,
+            "POSTGRES_CLIENT_NAME": "client-name",
+        }
+    }
+
+    s4 = _MainSettings.AsNullableAutoDefault.create_from_envs()
+    assert s4.dict() == {
+        "WEBSERVER_POSTGRES": {
+            "POSTGRES_HOST": "pg2",
+            "POSTGRES_USER": "test2",
+            "POSTGRES_PORT": 5432,
+            "POSTGRES_PASSWORD": "shh2",
+            "POSTGRES_DB": "db2",
+            "POSTGRES_MAXSIZE": 50,
+            "POSTGRES_MINSIZE": 1,
+            "POSTGRES_CLIENT_NAME": "client-name",
+        }
+    }
+
+    s5 = _MainSettings.AsDefaultNone.create_from_envs()
+    assert s5.dict(exclude_unset=True) == {
+        "WEBSERVER_POSTGRES": {
+            "POSTGRES_HOST": "pg2",
+            "POSTGRES_USER": "test2",
+            "POSTGRES_PASSWORD": "shh2",
+            "POSTGRES_DB": "db2",
+            "POSTGRES_CLIENT_NAME": "client-name",
         }
     }
