@@ -440,8 +440,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return selectedNodeIDs;
     },
 
-    resetSelectedNodes: function() {
+    resetSelection: function() {
       this.__setSelectedNodes([]);
+      this.__selectedItemChanged(null);
     },
 
     __setSelectedNodes: function(selectedNodeUIs) {
@@ -526,6 +527,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__edgesUI.push(edgeUI);
 
         const that = this;
+        edgeUI.getRepresentation().widerCurve.node.addEventListener("click", e => {
+          // this is needed to get out of the context of svg
+          that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
+          e.stopPropagation();
+        }, this);
         edgeUI.getRepresentation().node.addEventListener("click", e => {
           // this is needed to get out of the context of svg
           that.__selectedItemChanged(edgeUI.getEdgeId()); // eslint-disable-line no-underscore-dangle
@@ -994,7 +1000,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     _loadModel: async function(model) {
       this._clearAll();
-      this.resetSelectedNodes();
+      this.resetSelection();
       this._currentModel = model;
       if (model) {
         const isContainer = model.isContainer();
@@ -1419,7 +1425,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
               this.fireDataEvent("removeNode", selectedNodeIDs[0]);
               break;
             case "Escape":
-              this.resetSelectedNodes();
+              this.resetSelection();
               break;
           }
         } else if (keyEvent.getKeyIdentifier() === "Delete" && this.__isSelectedItemAnEdge()) {
@@ -1428,16 +1434,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         } else if (keyEvent.getKeyIdentifier() === "Delete") {
           this.fireDataEvent("removeNodes", selectedNodeIDs);
         } else if (keyEvent.getKeyIdentifier() === "Escape") {
-          this.resetSelectedNodes();
+          this.resetSelection();
           this.__removeTempEdge();
           this.__removePointerMoveListener();
         }
       }, this);
 
-      this.__workbenchLayout.addListener("tap", () => {
-        this.resetSelectedNodes();
-        this.__selectedItemChanged(null);
-      }, this);
+      this.__workbenchLayout.addListener("tap", () => this.resetSelection(), this);
       this.__workbenchLayout.addListener("dbltap", e => this.__openServiceCatalog(e), this);
       this.__workbenchLayout.addListener("resize", () => this.__updateHint(), this);
 
