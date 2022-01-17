@@ -1,22 +1,24 @@
 """ Customizes pydantic's BaseSettings class and extends it to allow embedded BaseSettings (not only BaseModels)
 
 
++ MOTIVATION:
 
-
-SEE https://pydantic-docs.helpmanual.io/usage/settings/:
     If you create a model that inherits from BaseSettings, the model initialiser will
     attempt to determine the values of any fields not passed as keyword arguments by reading from the environment
     (Default values will still be used if the matching environment variable is not set.)
 
+    osparc's services share many configurations (e.g. access postgress) which are commas pydantic settings as
+    well (e.g. settings_library.postgres.PostgresSettings )
 
 
+SEE https://pydantic-docs.helpmanual.io/usage/settings/:
 """
 
 
 import logging
 import os
 from functools import cached_property
-from typing import List, Tuple, Type
+from typing import Any, Dict, List, Tuple, Type
 
 from pydantic import BaseSettings, Extra, SecretStr, ValidationError
 from pydantic.fields import ModelField
@@ -31,6 +33,10 @@ class AutoDefaultType:
 AUTO_DEFAULT_FROM_ENV_VARS = AutoDefaultType()
 
 NameSettingsTypePair = Tuple[str, Type["BaseCustomSettings"]]
+
+
+class AutoDefaultFactoryError(ValidationError):
+    ...
 
 
 class BaseCustomSettings(BaseSettings):
@@ -67,7 +73,7 @@ class BaseCustomSettings(BaseSettings):
                 field_obj.default = default
                 field_obj.field_info.default = default
                 field_obj.required = False
-            except ValidationError as e:
+            except ValidationError as err:
                 logger.error(
                     (
                         "Could not validate '%s', field '%s' "
@@ -77,10 +83,12 @@ class BaseCustomSettings(BaseSettings):
                     ),
                     cls.__name__,
                     default_cls.__name__,
-                    str(e),
+                    str(err),
                     "\n".join(f"{k}={v}" for k, v in os.environ.items()),
                 )
-                raise e
+                raise AutoDefaultFactoryError(
+                    errors=err.raw_errors, model=err.model
+                ) from err
 
     @classmethod
     def create_from_envs(cls):
@@ -96,23 +104,29 @@ class BaseCustomSettings(BaseSettings):
         # captures envs here to build defaults for BaseCustomSettings sub-settings
         name: str
         field: ModelField
-        defaults_to_create: List[NameSettingsTypePair] = []
+
+        auto_default_factories: List[NameSettingsTypePair] = []
+        init_from_envs: Dict[str, Any] = {}
 
         for name, field in cls.__fields__.items():
-            if field.field_info.default == AUTO_DEFAULT_FROM_ENV_VARS:
-                if issubclass(field.type_, BaseCustomSettings):
-                    defaults_to_create.append((name, field.type_))
-                elif issubclass(field.type_, BaseSettings):
-                    raise ValueError(
-                        f"{cls}.{name} of type {field.type_} must inherit from BaseCustomSettings"
-                    )
-                else:
-                    raise ValueError(
-                        "default=AUTO_DEFAULT can only be used in BaseCustomSettings subclasses"
-                        f"but field {cls}.{name} is of type {field.type_} "
-                    )
-        cls._reset_field_defaults(defaults_to_create)
 
-        # builds instance
-        obj = cls()
+            if issubclass(field.type_, BaseCustomSettings):
+                subsettings_cls = field.type_
+
+                if field.field_info.default == AUTO_DEFAULT_FROM_ENV_VARS:
+                    auto_default_factories.append((name, subsettings_cls))
+
+            elif issubclass(field.type_, BaseSettings):
+                raise ValueError(
+                    f"{cls}.{name} of type {field.type_} must inherit from BaseCustomSettings"
+                )
+
+            elif field.field_info.default == AUTO_DEFAULT_FROM_ENV_VARS:
+                raise ValueError(
+                    "default=AUTO_DEFAULT can only be used in BaseCustomSettings subclasses"
+                    f"but field {cls}.{name} is of type {field.type_} "
+                )
+
+        cls._reset_field_defaults(auto_default_factories)
+        obj = cls(**init_from_envs)
         return obj
