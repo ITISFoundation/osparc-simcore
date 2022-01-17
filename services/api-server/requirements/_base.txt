@@ -15,7 +15,6 @@ aiofiles==0.5.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-    #   fastapi
 aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -42,6 +41,8 @@ anyio==3.5.0
     # via
     #   httpcore
     #   starlette
+asgiref==3.4.1
+    # via uvicorn
 async-timeout==3.0.1
     # via
     #   aiohttp
@@ -102,7 +103,7 @@ h11==0.12.0
     #   uvicorn
 httpcore==0.14.4
     # via httpx
-httptools==0.1.2
+httptools==0.2.0
     # via uvicorn
 httpx==0.21.3
     # via -r requirements/_base.in
@@ -305,24 +306,13 @@ urllib3==1.26.7
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-uvicorn==0.13.4
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   fastapi
+uvicorn==0.15.0
+    # via fastapi
 uvloop==0.14.0
     # via uvicorn
 watchgod==0.7
     # via uvicorn
-websockets==8.1
+websockets==10.1
     # via uvicorn
 yarl==1.6.3
     # via
