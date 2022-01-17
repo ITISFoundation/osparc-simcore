@@ -37,7 +37,7 @@ sqlalchemy<2.0
 minio==7.0.4
 
 # FIXME: auto-reload does not work
-uvicorn<0.14.0
+uvicorn<0.18.0
 
 #
 # Compatibility/coordination
