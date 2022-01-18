@@ -65,7 +65,7 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
       const menuButtons = this._getMenuButtons();
       menuButtons.forEach(button => button.resetIcon());
       // Remove active tags
-      if (this.__activeTags && this.__activeTags.length) {
+      if (this.__activeTags.length) {
         this.__activeTags.length = 0;
       }
       // Remove tag buttons
@@ -73,7 +73,10 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
         this._remove(this.__tagButtons[tagName]);
         delete this.__tagButtons[tagName];
       }
-      // Dispatch
+      this.__dispatch();
+    },
+
+    __dispatch: function() {
       this._filterChange(this.__activeTags);
     },
 
@@ -100,8 +103,7 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
           this.__tagButtons[tagName] = tagButton;
         }
       }
-      // Dispatch
-      this._filterChange(this.__activeTags);
+      this.__dispatch();
     },
 
     __removeTag: function(tagName, menuButton) {
@@ -113,8 +115,7 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
         this._remove(this.__tagButtons[tagName]);
         delete this.__tagButtons[tagName];
       }
-      // Dispatch
-      this._filterChange(this.__activeTags);
+      this.__dispatch();
     },
 
     _getMenuButtons: function() {
