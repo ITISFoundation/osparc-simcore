@@ -9,6 +9,7 @@ from typing import Optional
 import pytest
 from dotenv import dotenv_values
 from pydantic import Field, ValidationError
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.base import (
     AUTO_DEFAULT_FROM_ENV_VARS,
     AutoDefaultFactoryError,
@@ -41,17 +42,30 @@ class _FakePostgresSettings(BaseCustomSettings):
     )
 
 
-def monkeypatch_setenvfile(monkeypatch, content: str):
-    envs = dotenv_values(stream=StringIO(content))
+#
+# NOTE: monkeypatching envs using envfile text gets closer
+#       to the real use case where .env/.env-devel
+#       files are used to setup envs. Quotes formatting in
+#       those files can sometimes be challenging for parsers
+#
+# TODO: move this to pytest_simcore ?
+
+
+def setenvs_as_envfile(monkeypatch, envfile_text: str) -> EnvVarsDict:
+    envs = dotenv_values(stream=StringIO(envfile_text))
     for key, value in envs.items():
         monkeypatch.setenv(key, str(value))
+    return envs
 
 
-def monkeypatch_delenvfile(monkeypatch, content: str, raising: bool):
-    envs = dotenv_values(stream=StringIO(content))
+def delenvs_as_envfile(monkeypatch, envfile_text: str, raising: bool) -> EnvVarsDict:
+    envs = dotenv_values(stream=StringIO(envfile_text))
     for key in envs.keys():
         monkeypatch.delenv(key, raising=raising)
+    return envs
 
+
+# FIXTURES --------------------------------------------------------------------------------------
 
 #
 #
@@ -79,6 +93,50 @@ def fake_settings_class():
         SETTINGS_VALUE_OPTIONAL_DEFAULT_NONE: Optional[int] = None
 
     return _Settings
+
+
+#
+# NOTE: Tests below are progressive to understand and validate the construction mechanism
+#       implemented in BaseCustomSettings.
+#       Pay attention how the defaults of SubSettings are automaticaly captured from env vars
+#       at construction time.
+#
+
+
+@pytest.fixture
+def fake_main_settings_with_postgres():
+    class _Namespace:
+        #
+        # Different constraints on WEBSERVER_POSTGRES subsettings
+        #
+        class AsRequired(BaseCustomSettings):
+            # required
+            WEBSERVER_POSTGRES: _FakePostgresSettings
+
+        class AsOptionalUndefined(BaseCustomSettings):
+            # optional with undefined default
+            WEBSERVER_POSTGRES: Optional[_FakePostgresSettings]
+
+        class AsOptionalAutoDefault(BaseCustomSettings):
+            # optional with auto default i.e. delayed default factory
+            WEBSERVER_POSTGRES: _FakePostgresSettings = Field(
+                AUTO_DEFAULT_FROM_ENV_VARS
+            )
+
+        class AsNullableAutoDefault(BaseCustomSettings):
+            # optional, nullable and with auto default (= enabled by default)
+            WEBSERVER_POSTGRES: Optional[_FakePostgresSettings] = Field(
+                AUTO_DEFAULT_FROM_ENV_VARS
+            )
+
+        class AsDefaultNone(BaseCustomSettings):
+            # optional, nullable and None default (= disabled by default)
+            WEBSERVER_POSTGRES: Optional[_FakePostgresSettings] = None
+
+    return _Namespace
+
+
+# TESTS --------------------------------------------------------------------------------------
 
 
 def test_create_settings_from_env(monkeypatch, fake_settings_class):
@@ -124,47 +182,6 @@ def test_create_settings_from_env(monkeypatch, fake_settings_class):
     }
 
 
-#
-# NOTE: Tests below are progressive to understand and validate the construction mechanism
-#       implemented in BaseCustomSettings.
-#       Pay attention how the defaults of SubSettings are automaticaly captured from env vars
-#       at construction time.
-#
-
-
-@pytest.fixture
-def fake_main_settings_with_postgres():
-    class _MainSettingsVariants:
-        #
-        # Different constraints on WEBSERVER_POSTGRES subsettings
-        #
-        class AsRequired(BaseCustomSettings):
-            # required
-            WEBSERVER_POSTGRES: _FakePostgresSettings
-
-        class AsOptionalUndefined(BaseCustomSettings):
-            # optional with undefined default
-            WEBSERVER_POSTGRES: Optional[_FakePostgresSettings]
-
-        class AsOptionalAutoDefault(BaseCustomSettings):
-            # optional with auto default i.e. delayed default factory
-            WEBSERVER_POSTGRES: _FakePostgresSettings = Field(
-                AUTO_DEFAULT_FROM_ENV_VARS
-            )
-
-        class AsNullableAutoDefault(BaseCustomSettings):
-            # optional, nullable and with auto default (= enabled by default)
-            WEBSERVER_POSTGRES: Optional[_FakePostgresSettings] = Field(
-                AUTO_DEFAULT_FROM_ENV_VARS
-            )
-
-        class AsDefaultNone(BaseCustomSettings):
-            # optional, nullable and None default (= disabled by default)
-            WEBSERVER_POSTGRES: Optional[_FakePostgresSettings] = None
-
-    return _MainSettingsVariants
-
-
 def test_without_environs(monkeypatch, fake_main_settings_with_postgres):
 
     _MainSettings = fake_main_settings_with_postgres
@@ -193,7 +210,7 @@ def test_with_postgres_envs(monkeypatch, fake_main_settings_with_postgres):
 
     # environments with individual envs (PostgresSettings required fields)
     monkeypatch.delenv("WEBSERVER_POSTGRES", raising=False)
-    monkeypatch_setenvfile(
+    setenvs_as_envfile(
         monkeypatch,
         """
             POSTGRES_HOST=pg
@@ -258,13 +275,13 @@ def test_with_json_env(monkeypatch, fake_main_settings_with_postgres):
     _MainSettings = fake_main_settings_with_postgres
 
     # environment with json (compact)
-    monkeypatch_setenvfile(
+    setenvs_as_envfile(
         monkeypatch,
         """
             WEBSERVER_POSTGRES='{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}'
         """,
     )
-    monkeypatch_delenvfile(
+    delenvs_as_envfile(
         monkeypatch,
         """
             POSTGRES_HOST=
@@ -331,15 +348,11 @@ def test_with_json_and_postgres_envs(monkeypatch, fake_main_settings_with_postgr
     _MainSettings = fake_main_settings_with_postgres
 
     # MIXED environment with json (compact) AND postgres envs
-    monkeypatch_setenvfile(
+    setenvs_as_envfile(
         monkeypatch,
         """
             WEBSERVER_POSTGRES='{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}'
-        """,
-    )
-    monkeypatch_setenvfile(
-        monkeypatch,
-        """
+
             POSTGRES_HOST=pg
             POSTGRES_USER=test
             POSTGRES_PASSWORD=ssh

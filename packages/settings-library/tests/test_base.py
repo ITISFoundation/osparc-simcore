@@ -6,18 +6,15 @@
 import importlib
 import inspect
 import os
-from io import StringIO
 from pathlib import Path
 from typing import List, Optional, Type
 
 import pytest
 import settings_library
-from dotenv import dotenv_values
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.env_settings import BaseSettings
 from pytest_simcore.helpers.utils_environs import EnvVarsDict
 from settings_library.base import AUTO_DEFAULT_FROM_ENV_VARS, BaseCustomSettings
-from settings_library.postgres import PostgresSettings
 
 # HELPERS --------------------------------------------------------------------------------
 
@@ -293,136 +290,6 @@ def test_create_from_envs_4(monkeypatch, fake_sub_model_class, fake_sub_settings
     assert settings.dict(exclude_unset=True) == {}  # NOTE that ALL are defaults!
 
     # QUESTION: should auto-default raise if cannot be init or be set to None?
-
-
-@pytest.fixture
-def fake_main_settings_with_postgres():
-    class _MainSettingsVariants:
-        #
-        # Different constraints on WEBSERVER_POSTGRES subsettings
-        #
-        class AsRequired(BaseCustomSettings):
-            # required
-            WEBSERVER_POSTGRES: PostgresSettings
-
-        class AsOptionalUndefined(BaseCustomSettings):
-            # optional with undefined default
-            WEBSERVER_POSTGRES: Optional[PostgresSettings]
-
-        class AsOptionalAutoDefault(BaseCustomSettings):
-            # optional with auto default i.e. delayed default factory
-            WEBSERVER_POSTGRES: PostgresSettings = Field(AUTO_DEFAULT_FROM_ENV_VARS)
-
-        class AsNullableAutoDefault(BaseCustomSettings):
-            # optional, nullable and with auto default (= enabled by default)
-            WEBSERVER_POSTGRES: Optional[PostgresSettings] = Field(
-                AUTO_DEFAULT_FROM_ENV_VARS
-            )
-
-        class AsDefaultNone(BaseCustomSettings):
-            # optional, nullable and None default (= disabled by default)
-            WEBSERVER_POSTGRES: Optional[PostgresSettings] = None
-
-    return _MainSettingsVariants
-
-
-def test_create_from_envs_5(monkeypatch, fake_main_settings_with_postgres):
-
-    _MainSettings = fake_main_settings_with_postgres
-
-    with pytest.raises(ValidationError):
-        s1 = _MainSettings.AsRequired.create_from_envs()
-
-    s2 = _MainSettings.AsOptionalUndefined.create_from_envs()
-    assert s2.dict() == {"WEBSERVER_POSTGRES": None}
-
-    with pytest.raises(ValidationError):
-        # raises auto-default factory
-        s3 = _MainSettings.AsOptionalAutoDefault.create_from_envs()
-
-    with pytest.raises(ValidationError):
-        # cannot build default
-        s4 = _MainSettings.AsNullableAutoDefault.create_from_envs()
-
-    s5 = _MainSettings.AsDefaultNone.create_from_envs()
-    assert s5.dict() == {"WEBSERVER_POSTGRES": None}
-
-
-def test_create_from_envs_6(monkeypatch, fake_main_settings_with_postgres):
-
-    _MainSettings = fake_main_settings_with_postgres
-
-    # environments with individual envs (PostgresSettings required fields)
-    envs = dotenv_values(
-        stream=StringIO(
-            """
-            POSTGRES_HOST=pg
-            POSTGRES_USER=test
-            POSTGRES_PASSWORD=shh
-            POSTGRES_DB=db
-        """
-        ),
-    )
-    for key, value in envs.items():
-        monkeypatch.setenv(key, str(value))
-
-    # checks
-
-    s1 = _MainSettings.AsRequired.create_from_envs()
-
-    assert s1.dict(exclude_unset=True) == {
-        "WEBSERVER_POSTGRES": {
-            "POSTGRES_HOST": "pg",
-            "POSTGRES_USER": "test",
-            "POSTGRES_PASSWORD": "shh",
-            "POSTGRES_DB": "db",
-        }
-    }
-
-    s2 = _MainSettings.AsOptionalUndefined.create_from_envs()
-
-    assert s2.dict(exclude_unset=True) == {
-        "WEBSERVER_POSTGRES": {
-            "POSTGRES_HOST": "pg",
-            "POSTGRES_USER": "test",
-            "POSTGRES_PASSWORD": "shh",
-            "POSTGRES_DB": "db",
-        }
-    }
-
-    s3 = _MainSettings.AsOptionalAutoDefault.create_from_envs()
-    assert s3.dict(exclude_unset=True) == {
-        "WEBSERVER_POSTGRES": {
-            "POSTGRES_HOST": "pg",
-            "POSTGRES_USER": "test",
-            "POSTGRES_PASSWORD": "shh",
-            "POSTGRES_DB": "db",
-        }
-    }
-
-    s4 = _MainSettings.AsNullableAutoDefault.create_from_envs()
-    s5 = _MainSettings.AsDefaultNone.create_from_envs()
-
-
-def test_create_from_envs_7(monkeypatch, fake_main_settings_with_postgres):
-
-    _MainSettings = fake_main_settings_with_postgres
-
-    # environment with json (compact)
-    envs = dotenv_values(
-        stream=StringIO(
-            """
-            WEBSERVER_POSTGRES='{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}'
-        """
-        )
-    )
-
-    # test
-    s1 = _MainSettings.AsRequired.create_from_envs()
-    s2 = _MainSettings.AsOptionalUndefined.create_from_envs()
-    s3 = _MainSettings.AsOptionalAutoDefault.create_from_envs()
-    s4 = _MainSettings.AsNullableAutoDefault.create_from_envs()
-    s5 = _MainSettings.AsDefaultNone.create_from_envs()
 
 
 @pytest.mark.skip(reason="FIXME: WIP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
