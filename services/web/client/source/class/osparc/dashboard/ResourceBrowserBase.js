@@ -74,31 +74,90 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   members: {
-    _studiesContainer: null,
-    _loadingStudiesBtn: null,
+    _topBar: null,
+    _secondaryBar: null,
+    _resourcesContainer: null,
+    _viewGridBtn: null,
+    _viewListBtn: null,
+    _loadingResourcesBtn: null,
 
     _initResources: function() {
       throw new Error("Abstract method called!");
     },
 
+    _createResourcesLayout: function() {
+      const resourcesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+
+      const topBar = this.__createTopBar();
+      resourcesLayout.add(topBar);
+
+      const secondaryBar = this._secondaryBar = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      resourcesLayout.add(secondaryBar);
+
+      const resourcesContainer = this._resourcesContainer = this.__createResourcesContainer();
+      resourcesLayout.add(resourcesContainer);
+
+      return resourcesLayout;
+    },
+
+    __createResourcesContainer: function() {
+      const spacing = osparc.dashboard.GridButtonBase.SPACING;
+      return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
+    },
+
+    __createTopBar: function() {
+      const topBar = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+        alignX: "right"
+      })).set({
+        paddingRight: 8
+      });
+      const viewGridBtn = this._viewGridBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/apps/18");
+      topBar.add(viewGridBtn);
+      const viewListBtn = this._viewListBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/reorder/18");
+      topBar.add(viewListBtn);
+      const group = new qx.ui.form.RadioGroup();
+      group.add(viewGridBtn);
+      group.add(viewListBtn);
+
+      viewGridBtn.addListener("execute", () => this.__setResourcesContainerMode("grid"));
+      viewListBtn.addListener("execute", () => this.__setResourcesContainerMode("list"));
+
+      return topBar;
+    },
+
+    __setResourcesContainerMode: function(mode = "grid") {
+      const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
+      this._resourcesContainer.getLayout().set({
+        spacingX: spacing,
+        spacingY: spacing
+      });
+      this._resourcesContainer.setMode(mode);
+    },
+
+    _createLoadMoreButton: function(widgetId = "studiesLoading", mode = "grid") {
+      const loadingMoreBtn = this._loadingResourcesBtn = (mode === "grid") ? new osparc.dashboard.GridButtonLoadMore() : new osparc.dashboard.ListButtonLoadMore();
+      osparc.utils.Utils.setIdToWidget(loadingMoreBtn, widgetId);
+      return loadingMoreBtn;
+    },
+
     _requestStudies: function(templates = false) {
-      if (this._loadingStudiesBtn.isFetching()) {
+      if (this._loadingResourcesBtn.isFetching()) {
         return;
       }
-      this._loadingStudiesBtn.setFetching(true);
+      this._loadingResourcesBtn.setFetching(true);
       const request = this.__getNextRequest(templates);
       request
         .then(resp => {
           const studies = resp["data"];
-          this._studiesContainer.nextRequest = resp["_links"]["next"];
+          this._resourcesContainer.nextRequest = resp["_links"]["next"];
           this._addStudiesToList(studies);
         })
         .catch(err => {
           console.error(err);
         })
         .finally(() => {
-          this._loadingStudiesBtn.setFetching(false);
-          this._loadingStudiesBtn.setVisibility(this._studiesContainer.nextRequest === null ? "excluded" : "visible");
+          this._loadingResourcesBtn.setFetching(false);
+          this._loadingResourcesBtn.setVisibility(this._resourcesContainer.nextRequest === null ? "excluded" : "visible");
           this._moreStudiesRequired();
         });
     },
@@ -110,12 +169,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
         }
       };
-      if ("nextRequest" in this._studiesContainer &&
-        this._studiesContainer.nextRequest !== null &&
-        osparc.utils.Utils.hasParamFromURL(this._studiesContainer.nextRequest, "offset") &&
-        osparc.utils.Utils.hasParamFromURL(this._studiesContainer.nextRequest, "limit")) {
-        params.url.offset = osparc.utils.Utils.getParamFromURL(this._studiesContainer.nextRequest, "offset");
-        params.url.limit = osparc.utils.Utils.getParamFromURL(this._studiesContainer.nextRequest, "limit");
+      if ("nextRequest" in this._resourcesContainer &&
+        this._resourcesContainer.nextRequest !== null &&
+        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.nextRequest, "offset") &&
+        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.nextRequest, "limit")) {
+        params.url.offset = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.nextRequest, "offset");
+        params.url.limit = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.nextRequest, "limit");
       }
       const resolveWResponse = true;
       return osparc.data.Resources.fetch(templates ? "templates" : "studies", "getPage", params, undefined, resolveWResponse);
@@ -126,10 +185,11 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _moreStudiesRequired: function() {
-      if (this._studiesContainer &&
-        this._studiesContainer.nextRequest !== null &&
-        (this._studiesContainer.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
-        this._loadingStudiesBtn.checkIsOnScreen())
+      if (this._resourcesContainer &&
+        this._loadingResourcesBtn &&
+        this._resourcesContainer.nextRequest !== null &&
+        (this._resourcesContainer.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
+        this._loadingResourcesBtn.checkIsOnScreen())
       ) {
         this.reloadStudies();
       }

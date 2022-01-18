@@ -177,12 +177,10 @@ qx.Class.define("osparc.desktop.MainPage", {
       const studyBrowser = this.__dashboard.getStudyBrowser();
       const templateBrowser = this.__dashboard.getTemplateBrowser();
       const serviceBrowser = this.__dashboard.getServiceBrowser();
-      const exploreBrowser = this.__dashboard.getExploreBrowser();
       [
         studyBrowser,
         templateBrowser,
-        serviceBrowser,
-        exploreBrowser
+        serviceBrowser
       ].forEach(browser => {
         browser.addListener("startStudy", e => {
           const startStudyData = e.getData();
@@ -190,9 +188,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         }, this);
       });
 
-      studyBrowser.addListener("updateTemplates", () => {
-        exploreBrowser.reloadStudies();
-      }, this);
+      studyBrowser.addListener("updateTemplates", () => templateBrowser.reloadStudies(), this);
     },
 
     __showDashboard: function() {

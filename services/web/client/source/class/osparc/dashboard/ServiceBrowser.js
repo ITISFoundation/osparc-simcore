@@ -26,7 +26,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
   members: {
-    __servicesContainer: null,
+    _resourcesContainer: null,
     __servicesAll: null,
     __servicesLatestList: null,
 
@@ -38,9 +38,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
           this._add(control, {
             flex: 1
           });
-          control.getChildControl("pane").addListener("scrollY", () => {
-            this._moreStudiesRequired();
-          }, this);
+          control.getChildControl("pane").addListener("scrollY", () => this._moreStudiesRequired(), this);
           break;
         case "services-layout": {
           const scroll = this.getChildControl("scroll-container");
@@ -56,8 +54,8 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
      * Function that resets the selected item
      */
     resetSelection: function() {
-      if (this.__servicesContainer) {
-        this.__servicesContainer.resetSelection();
+      if (this._resourcesContainer) {
+        this._resourcesContainer.resetSelection();
       }
     },
 
@@ -142,28 +140,11 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __createServicesLayout: function() {
-      const servicesLayout = this.__createCollapsibleView(this.tr("Services"));
+      const servicesLayout = this._createResourcesLayout();
 
-      const titleBarBtnsContainerLeft = servicesLayout.getTitleBarBtnsContainerLeft();
-      this.__addNewServiceButtons(titleBarBtnsContainerLeft);
+      this.__addNewServiceButtons();
 
-      const titleBarBtnsContainerRight = servicesLayout.getTitleBarBtnsContainerRight();
-      const viewGridBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/apps/18");
-      titleBarBtnsContainerRight.add(viewGridBtn);
-      const viewListBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/reorder/18");
-      titleBarBtnsContainerRight.add(viewListBtn);
-      const group = new qx.ui.form.RadioGroup();
-      group.add(viewGridBtn);
-      group.add(viewListBtn);
-
-      const servicesContainer = this.__servicesContainer = this.__createResourceListLayout();
-      osparc.utils.Utils.setIdToWidget(servicesContainer, "servicesList");
-      servicesLayout.setContent(servicesContainer);
-
-      viewGridBtn.addListener("execute", () => this.__setServicesContainerMode("grid"));
-      viewListBtn.addListener("execute", () => this.__setServicesContainerMode("list"));
-
-      servicesContainer.addListener("changeMode", () => this.__resetServicesList());
+      osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "servicesList");
 
       return servicesLayout;
     },
@@ -215,16 +196,16 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         servicesList = this.__servicesLatestList;
       }
       this.__servicesLatestList = servicesList;
-      this.__servicesContainer.removeAll();
+      this._resourcesContainer.removeAll();
       servicesList.forEach(service => {
         service["resourceType"] = "service";
-        const serviceItem = this.__createStudyItem(service, this.__servicesContainer.getMode());
+        const serviceItem = this.__createStudyItem(service, this._resourcesContainer.getMode());
         serviceItem.addListener("updateQualityService", e => {
           const updatedServiceData = e.getData();
           updatedServiceData["resourceType"] = "service";
           this._resetServiceItem(updatedServiceData);
         }, this);
-        this.__servicesContainer.add(serviceItem);
+        this._resourcesContainer.add(serviceItem);
       });
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },
@@ -236,11 +217,11 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     __setServicesContainerMode: function(mode = "grid") {
       const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
-      this.__servicesContainer.getLayout().set({
+      this._resourcesContainer.getLayout().set({
         spacingX: spacing,
         spacingY: spacing
       });
-      this.__servicesContainer.setMode(mode);
+      this._resourcesContainer.setMode(mode);
     },
 
     __createStudyItem: function(studyData, containerMode = "grid") {
@@ -412,7 +393,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       return false;
     },
 
-    __addNewServiceButtons: function(layout) {
+    __addNewServiceButtons: function() {
       osparc.utils.LibVersions.getPlatformName()
         .then(platformName => {
           if (platformName === "dev") {
@@ -423,7 +404,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
                   this.__displayServiceSubmissionForm(data);
                 });
             });
-            layout.add(testDataButton);
+            this._secondaryBar.add(testDataButton);
           }
         });
 
@@ -431,7 +412,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       addServiceButton.addListener("execute", () => {
         this.__displayServiceSubmissionForm();
       });
-      layout.add(addServiceButton);
+      this._secondaryBar.add(addServiceButton);
     },
 
     __displayServiceSubmissionForm: function(formData) {
