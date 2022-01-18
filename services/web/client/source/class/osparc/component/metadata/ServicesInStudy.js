@@ -28,6 +28,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     this.base(arguments);
 
     const grid = new qx.ui.layout.Grid(20, 5);
+    grid.setColumnMinWidth(this.self().gridPos.label, 100);
     grid.setColumnFlex(this.self().gridPos.label, 1);
     grid.setColumnAlign(this.self().gridPos.label, "left", "middle");
     grid.setColumnAlign(this.self().gridPos.name, "left", "middle");
