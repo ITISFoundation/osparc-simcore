@@ -105,7 +105,7 @@ qx.Class.define("osparc.desktop.MainPage", {
           this.__studyEditor.closeEditor();
           this.__showDashboard();
           this.__dashboard.getStudyBrowser().invalidateStudies();
-          this.__dashboard.getStudyBrowser().reloadStudies();
+          this.__dashboard.getStudyBrowser().reloadResources();
           this.__dashboard.getStudyBrowser().resetSelection();
           this.__dashboard.getStudyBrowser().reloadStudy(studyId)
             .then(() => {
@@ -188,7 +188,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         }, this);
       });
 
-      studyBrowser.addListener("updateTemplates", () => templateBrowser.reloadStudies(), this);
+      studyBrowser.addListener("updateTemplates", () => templateBrowser.reloadResources(), this);
     },
 
     __showDashboard: function() {

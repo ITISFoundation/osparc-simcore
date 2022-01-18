@@ -89,7 +89,7 @@ async function dashboardStudyBrowser(page) {
 
   await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
 
-  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templateStudiesList"]');
+  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templatesList"]');
   if (children.length === 0) {
     console.log("Editing thumbnail: no study found")
     return
@@ -121,10 +121,10 @@ async function toDashboard(page) {
 }
 
 async function waitForAllTemplates(page) {
-  await page.waitForSelector('[osparc-test-id="templateStudiesList"]');
+  await page.waitForSelector('[osparc-test-id="templatesList"]');
   let loadingTemplatesCardVisible = true;
   while(loadingTemplatesCardVisible) {
-    const childrenIDs = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templateStudiesList"]');
+    const childrenIDs = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templatesList"]');
     loadingTemplatesCardVisible = childrenIDs.some(childrenID => childrenID.includes("templatesLoading"));
   }
 }
@@ -141,8 +141,8 @@ async function dashboardOpenFirstTemplate(page, templateName) {
 
   await this.waitForAllTemplates(page);
 
-  await page.waitForSelector('[osparc-test-id="templateStudiesList"]');
-  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templateStudiesList"]');
+  await page.waitForSelector('[osparc-test-id="templatesList"]');
+  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templatesList"]');
 
   if (children.length) {
     const firstChildId = '[osparc-test-id="' + children[0] + '"]';
@@ -260,8 +260,8 @@ async function deleteFirstStudy(page, studyName) {
     await __filterStudiesByText(page, studyName);
   }
 
-  await page.waitForSelector('[osparc-test-id="userStudiesList"]')
-  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="userStudiesList"]');
+  await page.waitForSelector('[osparc-test-id="studiesList"]')
+  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="studiesList"]');
 
   // filter out the cards that are not studies
   [

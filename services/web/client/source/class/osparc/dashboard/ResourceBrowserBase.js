@@ -36,7 +36,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     this._initResources();
 
     this.addListener("appear", () => {
-      this._moreStudiesRequired();
+      this._moreResourcesRequired();
     });
   },
 
@@ -89,7 +89,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           this._add(control, {
             flex: 1
           });
-          control.getChildControl("pane").addListener("scrollY", () => this._moreStudiesRequired(), this);
+          control.getChildControl("pane").addListener("scrollY", () => this._moreResourcesRequired(), this);
           break;
         case "resources-layout": {
           const scroll = this.getChildControl("scroll-container");
@@ -102,6 +102,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _initResources: function() {
+      throw new Error("Abstract method called!");
+    },
+
+    reloadResources: function() {
       throw new Error("Abstract method called!");
     },
 
@@ -149,6 +153,30 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return topBar;
     },
 
+    /**
+     * Function that resets the selected item
+     */
+    resetSelection: function() {
+      if (this._resourcesContainer) {
+        this._resourcesContainer.resetSelection();
+      }
+    },
+
+    _showMainLayout: function(show) {
+      this._getChildren().forEach(children => {
+        children.setVisibility(show ? "visible" : "excluded");
+      });
+    },
+
+    __checkLoggedIn: function() {
+      let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
+      if (!isLogged) {
+        const msg = this.tr("You need to be logged in to create a study");
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg);
+      }
+      return isLogged;
+    },
+
     __setResourcesContainerMode: function(mode = "grid") {
       const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
       this._resourcesContainer.getLayout().set({
@@ -164,7 +192,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return loadingMoreBtn;
     },
 
-    _requestStudies: function(templates = false) {
+    _requestResources: function(templates = false) {
       if (this._loadingResourcesBtn.isFetching()) {
         return;
       }
@@ -172,9 +200,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const request = this.__getNextRequest(templates);
       request
         .then(resp => {
-          const studies = resp["data"];
+          const resources = resp["data"];
           this._resourcesContainer.nextRequest = resp["_links"]["next"];
-          this._addStudiesToList(studies);
+          this._addResourcesToList(resources);
         })
         .catch(err => {
           console.error(err);
@@ -182,7 +210,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         .finally(() => {
           this._loadingResourcesBtn.setFetching(false);
           this._loadingResourcesBtn.setVisibility(this._resourcesContainer.nextRequest === null ? "excluded" : "visible");
-          this._moreStudiesRequired();
+          this._moreResourcesRequired();
         });
     },
 
@@ -204,23 +232,19 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return osparc.data.Resources.fetch(templates ? "templates" : "studies", "getPage", params, undefined, resolveWResponse);
     },
 
-    _addStudiesToList: function() {
+    _addResourcesToList: function() {
       throw new Error("Abstract method called!");
     },
 
-    _moreStudiesRequired: function() {
+    _moreResourcesRequired: function() {
       if (this._resourcesContainer &&
         this._loadingResourcesBtn &&
         this._resourcesContainer.nextRequest !== null &&
         (this._resourcesContainer.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
         this._loadingResourcesBtn.checkIsOnScreen())
       ) {
-        this.reloadStudies();
+        this.reloadResources();
       }
-    },
-
-    reloadStudies: function() {
-      throw new Error("Abstract method called!");
     },
 
     _getMoreInfoMenuButton: function(resourceData) {
@@ -246,17 +270,16 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     __openStudyDetails: function(resourceData) {
       const studyDetails = new osparc.studycard.Large(resourceData);
-      const title = this.tr("Study Details");
+      const title = osparc.utils.Resources.isTemplate(resourceData) ? this.tr("Template Details") : this.tr("Study Details");
       const width = 500;
       const height = 500;
       osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
       studyDetails.addListener("updateStudy", e => {
+        const updatedData = e.getData();
         if (osparc.utils.Resources.isTemplate(resourceData)) {
-          const updatedTemplateData = e.getData();
-          this._resetTemplateItem(updatedTemplateData);
+          this._resetTemplateItem(updatedData);
         } else {
-          const updatedStudyData = e.getData();
-          this._resetStudyItem(updatedStudyData);
+          this._resetStudyItem(updatedData);
         }
       });
       studyDetails.addListener("updateTags", () => {
@@ -286,16 +309,20 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       });
     },
 
-    _startStudy: function(studyId) {
-      throw new Error("Abstract method called!");
-    },
+    _createResourceItem: function(resourceData) {
+      const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
 
-    _createStudyFromTemplate: function(templateData) {
-      throw new Error("Abstract method called!");
-    },
+      const item = this._resourcesContainer.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
+      item.set({
+        resourceData,
+        tags
+      });
 
-    _reloadTemplate: function(templateId) {
-      throw new Error("Abstract method called!");
+      const menu = this.__getStudyItemMenu(item, resourceData);
+      item.setMenu(menu);
+      item.subscribeToFilterGroup("sideSearchFilter");
+
+      return item;
     },
 
     _resetStudyItem: function(studyData) {

@@ -26,18 +26,8 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 
   members: {
-    _resourcesContainer: null,
     __servicesAll: null,
     __servicesLatestList: null,
-
-    /**
-     * Function that resets the selected item
-     */
-    resetSelection: function() {
-      if (this._resourcesContainer) {
-        this._resourcesContainer.resetSelection();
-      }
-    },
 
     __reloadService: function(key, version, reload) {
       osparc.store.Store.getInstance().getService(key, version, reload)
@@ -47,15 +37,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         .catch(err => {
           console.error(err);
         });
-    },
-
-    __checkLoggedIn: function() {
-      let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
-      if (!isLogged) {
-        const msg = this.tr("You need to be logged in to create a study");
-        osparc.component.message.FlashMessenger.getInstance().logAs(msg);
-      }
-      return isLogged;
     },
 
     /**
@@ -94,20 +75,14 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       Promise.all(resourcePromises)
         .then(() => {
           this.getChildControl("resources-layout");
-          this.__reloadResources();
+          this.reloadResources();
           this._hideLoadingPage();
-        });
+        })
+        .catch(err => console.error(err));
     },
 
-    __reloadResources: function() {
+    reloadResources: function() {
       this.__reloadServices();
-    },
-
-    // overridden
-    _showMainLayout: function(show) {
-      this._getChildren().forEach(children => {
-        children.setVisibility(show ? "visible" : "excluded");
-      });
     },
 
     _createLayout: function() {
@@ -121,7 +96,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __createStudyFromService: function(key, version) {
-      if (!this.__checkLoggedIn()) {
+      if (!this._checkLoggedIn()) {
         return;
       }
 
@@ -139,7 +114,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     __startStudy: function(studyId) {
-      if (!this.__checkLoggedIn()) {
+      if (!this._checkLoggedIn()) {
         return;
       }
 
@@ -170,7 +145,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this._resourcesContainer.removeAll();
       servicesList.forEach(service => {
         service["resourceType"] = "service";
-        const serviceItem = this.__createStudyItem(service, this._resourcesContainer.getMode());
+        const serviceItem = this.__createServiceItem(service, this._resourcesContainer.getMode());
         serviceItem.addListener("updateQualityService", e => {
           const updatedServiceData = e.getData();
           updatedServiceData["resourceType"] = "service";
@@ -181,36 +156,9 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
     },
 
-    __createResourceListLayout: function() {
-      const spacing = osparc.dashboard.GridButtonBase.SPACING;
-      return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
-    },
-
-    __setServicesContainerMode: function(mode = "grid") {
-      const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
-      this._resourcesContainer.getLayout().set({
-        spacingX: spacing,
-        spacingY: spacing
-      });
-      this._resourcesContainer.setMode(mode);
-    },
-
-    __createStudyItem: function(studyData, containerMode = "grid") {
-      const tags = studyData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => studyData.tags.includes(tag.id)) : [];
-
-      const item = containerMode === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
-      item.set({
-        resourceData: studyData,
-        tags
-      });
-
-      const menu = this.__getStudyItemMenu(studyData);
-      item.setMenu(menu);
-      item.subscribeToFilterGroup("sideSearchFilter");
-      item.addListener("execute", () => {
-        this.__itemClicked(item);
-      }, this);
-
+    __createServiceItem: function(serviceData) {
+      const item = this._createResourceItem(serviceData);
+      item.addListener("execute", () => this.__itemClicked(item), this);
       return item;
     },
 
