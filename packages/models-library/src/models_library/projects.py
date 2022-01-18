@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from models_library.services import EnvVarKey
+from models_library.boot_options import EnvVarKey
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 
 from .basic_regex import DATE_RE, UUID_RE
