@@ -6,11 +6,13 @@ import asyncio
 import importlib
 import json
 from collections import namedtuple
-from typing import Any, Dict, Iterable, List
+from os import stat
+from typing import Any, AsyncIterable, Dict, Iterable, List
 from unittest.mock import AsyncMock
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import aiodocker
+from aiohttp import client
 import faker
 import pytest
 import yaml
@@ -64,6 +66,18 @@ def compose_spec(dynamic_sidecar_network_name: str) -> str:
     )
 
 
+@pytest.fixture
+def compose_spec_single_service(dynamic_sidecar_network_name: str) -> str:
+    return json.dumps(
+        {
+            "version": "3",
+            "services": {
+                "solo-box": {"image": "busybox"},
+            },
+        }
+    )
+
+
 async def _docker_ps_a_container_names() -> List[str]:
     command = 'docker ps -a --format "{{.Names}}"'
     finished_without_errors, stdout = await async_command(
@@ -108,11 +122,9 @@ async def _get_container_timestamps(
     container_names: List[str],
 ) -> Dict[str, ContainerTimes]:
     container_timestamps: Dict[str, ContainerTimes] = {}
-    async with aiodocker.Docker() as docker_client:
+    async with aiodocker.Docker() as client:
         for container_name in container_names:
-            container: DockerContainer = await docker_client.containers.get(
-                container_name
-            )
+            container: DockerContainer = await client.containers.get(container_name)
             container_inspect: Dict[str, Any] = await container.show()
             container_timestamps[container_name] = ContainerTimes(
                 created=container_inspect["Created"],
@@ -203,6 +215,40 @@ def mutable_settings(test_client: TestClient) -> DynamicSidecarSettings:
 def rabbitmq_mock(mocker, app: FastAPI) -> Iterable[None]:
     app.state.rabbitmq = mocker.AsyncMock()
     yield
+
+
+@pytest.fixture
+async def attachable_networks_and_ids() -> AsyncIterable[Dict[str, str]]:
+    # generate some network names
+    unique_id = uuid4()
+    network_names = {f"test_network_{i}_{unique_id}": "" for i in range(10)}
+
+    # create networks
+    async with aiodocker.Docker() as client:
+        for network_name in network_names:
+            network_config = {
+                "Name": network_name,
+                "Driver": "overlay",
+                "Attachable": True,
+                "Internal": True,
+            }
+            network = await client.networks.create(network_config)
+            network_names[network_name] = network.id
+
+    yield network_names
+
+    # remove networks
+    async with aiodocker.Docker() as client:
+        for network_id in network_names.values():
+            network = await client.networks.get(network_id)
+            assert await network.delete() is True
+
+
+# UTILS
+
+
+def _create_network_aliases(network_name: str) -> List[str]:
+    return [f"alias_{i}_{network_name}" for i in range(10)]
 
 
 # TESTS
@@ -609,3 +655,52 @@ async def test_containers_restart(
         assert before.created == after.created
         assert before.started_at < after.started_at
         assert before.finished_at < after.finished_at
+
+
+@pytest.mark.parametrize(
+    "spec",
+    [
+        # pylint: disable=no-member
+        pytest.lazy_fixture("compose_spec"),
+        pytest.lazy_fixture("compose_spec_single_service"),
+    ],
+)
+async def test_attach_detach_container_to_network(
+    test_client: TestClient,
+    spec: Dict[str, Any],
+    attachable_networks_and_ids: Dict[str, str],
+) -> None:
+    response = await test_client.post(f"/{API_VTAG}/containers", data=spec)
+    assert response.status_code == status.HTTP_202_ACCEPTED, response.text
+    shared_store: SharedStore = test_client.application.state.shared_store
+    container_names = shared_store.container_names
+    assert response.json() == container_names
+
+    async with aiodocker.Docker() as client:
+        for container_name in container_names:
+            for network_name, network_id in attachable_networks_and_ids.items():
+                network_aliases = _create_network_aliases(network_name)
+                response = await test_client.post(
+                    f"/{API_VTAG}/containers/{container_name}/networks:attach",
+                    json={
+                        "network_id": network_id,
+                        "network_aliases": network_aliases,
+                    },
+                )
+                assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+
+                container = await client.containers.get(container_name)
+                container_inspect = await container.show()
+                networks = container_inspect["NetworkSettings"]["Networks"]
+                assert network_id in networks
+                assert set(networks[network_id]["Aliases"]) == set(network_aliases)
+
+                response = await test_client.post(
+                    f"/{API_VTAG}/containers/{container_name}/networks:detach",
+                    json={"network_id": network_id},
+                )
+                assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+                container = await client.containers.get(container_name)
+                container_inspect = await container.show()
+                networks = container_inspect["NetworkSettings"]["Networks"]
+                assert network_id in networks

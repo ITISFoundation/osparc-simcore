@@ -2,6 +2,7 @@
 
 import functools
 import json
+from lib2to3.pytree import Base
 import logging
 import traceback
 from collections import deque
@@ -59,6 +60,18 @@ class CreateDirsRequestItem(BaseModel):
 
 class PatchDirectoryWatcherItem(BaseModel):
     is_enabled: bool
+
+
+class _BaseNetworkItem(BaseModel):
+    network_id: str
+
+
+class AttachContainerToNetworkItem(_BaseNetworkItem):
+    network_aliases: List[str]
+
+
+class DetachContainerFromNetworkItem(_BaseNetworkItem):
+    pass
 
 
 async def _send_message(rabbitmq: RabbitMQ, message: str) -> None:
@@ -559,18 +572,15 @@ async def restarts_containers(
     await rabbitmq.send_event_reload_iframe()
 
 
-class DataIn(BaseModel):
-    network_id: str
-    network_aliases: List[str]
-
-
 @containers_router.post(
     "/containers/{id}/networks:attach",
-    summary="Attach to a network if not already attached",
-    response_model=None,
+    summary="attach container to a network, if not already attached",
+    response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def attach_container_to_network(id: str, data_id: DataIn) -> Response:
+async def attach_container_to_network(
+    id: str, item: AttachContainerToNetworkItem
+) -> None:
     async with docker_client() as docker:
         container_instance = await docker.containers.get(id)
         container_inspect = await container_instance.show()
@@ -579,27 +589,48 @@ async def attach_container_to_network(id: str, data_id: DataIn) -> Response:
             x["NetworkID"]
             for x in container_inspect["NetworkSettings"]["Networks"].values()
         }
-        logger.debug(
-            "NETWORKS network_id=%s: %s", data_id.network_id, attached_network_ids
+
+        if item.network_id in attached_network_ids:
+            logger.info(
+                "Container %s already attached to network %s", id, item.network_id
+            )
+            return
+
+        network = await docker.networks.get(item.network_id)
+        await network.connect(
+            {
+                "Container": id,
+                "EndpointConfig": {"Aliases": item.network_aliases},
+            }
         )
 
-        if data_id.network_id not in attached_network_ids:
-            network = await docker.networks.get(data_id.network_id)
-            await network.connect(
-                {
-                    "Container": id,
-                    "EndpointConfig": {"Aliases": data_id.network_aliases},
-                }
-            )
 
-            logger.debug(
-                "After attach, network_id=%s inspect=%s",
-                data_id.network_id,
-                await container_instance.show(),
-            )
+@containers_router.post(
+    "/containers/{id}/networks:detach",
+    summary="detach container from a network, if not already detached",
+    response_class=Response,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def detach_container_from_network(
+    id: str, item: DetachContainerFromNetworkItem
+) -> None:
+    async with docker_client() as docker:
+        container_instance = await docker.containers.get(id)
+        container_inspect = await container_instance.show()
 
-    # SEE https://github.com/tiangolo/fastapi/issues/2253
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+        attached_network_ids: Set[str] = {
+            x["NetworkID"]
+            for x in container_inspect["NetworkSettings"]["Networks"].values()
+        }
+
+        if item.network_id not in attached_network_ids:
+            logger.info(
+                "Container %s already detached from network %s", id, item.network_id
+            )
+            return
+
+        network = await docker.networks.get(item.network_id)
+        await network.disconnect({"Container": id})
 
 
 __all__ = ["containers_router"]
