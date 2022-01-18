@@ -136,7 +136,11 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __createDashboardStack: function() {
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard();
-      this.__navBar.addDashboardTabButtons(dashboard.getChildControl("bar"));
+      const tabsBar = dashboard.getChildControl("bar");
+      tabsBar.set({
+        paddingBottom: 8
+      });
+      this.__navBar.addDashboardTabButtons(tabsBar);
       const minNStudyItemsPerRow = 5;
       const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
       dashboard.setMinWidth(minNStudyItemsPerRow * itemWidth + 8);
