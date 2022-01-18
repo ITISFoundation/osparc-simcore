@@ -6,17 +6,15 @@ import asyncio
 import importlib
 import json
 from collections import namedtuple
-from os import stat
 from typing import Any, AsyncIterable, Dict, Iterable, List
 from unittest.mock import AsyncMock
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import aiodocker
 import faker
 import pytest
 import yaml
 from aiodocker.containers import DockerContainer
-from aiohttp import client
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI, status
 from models_library.services import ServiceOutput
