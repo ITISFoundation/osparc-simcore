@@ -12,7 +12,7 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
-from models_library.services import SERVICE_NETWORK_RE
+from models_library.sharing_networks import SERVICE_NETWORK_RE
 from pydantic import AnyHttpUrl, Field, PositiveFloat, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
