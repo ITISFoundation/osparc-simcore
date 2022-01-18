@@ -161,6 +161,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           break;
         case "dashboard-label":
           control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
+            paddingLeft: 20, // to align it with the button
             font: "text-16"
           });
           this.getChildControl("left-items").add(control);
