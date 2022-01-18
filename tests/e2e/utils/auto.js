@@ -133,7 +133,7 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   // Returns true if template is found
   console.log("Creating New Study from template");
 
-  await utils.waitAndClick(page, '[osparc-test-id="discoverTabBtn"]')
+  await utils.waitAndClick(page, '[osparc-test-id="templatesTabBtn"]')
 
   if (templateName) {
     await __filterTemplatesByText(page, templateName);
@@ -157,7 +157,7 @@ async function dashboardOpenService(page, serviceName) {
   // Returns true if template is found
   console.log("Creating New Study from template");
 
-  await utils.waitAndClick(page, '[osparc-test-id="discoverTabBtn"]')
+  await utils.waitAndClick(page, '[osparc-test-id="servicesTabBtn"]')
 
   if (serviceName) {
     await __filterTemplatesByText(page, serviceName);
