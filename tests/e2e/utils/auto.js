@@ -69,9 +69,14 @@ async function dashboardPreferences(page) {
   await utils.waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
 }
 
-async function dashboardDiscoverBrowser(page) {
-  console.log("Navigating through Templates and Services");
-  await utils.waitAndClick('[osparc-test-id="discoverTabBtn"]');
+async function dashboardTemplatesBrowser(page) {
+  console.log("Navigating through Templates");
+  await utils.waitAndClick('[osparc-test-id="templatesTabBtn"]');
+}
+
+async function dashboardServicesBrowser() {
+  console.log("Navigating through Services");
+  await utils.waitAndClick('[osparc-test-id="templatesTabBtn"]');
 }
 
 async function dashboardDataBrowser(page) {
@@ -84,7 +89,7 @@ async function dashboardDataBrowser(page) {
   await utils.waitAndClick(page, '.qx-no-border > div > div > div > div:nth-child(3) > div:nth-child(1)')
 }
 
-async function dashboardStudyBrowser(page) {
+async function dashboardStudiesBrowser(page) {
   console.log("Navigating through Templates");
 
   await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
@@ -364,9 +369,10 @@ module.exports = {
   logOut,
   dashboardAbout,
   dashboardPreferences,
-  dashboardDiscoverBrowser,
+  dashboardStudiesBrowser,
+  dashboardTemplatesBrowser,
+  dashboardServicesBrowser,
   dashboardDataBrowser,
-  dashboardStudyBrowser,
   dashboardNewStudy,
   waitForAllTemplates,
   dashboardOpenFirstTemplate,
