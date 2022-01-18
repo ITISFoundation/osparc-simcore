@@ -4,7 +4,7 @@ import logging
 import traceback
 from asyncio import Lock, Queue, Task, sleep
 from copy import deepcopy
-from dataclasses import dataclass, fieldaltsep
+from dataclasses import dataclass, field
 from typing import Deque, Dict, List, Optional
 from uuid import UUID
 
