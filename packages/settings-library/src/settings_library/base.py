@@ -16,11 +16,12 @@ SEE https://pydantic-docs.helpmanual.io/usage/settings/:
 
 
 import logging
-import os
 from functools import cached_property
 from typing import Callable, Tuple, Type
+from wsgiref.validate import ErrorWrapper
 
 from pydantic import BaseSettings, Extra, SecretStr, ValidationError
+from pydantic.error_wrappers import ErrorWrapper
 from pydantic.fields import ModelField
 
 logger = logging.getLogger(__name__)
@@ -62,52 +63,60 @@ class BaseCustomSettings(BaseSettings):
         default_factory: Callable,
     ):
         field = cls.__fields__[field_name]
+
         try:
+            # can build default?
             default_value = default_factory()
 
-            # reset default
-            field.default = default_value
-            field.field_info.default = default_value
-            field.required = False
+        except ValidationError:
+            if field.allow_none:
+                default_value = None
+            else:
+                # report error
+                raise
 
-        except ValidationError as err:
-            logger.error(
-                (
-                    "Could not validate '%s', %s "
-                    "contains errors, see below:\n%s"
-                    "\n======ENV_VARS=====\n%s"
-                    "\n==================="
-                ),
-                cls.__name__,
-                f"{field=}",
-                f"{err}",
-                "\n".join(f"{k}={v}" for k, v in os.environ.items()),
-            )
-            raise AutoDefaultFactoryError(
-                errors=err.raw_errors, model=err.model
-            ) from err
+        # sets default
+        field.default = default_value
+        field.field_info.default = default_value
+        field.required = False
 
     @classmethod
     def create_from_envs(cls):
-        """Extend default constructor of BaseSettings by adding an auto default factory for
-            fields that are subclasses of BaseCustomSettings.
+        """Method to construct settings from env vars
 
-            The auto default factory sets up a default value from an envs capture
+        Sub-settings fields (i.e. fields subclasses of BaseCustomSettings) can set factory
+        to create the default from env vars (denoted auto-default factory)
+
+        The auto-default factory sets up a default value that matches the specified type
+        or raises AutoDefaultFactoryError
+
+        Notice that if nullable,i.e. Option[SettingsType], the default might resolve in either
+        an instance of SettingsType or None.
 
         SEE https://pydantic-docs.helpmanual.io/usage/settings/#parsing-environment-variable-values
         """
         name: str
         field: ModelField
+        auto_default_errors = []
 
         for name, field in cls.__fields__.items():
 
             if issubclass(field.type_, BaseCustomSettings):
+                subsettings_cls = field.type_
 
                 if field.field_info.default == AUTO_DEFAULT_FROM_ENV_VARS:
-                    subsettings_cls = field.type_
-                    cls._create_default_field(
-                        field.name, default_factory=subsettings_cls.create_from_envs
-                    )
+                    try:
+                        cls._create_default_field(
+                            field.name, default_factory=subsettings_cls.create_from_envs
+                        )
+                    except ValidationError as err:
+                        assert err.model
+                        auto_default_errors.extend(
+                            [
+                                ErrorWrapper(e.exc, (field.name,) + e.loc_tuple())
+                                for e in err.raw_errors
+                            ]
+                        )
 
             elif issubclass(field.type_, BaseSettings):
                 raise ValueError(
@@ -119,6 +128,10 @@ class BaseCustomSettings(BaseSettings):
                     "default=AUTO_DEFAULT can only be used in BaseCustomSettings subclasses"
                     f"but field {cls}.{name} is of type {field.type_} "
                 )
+
+        if auto_default_errors:
+            # all errors at together
+            raise AutoDefaultFactoryError(errors=auto_default_errors, model=cls)
 
         obj = cls()
         return obj
