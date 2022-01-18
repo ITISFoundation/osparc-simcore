@@ -4,7 +4,7 @@
 
 
 from io import StringIO
-from typing import Optional
+from typing import Optional, Type
 
 import pytest
 from dotenv import dotenv_values
@@ -66,40 +66,14 @@ def delenvs_as_envfile(monkeypatch, envfile_text: str, raising: bool) -> EnvVars
 
 
 # FIXTURES --------------------------------------------------------------------------------------
-
-#
 #
 # NOTE: Pydantic models are returned by function-scoped fixture such that every
 #       test starts with a fresh Model class (notice that pydanctic classes involve meta-operations
 #       that modify the definition of class models upon import).
 #
-#
 # NOTE: all int defaults are 42, i.e. the "Answer to the Ultimate Question of Life, the Universe, and Everything"
 #
 # NOTE: suffixes are used to distinguis different options on the same field (e.g. _OPTIONAL, etc)
-#
-
-
-@pytest.fixture
-def fake_settings_class():
-    # NOTE: that this class inherits from BaseSettings
-    # Typically used to capture env vars for a shared module (e.g. postgres) and
-    # embed them in a general settings
-    class _Settings(BaseCustomSettings):
-        SETTINGS_VALUE: int
-        SETTINGS_VALUE_DEFAULT: int = 42
-        SETTINGS_VALUE_OPTIONAL: Optional[int]
-        SETTINGS_VALUE_OPTIONAL_DEFAULT_VALUE: Optional[int] = 42
-        SETTINGS_VALUE_OPTIONAL_DEFAULT_NONE: Optional[int] = None
-
-    return _Settings
-
-
-#
-# NOTE: Tests below are progressive to understand and validate the construction mechanism
-#       implemented in BaseCustomSettings.
-#       Pay attention how the defaults of SubSettings are automaticaly captured from env vars
-#       at construction time.
 #
 
 
@@ -137,48 +111,91 @@ def fake_main_settings_with_postgres():
 
 
 # TESTS --------------------------------------------------------------------------------------
+#
+# NOTE: Tests below are progressive to understand and validate the construction mechanism
+#       implemented in BaseCustomSettings.
+#       Pay attention how the defaults of SubSettings are automaticaly captured from env vars
+#       at construction time.
+#
 
 
-def test_create_settings_from_env(monkeypatch, fake_settings_class):
+def test_create_settings_from_env(
+    monkeypatch, fake_flat_settings_class: Type[BaseCustomSettings]
+):
     # NOTE : we use this test to check how it behaves with an int
     #        and expect the same behaviour later with PostgresSettings
 
-    _Settings = fake_settings_class
+    _Settings = fake_flat_settings_class
 
-    # environ 1
-    monkeypatch.setenv("SETTINGS_VALUE", 1)
+    # environment (set only minimal required)
+    monkeypatch.setenv("SETTINGS_VALUE", "1")
+    monkeypatch.setenv("SETTINGS_VALUE_NULLABLE_REQUIRED", "null")
+
+    settings1 = _Settings()
+    settings2 = _Settings(SETTINGS_VALUE=1, SETTINGS_VALUE_NULLABLE_REQUIRED=None)
 
     settings = _Settings.create_from_envs()
+    assert settings == settings1
 
     assert settings.dict() == {
         "SETTINGS_VALUE": 1,
         "SETTINGS_VALUE_DEFAULT": 42,
-        "SETTINGS_VALUE_OPTIONAL": None,
+        "SETTINGS_VALUE_NULLABLE_REQUIRED": None,
+        "SETTINGS_VALUE_NULLABLE_DEFAULT_UNDEFINED": None,
         "SETTINGS_VALUE_OPTIONAL_DEFAULT_VALUE": 42,
-        "SETTINGS_VALUE_OPTIONAL_DEFAULT_NONE": None,
+        "SETTINGS_VALUE_OPTIONAL_DEFAULT_NULL": None,
     }
     assert settings.dict(exclude_unset=True) == {
         "SETTINGS_VALUE": 1,
+        "SETTINGS_VALUE_NULLABLE_REQUIRED": None,
     }
 
-    # environ 2
-    monkeypatch.setenv("SETTINGS_VALUE_OPTIONAL_DEFAULT_NONE", 2)
+    # extend environment
+    monkeypatch.setenv("SETTINGS_VALUE_DEFAULT", "2")
 
     settings = _Settings.create_from_envs()
 
     assert settings.dict(exclude_unset=True) == {
         "SETTINGS_VALUE": 1,
-        "SETTINGS_VALUE_OPTIONAL_DEFAULT_NONE": 2,
+        "SETTINGS_VALUE_DEFAULT": 2,
+        "SETTINGS_VALUE_NULLABLE_REQUIRED": None,
     }
 
-    # environ 3
-    monkeypatch.setenv("SETTINGS_VALUE_OPTIONAL_DEFAULT_NONE", 2)
+    # extend environment
+    monkeypatch.setenv("SETTINGS_VALUE_NULLABLE_DEFAULT_UNDEFINED", "3")
 
     settings = _Settings.create_from_envs()
 
     assert settings.dict(exclude_unset=True) == {
         "SETTINGS_VALUE": 1,
-        "SETTINGS_VALUE_OPTIONAL_DEFAULT_NONE": 2,
+        "SETTINGS_VALUE_DEFAULT": 2,
+        "SETTINGS_VALUE_NULLABLE_REQUIRED": None,
+        "SETTINGS_VALUE_NULLABLE_DEFAULT_UNDEFINED": 3,
+    }
+
+    # extend environment
+    monkeypatch.setenv("SETTINGS_VALUE_OPTIONAL_DEFAULT_VALUE", "4")
+    settings = _Settings.create_from_envs()
+
+    assert settings.dict(exclude_unset=True) == {
+        "SETTINGS_VALUE": 1,
+        "SETTINGS_VALUE_DEFAULT": 2,
+        "SETTINGS_VALUE_NULLABLE_REQUIRED": None,
+        "SETTINGS_VALUE_NULLABLE_DEFAULT_UNDEFINED": 3,
+        "SETTINGS_VALUE_OPTIONAL_DEFAULT_VALUE": 4,
+    }
+
+    # extend environment
+    monkeypatch.setenv("SETTINGS_VALUE_OPTIONAL_DEFAULT_NULL", "5")
+    settings = _Settings.create_from_envs()
+
+    assert settings.dict(exclude_unset=True) == {
+        "SETTINGS_VALUE": 1,
+        "SETTINGS_VALUE_DEFAULT": 2,
+        "SETTINGS_VALUE_NULLABLE_REQUIRED": None,
+        "SETTINGS_VALUE_NULLABLE_DEFAULT_UNDEFINED": 3,
+        "SETTINGS_VALUE_OPTIONAL_DEFAULT_VALUE": 4,
+        "SETTINGS_VALUE_OPTIONAL_DEFAULT_NULL": 5,
     }
 
 
