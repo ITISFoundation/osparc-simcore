@@ -19,7 +19,6 @@ aiofiles==0.5.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-    #   fastapi
 aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -52,6 +51,8 @@ anyio==3.2.1
     # via
     #   httpcore
     #   starlette
+asgiref==3.4.1
+    # via uvicorn
 async-timeout==3.0.1
     # via
     #   aiohttp
@@ -79,12 +80,12 @@ click==7.1.2
     #   distributed
     #   typer
     #   uvicorn
-cloudpickle==1.6.0
+cloudpickle==2.0.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
-dask==2021.10.0
+dask==2021.12.0
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -94,7 +95,7 @@ dask-gateway==0.9.0
     # via -r requirements/_base.in
 decorator==4.4.2
     # via networkx
-distributed==2021.10.0
+distributed==2021.12.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
@@ -112,7 +113,7 @@ fastapi==0.71.0
     #   fastapi-contrib
 fastapi-contrib==0.2.11
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-fsspec==2021.10.1
+fsspec==2022.1.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
@@ -126,7 +127,7 @@ heapdict==1.0.1
     #   zict
 httpcore==0.14.4
     # via httpx
-httptools==0.1.2
+httptools==0.2.0
     # via uvicorn
 httpx==0.21.3
     # via -r requirements/_base.in
@@ -391,26 +392,13 @@ urllib3==1.26.6
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-uvicorn==0.13.4
-    # via
-    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   fastapi
+uvicorn==0.15.0
+    # via fastapi
 uvloop==0.15.2
     # via uvicorn
 watchgod==0.7
     # via uvicorn
-websockets==8.1
+websockets==10.1
     # via uvicorn
 yarl==1.7.2
     # via
