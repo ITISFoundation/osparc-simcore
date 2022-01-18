@@ -66,6 +66,10 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
       this._filterChange(this.__activeTags);
     },
 
+    getDropDown: function() {
+      return this.__dropdown;
+    },
+
     _addTag: function(tagName, menuButton) {
       // Check if added
       this.__activeTags = this.__activeTags || [];
