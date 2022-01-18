@@ -158,7 +158,8 @@ class Project(ProjectCommons):
     # Dev only
     dev: Optional[Dict] = Field(description="object used for development purposes only")
 
-    boot_options: Optional[Dict[NodeIDStr, Dict[EnvVarKey, str]]] = Field(
+    boot_options: Dict[NodeIDStr, Dict[EnvVarKey, str]] = Field(
+        {},
         alias="bootOptions",
         description=(
             "Some services provide alternative parameters to be injected at boot time. "
