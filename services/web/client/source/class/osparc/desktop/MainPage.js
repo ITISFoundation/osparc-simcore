@@ -26,8 +26,9 @@
  * - Main Stack
  *   - Dashboard Stack
  *     - StudyBrowser
+ *     - TemplateBrowser
+ *     - ServiceBrowser
  *     - DataManager
- *     - ExploreBrowser
  *   - StudyEditor
  *
  * <pre class='javascript'>
@@ -158,7 +159,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       dashboard.bind("selection", sideSearch, "visibility", {
         converter: value => {
           const tabIndex = dashboard.getChildren().indexOf(value[0]);
-          return [0, 1].includes(tabIndex) ? "visible" : "hidden";
+          return [0, 1, 2].includes(tabIndex) ? "visible" : "hidden";
         }
       });
       const dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
@@ -174,9 +175,13 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __attachHandlers: function() {
       const studyBrowser = this.__dashboard.getStudyBrowser();
+      const templateBrowser = this.__dashboard.getTemplateBrowser();
+      const serviceBrowser = this.__dashboard.getServiceBrowser();
       const exploreBrowser = this.__dashboard.getExploreBrowser();
       [
         studyBrowser,
+        templateBrowser,
+        serviceBrowser,
         exploreBrowser
       ].forEach(browser => {
         browser.addListener("startStudy", e => {

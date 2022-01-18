@@ -15,13 +15,6 @@
 
 ************************************************************************ */
 
-/**
- * @asset(form/service.json)
- * @asset(form/service-data.json)
- * @ignore(Headers)
- * @ignore(fetch)
- */
-
 qx.Class.define("osparc.dashboard.TemplateBrowser", {
   extend: osparc.dashboard.ResourceBrowserBase,
 

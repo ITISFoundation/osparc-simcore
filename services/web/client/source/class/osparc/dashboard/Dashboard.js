@@ -68,10 +68,20 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
   members: {
     __studyBrowser: null,
+    __templateBrowser: null,
+    __serviceBrowser: null,
     __exploreBrowser: null,
 
     getStudyBrowser: function() {
       return this.__studyBrowser;
+    },
+
+    getTemplateBrowser: function() {
+      return this.__templateBrowser;
+    },
+
+    getServiceBrowser: function() {
+      return this.__serviceBrowser;
     },
 
     getExploreBrowser: function() {
@@ -85,6 +95,9 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       }, {
         label: this.tr("Templates"),
         buildLayout: this.__createTemplateBrowser
+      }, {
+        label: this.tr("Services"),
+        buildLayout: this.__createServiceBrowser
       }, {
         label: this.tr("Discover"),
         buildLayout: this.__createExploreBrowser
@@ -130,6 +143,11 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     __createTemplateBrowser: function() {
       const templatesView = this.__templateBrowser = new osparc.dashboard.TemplateBrowser();
       return templatesView;
+    },
+
+    __createServiceBrowser: function() {
+      const servicesView = this.__serviceBrowser = new osparc.dashboard.ServiceBrowser();
+      return servicesView;
     },
 
     __createExploreBrowser: function() {
