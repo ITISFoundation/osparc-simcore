@@ -70,7 +70,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     __studyBrowser: null,
     __templateBrowser: null,
     __serviceBrowser: null,
-    __exploreBrowser: null,
 
     getStudyBrowser: function() {
       return this.__studyBrowser;
@@ -84,10 +83,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       return this.__serviceBrowser;
     },
 
-    getExploreBrowser: function() {
-      return this.__exploreBrowser;
-    },
-
     __createMainViewLayout: function() {
       const tabs = [{
         label: this.tr("Studies"),
@@ -98,9 +93,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       }, {
         label: this.tr("Services"),
         buildLayout: this.__createServiceBrowser
-      }, {
-        label: this.tr("Discover"),
-        buildLayout: this.__createExploreBrowser
       }];
       if (!osparc.utils.Utils.isProduct("s4l")) {
         tabs.push({
@@ -148,11 +140,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     __createServiceBrowser: function() {
       const servicesView = this.__serviceBrowser = new osparc.dashboard.ServiceBrowser();
       return servicesView;
-    },
-
-    __createExploreBrowser: function() {
-      const exploreView = this.__exploreBrowser = new osparc.dashboard.ExploreBrowser();
-      return exploreView;
     },
 
     __createDataBrowser: function() {
