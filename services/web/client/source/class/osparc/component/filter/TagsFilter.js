@@ -34,6 +34,17 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
       marginLeft: 0
     });
     this._add(this.__dropdown);
+
+    this.__activeTags = [];
+    this.__tagButtons = {};
+  },
+
+  properties: {
+    printTags: {
+      init: true,
+      check: "Boolean",
+      nullable: false
+    }
   },
 
   statics: {
@@ -72,7 +83,6 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
 
     _addTag: function(tagName, menuButton) {
       // Check if added
-      this.__activeTags = this.__activeTags || [];
       if (this.__activeTags.includes(tagName)) {
         this.__removeTag(tagName, menuButton);
       } else {
@@ -80,14 +90,15 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
         menuButton.prevIcon = menuButton.getIcon();
         // Add tick
         menuButton.setIcon(this.self().ActiveTagIcon);
-        // Add tag
-        const tagButton = new qx.ui.toolbar.Button(tagName, "@MaterialIcons/close/12");
-        this._add(tagButton);
-        tagButton.addListener("execute", () => this.__removeTag(tagName, menuButton));
         // Update state
         this.__activeTags.push(tagName);
-        this.__tagButtons = this.__tagButtons || {};
-        this.__tagButtons[tagName] = tagButton;
+        if (this.isPrintTags()) {
+          // Add tag
+          const tagButton = new qx.ui.toolbar.Button(tagName, "@MaterialIcons/close/12");
+          this._add(tagButton);
+          tagButton.addListener("execute", () => this.__removeTag(tagName, menuButton));
+          this.__tagButtons[tagName] = tagButton;
+        }
       }
       // Dispatch
       this._filterChange(this.__activeTags);
@@ -98,8 +109,10 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
       menuButton.setIcon(menuButton.prevIcon);
       // Update state
       this.__activeTags.splice(this.__activeTags.indexOf(tagName), 1);
-      this._remove(this.__tagButtons[tagName]);
-      delete this.__tagButtons[tagName];
+      if (tagName in this.__tagButtons) {
+        this._remove(this.__tagButtons[tagName]);
+        delete this.__tagButtons[tagName];
+      }
       // Dispatch
       this._filterChange(this.__activeTags);
     },
