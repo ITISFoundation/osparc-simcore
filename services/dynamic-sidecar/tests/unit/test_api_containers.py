@@ -12,11 +12,11 @@ from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
 import aiodocker
-from aiohttp import client
 import faker
 import pytest
 import yaml
 from aiodocker.containers import DockerContainer
+from aiohttp import client
 from async_asgi_testclient import TestClient
 from fastapi import FastAPI, status
 from models_library.services import ServiceOutput

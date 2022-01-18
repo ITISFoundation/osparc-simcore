@@ -2,10 +2,10 @@
 
 import functools
 import json
-from lib2to3.pytree import Base
 import logging
 import traceback
 from collections import deque
+from lib2to3.pytree import Base
 from typing import Any, Awaitable, Deque, Dict, List, Optional, Set, Union
 
 from fastapi import (
