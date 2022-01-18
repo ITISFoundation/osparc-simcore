@@ -318,11 +318,15 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         tags
       });
 
-      const menu = this.__getStudyItemMenu(item, resourceData);
+      const menu = this._getResourceItemMenu(resourceData, item);
       item.setMenu(menu);
       item.subscribeToFilterGroup("sideSearchFilter");
 
       return item;
+    },
+
+    _getResourceItemMenu: function(resourceData, item) {
+      throw new Error("Abstract method called!");
     },
 
     _resetStudyItem: function(studyData) {

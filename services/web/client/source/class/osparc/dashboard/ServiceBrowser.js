@@ -162,7 +162,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       return item;
     },
 
-    __getStudyItemMenu: function(studyData) {
+    _getResourceItemMenu: function(studyData) {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
