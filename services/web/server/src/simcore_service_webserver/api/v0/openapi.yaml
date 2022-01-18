@@ -1300,7 +1300,16 @@ paths:
             type: string
       responses:
         '200':
-          $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7BfileId%7D/put/responses/200'
+          description: Returns presigned link
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  link:
+                    type: string
+                example:
+                  link: example_link
     put:
       summary: Returns upload link or performs copy operation to datcore
       tags:
@@ -1329,16 +1338,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Returns presigned link
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  link:
-                    type: string
-                example:
-                  link: example_link
+          $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7BfileId%7D/get/responses/200'
     delete:
       summary: Deletes File
       tags:
