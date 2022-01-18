@@ -15,7 +15,7 @@ import settings_library
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import dotenv_values
 from pydantic import Field
-from pytest_simcore.helpers.utils_environs import EnvVarsDict
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt
 from settings_library.postgres import PostgresSettings

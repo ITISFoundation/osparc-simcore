@@ -4,11 +4,11 @@
 import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List
 
 import yaml
 
-EnvVarsDict = Dict[str, Union[str, None]]
+from .typing_env import EnvVarsDict
 
 VARIABLE_SUBSTITUTION = re.compile(r"\$\{(\w+)(?:(:{0,1}[-?]{0,1})(.*))?\}$")
 

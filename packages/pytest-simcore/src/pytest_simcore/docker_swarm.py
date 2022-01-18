@@ -22,9 +22,9 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from .helpers.constants import HEADER_STR, MINUTE
+from .helpers.typing_env import EnvVarsDict
 from .helpers.utils_dict import copy_from_dict
 from .helpers.utils_docker import get_ip
-from .helpers.utils_environs import EnvVarsDict
 
 log = logging.getLogger(__name__)
 
