@@ -17,9 +17,9 @@ from servicelib.aiohttp.rest_responses import wrap_as_envelope
 from servicelib.json_serialization import json_dumps
 from yarl import URL
 
+from ._constants import X_PRODUCT_NAME_HEADER
 from ._meta import api_version_prefix
 from .catalog_config import KCATALOG_ORIGIN, KCATALOG_VERSION_PREFIX
-from .constants import X_PRODUCT_NAME_HEADER
 
 logger = logging.getLogger(__name__)
 

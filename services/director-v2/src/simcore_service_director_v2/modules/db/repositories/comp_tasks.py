@@ -37,10 +37,10 @@ logger = logging.getLogger(__name__)
 _FRONTEND_SERVICES_CATALOG: Dict[str, ServiceDockerData] = {
     meta.key: meta
     for meta in iter_service_docker_data()
-    if any(name in meta.key for name in ["file-picker", "parameter"])
+    if any(name in meta.key for name in ["file-picker", "parameter", "data-iterator"])
 }
 assert (  # nosec
-    len(_FRONTEND_SERVICES_CATALOG) == 4
+    len(_FRONTEND_SERVICES_CATALOG) == 5
 ), "If this fails, review filter above and update"  # nosec
 
 

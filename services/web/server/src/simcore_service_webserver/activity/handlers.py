@@ -9,7 +9,6 @@ from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
 
 from ..login.decorators import login_required
-from .celery_client import get_celery_client
 from .config import CONFIG_SECTION_NAME
 
 
@@ -17,10 +16,6 @@ async def query_prometheus(session, url, query):
     async with session.get(url.with_query(query=query)) as resp:
         result = await resp.json()
         return result
-
-
-def celery_reserved(app):
-    return get_celery_client(app).control.inspect().reserved()
 
 
 async def get_cpu_usage(session, url, user_id):
@@ -31,11 +26,6 @@ async def get_cpu_usage(session, url, user_id):
 async def get_memory_usage(session, url, user_id):
     memory_query = f'container_memory_usage_bytes{{container_label_node_id=~".+", container_label_user_id="{user_id}"}} / 1000000'
     return await query_prometheus(session, url, memory_query)
-
-
-async def get_celery_reserved(app):
-    # this can take a bit of time, blocks for a second. so it runs in an executor
-    return await asyncio.get_event_loop().run_in_executor(None, celery_reserved, app)
 
 
 async def get_container_metric_for_labels(session, url, user_id):
@@ -65,14 +55,12 @@ async def get_status(request: aiohttp.web.Request):
     results = await asyncio.gather(
         get_cpu_usage(session, url, user_id),
         get_memory_usage(session, url, user_id),
-        get_celery_reserved(request.app),
         get_container_metric_for_labels(session, url, user_id),
         return_exceptions=True,
     )
     cpu_usage = get_prometheus_result_or_default(results[0], [])
     mem_usage = get_prometheus_result_or_default(results[1], [])
-    metric = get_prometheus_result_or_default(results[3], [])
-    celery_inspect = results[2]
+    metric = get_prometheus_result_or_default(results[2], [])
 
     res = defaultdict(dict)
     for node in cpu_usage:
@@ -89,7 +77,7 @@ async def get_status(request: aiohttp.web.Request):
             res[node_id] = {"stats": {"memUsage": usage}}
 
     for node in metric:
-        limits = {"cpus": 0, "mem": 0}
+        limits = {"cpus": 0.0, "mem": 0.0}
         metric_labels = node["metric"]
         limits["cpus"] = float(
             metric_labels.get("container_label_nano_cpus_limit", 0)
@@ -101,14 +89,6 @@ async def get_status(request: aiohttp.web.Request):
         )  # In MB
         node_id = metric_labels.get("container_label_node_id")
         res[node_id]["limits"] = limits
-
-    if hasattr(celery_inspect, "items"):
-        for dummy_worker_id, worker in celery_inspect.items():
-            for task in worker:
-                values = task["args"][1:-1].split(", ")
-                if values[0] == str(user_id):  # Extracts user_id from task's args
-                    node_id = values[2][1:-1]  # Extracts node_id from task's args
-                    res[node_id]["queued"] = True
 
     if not res:
         raise aiohttp.web.HTTPNoContent

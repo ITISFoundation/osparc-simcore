@@ -197,11 +197,11 @@ class Job(BaseModel):
 
     @property
     def resource_name(self) -> str:
-        """ Relative Resource Name """
+        """Relative Resource Name"""
         return self.name
 
 
-# TODO: these need to be in sync with celery task states
+# TODO: these need to be in sync with computational task states
 class TaskStates(str, Enum):
     UNKNOWN = "UNKNOWN"
     PUBLISHED = "PUBLISHED"

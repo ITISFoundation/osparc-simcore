@@ -9,3 +9,4 @@ pydantic
 pyinstrument
 pyyaml
 tenacity
+aiofiles

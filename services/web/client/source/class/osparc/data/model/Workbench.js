@@ -66,6 +66,19 @@ qx.Class.define("osparc.data.model.Workbench", {
     }
   },
 
+  statics: {
+    hasIteratorUpstream: function(workbench, node) {
+      const upstreamNodeIDs = workbench.getUpstreamNodes(node);
+      return [...upstreamNodeIDs].some(upstreamNodeID => {
+        const upstreamNode = workbench.getNode(upstreamNodeID);
+        if (upstreamNode) {
+          return upstreamNode.isIterator();
+        }
+        return false;
+      });
+    }
+  },
+
   members: {
     __workbenchInitData: null,
     __workbenchUIInitData: null,
@@ -90,6 +103,17 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     isContainer: function() {
       return false;
+    },
+
+    getUpstreamNodes: function(node, upstreamNodes = new Set()) {
+      upstreamNodes.add(node.getNodeId());
+      const links = node.getLinks();
+      links.forEach(link => {
+        upstreamNodes.add(link["nodeUuid"]);
+        const linkNode = this.getNode(link["nodeUuid"]);
+        this.getUpstreamNodes(linkNode, upstreamNodes);
+      });
+      return upstreamNodes;
     },
 
     isPipelineLinear: function() {
@@ -256,6 +280,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
     __createNode: function(study, key, version, uuid) {
       const node = new osparc.data.model.Node(study, key, version, uuid);
+      node.addListener("keyChanged", () => this.fireEvent("reloadModel"), this);
       node.addListener("changeInputNodes", () => this.fireDataEvent("pipelineChanged"), this);
       node.addListener("reloadModel", () => this.fireEvent("reloadModel"), this);
       return node;
@@ -276,7 +301,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.__initNodeSignals(node);
 
       node.populateNodeData();
-      this.__giveUniqueNameToNode(node, node.getLabel());
+      this.giveUniqueNameToNode(node, node.getLabel());
       node.startInBackend();
 
       const metaData = node.getMetaData();
@@ -600,11 +625,11 @@ qx.Class.define("osparc.data.model.Workbench", {
 
       nodeIds.forEach(nodeId => {
         const node = this.getNode(nodeId);
-        this.__giveUniqueNameToNode(node, node.getLabel());
+        this.giveUniqueNameToNode(node, node.getLabel());
       });
     },
 
-    __giveUniqueNameToNode: function(node, label, suffix = 2) {
+    giveUniqueNameToNode: function(node, label, suffix = 2) {
       const newLabel = label + "_" + suffix;
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);
@@ -612,7 +637,7 @@ qx.Class.define("osparc.data.model.Workbench", {
         if (node2.getNodeId() !== node.getNodeId() &&
             node2.getLabel().localeCompare(node.getLabel()) === 0) {
           node.setLabel(newLabel);
-          this.__giveUniqueNameToNode(node, label, suffix+1);
+          this.giveUniqueNameToNode(node, label, suffix+1);
         }
       }
     },
@@ -799,7 +824,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       this.removeNode(nodesGroup.getNodeId());
     },
 
-    serialize: function() {
+    serialize: function(clean = true) {
       if (this.__workbenchInitData !== null) {
         // workbench is not initialized
         return this.__workbenchInitData;
@@ -808,7 +833,7 @@ qx.Class.define("osparc.data.model.Workbench", {
       const allModels = this.getNodes(true);
       const nodes = Object.values(allModels);
       for (const node of nodes) {
-        const data = node.serialize();
+        const data = node.serialize(clean);
         if (data) {
           workbench[node.getNodeId()] = data;
         }

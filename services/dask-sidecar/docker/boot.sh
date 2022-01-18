@@ -34,19 +34,19 @@ fi
 #
 
 if [ ${DASK_START_AS_SCHEDULER+x} ]; then
-  SCHEDULER_VERSION=$(dask-scheduler --version)
-
-  echo "$INFO" "Starting as ${SCHEDULER_VERSION}..."
+  scheduler_version=$(dask-scheduler --version)
+  echo "$INFO" "Starting as dask-scheduler:${scheduler_version}..."
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-
-    exec watchmedo auto-restart --recursive --pattern="*.py;*/src/*" --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" --ignore-directories -- \
+    exec watchmedo auto-restart \
+        --recursive \
+        --pattern="*.py;*/src/*" \
+        --ignore-patterns="*test*;pytest_simcore/*;setup.py;*ignore*" \
+        --ignore-directories -- \
       dask-scheduler
-
   else
-
     exec dask-scheduler
-
   fi
+
 else
   DASK_WORKER_VERSION=$(dask-worker --version)
   DASK_SCHEDULER_URL=${DASK_SCHEDULER_URL:="tcp://${DASK_SCHEDULER_HOST}:8786"}

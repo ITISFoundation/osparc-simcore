@@ -83,7 +83,7 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
         const outValue = updatedOutputs[portKey];
         this.getModel().getChildren()
           .forEach(treeItem => {
-            if (treeItem.getPortKey() === portKey) {
+            if (treeItem.getPortKey() === portKey && "value" in outValue) {
               treeItem.setValue(qx.data.marshal.Json.createModel(outValue.value));
             }
           });

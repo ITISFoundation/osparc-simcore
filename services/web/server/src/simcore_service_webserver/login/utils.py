@@ -18,7 +18,7 @@ from passlib import pwd
 from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.json_serialization import json_dumps
 
-from ..resources import resources
+from .._resources import resources
 from .cfg import cfg  # TODO: remove this singleton!!!
 
 log = getLogger(__name__)

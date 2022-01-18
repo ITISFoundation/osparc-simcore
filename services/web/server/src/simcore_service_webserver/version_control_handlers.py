@@ -8,7 +8,7 @@ from pydantic.decorator import validate_arguments
 
 from ._meta import api_version_prefix as VTAG
 from .login.decorators import login_required
-from .rest_utils import RESPONSE_MODEL_POLICY
+from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
 from .utils_aiohttp import (
     create_url_for_function,
@@ -185,6 +185,14 @@ async def _list_checkpoints_handler(request: web.Request):
 
 
 @routes.get(
+    f"/{VTAG}/repos/projects/{{project_uuid}}/checkpoints/HEAD",
+)
+async def _get_checkpoint_handler_head(request: web.Request):
+    # NOTE: added a function so below the route can be named
+    return await _get_checkpoint_handler(request)
+
+
+@routes.get(
     f"/{VTAG}/repos/projects/{{project_uuid}}/checkpoints/{{ref_id}}",
 )
 @login_required
@@ -195,7 +203,7 @@ async def _get_checkpoint_handler(request: web.Request):
     vc_repo = VersionControlRepository(request)
 
     _project_uuid = request.match_info["project_uuid"]
-    _ref_id = _normalize_refid(request.match_info["ref_id"])
+    _ref_id = _normalize_refid(request.match_info.get("ref_id", HEAD))
 
     checkpoint: Checkpoint = await get_checkpoint_safe(
         vc_repo,

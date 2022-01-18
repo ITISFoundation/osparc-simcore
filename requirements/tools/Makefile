@@ -90,9 +90,8 @@ build build-nc: ## builds tooling image ${IMAGE_NAME}
 run: build ## Runs upgrade in a container [WARNING! UNDER DEV. USE CAREFULY]
 	docker run -it \
 		--workdir="/home/$(USER)" \
-    --volume="/etc/group:/etc/group:ro" \
+		--volume="/etc/group:/etc/group:ro" \
     --volume="/etc/passwd:/etc/passwd:ro" \
-    --volume="/etc/shadow:/etc/shadow:ro" \
 		--volume=$(REPODIR):/home/$(USER) \
 		--user=$(shell id -u):$(shell id -g) \
 		--entrypoint=/bin/bash \
@@ -104,9 +103,8 @@ run: build ## Runs upgrade in a container [WARNING! UNDER DEV. USE CAREFULY]
 shell: build ## Opens shell in ${IMAGE_NAME}
 	docker run -it \
 		--workdir="/home/$(USER)/requirements/tools" \
-    --volume="/etc/group:/etc/group:ro" \
+		--volume="/etc/group:/etc/group:ro" \
     --volume="/etc/passwd:/etc/passwd:ro" \
-		--volume="/etc/shadow:/etc/shadow:ro" \
 		--volume=$(REPODIR):/home/$(USER) \
 		--user=$(shell id -u):$(shell id -g) \
 		--entrypoint=/bin/bash \

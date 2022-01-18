@@ -6,8 +6,10 @@
 #
 aiodocker==0.21.0
     # via -r requirements/_base.in
-aiofiles==0.7.0
-    # via -r requirements/_base.in
+aiofiles==0.8.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
 aiohttp==3.8.1
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -18,6 +20,7 @@ aiohttp==3.8.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in
     #   aiodocker
+    #   dask-gateway
     #   jupyter-server-proxy
 aiosignal==1.2.0
     # via aiohttp
@@ -38,7 +41,7 @@ bleach==3.3.0
     # via nbconvert
 blosc==1.10.4
     # via -r requirements/_base.in
-bokeh==2.3.2
+bokeh==2.4.2
     # via dask
 certifi==2021.5.30
     # via requests
@@ -50,21 +53,26 @@ charset-normalizer==2.0.6
     #   requests
 click==7.1.2
     # via distributed
-cloudpickle==1.6.0
+cloudpickle==2.0.0
     # via
     #   dask
     #   distributed
 cytoolz==0.11.0
     # via -r requirements/_base.in
-dask==2021.10.0
+dask==2021.12.0
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -r requirements/_base.in
+    #   dask-gateway
     #   distributed
+dask-gateway==0.9.0
+    # via -r requirements/_base.in
 defusedxml==0.7.1
     # via nbconvert
-distributed==2021.10.0
-    # via dask
+distributed==2021.12.0
+    # via
+    #   dask
+    #   dask-gateway
 dnspython==2.0.0
     # via email-validator
 email-validator==1.1.1
@@ -75,7 +83,7 @@ frozenlist==1.2.0
     # via
     #   aiohttp
     #   aiosignal
-fsspec==2021.10.1
+fsspec==2022.1.0
     # via
     #   -c requirements/constraints.txt
     #   dask
@@ -208,7 +216,6 @@ pyrsistent==0.17.3
     # via jsonschema
 python-dateutil==2.8.1
     # via
-    #   bokeh
     #   jupyter-client
     #   pandas
 python-dotenv==0.19.0

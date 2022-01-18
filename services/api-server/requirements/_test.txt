@@ -9,6 +9,10 @@ alembic==1.7.4
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/_test.in
+anyio==3.5.0
+    # via
+    #   -c requirements/_base.txt
+    #   httpcore
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
 astroid==2.9.0
@@ -26,6 +30,7 @@ bcrypt==3.2.0
 certifi==2020.12.5
     # via
     #   -c requirements/_base.txt
+    #   httpcore
     #   httpx
     #   requests
 cffi==1.14.5
@@ -38,6 +43,10 @@ chardet==4.0.0
     # via
     #   -c requirements/_base.txt
     #   requests
+charset-normalizer==2.0.10
+    # via
+    #   -c requirements/_base.txt
+    #   httpx
 click==7.1.2
     # via
     #   -c requirements/_base.txt
@@ -80,11 +89,11 @@ h11==0.12.0
     # via
     #   -c requirements/_base.txt
     #   httpcore
-httpcore==0.13.3
+httpcore==0.14.4
     # via
     #   -c requirements/_base.txt
     #   httpx
-httpx==0.18.1
+httpx==0.21.3
     # via
     #   -c requirements/_base.txt
     #   respx
@@ -92,6 +101,7 @@ idna==2.10
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   anyio
     #   requests
     #   rfc3986
     #   yarl
@@ -195,11 +205,8 @@ requests==2.25.1
     #   coveralls
     #   docker
     #   docker-compose
-respx==0.17.1
-    # via
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_test.in
+respx==0.19.1
+    # via -r requirements/_test.in
 rfc3986==1.5.0
     # via
     #   -c requirements/_base.txt
@@ -217,6 +224,7 @@ six==1.16.0
 sniffio==1.2.0
     # via
     #   -c requirements/_base.txt
+    #   anyio
     #   asgi-lifespan
     #   httpcore
     #   httpx

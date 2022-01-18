@@ -8,13 +8,12 @@
 
 # installs base + tests requirements
 --requirement _base.txt
---constraint _packages.txt
 --requirement _test.txt
 
 # installs this repo's packages
 ../../../packages/models-library/
 ../../../packages/postgres-database/
-../../../packages/simcore-sdk/
+../../../packages/settings-library/
 ../../../packages/service-library[aiohttp]
 ../../../packages/pytest-simcore/
 

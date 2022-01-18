@@ -638,6 +638,12 @@ async def _get_dependant_repos(
     return dependent_repositories
 
 
+_TAG_REGEX = re.compile(r"^\d+\.\d+\.\d+$")
+_SERVICE_KEY_REGEX = re.compile(
+    r"^(simcore/services/(comp|dynamic|frontend)(/[\w/-]+)+):(\d+\.\d+\.\d+).*$"
+)
+
+
 async def _find_service_tag(
     list_of_images: Dict, service_key: str, service_tag: str
 ) -> str:
@@ -646,8 +652,7 @@ async def _find_service_tag(
             service_name=service_key, service_tag=service_tag
         )
     # filter incorrect chars
-    regex = re.compile(r"^\d+\.\d+\.\d+$")
-    filtered_tags_list = filter(regex.search, list_of_images[service_key])
+    filtered_tags_list = filter(_TAG_REGEX.search, list_of_images[service_key])
     # sort them now
     available_tags_list = sorted(filtered_tags_list, key=StrictVersion)
     # not tags available... probably an undefined service there...
@@ -813,11 +818,18 @@ async def _get_service_key_version_from_docker_service(
     service_full_name = str(service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"])
     if not service_full_name.startswith(config.REGISTRY_PATH):
         raise exceptions.DirectorException(
-            msg="Invalid service {}".format(service_full_name)
+            msg=f"Invalid service '{service_full_name}', it is missing {config.REGISTRY_PATH}"
         )
 
     service_full_name = service_full_name[len(config.REGISTRY_PATH) :].strip("/")
-    return service_full_name.split(":")[0], service_full_name.split(":")[1]
+    service_re_match = _SERVICE_KEY_REGEX.match(service_full_name)
+    if not service_re_match:
+        raise exceptions.DirectorException(
+            msg=f"Invalid service '{service_full_name}', it does not follow pattern '{_SERVICE_KEY_REGEX.pattern}'"
+        )
+    service_key = service_re_match.group(1)
+    service_tag = service_re_match.group(4)
+    return service_key, service_tag
 
 
 async def _get_service_basepath_from_docker_service(service: Dict) -> str:
@@ -869,7 +881,7 @@ async def start_service(
         if config.MONITORING_ENABLED:
             service_started(
                 app,
-                user_id,
+                "undefined_user",  # NOTE: to prevent high cardinality metrics this is disabled
                 service_key,
                 service_tag,
                 "DYNAMIC",

@@ -9,25 +9,30 @@ aiodebug==1.1.2
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiofiles==0.5.0
-    # via fastapi
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/./_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 aiopg==1.2.1
     # via -r requirements/_base.in
 alembic==1.7.4
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
-aniso8601==7.0.0
-    # via graphene
-async-exit-stack==1.0.1
-    # via fastapi
-async-generator==1.10
-    # via fastapi
+anyio==3.5.0
+    # via
+    #   httpcore
+    #   starlette
+asgiref==3.4.1
+    # via uvicorn
 async-timeout==3.0.1
     # via aiopg
 certifi==2020.12.5
     # via
+    #   httpcore
     #   httpx
     #   requests
 chardet==3.0.4
     # via requests
+charset-normalizer==2.0.10
+    # via httpx
 click==7.1.2
     # via
     #   typer
@@ -38,30 +43,22 @@ email-validator==1.1.2
     # via
     #   fastapi
     #   pydantic
-fastapi==0.68.1
+fastapi==0.71.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
     #   fastapi-contrib
 fastapi-contrib==0.2.11
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-graphene==2.1.8
-    # via fastapi
-graphql-core==2.3.2
-    # via
-    #   graphene
-    #   graphql-relay
-graphql-relay==2.0.1
-    # via graphene
 h11==0.12.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==0.13.3
+httpcore==0.14.4
     # via httpx
-httptools==0.1.1
+httptools==0.2.0
     # via uvicorn
-httpx==0.18.1
+httpx==0.21.3
     # via -r requirements/_base.in
 idna==2.10
     # via
@@ -69,6 +66,7 @@ idna==2.10
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
+    #   anyio
     #   email-validator
     #   requests
     #   rfc3986
@@ -113,10 +111,6 @@ orjson==3.4.8
     # via fastapi
 packaging==20.9
     # via -r requirements/_base.in
-promise==2.3
-    # via
-    #   graphql-core
-    #   graphql-relay
 psycopg2-binary==2.8.6
     # via
     #   aiopg
@@ -153,6 +147,7 @@ pyyaml==5.4.1
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -165,18 +160,14 @@ requests==2.25.1
     # via fastapi
 rfc3986==1.4.0
     # via httpx
-rx==1.6.1
-    # via graphql-core
 six==1.15.0
     # via
-    #   graphene
-    #   graphql-core
-    #   graphql-relay
     #   python-multipart
     #   tenacity
     #   thrift
 sniffio==1.2.0
     # via
+    #   anyio
     #   httpcore
     #   httpx
 sqlalchemy==1.3.23
@@ -190,7 +181,7 @@ sqlalchemy==1.3.23
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
-starlette==0.14.2
+starlette==0.17.1
     # via fastapi
 tenacity==6.3.1
     # via
@@ -220,20 +211,13 @@ urllib3==1.26.7
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-uvicorn==0.13.4
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   fastapi
+uvicorn==0.15.0
+    # via fastapi
 uvloop==0.14.0
     # via uvicorn
 watchgod==0.6
     # via uvicorn
-websockets==8.1
+websockets==10.1
     # via uvicorn
 yarl==1.6.3
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in

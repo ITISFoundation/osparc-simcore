@@ -112,6 +112,7 @@ qx.Class.define("osparc.data.Permissions", {
           "study.node.export",
           "study.edge.create",
           "study.edge.delete",
+          "study.service.update",
           "study.classifier",
           "study.tag",
           "study.slides"
@@ -121,7 +122,6 @@ qx.Class.define("osparc.data.Permissions", {
           "services.all.read",
           "user.role.update",
           "user.clusters.create",
-          "study.service.update",
           "study.snapshot.read",
           "study.snapshot.create",
           "study.nodestree.uuid.read",

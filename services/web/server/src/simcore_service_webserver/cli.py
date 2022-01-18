@@ -24,10 +24,10 @@ from aiohttp import web
 from models_library.basic_types import BuildTargetEnum
 
 from .application import create_application, run_service
-from .application_config import CLI_DEFAULT_CONFIGFILE, app_schema
+from .application__schema import CLI_DEFAULT_CONFIGFILE, app_schema
+from .application_settings import ApplicationSettings
 from .cli_config import add_cli_options, config_from_options
 from .log import setup_logging
-from .settings import ApplicationSettings
 from .utils import search_osparc_repo_dir
 
 # ptsvd cause issues with ProcessPoolExecutor

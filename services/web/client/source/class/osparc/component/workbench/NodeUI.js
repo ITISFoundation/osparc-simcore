@@ -40,25 +40,20 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   construct: function(node) {
     this.base(arguments);
 
-    this.set({
-      width: this.self(arguments).NODE_WIDTH,
-      maxWidth: this.self(arguments).NODE_WIDTH,
-      minWidth: this.self(arguments).NODE_WIDTH
-    });
-
     this.setNode(node);
 
-    this._createWindowLayout();
+    this.__resetNodeUILayout();
   },
 
   properties: {
     node: {
       check: "osparc.data.model.Node",
-      nullable: false
+      nullable: false,
+      apply: "__applyNode"
     },
 
     type: {
-      check: ["normal", "file", "parameter"],
+      check: ["normal", "file", "parameter", "iterator", "probe"],
       init: "normal",
       nullable: false,
       apply: "__applyType"
@@ -72,14 +67,14 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
   },
 
   statics: {
-    NODE_WIDTH: 200,
+    NODE_WIDTH: 180,
     NODE_HEIGHT: 80,
     CIRCLED_RADIUS: 16
   },
 
   members: {
-    __progressBar: null,
     __thumbnail: null,
+    __svgWorkbenchCanvas: null,
 
     getNodeType: function() {
       return "service";
@@ -93,18 +88,30 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       let control;
       switch (id) {
         case "chips": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3)).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(3, 3).set({
+            alignY: "middle"
+          })).set({
             margin: [3, 4]
           });
           let nodeType = this.getNode().getMetaData().type;
+          if (this.getNode().isIterator()) {
+            nodeType = "iterator";
+          } else if (this.getNode().isProbe()) {
+            nodeType = "probe";
+          }
           const type = osparc.utils.Services.getType(nodeType);
           if (type) {
-            control.add(new osparc.ui.basic.Chip(type.label, type.icon + "12"));
+            const chip = new osparc.ui.basic.Chip().set({
+              icon: type.icon + "14",
+              toolTipText: type.label
+            });
+            control.add(chip);
           }
+          const nodeStatus = new osparc.ui.basic.NodeStatusUI(this.getNode());
+          control.add(nodeStatus);
           this.add(control, {
-            row: 1,
-            column: 0,
-            colSpan: 3
+            row: 0,
+            column: 1
           });
           break;
         }
@@ -114,7 +121,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
             margin: 4
           });
           this.add(control, {
-            row: 2,
+            row: 1,
             column: 0,
             colSpan: 3
           });
@@ -123,22 +130,35 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       return control || this.base(arguments, id);
     },
 
+    __resetNodeUILayout: function() {
+      this.set({
+        width: this.self(arguments).NODE_WIDTH,
+        maxWidth: this.self(arguments).NODE_WIDTH,
+        minWidth: this.self(arguments).NODE_WIDTH
+      });
+      this.getContentElement().setStyles({
+        "border-radius": "0px"
+      });
+      this.resetThumbnail();
+
+      this._createWindowLayout();
+    },
+
     // overridden
     _createWindowLayout: function() {
       const node = this.getNode();
       if (node.getThumbnail()) {
         this.setThumbnail(node.getThumbnail());
       }
-      const chipContainer = this.getChildControl("chips");
-      if (node.isComputational() || node.isFilePicker()) {
-        this.__progressBar = this.getChildControl("progress");
-      }
 
-      const nodeStatus = new osparc.ui.basic.NodeStatusUI(node);
-      chipContainer.add(nodeStatus);
+      this.getChildControl("chips").show();
+
+      if (node.isComputational() || node.isFilePicker() || node.isIterator()) {
+        this.getChildControl("progress").show();
+      }
     },
 
-    populateNodeLayout: function() {
+    populateNodeLayout: function(svgWorkbenchCanvas) {
       const node = this.getNode();
       node.bind("label", this, "caption", {
         onUpdate: () => {
@@ -148,13 +168,20 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const metaData = node.getMetaData();
       this._createPorts(true, Boolean((metaData && metaData.inputs && Object.keys(metaData.inputs).length) || this.getNode().isContainer()));
       this._createPorts(false, Boolean((metaData && metaData.outputs && Object.keys(metaData.outputs).length) || this.getNode().isContainer()));
-      if (node.isComputational() || node.isFilePicker()) {
-        node.getStatus().bind("progress", this.__progressBar, "value");
+      if (node.isComputational()) {
+        node.getStatus().bind("progress", this.getChildControl("progress"), "value", {
+          converter: val => val === null ? 0 : val
+        });
       }
       if (node.isFilePicker()) {
         this.setType("file");
       } else if (node.isParameter()) {
         this.setType("parameter");
+      } else if (node.isIterator()) {
+        this.__svgWorkbenchCanvas = svgWorkbenchCanvas;
+        this.setType("iterator");
+      } else if (node.isProbe()) {
+        this.setType("probe");
       }
     },
 
@@ -162,8 +189,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const chipContainer = this.getChildControl("chips");
       chipContainer.exclude();
 
-      if (this.__progressBar) {
-        this.__progressBar.exclude();
+      if (this.hasChildControl("progress")) {
+        this.getChildControl("progress").exclude();
       }
 
       if (this._inputLayout && "ui" in this._inputLayout) {
@@ -171,13 +198,38 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
     },
 
+    __applyNode: function(node) {
+      if (node.getKey().includes("parameter/int")) {
+        const makeIterator = new qx.ui.menu.Button().set({
+          label: this.tr("Convert to Iterator"),
+          icon: "@FontAwesome5Solid/sync-alt/10"
+        });
+        makeIterator.addListener("execute", () => node.convertToIterator("int"), this);
+        this._optionsMenu.add(makeIterator);
+      } else if (node.getKey().includes("data-iterator/int-range")) {
+        const convertToParameter = new qx.ui.menu.Button().set({
+          label: this.tr("Convert to Parameter"),
+          icon: "@FontAwesome5Solid/sync-alt/10"
+        });
+        convertToParameter.addListener("execute", () => node.convertToParameter("int"), this);
+        this._optionsMenu.add(convertToParameter);
+      }
+    },
+
     __applyType: function(type) {
       switch (type) {
         case "file":
           this.__checkTurnIntoFileUI();
+          this.getNode().addListener("changeOutputs", () => this.__checkTurnIntoFileUI(), this);
           break;
         case "parameter":
           this.__turnIntoParameterUI();
+          break;
+        case "iterator":
+          this.__turnIntoIteratorUI();
+          break;
+        case "probe":
+          this.__turnIntoProbeUI();
           break;
       }
     },
@@ -197,9 +249,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     __checkTurnIntoFileUI: function() {
       const outputs = this.getNode().getOutputs();
       if ([null, ""].includes(osparc.file.FilePicker.getOutput(outputs))) {
-        this.getNode().addListener("changeOutputs", () => {
-          this.__checkTurnIntoFileUI();
-        }, this);
+        this.__resetNodeUILayout();
       } else {
         this.__turnIntoFileUI();
       }
@@ -246,17 +296,86 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
         column: 1
       });
 
-      const firstOutput = this.getNode().getFirstOutput();
-      if (firstOutput && "value" in firstOutput) {
-        const value = firstOutput["value"];
-        label.setValue(String(value));
-      }
-      this.getNode().addListener("changeOutputs", e => {
-        const updatedOutputs = e.getData();
-        const newVal = updatedOutputs["out_1"];
-        label.setValue(String(newVal["value"]));
+      this.getNode().bind("outputs", label, "value", {
+        converter: outputs => {
+          if ("out_1" in outputs && "value" in outputs["out_1"]) {
+            return String(outputs["out_1"]["value"]);
+          }
+          return "";
+        }
       });
       this.fireEvent("nodeMoving");
+    },
+
+    __turnIntoIteratorUI: function() {
+      const width = 150;
+      const height = 69;
+      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
+
+      if (this.__svgWorkbenchCanvas) {
+        const nShadows = 2;
+        this.shadows = [];
+        for (let i=0; i<nShadows; i++) {
+          const nodeUIShadow = this.__svgWorkbenchCanvas.drawNodeUI(width, height, this.self().CIRCLED_RADIUS);
+          this.shadows.push(nodeUIShadow);
+        }
+      }
+
+      this.__addIterationValue();
+    },
+
+    __addIterationValue: function() {
+      const label = new qx.ui.basic.Label().set({
+        paddingLeft: 5,
+        font: "text-18"
+      });
+      const chipContainer = this.getChildControl("chips");
+      chipContainer.add(label);
+      this.getNode().bind("outputs", label, "value", {
+        converter: outputs => {
+          const portKey = "out_1";
+          if (portKey in outputs && "value" in outputs[portKey]) {
+            return String(outputs[portKey]["value"]);
+          }
+          return "";
+        }
+      });
+    },
+
+    __turnIntoProbeUI: function() {
+      const width = 150;
+      this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
+
+      const label = new qx.ui.basic.Label().set({
+        paddingLeft: 5,
+        font: "text-18"
+      });
+      const chipContainer = this.getChildControl("chips");
+      chipContainer.add(label);
+
+      this.getNode().getPropsForm().addListener("linkFieldModified", () => this.__setProbeValue(label), this);
+      this.__setProbeValue(label);
+    },
+
+    __setProbeValue: function(label) {
+      const link = this.getNode().getPropsForm().getLink("in_1");
+      if (link && "nodeUuid" in link) {
+        const inputNodeId = link["nodeUuid"];
+        const portKey = link["output"];
+        const inputNode = this.getNode().getWorkbench().getNode(inputNodeId);
+        if (inputNode) {
+          inputNode.bind("outputs", label, "value", {
+            converter: outputs => {
+              if (portKey in outputs && "value" in outputs[portKey]) {
+                return String(outputs[portKey]["value"]);
+              }
+              return "";
+            }
+          });
+        }
+      } else {
+        label.setValue("");
+      }
     },
 
     // overridden
@@ -319,25 +438,28 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.base(arguments, e);
     },
 
-    _applyThumbnail: function(thumbnail, oldThumbnail) {
-      if (oldThumbnail !== null) {
-        this.removeAt(0);
+    _applyThumbnail: function(thumbnailSrc) {
+      if (this.__thumbnail) {
+        this.remove(this.__thumbnail);
+        this.__thumbnail = null;
       }
-      if (osparc.utils.Utils.isUrl(thumbnail)) {
-        this.__thumbnail = new qx.ui.basic.Image(thumbnail).set({
-          height: 100,
-          allowShrinkX: true,
-          scale: true
-        });
-      } else {
-        this.__thumbnail = new osparc.ui.basic.Thumbnail(thumbnail).set({
-          padding: 12
+      if (thumbnailSrc) {
+        if (osparc.utils.Utils.isUrl(thumbnailSrc)) {
+          this.__thumbnail = new qx.ui.basic.Image(thumbnailSrc).set({
+            height: 100,
+            allowShrinkX: true,
+            scale: true
+          });
+        } else {
+          this.__thumbnail = new osparc.ui.basic.Thumbnail(thumbnailSrc).set({
+            padding: 12
+          });
+        }
+        this.add(this.__thumbnail, {
+          row: 0,
+          column: 1
         });
       }
-      this.add(this.__thumbnail, {
-        row: 0,
-        column: 1
-      });
     },
 
     __filterText: function(text) {

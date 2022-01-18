@@ -1,20 +1,20 @@
 from collections import deque
-from typing import List, Optional, Tuple, Dict
+from typing import Dict, List, Optional, Tuple
+
+from models_library.services import ServiceVersion
 from pydantic import BaseModel, Field, StrictStr
 
-
-from ..xlsx_base import BaseXLSXCellData, BaseXLSXSheet, BaseXLSXDocument
 from ..styling_components import (
-    T,
     TB,
-    Link,
+    AllignTop,
+    AllignTopCenter,
     Backgrounds,
     Borders,
-    AllignTopCenter,
-    AllignTop,
+    Link,
+    T,
 )
-from .utils import ensure_correct_instance, column_iter
-from simcore_service_webserver.catalog_api_models import ServiceVersion
+from ..xlsx_base import BaseXLSXCellData, BaseXLSXDocument, BaseXLSXSheet
+from .utils import column_iter, ensure_correct_instance
 
 
 class RRIDEntry(BaseModel):

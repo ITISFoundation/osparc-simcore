@@ -34,6 +34,7 @@ def app(
     inputs_dir: Path,
     outputs_dir: Path,
     state_paths_dirs: List[Path],
+    state_exclude_dirs: List[Path],
     disable_registry_check: None,
 ) -> Iterable[FastAPI]:
     monkeypatch_module.setenv("SC_BOOT_MODE", "production")
@@ -49,6 +50,9 @@ def app(
     monkeypatch_module.setenv("DY_SIDECAR_PATH_OUTPUTS", str(outputs_dir))
     monkeypatch_module.setenv(
         "DY_SIDECAR_STATE_PATHS", json.dumps([str(x) for x in state_paths_dirs])
+    )
+    monkeypatch_module.setenv(
+        "DY_SIDECAR_STATE_EXCLUDE", json.dumps([str(x) for x in state_exclude_dirs])
     )
 
     monkeypatch_module.setattr(mounted_fs, "DY_VOLUMES", mock_dy_volumes)

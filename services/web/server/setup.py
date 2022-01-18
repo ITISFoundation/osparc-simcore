@@ -26,7 +26,7 @@ INSTALL_REQUIREMENTS = tuple(
     | {
         "simcore-models-library",
         "simcore-postgres-database",
-        "simcore-service-library",
+        "simcore-settings-library",
         "simcore-service-library[aiohttp]>=1.2.0",
     }
 )
@@ -35,6 +35,14 @@ TEST_REQUIREMENTS = tuple(read_reqs(CURRENT_DIR / "requirements" / "_test.txt"))
 SETUP = dict(
     name="simcore-service-webserver",
     version=Path(CURRENT_DIR / "VERSION").read_text().strip(),
+    description="Main service with an interface (http-API & websockets) to the web front-end",
+    author=", ".join(
+        (
+            "Pedro Crespo-Valero (pcrespov)",
+            "Sylvain Anderegg (sanderegg)",
+            "Andrei Neagu (GitHK)",
+        )
+    ),
     packages=find_packages(where="src"),
     package_dir={
         "": "src",

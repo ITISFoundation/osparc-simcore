@@ -18,7 +18,3 @@ def test_create_frontend_services_metadata(image_metadata):
     assert isinstance(image_metadata, ServiceDockerData)
 
     assert is_frontend_service(image_metadata.key)
-
-    assert (
-        not image_metadata.inputs and image_metadata.outputs
-    ), "Expected a source node"

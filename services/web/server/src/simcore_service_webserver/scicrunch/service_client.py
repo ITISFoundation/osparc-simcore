@@ -13,9 +13,9 @@ from pydantic import ValidationError
 from servicelib.aiohttp.client_session import get_client_session
 from yarl import URL
 
-from ._config import SciCrunchSettings
 from ._resolver import ResolvedItem, resolve_rrid
 from ._rest import ResourceHit, autocomplete_by_name, get_resource_fields
+from ._settings import SciCrunchSettings
 from .errors import (
     InvalidRRID,
     ScicrunchAPIError,
