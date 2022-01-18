@@ -47,6 +47,10 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
     }
   },
 
+  events: {
+    "activeTagsChanged": "qx.event.type.Data"
+  },
+
   statics: {
     ActiveTagIcon: "@FontAwesome5Solid/check/12"
   },
@@ -78,16 +82,17 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
 
     __dispatch: function() {
       this._filterChange(this.__activeTags);
+      this.fireDataEvent("activeTagsChanged", this.__activeTags);
     },
 
-    getDropDown: function() {
-      return this.__dropdown;
+    getActiveTags: function() {
+      return this.__activeTags;
     },
 
     _addTag: function(tagName, menuButton) {
       // Check if added
       if (this.__activeTags.includes(tagName)) {
-        this.__removeTag(tagName, menuButton);
+        this.removeTag(tagName, menuButton);
       } else {
         // Save previous icon
         menuButton.prevIcon = menuButton.getIcon();
@@ -99,14 +104,17 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
           // Add tag
           const tagButton = new qx.ui.toolbar.Button(tagName, "@MaterialIcons/close/12");
           this._add(tagButton);
-          tagButton.addListener("execute", () => this.__removeTag(tagName, menuButton));
+          tagButton.addListener("execute", () => this.removeTag(tagName, menuButton));
           this.__tagButtons[tagName] = tagButton;
         }
       }
       this.__dispatch();
     },
 
-    __removeTag: function(tagName, menuButton) {
+    removeTag: function(tagName, menuButton) {
+      if (menuButton === undefined) {
+        menuButton = this._getMenuButtons().find(btn => btn.getLabel() === tagName);
+      }
       // Restore icon
       menuButton.setIcon(menuButton.prevIcon);
       // Update state
