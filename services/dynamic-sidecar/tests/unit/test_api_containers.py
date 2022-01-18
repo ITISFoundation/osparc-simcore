@@ -680,14 +680,19 @@ async def test_attach_detach_container_to_network(
         for container_name in container_names:
             for network_name, network_id in attachable_networks_and_ids.items():
                 network_aliases = _create_network_aliases(network_name)
-                response = await test_client.post(
-                    f"/{API_VTAG}/containers/{container_name}/networks:attach",
-                    json={
-                        "network_id": network_id,
-                        "network_aliases": network_aliases,
-                    },
-                )
-                assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+
+                # attach network to containers
+                for _ in range(2):  # callin 2 times in a row
+                    response = await test_client.post(
+                        f"/{API_VTAG}/containers/{container_name}/networks:attach",
+                        json={
+                            "network_id": network_id,
+                            "network_aliases": network_aliases,
+                        },
+                    )
+                    assert (
+                        response.status_code == status.HTTP_204_NO_CONTENT
+                    ), response.text
 
                 container = await client.containers.get(container_name)
                 container_inspect = await container.show()
@@ -695,11 +700,16 @@ async def test_attach_detach_container_to_network(
                 assert network_id in networks
                 assert set(networks[network_id]["Aliases"]) == set(network_aliases)
 
-                response = await test_client.post(
-                    f"/{API_VTAG}/containers/{container_name}/networks:detach",
-                    json={"network_id": network_id},
-                )
-                assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
+                # detach network from containers
+                for _ in range(2):  # running twice in a row
+                    response = await test_client.post(
+                        f"/{API_VTAG}/containers/{container_name}/networks:detach",
+                        json={"network_id": network_id},
+                    )
+                    assert (
+                        response.status_code == status.HTTP_204_NO_CONTENT
+                    ), response.text
+
                 container = await client.containers.get(container_name)
                 container_inspect = await container.show()
                 networks = container_inspect["NetworkSettings"]["Networks"]
