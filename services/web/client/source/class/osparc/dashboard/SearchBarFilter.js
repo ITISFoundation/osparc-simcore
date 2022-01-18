@@ -23,7 +23,13 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
     this._setLayout(new qx.ui.layout.HBox());
 
+    this.set({
+      maxHeight: 30
+    });
+
     this.__buildLayout();
+
+    this.__attachEventHandlers();
   },
 
   properties: {
@@ -33,10 +39,21 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     }
   },
 
+  statics: {
+    FilterGroupId: "searchBarFilter"
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "tags-filter": {
+          control = new osparc.component.filter.UserTagsFilter("tags", this.self().FilterGroupId).set({
+            printTags: false
+          });
+          this._add(control);
+          break;
+        }
         case "search-icon":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/search/16").set({
             backgroundColor: "transparent",
@@ -44,6 +61,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
             alignY: "middle",
             opacity: 0.5
           });
+          this._add(control);
+          break;
+        case "active-filters":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(4));
           this._add(control);
           break;
         case "text-field":
@@ -70,7 +91,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     __buildLayout: function() {
-      this._createChildControlImpl("search-icon");
+      this.getChildControl("tags-filter");
+      this.getChildControl("search-icon");
+      this.getChildControl("active-filters");
 
       // const filterGroupId = "searchBarFilter";
       const textField = this.getChildControl("text-field");
@@ -80,11 +103,26 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       resetButton.addListener("execute", () => this.__resetFilters(), this);
     },
 
-    __addTagFilter: function(filterGroupId) {
-      const tagsFilter = this.__tagsFilter = new osparc.component.filter.UserTagsFilter("tags", filterGroupId).set({
-        visibility: osparc.data.Permissions.getInstance().canDo("study.tag") ? "visible" : "excluded"
+    __attachEventHandlers: function() {
+      const tagsFilter = this.getChildControl("tags-filter");
+      tagsFilter.addListener("activeTagsChanged", () => this.__reloadChips(), this);
+
+      const textField = this.getChildControl("text-field");
+      textField.addListener("changeValue", () => this.__filter(), this);
+
+      const resetButton = this.getChildControl("reset-button");
+      resetButton.addListener("execute", () => this.__resetFilters(), this);
+    },
+
+    __reloadChips: function() {
+      const tagsFilter = this.getChildControl("tags-filter");
+      const activeFilters = this.getChildControl("active-filters");
+      activeFilters.removeAll();
+      this.getChildControl("tags-filter").getActiveTags().forEach(tagName => {
+        const tagButton = new qx.ui.toolbar.Button("tag:'"+tagName+"'", "@MaterialIcons/close/12");
+        tagButton.addListener("execute", () => tagsFilter.removeTag(tagName));
+        activeFilters.add(tagButton);
       });
-      this._add(tagsFilter);
     },
 
     __resetFilters: function() {
