@@ -43,26 +43,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __studies: null,
     __newStudyBtn: null,
 
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "scroll-container":
-          control = new qx.ui.container.Scroll();
-          this._add(control, {
-            flex: 1
-          });
-          control.getChildControl("pane").addListener("scrollY", () => this._moreStudiesRequired(), this);
-          break;
-        case "studies-layout": {
-          const scroll = this.getChildControl("scroll-container");
-          control = this.__createStudiesLayout();
-          scroll.add(control);
-          break;
-        }
-      }
-      return control || this.base(arguments, id);
-    },
-
     /**
      * Function that resets the selected item
      */
@@ -119,7 +99,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       Promise.all(resourcePromises)
         .then(() => {
-          this.getChildControl("studies-layout");
+          this.getChildControl("resources-layout");
           this.__reloadResources();
           this.__attachEventHandlers();
           const loadStudyId = osparc.store.Store.getInstance().getCurrentStudyId();
@@ -170,7 +150,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return newStudyBtn;
     },
 
-    __createStudiesLayout: function() {
+    _createLayout: function() {
       const studiesLayout = this._createResourcesLayout();
 
       const importStudyButton = this.__createImportButton();

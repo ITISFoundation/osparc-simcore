@@ -30,26 +30,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     __servicesAll: null,
     __servicesLatestList: null,
 
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "scroll-container":
-          control = new qx.ui.container.Scroll();
-          this._add(control, {
-            flex: 1
-          });
-          control.getChildControl("pane").addListener("scrollY", () => this._moreStudiesRequired(), this);
-          break;
-        case "services-layout": {
-          const scroll = this.getChildControl("scroll-container");
-          control = this.__createServicesLayout();
-          scroll.add(control);
-          break;
-        }
-      }
-      return control || this.base(arguments, id);
-    },
-
     /**
      * Function that resets the selected item
      */
@@ -113,7 +93,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
       Promise.all(resourcePromises)
         .then(() => {
-          this.getChildControl("services-layout");
+          this.getChildControl("resources-layout");
           this.__reloadResources();
           this._hideLoadingPage();
         });
@@ -130,16 +110,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       });
     },
 
-    __createCollapsibleView: function(title) {
-      const userStudyLayout = new osparc.component.widget.CollapsibleView(title);
-      userStudyLayout.getChildControl("title").set({
-        font: "title-16"
-      });
-      userStudyLayout._getLayout().setSpacing(8); // eslint-disable-line no-underscore-dangle
-      return userStudyLayout;
-    },
-
-    __createServicesLayout: function() {
+    _createLayout: function() {
       const servicesLayout = this._createResourcesLayout();
 
       this.__addNewServiceButtons();
