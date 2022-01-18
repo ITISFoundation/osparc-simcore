@@ -4,7 +4,7 @@
 
 
 from io import StringIO
-from typing import Optional, Type
+from typing import Optional
 
 import pytest
 from dotenv import dotenv_values
@@ -18,6 +18,27 @@ from settings_library.base import (
 from settings_library.basic_types import PortInt
 
 # HELPERS --------------------------------------------------------------------------------
+#
+# NOTE: monkeypatching envs using envfile text gets closer
+#       to the real use case where .env/.env-devel
+#       files are used to setup envs. Quotes formatting in
+#       those files can sometimes be challenging for parsers
+#
+# TODO: move this to pytest_simcore ?
+
+
+def setenvs_as_envfile(monkeypatch, envfile_text: str) -> EnvVarsDict:
+    envs = dotenv_values(stream=StringIO(envfile_text))
+    for key, value in envs.items():
+        monkeypatch.setenv(key, str(value))
+    return envs
+
+
+def delenvs_as_envfile(monkeypatch, envfile_text: str, raising: bool) -> EnvVarsDict:
+    envs = dotenv_values(stream=StringIO(envfile_text))
+    for key in envs.keys():
+        monkeypatch.delenv(key, raising=raising)
+    return envs
 
 
 class _FakePostgresSettings(BaseCustomSettings):
@@ -42,29 +63,6 @@ class _FakePostgresSettings(BaseCustomSettings):
     )
 
 
-#
-# NOTE: monkeypatching envs using envfile text gets closer
-#       to the real use case where .env/.env-devel
-#       files are used to setup envs. Quotes formatting in
-#       those files can sometimes be challenging for parsers
-#
-# TODO: move this to pytest_simcore ?
-
-
-def setenvs_as_envfile(monkeypatch, envfile_text: str) -> EnvVarsDict:
-    envs = dotenv_values(stream=StringIO(envfile_text))
-    for key, value in envs.items():
-        monkeypatch.setenv(key, str(value))
-    return envs
-
-
-def delenvs_as_envfile(monkeypatch, envfile_text: str, raising: bool) -> EnvVarsDict:
-    envs = dotenv_values(stream=StringIO(envfile_text))
-    for key in envs.keys():
-        monkeypatch.delenv(key, raising=raising)
-    return envs
-
-
 # FIXTURES --------------------------------------------------------------------------------------
 #
 # NOTE: Pydantic models are returned by function-scoped fixture such that every
@@ -82,28 +80,26 @@ def fake_main_settings_with_postgres():
     class _Namespace:
         #
         # Different constraints on WEBSERVER_POSTGRES subsettings
+        # SEE test__pydantic_settings.py::test_fields_declarations for details
         #
         class AsRequired(BaseCustomSettings):
-            # required
             WEBSERVER_POSTGRES: _FakePostgresSettings
 
-        class AsOptionalUndefined(BaseCustomSettings):
-            # optional with undefined default
+        class AsNullableOptional(BaseCustomSettings):
             WEBSERVER_POSTGRES: Optional[_FakePostgresSettings]
 
-        class AsOptionalAutoDefault(BaseCustomSettings):
-            # optional with auto default i.e. delayed default factory
+        class AsDefaultAuto(BaseCustomSettings):
             WEBSERVER_POSTGRES: _FakePostgresSettings = Field(
                 AUTO_DEFAULT_FROM_ENV_VARS
             )
 
-        class AsNullableAutoDefault(BaseCustomSettings):
+        class AsNullableDefaultAuto(BaseCustomSettings):
             # optional, nullable and with auto default (= enabled by default)
             WEBSERVER_POSTGRES: Optional[_FakePostgresSettings] = Field(
                 AUTO_DEFAULT_FROM_ENV_VARS
             )
 
-        class AsDefaultNone(BaseCustomSettings):
+        class AsNullableDefaultNull(BaseCustomSettings):
             # optional, nullable and None default (= disabled by default)
             WEBSERVER_POSTGRES: Optional[_FakePostgresSettings] = None
 
@@ -119,114 +115,33 @@ def fake_main_settings_with_postgres():
 #
 
 
-def test_create_settings_from_env(
-    monkeypatch, fake_flat_settings_class: Type[BaseCustomSettings]
-):
-    # NOTE : we use this test to check how it behaves with an int
-    #        and expect the same behaviour later with PostgresSettings
-
-    _Settings = fake_flat_settings_class
-
-    # environment (set only minimal required)
-    monkeypatch.setenv("SETTINGS_VALUE", "1")
-    monkeypatch.setenv("SETTINGS_VALUE_NULLABLE_REQUIRED", "null")
-
-    settings1 = _Settings()
-    settings2 = _Settings(SETTINGS_VALUE=1, SETTINGS_VALUE_NULLABLE_REQUIRED=None)
-
-    settings = _Settings.create_from_envs()
-    assert settings == settings1
-
-    assert settings.dict() == {
-        "SETTINGS_VALUE": 1,
-        "SETTINGS_VALUE_DEFAULT": 42,
-        "SETTINGS_VALUE_NULLABLE_REQUIRED": None,
-        "SETTINGS_VALUE_NULLABLE_DEFAULT_UNDEFINED": None,
-        "SETTINGS_VALUE_OPTIONAL_DEFAULT_VALUE": 42,
-        "SETTINGS_VALUE_OPTIONAL_DEFAULT_NULL": None,
-    }
-    assert settings.dict(exclude_unset=True) == {
-        "SETTINGS_VALUE": 1,
-        "SETTINGS_VALUE_NULLABLE_REQUIRED": None,
-    }
-
-    # extend environment
-    monkeypatch.setenv("SETTINGS_VALUE_DEFAULT", "2")
-
-    settings = _Settings.create_from_envs()
-
-    assert settings.dict(exclude_unset=True) == {
-        "SETTINGS_VALUE": 1,
-        "SETTINGS_VALUE_DEFAULT": 2,
-        "SETTINGS_VALUE_NULLABLE_REQUIRED": None,
-    }
-
-    # extend environment
-    monkeypatch.setenv("SETTINGS_VALUE_NULLABLE_DEFAULT_UNDEFINED", "3")
-
-    settings = _Settings.create_from_envs()
-
-    assert settings.dict(exclude_unset=True) == {
-        "SETTINGS_VALUE": 1,
-        "SETTINGS_VALUE_DEFAULT": 2,
-        "SETTINGS_VALUE_NULLABLE_REQUIRED": None,
-        "SETTINGS_VALUE_NULLABLE_DEFAULT_UNDEFINED": 3,
-    }
-
-    # extend environment
-    monkeypatch.setenv("SETTINGS_VALUE_OPTIONAL_DEFAULT_VALUE", "4")
-    settings = _Settings.create_from_envs()
-
-    assert settings.dict(exclude_unset=True) == {
-        "SETTINGS_VALUE": 1,
-        "SETTINGS_VALUE_DEFAULT": 2,
-        "SETTINGS_VALUE_NULLABLE_REQUIRED": None,
-        "SETTINGS_VALUE_NULLABLE_DEFAULT_UNDEFINED": 3,
-        "SETTINGS_VALUE_OPTIONAL_DEFAULT_VALUE": 4,
-    }
-
-    # extend environment
-    monkeypatch.setenv("SETTINGS_VALUE_OPTIONAL_DEFAULT_NULL", "5")
-    settings = _Settings.create_from_envs()
-
-    assert settings.dict(exclude_unset=True) == {
-        "SETTINGS_VALUE": 1,
-        "SETTINGS_VALUE_DEFAULT": 2,
-        "SETTINGS_VALUE_NULLABLE_REQUIRED": None,
-        "SETTINGS_VALUE_NULLABLE_DEFAULT_UNDEFINED": 3,
-        "SETTINGS_VALUE_OPTIONAL_DEFAULT_VALUE": 4,
-        "SETTINGS_VALUE_OPTIONAL_DEFAULT_NULL": 5,
-    }
-
-
-def test_without_environs(monkeypatch, fake_main_settings_with_postgres):
+def test_parse_wo_envs(monkeypatch, fake_main_settings_with_postgres):
 
     _MainSettings = fake_main_settings_with_postgres
 
     with pytest.raises(ValidationError):
-        s1 = _MainSettings.AsRequired.create_from_envs()
+        _MainSettings.AsRequired.create_from_envs()
 
-    s2 = _MainSettings.AsOptionalUndefined.create_from_envs()
+    s2 = _MainSettings.AsNullableOptional.create_from_envs()
     assert s2.dict() == {"WEBSERVER_POSTGRES": None}
 
     with pytest.raises(ValidationError):
         # raises auto-default factory
-        s3 = _MainSettings.AsOptionalAutoDefault.create_from_envs()
+        _MainSettings.AsDefaultAuto.create_from_envs()
 
     with pytest.raises(ValidationError):
         # cannot build default
-        s4 = _MainSettings.AsNullableAutoDefault.create_from_envs()
+        _MainSettings.AsNullableDefaultAuto.create_from_envs()
 
-    s5 = _MainSettings.AsDefaultNone.create_from_envs()
+    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()
     assert s5.dict() == {"WEBSERVER_POSTGRES": None}
 
 
-def test_with_postgres_envs(monkeypatch, fake_main_settings_with_postgres):
+def test_parse_from_postgres_envs(monkeypatch, fake_main_settings_with_postgres):
 
     _MainSettings = fake_main_settings_with_postgres
 
     # environments with individual envs (PostgresSettings required fields)
-    monkeypatch.delenv("WEBSERVER_POSTGRES", raising=False)
     setenvs_as_envfile(
         monkeypatch,
         """
@@ -240,7 +155,7 @@ def test_with_postgres_envs(monkeypatch, fake_main_settings_with_postgres):
     # checks
 
     with pytest.raises(ValidationError) as exc_info:
-        s1 = _MainSettings.AsRequired.create_from_envs()
+        _MainSettings.AsRequired.create_from_envs()
 
     assert exc_info.value.errors()[0] == {
         "loc": ("WEBSERVER_POSTGRES",),
@@ -248,11 +163,11 @@ def test_with_postgres_envs(monkeypatch, fake_main_settings_with_postgres):
         "type": "value_error.missing",
     }
 
-    s2 = _MainSettings.AsOptionalUndefined.create_from_envs()
+    s2 = _MainSettings.AsNullableOptional.create_from_envs()
     assert s2.dict(exclude_unset=True) == {}
     assert s2.dict() == {"WEBSERVER_POSTGRES": None}
 
-    s3 = _MainSettings.AsOptionalAutoDefault.create_from_envs()
+    s3 = _MainSettings.AsDefaultAuto.create_from_envs()
     assert s3.dict(exclude_unset=True) == {}
     assert s3.dict() == {
         "WEBSERVER_POSTGRES": {
@@ -267,7 +182,7 @@ def test_with_postgres_envs(monkeypatch, fake_main_settings_with_postgres):
         }
     }
 
-    s4 = _MainSettings.AsNullableAutoDefault.create_from_envs()
+    s4 = _MainSettings.AsNullableDefaultAuto.create_from_envs()
     assert s4.dict(exclude_unset=True) == {}
     assert s4.dict() == {
         "WEBSERVER_POSTGRES": {
@@ -282,12 +197,12 @@ def test_with_postgres_envs(monkeypatch, fake_main_settings_with_postgres):
         }
     }
 
-    s5 = _MainSettings.AsDefaultNone.create_from_envs()
+    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()
     assert s5.dict(exclude_unset=True) == {}
     assert s5.dict() == {"WEBSERVER_POSTGRES": None}
 
 
-def test_with_json_env(monkeypatch, fake_main_settings_with_postgres):
+def test_parse_from_json_env(monkeypatch, fake_main_settings_with_postgres):
 
     _MainSettings = fake_main_settings_with_postgres
 
@@ -333,7 +248,7 @@ def test_with_json_env(monkeypatch, fake_main_settings_with_postgres):
         }
     }
 
-    s2 = _MainSettings.AsOptionalUndefined.create_from_envs()
+    s2 = _MainSettings.AsNullableOptional.create_from_envs()
     assert s2.dict(exclude_unset=True) == {
         "WEBSERVER_POSTGRES": {
             "POSTGRES_HOST": "pg2",
@@ -344,12 +259,12 @@ def test_with_json_env(monkeypatch, fake_main_settings_with_postgres):
     }
 
     with pytest.raises(AutoDefaultFactoryError):
-        s3 = _MainSettings.AsOptionalAutoDefault.create_from_envs()
+        s3 = _MainSettings.AsDefaultAuto.create_from_envs()
 
     with pytest.raises(AutoDefaultFactoryError):
-        s4 = _MainSettings.AsNullableAutoDefault.create_from_envs()
+        s4 = _MainSettings.AsNullableDefaultAuto.create_from_envs()
 
-    s5 = _MainSettings.AsDefaultNone.create_from_envs()
+    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()
     assert s5.dict(exclude_unset=True) == {
         "WEBSERVER_POSTGRES": {
             "POSTGRES_HOST": "pg2",
@@ -360,7 +275,7 @@ def test_with_json_env(monkeypatch, fake_main_settings_with_postgres):
     }
 
 
-def test_with_json_and_postgres_envs(monkeypatch, fake_main_settings_with_postgres):
+def test_parse_from_mixed_envs(monkeypatch, fake_main_settings_with_postgres):
 
     _MainSettings = fake_main_settings_with_postgres
 
@@ -403,7 +318,7 @@ def test_with_json_and_postgres_envs(monkeypatch, fake_main_settings_with_postgr
         }
     }
 
-    s2 = _MainSettings.AsOptionalUndefined.create_from_envs()
+    s2 = _MainSettings.AsNullableOptional.create_from_envs()
     assert s2.dict(exclude_unset=True) == {
         "WEBSERVER_POSTGRES": {
             "POSTGRES_HOST": "pg2",
@@ -414,7 +329,7 @@ def test_with_json_and_postgres_envs(monkeypatch, fake_main_settings_with_postgr
         }
     }
 
-    s3 = _MainSettings.AsOptionalAutoDefault.create_from_envs()
+    s3 = _MainSettings.AsDefaultAuto.create_from_envs()
     assert s3.dict() == {
         "WEBSERVER_POSTGRES": {
             "POSTGRES_HOST": "pg2",
@@ -428,7 +343,7 @@ def test_with_json_and_postgres_envs(monkeypatch, fake_main_settings_with_postgr
         }
     }
 
-    s4 = _MainSettings.AsNullableAutoDefault.create_from_envs()
+    s4 = _MainSettings.AsNullableDefaultAuto.create_from_envs()
     assert s4.dict() == {
         "WEBSERVER_POSTGRES": {
             "POSTGRES_HOST": "pg2",
@@ -442,7 +357,7 @@ def test_with_json_and_postgres_envs(monkeypatch, fake_main_settings_with_postgr
         }
     }
 
-    s5 = _MainSettings.AsDefaultNone.create_from_envs()
+    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()
     assert s5.dict(exclude_unset=True) == {
         "WEBSERVER_POSTGRES": {
             "POSTGRES_HOST": "pg2",
@@ -452,3 +367,72 @@ def test_with_json_and_postgres_envs(monkeypatch, fake_main_settings_with_postgr
             "POSTGRES_CLIENT_NAME": "client-name",
         }
     }
+
+
+def test_toggle_plugin_using_nullables(monkeypatch, fake_main_settings_with_postgres):
+    _MainSettings = fake_main_settings_with_postgres
+
+    # NOTE:
+    #  Using nullable fields for subsettings, allows us to easily mark a module as
+    #  enabled/disabled
+    #
+
+    # minimal
+    setenvs_as_envfile(
+        monkeypatch,
+        """
+        POSTGRES_HOST=pg
+        POSTGRES_USER=test
+        POSTGRES_PASSWORD=ssh
+        POSTGRES_DB=db
+    """,
+    )
+
+    s4 = _MainSettings.AsNullableDefaultAuto.create_from_envs()  # enabled by default
+    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()  # disabled by default
+
+    assert s4.WEBSERVER_POSTGRES is not None
+    assert s5.WEBSERVER_POSTGRES is None
+
+    # Disables
+    setenvs_as_envfile(
+        monkeypatch,
+        """
+        WEBSERVER_POSTGRES=null
+
+        POSTGRES_HOST=pg
+        POSTGRES_USER=test
+        POSTGRES_PASSWORD=ssh
+        POSTGRES_DB=db
+    """,
+    )
+
+    s4 = _MainSettings.AsNullableDefaultAuto.create_from_envs()  # enabled by default
+    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()  # disabled by default
+
+    assert s4.WEBSERVER_POSTGRES is None
+    assert s5.WEBSERVER_POSTGRES is None
+
+    # Enables
+    setenvs_as_envfile(
+        monkeypatch,
+        """
+        WEBSERVER_POSTGRES='{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}'
+
+        POSTGRES_HOST=pg
+        POSTGRES_USER=test
+        POSTGRES_PASSWORD=ssh
+        POSTGRES_DB=db
+    """,
+    )
+    s4 = _MainSettings.AsNullableDefaultAuto.create_from_envs()  # enabled by default
+    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()  # disabled by default
+
+    assert s4.WEBSERVER_POSTGRES is not None
+    assert s5.WEBSERVER_POSTGRES is not None
+    assert s4 == s5
+
+    # FIXME:
+    # The problem is that s4 needs POSTGRES_* envs for the auto-default factory
+    # while s5 needs WEBSERVER_POSTGRES env for the constructor !!!
+    #
