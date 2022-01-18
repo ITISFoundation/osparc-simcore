@@ -168,7 +168,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       });
     },
 
-    __checkLoggedIn: function() {
+    _checkLoggedIn: function() {
       let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
       if (!isLogged) {
         const msg = this.tr("You need to be logged in to create a study");
@@ -261,20 +261,20 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _getQualityMenuButton: function(resourceData) {
-      const studyQualityButton = new qx.ui.menu.Button(this.tr("Quality"));
-      studyQualityButton.addListener("execute", () => {
+      const qualityButton = new qx.ui.menu.Button(this.tr("Quality"));
+      qualityButton.addListener("execute", () => {
         this.__openQualityEditor(resourceData);
       }, this);
-      return studyQualityButton;
+      return qualityButton;
     },
 
     __openStudyDetails: function(resourceData) {
-      const studyDetails = new osparc.studycard.Large(resourceData);
+      const card = new osparc.studycard.Large(resourceData);
       const title = osparc.utils.Resources.isTemplate(resourceData) ? this.tr("Template Details") : this.tr("Study Details");
       const width = 500;
       const height = 500;
-      osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
-      studyDetails.addListener("updateStudy", e => {
+      osparc.ui.window.Window.popUpInWindow(card, title, width, height);
+      card.addListener("updateStudy", e => {
         const updatedData = e.getData();
         if (osparc.utils.Resources.isTemplate(resourceData)) {
           this._resetTemplateItem(updatedData);
@@ -282,7 +282,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           this._resetStudyItem(updatedData);
         }
       });
-      studyDetails.addListener("updateTags", () => {
+      card.addListener("updateTags", () => {
         if (osparc.utils.Resources.isTemplate(resourceData)) {
           this._resetTemplatesList(osparc.store.Store.getInstance().getTemplates());
         } else {
