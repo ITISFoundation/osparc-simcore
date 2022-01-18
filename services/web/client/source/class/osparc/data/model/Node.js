@@ -460,22 +460,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.getStatus().setProgress(progress);
       }
       if ("state" in nodeData) {
-        const state = nodeData.state;
-        if ("dependencies" in state) {
-          this.getStatus().setDependencies(state.dependencies);
-        }
-        if ("currentStatus" in state && this.isComputational()) {
-          // currentStatus is only applicable to computational services
-          this.getStatus().setRunning(state.currentStatus);
-        }
-        if ("modified" in state) {
-          if (this.getStatus().getHasOutputs()) {
-            // File Picker can't have a modified output
-            this.getStatus().setModified((state.modified || this.getStatus().hasDependencies()) && !this.isFilePicker());
-          } else {
-            this.getStatus().setModified(null);
-          }
-        }
+        this.getStatus().setState(nodeData.state);
       }
     },
 

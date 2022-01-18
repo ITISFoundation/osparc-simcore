@@ -153,6 +153,12 @@ version-major: ## commits version with backwards-INcompatible addition or change
 	$(_bumpversion)
 
 
+.PHONE: pip-freeze
+pip-freeze: ## dumps current environ and base.txt [diagnostics]
+	pip freeze > freeze-now.ignore.txt
+	cat requirements/_base.txt | grep -v '#' > freeze-base.ignore.txt
+
+
 #
 # SUBTASKS
 #

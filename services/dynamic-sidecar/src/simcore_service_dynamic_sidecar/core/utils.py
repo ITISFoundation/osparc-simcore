@@ -13,6 +13,7 @@ import aiodocker
 import aiofiles
 import httpx
 import yaml
+from aiofiles import os as aiofiles_os
 from async_timeout import timeout
 from fastapi import HTTPException
 from settings_library.docker_registry import RegistrySettings
@@ -100,7 +101,7 @@ async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
     try:
         yield file_path
     finally:
-        await aiofiles.os.remove(file_path)  # type: ignore
+        await aiofiles_os.remove(file_path)
 
 
 @asynccontextmanager

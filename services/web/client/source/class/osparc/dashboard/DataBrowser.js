@@ -160,7 +160,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
     },
 
     __selectionChanged: function(selectedItem) {
-      this.__selectedFileLayout.itemSelected(selectedItem);
+      this.__selectedFileLayout.setItemSelected(selectedItem);
     }
   }
 });

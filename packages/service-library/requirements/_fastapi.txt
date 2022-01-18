@@ -6,7 +6,7 @@
 #
 anyio==3.3.4
     # via starlette
-fastapi==0.70.0
+fastapi==0.71.0
     # via
     #   -r requirements/_fastapi.in
     #   fastapi-contrib
@@ -31,7 +31,7 @@ six==1.16.0
     # via thrift
 sniffio==1.2.0
     # via anyio
-starlette==0.16.0
+starlette==0.17.1
     # via fastapi
 threadloop==1.0.2
     # via jaeger-client

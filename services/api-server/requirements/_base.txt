@@ -15,7 +15,6 @@ aiofiles==0.5.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-    #   fastapi
 aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -38,12 +37,12 @@ alembic==1.7.4
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
-aniso8601==7.0.0
-    # via graphene
-async-exit-stack==1.0.1
-    # via fastapi
-async-generator==1.10
-    # via fastapi
+anyio==3.5.0
+    # via
+    #   httpcore
+    #   starlette
+asgiref==3.4.1
+    # via uvicorn
 async-timeout==3.0.1
     # via
     #   aiohttp
@@ -57,6 +56,7 @@ attrs==20.3.0
     #   aiohttp
 certifi==2020.12.5
     # via
+    #   httpcore
     #   httpx
     #   requests
 cffi==1.14.5
@@ -65,6 +65,8 @@ chardet==4.0.0
     # via
     #   aiohttp
     #   requests
+charset-normalizer==2.0.10
+    # via httpx
 click==7.1.2
     # via
     #   typer
@@ -88,30 +90,22 @@ email-validator==1.1.2
     # via
     #   fastapi
     #   pydantic
-fastapi==0.68.1
+fastapi==0.71.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
     #   fastapi-contrib
 fastapi-contrib==0.2.11
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
-graphene==2.1.8
-    # via fastapi
-graphql-core==2.3.2
-    # via
-    #   graphene
-    #   graphql-relay
-graphql-relay==2.0.1
-    # via graphene
 h11==0.12.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==0.13.3
+httpcore==0.14.4
     # via httpx
-httptools==0.1.2
+httptools==0.2.0
     # via uvicorn
-httpx==0.18.1
+httpx==0.21.3
     # via -r requirements/_base.in
 idna==2.10
     # via
@@ -122,6 +116,7 @@ idna==2.10
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
+    #   anyio
     #   email-validator
     #   requests
     #   rfc3986
@@ -179,10 +174,6 @@ packaging==20.9
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
-promise==2.3
-    # via
-    #   graphql-core
-    #   graphql-relay
 psycopg2-binary==2.9.1
     # via
     #   aiopg
@@ -249,18 +240,14 @@ requests==2.25.1
     # via fastapi
 rfc3986==1.5.0
     # via httpx
-rx==1.6.1
-    # via graphql-core
 six==1.16.0
     # via
-    #   graphene
-    #   graphql-core
-    #   graphql-relay
     #   python-multipart
     #   tenacity
     #   thrift
 sniffio==1.2.0
     # via
+    #   anyio
     #   httpcore
     #   httpx
 sqlalchemy==1.3.24
@@ -279,7 +266,7 @@ sqlalchemy==1.3.24
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
-starlette==0.14.2
+starlette==0.17.1
     # via fastapi
 tenacity==7.0.0
     # via
@@ -319,24 +306,13 @@ urllib3==1.26.7
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-uvicorn==0.13.4
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   fastapi
+uvicorn==0.15.0
+    # via fastapi
 uvloop==0.14.0
     # via uvicorn
 watchgod==0.7
     # via uvicorn
-websockets==8.1
+websockets==10.1
     # via uvicorn
 yarl==1.6.3
     # via

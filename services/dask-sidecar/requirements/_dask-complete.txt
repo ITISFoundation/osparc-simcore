@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_dask-complete.txt --strip-extras requirements/_dask-complete.in
 #
-bokeh==2.3.2
+bokeh==2.4.2
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -12,21 +12,21 @@ click==7.1.2
     # via
     #   -c requirements/./_base.txt
     #   distributed
-cloudpickle==1.6.0
+cloudpickle==2.0.0
     # via
     #   -c requirements/./_base.txt
     #   dask
     #   distributed
-dask==2021.10.0
+dask==2021.12.0
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-complete.in
     #   distributed
-distributed==2021.10.0
+distributed==2021.12.0
     # via
     #   -c requirements/./_base.txt
     #   dask
-fsspec==2021.10.1
+fsspec==2022.1.0
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -86,7 +86,6 @@ pyparsing==2.4.7
 python-dateutil==2.8.1
     # via
     #   -c requirements/./_base.txt
-    #   bokeh
     #   pandas
 pytz==2020.1
     # via

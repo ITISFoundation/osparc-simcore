@@ -8,7 +8,8 @@ REPO_BASE_DIR := $(shell git rev-parse --show-toplevel)
 .PHONY: touch reqs check clean help
 .DEFAULT_GOAL := help
 
-UPGRADE_OPTION := $(if $(upgrade),--upgrade-package $(upgrade),--upgrade)
+DO_CLEAN_OR_UPGRADE:=$(if $(clean),,--upgrade)
+UPGRADE_OPTION := $(if $(upgrade),--upgrade-package $(upgrade),$(DO_CLEAN_OR_UPGRADE))
 
 
 objects = $(sort $(wildcard *.in))
