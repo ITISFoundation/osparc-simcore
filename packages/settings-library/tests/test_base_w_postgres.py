@@ -3,13 +3,11 @@
 # pylint: disable=unused-variable
 
 
-from io import StringIO
 from typing import Optional
 
 import pytest
-from dotenv import dotenv_values
 from pydantic import Field, ValidationError
-from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_as_envfile
 from settings_library.base import (
     AUTO_DEFAULT_FROM_ENV_VARS,
     AutoDefaultFactoryError,
@@ -24,21 +22,6 @@ from settings_library.basic_types import PortInt
 #       files are used to setup envs. Quotes formatting in
 #       those files can sometimes be challenging for parsers
 #
-# TODO: move this to pytest_simcore ?
-
-
-def setenvs_as_envfile(monkeypatch, envfile_text: str) -> EnvVarsDict:
-    envs = dotenv_values(stream=StringIO(envfile_text))
-    for key, value in envs.items():
-        monkeypatch.setenv(key, str(value))
-    return envs
-
-
-def delenvs_as_envfile(monkeypatch, envfile_text: str, raising: bool) -> EnvVarsDict:
-    envs = dotenv_values(stream=StringIO(envfile_text))
-    for key in envs.keys():
-        monkeypatch.delenv(key, raising=raising)
-    return envs
 
 
 class _FakePostgresSettings(BaseCustomSettings):

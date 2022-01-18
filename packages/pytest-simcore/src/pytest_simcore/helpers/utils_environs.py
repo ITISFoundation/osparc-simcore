@@ -2,6 +2,7 @@
 
 """
 import re
+import warnings
 from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List
@@ -11,6 +12,11 @@ import yaml
 from .typing_env import EnvVarsDict
 
 VARIABLE_SUBSTITUTION = re.compile(r"\$\{(\w+)(?:(:{0,1}[-?]{0,1})(.*))?\}$")
+
+warnings.warn(
+    f"{__name__} is deprecated, use instead pytest_simcore.helpers.utils_envs",
+    DeprecationWarning,
+)
 
 
 def _load_env(file_handler) -> Dict:

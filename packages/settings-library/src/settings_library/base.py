@@ -18,7 +18,6 @@ SEE https://pydantic-docs.helpmanual.io/usage/settings/:
 import logging
 from functools import cached_property
 from typing import Callable, Tuple, Type
-from wsgiref.validate import ErrorWrapper
 
 from pydantic import BaseSettings, Extra, SecretStr, ValidationError
 from pydantic.error_wrappers import ErrorWrapper
@@ -125,12 +124,11 @@ class BaseCustomSettings(BaseSettings):
 
             elif field.field_info.default == AUTO_DEFAULT_FROM_ENV_VARS:
                 raise ValueError(
-                    "default=AUTO_DEFAULT can only be used in BaseCustomSettings subclasses"
-                    f"but field {cls}.{name} is of type {field.type_} "
+                    "default=AUTO_DEFAULT_FROM_ENV_VARS can only be used in BaseCustomSettings subclasses"
+                    f"but field {cls}.{name} is {field.type_} "
                 )
 
         if auto_default_errors:
-            # all errors at together
             raise AutoDefaultFactoryError(errors=auto_default_errors, model=cls)
 
         obj = cls()

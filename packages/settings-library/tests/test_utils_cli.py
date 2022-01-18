@@ -87,6 +87,7 @@ def test_settings_as_json(
     assert fake_settings_class.parse_obj(settings)
 
 
+@pytest.mark.skip(reason="WIP")
 def test_settings_as_env_file(
     cli: typer.Typer, fake_settings_class, mock_environment, cli_runner: CliRunner
 ):
@@ -110,6 +111,7 @@ def test_settings_as_env_file(
     assert fake_settings_class.parse_obj(settings)
 
 
+@pytest.mark.skip(reason="WIP")
 def test_supported_parsable_env_formats(
     cli: typer.Typer,
     fake_settings_class: Type[BaseCustomSettings],
