@@ -114,7 +114,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _createResourcesLayout: function() {
-      const resourcesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      const resourcesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
 
       const topBar = this.__createTopBar();
       resourcesLayout.add(topBar);
@@ -134,18 +134,25 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     __createTopBar: function() {
-      const topBar = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
-        alignX: "right"
-      })).set({
-        paddingRight: 8
+      const topBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(12)).set({
+        paddingRight: 8,
+        alignY: "middle"
       });
+
+      const searchBarFilter = new osparc.dashboard.SearchBarFilter();
+      topBar.add(searchBarFilter, {
+        flex: 1
+      });
+
+      const containterModeBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       const viewGridBtn = this._viewGridBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/apps/18");
-      topBar.add(viewGridBtn);
+      containterModeBtns.add(viewGridBtn);
       const viewListBtn = this._viewListBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/reorder/18");
-      topBar.add(viewListBtn);
+      containterModeBtns.add(viewListBtn);
       const group = new qx.ui.form.RadioGroup();
       group.add(viewGridBtn);
       group.add(viewListBtn);
+      topBar.add(containterModeBtns);
 
       viewGridBtn.addListener("execute", () => this.__setResourcesContainerMode("grid"));
       viewListBtn.addListener("execute", () => this.__setResourcesContainerMode("list"));
