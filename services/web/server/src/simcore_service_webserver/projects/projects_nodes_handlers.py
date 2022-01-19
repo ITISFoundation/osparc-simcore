@@ -15,7 +15,10 @@ from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
 from . import projects_api
 from .projects_exceptions import ProjectNotFoundError
-from models_library.sharing_networks import SharingNetworks
+from models_library.sharing_networks import (
+    validate_network_alias,
+    validate_network_name,
+)
 
 log = logging.getLogger(__name__)
 
@@ -117,6 +120,7 @@ async def post_retrieve(request: web.Request) -> web.Response:
         user_id: int = request[RQT_USERID_KEY]
 
         network_name = "default_network"
+        validate_network_name(network_name)
         await sharing_networks.add_network(
             project_id=UUID(project_uuid), network_name=network_name
         )
@@ -127,11 +131,13 @@ async def post_retrieve(request: web.Request) -> web.Response:
             user_id=user_id,
         )
 
+        network_alias = project["workbench"][node_uuid]["label"]
+        validate_network_alias(network_alias)
         await sharing_networks.add_node(
             project_id=UUID(project_uuid),
             node_id=UUID(node_uuid),
             network_name=network_name,
-            service_label=project["workbench"][node_uuid]["label"],
+            network_alias=network_alias,
         )
 
         project_sharing_networks = await sharing_networks.get_sharing_networks(
