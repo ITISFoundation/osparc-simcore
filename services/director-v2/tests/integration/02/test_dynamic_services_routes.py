@@ -3,7 +3,7 @@
 
 import asyncio
 import logging
-from typing import Any, AsyncIterable, AsyncIterator, Dict
+from typing import Any, AsyncIterable, AsyncIterator, Callable, Dict, List, Tuple
 from uuid import uuid4
 
 import aiodocker
@@ -11,6 +11,7 @@ import pytest
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 from async_timeout import timeout
+from models_library.services import ServiceKeyVersion
 from models_library.settings.rabbit import RabbitConfig
 from pydantic import PositiveInt
 from pytest_mock.plugin import MockerFixture
@@ -150,6 +151,32 @@ def mock_service_state(mocker: MockerFixture) -> None:
     )
 
 
+@pytest.fixture
+async def key_version_expected(
+    dy_static_file_server_dynamic_sidecar_service: Dict,
+    dy_static_file_server_service: Dict,
+    docker_registry_image_injector: Callable,
+) -> List[Tuple[ServiceKeyVersion, bool]]:
+
+    results: List[Tuple[ServiceKeyVersion, bool]] = []
+
+    sleeper_service = docker_registry_image_injector(
+        "itisfoundation/sleeper", "2.1.1", "user@e.mail"
+    )
+
+    for image, expected in [
+        (dy_static_file_server_dynamic_sidecar_service, True),
+        (dy_static_file_server_service, False),
+        (sleeper_service, False),
+    ]:
+        schema = image["schema"]
+        results.append(
+            (ServiceKeyVersion(key=schema["key"], version=schema["version"]), expected)
+        )
+
+    return results
+
+
 # TESTS
 
 
@@ -197,3 +224,15 @@ async def test_start_status_stop(
     )
     assert response.status_code == 204, response.text
     assert response.text == ""
+
+
+async def test_requires_dynamic_sidecar(
+    test_client: TestClient, key_version_expected: List[Tuple[ServiceKeyVersion, bool]]
+) -> None:
+    for service_key_version, expected in key_version_expected:
+        response: Response = await test_client.get(
+            f"/v2/dynamic_services/dynamic-sidecar:required",
+            json=service_key_version.dict(),
+        )
+        assert response.status_code == 200, response.text
+        assert response.json() == expected

@@ -144,6 +144,22 @@ async def create_dynamic_service(
 
 
 @router.get(
+    "/dynamic-sidecar:required",
+    summary="returns True if service must be ran via dynamic-sidecar",
+    status_code=status.HTTP_200_OK,
+)
+@log_decorator(logger=logger)
+async def requires_dynamic_sidecar(
+    service_key_version: ServiceKeyVersion,
+    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
+) -> bool:
+    simcore_service_labels: SimcoreServiceLabels = (
+        await director_v0_client.get_service_labels(service=service_key_version)
+    )
+    return simcore_service_labels.needs_dynamic_sidecar
+
+
+@router.get(
     "/{node_uuid}",
     summary="assembles the status for the dynamic-sidecar",
     response_model=DynamicServiceOut,
