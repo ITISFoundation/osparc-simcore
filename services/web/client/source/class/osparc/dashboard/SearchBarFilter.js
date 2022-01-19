@@ -106,6 +106,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const textField = this.getChildControl("text-field");
       textField.addListener("tap", () => this.__showFilterMenu(), this);
       textField.addListener("deactivate", () => this.__hideFilterMenu(), this);
+      textField.addListener("keypress", () => this.__hideFilterMenu(), this);
 
       const resetButton = this.getChildControl("reset-button");
       resetButton.addListener("execute", () => this.__resetFilters(), this);
@@ -228,7 +229,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
             break;
         }
       });
-      console.log("filter", filterData);
       qx.event.message.Bus.getInstance().dispatchByName(osparc.component.filter.UIFilterController.getOutputMessageName("SearchBarFilter"), filterData);
     }
   }
