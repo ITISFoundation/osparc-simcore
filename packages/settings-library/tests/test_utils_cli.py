@@ -4,18 +4,37 @@
 
 import json
 import logging
+import os
 from io import StringIO
-from typing import Callable, ContextManager, Dict, Type
+from typing import Any, Callable, ContextManager, Dict, Type
 
 import pytest
 import typer
 from dotenv import dotenv_values
 from pydantic import ValidationError
+from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.utils_envs import setenvs_as_envfile
 from settings_library.base import BaseCustomSettings
-from settings_library.utils_cli import create_settings_command
+from settings_library.utils_cli import create_settings_command, print_as_envfile
 from typer.testing import CliRunner
 
 log = logging.getLogger(__name__)
+
+# HELPERS  --------------------------------------------------------------------------------
+
+
+def envs_to_kwargs(envs: EnvVarsDict) -> Dict[str, Any]:
+    kwargs = {}
+    for k, v in envs.items():
+        if v is not None:
+            try:
+                kwargs[k] = json.loads(v)
+            except json.JSONDecodeError:
+                kwargs[k] = v
+    return kwargs
+
+
+# FIXTURES --------------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -34,6 +53,9 @@ def cli(fake_settings_class: Type[BaseCustomSettings]) -> typer.Typer:
     main.command()(settings_cmd)
 
     return main
+
+
+# TESTS -----------------------------------------------------------------------------------
 
 
 def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
@@ -87,7 +109,6 @@ def test_settings_as_json(
     assert fake_settings_class.parse_obj(settings)
 
 
-@pytest.mark.skip(reason="WIP")
 def test_settings_as_env_file(
     cli: typer.Typer, fake_settings_class, mock_environment, cli_runner: CliRunner
 ):
@@ -111,7 +132,6 @@ def test_settings_as_env_file(
     assert fake_settings_class.parse_obj(settings)
 
 
-@pytest.mark.skip(reason="WIP")
 def test_supported_parsable_env_formats(
     cli: typer.Typer,
     fake_settings_class: Type[BaseCustomSettings],
@@ -135,6 +155,7 @@ def test_supported_parsable_env_formats(
         assert settings_object
 
 
+@pytest.mark.skip(reason="WIP")
 def test_unsupported_env_format(
     cli: typer.Typer,
     fake_settings_class: Type[BaseCustomSettings],
@@ -162,5 +183,71 @@ def test_unsupported_env_format(
 
         # parse compact format
         with mocked_environment(setting_env_content_compact):
+            print(json.dumps(dict(os.environ), indent=1))
             settings_object = fake_settings_class.create_from_envs()
             assert settings_object
+
+
+def test_compact_format(monkeypatch, fake_settings_class):
+    compact_envs: EnvVarsDict = setenvs_as_envfile(
+        monkeypatch,
+        """
+    APP_HOST=localhost
+    APP_PORT=80
+    APP_OPTIONAL_ADDON='{"MODULE_VALUE": 10, "MODULE_VALUE_DEFAULT": 42}'
+    APP_REQUIRED_PLUGIN='{"POSTGRES_HOST": "localhost", "POSTGRES_PORT": 5432, "POSTGRES_USER": "foo", "POSTGRES_PASSWORD": "**********", "POSTGRES_DB": "foodb", "POSTGRES_MINSIZE": 1, "POSTGRES_MAXSIZE": 50, "POSTGRES_CLIENT_NAME": "None"}'
+    """,
+    )
+
+    settings_from_envs1 = fake_settings_class.create_from_envs()
+    settings_from_init = fake_settings_class(**envs_to_kwargs(compact_envs))
+
+    assert settings_from_envs1 == settings_from_init
+
+    print_as_envfile(settings_from_envs1, compact=False, verbose=True)
+
+
+def test_granular_format(monkeypatch, fake_settings_class):
+    setenvs_as_envfile(
+        monkeypatch,
+        """
+    APP_HOST=localhost
+    APP_PORT=80
+
+    # --- APP_OPTIONAL_ADDON ---
+    MODULE_VALUE=10
+    MODULE_VALUE_DEFAULT=42
+
+    # --- APP_REQUIRED_PLUGIN ---
+    POSTGRES_HOST=localhost
+    POSTGRES_PORT=5432
+    POSTGRES_USER=foo
+    POSTGRES_PASSWORD=**********
+    # Database name
+    POSTGRES_DB=foodb
+    # Minimum number of connections in the pool
+    POSTGRES_MINSIZE=1
+    # Maximum number of connections in the pool
+    POSTGRES_MAXSIZE=50
+    # Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)
+    POSTGRES_CLIENT_NAME=None
+    """,
+    )
+
+    settings_from_envs = fake_settings_class.create_from_envs()
+
+    assert settings_from_envs == fake_settings_class(
+        APP_HOST="localhost",
+        APP_PORT=80,
+        APP_OPTIONAL_ADDON={"MODULE_VALUE": 10, "MODULE_VALUE_DEFAULT": 42},
+        APP_REQUIRED_PLUGIN={
+            "POSTGRES_HOST": "localhost",
+            "POSTGRES_PORT": 5432,
+            "POSTGRES_USER": "foo",
+            "POSTGRES_PASSWORD": "**********",
+            "POSTGRES_DB": "foodb",
+            "POSTGRES_MINSIZE": 1,
+            "POSTGRES_MAXSIZE": 50,
+            "POSTGRES_CLIENT_NAME": None,
+        },
+    )

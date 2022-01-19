@@ -19,7 +19,7 @@ import logging
 from functools import cached_property
 from typing import Callable, Tuple, Type
 
-from pydantic import BaseSettings, Extra, SecretStr, ValidationError
+from pydantic import BaseSettings, Extra, SecretStr, ValidationError, validator
 from pydantic.error_wrappers import ErrorWrapper
 from pydantic.fields import ModelField
 
@@ -45,6 +45,15 @@ class BaseCustomSettings(BaseSettings):
 
     """
 
+    @validator("*", pre=True)
+    @classmethod
+    def parse_none(cls, v, field: ModelField):
+        # WARNING: In nullable fields, envs equal to null or none are parsed as None !!
+        if field.allow_none:
+            if isinstance(v, str) and v.lower() in ("null", "none"):
+                return None
+        return v
+
     class Config:
         # SEE https://pydantic-docs.helpmanual.io/usage/model_config/
         case_sensitive = False
@@ -60,6 +69,8 @@ class BaseCustomSettings(BaseSettings):
         cls,
         field_name,
         default_factory: Callable,
+        *,
+        on_failure_set_as_required: bool = False,
     ):
         field = cls.__fields__[field_name]
 
@@ -67,17 +78,24 @@ class BaseCustomSettings(BaseSettings):
             # can build default?
             default_value = default_factory()
 
+            # reset default to value
+            field.default = default_value
+            field.field_info.default = default_value
+            field.required = False
+
         except ValidationError:
             if field.allow_none:
-                default_value = None
+                # reset default to None
+                field.default = None
+                field.field_info.default = None
+                field.required = False
+            elif on_failure_set_as_required:
+                # reset default to ...
+                field.default = None
+                field.field_info.default = Ellipsis
+                field.required = True
             else:
-                # report error
                 raise
-
-        # sets default
-        field.default = default_value
-        field.field_info.default = default_value
-        field.required = False
 
     @classmethod
     def create_from_envs(cls):

@@ -16,12 +16,6 @@ from settings_library.base import (
 from settings_library.basic_types import PortInt
 
 # HELPERS --------------------------------------------------------------------------------
-#
-# NOTE: monkeypatching envs using envfile text gets closer
-#       to the real use case where .env/.env-devel
-#       files are used to setup envs. Quotes formatting in
-#       those files can sometimes be challenging for parsers
-#
 
 
 class _FakePostgresSettings(BaseCustomSettings):
@@ -95,6 +89,11 @@ def fake_main_settings_with_postgres():
 #       implemented in BaseCustomSettings.
 #       Pay attention how the defaults of SubSettings are automaticaly captured from env vars
 #       at construction time.
+#
+# NOTE: monkeypatching envs using envfile text gets the tests closer
+#       to the real use case where .env/.env-devel
+#       files are used to setup envs. Quotes formatting in
+#       those files can sometimes be challenging for parsers
 #
 
 
