@@ -21,7 +21,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.HBox());
+    this._setLayout(new qx.ui.layout.HBox(5));
 
     this.set({
       backgroundColor: "background-main-lighter+",
@@ -53,7 +53,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         case "search-icon":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/search/16").set({
             backgroundColor: "transparent",
-            paddingRight: 6,
             alignY: "middle",
             opacity: 0.5
           });
@@ -102,8 +101,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.__addTags(tagsButton);
       menu.add(tagsButton);
 
-      const clasButton = new qx.ui.menu.Button("Classifiers", null, null, this.__getClassifiers());
-      menu.add(clasButton);
+      const classifiersButton = new qx.ui.menu.Button("Classifiers");
+      this.__addClassifiers(classifiersButton);
+      menu.add(classifiersButton);
     },
 
     __attachEventHandlers: function() {
@@ -140,49 +140,61 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         const tagsMenu = new qx.ui.menu.Menu();
         tags.forEach(tag => {
           const tagButton = new qx.ui.menu.Button(tag.name);
-          tagButton.tag = tag;
           tagsMenu.add(tagButton);
-          tagButton.addListener("execute", () => {
-            const tagChip = this.__createChip("tag", tag.name);
-            this.getChildControl("active-filters").add(tagChip);
-          }, this);
+          tagButton.addListener("execute", () => this.__addChip("tag", tag.name, tag.name), this);
         });
         menuButton.setMenu(tagsMenu);
       }
     },
 
-    __getClassifiers: function() {
-      const clasMenu = new qx.ui.menu.Menu();
-      [
-        "Clas1",
-        "Clas2"
-      ].forEach(clas => {
-        const clasButton = new qx.ui.menu.Button(clas);
-        clasMenu.add(clasButton);
-      });
-      return clasMenu;
+    __addClassifiers: function(menuButton) {
+      const classifiers = osparc.store.Store.getInstance().getClassifiers();
+      menuButton.setVisibility(classifiers.length ? "visible" : "excluded");
+      if (classifiers.length) {
+        const classifiersMenu = new qx.ui.menu.Menu();
+        classifiers.forEach(classifier => {
+          const classifierButton = new qx.ui.menu.Button(classifier.display_name);
+          classifiersMenu.add(classifierButton);
+          classifierButton.addListener("execute", () => this.__addChip("classifier", classifier.classifier, classifier.display_name), this);
+        });
+        menuButton.setMenu(classifiersMenu);
+      }
     },
 
-    __createChip: function(chipType, chipLabel) {
-      const chipButton = new qx.ui.toolbar.Button().set({
+    __createChip: function(chipType, chipId, chipLabel) {
+      const chipButton = new qx.ui.form.Button().set({
         label: osparc.utils.Utils.capitalize(chipType) + " = '" + chipLabel + "'",
         icon: "@MaterialIcons/close/12",
         iconPosition: "right",
         paddingRight: 4,
-        paddingLeft: 4
+        paddingLeft: 4,
+        alignY: "middle",
+        toolTipText: chipLabel,
+        maxHeight: 26,
+        maxWidth: 180
       });
       chipButton.type = chipType;
-      chipButton.label = chipLabel;
+      chipButton.id = chipId;
       chipButton.getContentElement().setStyles({
         "border-radius": "4px"
       });
-      chipButton.addListener("execute", () => this.__removeChip(chipType, chipLabel), this);
+      chipButton.addListener("execute", () => this.__removeChip(chipType, chipId), this);
       return chipButton;
     },
 
-    __removeChip: function(chipType, chipLabel) {
+    __addChip: function(type, id, label) {
       const activeFilter = this.getChildControl("active-filters");
-      const chipFound = activeFilter.getChildren().find(chip => chip.type === chipType && chip.label === chipLabel);
+      const chipFound = activeFilter.getChildren().find(chip => chip.type === type && chip.id === id);
+      if (chipFound) {
+        return;
+      }
+      const chip = this.__createChip(type, id, label);
+      this.getChildControl("active-filters").add(chip);
+    },
+
+    __removeChip: function(type, id) {
+      const activeFilter = this.getChildControl("active-filters");
+      const chipFound = activeFilter.getChildren().find(chip => chip.type === type && chip.id === id);
       if (chipFound) {
         activeFilter.remove(chipFound);
       }
