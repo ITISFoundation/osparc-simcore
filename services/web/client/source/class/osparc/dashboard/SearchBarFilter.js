@@ -34,14 +34,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
     this.__buildLayout();
 
-    this.__attachEventHandlers();
-  },
+    this.__buildFiltersMenu();
 
-  properties: {
-    appearance: {
-      init: "dashboard",
-      refine: true
-    }
+    this.__attachEventHandlers();
   },
 
   statics: {
@@ -49,16 +44,12 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
   },
 
   members: {
+    __activeFilters: null,
+    __filtersMenu: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "tags-filter": {
-          control = new osparc.component.filter.UserTagsFilter("tags", this.self().FilterGroupId).set({
-            printTags: false
-          });
-          this._add(control);
-          break;
-        }
         case "search-icon":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/search/16").set({
             backgroundColor: "transparent",
@@ -99,63 +90,107 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("tags-filter");
       this.getChildControl("search-icon");
       this.getChildControl("active-filters");
+      this.getChildControl("text-field");
+      this.getChildControl("reset-button");
+    },
 
-      // const filterGroupId = "searchBarFilter";
-      const textField = this.getChildControl("text-field");
-      textField.addListener("changeValue", () => this.__filter(), this);
+    __buildFiltersMenu: function() {
+      const menu = this.__filtersMenu = new qx.ui.menu.Menu();
+      const tagsButton = new qx.ui.menu.Button("Tags");
+      this.__addTags(tagsButton);
+      menu.add(tagsButton);
 
-      const resetButton = this.getChildControl("reset-button");
-      resetButton.addListener("execute", () => this.__resetFilters(), this);
+      const clasButton = new qx.ui.menu.Button("Classifiers", null, null, this.__getClassifiers());
+      menu.add(clasButton);
     },
 
     __attachEventHandlers: function() {
-      const tagsFilter = this.getChildControl("tags-filter");
-      tagsFilter.addListener("activeTagsChanged", () => this.__reloadChips(), this);
-
       const textField = this.getChildControl("text-field");
-      textField.addListener("changeValue", () => this.__filter(), this);
+      textField.addListener("tap", () => this.__showFilterMenu(), this);
+      textField.addListener("deactivate", () => this.__hideFilterMenu(), this);
 
       const resetButton = this.getChildControl("reset-button");
       resetButton.addListener("execute", () => this.__resetFilters(), this);
     },
 
-    __reloadChips: function() {
-      const activeFilters = this.getChildControl("active-filters");
-      activeFilters.removeAll();
-      this.getChildControl("tags-filter").getActiveTags().forEach(tagName => {
-        const tagButton = this.__createChip("tag", tagName);
-        activeFilters.add(tagButton);
+    __showFilterMenu: function() {
+      const element = this.getChildControl("text-field").getContentElement().getDomElement();
+      const {
+        top,
+        left
+      } = qx.bom.element.Location.get(element);
+      this.__filtersMenu.setLayoutProperties({
+        top: top + 30,
+        left: left
       });
+
+      this.__filtersMenu.show();
+    },
+
+    __hideFilterMenu: function() {
+      this.__filtersMenu.exclude();
+    },
+
+    __addTags: function(menuButton) {
+      const tags = osparc.store.Store.getInstance().getTags();
+      menuButton.setVisibility(tags.length ? "visible" : "excluded");
+      if (tags.length) {
+        const tagsMenu = new qx.ui.menu.Menu();
+        tags.forEach(tag => {
+          const tagButton = new qx.ui.menu.Button(tag.name);
+          tagButton.tag = tag;
+          tagsMenu.add(tagButton);
+          tagButton.addListener("execute", () => {
+            const tagChip = this.__createChip("tag", tag.name);
+            this.getChildControl("active-filters").add(tagChip);
+          }, this);
+        });
+        menuButton.setMenu(tagsMenu);
+      }
+    },
+
+    __getClassifiers: function() {
+      const clasMenu = new qx.ui.menu.Menu();
+      [
+        "Clas1",
+        "Clas2"
+      ].forEach(clas => {
+        const clasButton = new qx.ui.menu.Button(clas);
+        clasMenu.add(clasButton);
+      });
+      return clasMenu;
     },
 
     __createChip: function(chipType, chipLabel) {
       const chipButton = new qx.ui.toolbar.Button().set({
-        label: chipType + ":'" + chipLabel + "'",
-        icon: "@MaterialIcons/close/14"
+        label: osparc.utils.Utils.capitalize(chipType) + " = '" + chipLabel + "'",
+        icon: "@MaterialIcons/close/12",
+        iconPosition: "right",
+        paddingRight: 4,
+        paddingLeft: 4
+      });
+      chipButton.type = chipType;
+      chipButton.label = chipLabel;
+      chipButton.getContentElement().setStyles({
+        "border-radius": "4px"
       });
       chipButton.addListener("execute", () => this.__removeChip(chipType, chipLabel), this);
       return chipButton;
     },
 
     __removeChip: function(chipType, chipLabel) {
-      switch (chipType) {
-        case "tag": {
-          const tagsFilter = this.getChildControl("tags-filter");
-          tagsFilter.removeTag(chipLabel);
-          break;
-        }
+      const activeFilter = this.getChildControl("active-filters");
+      const chipFound = activeFilter.getChildren().find(chip => chip.type === chipType && chip.label === chipLabel);
+      if (chipFound) {
+        activeFilter.remove(chipFound);
       }
     },
 
     __resetFilters: function() {
+      this.getChildControl("active-filters").removeAll();
       this.getChildControl("text-field").resetValue();
-    },
-
-    __filter: function() {
-      console.log(this.getChildControl("text-field").getValue());
     }
   }
 });
