@@ -107,11 +107,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       textField.addListener("tap", () => this.__showFilterMenu(), this);
       textField.addListener("deactivate", () => this.__hideFilterMenu(), this);
       textField.addListener("keypress", () => this.__hideFilterMenu(), this);
+      textField.addListener("changeValue", () => this.__filter(), this);
 
       const resetButton = this.getChildControl("reset-button");
       resetButton.addListener("execute", () => this.__resetFilters(), this);
-
-      textField.addListener("changeValue", () => this.__filter(), this);
     },
 
     __showFilterMenu: function() {
