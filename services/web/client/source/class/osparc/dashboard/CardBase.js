@@ -52,15 +52,16 @@ qx.Class.define("osparc.dashboard.CardBase", {
     MODE_APP: "@FontAwesome5Solid/desktop/14",
 
     filterText: function(checks, text) {
-      if (text && checks.filter(label => label && label.toLowerCase().trim().includes(text)).length == 0) {
-        return true;
+      if (text) {
+        const includesSome = checks.some(check => check.toLowerCase().trim().includes(text.toLowerCase()));
+        return !includesSome;
       }
       return false;
     },
 
     filterTags: function(checks, tags) {
       if (tags && tags.length) {
-        const includesAll = (tags.every(tag => checks.includes(tag)));
+        const includesAll = tags.every(tag => checks.includes(tag));
         return !includesAll;
       }
       return false;
@@ -68,7 +69,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     filterClassifiers: function(checks, classifiers) {
       if (classifiers && classifiers.length) {
-        const includesAll = (classifiers.every(classifier => checks.includes(classifier)));
+        const includesAll = classifiers.every(classifier => checks.includes(classifier));
         return !includesAll;
       }
       return false;

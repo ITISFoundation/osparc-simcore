@@ -114,7 +114,13 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     __showFilterMenu: function() {
-      const element = this.getChildControl("text-field").getContentElement().getDomElement();
+      const textField = this.getChildControl("text-field");
+      const textValue = textField.getValue();
+      if (textValue) {
+        return;
+      }
+
+      const element = textField.getContentElement().getDomElement();
       const {
         top,
         left
