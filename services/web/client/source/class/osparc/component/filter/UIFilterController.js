@@ -27,6 +27,9 @@ qx.Class.define("osparc.component.filter.UIFilterController", {
   },
 
   statics: {
+    getOutputMessageName: function(filterGroupId, suffix = "filter") {
+      return osparc.utils.Utils.capitalize(filterGroupId, suffix);
+    },
     registerFilter: function(filterId) {
       this.getInstance().registerFilter(filterId);
     },
@@ -99,14 +102,6 @@ qx.Class.define("osparc.component.filter.UIFilterController", {
       }
     },
 
-    __getInputMessageName: function(filterId, filterGroupId, suffix = "filter") {
-      return osparc.utils.Utils.capitalize(filterId, filterGroupId, suffix);
-    },
-
-    __getOutputMessageName: function(filterGroupId, suffix = "filter") {
-      return osparc.utils.Utils.capitalize(filterGroupId, suffix);
-    },
-
     /**
      * Function called when a filter state changes and it wants to publish those changes to trigger the filtering.
      *
@@ -137,7 +132,7 @@ qx.Class.define("osparc.component.filter.UIFilterController", {
      */
     dispatch: function(filterGroupId) {
       if (this.__state && this.__state[filterGroupId]) {
-        qx.event.message.Bus.getInstance().dispatchByName(this.__getOutputMessageName(filterGroupId), this.__state[filterGroupId]);
+        qx.event.message.Bus.getInstance().dispatchByName(this.self().getOutputMessageName(filterGroupId), this.__state[filterGroupId]);
       }
     }
   }
