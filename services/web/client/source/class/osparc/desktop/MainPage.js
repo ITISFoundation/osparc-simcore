@@ -48,12 +48,19 @@ qx.Class.define("osparc.desktop.MainPage", {
     const navBar = this.__navBar = this.__createNavigationBar();
     this._add(navBar);
 
-    const mainStack = this.__mainStack = this.__createMainStack();
-    this._add(mainStack, {
-      flex: 1
-    });
+    // Some resources request before building the main stack
+    const store = osparc.store.Store.getInstance();
+    Promise.all([
+      store.getAllClassifiers(true),
+      store.getTags()
+    ]).then(() => {
+      const mainStack = this.__mainStack = this.__createMainStack();
+      this._add(mainStack, {
+        flex: 1
+      });
 
-    this.__attachHandlers();
+      this.__attachHandlers();
+    });
   },
 
   members: {
@@ -144,13 +151,9 @@ qx.Class.define("osparc.desktop.MainPage", {
       const minNStudyItemsPerRow = 5;
       const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
       dashboard.setMinWidth(minNStudyItemsPerRow * itemWidth + 8);
-      const sideSearch = new osparc.dashboard.SideSearch().set({
-        maxWidth: 330,
-        minWidth: 220
-      });
       const fitResourceCards = () => {
         const w = document.documentElement.clientWidth;
-        const nStudies = Math.floor((w - 2*sideSearch.getSizeHint().width - 8) / itemWidth);
+        const nStudies = Math.floor((w - 2*260 - 8) / itemWidth);
         const newWidth = nStudies * itemWidth + 8;
         if (newWidth > dashboard.getMinWidth()) {
           dashboard.setWidth(newWidth);
@@ -160,14 +163,8 @@ qx.Class.define("osparc.desktop.MainPage", {
       };
       fitResourceCards();
       window.addEventListener("resize", () => fitResourceCards());
-      dashboard.bind("selection", sideSearch, "visibility", {
-        converter: value => {
-          const tabIndex = dashboard.getChildren().indexOf(value[0]);
-          return [0, 1, 2].includes(tabIndex) ? "visible" : "hidden";
-        }
-      });
       const dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      dashboardLayout.add(sideSearch, {
+      dashboardLayout.add(new qx.ui.core.Widget(), {
         flex: 1
       });
       dashboardLayout.add(dashboard);
