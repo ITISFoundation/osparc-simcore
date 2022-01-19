@@ -1,6 +1,6 @@
 from typing import Dict
 
-from pydantic import BaseModel, constr, validate_model
+from pydantic import BaseModel, constr
 
 from .projects_nodes_io import NodeID
 
@@ -11,18 +11,18 @@ DockerNetworkName = constr(regex=SERVICE_NETWORK_RE)
 DockerNetworkAlias = constr(regex=SERVICE_NETWORK_RE)
 
 
-def validate_network_name(input: str) -> DockerNetworkName:
+def validate_network_name(value: str) -> DockerNetworkName:
     class ValidationModel(BaseModel):
         item: DockerNetworkName
 
-    return ValidationModel(item=input).item
+    return ValidationModel(item=value).item
 
 
-def validate_network_alias(input: str) -> DockerNetworkAlias:
+def validate_network_alias(value: str) -> DockerNetworkAlias:
     class ValidationModel(BaseModel):
         item: DockerNetworkAlias
 
-    return ValidationModel(item=input).item
+    return ValidationModel(item=value).item
 
 
 class SharingNetworks(BaseModel):
