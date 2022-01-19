@@ -9,12 +9,14 @@ from models_library.sharing_networks import (
 from pydantic import Field, ValidationError
 
 
-@pytest.mark.parametrize("example", SharingNetworks.Config.schema_extra["examples"][:2])
+@pytest.mark.parametrize("example", SharingNetworks.Config.schema_extra["examples"])
 def test_sharing_networks(example: Dict) -> None:
     assert SharingNetworks.parse_obj(example)
 
 
-@pytest.mark.parametrize("example", SharingNetworks.Config.schema_extra["examples"][2:])
+@pytest.mark.parametrize(
+    "example", SharingNetworks.Config.schema_extra["invalid_examples"]
+)
 def test_sharing_networks_fail(example: Dict) -> None:
     with pytest.raises(ValidationError):
         assert SharingNetworks.parse_obj(example)

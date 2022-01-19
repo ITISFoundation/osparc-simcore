@@ -37,10 +37,10 @@ class SharingNetworks(BaseModel):
     class Config:
         schema_extra = {
             "examples": [
-                # valid identifiers
                 {"nSetwork_name12-s": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
                 {"C": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
-                # invalid identifiers
+            ],
+            "invalid_examples": [
                 {
                     "1_NO_START_WITH_NUMBER": {
                         "5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"
@@ -59,8 +59,5 @@ class SharingNetworks(BaseModel):
                 },
                 {"i_am_ok": {"NOT_A_VALID_UUID": "ok"}},
                 {"i_am_ok": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "1_I_AM_INVALID"}},
-            ]
+            ],
         }
-
-    # we can now have examples and tests here
-    # let us put some of those
