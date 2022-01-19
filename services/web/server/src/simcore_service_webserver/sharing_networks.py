@@ -2,7 +2,11 @@ from typing import AsyncIterator, Dict
 from _pytest.fixtures import fail_fixturefunc
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.sharing_networks import SharingNetworks
+from models_library.sharing_networks import (
+    SharingNetworks,
+    DockerNetworkAlias,
+    DockerNetworkName,
+)
 
 from contextlib import asynccontextmanager
 
@@ -33,21 +37,16 @@ class NetworkNotDefinedException(BaseNetworksException):
     pass
 
 
-def _validate_network_name(service_label: str) -> None:
-    # TODO: implement regex to check service_label is compatible with
-    # service name
-    # raise InvalidServiceLabelException(f"Not a valid network {service_label}")
-    pass
-
-
-async def add_network(project_id: ProjectID, network_name: str) -> None:
+async def add_network(project_id: ProjectID, network_name: DockerNetworkName) -> None:
     """creates network if missing"""
     async with networks_manager(project_id) as project_networks:
         if network_name not in project_networks:
             project_networks[network_name] = {}
 
 
-async def remove_network(project_id: ProjectID, network_name: str) -> None:
+async def remove_network(
+    project_id: ProjectID, network_name: DockerNetworkName
+) -> None:
     """removes network if present"""
     async with networks_manager(project_id) as project_networks:
         if network_name in project_networks:
@@ -57,18 +56,19 @@ async def remove_network(project_id: ProjectID, network_name: str) -> None:
 
 
 async def add_node(
-    project_id: ProjectID, node_id: NodeID, network_name: str, service_label: str
+    project_id: ProjectID,
+    node_id: NodeID,
+    network_name: DockerNetworkName,
+    network_alias: DockerNetworkAlias,
 ) -> None:
     """adds node to network or update network name"""
-
-    _validate_network_name(service_label)
 
     send_update = False
     async with networks_manager(project_id) as project_networks:
         if network_name not in project_networks:
             raise NetworkNotDefinedException(f"Network {network_name} was not defined!")
 
-        project_networks[network_name][node_id] = service_label
+        project_networks[network_name][node_id] = network_alias
         send_update = True
 
     if send_update:
@@ -77,7 +77,7 @@ async def add_node(
 
 
 async def remove_node(
-    project_id: ProjectID, network_name: str, node_id: NodeID
+    project_id: ProjectID, network_name: DockerNetworkName, node_id: NodeID
 ) -> None:
     """removes node from network"""
     send_update = False
