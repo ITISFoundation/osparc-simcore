@@ -85,18 +85,18 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
     __createMainViewLayout: function() {
       const tabs = [{
-        label: this.tr("Studies"),
+        label: this.tr("STUDIES"),
         buildLayout: this.__createStudyBrowser
       }, {
-        label: this.tr("Templates"),
+        label: this.tr("TEMPLATES"),
         buildLayout: this.__createTemplateBrowser
       }, {
-        label: this.tr("Services"),
+        label: this.tr("SERVICES"),
         buildLayout: this.__createServiceBrowser
       }];
       if (!osparc.utils.Utils.isProduct("s4l")) {
         tabs.push({
-          label: this.tr("Data"),
+          label: this.tr("DATA"),
           buildLayout: this.__createDataBrowser}
         );
       }
