@@ -93,11 +93,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
     __buildFiltersMenu: function() {
       const menu = this.__filtersMenu = new qx.ui.menu.Menu();
-      const tagsButton = new qx.ui.menu.Button("Tags");
+      const tagsButton = new qx.ui.menu.Button(this.tr("Tags"), "@FontAwesome5Solid/tags/12");
       this.__addTags(tagsButton);
       menu.add(tagsButton);
 
-      const classifiersButton = new qx.ui.menu.Button("Classifiers");
+      const classifiersButton = new qx.ui.menu.Button(this.tr("Classifiers"), "@FontAwesome5Solid/search/12");
       this.__addClassifiers(classifiersButton);
       menu.add(classifiersButton);
     },
@@ -143,7 +143,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       if (tags.length) {
         const tagsMenu = new qx.ui.menu.Menu();
         tags.forEach(tag => {
-          const tagButton = new qx.ui.menu.Button(tag.name);
+          const tagButton = new qx.ui.menu.Button(tag.name, "@FontAwesome5Solid/tag/12");
+          tagButton.getChildControl("icon").setTextColor(tag.color);
           tagsMenu.add(tagButton);
           tagButton.addListener("execute", () => this.__addChip("tag", tag.name, tag.name), this);
         });
