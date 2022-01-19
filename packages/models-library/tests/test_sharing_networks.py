@@ -3,10 +3,10 @@ from typing import Dict
 import pytest
 from models_library.sharing_networks import (
     SharingNetworks,
-    validate_network_name,
     validate_network_alias,
+    validate_network_name,
 )
-from pydantic import Field, ValidationError
+from pydantic import ValidationError
 
 
 @pytest.mark.parametrize("example", SharingNetworks.Config.schema_extra["examples"])
