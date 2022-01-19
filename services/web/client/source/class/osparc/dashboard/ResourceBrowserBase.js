@@ -144,14 +144,20 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         flex: 1
       });
 
-      const containterModeBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const containterModeBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox(6));
       const viewGridBtn = this._viewGridBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/apps/18");
-      containterModeBtns.add(viewGridBtn);
       const viewListBtn = this._viewListBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/reorder/18");
-      containterModeBtns.add(viewListBtn);
       const group = new qx.ui.form.RadioGroup();
-      group.add(viewGridBtn);
-      group.add(viewListBtn);
+      [
+        viewGridBtn,
+        viewListBtn
+      ].forEach(btn => {
+        containterModeBtns.add(btn);
+        group.add(btn);
+        btn.getContentElement().setStyles({
+          "border-radius": "8px"
+        });
+      });
       topBar.add(containterModeBtns);
 
       viewGridBtn.addListener("execute", () => this.__setResourcesContainerMode("grid"));

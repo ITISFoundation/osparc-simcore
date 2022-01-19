@@ -25,7 +25,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
     this.set({
       backgroundColor: "background-main-lighter+",
-      maxHeight: 30
+      paddingLeft: 6,
+      height: 36
+    });
+    this.getContentElement().setStyles({
+      "border-radius": "8px"
     });
 
     this.__buildLayout();
@@ -70,9 +74,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           break;
         case "text-field":
           control = new qx.ui.form.TextField().set({
+            backgroundColor: "background-main-lighter+",
             font: "text-16",
             placeholder: this.tr("search"),
-            alignY: "bottom"
+            alignY: "bottom",
+            marginBottom: 4
           });
           this._add(control, {
             flex: 1
@@ -82,6 +88,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           control = new qx.ui.toolbar.Button(null, "@MaterialIcons/close/12").set({
             backgroundColor: "transparent",
             paddingLeft: 0,
+            paddingRight: 0,
             alignY: "middle",
             opacity: 0.7
           });
@@ -130,6 +137,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         icon: "@MaterialIcons/close/14"
       });
       chipButton.addListener("execute", () => this.__removeChip(chipType, chipLabel), this);
+      return chipButton;
     },
 
     __removeChip: function(chipType, chipLabel) {
