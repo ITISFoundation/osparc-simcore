@@ -333,7 +333,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
       const menu = this._getResourceItemMenu(resourceData, item);
       item.setMenu(menu);
-      item.subscribeToFilterGroup("sideSearchFilter");
+      item.subscribeToFilterGroup("searchBarFilter");
 
       return item;
     },

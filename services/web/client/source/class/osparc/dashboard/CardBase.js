@@ -60,20 +60,16 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     filterTags: function(checks, tags) {
       if (tags && tags.length) {
-        const tagNames = checks.map(tag => tag.name);
-        if (tags.filter(tag => tagNames.includes(tag)).length == 0) {
-          return true;
-        }
+        const includesAll = (tags.every(tag => checks.includes(tag)));
+        return !includesAll;
       }
       return false;
     },
 
     filterClassifiers: function(checks, classifiers) {
       if (classifiers && classifiers.length) {
-        const classes = osparc.utils.Classifiers.getLeafClassifiers(classifiers);
-        if (classes.filter(clas => checks.includes(clas.data.classifier)).length == 0) {
-          return true;
-        }
+        const includesAll = (classifiers.every(classifier => checks.includes(classifier)));
+        return !includesAll;
       }
       return false;
     }
