@@ -39,10 +39,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this.__attachEventHandlers();
   },
 
-  statics: {
-    FilterGroupId: "searchBarFilter"
-  },
-
   members: {
     __activeFilters: null,
     __filtersMenu: null,
@@ -113,6 +109,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
       const resetButton = this.getChildControl("reset-button");
       resetButton.addListener("execute", () => this.__resetFilters(), this);
+
+      textField.addListener("changeValue", () => this.__filter(), this);
     },
 
     __showFilterMenu: function() {
@@ -189,7 +187,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         return;
       }
       const chip = this.__createChip(type, id, label);
-      this.getChildControl("active-filters").add(chip);
+      activeFilter.add(chip);
+      this.__filter();
     },
 
     __removeChip: function(type, id) {
@@ -197,12 +196,34 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const chipFound = activeFilter.getChildren().find(chip => chip.type === type && chip.id === id);
       if (chipFound) {
         activeFilter.remove(chipFound);
+        this.__filter();
       }
     },
 
     __resetFilters: function() {
       this.getChildControl("active-filters").removeAll();
       this.getChildControl("text-field").resetValue();
+      this.__filter();
+    },
+
+    __filter: function() {
+      const filterData = {
+        tags: [],
+        classifiers: [],
+        text: this.getChildControl("text-field").getValue() ? this.getChildControl("text-field").getValue() : ""
+      };
+      this.getChildControl("active-filters").getChildren().forEach(chip => {
+        switch (chip.type) {
+          case "tag":
+            filterData.tags.push(chip.id);
+            break;
+          case "classifier":
+            filterData.classifiers.push(chip.id);
+            break;
+        }
+      });
+      console.log("filter", filterData);
+      qx.event.message.Bus.getInstance().dispatchByName(osparc.component.filter.UIFilterController.getOutputMessageName("SearchBarFilter"), filterData);
     }
   }
 });
