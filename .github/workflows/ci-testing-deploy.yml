@@ -2118,6 +2118,12 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash install
       - name: test
         run: ./ci/github/system-testing/public-api.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./tests/public-api/test_failures
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/public-api.bash clean_up
