@@ -1,48 +1,52 @@
-""" Customizes pydantic's BaseSettings class and extends it to allow embedded BaseSettings (not only BaseModels)
-
-
-+ MOTIVATION:
-
-    If you create a model that inherits from BaseSettings, the model initialiser will
-    attempt to determine the values of any fields not passed as keyword arguments by reading from the environment
-    (Default values will still be used if the matching environment variable is not set.)
-
-    osparc's services share many configurations (e.g. access postgress) which are commas pydantic settings as
-    well (e.g. settings_library.postgres.PostgresSettings )
-
-
-SEE https://pydantic-docs.helpmanual.io/usage/settings/:
-"""
-
-
-import logging
 from functools import cached_property
-from typing import Callable, Tuple, Type
+from typing import Sequence, get_args
 
-from pydantic import BaseSettings, Extra, SecretStr, ValidationError, validator
-from pydantic.error_wrappers import ErrorWrapper
-from pydantic.fields import ModelField
+from pydantic import BaseConfig, BaseSettings, Extra, ValidationError, validator
+from pydantic.error_wrappers import ErrorList, ErrorWrapper
+from pydantic.fields import ModelField, Undefined
+from pydantic.types import SecretStr
 
-logger = logging.getLogger(__name__)
 
-
-class AutoDefaultType:
+class DefaultFromEnvFactoryError(ValidationError):
     ...
 
 
-AUTO_DEFAULT_FROM_ENV_VARS = AutoDefaultType()
+def create_settings_from_env(field):
+    # Keeps a reference of field but MUST nothing should be modified there
+    # cannot pass only field.type_ because @prepare_field still not resolved!
 
-NameSettingsTypePair = Tuple[str, Type["BaseCustomSettings"]]
+    def _default_factory():
+        """Creates default from sub-settings or None (if nullable)"""
+        field_settings_cls = field.type_
+        try:
+            return field_settings_cls()
 
+        except ValidationError as err:
+            if field.allow_none:
+                return None
 
-class AutoDefaultFactoryError(ValidationError):
-    ...
+            def _prepend_field_name(ee: ErrorList):
+                if isinstance(ee, ErrorWrapper):
+                    return ErrorWrapper(ee.exc, (field.name,) + ee.loc_tuple())
+                assert isinstance(ee, Sequence)  # nosec
+                return [_prepend_field_name(e) for e in ee]
+
+            raise DefaultFromEnvFactoryError(
+                errors=_prepend_field_name(err.raw_errors),  # type: ignore
+                model=err.model,
+                # FIXME: model = shall be the parent settings?? but I dont find how retrieve it from the field
+            ) from err
+
+    return _default_factory
 
 
 class BaseCustomSettings(BaseSettings):
     """
-    - Allows nested 'BaseCustomSettings' (i.e. fields that captures)
+    - Customized configuration for all settings
+    - If a field is a BaseCustomSettings subclass, it allows creating a default from env vars setting the Field
+      option 'auto_default_from_env=True'.
 
+    SEE tests for details.
     """
 
     @validator("*", pre=True)
@@ -54,9 +58,8 @@ class BaseCustomSettings(BaseSettings):
                 return None
         return v
 
-    class Config:
-        # SEE https://pydantic-docs.helpmanual.io/usage/model_config/
-        case_sensitive = False
+    class Config(BaseConfig):
+        case_sensitive = True  # All must be capitalized
         extra = Extra.forbid
         allow_mutation = False
         frozen = True
@@ -64,90 +67,45 @@ class BaseCustomSettings(BaseSettings):
         json_encoders = {SecretStr: lambda v: v.get_secret_value()}
         keep_untouched = (cached_property,)
 
-    @classmethod
-    def _create_default_field(
-        cls,
-        field_name,
-        default_factory: Callable,
-        *,
-        on_failure_set_as_required: bool = False,
-    ):
-        field = cls.__fields__[field_name]
+        @classmethod
+        def prepare_field(cls, field: ModelField) -> None:
+            super().prepare_field(field)
 
-        try:
-            # can build default?
-            default_value = default_factory()
+            auto_default_from_env = field.field_info.extra.get(
+                "auto_default_from_env", False
+            )
 
-            # reset default to value
-            field.default = default_value
-            field.field_info.default = default_value
-            field.required = False
+            field_type = field.type_
+            if args := get_args(field_type):
+                # TODO: skip all the way if none of these types
+                field_type = next(a for a in args if a != type(None))
 
-        except ValidationError:
-            if field.allow_none:
-                # reset default to None
-                field.default = None
-                field.field_info.default = None
-                field.required = False
-            elif on_failure_set_as_required:
-                # reset default to ...
-                field.default = None
-                field.field_info.default = Ellipsis
-                field.required = True
-            else:
-                raise
+            if issubclass(field_type, BaseCustomSettings):
 
-    @classmethod
-    def create_from_envs(cls):
-        """Method to construct settings from env vars
+                if auto_default_from_env:
 
-        Sub-settings fields (i.e. fields subclasses of BaseCustomSettings) can set factory
-        to create the default from env vars (denoted auto-default factory)
+                    assert field.field_info.default is Undefined
+                    assert field.field_info.default_factory is None
 
-        The auto-default factory sets up a default value that matches the specified type
-        or raises AutoDefaultFactoryError
+                    field.default_factory = create_settings_from_env(field)
 
-        Notice that if nullable,i.e. Option[SettingsType], the default might resolve in either
-        an instance of SettingsType or None.
+                    # TODO: doc why we are doing this?
+                    # Undefined required -> required=true
+                    # Undefined default and no factor -> default=None
+                    field.required = False
 
-        SEE https://pydantic-docs.helpmanual.io/usage/settings/#parsing-environment-variable-values
-        """
-        name: str
-        field: ModelField
-        auto_default_errors = []
-
-        for name, field in cls.__fields__.items():
-
-            if issubclass(field.type_, BaseCustomSettings):
-                subsettings_cls = field.type_
-
-                if field.field_info.default == AUTO_DEFAULT_FROM_ENV_VARS:
-                    try:
-                        cls._create_default_field(
-                            field.name, default_factory=subsettings_cls.create_from_envs
-                        )
-                    except ValidationError as err:
-                        assert err.model
-                        auto_default_errors.extend(
-                            [
-                                ErrorWrapper(e.exc, (field.name,) + e.loc_tuple())
-                                for e in err.raw_errors
-                            ]
-                        )
-
-            elif issubclass(field.type_, BaseSettings):
+            elif issubclass(field_type, BaseSettings):
                 raise ValueError(
-                    f"{cls}.{name} of type {field.type_} must inherit from BaseCustomSettings"
+                    f"{cls}.{field.name} of type {field_type} must inherit from BaseCustomSettings"
                 )
 
-            elif field.field_info.default == AUTO_DEFAULT_FROM_ENV_VARS:
+            elif auto_default_from_env:
                 raise ValueError(
-                    "default=AUTO_DEFAULT_FROM_ENV_VARS can only be used in BaseCustomSettings subclasses"
-                    f"but field {cls}.{name} is {field.type_} "
+                    "auto_default_from_env=True can only be used in BaseCustomSettings subclasses"
+                    f"but field {cls}.{field.name} is {field_type} "
                 )
 
-        if auto_default_errors:
-            raise AutoDefaultFactoryError(errors=auto_default_errors, model=cls)
-
-        obj = cls()
-        return obj
+    @classmethod
+    def create_from_envs(cls, **overrides):
+        # Legacy. More explicit and pylance does not get confused
+        return cls(**overrides)

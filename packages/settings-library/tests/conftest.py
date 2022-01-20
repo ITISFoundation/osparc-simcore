@@ -14,9 +14,9 @@ import pytest
 import settings_library
 from _pytest.monkeypatch import MonkeyPatch
 from dotenv import dotenv_values
-from pydantic import Field
+from pydantic.fields import Field
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.base import AUTO_DEFAULT_FROM_ENV_VARS, BaseCustomSettings
+from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt
 from settings_library.postgres import PostgresSettings
 
@@ -97,12 +97,12 @@ def fake_settings_class() -> Type[BaseCustomSettings]:
         # NOTE: by convention, an addon is disabled when APP_ADDON=None, so we make this
         # entry nullable as well
         APP_OPTIONAL_ADDON: Optional[_ModuleSettings] = Field(
-            default=AUTO_DEFAULT_FROM_ENV_VARS
+            auto_default_from_env=True
         )
 
         # NOTE: example of a group that cannot be disabled (not nullable)
         APP_REQUIRED_PLUGIN: Optional[PostgresSettings] = Field(
-            default=AUTO_DEFAULT_FROM_ENV_VARS
+            auto_default_from_env=True
         )
 
     return _ApplicationSettings

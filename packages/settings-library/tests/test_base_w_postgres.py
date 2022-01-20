@@ -3,41 +3,15 @@
 # pylint: disable=unused-variable
 
 
-from typing import Optional
+from typing import Callable, Optional
 
 import pytest
 from pydantic import Field, ValidationError
 from pytest_simcore.helpers.utils_envs import setenvs_as_envfile
-from settings_library.base import (
-    AUTO_DEFAULT_FROM_ENV_VARS,
-    AutoDefaultFactoryError,
-    BaseCustomSettings,
-)
+from settings_library.base import BaseCustomSettings, DefaultFromEnvFactoryError
 from settings_library.basic_types import PortInt
 
 # HELPERS --------------------------------------------------------------------------------
-
-
-class _FakePostgresSettings(BaseCustomSettings):
-    #
-    # NOTE: Copied here to break these tests in case real PostgresSettings
-    # really changes
-
-    POSTGRES_HOST: str
-    POSTGRES_PORT: PortInt = 5432
-
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-
-    POSTGRES_DB: str = Field(...)
-
-    POSTGRES_MINSIZE: int = Field(1, ge=1)
-    POSTGRES_MAXSIZE: int = Field(50, ge=1)
-
-    POSTGRES_CLIENT_NAME: Optional[str] = Field(
-        None,
-        env=["HOST", "HOSTNAME", "POSTGRES_CLIENT_NAME"],
-    )
 
 
 # FIXTURES --------------------------------------------------------------------------------------
@@ -53,34 +27,73 @@ class _FakePostgresSettings(BaseCustomSettings):
 
 
 @pytest.fixture
-def fake_main_settings_with_postgres():
-    class _Namespace:
+def model_classes_factory() -> Callable:
+    #
+    # pydantic uses a meta-class to build the actual class model using
+    # the user's annotations. This fixture allows us to control the moment
+    # this happens (e.g. to guarantee certain)
+    #
+
+    def _create_classes():
+        class _FakePostgresSettings(BaseCustomSettings):
+            #
+            # NOTE: Copied here to break these tests in case real PostgresSettings
+            # really changes
+
+            POSTGRES_HOST: str
+            POSTGRES_PORT: PortInt = 5432
+
+            POSTGRES_USER: str
+            POSTGRES_PASSWORD: str
+
+            POSTGRES_DB: str = Field(...)
+
+            POSTGRES_MINSIZE: int = Field(1, ge=1)
+            POSTGRES_MAXSIZE: int = Field(50, ge=1)
+
+            POSTGRES_CLIENT_NAME: Optional[str] = Field(
+                None,
+                env=["HOST", "HOSTNAME", "POSTGRES_CLIENT_NAME"],
+            )
+
         #
         # Different constraints on WEBSERVER_POSTGRES subsettings
         # SEE test__pydantic_settings.py::test_fields_declarations for details
         #
-        class AsRequired(BaseCustomSettings):
+        class S1(BaseCustomSettings):
             WEBSERVER_POSTGRES: _FakePostgresSettings
 
-        class AsNullableOptional(BaseCustomSettings):
-            WEBSERVER_POSTGRES: Optional[_FakePostgresSettings]
+        class S2(BaseCustomSettings):
+            WEBSERVER_POSTGRES_NULLABLE_OPTIONAL: Optional[_FakePostgresSettings]
 
-        class AsDefaultAuto(BaseCustomSettings):
-            WEBSERVER_POSTGRES: _FakePostgresSettings = Field(
-                AUTO_DEFAULT_FROM_ENV_VARS
+        class S3(BaseCustomSettings):
+            # cannot be disabled!!
+            WEBSERVER_POSTGRES_DEFAULT_ENV: _FakePostgresSettings = Field(
+                auto_default_from_env=True
             )
 
-        class AsNullableDefaultAuto(BaseCustomSettings):
-            # optional, nullable and with auto default (= enabled by default)
-            WEBSERVER_POSTGRES: Optional[_FakePostgresSettings] = Field(
-                AUTO_DEFAULT_FROM_ENV_VARS
-            )
+        class S4(BaseCustomSettings):
+            # defaults enabled but if cannot be resolved, it disables
+            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV: Optional[
+                _FakePostgresSettings
+            ] = Field(auto_default_from_env=True)
 
-        class AsNullableDefaultNull(BaseCustomSettings):
-            # optional, nullable and None default (= disabled by default)
-            WEBSERVER_POSTGRES: Optional[_FakePostgresSettings] = None
+        class S5(BaseCustomSettings):
+            # defaults disabled but only explicit enabled
+            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL: Optional[
+                _FakePostgresSettings
+            ] = None
 
-    return _Namespace
+        _classes = (
+            S1,
+            S2,
+            S3,
+            S4,
+            S5,
+        )
+        return _classes
+
+    return _create_classes
 
 
 # TESTS --------------------------------------------------------------------------------------
@@ -97,33 +110,34 @@ def fake_main_settings_with_postgres():
 #
 
 
-def test_parse_wo_envs(fake_main_settings_with_postgres):
+def test_parse_from_empty_envs(model_classes_factory: Callable):
 
-    _MainSettings = fake_main_settings_with_postgres
+    S1, S2, S3, S4, S5 = model_classes_factory()
 
     with pytest.raises(ValidationError):
-        s1 = _MainSettings.AsRequired.create_from_envs()
+        s1 = S1()
 
-    s2 = _MainSettings.AsNullableOptional.create_from_envs()
-    assert s2.WEBSERVER_POSTGRES == None
+    s2 = S2()
+    assert s2.WEBSERVER_POSTGRES_NULLABLE_OPTIONAL == None
 
-    with pytest.raises(AutoDefaultFactoryError):
-        # auto-default cannot resolve
-        s3 = _MainSettings.AsDefaultAuto.create_from_envs()
+    with pytest.raises(DefaultFromEnvFactoryError):
+        # NOTE: cannot hae a default or assignment
+        s3 = S3()
 
     # auto default factory resolves to None (because is nullable)
-    s4 = _MainSettings.AsNullableDefaultAuto.create_from_envs()
-    assert s4.WEBSERVER_POSTGRES == None
+    s4 = S4()
+    assert s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV == None
 
-    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()
-    assert s5.WEBSERVER_POSTGRES == None
+    s5 = S5()
+    assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL == None
 
 
-def test_parse_from_postgres_envs(monkeypatch, fake_main_settings_with_postgres):
+def test_parse_from_individual_envs(monkeypatch, model_classes_factory):
 
-    _MainSettings = fake_main_settings_with_postgres
+    S1, S2, S3, S4, S5 = model_classes_factory()
 
-    # environments with individual envs (PostgresSettings required fields)
+    # environment
+    #  - with individual envs (PostgresSettings required fields)
     setenvs_as_envfile(
         monkeypatch,
         """
@@ -134,10 +148,8 @@ def test_parse_from_postgres_envs(monkeypatch, fake_main_settings_with_postgres)
         """,
     )
 
-    # checks
-
     with pytest.raises(ValidationError) as exc_info:
-        _MainSettings.AsRequired.create_from_envs()
+        S1()
 
     assert exc_info.value.errors()[0] == {
         "loc": ("WEBSERVER_POSTGRES",),
@@ -145,14 +157,14 @@ def test_parse_from_postgres_envs(monkeypatch, fake_main_settings_with_postgres)
         "type": "value_error.missing",
     }
 
-    s2 = _MainSettings.AsNullableOptional.create_from_envs()
+    s2 = S2()
     assert s2.dict(exclude_unset=True) == {}
-    assert s2.dict() == {"WEBSERVER_POSTGRES": None}
+    assert s2.dict() == {"WEBSERVER_POSTGRES_NULLABLE_OPTIONAL": None}
 
-    s3 = _MainSettings.AsDefaultAuto.create_from_envs()
+    s3 = S3()
     assert s3.dict(exclude_unset=True) == {}
     assert s3.dict() == {
-        "WEBSERVER_POSTGRES": {
+        "WEBSERVER_POSTGRES_DEFAULT_ENV": {
             "POSTGRES_HOST": "pg",
             "POSTGRES_USER": "test",
             "POSTGRES_PORT": 5432,
@@ -164,10 +176,10 @@ def test_parse_from_postgres_envs(monkeypatch, fake_main_settings_with_postgres)
         }
     }
 
-    s4 = _MainSettings.AsNullableDefaultAuto.create_from_envs()
+    s4 = S4()
     assert s4.dict(exclude_unset=True) == {}
     assert s4.dict() == {
-        "WEBSERVER_POSTGRES": {
+        "WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV": {
             "POSTGRES_HOST": "pg",
             "POSTGRES_USER": "test",
             "POSTGRES_PORT": 5432,
@@ -179,197 +191,272 @@ def test_parse_from_postgres_envs(monkeypatch, fake_main_settings_with_postgres)
         }
     }
 
-    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()
+    s5 = S5()
     assert s5.dict(exclude_unset=True) == {}
-    assert s5.dict() == {"WEBSERVER_POSTGRES": None}
+    assert s5.dict() == {"WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL": None}
 
 
-def test_parse_from_json_env(monkeypatch, fake_main_settings_with_postgres):
+def test_parse_compact_env(monkeypatch, model_classes_factory):
 
-    _MainSettings = fake_main_settings_with_postgres
+    S1, S2, S3, S4, S5 = model_classes_factory()
 
-    # environment with json (compact)
-    setenvs_as_envfile(
-        monkeypatch,
-        """
-            WEBSERVER_POSTGRES='{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}'
-        """,
-    )
+    # environment
+    # - with json (compact)
+    JSON_VALUE = '{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}'
 
-    # test
-    s1 = _MainSettings.AsRequired.create_from_envs()
+    with monkeypatch.context() as patch:
+        setenvs_as_envfile(
+            patch,
+            f"""
+                WEBSERVER_POSTGRES='{JSON_VALUE}'
+            """,
+        )
 
-    assert s1.dict(exclude_unset=True) == {
-        "WEBSERVER_POSTGRES": {
-            "POSTGRES_HOST": "pg2",
-            "POSTGRES_USER": "test2",
-            "POSTGRES_PASSWORD": "shh2",
-            "POSTGRES_DB": "db2",
+        # test
+        s1 = S1()
+
+        assert s1.dict(exclude_unset=True) == {
+            "WEBSERVER_POSTGRES": {
+                "POSTGRES_HOST": "pg2",
+                "POSTGRES_USER": "test2",
+                "POSTGRES_PASSWORD": "shh2",
+                "POSTGRES_DB": "db2",
+            }
         }
-    }
-    assert s1.dict() == {
-        "WEBSERVER_POSTGRES": {
-            "POSTGRES_HOST": "pg2",
-            "POSTGRES_USER": "test2",
-            "POSTGRES_PORT": 5432,
-            "POSTGRES_PASSWORD": "shh2",
-            "POSTGRES_DB": "db2",
-            "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 1,
-            "POSTGRES_CLIENT_NAME": None,
+        assert s1.dict() == {
+            "WEBSERVER_POSTGRES": {
+                "POSTGRES_HOST": "pg2",
+                "POSTGRES_USER": "test2",
+                "POSTGRES_PORT": 5432,
+                "POSTGRES_PASSWORD": "shh2",
+                "POSTGRES_DB": "db2",
+                "POSTGRES_MAXSIZE": 50,
+                "POSTGRES_MINSIZE": 1,
+                "POSTGRES_CLIENT_NAME": None,
+            }
         }
-    }
 
-    s2 = _MainSettings.AsNullableOptional.create_from_envs()
-    assert s2.dict(exclude_unset=True) == {
-        "WEBSERVER_POSTGRES": {
-            "POSTGRES_HOST": "pg2",
-            "POSTGRES_USER": "test2",
-            "POSTGRES_PASSWORD": "shh2",
-            "POSTGRES_DB": "db2",
+    with monkeypatch.context() as patch:
+        setenvs_as_envfile(
+            patch,
+            f"""
+                WEBSERVER_POSTGRES_NULLABLE_OPTIONAL='{JSON_VALUE}'
+            """,
+        )
+        s2 = S2()
+        assert s2.dict(exclude_unset=True) == {
+            "WEBSERVER_POSTGRES_NULLABLE_OPTIONAL": {
+                "POSTGRES_HOST": "pg2",
+                "POSTGRES_USER": "test2",
+                "POSTGRES_PASSWORD": "shh2",
+                "POSTGRES_DB": "db2",
+            }
         }
-    }
 
-    with pytest.raises(AutoDefaultFactoryError):
-        s3 = _MainSettings.AsDefaultAuto.create_from_envs()
-
-    s4 = _MainSettings.AsNullableDefaultAuto.create_from_envs()
-    assert s4.dict(exclude_unset=True) == {
-        "WEBSERVER_POSTGRES": {
-            "POSTGRES_HOST": "pg2",
-            "POSTGRES_USER": "test2",
-            "POSTGRES_PASSWORD": "shh2",
-            "POSTGRES_DB": "db2",
+    with monkeypatch.context() as patch:
+        setenvs_as_envfile(
+            patch,
+            f"""
+                WEBSERVER_POSTGRES_DEFAULT_ENV='{JSON_VALUE}'
+            """,
+        )
+        # NOTE: pydantic 1.9 does it right: it delays evaluating
+        # default until it is really needed. Here before it would
+        # fail because default cannot be computed even if the final value can!
+        s3 = S3()
+        assert s3.dict(exclude_unset=True) == {
+            "WEBSERVER_POSTGRES_DEFAULT_ENV": {
+                "POSTGRES_HOST": "pg2",
+                "POSTGRES_USER": "test2",
+                "POSTGRES_PASSWORD": "shh2",
+                "POSTGRES_DB": "db2",
+            }
         }
-    }
 
-    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()
-    assert s5.dict(exclude_unset=True) == {
-        "WEBSERVER_POSTGRES": {
-            "POSTGRES_HOST": "pg2",
-            "POSTGRES_USER": "test2",
-            "POSTGRES_PASSWORD": "shh2",
-            "POSTGRES_DB": "db2",
+    with monkeypatch.context() as patch:
+        setenvs_as_envfile(
+            patch,
+            f"""
+                WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV='{JSON_VALUE}'
+            """,
+        )
+        s4 = S4()
+        assert s4.dict(exclude_unset=True) == {
+            "WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV": {
+                "POSTGRES_HOST": "pg2",
+                "POSTGRES_USER": "test2",
+                "POSTGRES_PASSWORD": "shh2",
+                "POSTGRES_DB": "db2",
+            }
         }
-    }
+
+    with monkeypatch.context() as patch:
+        setenvs_as_envfile(
+            patch,
+            f"""
+                WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL='{JSON_VALUE}'
+            """,
+        )
+        s5 = S5()
+        assert s5.dict(exclude_unset=True) == {
+            "WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL": {
+                "POSTGRES_HOST": "pg2",
+                "POSTGRES_USER": "test2",
+                "POSTGRES_PASSWORD": "shh2",
+                "POSTGRES_DB": "db2",
+            }
+        }
 
 
-def test_parse_from_mixed_envs(monkeypatch, fake_main_settings_with_postgres):
+def test_parse_from_mixed_envs(monkeypatch, model_classes_factory):
 
-    _MainSettings = fake_main_settings_with_postgres
+    S1, S2, S3, S4, S5 = model_classes_factory()
 
-    # MIXED environment with json (compact) AND postgres envs
-    setenvs_as_envfile(
-        monkeypatch,
-        """
-            WEBSERVER_POSTGRES='{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}'
+    # environment
+    # - Mixed with json (compact) AND postgres envs
+    ENV_FILE = """
+            {0}='{{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}}'
 
             POSTGRES_HOST=pg
             POSTGRES_USER=test
             POSTGRES_PASSWORD=ssh
             POSTGRES_DB=db
             POSTGRES_CLIENT_NAME=client-name
-        """,
-    )
+        """
 
-    # test
-    s1 = _MainSettings.AsRequired.create_from_envs()
+    with monkeypatch.context() as patch:
+        setenvs_as_envfile(
+            monkeypatch,
+            ENV_FILE.format("WEBSERVER_POSTGRES"),
+        )
 
-    assert s1.dict(exclude_unset=True) == {
-        "WEBSERVER_POSTGRES": {
-            "POSTGRES_HOST": "pg2",
-            "POSTGRES_USER": "test2",
-            "POSTGRES_PASSWORD": "shh2",
-            "POSTGRES_DB": "db2",
-            "POSTGRES_CLIENT_NAME": "client-name",
+        s1 = S1()
+
+        assert s1.dict() == {
+            "WEBSERVER_POSTGRES": {
+                "POSTGRES_HOST": "pg2",
+                "POSTGRES_USER": "test2",
+                "POSTGRES_PORT": 5432,
+                "POSTGRES_PASSWORD": "shh2",
+                "POSTGRES_DB": "db2",
+                "POSTGRES_MAXSIZE": 50,
+                "POSTGRES_MINSIZE": 1,
+                "POSTGRES_CLIENT_NAME": "client-name",
+            }
         }
-    }
-    assert s1.dict() == {
-        "WEBSERVER_POSTGRES": {
-            "POSTGRES_HOST": "pg2",
-            "POSTGRES_USER": "test2",
-            "POSTGRES_PORT": 5432,
-            "POSTGRES_PASSWORD": "shh2",
-            "POSTGRES_DB": "db2",
-            "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 1,
-            "POSTGRES_CLIENT_NAME": "client-name",
+        # NOTE how unset marks also applies to embedded fields
+        # NOTE: (1) priority of json-compact over granulated
+        # NOTE: (2) json-compact did not define this but granulated did
+        assert s1.dict(exclude_unset=True) == {
+            "WEBSERVER_POSTGRES": {
+                "POSTGRES_HOST": "pg2",  # <- (1)
+                "POSTGRES_USER": "test2",  # <- (1)
+                "POSTGRES_PASSWORD": "shh2",  # <- (1)
+                "POSTGRES_DB": "db2",  # <- (1)
+                "POSTGRES_CLIENT_NAME": "client-name",  # <- (2)
+            }
         }
-    }
 
-    s2 = _MainSettings.AsNullableOptional.create_from_envs()
-    assert s2.dict(exclude_unset=True) == {
-        "WEBSERVER_POSTGRES": {
-            "POSTGRES_HOST": "pg2",
-            "POSTGRES_USER": "test2",
-            "POSTGRES_PASSWORD": "shh2",
-            "POSTGRES_DB": "db2",
-            "POSTGRES_CLIENT_NAME": "client-name",
+    with monkeypatch.context() as patch:
+        setenvs_as_envfile(
+            monkeypatch,
+            ENV_FILE.format("WEBSERVER_POSTGRES_NULLABLE_OPTIONAL"),
+        )
+
+        s2 = S2()
+        assert s2.dict(exclude_unset=True) == {
+            "WEBSERVER_POSTGRES_NULLABLE_OPTIONAL": {
+                "POSTGRES_HOST": "pg2",
+                "POSTGRES_USER": "test2",
+                "POSTGRES_PASSWORD": "shh2",
+                "POSTGRES_DB": "db2",
+                "POSTGRES_CLIENT_NAME": "client-name",
+            }
         }
-    }
 
-    s3 = _MainSettings.AsDefaultAuto.create_from_envs()
-    assert s3.dict() == {
-        "WEBSERVER_POSTGRES": {
-            "POSTGRES_HOST": "pg2",
-            "POSTGRES_USER": "test2",
-            "POSTGRES_PORT": 5432,
-            "POSTGRES_PASSWORD": "shh2",
-            "POSTGRES_DB": "db2",
-            "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 1,
-            "POSTGRES_CLIENT_NAME": "client-name",
+    with monkeypatch.context() as patch:
+        setenvs_as_envfile(
+            monkeypatch,
+            ENV_FILE.format("WEBSERVER_POSTGRES_DEFAULT_ENV"),
+        )
+
+        s3 = S3()
+        assert s3.dict(exclude_unset=True) == {
+            "WEBSERVER_POSTGRES_DEFAULT_ENV": {
+                "POSTGRES_HOST": "pg2",
+                "POSTGRES_USER": "test2",
+                "POSTGRES_PASSWORD": "shh2",
+                "POSTGRES_DB": "db2",
+                "POSTGRES_CLIENT_NAME": "client-name",
+            }
         }
-    }
 
-    s4 = _MainSettings.AsNullableDefaultAuto.create_from_envs()
-    assert s4.dict() == {
-        "WEBSERVER_POSTGRES": {
-            "POSTGRES_HOST": "pg2",
-            "POSTGRES_USER": "test2",
-            "POSTGRES_PORT": 5432,
-            "POSTGRES_PASSWORD": "shh2",
-            "POSTGRES_DB": "db2",
-            "POSTGRES_MAXSIZE": 50,
-            "POSTGRES_MINSIZE": 1,
-            "POSTGRES_CLIENT_NAME": "client-name",
+    with monkeypatch.context() as patch:
+        setenvs_as_envfile(
+            monkeypatch,
+            ENV_FILE.format("WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV"),
+        )
+
+        s4 = S4()
+        assert s4.dict(exclude_unset=True) == {
+            "WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV": {
+                "POSTGRES_HOST": "pg2",
+                "POSTGRES_USER": "test2",
+                "POSTGRES_PASSWORD": "shh2",
+                "POSTGRES_DB": "db2",
+                "POSTGRES_CLIENT_NAME": "client-name",
+            }
         }
-    }
 
-    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()
-    assert s5.dict(exclude_unset=True) == {
-        "WEBSERVER_POSTGRES": {
-            "POSTGRES_HOST": "pg2",
-            "POSTGRES_USER": "test2",
-            "POSTGRES_PASSWORD": "shh2",
-            "POSTGRES_DB": "db2",
-            "POSTGRES_CLIENT_NAME": "client-name",
+    with monkeypatch.context() as patch:
+        setenvs_as_envfile(
+            monkeypatch,
+            ENV_FILE.format("WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL"),
+        )
+
+        s5 = S5()
+        assert s5.dict(exclude_unset=True) == {
+            "WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL": {
+                "POSTGRES_HOST": "pg2",
+                "POSTGRES_USER": "test2",
+                "POSTGRES_PASSWORD": "shh2",
+                "POSTGRES_DB": "db2",
+                "POSTGRES_CLIENT_NAME": "client-name",
+            }
         }
-    }
 
 
-def test_toggle_plugin_1(monkeypatch, fake_main_settings_with_postgres):
-    _MainSettings = fake_main_settings_with_postgres
+# NOTE: let's focus on setups #4 and #5
+#
+#  Using nullable fields for subsettings, allows us to easily mark a module as
+#  enabled/disabled
+#
+#   - S3: cannot be disabled!! (e.g. can be used for system add-ons)
+#        *_DEFAULT_ENV: S = Field( auto_default_from_env=True )
+#
+#   - S4: defaults enabled but if cannot be resolved, it disables
+#         *_NULLABLE_DEFAULT_ENV: Optional[S] = Field(auto_default_from_env=True)
+#
+#   - S5: defaults disabled but only explicit enabled
+#         *_NULLABLE_DEFAULT_NULL: Optional[S] = None
+#
 
-    # NOTE: let's focus on setups #4 and #5
-    #
-    #  Using nullable fields for subsettings, allows us to easily mark a module as
-    #  enabled/disabled
-    #
+
+def test_toggle_plugin_1(monkeypatch, model_classes_factory):
+
+    *_, S4, S5 = model_classes_factory()
 
     # empty environ
 
-    s4 = (
-        _MainSettings.AsNullableDefaultAuto.create_from_envs()
-    )  # cannot resolve default, then null -> disabled
-    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()  # disabled by default
+    s4 = S4()  # cannot resolve default, then null -> disabled
+    s5 = S5()  # disabled by default
 
-    assert s4.WEBSERVER_POSTGRES is None
-    assert s5.WEBSERVER_POSTGRES is None
+    assert s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV is None
+    assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL is None
 
 
-def test_toggle_plugin_2(monkeypatch, fake_main_settings_with_postgres):
-    _MainSettings = fake_main_settings_with_postgres
+def test_toggle_plugin_2(monkeypatch, model_classes_factory):
+    *_, S4, S5 = model_classes_factory()
 
     # minimal
     setenvs_as_envfile(
@@ -382,21 +469,21 @@ def test_toggle_plugin_2(monkeypatch, fake_main_settings_with_postgres):
     """,
     )
 
-    s4 = _MainSettings.AsNullableDefaultAuto.create_from_envs()
-    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()  # disabled by default
+    s4 = S4()
+    s5 = S5()  # disabled by default
 
-    assert s4.WEBSERVER_POSTGRES is not None
-    assert s5.WEBSERVER_POSTGRES is None
+    assert s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV is not None
+    assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL is None
 
 
-def test_toggle_plugin_3(monkeypatch, fake_main_settings_with_postgres):
-    _MainSettings = fake_main_settings_with_postgres
+def test_toggle_plugin_3(monkeypatch, model_classes_factory):
+    *_, S4, S5 = model_classes_factory()
 
     # explicitly disables
     setenvs_as_envfile(
         monkeypatch,
         """
-        WEBSERVER_POSTGRES=null
+        WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV=null
 
         POSTGRES_HOST=pg
         POSTGRES_USER=test
@@ -405,49 +492,59 @@ def test_toggle_plugin_3(monkeypatch, fake_main_settings_with_postgres):
         """,
     )
 
-    s4 = _MainSettings.AsNullableDefaultAuto.create_from_envs()
-    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()
+    s4 = S4()
+    s5 = S5()
 
-    assert s4.WEBSERVER_POSTGRES is None
-    assert s5.WEBSERVER_POSTGRES is None
-
-
-def test_toggle_plugin_4(monkeypatch, fake_main_settings_with_postgres):
-    _MainSettings = fake_main_settings_with_postgres
-
-    # Enables both
-    setenvs_as_envfile(
-        monkeypatch,
-        """
-        WEBSERVER_POSTGRES='{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}'
-
-        POSTGRES_HOST=pg
-        POSTGRES_USER=test
-        POSTGRES_PASSWORD=ssh
-        POSTGRES_DB=db
-        """,
-    )
-    s4 = _MainSettings.AsNullableDefaultAuto.create_from_envs()
-    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()
-
-    assert s4.WEBSERVER_POSTGRES is not None
-    assert s5.WEBSERVER_POSTGRES is not None
-    assert s4 == s5
+    assert s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV is None
+    assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL is None
 
 
-def test_toggle_plugin_5(monkeypatch, fake_main_settings_with_postgres):
-    _MainSettings = fake_main_settings_with_postgres
+def test_toggle_plugin_4(monkeypatch, model_classes_factory):
 
-    # Enables both
-    setenvs_as_envfile(
-        monkeypatch,
-        """
-        WEBSERVER_POSTGRES='{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}'
-        """,
-    )
-    s4 = _MainSettings.AsNullableDefaultAuto.create_from_envs()
-    s5 = _MainSettings.AsNullableDefaultNull.create_from_envs()
+    *_, S4, S5 = model_classes_factory()
+    JSON_VALUE = '{"POSTGRES_HOST":"pg2", "POSTGRES_USER":"test2", "POSTGRES_PASSWORD":"shh2", "POSTGRES_DB":"db2"}'
 
-    assert s4.WEBSERVER_POSTGRES is not None
-    assert s5.WEBSERVER_POSTGRES is not None
-    assert s4 == s5
+    with monkeypatch.context() as patch:
+        # Enables both
+        setenvs_as_envfile(
+            patch,
+            f"""
+            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV='{JSON_VALUE}'
+            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL='{JSON_VALUE}'
+
+            POSTGRES_HOST=pg
+            POSTGRES_USER=test
+            POSTGRES_PASSWORD=ssh
+            POSTGRES_DB=db
+            POSTGRES_CLIENT_NAME=name-is-now-set
+            """,
+        )
+        s4 = S4()
+        s5 = S5()
+
+        assert s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV is not None
+        assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL is not None
+        assert (
+            s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV
+            == s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL
+        )
+
+    with monkeypatch.context() as patch:
+
+        # Enables both but remove individuals
+        setenvs_as_envfile(
+            patch,
+            f"""
+            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV='{JSON_VALUE}'
+            WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL='{JSON_VALUE}'
+            """,
+        )
+        s4 = S4()
+        s5 = S5()
+
+        assert s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV is not None
+        assert s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL is not None
+        assert (
+            s4.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_ENV
+            == s5.WEBSERVER_POSTGRES_NULLABLE_DEFAULT_NULL
+        )

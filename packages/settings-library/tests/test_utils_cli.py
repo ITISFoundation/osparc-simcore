@@ -140,7 +140,7 @@ def test_supported_parsable_env_formats(
     mocked_environment: Callable[[str], ContextManager[None]],
 ) -> None:
     with mocked_environment(mocked_settings_cls_env):
-        settings_object = fake_settings_class.create_from_envs()
+        settings_object = fake_settings_class()
         assert settings_object
 
         setting_env_content = cli_runner.invoke(
@@ -151,7 +151,7 @@ def test_supported_parsable_env_formats(
 
     # parse standard format
     with mocked_environment(setting_env_content):
-        settings_object = fake_settings_class.create_from_envs()
+        settings_object = fake_settings_class()
         assert settings_object
 
 
@@ -164,7 +164,7 @@ def test_unsupported_env_format(
     mocked_environment: Callable[[str], ContextManager[None]],
 ) -> None:
     with mocked_environment(mocked_settings_cls_env):
-        settings_object = fake_settings_class.create_from_envs()
+        settings_object = fake_settings_class()
         assert settings_object
 
         setting_env_content_compact = cli_runner.invoke(
@@ -184,7 +184,7 @@ def test_unsupported_env_format(
         # parse compact format
         with mocked_environment(setting_env_content_compact):
             print(json.dumps(dict(os.environ), indent=1))
-            settings_object = fake_settings_class.create_from_envs()
+            settings_object = fake_settings_class()
             assert settings_object
 
 
@@ -199,7 +199,7 @@ def test_compact_format(monkeypatch, fake_settings_class):
     """,
     )
 
-    settings_from_envs1 = fake_settings_class.create_from_envs()
+    settings_from_envs1 = fake_settings_class()
     settings_from_init = fake_settings_class(**envs_to_kwargs(compact_envs))
 
     assert settings_from_envs1 == settings_from_init
@@ -234,7 +234,7 @@ def test_granular_format(monkeypatch, fake_settings_class):
     """,
     )
 
-    settings_from_envs = fake_settings_class.create_from_envs()
+    settings_from_envs = fake_settings_class()
 
     assert settings_from_envs == fake_settings_class(
         APP_HOST="localhost",
