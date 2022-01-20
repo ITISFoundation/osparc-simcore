@@ -942,12 +942,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__desktop.getChildren().includes(nodeUI)) {
         this.__desktop.remove(nodeUI);
       }
-      if ("shadows" in nodeUI) {
-        nodeUI.shadows.forEach(shadow => {
-          osparc.component.workbench.SvgWidget.removeNodeUI(shadow);
-        });
-        delete nodeUI["shadows"];
-      }
+      nodeUI.removeShadows();
       let index = this.__nodesUI.indexOf(nodeUI);
       if (index > -1) {
         this.__nodesUI.splice(index, 1);
