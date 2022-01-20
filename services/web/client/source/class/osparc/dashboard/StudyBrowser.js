@@ -122,7 +122,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createNewStudyButton: function(mode = "grid") {
       const newStudyBtn = this.__newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew() : new osparc.dashboard.ListButtonNew();
-      newStudyBtn.subscribeToFilterGroup("sideSearchFilter");
+      newStudyBtn.subscribeToFilterGroup("searchBarFilter");
       osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
       newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
       return newStudyBtn;
@@ -395,7 +395,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (idx !== -1) {
         studyList.push(studyList.splice(idx, 1)[0]);
       }
-      osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
+      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     __removeFromStudyList: function(studyId) {
@@ -635,7 +635,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.tr("Duplicating ") + studyData["name"],
         "@FontAwesome5Solid/copy/" + isGrid ? "60" : "24"
       );
-      duplicatingStudyCard.subscribeToFilterGroup("sideSearchFilter");
+      duplicatingStudyCard.subscribeToFilterGroup("searchBarFilter");
       this._resourcesContainer.addAt(duplicatingStudyCard, 1);
 
       const params = {
@@ -695,7 +695,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         uploadingLabel,
         true
       );
-      importingStudyCard.subscribeToFilterGroup("sideSearchFilter");
+      importingStudyCard.subscribeToFilterGroup("searchBarFilter");
       this._resourcesContainer.addAt(importingStudyCard, 1);
       importTask.setSubtitle(uploadingLabel);
 

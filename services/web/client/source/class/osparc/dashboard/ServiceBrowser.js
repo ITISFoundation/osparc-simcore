@@ -153,7 +153,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         }, this);
         this._resourcesContainer.add(serviceItem);
       });
-      osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
+      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     __createServiceItem: function(serviceData) {

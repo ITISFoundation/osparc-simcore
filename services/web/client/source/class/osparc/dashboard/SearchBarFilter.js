@@ -16,10 +16,10 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.dashboard.SearchBarFilter", {
-  extend: qx.ui.core.Widget,
+  extend: osparc.component.filter.UIFilter,
 
   construct: function() {
-    this.base(arguments);
+    this.base(arguments, "searchBarFilter", "searchBarFilter");
 
     this._setLayout(new qx.ui.layout.HBox(5));
 
@@ -65,7 +65,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
             alignY: "bottom",
             marginBottom: 4
           });
-          osparc.utils.Utils.setIdToWidget(control, "searchBarFilter");
+          osparc.utils.Utils.setIdToWidget(control, "searchBarFilter-textField");
           this._add(control, {
             flex: 1
           });
@@ -238,7 +238,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
             break;
         }
       });
-      qx.event.message.Bus.getInstance().dispatchByName(osparc.component.filter.UIFilterController.getOutputMessageName("SearchBarFilter"), filterData);
+      this._filterChange(filterData);
     }
   }
 });

@@ -131,7 +131,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         this._resourcesContainer.add(newLoadMoreBtn);
       }
 
-      osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
+      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     _addResourcesToList: function(newTemplatesList) {
@@ -155,7 +155,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       if (idx !== -1) {
         templatesList.push(templatesList.splice(idx, 1)[0]);
       }
-      osparc.component.filter.UIFilterController.dispatch("sideSearchFilter");
+      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
     },
 
     __removeFromTemplateList: function(studyId) {

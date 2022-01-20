@@ -245,7 +245,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
         const tagsContainer = this.getChildControl("tags");
         tagsContainer.removeAll();
         tags.forEach(tag => {
-          const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "sideSearchFilter").set({
+          const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "searchBarFilter").set({
             alignY: "middle",
             font: "text-12"
           });
