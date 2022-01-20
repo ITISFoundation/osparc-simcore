@@ -17,12 +17,9 @@ def create_settings_from_env(field):
 
     def _default_factory():
         """Creates default from sub-settings or None (if nullable)"""
-        settings_cls = (
-            field.outer_type_
-        )  # FIXME: this is wrong, it is NOT the container class
-        sub_settings_cls = field.type_
+        field_settings_cls = field.type_
         try:
-            return sub_settings_cls()
+            return field_settings_cls()
 
         except ValidationError as err:
             if field.allow_none:
@@ -33,7 +30,8 @@ def create_settings_from_env(field):
                     ErrorWrapper(e.exc, (field.name,) + e.loc_tuple())
                     for e in err.raw_errors
                 ],
-                model=settings_cls,
+                model=err.model,
+                # FIXME: model = shall be the parent settings?? but I dont find how retrieve it from the field
             ) from err
 
     return _default_factory
@@ -67,8 +65,6 @@ class BaseCustomSettings(BaseSettings):
             auto_default_from_env = field.field_info.extra.get(
                 "auto_default_from_env", False
             )
-            # TODO: if from-env factory fails and is required, we could check if field-name exists in
-            # os environ otherwise raise
 
             field_type = field.type_
             if args := get_args(field_type):
@@ -84,7 +80,7 @@ class BaseCustomSettings(BaseSettings):
 
                     field.default_factory = create_settings_from_env(field)
 
-                    # TODO: check if
+                    # TODO: doc why we are doing this?
                     # Undefined required -> required=true
                     # Undefined default and no factor -> default=None
                     field.required = False

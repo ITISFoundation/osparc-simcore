@@ -66,6 +66,10 @@ def model_class_factory():
             VALUE_DEFAULT_ENV: S = Field(auto_default_from_env=True)
 
         class M2(BaseCustomSettings):
+            #
+            #  Using nullable fields for subsettings, allows us to easily
+            #  mark a module as enabled/disabled
+            #
 
             # defaults disabled but only explicit enabled
             VALUE_NULLABLE_DEFAULT_NULL: Optional[S] = None
