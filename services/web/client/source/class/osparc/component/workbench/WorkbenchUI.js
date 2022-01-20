@@ -1022,12 +1022,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }
 
         let tries = 0;
-        const maxTries = 20;
+        const maxTries = 40;
         const sleepFor = 100;
         const allNodesVisible = nodeUIss => nodeUIss.every(nodeUI => nodeUI.getCurrentBounds() !== null);
-        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
         while (!allNodesVisible(nodeUIs) && tries < maxTries) {
-          await sleep(100);
+          await osparc.utils.Utils.sleep(sleepFor);
           tries++;
         }
         console.log("nodes visible", nodeUIs.length, tries*sleepFor);
