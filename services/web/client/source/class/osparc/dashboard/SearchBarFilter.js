@@ -65,7 +65,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
             alignY: "bottom",
             marginBottom: 4
           });
-          osparc.utils.Utils.setIdToWidget(control, "searchBarFilter-textField");
           this._add(control, {
             flex: 1
           });

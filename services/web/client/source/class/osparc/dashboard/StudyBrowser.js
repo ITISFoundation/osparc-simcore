@@ -129,7 +129,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _createLayout: function() {
-      const studiesLayout = this._createResourcesLayout();
+      const studiesLayout = this._createResourcesLayout("studies");
 
       const importStudyButton = this.__createImportButton();
       this._secondaryBar.add(importStudyButton);

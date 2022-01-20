@@ -51,7 +51,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     _createLayout: function() {
-      const templatesLayout = this._createResourcesLayout();
+      const templatesLayout = this._createResourcesLayout("templates");
 
       osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "templatesList");
 

@@ -191,18 +191,18 @@ async function dashboardOpenService(page, serviceName) {
 async function __filterStudiesByText(page, studyName) {
   console.log("Filtering by", studyName);
 
-  await utils.waitAndClick(page, '[osparc-test-id="searchBarFilter-textField"]')
-  await utils.clearInput(page, '[osparc-test-id="searchBarFilter-textField"]')
-  await page.type('[osparc-test-id="searchBarFilter-textField"]', studyName)
+  await utils.waitAndClick(page, '[osparc-test-id="searchBarFilter-textField-studies"]')
+  await utils.clearInput(page, '[osparc-test-id="searchBarFilter-textField-studies"]')
+  await page.type('[osparc-test-id="searchBarFilter-textField-studies"]', studyName)
   await page.keyboard.press('Enter')
 }
 
 async function __filterTemplatesByText(page, templateName) {
   console.log("Filtering by", templateName);
 
-  await utils.waitAndClick(page, '[osparc-test-id="searchBarFilter-textField"]')
-  await utils.clearInput(page, '[osparc-test-id="searchBarFilter-textField"]')
-  await page.type('[osparc-test-id="searchBarFilter-textField"]', templateName)
+  await utils.waitAndClick(page, '[osparc-test-id="searchBarFilter-textField-templates"]')
+  await utils.clearInput(page, '[osparc-test-id="searchBarFilter-textField-templates"]')
+  await page.type('[osparc-test-id="searchBarFilter-textField-templates"]', templateName)
   await page.keyboard.press('Enter')
 }
 
