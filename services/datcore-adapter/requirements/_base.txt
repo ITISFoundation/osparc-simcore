@@ -109,7 +109,7 @@ pyasn1==0.4.8
     # via
     #   python-jose
     #   rsa
-pydantic==1.8.2
+pydantic==1.9.0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
