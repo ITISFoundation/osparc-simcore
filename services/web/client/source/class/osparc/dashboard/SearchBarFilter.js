@@ -66,6 +66,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
             alignY: "bottom",
             marginBottom: 4
           });
+          osparc.utils.Utils.setIdToWidget(control, "searchBarFilter");
           this._add(control, {
             flex: 1
           });
@@ -94,10 +95,12 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     __buildFiltersMenu: function() {
       const menu = this.__filtersMenu = new qx.ui.menu.Menu();
       const tagsButton = new qx.ui.menu.Button(this.tr("Tags"), "@FontAwesome5Solid/tags/12");
+      osparc.utils.Utils.setIdToWidget(tagsButton, "searchBarFilter-tags-button");
       this.__addTags(tagsButton);
       menu.add(tagsButton);
 
       const classifiersButton = new qx.ui.menu.Button(this.tr("Classifiers"), "@FontAwesome5Solid/search/12");
+      osparc.utils.Utils.setIdToWidget(classifiersButton, "searchBarFilter-classifiers");
       this.__addClassifiers(classifiersButton);
       menu.add(classifiersButton);
     },
@@ -111,6 +114,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
       const resetButton = this.getChildControl("reset-button");
       resetButton.addListener("execute", () => this.__resetFilters(), this);
+
+      osparc.store.Store.getInstance().addListener("changeTags", () => this.__buildFiltersMenu(), this);
     },
 
     __showFilterMenu: function() {
@@ -142,6 +147,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       menuButton.setVisibility(tags.length ? "visible" : "excluded");
       if (tags.length) {
         const tagsMenu = new qx.ui.menu.Menu();
+        osparc.utils.Utils.setIdToWidget(tagsMenu, "searchBarFilter-tags-menu");
         tags.forEach(tag => {
           const tagButton = new qx.ui.menu.Button(tag.name, "@FontAwesome5Solid/tag/12");
           tagButton.getChildControl("icon").setTextColor(tag.color);

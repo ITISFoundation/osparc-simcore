@@ -91,8 +91,9 @@ describe('tags testing', () => {
 
   test('tag shows in filters', async () => {
     // Check that tag shows in filter
-    await waitAndClick(page, '[qxclass="osparc.component.filter.UserTagsFilter"] [qxclass="qx.ui.toolbar.MenuButton"]');
-    let tagFilterMenu = await page.waitForSelector('[qxclass="qx.ui.menu.Menu"]:not([style*="display: none"])');
+    await waitAndClick(page, '[osparc-test-id="searchBarFilter"]');
+    await waitAndClick(page, '[osparc-test-id="searchBarFilter-tags-button"]');
+    const tagFilterMenu = await page.waitForSelector('[osparc-test-id="searchBarFilter-tags-menu"]:not([style*="display: none"])');
     expect(await tagFilterMenu.evaluate(el => el.innerText)).toContain(TAG_NAME);
   }, ourTimeout);
 
@@ -133,8 +134,9 @@ describe('tags testing', () => {
     // Close properties
     await waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
     // Check that tag name changed in filter and study list
-    await waitAndClick(page, '[qxclass="osparc.component.filter.UserTagsFilter"] [qxclass="qx.ui.toolbar.MenuButton"]');
-    const tagFilterMenu = await page.waitForSelector('[qxclass="qx.ui.menu.Menu"]:not([style*="display: none"])');
+    await waitAndClick(page, '[osparc-test-id="searchBarFilter"]');
+    await waitAndClick(page, '[osparc-test-id="searchBarFilter-tags-button"]');
+    const tagFilterMenu = await page.waitForSelector('[osparc-test-id="searchBarFilter-tags-menu"]:not([style*="display: none"])');
     expect(await tagFilterMenu.evaluate(el => el.innerText)).toContain(TAG_NAME_2);
     await page.waitForFunction(tagName => {
       const el = document.querySelector(
