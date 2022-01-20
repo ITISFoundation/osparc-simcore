@@ -287,10 +287,12 @@ qx.Class.define("osparc.data.model.Study", {
         }
         const params = {
           url: {
-            "studyId": this.getUuid()
+            "studyId": this.getUuid(),
+            "offset": 0,
+            "limit": 50 // if the master commit is not there the git tree will loog wrong
           }
         };
-        osparc.data.Resources.get("snapshots", params)
+        osparc.data.Resources.fetch("snapshots", "getPage", params)
           .then(snapshots => {
             resolve(snapshots);
           })
