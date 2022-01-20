@@ -59,10 +59,9 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         }
         case "tags":
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 3).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
             alignY: "middle"
           })).set({
-            alignY: "middle",
             anonymous: true,
             maxWidth: 100
           });
