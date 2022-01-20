@@ -47,7 +47,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       const textColor = qx.theme.manager.Color.getInstance().resolve("text");
       const masterColor = "#1486da";
       const iterationColor = "#e01a94";
-      const colors = Array(19).fill(iterationColor);
+      const colors = Array(50).fill(iterationColor);
       colors.unshift(masterColor);
       return {
         colors: colors,
