@@ -3,7 +3,7 @@
 #
 --constraint ../../../requirements/constraints.txt
 
-pydantic
+pydantic>=1.9
 
 
 # extra
