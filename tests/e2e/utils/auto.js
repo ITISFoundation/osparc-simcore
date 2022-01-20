@@ -94,7 +94,7 @@ async function dashboardStudiesBrowser(page) {
 
   await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
 
-  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templatesList"]');
+  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="studiesList"]');
   if (children.length === 0) {
     console.log("Editing thumbnail: no study found")
     return
