@@ -6,7 +6,6 @@ import logging
 from typing import Any, Dict
 
 from aiohttp import web
-from models_library.rest_pagination import monkey_patch_pydantic_url_regex
 from servicelib.aiohttp.application import create_safe_application
 
 from ._constants import APP_SETTINGS_KEY
@@ -42,9 +41,6 @@ from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
 from .version_control import setup_version_control
-
-monkey_patch_pydantic_url_regex()
-
 
 log = logging.getLogger(__name__)
 
