@@ -40,7 +40,6 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
   },
 
   members: {
-    __activeFilters: null,
     __filtersMenu: null,
 
     _createChildControlImpl: function(id) {
@@ -93,7 +92,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     __buildFiltersMenu: function() {
-      const menu = this.__filtersMenu = new qx.ui.menu.Menu();
+      if (this.__filtersMenu === null) {
+        this.__filtersMenu = new qx.ui.menu.Menu();
+      }
+      const menu = this.__filtersMenu;
+      menu.removeAll();
       const tagsButton = new qx.ui.menu.Button(this.tr("Tags"), "@FontAwesome5Solid/tags/12");
       osparc.utils.Utils.setIdToWidget(tagsButton, "searchBarFilter-tags-button");
       this.__addTags(tagsButton);
