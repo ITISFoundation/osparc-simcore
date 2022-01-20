@@ -165,7 +165,7 @@ async function dashboardOpenService(page, serviceName) {
   await utils.waitAndClick(page, '[osparc-test-id="servicesTabBtn"]')
 
   if (serviceName) {
-    await __filterTemplatesByText(page, serviceName);
+    await __filterServicesByText(page, serviceName);
   }
 
   await page.waitForSelector('[osparc-test-id="servicesList"]')
@@ -184,26 +184,29 @@ async function dashboardOpenService(page, serviceName) {
     await utils.waitAndClick(page, firstChildId);
     return true;
   }
-  console.log("Creating New Study from template: no template found");
+  console.log("Creating New Study from service: no service found");
   return false;
 }
 
 async function __filterStudiesByText(page, studyName) {
-  console.log("Filtering by", studyName);
-
-  await utils.waitAndClick(page, '[osparc-test-id="searchBarFilter-textField-studies"]')
-  await utils.clearInput(page, '[osparc-test-id="searchBarFilter-textField-studies"]')
-  await page.type('[osparc-test-id="searchBarFilter-textField-studies"]', studyName)
-  await page.keyboard.press('Enter')
+  await __typeInFilter(page, '[osparc-test-id="searchBarFilter-textField-studies"]', studyName);
 }
 
 async function __filterTemplatesByText(page, templateName) {
-  console.log("Filtering by", templateName);
+  await __typeInFilter(page, '[osparc-test-id="searchBarFilter-textField-templates"]', templateName);
+}
 
-  await utils.waitAndClick(page, '[osparc-test-id="searchBarFilter-textField-templates"]')
-  await utils.clearInput(page, '[osparc-test-id="searchBarFilter-textField-templates"]')
-  await page.type('[osparc-test-id="searchBarFilter-textField-templates"]', templateName)
-  await page.keyboard.press('Enter')
+async function __filterServicesByText(page, serviceName) {
+  await __typeInFilter(page, '[osparc-test-id="searchBarFilter-textField-services"]', serviceName);
+}
+
+async function __typeInFilter(page, selector, text) {
+  console.log("Filtering by", text);
+
+  await utils.waitAndClick(page, selector);
+  await utils.clearInput(page, selector);
+  await page.type(selector, text);
+  await page.keyboard.press('Enter');
 }
 
 async function showLogger(page, show = true) {
