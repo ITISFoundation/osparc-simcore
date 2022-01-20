@@ -331,6 +331,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       if (this.hasChildControl("progress")) {
         this.getChildControl("progress").exclude();
       }
+      this.getNode().getPropsForm().setEnabled(false);
     },
 
     removeShadows: function() {
