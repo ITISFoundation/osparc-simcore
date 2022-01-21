@@ -1,33 +1,32 @@
-from typing import Dict, Optional
+from typing import Dict
 
-from pydantic import BaseModel, constr, root_validator
+from pydantic import BaseModel, constr, validator
 from typing_extensions import TypedDict
 
 ENV_VAR_KEY_RE = r"[a-zA-Z][a-azA-Z0-9_]*"
 EnvVarKey = constr(regex=ENV_VAR_KEY_RE)
 
 
-class BootOptionItem(TypedDict):
+class BootChoice(TypedDict):
     label: str
     description: str
 
 
-class BootOptionMode(BaseModel):
+class BootOption(BaseModel):
     label: str
     description: str
     default: str
-    items: Dict[str, BootOptionItem]
+    items: Dict[str, BootChoice]
 
-    @root_validator
+    @validator("items")
     @classmethod
-    def ensure_default_is_present(cls, values: Dict) -> Dict:
+    def ensure_default_included(cls, v, values):
         default = values["default"]
-        items = values["items"]
-        if default not in items:
+        if default not in v:
             raise ValueError(
-                f"Expected default={default} to be present a key of items={items}"
+                f"Expected default={default} to be present a key of items={v}"
             )
-        return values
+        return v
 
     class Config:
         schema_extra = {
@@ -66,4 +65,4 @@ class BootOptionMode(BaseModel):
         }
 
 
-BootOptions = Optional[Dict[EnvVarKey, BootOptionMode]]
+BootOptions = Dict[EnvVarKey, BootOption]
