@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Type, Union
 
 from pydantic import BaseModel
-from pydantic.main import SchemaExtraCallable
+from pydantic.config import SchemaExtraCallable
 
 
 def extract_examples(model_cls: Type[BaseModel]) -> List[Dict[str, Any]]:
