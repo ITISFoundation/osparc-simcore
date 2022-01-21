@@ -140,11 +140,11 @@ async function dashboardOpenFirstTemplate(page, templateName) {
 
   await utils.waitAndClick(page, '[osparc-test-id="templatesTabBtn"]')
 
+  await this.waitForAllTemplates(page);
+
   if (templateName) {
     await __filterTemplatesByText(page, templateName);
   }
-
-  await this.waitForAllTemplates(page);
 
   await page.waitForSelector('[osparc-test-id="templatesList"]');
   const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templatesList"]');
@@ -160,7 +160,7 @@ async function dashboardOpenFirstTemplate(page, templateName) {
 
 async function dashboardOpenService(page, serviceName) {
   // Returns true if template is found
-  console.log("Creating New Study from template");
+  console.log("Creating New Study from service");
 
   await utils.waitAndClick(page, '[osparc-test-id="servicesTabBtn"]')
 
