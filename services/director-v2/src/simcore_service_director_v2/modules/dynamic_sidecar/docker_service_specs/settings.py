@@ -3,13 +3,13 @@ import logging
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, cast
 
+from models_library.boot_options import BootOption, EnvVarKey
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
     SimcoreServiceLabels,
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
 )
-from models_library.boot_options import BootOption, EnvVarKey
 from models_library.services import ServiceKeyVersion
 
 from ....api.dependencies.director_v0 import DirectorV0Client

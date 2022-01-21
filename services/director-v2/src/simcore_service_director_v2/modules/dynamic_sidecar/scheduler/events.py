@@ -6,6 +6,7 @@ from typing import Any, Deque, Dict, List, Optional, Type
 import httpx
 from fastapi import FastAPI
 from models_library.projects import ProjectAtDB
+from models_library.projects_nodes import Node
 from models_library.service_settings_labels import (
     SimcoreServiceLabels,
     SimcoreServiceSettingsLabel,
@@ -107,7 +108,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
 
         node_uuid_str = str(scheduler_data.node_uuid)
-        node: Node = project.workbench.get(node_uuid_str)
+        node: Optional[Node] = project.workbench.get(node_uuid_str)
         boot_options = (
             node.boot_options
             if node is not None and node.boot_options is not None
