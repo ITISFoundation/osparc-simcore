@@ -27,10 +27,8 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    if (study.hasSnapshots()) {
-      this.__study = study;
-      this.__buildLayout();
-    }
+    this.__study = study;
+    this.__buildLayout();
   },
 
   events: {

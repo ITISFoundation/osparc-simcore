@@ -319,18 +319,6 @@ qx.Class.define("osparc.data.model.Study", {
       });
     },
 
-    hasSnapshots: function() {
-      return new Promise(resolve => {
-        this.getSnapshots()
-          .then(snapshots => {
-            resolve(Boolean(snapshots.length));
-          })
-          .catch(() => {
-            resolve(false);
-          });
-      });
-    },
-
     getIterations: function() {
       return new Promise((resolve, reject) => {
         if (!osparc.data.Permissions.getInstance().canDo("study.snapshot.read")) {
