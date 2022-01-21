@@ -180,12 +180,19 @@ qx.Class.define("osparc.wrapper.GitGraph", {
         widget
       });
       const bgColor = widget.getBackgroundColor();
-      widget.addListener("mouseover", () => {
+      widget.addListener("mouseover", e => {
         widget.set({
           backgroundColor: "white",
           cursor: "pointer"
         });
         hint.show();
+        // since the widget might be hidden in the scroll area,
+        // take mouse's position. It creates a bit of blinking thou
+        const native = e.getNativeEvent();
+        hint.setLayoutProperties({
+          top: native.clientY,
+          left: native.clientX
+        });
       });
       widget.addListener("mouseout", () => {
         widget.set({
