@@ -43,7 +43,7 @@ pluggy==1.0.0
     # via pytest
 py==1.11.0
     # via pytest
-pydantic==1.8.2
+pydantic==1.9.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/_base.in

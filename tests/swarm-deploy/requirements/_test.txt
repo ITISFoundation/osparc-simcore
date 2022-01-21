@@ -152,7 +152,7 @@ psycopg2-binary==2.9.2
     #   sqlalchemy
 py==1.11.0
     # via pytest
-pydantic==1.8.2
+pydantic==1.9.0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt

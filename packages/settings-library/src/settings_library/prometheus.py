@@ -1,6 +1,6 @@
 from functools import cached_property
 
-from pydantic.networks import HttpUrl
+from pydantic.networks import AnyHttpUrl
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import MixinServiceSettings
 
@@ -14,7 +14,7 @@ class PrometheusSettings(BaseCustomSettings, MixinServiceSettings):
 
     @cached_property
     def base_url(self) -> str:
-        return HttpUrl.build(
+        return AnyHttpUrl.build(
             scheme="http",
             host=self.PROMETHEUS_HOST,
             port=f"{self.PROMETHEUS_PORT}",
