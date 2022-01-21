@@ -13,7 +13,7 @@ from models_library.service_settings_labels import (
 from models_library.services import ServiceKeyVersion
 
 from ....api.dependencies.director_v0 import DirectorV0Client
-from ..constants import CONTAINER_NAME
+from .._constants import CONTAINER_NAME
 from ..errors import DynamicSidecarError
 
 # Notes on below env var names:
