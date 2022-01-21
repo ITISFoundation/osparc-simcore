@@ -47,7 +47,7 @@ from ..docker_service_specs import (
     merge_settings_before_use,
 )
 from ..errors import (
-    DynamicSidecarNetworkError,
+    DynamicSidecarUnexpectedResponseStatus,
     EntrypointContainerNotFoundError,
     GenericDockerError,
 )
@@ -205,7 +205,7 @@ class GetStatus(DynamicSchedulerEvent):
             ] = await dynamic_sidecar_client.containers_inspect(
                 dynamic_sidecar_endpoint
             )
-        except (httpx.HTTPError, DynamicSidecarNetworkError):
+        except (httpx.HTTPError, DynamicSidecarUnexpectedResponseStatus):
             # After the service creation it takes a bit of time for the container to start
             # If the same message appears in the log multiple times in a row (for the same
             # service) something might be wrong with the service.

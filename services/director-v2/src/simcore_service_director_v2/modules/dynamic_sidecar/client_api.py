@@ -1,6 +1,5 @@
 import json
 import logging
-import traceback
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -11,8 +10,6 @@ from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.dynamic_services import SchedulerData
 from ...utils.logging_utils import log_decorator
 from .errors import (
-    DynamicSchedulerException,
-    DynamicSidecarNetworkError,
     DynamicSidecarUnexpectedResponseStatus,
     EntrypointContainerNotFoundError,
 )
