@@ -140,11 +140,11 @@ async function dashboardOpenFirstTemplate(page, templateName) {
 
   await utils.waitAndClick(page, '[osparc-test-id="templatesTabBtn"]')
 
-  await this.waitForAllTemplates(page);
-
   if (templateName) {
     await __filterTemplatesByText(page, templateName);
   }
+
+  await this.waitForAllTemplates(page);
 
   await page.waitForSelector('[osparc-test-id="templatesList"]');
   const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templatesList"]');
@@ -189,15 +189,24 @@ async function dashboardOpenService(page, serviceName) {
 }
 
 async function __filterStudiesByText(page, studyName) {
-  await __typeInFilter(page, '[osparc-test-id="searchBarFilter-textField-studies"]', studyName);
+  await __typeInSearchBarFilter(page, "studies", studyName);
 }
 
 async function __filterTemplatesByText(page, templateName) {
-  await __typeInFilter(page, '[osparc-test-id="searchBarFilter-textField-templates"]', templateName);
+  await __typeInSearchBarFilter(page, "templates", templateName);
 }
 
 async function __filterServicesByText(page, serviceName) {
-  await __typeInFilter(page, '[osparc-test-id="searchBarFilter-textField-services"]', serviceName);
+  await __typeInSearchBarFilter(page, "services", serviceName);
+}
+
+async function __typeInSearchBarFilter(page, resource, text) {
+  const tabSelector = '[osparc-test-id="'+resource+'TabBtn"]';
+  const fieldSelector = '[osparc-test-id="searchBarFilter-textField-'+resource+'"]';
+
+  await utils.waitAndClick(page, tabSelector);
+  await utils.sleep(5000);
+  await __typeInFilter(page, fieldSelector, text);
 }
 
 async function __typeInFilter(page, selector, text) {
