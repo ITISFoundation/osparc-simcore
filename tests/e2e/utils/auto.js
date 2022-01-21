@@ -114,6 +114,8 @@ async function __waitForAllTemplates(page) {
 }
 
 async function dashboardOpenFirstTemplate(page, templateName) {
+  await utils.sleep(5000);
+
   // Returns true if template is found
   console.log("Creating New Study from template");
 
@@ -142,6 +144,8 @@ async function dashboardOpenFirstTemplate(page, templateName) {
 }
 
 async function dashboardOpenService(page, serviceName) {
+  await utils.sleep(5000);
+
   // Returns true if template is found
   console.log("Creating New Study from service");
 
