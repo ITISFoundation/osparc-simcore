@@ -69,46 +69,25 @@ async function dashboardPreferences(page) {
   await utils.waitAndClick(page, '[osparc-test-id="preferencesWindowCloseBtn"]');
 }
 
-async function dashboardTemplatesBrowser(page) {
-  console.log("Navigating through Templates");
-  await utils.waitAndClick('[osparc-test-id="templatesTabBtn"]');
-}
-
-async function dashboardServicesBrowser() {
-  console.log("Navigating through Services");
-  await utils.waitAndClick('[osparc-test-id="servicesTabBtn"]');
-}
-
-async function dashboardDataBrowser(page) {
-  console.log("Navigating through Data");
-
-  await utils.waitAndClick(page, '[osparc-test-id="dataTabBtn"]')
-  // expand first location
-  await utils.waitAndClick(page, '.qx-no-border > div > div > div > div:nth-child(2) > div:nth-child(1)')
-  // expand first study
-  await utils.waitAndClick(page, '.qx-no-border > div > div > div > div:nth-child(3) > div:nth-child(1)')
-}
-
-async function dashboardStudiesBrowser(page) {
-  console.log("Navigating through Templates");
-
+async function __dashboardStudiesBrowser(page) {
+  console.log("Navigating through Studies");
   await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
+}
 
-  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="studiesList"]');
-  if (children.length === 0) {
-    console.log("Editing thumbnail: no study found")
-    return
-  }
-  for (let i = 0; i < children.length; i++) {
-    const childId = '[osparc-test-id="' + children[i] + '"]'
-    await utils.waitAndClick(page, childId);
-  }
+async function __dashboardTemplatesBrowser(page) {
+  console.log("Navigating through Templates");
+  await utils.waitAndClick(page, '[osparc-test-id="templatesTabBtn"]');
+}
+
+async function __dashboardServicesBrowser(page) {
+  console.log("Navigating through Services");
+  await utils.waitAndClick(page, '[osparc-test-id="servicesTabBtn"]');
 }
 
 async function dashboardNewStudy(page) {
   console.log("Creating New Study");
 
-  await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
+  await __dashboardStudiesBrowser(page);
   await utils.waitAndClick(page, '[osparc-test-id="newStudyBtn"]');
 
   await page.waitForSelector('[osparc-test-id="newStudyTitleFld"]');
@@ -125,7 +104,7 @@ async function toDashboard(page) {
   await utils.waitAndClick(page, '[osparc-test-id="confirmDashboardBtn"]');
 }
 
-async function waitForAllTemplates(page) {
+async function __waitForAllTemplates(page) {
   await page.waitForSelector('[osparc-test-id="templatesList"]');
   let loadingTemplatesCardVisible = true;
   while(loadingTemplatesCardVisible) {
@@ -138,13 +117,17 @@ async function dashboardOpenFirstTemplate(page, templateName) {
   // Returns true if template is found
   console.log("Creating New Study from template");
 
-  await utils.waitAndClick(page, '[osparc-test-id="templatesTabBtn"]')
+  await utils.takeScreenshot(page, "click on templates tab");
+  await __dashboardTemplatesBrowser(page);
+  await utils.takeScreenshot(page, "clicked on templates tab");
 
   if (templateName) {
+    await utils.takeScreenshot(page, "type filter text");
     await __filterTemplatesByText(page, templateName);
+    await utils.takeScreenshot(page, "typed filter text");
   }
 
-  await this.waitForAllTemplates(page);
+  await __waitForAllTemplates(page);
 
   await page.waitForSelector('[osparc-test-id="templatesList"]');
   const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templatesList"]');
@@ -162,7 +145,7 @@ async function dashboardOpenService(page, serviceName) {
   // Returns true if template is found
   console.log("Creating New Study from service");
 
-  await utils.waitAndClick(page, '[osparc-test-id="servicesTabBtn"]')
+  await __dashboardServicesBrowser(page);
 
   if (serviceName) {
     await __filterServicesByText(page, serviceName);
@@ -189,23 +172,22 @@ async function dashboardOpenService(page, serviceName) {
 }
 
 async function __filterStudiesByText(page, studyName) {
+  await __dashboardStudiesBrowser();
   await __typeInSearchBarFilter(page, "studies", studyName);
 }
 
 async function __filterTemplatesByText(page, templateName) {
+  await __dashboardTemplatesBrowser();
   await __typeInSearchBarFilter(page, "templates", templateName);
 }
 
 async function __filterServicesByText(page, serviceName) {
+  await __dashboardServicesBrowser();
   await __typeInSearchBarFilter(page, "services", serviceName);
 }
 
 async function __typeInSearchBarFilter(page, resource, text) {
-  const tabSelector = '[osparc-test-id="'+resource+'TabBtn"]';
   const fieldSelector = '[osparc-test-id="searchBarFilter-textField-'+resource+'"]';
-
-  await utils.waitAndClick(page, tabSelector);
-  await utils.sleep(5000);
   await __typeInFilter(page, fieldSelector, text);
 }
 
@@ -271,7 +253,7 @@ async function runStudy(page) {
 async function deleteFirstStudy(page, studyName) {
   console.log("Deleting first study")
 
-  await utils.waitAndClick(page, '[osparc-test-id="studiesTabBtn"]')
+  await __dashboardStudiesBrowser(page);
 
   if (studyName) {
     await __filterStudiesByText(page, studyName);
@@ -381,12 +363,7 @@ module.exports = {
   logOut,
   dashboardAbout,
   dashboardPreferences,
-  dashboardStudiesBrowser,
-  dashboardTemplatesBrowser,
-  dashboardServicesBrowser,
-  dashboardDataBrowser,
   dashboardNewStudy,
-  waitForAllTemplates,
   dashboardOpenFirstTemplate,
   dashboardOpenService,
   showLogger,
