@@ -84,14 +84,18 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # POSTGRES
-    API_SERVER_POSTGRES: Optional[PostgresSettings]
+    API_SERVER_POSTGRES: Optional[PostgresSettings] = Field(auto_default_from_env=True)
 
     # SERVICES with http API
-    API_SERVER_WEBSERVER: Optional[WebServerSettings]
-    API_SERVER_CATALOG: Optional[CatalogSettings]
-    API_SERVER_STORAGE: Optional[StorageSettings]
-    API_SERVER_DIRECTOR_V2: Optional[DirectorV2Settings]
-    API_SERVER_TRACING: Optional[TracingSettings]
+    API_SERVER_WEBSERVER: Optional[WebServerSettings] = Field(
+        auto_default_from_env=True
+    )
+    API_SERVER_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
+    API_SERVER_STORAGE: Optional[StorageSettings] = Field(auto_default_from_env=True)
+    API_SERVER_DIRECTOR_V2: Optional[DirectorV2Settings] = Field(
+        auto_default_from_env=True
+    )
+    API_SERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
     API_SERVER_DEV_FEATURES_ENABLED: bool = Field(
         False, env=["API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"]
