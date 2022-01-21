@@ -158,7 +158,9 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
     )
 
-    DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings
+    DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
+        auto_default_from_env=True
+    )
 
     DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
         "3.8", description="docker-compose version used in the compose-specs"
@@ -193,9 +195,11 @@ class DynamicServicesSettings(BaseCustomSettings):
         True, description="Enables/Disables the dynamic_sidecar submodule"
     )
 
-    DYNAMIC_SIDECAR: DynamicSidecarSettings
+    DYNAMIC_SIDECAR: DynamicSidecarSettings = Field(auto_default_from_env=True)
 
-    DYNAMIC_SCHEDULER: DynamicServicesSchedulerSettings
+    DYNAMIC_SCHEDULER: DynamicServicesSchedulerSettings = Field(
+        auto_default_from_env=True
+    )
 
 
 class PGSettings(PostgresSettings):
@@ -269,7 +273,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     # ptvsd settings
     DIRECTOR_V2_REMOTE_DEBUG_PORT: PortInt = 3000
 
-    CLIENT_REQUEST: ClientRequestSettings
+    CLIENT_REQUEST: ClientRequestSettings = Field(auto_default_from_env=True)
 
     # App modules settings ---------------------
 
