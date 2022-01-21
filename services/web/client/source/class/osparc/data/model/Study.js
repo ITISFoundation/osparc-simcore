@@ -203,7 +203,6 @@ qx.Class.define("osparc.data.model.Study", {
     deepCloneStudyObject: function(src) {
       const studyObject = osparc.utils.Utils.deepCloneObject(src);
       const studyPropKeys = osparc.data.model.Study.getProperties();
-      studyPropKeys.push("bootOptions");
       Object.keys(studyObject).forEach(key => {
         if (!studyPropKeys.includes(key)) {
           delete studyObject[key];
@@ -511,9 +510,6 @@ qx.Class.define("osparc.data.model.Study", {
     __updateModel: function(data) {
       if ("dev" in data) {
         delete data["dev"];
-      }
-      if ("bootOptions" in data) {
-        delete data["bootOptions"];
       }
       Object.keys(data).forEach(key => {
         if (this.self().IgnoreModelizationProps.includes(key)) {

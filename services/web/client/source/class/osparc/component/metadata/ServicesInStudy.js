@@ -107,10 +107,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     },
 
     __updateBootMode: function(nodeId, newBootModeId) {
-      if (!("bootOptions" in this.__studyData)) {
-        this.__studyData["bootOptions"] = {};
+      if (!("boot_options" in this.__studyData["workbench"][nodeId])) {
+        this.__studyData["workbench"][nodeId]["boot_options"] = {};
       }
-      this.__studyData["bootOptions"][nodeId] = {
+      this.__studyData["workbench"][nodeId]["boot_options"] = {
         "boot_mode": newBootModeId
       };
 
@@ -276,8 +276,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
             sbItems.push(sbItem);
           });
           let defaultBMId = null;
-          if ("bootOptions" in this.__studyData && nodeId in this.__studyData["bootOptions"] && "boot_mode" in this.__studyData["bootOptions"][nodeId]) {
-            defaultBMId = this.__studyData["bootOptions"][nodeId]["boot_mode"];
+          //if ("bootOptions" in this.__studyData && nodeId in this.__studyData["bootOptions"] && "boot_mode" in this.__studyData["bootOptions"][nodeId]) {
+          console.log(this.__studyData["workbench"][nodeId]);
+          if ("boot_options" in this.__studyData["workbench"][nodeId] && "boot_mode" in this.__studyData["workbench"][nodeId]["boot_options"]) {
+            defaultBMId = this.__studyData["workbench"][nodeId]["boot_options"]["boot_mode"];
           } else {
             defaultBMId = bootModesMD["default"];
           }
