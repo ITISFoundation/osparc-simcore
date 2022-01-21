@@ -273,23 +273,23 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # App modules settings ---------------------
 
-    DIRECTOR_V0: DirectorV0Settings
+    DIRECTOR_V0: DirectorV0Settings = Field(auto_default_from_env=True)
 
-    DYNAMIC_SERVICES: DynamicServicesSettings
+    DYNAMIC_SERVICES: DynamicServicesSettings = Field(auto_default_from_env=True)
 
-    POSTGRES: PGSettings
+    POSTGRES: PGSettings = Field(auto_default_from_env=True)
 
-    DIRECTOR_V2_RABBITMQ: RabbitSettings
+    DIRECTOR_V2_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
 
     STORAGE_ENDPOINT: str = Field("storage:8080", env="STORAGE_ENDPOINT")
 
     TRAEFIK_SIMCORE_ZONE: str = Field("internal_simcore_stack")
 
-    DASK_SCHEDULER: DaskSchedulerSettings
+    DASK_SCHEDULER: DaskSchedulerSettings = Field(auto_default_from_env=True)
 
-    DIRECTOR_V2_TRACING: Optional[TracingSettings] = None
+    DIRECTOR_V2_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
-    DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings
+    DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
 
     @validator("LOG_LEVEL", pre=True)
     @classmethod
