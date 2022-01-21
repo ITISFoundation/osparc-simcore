@@ -18,8 +18,7 @@
 /**
  * VirtualTreeItem used mainly by NodeOutputTreeItem
  *
- *   It consists of an entry icon and label and contains more information like: isDir,
- * isRoot, nodeKey, portKey, key.
+ *   It consists of an entry icon and label and contains more information like: nodeKey, portKey, key.
  *
  * *Example*
  *
@@ -33,7 +32,6 @@
  *     },
  *     configureItem: item => {
  *       item.set({
- *       isDir: !portKey.includes("modeler") && !portKey.includes("sensorSettingAPI") && !portKey.includes("neuronsSetting"),
  *       nodeKey: node.getKey(),
  *       portKey: portKey
  *     });
@@ -46,16 +44,16 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
   include: osparc.ui.tree.MHintInTree,
 
   properties: {
-    isDir: {
-      check: "Boolean",
-      nullable: false,
-      init: true
+    type: {
+      check: "String",
+      nullable: false
     },
 
-    isRoot: {
-      check: "Boolean",
-      nullable: false,
-      init: false
+    value: {
+      nullable: true,
+      event: "changeValue",
+      apply: "_applyValue",
+      transform: "_transformValue"
     },
 
     nodeKey: {
@@ -66,18 +64,6 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
     portKey: {
       check: "String",
       nullable: true
-    },
-
-    value: {
-      nullable: true,
-      event: "changeValue",
-      apply: "_applyValue",
-      transform: "_transformValue"
-    },
-
-    type: {
-      check: "String",
-      nullable: false
     },
 
     unitShort: {
@@ -168,6 +154,8 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
           value: filename,
           url: value.downloadLink
         });
+      } else if (this.getType() === "array") {
+        this.__label.setValue("["+value+"]");
       } else {
         this.__label.setValue(value);
       }
