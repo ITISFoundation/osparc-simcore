@@ -45,8 +45,8 @@ def project_slug_dir() -> Path:
 
 
 @pytest.fixture(scope="session")
-def mocks_folder(project_tests_dir: Path) -> Path:
-    dir_path = project_tests_dir / "mocks"
+def project_tests_data_folder(project_tests_dir: Path) -> Path:
+    dir_path = project_tests_dir / "data"
     assert dir_path.exists()
     return dir_path
 
@@ -58,9 +58,13 @@ def env_file():
 
 
 @pytest.fixture
-def mock_environment(mocks_folder: Path, monkeypatch, env_file: str) -> EnvVarsDict:
-    env_file_path = mocks_folder / env_file
+def mock_environment(
+    project_tests_data_folder: Path, monkeypatch, env_file: str
+) -> EnvVarsDict:
+    """mocks environment provided in the env_file"""
+    env_file_path = project_tests_data_folder / env_file
     assert env_file_path.exists()
+
     envs = dotenv_values(str(env_file_path))
 
     for name, value in envs.items():
@@ -106,17 +110,6 @@ def fake_settings_class() -> Type[BaseCustomSettings]:
         )
 
     return _ApplicationSettings
-
-
-@pytest.fixture
-def fake_settings_instance(fake_settings_class) -> BaseCustomSettings:
-
-    return fake_settings_class(
-        APP_HOST="localhost",
-        APP_PORT=80,
-        APP_OPTIONAL_ADDON={"MODULE_VALUE: 1"},
-        APP_REQUIRED_PLUGIN=PostgresSettings.Config.schema_extra["examples"][0],
-    )
 
 
 @pytest.fixture
