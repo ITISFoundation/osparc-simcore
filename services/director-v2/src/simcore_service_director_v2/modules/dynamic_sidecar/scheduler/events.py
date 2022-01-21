@@ -18,7 +18,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential, wait_fixed
 
-from ....api.dependencies.database import fetch_repo_no_request
+from ....api.dependencies.database import fetch_repo_outside_of_request
 from ....core.settings import DynamicSidecarSettings
 from ....models.schemas.dynamic_services import (
     DockerContainerInspect,
@@ -101,20 +101,25 @@ class CreateSidecars(DynamicSchedulerEvent):
         director_v0_client: DirectorV0Client = _get_director_v0_client(app)
 
         # fetching project form DB and fetching user settings
-        projects_repository = fetch_repo_no_request(app, ProjectsRepository)
+        projects_repository = fetch_repo_outside_of_request(app, ProjectsRepository)
         project: ProjectAtDB = await projects_repository.get_project(
             project_id=scheduler_data.project_id
         )
-        logger.info("boot_options=%s", project.boot_options)
-        service_user_selection_boot_options = project.boot_options.get(
-            f"{scheduler_data.node_uuid}", {}
+
+        node_uuid_str = str(scheduler_data.node_uuid)
+        node: Node = project.workbench.get(node_uuid_str)
+        boot_options = (
+            node.boot_options
+            if node is not None and node.boot_options is not None
+            else {}
         )
+        logger.info("%s", f"{boot_options=}")
 
         settings: SimcoreServiceSettingsLabel = await merge_settings_before_use(
             director_v0_client=director_v0_client,
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
-            service_user_selection_boot_options=service_user_selection_boot_options,
+            service_user_selection_boot_options=boot_options,
         )
 
         # these configuration should guarantee 245 address network
