@@ -117,8 +117,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         params.url.offset = osparc.utils.Utils.getParamFromURL(this._studiesContainer.nextRequest, "offset");
         params.url.limit = osparc.utils.Utils.getParamFromURL(this._studiesContainer.nextRequest, "limit");
       }
-      const resolveWResponse = true;
-      return osparc.data.Resources.fetch(templates ? "templates" : "studies", "getPage", params, undefined, resolveWResponse);
+      const options = {
+        resolveWResponse: true
+      };
+      return osparc.data.Resources.fetch(templates ? "templates" : "studies", "getPage", params, undefined, options);
     },
 
     _addStudiesToList: function() {
