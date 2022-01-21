@@ -738,10 +738,9 @@ qx.Class.define("osparc.data.Resources", {
       return new Promise((resolve, reject) => {
         let resources = [];
         let offset = 0;
-        const limit = 2;
         Object.assign(params.url, {
           "offset": offset,
-          "limit": limit
+          "limit": 50
         });
         const endpoint = "getPage";
         const options = {
