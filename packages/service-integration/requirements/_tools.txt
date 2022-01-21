@@ -123,7 +123,7 @@ prance==0.21.8.0
     # via datamodel-code-generator
 pre-commit==2.15.0
     # via -r requirements/../../../requirements/devenv.txt
-pydantic==1.8.2
+pydantic==1.9.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt

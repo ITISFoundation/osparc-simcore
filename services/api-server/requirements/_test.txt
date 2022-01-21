@@ -248,7 +248,10 @@ toml==0.10.2
     #   pylint
     #   pytest
 tomli==1.2.2
-    # via coverage
+    # via
+    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../requirements/constraints.txt
+    #   coverage
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt

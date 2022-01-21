@@ -2,9 +2,8 @@ from functools import cached_property
 from typing import Optional
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import Field, SecretStr
+from pydantic import AnyHttpUrl, Field, SecretStr
 from pydantic.class_validators import validator
-from pydantic.networks import HttpUrl
 from settings_library.base import BaseCustomSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.tracing import TracingSettings
@@ -16,7 +15,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 class _UrlMixin:
     def _build_url(self, prefix: str) -> str:
         prefix = prefix.upper()
-        return HttpUrl.build(
+        return AnyHttpUrl.build(
             scheme="http",
             host=getattr(self, f"{prefix}_HOST"),
             port=f"{getattr(self, f'{prefix}_PORT')}",
