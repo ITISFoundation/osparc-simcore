@@ -440,6 +440,7 @@ qx.Class.define("osparc.component.form.Auto", {
             integer: "Spinner",
             number: "Number",
             boolean: "CheckBox",
+            array: "Text",
             data: "FileButton"
           }[type]
         };
