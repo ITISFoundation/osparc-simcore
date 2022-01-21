@@ -90,9 +90,9 @@ class DynamicSidecarSettings(BaseCustomSettings):
     DY_SIDECAR_PROJECT_ID: ProjectID
     DY_SIDECAR_NODE_ID: NodeID
 
-    REGISTRY_SETTINGS: RegistrySettings
+    REGISTRY_SETTINGS: RegistrySettings = Field(auto_default_from_env=True)
 
-    RABBIT_SETTINGS: Optional[RabbitSettings]
+    RABBIT_SETTINGS: Optional[RabbitSettings] = Field(auto_default_from_env=True)
 
     @property
     def is_development_mode(self) -> bool:
