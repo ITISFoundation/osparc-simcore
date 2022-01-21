@@ -45,7 +45,7 @@ def get_repository(repo_type: Type[BaseRepository]) -> Callable:
     return _get_repo
 
 
-def fetch_repo_no_request(
+def fetch_repo_outside_of_request(
     app: FastAPI, repo_type: Type[BaseRepository]
 ) -> BaseRepository:
     return _get_base_repository(engine=app.state.engine, repo_type=repo_type)
