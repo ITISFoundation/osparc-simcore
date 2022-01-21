@@ -26,6 +26,7 @@ from .projects_nodes_io import (
     PortLink,
     SimCoreFileLink,
 )
+from .boot_options import EnvVarKey
 from .projects_nodes_ui import Position
 from .projects_state import RunningState
 from .services import PROPERTY_KEY_RE, SERVICE_KEY_RE
@@ -166,6 +167,15 @@ class Node(BaseModel):
 
     state: Optional[NodeState] = Field(
         default_factory=NodeState, description="The node's state object"
+    )
+
+    boot_options: Optional[Dict[EnvVarKey, str]] = Field(
+        None,
+        description=(
+            "Some services provide alternative parameters to be injected at boot time. "
+            "The user selection should be stored here, and it will overwrite the "
+            "services's defaults."
+        ),
     )
 
     @validator("thumbnail", pre=True)

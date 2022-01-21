@@ -322,6 +322,16 @@ properties:
                   - ABORTED
                 type: string
             additionalProperties: false
+        boot_options:
+          title: Boot Options
+          description: >-
+            Some services provide alternative parameters to be injected at boot
+            time. The user selection should be stored here, and it will
+            overwrite the services's defaults.
+          type: object
+          patternProperties:
+            '[a-zA-Z][a-azA-Z0-9_]*':
+              type: string
     additionalProperties: true
   ui:
     type: object
@@ -386,20 +396,6 @@ properties:
   dev:
     type: object
     description: object used for development purposes only
-  bootOptions:
-    title: Boot options
-    description: >-
-      Some services provide alternative parameters to be injected at boot time.
-      The user selection should be stored here, and it will overwrite the
-      services's defaults.
-    type: object
-    x-patternProperties:
-      ^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$:
-        type: object
-        patternProperties:
-          '[a-zA-Z][a-azA-Z0-9_]*':
-            type: string
-    additionalProperties: true
   state:
     title: State
     description: Project state
