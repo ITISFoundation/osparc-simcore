@@ -157,10 +157,11 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       }
       branch["lastCommit"] = commitData["id"];
 
+      // Widget for highlighting the overed commit with hint
       const widget = new qx.ui.core.Widget().set({
         opacity: 0.1,
         height: this.self().COMMIT_SPACING,
-        minWidth: 50,
+        minWidth: this.self().COMMIT_SPACING*this.__branches.length,
         allowGrowX: true
       });
       const texts = [];
