@@ -13,8 +13,8 @@ from ...utils.logging_utils import log_decorator
 from .errors import (
     DynamicSchedulerException,
     DynamicSidecarNetworkError,
-    EntrypointContainerNotFoundError,
     DynamicSidecarUnexpectedResponseStatus,
+    EntrypointContainerNotFoundError,
 )
 
 # PC -> SAN improvements to discuss
