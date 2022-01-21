@@ -1399,10 +1399,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         };
         this.addListenerOnce("dragover", startDragging, this);
 
-        this.addListener("mousewheel", this.__mouseWheel, this);
         this.addListener("mousedown", this.__mouseDown, this);
         this.addListener("mousemove", this.__mouseMove, this);
         this.addListener("mouseup", this.__mouseUp, this);
+        this._listenToMouseWheel();
       });
 
       this.addListener("keypress", keyEvent => {
@@ -1439,6 +1439,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__workbenchLayout.addListener("resize", () => this.__updateHint(), this);
 
       this.__svgLayer.addListener("mousedown", this.__mouseDownOnSVG, this);
+    },
+
+    _listenToMouseWheel: function() {
+      this.addListener("mousewheel", this.__mouseWheel, this);
     },
 
     __allowDragFile: function(e) {
