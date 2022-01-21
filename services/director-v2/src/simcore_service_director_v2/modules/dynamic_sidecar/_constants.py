@@ -1,1 +1,3 @@
-CONTAINER_NAME = "container"
+from typing import Final
+
+CONTAINER_NAME: Final[str] = "container"
