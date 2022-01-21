@@ -229,7 +229,6 @@ async def test_workflow(
             "creationDate",
             "lastChangeDate",
             "accessRights",
-            "bootOptions",
         ):
             assert projects[0][key] == fake_project_data[key]
     assert projects[0]["prjOwner"] == logged_user["email"]
