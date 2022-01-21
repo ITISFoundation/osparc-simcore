@@ -6,7 +6,7 @@
 #
 click==8.0.3
     # via typer
-pydantic==1.8.2
+pydantic==1.9.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in

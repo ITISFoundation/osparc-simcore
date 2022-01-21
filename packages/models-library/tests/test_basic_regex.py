@@ -8,7 +8,7 @@ from typing import Optional, Sequence
 
 import pytest
 from models_library.basic_regex import DATE_RE, UUID_RE, VERSION_RE
-from pkg_resources import parse_version
+from packaging.version import Version
 
 INVALID = object()
 VALID = object()
@@ -97,6 +97,6 @@ def test_DATE_RE(date_str, expected):
 
 def test_pep404_compare_versions():
     # A reminder from https://setuptools.readthedocs.io/en/latest/userguide/distribution.html#specifying-your-project-s-version
-    assert parse_version("1.9.a.dev") == parse_version("1.9a0dev")
-    assert parse_version("2.1-rc2") < parse_version("2.1")
-    assert parse_version("0.6a9dev-r41475") < parse_version("0.6a9")
+    assert Version("1.9.a.dev") == Version("1.9a0dev")
+    assert Version("2.1-rc2") < Version("2.1")
+    assert Version("0.6a9dev") < Version("0.6a9")

@@ -15,7 +15,7 @@ from pydantic import (
     StrictInt,
     StrictStr,
 )
-from typing_extensions import Annotated
+from pydantic.types import constr
 
 
 class PortSchema(BaseModel):
@@ -74,7 +74,7 @@ class FileUrl(BaseModel):
         }
 
 
-PortKey = Annotated[str, Field(regex=PROPERTY_KEY_RE)]
+PortKey = constr(regex=PROPERTY_KEY_RE)
 PortValue = Union[StrictBool, StrictInt, StrictFloat, StrictStr, FileUrl, None]
 
 

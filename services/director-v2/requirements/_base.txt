@@ -233,7 +233,7 @@ psycopg2-binary==2.9.2
     # via
     #   aiopg
     #   sqlalchemy
-pydantic==1.8.2
+pydantic==1.9.0
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
