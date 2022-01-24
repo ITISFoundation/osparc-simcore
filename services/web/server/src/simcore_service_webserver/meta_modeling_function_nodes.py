@@ -16,8 +16,6 @@ from typing import Callable, Dict, Iterator, List, Tuple
 
 from models_library.frontend_services_catalog import (
     FRONTEND_SERVICE_KEY_PREFIX,
-    OM,
-    ServiceType,
     iter_service_docker_data,
 )
 from models_library.projects_nodes import Node, OutputTypes
@@ -51,62 +49,6 @@ def _linspace_generator(**kwargs) -> Iterator[Dict[str, OutputTypes]]:
 # the catalog can identify this service
 
 # TODO: inject in database (including code??) If so, the definition can even change??
-
-
-def _sensitivity_meta() -> ServiceDockerData:
-    return ServiceDockerData(
-        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/sensitivity",
-        version="1.0.0",
-        type=ServiceType.FRONTEND,
-        name="Sensitivity iterator",
-        description="Increases/decreases one dimension of the reference parameters at every iteration",
-        authors=[
-            OM,
-        ],
-        contact=OM.email,
-        **_sensitivity_schema(),
-    )
-
-
-def _sensitivity_schema():
-    return {
-        "inputs": {
-            "in_1": {
-                "label": "paramrefs",
-                "description": "reference parameters",
-                "type": List[
-                    float
-                ],  # TODO: check how pydantic maps with python with jsonschema
-            },
-            "in_2": {
-                "label": "paramdiff",
-                "description": "diff parameters",
-                "type": List[float],
-            },
-            "in_3": {
-                "label": "diff_or_fact",
-                "description": "Applies difference (true) or factor (false)",
-                "type": bool,
-            },
-        },
-        "outputs": {
-            "out_1": {
-                "label": "i",
-                "description": "dimension index that was modified",
-                "type": int,
-            },
-            "out_2": {
-                "label": "paramtestplus",
-                "description": "increased parameter",
-                "type": List[float],
-            },
-            "out_3": {
-                "label": "paramtestminus",
-                "description": "decreased parameter",
-                "type": List[float],
-            },
-        },
-    }
 
 
 def _sensitivity_func(
@@ -151,8 +93,11 @@ FRONTEND_SERVICES_CATALOG: Dict[_ServiceKeyVersionPair, ServiceDockerData] = {
 
 
 # Maps meta-function nodes with an implementation
+#  - Basically "glues" the implementation to a function node
+
+# TODO: ensure inputs/outputs map function signature
+# TODO: implement with a decorator on the implementation function
 FRONTEND_SERVICE_TO_CALLABLE: Dict[_ServiceKeyVersionPair, Callable] = {
-    # TODO: ensure inputs/outputs map function signature
     (
         f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/int-range",
         "1.0.0",

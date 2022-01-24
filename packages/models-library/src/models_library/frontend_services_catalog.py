@@ -9,6 +9,7 @@
 import functools
 from typing import Iterator, Optional
 
+from .functions_catalog.sensitivity import sensitivity_meta
 from .services import Author, ServiceDockerData, ServiceType
 
 FRONTEND_SERVICE_KEY_PREFIX = "simcore/services/frontend"
@@ -179,6 +180,7 @@ _FACTORY_FUNCTIONS = [
     _create_node_group_service,
     _create_data_iterator_int_range,
     _create_iterator_consumer_probe_int,
+    sensitivity_meta,
 ] + [
     functools.partial(_create_constant_node_def, output_type=p)
     for p in ["number", "boolean", "integer"]
