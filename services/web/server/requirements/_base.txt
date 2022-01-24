@@ -287,8 +287,15 @@ typing-extensions==3.10.0.2
     #   aiohttp
     #   aiohttp-jinja2
     #   pydantic
-ujson==4.0.2
-    # via aiohttp-swagger
+ujson==5.1.0
+    # via
+    #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/service-library/requirements/./../../../requirements/constraints.txt
+    #   -c requirements/../../../../packages/settings-library/requirements/../../../requirements/constraints.txt
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   aiohttp-swagger
 werkzeug==2.0.2
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 yarl==1.5.1
