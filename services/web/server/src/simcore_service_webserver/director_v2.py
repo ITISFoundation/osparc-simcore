@@ -11,7 +11,7 @@ from . import director_v2_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY
 from .director_v2_abc import set_project_run_policy
 from .director_v2_core import DefaultProjectRunPolicy, DirectorV2ApiClient, set_client
-from .director_v2_settings import CONFIG_SECTION_NAME, create_settings
+from .director_v2_settings import CONFIG_SECTION_NAME
 
 log = logging.getLogger(__file__)
 
@@ -24,9 +24,6 @@ log = logging.getLogger(__file__)
     logger=log,
 )
 def setup_director_v2(app: web.Application):
-    # create settings and injects in app
-    create_settings(app)
-
     set_project_run_policy(app, DefaultProjectRunPolicy())
 
     set_client(app, DirectorV2ApiClient(app))

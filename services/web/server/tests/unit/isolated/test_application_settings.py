@@ -175,6 +175,7 @@ def test_app_settings_with_prod_config(
     assert app_settings.WEBSERVER_CATALOG is not None
     assert app_settings.WEBSERVER_DIRECTOR is not None
     assert app_settings.WEBSERVER_STORAGE is not None
+    assert app_settings.WEBSERVER_DIRECTOR_V2 is not None
 
     # This is basically how the fields in ApplicationSettings map the trafaret's config file
     #
@@ -271,7 +272,7 @@ def test_app_settings_with_prod_config(
         "clusters": {"enabled": True},
         "computation": {"enabled": True},
         "diagnostics": {"enabled": True},
-        "director-v2": {"enabled": True},
+        "director-v2": {"enabled": app_settings.WEBSERVER_DIRECTOR_V2 is not None},
         "exporter": {"enabled": True},
         "groups": {"enabled": True},
         "meta_modeling": {"enabled": True},

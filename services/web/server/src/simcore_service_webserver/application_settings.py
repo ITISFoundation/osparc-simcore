@@ -29,8 +29,8 @@ from .catalog_settings import CatalogSettings
 
 # from .db_settings import PostgresSettings
 from .director.settings import DirectorSettings
+from .director_v2_settings import DirectorV2Settings
 
-# from .director_v2_settings import DirectorV2Settings
 # from .email_settings import SmtpSettings
 # from .login.settings import LoginSettings
 # from .resource_manager.settings import ResourceManagerSettings
@@ -93,7 +93,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # SERVICES is osparc-stack with http API
     WEBSERVER_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
-    # WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings]
+    WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings] = Field(
+        auto_default_from_env=True
+    )
     WEBSERVER_DIRECTOR: Optional[DirectorSettings] = Field(auto_default_from_env=True)
     WEBSERVER_STORAGE: Optional[StorageSettings] = Field(auto_default_from_env=True)
 
