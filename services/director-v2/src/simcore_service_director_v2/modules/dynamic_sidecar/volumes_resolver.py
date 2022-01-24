@@ -17,9 +17,12 @@ class DynamicSidecarVolumesPathsResolver:
         return f"{target_path}"
 
     @classmethod
+    def _volume_name(cls, path: Path) -> str:
+        return f"{path}".replace(os.sep, "_")
+
+    @classmethod
     def _source(cls, compose_namespace: str, path: Path) -> str:
-        volume_name = f"{path}".replace(os.sep, "_")
-        return f"{compose_namespace}{volume_name}"
+        return f"{compose_namespace}{cls._volume_name(path)}"
 
     @classmethod
     def mount_entry(
@@ -69,7 +72,7 @@ class DynamicSidecarVolumesPathsResolver:
                         "s3-location_constraint": "",
                         "s3-server_side_encryption": "",
                         # TODO: PC, SAN this "simcore" where is it defined, can I use a constant
-                        "path": f"simcore/{project_id}/{node_uuid}",
+                        "path": f"simcore/{project_id}/{node_uuid}/{cls._volume_name(path).strip('_')}",
                         "allow-other": "true",
                     },
                 },
