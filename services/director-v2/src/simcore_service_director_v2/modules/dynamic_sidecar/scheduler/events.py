@@ -52,7 +52,7 @@ from ..errors import (
     GenericDockerError,
 )
 from .abc import DynamicSchedulerEvent
-from .events_utils import bypass_directroy_watcher
+from .events_utils import disabled_directory_watcher
 
 logger = logging.getLogger(__name__)
 
@@ -243,7 +243,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
-        async with bypass_directroy_watcher(
+        async with disabled_directory_watcher(
             dynamic_sidecar_client, dynamic_sidecar_endpoint
         ):
             # below tasks can take a while, running them in parallel

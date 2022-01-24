@@ -5,7 +5,7 @@ from ..client_api import DynamicSidecarClient
 
 
 @asynccontextmanager
-async def bypass_directroy_watcher(
+async def disabled_directory_watcher(
     dynamic_sidecar_client: DynamicSidecarClient, dynamic_sidecar_endpoint: str
 ) -> AsyncIterator[None]:
     try:
