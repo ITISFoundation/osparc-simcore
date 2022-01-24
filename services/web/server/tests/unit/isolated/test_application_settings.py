@@ -252,9 +252,11 @@ def test_app_settings_with_prod_config(
             "host": app_settings.WEBSERVER_EMAIL.SMTP_HOST,
             "port": app_settings.WEBSERVER_EMAIL.SMTP_PORT,
             "tls": int(app_settings.WEBSERVER_EMAIL.SMTP_TLS_ENABLED),
-            "username": app_settings.WEBSERVER_EMAIL.SMTP_USERNAME,
-            "password": app_settings.WEBSERVER_EMAIL.SMTP_PASSWORD
-            and app_settings.WEBSERVER_EMAIL.SMTP_PASSWORD.get_secret_value(),
+            "username": str(app_settings.WEBSERVER_EMAIL.SMTP_USERNAME),
+            "password": str(
+                app_settings.WEBSERVER_EMAIL.SMTP_PASSWORD
+                and app_settings.WEBSERVER_EMAIL.SMTP_PASSWORD.get_secret_value()
+            ),
         },
         "storage": {
             "enabled": app_settings.WEBSERVER_STORAGE is not None,
@@ -275,7 +277,7 @@ def test_app_settings_with_prod_config(
         },
         "activity": {
             "enabled": app_settings.WEBSERVER_PROMETHEUS is not None,
-            "prometheus_host": app_settings.WEBSERVER_PROMETHEUS.PROMETHEUS_HOST,
+            "prometheus_host": app_settings.WEBSERVER_PROMETHEUS.origin,
             "prometheus_port": app_settings.WEBSERVER_PROMETHEUS.PROMETHEUS_PORT,
             "prometheus_api_version": app_settings.WEBSERVER_PROMETHEUS.PROMETHEUS_VTAG,
         },
@@ -291,9 +293,11 @@ def test_app_settings_with_prod_config(
         "remote_debug": {"enabled": True},
         "security": {"enabled": True},
         "statics": {"enabled": True},
-        "studies_access": {"enabled": app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED},
+        "studies_access": {
+            "enabled": True
+        },  # app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
         "studies_dispatcher": {
-            "enabled": app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED
+            "enabled": True  # app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
         },
         "tags": {"enabled": True},
         "users": {"enabled": True},
