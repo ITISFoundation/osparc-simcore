@@ -4,18 +4,14 @@
 
 import json
 import logging
-import os
-from io import StringIO
-from typing import Any, Callable, ContextManager, Dict, Type
+from typing import Any, Dict, Type
 
 import pytest
 import typer
-from dotenv import dotenv_values
-from pydantic import ValidationError
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_as_envfile
 from settings_library.base import BaseCustomSettings
-from settings_library.utils_cli import create_settings_command, print_as_envfile
+from settings_library.utils_cli import create_settings_command
 from typer.testing import CliRunner
 
 log = logging.getLogger(__name__)
@@ -53,6 +49,23 @@ def cli(fake_settings_class: Type[BaseCustomSettings]) -> typer.Typer:
     main.command()(settings_cmd)
 
     return main
+
+
+@pytest.fixture
+def fake_granular_env_file_content() -> str:
+    return """
+        APP_HOST=localhost
+        APP_PORT=80
+        POSTGRES_HOST=localhost
+        POSTGRES_PORT=5432
+        POSTGRES_USER=foo
+        POSTGRES_PASSWORD=secret
+        POSTGRES_DB=foodb
+        POSTGRES_MINSIZE=1
+        POSTGRES_MAXSIZE=50
+        POSTGRES_CLIENT_NAME=None
+        MODULE_VALUE=10
+    """
 
 
 # TESTS -----------------------------------------------------------------------------------
@@ -93,6 +106,8 @@ HELP = """
                                     [default: no-as-json-schema]
     --compact / --no-compact        Print compact form  [default: no-compact]
     --verbose / --no-verbose        [default: no-verbose]
+    --show-secrets / --no-show-secrets
+                                    [default: no-show-secrets]
     --help                          Show this message and exit.
 """
 
@@ -109,102 +124,126 @@ def test_settings_as_json(
     assert fake_settings_class.parse_obj(settings)
 
 
-def test_settings_as_env_file(
-    cli: typer.Typer, fake_settings_class, mock_environment, cli_runner: CliRunner
+def test_cli_default_settings_envs(
+    cli: typer.Typer,
+    fake_settings_class: Type[BaseCustomSettings],
+    fake_granular_env_file_content: str,
+    cli_runner: CliRunner,
+    monkeypatch,
 ):
-    # ANE -> PC: this test will be left in place but the feature will
-    # not be considered for parsing settings via Pudantic as there
-    # is no out of the box support
+    with monkeypatch.context() as patch:
+        mocked_envs_1: EnvVarsDict = setenvs_as_envfile(
+            patch, fake_granular_env_file_content
+        )
 
-    result = cli_runner.invoke(cli, ["settings", "--compact"])
-    print(result.stdout)
-
-    # reuse resulting env_file to build settings
-    env_file = StringIO(result.stdout)
-
-    settings: Dict = dotenv_values(stream=env_file)
-    for key, value in settings.items():
-        try:
-            settings[key] = json.loads(str(value))
-        except json.decoder.JSONDecodeError:
-            pass
-
-    assert fake_settings_class.parse_obj(settings)
-
-
-def test_supported_parsable_env_formats(
-    cli: typer.Typer,
-    fake_settings_class: Type[BaseCustomSettings],
-    cli_runner: CliRunner,
-    mocked_settings_cls_env: str,
-    mocked_environment: Callable[[str], ContextManager[None]],
-) -> None:
-    with mocked_environment(mocked_settings_cls_env):
-        settings_object = fake_settings_class()
-        assert settings_object
-
-        setting_env_content = cli_runner.invoke(
+        cli_settings_output = cli_runner.invoke(
             cli,
-            ["settings"],
+            ["settings", "--show-secrets"],
         ).stdout
-        print(setting_env_content)
 
-    # parse standard format
-    with mocked_environment(setting_env_content):
+    # now let's use these as env vars
+    print(cli_settings_output)
+
+    with monkeypatch.context() as patch:
+        mocked_envs_2: EnvVarsDict = setenvs_as_envfile(
+            patch,
+            cli_settings_output,
+        )
         settings_object = fake_settings_class()
         assert settings_object
 
+        # NOTE: SEE BaseCustomSettings.Config.json_encoder for SecretStr
+        settings_dict_wo_secrets = json.loads(settings_object.json(indent=2))
+        assert settings_dict_wo_secrets == {
+            "APP_HOST": "localhost",
+            "APP_PORT": 80,
+            "APP_OPTIONAL_ADDON": {"MODULE_VALUE": 10, "MODULE_VALUE_DEFAULT": 42},
+            "APP_REQUIRED_PLUGIN": {
+                "POSTGRES_HOST": "localhost",
+                "POSTGRES_PORT": 5432,
+                "POSTGRES_USER": "foo",
+                "POSTGRES_PASSWORD": "secret",
+                "POSTGRES_DB": "foodb",
+                "POSTGRES_MINSIZE": 1,
+                "POSTGRES_MAXSIZE": 50,
+                "POSTGRES_CLIENT_NAME": None,
+            },
+        }
 
-@pytest.mark.skip(reason="WIP")
-def test_unsupported_env_format(
+
+def test_cli_compact_settings_envs(
     cli: typer.Typer,
     fake_settings_class: Type[BaseCustomSettings],
+    fake_granular_env_file_content: str,
     cli_runner: CliRunner,
-    mocked_settings_cls_env: str,
-    mocked_environment: Callable[[str], ContextManager[None]],
-) -> None:
-    with mocked_environment(mocked_settings_cls_env):
-        settings_object = fake_settings_class()
-        assert settings_object
+    monkeypatch,
+):
+
+    with monkeypatch.context() as patch:
+        mocked_envs_1: EnvVarsDict = setenvs_as_envfile(
+            patch, fake_granular_env_file_content
+        )
+
+        settings_1 = fake_settings_class()
+
+        # NOTE: SEE BaseCustomSettings.Config.json_encoder for SecretStr
+        settings_1_dict_wo_secrets = json.loads(settings_1.json(indent=2))
+        assert settings_1_dict_wo_secrets == {
+            "APP_HOST": "localhost",
+            "APP_PORT": 80,
+            "APP_OPTIONAL_ADDON": {"MODULE_VALUE": 10, "MODULE_VALUE_DEFAULT": 42},
+            "APP_REQUIRED_PLUGIN": {
+                "POSTGRES_HOST": "localhost",
+                "POSTGRES_PORT": 5432,
+                "POSTGRES_USER": "foo",
+                "POSTGRES_PASSWORD": "secret",
+                "POSTGRES_DB": "foodb",
+                "POSTGRES_MINSIZE": 1,
+                "POSTGRES_MAXSIZE": 50,
+                "POSTGRES_CLIENT_NAME": None,
+            },
+        }
 
         setting_env_content_compact = cli_runner.invoke(
             cli,
             ["settings", "--compact"],
         ).stdout
-        print(setting_env_content_compact)
 
-    # The compact format is not parsable directly by Pydantic.
-    # Also removed compact and mixed compact mocks .env files
-    with pytest.raises(ValidationError):
-        # if support for this test is ever added (meaning this test will fail)
-        # please redefine the below files inside the mocks directory
-        # ".env-compact", ".env-granular", ".env-fails", ".env-mixed", ".env-sample"
-        # removed by https://github.com/ITISFoundation/osparc-simcore/pull/2438
+    # now we use these as env vars
+    print(setting_env_content_compact)
 
-        # parse compact format
-        with mocked_environment(setting_env_content_compact):
-            print(json.dumps(dict(os.environ), indent=1))
-            settings_object = fake_settings_class()
-            assert settings_object
+    with monkeypatch.context() as patch:
+        mocked_envs_2: EnvVarsDict = setenvs_as_envfile(
+            patch,
+            setting_env_content_compact,
+        )
+
+        assert mocked_envs_2 == {
+            "APP_HOST": "localhost",
+            "APP_PORT": "80",
+            "APP_OPTIONAL_ADDON": '{"MODULE_VALUE": 10, "MODULE_VALUE_DEFAULT": 42}',
+            "APP_REQUIRED_PLUGIN": '{"POSTGRES_HOST": "localhost", "POSTGRES_PORT": 5432, "POSTGRES_USER": "foo", "POSTGRES_PASSWORD": "secret", "POSTGRES_DB": "foodb", "POSTGRES_MINSIZE": 1, "POSTGRES_MAXSIZE": 50, "POSTGRES_CLIENT_NAME": null}',
+        }
+
+        settings_2 = fake_settings_class()
+        assert settings_1 == settings_2
 
 
 def test_compact_format(monkeypatch, fake_settings_class):
     compact_envs: EnvVarsDict = setenvs_as_envfile(
         monkeypatch,
         """
-    APP_HOST=localhost
-    APP_PORT=80
-    APP_OPTIONAL_ADDON='{"MODULE_VALUE": 10, "MODULE_VALUE_DEFAULT": 42}'
-    APP_REQUIRED_PLUGIN='{"POSTGRES_HOST": "localhost", "POSTGRES_PORT": 5432, "POSTGRES_USER": "foo", "POSTGRES_PASSWORD": "**********", "POSTGRES_DB": "foodb", "POSTGRES_MINSIZE": 1, "POSTGRES_MAXSIZE": 50, "POSTGRES_CLIENT_NAME": "None"}'
-    """,
+        APP_HOST=localhost
+        APP_PORT=80
+        APP_OPTIONAL_ADDON='{"MODULE_VALUE": 10, "MODULE_VALUE_DEFAULT": 42}'
+        APP_REQUIRED_PLUGIN='{"POSTGRES_HOST": "localhost", "POSTGRES_PORT": 5432, "POSTGRES_USER": "foo", "POSTGRES_PASSWORD": "secret", "POSTGRES_DB": "foodb", "POSTGRES_MINSIZE": 1, "POSTGRES_MAXSIZE": 50, "POSTGRES_CLIENT_NAME": "None"}'
+        """,
     )
 
     settings_from_envs1 = fake_settings_class()
     settings_from_init = fake_settings_class(**envs_to_kwargs(compact_envs))
 
     assert settings_from_envs1 == settings_from_init
-
-    print_as_envfile(settings_from_envs1, compact=False, verbose=True)
 
 
 def test_granular_format(monkeypatch, fake_settings_class):
@@ -222,7 +261,7 @@ def test_granular_format(monkeypatch, fake_settings_class):
     POSTGRES_HOST=localhost
     POSTGRES_PORT=5432
     POSTGRES_USER=foo
-    POSTGRES_PASSWORD=**********
+    POSTGRES_PASSWORD=secret
     # Database name
     POSTGRES_DB=foodb
     # Minimum number of connections in the pool
@@ -244,7 +283,7 @@ def test_granular_format(monkeypatch, fake_settings_class):
             "POSTGRES_HOST": "localhost",
             "POSTGRES_PORT": 5432,
             "POSTGRES_USER": "foo",
-            "POSTGRES_PASSWORD": "**********",
+            "POSTGRES_PASSWORD": "secret",
             "POSTGRES_DB": "foodb",
             "POSTGRES_MINSIZE": 1,
             "POSTGRES_MAXSIZE": 50,
