@@ -66,3 +66,17 @@ class PostgresSettings(BaseCustomSettings):
                 {"application_name": self.POSTGRES_CLIENT_NAME}
             )
         return dsn
+
+    class Config(BaseCustomSettings.Config):
+        schema_extra = {
+            "examples": [
+                # minimal
+                {
+                    "POSTGRES_HOST": "localhost",
+                    "POSTGRES_PORT": "5432",
+                    "POSTGRES_USER": "usr",
+                    "POSTGRES_PASSWORD": "secret",
+                    "POSTGRES_DB": "db",
+                }
+            ],
+        }

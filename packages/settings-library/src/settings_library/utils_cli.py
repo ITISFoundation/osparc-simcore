@@ -11,25 +11,30 @@ from ._constants import HEADER_STR
 from .base import BaseCustomSettings
 
 
-def print_as_envfile(settings_obj, *, compact, verbose):
-    for name in settings_obj.__fields__:
-        value = getattr(settings_obj, name)
+def print_as_envfile(settings_obj, *, compact: bool, verbose: bool, show_secrets: bool):
+    for field in settings_obj.__fields__.values():
+
+        value = getattr(settings_obj, field.name)
+        if show_secrets and hasattr(value, "get_secret_value"):
+            value = value.get_secret_value()
 
         if isinstance(value, BaseSettings):
             if compact:
                 value = f"'{value.json()}'"  # flat
             else:
                 if verbose:
-                    typer.echo(f"\n# --- {name} --- ")
-                print_as_envfile(value, compact=False, verbose=verbose)
+                    typer.echo(f"\n# --- {field.name} --- ")
+                print_as_envfile(
+                    value, compact=False, verbose=verbose, show_secrets=show_secrets
+                )
                 continue
 
         if verbose:
-            field_info = settings_obj.__fields__[name].field_info
+            field_info = field.field_info
             if field_info.description:
                 typer.echo(f"# {field_info.description}")
 
-        typer.echo(f"{name}={value}")
+        typer.echo(f"{field.name}={value}")
 
 
 def print_as_json(settings_obj, *, compact=False):
@@ -52,6 +57,7 @@ def create_settings_command(
         as_json_schema: bool = False,
         compact: bool = typer.Option(False, help="Print compact form"),
         verbose: bool = False,
+        show_secrets: bool = False,
     ):
         """Resolves settings and prints envfile"""
 
@@ -91,6 +97,11 @@ def create_settings_command(
         if as_json:
             print_as_json(settings_obj, compact=compact)
         else:
-            print_as_envfile(settings_obj, compact=compact, verbose=verbose)
+            print_as_envfile(
+                settings_obj,
+                compact=compact,
+                verbose=verbose,
+                show_secrets=show_secrets,
+            )
 
     return settings
