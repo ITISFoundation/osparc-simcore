@@ -176,7 +176,9 @@ toml==0.10.2
     #   pylint
     #   pytest
 tomli==1.2.2
-    # via coverage
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   coverage
 typing-extensions==4.0.0
     # via
     #   astroid

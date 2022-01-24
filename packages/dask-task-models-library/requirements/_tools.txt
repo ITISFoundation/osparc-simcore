@@ -60,6 +60,7 @@ toml==0.10.2
     #   pre-commit
 tomli==1.2.2
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_test.txt
     #   black
     #   pep517

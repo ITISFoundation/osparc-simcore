@@ -239,7 +239,9 @@ toml==0.10.2
     #   pylint
     #   pytest
 tomli==1.2.2
-    # via coverage
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   coverage
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt

@@ -71,7 +71,9 @@ text-unidecode==1.3
 toml==0.10.2
     # via pytest
 tomli==1.2.2
-    # via coverage
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   coverage
 types-aiofiles==0.8.2
     # via -r requirements/_test.in
 types-pkg-resources==0.1.3
