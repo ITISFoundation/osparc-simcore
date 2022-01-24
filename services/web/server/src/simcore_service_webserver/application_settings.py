@@ -23,10 +23,11 @@ from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, API_VTAG, APP_NAME
-from .utils import snake_to_camel
 
 # from .activity.settings import ActivitySettings
-# from .catalog_settings import CatalogSettings
+from .catalog_settings import CatalogSettings
+from .utils import snake_to_camel
+
 # from .db_settings import PostgresSettings
 # from .director.settings import DirectorSettings
 # from .director_v2_settings import DirectorV2Settings
@@ -89,7 +90,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
     # SERVICES is osparc-stack with http API
-    # WEBSERVER_CATALOG: Optional[CatalogSettings]
+    WEBSERVER_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
     # WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings]
     # WEBSERVER_DIRECTOR: Optional[DirectorSettings]
     # WEBSERVER_STORAGE: Optional[StorageSettings]

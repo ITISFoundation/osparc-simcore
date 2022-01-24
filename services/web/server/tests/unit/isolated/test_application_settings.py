@@ -172,7 +172,7 @@ def test_app_settings_with_prod_config(
     assert app_settings.WEBSERVER_PROMETHEUS is not None
     assert app_settings.WEBSERVER_REDIS is not None
     assert app_settings.WEBSERVER_TRACING is not None
-
+    assert app_settings.WEBSERVER_CATALOG is not None
     # This is basically how the fields in ApplicationSettings map the trafaret's config file
     #
     # This test compares the config produced by trafaret against
@@ -249,10 +249,10 @@ def test_app_settings_with_prod_config(
             "version": "v0",
         },
         "catalog": {
-            "enabled": True,
-            "host": "${CATALOG_HOST}",
-            "port": "${CATALOG_PORT}",
-            "version": "v0",
+            "enabled": app_settings.WEBSERVER_CATALOG is not None,
+            "host": app_settings.WEBSERVER_CATALOG.CATALOG_HOST,
+            "port": app_settings.WEBSERVER_CATALOG.CATALOG_PORT,
+            "version": app_settings.WEBSERVER_CATALOG.CATALOG_VTAG,
         },
         "rest": {"version": app_settings.API_VTAG, "enabled": True},
         "projects": {"enabled": True},
