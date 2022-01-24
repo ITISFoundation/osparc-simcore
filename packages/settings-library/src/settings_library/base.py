@@ -11,9 +11,10 @@ class DefaultFromEnvFactoryError(ValidationError):
     ...
 
 
-def create_settings_from_env(field):
-    # Keeps a reference of field but MUST nothing should be modified there
-    # cannot pass only field.type_ because @prepare_field still not resolved!
+def create_settings_from_env(field: ModelField):
+    # NOTE: Cannot pass only field.type_ because @prepare_field (when this function is called)
+    #  this value is still not resolved (field.type_ at that moment has a weak_ref).
+    #  Therefore we keep the entire 'field' but MUST be treated here as read-only
 
     def _default_factory():
         """Creates default from sub-settings or None (if nullable)"""
@@ -77,7 +78,6 @@ class BaseCustomSettings(BaseSettings):
 
             field_type = field.type_
             if args := get_args(field_type):
-                # TODO: skip all the way if none of these types
                 field_type = next(a for a in args if a != type(None))
 
             if issubclass(field_type, BaseCustomSettings):
@@ -88,10 +88,7 @@ class BaseCustomSettings(BaseSettings):
                     assert field.field_info.default_factory is None
 
                     field.default_factory = create_settings_from_env(field)
-
-                    # TODO: doc why we are doing this?
-                    # Undefined required -> required=true
-                    # Undefined default and no factor -> default=None
+                    # Having a default value, makes this field automatically optional
                     field.required = False
 
             elif issubclass(field_type, BaseSettings):
@@ -107,5 +104,7 @@ class BaseCustomSettings(BaseSettings):
 
     @classmethod
     def create_from_envs(cls, **overrides):
-        # Legacy. More explicit and pylance does not get confused
+        # Kept for legacy
+        # Optional to use to make the code more readable
+        # More explicit and pylance seems to get less confused
         return cls(**overrides)
