@@ -29,13 +29,14 @@ from .catalog_settings import CatalogSettings
 
 # from .db_settings import PostgresSettings
 from .director.settings import DirectorSettings
-from .utils import snake_to_camel
 
 # from .director_v2_settings import DirectorV2Settings
 # from .email_settings import SmtpSettings
 # from .login.settings import LoginSettings
 # from .resource_manager.settings import ResourceManagerSettings
-# from .storage_settings import StorageSettings
+from .storage_settings import StorageSettings
+from .utils import snake_to_camel
+
 # from .tracing_settings import TracingSettings
 
 
@@ -94,7 +95,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
     # WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings]
     WEBSERVER_DIRECTOR: Optional[DirectorSettings] = Field(auto_default_from_env=True)
-    # WEBSERVER_STORAGE: Optional[StorageSettings]
+    WEBSERVER_STORAGE: Optional[StorageSettings] = Field(auto_default_from_env=True)
 
     # WEBSERVER_ACTIVITY: Optional[ActivitySettings]
     # WEBSERVER_EMAIL: Optional[SmtpSettings]

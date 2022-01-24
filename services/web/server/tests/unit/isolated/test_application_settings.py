@@ -174,6 +174,7 @@ def test_app_settings_with_prod_config(
     assert app_settings.WEBSERVER_TRACING is not None
     assert app_settings.WEBSERVER_CATALOG is not None
     assert app_settings.WEBSERVER_DIRECTOR is not None
+    assert app_settings.WEBSERVER_STORAGE is not None
 
     # This is basically how the fields in ApplicationSettings map the trafaret's config file
     #
@@ -245,10 +246,10 @@ def test_app_settings_with_prod_config(
             and app_settings.WEBSERVER_EMAIL.SMTP_PASSWORD.get_secret_value(),
         },
         "storage": {
-            "enabled": True,
-            "host": "${STORAGE_HOST}",
-            "port": "${STORAGE_PORT}",
-            "version": "v0",
+            "enabled": app_settings.WEBSERVER_STORAGE is not None,
+            "host": app_settings.WEBSERVER_STORAGE.STORAGE_HOST,
+            "port": app_settings.WEBSERVER_STORAGE.STORAGE_PORT,
+            "version": app_settings.WEBSERVER_STORAGE.STORAGE_VTAG,
         },
         "catalog": {
             "enabled": app_settings.WEBSERVER_CATALOG is not None,
