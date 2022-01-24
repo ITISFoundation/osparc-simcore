@@ -322,7 +322,7 @@ properties:
                   - ABORTED
                 type: string
             additionalProperties: false
-          boot_options:
+          bootOptions:
             title: Boot Options
             description: >-
               Some services provide alternative parameters to be injected at
