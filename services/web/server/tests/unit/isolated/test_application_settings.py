@@ -167,6 +167,13 @@ def app_config(request, mock_webserver_service_environment) -> Dict:
 def test_app_settings_with_prod_config(
     app_config: Dict, app_settings: ApplicationSettings
 ):
+
+    assert app_settings.WEBSERVER_EMAIL is not None
+    assert app_settings.WEBSERVER_PROMETHEUS is not None
+    assert app_settings.WEBSERVER_REDIS is not None
+    assert app_settings.WEBSERVER_TRACING is not None
+
+    # This is basically how the fields in ApplicationSettings map the trafaret's config file
     #
     # This test compares the config produced by trafaret against
     # the equilalent fields captured by ApplicationSettings
@@ -182,13 +189,15 @@ def test_app_settings_with_prod_config(
         "main": {
             "host": "0.0.0.0",
             "port": app_settings.WEBSERVER_PORT,
-            "log_level": "${WEBSERVER_LOGLEVEL}",
-            "testing": False,
-            "studies_access_enabled": app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED,
+            "log_level": f"{app_settings.WEBSERVER_LOG_LEVEL}",
+            "testing": False,  # TODO: deprecate!
+            "studies_access_enabled": 1
+            if app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED
+            else 0,
         },
         "tracing": {
-            "enabled": "${TRACING_ENABLED}",
-            "zipkin_endpoint": "${TRACING_ZIPKIN_ENDPOINT}",
+            "enabled": 1 if app_settings.WEBSERVER_TRACING is not None else 0,
+            "zipkin_endpoint": f"{app_settings.WEBSERVER_TRACING.TRACING_ZIPKIN_ENDPOINT}",
         },
         "socketio": {"enabled": True},
         "director": {
@@ -211,10 +220,13 @@ def test_app_settings_with_prod_config(
             "enabled": app_settings.WEBSERVER_POSTGRES is not None,
         },
         "resource_manager": {
-            "enabled": True,
+            "enabled": app_settings.WEBSERVER_REDIS is not None,
             "resource_deletion_timeout_seconds": "${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}",
             "garbage_collection_interval_seconds": "${WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS}",
-            "redis": {"host": "${REDIS_HOST}", "port": "${REDIS_PORT}"},
+            "redis": {
+                "host": app_settings.WEBSERVER_REDIS.REDIS_HOST,
+                "port": app_settings.WEBSERVER_REDIS.REDIS_PORT,
+            },
         },
         "login": {
             "enabled": True,
@@ -237,18 +249,21 @@ def test_app_settings_with_prod_config(
             "version": "v0",
         },
         "catalog": {
+            "enabled": True,
             "host": "${CATALOG_HOST}",
             "port": "${CATALOG_PORT}",
             "version": "v0",
         },
-        "rest": {"version": "v0", "enabled": True},
+        "rest": {"version": app_settings.API_VTAG, "enabled": True},
         "projects": {"enabled": True},
-        "session": {"secret_key": "${WEBSERVER_SESSION_SECRET_KEY}"},
+        "session": {
+            "secret_key": app_settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
+        },
         "activity": {
-            "enabled": True,
-            "prometheus_host": "${WEBSERVER_PROMETHEUS_HOST}",
-            "prometheus_port": "${WEBSERVER_PROMETHEUS_PORT}",
-            "prometheus_api_version": "${WEBSERVER_PROMETHEUS_API_VERSION}",
+            "enabled": app_settings.WEBSERVER_PROMETHEUS is not None,
+            "prometheus_host": app_settings.WEBSERVER_PROMETHEUS.PROMETHEUS_HOST,
+            "prometheus_port": app_settings.WEBSERVER_PROMETHEUS.PROMETHEUS_PORT,
+            "prometheus_api_version": app_settings.WEBSERVER_PROMETHEUS.PROMETHEUS_VTAG,
         },
         "clusters": {"enabled": True},
         "computation": {"enabled": True},
@@ -262,8 +277,10 @@ def test_app_settings_with_prod_config(
         "remote_debug": {"enabled": True},
         "security": {"enabled": True},
         "statics": {"enabled": True},
-        "studies_access": {"enabled": True},
-        "studies_dispatcher": {"enabled": True},
+        "studies_access": {"enabled": app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED},
+        "studies_dispatcher": {
+            "enabled": app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED
+        },
         "tags": {"enabled": True},
         "users": {"enabled": True},
         "version_control": {"enabled": True},

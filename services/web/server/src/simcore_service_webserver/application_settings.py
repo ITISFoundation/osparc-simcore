@@ -2,18 +2,27 @@ import logging
 from typing import Any, Dict, Optional
 
 from aiohttp import web
-from models_library.basic_types import BootModeEnum, BuildTargetEnum, PortInt
+from models_library.basic_types import (
+    BootModeEnum,
+    BuildTargetEnum,
+    LogLevel,
+    PortInt,
+    VersionTag,
+)
 from pydantic import Field
 from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
+from settings_library.prometheus import PrometheusSettings
 from settings_library.redis import RedisSettings
 from settings_library.s3 import S3Settings
+from settings_library.tracing import TracingSettings
+from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 
 from ._constants import APP_SETTINGS_KEY
-from ._meta import API_VERSION, APP_NAME
+from ._meta import API_VERSION, API_VTAG, APP_NAME
 from .utils import snake_to_camel
 
 # from .activity.settings import ActivitySettings
@@ -31,10 +40,11 @@ from .utils import snake_to_camel
 log = logging.getLogger(__name__)
 
 
-class ApplicationSettings(BaseCustomSettings):
+class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # CODE STATICS ---
     API_VERSION: str = API_VERSION
     APP_NAME: str = APP_NAME
+    API_VTAG: VersionTag = API_VTAG
 
     # IMAGE BUILDTIME ---
     # @Makefile
@@ -60,18 +70,23 @@ class ApplicationSettings(BaseCustomSettings):
 
     WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
 
+    WEBSERVER_LOG_LEVEL: LogLevel = Field(
+        LogLevel.WARNING.value,
+        env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+    )
+
     WEBSERVER_DEV_FEATURES_ENABLED: bool = Field(
         False,
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
     )
 
-    WEBSERVER_POSTGRES: PostgresSettings
+    WEBSERVER_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
 
     WEBSERVER_SESSION_SECRET_KEY: SecretStr = Field(  # type: ignore
         ..., description="Secret key to encrypt cookies", min_length=32
     )
 
-    # WEBSERVER_TRACING: Optional[TracingSettings]
+    WEBSERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
     # SERVICES is osparc-stack with http API
     # WEBSERVER_CATALOG: Optional[CatalogSettings]
@@ -86,9 +101,13 @@ class ApplicationSettings(BaseCustomSettings):
 
     # WEBSERVER_RESOURCE_MANAGER: Optional[ResourceManagerSettings]
 
-    WEBSERVER_S3: Optional[S3Settings]
-    WEBSERVER_REDIS: Optional[RedisSettings]
-    WEBSERVER_EMAIL: SMTPSettings
+    WEBSERVER_S3: Optional[S3Settings] = Field(auto_default_from_env=True)
+    WEBSERVER_REDIS: Optional[RedisSettings] = Field(auto_default_from_env=True)
+    WEBSERVER_EMAIL: Optional[SMTPSettings] = Field(auto_default_from_env=True)
+
+    WEBSERVER_PROMETHEUS: Optional[PrometheusSettings] = Field(
+        auto_default_from_env=True
+    )
 
     # WEBSERVER_LOGIN: Optional[LoginSettings]
 
