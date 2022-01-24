@@ -19,8 +19,9 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential, wait_fixed
 
-from ....api.dependencies.database import fetch_repo_outside_of_request
+from ....api.dependencies.database import get_base_repository
 from ....core.settings import DynamicSidecarSettings
+from ....modules.db.repositories import BaseRepository
 from ....models.schemas.dynamic_services import (
     DockerContainerInspect,
     DynamicSidecarStatus,
@@ -54,7 +55,14 @@ from ..errors import (
 from .abc import DynamicSchedulerEvent
 from .events_utils import disabled_directory_watcher
 
+
 logger = logging.getLogger(__name__)
+
+
+def _fetch_repo_outside_of_request(
+    app: FastAPI, repo_type: Type[BaseRepository]
+) -> BaseRepository:
+    return get_base_repository(engine=app.state.engine, repo_type=repo_type)
 
 
 def _get_director_v0_client(app: FastAPI) -> DirectorV0Client:
@@ -103,7 +111,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         director_v0_client: DirectorV0Client = _get_director_v0_client(app)
 
         # fetching project form DB and fetching user settings
-        projects_repository = fetch_repo_outside_of_request(app, ProjectsRepository)
+        projects_repository = _fetch_repo_outside_of_request(app, ProjectsRepository)
         project: ProjectAtDB = await projects_repository.get_project(
             project_id=scheduler_data.project_id
         )
