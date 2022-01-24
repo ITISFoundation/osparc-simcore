@@ -26,10 +26,11 @@ from ._meta import API_VERSION, API_VTAG, APP_NAME
 
 # from .activity.settings import ActivitySettings
 from .catalog_settings import CatalogSettings
-from .utils import snake_to_camel
 
 # from .db_settings import PostgresSettings
-# from .director.settings import DirectorSettings
+from .director.settings import DirectorSettings
+from .utils import snake_to_camel
+
 # from .director_v2_settings import DirectorV2Settings
 # from .email_settings import SmtpSettings
 # from .login.settings import LoginSettings
@@ -92,7 +93,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # SERVICES is osparc-stack with http API
     WEBSERVER_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
     # WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings]
-    # WEBSERVER_DIRECTOR: Optional[DirectorSettings]
+    WEBSERVER_DIRECTOR: Optional[DirectorSettings] = Field(auto_default_from_env=True)
     # WEBSERVER_STORAGE: Optional[StorageSettings]
 
     # WEBSERVER_ACTIVITY: Optional[ActivitySettings]

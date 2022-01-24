@@ -1,38 +1,39 @@
-from typing import Dict, Optional, Tuple
+from functools import cached_property
+from typing import Dict, Tuple
 
 from aiohttp.web import Application
 from models_library.basic_types import PortInt, VersionTag
-from pydantic import AnyHttpUrl, BaseSettings, Field, validator
+from settings_library.base import BaseCustomSettings
+from settings_library.utils_service import DEFAULT_AIOHTTP_PORT, MixinServiceSettings
+from yarl import URL
 
+from .._constants import APP_SETTINGS_KEY
 from .config import get_config
 
 APP_DIRECTOR_API_KEY = __name__ + ".director_api"
 
 
-class DirectorSettings(BaseSettings):
-    enabled: bool = True
-    host: str = "director"
-    port: PortInt = 8001
-    vtag: VersionTag = Field(
-        "v0", alias="version", description="Director service API's version tag"
-    )
+class DirectorSettings(BaseCustomSettings, MixinServiceSettings):
+    DIRECTOR_HOST: str = "director"
+    DIRECTOR_PORT: PortInt = DEFAULT_AIOHTTP_PORT
+    DIRECTOR_VTAG: VersionTag = "v0"
 
-    url: Optional[AnyHttpUrl] = None
-
-    @validator("url", pre=True)
-    @classmethod
-    def autofill_url(cls, v, values):
-        if v is None:
-            return AnyHttpUrl.build(
-                scheme="http",
-                host=values["host"],
-                port=f"{values['port']}",
-                path=f"/{values['vtag']}",
-            )
-        return v
+    @cached_property
+    def base_url(self) -> URL:
+        return URL(self._build_api_base_url(prefix="DIRECTOR"))
 
 
 def assert_valid_config(app: Application) -> Tuple[Dict, DirectorSettings]:
     cfg = get_config(app)
-    settings = DirectorSettings(**cfg)
-    return cfg, settings
+
+    app_settings = app[APP_SETTINGS_KEY]
+
+    assert app_settings.WEBSERVER_DIRECTOR is not None
+    assert cfg == {
+        "enabled": app_settings.WEBSERVER_DIRECTOR is not None,
+        "host": app_settings.WEBSERVER_DIRECTOR.DIRECTOR_HOST,
+        "port": app_settings.WEBSERVER_DIRECTOR.DIRECTOR_PORT,
+        "version": app_settings.WEBSERVER_DIRECTOR.DIRECTOR_VTAG,
+    }
+
+    return cfg, app_settings.WEBSERVER_DIRECTOR

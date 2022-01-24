@@ -173,6 +173,8 @@ def test_app_settings_with_prod_config(
     assert app_settings.WEBSERVER_REDIS is not None
     assert app_settings.WEBSERVER_TRACING is not None
     assert app_settings.WEBSERVER_CATALOG is not None
+    assert app_settings.WEBSERVER_DIRECTOR is not None
+
     # This is basically how the fields in ApplicationSettings map the trafaret's config file
     #
     # This test compares the config produced by trafaret against
@@ -201,10 +203,10 @@ def test_app_settings_with_prod_config(
         },
         "socketio": {"enabled": True},
         "director": {
-            "enabled": True,
-            "host": "${DIRECTOR_HOST}",
-            "port": "${DIRECTOR_PORT}",
-            "version": "v0",
+            "enabled": app_settings.WEBSERVER_DIRECTOR is not None,
+            "host": app_settings.WEBSERVER_DIRECTOR.DIRECTOR_HOST,
+            "port": app_settings.WEBSERVER_DIRECTOR.DIRECTOR_PORT,
+            "version": app_settings.WEBSERVER_DIRECTOR.DIRECTOR_VTAG,
         },
         "db": {
             "postgres": {
