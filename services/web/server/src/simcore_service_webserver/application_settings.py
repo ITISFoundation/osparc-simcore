@@ -33,7 +33,7 @@ from .director_v2_settings import DirectorV2Settings
 
 # from .email_settings import SmtpSettings
 # from .login.settings import LoginSettings
-# from .resource_manager.settings import ResourceManagerSettings
+from .resource_manager.settings import ResourceManagerSettings
 from .storage_settings import StorageSettings
 from .utils import snake_to_camel
 
@@ -91,7 +91,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     WEBSERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
-    # SERVICES is osparc-stack with http API
+    # SERVICES is osparc-stack with http API ------------------------------------------------------
     WEBSERVER_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
     WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings] = Field(
         auto_default_from_env=True
@@ -104,7 +104,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     WEBSERVER_STUDIES_ACCESS_ENABLED: bool
 
-    # WEBSERVER_RESOURCE_MANAGER: Optional[ResourceManagerSettings]
+    WEBSERVER_RESOURCE_MANAGER: Optional[ResourceManagerSettings] = Field(
+        auto_default_from_env=True
+    )
 
     WEBSERVER_S3: Optional[S3Settings] = Field(auto_default_from_env=True)
     WEBSERVER_REDIS: Optional[RedisSettings] = Field(auto_default_from_env=True)

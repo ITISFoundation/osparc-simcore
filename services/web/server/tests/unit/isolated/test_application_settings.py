@@ -176,6 +176,7 @@ def test_app_settings_with_prod_config(
     assert app_settings.WEBSERVER_DIRECTOR is not None
     assert app_settings.WEBSERVER_STORAGE is not None
     assert app_settings.WEBSERVER_DIRECTOR_V2 is not None
+    assert app_settings.WEBSERVER_RESOURCE_MANAGER is not None
 
     # This is basically how the fields in ApplicationSettings map the trafaret's config file
     #
@@ -224,10 +225,14 @@ def test_app_settings_with_prod_config(
             "enabled": app_settings.WEBSERVER_POSTGRES is not None,
         },
         "resource_manager": {
-            "enabled": app_settings.WEBSERVER_REDIS is not None,
-            "resource_deletion_timeout_seconds": "${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}",
-            "garbage_collection_interval_seconds": "${WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS}",
+            "enabled": (
+                app_settings.WEBSERVER_REDIS is not None
+                and app_settings.WEBSERVER_RESOURCE_MANAGER is not None
+            ),
+            "resource_deletion_timeout_seconds": app_settings.WEBSERVER_RESOURCE_MANAGER.RESOURCE_MANAGER_RESOURCE_TTL_S,
+            "garbage_collection_interval_seconds": app_settings.WEBSERVER_RESOURCE_MANAGER.RESOURCE_MANAGER_GARBAGE_COLLECTION_INTERVAL_S,
             "redis": {
+                "enabled": app_settings.WEBSERVER_REDIS is not None,
                 "host": app_settings.WEBSERVER_REDIS.REDIS_HOST,
                 "port": app_settings.WEBSERVER_REDIS.REDIS_PORT,
             },
