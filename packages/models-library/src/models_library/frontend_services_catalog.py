@@ -9,7 +9,7 @@
 import functools
 from typing import Iterator, Optional
 
-from .functions_catalog.sensitivity import sensitivity_meta
+from .functions_catalog import filepicker, sensitivity
 from .services import Author, ServiceDockerData, ServiceType
 
 FRONTEND_SERVICE_KEY_PREFIX = "simcore/services/frontend"
@@ -176,11 +176,11 @@ def _create_iterator_consumer_probe_int() -> ServiceDockerData:
 
 
 _FACTORY_FUNCTIONS = [
-    _create_file_picker_service,
+    filepicker.create_metadata,
     _create_node_group_service,
     _create_data_iterator_int_range,
     _create_iterator_consumer_probe_int,
-    sensitivity_meta,
+    sensitivity.create_metadata,
 ] + [
     functools.partial(_create_constant_node_def, output_type=p)
     for p in ["number", "boolean", "integer"]

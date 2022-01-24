@@ -10,17 +10,10 @@ OM = Author(name="Odei Maiz", email="maiz@itis.swiss", affiliation="IT'IS")
 #
 
 
-def to_schema(type_: Any) -> Dict[str, Any]:
-    # FIXME: this is chapuzaaaaa
-    # NOTE: schema_of has already a cache in place of 2MB
-    schema = schema_of(type_)
-    schema.pop("title")
-    if set(schema.keys()) == "type":
-        return schema["type"]
-    return schema
+LIST_NUMBERS_SCHEMA: Dict[str, Any] = schema_of(List[float], title="list[float]")
 
 
-def sensitivity_meta() -> ServiceDockerData:
+def create_metadata() -> ServiceDockerData:
     return ServiceDockerData(
         key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/sensitivity",
         version="1.0.0",
@@ -41,34 +34,34 @@ def _io_signature() -> Dict[str, Any]:
             "in_1": {
                 "label": "paramrefs",
                 "description": "reference parameters",
-                "type": to_schema(List[float]),
+                "schema": LIST_NUMBERS_SCHEMA,
             },
             "in_2": {
                 "label": "paramdiff",
                 "description": "diff parameters",
-                "type": to_schema(List[float]),
+                "schema": LIST_NUMBERS_SCHEMA,
             },
             "in_3": {
                 "label": "diff_or_fact",
                 "description": "Applies difference (true) or factor (false)",
-                "type": to_schema(bool),
+                "type": "boolean",
             },
         },
         "outputs": {
             "out_1": {
                 "label": "i",
                 "description": "dimension index that was modified",
-                "type": to_schema(int),
+                "type": "integer",
             },
             "out_2": {
                 "label": "paramtestplus",
-                "description": "increased parameter",
-                "type": to_schema(List[float]),
+                "description": "increased parameters",
+                "schema": LIST_NUMBERS_SCHEMA,
             },
             "out_3": {
                 "label": "paramtestminus",
-                "description": "decreased parameter",
-                "type": to_schema(List[float]),
+                "description": "decreased parameters",
+                "schema": LIST_NUMBERS_SCHEMA,
             },
         },
     }
