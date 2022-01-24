@@ -1,31 +1,32 @@
-""" db subsystem's configuration
-
-    - config-file schema
-    - settings
-"""
-from typing import Dict, Optional
+from typing import Dict
 
 from aiohttp.web import Application
 from models_library.settings.postgres import PostgresSettings
-from pydantic import BaseSettings
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
+from settings_library.postgres import PostgresSettings
 
 from .db_config import CONFIG_SECTION_NAME
 
 
-class PgSettings(PostgresSettings):
-    endpoint: Optional[str] = None  # TODO: PC remove or deprecate that one
-
-    class Config:
-        fields = {"db": "database"}
-
-
-class DatabaseSettings(BaseSettings):
-    enabled: bool = True
-    postgres: PgSettings
-
-
 def assert_valid_config(app: Application) -> Dict:
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    _settings = DatabaseSettings(**cfg)
+
+    app_settings = app[APP_SETTINGS_KEY]
+
+    assert isinstance(app_settings.WEBSERVER_POSTGRES, PostgresSettings)  # nosec
+    assert app_settings.WEBSERVER_POSTGRES is not None
+
+    assert cfg == {  # nosec
+        "postgres": {
+            "database": app_settings.WEBSERVER_POSTGRES.POSTGRES_DB,
+            "endpoint": f"{app_settings.WEBSERVER_POSTGRES.POSTGRES_HOST}:{app_settings.WEBSERVER_POSTGRES.POSTGRES_PORT}",
+            "host": app_settings.WEBSERVER_POSTGRES.POSTGRES_HOST,
+            "maxsize": app_settings.WEBSERVER_POSTGRES.POSTGRES_MAXSIZE,
+            "minsize": app_settings.WEBSERVER_POSTGRES.POSTGRES_MINSIZE,
+            "password": app_settings.WEBSERVER_POSTGRES.POSTGRES_PASSWORD.get_secret_value(),
+            "port": app_settings.WEBSERVER_POSTGRES.POSTGRES_PORT,
+            "user": app_settings.WEBSERVER_POSTGRES.POSTGRES_USER,
+        },
+        "enabled": app_settings.WEBSERVER_POSTGRES is not None,
+    }
     return cfg
