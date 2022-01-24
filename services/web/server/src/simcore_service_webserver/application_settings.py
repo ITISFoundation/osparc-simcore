@@ -32,7 +32,7 @@ from .director.settings import DirectorSettings
 from .director_v2_settings import DirectorV2Settings
 
 # from .email_settings import SmtpSettings
-# from .login.settings import LoginSettings
+from .login.settings import LoginSettings
 from .resource_manager.settings import ResourceManagerSettings
 from .storage_settings import StorageSettings
 from .utils import snake_to_camel
@@ -116,7 +116,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True
     )
 
-    # WEBSERVER_LOGIN: Optional[LoginSettings]
+    WEBSERVER_LOGIN: Optional[LoginSettings] = Field(auto_default_from_env=True)
 
     class Config(BaseCustomSettings.Config):
         fields = {

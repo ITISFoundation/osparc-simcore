@@ -177,6 +177,7 @@ def test_app_settings_with_prod_config(
     assert app_settings.WEBSERVER_STORAGE is not None
     assert app_settings.WEBSERVER_DIRECTOR_V2 is not None
     assert app_settings.WEBSERVER_RESOURCE_MANAGER is not None
+    assert app_settings.WEBSERVER_LOGIN is not None
 
     # This is basically how the fields in ApplicationSettings map the trafaret's config file
     #
@@ -238,9 +239,13 @@ def test_app_settings_with_prod_config(
             },
         },
         "login": {
-            "enabled": True,
-            "registration_invitation_required": "${WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED}",
-            "registration_confirmation_required": "${WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED}",
+            "enabled": app_settings.WEBSERVER_LOGIN is not None,
+            "registration_invitation_required": 1
+            if app_settings.WEBSERVER_LOGIN.LOGIN_REGISTRATION_INVITATION_REQUIRED
+            else 0,
+            "registration_confirmation_required": 1
+            if app_settings.WEBSERVER_LOGIN.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
+            else 0,
         },
         "smtp": {
             "sender": app_settings.WEBSERVER_EMAIL.SMTP_SENDER,
