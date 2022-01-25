@@ -12,6 +12,7 @@ from pydantic import (
     Extra,
     Field,
     HttpUrl,
+    Json,
     StrictBool,
     StrictFloat,
     StrictInt,
@@ -37,10 +38,12 @@ KEY_RE = SERVICE_KEY_RE  # TODO: deprecate this global constant by SERVICE_KEY_R
 SERVICE_NETWORK_RE = r"^([a-zA-Z0-9_-]+)$"
 
 
-PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
+PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|as_schema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
 PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"
 
 FILENAME_RE = r".+"
+
+LATEST_INTEGRATION_VERSION = "1.0.0"
 
 PropertyName = constr(regex=PROPERTY_KEY_RE)
 FileName = constr(regex=FILENAME_RE)
@@ -139,9 +142,9 @@ class Widget(BaseModel):
         extra = Extra.forbid
 
 
-class ServiceProperty(BaseModel):
+class BaseServiceIO(BaseModel):
     """
-    Metadata on a service input or output port
+    Base class for service input/outputs
     """
 
     ## management
@@ -182,6 +185,10 @@ class ServiceProperty(BaseModel):
         regex=PROPERTY_TYPE_RE,
     )
 
+    content_schema: Optional[Json] = Field(
+        None, description="jsonschema of this input/output. Required when type='schema'"
+    )
+
     # value
     file_to_key_map: Optional[Dict[FileName, PropertyName]] = Field(
         None,
@@ -199,8 +206,19 @@ class ServiceProperty(BaseModel):
         extra = Extra.forbid
         # TODO: all alias with camecase
 
+    @validator("content_schema")
+    @classmethod
+    def check_type_is_set_to_schema(cls, v, values):
+        # TODO: content_schema should be a valid json-schema
+        if v is not None and (ptype := values["property_type"]) != "as_schema":
+            raise ValueError(
+                "content_schema is defined but set the wrong type."
+                f"Expected type=as_schema but got ={ptype}."
+            )
+        return v
 
-class ServiceInput(ServiceProperty):
+
+class ServiceInput(BaseServiceIO):
     """
     Metadata on a service input port
     """
@@ -214,7 +232,7 @@ class ServiceInput(ServiceProperty):
         description="custom widget to use instead of the default one determined from the data-type",
     )
 
-    class Config(ServiceProperty.Config):
+    class Config(BaseServiceIO.Config):
         schema_extra = {
             "examples": [
                 # file-wo-widget:
@@ -247,14 +265,14 @@ class ServiceInput(ServiceProperty):
         }
 
 
-class ServiceOutput(ServiceProperty):
+class ServiceOutput(BaseServiceIO):
     widget: Optional[Widget] = Field(
         None,
         description="custom widget to use instead of the default one determined from the data-type",
         deprecated=True,
     )
 
-    class Config(ServiceProperty.Config):
+    class Config(BaseServiceIO.Config):
         schema_extra = {
             "examples": [
                 {
