@@ -7,7 +7,6 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from models_library.services import EnvVarKey
 from pydantic import BaseModel, EmailStr, Extra, Field, HttpUrl, constr, validator
 
 from .basic_regex import DATE_RE, UUID_RE
@@ -88,14 +87,6 @@ class ProjectAtDB(ProjectCommons):
         False, description="Defines if a study is available publicly"
     )
 
-    boot_options: Optional[Dict[NodeIDStr, Dict[EnvVarKey, str]]] = Field(
-        description=(
-            "Some services provide alternative parameters to be injected at boot time. "
-            "The user selection should be stored here, and it will overwrite the "
-            "services's defaults."
-        )
-    )
-
     @validator("project_type", pre=True)
     @classmethod
     def convert_sql_alchemy_enum(cls, v):
@@ -157,14 +148,6 @@ class Project(ProjectCommons):
 
     # Dev only
     dev: Optional[Dict] = Field(description="object used for development purposes only")
-
-    boot_options: Optional[Dict[NodeIDStr, Dict[EnvVarKey, str]]] = Field(
-        description=(
-            "Some services provide alternative parameters to be injected at boot time. "
-            "The user selection should be stored here, and it will overwrite the "
-            "services's defaults."
-        )
-    )
 
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"
