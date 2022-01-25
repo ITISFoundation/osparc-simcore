@@ -1826,10 +1826,8 @@ paths:
                                     - integer
                                     - boolean
                                     - number
+                                    - string
                                     - 'null'
-                                - type: string
-                                  format: json-string
-                                - type: string
                                 - type: object
                                   additionalProperties: false
                                   required:
@@ -1904,10 +1902,8 @@ paths:
                                     - integer
                                     - boolean
                                     - number
+                                    - string
                                     - 'null'
-                                - type: string
-                                  format: json-string
-                                - type: string
                                 - type: object
                                   additionalProperties: false
                                   required:

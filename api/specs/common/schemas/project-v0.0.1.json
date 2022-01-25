@@ -176,15 +176,9 @@
                         "integer",
                         "boolean",
                         "number",
+                        "string",
                         "null"
                       ]
-                    },
-                    {
-                      "type": "string",
-                      "format": "json-string"
-                    },
-                    {
-                      "type": "string"
                     },
                     {
                       "type": "object",
@@ -295,15 +289,9 @@
                         "integer",
                         "boolean",
                         "number",
+                        "string",
                         "null"
                       ]
-                    },
-                    {
-                      "type": "string",
-                      "format": "json-string"
-                    },
-                    {
-                      "type": "string"
                     },
                     {
                       "type": "object",
