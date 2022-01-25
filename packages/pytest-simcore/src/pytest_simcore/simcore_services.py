@@ -19,8 +19,8 @@ from tenacity.wait import wait_random
 from yarl import URL
 
 from .helpers.constants import MINUTE
+from .helpers.typing_env import EnvVarsDict
 from .helpers.utils_docker import get_ip, get_service_published_port
-from .helpers.utils_environs import EnvVarsDict
 
 log = logging.getLogger(__name__)
 

@@ -46,10 +46,6 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       });
   },
 
-  events: {
-    "updateServices": "qx.event.type.Data"
-  },
-
   statics: {
     gridPos: {
       infoButton: 0,
@@ -57,7 +53,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       name: 2,
       currentVersion: 3,
       latestVersion: 4,
-      updateButton: 5
+      updateButton: 5,
+      bootMode: 6
     }
   },
 
@@ -97,7 +94,6 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       };
       osparc.data.Resources.fetch("studies", "put", params)
         .then(updatedData => {
-          this.fireDataEvent("updateServices", updatedData);
           this.__studyData = osparc.data.model.Study.deepCloneStudyObject(updatedData);
           this.__populateLayout();
         })
@@ -108,6 +104,31 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         .finally(() => {
           fetchButton.setFetching(false);
           this.setEnabled(true);
+        });
+    },
+
+    __updateBootMode: function(nodeId, newBootModeId) {
+      if (!("bootOptions" in this.__studyData["workbench"][nodeId])) {
+        this.__studyData["workbench"][nodeId]["bootOptions"] = {};
+      }
+      this.__studyData["workbench"][nodeId]["bootOptions"] = {
+        "boot_mode": newBootModeId
+      };
+
+      const params = {
+        url: {
+          "studyId": this.__studyData["uuid"]
+        },
+        data: this.__studyData
+      };
+      osparc.data.Resources.fetch("studies", "put", params)
+        .then(updatedData => {
+          this.__studyData = osparc.data.model.Study.deepCloneStudyObject(updatedData);
+          this.__populateLayout();
+        })
+        .catch(err => {
+          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Something went wrong updating the Boot Mode"), "ERROR");
+          console.error(err);
         });
     },
 
@@ -151,6 +172,13 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       }), {
         row: i,
         column: this.self().gridPos.latestVersion
+      });
+      this._add(new qx.ui.basic.Label(this.tr("Boot Mode")).set({
+        font: "title-14",
+        toolTipText: this.tr("Select boot type")
+      }), {
+        row: i,
+        column: this.self().gridPos.bootMode
       });
 
       const updatableServices = [];
@@ -235,6 +263,37 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
           this._add(updateButton, {
             row: i,
             column: this.self().gridPos.updateButton
+          });
+        }
+
+        if (canIWrite && "boot-options" in nodeMetaData && "boot_mode" in nodeMetaData["boot-options"]) {
+          const bootModesMD = nodeMetaData["boot-options"]["boot_mode"];
+          const bootModeSB = new qx.ui.form.SelectBox();
+          const sbItems = [];
+          Object.entries(bootModesMD["items"]).forEach(([bootModeId, bootModeMD]) => {
+            const sbItem = new qx.ui.form.ListItem(bootModeMD["label"]);
+            sbItem.bootModeId = bootModeId;
+            bootModeSB.add(sbItem);
+            sbItems.push(sbItem);
+          });
+          let defaultBMId = null;
+          if ("bootOptions" in this.__studyData["workbench"][nodeId] && "boot_mode" in this.__studyData["workbench"][nodeId]["bootOptions"]) {
+            defaultBMId = this.__studyData["workbench"][nodeId]["bootOptions"]["boot_mode"];
+          } else {
+            defaultBMId = bootModesMD["default"];
+          }
+          sbItems.forEach(sbItem => {
+            if (defaultBMId === sbItem.bootModeId) {
+              bootModeSB.setSelection([sbItem]);
+            }
+          });
+          bootModeSB.addListener("changeSelection", e => {
+            let newBootModeId = e.getData()[0].bootModeId;
+            this.__updateBootMode(nodeId, newBootModeId);
+          }, this);
+          this._add(bootModeSB, {
+            row: i,
+            column: this.self().gridPos.bootMode
           });
         }
 

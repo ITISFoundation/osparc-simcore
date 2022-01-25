@@ -39,13 +39,13 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         None, description="Pennsieve API secret ONLY for testing purposes"
     )
 
-    STORAGE_POSTGRES: PostgresSettings
+    STORAGE_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
 
-    STORAGE_S3: S3Settings
+    STORAGE_S3: S3Settings = Field(auto_default_from_env=True)
 
-    STORAGE_TRACING: Optional[TracingSettings]
+    STORAGE_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
-    DATCORE_ADAPTER: DatcoreAdapterSettings
+    DATCORE_ADAPTER: DatcoreAdapterSettings = Field(auto_default_from_env=True)
 
     STORAGE_SYNC_METADATA_TIMEOUT: PositiveInt = Field(
         180, description="Timeout (seconds) for metadata sync task"
