@@ -8,14 +8,14 @@ from typing import Optional
 from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
-from settings_library.utils_service import DEFAULT_AIOHTTP_PORT, MixinServiceSettings
+from settings_library.utils_service import MixinServiceSettings
 
 
 def test_mixing_service_settings_usage(monkeypatch):
     # this test provides an example of usage
     class MySettings(BaseCustomSettings, MixinServiceSettings):
         MY_HOST: str = "example.com"
-        MY_PORT: PortInt = DEFAULT_AIOHTTP_PORT
+        MY_PORT: PortInt = 8000
         MY_VTAG: Optional[VersionTag] = None
 
         # optional

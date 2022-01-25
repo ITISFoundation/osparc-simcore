@@ -24,6 +24,11 @@ def _get_environment_variables(
 ) -> Dict[str, str]:
     registry_settings = app_settings.DIRECTOR_V2_DOCKER_REGISTRY
     rabbit_settings = app_settings.DIRECTOR_V2_RABBITMQ
+
+    state_exclude = []
+    if scheduler_data.paths_mapping.state_exclude is not None:
+        state_exclude = scheduler_data.paths_mapping.state_exclude
+
     return {
         "SIMCORE_HOST_NAME": scheduler_data.service_name,
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
@@ -32,8 +37,7 @@ def _get_environment_variables(
         "DY_SIDECAR_STATE_PATHS": json_dumps(
             [f"{x}" for x in scheduler_data.paths_mapping.state_paths]
         ),
-        # FIXME: Below will be relaced with proper value when in future PR
-        "DY_SIDECAR_STATE_EXCLUDE": json_dumps([]),
+        "DY_SIDECAR_STATE_EXCLUDE": json_dumps([f"{x}" for x in state_exclude]),
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
         "DY_SIDECAR_PROJECT_ID": f"{scheduler_data.project_id}",
         "DY_SIDECAR_NODE_ID": f"{scheduler_data.node_uuid}",
@@ -102,7 +106,7 @@ def get_dynamic_sidecar_spec(
         mounts.append(
             DynamicSidecarVolumesPathsResolver.mount_entry(
                 compose_namespace=compose_namespace,
-                state_path=path_to_mount,
+                path=path_to_mount,
                 node_uuid=f"{scheduler_data.node_uuid}",
             )
         )

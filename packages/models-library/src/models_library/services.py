@@ -21,6 +21,7 @@ from pydantic import (
 from pydantic.types import PositiveInt
 
 from .basic_regex import VERSION_RE
+from .boot_options import BootOption, BootOptions
 
 # NOTE: needs to end with / !!
 SERVICE_KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$"
@@ -373,6 +374,12 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
         ..., description="definition of the outputs of this node"
     )
 
+    boot_options: Optional[BootOptions] = Field(
+        None,
+        alias="boot-options",
+        description="Service defined boot options. These get injected in the service as env variables.",
+    )
+
     class Config:
         description = "Description of a simcore node 'class' with input and output"
         extra = Extra.forbid
@@ -452,6 +459,18 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
                             "type": "data:*/*",
                             "fileToKeyMap": {"output_data.zip": "output_1"},
                         }
+                    },
+                    "boot-options": {
+                        "example_service_defined_boot_mode": BootOption.Config.schema_extra[
+                            "examples"
+                        ][
+                            0
+                        ],
+                        "example_service_defined_theme_selection": BootOption.Config.schema_extra[
+                            "examples"
+                        ][
+                            1
+                        ],
                     },
                 },
             ]

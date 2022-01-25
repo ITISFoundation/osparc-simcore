@@ -1,10 +1,17 @@
+import json
 import logging
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, Type
 
 import httpx
 from fastapi import FastAPI
-from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from models_library.projects import ProjectAtDB
+from models_library.projects_nodes import Node
+from models_library.service_settings_labels import (
+    SimcoreServiceLabels,
+    SimcoreServiceSettingsLabel,
+)
+from models_library.services import ServiceKeyVersion
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
@@ -12,13 +19,16 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential, wait_fixed
 
+from ....api.dependencies.database import get_base_repository
 from ....core.settings import DynamicSidecarSettings
+from ....modules.db.repositories import BaseRepository
 from ....models.schemas.dynamic_services import (
     DockerContainerInspect,
     DynamicSidecarStatus,
     SchedulerData,
 )
 from ....modules.director_v0 import DirectorV0Client
+from ...db.repositories.projects import ProjectsRepository
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     create_network,
@@ -38,13 +48,21 @@ from ..docker_service_specs import (
     merge_settings_before_use,
 )
 from ..errors import (
-    DynamicSidecarNetworkError,
+    DynamicSidecarUnexpectedResponseStatus,
     EntrypointContainerNotFoundError,
     GenericDockerError,
 )
 from .abc import DynamicSchedulerEvent
+from .events_utils import disabled_directory_watcher
+
 
 logger = logging.getLogger(__name__)
+
+
+def _fetch_repo_outside_of_request(
+    app: FastAPI, repo_type: Type[BaseRepository]
+) -> BaseRepository:
+    return get_base_repository(engine=app.state.engine, repo_type=repo_type)
 
 
 def _get_director_v0_client(app: FastAPI) -> DirectorV0Client:
@@ -91,10 +109,27 @@ class CreateSidecars(DynamicSchedulerEvent):
         # the provided docker-compose spec
         # also other encodes the env vars to target the proper container
         director_v0_client: DirectorV0Client = _get_director_v0_client(app)
+
+        # fetching project form DB and fetching user settings
+        projects_repository = _fetch_repo_outside_of_request(app, ProjectsRepository)
+        project: ProjectAtDB = await projects_repository.get_project(
+            project_id=scheduler_data.project_id
+        )
+
+        node_uuid_str = str(scheduler_data.node_uuid)
+        node: Optional[Node] = project.workbench.get(node_uuid_str)
+        boot_options = (
+            node.boot_options
+            if node is not None and node.boot_options is not None
+            else {}
+        )
+        logger.info("%s", f"{boot_options=}")
+
         settings: SimcoreServiceSettingsLabel = await merge_settings_before_use(
             director_v0_client=director_v0_client,
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
+            service_user_selection_boot_options=boot_options,
         )
 
         # these configuration should guarantee 245 address network
@@ -178,7 +213,7 @@ class GetStatus(DynamicSchedulerEvent):
             ] = await dynamic_sidecar_client.containers_inspect(
                 dynamic_sidecar_endpoint
             )
-        except (httpx.HTTPError, DynamicSidecarNetworkError):
+        except (httpx.HTTPError, DynamicSidecarUnexpectedResponseStatus):
             # After the service creation it takes a bit of time for the container to start
             # If the same message appears in the log multiple times in a row (for the same
             # service) something might be wrong with the service.
@@ -216,11 +251,37 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
-        logger.info("Calling into dynamic-sidecar to restore state")
-        await dynamic_sidecar_client.service_restore_state(dynamic_sidecar_endpoint)
-        logger.info("State restored by dynamic-sidecar")
+        async with disabled_directory_watcher(
+            dynamic_sidecar_client, dynamic_sidecar_endpoint
+        ):
+            # below tasks can take a while, running them in parallel
+            await logged_gather(
+                dynamic_sidecar_client.service_restore_state(dynamic_sidecar_endpoint),
+                dynamic_sidecar_client.service_pull_output_ports(
+                    dynamic_sidecar_endpoint
+                ),
+            )
 
-        scheduler_data.dynamic_sidecar.service_environment_prepared = True
+            # inside this directory create the missing dirs, fetch those form the labels
+            director_v0_client: DirectorV0Client = _get_director_v0_client(app)
+            simcore_service_labels: SimcoreServiceLabels = (
+                await director_v0_client.get_service_labels(
+                    service=ServiceKeyVersion(
+                        key=scheduler_data.key, version=scheduler_data.version
+                    )
+                )
+            )
+            service_outputs_labels = json.loads(
+                simcore_service_labels.dict().get("io.simcore.outputs", "{}")
+            ).get("outputs", {})
+            logger.debug(
+                "Creating dirs from service outputs labels: %s", service_outputs_labels
+            )
+            await dynamic_sidecar_client.service_outputs_create_dirs(
+                dynamic_sidecar_endpoint, service_outputs_labels
+            )
+
+            scheduler_data.dynamic_sidecar.service_environment_prepared = True
 
 
 class CreateUserServices(DynamicSchedulerEvent):

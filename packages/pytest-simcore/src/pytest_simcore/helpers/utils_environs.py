@@ -2,15 +2,21 @@
 
 """
 import re
+import warnings
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List
 
 import yaml
 
-EnvVarsDict = Dict[str, Union[str, None]]
+from .typing_env import EnvVarsDict
 
 VARIABLE_SUBSTITUTION = re.compile(r"\$\{(\w+)(?:(:{0,1}[-?]{0,1})(.*))?\}$")
+
+warnings.warn(
+    f"{__name__} is deprecated, use instead pytest_simcore.helpers.utils_envs",
+    DeprecationWarning,
+)
 
 
 def _load_env(file_handler) -> Dict:
@@ -36,7 +42,7 @@ def eval_environs_in_docker_compose(
     docker_compose_dir: Path,
     host_environ: Dict = None,
     *,
-    use_env_devel=True
+    use_env_devel=True,
 ):
     """Resolves environments in docker compose and sets them under 'environment' section
 
@@ -56,7 +62,7 @@ def replace_environs_in_docker_compose_service(
     docker_compose_dir: Path,
     host_environ: Dict = None,
     *,
-    use_env_devel=True
+    use_env_devel=True,
 ):
     """Resolves environments in docker-compose's service section,
     drops any reference to env_file and sets all
@@ -107,7 +113,7 @@ def eval_service_environ(
     host_environ: Dict = None,
     image_environ: Dict = None,
     *,
-    use_env_devel=True
+    use_env_devel=True,
 ) -> EnvVarsDict:
     """Deduces a service environment with it runs in a stack from confirmation
 

@@ -211,8 +211,23 @@ def services_node_uuids(
 
 
 @pytest.fixture
-def current_study(project: Callable, fake_dy_workbench: Dict[str, Any]) -> ProjectAtDB:
-    return project(workbench=fake_dy_workbench)
+async def current_study(
+    project: Callable,
+    fake_dy_workbench: Dict[str, Any],
+    async_client: httpx.AsyncClient,
+) -> ProjectAtDB:
+    project_at_db = project(workbench=fake_dy_workbench)
+
+    # create entries in comp_task table in order to pull output ports
+    await create_pipeline(
+        async_client,
+        project=project_at_db,
+        user_id=project_at_db.prj_owner,
+        start_pipeline=False,
+        expected_response_status_code=status.HTTP_201_CREATED,
+    )
+
+    return project_at_db
 
 
 @pytest.fixture

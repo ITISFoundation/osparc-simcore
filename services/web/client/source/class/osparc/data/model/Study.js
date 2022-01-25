@@ -496,6 +496,9 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     __updateModel: function(data) {
+      if ("dev" in data) {
+        delete data["dev"];
+      }
       Object.keys(data).forEach(key => {
         if (this.self().IgnoreModelizationProps.includes(key)) {
           delete data[key];

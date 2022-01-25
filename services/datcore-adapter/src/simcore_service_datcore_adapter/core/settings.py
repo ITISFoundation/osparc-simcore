@@ -26,6 +26,8 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         env=["DATCORE-ADAPTER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
 
-    PENNSIEVE: PennsieveSettings
+    PENNSIEVE: PennsieveSettings = Field(auto_default_from_env=True)
 
-    DATCORE_ADAPTER_TRACING: Optional[TracingSettings] = None
+    DATCORE_ADAPTER_TRACING: Optional[TracingSettings] = Field(
+        auto_default_from_env=True
+    )

@@ -158,7 +158,9 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
     )
 
-    DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings
+    DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
+        auto_default_from_env=True
+    )
 
     DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
         "3.8", description="docker-compose version used in the compose-specs"
@@ -193,9 +195,11 @@ class DynamicServicesSettings(BaseCustomSettings):
         True, description="Enables/Disables the dynamic_sidecar submodule"
     )
 
-    DYNAMIC_SIDECAR: DynamicSidecarSettings
+    DYNAMIC_SIDECAR: DynamicSidecarSettings = Field(auto_default_from_env=True)
 
-    DYNAMIC_SCHEDULER: DynamicServicesSchedulerSettings
+    DYNAMIC_SCHEDULER: DynamicServicesSchedulerSettings = Field(
+        auto_default_from_env=True
+    )
 
 
 class PGSettings(PostgresSettings):
@@ -269,27 +273,27 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     # ptvsd settings
     DIRECTOR_V2_REMOTE_DEBUG_PORT: PortInt = 3000
 
-    CLIENT_REQUEST: ClientRequestSettings
+    CLIENT_REQUEST: ClientRequestSettings = Field(auto_default_from_env=True)
 
     # App modules settings ---------------------
 
-    DIRECTOR_V0: DirectorV0Settings
+    DIRECTOR_V0: DirectorV0Settings = Field(auto_default_from_env=True)
 
-    DYNAMIC_SERVICES: DynamicServicesSettings
+    DYNAMIC_SERVICES: DynamicServicesSettings = Field(auto_default_from_env=True)
 
-    POSTGRES: PGSettings
+    POSTGRES: PGSettings = Field(auto_default_from_env=True)
 
-    DIRECTOR_V2_RABBITMQ: RabbitSettings
+    DIRECTOR_V2_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
 
     STORAGE_ENDPOINT: str = Field("storage:8080", env="STORAGE_ENDPOINT")
 
     TRAEFIK_SIMCORE_ZONE: str = Field("internal_simcore_stack")
 
-    DASK_SCHEDULER: DaskSchedulerSettings
+    DASK_SCHEDULER: DaskSchedulerSettings = Field(auto_default_from_env=True)
 
-    DIRECTOR_V2_TRACING: Optional[TracingSettings] = None
+    DIRECTOR_V2_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
-    DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings
+    DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
 
     @validator("LOG_LEVEL", pre=True)
     @classmethod
