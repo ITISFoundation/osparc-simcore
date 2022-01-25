@@ -239,7 +239,37 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     },
 
     __tagIteration: function(iterationId) {
-      console.log("__tagIteration", iterationId);
+      const selectedSnapshot = this.__iterations.find(iteration => iteration["uuid"] === iterationId);
+      if (selectedSnapshot) {
+        const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
+        const tagCtrl = editSnapshotView.getChildControl("tags");
+        tagCtrl.setValue(selectedSnapshot["tags"][0]);
+        const msgCtrl = editSnapshotView.getChildControl("message");
+        msgCtrl.setValue(selectedSnapshot["message"]);
+        const title = this.tr("Edit Snapshot");
+        const win = osparc.ui.window.Window.popUpInWindow(editSnapshotView, title, 400, 180);
+        editSnapshotView.addListener("takeSnapshot", () => {
+          const params = {
+            url: {
+              "studyId": this.__study.getUuid(),
+              "snapshotId": iterationId
+            },
+            data: {
+              "tag": editSnapshotView.getTag(),
+              "message": editSnapshotView.getMessage()
+            }
+          };
+          osparc.data.Resources.fetch("snapshots", "updateSnapshot", params)
+            .then(() => {
+              this.__rebuildSnapshots();
+            })
+            .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
+          win.close();
+        }, this);
+        editSnapshotView.addListener("cancel", () => {
+          win.close();
+        }, this);
+      }
     },
 
     __iterationSelected: function(iterationId) {
