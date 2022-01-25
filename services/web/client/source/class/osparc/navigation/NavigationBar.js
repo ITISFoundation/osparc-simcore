@@ -100,20 +100,16 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     __serverStatics: null,
 
     buildLayout: function() {
-      this.getChildControl("logo");
+      this.getChildControl("left-items");
+      this.getChildControl("center-items");
+      this.getChildControl("right-items");
 
-      this._add(new qx.ui.core.Spacer(30));
+      this.getChildControl("logo");
 
       this.getChildControl("dashboard-button");
       this.getChildControl("dashboard-label");
 
-      this._add(new qx.ui.core.Spacer(30));
-
       this.getChildControl("read-only-icon");
-
-      this._add(new qx.ui.core.Spacer(), {
-        flex: 1
-      });
 
       this.getChildControl("tasks-button");
       this.getChildControl("manual");
@@ -127,9 +123,32 @@ qx.Class.define("osparc.navigation.NavigationBar", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "left-items":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(30).set({
+            alignY: "middle",
+            alignX: "left"
+          }));
+          this._addAt(control, 0);
+          break;
+        case "center-items":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+            alignY: "middle",
+            alignX: "center"
+          }));
+          this._addAt(control, 1, {
+            flex: 1
+          });
+          break;
+        case "right-items":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+            alignY: "middle",
+            alignX: "right"
+          }));
+          this._addAt(control, 2);
+          break;
         case "logo":
           control = osparc.component.widget.LogoOnOff.getInstance();
-          this._add(control);
+          this.getChildControl("left-items").add(control);
           break;
         case "dashboard-button":
           control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16").set({
@@ -138,13 +157,14 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           });
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
           control.addListener("execute", () => this.fireEvent("backToDashboardPressed"), this);
-          this._add(control);
+          this.getChildControl("left-items").add(control);
           break;
         case "dashboard-label":
           control = new qx.ui.basic.Label(this.tr("Dashboard")).set({
+            paddingLeft: 20, // to align it with the button
             font: "text-16"
           });
-          this._add(control);
+          this.getChildControl("left-items").add(control);
           break;
         case "read-only-icon":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/eye/22").set({
@@ -152,7 +172,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
             paddingRight: 10,
             toolTipText: "Read Only"
           });
-          this._add(control);
+          this.getChildControl("center-items").add(control);
           break;
         case "tasks-button":
           control = new osparc.component.task.TasksButton();
@@ -161,23 +181,23 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         case "manual":
           control = this.__createManualMenuBtn();
           control.set(this.self().BUTTON_OPTIONS);
-          this._add(control);
+          this.getChildControl("right-items").add(control);
           break;
         case "feedback":
           control = this.__createFeedbackMenuBtn();
           control.set(this.self().BUTTON_OPTIONS);
-          this._add(control);
+          this.getChildControl("right-items").add(control);
           break;
         case "theme-switch":
           control = new osparc.ui.switch.ThemeSwitcherFormBtn();
           control.set(this.self().BUTTON_OPTIONS);
-          this._add(control);
+          this.getChildControl("right-items").add(control);
           break;
         case "user-menu":
           control = new osparc.navigation.UserMenuButton();
           control.populateSimpleMenu();
           control.set(this.self().BUTTON_OPTIONS);
-          this._add(control);
+          this.getChildControl("right-items").add(control);
           break;
       }
       return control || this.base(arguments, id);
@@ -189,12 +209,18 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("dashboard-label").show();
           this.getChildControl("dashboard-button").exclude();
           this.getChildControl("read-only-icon").exclude();
+          if (this.__tabButtons) {
+            this.__tabButtons.show();
+          }
           break;
         case "workbench":
         case "guided":
         case "app":
           this.getChildControl("dashboard-label").exclude();
           this.getChildControl("dashboard-button").show();
+          if (this.__tabButtons) {
+            this.__tabButtons.exclude();
+          }
           break;
       }
     },
@@ -270,6 +296,11 @@ qx.Class.define("osparc.navigation.NavigationBar", {
         toolTipText: this.tr("Give us feedback")
       });
       return feedbackBtn;
+    },
+
+    addDashboardTabButtons: function(tabButtons) {
+      this.__tabButtons = tabButtons;
+      this.getChildControl("center-items").add(tabButtons);
     },
 
     _applyStudy: function(study) {
