@@ -4,9 +4,9 @@ from .s3 import S3Settings
 
 
 class S3BackendType(str, Enum):
-    MINIO = "MINIO"
+    AWS = "AWS"
     CEPH = "CEPH"
-    S3 = "S3"
+    MINIO = "MINIO"
 
 
 class RCloneSettings(S3Settings):
