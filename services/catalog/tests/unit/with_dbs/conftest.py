@@ -37,6 +37,7 @@ def app(
     postgres_host_config: Dict[str, str],
 ) -> Iterable[FastAPI]:
     monkeypatch.setenv("CATALOG_TRACING", "null")
+    monkeypatch.setenv("SC_BOOT_MODE", "local-development")
     app = init_app()
     yield app
 

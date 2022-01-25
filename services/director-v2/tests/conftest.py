@@ -93,17 +93,18 @@ def project_env_devel_environment(
     return deepcopy(project_env_devel_dict)
 
 
-@pytest.fixture(scope="function")
-def mock_env(monkeypatch: MonkeyPatch) -> None:
+@pytest.fixture
+def dynamic_sidecar_docker_image() -> str:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
-
     registry = os.environ.get("DOCKER_REGISTRY", "local")
     image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
+    return f"{registry}/dynamic-sidecar:{image_tag}"
 
-    monkeypatch.setenv(
-        "DYNAMIC_SIDECAR_IMAGE", f"{registry}/dynamic-sidecar:{image_tag}"
-    )
+
+@pytest.fixture(scope="function")
+def mock_env(monkeypatch: MonkeyPatch, dynamic_sidecar_docker_image: str) -> None:
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", dynamic_sidecar_docker_image)
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")

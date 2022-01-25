@@ -24,7 +24,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
   /**
     * @param studyData {Object|osparc.data.model.Study} studyData (metadata)
     */
-  construct: function(studyData) {
+  construct: function (studyData) {
     this.base(arguments);
 
     const grid = new qx.ui.layout.Grid(20, 5);
@@ -61,7 +61,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     __studyData: null,
     __services: null,
 
-    __updateService: function(nodeId, newVersion, button) {
+    __updateService: function (nodeId, newVersion, button) {
       this.setEnabled(false);
       for (const id in this.__studyData["workbench"]) {
         if (id === nodeId) {
@@ -71,7 +71,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       this.__updateStudy(button);
     },
 
-    __updateAllServices: function(nodeIds, button) {
+    __updateAllServices: function (nodeIds, button) {
       this.setEnabled(false);
       for (const nodeId in this.__studyData["workbench"]) {
         if (nodeIds.includes(nodeId)) {
@@ -83,7 +83,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       this.__updateStudy(button);
     },
 
-    __updateStudy: function(fetchButton) {
+    __updateStudy: function (fetchButton) {
       fetchButton.setFetching(true);
       const params = {
         url: {
@@ -106,11 +106,11 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         });
     },
 
-    __updateBootMode: function(nodeId, newBootModeId) {
-      if (!("bootOptions" in this.__studyData)) {
-        this.__studyData["bootOptions"] = {};
+    __updateBootMode: function (nodeId, newBootModeId) {
+      if (!("bootOptions" in this.__studyData["workbench"][nodeId])) {
+        this.__studyData["workbench"][nodeId]["bootOptions"] = {};
       }
-      this.__studyData["bootOptions"][nodeId] = {
+      this.__studyData["workbench"][nodeId]["bootOptions"] = {
         "boot_mode": newBootModeId
       };
 
@@ -131,7 +131,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         });
     },
 
-    __populateLayout: function() {
+    __populateLayout: function () {
       this._removeAll();
 
       const workbench = this.__studyData["workbench"];
@@ -145,7 +145,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         return;
       }
 
-      let i=0;
+      let i = 0;
 
       this._add(new qx.ui.basic.Label(this.tr("Label")).set({
         font: "title-14"
@@ -276,8 +276,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
             sbItems.push(sbItem);
           });
           let defaultBMId = null;
-          if ("bootOptions" in this.__studyData && nodeId in this.__studyData["bootOptions"] && "boot_mode" in this.__studyData["bootOptions"][nodeId]) {
-            defaultBMId = this.__studyData["bootOptions"][nodeId]["boot_mode"];
+          if ("bootOptions" in this.__studyData["workbench"][nodeId] && "boot_mode" in this.__studyData["workbench"][nodeId]["bootOptions"]) {
+            defaultBMId = this.__studyData["workbench"][nodeId]["bootOptions"]["boot_mode"];
           } else {
             defaultBMId = bootModesMD["default"];
           }

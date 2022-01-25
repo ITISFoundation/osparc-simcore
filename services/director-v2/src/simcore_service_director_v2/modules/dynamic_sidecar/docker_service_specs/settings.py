@@ -3,6 +3,7 @@ import logging
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, cast
 
+from models_library.boot_options import BootOption, EnvVarKey
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
     SimcoreServiceLabels,
@@ -12,7 +13,7 @@ from models_library.service_settings_labels import (
 from models_library.services import BootOptionMode, EnvVarKey, ServiceKeyVersion
 
 from ....api.dependencies.director_v0 import DirectorV0Client
-from ..constants import CONTAINER_NAME
+from .._constants import CONTAINER_NAME
 from ..errors import DynamicSidecarError
 
 # Notes on below env var names:
@@ -346,7 +347,7 @@ def _patch_target_service_into_env_vars(
 
 def _get_boot_options(
     service_labels: SimcoreServiceLabels,
-) -> Optional[Dict[EnvVarKey, BootOptionMode]]:
+) -> Optional[Dict[EnvVarKey, BootOption]]:
     as_dict = service_labels.dict()
     boot_options_encoded = as_dict.get("io.simcore.boot-options", None)
     if boot_options_encoded is None:
@@ -354,11 +355,11 @@ def _get_boot_options(
 
     boot_options = json.loads(boot_options_encoded)["boot-options"]
     log.debug("got boot_options=%s", boot_options)
-    return {k: BootOptionMode.parse_obj(v) for k, v in boot_options.items()}
+    return {k: BootOption.parse_obj(v) for k, v in boot_options.items()}
 
 
 def _assemble_env_vars_for_boot_options(
-    boot_options: Dict[EnvVarKey, BootOptionMode],
+    boot_options: Dict[EnvVarKey, BootOption],
     service_user_selection_boot_options: Dict[EnvVarKey, str],
 ) -> SimcoreServiceSettingsLabel:
 

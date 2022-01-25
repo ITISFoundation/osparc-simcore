@@ -2,9 +2,8 @@ from functools import cached_property
 from typing import Optional
 
 from models_library.basic_types import BootModeEnum, LogLevel
-from pydantic import Field, SecretStr
+from pydantic import AnyHttpUrl, Field, SecretStr
 from pydantic.class_validators import validator
-from pydantic.networks import HttpUrl
 from settings_library.base import BaseCustomSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.tracing import TracingSettings
@@ -16,7 +15,7 @@ from settings_library.utils_logging import MixinLoggingSettings
 class _UrlMixin:
     def _build_url(self, prefix: str) -> str:
         prefix = prefix.upper()
-        return HttpUrl.build(
+        return AnyHttpUrl.build(
             scheme="http",
             host=getattr(self, f"{prefix}_HOST"),
             port=f"{getattr(self, f'{prefix}_PORT')}",
@@ -85,14 +84,18 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     # POSTGRES
-    API_SERVER_POSTGRES: Optional[PostgresSettings]
+    API_SERVER_POSTGRES: Optional[PostgresSettings] = Field(auto_default_from_env=True)
 
     # SERVICES with http API
-    API_SERVER_WEBSERVER: Optional[WebServerSettings]
-    API_SERVER_CATALOG: Optional[CatalogSettings]
-    API_SERVER_STORAGE: Optional[StorageSettings]
-    API_SERVER_DIRECTOR_V2: Optional[DirectorV2Settings]
-    API_SERVER_TRACING: Optional[TracingSettings]
+    API_SERVER_WEBSERVER: Optional[WebServerSettings] = Field(
+        auto_default_from_env=True
+    )
+    API_SERVER_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
+    API_SERVER_STORAGE: Optional[StorageSettings] = Field(auto_default_from_env=True)
+    API_SERVER_DIRECTOR_V2: Optional[DirectorV2Settings] = Field(
+        auto_default_from_env=True
+    )
+    API_SERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
     API_SERVER_DEV_FEATURES_ENABLED: bool = Field(
         False, env=["API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"]

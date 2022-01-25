@@ -4,6 +4,7 @@
 import asyncio
 import logging
 from typing import Any, AsyncIterable, AsyncIterator, Dict
+from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import aiodocker
@@ -20,6 +21,8 @@ from simcore_service_director_v2.core.settings import AppSettings
 from utils import ensure_network_cleanup, patch_dynamic_service_url
 
 SERVICE_IS_READY_TIMEOUT = 2 * 60
+
+DIRECTOR_V2_MODULES = "simcore_service_director_v2.modules"
 
 logger = logging.getLogger(__name__)
 
@@ -76,11 +79,23 @@ def start_request_data(
 
 
 @pytest.fixture
+def mocked_engine() -> AsyncMock:
+    engine = AsyncMock()
+    engine.maxsize = 100
+    engine.size = 1
+    engine.freesize = 1
+    available_engines = engine.maxsize - (engine.size - engine.freesize)
+    assert type(available_engines) == int
+    return engine
+
+
+@pytest.fixture
 async def test_client(
     loop: asyncio.AbstractEventLoop,
     minimal_configuration: None,
     mock_env: None,
     network_name: str,
+    mocked_engine: AsyncMock,
     monkeypatch,
 ) -> AsyncIterable[TestClient]:
     monkeypatch.setenv("SC_BOOT_MODE", "production")
@@ -105,6 +120,8 @@ async def test_client(
     settings = AppSettings.create_from_envs()
 
     app = init_app(settings)
+
+    app.state.engine = mocked_engine
 
     async with TestClient(app) as client:
         yield client
@@ -136,18 +153,29 @@ async def ensure_services_stopped(
 
 
 @pytest.fixture
-def mock_service_state(mocker: MockerFixture) -> None:
-    """because the monitor is disabled some functionality needs to be mocked"""
-
+def mock_project_repository(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.client_api.DynamicSidecarClient.service_save_state",
-        side_effect=lambda *args, **kwargs: None,
+        f"{DIRECTOR_V2_MODULES}.db.repositories.projects.ProjectsRepository.get_project",
+        side_effect=lambda *args, **kwargs: Mock(),
     )
 
-    mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.client_api.DynamicSidecarClient.service_restore_state",
-        side_effect=lambda *args, **kwargs: None,
+
+@pytest.fixture
+def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
+    class_path = (
+        f"{DIRECTOR_V2_MODULES}.dynamic_sidecar.client_api.DynamicSidecarClient"
     )
+    for function_name, return_value in [
+        ("service_save_state", None),
+        ("service_restore_state", None),
+        ("service_pull_output_ports", 42),
+        ("service_outputs_create_dirs", None),
+    ]:
+        mocker.patch(
+            f"{class_path}.{function_name}",
+            # pylint: disable=cell-var-from-loop
+            side_effect=lambda *args, **kwargs: return_value,
+        )
 
 
 # TESTS
@@ -158,7 +186,8 @@ async def test_start_status_stop(
     node_uuid: str,
     start_request_data: Dict[str, Any],
     ensure_services_stopped: None,
-    mock_service_state: None,
+    mock_project_repository: None,
+    mock_dynamic_sidecar_api_calls: None,
 ):
     # starting the service
     headers = {
@@ -186,8 +215,8 @@ async def test_start_status_stop(
 
             status_is_not_running = data.get("service_state", "") != "running"
 
-        # give the service some time to keep up
-        await asyncio.sleep(5)
+            # give the service some time to keep up
+            await asyncio.sleep(5)
 
     assert data["service_state"] == "running"
 

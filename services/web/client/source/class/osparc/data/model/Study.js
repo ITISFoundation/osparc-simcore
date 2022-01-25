@@ -512,9 +512,6 @@ qx.Class.define("osparc.data.model.Study", {
       if ("dev" in data) {
         delete data["dev"];
       }
-      if ("bootOptions" in data) {
-        delete data["bootOptions"];
-      }
       Object.keys(data).forEach(key => {
         if (this.self().IgnoreModelizationProps.includes(key)) {
           delete data[key];

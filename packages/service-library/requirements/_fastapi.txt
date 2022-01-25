@@ -6,7 +6,7 @@
 #
 anyio==3.3.4
     # via starlette
-fastapi==0.70.0
+fastapi==0.71.0
     # via
     #   -r requirements/_fastapi.in
     #   fastapi-contrib
@@ -22,7 +22,7 @@ opentracing==2.4.0
     # via
     #   fastapi-contrib
     #   jaeger-client
-pydantic==1.8.2
+pydantic==1.9.0
     # via
     #   -c requirements/./../../../requirements/constraints.txt
     #   -c requirements/./_base.in
@@ -31,7 +31,7 @@ six==1.16.0
     # via thrift
 sniffio==1.2.0
     # via anyio
-starlette==0.16.0
+starlette==0.17.1
     # via fastapi
 threadloop==1.0.2
     # via jaeger-client

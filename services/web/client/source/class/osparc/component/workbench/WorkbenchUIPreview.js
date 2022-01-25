@@ -54,7 +54,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
     // overridden
     _loadModel: function(model) {
       this._clearAll();
-      this.resetSelectedNodes();
+      this.resetSelection();
       this._currentModel = model;
       if (model) {
         qx.ui.core.queue.Visibility.flush();

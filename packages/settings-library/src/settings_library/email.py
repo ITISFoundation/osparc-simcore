@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic.fields import Field
 from pydantic.types import SecretStr
 
@@ -13,6 +15,6 @@ class SMTPSettings(BaseCustomSettings):
     SMTP_HOST: str
     SMTP_PORT: PortInt
 
-    SMTP_TLS_ENABLED: bool = Field(description="Enables Secure Mode")
-    SMTP_USERNAME: str
-    SMTP_PASSWORD: SecretStr
+    SMTP_TLS_ENABLED: bool = Field(False, description="Enables Secure Mode")
+    SMTP_USERNAME: Optional[str]
+    SMTP_PASSWORD: Optional[SecretStr]

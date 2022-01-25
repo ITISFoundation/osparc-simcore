@@ -14,17 +14,17 @@ click==7.1.2
     # via
     #   -c requirements/_base.txt
     #   distributed
-cloudpickle==1.6.0
+cloudpickle==2.0.0
     # via
     #   -c requirements/_base.txt
     #   dask
     #   distributed
-dask==2021.10.0
+dask==2021.12.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   distributed
-distributed==2021.10.0
+distributed==2021.12.0
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -36,7 +36,7 @@ email-validator==1.1.1
     # via
     #   -c requirements/_base.txt
     #   pydantic
-fsspec==2021.10.1
+fsspec==2022.1.0
     # via
     #   -c requirements/_base.txt
     #   dask
@@ -85,7 +85,7 @@ psutil==5.8.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-pydantic==1.8.2
+pydantic==1.9.0
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt

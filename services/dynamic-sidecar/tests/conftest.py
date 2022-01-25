@@ -81,7 +81,7 @@ def mock_environment(
     state_exclude_dirs: List[Path],
 ) -> None:
     monkeypatch_module.setenv("SC_BOOT_MODE", "production")
-    monkeypatch_module.setenv("DYNAMIC_SIDECAR_compose_namespace", compose_namespace)
+    monkeypatch_module.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", compose_namespace)
     monkeypatch_module.setenv("REGISTRY_AUTH", "false")
     monkeypatch_module.setenv("REGISTRY_USER", "test")
     monkeypatch_module.setenv("REGISTRY_PW", "test")

@@ -10,11 +10,11 @@ cloudpickle==2.0.0
     # via
     #   dask
     #   distributed
-dask==2021.11.2
+dask==2021.12.0
     # via
     #   -r requirements/_base.in
     #   distributed
-distributed==2021.11.2
+distributed==2021.12.0
     # via dask
 dnspython==2.1.0
     # via email-validator
@@ -46,7 +46,7 @@ partd==1.2.0
     # via dask
 psutil==5.8.0
     # via distributed
-pydantic==1.8.2
+pydantic==1.9.0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt

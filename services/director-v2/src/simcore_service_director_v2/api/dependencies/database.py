@@ -14,7 +14,7 @@ def _get_db_engine(request: Request) -> Engine:
     return request.app.state.engine
 
 
-def _get_base_repository(
+def get_base_repository(
     engine: Engine, repo_type: Type[BaseRepository]
 ) -> BaseRepository:
     # NOTE: 2 different ideas were tried here with not so good
@@ -40,7 +40,7 @@ def get_repository(repo_type: Type[BaseRepository]) -> Callable:
     async def _get_repo(
         engine: Engine = Depends(_get_db_engine),
     ) -> AsyncGenerator[BaseRepository, None]:
-        yield _get_base_repository(engine=engine, repo_type=repo_type)
+        yield get_base_repository(engine=engine, repo_type=repo_type)
 
     return _get_repo
 
@@ -48,4 +48,4 @@ def get_repository(repo_type: Type[BaseRepository]) -> Callable:
 def fetch_repo_no_request(
     app: FastAPI, repo_type: Type[BaseRepository]
 ) -> BaseRepository:
-    return _get_base_repository(engine=app.state.engine, repo_type=repo_type)
+    return get_base_repository(engine=app.state.engine, repo_type=repo_type)

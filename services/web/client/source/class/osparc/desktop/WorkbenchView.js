@@ -613,23 +613,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         }, this);
       }
 
-      // callback for node updates
-      const slotName3 = "nodeUpdated";
-      if (!socket.slotExists(slotName3)) {
-        socket.on(slotName3, data => {
-          const d = JSON.parse(data);
-          const nodeId = d["node_id"];
-          const nodeData = d["data"];
-          const workbench = this.getStudy().getWorkbench();
-          const node = workbench.getNode(nodeId);
-          if (node && nodeData) {
-            node.setOutputData(nodeData.outputs);
-            node.populateStates(nodeData);
-          } else if (osparc.data.Permissions.getInstance().isTester()) {
-            console.log("Ignored ws 'nodeUpdated' msg", d);
-          }
-        }, this);
-      }
+      this.listenToNodeUpdated();
 
       // callback for events
       const slotName4 = "event";
@@ -936,11 +920,23 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
         this.__infoPage.add(view);
 
+        const hbox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
         const downloadFileBtn = new qx.ui.form.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/14").set({
           allowGrowX: false
         });
         downloadFileBtn.addListener("execute", () => osparc.file.FilePicker.downloadOutput(filePicker));
-        this.__infoPage.add(downloadFileBtn);
+        hbox.add(downloadFileBtn);
+        const resetFileBtn = new qx.ui.form.Button(this.tr("Reset"), "@FontAwesome5Solid/sync-alt/14").set({
+          allowGrowX: false
+        });
+        resetFileBtn.addListener("execute", () => {
+          osparc.file.FilePicker.resetOutputValue(filePicker);
+          filePicker.setLabel("File Picker");
+          this.getStudy().getWorkbench().giveUniqueNameToNode(filePicker, "File Picker");
+          this.__populateSecondPanel(filePicker);
+        }, this);
+        hbox.add(resetFileBtn);
+        this.__infoPage.add(hbox);
       } else {
         // empty File Picker
         const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
@@ -1079,7 +1075,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : this.getStudy().getUuid());
       this.__workbenchChanged();
 
-      this.__workbenchUI.resetSelectedNodes();
+      this.__workbenchUI.resetSelection();
     },
 
     __ungroupSelection: function() {
@@ -1109,7 +1105,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.nodeSelected(currentModel.getNodeId ? currentModel.getNodeId() : this.getStudy().getUuid());
       this.__workbenchChanged();
 
-      this.__workbenchUI.resetSelectedNodes();
+      this.__workbenchUI.resetSelection();
     },
 
     __attachEventHandlers: function() {

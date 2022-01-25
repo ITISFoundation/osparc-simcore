@@ -15,7 +15,7 @@ from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
     SERVICE_KEY_RE,
-    BootOptionMode,
+    BootOption,
     ServiceAccessRightsAtDB,
     ServiceCommonData,
     ServiceDockerData,
@@ -234,16 +234,13 @@ def test_same_regex_patterns_in_jsonschema_and_python(
         assert json_pattern == python_regex_pattern
 
 
-def test_option_boot_mode() -> None:
-    for example in BootOptionMode.Config.schema_extra["examples"]:
-        option_boot_mode = BootOptionMode(**example)
-        assert option_boot_mode
+def test_boot_option() -> None:
+    for example in BootOption.Config.schema_extra["examples"]:
+        assert BootOption(**example)
 
 
-def test_option_boot_mode_wrong_default() -> None:
-    for example in [
-        deepcopy(x) for x in BootOptionMode.Config.schema_extra["examples"]
-    ]:
+def test_boot_option_wrong_default() -> None:
+    for example in [deepcopy(x) for x in BootOption.Config.schema_extra["examples"]]:
         with pytest.raises(ValueError):
             example["default"] = "__undefined__"
-            BootOptionMode(**example)
+            assert BootOption(**example)

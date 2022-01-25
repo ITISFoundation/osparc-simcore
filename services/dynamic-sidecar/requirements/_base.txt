@@ -44,7 +44,11 @@ alembic==1.7.4
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
 anyio==3.3.4
-    # via httpcore
+    # via
+    #   httpcore
+    #   starlette
+asgiref==3.4.1
+    # via uvicorn
 async-generator==1.10
     # via -r requirements/_base.in
 async-timeout==3.0.1
@@ -63,6 +67,7 @@ bcrypt==3.2.0
     # via paramiko
 certifi==2021.5.30
     # via
+    #   httpcore
     #   httpx
     #   requests
 cffi==1.14.5
@@ -118,7 +123,7 @@ docopt==0.6.2
     # via docker-compose
 email-validator==1.1.3
     # via pydantic
-fastapi==0.68.1
+fastapi==0.71.0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -129,9 +134,9 @@ h11==0.12.0
     # via
     #   httpcore
     #   uvicorn
-httpcore==0.13.7
+httpcore==0.14.4
     # via httpx
-httpx==0.20.0
+httpx==0.21.3
     # via -r requirements/_base.in
 idna==2.10
     # via
@@ -194,7 +199,7 @@ psycopg2-binary==2.9.1
     #   sqlalchemy
 pycparser==2.20
     # via cffi
-pydantic==1.8.2
+pydantic==1.9.0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -283,7 +288,7 @@ sqlalchemy==1.3.24
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   aiopg
     #   alembic
-starlette==0.14.2
+starlette==0.17.1
     # via fastapi
 tenacity==8.0.1
     # via
@@ -323,19 +328,8 @@ urllib3==1.26.6
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-uvicorn==0.13.4
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_base.in
+uvicorn==0.17.0
+    # via -r requirements/_base.in
 watchdog==2.1.5
     # via -r requirements/_base.in
 websocket-client==0.59.0
