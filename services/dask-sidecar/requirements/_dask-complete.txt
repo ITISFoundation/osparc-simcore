@@ -63,7 +63,7 @@ packaging==20.4
     #   -c requirements/./_base.txt
     #   bokeh
     #   dask
-pandas==1.2.4
+pandas==1.4.0
     # via
     #   -c requirements/./_base.txt
     #   dask
