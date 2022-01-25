@@ -137,8 +137,8 @@ properties:
                   - type:
                       - integer
                       - boolean
-                      - number
                       - string
+                      - number
                       - 'null'
                   - type: object
                     additionalProperties: false
@@ -213,8 +213,8 @@ properties:
                   - type:
                       - integer
                       - boolean
-                      - number
                       - string
+                      - number
                       - 'null'
                   - type: object
                     additionalProperties: false

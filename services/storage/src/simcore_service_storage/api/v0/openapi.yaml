@@ -946,8 +946,8 @@ components:
                         - type:
                             - integer
                             - boolean
-                            - number
                             - string
+                            - number
                             - 'null'
                         - type: object
                           additionalProperties: false
@@ -1022,8 +1022,8 @@ components:
                         - type:
                             - integer
                             - boolean
-                            - number
                             - string
+                            - number
                             - 'null'
                         - type: object
                           additionalProperties: false

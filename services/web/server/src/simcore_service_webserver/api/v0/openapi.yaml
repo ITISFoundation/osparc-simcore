@@ -1825,8 +1825,8 @@ paths:
                                 - type:
                                     - integer
                                     - boolean
-                                    - number
                                     - string
+                                    - number
                                     - 'null'
                                 - type: object
                                   additionalProperties: false
@@ -1901,8 +1901,8 @@ paths:
                                 - type:
                                     - integer
                                     - boolean
-                                    - number
                                     - string
+                                    - number
                                     - 'null'
                                 - type: object
                                   additionalProperties: false

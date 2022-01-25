@@ -175,8 +175,8 @@
                       "type": [
                         "integer",
                         "boolean",
-                        "number",
                         "string",
+                        "number",
                         "null"
                       ]
                     },
@@ -288,8 +288,8 @@
                       "type": [
                         "integer",
                         "boolean",
-                        "number",
                         "string",
+                        "number",
                         "null"
                       ]
                     },
