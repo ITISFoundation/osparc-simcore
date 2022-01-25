@@ -292,7 +292,7 @@ properties:
             type: string
     additionalProperties: true
   boot-options:
-    title: Boot-Options
+    title: Boot Options
     description: >-
       Service defined boot options. These get injected in the service as env
       variables.

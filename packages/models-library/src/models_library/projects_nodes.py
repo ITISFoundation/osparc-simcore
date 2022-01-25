@@ -171,6 +171,7 @@ class Node(BaseModel):
 
     boot_options: Optional[Dict[EnvVarKey, str]] = Field(
         None,
+        alias="bootOptions",
         description=(
             "Some services provide alternative parameters to be injected at boot time. "
             "The user selection should be stored here, and it will overwrite the "

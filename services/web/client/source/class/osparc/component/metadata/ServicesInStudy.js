@@ -107,10 +107,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     },
 
     __updateBootMode: function(nodeId, newBootModeId) {
-      if (!("boot_options" in this.__studyData["workbench"][nodeId])) {
-        this.__studyData["workbench"][nodeId]["boot_options"] = {};
+      if (!("bootOptions" in this.__studyData["workbench"][nodeId])) {
+        this.__studyData["workbench"][nodeId]["bootOptions"] = {};
       }
-      this.__studyData["workbench"][nodeId]["boot_options"] = {
+      this.__studyData["workbench"][nodeId]["bootOptions"] = {
         "boot_mode": newBootModeId
       };
 
@@ -276,8 +276,8 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
             sbItems.push(sbItem);
           });
           let defaultBMId = null;
-          if ("boot_options" in this.__studyData["workbench"][nodeId] && "boot_mode" in this.__studyData["workbench"][nodeId]["boot_options"]) {
-            defaultBMId = this.__studyData["workbench"][nodeId]["boot_options"]["boot_mode"];
+          if ("bootOptions" in this.__studyData["workbench"][nodeId] && "boot_mode" in this.__studyData["workbench"][nodeId]["bootOptions"]) {
+            defaultBMId = this.__studyData["workbench"][nodeId]["bootOptions"]["boot_mode"];
           } else {
             defaultBMId = bootModesMD["default"];
           }

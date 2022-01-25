@@ -37,11 +37,13 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
     )
 
-    CATALOG_POSTGRES: Optional[PostgresSettings]
+    CATALOG_POSTGRES: Optional[PostgresSettings] = Field(auto_default_from_env=True)
 
-    CATALOG_CLIENT_REQUEST: Optional[ClientRequestSettings]
+    CATALOG_CLIENT_REQUEST: Optional[ClientRequestSettings] = Field(
+        auto_default_from_env=True
+    )
 
-    CATALOG_DIRECTOR: Optional[DirectorSettings]
+    CATALOG_DIRECTOR: Optional[DirectorSettings] = Field(auto_default_from_env=True)
 
     # BACKGROUND TASK
     CATALOG_BACKGROUND_TASK_REST_TIME: PositiveInt = 60
