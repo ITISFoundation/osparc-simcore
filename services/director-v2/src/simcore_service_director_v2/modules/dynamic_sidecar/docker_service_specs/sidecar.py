@@ -113,15 +113,25 @@ def get_dynamic_sidecar_spec(
         )
     # state paths now get mounted via different driver and are synced to s3 automatically
     for path_to_mount in scheduler_data.paths_mapping.state_paths:
-        mounts.append(
-            DynamicSidecarVolumesPathsResolver.mount_r_clone(
-                compose_namespace=compose_namespace,
-                path=path_to_mount,
-                project_id=scheduler_data.project_id,
-                node_uuid=scheduler_data.node_uuid,
-                r_clone_settings=dynamic_sidecar_settings.R_CLONE_SETTINGS,
+        # for now only enable this with dev features enabled
+        if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+            mounts.append(
+                DynamicSidecarVolumesPathsResolver.mount_r_clone(
+                    compose_namespace=compose_namespace,
+                    path=path_to_mount,
+                    project_id=scheduler_data.project_id,
+                    node_uuid=scheduler_data.node_uuid,
+                    r_clone_settings=dynamic_sidecar_settings.R_CLONE_SETTINGS,
+                )
             )
-        )
+        else:
+            mounts.append(
+                DynamicSidecarVolumesPathsResolver.mount_entry(
+                    compose_namespace=compose_namespace,
+                    path=path_to_mount,
+                    node_uuid=scheduler_data.node_uuid,
+                )
+            )
 
     endpint_spec = {}
 
