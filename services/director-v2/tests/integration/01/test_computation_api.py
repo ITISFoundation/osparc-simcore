@@ -65,6 +65,7 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
+    monkeypatch.setenv("S3_PROVIDER", "MINIO")
 
 
 @pytest.fixture()

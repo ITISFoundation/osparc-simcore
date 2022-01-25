@@ -275,6 +275,7 @@ def mock_env(
     # this address to reach the rabbit service
     monkeypatch.setenv("RABBIT_HOST", f"{get_ip()}")
     monkeypatch.setenv("POSTGRES_HOST", f"{get_ip()}")
+    monkeypatch.setenv("S3_PROVIDER", "MINIO")
 
 
 @pytest.fixture
