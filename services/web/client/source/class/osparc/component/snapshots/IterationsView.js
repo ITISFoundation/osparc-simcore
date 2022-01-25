@@ -90,6 +90,15 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox());
       this._add(buttonsSection);
 
+      const tagIterationBtn = this.__tagIterationBtn = this.__createTagIterationBtn();
+      tagIterationBtn.setEnabled(false);
+      tagIterationBtn.addListener("execute", () => {
+        if (this.__selectedIterationId) {
+          this.__tagIteration(this.__selectedIterationId);
+        }
+      });
+      buttonsSection.add(tagIterationBtn);
+
       const openIterationBtn = this.__openIterationBtn = this.__createOpenIterationBtn();
       openIterationBtn.setEnabled(false);
       openIterationBtn.addListener("execute", () => {
@@ -215,6 +224,13 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
         });
     },
 
+    __createTagIterationBtn: function() {
+      const tagIterationBtn = new qx.ui.form.Button(this.tr("Tag Iteration")).set({
+        allowGrowX: false
+      });
+      return tagIterationBtn;
+    },
+
     __createOpenIterationBtn: function() {
       const openIterationBtn = new qx.ui.form.Button(this.tr("Open Iteration")).set({
         allowGrowX: false
@@ -222,10 +238,18 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       return openIterationBtn;
     },
 
+    __tagIteration: function(iterationId) {
+      console.log("__tagIteration", iterationId);
+    },
+
     __iterationSelected: function(iterationId) {
       this.__selectedIterationId = iterationId;
 
       this.__reloadIteration(iterationId);
+
+      if (this.__tagIterationBtn) {
+        this.__tagIterationBtn.setEnabled(true);
+      }
 
       if (this.__openIterationBtn) {
         this.__openIterationBtn.setEnabled(true);
