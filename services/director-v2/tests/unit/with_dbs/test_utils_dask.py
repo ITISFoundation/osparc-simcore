@@ -222,6 +222,7 @@ def app_with_db(
     postgres_host_config: Dict[str, str],
 ):
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
+    monkeypatch.setenv("S3_PROVIDER", "MINIO")
 
 
 async def test_compute_input_data(

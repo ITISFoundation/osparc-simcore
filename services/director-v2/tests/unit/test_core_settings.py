@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Dict
+from typing import Dict, Any
 
 import pytest
 from models_library.basic_types import LogLevel
@@ -14,7 +14,7 @@ from simcore_service_director_v2.core.settings import (
 )
 
 
-def test_settings_with_project_env_devel(project_env_devel_environment):
+def test_settings_with_project_env_devel(project_env_devel_environment: Dict[str, Any]):
     # loads from environ
     settings = AppSettings.create_from_envs()
     print("captured settings: \n", settings.json(indent=2))
@@ -44,7 +44,9 @@ def test_settings_with_env_devel(mock_env_devel_environment: Dict[str, str]):
         "/local/dynamic-sidecar:latest",
     ],
 )
-def test_dynamic_sidecar_settings(image: str) -> None:
+def test_dynamic_sidecar_settings(
+    image: str, project_env_devel_environment: Dict[str, Any]
+) -> None:
     required_kwards = dict(
         DYNAMIC_SIDECAR_IMAGE=image,
         SIMCORE_SERVICES_NETWORK_NAME="test",

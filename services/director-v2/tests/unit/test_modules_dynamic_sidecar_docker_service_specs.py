@@ -37,6 +37,7 @@ def mocked_env(monkeypatch: MonkeyPatch) -> Iterator[Dict[str, str]]:
         "SIMCORE_SERVICES_NETWORK_NAME": "simcore_services_network_name",
         "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
         "SWARM_STACK_NAME": "test_swarm_name",
+        "S3_PROVIDER": "MINIO",
     }
 
     with monkeypatch.context() as m:

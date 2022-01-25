@@ -75,6 +75,7 @@ def minimal_dask_scheduler_config(
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "1")
+    monkeypatch.setenv("S3_PROVIDER", "MINIO")
 
 
 @pytest.fixture
