@@ -61,7 +61,7 @@ test-ci: test-ci-unit test-ci-integration ## runs unit and integration tests for
 .PHONY: build build-nc build-devel build-devel-nc
 build build-nc build-devel build-devel-nc: ## builds docker image in many flavours
 	# Building docker image for ${APP_NAME} ...
-	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME}
+	@$(MAKE_C) ${REPO_BASE_DIR} $@ target=${APP_NAME} push=$(push)
 
 
 .PHONY: shell
