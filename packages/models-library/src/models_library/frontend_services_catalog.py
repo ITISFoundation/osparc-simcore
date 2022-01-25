@@ -20,29 +20,6 @@ OM = Author(name="Odei Maiz", email="maiz@itis.swiss", affiliation="IT'IS")
 # FACTORY FUNCTIONS ----------------------------------------------------
 
 
-def _create_file_picker_service() -> ServiceDockerData:
-    return ServiceDockerData(
-        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/file-picker",
-        version="1.0.0",
-        type=ServiceType.FRONTEND,
-        name="File Picker",
-        description="File Picker",
-        authors=[
-            OM,
-        ],
-        contact=OM.email,
-        inputs={},
-        outputs={
-            "outFile": {
-                "displayOrder": 0,
-                "label": "File",
-                "description": "Chosen File",
-                "type": "data:*/*",
-            }
-        },
-    )
-
-
 def _create_node_group_service() -> ServiceDockerData:
     #
     # NOTE: DO not mistake with simcore/services/frontend/nodes-group/macros/

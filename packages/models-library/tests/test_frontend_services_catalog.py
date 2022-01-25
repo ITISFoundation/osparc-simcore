@@ -3,6 +3,8 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 
+from collections import defaultdict
+
 import pytest
 from models_library.frontend_services_catalog import (
     is_frontend_service,
@@ -18,3 +20,17 @@ def test_create_frontend_services_metadata(image_metadata):
     assert isinstance(image_metadata, ServiceDockerData)
 
     assert is_frontend_service(image_metadata.key)
+
+
+def test_catalog_frontend_services_registry():
+    registry = {(s.key, s.version): s for s in iter_service_docker_data()}
+
+    for s in registry.values():
+        print(s.json(exclude_unset=True, indent=1))
+
+    # one version per front-end service?
+    versions_per_service = defaultdict(list)
+    for s in registry.values():
+        versions_per_service[s.key].append(s.version)
+
+    assert not any(len(v) > 1 for v in versions_per_service.values())
