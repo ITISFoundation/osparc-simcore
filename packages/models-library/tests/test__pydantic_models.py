@@ -6,8 +6,7 @@ check some "corner cases" or critical setups with pydantic model such that:
 
 """
 
-import json
-from typing import Dict, List, Union, get_args, get_origin
+from typing import List, Union, get_args, get_origin
 
 import pytest
 from models_library.projects_nodes import InputTypes, OutputTypes
@@ -86,34 +85,46 @@ def test_union_types_coercion():
     # NOTE: it is recommended that, when defining Union annotations, the most specific type is included first and followed by less specific types.
     #
 
-    # integers
+    # integers ------------------------
     model = Func.parse_obj({"input": "0", "output": 1})
+    print(model.json(indent=1))
+
     assert model.input == 0
     assert model.output == 1
 
-    # numbers and bool
-    model = Func.parse_obj({"input": ".5", "output": "false"})
+    # numbers and bool ------------------------
+    model = Func.parse_obj({"input": "0.5", "output": "false"})
+    print(model.json(indent=1))
+
     assert model.input == 0.5
     assert model.output == False
 
-    # (undefined) json vs string
+    # (undefined) json vs string ------------------------
     model = Func.parse_obj(
         {
-            "input": '{"w": 42, "z": false}',
+            "input": '{"w": 42, "z": false}',  # NOTE: this is a raw json string
             "output": "some/path/or/string",
         }
     )
+    print(model.json(indent=1))
+
     assert model.input == {"w": 42, "z": False}
     assert model.output == "some/path/or/string"
 
-    # (undefined) json vs SimCoreFileLink
+    # (undefined) json vs SimCoreFileLink.dict() ------------
     assert SimCoreFileLink in get_args(OutputTypes)
-    example: Dict = SimCoreFileLink.Config.schema_extra["example"]
+    example = SimCoreFileLink.parse_obj(
+        SimCoreFileLink.Config.schema_extra["examples"][0]
+    )
     model = Func.parse_obj(
         {
             "input": '{"w": 42, "z": false}',
-            "output": json.dumps(example),
+            "output": example.dict(
+                exclude_unset=True
+            ),  # NOTE: this is NOT a raw json string
         }
     )
+    print(model.json(indent=1))
     assert model.input == {"w": 42, "z": False}
     assert model.output == example
+    assert isinstance(model.output, SimCoreFileLink)
