@@ -6,9 +6,12 @@ check some "corner cases" or critical setups with pydantic model such that:
 
 """
 
-from typing import List
+import json
+from typing import Dict, List, Union, get_args, get_origin
 
 import pytest
+from models_library.projects_nodes import InputTypes, OutputTypes
+from models_library.projects_nodes_io import SimCoreFileLink
 from pydantic import BaseModel, ValidationError, schema_json_of
 from pydantic.types import Json
 
@@ -68,3 +71,49 @@ def test_json_type():
         "msg": "JSON object must be str, bytes or bytearray",
         "type": "type_error.json",
     }
+
+
+def test_union_types_coercion():
+    # SEE https://pydantic-docs.helpmanual.io/usage/types/#unions
+    class Func(BaseModel):
+        input: InputTypes
+        output: OutputTypes
+
+    assert get_origin(InputTypes) == Union
+    assert get_origin(OutputTypes) == Union
+    #
+    # pydantic will attempt to 'match' any of the types defined under Union and will use the first one that matches
+    # NOTE: it is recommended that, when defining Union annotations, the most specific type is included first and followed by less specific types.
+    #
+
+    # integers
+    model = Func.parse_obj({"input": "0", "output": 1})
+    assert model.input == 0
+    assert model.output == 1
+
+    # numbers and bool
+    model = Func.parse_obj({"input": ".5", "output": "false"})
+    assert model.input == 0.5
+    assert model.output == False
+
+    # (undefined) json vs string
+    model = Func.parse_obj(
+        {
+            "input": '{"w": 42, "z": false}',
+            "output": "some/path/or/string",
+        }
+    )
+    assert model.input == {"w": 42, "z": False}
+    assert model.output == "some/path/or/string"
+
+    # (undefined) json vs SimCoreFileLink
+    assert SimCoreFileLink in get_args(OutputTypes)
+    example: Dict = SimCoreFileLink.Config.schema_extra["example"]
+    model = Func.parse_obj(
+        {
+            "input": '{"w": 42, "z": false}',
+            "output": json.dumps(example),
+        }
+    )
+    assert model.input == {"w": 42, "z": False}
+    assert model.output == example

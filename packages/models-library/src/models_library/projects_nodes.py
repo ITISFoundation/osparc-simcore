@@ -38,22 +38,22 @@ InputTypes = Union[
     StrictBool,
     StrictInt,
     StrictFloat,
-    Json,
-    str,
     PortLink,
     SimCoreFileLink,
     DatCoreFileLink,
     DownloadLink,
+    Json,
+    str,
 ]
 OutputTypes = Union[
     StrictBool,
     StrictInt,
     StrictFloat,
-    Json,
-    str,
     SimCoreFileLink,
     DatCoreFileLink,
     DownloadLink,
+    Json,
+    str,
 ]
 
 InputID = OutputID = constr(regex=PROPERTY_KEY_RE)
