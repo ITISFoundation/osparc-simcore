@@ -20,12 +20,10 @@
   */
 
 qx.Class.define("osparc.component.snapshots.IterationsView", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.splitpane.Pane,
 
   construct: function(study) {
-    this.base(arguments);
-
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this.base(arguments, "horizontal");
 
     this.__study = study;
     this.__iterations = [];
@@ -50,30 +48,20 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     __lastFunc: null,
 
     __buildLayout: function() {
-      const iterationsSection = this.__iterationsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      this._add(iterationsSection, {
-        flex: 1
-      });
+      const iterationsSection = this.__iterationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      this.add(iterationsSection, 1);
+
       this.__buildIterations();
-      this.__buildIterationsPreview();
+      this.__buildSnapshotButtons();
 
-      const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      this._add(buttonsSection);
-
-      const openIterationBtn = this.__openIterationBtn = this.__createOpenIterationBtn();
-      openIterationBtn.setEnabled(false);
-      openIterationBtn.addListener("execute", () => {
-        if (this.__selectedIterationId) {
-          this.fireDataEvent("openIteration", this.__selectedIterationId);
-        }
-      });
-      buttonsSection.add(openIterationBtn);
+      const iterationsPreview = this.__iterationPreview = new osparc.component.workbench.WorkbenchUIPreview();
+      this.add(iterationsPreview, 1);
     },
 
     __buildIterations: function() {
       const loadingTable = this.__loadingTable = new osparc.component.snapshots.Loading(this.tr("iterations"));
       this.__iterationsSection.addAt(loadingTable, 0, {
-        width: "50%"
+        flex: 1
       });
 
       this.__study.getIterations()
@@ -96,6 +84,22 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
               });
           }
         });
+    },
+
+    __buildSnapshotButtons: function() {
+      const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      this._add(buttonsSection);
+
+      const openIterationBtn = this.__openIterationBtn = this.__createOpenIterationBtn();
+      openIterationBtn.setEnabled(false);
+      openIterationBtn.addListener("execute", () => {
+        if (this.__selectedIterationId) {
+          this.fireDataEvent("openIteration", this.__selectedIterationId);
+        }
+      });
+      buttonsSection.add(openIterationBtn);
+
+      this.__iterationsSection.addAt(buttonsSection, 1);
     },
 
     __listenToNodeUpdates: function() {
@@ -175,20 +179,11 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       iterationsTable.addListener("cellTap", e => {
         const selectedRow = e.getRow();
         const iterationId = iterationsTable.getRowData(selectedRow)["uuid"];
-        this.__iterationSelected(iterationId, {
-          flex: 1
-        });
+        this.__iterationSelected(iterationId);
       });
 
       this.__iterationsSection.addAt(iterationsTable, 0, {
-        width: "50%"
-      });
-    },
-
-    __buildIterationsPreview: function() {
-      const iterationsPreview = this.__iterationPreview = new osparc.component.workbench.WorkbenchUIPreview();
-      this.__iterationsSection.addAt(iterationsPreview, 1, {
-        width: "50%"
+        flex: 1
       });
     },
 
