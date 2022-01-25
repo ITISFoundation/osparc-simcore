@@ -137,7 +137,7 @@ properties:
           type:
             type: string
             pattern: >-
-              ^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$
+              ^(number|integer|boolean|string|ref_content_schema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$
             description: >-
               data type expected on this input glob matching for data type is
               allowed
@@ -154,6 +154,13 @@ properties:
               - data:text/plain
               - data:application/hdf5
               - data:application/edu.ucdavis@ceclancy.xyz
+          content_schema:
+            title: Content Schema
+            description: >-
+              jsonschema of the content at this input/output. Required when
+              type='ref_content_schema'
+            type: string
+            format: json-string
           fileToKeyMap:
             description: Place the data associated with the named keys in files
             type: object
@@ -263,7 +270,8 @@ properties:
               - Age in seconds since 1970
           type:
             type: string
-            pattern: ^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$
+            pattern: >-
+              ^(number|integer|boolean|string|ref_content_schema|data:[^/\s,]+/[^/\s,]+)$
             description: data type expected on this output
             example:
               - number
@@ -274,6 +282,13 @@ properties:
               - 'data:application/vnd.ms-excel '
               - data:text/plain
               - data:application/hdf5
+          content_schema:
+            title: Content Schema
+            description: >-
+              jsonschema of this input/output. Required when
+              type='ref_content_schema'
+            type: string
+            format: json-string
           fileToKeyMap:
             description: >-
               Place the data stored in the named files and store it in the

@@ -271,7 +271,7 @@ paths:
                                     - Age in seconds since 1970
                                 type:
                                   type: string
-                                  pattern: '^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
+                                  pattern: '^(number|integer|boolean|string|ref_content_schema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
                                   description: data type expected on this input glob matching for data type is allowed
                                   example:
                                     - number
@@ -285,6 +285,11 @@ paths:
                                     - 'data:text/plain'
                                     - 'data:application/hdf5'
                                     - 'data:application/edu.ucdavis@ceclancy.xyz'
+                                content_schema:
+                                  title: Content Schema
+                                  description: jsonschema of the content at this input/output. Required when type='ref_content_schema'
+                                  type: string
+                                  format: json-string
                                 fileToKeyMap:
                                   description: Place the data associated with the named keys in files
                                   type: object
@@ -392,7 +397,7 @@ paths:
                                     - Age in seconds since 1970
                                 type:
                                   type: string
-                                  pattern: '^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$'
+                                  pattern: '^(number|integer|boolean|string|ref_content_schema|data:[^/\s,]+/[^/\s,]+)$'
                                   description: data type expected on this output
                                   example:
                                     - number
@@ -403,6 +408,11 @@ paths:
                                     - 'data:application/vnd.ms-excel '
                                     - 'data:text/plain'
                                     - 'data:application/hdf5'
+                                content_schema:
+                                  title: Content Schema
+                                  description: jsonschema of this input/output. Required when type='ref_content_schema'
+                                  type: string
+                                  format: json-string
                                 fileToKeyMap:
                                   description: Place the data stored in the named files and store it in the locations pointed to by the respective output key.
                                   type: object
@@ -702,7 +712,7 @@ paths:
                                     - Age in seconds since 1970
                                 type:
                                   type: string
-                                  pattern: '^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
+                                  pattern: '^(number|integer|boolean|string|ref_content_schema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
                                   description: data type expected on this input glob matching for data type is allowed
                                   example:
                                     - number
@@ -716,6 +726,11 @@ paths:
                                     - 'data:text/plain'
                                     - 'data:application/hdf5'
                                     - 'data:application/edu.ucdavis@ceclancy.xyz'
+                                content_schema:
+                                  title: Content Schema
+                                  description: jsonschema of the content at this input/output. Required when type='ref_content_schema'
+                                  type: string
+                                  format: json-string
                                 fileToKeyMap:
                                   description: Place the data associated with the named keys in files
                                   type: object
@@ -823,7 +838,7 @@ paths:
                                     - Age in seconds since 1970
                                 type:
                                   type: string
-                                  pattern: '^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$'
+                                  pattern: '^(number|integer|boolean|string|ref_content_schema|data:[^/\s,]+/[^/\s,]+)$'
                                   description: data type expected on this output
                                   example:
                                     - number
@@ -834,6 +849,11 @@ paths:
                                     - 'data:application/vnd.ms-excel '
                                     - 'data:text/plain'
                                     - 'data:application/hdf5'
+                                content_schema:
+                                  title: Content Schema
+                                  description: jsonschema of this input/output. Required when type='ref_content_schema'
+                                  type: string
+                                  format: json-string
                                 fileToKeyMap:
                                   description: Place the data stored in the named files and store it in the locations pointed to by the respective output key.
                                   type: object
@@ -2540,7 +2560,7 @@ components:
                           - Age in seconds since 1970
                       type:
                         type: string
-                        pattern: '^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
+                        pattern: '^(number|integer|boolean|string|ref_content_schema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
                         description: data type expected on this input glob matching for data type is allowed
                         example:
                           - number
@@ -2554,6 +2574,11 @@ components:
                           - 'data:text/plain'
                           - 'data:application/hdf5'
                           - 'data:application/edu.ucdavis@ceclancy.xyz'
+                      content_schema:
+                        title: Content Schema
+                        description: jsonschema of the content at this input/output. Required when type='ref_content_schema'
+                        type: string
+                        format: json-string
                       fileToKeyMap:
                         description: Place the data associated with the named keys in files
                         type: object
@@ -2661,7 +2686,7 @@ components:
                           - Age in seconds since 1970
                       type:
                         type: string
-                        pattern: '^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$'
+                        pattern: '^(number|integer|boolean|string|ref_content_schema|data:[^/\s,]+/[^/\s,]+)$'
                         description: data type expected on this output
                         example:
                           - number
@@ -2672,6 +2697,11 @@ components:
                           - 'data:application/vnd.ms-excel '
                           - 'data:text/plain'
                           - 'data:application/hdf5'
+                      content_schema:
+                        title: Content Schema
+                        description: jsonschema of this input/output. Required when type='ref_content_schema'
+                        type: string
+                        format: json-string
                       fileToKeyMap:
                         description: Place the data stored in the named files and store it in the locations pointed to by the respective output key.
                         type: object

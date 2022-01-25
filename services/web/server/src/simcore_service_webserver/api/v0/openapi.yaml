@@ -1825,9 +1825,11 @@ paths:
                                 - type:
                                     - integer
                                     - boolean
-                                    - string
                                     - number
                                     - 'null'
+                                - type: string
+                                  format: json-string
+                                - type: string
                                 - type: object
                                   additionalProperties: false
                                   required:
@@ -1901,9 +1903,11 @@ paths:
                                 - type:
                                     - integer
                                     - boolean
-                                    - string
                                     - number
                                     - 'null'
+                                - type: string
+                                  format: json-string
+                                - type: string
                                 - type: object
                                   additionalProperties: false
                                   required:
