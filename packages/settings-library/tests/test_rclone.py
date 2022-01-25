@@ -1,10 +1,10 @@
 from typing import Set
 
-from settings_library.rclone import S3BackendType
+from settings_library.rclone import S3Provider
 
 
 def _get_backend_type_options() -> Set[str]:
-    return {x for x in dir(S3BackendType) if not x.startswith("_")}
+    return {x for x in dir(S3Provider) if not x.startswith("_")}
 
 
 def test_supported_backends_did_not_change() -> None:

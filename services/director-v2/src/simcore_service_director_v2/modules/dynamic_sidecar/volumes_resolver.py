@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict
 
-from settings_library.rclone import RCloneSettings, S3BackendType
+from settings_library.rclone import RCloneSettings, S3Provider
 from models_library.projects_nodes_io import NodeID
 from models_library.projects import ProjectID
 
@@ -29,23 +29,23 @@ def _get_s3_volume_driver_config(
 
     extra_options = None
 
-    if r_clone_settings.S3_BACKEND == S3BackendType.MINIO:
+    if r_clone_settings.S3_PROVIDER == S3Provider.MINIO:
         extra_options = {
             "s3-provider": "Minio",
             "s3-region": "us-east-1",
             "s3-location_constraint": "",
             "s3-server_side_encryption": "",
         }
-    elif r_clone_settings.S3_BACKEND == S3BackendType.CEPH:
+    elif r_clone_settings.S3_PROVIDER == S3Provider.CEPH:
         extra_options = {
             "s3-provider": "Ceph",
             "s3-acl": "private",
         }
-    elif r_clone_settings.S3_BACKEND == S3BackendType.S3:
+    elif r_clone_settings.S3_PROVIDER == S3Provider.AWS:
         raise NotImplementedError("TODO: finish before merging")
     else:
         raise DynamicSidecarError(
-            f"Unexpected, all {S3BackendType.__name__} should be covered"
+            f"Unexpected, all {S3Provider.__name__} should be covered"
         )
 
     assert extra_options is not None  # no sec

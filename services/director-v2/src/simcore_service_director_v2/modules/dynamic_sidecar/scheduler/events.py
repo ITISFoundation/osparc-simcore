@@ -449,11 +449,11 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                     dynamic_sidecar_client.service_push_output_ports(
                         dynamic_sidecar_endpoint,
                     ),
-                    dynamic_sidecar_client.service_save_state(
-                        dynamic_sidecar_endpoint,
-                    ),
+                    # dynamic_sidecar_client.service_save_state(
+                    #     dynamic_sidecar_endpoint,
+                    # ),
                 )
-                logger.info("State saved by dynamic-sidecar")
+                logger.info("Ports data pushed by dynamic-sidecar")
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(
                     (
