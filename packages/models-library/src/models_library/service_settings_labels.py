@@ -95,10 +95,6 @@ class PathMappingsLabel(BaseModel):
         [],
         description="optional list of paths which contents need to be persisted",
     )
-    state_exclude: List[Path] = Field(
-        [],
-        description="optional list of paths to exclude when saving satate_paths",
-    )
 
     state_exclude: Optional[List[str]] = Field(
         None,
