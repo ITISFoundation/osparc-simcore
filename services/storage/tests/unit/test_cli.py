@@ -19,7 +19,7 @@ from simcore_service_storage.settings import Settings
 def test_cli_help(arguments, cli_runner):
     result = cli_runner.invoke(main, arguments)
     print(result.stdout)
-    assert result.exit_code == os.EX_OK
+    assert result.exit_code == os.EX_OK, result
     assert "Usage: simcore-service-storage" in result.stdout
 
 

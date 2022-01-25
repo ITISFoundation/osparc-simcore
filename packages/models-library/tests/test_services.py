@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import re
+from copy import deepcopy
 from pathlib import Path
 from pprint import pformat
 from typing import Any, Callable, Dict, List
@@ -14,6 +15,7 @@ from models_library.services import (
     COMPUTATIONAL_SERVICE_KEY_FORMAT,
     DYNAMIC_SERVICE_KEY_FORMAT,
     SERVICE_KEY_RE,
+    BootOption,
     ServiceAccessRightsAtDB,
     ServiceCommonData,
     ServiceDockerData,
@@ -230,3 +232,15 @@ def test_same_regex_patterns_in_jsonschema_and_python(
     for x_path in json_schema_entry_paths:
         json_pattern = _find_pattern_entry(json_schema_config, x_path)
         assert json_pattern == python_regex_pattern
+
+
+def test_boot_option() -> None:
+    for example in BootOption.Config.schema_extra["examples"]:
+        assert BootOption(**example)
+
+
+def test_boot_option_wrong_default() -> None:
+    for example in [deepcopy(x) for x in BootOption.Config.schema_extra["examples"]]:
+        with pytest.raises(ValueError):
+            example["default"] = "__undefined__"
+            assert BootOption(**example)
