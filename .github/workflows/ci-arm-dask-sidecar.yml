@@ -27,7 +27,7 @@ jobs:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
-    name: "[build/deploy] docker images"
+    name: "[build/deploy] dask-sidecar multiplatform docker images"
     steps:
       - uses: actions/checkout@v2
       - name: setup docker buildx
