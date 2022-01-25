@@ -101,7 +101,7 @@ qx.Class.define("osparc.component.metadata.ClassifiersEditor", {
     __createClassifiersTree: function() {
       const studyData = this.__studyData;
       const classifiers = studyData.classifiers && studyData.classifiers ? studyData.classifiers : [];
-      const classifiersTree = this.__classifiersTree = new osparc.component.filter.ClassifiersFilter("classifiersEditor", "sideSearchFilter", classifiers);
+      const classifiersTree = this.__classifiersTree = new osparc.component.filter.ClassifiersFilter("classifiersEditor", "searchBarFilter", classifiers);
       osparc.store.Store.getInstance().addListener("changeClassifiers", e => {
         classifiersTree.recreateTree();
       }, this);

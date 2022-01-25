@@ -379,7 +379,7 @@ async function clearInput(page, selector) {
   await page.click(selector, {
     clickCount: 3
   });
-  await page.type('[osparc-test-id="sideSearchFiltersTextFld"]', "");
+  await page.type(selector, "");
 }
 
 function sleep(ms) {

@@ -53,7 +53,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     ITEM_HEIGHT: 220,
     PADDING: 10,
     V_SPACING: 6,
-    SPACING: 12,
+    SPACING: 15,
     POS: {
       TITLE: 0,
       SUBTITLE: 1,
