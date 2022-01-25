@@ -2,9 +2,56 @@ import os
 from pathlib import Path
 from typing import Any, Dict
 
-from settings_library.rclone import RCloneSettings
+from settings_library.rclone import RCloneSettings, S3BackendType
 from models_library.projects_nodes_io import NodeID
 from models_library.projects import ProjectID
+
+from .errors import DynamicSidecarError
+
+
+def _get_s3_volume_driver_config(
+    r_clone_settings: RCloneSettings,
+    project_id: ProjectID,
+    node_uuid: NodeID,
+    volume_name: str,
+) -> Dict[str, Any]:
+    driver_config = {
+        "Name": "rclone",
+        "Options": {
+            "type": "s3",
+            "s3-access_key_id": r_clone_settings.S3_ACCESS_KEY,
+            "s3-secret_access_key": r_clone_settings.S3_SECRET_KEY,
+            "s3-endpoint": r_clone_settings.S3_ENDPOINT,
+            "path": f"{r_clone_settings.S3_BUCKET_NAME}/{project_id}/{node_uuid}/{volume_name}",
+            "allow-other": "true",
+        },
+    }
+
+    extra_options = None
+
+    if r_clone_settings.S3_BACKEND == S3BackendType.MINIO:
+        extra_options = {
+            "s3-provider": "Minio",
+            "s3-region": "us-east-1",
+            "s3-location_constraint": "",
+            "s3-server_side_encryption": "",
+        }
+    elif r_clone_settings.S3_BACKEND == S3BackendType.CEPH:
+        extra_options = {
+            "s3-provider": "Ceph",
+            "s3-acl": "private",
+        }
+    elif r_clone_settings.S3_BACKEND == S3BackendType.S3:
+        raise NotImplementedError("TODO: finish before merging")
+    else:
+        raise DynamicSidecarError(
+            f"Unexpected, all {S3BackendType.__name__} should be covered"
+        )
+
+    assert extra_options is not None  # no sec
+    driver_config["Options"].update(extra_options)
+
+    return driver_config
 
 
 class DynamicSidecarVolumesPathsResolver:
@@ -28,11 +75,10 @@ class DynamicSidecarVolumesPathsResolver:
     def mount_entry(
         cls, compose_namespace: str, path: Path, node_uuid: NodeID
     ) -> Dict[str, Any]:
-        #   # TODO: migrate this to path resolver to be mounted
-        #   the volume is created here by the docker engine
-
-        # mounts local directories form the host where the service
-        # (dynamic-sidecar) is running.
+        """
+        mounts local directories form the host where the service
+        dynamic-sidecar) is running.
+        """
         return {
             "Source": cls._source(compose_namespace, path),
             "Target": cls.target(path),
@@ -47,10 +93,8 @@ class DynamicSidecarVolumesPathsResolver:
         path: Path,
         project_id: ProjectID,
         node_uuid: NodeID,
-        # TODO: use r_clone settings to pull in information about the endpoint
-        # r_clone_settings: RCloneSettings,
+        r_clone_settings: RCloneSettings,
     ) -> Dict[str, Any]:
-
         return {
             "Source": cls._source(compose_namespace, path),
             "Target": cls.target(path),
@@ -59,22 +103,11 @@ class DynamicSidecarVolumesPathsResolver:
                 "Labels": {
                     "uuid": f"{node_uuid}",
                 },
-                "DriverConfig": {
-                    "Name": "rclone",
-                    "Options": {
-                        "type": "s3",
-                        "s3-provider": "Minio",
-                        "s3-env_auth": "false",
-                        "s3-access_key_id": "12345678",
-                        "s3-secret_access_key": "12345678",
-                        "s3-region": "us-east-1",
-                        "s3-endpoint": "http://172.17.0.1:9001",
-                        "s3-location_constraint": "",
-                        "s3-server_side_encryption": "",
-                        # TODO: PC, SAN this "simcore" where is it defined, can I use a constant
-                        "path": f"simcore/{project_id}/{node_uuid}/{cls._volume_name(path).strip('_')}",
-                        "allow-other": "true",
-                    },
-                },
+                "DriverConfig": _get_s3_volume_driver_config(
+                    r_clone_settings=r_clone_settings,
+                    project_id=project_id,
+                    node_uuid=node_uuid,
+                    volume_name=cls._volume_name(path).strip("_"),
+                ),
             },
         }

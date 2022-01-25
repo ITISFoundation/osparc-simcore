@@ -3,6 +3,7 @@ from typing import Any, Dict
 
 from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from servicelib.json_serialization import json_dumps
+from settings_library.rclone import RCloneSettings
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
@@ -118,6 +119,7 @@ def get_dynamic_sidecar_spec(
                 path=path_to_mount,
                 project_id=scheduler_data.project_id,
                 node_uuid=scheduler_data.node_uuid,
+                r_clone_settings=dynamic_sidecar_settings.R_CLONE_SETTINGS,
             )
         )
 

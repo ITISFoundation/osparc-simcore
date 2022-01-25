@@ -19,6 +19,7 @@ from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.rclone import RCloneSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
@@ -152,6 +153,8 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ...,
         description="Names the traefik zone for services that must be accessible from platform http entrypoint",
     )
+
+    R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     SWARM_STACK_NAME: str = Field(
         ...,
