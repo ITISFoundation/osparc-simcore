@@ -246,7 +246,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
         tagCtrl.setValue(selectedSnapshot["tags"][0]);
         const msgCtrl = editSnapshotView.getChildControl("message");
         msgCtrl.setValue(selectedSnapshot["message"]);
-        const title = this.tr("Edit Snapshot");
+        const title = this.tr("Edit Iteration");
         const win = osparc.ui.window.Window.popUpInWindow(editSnapshotView, title, 400, 180);
         editSnapshotView.addListener("takeSnapshot", () => {
           const params = {
