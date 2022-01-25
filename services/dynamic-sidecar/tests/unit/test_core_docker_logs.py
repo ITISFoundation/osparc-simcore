@@ -38,7 +38,7 @@ def app(
     disable_registry_check: None,
 ) -> Iterable[FastAPI]:
     monkeypatch_module.setenv("SC_BOOT_MODE", "production")
-    monkeypatch_module.setenv("DYNAMIC_SIDECAR_compose_namespace", "test-space")
+    monkeypatch_module.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", "test-space")
     monkeypatch_module.setenv("REGISTRY_AUTH", "false")
     monkeypatch_module.setenv("REGISTRY_USER", "test")
     monkeypatch_module.setenv("REGISTRY_PW", "test")
