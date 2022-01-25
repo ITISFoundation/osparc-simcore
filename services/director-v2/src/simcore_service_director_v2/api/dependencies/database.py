@@ -2,7 +2,7 @@ import logging
 from typing import AsyncGenerator, Callable, Type
 
 from aiopg.sa import Engine
-from fastapi import Depends, FastAPI
+from fastapi import Depends
 from fastapi.requests import Request
 
 from ...modules.db.repositories import BaseRepository
@@ -43,9 +43,3 @@ def get_repository(repo_type: Type[BaseRepository]) -> Callable:
         yield get_base_repository(engine=engine, repo_type=repo_type)
 
     return _get_repo
-
-
-def fetch_repo_no_request(
-    app: FastAPI, repo_type: Type[BaseRepository]
-) -> BaseRepository:
-    return get_base_repository(engine=app.state.engine, repo_type=repo_type)

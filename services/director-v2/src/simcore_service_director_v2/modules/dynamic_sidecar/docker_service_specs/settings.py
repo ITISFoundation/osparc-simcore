@@ -10,7 +10,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingLabelEntry,
     SimcoreServiceSettingsLabel,
 )
-from models_library.services import BootOptionMode, EnvVarKey, ServiceKeyVersion
+from models_library.services import ServiceKeyVersion
 
 from ....api.dependencies.director_v0 import DirectorV0Client
 from .._constants import CONTAINER_NAME
