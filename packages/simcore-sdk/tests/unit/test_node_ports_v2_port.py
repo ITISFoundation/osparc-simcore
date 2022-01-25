@@ -101,26 +101,6 @@ def symlink_to_file_with_data() -> Iterator[Path]:
 
 
 @pytest.fixture
-def dy_volumes_overwrite(tmp_path: Path) -> Path:
-    dy_volumes = tmp_path / "dy_volumes"
-    dy_volumes.mkdir(exist_ok=True, parents=True)
-    return dy_volumes
-
-
-@pytest.fixture(params=[True, False])
-def relative_path(request):
-    return request.param
-
-
-@pytest.fixture
-def pointed_fie_path(relative_path: bool, tmp_path: Path) -> Path:
-    if relative_path:
-        return Path("real_file_")
-
-    return tmp_path / "real_file"
-
-
-@pytest.fixture
 def file_with_data() -> Iterator[Path]:
     file_name: Path = this_node_file_name()
     file_path = file_name
