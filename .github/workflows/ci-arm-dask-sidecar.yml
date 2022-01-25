@@ -30,16 +30,18 @@ jobs:
     name: "[build/deploy] dask-sidecar multiplatform docker images"
     steps:
       - uses: actions/checkout@v2
+      - name: set up QEMU
+        id: qemu
+        uses: docker/setup-qemu-action@v1
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: all
       - name: setup docker buildx
-        if: github.event_name == 'push'
         id: buildx
         uses: docker/setup-buildx-action@v1
         with:
           version: ${{ matrix.docker_buildx }}
-          driver: docker
-      - name: setup docker-compose
-        if: github.event_name == 'push'
-        run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+          driver: docker-container # a must for multi-arch buildsplatform
       - name: show system environs
         if: github.event_name == 'push'
         run: ./ci/helpers/show_system_versions.bash
