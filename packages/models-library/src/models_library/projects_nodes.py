@@ -10,6 +10,7 @@ from pydantic import (
     Extra,
     Field,
     HttpUrl,
+    Json,
     StrictBool,
     StrictFloat,
     StrictInt,
@@ -18,6 +19,7 @@ from pydantic import (
 )
 
 from .basic_regex import VERSION_RE
+from .boot_options import EnvVarKey
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
     DatCoreFileLink,
@@ -26,16 +28,17 @@ from .projects_nodes_io import (
     PortLink,
     SimCoreFileLink,
 )
-from .boot_options import EnvVarKey
 from .projects_nodes_ui import Position
 from .projects_state import RunningState
 from .services import PROPERTY_KEY_RE, SERVICE_KEY_RE
 
 # NOTE: WARNING the order here matters
+# NOTE: Json is a raw JSON string. SEE https://pydantic-docs.helpmanual.io/usage/types/#json-type
 InputTypes = Union[
     StrictBool,
     StrictInt,
     StrictFloat,
+    Json,
     str,
     PortLink,
     SimCoreFileLink,
@@ -46,6 +49,7 @@ OutputTypes = Union[
     StrictBool,
     StrictInt,
     StrictFloat,
+    Json,
     str,
     SimCoreFileLink,
     DatCoreFileLink,

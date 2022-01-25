@@ -38,7 +38,7 @@ KEY_RE = SERVICE_KEY_RE  # TODO: deprecate this global constant by SERVICE_KEY_R
 SERVICE_NETWORK_RE = r"^([a-zA-Z0-9_-]+)$"
 
 
-PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|as_schema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
+PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|ref_content_schema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
 PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"
 
 FILENAME_RE = r".+"
@@ -186,7 +186,8 @@ class BaseServiceIO(BaseModel):
     )
 
     content_schema: Optional[Json] = Field(
-        None, description="jsonschema of this input/output. Required when type='schema'"
+        None,
+        description="jsonschema of this input/output. Required when type='ref_content_schema'",
     )
 
     # value
@@ -210,10 +211,10 @@ class BaseServiceIO(BaseModel):
     @classmethod
     def check_type_is_set_to_schema(cls, v, values):
         # TODO: content_schema should be a valid json-schema
-        if v is not None and (ptype := values["property_type"]) != "as_schema":
+        if v is not None and (ptype := values["property_type"]) != "ref_content_schema":
             raise ValueError(
                 "content_schema is defined but set the wrong type."
-                f"Expected type=as_schema but got ={ptype}."
+                f"Expected type=ref_content_schema but got ={ptype}."
             )
         return v
 
@@ -361,6 +362,8 @@ ServiceOutputs = Dict[PropertyName, ServiceOutput]
 class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
     """
     Static metadata for a service injected in the image labels
+
+    This is one to one with node-meta-v0.0.1.json
     """
 
     integration_version: Optional[str] = Field(

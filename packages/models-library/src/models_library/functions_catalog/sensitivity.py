@@ -32,13 +32,13 @@ def _io_signature() -> Dict[str, Any]:
             "in_1": {
                 "label": "paramrefs",
                 "description": "reference parameters",
-                "type": "as_schema",
+                "type": "ref_content_schema",
                 "content_schema": LIST_NUMBERS_SCHEMA,
             },
             "in_2": {
                 "label": "paramdiff",
                 "description": "diff parameters",
-                "type": "as_schema",
+                "type": "ref_content_schema",
                 "content_schema": LIST_NUMBERS_SCHEMA,
             },
             "in_3": {
@@ -56,13 +56,13 @@ def _io_signature() -> Dict[str, Any]:
             "out_2": {
                 "label": "paramtestplus",
                 "description": "increased parameters",
-                "type": "as_schema",
+                "type": "ref_content_schema",
                 "content_schema": LIST_NUMBERS_SCHEMA,
             },
             "out_3": {
                 "label": "paramtestminus",
                 "description": "decreased parameters",
-                "type": "as_schema",
+                "type": "ref_content_schema",
                 "content_schema": LIST_NUMBERS_SCHEMA,
             },
         },
