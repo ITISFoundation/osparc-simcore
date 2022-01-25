@@ -306,7 +306,7 @@ class ServiceKeyVersion(BaseModel):
     )
 
 
-class ServiceCommonData(BaseModel):
+class _BaseServiceCommonDataModel(BaseModel):
     name: str = Field(
         ...,
         description="short, human readable name for the node",
@@ -340,7 +340,7 @@ ServiceInputs = Dict[PropertyName, ServiceInput]
 ServiceOutputs = Dict[PropertyName, ServiceOutput]
 
 
-class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
+class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
     """
     Static metadata for a service injected in the image labels
     """
@@ -494,7 +494,7 @@ class ServiceAccessRights(BaseModel):
     )
 
 
-class ServiceMetaData(ServiceCommonData):
+class ServiceMetaData(_BaseServiceCommonDataModel):
     # Overrides all fields of ServiceCommonData:
     #    - for a partial update all members must be Optional
     #  FIXME: if API entry needs a schema to allow partial updates (e.g. patch/put),
