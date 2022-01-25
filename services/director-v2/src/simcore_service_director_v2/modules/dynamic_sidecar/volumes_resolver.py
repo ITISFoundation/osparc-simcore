@@ -42,7 +42,11 @@ def _get_s3_volume_driver_config(
             "s3-acl": "private",
         }
     elif r_clone_settings.S3_PROVIDER == S3Provider.AWS:
-        raise NotImplementedError("TODO: finish before merging")
+        extra_options = {
+            "s3-provider": "AWS",
+            "s3-region": "us-east-1",
+            "s3-acl": "private",
+        }
     else:
         raise DynamicSidecarError(
             f"Unexpected, all {S3Provider.__name__} should be covered"
