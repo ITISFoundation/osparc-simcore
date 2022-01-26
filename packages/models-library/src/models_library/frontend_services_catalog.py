@@ -51,7 +51,7 @@ _CATALOG_REGISTRY = create_registry(
 
 def iter_service_docker_data() -> Iterator[ServiceDockerData]:
     for meta_obj in _CATALOG_REGISTRY.values():
-        # NOTE: the originals are this way not
+        # NOTE: the originals are this way not modified from outside
         copied_meta_obj = meta_obj.copy(deep=True)
         assert is_frontend_service(copied_meta_obj.key)  # nosec
         yield copied_meta_obj
