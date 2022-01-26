@@ -19,9 +19,49 @@ from models_library.frontend_services_catalog import (
     iter_service_docker_data,
 )
 from models_library.projects_nodes import Node, OutputTypes
-from models_library.services import ServiceDockerData
+from models_library.services import ServiceDockerData, ServiceKey, ServiceVersion
+from pydantic import validate_arguments
 
 _ServiceKeyVersionPair = Tuple[str, str]
+
+
+# META-FUNCTIONS ---------------------------------------------------
+
+# Catalog of front-end (i.e. non-docker) services
+FRONTEND_SERVICES_CATALOG: Dict[_ServiceKeyVersionPair, ServiceDockerData] = {
+    (s.key, s.version): s for s in iter_service_docker_data()
+}
+
+
+FRONTEND_SERVICE_TO_CALLABLE: Dict[_ServiceKeyVersionPair, Callable] = {}
+
+
+@validate_arguments
+def register(name: ServiceKey, version: ServiceVersion) -> Callable:
+    """Maps a service with a callable
+
+    Basically "glues" the implementation to a function node
+    """
+    key: _ServiceKeyVersionPair = (name, version)
+
+    if key not in FRONTEND_SERVICES_CATALOG.keys():
+        raise ValueError(
+            f"No definition of {key} found in the {len(FRONTEND_SERVICES_CATALOG)=}"
+        )
+
+    if key in FRONTEND_SERVICE_TO_CALLABLE.keys():
+        raise ValueError(f"{key} is already registered")
+
+    def _decorator(func: Callable):
+        # TODO: ensure inputs/outputs map function signature
+        FRONTEND_SERVICE_TO_CALLABLE[key] = func
+
+        # TODO: wrapper(args,kwargs): extract schemas for inputs and use them to validate inputs
+        # before running
+
+        return func
+
+    return _decorator
 
 
 # META-FUNCTION IMPLEMENTATIONS ---------------------------------------
@@ -34,6 +74,7 @@ def _linspace_func(
         yield value
 
 
+@register(f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/int-range", "1.0.0")
 def _linspace_generator(**kwargs) -> Iterator[Dict[str, OutputTypes]]:
     # maps generator with iterable outputs. can have non-iterable outputs
     # as well
@@ -41,23 +82,14 @@ def _linspace_generator(**kwargs) -> Iterator[Dict[str, OutputTypes]]:
         yield {"out_1": value}
 
 
-# TODO: extend InputTypes/OutputTypes to List[T]
-# TODO: pydantic map to json-schema
-
-# TODO: inputs need to match _func definition!
-# TODO: _sensitivity_meta needs to go in frontend_service_cantalog and registered in there so that
-# the catalog can identify this service
-
-# TODO: inject in database (including code??) If so, the definition can even change??
-
-
 def _sensitivity_func(
     paramrefs: List[float],
     paramdiff: List[float],
     diff_or_fact: bool,
-):
+) -> Iterator[Tuple[int, List[float], List[float]]]:
+
     # This code runs in the backend
-    assert len(paramrefs) == len(paramdiff)
+    assert len(paramrefs) == len(paramdiff)  # nosec
 
     n_dims = len(paramrefs)
 
@@ -79,34 +111,10 @@ def _sensitivity_func(
         yield (i, paramtestplus, paramtestminus)
 
 
+@register(f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/sensitivity", "1.0.0")
 def _sensitivity_generator(**kwargs) -> Iterator[Dict[str, OutputTypes]]:
     for i, paramtestplus, paramtestminus in _sensitivity_func(**kwargs):
         yield {"out_1": i, "out_2": paramtestplus, "out_3": paramtestminus}
-
-
-# META-FUNCTIONS ---------------------------------------------------
-
-# Catalog of front-end (i.e. non-docker) services
-FRONTEND_SERVICES_CATALOG: Dict[_ServiceKeyVersionPair, ServiceDockerData] = {
-    (s.key, s.version): s for s in iter_service_docker_data()
-}
-
-
-# Maps meta-function nodes with an implementation
-#  - Basically "glues" the implementation to a function node
-
-# TODO: ensure inputs/outputs map function signature
-# TODO: implement with a decorator on the implementation function
-FRONTEND_SERVICE_TO_CALLABLE: Dict[_ServiceKeyVersionPair, Callable] = {
-    (
-        f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/int-range",
-        "1.0.0",
-    ): _linspace_generator,
-    (
-        f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/sensitivity",
-        "1.0.0",
-    ): _sensitivity_generator,
-}
 
 
 # UTILS ---------------------------------------------------------------
@@ -122,7 +130,7 @@ def create_param_node_from_iterator_with_outputs(iterator_node: Node) -> Node:
     # that can replace any node with equivalent param-node with outputs
     #
 
-    assert (
+    assert (  # nosec
         iterator_node.key == f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/int-range"
     )  # nosec
     assert iterator_node.version == "1.0.0"  # nosec

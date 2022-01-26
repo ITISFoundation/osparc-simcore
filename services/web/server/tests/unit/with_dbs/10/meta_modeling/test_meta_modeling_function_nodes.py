@@ -3,18 +3,23 @@
 # pylint: disable=unused-variable
 
 
-def create(iterable_func, input_values):
+import collections.abc
+import inspect
+from typing import get_origin
 
-    # TODO: process input to iterable_func inputs
-    def iter_node():
-        for output_values in iterable_func(**input_values):
-            # map each func output into a node output
-            yield {f"out_{i}": value for i, value in enumerate(output_values, start=1)}
+from simcore_service_webserver.meta_modeling_function_nodes import (
+    FRONTEND_SERVICE_TO_CALLABLE,
+)
 
-    return iter_node
+# TODO: test i/o schemas on FRONTEND_SERVICES_CATALOG fit the  _fun Callable
 
 
-# given a function signature -> inputs and outputs for ServiceDockerData (schema)
-# of the service
-#
-#
+def test_frontend_service_to_callable_registry():
+
+    print(f"\n{len(FRONTEND_SERVICE_TO_CALLABLE)=}")
+    for (node_key, node_version), node_call in FRONTEND_SERVICE_TO_CALLABLE.items():
+        print(" -", node_key, node_version, node_call.__name__)
+        assert (
+            get_origin(inspect.signature(node_call).return_annotation)
+            is collections.abc.Iterator
+        ), f"Expected iterable nodes only {(node_key, node_version)=}"
