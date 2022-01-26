@@ -78,8 +78,8 @@ def test_union_types_coercion():
         input: InputTypes
         output: OutputTypes
 
-    assert get_origin(InputTypes) == Union
-    assert get_origin(OutputTypes) == Union
+    assert get_origin(InputTypes) is Union
+    assert get_origin(OutputTypes) is Union
     #
     # pydantic will attempt to 'match' any of the types defined under Union and will use the first one that matches
     # NOTE: it is recommended that, when defining Union annotations, the most specific type is included first and followed by less specific types.
