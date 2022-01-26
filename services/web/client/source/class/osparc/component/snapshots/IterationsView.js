@@ -41,6 +41,8 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     __loadingTable: null,
     __iterationsTable: null,
     __iterationPreview: null,
+    __tagIterationBtn: null,
+    __deleteIterationBtn: null,
     __openIterationBtn: null,
     __selectedIterationId: null,
     // throttling
@@ -87,7 +89,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     },
 
     __buildSnapshotButtons: function() {
-      const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       this._add(buttonsSection);
 
       const tagIterationBtn = this.__tagIterationBtn = this.__createTagIterationBtn();
@@ -98,6 +100,10 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
         }
       });
       buttonsSection.add(tagIterationBtn);
+
+      const deleteIterationBtn = this.__deleteIterationBtn = this.__createDeleteIterationBtn();
+      deleteIterationBtn.setEnabled(false);
+      buttonsSection.add(deleteIterationBtn);
 
       const openIterationBtn = this.__openIterationBtn = this.__createOpenIterationBtn();
       openIterationBtn.setEnabled(false);
@@ -225,15 +231,25 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     },
 
     __createTagIterationBtn: function() {
-      const tagIterationBtn = new qx.ui.form.Button(this.tr("Tag Iteration")).set({
-        allowGrowX: false
+      const tagIterationBtn = new qx.ui.form.Button(this.tr("Edit Tag")).set({
+        allowGrowX: false,
+        alignX: "left"
       });
       return tagIterationBtn;
     },
 
+    __createDeleteIterationBtn: function() {
+      const deleteIterationBtn = new qx.ui.form.Button(this.tr("Delete")).set({
+        allowGrowX: false,
+        alignX: "left"
+      });
+      return deleteIterationBtn;
+    },
+
     __createOpenIterationBtn: function() {
-      const openIterationBtn = new qx.ui.form.Button(this.tr("Open Iteration")).set({
-        allowGrowX: false
+      const openIterationBtn = new qx.ui.form.Button(this.tr("Open")).set({
+        allowGrowX: false,
+        alignX: "right"
       });
       return openIterationBtn;
     },
@@ -276,10 +292,6 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       this.__selectedIterationId = iterationId;
 
       this.__reloadIteration(iterationId);
-
-      if (this.__tagIterationBtn) {
-        this.__tagIterationBtn.setEnabled(true);
-      }
 
       if (this.__openIterationBtn) {
         this.__openIterationBtn.setEnabled(true);

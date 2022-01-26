@@ -114,7 +114,7 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     },
 
     __buildSnapshotButtons: function() {
-      const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
       this._add(buttonsSection);
 
       const editSnapshotBtn = this.__editSnapshotBtn = this.__createEditSnapshotBtn();
@@ -139,15 +139,17 @@ qx.Class.define("osparc.component.snapshots.SnapshotsView", {
     },
 
     __createEditSnapshotBtn: function() {
-      const editSnapshotBtn = new qx.ui.form.Button(this.tr("Edit Snapshot")).set({
-        allowGrowX: false
+      const editSnapshotBtn = new qx.ui.form.Button(this.tr("Edit Tag")).set({
+        allowGrowX: false,
+        alignX: "left"
       });
       return editSnapshotBtn;
     },
 
     __createOpenSnapshotBtn: function() {
-      const openSnapshotBtn = new qx.ui.form.Button(this.tr("Open Snapshot")).set({
-        allowGrowX: false
+      const openSnapshotBtn = new qx.ui.form.Button(this.tr("Open")).set({
+        allowGrowX: false,
+        alignX: "right"
       });
       return openSnapshotBtn;
     },
