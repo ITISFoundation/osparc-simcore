@@ -1,9 +1,9 @@
-from typing import Any, Dict, List
+from typing import List
 
 from pydantic import schema_json_of
 
 from ..services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
-from ._constants import EN, FRONTEND_SERVICE_KEY_PREFIX, OM
+from ._utils import EN, FRONTEND_SERVICE_KEY_PREFIX, OM, register
 
 # TODO: how to avoid explicit names here to define ownership?
 #
@@ -12,22 +12,16 @@ from ._constants import EN, FRONTEND_SERVICE_KEY_PREFIX, OM
 LIST_NUMBERS_SCHEMA: str = schema_json_of(List[float], title="list[number]")
 
 
-def create_metadata() -> ServiceDockerData:
-    return ServiceDockerData(
-        key=f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/sensitivity",
-        version="1.0.0",
-        type=ServiceType.FRONTEND,
-        name="Sensitivity iterator",
-        description="Increases/decreases one dimension of the reference parameters at every iteration",
-        authors=[EN, OM],
-        contact=OM["email"],
-        **_io_signature(),
-    )
-
-
-def _io_signature() -> Dict[str, Any]:
-    return {
+META = ServiceDockerData.parse_obj(
+    {
         "integration-version": LATEST_INTEGRATION_VERSION,
+        "key": f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/sensitivity",
+        "version": "1.0.0",
+        "type": ServiceType.FRONTEND,
+        "name": "Sensitivity iterator",
+        "description": "Increases/decreases one dimension of the reference parameters at every iteration",
+        "authors": [EN, OM],
+        "contact": OM["email"],
         "inputs": {
             "in_1": {
                 "label": "paramrefs",
@@ -67,3 +61,6 @@ def _io_signature() -> Dict[str, Any]:
             },
         },
     }
+)
+
+REGISTRY = register(META)
