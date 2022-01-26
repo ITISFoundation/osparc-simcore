@@ -154,8 +154,6 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
           value: filename,
           url: value.downloadLink
         });
-      } else if (this.getType() === "array") {
-        this.__label.setValue("["+value+"]");
       } else {
         this.__label.setValue(value);
       }
