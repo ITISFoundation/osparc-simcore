@@ -20,7 +20,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential, wait_fixed
 
 from ....api.dependencies.database import get_base_repository
-from ....core.settings import DynamicSidecarSettings
+from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....modules.db.repositories import BaseRepository
 from ....models.schemas.dynamic_services import (
     DockerContainerInspect,
@@ -433,8 +433,9 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 str(e),
             )
 
+        app_settings: AppSettings = app.state.settings
         dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+            app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
 
         if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
@@ -445,14 +446,20 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 "Calling into dynamic-sidecar to save state and pushing data to nodeports"
             )
             try:
-                await logged_gather(
+                tasks = [
                     dynamic_sidecar_client.service_push_output_ports(
                         dynamic_sidecar_endpoint,
-                    ),
-                    # dynamic_sidecar_client.service_save_state(
-                    #     dynamic_sidecar_endpoint,
-                    # ),
-                )
+                    )
+                ]
+                # When enabled no longer upload outputs via nodeports
+                # uses S3 as storage for the contens of the state directories
+                if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+                    tasks.append(
+                        dynamic_sidecar_client.service_save_state(
+                            dynamic_sidecar_endpoint,
+                        )
+                    )
+                await logged_gather(*tasks)
                 logger.info("Ports data pushed by dynamic-sidecar")
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(
