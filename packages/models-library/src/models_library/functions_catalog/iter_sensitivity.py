@@ -26,14 +26,14 @@ META = ServiceDockerData.parse_obj(
             "in_1": {
                 "label": "paramrefs",
                 "description": "reference parameters",
-                "type": "ref_content_schema",
-                "content_schema": LIST_NUMBERS_SCHEMA,
+                "type": "ref_contentSchema",
+                "contentSchema": LIST_NUMBERS_SCHEMA,
             },
             "in_2": {
                 "label": "paramdiff",
                 "description": "diff parameters",
-                "type": "ref_content_schema",
-                "content_schema": LIST_NUMBERS_SCHEMA,
+                "type": "ref_contentSchema",
+                "contentSchema": LIST_NUMBERS_SCHEMA,
             },
             "in_3": {
                 "label": "diff_or_fact",
@@ -50,14 +50,14 @@ META = ServiceDockerData.parse_obj(
             "out_2": {
                 "label": "paramtestplus",
                 "description": "increased parameters",
-                "type": "ref_content_schema",
-                "content_schema": LIST_NUMBERS_SCHEMA,
+                "type": "ref_contentSchema",
+                "contentSchema": LIST_NUMBERS_SCHEMA,
             },
             "out_3": {
                 "label": "paramtestminus",
                 "description": "decreased parameters",
-                "type": "ref_content_schema",
-                "content_schema": LIST_NUMBERS_SCHEMA,
+                "type": "ref_contentSchema",
+                "contentSchema": LIST_NUMBERS_SCHEMA,
             },
         },
     }
