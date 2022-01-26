@@ -22,6 +22,10 @@ from pydantic.types import PositiveInt
 
 from .basic_regex import VERSION_RE
 from .boot_options import BootOption, BootOptions
+from .services_access import ServiceGroupAccessRights
+from .services_ui import Widget
+
+# CONSTANTS -------------------------------------------
 
 # NOTE: needs to end with / !!
 SERVICE_KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$"
@@ -44,9 +48,11 @@ FILENAME_RE = r".+"
 
 LATEST_INTEGRATION_VERSION = "1.0.0"
 
+# CONSTRAINT TYPES -------------------------------------------
+
+
 PropertyName = constr(regex=PROPERTY_KEY_RE)
 FileName = constr(regex=FILENAME_RE)
-GroupId = PositiveInt
 
 ServiceKey = constr(regex=KEY_RE)
 ServiceVersion = constr(regex=VERSION_RE)
@@ -58,6 +64,7 @@ class ServiceType(str, Enum):
     FRONTEND = "frontend"
 
 
+# MODELS -------------------------------------------
 class Badge(BaseModel):
     name: str = Field(
         ...,
@@ -97,45 +104,6 @@ class Author(BaseModel):
     affiliation: Optional[str] = Field(
         None, examples=["Sense8", "Babylon 5"], description="Affiliation of the author"
     )
-
-    class Config:
-        extra = Extra.forbid
-
-
-class WidgetType(str, Enum):
-    TextArea = "TextArea"
-    SelectBox = "SelectBox"
-
-
-class TextArea(BaseModel):
-    min_height: PositiveInt = Field(
-        ..., alias="minHeight", description="minimum Height of the textarea"
-    )
-
-    class Config:
-        extra = Extra.forbid
-
-
-class Structure(BaseModel):
-    key: Union[str, bool, float]
-    label: str
-
-    class Config:
-        extra = Extra.forbid
-
-
-class SelectBox(BaseModel):
-    structure: List[Structure] = Field(..., min_items=1)
-
-    class Config:
-        extra = Extra.forbid
-
-
-class Widget(BaseModel):
-    widget_type: WidgetType = Field(
-        ..., alias="type", description="type of the property"
-    )
-    details: Union[TextArea, SelectBox]
 
     class Config:
         extra = Extra.forbid
@@ -497,23 +465,6 @@ class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
                 },
             ]
         }
-
-
-# Service access rights models
-class ServiceGroupAccessRights(BaseModel):
-    execute_access: bool = Field(
-        False,
-        description="defines whether the group can execute the service",
-    )
-    write_access: bool = Field(
-        False, description="defines whether the group can modify the service"
-    )
-
-
-class ServiceAccessRights(BaseModel):
-    access_rights: Optional[Dict[GroupId, ServiceGroupAccessRights]] = Field(
-        None, description="service access rights per group id"
-    )
 
 
 class ServiceMetaData(_BaseServiceCommonDataModel):
