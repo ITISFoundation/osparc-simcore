@@ -137,7 +137,7 @@ properties:
           type:
             type: string
             pattern: >-
-              ^(number|integer|boolean|string|ref_content_schema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$
+              ^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$
             description: >-
               data type expected on this input glob matching for data type is
               allowed
@@ -154,11 +154,11 @@ properties:
               - data:text/plain
               - data:application/hdf5
               - data:application/edu.ucdavis@ceclancy.xyz
-          content_schema:
+          contentSchema:
             title: Content Schema
             description: >-
               jsonschema of the content at this input/output. Required when
-              type='ref_content_schema'
+              type='ref_contentSchema'
             type: object
           fileToKeyMap:
             description: Place the data associated with the named keys in files
@@ -270,7 +270,7 @@ properties:
           type:
             type: string
             pattern: >-
-              ^(number|integer|boolean|string|ref_content_schema|data:[^/\s,]+/[^/\s,]+)$
+              ^(number|integer|boolean|string|ref_contentSchema|data:[^/\s,]+/[^/\s,]+)$
             description: data type expected on this output
             example:
               - number
@@ -278,14 +278,14 @@ properties:
               - boolean
               - string
               - data:application/json
-              - 'data:application/vnd.ms-excel '
+              - "data:application/vnd.ms-excel "
               - data:text/plain
               - data:application/hdf5
-          content_schema:
+          contentSchema:
             title: Content Schema
             description: >-
               jsonschema of this input/output. Required when
-              type='ref_content_schema'
+              type='ref_contentSchema'
             type: object
           fileToKeyMap:
             description: >-

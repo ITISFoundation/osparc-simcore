@@ -200,7 +200,7 @@
             },
             "type": {
               "type": "string",
-              "pattern": "^(number|integer|boolean|string|ref_content_schema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+              "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
               "description": "data type expected on this input glob matching for data type is allowed",
               "examples": [
                 "number",
@@ -216,9 +216,9 @@
                 "data:application/edu.ucdavis@ceclancy.xyz"
               ]
             },
-            "content_schema": {
+            "contentSchema": {
                 "title": "Content Schema",
-                "description": "jsonschema of the content at this input/output. Required when type='ref_content_schema'",
+                "description": "jsonschema of the content at this input/output. Required when type='ref_contentSchema'",
                 "type": "object"
             },
             "fileToKeyMap": {
@@ -377,7 +377,7 @@
             },
             "type": {
               "type": "string",
-              "pattern": "^(number|integer|boolean|string|ref_content_schema|data:[^/\\s,]+/[^/\\s,]+)$",
+              "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:[^/\\s,]+/[^/\\s,]+)$",
               "description": "data type expected on this output",
               "examples": [
                 "number",
@@ -390,9 +390,9 @@
                 "data:application/hdf5"
               ]
             },
-            "content_schema": {
+            "contentSchema": {
               "title": "Content Schema",
-              "description": "jsonschema of this input/output. Required when type='ref_content_schema'",
+              "description": "jsonschema of this input/output. Required when type='ref_contentSchema'",
               "type": "object"
             },
             "fileToKeyMap": {
