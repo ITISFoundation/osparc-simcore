@@ -38,6 +38,9 @@ qx.Class.define("osparc.ui.form.ContentSchemaField", {
     // overrriden
     getValue: function() {
       let value = this.base(arguments);
+      if (value === null) {
+        value = "";
+      }
       const cSchema = this.getContentSchema();
       if (cSchema) {
         if (cSchema.type === "array") {
