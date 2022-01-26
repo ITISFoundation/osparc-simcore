@@ -33,7 +33,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    this._initResources();
+    this._showLoadingPage(this.tr("Starting..."));
 
     this.addListener("appear", () => {
       this._moreResourcesRequired();
@@ -101,7 +101,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return control || this.base(arguments, id);
     },
 
-    _initResources: function() {
+    initResources: function() {
       throw new Error("Abstract method called!");
     },
 
