@@ -159,8 +159,7 @@ properties:
             description: >-
               jsonschema of the content at this input/output. Required when
               type='ref_content_schema'
-            type: string
-            format: json-string
+            type: object
           fileToKeyMap:
             description: Place the data associated with the named keys in files
             type: object
@@ -287,8 +286,7 @@ properties:
             description: >-
               jsonschema of this input/output. Required when
               type='ref_content_schema'
-            type: string
-            format: json-string
+            type: object
           fileToKeyMap:
             description: >-
               Place the data stored in the named files and store it in the

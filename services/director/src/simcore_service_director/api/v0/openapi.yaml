@@ -288,8 +288,7 @@ paths:
                                 content_schema:
                                   title: Content Schema
                                   description: jsonschema of the content at this input/output. Required when type='ref_content_schema'
-                                  type: string
-                                  format: json-string
+                                  type: object
                                 fileToKeyMap:
                                   description: Place the data associated with the named keys in files
                                   type: object
@@ -411,8 +410,7 @@ paths:
                                 content_schema:
                                   title: Content Schema
                                   description: jsonschema of this input/output. Required when type='ref_content_schema'
-                                  type: string
-                                  format: json-string
+                                  type: object
                                 fileToKeyMap:
                                   description: Place the data stored in the named files and store it in the locations pointed to by the respective output key.
                                   type: object
@@ -729,8 +727,7 @@ paths:
                                 content_schema:
                                   title: Content Schema
                                   description: jsonschema of the content at this input/output. Required when type='ref_content_schema'
-                                  type: string
-                                  format: json-string
+                                  type: object
                                 fileToKeyMap:
                                   description: Place the data associated with the named keys in files
                                   type: object
@@ -852,8 +849,7 @@ paths:
                                 content_schema:
                                   title: Content Schema
                                   description: jsonschema of this input/output. Required when type='ref_content_schema'
-                                  type: string
-                                  format: json-string
+                                  type: object
                                 fileToKeyMap:
                                   description: Place the data stored in the named files and store it in the locations pointed to by the respective output key.
                                   type: object
@@ -2577,8 +2573,7 @@ components:
                       content_schema:
                         title: Content Schema
                         description: jsonschema of the content at this input/output. Required when type='ref_content_schema'
-                        type: string
-                        format: json-string
+                        type: object
                       fileToKeyMap:
                         description: Place the data associated with the named keys in files
                         type: object
@@ -2700,8 +2695,7 @@ components:
                       content_schema:
                         title: Content Schema
                         description: jsonschema of this input/output. Required when type='ref_content_schema'
-                        type: string
-                        format: json-string
+                        type: object
                       fileToKeyMap:
                         description: Place the data stored in the named files and store it in the locations pointed to by the respective output key.
                         type: object
