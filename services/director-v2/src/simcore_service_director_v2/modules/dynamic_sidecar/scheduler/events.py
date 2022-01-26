@@ -248,19 +248,27 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        app_settings: AppSettings = app.state.settings
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
         async with disabled_directory_watcher(
             dynamic_sidecar_client, dynamic_sidecar_endpoint
         ):
-            # below tasks can take a while, running them in parallel
-            await logged_gather(
-                dynamic_sidecar_client.service_restore_state(dynamic_sidecar_endpoint),
+            tasks = [
                 dynamic_sidecar_client.service_pull_output_ports(
                     dynamic_sidecar_endpoint
-                ),
-            )
+                )
+            ]
+            # When enabled no longer downloads state via nodeports
+            # S3 is used to store state paths
+            if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+                tasks.append(
+                    dynamic_sidecar_client.service_restore_state(
+                        dynamic_sidecar_endpoint
+                    )
+                )
+            await logged_gather(*tasks)
 
             # inside this directory create the missing dirs, fetch those form the labels
             director_v0_client: DirectorV0Client = _get_director_v0_client(app)
@@ -451,8 +459,8 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                         dynamic_sidecar_endpoint,
                     )
                 ]
-                # When enabled no longer upload outputs via nodeports
-                # uses S3 as storage for the contens of the state directories
+                # When enabled no longer uploads state via nodeports
+                # S3 is used to store state paths
                 if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
                     tasks.append(
                         dynamic_sidecar_client.service_save_state(
