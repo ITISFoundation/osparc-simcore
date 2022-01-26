@@ -42,8 +42,8 @@ _FRONTEND_SERVICES_CATALOG: Dict[str, ServiceDockerData] = {
 
 # NOTE: this check is here to check every time new front-end nodes are defined
 assert (  # nosec
-    len(_FRONTEND_SERVICES_CATALOG) == 6
-), f"{len(_FRONTEND_SERVICES_CATALOG)=} check faile, review filter and update"  # nosec
+    len(_FRONTEND_SERVICES_CATALOG) == 7
+), f"{len(_FRONTEND_SERVICES_CATALOG)=} check failed, review filter above and update"  # nosec
 
 
 async def _generate_tasks_list_from_project(

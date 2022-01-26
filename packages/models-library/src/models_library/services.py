@@ -12,7 +12,6 @@ from pydantic import (
     Extra,
     Field,
     HttpUrl,
-    Json,
     StrictBool,
     StrictFloat,
     StrictInt,
@@ -185,7 +184,7 @@ class BaseServiceIO(BaseModel):
         regex=PROPERTY_TYPE_RE,
     )
 
-    content_schema: Optional[Json] = Field(
+    content_schema: Optional[Dict[str, Any]] = Field(
         None,
         description="jsonschema of this input/output. Required when type='ref_content_schema'",
     )
