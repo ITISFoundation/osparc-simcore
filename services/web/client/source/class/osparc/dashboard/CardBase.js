@@ -52,28 +52,25 @@ qx.Class.define("osparc.dashboard.CardBase", {
     MODE_APP: "@FontAwesome5Solid/desktop/14",
 
     filterText: function(checks, text) {
-      if (text && checks.filter(label => label && label.toLowerCase().trim().includes(text)).length == 0) {
-        return true;
+      if (text) {
+        const includesSome = checks.some(check => check.toLowerCase().trim().includes(text.toLowerCase()));
+        return !includesSome;
       }
       return false;
     },
 
     filterTags: function(checks, tags) {
       if (tags && tags.length) {
-        const tagNames = checks.map(tag => tag.name);
-        if (tags.filter(tag => tagNames.includes(tag)).length == 0) {
-          return true;
-        }
+        const includesAll = tags.every(tag => checks.includes(tag));
+        return !includesAll;
       }
       return false;
     },
 
     filterClassifiers: function(checks, classifiers) {
       if (classifiers && classifiers.length) {
-        const classes = osparc.utils.Classifiers.getLeafClassifiers(classifiers);
-        if (classes.filter(clas => checks.includes(clas.data.classifier)).length == 0) {
-          return true;
-        }
+        const includesAll = classifiers.every(classifier => checks.includes(classifier));
+        return !includesAll;
       }
       return false;
     }
@@ -404,6 +401,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _shouldApplyFilter: function(data) {
+      data = data["searchBarFilter"];
       if (this._filterText(data.text)) {
         return true;
       }
@@ -417,6 +415,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _shouldReactToFilter: function(data) {
+      data = data["searchBarFilter"];
       if (data.text && data.text.length > 1) {
         return true;
       }

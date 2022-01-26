@@ -36,7 +36,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     this._initResources();
 
     this.addListener("appear", () => {
-      this._moreStudiesRequired();
+      this._moreResourcesRequired();
     });
   },
 
@@ -74,32 +74,158 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   members: {
-    _studiesContainer: null,
-    _loadingStudiesBtn: null,
+    _topBar: null,
+    _secondaryBar: null,
+    _resourcesContainer: null,
+    _viewGridBtn: null,
+    _viewListBtn: null,
+    _loadingResourcesBtn: null,
+
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "scroll-container":
+          control = new qx.ui.container.Scroll();
+          this._add(control, {
+            flex: 1
+          });
+          control.getChildControl("pane").addListener("scrollY", () => this._moreResourcesRequired(), this);
+          break;
+        case "resources-layout": {
+          const scroll = this.getChildControl("scroll-container");
+          control = this._createLayout();
+          scroll.add(control);
+          break;
+        }
+      }
+      return control || this.base(arguments, id);
+    },
 
     _initResources: function() {
       throw new Error("Abstract method called!");
     },
 
-    _requestStudies: function(templates = false) {
-      if (this._loadingStudiesBtn.isFetching()) {
+    reloadResources: function() {
+      throw new Error("Abstract method called!");
+    },
+
+    _createLayout: function() {
+      throw new Error("Abstract method called!");
+    },
+
+    _createResourcesLayout: function(resourceType) {
+      const resourcesLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+
+      const topBar = this.__createTopBar(resourceType);
+      resourcesLayout.add(topBar);
+
+      const secondaryBar = this._secondaryBar = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      resourcesLayout.add(secondaryBar);
+
+      const resourcesContainer = this._resourcesContainer = this.__createResourcesContainer();
+      resourcesLayout.add(resourcesContainer);
+
+      return resourcesLayout;
+    },
+
+    __createResourcesContainer: function() {
+      const spacing = osparc.dashboard.GridButtonBase.SPACING;
+      return new osparc.component.form.ToggleButtonContainer(new qx.ui.layout.Flow(spacing, spacing));
+    },
+
+    __createTopBar: function(resourceType) {
+      const topBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(12)).set({
+        paddingRight: 8,
+        alignY: "middle"
+      });
+
+      const searchBarFilter = new osparc.dashboard.SearchBarFilter();
+      const textField = searchBarFilter.getChildControl("text-field");
+      osparc.utils.Utils.setIdToWidget(textField, resourceType ? "searchBarFilter-textField-"+resourceType : "searchBarFilter-textField");
+      topBar.add(searchBarFilter, {
+        flex: 1
+      });
+
+      const containterModeBtns = new qx.ui.container.Composite(new qx.ui.layout.HBox(6));
+      const viewGridBtn = this._viewGridBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/apps/18");
+      const viewListBtn = this._viewListBtn = new qx.ui.form.ToggleButton(null, "@MaterialIcons/reorder/18");
+      const group = new qx.ui.form.RadioGroup();
+      [
+        viewGridBtn,
+        viewListBtn
+      ].forEach(btn => {
+        containterModeBtns.add(btn);
+        group.add(btn);
+        btn.getContentElement().setStyles({
+          "border-radius": "8px"
+        });
+      });
+      topBar.add(containterModeBtns);
+
+      viewGridBtn.addListener("execute", () => this.__setResourcesContainerMode("grid"));
+      viewListBtn.addListener("execute", () => this.__setResourcesContainerMode("list"));
+
+      return topBar;
+    },
+
+    /**
+     * Function that resets the selected item
+     */
+    resetSelection: function() {
+      if (this._resourcesContainer) {
+        this._resourcesContainer.resetSelection();
+      }
+    },
+
+    _showMainLayout: function(show) {
+      this._getChildren().forEach(children => {
+        children.setVisibility(show ? "visible" : "excluded");
+      });
+    },
+
+    _checkLoggedIn: function() {
+      let isLogged = osparc.auth.Manager.getInstance().isLoggedIn();
+      if (!isLogged) {
+        const msg = this.tr("You need to be logged in to create a study");
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg);
+      }
+      return isLogged;
+    },
+
+    __setResourcesContainerMode: function(mode = "grid") {
+      const spacing = mode === "grid" ? osparc.dashboard.GridButtonBase.SPACING : osparc.dashboard.ListButtonBase.SPACING;
+      this._resourcesContainer.getLayout().set({
+        spacingX: spacing,
+        spacingY: spacing
+      });
+      this._resourcesContainer.setMode(mode);
+    },
+
+    _createLoadMoreButton: function(widgetId = "studiesLoading", mode = "grid") {
+      const loadingMoreBtn = this._loadingResourcesBtn = (mode === "grid") ? new osparc.dashboard.GridButtonLoadMore() : new osparc.dashboard.ListButtonLoadMore();
+      osparc.utils.Utils.setIdToWidget(loadingMoreBtn, widgetId);
+      return loadingMoreBtn;
+    },
+
+    _requestResources: function(templates = false) {
+      if (this._loadingResourcesBtn.isFetching()) {
         return;
       }
-      this._loadingStudiesBtn.setFetching(true);
+      this._loadingResourcesBtn.setFetching(true);
       const request = this.__getNextRequest(templates);
       request
         .then(resp => {
-          const studies = resp["data"];
-          this._studiesContainer.nextRequest = resp["_links"]["next"];
-          this._addStudiesToList(studies);
+          const resources = resp["data"];
+          this._resourcesContainer.nextRequest = resp["_links"]["next"];
+          this._addResourcesToList(resources);
         })
         .catch(err => {
           console.error(err);
         })
         .finally(() => {
-          this._loadingStudiesBtn.setFetching(false);
-          this._loadingStudiesBtn.setVisibility(this._studiesContainer.nextRequest === null ? "excluded" : "visible");
-          this._moreStudiesRequired();
+          this._loadingResourcesBtn.setFetching(false);
+          this._loadingResourcesBtn.setVisibility(this._resourcesContainer.nextRequest === null ? "excluded" : "visible");
+          this._moreResourcesRequired();
         });
     },
 
@@ -110,33 +236,30 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           limit: osparc.dashboard.ResourceBrowserBase.PAGINATED_STUDIES
         }
       };
-      if ("nextRequest" in this._studiesContainer &&
-        this._studiesContainer.nextRequest !== null &&
-        osparc.utils.Utils.hasParamFromURL(this._studiesContainer.nextRequest, "offset") &&
-        osparc.utils.Utils.hasParamFromURL(this._studiesContainer.nextRequest, "limit")) {
-        params.url.offset = osparc.utils.Utils.getParamFromURL(this._studiesContainer.nextRequest, "offset");
-        params.url.limit = osparc.utils.Utils.getParamFromURL(this._studiesContainer.nextRequest, "limit");
+      if ("nextRequest" in this._resourcesContainer &&
+        this._resourcesContainer.nextRequest !== null &&
+        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.nextRequest, "offset") &&
+        osparc.utils.Utils.hasParamFromURL(this._resourcesContainer.nextRequest, "limit")) {
+        params.url.offset = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.nextRequest, "offset");
+        params.url.limit = osparc.utils.Utils.getParamFromURL(this._resourcesContainer.nextRequest, "limit");
       }
       const resolveWResponse = true;
       return osparc.data.Resources.fetch(templates ? "templates" : "studies", "getPage", params, undefined, resolveWResponse);
     },
 
-    _addStudiesToList: function() {
+    _addResourcesToList: function() {
       throw new Error("Abstract method called!");
     },
 
-    _moreStudiesRequired: function() {
-      if (this._studiesContainer &&
-        this._studiesContainer.nextRequest !== null &&
-        (this._studiesContainer.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
-        this._loadingStudiesBtn.checkIsOnScreen())
+    _moreResourcesRequired: function() {
+      if (this._resourcesContainer &&
+        this._loadingResourcesBtn &&
+        this._resourcesContainer.nextRequest !== null &&
+        (this._resourcesContainer.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
+        this._loadingResourcesBtn.checkIsOnScreen())
       ) {
-        this.reloadStudies();
+        this.reloadResources();
       }
-    },
-
-    reloadStudies: function() {
-      throw new Error("Abstract method called!");
     },
 
     _getMoreInfoMenuButton: function(resourceData) {
@@ -153,29 +276,28 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _getQualityMenuButton: function(resourceData) {
-      const studyQualityButton = new qx.ui.menu.Button(this.tr("Quality"));
-      studyQualityButton.addListener("execute", () => {
+      const qualityButton = new qx.ui.menu.Button(this.tr("Quality"));
+      qualityButton.addListener("execute", () => {
         this.__openQualityEditor(resourceData);
       }, this);
-      return studyQualityButton;
+      return qualityButton;
     },
 
     __openStudyDetails: function(resourceData) {
-      const studyDetails = new osparc.studycard.Large(resourceData);
-      const title = this.tr("Study Details");
+      const card = new osparc.studycard.Large(resourceData);
+      const title = osparc.utils.Resources.isTemplate(resourceData) ? this.tr("Template Details") : this.tr("Study Details");
       const width = 500;
       const height = 500;
-      osparc.ui.window.Window.popUpInWindow(studyDetails, title, width, height);
-      studyDetails.addListener("updateStudy", e => {
+      osparc.ui.window.Window.popUpInWindow(card, title, width, height);
+      card.addListener("updateStudy", e => {
+        const updatedData = e.getData();
         if (osparc.utils.Resources.isTemplate(resourceData)) {
-          const updatedTemplateData = e.getData();
-          this._resetTemplateItem(updatedTemplateData);
+          this._resetTemplateItem(updatedData);
         } else {
-          const updatedStudyData = e.getData();
-          this._resetStudyItem(updatedStudyData);
+          this._resetStudyItem(updatedData);
         }
       });
-      studyDetails.addListener("updateTags", () => {
+      card.addListener("updateTags", () => {
         if (osparc.utils.Resources.isTemplate(resourceData)) {
           this._resetTemplatesList(osparc.store.Store.getInstance().getTemplates());
         } else {
@@ -202,15 +324,23 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       });
     },
 
-    _startStudy: function(studyId) {
-      throw new Error("Abstract method called!");
+    _createResourceItem: function(resourceData) {
+      const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
+
+      const item = this._resourcesContainer.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
+      item.set({
+        resourceData,
+        tags
+      });
+
+      const menu = this._getResourceItemMenu(resourceData, item);
+      item.setMenu(menu);
+      item.subscribeToFilterGroup("searchBarFilter");
+
+      return item;
     },
 
-    _createStudyFromTemplate: function(templateData) {
-      throw new Error("Abstract method called!");
-    },
-
-    _reloadTemplate: function(templateId) {
+    _getResourceItemMenu: function(resourceData, item) {
       throw new Error("Abstract method called!");
     },
 
