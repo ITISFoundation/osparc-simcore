@@ -1,4 +1,5 @@
 from typing import Dict, Final, Tuple
+from urllib.parse import quote
 
 from ..services import ServiceDockerData
 
@@ -14,9 +15,15 @@ OM: Dict[str, str] = {
     "email": "maiz@itis.swiss",
     "affiliation": "IT'IS",
 }
+# TODO: how to avoid explicit names here to define ownership?
+#
 
 
 NameVersionPair = Tuple[str, str]
+
+
+def get_fake_thumbnail(label) -> str:
+    return f"https://fakeimg.pl/100x100/ff0000%2C128/000%2C255/?text={quote(label)}"
 
 
 def register(

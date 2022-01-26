@@ -3,11 +3,7 @@ from typing import Any, Dict, List
 from pydantic import schema_of
 
 from ..services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
-from ._utils import EN, FRONTEND_SERVICE_KEY_PREFIX, OM, register
-
-# TODO: how to avoid explicit names here to define ownership?
-#
-
+from ._utils import EN, FRONTEND_SERVICE_KEY_PREFIX, OM, get_fake_thumbnail, register
 
 LIST_NUMBERS_SCHEMA: Dict[str, Any] = schema_of(List[float], title="list[number]")
 
@@ -22,6 +18,7 @@ META = ServiceDockerData.parse_obj(
         "description": "Increases/decreases one dimension of the reference parameters at every iteration",
         "authors": [EN, OM],
         "contact": OM["email"],
+        "thumbnail": get_fake_thumbnail("sensitivity"),
         "inputs": {
             "in_1": {
                 "label": "paramrefs",

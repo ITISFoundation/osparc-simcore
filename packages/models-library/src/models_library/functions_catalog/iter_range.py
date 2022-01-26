@@ -1,7 +1,7 @@
 from typing import Optional
 
 from ..services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
-from ._utils import FRONTEND_SERVICE_KEY_PREFIX, OM, register
+from ._utils import FRONTEND_SERVICE_KEY_PREFIX, OM, get_fake_thumbnail, register
 
 
 def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDockerData:
@@ -15,6 +15,7 @@ def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDock
             "type": ServiceType.FRONTEND,
             "name": f"{type_name.capitalize()} iterator",
             "description": f"{type_name.capitalize()} iterator. range()",
+            "thumbnail": get_fake_thumbnail(f"{type_name}"),
             "authors": [
                 OM,
             ],
