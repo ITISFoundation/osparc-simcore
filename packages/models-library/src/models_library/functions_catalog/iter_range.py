@@ -6,15 +6,15 @@ from ._utils import FRONTEND_SERVICE_KEY_PREFIX, OM, get_fake_thumbnail, registe
 
 def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDockerData:
     prefix = prefix or type_name
-
+    LABEL = f"{type_name.capitalize()} iterator"
     return ServiceDockerData.parse_obj(
         {
             "integration-version": LATEST_INTEGRATION_VERSION,
             "key": f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/{prefix}-range",
             "version": "1.0.0",
             "type": ServiceType.FRONTEND,
-            "name": f"{type_name.capitalize()} iterator",
-            "description": f"{type_name.capitalize()} iterator. range()",
+            "name": LABEL,
+            "description": "Iterates over a sequence of integers from start (inclusive) to stop (exclusive) by step",
             "thumbnail": get_fake_thumbnail(f"{type_name}"),
             "authors": [
                 OM,
@@ -30,7 +30,7 @@ def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDock
                 "linspace_stop": {
                     "label": "Stop",
                     "description": "Linear space Stop",
-                    "defaultValue": 1,
+                    "defaultValue": 2,
                     "type": type_name,
                 },
                 "linspace_step": {
@@ -52,7 +52,5 @@ def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDock
 
 
 META_INT = create_metadata("integer", prefix="int")
-META_NUM = create_metadata("number")
 
-# TODO: PC-> OM register more or even one generic?
 REGISTRY = register(META_INT)

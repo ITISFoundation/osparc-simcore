@@ -19,7 +19,7 @@ OM: Dict[str, str] = {
 #
 
 
-NameVersionPair = Tuple[str, str]
+_NodeKeyVersionPair = Tuple[str, str]
 
 
 def get_fake_thumbnail(label) -> str:
@@ -28,16 +28,16 @@ def get_fake_thumbnail(label) -> str:
 
 def register(
     *meta_objects: ServiceDockerData,
-) -> Dict[NameVersionPair, ServiceDockerData]:
+) -> Dict[_NodeKeyVersionPair, ServiceDockerData]:
     """Used to do a first validation and dump data in an intermediate trusted registry"""
     _validated_registry = {}
     for meta in meta_objects:
         if not isinstance(meta, ServiceDockerData):
             raise ValueError(f"Expected ServiceDockerData, got {type(meta)}")
 
-        key = (meta.name, meta.version)
-        if key in _validated_registry:
-            raise ValueError(f"{key} is already registered")
+        kv = (meta.key, meta.version)
+        if kv in _validated_registry:
+            raise ValueError(f"{(meta.key, meta.version)=} is already registered")
 
-        _validated_registry[key] = meta
+        _validated_registry[kv] = meta
     return _validated_registry

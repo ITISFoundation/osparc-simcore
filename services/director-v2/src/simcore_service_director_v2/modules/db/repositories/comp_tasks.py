@@ -40,11 +40,6 @@ _FRONTEND_SERVICES_CATALOG: Dict[str, ServiceDockerData] = {
     if any(name in meta.key for name in ["file-picker", "parameter", "data-iterator"])
 }
 
-# NOTE: this check is here to check every time new front-end nodes are defined
-assert (  # nosec
-    len(_FRONTEND_SERVICES_CATALOG) == 7
-), f"{len(_FRONTEND_SERVICES_CATALOG)=} check failed, review filter above and update"  # nosec
-
 
 async def _generate_tasks_list_from_project(
     project: ProjectAtDB,

@@ -31,13 +31,15 @@ def create_registry(*namespaces):
     _registry = {}
     for namespace in namespaces:
         try:
-            for (name, version), meta in namespace.REGISTRY.items():
+            for (node_key, node_version), meta in namespace.REGISTRY.items():
 
-                if (name, version) in _registry:
-                    raise ValueError(f"{(name, version)=} is already registered")
+                if (node_key, node_version) in _registry:
+                    raise ValueError(
+                        f"{(node_key, node_version)=} is already registered"
+                    )
 
                 _registry[
-                    (name, version),
+                    (node_key, node_version),
                 ] = meta
         except (ValueError, AttributeError):
             logger.error("Failed to register functions in %s. Skipping", namespace)
