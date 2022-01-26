@@ -41,7 +41,7 @@ qx.Class.define("osparc.ui.form.ContentSchemaField", {
       const cSchema = this.getContentSchema();
       if (cSchema) {
         if (cSchema.type === "array") {
-          value = this.__addArrayCharacters(value);
+          value = this.__addArrayBrackets(value);
         }
       }
       return value;
@@ -52,13 +52,13 @@ qx.Class.define("osparc.ui.form.ContentSchemaField", {
       const cSchema = this.getContentSchema();
       if (cSchema) {
         if (cSchema.type === "array") {
-          value = this.__addArrayCharacters(value);
+          value = this.__addArrayBrackets(value);
         }
       }
       this.base(arguments, value);
     },
 
-    __addArrayCharacters: function(label) {
+    __addArrayBrackets: function(label) {
       if (label.charAt(0) !== "[") {
         label = "[" + label;
       }
