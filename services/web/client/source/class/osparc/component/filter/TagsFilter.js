@@ -47,10 +47,6 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
     }
   },
 
-  events: {
-    "activeTagsChanged": "qx.event.type.Data"
-  },
-
   statics: {
     ActiveTagIcon: "@FontAwesome5Solid/check/12"
   },
@@ -82,7 +78,6 @@ qx.Class.define("osparc.component.filter.TagsFilter", {
 
     __dispatch: function() {
       this._filterChange(this.__activeTags);
-      this.fireDataEvent("activeTagsChanged", this.__activeTags);
     },
 
     getActiveTags: function() {
