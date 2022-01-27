@@ -21,9 +21,10 @@ def _get_s3_volume_driver_config(
             "type": "s3",
             "s3-access_key_id": r_clone_settings.S3_ACCESS_KEY,
             "s3-secret_access_key": r_clone_settings.S3_SECRET_KEY,
-            "s3-endpoint": r_clone_settings.S3_ENDPOINT,
+            "s3-endpoint": r_clone_settings.endpoint_url,
             "path": f"{r_clone_settings.S3_BUCKET_NAME}/{project_id}/{node_uuid}/{volume_name}",
             "allow-other": "true",
+            "vfs-cache-mode": "full",
         },
     }
 

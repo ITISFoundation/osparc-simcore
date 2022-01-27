@@ -16,6 +16,6 @@ class RCloneSettings(S3Settings):
     @cached_property
     def endpoint_url(self) -> str:
         if not self.S3_ENDPOINT.startswith("http"):
-            protocol = "https" if self.S3_SECURE else "http"
-            return f"{protocol}://{self.S3_ENDPOINT}"
+            scheme = "https" if self.S3_SECURE else "http"
+            return f"{scheme}://{self.S3_ENDPOINT}"
         return self.S3_ENDPOINT

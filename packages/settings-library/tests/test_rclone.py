@@ -37,6 +37,6 @@ def test_expected_endpoint(
 
     r_clone_settings = RCloneSettings.create_from_envs()
 
-    protocol = "https" if is_secure else "http"
-    assert r_clone_settings.endpoint_url.startswith(f"{protocol}://")
+    scheme = "https" if is_secure else "http"
+    assert r_clone_settings.endpoint_url.startswith(f"{scheme}://")
     assert r_clone_settings.endpoint_url.endswith(endpoint)
