@@ -432,6 +432,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(selectButton);
       }
 
+      const renameStudyButton = this.__getRenameStudyMenuButton(studyData);
+      menu.add(renameStudyButton);
+
+      const duplicateStudyButton = this.__getDuplicateStudyMenuButton(studyData);
+      menu.add(duplicateStudyButton);
+
+      const moreOptionsButton = this.__getMoreStudyOptionsMenuButton(studyData);
+      menu.add(moreOptionsButton);
+
+      const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
+      if (deleteButton) {
+        menu.addSeparator();
+        menu.add(deleteButton);
+      }
+
+
+      menu.addSeparator();
+
       const moreInfoButton = this._getMoreInfoMenuButton(studyData);
       if (moreInfoButton) {
         menu.add(moreInfoButton);
@@ -453,9 +471,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
       menu.add(studyServicesButton);
 
-      const duplicateStudyButton = this.__getDuplicateStudyMenuButton(studyData);
-      menu.add(duplicateStudyButton);
-
       const exportButton = this.__getExportMenuButton(studyData);
       menu.add(exportButton);
 
@@ -464,12 +479,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (isCurrentUserOwner && canCreateTemplate) {
         const saveAsTemplateButton = this.__getSaveAsTemplateMenuButton(studyData);
         menu.add(saveAsTemplateButton);
-      }
-
-      const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
-      if (deleteButton) {
-        menu.addSeparator();
-        menu.add(deleteButton);
       }
 
       return menu;
@@ -482,6 +491,25 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this._resourcesContainer.setLastSelectedItem(item);
       }, this);
       return selectButton;
+    },
+
+    __getRenameStudyMenuButton: function(studyData) {
+      const renameButton = new qx.ui.menu.Button(this.tr("Rename"));
+      renameButton.addListener("execute", () => {
+        console.log("rename", studyData);
+      }, this);
+      return renameButton;
+    },
+
+    __getMoreStudyOptionsMenuButton: function(studyData) {
+      const moreOptsButton = new qx.ui.menu.Button(this.tr("More options"));
+      moreOptsButton.addListener("execute", () => {
+        const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyData);
+        const title = this.tr("More options");
+        const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 600, 700);
+        console.log(win);
+      }, this);
+      return moreOptsButton;
     },
 
     __getPermissionsMenuButton: function(studyData) {
