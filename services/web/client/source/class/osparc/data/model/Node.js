@@ -1131,6 +1131,12 @@ qx.Class.define("osparc.data.model.Node", {
       osparc.data.Resources.fetch("studies", "getNode", params)
         .then(data => this.__onNodeState(data))
         .catch(err => {
+          if ("status" in err && err.status === 503) {
+            const interval = Math.floor(Math.random() * 5000) + 3000;
+            console.log(this.getNodeId(), "node unresponive, trying again in", interval);
+            setTimeout(() => this.__nodeState(), interval);
+            return;
+          }
           const errorMsg = "Error when retrieving " + this.getKey() + ":" + this.getVersion() + " status: " + err;
           const errorMsgData = {
             nodeId: this.getNodeId(),
