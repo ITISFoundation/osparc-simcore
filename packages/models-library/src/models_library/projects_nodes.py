@@ -3,14 +3,13 @@
 """
 
 from copy import deepcopy
-from typing import Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 from pydantic import (
     BaseModel,
     Extra,
     Field,
     HttpUrl,
-    Json,
     StrictBool,
     StrictFloat,
     StrictInt,
@@ -33,27 +32,27 @@ from .projects_state import RunningState
 from .services import PROPERTY_KEY_RE, SERVICE_KEY_RE
 
 # NOTE: WARNING the order here matters
-# NOTE: Json is a raw JSON string. SEE https://pydantic-docs.helpmanual.io/usage/types/#json-type
+
 InputTypes = Union[
     StrictBool,
     StrictInt,
     StrictFloat,
+    str,
     PortLink,
     SimCoreFileLink,
     DatCoreFileLink,
     DownloadLink,
-    Json,
-    str,
+    Union[List[Any], Dict[str, Any]],  # arrays | object
 ]
 OutputTypes = Union[
     StrictBool,
     StrictInt,
     StrictFloat,
+    str,
     SimCoreFileLink,
     DatCoreFileLink,
     DownloadLink,
-    Json,
-    str,
+    Union[List[Any], Dict[str, Any]],  # arrays | object
 ]
 
 InputID = OutputID = constr(regex=PROPERTY_KEY_RE)

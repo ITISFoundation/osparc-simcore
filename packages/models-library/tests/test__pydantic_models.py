@@ -31,7 +31,7 @@ def test_json_type():
     # Json data type first load a raw JSON string and parses it into a nested dict
     # SEE https://pydantic-docs.helpmanual.io/usage/types/#json-type
 
-    class InputArgument(BaseModel):
+    class ArgumentAnnotation(BaseModel):
         name: str
         data_schema: Json
 
@@ -39,7 +39,7 @@ def test_json_type():
     jsonschema_of_x = schema_json_of(List[int], title="schema[x]")
     assert isinstance(jsonschema_of_x, str)
 
-    x_annotation = InputArgument(name="x", data_schema=jsonschema_of_x)
+    x_annotation = ArgumentAnnotation(name="x", data_schema=jsonschema_of_x)
 
     # x_schema was parsed as a string into a nested dict
     assert x_annotation.data_schema != jsonschema_of_x
@@ -63,12 +63,21 @@ def test_json_type():
     #
     # the constructor would expect a raw string but we produced a nested dict
     with pytest.raises(ValidationError) as exc_info:
-        InputArgument(**x_annotation.dict())
+        ArgumentAnnotation(**x_annotation.dict())
 
     assert exc_info.value.errors()[0] == {
         "loc": ("data_schema",),
         "msg": "JSON object must be str, bytes or bytearray",
         "type": "type_error.json",
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        ArgumentAnnotation(name="foo", data_schema="invalid-json")
+
+    assert exc_info.value.errors()[0] == {
+        "loc": ("data_schema",),
+        "msg": "Invalid JSON",
+        "type": "value_error.json",
     }
 
 
@@ -85,6 +94,22 @@ def test_union_types_coercion():
     # NOTE: it is recommended that, when defining Union annotations, the most specific type is included first and followed by less specific types.
     #
 
+    assert Func.schema()["properties"]["input"] == {
+        "title": "Input",
+        "anyOf": [
+            {"type": "boolean"},
+            {"type": "integer"},
+            {"type": "number"},
+            {"type": "string"},
+            {"$ref": "#/definitions/PortLink"},
+            {"$ref": "#/definitions/SimCoreFileLink"},
+            {"$ref": "#/definitions/DatCoreFileLink"},
+            {"$ref": "#/definitions/DownloadLink"},
+            {"type": "array", "items": {}},
+            {"type": "object"},
+        ],
+    }
+
     # integers ------------------------
     model = Func.parse_obj({"input": "0", "output": 1})
     print(model.json(indent=1))
@@ -99,7 +124,7 @@ def test_union_types_coercion():
     assert model.input == 0.5
     assert model.output == False
 
-    # (undefined) json vs string ------------------------
+    # (undefined) json string vs string ------------------------
     model = Func.parse_obj(
         {
             "input": '{"w": 42, "z": false}',  # NOTE: this is a raw json string
@@ -111,7 +136,7 @@ def test_union_types_coercion():
     assert model.input == {"w": 42, "z": False}
     assert model.output == "some/path/or/string"
 
-    # (undefined) json vs SimCoreFileLink.dict() ------------
+    # (undefined) json string vs SimCoreFileLink.dict() ------------
     assert SimCoreFileLink in get_args(OutputTypes)
     example = SimCoreFileLink.parse_obj(
         SimCoreFileLink.Config.schema_extra["examples"][0]
@@ -128,3 +153,9 @@ def test_union_types_coercion():
     assert model.input == {"w": 42, "z": False}
     assert model.output == example
     assert isinstance(model.output, SimCoreFileLink)
+
+    # json array and objects
+    model = Func.parse_obj({"input": {"w": 42, "z": False}, "output": [1, 2, 3, None]})
+    print(model.json(indent=1))
+    assert model.input == {"w": 42, "z": False}
+    assert model.output == [1, 2, 3, None]
