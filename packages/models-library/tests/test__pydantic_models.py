@@ -100,6 +100,7 @@ def test_union_types_coercion():
             {"type": "boolean"},
             {"type": "integer"},
             {"type": "number"},
+            {"format": "json-string", "type": "string"},
             {"type": "string"},
             {"$ref": "#/definitions/PortLink"},
             {"$ref": "#/definitions/SimCoreFileLink"},
