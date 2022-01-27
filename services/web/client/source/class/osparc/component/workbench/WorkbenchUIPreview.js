@@ -45,10 +45,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
     // overridden
     _addItemsToLayout: function() {
       this._addWorkbenchLayer();
-      this._workbenchLayoutScroll.set({
-        scrollbarX: "off",
-        scrollbarY: "off"
-      });
     },
 
     // overridden
@@ -82,13 +78,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUIPreview", {
           });
         }
 
-        this.setScale(0.6);
+        this.setScale(0.7);
       }
     },
 
     // overridden
     _addEventListeners: function() {
-      return;
+      this.addListenerOnce("appear", () => {
+        this._listenToMouseWheel();
+      });
     }
   }
 });

@@ -156,7 +156,7 @@ qx.Class.define("osparc.component.snapshots.Iterations", {
         row[this.self().T_POS.ID.col] = iteration["uuid"];
         row[this.self().T_POS.NAME.col] = iteration["name"];
         const studyProgress = osparc.data.model.Study.computeStudyProgress(iteration);
-        row[this.self().T_POS.PROGRESS.col] = studyProgress+"%";
+        row[this.self().T_POS.PROGRESS.col] = Math.floor(studyProgress)+"%";
         let countRow = this.self().T_POS.PROGRESS.col+1;
         iterators.forEach(iterator => {
           const itOut = this.self().extractIteratorOutput(iterator);

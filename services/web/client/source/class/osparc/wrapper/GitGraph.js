@@ -47,7 +47,7 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       const textColor = qx.theme.manager.Color.getInstance().resolve("text");
       const masterColor = "#1486da";
       const iterationColor = "#e01a94";
-      const colors = Array(19).fill(iterationColor);
+      const colors = Array(50).fill(iterationColor);
       colors.unshift(masterColor);
       return {
         colors: colors,
@@ -157,10 +157,11 @@ qx.Class.define("osparc.wrapper.GitGraph", {
       }
       branch["lastCommit"] = commitData["id"];
 
+      // Widget for highlighting the overed commit with hint
       const widget = new qx.ui.core.Widget().set({
         opacity: 0.1,
         height: this.self().COMMIT_SPACING,
-        minWidth: 50,
+        minWidth: this.self().COMMIT_SPACING*this.__branches.length,
         allowGrowX: true
       });
       const texts = [];
@@ -179,12 +180,19 @@ qx.Class.define("osparc.wrapper.GitGraph", {
         widget
       });
       const bgColor = widget.getBackgroundColor();
-      widget.addListener("mouseover", () => {
+      widget.addListener("mouseover", e => {
         widget.set({
           backgroundColor: "white",
           cursor: "pointer"
         });
         hint.show();
+        // since the widget might be hidden in the scroll area,
+        // take mouse's position. It creates a bit of blinking thou
+        const native = e.getNativeEvent();
+        hint.setLayoutProperties({
+          top: native.clientY,
+          left: native.clientX
+        });
       });
       widget.addListener("mouseout", () => {
         widget.set({
