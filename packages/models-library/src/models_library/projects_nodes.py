@@ -10,6 +10,7 @@ from pydantic import (
     Extra,
     Field,
     HttpUrl,
+    Json,
     StrictBool,
     StrictFloat,
     StrictInt,
@@ -37,6 +38,7 @@ InputTypes = Union[
     StrictBool,
     StrictInt,
     StrictFloat,
+    Json,  # FIXME: remove if OM sends object/array. create project does NOT use pydantic
     str,
     PortLink,
     SimCoreFileLink,
@@ -48,6 +50,7 @@ OutputTypes = Union[
     StrictBool,
     StrictInt,
     StrictFloat,
+    Json,  # FIXME: remove if OM sends object/array
     str,
     SimCoreFileLink,
     DatCoreFileLink,
