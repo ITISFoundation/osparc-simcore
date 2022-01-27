@@ -252,6 +252,7 @@ qx.Class.define("osparc.data.model.Node", {
     __outputWidget: null,
     __posX: null,
     __posY: null,
+    __unresponsiveRetries: null,
 
     getWorkbench: function() {
       return this.getStudy().getWorkbench();
@@ -1038,6 +1039,7 @@ qx.Class.define("osparc.data.model.Node", {
         const status = this.getStatus();
         status.setInteractive("starting");
 
+        this.__unresponsiveRetries = 5;
         this.__nodeState();
       }
     },
@@ -1131,9 +1133,10 @@ qx.Class.define("osparc.data.model.Node", {
       osparc.data.Resources.fetch("studies", "getNode", params)
         .then(data => this.__onNodeState(data))
         .catch(err => {
-          if ("status" in err && err.status === 503) {
+          if ("status" in err && err.status === 503 && this.__unresponsiveRetries > 0) {
+            this.__unresponsiveRetries--;
             const interval = Math.floor(Math.random() * 5000) + 3000;
-            console.log(this.getNodeId(), "node unresponive, trying again in", interval);
+            console.log(this.getNodeId(), "node unresponive, trying again in", interval, this.__unresponsiveRetries);
             setTimeout(() => this.__nodeState(), interval);
             return;
           }
