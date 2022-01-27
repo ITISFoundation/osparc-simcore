@@ -184,7 +184,6 @@ properties:
                         type: string
                   - type: array
                     items: {}
-                  - type: object
           inputAccess:
             description: map with key - access level pairs
             type: object
@@ -249,6 +248,8 @@ properties:
                         format: uri
                       label:
                         type: string
+                  - type: array
+                    items: {}
           outputNode:
             type: boolean
             deprecated: true

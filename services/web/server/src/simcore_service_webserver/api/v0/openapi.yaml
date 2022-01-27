@@ -1872,7 +1872,6 @@ paths:
                                       type: string
                                 - type: array
                                   items: {}
-                                - type: object
                         inputAccess:
                           description: map with key - access level pairs
                           type: object
@@ -1937,6 +1936,8 @@ paths:
                                       format: uri
                                     label:
                                       type: string
+                                - type: array
+                                  items: {}
                         outputNode:
                           type: boolean
                           deprecated: true

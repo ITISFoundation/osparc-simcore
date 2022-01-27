@@ -247,9 +247,6 @@
                     {
                       "type": "array",
                       "items": {}
-                    },
-                    {
-                      "type": "object"
                     }
                   ]
                 }
@@ -345,6 +342,10 @@
                           "type": "string"
                         }
                       }
+                    },
+                    {
+                      "type": "array",
+                      "items": {}
                     }
                   ]
                 }
