@@ -70,6 +70,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     __studyBrowser: null,
     __templateBrowser: null,
     __serviceBrowser: null,
+    __dataBrowser: null,
 
     getStudyBrowser: function() {
       return this.__studyBrowser;
@@ -125,6 +126,28 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
         this.add(tabPage);
       }, this);
+
+      const preResourcePromises = [];
+      const store = osparc.store.Store.getInstance();
+      preResourcePromises.push(store.getVisibleMembers());
+      preResourcePromises.push(store.getServicesDAGs(true));
+      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
+        preResourcePromises.push(osparc.data.Resources.get("tags"));
+      }
+      Promise.all(preResourcePromises)
+        .then(() => {
+          [
+            this.__studyBrowser,
+            this.__templateBrowser,
+            this.__serviceBrowser,
+            this.__dataBrowser
+          ].forEach(resourceBrowser => {
+            if (resourceBrowser) {
+              resourceBrowser.initResources();
+            }
+          });
+        })
+        .catch(err => console.error(err));
     },
 
     __createStudyBrowser: function() {
@@ -143,7 +166,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     },
 
     __createDataBrowser: function() {
-      const dataManagerView = new osparc.dashboard.DataBrowser();
+      const dataManagerView = this.__dataBrowser = new osparc.dashboard.DataBrowser();
       return dataManagerView;
     }
   }

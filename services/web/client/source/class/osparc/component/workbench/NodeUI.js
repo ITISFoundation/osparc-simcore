@@ -185,19 +185,6 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       }
     },
 
-    __hideExtraElements: function() {
-      const chipContainer = this.getChildControl("chips");
-      chipContainer.exclude();
-
-      if (this.hasChildControl("progress")) {
-        this.getChildControl("progress").exclude();
-      }
-
-      if (this._inputLayout && "ui" in this._inputLayout) {
-        this._inputLayout.exclude();
-      }
-    },
-
     __applyNode: function(node) {
       if (node.getKey().includes("parameter/int")) {
         const makeIterator = new qx.ui.menu.Button().set({
@@ -226,7 +213,8 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           this.__turnIntoParameterUI();
           break;
         case "iterator":
-          this.__turnIntoIteratorUI();
+          this.__checkTurnIntoIteratorUI();
+          this.getNode().addListener("changeOutputs", () => this.__checkTurnIntoIteratorUI(), this);
           break;
         case "probe":
           this.__turnIntoProbeUI();
@@ -258,7 +246,13 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     __turnIntoFileUI: function() {
       const width = 120;
       this.__turnIntoCircledUI(width);
-      this.__hideExtraElements();
+
+      const chipContainer = this.getChildControl("chips");
+      chipContainer.exclude();
+
+      if (this.hasChildControl("progress")) {
+        this.getChildControl("progress").exclude();
+      }
 
       // two lines
       const title = this.getChildControl("title");
@@ -285,16 +279,14 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     __turnIntoParameterUI: function() {
       const width = 100;
       this.__turnIntoCircledUI(width);
-      this.__hideExtraElements();
 
       const label = new qx.ui.basic.Label().set({
         font: "text-18",
-        paddingTop: 6
+        // paddingTop: 6,
+        paddingLeft: 6
       });
-      this.add(label, {
-        row: 0,
-        column: 1
-      });
+      const chipContainer = this.getChildControl("chips");
+      chipContainer.add(label);
 
       this.getNode().bind("outputs", label, "value", {
         converter: outputs => {
@@ -307,11 +299,22 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       this.fireEvent("nodeMoving");
     },
 
+    __checkTurnIntoIteratorUI: function() {
+      const outputs = this.getNode().getOutputs();
+      const portKey = "out_1";
+      if (portKey in outputs && "value" in outputs[portKey]) {
+        this.__turnIntoIteratorIteratedUI();
+      } else {
+        this.__turnIntoIteratorUI();
+      }
+    },
+
     __turnIntoIteratorUI: function() {
       const width = 150;
       const height = 69;
       this.__turnIntoCircledUI(width, this.self().CIRCLED_RADIUS);
 
+      // add shadows
       if (this.__svgWorkbenchCanvas) {
         const nShadows = 2;
         this.shadows = [];
@@ -320,26 +323,24 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
           this.shadows.push(nodeUIShadow);
         }
       }
-
-      this.__addIterationValue();
     },
 
-    __addIterationValue: function() {
-      const label = new qx.ui.basic.Label().set({
-        paddingLeft: 5,
-        font: "text-18"
-      });
-      const chipContainer = this.getChildControl("chips");
-      chipContainer.add(label);
-      this.getNode().bind("outputs", label, "value", {
-        converter: outputs => {
-          const portKey = "out_1";
-          if (portKey in outputs && "value" in outputs[portKey]) {
-            return String(outputs[portKey]["value"]);
-          }
-          return "";
-        }
-      });
+    __turnIntoIteratorIteratedUI: function() {
+      this.removeShadows;
+      this.__turnIntoParameterUI();
+      if (this.hasChildControl("progress")) {
+        this.getChildControl("progress").exclude();
+      }
+      this.getNode().getPropsForm().setEnabled(false);
+    },
+
+    removeShadows: function() {
+      if (this.__svgWorkbenchCanvas && "shadows" in this) {
+        this.shadows.forEach(shadow => {
+          osparc.component.workbench.SvgWidget.removeNodeUI(shadow);
+        });
+        delete this["shadows"];
+      }
     },
 
     __turnIntoProbeUI: function() {

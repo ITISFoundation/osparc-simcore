@@ -290,7 +290,7 @@ qx.Class.define("osparc.data.model.Study", {
             "studyId": this.getUuid()
           }
         };
-        osparc.data.Resources.get("snapshots", params)
+        osparc.data.Resources.getInstance().getAllPages("snapshots", params)
           .then(snapshots => {
             resolve(snapshots);
           })
@@ -315,18 +315,6 @@ qx.Class.define("osparc.data.model.Study", {
           .catch(err => {
             console.error(err);
             reject(err);
-          });
-      });
-    },
-
-    hasSnapshots: function() {
-      return new Promise(resolve => {
-        this.getSnapshots()
-          .then(snapshots => {
-            resolve(Boolean(snapshots.length));
-          })
-          .catch(() => {
-            resolve(false);
           });
       });
     },

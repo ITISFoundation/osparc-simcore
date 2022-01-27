@@ -71,18 +71,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     // overridden
-    _initResources: function() {
-      this._showLoadingPage(this.tr("Starting..."));
-
+    initResources: function() {
       this.__studies = [];
-      const resourcePromises = [];
+      const preResourcePromises = [];
       const store = osparc.store.Store.getInstance();
-      resourcePromises.push(store.getVisibleMembers());
-      resourcePromises.push(store.getServicesDAGs(true));
+      preResourcePromises.push(store.getVisibleMembers());
+      preResourcePromises.push(store.getServicesDAGs());
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
-        resourcePromises.push(osparc.data.Resources.get("tags"));
+        preResourcePromises.push(osparc.data.Resources.get("tags"));
       }
-      Promise.all(resourcePromises)
+      Promise.all(preResourcePromises)
         .then(() => {
           this.getChildControl("resources-layout");
           this.__reloadResources();

@@ -55,6 +55,9 @@ qx.Class.define("osparc.ui.form.ContentSchemaField", {
       const cSchema = this.getContentSchema();
       if (cSchema) {
         if (cSchema.type === "array") {
+          if (Array.isArray(value)) {
+            value = JSON.stringify(value);
+          }
           value = this.__addArrayBrackets(value);
         }
       }
