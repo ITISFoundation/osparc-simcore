@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectIDStr
+from models_library.utils.encoders import jsonable_encoder
 
 from .projects.project_models import ProjectDict
 from .version_control_changes import (
@@ -91,6 +92,11 @@ class VersionControlForMetaModeling(VersionControlRepository):
     ) -> CommitID:
         """Creates a new branch with an explicit working copy 'project' on 'start_commit_id'"""
         IS_INTERNAL_OPERATION = True
+
+        # NOTE: this avoid having non-compatible types embedded in the dict that
+        # make operations with the db to fail
+        # SEE https://fastapi.tiangolo.com/tutorial/encoder/
+        project = jsonable_encoder(project, sqlalchemy_safe=True)
 
         async with self.engine.acquire() as conn:
             # existance check prevents errors later
