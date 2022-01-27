@@ -90,6 +90,10 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
 
     isArray: function(n) {
       return Array.isArray(n);
+    },
+
+    isQxArray: function(n) {
+      return n instanceof qx.data.Array;
     }
   },
 
@@ -191,6 +195,9 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTreeItem", {
       }
       if (this.self().isArray(value)) {
         return JSON.stringify(value);
+      }
+      if (this.self().isQxArray(value)) {
+        return JSON.stringify(value.toArray());
       }
       return value;
     }
