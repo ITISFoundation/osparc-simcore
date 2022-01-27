@@ -20,19 +20,19 @@ META = ServiceDockerData.parse_obj(
         "contact": OM["email"],
         "thumbnail": get_fake_thumbnail("sensitivity"),
         "inputs": {
-            "in_1": {
+            "paramrefs": {
                 "label": "paramrefs",
                 "description": "reference parameters",
                 "type": "ref_contentSchema",
                 "contentSchema": LIST_NUMBERS_SCHEMA,
             },
-            "in_2": {
+            "paramdiff": {
                 "label": "paramdiff",
                 "description": "diff parameters",
                 "type": "ref_contentSchema",
                 "contentSchema": LIST_NUMBERS_SCHEMA,
             },
-            "in_3": {
+            "diff_or_fact": {
                 "label": "diff_or_fact",
                 "description": "Applies difference (true) or factor (false)",
                 "type": "boolean",

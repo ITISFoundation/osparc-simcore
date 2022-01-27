@@ -29,9 +29,10 @@ def compute_workbench_checksum(workbench: Dict[str, Any]) -> SHA1Str:
     # - Add options with include/exclude fields (e.g. to avoid status)
     #
     normalized = {
-        str(k): (Node.parse_obj(v) if not isinstance(v, Node) else v)
+        str(k): (Node.construct(**v) if not isinstance(v, Node) else v)
         for k, v in workbench.items()
     }
+
     checksum = compute_sha1_on_small_dataset(
         {
             k: node.dict(

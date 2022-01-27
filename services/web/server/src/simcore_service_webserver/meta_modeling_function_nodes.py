@@ -113,6 +113,7 @@ def _sensitivity_func(
 
 @register(f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/sensitivity", "1.0.0")
 def _sensitivity_generator(**kwargs) -> Iterator[Dict[str, OutputTypes]]:
+
     for i, paramtestplus, paramtestminus in _sensitivity_func(**kwargs):
         yield {"out_1": i, "out_2": paramtestplus, "out_3": paramtestminus}
 
