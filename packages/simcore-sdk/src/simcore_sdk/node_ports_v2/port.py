@@ -4,7 +4,7 @@ from pathlib import Path
 from pprint import pformat
 from typing import Any, Callable, Dict, Optional, Tuple, Type
 
-from models_library.services import PROPERTY_KEY_RE, BaseServiceIO
+from models_library.services import PROPERTY_KEY_RE, BaseServiceIOModel
 from pydantic import AnyUrl, Field, PrivateAttr, validator
 
 from ..node_ports_common.exceptions import (
@@ -45,7 +45,7 @@ def _check_if_symlink_is_valid(symlink: Path) -> None:
         raise AbsoluteSymlinkIsNotUploadableException(symlink, symlink_target_path)
 
 
-class Port(BaseServiceIO):
+class Port(BaseServiceIOModel):
     key: str = Field(..., regex=PROPERTY_KEY_RE)
     widget: Optional[Dict[str, Any]] = None
 

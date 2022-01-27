@@ -1,3 +1,5 @@
+import keyword
+
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -7,7 +9,7 @@ from datetime import datetime
 from typing import Optional, Sequence
 
 import pytest
-from models_library.basic_regex import DATE_RE, UUID_RE, VERSION_RE
+from models_library.basic_regex import DATE_RE, UUID_RE, VARIABLE_NAME_RE, VERSION_RE
 from packaging.version import Version
 
 INVALID = object()
@@ -100,3 +102,31 @@ def test_pep404_compare_versions():
     assert Version("1.9.a.dev") == Version("1.9a0dev")
     assert Version("2.1-rc2") < Version("2.1")
     assert Version("0.6a9dev") < Version("0.6a9")
+
+
+@pytest.mark.parametrize(
+    "string_under_test",
+    (
+        "x1",
+        "a_very_long_variable_22",
+        "a-string-with-minus",
+        "1xxx",
+        "str w/ spaces",
+        "a./b.c",
+        "def",
+        "for",
+        "in",
+    ),
+)
+def test_variable_names_regex(string_under_test):
+    variable_re = re.compile(VARIABLE_NAME_RE)
+
+    if string_under_test.isidentifier():
+        # This is what we could do in case it is a keyword (added as validator( ... pre=True) )
+        # SEE https://docs.python.org/3/library/stdtypes.html?highlight=isidentifier#str.isidentifier
+        if keyword.iskeyword(string_under_test):
+            string_under_test += "_"
+
+        assert variable_re.match(string_under_test)
+    else:
+        assert not variable_re.match(string_under_test)

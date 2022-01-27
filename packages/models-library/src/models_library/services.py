@@ -42,7 +42,7 @@ SERVICE_NETWORK_RE = r"^([a-zA-Z0-9_-]+)$"
 
 
 PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
-PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"
+PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to have this "variable friendly" (see VARIABLE_NAME_RE)
 
 FILENAME_RE = r".+"
 
@@ -109,7 +109,7 @@ class Author(BaseModel):
         extra = Extra.forbid
 
 
-class BaseServiceIO(BaseModel):
+class BaseServiceIOModel(BaseModel):
     """
     Base class for service input/outputs
     """
@@ -188,7 +188,7 @@ class BaseServiceIO(BaseModel):
         return v
 
 
-class ServiceInput(BaseServiceIO):
+class ServiceInput(BaseServiceIOModel):
     """
     Metadata on a service input port
     """
@@ -202,7 +202,7 @@ class ServiceInput(BaseServiceIO):
         description="custom widget to use instead of the default one determined from the data-type",
     )
 
-    class Config(BaseServiceIO.Config):
+    class Config(BaseServiceIOModel.Config):
         schema_extra = {
             "examples": [
                 # file-wo-widget:
@@ -235,14 +235,14 @@ class ServiceInput(BaseServiceIO):
         }
 
 
-class ServiceOutput(BaseServiceIO):
+class ServiceOutput(BaseServiceIOModel):
     widget: Optional[Widget] = Field(
         None,
         description="custom widget to use instead of the default one determined from the data-type",
         deprecated=True,
     )
 
-    class Config(BaseServiceIO.Config):
+    class Config(BaseServiceIOModel.Config):
         schema_extra = {
             "examples": [
                 {
