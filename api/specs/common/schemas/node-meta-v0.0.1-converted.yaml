@@ -278,7 +278,7 @@ properties:
               - boolean
               - string
               - data:application/json
-              - "data:application/vnd.ms-excel "
+              - 'data:application/vnd.ms-excel '
               - data:text/plain
               - data:application/hdf5
           contentSchema:

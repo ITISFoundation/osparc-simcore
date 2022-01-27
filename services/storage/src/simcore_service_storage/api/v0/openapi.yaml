@@ -991,6 +991,9 @@ components:
                               format: uri
                             label:
                               type: string
+                        - type: array
+                          items: {}
+                        - type: object
                 inputAccess:
                   description: map with key - access level pairs
                   type: object
