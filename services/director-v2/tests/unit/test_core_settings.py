@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 import pytest
 from models_library.basic_types import LogLevel

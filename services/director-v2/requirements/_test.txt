@@ -4,17 +4,24 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aio-pika==6.8.0
+aio_pika==6.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+aioboto3==9.3.1
+    # via -r requirements/_test.in
+aiobotocore==2.1.0
+    # via aioboto3
 aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/./constraints.txt
     #   -c requirements/_base.txt
+    #   aiobotocore
     #   dask-gateway-server
     #   pytest-aiohttp
+aioitertools==0.8.0
+    # via aiobotocore
 aioredis==1.3.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -53,6 +60,13 @@ bcrypt==3.2.0
     # via paramiko
 bokeh==2.4.2
     # via -r requirements/_test.in
+boto3==1.20.24
+    # via aiobotocore
+botocore==1.23.24
+    # via
+    #   aiobotocore
+    #   boto3
+    #   s3transfer
 certifi==2021.5.30
     # via
     #   -c requirements/_base.txt
@@ -153,6 +167,10 @@ jinja2==2.11.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   bokeh
+jmespath==0.10.0
+    # via
+    #   boto3
+    #   botocore
 jsonschema==3.2.0
     # via docker-compose
 lazy-object-proxy==1.6.0
@@ -248,7 +266,9 @@ pytest-runner==5.3.1
 pytest-xdist==2.4.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
-    # via faker
+    # via
+    #   botocore
+    #   faker
 python-dotenv==0.18.0
     # via
     #   -c requirements/_base.txt
@@ -273,6 +293,8 @@ rfc3986==1.4.0
     # via
     #   -c requirements/_base.txt
     #   httpx
+s3transfer==0.5.0
+    # via boto3
 six==1.15.0
     # via
     #   -c requirements/_base.txt
@@ -305,7 +327,9 @@ toml==0.10.2
     #   pylint
     #   pytest
 tomli==1.2.2
-    # via coverage
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   coverage
 tornado==6.1
     # via
     #   -c requirements/_base.txt
@@ -323,6 +347,7 @@ urllib3==1.26.6
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   botocore
     #   minio
     #   requests
 websocket-client==0.59.0
@@ -330,7 +355,9 @@ websocket-client==0.59.0
     #   docker
     #   docker-compose
 wrapt==1.13.3
-    # via astroid
+    # via
+    #   aiobotocore
+    #   astroid
 yarl==1.7.2
     # via
     #   -c requirements/_base.txt

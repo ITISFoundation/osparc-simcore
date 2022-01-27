@@ -286,7 +286,7 @@ async def _inspect_service_and_print_logs(
         print(f"{formatted_logs}\n{SEPARATOR} - {tag}")
 
 
-def _run_command(command: str) -> str:
+def run_command(command: str) -> str:
     # using asyncio.create_subprocess_shell is slower
     # and sometimes ir randomly hangs forever
 
@@ -306,11 +306,11 @@ async def _port_forward_legacy_service(  # pylint: disable=redefined-outer-name
 
     # Legacy services are started --endpoint-mode dnsrr, it needs to
     # be changed to vip otherwise the port forward will not work
-    result = _run_command(f"docker service update {service_name} --endpoint-mode=vip")
+    result = run_command(f"docker service update {service_name} --endpoint-mode=vip")
     assert "verify: Service converged" in result
 
     # Finally forward the port on a random assigned port.
-    result = _run_command(
+    result = run_command(
         f"docker service update {service_name} --publish-add :{internal_port}"
     )
     assert "verify: Service converged" in result
@@ -396,3 +396,10 @@ async def assert_services_reply_200(
                 service_name=service_data["service_host"],
                 is_legacy=is_legacy(node_data),
             )
+
+
+async def sleep_for(interval: PositiveInt, reason: str) -> None:
+    assert interval > 0
+    for i in range(1, interval + 1):
+        await asyncio.sleep(1)
+        print(f"[{i}/{interval}]Sleeping: {reason}")

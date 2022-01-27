@@ -280,8 +280,10 @@ def project(
     created_project_ids: List[str] = []
 
     def creator(**overrides) -> ProjectAtDB:
+        project_uuid = uuid4()
+        print(f"Created new project with uuid={project_uuid}")
         project_config = {
-            "uuid": f"{uuid4()}",
+            "uuid": f"{project_uuid}",
             "name": "my test project",
             "type": ProjectType.STANDARD.name,
             "description": "my test description",
