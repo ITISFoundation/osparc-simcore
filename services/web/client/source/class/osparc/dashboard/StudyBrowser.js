@@ -438,6 +438,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const duplicateStudyButton = this.__getDuplicateStudyMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
+      const exportButton = this.__getExportMenuButton(studyData);
+      menu.add(exportButton);
+
       const moreOptionsButton = this.__getMoreStudyOptionsMenuButton(studyData);
       menu.add(moreOptionsButton);
 
@@ -470,9 +473,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
       menu.add(studyServicesButton);
-
-      const exportButton = this.__getExportMenuButton(studyData);
-      menu.add(exportButton);
 
       const isCurrentUserOwner = osparc.data.model.Study.isOwner(studyData);
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
