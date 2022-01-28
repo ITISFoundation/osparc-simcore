@@ -413,6 +413,10 @@ qx.Class.define("osparc.component.form.Auto", {
         }
       );
     },
+    __setupContentSchema: function(s, key, control) {
+      control.setContentSchema(s.contentSchema);
+    },
+
     __addField: function(s, key) {
       const control = this.__getField(s, key);
 
@@ -440,7 +444,8 @@ qx.Class.define("osparc.component.form.Auto", {
             integer: "Spinner",
             number: "Number",
             boolean: "CheckBox",
-            data: "FileButton"
+            data: "FileButton",
+            "ref_contentSchema": "ContentSchema"
           }[type]
         };
       }
@@ -490,6 +495,10 @@ qx.Class.define("osparc.component.form.Auto", {
         case "FileButton":
           control = new qx.ui.form.TextField();
           setup = this.__setupFileButton;
+          break;
+        case "ContentSchema":
+          control = new osparc.ui.form.ContentSchemaField();
+          setup = this.__setupContentSchema;
           break;
         default:
           throw new Error("unknown widget type " + s.widget.type);
