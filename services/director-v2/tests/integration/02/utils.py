@@ -3,7 +3,7 @@
 import asyncio
 import json
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set
 import logging
 
 import aiodocker
@@ -31,6 +31,11 @@ SERVICES_ARE_READY_TIMEOUT = 2 * 60
 SEPARATOR = "=" * 50
 
 
+class _VolumeNotExpectedError(Exception):
+    def __init__(self, volume_name: str) -> None:
+        super().__init__(f"Volume {volume_name} should have been removed")
+
+
 log = logging.getLogger(__name__)
 
 
@@ -41,22 +46,25 @@ def is_legacy(node_data: Node) -> bool:
 async def ensure_volume_cleanup(
     docker_client: aiodocker.Docker, node_uuid: str
 ) -> None:
-    volumes_list = await docker_client.volumes.list()
-    volume_names = [x["Name"] for x in volumes_list["Volumes"]]
-    for volume_name in volume_names:
-        if volume_name.startswith(f"dy-sidecar_{node_uuid}"):
-            docker_volume = DockerVolume(docker_client, volume_name)
+    async def _get_volume_names() -> Set[str]:
+        volumes_list = await docker_client.volumes.list()
+        volume_names: Set[str] = {x["Name"] for x in volumes_list["Volumes"]}
+        return volume_names
 
+    for volume_name in await _get_volume_names():
+        if volume_name.startswith(f"dy-sidecar_{node_uuid}"):
             # docker volume results to be in use and it takes a bit to remove
             # it once done with it
             async for attempt in AsyncRetrying(
-                before_sleep=before_sleep_log(log, logging.INFO),
                 reraise=False,
-                stop=stop_after_attempt(12),
+                stop=stop_after_attempt(15),
                 wait=wait_fixed(5),
             ):
                 with attempt:
-                    await docker_volume.delete()
+                    # if volume is still found raise an exception
+                    # by the time this finishes all volumes should have been removed
+                    if volume_name in await _get_volume_names():
+                        raise _VolumeNotExpectedError(volume_name)
 
 
 async def ensure_network_cleanup(

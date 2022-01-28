@@ -962,13 +962,6 @@ async def test_nodeports_integration(
         )
     )
 
-    # TODO: something is fishy about how things get generated here
-    # need to fix it, files end up in different folders on remote like different project_ids are being used
-    # they end up with separate UUIDs in the various folders!
-    # NONE save the files in the correct UUID path! why is this happening, even though the thing is the same!
-    # dae9d878-9da9-4fc8-845a-784efd61aec9
-    # 6f71676c-b5a0-4480-a03b-994ff4981cbe
-
     # STEP 5
 
     # stop the services to make sure the data is saved to storage
@@ -1074,3 +1067,9 @@ async def test_nodeports_integration(
         _get_file_hashes_in_path(dy_compose_spec_path_data_manager_before),
         _get_file_hashes_in_path(dy_compose_spec_path_volume_after),
     )
+
+
+# TODO: test with a 10s interval for waiting on the files to get synced `sleep_for`, 
+# or a reduced one not sure how fast the entire process is, 
+# but with a small amount of files it should be fast
+# 
