@@ -146,7 +146,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Quality");
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
-      const qualityEditor = osparc.studycard.Utils.openQuality(resourceData);
+      const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
       qualityEditor.addListener("updateQuality", e => {
         const updatedData = e.getData();
         if (osparc.utils.Resources.isStudy(resourceData)) {
