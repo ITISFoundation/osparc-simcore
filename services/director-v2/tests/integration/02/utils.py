@@ -4,8 +4,10 @@ import asyncio
 import json
 import os
 from typing import Any, Dict, Optional
+import logging
 
 import aiodocker
+from aiodocker.volumes import DockerVolume
 import httpx
 from async_timeout import timeout
 from fastapi import FastAPI
@@ -22,14 +24,39 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
+from tenacity.before_sleep import before_sleep_log
 
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
 SERVICES_ARE_READY_TIMEOUT = 2 * 60
 SEPARATOR = "=" * 50
 
 
+log = logging.getLogger(__name__)
+
+
 def is_legacy(node_data: Node) -> bool:
     return node_data.label == "LEGACY"
+
+
+async def ensure_volume_cleanup(
+    docker_client: aiodocker.Docker, node_uuid: str
+) -> None:
+    volumes_list = await docker_client.volumes.list()
+    volume_names = [x["Name"] for x in volumes_list["Volumes"]]
+    for volume_name in volume_names:
+        if volume_name.startswith(f"dy-sidecar_{node_uuid}"):
+            docker_volume = DockerVolume(docker_client, volume_name)
+
+            # docker volume results to be in use and it takes a bit to remove
+            # it once done with it
+            async for attempt in AsyncRetrying(
+                before_sleep=before_sleep_log(log, logging.INFO),
+                reraise=False,
+                stop=stop_after_attempt(12),
+                wait=wait_fixed(5),
+            ):
+                with attempt:
+                    await docker_volume.delete()
 
 
 async def ensure_network_cleanup(

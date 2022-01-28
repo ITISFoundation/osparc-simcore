@@ -70,6 +70,7 @@ from utils import (
     assert_start_service,
     assert_stop_service,
     ensure_network_cleanup,
+    ensure_volume_cleanup,
     is_legacy,
     patch_dynamic_service_url,
     run_command,
@@ -98,7 +99,11 @@ pytest_simcore_ops_services_selection = [
 ServicesNodeUUIDs = namedtuple("ServicesNodeUUIDs", "sleeper, dy, dy_compose_spec")
 InputsOutputs = namedtuple("InputsOutputs", "inputs, outputs")
 
-DY_SERVICES_STATE_PATH: Path = Path("/dy-volumes/workdir/generated-data")
+DY_VOLUMES: str = "/dy-volumes/"
+DY_SERVICES_STATE_PATH: Path = Path(DY_VOLUMES) / "workdir/generated-data"
+DY_SERVICES_R_CLONE_DIR_NAME: str = (
+    str(DY_SERVICES_STATE_PATH).strip(DY_VOLUMES).replace("/", "_")
+)
 TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED = 60
 TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED = 60
 POSSIBLE_ISSUE_WORKAROUND = 10
@@ -291,7 +296,7 @@ def mock_env(
     monkeypatch.setenv("POSTGRES_HOST", f"{get_ip()}")
     monkeypatch.setenv("S3_PROVIDER", "MINIO")
     monkeypatch.setenv("DIRECTOR_V2_DEV_FEATURES_ENABLED", dev_features_enabled)
-    monkeypatch.setenv("TRACING_ENABLED", "false")
+    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
 
 
 @pytest.fixture
@@ -321,6 +326,11 @@ async def cleanup_services_and_networks(
         # sleep enough to ensure the observation cycle properly stopped the service
         await asyncio.sleep(2 * scheduler_interval)
         await ensure_network_cleanup(docker_client, project_id)
+
+        # remove pending volumes for service
+        # NOTE: might require to sleep a bit before doing it
+        for node_uuid in workbench_dynamic_services:
+            await ensure_volume_cleanup(docker_client, node_uuid)
 
 
 @pytest.fixture
@@ -534,7 +544,7 @@ async def _fetch_data_via_aioboto(
     async with session.resource("s3", endpoint_url=r_clone_settings.endpoint_url) as s3:
         bucket = await s3.Bucket(r_clone_settings.S3_BUCKET_NAME)
         async for s3_object in bucket.objects.all():
-            key_path = f"{project_id}/{node_id}/workdir_generated-data/"
+            key_path = f"{project_id}/{node_id}/{DY_SERVICES_R_CLONE_DIR_NAME}/"
             if s3_object.key.startswith(key_path):
                 file_object = await s3_object.get()
                 file_path = save_to / s3_object.key.replace(key_path, "")
@@ -808,12 +818,16 @@ async def test_nodeports_integration(
     2. run the computational pipeline & trigger port retrievals
     3. check that the outputs of the `sleeper` are the same as the
         outputs of the `dy-static-file-server-dynamic-sidecar-compose-spec``
-    4. fetch the "state" via `docker ` for both dynamic services
+    4. fetch the "state" via `docker/aioboto` for both dynamic services
     5. start the dynamic-services and fetch the "state" via
-        `storage-data_manager API` for both dynamic services
+        `storage-data_manager API/aioboto` for both dynamic services
     6. start the dynamic-services again, fetch the "state" via
-        `docker` for both dynamic services
+        `docker/aioboto` for both dynamic services
     7. finally check that all states for both dynamic services match
+
+    NOTE: when the services are started using S3 as a backend
+    for saving the state, the state files are recovered via
+    `aioboto` instead of `docker` or `storage-data_manager API`.
     """
 
     # STEP 1
@@ -910,13 +924,14 @@ async def test_nodeports_integration(
 
     # STEP 4
 
+    # pylint: disable=protected-access
     app_settings: AppSettings = async_client._transport.app.state.settings
     r_clone_settings: RCloneSettings = (
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.R_CLONE_SETTINGS
     )
 
     if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
-        await sleep_for(30, "Waiting for rclone to sync data from the docker volume")
+        await sleep_for(60, "Waiting for rclone to sync data from the docker volume")
 
     dy_path_volume_before = (
         await _fetch_data_via_aioboto(
@@ -946,6 +961,13 @@ async def test_nodeports_integration(
             temp_dir=temp_dir,
         )
     )
+
+    # TODO: something is fishy about how things get generated here
+    # need to fix it, files end up in different folders on remote like different project_ids are being used
+    # they end up with separate UUIDs in the various folders!
+    # NONE save the files in the correct UUID path! why is this happening, even though the thing is the same!
+    # dae9d878-9da9-4fc8-845a-784efd61aec9
+    # 6f71676c-b5a0-4480-a03b-994ff4981cbe
 
     # STEP 5
 
