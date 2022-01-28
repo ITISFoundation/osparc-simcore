@@ -34,6 +34,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
   events: {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
+    "updateService": "qx.event.type.Data",
+    "updateStudies": "qx.event.type.Event",
     "updateTemplates": "qx.event.type.Event"
   },
 
@@ -116,10 +118,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         }
       });
       studyDetails.addListener("updateTags", () => {
-        if (osparc.utils.Resources.isTemplate(resourceData)) {
-          this._resetTemplatesList(osparc.store.Store.getInstance().getTemplates());
-        } else {
-          this._resetStudiesList(osparc.store.Store.getInstance().getStudies());
+        if (osparc.utils.Resources.isStudy(resourceData)) {
+          this.fireEvent("updateStudies");
+        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+          this.fireEvent("updateTemplates");
         }
       });
       const page = this.__createPage(title, studyDetails, icon);
@@ -127,11 +129,16 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getPermissionsPage: function() {
-      const title = this.tr("Permissions");
+      const title = this.tr("Sharing");
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
-      const studyDetails = new osparc.studycard.Large(resourceData);
-      const page = this.__createPage(title, studyDetails, icon);
+      const permissionsView = new osparc.component.permissions.Study(resourceData);
+      permissionsView.getChildControl("study-link").show();
+      permissionsView.addListener("updateAccessRights", e => {
+        const updatedData = e.getData();
+        this.fireEvent("updateStudy", updatedData);
+      }, this);
+      const page = this.__createPage(title, permissionsView, icon);
       return page;
     },
 
@@ -139,17 +146,39 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Quality");
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
-      const studyDetails = new osparc.studycard.Large(resourceData);
-      const page = this.__createPage(title, studyDetails, icon);
+      const qualityEditor = osparc.studycard.Utils.openQuality(resourceData);
+      qualityEditor.addListener("updateQuality", e => {
+        const updatedData = e.getData();
+        if (osparc.utils.Resources.isStudy(resourceData)) {
+          this.fireEvent("updateStudy", updatedData);
+        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+          this.fireEvent("updateTemplate", updatedData);
+        } else if (osparc.utils.Resources.isService(resourceData)) {
+          this.fireEvent("updateService", updatedData);
+        }
+      });
+      const page = this.__createPage(title, qualityEditor, icon);
       return page;
     },
 
     __getClassifiersPage: function() {
+      if (!osparc.data.Permissions.getInstance().canDo("study.classifier")) {
+        return null;
+      }
       const title = this.tr("Classifiers");
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
-      const studyDetails = new osparc.studycard.Large(resourceData);
-      const page = this.__createPage(title, studyDetails, icon);
+      let classifiers = null;
+      if (osparc.data.model.Study.isOwner(resourceData)) {
+        classifiers = new osparc.component.metadata.ClassifiersEditor(resourceData);
+        classifiers.addListener("updateClassifiers", e => {
+          const updatedData = e.getData();
+          this.fireEvent("updateStudy", updatedData);
+        }, this);
+      } else {
+        classifiers = new osparc.component.metadata.ClassifiersViewer(resourceData);
+      }
+      const page = this.__createPage(title, classifiers, icon);
       return page;
     },
 
@@ -157,8 +186,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Services");
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
-      const studyDetails = new osparc.studycard.Large(resourceData);
-      const page = this.__createPage(title, studyDetails, icon);
+      const servicesInStudy = new osparc.component.metadata.ServicesInStudy(resourceData);
+      const page = this.__createPage(title, servicesInStudy, icon);
       return page;
     },
 
