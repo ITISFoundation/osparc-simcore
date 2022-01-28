@@ -8,7 +8,7 @@ from typing import List, Optional
 
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectIDStr
-from models_library.utils.encoders import jsonable_encoder
+from models_library.utils.fastapi_encoders import jsonable_encoder
 
 from .projects.project_models import ProjectDict
 from .version_control_changes import (

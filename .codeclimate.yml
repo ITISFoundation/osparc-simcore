@@ -56,7 +56,7 @@ plugins:
     channel: "eslint-6"
     config:
       extensions:
-      - .js
+        - .js
 
 exclude_patterns:
   - "config/"
@@ -80,4 +80,5 @@ exclude_patterns:
   - "**/pytest-simcore/"
   - "**/pytest_plugin/"
   - "**/sandbox/"
+  - packages/models-library/src/models_library/utils/fastapi_encoders.py
   - services/web/server/src/simcore_service_webserver/exporter/formatters/sds/xlsx/templates/code_description.py
