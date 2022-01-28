@@ -496,9 +496,36 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __getRenameStudyMenuButton: function(studyData) {
       const renameButton = new qx.ui.menu.Button(this.tr("Rename"));
       renameButton.addListener("execute", () => {
-        console.log("rename", studyData);
+        const renamer = new osparc.component.widget.Renamer(studyData["name"]);
+        renamer.addListener("labelChanged", e => {
+          const newLabel = e.getData()["newLabel"];
+          const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
+          studyDataCopy.name = newLabel;
+          this.__updateStudy(studyDataCopy);
+          renamer.close();
+        }, this);
+        renamer.center();
+        renamer.open();
       }, this);
       return renameButton;
+    },
+
+    __updateStudy: function(studyData) {
+      const params = {
+        url: {
+          "studyId": studyData["uuid"]
+        },
+        data: studyData
+      };
+      osparc.data.Resources.fetch("studies", "put", params)
+        .then(updatedStudyData => {
+          this._resetStudyItem(updatedStudyData);
+        })
+        .catch(err => {
+          const msg = this.tr("Something went wrong updating the Service");
+          osparc.component.message.FlashMessenger.logAs(msg, "ERROR");
+          console.error(err);
+        });
     },
 
     __getMoreStudyOptionsMenuButton: function(studyData) {
