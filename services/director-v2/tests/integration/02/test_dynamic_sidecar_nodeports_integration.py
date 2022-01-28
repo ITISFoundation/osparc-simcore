@@ -102,6 +102,7 @@ InputsOutputs = namedtuple("InputsOutputs", "inputs, outputs")
 DY_VOLUMES: str = "/dy-volumes/"
 DY_SERVICES_STATE_PATH: Path = Path(DY_VOLUMES) / "workdir/generated-data"
 DY_SERVICES_R_CLONE_DIR_NAME: str = (
+    # pylint: disable=bad-str-strip-call
     str(DY_SERVICES_STATE_PATH).strip(DY_VOLUMES).replace("/", "_")
 )
 TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED = 60
@@ -1069,7 +1070,7 @@ async def test_nodeports_integration(
     )
 
 
-# TODO: test with a 10s interval for waiting on the files to get synced `sleep_for`, 
-# or a reduced one not sure how fast the entire process is, 
+# TODO: test with a 10s interval for waiting on the files to get synced `sleep_for`,
+# or a reduced one not sure how fast the entire process is,
 # but with a small amount of files it should be fast
-# 
+#
