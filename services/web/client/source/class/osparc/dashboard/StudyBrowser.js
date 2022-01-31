@@ -450,37 +450,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(deleteButton);
       }
 
-
-      menu.addSeparator();
-
-      const moreInfoButton = this._getMoreInfoMenuButton(studyData);
-      if (moreInfoButton) {
-        menu.add(moreInfoButton);
-      }
-
-      const shareStudyButton = this.__getPermissionsMenuButton(studyData);
-      menu.add(shareStudyButton);
-
-      if ("quality" in studyData) {
-        const qualityButton = this._getQualityMenuButton(studyData);
-        menu.add(qualityButton);
-      }
-
-      const classifiersButton = this.__getClassifiersMenuButton(studyData);
-      if (classifiersButton) {
-        menu.add(classifiersButton);
-      }
-
-      const studyServicesButton = this.__getStudyServicesMenuButton(studyData);
-      menu.add(studyServicesButton);
-
-      const isCurrentUserOwner = osparc.data.model.Study.isOwner(studyData);
-      const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
-      if (isCurrentUserOwner && canCreateTemplate) {
-        const saveAsTemplateButton = this.__getSaveAsTemplateMenuButton(studyData);
-        menu.add(saveAsTemplateButton);
-      }
-
       return menu;
     },
 
@@ -545,62 +514,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return moreOptsButton;
     },
 
-    __getPermissionsMenuButton: function(studyData) {
-      const permissionsButton = new qx.ui.menu.Button(this.tr("Sharing"));
-      permissionsButton.addListener("execute", () => {
-        this.__openPermissions(studyData);
-      }, this);
-      return permissionsButton;
-    },
-
-    __getClassifiersMenuButton: function(studyData) {
-      if (!osparc.data.Permissions.getInstance().canDo("study.classifier")) {
-        return null;
-      }
-
-      const classifiersButton = new qx.ui.menu.Button(this.tr("Classifiers"));
-      classifiersButton.addListener("execute", () => {
-        this.__openClassifiers(studyData);
-      }, this);
-      return classifiersButton;
-    },
-
-    __openPermissions: function(studyData) {
-      const permissionsView = osparc.studycard.Utils.openAccessRights(studyData);
-      permissionsView.getChildControl("study-link").show();
-      permissionsView.addListener("updateAccessRights", e => {
-        const updatedData = e.getData();
-        this._resetStudyItem(updatedData);
-      }, this);
-    },
-
-    __openClassifiers: function(studyData) {
-      const title = this.tr("Classifiers");
-      let classifiers = null;
-      if (osparc.data.model.Study.isOwner(studyData)) {
-        classifiers = new osparc.component.metadata.ClassifiersEditor(studyData);
-        const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
-        classifiers.addListener("updateClassifiers", e => {
-          win.close();
-          const updatedStudy = e.getData();
-          this._resetStudyItem(updatedStudy);
-        }, this);
-      } else {
-        classifiers = new osparc.component.metadata.ClassifiersViewer(studyData);
-        osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
-      }
-    },
-
-    __getStudyServicesMenuButton: function(studyData) {
-      const studyServicesButton = new qx.ui.menu.Button(this.tr("Services"));
-      studyServicesButton.addListener("execute", () => {
-        const servicesInStudy = new osparc.component.metadata.ServicesInStudy(studyData);
-        const title = this.tr("Services in Study");
-        osparc.ui.window.Window.popUpInWindow(servicesInStudy, title, 650, 300);
-      }, this);
-      return studyServicesButton;
-    },
-
     __getDuplicateStudyMenuButton: function(studyData) {
       const duplicateStudyButton = new qx.ui.menu.Button(this.tr("Duplicate"));
       osparc.utils.Utils.setIdToWidget(duplicateStudyButton, "duplicateStudy");
@@ -616,23 +529,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.__exportStudy(studyData);
       }, this);
       return exportButton;
-    },
-
-    __getSaveAsTemplateMenuButton: function(studyData) {
-      const saveAsTemplateButton = new qx.ui.menu.Button(this.tr("Publish as Template"));
-      saveAsTemplateButton.addListener("execute", () => {
-        const saveAsTemplateView = new osparc.component.study.SaveAsTemplate(studyData);
-        const title = this.tr("Publish as Template");
-        const window = osparc.ui.window.Window.popUpInWindow(saveAsTemplateView, title, 400, 300);
-        saveAsTemplateView.addListener("finished", e => {
-          const template = e.getData();
-          if (template) {
-            this.fireEvent("updateTemplates");
-            window.close();
-          }
-        }, this);
-      }, this);
-      return saveAsTemplateButton;
     },
 
     __getDeleteStudyMenuButton: function(studyData) {
