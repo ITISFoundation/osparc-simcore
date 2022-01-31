@@ -84,7 +84,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
           }, this);
           this._add(bootModeSB, {
             row: i,
-            column: this.self().gridPos.bootMode
+            column: this.self().gridPosBoot.bootMode
           });
         }
 
