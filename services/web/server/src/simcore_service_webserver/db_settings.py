@@ -1,7 +1,6 @@
 from typing import Dict
 
 from aiohttp.web import Application
-from models_library.settings.postgres import PostgresSettings
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
 from settings_library.postgres import PostgresSettings
 
