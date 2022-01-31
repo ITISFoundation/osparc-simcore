@@ -62,6 +62,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         fetchButton.setFetching(true);
       }
 
+      this.setEnabled(false);
       const params = {
         url: {
           "studyId": this.__studyData["uuid"]
