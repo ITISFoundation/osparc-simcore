@@ -93,7 +93,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Information");
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
-      const studyDetails = new osparc.studycard.Large(resourceData);
+      const studyDetails = new osparc.studycard.Large(resourceData, false);
       studyDetails.addListener("updateStudy", e => {
         const updatedData = e.getData();
         if (osparc.utils.Resources.isStudy(resourceData)) {
@@ -168,7 +168,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getServicesUpdatePage: function() {
-      const title = this.tr("Update Serives");
+      const title = this.tr("Update Services");
       const icon = "@MaterialIcons/update";
       const resourceData = this.__resourceData;
       const servicesUpdate = new osparc.component.metadata.ServicesInStudyUpdate(resourceData);
