@@ -110,6 +110,7 @@ DY_SERVICES_R_CLONE_DIR_NAME: str = (
 TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED = 60
 TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED = 60
 POSSIBLE_ISSUE_WORKAROUND = 10
+WAIT_FOR_R_CLONE_VOLUME_TO_SYNC_DATA = 30
 
 
 logger = logging.getLogger(__name__)
@@ -934,7 +935,10 @@ async def test_nodeports_integration(
     )
 
     if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
-        await sleep_for(60, "Waiting for rclone to sync data from the docker volume")
+        await sleep_for(
+            WAIT_FOR_R_CLONE_VOLUME_TO_SYNC_DATA,
+            "Waiting for rclone to sync data from the docker volume",
+        )
 
     dy_path_volume_before = (
         await _fetch_data_via_aioboto(
@@ -981,7 +985,10 @@ async def test_nodeports_integration(
     await _wait_for_dy_services_to_fully_stop(async_client)
 
     if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
-        await sleep_for(30, "Waiting for rclone to sync data from the docker volume")
+        await sleep_for(
+            WAIT_FOR_R_CLONE_VOLUME_TO_SYNC_DATA,
+            "Waiting for rclone to sync data from the docker volume",
+        )
 
     dy_path_data_manager_before = (
         await _fetch_data_via_aioboto(
@@ -1070,9 +1077,3 @@ async def test_nodeports_integration(
         _get_file_hashes_in_path(dy_compose_spec_path_data_manager_before),
         _get_file_hashes_in_path(dy_compose_spec_path_volume_after),
     )
-
-
-# TODO: test with a 10s interval for waiting on the files to get synced `sleep_for`,
-# or a reduced one not sure how fast the entire process is,
-# but with a small amount of files it should be fast
-#
