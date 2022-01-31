@@ -29,7 +29,7 @@ def _get_s3_volume_driver_config(
             # Directly connected to how much time it takes for
             # files to appear on remote s3, please se discussion
             # SEE https://forum.rclone.org/t/file-added-to-s3-on-one-machine-not-visible-on-2nd-machine-unless-mount-is-restarted/20645
-            "dir-cache-time": "10s",
+            "dir-cache-time": f"{r_clone_settings.R_CLONE_DIR_CACHE_TIME_SECONDS}s",
         },
     }
 

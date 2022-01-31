@@ -51,6 +51,13 @@ class S3Provider(str, Enum):
 
 class RCloneSettings(S3Settings):
     S3_PROVIDER: S3Provider
+    R_CLONE_DIR_CACHE_TIME_SECONDS: int = Field(
+        10,
+        description=(
+            "time between directory refreshes, for reference:"
+            "https://rclone.org/commands/rclone_mount/#vfs-directory-cache"
+        ),
+    )
 
     @cached_property
     def endpoint(self) -> str:
