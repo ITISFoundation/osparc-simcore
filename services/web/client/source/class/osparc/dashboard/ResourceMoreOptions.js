@@ -112,9 +112,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       studyDetails.addListener("updateStudy", e => {
         const updatedData = e.getData();
         if (osparc.utils.Resources.isStudy(resourceData)) {
-          this.fireEvent("updateStudy", updatedData);
+          this.fireDataEvent("updateStudy", updatedData);
         } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-          this.fireEvent("updateTemplate", updatedData);
+          this.fireDataEvent("updateTemplate", updatedData);
         }
       });
       studyDetails.addListener("updateTags", () => {
@@ -136,7 +136,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       permissionsView.getChildControl("study-link").show();
       permissionsView.addListener("updateAccessRights", e => {
         const updatedData = e.getData();
-        this.fireEvent("updateStudy", updatedData);
+        this.fireDataEvent("updateStudy", updatedData);
       }, this);
       const page = this.__createPage(title, permissionsView, icon);
       return page;
@@ -150,11 +150,11 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       qualityEditor.addListener("updateQuality", e => {
         const updatedData = e.getData();
         if (osparc.utils.Resources.isStudy(resourceData)) {
-          this.fireEvent("updateStudy", updatedData);
+          this.fireDataEvent("updateStudy", updatedData);
         } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-          this.fireEvent("updateTemplate", updatedData);
+          this.fireDataEvent("updateTemplate", updatedData);
         } else if (osparc.utils.Resources.isService(resourceData)) {
-          this.fireEvent("updateService", updatedData);
+          this.fireDataEvent("updateService", updatedData);
         }
       });
       const page = this.__createPage(title, qualityEditor, icon);
@@ -173,7 +173,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         classifiers = new osparc.component.metadata.ClassifiersEditor(resourceData);
         classifiers.addListener("updateClassifiers", e => {
           const updatedData = e.getData();
-          this.fireEvent("updateStudy", updatedData);
+          this.fireDataEvent("updateStudy", updatedData);
         }, this);
       } else {
         classifiers = new osparc.component.metadata.ClassifiersViewer(resourceData);

@@ -535,8 +535,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const title = this.tr("More options");
         osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 700);
         moreOpts.addListener("updateStudy", e => {
-          const updatedData = e.getData();
-          console.log("update study", updatedData);
+          const updatedStudyData = e.getData();
+          this._resetStudyItem(updatedStudyData);
         });
         moreOpts.addListener("updateStudies", () => {
           console.log("update studies");
