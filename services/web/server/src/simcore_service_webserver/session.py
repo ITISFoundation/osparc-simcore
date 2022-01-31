@@ -52,8 +52,8 @@ def setup_session(app: web.Application):
         secret_key_bytes += secret_key_bytes
 
     # TODO: currently cfg and settings in place until former is dropped
-    settings = app[APP_SETTINGS_KEY]
-    assert settings.WEBSERVER_SESSION_SECRET_KEY == secret_key_bytes[:32]  # nosec
+    if settings := app.get(APP_SETTINGS_KEY):
+        assert settings.WEBSERVER_SESSION_SECRET_KEY == secret_key_bytes[:32]  # nosec
 
     # EncryptedCookieStorage urlsafe_b64decode inside if passes bytes
     storage = EncryptedCookieStorage(
