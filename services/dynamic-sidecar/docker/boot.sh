@@ -27,12 +27,16 @@ fi
 
 # RUNNING application ----------------------------------------
 if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-  # NOTE: ptvsd is programmatically enabled inside of the service
-  # this way we can have reload in place as well
-  exec uvicorn simcore_service_dynamic_sidecar.main:app \
-    --reload \
-    --host 0.0.0.0 \
-    --reload-dir services/dynamic-sidecar/src/simcore_service_dynamic_sidecar
+  reload_dir_packages=$(find /devel/packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo '--reload-dir {} \' \;)
+
+  exec sh -c "
+    cd services/dynamic-sidecar/src/simcore_service_dynamic_sidecar && \
+    uvicorn main:app \
+      --host 0.0.0.0 \
+      --reload \
+      $reload_dir_packages
+      --reload-dir .
+  "
 else
   exec uvicorn simcore_service_dynamic_sidecar.main:app \
     --host 0.0.0.0
