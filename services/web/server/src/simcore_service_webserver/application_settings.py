@@ -30,6 +30,7 @@ from .catalog_settings import CatalogSettings
 # from .db_settings import PostgresSettings
 from .director.settings import DirectorSettings
 from .director_v2_settings import DirectorV2Settings
+from .exporter.settings import ExporterSettings
 
 # from .email_settings import SmtpSettings
 from .login.settings import LoginSettings
@@ -119,6 +120,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     WEBSERVER_LOGIN: Optional[LoginSettings] = Field(auto_default_from_env=True)
+
+    WEBSERVER_EXPORTER: Optional[ExporterSettings] = Field(auto_default_from_env=True)
 
     @validator("WEBSERVER_SESSION_SECRET_KEY", pre=True)
     @classmethod

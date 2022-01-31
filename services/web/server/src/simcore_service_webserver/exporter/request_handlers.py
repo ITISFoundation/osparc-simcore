@@ -11,10 +11,10 @@ from .._constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..projects.projects_api import retrieve_and_notify_project_locked_state
 from ..security_decorators import permission_required
-from .config import get_settings
 from .exceptions import ExporterException
 from .export_import import study_duplicate, study_export, study_import
 from .formatters import FormatterV1
+from .settings import get_settings
 from .utils import CleanupFileResponse, get_empty_tmp_dir, remove_dir
 
 ONE_GB: int = 1024 * 1024 * 1024
@@ -88,7 +88,7 @@ async def import_project(request: web.Request):
     # bumping this requests's max size
     # pylint: disable=protected-access
     exporter_settings = get_settings(request.app)
-    request._client_max_size = exporter_settings.max_upload_file_size * ONE_GB
+    request._client_max_size = exporter_settings.EXPORTER_MAX_UPLOAD_FILE_SIZE * ONE_GB
 
     post_contents = await request.post()
     log.info("POST body %s", post_contents)
