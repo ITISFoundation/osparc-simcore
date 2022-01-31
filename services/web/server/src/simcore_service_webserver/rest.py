@@ -11,6 +11,7 @@ from typing import Tuple
 from aiohttp import web
 from aiohttp_swagger import setup_swagger
 from servicelib.aiohttp import openapi
+from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.rest_middlewares import (
     envelope_middleware_factory,
@@ -21,7 +22,6 @@ from . import rest_routes
 from ._constants import APP_OPENAPI_SPECS_KEY
 from ._meta import api_version_prefix
 from .diagnostics_settings import get_diagnostics_config
-from .rest_settings import assert_valid_config
 from .rest_utils import get_openapi_specs_path, load_openapi_specs
 
 log = logging.getLogger(__name__)
@@ -34,14 +34,9 @@ log = logging.getLogger(__name__)
     logger=log,
 )
 def setup_rest(app: web.Application, *, swagger_doc_enabled: bool = True):
-    # ----------------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    cfg = assert_valid_config(app)
-    # ---------------------------------------------
 
-    api_version_dir = cfg["version"]
-    spec_path = get_openapi_specs_path(api_version_dir)
+    app_settings = app[APP_SETTINGS_KEY]
+    spec_path = get_openapi_specs_path(api_version_dir=app_settings.API_VTAG)
 
     # validated openapi specs
     app[APP_OPENAPI_SPECS_KEY] = specs = load_openapi_specs(spec_path)
