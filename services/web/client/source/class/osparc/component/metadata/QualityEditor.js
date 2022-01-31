@@ -33,6 +33,10 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
     this._setLayout(new qx.ui.layout.VBox(8));
 
+    this.set({
+      height: 600
+    });
+
     this.__initResourceData(resourceData);
   },
 
@@ -49,7 +53,16 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     }
   },
 
-  // eslint-disable-next-line qx-rules/no-refs-in-members
+  statics: {
+    GridPos: {
+      rule: 0,
+      clCurrent: 1,
+      clTarget: 2,
+      reference: 3,
+      edit: 4
+    }
+  },
+
   members: {
     __resourceData: null,
     __copyResourceData: null,
@@ -59,13 +72,6 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     __annotationsSection: null,
     __tsrGrid: null,
     __annotationsGrid: null,
-    __tsrGridPos: {
-      rule: 0,
-      clCurrent: 1,
-      clTarget: 2,
-      reference: 3,
-      edit: 4
-    },
 
     __initResourceData: function(resourceData) {
       if (!("quality" in resourceData)) {
@@ -187,10 +193,10 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       box.add(helpTextMD);
 
       const grid = new qx.ui.layout.Grid(10, 6);
-      Object.values(this.__tsrGridPos).forEach(gridPos => {
+      Object.values(this.self().GridPos).forEach(gridPos => {
         grid.setColumnAlign(gridPos, "left", "middle");
       });
-      grid.setColumnFlex(this.__tsrGridPos.reference, 1);
+      grid.setColumnFlex(this.self().GridPos.reference, 1);
       this.__tsrGrid = new qx.ui.container.Composite(grid);
       box.add(this.__tsrGrid);
 
@@ -252,7 +258,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       });
       this.__tsrGrid.add(headerTSR, {
         row: 0,
-        column: this.__tsrGridPos.rule
+        column: this.self().GridPos.rule
       });
 
       const headerCL = new qx.ui.basic.Label(this.tr("Conformance Level")).set({
@@ -260,7 +266,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       });
       this.__tsrGrid.add(headerCL, {
         row: 0,
-        column: this.__tsrGridPos.clCurrent
+        column: this.self().GridPos.clCurrent
       });
 
       const headerTargetCL = new qx.ui.basic.Label(this.tr("Target")).set({
@@ -272,7 +278,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       });
       this.__tsrGrid.add(headerTargetCL, {
         row: 0,
-        column: this.__tsrGridPos.clTarget
+        column: this.self().GridPos.clTarget
       });
 
       const headerRef = new qx.ui.basic.Label(this.tr("References")).set({
@@ -280,7 +286,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       });
       this.__tsrGrid.add(headerRef, {
         row: 0,
-        column: this.__tsrGridPos.reference
+        column: this.self().GridPos.reference
       });
 
       let row = 1;
@@ -293,7 +299,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         });
         this.__tsrGrid.add(ruleWHint, {
           row,
-          column: this.__tsrGridPos.rule
+          column: this.self().GridPos.rule
         });
         row++;
       });
@@ -302,7 +308,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       });
       this.__tsrGrid.add(label, {
         row,
-        column: this.__tsrGridPos.rule
+        column: this.self().GridPos.rule
       });
       row++;
     },
@@ -355,7 +361,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         updateCurrentLevel(currentRule.level);
         this.__tsrGrid.add(currentRulelayout, {
           row,
-          column: this.__tsrGridPos.clCurrent
+          column: this.self().GridPos.clCurrent
         });
 
         const targetRule = copyTSRTarget[ruleKey];
@@ -387,13 +393,13 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         });
         this.__tsrGrid.add(targetsBox, {
           row,
-          column: this.__tsrGridPos.clTarget
+          column: this.self().GridPos.clTarget
         });
 
         const referenceMD = new osparc.ui.markdown.Markdown(currentRule.references);
         this.__tsrGrid.add(referenceMD, {
           row,
-          column: this.__tsrGridPos.reference
+          column: this.self().GridPos.reference
         });
 
         const button = osparc.utils.Utils.getEditButton();
@@ -418,7 +424,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         });
         this.__tsrGrid.add(button, {
           row,
-          column: this.__tsrGridPos.edit
+          column: this.self().GridPos.edit
         });
 
         row++;
@@ -426,7 +432,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
 
       this.__tsrGrid.add(tsrTotalRating, {
         row,
-        column: this.__tsrGridPos.clCurrent
+        column: this.self().GridPos.clCurrent
       });
     },
 
