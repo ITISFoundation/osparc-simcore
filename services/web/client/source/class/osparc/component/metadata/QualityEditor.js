@@ -150,13 +150,13 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
           this.__createEditBtns();
         }
 
+        this.__createTSRSection();
+        this.__createAnnotationsSection();
+
         this.__createEnableSection();
         if (!this.__isUserOwner()) {
           this.__enabledQuality.exclude();
         }
-
-        this.__createTSRSection();
-        this.__createAnnotationsSection();
 
         this.__populateForms();
       } else {
@@ -625,7 +625,6 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
       }, this);
 
       const buttonsToolbar = new qx.ui.toolbar.ToolBar();
-      buttonsToolbar.addSpacer();
       buttonsToolbar.add(editButton);
       buttonsToolbar.add(saveButton);
       buttonsToolbar.add(cancelButton);
