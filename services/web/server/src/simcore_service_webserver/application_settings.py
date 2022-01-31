@@ -26,8 +26,6 @@ from ._meta import API_VERSION, API_VTAG, APP_NAME
 
 # from .activity.settings import ActivitySettings
 from .catalog_settings import CatalogSettings
-
-# from .db_settings import PostgresSettings
 from .director.settings import DirectorSettings
 from .director_v2_settings import DirectorV2Settings
 from .exporter.settings import ExporterSettings
@@ -46,12 +44,12 @@ log = logging.getLogger(__name__)
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
-    # CODE STATICS --------------------------------------------------------------------------------------
+    # CODE STATICS ---------------------------------------------------------
     API_VERSION: str = API_VERSION
     APP_NAME: str = APP_NAME
     API_VTAG: VersionTag = API_VTAG
 
-    # IMAGE BUILDTIME -----------------------------------------------------------------------------------
+    # IMAGE BUILDTIME ------------------------------------------------------
     # @Makefile
     SC_BUILD_DATE: Optional[str] = None
     SC_BUILD_TARGET: Optional[BuildTargetEnum] = None
@@ -65,7 +63,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SC_USER_ID: Optional[int] = None
     SC_USER_NAME: Optional[str] = None
 
-    # RUNTIME  -----------------------------------------------------------------------------------------
+    # RUNTIME  -----------------------------------------------------------
     # settings defined from environs defined when container runs
     # NOTE: keep alphabetically if possible
 
@@ -123,6 +121,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             "SWARM_STACK_NAME": "stack_name",
         }
         alias_generator = lambda s: s.lower()
+
+    # HELPERS  --------------------------------------------------------
 
     def public_dict(self) -> Dict[str, Any]:
         """Data publicaly available"""
