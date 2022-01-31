@@ -21,12 +21,12 @@ from tenacity.wait import wait_exponential, wait_fixed
 
 from ....api.dependencies.database import get_base_repository
 from ....core.settings import AppSettings, DynamicSidecarSettings
-from ....modules.db.repositories import BaseRepository
 from ....models.schemas.dynamic_services import (
     DockerContainerInspect,
     DynamicSidecarStatus,
     SchedulerData,
 )
+from ....modules.db.repositories import BaseRepository
 from ....modules.director_v0 import DirectorV0Client
 from ...db.repositories.projects import ProjectsRepository
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
@@ -54,7 +54,6 @@ from ..errors import (
 )
 from .abc import DynamicSchedulerEvent
 from .events_utils import disabled_directory_watcher
-
 
 logger = logging.getLogger(__name__)
 

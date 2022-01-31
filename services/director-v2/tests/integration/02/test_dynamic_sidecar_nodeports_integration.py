@@ -42,7 +42,6 @@ from models_library.settings.redis import RedisConfig
 from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_ip
-from settings_library.rclone import RCloneSettings
 from shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
@@ -56,7 +55,7 @@ from simcore_sdk.node_data import data_manager
 # FIXTURES
 from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
-from simcore_service_director_v2.core.settings import AppSettings
+from simcore_service_director_v2.core.settings import AppSettings, RCloneSettings
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
@@ -545,7 +544,7 @@ async def _fetch_data_via_aioboto(
         aws_access_key_id=r_clone_settings.S3_ACCESS_KEY,
         aws_secret_access_key=r_clone_settings.S3_SECRET_KEY,
     )
-    async with session.resource("s3", endpoint_url=r_clone_settings.endpoint_url) as s3:
+    async with session.resource("s3", endpoint_url=r_clone_settings.endpoint) as s3:
         bucket = await s3.Bucket(r_clone_settings.S3_BUCKET_NAME)
         async for s3_object in bucket.objects.all():
             key_path = f"{project_id}/{node_id}/{DY_SERVICES_R_CLONE_DIR_NAME}/"

@@ -1,6 +1,7 @@
 # pylint: disable=no-self-argument
 # pylint: disable=no-self-use
 
+from enum import Enum
 from functools import cached_property
 from pathlib import Path
 from typing import Dict, Optional, Set
@@ -19,7 +20,7 @@ from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
-from settings_library.rclone import RCloneSettings
+from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
@@ -40,6 +41,23 @@ ORG_LABELS_TO_SCHEMA_LABELS: Dict[str, str] = {
 }
 
 SUPPORTED_TRAEFIK_LOG_LEVELS: Set[str] = {"info", "debug", "warn", "error"}
+
+
+class S3Provider(str, Enum):
+    AWS = "AWS"
+    CEPH = "CEPH"
+    MINIO = "MINIO"
+
+
+class RCloneSettings(S3Settings):
+    S3_PROVIDER: S3Provider
+
+    @cached_property
+    def endpoint(self) -> str:
+        if not self.S3_ENDPOINT.startswith("http"):
+            scheme = "https" if self.S3_SECURE else "http"
+            return f"{scheme}://{self.S3_ENDPOINT}"
+        return self.S3_ENDPOINT
 
 
 class DirectorV0Settings(BaseCustomSettings):

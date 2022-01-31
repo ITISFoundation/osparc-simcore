@@ -2,10 +2,10 @@ import os
 from pathlib import Path
 from typing import Any, Dict
 
-from settings_library.rclone import RCloneSettings, S3Provider
-from models_library.projects_nodes_io import NodeID
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 
+from ...core.settings import RCloneSettings, S3Provider
 from .errors import DynamicSidecarError
 
 
@@ -22,7 +22,7 @@ def _get_s3_volume_driver_config(
             "type": "s3",
             "s3-access_key_id": r_clone_settings.S3_ACCESS_KEY,
             "s3-secret_access_key": r_clone_settings.S3_SECRET_KEY,
-            "s3-endpoint": r_clone_settings.endpoint_url,
+            "s3-endpoint": r_clone_settings.endpoint,
             "path": f"{r_clone_settings.S3_BUCKET_NAME}/{project_id}/{node_uuid}/{storage_directory_name}",
             "allow-other": "true",
             "vfs-cache-mode": "full",
