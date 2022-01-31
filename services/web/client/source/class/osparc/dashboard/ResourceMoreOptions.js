@@ -43,40 +43,20 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __resourceData: null,
 
     __addPages: function() {
-      const moreInfoPage = this.__getInfoPage();
-      if (moreInfoPage) {
-        this.add(moreInfoPage);
-      }
-
-      const permissionsPage = this.__getPermissionsPage();
-      if (permissionsPage) {
-        this.add(permissionsPage);
-      }
-
-      const classifiersPage = this.__getClassifiersPage();
-      if (classifiersPage) {
-        this.add(classifiersPage);
-      }
-
-      const qualityPage = this.__getQualityPage();
-      if (qualityPage) {
-        this.add(qualityPage);
-      }
-
-      const servicesUpdatePage = this.__getServicesUpdatePage();
-      if (servicesUpdatePage) {
-        this.add(servicesUpdatePage);
-      }
-
-      const servicesBootOptsPage = this.__getServicesBootOptionsPage();
-      if (servicesBootOptsPage) {
-        this.add(servicesBootOptsPage);
-      }
-
-      const saveAsTemplatePage = this.__getSaveAsTemplatePage();
-      if (saveAsTemplatePage) {
-        this.add(saveAsTemplatePage);
-      }
+      [
+        this.__getInfoPage,
+        this.__getPermissionsPage,
+        this.__getClassifiersPage,
+        this.__getQualityPage,
+        this.__getServicesUpdatePage,
+        this.__getServicesBootOptionsPage,
+        this.__getSaveAsTemplatePage
+      ].forEach(pageCallee => {
+        const page = pageCallee.call(this);
+        if (page) {
+          this.add(page);
+        }
+      });
     },
 
     __createPage: function(title, widget, icon) {
@@ -198,7 +178,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     __getServicesBootOptionsPage: function() {
       const title = this.tr("Boot Options");
-      const icon = "@MaterialIcons/update";
+      const icon = "@FontAwesome5Solid/play-circle";
       const resourceData = this.__resourceData;
       const servicesBootOpts = new osparc.component.metadata.ServicesInStudyBootOpts(resourceData);
       const page = this.__createPage(title, servicesBootOpts, icon);
