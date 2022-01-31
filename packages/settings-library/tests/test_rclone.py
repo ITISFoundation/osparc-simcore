@@ -35,7 +35,7 @@ def test_expected_endpoint(
     monkeypatch.setenv("S3_ENDPOINT", endpoint)
     monkeypatch.setenv("S3_SECURE", "true" if is_secure else "false")
 
-    r_clone_settings = RCloneSettings.create_from_envs()
+    r_clone_settings = RCloneSettings()
 
     scheme = "https" if is_secure else "http"
     assert r_clone_settings.endpoint_url.startswith(f"{scheme}://")
