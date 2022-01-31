@@ -48,10 +48,6 @@ qx.Class.define("osparc.component.study.SaveAsTemplate", {
 
     __buildLayout: function() {
       const shareWith = this.__shareWith = new osparc.component.permissions.ShareWith();
-      shareWith.getChildControl("legend").set({
-        label: this.tr("Make Template accessible to"),
-        font: "title-14"
-      });
       this._add(shareWith, {
         flex: 1
       });
