@@ -13,8 +13,9 @@ def _get_s3_volume_driver_config(
     r_clone_settings: RCloneSettings,
     project_id: ProjectID,
     node_uuid: NodeID,
-    volume_name: str,
+    storage_directory_name: str,
 ) -> Dict[str, Any]:
+    assert "/" not in storage_directory_name  # no sec
     driver_config = {
         "Name": "rclone",
         "Options": {
@@ -22,7 +23,7 @@ def _get_s3_volume_driver_config(
             "s3-access_key_id": r_clone_settings.S3_ACCESS_KEY,
             "s3-secret_access_key": r_clone_settings.S3_SECRET_KEY,
             "s3-endpoint": r_clone_settings.endpoint_url,
-            "path": f"{r_clone_settings.S3_BUCKET_NAME}/{project_id}/{node_uuid}/{volume_name}",
+            "path": f"{r_clone_settings.S3_BUCKET_NAME}/{project_id}/{node_uuid}/{storage_directory_name}",
             "allow-other": "true",
             "vfs-cache-mode": "full",
             # Directly connected to how much time it takes for
@@ -116,7 +117,7 @@ class DynamicSidecarVolumesPathsResolver:
                     r_clone_settings=r_clone_settings,
                     project_id=project_id,
                     node_uuid=node_uuid,
-                    volume_name=cls._volume_name(path).strip("_"),
+                    storage_directory_name=cls._volume_name(path).strip("_"),
                 ),
             },
         }
