@@ -9,8 +9,8 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
-from pydantic import Field
-from pydantic.types import SecretStr
+from pydantic import Field, validator
+from pydantic.types import SecretBytes
 from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
@@ -85,8 +85,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     WEBSERVER_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
 
-    WEBSERVER_SESSION_SECRET_KEY: SecretStr = Field(  # type: ignore
-        ..., description="Secret key to encrypt cookies", min_length=32
+    WEBSERVER_SESSION_SECRET_KEY: SecretBytes = Field(  # type: ignore
+        ...,
+        description="Secret key to encrypt cookies",
+        min_length=32,
     )
 
     WEBSERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
@@ -117,6 +119,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     WEBSERVER_LOGIN: Optional[LoginSettings] = Field(auto_default_from_env=True)
+
+    @validator("WEBSERVER_SESSION_SECRET_KEY", pre=True)
+    @classmethod
+    def truncate_session_key(cls, v):
+        return v[:32]
 
     class Config(BaseCustomSettings.Config):
         fields = {
