@@ -1,7 +1,7 @@
-from functools import cached_property
-
 # pylint: disable=no-self-argument
 # pylint: disable=no-self-use
+
+from functools import cached_property
 from pathlib import Path
 from typing import Dict, Optional, Set
 
@@ -154,7 +154,7 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="Names the traefik zone for services that must be accessible from platform http entrypoint",
     )
 
-    R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
+    DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     SWARM_STACK_NAME: str = Field(
         ...,
