@@ -203,7 +203,7 @@ async function __getHost(page) {
   return host;
 }
 
-async function makeRequest(page, endpoint, apiVersion = "v0") {
+async function __makeRequest(page, endpoint, apiVersion = "v0") {
   const host = await __getHost(page);
   // https://github.com/Netflix/pollyjs/issues/149#issuecomment-481108446
   await page.setBypassCSP(true);
@@ -212,12 +212,23 @@ async function makeRequest(page, endpoint, apiVersion = "v0") {
     console.log("makeRequest", url);
     const resp = await fetch(url);
 
+    if (!resp.ok) {
+      if (resp.statusText === 503) {
+        console.log("SERVICE UNAVAILABLE");
+      }
+      console.log("RESP NOT OK", JSON.stringify(resp));
+      return null;
+    }
+
     try {
-      const jsonResp = await resp.json();
+      // clone() the response. Otherwise, if the json() fails,
+      // the response will be consumed and it can't be textified in the catch
+      const jsonResp = await resp.clone().json();
       return jsonResp["data"];
     }
     catch(error) {
       console.log("-- No JSON in response --");
+      console.log("Error", error);
       console.log("Request:", url);
       console.log("Response headers:", resp.headers);
       console.log("Response:", await resp.text());
@@ -253,7 +264,10 @@ async function waitForResponse(page, url) {
 async function isServiceReady(page, studyId, nodeId) {
   const endPoint = "/projects/" + studyId + "/nodes/" + nodeId;
   console.log("-- Is service ready", endPoint);
-  const resp = await makeRequest(page, endPoint);
+  const resp = await __makeRequest(page, endPoint);
+  if (resp === null) {
+    return false;
+  }
 
   const status = resp["service_state"];
   console.log("Status:", nodeId, status);
@@ -268,7 +282,10 @@ async function isServiceReady(page, studyId, nodeId) {
 async function getServiceUrl(page, studyId, nodeId) {
   const endPoint = "/projects/" + studyId + "/nodes/" + nodeId;
   console.log("-- get service url", endPoint);
-  const resp = await makeRequest(page, endPoint);
+  const resp = await __makeRequest(page, endPoint);
+  if (resp === null) {
+    return null;
+  }
 
   const service_basepath = resp["service_basepath"];
   const service_entrypoint = resp["entry_point"];
@@ -308,14 +325,16 @@ async function isServiceConnected(page, studyId, nodeId) {
 async function getStudyState(page, studyId) {
   const endPoint = "/projects/" + studyId + "/state";
   console.log("-- Get study state", endPoint);
-  const resp = await makeRequest(page, endPoint);
+  const resp = await __makeRequest(page, endPoint);
+  if (resp === null) {
+    return null;
+  }
 
   if (resp !== null && "state" in resp && "value" in resp["state"]) {
     const state = resp["state"]["value"];
     console.log("-----> study state", state);
     return state;
   }
-  console.log("Unable to parse Pipeline Status:", JSON.stringify(resp));
   return null;
 }
 
@@ -334,11 +353,17 @@ async function isStudyDone(page, studyId) {
 async function isStudyUnlocked(page, studyId) {
   const endPoint = "/projects/" + studyId + "/state";
   console.log("-- Is study closed", endPoint);
-  const resp = await makeRequest(page, endPoint);
+  const resp = await __makeRequest(page, endPoint);
+  if (resp === null) {
+    return false;
+  }
 
-  const studyLocked = resp["locked"]["value"];
-  console.log("Study Lock Status:", studyId, studyLocked);
-  return !studyLocked;
+  if (resp !== null && "locked" in resp && "value" in resp["locked"]) {
+    const studyLocked = resp["locked"]["value"];
+    console.log("Study Lock Status:", studyId, studyLocked);
+    return !studyLocked;
+  }
+  return false;
 }
 
 async function waitForValidOutputFile(page) {
@@ -487,7 +512,6 @@ module.exports = {
   getDashboardCardLabel,
   getStyle,
   fetchReq,
-  makeRequest,
   emptyField,
   dragAndDrop,
   waitForResponse,
