@@ -931,7 +931,7 @@ async def test_nodeports_integration(
     # pylint: disable=protected-access
     app_settings: AppSettings = async_client._transport.app.state.settings
     r_clone_settings: RCloneSettings = (
-        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.R_CLONE_SETTINGS
+        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
     )
 
     if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:

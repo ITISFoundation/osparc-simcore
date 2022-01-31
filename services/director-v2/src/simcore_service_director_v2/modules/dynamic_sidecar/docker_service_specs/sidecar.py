@@ -120,7 +120,7 @@ def get_dynamic_sidecar_spec(
                     path=path_to_mount,
                     project_id=scheduler_data.project_id,
                     node_uuid=scheduler_data.node_uuid,
-                    r_clone_settings=dynamic_sidecar_settings.R_CLONE_SETTINGS,
+                    r_clone_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_R_CLONE_SETTINGS,
                 )
             )
         else:
