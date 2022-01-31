@@ -35,19 +35,19 @@ def _get_s3_volume_driver_config(
 
     extra_options = None
 
-    if r_clone_settings.S3_PROVIDER == S3Provider.MINIO:
+    if r_clone_settings.R_CLONE_S3_PROVIDER == S3Provider.MINIO:
         extra_options = {
             "s3-provider": "Minio",
             "s3-region": "us-east-1",
             "s3-location_constraint": "",
             "s3-server_side_encryption": "",
         }
-    elif r_clone_settings.S3_PROVIDER == S3Provider.CEPH:
+    elif r_clone_settings.R_CLONE_S3_PROVIDER == S3Provider.CEPH:
         extra_options = {
             "s3-provider": "Ceph",
             "s3-acl": "private",
         }
-    elif r_clone_settings.S3_PROVIDER == S3Provider.AWS:
+    elif r_clone_settings.R_CLONE_S3_PROVIDER == S3Provider.AWS:
         extra_options = {
             "s3-provider": "AWS",
             "s3-region": "us-east-1",

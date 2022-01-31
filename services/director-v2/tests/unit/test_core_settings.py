@@ -42,7 +42,7 @@ def test_supported_backends_did_not_change() -> None:
 def test_expected_endpoint(
     endpoint: str, is_secure: bool, monkeypatch: MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
     monkeypatch.setenv("S3_ENDPOINT", endpoint)
     monkeypatch.setenv("S3_SECURE", "true" if is_secure else "false")
 

@@ -195,7 +195,7 @@ def dynamic_sidecar_settings(
         "DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS",
         str(TEST_SCHEDULER_INTERVAL_SECONDS),
     )
-    monkeypatch.setenv("S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
 
     app_settings = AppSettings.create_from_envs()
     return app_settings

@@ -50,7 +50,7 @@ class S3Provider(str, Enum):
 
 
 class RCloneSettings(S3Settings):
-    S3_PROVIDER: S3Provider
+    R_CLONE_S3_PROVIDER: S3Provider
     R_CLONE_DIR_CACHE_TIME_SECONDS: int = Field(
         10,
         description=(
