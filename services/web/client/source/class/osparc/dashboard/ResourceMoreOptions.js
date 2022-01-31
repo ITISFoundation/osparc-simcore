@@ -53,14 +53,14 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         this.add(permissionsPage);
       }
 
-      const qualityPage = this.__getQualityPage();
-      if (qualityPage) {
-        this.add(qualityPage);
-      }
-
       const classifiersPage = this.__getClassifiersPage();
       if (classifiersPage) {
         this.add(classifiersPage);
+      }
+
+      const qualityPage = this.__getQualityPage();
+      if (qualityPage) {
+        this.add(qualityPage);
       }
 
       const servicesInStudyPage = this.__getServicesInStudyPage();
@@ -88,7 +88,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         alignY: "middle"
       });
       tabPage.getButton().getChildControl("icon").set({
-        alignX: "right"
+        alignX: "center"
       });
 
       // Page title
@@ -130,7 +130,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     __getPermissionsPage: function() {
       const title = this.tr("Sharing");
-      const icon = "@FontAwesome5Solid/info";
+      const icon = "@FontAwesome5Solid/share-alt";
       const resourceData = this.__resourceData;
       const permissionsView = new osparc.component.permissions.Study(resourceData);
       permissionsView.getChildControl("study-link").show();
@@ -144,7 +144,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     __getQualityPage: function() {
       const title = this.tr("Quality");
-      const icon = "@FontAwesome5Solid/info";
+      const icon = "@FontAwesome5Solid/star-half";
       const resourceData = this.__resourceData;
       const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
       qualityEditor.addListener("updateQuality", e => {
@@ -166,7 +166,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         return null;
       }
       const title = this.tr("Classifiers");
-      const icon = "@FontAwesome5Solid/info";
+      const icon = "@FontAwesome5Solid/search";
       const resourceData = this.__resourceData;
       let classifiers = null;
       if (osparc.data.model.Study.isOwner(resourceData)) {
@@ -184,7 +184,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     __getServicesInStudyPage: function() {
       const title = this.tr("Services");
-      const icon = "@FontAwesome5Solid/info";
+      const icon = "@MaterialIcons/update";
       const resourceData = this.__resourceData;
       const servicesInStudy = new osparc.component.metadata.ServicesInStudy(resourceData);
       const page = this.__createPage(title, servicesInStudy, icon);
@@ -196,7 +196,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const canCreateTemplate = osparc.data.Permissions.getInstance().canDo("studies.template.create");
       if (isCurrentUserOwner && canCreateTemplate) {
         const title = this.tr("Save as Template");
-        const icon = "@FontAwesome5Solid/info";
+        const icon = "@FontAwesome5Solid/copy";
         const saveAsTemplateView = new osparc.component.study.SaveAsTemplate(this.__resourceData);
         saveAsTemplateView.addListener("finished", e => {
           const template = e.getData();
