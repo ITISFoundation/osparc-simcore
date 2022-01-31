@@ -7,7 +7,6 @@ from typing import Any, Dict, Optional, Set
 import logging
 
 import aiodocker
-from aiodocker.volumes import DockerVolume
 import httpx
 from async_timeout import timeout
 from fastapi import FastAPI
@@ -24,7 +23,6 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
-from tenacity.before_sleep import before_sleep_log
 
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
 SERVICES_ARE_READY_TIMEOUT = 2 * 60

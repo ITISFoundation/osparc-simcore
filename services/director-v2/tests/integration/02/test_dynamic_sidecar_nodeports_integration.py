@@ -103,7 +103,9 @@ DY_VOLUMES: str = "/dy-volumes/"
 DY_SERVICES_STATE_PATH: Path = Path(DY_VOLUMES) / "workdir/generated-data"
 DY_SERVICES_R_CLONE_DIR_NAME: str = (
     # pylint: disable=bad-str-strip-call
-    str(DY_SERVICES_STATE_PATH).strip(DY_VOLUMES).replace("/", "_")
+    str(DY_SERVICES_STATE_PATH)
+    .strip(DY_VOLUMES)
+    .replace("/", "_")
 )
 TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED = 60
 TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED = 60
