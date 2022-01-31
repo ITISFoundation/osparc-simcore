@@ -46,12 +46,12 @@ log = logging.getLogger(__name__)
 
 
 class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
-    # CODE STATICS ---
+    # CODE STATICS --------------------------------------------------------------------------------------
     API_VERSION: str = API_VERSION
     APP_NAME: str = APP_NAME
     API_VTAG: VersionTag = API_VTAG
 
-    # IMAGE BUILDTIME ---
+    # IMAGE BUILDTIME -----------------------------------------------------------------------------------
     # @Makefile
     SC_BUILD_DATE: Optional[str] = None
     SC_BUILD_TARGET: Optional[BuildTargetEnum] = None
@@ -65,7 +65,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SC_USER_ID: Optional[int] = None
     SC_USER_NAME: Optional[str] = None
 
-    # RUNTIME  ---
+    # RUNTIME  -----------------------------------------------------------------------------------------
     # settings defined from environs defined when container runs
     # NOTE: keep alphabetically if possible
 
@@ -73,58 +73,42 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         None, description="Stack name defined upon deploy (see main Makefile)"
     )
 
-    WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
-
-    WEBSERVER_LOG_LEVEL: LogLevel = Field(
-        LogLevel.WARNING.value,
-        env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
-    )
-
+    # WEBSERVER_ACTIVITY: Optional[ActivitySettings]
+    WEBSERVER_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
     WEBSERVER_DEV_FEATURES_ENABLED: bool = Field(
         False,
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
     )
-
-    WEBSERVER_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
-
-    WEBSERVER_SESSION_SECRET_KEY: SecretBytes = Field(  # type: ignore
-        ...,
-        description="Secret key to encrypt cookies",
-        min_length=32,
-    )
-
-    WEBSERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
-
-    # SERVICES is osparc-stack with http API ------------------------------------------------------
-    WEBSERVER_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
     WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings] = Field(
         auto_default_from_env=True
     )
     WEBSERVER_DIRECTOR: Optional[DirectorSettings] = Field(auto_default_from_env=True)
-    WEBSERVER_STORAGE: Optional[StorageSettings] = Field(auto_default_from_env=True)
-
-    # WEBSERVER_ACTIVITY: Optional[ActivitySettings]
-    # WEBSERVER_EMAIL: Optional[SmtpSettings]
-
-    WEBSERVER_SCICRUNCH: Optional[SciCrunchSettings] = Field(auto_default_from_env=True)
-
-    WEBSERVER_STUDIES_ACCESS_ENABLED: bool
-
-    WEBSERVER_RESOURCE_MANAGER: Optional[ResourceManagerSettings] = Field(
-        auto_default_from_env=True
-    )
-
-    WEBSERVER_S3: Optional[S3Settings] = Field(auto_default_from_env=True)
-    WEBSERVER_REDIS: Optional[RedisSettings] = Field(auto_default_from_env=True)
     WEBSERVER_EMAIL: Optional[SMTPSettings] = Field(auto_default_from_env=True)
-
+    WEBSERVER_EXPORTER: Optional[ExporterSettings] = Field(auto_default_from_env=True)
+    WEBSERVER_LOG_LEVEL: LogLevel = Field(
+        LogLevel.WARNING.value,
+        env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
+    )
+    WEBSERVER_LOGIN: Optional[LoginSettings] = Field(auto_default_from_env=True)
+    WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
+    WEBSERVER_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
     WEBSERVER_PROMETHEUS: Optional[PrometheusSettings] = Field(
         auto_default_from_env=True
     )
-
-    WEBSERVER_LOGIN: Optional[LoginSettings] = Field(auto_default_from_env=True)
-
-    WEBSERVER_EXPORTER: Optional[ExporterSettings] = Field(auto_default_from_env=True)
+    WEBSERVER_REDIS: Optional[RedisSettings] = Field(auto_default_from_env=True)
+    WEBSERVER_RESOURCE_MANAGER: Optional[ResourceManagerSettings] = Field(
+        auto_default_from_env=True
+    )
+    WEBSERVER_S3: Optional[S3Settings] = Field(auto_default_from_env=True)
+    WEBSERVER_SCICRUNCH: Optional[SciCrunchSettings] = Field(auto_default_from_env=True)
+    WEBSERVER_SESSION_SECRET_KEY: SecretBytes = Field(
+        ...,
+        description="Secret key to encrypt cookies",
+        min_length=32,
+    )
+    WEBSERVER_STORAGE: Optional[StorageSettings] = Field(auto_default_from_env=True)
+    WEBSERVER_STUDIES_ACCESS_ENABLED: bool
+    WEBSERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
     @validator("WEBSERVER_SESSION_SECRET_KEY", pre=True)
     @classmethod
