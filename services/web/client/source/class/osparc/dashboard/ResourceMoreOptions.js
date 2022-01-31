@@ -63,9 +63,14 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         this.add(qualityPage);
       }
 
-      const servicesInStudyPage = this.__getServicesInStudyPage();
-      if (servicesInStudyPage) {
-        this.add(servicesInStudyPage);
+      const servicesUpdatePage = this.__getServicesUpdatePage();
+      if (servicesUpdatePage) {
+        this.add(servicesUpdatePage);
+      }
+
+      const servicesBootOptsPage = this.__getServicesBootOptionsPage();
+      if (servicesBootOptsPage) {
+        this.add(servicesBootOptsPage);
       }
 
       const saveAsTemplatePage = this.__getSaveAsTemplatePage();
@@ -182,12 +187,21 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       return page;
     },
 
-    __getServicesInStudyPage: function() {
-      const title = this.tr("Services");
+    __getServicesUpdatePage: function() {
+      const title = this.tr("Update Serives");
       const icon = "@MaterialIcons/update";
       const resourceData = this.__resourceData;
-      const servicesInStudy = new osparc.component.metadata.ServicesInStudy(resourceData);
-      const page = this.__createPage(title, servicesInStudy, icon);
+      const servicesUpdate = new osparc.component.metadata.ServicesInStudyUpdate(resourceData);
+      const page = this.__createPage(title, servicesUpdate, icon);
+      return page;
+    },
+
+    __getServicesBootOptionsPage: function() {
+      const title = this.tr("Boot Options");
+      const icon = "@MaterialIcons/update";
+      const resourceData = this.__resourceData;
+      const servicesBootOpts = new osparc.component.metadata.ServicesInStudyBootOpts(resourceData);
+      const page = this.__createPage(title, servicesBootOpts, icon);
       return page;
     },
 
