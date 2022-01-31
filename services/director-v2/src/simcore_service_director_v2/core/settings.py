@@ -14,7 +14,7 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.services import SERVICE_NETWORK_RE
-from pydantic import AnyHttpUrl, Field, PositiveFloat, validator
+from pydantic import AnyHttpUrl, Field, PositiveFloat, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
@@ -23,6 +23,7 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
+from sqlalchemy import desc
 
 from ..meta import API_VTAG
 from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE, ClusterID
@@ -51,13 +52,28 @@ class S3Provider(str, Enum):
 
 class RCloneSettings(S3Settings):
     R_CLONE_S3_PROVIDER: S3Provider
-    R_CLONE_DIR_CACHE_TIME_SECONDS: int = Field(
+
+    R_CLONE_DIR_CACHE_TIME_SECONDS: PositiveInt = Field(
         10,
-        description=(
-            "time between directory refreshes, for reference:"
-            "https://rclone.org/commands/rclone_mount/#vfs-directory-cache"
-        ),
+        description=("time to cache directory entries for"),
     )
+    R_CLONE_POLL_INTERVAL_SECONDS: PositiveInt = Field(
+        9,
+        description=("time to wait between polling for changes"),
+    )
+
+    @validator("R_CLONE_POLL_INTERVAL_SECONDS")
+    @classmethod
+    def enforce_r_clone_requirement(cls, v, values, *args) -> PositiveInt:
+        dir_cache_time = values["R_CLONE_DIR_CACHE_TIME_SECONDS"]
+        if v < dir_cache_time:
+            raise ValueError(
+                (
+                    f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower "
+                    f"than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
+                )
+            )
+        return v
 
     @cached_property
     def endpoint(self) -> str:
