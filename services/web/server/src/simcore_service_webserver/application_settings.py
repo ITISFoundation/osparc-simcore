@@ -35,6 +35,7 @@ from .exporter.settings import ExporterSettings
 # from .email_settings import SmtpSettings
 from .login.settings import LoginSettings
 from .resource_manager.settings import ResourceManagerSettings
+from .scicrunch.settings import SciCrunchSettings
 from .storage_settings import StorageSettings
 from .utils import snake_to_camel
 
@@ -104,6 +105,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # WEBSERVER_ACTIVITY: Optional[ActivitySettings]
     # WEBSERVER_EMAIL: Optional[SmtpSettings]
+
+    WEBSERVER_SCICRUNCH: Optional[SciCrunchSettings] = Field(auto_default_from_env=True)
 
     WEBSERVER_STUDIES_ACCESS_ENABLED: bool
 

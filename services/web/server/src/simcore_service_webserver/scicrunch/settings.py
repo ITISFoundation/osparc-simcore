@@ -1,10 +1,11 @@
-from pydantic import BaseSettings, Field, HttpUrl, SecretStr
+from pydantic import Field, HttpUrl, SecretStr
+from settings_library.base import BaseCustomSettings
 
 # TODO: read https://www.force11.org/group/resource-identification-initiative
 SCICRUNCH_DEFAULT_URL = "https://scicrunch.org"
 
 
-class SciCrunchSettings(BaseSettings):
+class SciCrunchSettings(BaseCustomSettings):
 
     SCICRUNCH_API_BASE_URL: HttpUrl = Field(
         f"{SCICRUNCH_DEFAULT_URL}/api/1",
