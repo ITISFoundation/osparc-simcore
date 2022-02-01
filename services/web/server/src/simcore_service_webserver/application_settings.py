@@ -69,39 +69,62 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         None, description="Stack name defined upon deploy (see main Makefile)"
     )
 
-    WEBSERVER_ACTIVITY: Optional[PrometheusSettings] = Field(auto_default_from_env=True)
-    WEBSERVER_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
     WEBSERVER_DEV_FEATURES_ENABLED: bool = Field(
         False,
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
     )
-    WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings] = Field(
-        auto_default_from_env=True
-    )
-    WEBSERVER_DIRECTOR: Optional[DirectorSettings] = Field(auto_default_from_env=True)
-    WEBSERVER_EMAIL: Optional[SMTPSettings] = Field(auto_default_from_env=True)
-    WEBSERVER_EXPORTER: Optional[ExporterSettings] = Field(auto_default_from_env=True)
     WEBSERVER_LOG_LEVEL: LogLevel = Field(
         LogLevel.WARNING.value,
         env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
-    WEBSERVER_LOGIN: Optional[LoginSettings] = Field(auto_default_from_env=True)
     WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
-    WEBSERVER_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
-    WEBSERVER_REDIS: Optional[RedisSettings] = Field(auto_default_from_env=True)
-    WEBSERVER_RESOURCE_MANAGER: Optional[ResourceManagerSettings] = Field(
-        auto_default_from_env=True
-    )
-    WEBSERVER_S3: Optional[S3Settings] = Field(auto_default_from_env=True)
-    WEBSERVER_SCICRUNCH: Optional[SciCrunchSettings] = Field(auto_default_from_env=True)
     WEBSERVER_SESSION_SECRET_KEY: SecretBytes = Field(
         ...,
         description="Secret key to encrypt cookies",
         min_length=32,
     )
-    WEBSERVER_STORAGE: Optional[StorageSettings] = Field(auto_default_from_env=True)
     WEBSERVER_STUDIES_ACCESS_ENABLED: bool
-    WEBSERVER_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
+
+    # PLUGINS ----------------
+
+    WEBSERVER_ACTIVITY: Optional[PrometheusSettings] = Field(
+        auto_default_from_env=True, description="activity plugin"
+    )
+    WEBSERVER_CATALOG: Optional[CatalogSettings] = Field(
+        auto_default_from_env=True, description="catalog service client's plugin"
+    )
+    WEBSERVER_DB: PostgresSettings = Field(
+        auto_default_from_env=True, description="database plugin"
+    )
+    WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings] = Field(
+        auto_default_from_env=True, description="director-v2 service client's plugin"
+    )
+    WEBSERVER_DIRECTOR: Optional[DirectorSettings] = Field(
+        auto_default_from_env=True, description="director service client's plugin"
+    )
+    WEBSERVER_EMAIL: Optional[SMTPSettings] = Field(
+        auto_default_from_env=True, description="email plugin"
+    )
+    WEBSERVER_EXPORTER: Optional[ExporterSettings] = Field(
+        auto_default_from_env=True, description="exporter plugin"
+    )
+    WEBSERVER_LOGIN: Optional[LoginSettings] = Field(
+        auto_default_from_env=True, description="login plugin"
+    )
+    WEBSERVER_REDIS: Optional[RedisSettings] = Field(auto_default_from_env=True)
+    WEBSERVER_RESOURCE_MANAGER: Optional[ResourceManagerSettings] = Field(
+        auto_default_from_env=True, description="resource_manager plugin"
+    )
+    WEBSERVER_S3: Optional[S3Settings] = Field(auto_default_from_env=True)
+    WEBSERVER_SCICRUNCH: Optional[SciCrunchSettings] = Field(
+        auto_default_from_env=True, description="scicrunch plugin"
+    )
+    WEBSERVER_STORAGE: Optional[StorageSettings] = Field(
+        auto_default_from_env=True, description="storage service client's plugin"
+    )
+    WEBSERVER_TRACING: Optional[TracingSettings] = Field(
+        auto_default_from_env=True, description="tracing plugin"
+    )
 
     @validator("WEBSERVER_SESSION_SECRET_KEY", pre=True)
     @classmethod
@@ -187,24 +210,18 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
         },
         "db": {
             "postgres": {
-                "database": getattr(
-                    app_settings.WEBSERVER_POSTGRES, "POSTGRES_DB", None
-                ),
-                "endpoint": f"{getattr(app_settings.WEBSERVER_POSTGRES, 'POSTGRES_HOST', None)}:{getattr(app_settings.WEBSERVER_POSTGRES, 'POSTGRES_PORT', None)}",
-                "host": getattr(app_settings.WEBSERVER_POSTGRES, "POSTGRES_HOST", None),
-                "maxsize": getattr(
-                    app_settings.WEBSERVER_POSTGRES, "POSTGRES_MAXSIZE", None
-                ),
-                "minsize": getattr(
-                    app_settings.WEBSERVER_POSTGRES, "POSTGRES_MINSIZE", None
-                ),
+                "database": getattr(app_settings.WEBSERVER_DB, "POSTGRES_DB", None),
+                "endpoint": f"{getattr(app_settings.WEBSERVER_DB, 'POSTGRES_HOST', None)}:{getattr(app_settings.WEBSERVER_DB, 'POSTGRES_PORT', None)}",
+                "host": getattr(app_settings.WEBSERVER_DB, "POSTGRES_HOST", None),
+                "maxsize": getattr(app_settings.WEBSERVER_DB, "POSTGRES_MAXSIZE", None),
+                "minsize": getattr(app_settings.WEBSERVER_DB, "POSTGRES_MINSIZE", None),
                 "password": getattr(
-                    app_settings.WEBSERVER_POSTGRES, "POSTGRES_PASSWORD", SecretStr("")
+                    app_settings.WEBSERVER_DB, "POSTGRES_PASSWORD", SecretStr("")
                 ).get_secret_value(),
-                "port": getattr(app_settings.WEBSERVER_POSTGRES, "POSTGRES_PORT", None),
-                "user": getattr(app_settings.WEBSERVER_POSTGRES, "POSTGRES_USER", None),
+                "port": getattr(app_settings.WEBSERVER_DB, "POSTGRES_PORT", None),
+                "user": getattr(app_settings.WEBSERVER_DB, "POSTGRES_USER", None),
             },
-            "enabled": app_settings.WEBSERVER_POSTGRES is not None,
+            "enabled": app_settings.WEBSERVER_DB is not None,
         },
         "resource_manager": {
             "enabled": (
