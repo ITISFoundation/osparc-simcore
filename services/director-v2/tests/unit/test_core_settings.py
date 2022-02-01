@@ -39,7 +39,7 @@ def test_supported_backends_did_not_change() -> None:
         ("http://local.dev", False),
     ],
 )
-def test_expected_endpoint(
+def test_expected_s3_endpoint(
     endpoint: str, is_secure: bool, monkeypatch: MonkeyPatch
 ) -> None:
     monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
@@ -51,6 +51,13 @@ def test_expected_endpoint(
     scheme = "https" if is_secure else "http"
     assert r_clone_settings.endpoint.startswith(f"{scheme}://")
     assert r_clone_settings.endpoint.endswith(endpoint)
+
+
+def test_enforce_r_clone_requirement(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_POLL_INTERVAL_SECONDS", "11")
+    with pytest.raises(ValueError):
+        RCloneSettings()
 
 
 def test_settings_with_project_env_devel(project_env_devel_environment: Dict[str, Any]):
