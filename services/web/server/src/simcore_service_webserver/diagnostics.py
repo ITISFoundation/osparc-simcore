@@ -74,7 +74,6 @@ def setup_diagnostics(
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas
     assert_valid_config(
-        app,
         slow_duration_secs,
         max_avg_response_latency,
         start_sensing_delay,

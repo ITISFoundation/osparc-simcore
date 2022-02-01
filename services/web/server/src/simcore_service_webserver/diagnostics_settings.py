@@ -43,7 +43,6 @@ def get_diagnostics_config(app: Application) -> Dict:
 
 
 def assert_valid_config(
-    app: Application,
     slow_duration_secs: float,
     max_avg_response_latency: float,
     start_sensing_delay: float,

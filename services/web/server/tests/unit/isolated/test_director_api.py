@@ -315,7 +315,7 @@ def app_mock():
         director_config.CONFIG_SECTION_NAME: {
             "host": settings.DIRECTOR_HOST,
             "port": settings.DIRECTOR_PORT,
-            "vtag": settings.DIRECTOR_VTAG,
+            "version": settings.DIRECTOR_VTAG,
             "enabled": True,
         }
     }
