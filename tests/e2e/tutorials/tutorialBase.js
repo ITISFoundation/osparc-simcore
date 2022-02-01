@@ -126,7 +126,7 @@ class TutorialBase {
 
   async printMe() {
     const resp = await utils.makeRequest(this.__page, "/me");
-    if ("data" in resp) {
+    if (resp && "data" in resp) {
       console.log("login:", resp["data"]["login"]);
       console.log("user_id:", resp["data"]["user_id"]);
     }
