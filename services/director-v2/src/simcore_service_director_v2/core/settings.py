@@ -55,18 +55,18 @@ class RCloneSettings(S3Settings):
 
     R_CLONE_DIR_CACHE_TIME_SECONDS: PositiveInt = Field(
         10,
-        description=("time to cache directory entries for"),
+        description="time to cache directory entries for",
     )
     R_CLONE_POLL_INTERVAL_SECONDS: PositiveInt = Field(
         9,
-        description=("time to wait between polling for changes"),
+        description="time to wait between polling for changes",
     )
 
     @validator("R_CLONE_POLL_INTERVAL_SECONDS")
     @classmethod
-    def enforce_r_clone_requirement(cls, v, values, *args) -> PositiveInt:
+    def enforce_r_clone_requirement(cls, v, values) -> PositiveInt:
         dir_cache_time = values["R_CLONE_DIR_CACHE_TIME_SECONDS"]
-        if v < dir_cache_time:
+        if not v < dir_cache_time:
             raise ValueError(
                 (
                     f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower "
