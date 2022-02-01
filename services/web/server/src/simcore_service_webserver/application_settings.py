@@ -32,6 +32,7 @@ from .exporter.settings import ExporterSettings
 from .login.settings import LoginSettings
 from .resource_manager.settings import ResourceManagerSettings
 from .scicrunch.settings import SciCrunchSettings
+from .statics_settings import FrontEndAppSettings, StaticWebserverModuleSettings
 from .storage_settings import StorageSettings
 from .utils import snake_to_camel
 
@@ -111,6 +112,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_EXPORTER: Optional[ExporterSettings] = Field(
         auto_default_from_env=True, description="exporter plugin"
     )
+
+    WEBSERVER_FRONTEND: Optional[FrontEndAppSettings] = Field(
+        auto_default_from_env=True, description="front-end static settings"
+    )
+
     WEBSERVER_LOGIN: Optional[LoginSettings] = Field(
         auto_default_from_env=True, description="login plugin"
     )
@@ -121,6 +127,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_S3: Optional[S3Settings] = Field(auto_default_from_env=True)
     WEBSERVER_SCICRUNCH: Optional[SciCrunchSettings] = Field(
         auto_default_from_env=True, description="scicrunch plugin"
+    )
+    WEBSERVER_STATICWEB: Optional[StaticWebserverModuleSettings] = Field(
+        auto_default_from_env=True, description="static-webserver service plugin"
     )
     WEBSERVER_STORAGE: Optional[StorageSettings] = Field(
         auto_default_from_env=True, description="storage service client's plugin"
