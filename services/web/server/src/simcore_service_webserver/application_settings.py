@@ -9,8 +9,8 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
-from pydantic import Field, validator
-from pydantic.types import SecretBytes, SecretStr
+from pydantic.fields import Field
+from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
@@ -32,6 +32,7 @@ from .exporter.settings import ExporterSettings
 from .login.settings import LoginSettings
 from .resource_manager.settings import ResourceManagerSettings
 from .scicrunch.settings import SciCrunchSettings
+from .session_settings import SessionSettings
 from .statics_settings import FrontEndAppSettings, StaticWebserverModuleSettings
 from .storage_settings import StorageSettings
 from .utils import snake_to_camel
@@ -76,10 +77,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
     WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
-    WEBSERVER_SESSION_SECRET_KEY: SecretBytes = Field(
-        ...,
-        description="Secret key to encrypt cookies",
-        min_length=32,
+    WEBSERVER_SESSION: SessionSettings = Field(
+        auto_default_from_env=True, description="sesion module"
     )
     WEBSERVER_STUDIES_ACCESS_ENABLED: bool
 
@@ -137,11 +136,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_TRACING: Optional[TracingSettings] = Field(
         auto_default_from_env=True, description="tracing plugin"
     )
-
-    @validator("WEBSERVER_SESSION_SECRET_KEY", pre=True)
-    @classmethod
-    def truncate_session_key(cls, v):
-        return v[:32]
 
     class Config(BaseCustomSettings.Config):
         fields = {
@@ -306,7 +300,9 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
         "rest": {"version": app_settings.API_VTAG, "enabled": True},
         "projects": {"enabled": True},
         "session": {
-            "secret_key": app_settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
+            "secret_key": app_settings.WEBSERVER_SESSION.SESSION_SECRET_KEY.get_secret_value().decode(
+                "utf-8"
+            )
         },
         "activity": {
             "enabled": app_settings.WEBSERVER_ACTIVITY is not None,

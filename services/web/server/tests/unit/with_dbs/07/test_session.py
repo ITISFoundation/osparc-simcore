@@ -5,9 +5,11 @@
 import pytest
 from aiohttp import web
 from aiohttp_session import get_session as get_aiohttp_session
-
+from aiohttp_session.cookie_storage import EncryptedCookieStorage
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_login import NewUser
 from simcore_service_webserver.application import create_application
+from simcore_service_webserver.session_settings import SessionSettings
 
 
 @pytest.fixture
@@ -65,3 +67,21 @@ async def test_identity_is_email(client):
         resp = await client.get(session_url)
         session = await resp.json()
         assert session.get("AIOHTTP_SECURITY") == None
+
+
+def test_session_settings(mock_env_devel_environment: EnvVarsDict):
+
+    settings = SessionSettings()
+
+    _should_not_raise = EncryptedCookieStorage(
+        secret_key=settings.SESSION_SECRET_KEY.get_secret_value()
+    )
+
+    assert _should_not_raise._fernet is not None
+
+    WEBSERVER_SESSION_SECRET_KEY = mock_env_devel_environment[
+        "WEBSERVER_SESSION_SECRET_KEY"
+    ]
+    assert WEBSERVER_SESSION_SECRET_KEY[
+        :32
+    ] == settings.SESSION_SECRET_KEY.get_secret_value().decode("utf-8")

@@ -190,7 +190,10 @@ def test_app_settings_with_prod_config(
     #
     # This test has been used to guide the design of new settings
     #
-    #
+
+    # NOTE: new settings truncate to 32
+    app_config["session"]["secret_key"] = app_config["session"]["secret_key"][:32]
+
     assert app_config == convert_to_app_config(app_settings)
 
 
