@@ -125,7 +125,7 @@ def mock_webserver_service_environment(
 
     monkeypatch_setenv_default("CATALOG_HOST", "catalog")
     monkeypatch_setenv_default("CATALOG_PORT", "8000")
-    monkeypatch.setenv("DIAGNOSTICS_MAX_AVG_LATENCY", 30)
+    monkeypatch.setenv("DIAGNOSTICS_MAX_AVG_LATENCY", "30")
     monkeypatch_setenv_default("DIRECTOR_HOST", "director")
     monkeypatch_setenv_default("DIRECTOR_PORT", "8080")
     monkeypatch_setenv_default("DIRECTOR_V2_HOST", "director-v2")

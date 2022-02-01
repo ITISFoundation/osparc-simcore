@@ -138,6 +138,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
 
     class Config(BaseCustomSettings.Config):
+        # NOTE: FutureWarning: aliases are no longer used by BaseSettings to define which environment variables to read.
+        #       Instead use the "env" field setting. See https://pydantic-docs.helpmanual.io/usage/settings/#environment-variable-names
+        # NOTE: These alias are ONLY used in export, not in constructor
         fields = {
             "SC_VCS_URL": "vcs_url",
             "SC_VCS_REF": "vcs_ref",
@@ -178,7 +181,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             exclude_none=True,
             by_alias=True,
         )
-        # Alias MUST be camelcase here
+        # Alias in addition MUST be camelcase here
         return {snake_to_camel(k): v for k, v in data.items()}
 
 

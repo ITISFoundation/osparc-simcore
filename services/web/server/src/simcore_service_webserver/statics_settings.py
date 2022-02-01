@@ -2,7 +2,7 @@
 
     Typically dumped in statics.json
 """
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import AnyHttpUrl, BaseModel, Field, HttpUrl
 from settings_library.base import BaseCustomSettings
@@ -102,16 +102,15 @@ class FrontEndAppSettings(BaseCustomSettings):
         default_factory=discover_osparc_dependencies
     )
 
-    class Config(BaseCustomSettings.Config):
-        alias_generator = lambda s: snake_to_camel(s.replace("WEBSERVER_", "").lower())
-
-    # ---
-
-    def to_statics(self) -> Dict:
-        return self.dict(
+    def to_statics(self) -> Dict[str, Any]:
+        data = self.dict(
             exclude_none=True,
             by_alias=True,
         )
+        return {
+            snake_to_camel(k.replace("WEBSERVER_", "").lower()): v
+            for k, v in data.items()
+        }
 
 
 class StaticWebserverModuleSettings(BaseCustomSettings):
