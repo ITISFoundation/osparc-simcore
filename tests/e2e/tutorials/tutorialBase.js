@@ -98,6 +98,7 @@ class TutorialBase {
       if (!needsRegister) {
         await this.login();
       }
+      await this.printMe();
     }
     catch (err) {
       console.error("Error starting", err);
@@ -112,6 +113,7 @@ class TutorialBase {
     try {
       await this.__goTo();
       resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
+      await this.printMe();
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
     }

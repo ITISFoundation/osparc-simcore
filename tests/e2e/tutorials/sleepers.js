@@ -21,7 +21,6 @@ async function runTutorial() {
   try {
     await tutorial.start();
     await tutorial.openTemplate(1000);
-    await tutorial.printMe();
 
     await tutorial.waitFor(5000, 'Some time for loading the workbench');
 
