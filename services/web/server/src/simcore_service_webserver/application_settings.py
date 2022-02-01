@@ -325,7 +325,10 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
         "publications": {"enabled": True},
         "remote_debug": {"enabled": True},
         "security": {"enabled": True},
-        "statics": {"enabled": True},
+        "statics": {
+            "enabled": app_settings.WEBSERVER_FRONTEND is not None
+            and app_settings.WEBSERVER_STATICWEB is not None
+        },
         # NOTE:  app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
         "studies_access": {"enabled": True},
         # NOTE  app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
