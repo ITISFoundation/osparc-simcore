@@ -3,12 +3,10 @@
     - config-file schema
     - settings
 """
-from typing import Dict
 
 from aiohttp import web
 from aiohttp.web import Application
 from pydantic import Field
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
 
 from .config import get_login_config
@@ -30,22 +28,22 @@ class LoginSettings(BaseCustomSettings):
     )
 
 
-def assert_valid_config(app: Application) -> Dict:
+def assert_valid_config(app: Application):
     """
     raises pydantic.ValidationError if validation fails
     """
     cfg = get_login_config(app)
 
-    app_settings = app[APP_SETTINGS_KEY]
+    WEBSERVER_LOGIN = LoginSettings()
 
     assert cfg == {  # nosec
-        "enabled": app_settings.WEBSERVER_LOGIN is not None,
+        "enabled": WEBSERVER_LOGIN is not None,
         "registration_invitation_required": 1
-        if app_settings.WEBSERVER_LOGIN.LOGIN_REGISTRATION_INVITATION_REQUIRED
+        if WEBSERVER_LOGIN.LOGIN_REGISTRATION_INVITATION_REQUIRED
         else 0,
         "registration_confirmation_required": 1
-        if app_settings.WEBSERVER_LOGIN.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
+        if WEBSERVER_LOGIN.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
         else 0,
     }
 
-    return cfg
+    return cfg, WEBSERVER_LOGIN

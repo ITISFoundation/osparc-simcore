@@ -3,20 +3,14 @@
     - config-file schema
     - settings
 """
-from typing import Dict
 
 from aiohttp.web import Application
-from models_library.settings.redis import RedisConfig
 from pydantic import Field, PositiveInt
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
+from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from settings_library.base import BaseCustomSettings
+from settings_library.redis import RedisSettings
 
 from .config import CONFIG_SECTION_NAME
-
-
-class RedisSection(RedisConfig):
-    enabled: bool = True
-
 
 CONFIG_SECTION_NAME = "resource_manager"
 
@@ -42,21 +36,22 @@ class ResourceManagerSettings(BaseCustomSettings):
     )
 
 
-def assert_valid_config(app: Application) -> Dict:
+def assert_valid_config(app: Application):
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
-    app_settings = app[APP_SETTINGS_KEY]
+    WEBSERVER_RESOURCE_MANAGER = ResourceManagerSettings()
+    WEBSERVER_REDIS = RedisSettings()
+
     assert cfg == {  # nosec
         "enabled": (
-            app_settings.WEBSERVER_REDIS is not None
-            and app_settings.WEBSERVER_RESOURCE_MANAGER is not None
+            WEBSERVER_REDIS is not None and WEBSERVER_RESOURCE_MANAGER is not None
         ),
-        "resource_deletion_timeout_seconds": app_settings.WEBSERVER_RESOURCE_MANAGER.RESOURCE_MANAGER_RESOURCE_TTL_S,
-        "garbage_collection_interval_seconds": app_settings.WEBSERVER_RESOURCE_MANAGER.RESOURCE_MANAGER_GARBAGE_COLLECTION_INTERVAL_S,
+        "resource_deletion_timeout_seconds": WEBSERVER_RESOURCE_MANAGER.RESOURCE_MANAGER_RESOURCE_TTL_S,
+        "garbage_collection_interval_seconds": WEBSERVER_RESOURCE_MANAGER.RESOURCE_MANAGER_GARBAGE_COLLECTION_INTERVAL_S,
         "redis": {
-            "enabled": app_settings.WEBSERVER_REDIS is not None,
-            "host": app_settings.WEBSERVER_REDIS.REDIS_HOST,
-            "port": app_settings.WEBSERVER_REDIS.REDIS_PORT,
+            "enabled": WEBSERVER_REDIS is not None,
+            "host": WEBSERVER_REDIS.REDIS_HOST,
+            "port": WEBSERVER_REDIS.REDIS_PORT,
         },
     }
-    return cfg
+    return cfg, WEBSERVER_RESOURCE_MANAGER, WEBSERVER_REDIS

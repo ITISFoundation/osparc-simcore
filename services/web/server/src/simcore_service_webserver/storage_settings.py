@@ -12,7 +12,6 @@ from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT, MixinServiceSettings
 from yarl import URL
 
-from ._constants import APP_SETTINGS_KEY
 from .storage_config import get_storage_config
 
 
@@ -29,16 +28,12 @@ class StorageSettings(BaseCustomSettings, MixinServiceSettings):
 def assert_valid_config(app: web.Application) -> Tuple[Dict, StorageSettings]:
     cfg = get_storage_config(app)
 
-    app_settings = app[APP_SETTINGS_KEY]
-
-    assert app_settings.WEBSERVER_STORAGE is not None
-    assert isinstance(app_settings.WEBSERVER_STORAGE, StorageSettings)
-
+    WEBSERVER_STORAGE = StorageSettings()
     assert cfg == {
-        "enabled": app_settings.WEBSERVER_STORAGE is not None,
-        "host": app_settings.WEBSERVER_STORAGE.STORAGE_HOST,
-        "port": app_settings.WEBSERVER_STORAGE.STORAGE_PORT,
-        "version": app_settings.WEBSERVER_STORAGE.STORAGE_VTAG,
+        "enabled": WEBSERVER_STORAGE is not None,
+        "host": WEBSERVER_STORAGE.STORAGE_HOST,
+        "port": WEBSERVER_STORAGE.STORAGE_PORT,
+        "version": WEBSERVER_STORAGE.STORAGE_VTAG,
     }
 
-    return cfg, app_settings.WEBSERVER_STORAGE
+    return cfg, WEBSERVER_STORAGE
