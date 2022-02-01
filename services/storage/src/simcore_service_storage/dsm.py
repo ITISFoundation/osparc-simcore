@@ -976,6 +976,10 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                         reason=f"User does not have delete access for {project_id}"
                     )
             except ProjectNotFoundtError:
+                # When the project is deleted, first it is removed from the database
+                # and then the data is removed. If there is no project no access rights
+                # will be granted for the project to be remove.
+                # In this situation it is safe to remove the project
                 logger.info(
                     "Could not find a project for project_id=%s, but removal will continue",
                     project_id,
