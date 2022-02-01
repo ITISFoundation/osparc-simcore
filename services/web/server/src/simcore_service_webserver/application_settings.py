@@ -54,7 +54,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SC_VCS_URL: Optional[str] = None
 
     # @Dockerfile
-    SC_BOOT_MODE: Optional[BootModeEnum]
+    SC_BOOT_MODE: Optional[BootModeEnum] = None
     SC_HEALTHCHECK_INTERVAL: Optional[int] = None
     SC_HEALTHCHECK_RETRY: Optional[int] = None
     SC_USER_ID: Optional[int] = None
@@ -93,7 +93,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_COMPUTATION: Optional[RabbitSettings] = Field(
         auto_default_from_env=True, description="computation plugin"
     )
-    WEBSERVER_DB: PostgresSettings = Field(
+    # TODO: Shall be required
+    WEBSERVER_DB: Optional[PostgresSettings] = Field(
         auto_default_from_env=True, description="database plugin"
     )
     WEBSERVER_DIAGNOSTICS: Optional[DiagnosticsSettings] = Field(
@@ -342,3 +343,115 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
     }
 
     return cfg
+
+
+def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
+    envs = {}
+
+    def _set_enable(section_name, section):
+        if not section.get("enabled"):
+            envs[section_name] = None
+
+    if main := cfg.get("main"):
+        envs["WEBSERVER_PORT"] = main.get("port")
+        envs["WEBSERVER_LOG_LEVEL"] = main.get("log_level")
+        envs["WEBSERVER_STUDIES_ACCESS_ENABLED"] = main.get("studies_access_enabled")
+
+    if section := cfg.get("tracing"):
+        _set_enable("WEBSERVER_TRACING", section)
+        envs["TRACING_ZIPKIN_ENDPOINT"] = section.get("zipkin_endpoint")
+
+    if section := cfg.get("director"):
+        _set_enable("WEBSERVER_DIRECTOR", section)
+        envs["DIRECTOR_HOST"] = section.get("host")
+        envs["DIRECTOR_PORT"] = section.get("port")
+        envs["DIRECTOR_VTAG"] = section.get("version")
+
+    if db := cfg.get("db"):
+        if section := db.get("postgres"):
+
+            envs["POSTGRES_DB"] = section.get("database")
+            envs["POSTGRES_HOST"] = section.get("host")
+            envs["POSTGRES_MAXSIZE"] = section.get("maxsize")
+            envs["POSTGRES_MINSIZE"] = section.get("minsize")
+            envs["POSTGRES_PASSWORD"] = section.get("password")
+            envs["POSTGRES_PORT"] = section.get("port")
+            envs["POSTGRES_USER"] = section.get("user")
+
+        _set_enable("WEBSERVER_DB", section)
+
+    if section := cfg.get("resource_manager"):
+        _set_enable("WEBSERVER_REDIS", section)
+        _set_enable("WEBSERVER_RESOURCE_MANAGER", section)
+
+        envs["RESOURCE_MANAGER_RESOURCE_TTL_S"] = section.get(
+            "resource_deletion_timeout_seconds"
+        )
+        envs["RESOURCE_MANAGER_GARBAGE_COLLECTION_INTERVAL_S"] = section.get(
+            "garbage_collection_interval_seconds"
+        )
+
+        if section2 := cfg.get("redis"):
+            _set_enable("WEBSERVER_REDIS", section2)
+            envs["REDIS_HOST"] = section2.get("host")
+            envs["REDIS_PORT"] = section2.get("port")
+
+    if section := cfg.get("login"):
+        _set_enable("WEBSERVER_LOGIN", section)
+
+        envs["LOGIN_REGISTRATION_INVITATION_REQUIRED"] = section.get(
+            "registration_invitation_required"
+        )
+        envs["LOGIN_REGISTRATION_CONFIRMATION_REQUIRED"] = section.get(
+            "registration_confirmation_required"
+        )
+
+    if section := cfg.get("smtp"):
+        envs["SMTP_SENDER"] = section.get("sender")
+        envs["SMTP_HOST"] = section.get("host")
+        envs["SMTP_PORT"] = section.get("port")
+        envs["SMTP_TLS_ENABLED"] = section.get("tls")
+
+        envs["SMTP_USERNAME"] = section.get("username")
+        envs["SMTP_PASSWORD"] = section.get("password")
+
+    if section := cfg.get("storage"):
+        _set_enable("WEBSERVER_STORAGE", section)
+
+        envs["STORAGE_HOST"] = section.get("host")
+        envs["STORAGE_PORT"] = section.get("port")
+        envs["STORAGE_VTAG"] = section.get("version")
+
+    if section := cfg.get("catalog"):
+        _set_enable("WEBSERVER_CATALOG", section)
+
+        envs["CATALOG_HOST"] = section.get("host")
+        envs["CATALOG_PORT"] = section.get("port")
+        envs["CATALOG_VTAG"] = section.get("version")
+
+    if section := cfg.get("session"):
+        envs["SESSION_SECRET_KEY"] = section.get("secret_key")
+
+    if section := cfg.get("activity"):
+        _set_enable("WEBSERVER_ACTIVITY", section)
+
+        envs["PROMETHEUS_PORT"] = section.get("prometheus_port")
+        envs["PROMETHEUS_VTAG"] = section.get("prometheus_api_version")
+
+    if section := cfg.get("computation"):
+        _set_enable("COMPUTATION", section)
+
+    if section := cfg.get("diagnostics"):
+        _set_enable("DIAGNOSTICS", section)
+
+    if section := cfg.get("director-v2"):
+        _set_enable("DIRECTOR_V2", section)
+
+    if section := cfg.get("exporter"):
+        _set_enable("WEBSERVER_EXPORTER", section)
+
+    if section := cfg.get("statics"):
+        _set_enable("WEBSERVER_FRONTEND", section)
+        _set_enable("WEBSERVER_STATICWEB", section)
+
+    return {k: v for k, v in envs.items() if v is not None}
