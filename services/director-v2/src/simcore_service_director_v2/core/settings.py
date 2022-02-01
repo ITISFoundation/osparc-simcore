@@ -23,7 +23,6 @@ from settings_library.rabbit import RabbitSettings
 from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
-from sqlalchemy import desc
 
 from ..meta import API_VTAG
 from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE, ClusterID
