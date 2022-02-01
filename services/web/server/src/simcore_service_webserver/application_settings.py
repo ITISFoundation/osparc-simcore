@@ -15,6 +15,7 @@ from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.prometheus import PrometheusSettings
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
@@ -28,16 +29,11 @@ from .diagnostics_settings import DiagnosticsSettings
 from .director.settings import DirectorSettings
 from .director_v2_settings import DirectorV2Settings
 from .exporter.settings import ExporterSettings
-
-# from .email_settings import SmtpSettings
 from .login.settings import LoginSettings
 from .resource_manager.settings import ResourceManagerSettings
 from .scicrunch.settings import SciCrunchSettings
 from .storage_settings import StorageSettings
 from .utils import snake_to_camel
-
-# from .tracing_settings import TracingSettings
-
 
 log = logging.getLogger(__name__)
 
@@ -93,6 +89,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     WEBSERVER_CATALOG: Optional[CatalogSettings] = Field(
         auto_default_from_env=True, description="catalog service client's plugin"
+    )
+    WEBSERVER_COMPUTATION: Optional[RabbitSettings] = Field(
+        auto_default_from_env=True, description="computation plugin"
     )
     WEBSERVER_DB: PostgresSettings = Field(
         auto_default_from_env=True, description="database plugin"
@@ -308,10 +307,10 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
             ),
         },
         "clusters": {"enabled": True},
-        "computation": {"enabled": True},
-        "diagnostics": {"enabled": True},
+        "computation": {"enabled": app_settings.WEBSERVER_COMPUTATION is not None},
+        "diagnostics": {"enabled": app_settings.WEBSERVER_DIAGNOSTICS is not None},
         "director-v2": {"enabled": app_settings.WEBSERVER_DIRECTOR_V2 is not None},
-        "exporter": {"enabled": True},
+        "exporter": {"enabled": app_settings.WEBSERVER_EXPORTER is not None},
         "groups": {"enabled": True},
         "meta_modeling": {"enabled": True},
         "products": {"enabled": True},
