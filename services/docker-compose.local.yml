@@ -61,11 +61,13 @@ services:
     ports:
       - "8080"
       - "3001:3000"
+    deploy:
+      labels:
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.secure=false
 
   dask-sidecar:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
-
 
   dask-scheduler:
     environment:
@@ -132,7 +134,8 @@ services:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
         - traefik.enable=true
         - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.service=api@internal
-        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.rule=PathPrefix(`/dashboard`) || PathPrefix(`/api`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.rule=PathPrefix(`/dashboard`)
+          || PathPrefix(`/api`)
         - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.entrypoints=traefik_monitor
         - traefik.http.routers.${SWARM_STACK_NAME}_api_internal.middlewares=${SWARM_STACK_NAME}_gzip@docker
         - traefik.http.services.${SWARM_STACK_NAME}_api_internal.loadbalancer.server.port=8080
