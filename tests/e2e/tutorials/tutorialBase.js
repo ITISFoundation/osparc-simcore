@@ -122,6 +122,17 @@ class TutorialBase {
     return resp;
   }
 
+  async printMe() {
+    const resp = await utils.makeRequest(this.__page, "/me");
+    if ("data" in resp) {
+      console.log("login:", resp["data"]["login"]);
+      console.log("user_id:", resp["data"]["user_id"]);
+    }
+    else {
+      console.log("user data not found");
+    }
+  }
+
   async registerIfNeeded() {
     if (this.__newUser) {
       await auto.register(this.__page, this.__user, this.__pass);
