@@ -179,7 +179,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         position: "bottom-right"
       });
 
-      const moreInfoButton = this._getMoreInfoMenuButton(studyData);
+      const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
       if (moreInfoButton) {
         menu.add(moreInfoButton);
       }
