@@ -264,6 +264,28 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
     },
 
+    _getMoreOptionsMenuButton: function(studyData) {
+      const moreOptsButton = new qx.ui.menu.Button(this.tr("More options"));
+      moreOptsButton.addListener("execute", () => {
+        const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyData);
+        const title = this.tr("More options");
+        osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 700);
+        moreOpts.addListener("updateStudy", e => {
+          const updatedStudyData = e.getData();
+          this._resetStudyItem(updatedStudyData);
+        });
+        moreOpts.addListener("updateTemplate", e => {
+          const updatedTemplateData = e.getData();
+          this._resetTemplateItem(updatedTemplateData);
+        });
+        moreOpts.addListener("updateService", e => {
+          const updatedServiceData = e.getData();
+          this._resetServiceItem(updatedServiceData);
+        });
+      }, this);
+      return moreOptsButton;
+    },
+
     _getMoreInfoMenuButton: function(resourceData) {
       const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
       osparc.utils.Utils.setIdToWidget(moreInfoButton, "moreInfoBtn");
