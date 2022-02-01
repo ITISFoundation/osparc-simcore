@@ -9,7 +9,8 @@ import pytest
 import sqlalchemy as sa
 from _dask_helpers import DaskGatewayServer
 from _pytest.monkeypatch import MonkeyPatch
-from dask_gateway import Gateway, auth
+from dask_gateway import Gateway, GatewayCluster, auth
+from distributed import Client as DaskClient
 from distributed.deploy.spec import SpecCluster
 from models_library.clusters import Cluster, SimpleAuthentication
 from settings_library.rabbit import RabbitSettings
@@ -170,11 +171,46 @@ async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayS
                     assert len(cluster.scheduler_info.get("workers", 0)) == 0
 
 
+@pytest.fixture
+async def dask_gateway(
+    local_dask_gateway_server: DaskGatewayServer,
+) -> Gateway:
+    async with Gateway(
+        local_dask_gateway_server.address,
+        local_dask_gateway_server.proxy_address,
+        asynchronous=True,
+        auth=auth.BasicAuth("pytest_user", local_dask_gateway_server.password),
+    ) as gateway:
+        print(f"--> {gateway=} created")
+        cluster_options = await gateway.cluster_options()
+        gateway_versions = await gateway.get_versions()
+        clusters_list = await gateway.list_clusters()
+        print(f"--> {gateway_versions=}, {cluster_options=}, {clusters_list=}")
+        for option in cluster_options.items():
+            print(f"--> {option=}")
+        return gateway
+
+
+@pytest.fixture
+async def dask_gateway_cluster(dask_gateway: Gateway) -> GatewayCluster:
+    async with dask_gateway.new_cluster() as cluster:
+        return cluster
+
+
+@pytest.fixture
+async def dask_gateway_cluster_client(
+    dask_gateway_cluster: GatewayCluster,
+) -> DaskClient:
+    async with dask_gateway_cluster.get_client() as client:
+        return client
+
+
 async def test_get_cluster_entrypoint(
     clusters_config: None,
     async_client: httpx.AsyncClient,
     local_dask_gateway_server: DaskGatewayServer,
     cluster: Callable[..., Cluster],
+    dask_gateway_cluster: GatewayCluster,
 ):
     some_cluster = cluster(
         endpoint=local_dask_gateway_server.address,
@@ -187,4 +223,8 @@ async def test_get_cluster_entrypoint(
     print(f"<-- received cluster details response {response=}")
     cluster_out = ClusterOut.parse_obj(response.json())
     assert cluster_out
+    assert not cluster_out.scheduler.workers
+    import pdb
+
+    pdb.set_trace()
     print(f"<-- received cluster details {cluster_out=}")
