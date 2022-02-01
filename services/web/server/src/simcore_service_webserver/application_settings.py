@@ -10,7 +10,7 @@ from models_library.basic_types import (
     VersionTag,
 )
 from pydantic import Field, validator
-from pydantic.types import SecretBytes
+from pydantic.types import SecretBytes, SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
@@ -23,8 +23,6 @@ from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, API_VTAG, APP_NAME
-
-# from .activity.settings import ActivitySettings
 from .catalog_settings import CatalogSettings
 from .director.settings import DirectorSettings
 from .director_v2_settings import DirectorV2Settings
@@ -160,3 +158,155 @@ def setup_settings(app: web.Application) -> ApplicationSettings:
 
 def get_settings(app: web.Application) -> ApplicationSettings:
     return app[APP_SETTINGS_KEY]
+
+
+def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
+    """Maps current ApplicationSettings object into former trafaret-based config"""
+
+    cfg = {
+        "version": "1.0",
+        "main": {
+            "host": "0.0.0.0",
+            "port": app_settings.WEBSERVER_PORT,
+            "log_level": f"{app_settings.WEBSERVER_LOG_LEVEL}",
+            "testing": False,  # TODO: deprecate!
+            "studies_access_enabled": 1
+            if app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED
+            else 0,
+        },
+        "tracing": {
+            "enabled": 1 if app_settings.WEBSERVER_TRACING is not None else 0,
+            "zipkin_endpoint": f"{getattr(app_settings.WEBSERVER_TRACING, 'TRACING_ZIPKIN_ENDPOINT', None)}",
+        },
+        "socketio": {"enabled": True},
+        "director": {
+            "enabled": app_settings.WEBSERVER_DIRECTOR is not None,
+            "host": getattr(app_settings.WEBSERVER_DIRECTOR, "DIRECTOR_HOST", None),
+            "port": getattr(app_settings.WEBSERVER_DIRECTOR, "DIRECTOR_PORT", None),
+            "version": getattr(app_settings.WEBSERVER_DIRECTOR, "DIRECTOR_VTAG", None),
+        },
+        "db": {
+            "postgres": {
+                "database": getattr(
+                    app_settings.WEBSERVER_POSTGRES, "POSTGRES_DB", None
+                ),
+                "endpoint": f"{getattr(app_settings.WEBSERVER_POSTGRES, 'POSTGRES_HOST', None)}:{getattr(app_settings.WEBSERVER_POSTGRES, 'POSTGRES_PORT', None)}",
+                "host": getattr(app_settings.WEBSERVER_POSTGRES, "POSTGRES_HOST", None),
+                "maxsize": getattr(
+                    app_settings.WEBSERVER_POSTGRES, "POSTGRES_MAXSIZE", None
+                ),
+                "minsize": getattr(
+                    app_settings.WEBSERVER_POSTGRES, "POSTGRES_MINSIZE", None
+                ),
+                "password": getattr(
+                    app_settings.WEBSERVER_POSTGRES, "POSTGRES_PASSWORD", SecretStr("")
+                ).get_secret_value(),
+                "port": getattr(app_settings.WEBSERVER_POSTGRES, "POSTGRES_PORT", None),
+                "user": getattr(app_settings.WEBSERVER_POSTGRES, "POSTGRES_USER", None),
+            },
+            "enabled": app_settings.WEBSERVER_POSTGRES is not None,
+        },
+        "resource_manager": {
+            "enabled": (
+                app_settings.WEBSERVER_REDIS is not None
+                and app_settings.WEBSERVER_RESOURCE_MANAGER is not None
+            ),
+            "resource_deletion_timeout_seconds": getattr(
+                app_settings.WEBSERVER_RESOURCE_MANAGER,
+                "RESOURCE_MANAGER_RESOURCE_TTL_S",
+                None,
+            ),
+            "garbage_collection_interval_seconds": getattr(
+                app_settings.WEBSERVER_RESOURCE_MANAGER,
+                "RESOURCE_MANAGER_GARBAGE_COLLECTION_INTERVAL_S",
+                None,
+            ),
+            "redis": {
+                "enabled": app_settings.WEBSERVER_REDIS is not None,
+                "host": getattr(app_settings.WEBSERVER_REDIS, "REDIS_HOST", None),
+                "port": getattr(app_settings.WEBSERVER_REDIS, "REDIS_PORT", None),
+            },
+        },
+        "login": {
+            "enabled": app_settings.WEBSERVER_LOGIN is not None,
+            "registration_invitation_required": 1
+            if getattr(
+                app_settings.WEBSERVER_LOGIN,
+                "LOGIN_REGISTRATION_INVITATION_REQUIRED",
+                None,
+            )
+            else 0,
+            "registration_confirmation_required": 1
+            if getattr(
+                app_settings.WEBSERVER_LOGIN,
+                "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED",
+                None,
+            )
+            else 0,
+        },
+        "smtp": {
+            "sender": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_SENDER", None),
+            "host": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_HOST", None),
+            "port": getattr(app_settings.WEBSERVER_EMAIL, "SMTP_PORT", None),
+            "tls": int(getattr(app_settings.WEBSERVER_EMAIL, "SMTP_TLS_ENABLED", 0)),
+            "username": str(
+                getattr(app_settings.WEBSERVER_EMAIL, "SMTP_USERNAME", None)
+            ),
+            "password": str(
+                getattr(app_settings.WEBSERVER_EMAIL, "SMTP_PASSWORD", None)
+                and getattr(
+                    app_settings.WEBSERVER_EMAIL, "SMTP_PASSWORD", SecretStr("")
+                ).get_secret_value()
+            ),
+        },
+        "storage": {
+            "enabled": app_settings.WEBSERVER_STORAGE is not None,
+            "host": getattr(app_settings.WEBSERVER_STORAGE, "STORAGE_HOST", None),
+            "port": getattr(app_settings.WEBSERVER_STORAGE, "STORAGE_PORT", None),
+            "version": getattr(app_settings.WEBSERVER_STORAGE, "STORAGE_VTAG", None),
+        },
+        "catalog": {
+            "enabled": app_settings.WEBSERVER_CATALOG is not None,
+            "host": getattr(app_settings.WEBSERVER_CATALOG, "CATALOG_HOST", None),
+            "port": getattr(app_settings.WEBSERVER_CATALOG, "CATALOG_PORT", None),
+            "version": getattr(app_settings.WEBSERVER_CATALOG, "CATALOG_VTAG", None),
+        },
+        "rest": {"version": app_settings.API_VTAG, "enabled": True},
+        "projects": {"enabled": True},
+        "session": {
+            "secret_key": app_settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
+        },
+        "activity": {
+            "enabled": app_settings.WEBSERVER_ACTIVITY is not None,
+            "prometheus_host": getattr(app_settings.WEBSERVER_ACTIVITY, "origin", None),
+            "prometheus_port": getattr(
+                app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_PORT", None
+            ),
+            "prometheus_api_version": getattr(
+                app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_VTAG", None
+            ),
+        },
+        "clusters": {"enabled": True},
+        "computation": {"enabled": True},
+        "diagnostics": {"enabled": True},
+        "director-v2": {"enabled": app_settings.WEBSERVER_DIRECTOR_V2 is not None},
+        "exporter": {"enabled": True},
+        "groups": {"enabled": True},
+        "meta_modeling": {"enabled": True},
+        "products": {"enabled": True},
+        "publications": {"enabled": True},
+        "remote_debug": {"enabled": True},
+        "security": {"enabled": True},
+        "statics": {"enabled": True},
+        "studies_access": {
+            "enabled": True
+        },  # app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
+        "studies_dispatcher": {
+            "enabled": True  # app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
+        },
+        "tags": {"enabled": True},
+        "users": {"enabled": True},
+        "version_control": {"enabled": True},
+    }
+
+    return cfg

@@ -167,9 +167,9 @@ def app_config(request, mock_webserver_service_environment) -> Dict:
 def test_app_settings_with_prod_config(
     app_config: Dict, app_settings: ApplicationSettings
 ):
-
+    # Ensures all plugins are enabled for this test
     assert app_settings.WEBSERVER_EMAIL is not None
-    assert app_settings.WEBSERVER_PROMETHEUS is not None
+    assert app_settings.WEBSERVER_ACTIVITY is not None
     assert app_settings.WEBSERVER_REDIS is not None
     assert app_settings.WEBSERVER_TRACING is not None
     assert app_settings.WEBSERVER_CATALOG is not None
@@ -190,119 +190,7 @@ def test_app_settings_with_prod_config(
     # This test has been used to guide the design of new settings
     #
     #
-    assert app_config == {
-        "version": "1.0",
-        "main": {
-            "host": "0.0.0.0",
-            "port": app_settings.WEBSERVER_PORT,
-            "log_level": f"{app_settings.WEBSERVER_LOG_LEVEL}",
-            "testing": False,  # TODO: deprecate!
-            "studies_access_enabled": 1
-            if app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED
-            else 0,
-        },
-        "tracing": {
-            "enabled": 1 if app_settings.WEBSERVER_TRACING is not None else 0,
-            "zipkin_endpoint": f"{app_settings.WEBSERVER_TRACING.TRACING_ZIPKIN_ENDPOINT}",
-        },
-        "socketio": {"enabled": True},
-        "director": {
-            "enabled": app_settings.WEBSERVER_DIRECTOR is not None,
-            "host": app_settings.WEBSERVER_DIRECTOR.DIRECTOR_HOST,
-            "port": app_settings.WEBSERVER_DIRECTOR.DIRECTOR_PORT,
-            "version": app_settings.WEBSERVER_DIRECTOR.DIRECTOR_VTAG,
-        },
-        "db": {
-            "postgres": {
-                "database": app_settings.WEBSERVER_POSTGRES.POSTGRES_DB,
-                "endpoint": f"{app_settings.WEBSERVER_POSTGRES.POSTGRES_HOST}:{app_settings.WEBSERVER_POSTGRES.POSTGRES_PORT}",
-                "host": app_settings.WEBSERVER_POSTGRES.POSTGRES_HOST,
-                "maxsize": app_settings.WEBSERVER_POSTGRES.POSTGRES_MAXSIZE,
-                "minsize": app_settings.WEBSERVER_POSTGRES.POSTGRES_MINSIZE,
-                "password": app_settings.WEBSERVER_POSTGRES.POSTGRES_PASSWORD.get_secret_value(),
-                "port": app_settings.WEBSERVER_POSTGRES.POSTGRES_PORT,
-                "user": app_settings.WEBSERVER_POSTGRES.POSTGRES_USER,
-            },
-            "enabled": app_settings.WEBSERVER_POSTGRES is not None,
-        },
-        "resource_manager": {
-            "enabled": (
-                app_settings.WEBSERVER_REDIS is not None
-                and app_settings.WEBSERVER_RESOURCE_MANAGER is not None
-            ),
-            "resource_deletion_timeout_seconds": app_settings.WEBSERVER_RESOURCE_MANAGER.RESOURCE_MANAGER_RESOURCE_TTL_S,
-            "garbage_collection_interval_seconds": app_settings.WEBSERVER_RESOURCE_MANAGER.RESOURCE_MANAGER_GARBAGE_COLLECTION_INTERVAL_S,
-            "redis": {
-                "enabled": app_settings.WEBSERVER_REDIS is not None,
-                "host": app_settings.WEBSERVER_REDIS.REDIS_HOST,
-                "port": app_settings.WEBSERVER_REDIS.REDIS_PORT,
-            },
-        },
-        "login": {
-            "enabled": app_settings.WEBSERVER_LOGIN is not None,
-            "registration_invitation_required": 1
-            if app_settings.WEBSERVER_LOGIN.LOGIN_REGISTRATION_INVITATION_REQUIRED
-            else 0,
-            "registration_confirmation_required": 1
-            if app_settings.WEBSERVER_LOGIN.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
-            else 0,
-        },
-        "smtp": {
-            "sender": app_settings.WEBSERVER_EMAIL.SMTP_SENDER,
-            "host": app_settings.WEBSERVER_EMAIL.SMTP_HOST,
-            "port": app_settings.WEBSERVER_EMAIL.SMTP_PORT,
-            "tls": int(app_settings.WEBSERVER_EMAIL.SMTP_TLS_ENABLED),
-            "username": str(app_settings.WEBSERVER_EMAIL.SMTP_USERNAME),
-            "password": str(
-                app_settings.WEBSERVER_EMAIL.SMTP_PASSWORD
-                and app_settings.WEBSERVER_EMAIL.SMTP_PASSWORD.get_secret_value()
-            ),
-        },
-        "storage": {
-            "enabled": app_settings.WEBSERVER_STORAGE is not None,
-            "host": app_settings.WEBSERVER_STORAGE.STORAGE_HOST,
-            "port": app_settings.WEBSERVER_STORAGE.STORAGE_PORT,
-            "version": app_settings.WEBSERVER_STORAGE.STORAGE_VTAG,
-        },
-        "catalog": {
-            "enabled": app_settings.WEBSERVER_CATALOG is not None,
-            "host": app_settings.WEBSERVER_CATALOG.CATALOG_HOST,
-            "port": app_settings.WEBSERVER_CATALOG.CATALOG_PORT,
-            "version": app_settings.WEBSERVER_CATALOG.CATALOG_VTAG,
-        },
-        "rest": {"version": app_settings.API_VTAG, "enabled": True},
-        "projects": {"enabled": True},
-        "session": {
-            "secret_key": app_settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
-        },
-        "activity": {
-            "enabled": app_settings.WEBSERVER_PROMETHEUS is not None,
-            "prometheus_host": app_settings.WEBSERVER_PROMETHEUS.origin,
-            "prometheus_port": app_settings.WEBSERVER_PROMETHEUS.PROMETHEUS_PORT,
-            "prometheus_api_version": app_settings.WEBSERVER_PROMETHEUS.PROMETHEUS_VTAG,
-        },
-        "clusters": {"enabled": True},
-        "computation": {"enabled": True},
-        "diagnostics": {"enabled": True},
-        "director-v2": {"enabled": app_settings.WEBSERVER_DIRECTOR_V2 is not None},
-        "exporter": {"enabled": True},
-        "groups": {"enabled": True},
-        "meta_modeling": {"enabled": True},
-        "products": {"enabled": True},
-        "publications": {"enabled": True},
-        "remote_debug": {"enabled": True},
-        "security": {"enabled": True},
-        "statics": {"enabled": True},
-        "studies_access": {
-            "enabled": True
-        },  # app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
-        "studies_dispatcher": {
-            "enabled": True  # app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
-        },
-        "tags": {"enabled": True},
-        "users": {"enabled": True},
-        "version_control": {"enabled": True},
-    }
+    assert app_config == convert_to_app_config(app_settings)
 
 
 def test_settings_constructs(app_settings: ApplicationSettings):
