@@ -154,6 +154,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # HELPERS  --------------------------------------------------------
 
+    def is_enabled(self, plugin_name: str):
+        return getattr(self, f"WEBSERVER_{plugin_name.upper()}", None) is not None
+
     def public_dict(self) -> Dict[str, Any]:
         """Data publicaly available"""
         return self.dict(
@@ -316,9 +319,9 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
             ),
         },
         "clusters": {"enabled": True},
-        "computation": {"enabled": app_settings.WEBSERVER_COMPUTATION is not None},
-        "diagnostics": {"enabled": app_settings.WEBSERVER_DIAGNOSTICS is not None},
-        "director-v2": {"enabled": app_settings.WEBSERVER_DIRECTOR_V2 is not None},
+        "computation": {"enabled": app_settings.is_enabled("COMPUTATION")},
+        "diagnostics": {"enabled": app_settings.is_enabled("DIAGNOSTICS")},
+        "director-v2": {"enabled": app_settings.is_enabled("DIRECTOR_V2")},
         "exporter": {"enabled": app_settings.WEBSERVER_EXPORTER is not None},
         "groups": {"enabled": True},
         "meta_modeling": {"enabled": True},
@@ -327,12 +330,10 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
         "remote_debug": {"enabled": True},
         "security": {"enabled": True},
         "statics": {"enabled": True},
-        "studies_access": {
-            "enabled": True
-        },  # app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
-        "studies_dispatcher": {
-            "enabled": True  # app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
-        },
+        # NOTE:  app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
+        "studies_access": {"enabled": True},
+        # NOTE  app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
+        "studies_dispatcher": {"enabled": True},
         "tags": {"enabled": True},
         "users": {"enabled": True},
         "version_control": {"enabled": True},
