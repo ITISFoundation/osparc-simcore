@@ -24,6 +24,7 @@ from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 from ._constants import APP_SETTINGS_KEY
 from ._meta import API_VERSION, API_VTAG, APP_NAME
 from .catalog_settings import CatalogSettings
+from .diagnostics_settings import DiagnosticsSettings
 from .director.settings import DirectorSettings
 from .director_v2_settings import DirectorV2Settings
 from .exporter.settings import ExporterSettings
@@ -95,6 +96,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     WEBSERVER_DB: PostgresSettings = Field(
         auto_default_from_env=True, description="database plugin"
+    )
+    WEBSERVER_DIAGNOSTICS: Optional[DiagnosticsSettings] = Field(
+        auto_default_from_env=True, description="diagnostics plugin"
     )
     WEBSERVER_DIRECTOR_V2: Optional[DirectorV2Settings] = Field(
         auto_default_from_env=True, description="director-v2 service client's plugin"

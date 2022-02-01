@@ -94,10 +94,10 @@ def setup_diagnostics(
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas
     cfg = DiagnosticsSettings(**settings_kwargs)
-    assert cfg.slow_duration_secs == slow_duration_secs  # nosec
-    assert cfg.max_task_delay == max_task_delay  # nosec
-    assert cfg.max_avg_response_latency == max_avg_response_latency  # nosec
-    assert cfg.start_sensing_delay == start_sensing_delay  # nosec
+    assert cfg.DIAGNOSTICS_SLOW_DURATION_SECS == slow_duration_secs  # nosec
+    assert cfg.DIAGNOSTICS_MAX_TASK_DELAY == max_task_delay  # nosec
+    assert cfg.DIAGNOSTICS_MAX_AVG_LATENCY == max_avg_response_latency  # nosec
+    assert cfg.DIAGNOSTICS_START_SENSING_DELAY == start_sensing_delay  # nosec
     # ---------------------------------------------
 
     # -----
