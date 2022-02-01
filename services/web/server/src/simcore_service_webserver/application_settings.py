@@ -71,7 +71,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         None, description="Stack name defined upon deploy (see main Makefile)"
     )
 
-    # WEBSERVER_ACTIVITY: Optional[ActivitySettings]
+    WEBSERVER_ACTIVITY: Optional[PrometheusSettings] = Field(auto_default_from_env=True)
     WEBSERVER_CATALOG: Optional[CatalogSettings] = Field(auto_default_from_env=True)
     WEBSERVER_DEV_FEATURES_ENABLED: bool = Field(
         False,
@@ -90,9 +90,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_LOGIN: Optional[LoginSettings] = Field(auto_default_from_env=True)
     WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
     WEBSERVER_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
-    WEBSERVER_PROMETHEUS: Optional[PrometheusSettings] = Field(
-        auto_default_from_env=True
-    )
     WEBSERVER_REDIS: Optional[RedisSettings] = Field(auto_default_from_env=True)
     WEBSERVER_RESOURCE_MANAGER: Optional[ResourceManagerSettings] = Field(
         auto_default_from_env=True
