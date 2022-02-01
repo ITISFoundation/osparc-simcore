@@ -37,6 +37,7 @@ from yarl import URL
 
 from .access_layer import (
     AccessRights,
+    ProjectNotFoundtError,
     get_file_access_rights,
     get_project_access_rights,
     get_readable_project_ids,
@@ -961,17 +962,23 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
         async with self.engine.acquire() as conn, conn.begin():
             # access layer
-            can: Optional[AccessRights] = await get_project_access_rights(
-                conn, int(user_id), project_id
-            )
-            if not can.delete:
-                logger.debug(
-                    "User %s was not allowed to delete project %s",
-                    user_id,
-                    project_id,
+            try:
+                can: Optional[AccessRights] = await get_project_access_rights(
+                    conn, int(user_id), project_id
                 )
-                raise web.HTTPForbidden(
-                    reason=f"User does not have delete access for {project_id}"
+                if not can.delete:
+                    logger.debug(
+                        "User %s was not allowed to delete project %s",
+                        user_id,
+                        project_id,
+                    )
+                    raise web.HTTPForbidden(
+                        reason=f"User does not have delete access for {project_id}"
+                    )
+            except ProjectNotFoundtError:
+                logger.info(
+                    "Could not find a project for project_id=%s, but removal will continue",
+                    project_id,
                 )
 
             delete_me = file_meta_data.delete().where(

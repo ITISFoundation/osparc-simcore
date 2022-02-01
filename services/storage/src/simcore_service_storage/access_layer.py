@@ -45,7 +45,11 @@ from uuid import UUID
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
-from simcore_postgres_database.storage_models import file_meta_data, user_to_groups
+from simcore_postgres_database.storage_models import (
+    file_meta_data,
+    user_to_groups,
+    projects,
+)
 from sqlalchemy.sql import text
 
 logger = logging.getLogger(__name__)
@@ -70,7 +74,7 @@ class AccessRights:
 
 
 class AccessLayerError(Exception):
-    """ Base class for access-layer related errors """
+    """Base class for access-layer related errors"""
 
 
 class InvalidFileIdentifier(AccessLayerError):
@@ -89,11 +93,24 @@ class InvalidFileIdentifier(AccessLayerError):
         return "Error in {}: {} [{}]".format(self.identifier, self.reason, self.details)
 
 
+class ProjectNotFoundtError(Exception):
+    def __init__(self, project_id: ProjectID) -> None:
+        super().__init__(f"No project found for {project_id=}")
+        self.project_id = project_id
+
+
 async def _get_user_groups_ids(conn: SAConnection, user_id: int) -> List[int]:
     stmt = sa.select([user_to_groups.c.gid]).where(user_to_groups.c.uid == user_id)
     rows = await (await conn.execute(stmt)).fetchall()
     user_group_ids = [g.gid for g in rows]
     return user_group_ids
+
+
+async def _is_project_present(conn: SAConnection, project_id: ProjectID) -> bool:
+    stmt = sa.select([projects.c.id]).where(projects.c.uuid == project_id)
+    result: ResultProxy = await conn.execute(stmt)
+    row: Optional[RowProxy] = await result.first()
+    return row is not None
 
 
 def _aggregate_access_rights(
@@ -164,6 +181,14 @@ async def get_project_access_rights(
     """
     Returns access-rights of user (user_id) over a project resource (project_id)
     """
+    # when the project is removed, the project will no longer exist
+    # instead of returning AccessRights.none()
+    # an error will be raised
+    # this allows to handle the removal of the project data after the project was
+    # remove from the database
+    if not await _is_project_present(conn, project_id):
+        raise ProjectNotFoundtError(project_id)
+
     user_group_ids: List[int] = await _get_user_groups_ids(conn, user_id)
 
     stmt = text(
@@ -282,6 +307,6 @@ async def get_file_access_rights(
 
 
 async def get_readable_project_ids(conn: SAConnection, user_id: int) -> List[ProjectID]:
-    """ Returns a list of projects where user has granted read-access """
+    """Returns a list of projects where user has granted read-access"""
     projects_access_rights = await list_projects_access_rights(conn, int(user_id))
     return [pid for pid, access in projects_access_rights.items() if access.read]
