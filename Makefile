@@ -228,6 +228,7 @@ printf "$$rows" Redis 'http://$(get_my_ip).nip.io:18081';\
 printf "$$rows" 'Docker Registry' $${REGISTRY_URL} $${REGISTRY_USER} $${REGISTRY_PW};\
 printf "$$rows" "Dask Dashboard" "http://$(get_my_ip).nip.io:8787";
 printf "$$rows" "Traefik Dashboard" "http://$(get_my_ip).nip.io:8080/dashboard/";
+printf "$$rows" "Rabbit Dashboard" "http://$(get_my_ip).nip.io:15762" admin adminadmin;
 printf "\n%s\n" "⚠️ if a DNS is not used (as displayed above), the interactive services started via dynamic-sidecar";\
 echo "⚠️ will not be shown. The frontend accesses them via the uuid.services.YOUR_IP.nip.io:9081";
 endef
