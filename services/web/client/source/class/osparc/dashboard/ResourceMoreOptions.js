@@ -98,6 +98,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __addPages: function() {
+      // keep selected page
+      const selection = this.getSelection();
+      const selectedTabId = selection.length ? selection[0]["tabId"] : null;
+
       // removeAll
       const pages = this.getChildren().length;
       for (let i=pages-1; i>=0; i--) {
@@ -118,15 +122,23 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           this.add(page);
         }
       });
+
+      if (selectedTabId) {
+        const pageFound = this.getChildren().find(page => page.tabId === selectedTabId);
+        if (pageFound) {
+          this.setSelection([pageFound]);
+        }
+      }
     },
 
-    __createPage: function(title, widget, icon) {
+    __createPage: function(title, widget, icon, id) {
       const tabPage = new qx.ui.tabview.Page().set({
         backgroundColor: "material-button-background",
         paddingLeft: 20,
         layout: new qx.ui.layout.VBox(10),
         icon: icon + "/24"
       });
+      tabPage.tabId = id;
 
       tabPage.getButton().set({
         minWidth: 35,
@@ -160,6 +172,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getInfoPage: function() {
+      const id = "Information";
       const title = this.tr("Information");
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
@@ -189,11 +202,12 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           this.fireDataEvent("updateTemplate", updatedData);
         }
       });
-      const page = this.__createPage(title, infoCard, icon);
+      const page = this.__createPage(title, infoCard, icon, id);
       return page;
     },
 
     __getPermissionsPage: function() {
+      const id = "Permissions";
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isTemplate(resourceData) && !osparc.data.model.Study.isOwner(resourceData)) {
         return null;
@@ -225,11 +239,12 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           }
         }, this);
       }
-      const page = this.__permissionsPage = this.__createPage(title, permissionsView, icon);
+      const page = this.__permissionsPage = this.__createPage(title, permissionsView, icon, id);
       return page;
     },
 
     __getClassifiersPage: function() {
+      const id = "Classfiiers";
       if (!osparc.data.Permissions.getInstance().canDo("study.classifier")) {
         return null;
       }
@@ -255,11 +270,12 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       } else {
         classifiers = new osparc.component.metadata.ClassifiersViewer(resourceData);
       }
-      const page = this.__classifiersPage = this.__createPage(title, classifiers, icon);
+      const page = this.__classifiersPage = this.__createPage(title, classifiers, icon, id);
       return page;
     },
 
     __getQualityPage: function() {
+      const id = "Quality";
       const resourceData = this.__resourceData;
       if (
         "quality" in resourceData &&
@@ -276,13 +292,14 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
             this.fireDataEvent("updateTemplate", updatedData);
           }
         });
-        const page = this.__qualityPage = this.__createPage(title, qualityEditor, icon);
+        const page = this.__qualityPage = this.__createPage(title, qualityEditor, icon, id);
         return page;
       }
       return null;
     },
 
     __getServicesUpdatePage: function() {
+      const id = "ServicesUpdate";
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isService(resourceData)) {
         return null;
@@ -291,11 +308,12 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Update Services");
       const icon = "@MaterialIcons/update";
       const servicesUpdate = new osparc.component.metadata.ServicesInStudyUpdate(resourceData);
-      const page = this.__createPage(title, servicesUpdate, icon);
+      const page = this.__createPage(title, servicesUpdate, icon, id);
       return page;
     },
 
     __getServicesBootOptionsPage: function() {
+      const id = "ServicesBootOptions";
       const resourceData = this.__resourceData;
       if (osparc.utils.Resources.isService(resourceData)) {
         return null;
@@ -304,11 +322,12 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Boot Options");
       const icon = "@FontAwesome5Solid/play-circle";
       const servicesBootOpts = new osparc.component.metadata.ServicesInStudyBootOpts(resourceData);
-      const page = this.__createPage(title, servicesBootOpts, icon);
+      const page = this.__createPage(title, servicesBootOpts, icon, id);
       return page;
     },
 
     __getSaveAsTemplatePage: function() {
+      const id = "SaveAsTemplate";
       if (!osparc.utils.Resources.isStudy(this.__resourceData)) {
         return null;
       }
@@ -325,7 +344,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
             this.fireEvent("updateTemplates");
           }
         }, this);
-        const page = this.__createPage(title, saveAsTemplateView, icon);
+        const page = this.__createPage(title, saveAsTemplateView, icon, id);
         return page;
       }
       return null;
