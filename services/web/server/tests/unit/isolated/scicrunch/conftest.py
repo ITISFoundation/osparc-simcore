@@ -4,7 +4,7 @@
 
 
 import pytest
-from simcore_service_webserver.scicrunch.submodule_setup import SciCrunchSettings
+from simcore_service_webserver.scicrunch.settings import SciCrunchSettings
 
 
 @pytest.fixture
