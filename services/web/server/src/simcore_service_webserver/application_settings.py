@@ -379,7 +379,7 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
             envs["POSTGRES_PORT"] = section.get("port")
             envs["POSTGRES_USER"] = section.get("user")
 
-        _set_enable("WEBSERVER_DB", section)
+        _set_enable("WEBSERVER_DB", db)
 
     if section := cfg.get("resource_manager"):
         _set_enable("WEBSERVER_RESOURCE_MANAGER", section)
