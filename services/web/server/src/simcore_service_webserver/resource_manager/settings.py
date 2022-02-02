@@ -25,14 +25,20 @@ class ResourceManagerSettings(BaseCustomSettings):
         900,
         description="Expiration time (or Time to live (TTL) in redis jargon) for a registered resource",
         # legacy!
-        env=["WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS"],
+        env=[
+            "RESOURCE_MANAGER_RESOURCE_TTL_S",
+            "WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS",  # legacy
+        ],
     )
 
     RESOURCE_MANAGER_GARBAGE_COLLECTION_INTERVAL_S: PositiveInt = Field(
         30,
         description="Waiting time between consecutive runs of the garbage-colector",
         # legacy
-        env=["WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS"],
+        env=[
+            "RESOURCE_MANAGER_GARBAGE_COLLECTION_INTERVAL_S",
+            "WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS",  # legacy
+        ],
     )
 
 

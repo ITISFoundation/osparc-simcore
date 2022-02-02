@@ -384,10 +384,10 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
         _set_enable("WEBSERVER_REDIS", section)
         _set_enable("WEBSERVER_RESOURCE_MANAGER", section)
 
-        envs["RESOURCE_MANAGER_RESOURCE_TTL_S"] = section.get(
+        envs["WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS"] = section.get(
             "resource_deletion_timeout_seconds"
         )
-        envs["RESOURCE_MANAGER_GARBAGE_COLLECTION_INTERVAL_S"] = section.get(
+        envs["WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS"] = section.get(
             "garbage_collection_interval_seconds"
         )
 
