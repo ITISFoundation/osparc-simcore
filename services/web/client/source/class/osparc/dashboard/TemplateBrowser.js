@@ -199,15 +199,17 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
     },
 
     __getPublishOnPortalMenuButton: function(studyData) {
-      if (osparc.data.model.Study.isOwner(studyData)) {
-        const publishOnPortalButton = new qx.ui.menu.Button(this.tr("Publish on Portal"));
-        publishOnPortalButton.addListener("execute", () => {
-          const msg = this.tr("Not yet implemented");
-          osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
-        }, this);
-        return publishOnPortalButton;
+      const isCurrentUserOwner = osparc.data.model.Study.isOwner(studyData);
+      if (!isCurrentUserOwner) {
+        return null;
       }
-      return null;
+
+      const publishOnPortalButton = new qx.ui.menu.Button(this.tr("Publish on Portal"));
+      publishOnPortalButton.addListener("execute", () => {
+        const msg = this.tr("Not yet implemented");
+        osparc.component.message.FlashMessenger.getInstance().logAs(msg, "INFO");
+      }, this);
+      return publishOnPortalButton;
     },
 
     __getDeleteTemplateMenuButton: function(studyData) {
