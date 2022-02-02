@@ -37,6 +37,7 @@ from simcore_service_webserver import rest
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application__schema import app_schema as app_schema
+from simcore_service_webserver.application_settings import convert_to_environ_vars
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
@@ -127,10 +128,15 @@ def web_server(
     aiohttp_server,
     disable_static_webserver,
 ) -> TestServer:
-    print(
-        "Inits webserver with app_cfg",
-        json_dumps(app_cfg, indent=2),
-    )
+
+    print("+ web_server:")
+    print("  - app_config=\n", json_dumps(app_cfg, indent=1))
+
+    envs = convert_to_environ_vars(app_cfg)
+    print("  - convert_to_environ_vars(app_cfg)=\n", json_dumps(envs, indent=1))
+
+    for env_key, env_value in envs.items():
+        monkeypatch.setenv(env_key, f"{env_value}")
 
     # original APP
     app = create_application(app_cfg)
