@@ -98,7 +98,7 @@ class TutorialBase {
       if (!needsRegister) {
         await this.login();
       }
-      await this.printMe();
+      await this.__printMe();
     }
     catch (err) {
       console.error("Error starting", err);
@@ -113,7 +113,7 @@ class TutorialBase {
     try {
       await this.__goTo();
       resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
-      await this.printMe();
+      await this.__printMe();
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
     }
@@ -124,14 +124,14 @@ class TutorialBase {
     return resp;
   }
 
-  async printMe() {
+  async __printMe() {
     const resp = await utils.makeRequest(this.__page, "/me");
-    if (resp && "data" in resp) {
-      console.log("login:", resp["data"]["login"]);
-      console.log("user_id:", resp["data"]["user_id"]);
+    if (resp) {
+      console.log("login:", resp["login"]);
+      console.log("user_id:", resp["id"]);
     }
     else {
-      console.log("user data not found");
+      console.log("Not found");
     }
   }
 
