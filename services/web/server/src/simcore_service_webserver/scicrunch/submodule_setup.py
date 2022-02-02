@@ -5,18 +5,19 @@ import logging
 
 from aiohttp import web
 from pydantic import ValidationError
+from simcore_service_webserver.session_settings import assert_valid_config
 
-from .._constants import APP_SETTINGS_KEY
 from .service_client import SciCrunch
-from .settings import SciCrunchSettings
+from .settings import assert_valid_config
 
 logger = logging.getLogger(__name__)
 
 
 def setup_scicrunch_submodule(app: web.Application):
     try:
-        settings: SciCrunchSettings = app[APP_SETTINGS_KEY].WEBSERVER_SCICRUNCH
-        assert settings  # nosec
+        # TODO: tmp
+        settings = assert_valid_config(app)
+        #
         api = SciCrunch.acquire_instance(app, settings)
         assert api == SciCrunch.get_instance(app)  # nosec
 
