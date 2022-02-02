@@ -127,6 +127,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     _resetServiceItem: function(serviceData) {
+      serviceData["resourceType"] = "service";
       const servicesList = this.__servicesLatestList;
       const index = servicesList.findIndex(service => service["key"] === serviceData["key"] && service["version"] === serviceData["version"]);
       if (index !== -1) {
@@ -146,7 +147,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         const serviceItem = this.__createServiceItem(service, this._resourcesContainer.getMode());
         serviceItem.addListener("updateQualityService", e => {
           const updatedServiceData = e.getData();
-          updatedServiceData["resourceType"] = "service";
           this._resetServiceItem(updatedServiceData);
         }, this);
         this._resourcesContainer.add(serviceItem);

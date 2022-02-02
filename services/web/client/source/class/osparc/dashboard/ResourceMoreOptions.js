@@ -86,6 +86,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
               .then(services => {
                 const serviceData = osparc.utils.Services.getFromObject(services, this.__resourceData["key"], serviceVersion);
                 console.log(serviceData);
+                serviceData["resourceType"] = "service";
+                this.__resourceData = serviceData;
+                this.__addPages();
               });
           }
         }
@@ -95,6 +98,12 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __addPages: function() {
+      // removeAll
+      const pages = this.getChildren().length;
+      for (let i=pages-1; i>=0; i--) {
+        this.remove(this.getChildren()[i]);
+      }
+
       [
         this.__getInfoPage,
         this.__getPermissionsPage,
