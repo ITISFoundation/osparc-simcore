@@ -28,6 +28,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       contentPadding: 0
     });
 
+    if (osparc.utils.Resources.isService(resourceData)) {
+      this.__createServiceVersionSelector();
+    }
+
     this.__addPages();
   },
 
@@ -40,9 +44,55 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
   members: {
     __resourceData: null,
+    __serviceVersionLayout: null,
+    __serviceVersionSelector: null,
     __permissionsPage: null,
     __classifiersPage: null,
     __qualityPage: null,
+
+    __createServiceVersionSelector: function() {
+      const hBox = this.__serviceVersionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+        alignY: "middle"
+      }));
+
+      const versionLabel = new qx.ui.basic.Label(this.tr("Service Version"));
+      hBox.add(versionLabel);
+      const versionsBox = this.__serviceVersionSelector = new osparc.ui.toolbar.SelectBox();
+      hBox.add(versionsBox);
+
+      // populate it with owned versions
+      const store = osparc.store.Store.getInstance();
+      store.getServicesDAGs(false)
+        .then(services => {
+          const myEmail = osparc.auth.Data.getInstance().getEmail();
+          const versions = osparc.utils.Services.getOwnedServices(services, this.__resourceData["key"], myEmail);
+          const selectBox = this.__serviceVersionSelector;
+          let selectedItem = null;
+          versions.reverse().forEach(version => {
+            selectedItem = new qx.ui.form.ListItem(version);
+            selectBox.add(selectedItem);
+            if (this.__resourceData["version"] === version) {
+              selectBox.setSelection([selectedItem]);
+            }
+          });
+        });
+
+      versionsBox.addListener("changeSelection", () => {
+        const selection = versionsBox.getSelection();
+        if (selection && selection.length) {
+          const serviceVersion = selection[0].getLabel();
+          if (serviceVersion !== this.__resourceData["version"]) {
+            store.getServicesDAGs(false)
+              .then(services => {
+                const serviceData = osparc.utils.Services.getFromObject(services, this.__resourceData["key"], serviceVersion);
+                console.log(serviceData);
+              });
+          }
+        }
+      }, this);
+
+      return hBox;
+    },
 
     __addPages: function() {
       [
@@ -87,6 +137,15 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       tabPage.add(widget, {
         flex: 1
       });
+
+      if (osparc.utils.Resources.isService(this.__resourceData)) {
+        this.addListener("changeSelection", e => {
+          const currentSelection = e.getData()[0];
+          if (currentSelection === tabPage) {
+            tabPage.addAt(this.__serviceVersionLayout, 0);
+          }
+        }, this);
+      }
 
       return tabPage;
     },
