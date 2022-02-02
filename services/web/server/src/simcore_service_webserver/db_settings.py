@@ -2,6 +2,7 @@ from aiohttp.web import Application
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from settings_library.postgres import PostgresSettings
 
+from ._constants import APP_SETTINGS_KEY
 from .db_config import CONFIG_SECTION_NAME
 
 
@@ -9,6 +10,10 @@ def assert_valid_config(app: Application):
     import json
 
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
+
+    cfg_enabled = cfg.pop("enabled")
+    if app_settings := app.get(APP_SETTINGS_KEY):
+        assert cfg_enabled == app_settings.WEBSERVER_DB is not None
 
     WEBSERVER_POSTGRES = PostgresSettings()
     got = {  # nosec
@@ -22,7 +27,6 @@ def assert_valid_config(app: Application):
             "port": WEBSERVER_POSTGRES.POSTGRES_PORT,
             "user": WEBSERVER_POSTGRES.POSTGRES_USER,
         },
-        "enabled": WEBSERVER_POSTGRES is not None,
     }
-    assert cfg == got, json.dumps(got) + "!=" + json.dumps(cfg)
+    assert cfg == got, json.dumps(got) + "!=" + json.dumps(cfg)  # nosec
     return cfg, PostgresSettings
