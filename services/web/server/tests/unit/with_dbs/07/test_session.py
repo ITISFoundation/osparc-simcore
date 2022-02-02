@@ -2,6 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
+from typing import Callable
+
 import pytest
 from aiohttp import web
 from aiohttp_session import get_session as get_aiohttp_session
@@ -22,16 +24,18 @@ def client(
     postgres_db,
     mock_orphaned_services,
     disable_static_webserver,
+    monkeypatch_setenv_from_app_config: Callable,
 ):
-
     extra_test_routes = web.RouteTableDef()
 
     @extra_test_routes.get("/session")
-    async def return_session(request: web.Request):
+    async def _return_session(request: web.Request):
         session = await get_aiohttp_session(request)
         return web.json_response(dict(session))
 
+    monkeypatch_setenv_from_app_config(app_cfg)
     app = create_application(app_cfg)
+
     app.add_routes(extra_test_routes)
 
     return loop.run_until_complete(
