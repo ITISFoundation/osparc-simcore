@@ -95,7 +95,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Information");
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
-      const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.servicecard.Large(resourceData) : new osparc.studycard.Large(resourceData, false);
+      const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.servicecard.Large(resourceData, false) : new osparc.studycard.Large(resourceData, false);
       infoCard.addListener("openAccessRights", () => this.setSelection([this.__permissionsPage]));
       infoCard.addListener("openClassifiers", () => this.setSelection([this.__classifiersPage]));
       infoCard.addListener("openQuality", () => this.setSelection([this.__qualityPage]));
@@ -193,7 +193,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     __getQualityPage: function() {
       const resourceData = this.__resourceData;
-      if ("quality" in resourceData) {
+      if (
+        "quality" in resourceData &&
+        (!osparc.utils.Resources.isService(resourceData) || osparc.data.model.Node.isComputational(resourceData))
+      ) {
         const title = this.tr("Quality");
         const icon = "@FontAwesome5Solid/star-half";
         const qualityEditor = new osparc.component.metadata.QualityEditor(resourceData);
