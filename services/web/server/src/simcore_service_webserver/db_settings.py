@@ -13,7 +13,7 @@ def assert_valid_config(app: Application):
 
     cfg_enabled = cfg.pop("enabled")
     if app_settings := app.get(APP_SETTINGS_KEY):
-        assert cfg_enabled == app_settings.WEBSERVER_DB is not None
+        assert cfg_enabled == (app_settings.WEBSERVER_DB is not None)  # nosec
 
     WEBSERVER_POSTGRES = PostgresSettings()
     got = {  # nosec
