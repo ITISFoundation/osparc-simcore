@@ -1,4 +1,9 @@
-# pylint:disable=redefined-outer-name,unused-argument,too-many-arguments
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+
 import asyncio
 import cgi
 import itertools
@@ -135,6 +140,7 @@ def client(
     postgres_with_template_db: aiopg.sa.engine.Engine,
     mock_orphaned_services: mock.Mock,
     mock_client_environment: Dict[str, str],
+    monkeypatch_setenv_from_app_config: Callable,
 ):
     cfg = deepcopy(app_config)
 
@@ -144,6 +150,7 @@ def client(
     cfg["director"]["enabled"] = True
 
     # fake config
+    monkeypatch_setenv_from_app_config(cfg)
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules

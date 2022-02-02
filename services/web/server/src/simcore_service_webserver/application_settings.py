@@ -353,7 +353,7 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
 
     def _set_enable(section_name, section):
         if not section.get("enabled"):
-            envs[section_name] = None
+            envs[section_name] = "null"
 
     if main := cfg.get("main"):
         envs["WEBSERVER_PORT"] = main.get("port")

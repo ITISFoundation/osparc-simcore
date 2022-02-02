@@ -129,19 +129,20 @@ def web_server(
 ) -> TestServer:
 
     print("+ web_server:")
-    monkeypatch_setenv_from_app_config(app_cfg)
+    cfg = deepcopy(app_cfg)
+    monkeypatch_setenv_from_app_config(cfg)
 
     # original APP
-    app = create_application(app_cfg)
+    app = create_application(cfg)
 
-    assert app[APP_CONFIG_KEY] == app_cfg
+    assert app[APP_CONFIG_KEY] == cfg
 
     # with patched email
     _path_mail(monkeypatch)
 
     disable_static_webserver(app)
 
-    server = loop.run_until_complete(aiohttp_server(app, port=app_cfg["main"]["port"]))
+    server = loop.run_until_complete(aiohttp_server(app, port=cfg["main"]["port"]))
 
     assert isinstance(postgres_db, sa.engine.Engine)
     pg_settings = dict(e.split("=") for e in app[APP_DB_ENGINE_KEY].dsn.split())

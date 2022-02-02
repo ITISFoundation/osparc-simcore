@@ -50,6 +50,7 @@ def client(
     mocked_director_v2_api,
     mock_orphaned_services,
     redis_client,
+    monkeypatch_setenv_from_app_config: Callable,
 ):
 
     # config app
@@ -63,6 +64,8 @@ def client(
     cfg["resource_manager"][
         "resource_deletion_timeout_seconds"
     ] = DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS  # reduce deletion delay
+
+    monkeypatch_setenv_from_app_config(cfg)
     app = create_safe_application(cfg)
 
     # setup app
