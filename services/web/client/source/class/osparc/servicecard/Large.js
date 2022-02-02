@@ -77,9 +77,7 @@ qx.Class.define("osparc.servicecard.Large", {
 
   members: {
     __isOwner: function() {
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-      orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
-      return osparc.component.permissions.Service.canAnyGroupWrite(this.getService()["access_rights"], orgIDs);
+      return osparc.utils.Services.isOwner(this.getService());
     },
 
     __rebuildLayout: function() {
