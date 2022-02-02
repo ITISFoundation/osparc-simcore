@@ -95,11 +95,21 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Information");
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
-      const studyDetails = new osparc.studycard.Large(resourceData, false);
-      studyDetails.addListener("openAccessRights", () => this.setSelection([this.__permissionsPage]));
-      studyDetails.addListener("openClassifiers", () => this.setSelection([this.__classifiersPage]));
-      studyDetails.addListener("openQuality", () => this.setSelection([this.__qualityPage]));
-      studyDetails.addListener("updateStudy", e => {
+      const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.servicecard.Large(resourceData) : new osparc.studycard.Large(resourceData, false);
+      infoCard.addListener("openAccessRights", () => this.setSelection([this.__permissionsPage]));
+      infoCard.addListener("openClassifiers", () => this.setSelection([this.__classifiersPage]));
+      infoCard.addListener("openQuality", () => this.setSelection([this.__qualityPage]));
+      infoCard.addListener("updateStudy", e => {
+        const updatedData = e.getData();
+        if (osparc.utils.Resources.isStudy(resourceData)) {
+          this.fireDataEvent("updateStudy", updatedData);
+        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+          this.fireDataEvent("updateTemplate", updatedData);
+        } else if (osparc.utils.Resources.isService(resourceData)) {
+          this.fireDataEvent("updateService", updatedData);
+        }
+      });
+      infoCard.addListener("updateTags", e => {
         const updatedData = e.getData();
         if (osparc.utils.Resources.isStudy(resourceData)) {
           this.fireDataEvent("updateStudy", updatedData);
@@ -107,15 +117,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           this.fireDataEvent("updateTemplate", updatedData);
         }
       });
-      studyDetails.addListener("updateTags", e => {
-        const updatedData = e.getData();
-        if (osparc.utils.Resources.isStudy(resourceData)) {
-          this.fireDataEvent("updateStudy", updatedData);
-        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-          this.fireDataEvent("updateTemplate", updatedData);
-        }
-      });
-      const page = this.__createPage(title, studyDetails, icon);
+      const page = this.__createPage(title, infoCard, icon);
       return page;
     },
 

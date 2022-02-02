@@ -326,6 +326,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         });
       }, this);
       return moreOptsButton;
-    },
+    }
   }
 });
