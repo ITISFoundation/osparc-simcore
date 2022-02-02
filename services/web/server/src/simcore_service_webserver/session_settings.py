@@ -17,3 +17,11 @@ class SessionSettings(BaseCustomSettings):
     @classmethod
     def truncate_session_key(cls, v):
         return v[:32]
+
+
+def assert_valid_config(secret_key_bytes):
+
+    WEBSERVER_SESSION = SessionSettings()
+    assert (  # nosec
+        WEBSERVER_SESSION.SESSION_SECRET_KEY.get_secret_value() == secret_key_bytes
+    )  # nosec

@@ -391,7 +391,7 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
             "garbage_collection_interval_seconds"
         )
 
-        if section2 := cfg.get("redis"):
+        if section2 := section.get("redis"):
             _set_enable("WEBSERVER_REDIS", section2)
             envs["REDIS_HOST"] = section2.get("host")
             envs["REDIS_PORT"] = section2.get("port")

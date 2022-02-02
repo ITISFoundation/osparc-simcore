@@ -25,7 +25,8 @@ from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from cryptography import fernet
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ._constants import APP_CONFIG_KEY, APP_SETTINGS_KEY
+from ._constants import APP_CONFIG_KEY
+from .session_settings import assert_valid_config
 
 logger = logging.getLogger(__file__)
 
@@ -51,9 +52,10 @@ def setup_session(app: web.Application):
     while len(secret_key_bytes) < 32:
         secret_key_bytes += secret_key_bytes
 
+    # -------------------------------
     # TODO: currently cfg and settings in place until former is dropped
-    if settings := app.get(APP_SETTINGS_KEY):
-        assert settings.WEBSERVER_SESSION_SECRET_KEY == secret_key_bytes[:32]  # nosec
+    assert_valid_config(secret_key_bytes[:32])  # nosec
+    # -------------------------------
 
     # EncryptedCookieStorage urlsafe_b64decode inside if passes bytes
     storage = EncryptedCookieStorage(
