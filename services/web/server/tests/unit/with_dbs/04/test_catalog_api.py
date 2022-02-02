@@ -3,11 +3,12 @@
 # pylint:disable=redefined-outer-name
 
 import re
-from copy import deepcopy
+from typing import Dict
 
 import pytest
 from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
+from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application import (
     create_safe_application,
     setup_catalog,
@@ -18,20 +19,30 @@ from simcore_service_webserver.application import (
     setup_security,
     setup_session,
 )
+from simcore_service_webserver.application_settings import convert_to_environ_vars
 from simcore_service_webserver.catalog_client import KCATALOG_ORIGIN
 from simcore_service_webserver.db_models import UserRole
 
 
+@pytest.fixture
+def mock_client_environment(app_cfg, monkeypatch) -> Dict[str, str]:
+    print("  - app_cfg=\n", json_dumps(app_cfg, indent=1))
+    envs = convert_to_environ_vars(app_cfg)
+
+    print("  - convert_to_environ_vars(app_cfg)=\n", json_dumps(envs, indent=1))
+
+    for env_key, env_value in envs.items():
+        monkeypatch.setenv(env_key, f"{env_value}")
+
+    return envs
+
+
 @pytest.fixture()
-def client(loop, app_cfg, aiohttp_client, postgres_db):
+def client(loop, app_cfg, aiohttp_client, postgres_db, mock_client_environment):
     # fixture: minimal client with catalog-subsystem enabled and
     #   only pertinent modules
     #
     # - Mocks calls to actual API
-
-    cfg = deepcopy(app_cfg)
-
-    cfg["catalog"]["enabled"] = True
 
     app = create_safe_application(app_cfg)
 
