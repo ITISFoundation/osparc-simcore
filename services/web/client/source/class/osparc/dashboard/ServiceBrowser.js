@@ -165,19 +165,9 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         position: "bottom-right"
       });
 
-      const moreInfoButton = this._getMoreInfoMenuButton(studyData);
+      const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
       if (moreInfoButton) {
         menu.add(moreInfoButton);
-      }
-
-      const permissionsButton = this.__getPermissionsMenuButton(studyData);
-      if (permissionsButton) {
-        menu.add(permissionsButton);
-      }
-
-      if (osparc.data.model.Node.isComputational(studyData) && "quality" in studyData) {
-        const qualityButton = this._getQualityMenuButton(studyData);
-        menu.add(qualityButton);
       }
 
       return menu;

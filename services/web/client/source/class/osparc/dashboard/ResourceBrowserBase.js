@@ -18,9 +18,10 @@
 /**
  * Widget (base class) that shows some resources in the Dashboard.
  *
- * It used by the three tabbed elements in the main view:
+ * It used by the following tabbed elements in the main view:
  * - Study Browser
- * - Explore Browser
+ * - Template Browser
+ * - Service Browser
  * - Data Browser
  */
 
@@ -264,91 +265,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
     },
 
-    _getMoreOptionsMenuButton: function(studyData) {
-      const moreOptsButton = new qx.ui.menu.Button(this.tr("More options"));
-      osparc.utils.Utils.setIdToWidget(moreOptsButton, "moreInfoBtn");
-      moreOptsButton.addListener("execute", () => {
-        const moreOpts = new osparc.dashboard.ResourceMoreOptions(studyData);
-        const title = this.tr("More options");
-        osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 700);
-        moreOpts.addListener("updateStudy", e => {
-          const updatedStudyData = e.getData();
-          this._resetStudyItem(updatedStudyData);
-        });
-        moreOpts.addListener("updateTemplate", e => {
-          const updatedTemplateData = e.getData();
-          this._resetTemplateItem(updatedTemplateData);
-        });
-        moreOpts.addListener("updateService", e => {
-          const updatedServiceData = e.getData();
-          this._resetServiceItem(updatedServiceData);
-        });
-      }, this);
-      return moreOptsButton;
-    },
-
-    _getMoreInfoMenuButton: function(resourceData) {
-      const moreInfoButton = new qx.ui.menu.Button(this.tr("More Info"));
-      osparc.utils.Utils.setIdToWidget(moreInfoButton, "moreInfoBtn");
-      moreInfoButton.addListener("execute", () => {
-        if (osparc.utils.Resources.isService(resourceData)) {
-          this._openServiceDetails(resourceData);
-        } else {
-          this.__openStudyDetails(resourceData);
-        }
-      }, this);
-      return moreInfoButton;
-    },
-
-    _getQualityMenuButton: function(resourceData) {
-      const qualityButton = new qx.ui.menu.Button(this.tr("Quality"));
-      qualityButton.addListener("execute", () => {
-        this.__openQualityEditor(resourceData);
-      }, this);
-      return qualityButton;
-    },
-
-    __openStudyDetails: function(resourceData) {
-      const card = new osparc.studycard.Large(resourceData);
-      const title = osparc.utils.Resources.isTemplate(resourceData) ? this.tr("Template Details") : this.tr("Study Details");
-      const width = 500;
-      const height = 500;
-      osparc.ui.window.Window.popUpInWindow(card, title, width, height);
-      card.addListener("updateStudy", e => {
-        const updatedData = e.getData();
-        if (osparc.utils.Resources.isTemplate(resourceData)) {
-          this._resetTemplateItem(updatedData);
-        } else {
-          this._resetStudyItem(updatedData);
-        }
-      });
-      card.addListener("updateTags", () => {
-        if (osparc.utils.Resources.isTemplate(resourceData)) {
-          this._resetTemplatesList(osparc.store.Store.getInstance().getTemplates());
-        } else {
-          this._resetStudiesList(osparc.store.Store.getInstance().getStudies());
-        }
-      });
-    },
-
-    _openServiceDetails: function(serviceData) {
-      throw new Error("Abstract method called!");
-    },
-
-    __openQualityEditor: function(resourceData) {
-      const qualityEditor = osparc.studycard.Utils.openQuality(resourceData);
-      qualityEditor.addListener("updateQuality", e => {
-        const updatedResourceData = e.getData();
-        if (osparc.utils.Resources.isStudy(resourceData)) {
-          this._resetStudyItem(updatedResourceData);
-        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-          this._resetTemplateItem(updatedResourceData);
-        } else if (osparc.utils.Resources.isService(resourceData)) {
-          this._resetServiceItem(updatedResourceData);
-        }
-      });
-    },
-
     _createResourceItem: function(resourceData) {
       const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
 
@@ -387,6 +303,29 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _resetTemplatesList: function() {
       throw new Error("Abstract method called!");
-    }
+    },
+
+    _getMoreOptionsMenuButton: function(resourceData) {
+      const moreOptsButton = new qx.ui.menu.Button(this.tr("More options"));
+      osparc.utils.Utils.setIdToWidget(moreOptsButton, "moreInfoBtn");
+      moreOptsButton.addListener("execute", () => {
+        const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
+        const title = this.tr("More options");
+        osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 700);
+        moreOpts.addListener("updateStudy", e => {
+          const updatedStudyData = e.getData();
+          this._resetStudyItem(updatedStudyData);
+        });
+        moreOpts.addListener("updateTemplate", e => {
+          const updatedTemplateData = e.getData();
+          this._resetTemplateItem(updatedTemplateData);
+        });
+        moreOpts.addListener("updateService", e => {
+          const updatedServiceData = e.getData();
+          this._resetServiceItem(updatedServiceData);
+        });
+      }, this);
+      return moreOptsButton;
+    },
   }
 });
