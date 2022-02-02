@@ -24,6 +24,7 @@ import sqlalchemy.engine as sa_engine
 import yaml
 from aiopg.sa.result import RowProxy
 from asgi_lifespan import LifespanManager
+from cryptography.fernet import Fernet
 from dotenv import dotenv_values
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -115,7 +116,7 @@ class RWApiKeysRepository(BaseRepository):
 def environment() -> Dict:
     env = {
         "WEBSERVER_HOST": "webserver",
-        "WEBSERVER_SESSION_SECRET_KEY": "REPLACE-ME-with-a-key-of-at-least-length-44-",
+        "WEBSERVER_SESSION_SECRET_KEY": Fernet.generate_key().decode("utf-8"),
         "POSTGRES_HOST": "127.0.0.1",
         "POSTGRES_USER": "test",
         "POSTGRES_PASSWORD": "test",

@@ -304,9 +304,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
         "rest": {"version": app_settings.API_VTAG, "enabled": True},
         "projects": {"enabled": True},
         "session": {
-            "secret_key": app_settings.WEBSERVER_SESSION.SESSION_SECRET_KEY.get_secret_value().decode(
-                "utf-8"
-            )
+            "secret_key": app_settings.WEBSERVER_SESSION.SESSION_SECRET_KEY.get_secret_value()
         },
         "activity": {
             "enabled": app_settings.WEBSERVER_ACTIVITY is not None,

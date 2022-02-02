@@ -50,7 +50,7 @@ rest:
   enabled: true
   version: v0
 session:
-  secret_key: "TODO: Replace with a key of at least length 32"
+  secret_key: "REPLACE_ME_with_result__Fernet_generate_key="
 smtp:
   host: mail.foo.com
   password: null

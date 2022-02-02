@@ -54,7 +54,7 @@ def setup_session(app: web.Application):
 
     # -------------------------------
     # TODO: currently cfg and settings in place until former is dropped
-    assert_valid_config(secret_key_bytes[:32])  # nosec
+    assert_valid_config(secret_key_bytes.decode("utf-8"))  # nosec
     # -------------------------------
 
     # EncryptedCookieStorage urlsafe_b64decode inside if passes bytes
