@@ -17,9 +17,9 @@ def assert_valid_config(app: Application):
     # TODO: DEPRECATE: "endpoint": f"{WEBSERVER_POSTGRES.POSTGRES_HOST}:{WEBSERVER_POSTGRES.POSTGRES_PORT}",
     # NOTE: found inconsistencies between values passed as host and the entrypoint.
     # Remove and use instead WEBSERVER_POSTGRES.dsn
-    cfg.get("postgres", {}).pop("entrypoint", None)
+    cfg.get("postgres", {}).pop("endpoint", None)
 
-    WEBSERVER_POSTGRES = PostgresSettings()
+    WEBSERVER_POSTGRES = PostgresSettings.create_from_envs()
     got = {  # nosec
         "postgres": {
             "database": WEBSERVER_POSTGRES.POSTGRES_DB,
