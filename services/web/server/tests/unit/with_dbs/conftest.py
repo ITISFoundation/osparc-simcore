@@ -32,12 +32,10 @@ from aiohttp.test_utils import TestClient, TestServer
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.common_aiopg_utils import DSN
-from servicelib.json_serialization import json_dumps
 from simcore_service_webserver import rest
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application__schema import app_schema as app_schema
-from simcore_service_webserver.application_settings import convert_to_environ_vars
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
@@ -127,16 +125,11 @@ def web_server(
     postgres_db,
     aiohttp_server,
     disable_static_webserver,
+    monkeypatch_setenv_from_app_config: Callable,
 ) -> TestServer:
 
     print("+ web_server:")
-    print("  - app_config=\n", json_dumps(app_cfg, indent=1))
-
-    envs = convert_to_environ_vars(app_cfg)
-    print("  - convert_to_environ_vars(app_cfg)=\n", json_dumps(envs, indent=1))
-
-    for env_key, env_value in envs.items():
-        monkeypatch.setenv(env_key, f"{env_value}")
+    monkeypatch_setenv_from_app_config(app_cfg)
 
     # original APP
     app = create_application(app_cfg)

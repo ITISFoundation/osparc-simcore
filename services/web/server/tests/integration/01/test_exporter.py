@@ -134,6 +134,7 @@ def client(
     app_config: Dict,
     postgres_with_template_db: aiopg.sa.engine.Engine,
     mock_orphaned_services: mock.Mock,
+    mock_client_environment: Dict[str, str],
 ):
     cfg = deepcopy(app_config)
 
