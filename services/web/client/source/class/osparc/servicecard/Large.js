@@ -21,8 +21,9 @@ qx.Class.define("osparc.servicecard.Large", {
 
   /**
     * @param serviceData {Object} Serialized Service Object
+    * @param openOptions {Boolean} open edit options in new window or fire event
     */
-  construct: function(serviceData) {
+  construct: function(serviceData, openOptions = true) {
     this.base(arguments);
 
     this.set({
@@ -33,6 +34,10 @@ qx.Class.define("osparc.servicecard.Large", {
 
     this.setService(serviceData);
 
+    if (openOptions !== undefined) {
+      this.setOpenOptions(openOptions);
+    }
+
     this.addListenerOnce("appear", () => {
       this.__rebuildLayout();
     }, this);
@@ -42,6 +47,9 @@ qx.Class.define("osparc.servicecard.Large", {
   },
 
   events: {
+    "openAccessRights": "qx.event.type.Event",
+    "openClassifiers": "qx.event.type.Event",
+    "openQuality": "qx.event.type.Event",
     "updateService": "qx.event.type.Data"
   },
 
@@ -51,6 +59,12 @@ qx.Class.define("osparc.servicecard.Large", {
       init: null,
       nullable: false,
       apply: "__rebuildLayout"
+    },
+
+    openOptions: {
+      check: "Boolean",
+      init: true,
+      nullable: false
     }
   },
 
@@ -154,7 +168,7 @@ qx.Class.define("osparc.servicecard.Large", {
         view: this.__createAccessRights(),
         action: {
           button: osparc.utils.Utils.getViewButton(),
-          callback: this.__openAccessRights,
+          callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
           ctx: this
         }
       }];
@@ -165,7 +179,7 @@ qx.Class.define("osparc.servicecard.Large", {
           view: this.__createClassifiers(),
           action: {
             button: osparc.utils.Utils.getViewButton(),
-            callback: this.__openClassifiers,
+            callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
             ctx: this
           }
         });
@@ -177,7 +191,7 @@ qx.Class.define("osparc.servicecard.Large", {
           view: this.__createQuality(),
           action: {
             button: osparc.utils.Utils.getViewButton(),
-            callback: this.__openQuality,
+            callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
             ctx: this
           }
         });

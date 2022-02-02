@@ -39,7 +39,7 @@ qx.Class.define("osparc.studycard.Large", {
       this.setStudy(studyModel);
     }
 
-    if (study !== undefined) {
+    if (openOptions !== undefined) {
       this.setOpenOptions(openOptions);
     }
 

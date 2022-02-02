@@ -105,7 +105,11 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
           this.fireDataEvent("updateStudy", updatedData);
         } else if (osparc.utils.Resources.isTemplate(resourceData)) {
           this.fireDataEvent("updateTemplate", updatedData);
-        } else if (osparc.utils.Resources.isService(resourceData)) {
+        }
+      });
+      infoCard.addListener("updateService", e => {
+        const updatedData = e.getData();
+        if (osparc.utils.Resources.isService(resourceData)) {
           this.fireDataEvent("updateService", updatedData);
         }
       });
@@ -122,9 +126,16 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     },
 
     __getPermissionsPage: function() {
+      const resourceData = this.__resourceData;
+      if (osparc.utils.Resources.isTemplate(resourceData) && !osparc.data.model.Study.isOwner(resourceData)) {
+        return null;
+      }
+      if (osparc.utils.Resources.isService(resourceData) && !osparc.data.model.Study.isOwner(resourceData)) {
+        return null;
+      }
+
       const title = this.tr("Sharing");
       const icon = "@FontAwesome5Solid/share-alt";
-      const resourceData = this.__resourceData;
       const permissionsView = new osparc.component.permissions.Study(resourceData);
       permissionsView.getChildControl("study-link").show();
       permissionsView.addListener("updateAccessRights", e => {
