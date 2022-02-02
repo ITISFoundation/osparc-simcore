@@ -384,7 +384,6 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
         _set_enable("WEBSERVER_DB", section)
 
     if section := cfg.get("resource_manager"):
-        _set_enable("WEBSERVER_REDIS", section)
         _set_enable("WEBSERVER_RESOURCE_MANAGER", section)
 
         envs["WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS"] = section.get(

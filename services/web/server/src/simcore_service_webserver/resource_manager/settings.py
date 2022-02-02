@@ -4,6 +4,8 @@
     - settings
 """
 
+from copy import deepcopy
+
 from aiohttp.web import Application
 from pydantic import Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
@@ -48,23 +50,25 @@ def assert_valid_config(app: Application):
     WEBSERVER_RESOURCE_MANAGER = ResourceManagerSettings()
     WEBSERVER_REDIS = RedisSettings()
 
-    cfg_enabled = cfg.pop("enabled")
+    cfg_test = deepcopy(cfg)
+
+    cfg_enabled = cfg_test.pop("enabled", None)
+    cfg_redis_enabled = cfg_test.get("redis", {}).pop("enabled", None)
+
     if app_settings := app.get(APP_SETTINGS_KEY):
         if app_settings.WEBSERVER_REDIS:
             assert app_settings.WEBSERVER_REDIS == WEBSERVER_REDIS
 
         if app_settings.WEBSERVER_RESOURCE_MANAGER:
             assert app_settings.WEBSERVER_REDIS == WEBSERVER_REDIS
-        assert (
-            cfg_enabled == app_settings.WEBSERVER_REDIS is not None
-            and app_settings.WEBSERVER_RESOURCE_MANAGER is not None
-        )
 
-    assert cfg == {  # nosec
+        assert cfg_enabled == (app_settings.WEBSERVER_RESOURCE_MANAGER is not None)
+        assert cfg_redis_enabled == (app_settings.WEBSERVER_REDIS is not None)
+
+    assert cfg_test == {  # nosec
         "resource_deletion_timeout_seconds": WEBSERVER_RESOURCE_MANAGER.RESOURCE_MANAGER_RESOURCE_TTL_S,
         "garbage_collection_interval_seconds": WEBSERVER_RESOURCE_MANAGER.RESOURCE_MANAGER_GARBAGE_COLLECTION_INTERVAL_S,
         "redis": {
-            "enabled": WEBSERVER_REDIS is not None,
             "host": WEBSERVER_REDIS.REDIS_HOST,
             "port": WEBSERVER_REDIS.REDIS_PORT,
         },
