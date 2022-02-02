@@ -172,15 +172,12 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
                     # Declaring queue
                     queue = await channel.declare_queue(
                         f"webserver_{exchange_name}_{socket.gethostname()}_{os.getpid()}",
-                        exclusive=True,
                         arguments={"x-message-ttl": 60000},
                     )
                     # Binding the queue to the exchange
                     await queue.bind(exchange)
                     # process
-                    async with queue.iterator(
-                        exclusive=True, **consumer_kwargs
-                    ) as queue_iter:
+                    async with queue.iterator(**consumer_kwargs) as queue_iter:
                         async for message in queue_iter:
                             log.debug(
                                 "Received message from exchange %s", exchange_name
