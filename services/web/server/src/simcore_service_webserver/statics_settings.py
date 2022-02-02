@@ -120,9 +120,12 @@ class StaticWebserverModuleSettings(BaseCustomSettings):
         description=(
             "if enabled it will try to fetch and cache the 3 product index webpages"
         ),
+        env=["STATIC_WEBSERVER_ENABLED", "WEBSERVER_STATIC_MODULE_ENABLED"],  # legacy
     )
 
     # TODO: host/port
     STATIC_WEBSERVER_URL: AnyHttpUrl = Field(
-        "http://static-webserver:8000", description="url fort static content"
+        "http://static-webserver:8000",
+        description="url fort static content",
+        env=["STATIC_WEBSERVER_URL", "WEBSERVER_STATIC_WEBSERVER_URL"],  # legacy
     )
