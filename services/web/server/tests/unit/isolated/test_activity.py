@@ -4,6 +4,7 @@
 
 import importlib
 from pathlib import Path
+from typing import Dict
 
 import pytest
 import yaml
@@ -11,8 +12,10 @@ from aiohttp import web
 from aiohttp.client_exceptions import ClientConnectionError
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.activity import handlers
 from simcore_service_webserver.activity.module_setup import setup_activity
+from simcore_service_webserver.application_settings import convert_to_environ_vars
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
@@ -70,7 +73,23 @@ def app_config(fake_data_dir: Path, osparc_simcore_root_dir: Path):
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_config, mock_orphaned_services):
+def mock_client_environment(app_config, monkeypatch) -> Dict[str, str]:
+    print("  - app_config=\n", json_dumps(app_config, indent=1))
+    envs = convert_to_environ_vars(app_config)
+
+    print("  - convert_to_environ_vars(app_cfg)=\n", json_dumps(envs, indent=1))
+
+    for env_key, env_value in envs.items():
+        monkeypatch.setenv(env_key, f"{env_value}")
+
+    return envs
+
+
+@pytest.fixture
+def client(
+    loop, aiohttp_client, app_config, mock_orphaned_services, mock_client_environment
+):
+
     app = create_safe_application(app_config)
 
     setup_session(app)

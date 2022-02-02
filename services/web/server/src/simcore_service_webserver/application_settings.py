@@ -346,6 +346,9 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
 
 
 def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
+    # NOTE: maily used for testing traferet vs settings_library
+    # pylint:disable=too-many-branches
+    # pylint:disable=too-many-statements
     envs = {}
 
     def _set_enable(section_name, section):
