@@ -6,10 +6,12 @@ from .db_config import CONFIG_SECTION_NAME
 
 
 def assert_valid_config(app: Application):
+    import json
+
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
     WEBSERVER_POSTGRES = PostgresSettings()
-    assert cfg == {  # nosec
+    got = {  # nosec
         "postgres": {
             "database": WEBSERVER_POSTGRES.POSTGRES_DB,
             "endpoint": f"{WEBSERVER_POSTGRES.POSTGRES_HOST}:{WEBSERVER_POSTGRES.POSTGRES_PORT}",
@@ -22,4 +24,5 @@ def assert_valid_config(app: Application):
         },
         "enabled": WEBSERVER_POSTGRES is not None,
     }
+    assert cfg == got, f"{json.dumps(got, indent=1)=}\n{json.dumps(cfg, indent=1)=}"
     return cfg, PostgresSettings
