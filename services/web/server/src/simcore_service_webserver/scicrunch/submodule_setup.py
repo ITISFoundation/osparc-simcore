@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 
 def setup_scicrunch_submodule(app: web.Application):
     try:
-        # TODO: tmp
+        # TODO: assert_valid_config is tmp
         settings = assert_valid_config(app)
-        #
+
         api = SciCrunch.acquire_instance(app, settings)
         assert api == SciCrunch.get_instance(app)  # nosec
 

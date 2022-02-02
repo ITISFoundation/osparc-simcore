@@ -25,7 +25,7 @@ from simcore_service_webserver.cli import parse, setup_parser
 def mock_env_makefile(monkeypatch):
     """envvars produced @Makefile (export)"""
 
-    # TODO: make dump-envs shall produce a file that we load here
+    # TODO: add Makefile recipe 'make dump-envs' to produce the file we load here
     monkeypatch.setenv("API_SERVER_API_VERSION", "0.3.0")
     monkeypatch.setenv("BUILD_DATE", "2022-01-14T21:28:15Z")
     monkeypatch.setenv("CATALOG_API_VERSION", "0.3.2")
@@ -51,11 +51,13 @@ def mock_env_makefile(monkeypatch):
 
 @pytest.fixture
 def mock_env_Dockerfile_build(monkeypatch):
-    # docker run -it --hostname "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}" local/webserver:production printenv
+    # NOTE: obtained using
+    #    docker run -it --hostname "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}" local/webserver:production printenv
+    #
     PRINTENV_OUTPUT = """
         GPG_KEY=123456789123456789
         HOME=/home/scu
-        HOSTNAME=osparc-master-02-master-simcore_master_webserver-1
+        HOSTNAME=osparc-master-55-master-simcore_master_webserver-1
         IS_CONTAINER_CONTEXT=Yes
         LANG=C.UTF-8
         PATH=/home/scu/.venv/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -190,9 +192,6 @@ def test_app_settings_with_prod_config(
     #
     # This test has been used to guide the design of new settings
     #
-
-    # NOTE: new settings truncate to 32
-    app_config["session"]["secret_key"] = app_config["session"]["secret_key"][:32]
 
     assert app_config == convert_to_app_config(app_settings)
 
