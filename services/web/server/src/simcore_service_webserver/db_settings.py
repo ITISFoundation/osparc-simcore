@@ -24,5 +24,5 @@ def assert_valid_config(app: Application):
         },
         "enabled": WEBSERVER_POSTGRES is not None,
     }
-    assert cfg == got, f"{json.dumps(got, indent=1)=}\n{json.dumps(cfg, indent=1)=}"
+    assert cfg == got, json.dumps(got) + "!=" + json.dumps(cfg)
     return cfg, PostgresSettings
