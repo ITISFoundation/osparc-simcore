@@ -21,10 +21,18 @@ def get_storage(app: web.Application):
 
 class LoginSettings(BaseCustomSettings):
     LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool = Field(
-        ..., env=["WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED"]
+        ...,
+        env=[
+            "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED",
+            "WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED",
+        ],
     )
     LOGIN_REGISTRATION_INVITATION_REQUIRED: bool = Field(
-        ..., env=["WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED"]
+        ...,
+        env=[
+            "LOGIN_REGISTRATION_INVITATION_REQUIRED",
+            "WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED",
+        ],
     )
 
 
