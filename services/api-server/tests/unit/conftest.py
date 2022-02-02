@@ -115,7 +115,7 @@ class RWApiKeysRepository(BaseRepository):
 def environment() -> Dict:
     env = {
         "WEBSERVER_HOST": "webserver",
-        "WEBSERVER_SESSION_SECRET_KEY": "REPLACE ME with a key of at least length 32.",
+        "WEBSERVER_SESSION_SECRET_KEY": "REPLACE-ME-with-a-key-of-at-least-length-44-",
         "POSTGRES_HOST": "127.0.0.1",
         "POSTGRES_USER": "test",
         "POSTGRES_PASSWORD": "test",
