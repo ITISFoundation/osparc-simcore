@@ -305,6 +305,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
+    _createStudyFromService: function() {
+      throw new Error("Abstract method called!");
+    },
+
     _getMoreOptionsMenuButton: function(resourceData) {
       const moreOptsButton = new qx.ui.menu.Button(this.tr("More options"));
       osparc.utils.Utils.setIdToWidget(moreOptsButton, "moreInfoBtn");
@@ -323,6 +327,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         moreOpts.addListener("updateService", e => {
           const updatedServiceData = e.getData();
           this._resetServiceItem(updatedServiceData);
+        });
+        moreOpts.addListener("openService", e => {
+          const openServiceData = e.getData();
+          this._createStudyFromService(openServiceData["key"], openServiceData["version"]);
         });
       }, this);
       return moreOptsButton;

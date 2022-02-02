@@ -93,7 +93,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       return servicesLayout;
     },
 
-    __createStudyFromService: function(key, version) {
+    _createStudyFromService: function(key, version) {
       if (!this._checkLoggedIn()) {
         return;
       }
@@ -175,7 +175,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
 
     __itemClicked: function(item) {
       const key = item.getUuid();
-      this.__createStudyFromService(key, null);
+      this._createStudyFromService(key, null);
       this.resetSelection();
     },
 

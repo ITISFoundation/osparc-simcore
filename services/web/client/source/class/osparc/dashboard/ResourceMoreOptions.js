@@ -39,7 +39,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     "updateStudy": "qx.event.type.Data",
     "updateTemplate": "qx.event.type.Data",
     "updateService": "qx.event.type.Data",
-    "updateTemplates": "qx.event.type.Event"
+    "updateTemplates": "qx.event.type.Event",
+    "openService": "qx.event.type.Data"
   },
 
   members: {
@@ -108,6 +109,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         this.remove(this.getChildren()[i]);
       }
 
+      // add Open service button
       [
         this.__getInfoPage,
         this.__getPermissionsPage,
@@ -203,6 +205,21 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         }
       });
       const page = this.__createPage(title, infoCard, icon, id);
+
+      if (osparc.utils.Resources.isService(resourceData)) {
+        const openServiceButton = new qx.ui.form.Button(this.tr("Open")).set({
+          allowGrowX: false,
+          alignX: "right"
+        });
+        openServiceButton.addListener("execute", () => {
+          this.fireDataEvent("openService", {
+            key: resourceData["key"],
+            version: resourceData["version"]
+          });
+        });
+        page.add(openServiceButton);
+      }
+
       return page;
     },
 
