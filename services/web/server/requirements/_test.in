@@ -31,6 +31,8 @@ openapi-spec-validator
 python-dotenv
 redis
 tenacity
+aioboto3
+minio
 
 # tools
 codecov

@@ -4,12 +4,19 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
+aioboto3==9.3.1
+    # via -r requirements/_test.in
+aiobotocore==2.1.0
+    # via aioboto3
 aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   aiobotocore
     #   aioresponses
     #   pytest-aiohttp
+aioitertools==0.8.0
+    # via aiobotocore
 aioresponses==0.7.2
     # via -r requirements/_test.in
 alembic==1.7.5
@@ -31,8 +38,17 @@ attrs==20.3.0
     #   pytest-docker
 bcrypt==3.2.0
     # via paramiko
+boto3==1.20.24
+    # via aiobotocore
+botocore==1.23.24
+    # via
+    #   aiobotocore
+    #   boto3
+    #   s3transfer
 certifi==2021.10.8
-    # via requests
+    # via
+    #   minio
+    #   requests
 cffi==1.14.5
     # via
     #   -c requirements/_base.txt
@@ -106,6 +122,10 @@ isodate==0.6.1
     #   openapi-schema-validator
 isort==5.10.1
     # via pylint
+jmespath==0.10.0
+    # via
+    #   boto3
+    #   botocore
 jsonschema==3.2.0
     # via
     #   -c requirements/_base.txt
@@ -127,6 +147,10 @@ markupsafe==1.1.1
     #   mako
 mccabe==0.6.1
     # via pylint
+minio==7.0.4
+    # via
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   -r requirements/_test.in
 multidict==5.1.0
     # via
     #   -c requirements/_base.txt
@@ -201,7 +225,9 @@ pytest-runner==5.3.1
 pytest-sugar==0.9.4
     # via -r requirements/_test.in
 python-dateutil==2.8.2
-    # via faker
+    # via
+    #   botocore
+    #   faker
 python-dotenv==0.19.2
     # via
     #   -r requirements/_test.in
@@ -220,6 +246,8 @@ requests==2.26.0
     #   coveralls
     #   docker
     #   docker-compose
+s3transfer==0.5.1
+    # via boto3
 six==1.16.0
     # via
     #   -c requirements/_base.txt
@@ -252,7 +280,9 @@ toml==0.10.2
     #   pylint
     #   pytest
 tomli==1.2.2
-    # via coverage
+    # via
+    #   -c requirements/../../../../requirements/constraints.txt
+    #   coverage
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
@@ -262,6 +292,8 @@ typing-extensions==3.10.0.2
 urllib3==1.26.7
     # via
     #   -c requirements/../../../../requirements/constraints.txt
+    #   botocore
+    #   minio
     #   requests
 websocket-client==0.59.0
     # via
@@ -270,7 +302,9 @@ websocket-client==0.59.0
 websockets==10.1
     # via -r requirements/_test.in
 wrapt==1.13.3
-    # via astroid
+    # via
+    #   aiobotocore
+    #   astroid
 yarl==1.5.1
     # via
     #   -c requirements/_base.txt
