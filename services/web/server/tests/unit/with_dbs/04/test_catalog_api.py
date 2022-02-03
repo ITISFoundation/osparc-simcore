@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import re
-from copy import deepcopy
+from typing import Callable
 
 import pytest
 from aiohttp import web
@@ -23,16 +23,19 @@ from simcore_service_webserver.db_models import UserRole
 
 
 @pytest.fixture()
-def client(loop, app_cfg, aiohttp_client, postgres_db):
+def client(
+    loop,
+    app_cfg,
+    aiohttp_client,
+    postgres_db,
+    monkeypatch_setenv_from_app_config: Callable,
+):
     # fixture: minimal client with catalog-subsystem enabled and
     #   only pertinent modules
     #
     # - Mocks calls to actual API
 
-    cfg = deepcopy(app_cfg)
-
-    cfg["catalog"]["enabled"] = True
-
+    monkeypatch_setenv_from_app_config(app_cfg)
     app = create_safe_application(app_cfg)
 
     # patch all

@@ -15,7 +15,6 @@ from yarl import URL
 
 from ._resolver import ResolvedItem, resolve_rrid
 from ._rest import ResourceHit, autocomplete_by_name, get_resource_fields
-from ._settings import SciCrunchSettings
 from .errors import (
     InvalidRRID,
     ScicrunchAPIError,
@@ -24,6 +23,7 @@ from .errors import (
     map_to_scicrunch_error,
 )
 from .models import ResearchResource, normalize_rrid_tags
+from .settings import SciCrunchSettings
 
 logger = logging.getLogger(__name__)
 

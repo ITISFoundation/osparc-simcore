@@ -12,8 +12,7 @@ import asyncio
 import json
 from copy import deepcopy
 from pathlib import Path
-from pprint import pprint
-from typing import Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 from uuid import uuid4
 
 import pytest
@@ -57,6 +56,7 @@ def client(
     mock_orphaned_services,
     aiohttp_client,
     app_config,  # waits until swarm with *_services are up
+    monkeypatch_setenv_from_app_config: Callable,
 ):
     assert app_config["rest"]["version"] == API_VERSION
 
@@ -65,8 +65,7 @@ def client(
     app_config["storage"]["enabled"] = False
     app_config["computation"]["enabled"] = False
 
-    pprint(app_config)
-
+    monkeypatch_setenv_from_app_config(app_config)
     app = create_safe_application(app_config)
 
     setup_db(app)

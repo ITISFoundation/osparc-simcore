@@ -9,11 +9,11 @@ from aiopg.sa.engine import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from servicelib.pools import non_blocking_process_pool_executor
 from simcore_postgres_database.models.scicrunch_resources import scicrunch_resources
-from simcore_service_webserver.catalog_client import get_service
-from simcore_service_webserver.projects.projects_api import get_project_for_user
-from simcore_service_webserver.projects.projects_exceptions import ProjectsException
-from simcore_service_webserver.scicrunch.db import ResearchResourceRepository
 
+from ...catalog_client import get_service
+from ...projects.projects_api import get_project_for_user
+from ...projects.projects_exceptions import ProjectsException
+from ...scicrunch.db import ResearchResourceRepository
 from ..exceptions import ExporterException
 from .base_formatter import BaseFormatter
 from .formatter_v1 import FormatterV1

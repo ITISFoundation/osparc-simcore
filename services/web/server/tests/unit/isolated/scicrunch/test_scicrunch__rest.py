@@ -26,8 +26,10 @@ from simcore_service_webserver.scicrunch._rest import (
     get_all_versions,
     get_resource_fields,
 )
-from simcore_service_webserver.scicrunch._settings import SCICRUNCH_DEFAULT_URL
-from simcore_service_webserver.scicrunch.submodule_setup import SciCrunchSettings
+from simcore_service_webserver.scicrunch.settings import (
+    SCICRUNCH_DEFAULT_URL,
+    SciCrunchSettings,
+)
 
 from ._citations import NOT_TOOL_CITATIONS, TOOL_CITATIONS
 

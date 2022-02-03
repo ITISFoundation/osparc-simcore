@@ -4,6 +4,7 @@
 
 import importlib
 from pathlib import Path
+from typing import Callable
 
 import pytest
 import yaml
@@ -70,7 +71,15 @@ def app_config(fake_data_dir: Path, osparc_simcore_root_dir: Path):
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_config, mock_orphaned_services):
+def client(
+    loop,
+    aiohttp_client,
+    app_config,
+    mock_orphaned_services,
+    monkeypatch_setenv_from_app_config: Callable,
+):
+    monkeypatch_setenv_from_app_config(app_config)
+
     app = create_safe_application(app_config)
 
     setup_session(app)
