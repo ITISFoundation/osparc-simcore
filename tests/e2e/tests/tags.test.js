@@ -106,6 +106,7 @@ describe('tags testing', () => {
         hidden: true
       }
     );
+    await utils.sleep(1000);
     // Assign to study
     await waitAndClick(page, '[qxclass="osparc.dashboard.GridButtonItem"] [osparc-test-id="studyItemMenuButton"]');
     await waitAndClick(page, '[osparc-test-id="moreInfoBtn"]');
