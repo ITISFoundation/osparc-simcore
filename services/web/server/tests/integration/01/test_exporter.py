@@ -391,10 +391,11 @@ async def import_study_from_file(client, file_path: Path) -> str:
 )
 async def test_import_export_import_duplicate(
     client: TestClient,
-    push_services_to_registry: None,
+    login_user_and_import_study: Callable,
     aiopg_engine: aiopg.sa.engine.Engine,
-    redis_client: aioredis.Redis,
     export_version: Path,
+    push_services_to_registry: None,
+    redis_client: aioredis.Redis,
     simcore_services_ready: None,
     grant_access_rights: None,
 ):
