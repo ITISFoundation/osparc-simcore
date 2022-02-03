@@ -150,7 +150,7 @@ async def _connect_with_gateway_and_create_cluster(
         assert client  # nosec
         return DaskSubSystem(
             client=client,
-            scheduler_id=client.scheduler_info["id"],  # type: ignore
+            scheduler_id=client.scheduler_info()["id"],
             gateway=gateway,
             gateway_cluster=cluster,
         )
