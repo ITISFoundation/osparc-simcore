@@ -5,7 +5,6 @@ import itertools
 import json
 import logging
 import operator
-import sys
 import tempfile
 from collections import deque
 from contextlib import contextmanager
@@ -23,7 +22,6 @@ from typing import (
     Set,
     Tuple,
 )
-from unittest import mock
 
 import aiofiles
 import aiohttp.web
@@ -35,39 +33,17 @@ from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.test_utils import TestClient
 from models_library.settings.redis import RedisConfig
 from pytest_simcore.docker_registry import _pull_push_service
-from pytest_simcore.helpers.utils_login import log_client_in
-from servicelib.aiohttp.application import create_safe_application
 from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
 )
 from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
-from simcore_service_webserver.application import (
-    setup_director,
-    setup_director_v2,
-    setup_exporter,
-    setup_login,
-    setup_products,
-    setup_projects,
-    setup_resource_manager,
-    setup_rest,
-    setup_security,
-    setup_session,
-    setup_socketio,
-    setup_storage,
-    setup_users,
-)
-from simcore_service_webserver.catalog import setup_catalog
-from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects
 from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
 from simcore_service_webserver.exporter.file_downloader import ParallelDownloader
-from simcore_service_webserver.scicrunch.submodule_setup import (
-    setup_scicrunch_submodule,
-)
-from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.storage_handlers import get_file_download_url
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from utils import API_PREFIX, get_exported_projects, login_user_and_import_study
 from yarl import URL
 
 log = logging.getLogger(__name__)
@@ -85,16 +61,6 @@ pytest_simcore_core_services_selection = [
 ]
 pytest_simcore_ops_services_selection = ["minio"]
 
-CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
-DATA_DIR = CURRENT_DIR.parent.parent / "data"
-assert DATA_DIR.exists(), "expected folder under tests/data"
-
-API_VERSION = "v0"
-API_PREFIX = "/" + API_VERSION
-
-# store only lowercase "v1", "v2", etc...
-SUPPORTED_EXPORTER_VERSIONS = {"v1", "v2"}
 
 REMAPPING_KEY = "__reverse__remapping__dict__key__"
 KEYS_TO_IGNORE_FROM_COMPARISON = {
@@ -127,66 +93,7 @@ async def __delete_all_redis_keys__(redis_service: RedisConfig):
     # do nothing on teadown
 
 
-@pytest.fixture
-def client(
-    loop: asyncio.AbstractEventLoop,
-    aiohttp_client: Callable,
-    app_config: Dict,
-    postgres_with_template_db: aiopg.sa.engine.Engine,
-    mock_orphaned_services: mock.Mock,
-):
-    cfg = deepcopy(app_config)
-
-    assert cfg["rest"]["version"] == API_VERSION
-    assert cfg["rest"]["enabled"]
-    cfg["projects"]["enabled"] = True
-    cfg["director"]["enabled"] = True
-
-    # fake config
-    app = create_safe_application(cfg)
-
-    # activates only security+restAPI sub-modules
-    setup_db(app)
-    setup_session(app)
-    setup_security(app)
-    setup_rest(app)
-    setup_login(app)
-    setup_users(app)
-    setup_socketio(app)
-    setup_projects(app)
-    setup_director(app)
-    setup_director_v2(app)
-    setup_exporter(app)
-    setup_storage(app)
-    setup_products(app)
-    setup_catalog(app)
-    setup_scicrunch_submodule(app)
-    assert setup_resource_manager(app)
-
-    yield loop.run_until_complete(
-        aiohttp_client(
-            app,
-            server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},
-        )
-    )
-
-
 ################ utils
-
-
-async def login_user(client):
-    """returns a logged in regular user"""
-    return await log_client_in(client=client, user_data={"role": UserRole.USER.name})
-
-
-def get_exported_projects() -> List[Path]:
-    # These files are generated from the front-end
-    # when the formatter be finished
-    exporter_dir = DATA_DIR / "exporter"
-    assert exporter_dir.exists()
-    exported_files = [x for x in exporter_dir.glob("*.osparc")]
-    assert exported_files, "expected *.osparc files, none found"
-    return exported_files
 
 
 @pytest.fixture
@@ -493,23 +400,15 @@ async def test_import_export_import_duplicate(
     produces the same result in the DB.
     """
 
-    user = await login_user(client)
-    export_file_name = export_version.name
-    version_from_name = export_file_name.split("#")[0]
-
-    assert_error = (
-        f"The '{version_from_name}' version' is not present in the supported versions: "
-        f"{SUPPORTED_EXPORTER_VERSIONS}. If it's a new version please remember to add it."
+    imported_project_uuid, user = await login_user_and_import_study(
+        client, export_version
     )
-    assert version_from_name in SUPPORTED_EXPORTER_VERSIONS, assert_error
-
-    imported_project_uuid = await import_study_from_file(client, export_version)
 
     headers = {X_PRODUCT_NAME_HEADER: "osparc"}
 
     # export newly imported project
     url_export = client.app.router["export_project"].url_for(
-        project_id=imported_project_uuid
+        project_id=str(imported_project_uuid)
     )
 
     assert url_export == URL(API_PREFIX + f"/projects/{imported_project_uuid}:xport")
@@ -535,7 +434,7 @@ async def test_import_export_import_duplicate(
 
     # duplicate newly imported project
     url_duplicate = client.app.router["duplicate_project"].url_for(
-        project_id=imported_project_uuid
+        project_id=str(imported_project_uuid)
     )
     assert url_duplicate == URL(
         API_PREFIX + f"/projects/{imported_project_uuid}:duplicate"
@@ -549,7 +448,9 @@ async def test_import_export_import_duplicate(
 
         duplicated_project_uuid = reply_data["data"]["uuid"]
 
-    imported_project = await query_project_from_db(aiopg_engine, imported_project_uuid)
+    imported_project = await query_project_from_db(
+        aiopg_engine, str(imported_project_uuid)
+    )
     reimported_project = await query_project_from_db(
         aiopg_engine, reimported_project_uuid
     )
@@ -609,6 +510,14 @@ async def test_import_export_import_duplicate(
         condition_operator=operator.eq,
     )
 
+    # project cleanup when finished
+    url_delete = client.app.router["delete_project"].url_for(
+        project_id=str(imported_project_uuid)
+    )
+    assert url_delete == URL(API_PREFIX + f"/projects/{imported_project_uuid}")
+    async with await client.delete(f"{url_delete}", timeout=10) as export_response:
+        assert export_response.status == 204, await export_response.text()
+
 
 @pytest.fixture
 def mock_file_downloader(monkeypatch: MonkeyPatch) -> None:
@@ -631,26 +540,15 @@ async def test_download_error_reporting(
     grant_access_rights: None,
     mock_file_downloader: None,
 ):
-    await login_user(client)
-
     # not testing agains all versions, results will be the same
     export_version = get_exported_projects()[0]
-    export_file_name = export_version.name
-    version_from_name = export_file_name.split("#")[0]
-
-    assert_error = (
-        f"The '{version_from_name}' version' is not present in the supported versions: "
-        f"{SUPPORTED_EXPORTER_VERSIONS}. If it's a new version please remember to add it."
-    )
-    assert version_from_name in SUPPORTED_EXPORTER_VERSIONS, assert_error
-
-    imported_project_uuid = await import_study_from_file(client, export_version)
+    imported_project_uuid, _ = await login_user_and_import_study(client, export_version)
 
     headers = {X_PRODUCT_NAME_HEADER: "osparc"}
 
     # export newly imported project
     url_export = client.app.router["export_project"].url_for(
-        project_id=imported_project_uuid
+        project_id=str(imported_project_uuid)
     )
 
     assert url_export == URL(API_PREFIX + f"/projects/{imported_project_uuid}:xport")
