@@ -37,6 +37,7 @@ def clusters_config(
 ):
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
 
 
 @pytest.fixture

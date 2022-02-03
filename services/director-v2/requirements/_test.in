@@ -22,6 +22,7 @@ pytest-xdist
 pytest-icdiff
 async-asgi-testclient
 minio
+aioboto3
 
 # fixtures
 Faker
