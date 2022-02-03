@@ -11,6 +11,7 @@ from simcore_postgres_database.models.clusters import ClusterType
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
+    ComputationalSchedulerChangedError,
     ConfigurationError,
     DaskClientAcquisisitonError,
     InsuficientComputationalResourcesError,
@@ -97,6 +98,11 @@ class DaskClientsPool:
                     )
 
                 assert dask_client  # nosec
+                logger.debug(
+                    "returning %s, connected to %s",
+                    f"{dask_client=}",
+                    f"{dask_client.dask_subsystem.client.scheduler_info()=}",
+                )
                 return dask_client
 
         try:
@@ -107,7 +113,11 @@ class DaskClientsPool:
             InsuficientComputationalResourcesError,
         ):
             raise
-        except (asyncio.CancelledError, ComputationalBackendNotConnectedError):
+        except (
+            asyncio.CancelledError,
+            ComputationalBackendNotConnectedError,
+            ComputationalSchedulerChangedError,
+        ):
             # cleanup and re-raise
             if dask_client := self._cluster_to_client_map.pop(cluster.id, None):
                 await dask_client.delete()
