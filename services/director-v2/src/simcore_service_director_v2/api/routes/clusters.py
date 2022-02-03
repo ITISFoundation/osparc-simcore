@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.clusters import Cluster
+from pydantic import AnyUrl, parse_obj_as
 from pydantic.types import NonNegativeInt
 from simcore_service_director_v2.api.dependencies.scheduler import (
     get_scheduler_settings,
@@ -34,10 +35,14 @@ async def _get_cluster_with_id(
         async with dask_clients_pool.acquire(cluster) as client:
             scheduler_info = client.dask_subsystem.client.scheduler_info()
             scheduler_status = client.dask_subsystem.client.status
+            dashboard_link = client.dask_subsystem.client.dashboard_link
 
         return ClusterOut(
             cluster=cluster,
             scheduler=Scheduler(status=scheduler_status, **scheduler_info),
+            dashboard_link=parse_obj_as(AnyUrl, dashboard_link)
+            if dashboard_link
+            else None,
         )
     except ClusterNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e

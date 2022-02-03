@@ -226,6 +226,7 @@ async def test_get_cluster_entrypoint(
     local_dask_gateway_server: DaskGatewayServer,
     cluster: Callable[..., Cluster],
     dask_gateway_cluster: GatewayCluster,
+    dask_gateway_cluster_client: DaskClient,
 ):
     # define the cluster in the DB
     some_cluster = cluster(
@@ -238,10 +239,12 @@ async def test_get_cluster_entrypoint(
     cluster_out = await _get_cluster_out(async_client, some_cluster.id)
     assert not cluster_out.scheduler.workers, "the cluster should not have any worker!"
 
-    # now let's scale the cluster, we should get 2 workers soon
-    _NUM_WORKERS = 2
+    # now let's scale the cluster
+    _NUM_WORKERS = 1
     await dask_gateway_cluster.scale(_NUM_WORKERS)
-    async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(60)):
+    async for attempt in AsyncRetrying(
+        reraise=True, stop=stop_after_delay(60), wait=wait_fixed(1)
+    ):
         with attempt:
             cluster_out = await _get_cluster_out(async_client, some_cluster.id)
             assert cluster_out.scheduler.workers, "the cluster has no workers!"
@@ -251,3 +254,59 @@ async def test_get_cluster_entrypoint(
             print(
                 f"cluster now has its {_NUM_WORKERS}, after {json.dumps(attempt.retry_state.retry_object.statistics)}"
             )
+    print(f"!!> cluster dashboard link: {dask_gateway_cluster.dashboard_link}")
+
+    # let's start some computation
+    _TASK_SLEEP_TIME = 5
+
+    def do_some_work(x: int):
+        import time
+
+        time.sleep(x)
+        return True
+
+    task = dask_gateway_cluster_client.submit(do_some_work, _TASK_SLEEP_TIME)
+    # wait for the computation to start, we should see this in the cluster infos
+    async for attempt in AsyncRetrying(
+        reraise=True, stop=stop_after_delay(10), wait=wait_fixed(1)
+    ):
+        with attempt:
+            cluster_out = await _get_cluster_out(async_client, some_cluster.id)
+            assert (
+                next(iter(cluster_out.scheduler.workers.values())).metrics.executing
+                == 1
+            ), "worker is not executing the task"
+            print(
+                f"!!> cluster metrics: {next(iter(cluster_out.scheduler.workers.values())).metrics=}"
+            )
+    # let's wait for the result
+    result = task.result(timeout=_TASK_SLEEP_TIME + 5)
+    assert result
+    assert await result == True
+    # wait for the computation to effectively stop
+    async for attempt in AsyncRetrying(
+        reraise=True, stop=stop_after_delay(20), wait=wait_fixed(1)
+    ):
+        with attempt:
+            cluster_out = await _get_cluster_out(async_client, some_cluster.id)
+            assert (
+                next(iter(cluster_out.scheduler.workers.values())).metrics.executing
+                == 0
+            ), "worker is still executing the task"
+            assert (
+                next(iter(cluster_out.scheduler.workers.values())).metrics.in_memory
+                == 1
+            ), "worker did not keep the result in memory"
+            assert (
+                next(iter(cluster_out.scheduler.workers.values())).metrics.cpu == 0
+            ), "worker did not keep the result in memory"
+            print(
+                f"!!> cluster metrics: {next(iter(cluster_out.scheduler.workers.values())).metrics=}"
+            )
+
+    # since the task is completed the worker should have stopped executing
+    cluster_out = await _get_cluster_out(async_client, some_cluster.id)
+    worker_data = next(iter(cluster_out.scheduler.workers.values()))
+    assert worker_data.metrics.executing == 0
+    # in dask, the task remains in memory until the result is deleted
+    assert worker_data.metrics.in_memory == 1
