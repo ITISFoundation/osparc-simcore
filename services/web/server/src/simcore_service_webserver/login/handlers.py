@@ -9,6 +9,7 @@ from yarl import URL
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..groups_api import auto_add_user_to_groups
 from ..security_api import check_password, encrypt_password, forget, remember
+from ..utils_rate_limiting import global_rate_limit_route
 from .cfg import APP_LOGIN_CONFIG, cfg, get_storage
 from .config import get_login_config
 from .confirmation import (
@@ -25,7 +26,6 @@ from .utils import (
     render_and_send_mail,
     themed,
 )
-from .utils_rate_limiting import global_rate_limit_route
 
 # FIXME: do not use cfg singleton. use instead cfg = request.app[APP_LOGIN_CONFIG]
 
