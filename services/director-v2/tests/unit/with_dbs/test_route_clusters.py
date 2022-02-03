@@ -2,7 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Callable, Dict, Iterable, List
+import json
+from typing import AsyncIterator, Callable, Dict, Iterable, List
 
 import httpx
 import pytest
@@ -13,6 +14,7 @@ from dask_gateway import Gateway, GatewayCluster, auth
 from distributed import Client as DaskClient
 from distributed.deploy.spec import SpecCluster
 from models_library.clusters import Cluster, SimpleAuthentication
+from pydantic import NonNegativeInt
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
@@ -192,17 +194,30 @@ async def dask_gateway(
 
 
 @pytest.fixture
-async def dask_gateway_cluster(dask_gateway: Gateway) -> GatewayCluster:
+async def dask_gateway_cluster(dask_gateway: Gateway) -> AsyncIterator[GatewayCluster]:
     async with dask_gateway.new_cluster() as cluster:
-        return cluster
+        yield cluster
 
 
 @pytest.fixture
 async def dask_gateway_cluster_client(
     dask_gateway_cluster: GatewayCluster,
-) -> DaskClient:
+) -> AsyncIterator[DaskClient]:
     async with dask_gateway_cluster.get_client() as client:
-        return client
+        yield client
+
+
+async def _get_cluster_out(
+    async_client: httpx.AsyncClient, cluster_id: NonNegativeInt
+) -> ClusterOut:
+    response = await async_client.get(f"/v2/clusters/{cluster_id}")
+    assert response.status_code == status.HTTP_200_OK
+    print(f"<-- received cluster details response {response=}")
+    cluster_out = ClusterOut.parse_obj(response.json())
+    assert cluster_out
+    print(f"<-- received cluster details {cluster_out=}")
+    assert cluster_out.scheduler, "the cluster's scheduler is not started!"
+    return cluster_out
 
 
 async def test_get_cluster_entrypoint(
@@ -212,19 +227,27 @@ async def test_get_cluster_entrypoint(
     cluster: Callable[..., Cluster],
     dask_gateway_cluster: GatewayCluster,
 ):
+    # define the cluster in the DB
     some_cluster = cluster(
         endpoint=local_dask_gateway_server.address,
         authentication=SimpleAuthentication(
             username="pytest_user", password=local_dask_gateway_server.password
         ).dict(by_alias=True),
     )
-    response = await async_client.get(f"/v2/clusters/{some_cluster.id}")
-    assert response.status_code == status.HTTP_200_OK
-    print(f"<-- received cluster details response {response=}")
-    cluster_out = ClusterOut.parse_obj(response.json())
-    assert cluster_out
-    assert not cluster_out.scheduler.workers
-    import pdb
+    # in its present state, the cluster should have no workers
+    cluster_out = await _get_cluster_out(async_client, some_cluster.id)
+    assert not cluster_out.scheduler.workers, "the cluster should not have any worker!"
 
-    pdb.set_trace()
-    print(f"<-- received cluster details {cluster_out=}")
+    # now let's scale the cluster, we should get 2 workers soon
+    _NUM_WORKERS = 2
+    await dask_gateway_cluster.scale(_NUM_WORKERS)
+    async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(60)):
+        with attempt:
+            cluster_out = await _get_cluster_out(async_client, some_cluster.id)
+            assert cluster_out.scheduler.workers, "the cluster has no workers!"
+            assert (
+                len(cluster_out.scheduler.workers) == _NUM_WORKERS
+            ), f"the cluster is missing {_NUM_WORKERS}, currently has {len(cluster_out.scheduler.workers)}"
+            print(
+                f"cluster now has its {_NUM_WORKERS}, after {json.dumps(attempt.retry_state.retry_object.statistics)}"
+            )
