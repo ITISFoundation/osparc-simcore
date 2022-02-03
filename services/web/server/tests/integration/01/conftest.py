@@ -1,7 +1,9 @@
 # pylint:disable=unused-argument
 
 import asyncio
+import sys
 from copy import deepcopy
+from pathlib import Path
 from typing import Callable, Dict, Tuple
 from unittest import mock
 from uuid import UUID
@@ -117,3 +119,28 @@ def login_user_and_import_study() -> Callable:
         return UUID(imported_project_uuid), user
 
     return executable
+
+
+@pytest.fixture(scope="session", params=["v1", "v2"])
+def exporter_version(request) -> str:
+    return request.param
+
+
+@pytest.fixture
+def exported_project(exporter_version: str) -> Path:
+    # These files are generated from the front-end
+    # when the formatter be finished
+    current_dir = (
+        Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+    )
+    data_dir = current_dir.parent.parent / "data"
+    assert data_dir.exists(), "expected folder under tests/data"
+    exporter_dir = data_dir / "exporter"
+    assert exporter_dir.exists()
+    exported_files = {x for x in exporter_dir.glob("*.osparc")}
+
+    for exported_file in exported_files:
+        if exported_file.name.startswith(exporter_version):
+            return exported_file
+
+    raise FileNotFoundError(f"{exporter_version=} not found in {exported_files}")

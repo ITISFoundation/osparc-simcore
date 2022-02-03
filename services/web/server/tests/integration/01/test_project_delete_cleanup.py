@@ -12,7 +12,6 @@ import pytest
 from aiohttp.test_utils import TestClient
 from models_library.projects import ProjectID
 from models_library.settings.redis import RedisConfig
-from utils import get_exported_projects
 from yarl import URL
 
 log = logging.getLogger(__name__)
@@ -87,20 +86,19 @@ async def _fetch_stored_files(
 # TESTS
 
 
-@pytest.mark.parametrize(
-    "export_version", get_exported_projects(), ids=(lambda p: p.name)
-)
 async def test_s3_cleanup_after_removal(
     client: TestClient,
     login_user_and_import_study: Callable,
-    export_version: Path,
     minio_config: Dict[str, Any],
+    exported_project: Path,
     aiopg_engine: aiopg.sa.engine.Engine,
     redis_client: aioredis.Redis,
     docker_registry: str,
     simcore_services_ready: None,
 ):
-    imported_project_uuid, _ = await login_user_and_import_study(client, export_version)
+    imported_project_uuid, _ = await login_user_and_import_study(
+        client, exported_project
+    )
 
     async def _files_in_s3() -> Set[str]:
         return await _fetch_stored_files(

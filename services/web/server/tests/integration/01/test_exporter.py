@@ -15,7 +15,6 @@ from typing import (
     AsyncIterator,
     Awaitable,
     Callable,
-    Coroutine,
     Dict,
     Iterable,
     Iterator,
@@ -44,7 +43,6 @@ from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
 from simcore_service_webserver.exporter.file_downloader import ParallelDownloader
 from simcore_service_webserver.storage_handlers import get_file_download_url
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from utils import get_exported_projects
 from yarl import URL
 
 API_PREFIX = "/v0"
@@ -386,14 +384,11 @@ async def import_study_from_file(client, file_path: Path) -> str:
     return imported_project_uuid
 
 
-@pytest.mark.parametrize(
-    "export_version", get_exported_projects(), ids=(lambda p: p.name)
-)
 async def test_import_export_import_duplicate(
     client: TestClient,
     login_user_and_import_study: Callable,
     aiopg_engine: aiopg.sa.engine.Engine,
-    export_version: Path,
+    exported_project: Path,
     push_services_to_registry: None,
     redis_client: aioredis.Redis,
     simcore_services_ready: None,
@@ -405,7 +400,7 @@ async def test_import_export_import_duplicate(
     """
 
     imported_project_uuid, user = await login_user_and_import_study(
-        client, export_version
+        client, exported_project
     )
 
     headers = {X_PRODUCT_NAME_HEADER: "osparc"}
