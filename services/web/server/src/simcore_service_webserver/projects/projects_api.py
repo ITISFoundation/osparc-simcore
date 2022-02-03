@@ -199,7 +199,7 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
         )
         await delete_data_folders_of_project(app, project_uuid, user_id)
 
-    fire_and_forget_task(_remove_services_and_data())
+    await fire_and_forget_task(_remove_services_and_data())
 
 
 @observe(event="SIGNAL_USER_DISCONNECTED")
