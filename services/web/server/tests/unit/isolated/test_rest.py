@@ -26,7 +26,13 @@ def spec_dict(openapi_path):
 
 
 @pytest.fixture
-def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
+def client(
+    loop,
+    aiohttp_unused_port,
+    aiohttp_client,
+    api_version_prefix,
+    mock_env_devel_environment,
+):
     app = create_safe_application()
 
     MAX_DELAY_SECS_ALLOWED = 1  # secs

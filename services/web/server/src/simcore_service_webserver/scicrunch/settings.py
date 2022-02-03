@@ -1,10 +1,14 @@
-from pydantic import BaseSettings, Field, HttpUrl, SecretStr
+from aiohttp import web
+from pydantic import Field, HttpUrl, SecretStr
+from settings_library.base import BaseCustomSettings
+
+from .._constants import APP_SETTINGS_KEY
 
 # TODO: read https://www.force11.org/group/resource-identification-initiative
 SCICRUNCH_DEFAULT_URL = "https://scicrunch.org"
 
 
-class SciCrunchSettings(BaseSettings):
+class SciCrunchSettings(BaseCustomSettings):
 
     SCICRUNCH_API_BASE_URL: HttpUrl = Field(
         f"{SCICRUNCH_DEFAULT_URL}/api/1",
@@ -19,3 +23,12 @@ class SciCrunchSettings(BaseSettings):
         f"{SCICRUNCH_DEFAULT_URL}/resolver",
         description="Base url to scicrunch resolver entrypoint",
     )
+
+
+def assert_valid_config(app: web.Application):
+
+    WEBSERVER_SCICRUNCH = SciCrunchSettings()
+
+    if settings := app.get(APP_SETTINGS_KEY):
+        assert settings.WEBSERVER_SCICRUNCH == WEBSERVER_SCICRUNCH  # nosec
+    return WEBSERVER_SCICRUNCH

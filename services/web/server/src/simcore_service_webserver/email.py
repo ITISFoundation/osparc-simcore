@@ -13,7 +13,6 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from ._resources import resources
 from .email_config import CONFIG_SECTION_NAME
-from .email_settings import assert_valid_config
 
 # TODO: move login/utils.py email functionality here!
 # from email.mime.text import MIMEText
@@ -26,12 +25,6 @@ log = logging.getLogger(__name__)
     __name__, ModuleCategory.ADDON, config_section=CONFIG_SECTION_NAME, logger=log
 )
 def setup_email(app: web.Application, debug: bool = False):
-
-    # ----------------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    assert_valid_config(app)
-    # ---------------------------------------------
 
     tmpl_dir = resources.get_path("templates")
     if not tmpl_dir.exists():

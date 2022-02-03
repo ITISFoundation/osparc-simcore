@@ -1,4 +1,9 @@
-# pylint:disable=redefined-outer-name,unused-argument,too-many-arguments
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+
 import asyncio
 import cgi
 import itertools
@@ -16,7 +21,6 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
-    Iterable,
     Iterator,
     List,
     Set,
@@ -175,7 +179,7 @@ def push_services_to_registry(docker_registry: str, node_meta_schema: Dict) -> N
 
 
 @contextmanager
-def assemble_tmp_file_path(file_name: str) -> Iterable[Path]:
+def assemble_tmp_file_path(file_name: str) -> Iterator[Path]:
     # pylint: disable=protected-access
     # let us all thank codeclimate for this beautiful piece of code
     tmp_store_dir = Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"

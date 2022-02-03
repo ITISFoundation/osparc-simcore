@@ -16,7 +16,6 @@ import pytest
 import socketio
 import socketio.exceptions
 import sqlalchemy as sa
-import tenacity
 from _helpers import MockedStorageSubsystem  # type: ignore
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -53,7 +52,6 @@ from simcore_service_webserver.socketio.module_setup import setup_socketio
 from simcore_service_webserver.users import setup_users
 from simcore_service_webserver.users_api import delete_user
 from simcore_service_webserver.users_exceptions import UserNotFoundError
-from six import reraise
 from tenacity._asyncio import AsyncRetrying
 from tenacity.after import after_log
 from tenacity.retry import retry_if_exception_type
@@ -100,6 +98,7 @@ def client(
     postgres_db: sa.engine.Engine,
     mock_orphaned_services,
     redis_client: Redis,
+    monkeypatch_setenv_from_app_config: Callable,
 ) -> TestClient:
     cfg = deepcopy(app_cfg)
 
@@ -112,6 +111,8 @@ def client(
     ] = GARBAGE_COLLECTOR_INTERVAL  # increase speed of garbage collection
 
     # fake config
+    monkeypatch_setenv_from_app_config(cfg)
+
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules

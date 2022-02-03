@@ -42,12 +42,12 @@ class MixinServiceSettings:
     def _build_api_base_url(self, *, prefix: str) -> str:
         assert prefix  # nosec
         prefix = prefix.upper()
-        password = getattr(self, f"{prefix}_PASSWORD")
+        password = getattr(self, f"{prefix}_PASSWORD", None)
         vtag = getattr(self, f"{prefix}_VTAG", None)
         return AnyUrl.build(
             scheme=getattr(self, f"{prefix}_SCHEME", "http"),
             user=getattr(self, f"{prefix}_USER", None),
-            password=password.get_secret_value() if password is not None else None,
+            password=None if password is None else password.get_secret_value(),
             host=getattr(self, f"{prefix}_HOST"),
             port=f"{getattr(self, f'{prefix}_PORT')}",
             path=f"/{vtag}" if vtag is not None else None,

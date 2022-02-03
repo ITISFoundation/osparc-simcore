@@ -4,8 +4,8 @@ from pathlib import Path
 from aiohttp.web import Application
 from parfive.downloader import Downloader
 
-from .config import get_settings
 from .exceptions import ExporterException
+from .settings import get_settings
 from .utils import makedirs
 
 log = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ class ParallelDownloader:
         exporter_settings = get_settings(app)
         results = await self.downloader.run_download(
             timeouts={
-                "total": exporter_settings.downloader_max_timeout_seconds,
+                "total": exporter_settings.EXPORTER_DOWNLOADER_MAX_TIMEOUT_SECONDS,
                 "sock_read": 90,  # default as in parfive code
             }
         )

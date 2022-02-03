@@ -8,7 +8,6 @@ from servicelib.aiohttp.rest_routing import (
 )
 
 from .._constants import APP_OPENAPI_SPECS_KEY
-from .config import inject_settings
 from .request_handlers import rest_handler_functions
 
 logger = logging.getLogger(__name__)
@@ -20,8 +19,6 @@ logger = logging.getLogger(__name__)
     logger=logger,
 )
 def setup_exporter(app: web.Application) -> bool:
-    # stores settings for this module in the app
-    inject_settings(app)
 
     # Rest-API routes: maps handlers with routes tags with "viewer" based on OAS operation_id
     specs = app[APP_OPENAPI_SPECS_KEY]

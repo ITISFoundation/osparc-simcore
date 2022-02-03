@@ -42,7 +42,7 @@ login:
   registration_invitation_required: ${WEBSERVER_LOGIN_REGISTRATION_INVITATION_REQUIRED}
   registration_confirmation_required: ${WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED}
 smtp:
-  sender: "OSPARC support <support@osparc.io>"
+  sender: "O2SPARC support <support@osparc.io>"
   host: ${SMTP_HOST}
   port: ${SMTP_PORT}
   tls: ${SMTP_TLS_ENABLED}

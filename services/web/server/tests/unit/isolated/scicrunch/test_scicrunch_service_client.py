@@ -11,8 +11,10 @@ import os
 from pathlib import Path
 
 import pytest
+from aiohttp import web
 from aioresponses.core import aioresponses
 from servicelib.aiohttp.client_session import get_client_session
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.scicrunch.service_client import (
     ResearchResource,
     SciCrunch,
@@ -96,9 +98,9 @@ async def fake_app(mock_env_devel_environment, loop):
     # least defined there
     print("app's environment variables", format(mock_env_devel_environment))
 
-    app = {}
+    app = web.Application()
+    setup_settings(app)
     setup_scicrunch_submodule(app)
-    assert app
 
     yield app
 
