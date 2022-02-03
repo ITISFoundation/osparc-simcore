@@ -4,7 +4,7 @@
 
 import logging
 from distutils.util import strtobool
-from typing import Dict, Iterator
+from typing import Any, Dict, Iterator
 
 import pytest
 import tenacity
@@ -42,7 +42,7 @@ def _ensure_remove_bucket(client: Minio, bucket_name: str):
 @pytest.fixture(scope="module")
 def minio_config(
     docker_stack: Dict, testing_environ_vars: Dict, monkeypatch_module: MonkeyPatch
-) -> Dict[str, str]:
+) -> Dict[str, Any]:
     assert "pytest-ops_minio" in docker_stack["services"]
 
     config = {
