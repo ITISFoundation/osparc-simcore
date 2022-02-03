@@ -99,7 +99,7 @@ describe('tags testing', () => {
 
   test('assign tag and reflect changes', async () => {
     // Wait until project is closed
-    await utils.sleep(1000);
+    await utils.sleep(5000);
     await page.waitForSelector(
       '[qxclass="osparc.dashboard.GridButtonItem"] > [qxclass="osparc.ui.basic.Thumbnail"]',
       {
