@@ -111,6 +111,7 @@ async def test_client(
     monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
     monkeypatch.setenv("POSTGRES_DB", "mocked_db")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
 
     # patch host for dynamic-sidecar, not reachable via localhost
     # the dynamic-sidecar (running inside a container) will use

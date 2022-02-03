@@ -1,7 +1,8 @@
-from functools import cached_property
-
 # pylint: disable=no-self-argument
 # pylint: disable=no-self-use
+
+from enum import Enum
+from functools import cached_property
 from pathlib import Path
 from typing import Dict, Optional, Set
 
@@ -13,12 +14,13 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.services import SERVICE_NETWORK_RE
-from pydantic import AnyHttpUrl, Field, PositiveFloat, validator
+from pydantic import AnyHttpUrl, Field, PositiveFloat, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
@@ -39,6 +41,45 @@ ORG_LABELS_TO_SCHEMA_LABELS: Dict[str, str] = {
 }
 
 SUPPORTED_TRAEFIK_LOG_LEVELS: Set[str] = {"info", "debug", "warn", "error"}
+
+
+class S3Provider(str, Enum):
+    AWS = "AWS"
+    CEPH = "CEPH"
+    MINIO = "MINIO"
+
+
+class RCloneSettings(S3Settings):
+    R_CLONE_S3_PROVIDER: S3Provider
+
+    R_CLONE_DIR_CACHE_TIME_SECONDS: PositiveInt = Field(
+        10,
+        description="time to cache directory entries for",
+    )
+    R_CLONE_POLL_INTERVAL_SECONDS: PositiveInt = Field(
+        9,
+        description="time to wait between polling for changes",
+    )
+
+    @validator("R_CLONE_POLL_INTERVAL_SECONDS")
+    @classmethod
+    def enforce_r_clone_requirement(cls, v, values) -> PositiveInt:
+        dir_cache_time = values["R_CLONE_DIR_CACHE_TIME_SECONDS"]
+        if not v < dir_cache_time:
+            raise ValueError(
+                (
+                    f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower "
+                    f"than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
+                )
+            )
+        return v
+
+    @cached_property
+    def endpoint(self) -> str:
+        if not self.S3_ENDPOINT.startswith("http"):
+            scheme = "https" if self.S3_SECURE else "http"
+            return f"{scheme}://{self.S3_ENDPOINT}"
+        return self.S3_ENDPOINT
 
 
 class DirectorV0Settings(BaseCustomSettings):
@@ -152,6 +193,8 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ...,
         description="Names the traefik zone for services that must be accessible from platform http entrypoint",
     )
+
+    DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
 
     SWARM_STACK_NAME: str = Field(
         ...,
