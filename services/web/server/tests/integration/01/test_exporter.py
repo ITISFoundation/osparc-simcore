@@ -15,6 +15,7 @@ from typing import (
     AsyncIterator,
     Awaitable,
     Callable,
+    Coroutine,
     Dict,
     Iterable,
     Iterator,
@@ -43,8 +44,10 @@ from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
 from simcore_service_webserver.exporter.file_downloader import ParallelDownloader
 from simcore_service_webserver.storage_handlers import get_file_download_url
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from utils import API_PREFIX, get_exported_projects, login_user_and_import_study
+from utils import get_exported_projects
 from yarl import URL
+
+API_PREFIX = "/v0"
 
 log = logging.getLogger(__name__)
 
@@ -533,6 +536,7 @@ def mock_file_downloader(monkeypatch: MonkeyPatch) -> None:
 
 async def test_download_error_reporting(
     client: TestClient,
+    login_user_and_import_study: Callable,
     push_services_to_registry: None,
     aiopg_engine: aiopg.sa.engine.Engine,
     redis_client: aioredis.Redis,

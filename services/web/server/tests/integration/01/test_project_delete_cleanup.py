@@ -2,7 +2,7 @@
 import asyncio
 import logging
 from pathlib import Path
-from typing import Any, Dict, Final, Iterator, Set
+from typing import Any, Callable, Dict, Final, Iterator, Set
 
 import aioboto3
 import aiopg
@@ -12,7 +12,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from models_library.projects import ProjectID
 from models_library.settings.redis import RedisConfig
-from utils import API_PREFIX, get_exported_projects, login_user_and_import_study
+from utils import get_exported_projects
 from yarl import URL
 
 log = logging.getLogger(__name__)
@@ -31,6 +31,7 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 S3_DATA_REMOVAL_SECONDS: Final[int] = 2
+API_PREFIX = "/v0"
 
 # FIXTURES
 
@@ -51,11 +52,6 @@ async def __delete_all_redis_keys__(redis_service: RedisConfig):
 
     yield
     # do nothing on teadown
-
-
-@pytest.fixture
-async def remove_previous_projects() -> None:
-    pass
 
 
 # UTILS
@@ -96,14 +92,14 @@ async def _fetch_stored_files(
 )
 async def test_s3_cleanup_after_removal(
     client: TestClient,
+    login_user_and_import_study: Callable,
+    export_version: Path,
+    minio_config: Dict[str, Any],
     aiopg_engine: aiopg.sa.engine.Engine,
     redis_client: aioredis.Redis,
-    export_version: Path,
     docker_registry: str,
     simcore_services_ready: None,
-    minio_config: Dict[str, Any],
 ):
-
     imported_project_uuid, _ = await login_user_and_import_study(client, export_version)
 
     async def _files_in_s3() -> Set[str]:
