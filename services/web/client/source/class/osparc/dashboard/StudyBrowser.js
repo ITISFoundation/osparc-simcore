@@ -550,7 +550,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const minMaxIdx = [lastIdx, currentIdx].sort();
         for (let i=minMaxIdx[0]; i<=minMaxIdx[1]; i++) {
           const button = studiesCont.getChildren()[i];
-          button.setValue(true);
+          if (button.isVisible()) {
+            button.setValue(true);
+          }
         }
       }
       studiesCont.setLastSelectedIndex(studiesCont.getIndex(item));
