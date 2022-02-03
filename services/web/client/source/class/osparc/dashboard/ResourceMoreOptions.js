@@ -65,8 +65,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const store = osparc.store.Store.getInstance();
       store.getServicesDAGs(false)
         .then(services => {
-          const myEmail = osparc.auth.Data.getInstance().getEmail();
-          const versions = osparc.utils.Services.getOwnedServices(services, this.__resourceData["key"], myEmail);
+          const versions = osparc.utils.Services.getVersions(services, this.__resourceData["key"]);
           const selectBox = this.__serviceVersionSelector;
           let selectedItem = null;
           versions.reverse().forEach(version => {

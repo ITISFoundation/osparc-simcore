@@ -315,7 +315,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       moreOptsButton.addListener("execute", () => {
         const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
         const title = this.tr("More options");
-        osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 725);
+        const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 725);
         moreOpts.addListener("updateStudy", e => {
           const updatedStudyData = e.getData();
           this._resetStudyItem(updatedStudyData);
@@ -329,6 +329,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
           this._resetServiceItem(updatedServiceData);
         });
         moreOpts.addListener("openService", e => {
+          win.close();
           const openServiceData = e.getData();
           this._createStudyFromService(openServiceData["key"], openServiceData["version"]);
         });
