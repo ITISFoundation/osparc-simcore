@@ -39,7 +39,7 @@ def setup_director(
     # ---------------------------------------------
 
     # director service API base url, e.g. http://director:8081/v0
-    app[APP_DIRECTOR_API_KEY] = str(settings.url)
+    app[APP_DIRECTOR_API_KEY] = str(settings.base_url)
 
     # setup routes ------------
     if not disable_routes:

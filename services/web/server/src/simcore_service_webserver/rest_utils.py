@@ -5,9 +5,9 @@ from typing import Optional
 import openapi_core
 import yaml
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
-from simcore_service_webserver._resources import resources
 
 from ._meta import api_version_prefix
+from ._resources import resources
 
 
 def get_openapi_specs_path(api_version_dir: Optional[str] = None) -> Path:

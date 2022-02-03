@@ -310,12 +310,15 @@ def app_mock():
 
     # mocks loading config
     settings = DirectorSettings()
-    app[director_config.APP_CONFIG_KEY] = {
-        director_config.CONFIG_SECTION_NAME: json.loads(
-            settings.json(exclude={"url"}, by_alias=True)
-        )
-    }
 
+    app[director_config.APP_CONFIG_KEY] = {
+        director_config.CONFIG_SECTION_NAME: {
+            "host": settings.DIRECTOR_HOST,
+            "port": settings.DIRECTOR_PORT,
+            "version": settings.DIRECTOR_VTAG,
+            "enabled": True,
+        }
+    }
     assert setup_director(app, disable_routes=True)
 
     return app

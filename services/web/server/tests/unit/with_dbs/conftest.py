@@ -32,7 +32,6 @@ from aiohttp.test_utils import TestClient, TestServer
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.common_aiopg_utils import DSN
-from servicelib.json_serialization import json_dumps
 from simcore_service_webserver import rest
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
@@ -126,23 +125,24 @@ def web_server(
     postgres_db,
     aiohttp_server,
     disable_static_webserver,
+    monkeypatch_setenv_from_app_config: Callable,
 ) -> TestServer:
-    print(
-        "Inits webserver with app_cfg",
-        json_dumps(app_cfg, indent=2),
-    )
+
+    print("+ web_server:")
+    cfg = deepcopy(app_cfg)
+    monkeypatch_setenv_from_app_config(cfg)
 
     # original APP
-    app = create_application(app_cfg)
+    app = create_application(cfg)
 
-    assert app[APP_CONFIG_KEY] == app_cfg
+    assert app[APP_CONFIG_KEY] == cfg
 
     # with patched email
     _path_mail(monkeypatch)
 
     disable_static_webserver(app)
 
-    server = loop.run_until_complete(aiohttp_server(app, port=app_cfg["main"]["port"]))
+    server = loop.run_until_complete(aiohttp_server(app, port=cfg["main"]["port"]))
 
     assert isinstance(postgres_db, sa.engine.Engine)
     pg_settings = dict(e.split("=") for e in app[APP_DB_ENGINE_KEY].dsn.split())

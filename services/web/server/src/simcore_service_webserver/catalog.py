@@ -80,7 +80,7 @@ def setup_catalog(app: web.Application, *, disable_auth=False):
     # ----------------------------------------------
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas
-    cfg = assert_valid_config(app).copy()
+    cfg, _ = assert_valid_config(app)
     # ---------------------------------------------
 
     # resolve url

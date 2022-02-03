@@ -69,7 +69,7 @@ async def health_check_emulator(
 
 
 @pytest.fixture
-def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
+def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix, monkeypatch):
     SLOW_HANDLER_DELAY_SECS = 2.0  # secs
 
     # pylint:disable=unused-variable
@@ -120,12 +120,14 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
     # activates some sub-modules
     setup_security(app)
     setup_rest(app)
+
+    monkeypatch.setenv("AIODEBUG_SLOW_DURATION_SECS", f"{SLOW_HANDLER_DELAY_SECS / 10}")
+    monkeypatch.setenv("DIAGNOSTICS_MAX_TASK_DELAY", f"{SLOW_HANDLER_DELAY_SECS}")
+    monkeypatch.setenv("DIAGNOSTICS_MAX_AVG_LATENCY", f"{2.0}")
+    monkeypatch.setenv("DIAGNOSTICS_START_SENSING_DELAY", f"{0}")  # inmidiately
+
     setup_diagnostics(
         app,
-        slow_duration_secs=SLOW_HANDLER_DELAY_SECS / 10,
-        max_task_delay=SLOW_HANDLER_DELAY_SECS,
-        max_avg_response_latency=2.0,
-        start_sensing_delay=0,  # inmidiately!
     )
 
     assert app[kMAX_AVG_RESP_LATENCY] == 2.0
