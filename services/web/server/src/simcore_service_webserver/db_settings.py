@@ -19,7 +19,7 @@ def assert_valid_config(app: Application):
     # Remove and use instead WEBSERVER_POSTGRES.dsn
     cfg.get("postgres", {}).pop("endpoint", None)
 
-    WEBSERVER_POSTGRES = PostgresSettings.create_from_envs()
+    WEBSERVER_POSTGRES = PostgresSettings()  # type: ignore
     got = {  # nosec
         "postgres": {
             "database": WEBSERVER_POSTGRES.POSTGRES_DB,

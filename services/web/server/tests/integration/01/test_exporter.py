@@ -22,7 +22,6 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
-    Iterable,
     Iterator,
     List,
     Set,
@@ -62,6 +61,7 @@ from simcore_service_webserver.application import (
     setup_storage,
     setup_users,
 )
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects
@@ -153,6 +153,7 @@ def client(
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules
+    setup_settings(app)
     setup_db(app)
     setup_session(app)
     setup_security(app)
@@ -274,7 +275,7 @@ def push_services_to_registry(docker_registry: str, node_meta_schema: Dict) -> N
 
 
 @contextmanager
-def assemble_tmp_file_path(file_name: str) -> Iterable[Path]:
+def assemble_tmp_file_path(file_name: str) -> Iterator[Path]:
     # pylint: disable=protected-access
     # let us all thank codeclimate for this beautiful piece of code
     tmp_store_dir = Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"
