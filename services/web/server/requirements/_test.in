@@ -10,7 +10,16 @@
 # testing
 
 # fixtures
+aioboto3
+aioresponses
+alembic
+click
 coverage
+docker
+Faker
+jsonschema
+minio
+openapi-spec-validator
 pytest
 pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
 pytest-cov
@@ -20,19 +29,10 @@ pytest-instafail
 pytest-mock
 pytest-runner
 pytest-sugar
-websockets
-aioresponses
-alembic
-click
-docker
-Faker
-jsonschema
-openapi-spec-validator
 python-dotenv
 redis
 tenacity
-aioboto3
-minio
+websockets
 
 # tools
 codecov
