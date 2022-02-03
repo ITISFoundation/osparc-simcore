@@ -20,3 +20,7 @@ class PrometheusSettings(BaseCustomSettings, MixinServiceSettings):
             port=f"{self.PROMETHEUS_PORT}",
             path=f"/api/{self.PROMETHEUS_VTAG}/query",
         )
+
+    @cached_property
+    def origin(self) -> str:
+        return self._build_origin_url(prefix="PROMETHEUS")
