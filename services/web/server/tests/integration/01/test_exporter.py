@@ -532,6 +532,7 @@ def mock_file_downloader(monkeypatch: MonkeyPatch) -> None:
 
 async def test_download_error_reporting(
     client: TestClient,
+    exported_project: Path,
     login_user_and_import_study: Callable,
     push_services_to_registry: None,
     aiopg_engine: aiopg.sa.engine.Engine,
@@ -541,8 +542,9 @@ async def test_download_error_reporting(
     mock_file_downloader: None,
 ):
     # not testing agains all versions, results will be the same
-    export_version = get_exported_projects()[0]
-    imported_project_uuid, _ = await login_user_and_import_study(client, export_version)
+    imported_project_uuid, _ = await login_user_and_import_study(
+        client, exported_project
+    )
 
     headers = {X_PRODUCT_NAME_HEADER: "osparc"}
 

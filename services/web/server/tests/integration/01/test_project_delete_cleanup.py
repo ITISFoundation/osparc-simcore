@@ -1,5 +1,4 @@
 # pylint:disable=redefined-outer-name,unused-argument,too-many-arguments
-import asyncio
 import logging
 from pathlib import Path
 from typing import Any, Callable, Dict, Final, Iterator, Set
@@ -12,6 +11,10 @@ import pytest
 from aiohttp.test_utils import TestClient
 from models_library.projects import ProjectID
 from models_library.settings.redis import RedisConfig
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 from yarl import URL
 
 log = logging.getLogger(__name__)
@@ -115,8 +118,12 @@ async def test_s3_cleanup_after_removal(
     async with await client.delete(f"{url_delete}", timeout=10) as export_response:
         assert export_response.status == 204, await export_response.text()
 
-    # give it some time to make sure data was removed
-    await asyncio.sleep(S3_DATA_REMOVAL_SECONDS)
-
-    # files from S3 should have been removed
-    assert await _files_in_s3() == set()
+    # since it takes time for the task to properly remove the data
+    # try a few times before giving up and failing the test
+    async for attempt in AsyncRetrying(
+        stop=stop_after_attempt(30),
+        wait=wait_fixed(2),
+        before_sleep=before_sleep_log(log, logging.WARNING),
+    ):
+        with attempt:
+            assert await _files_in_s3() == set()
