@@ -97,6 +97,8 @@ def mock_env(monkeypatch: MonkeyPatch, docker_swarm: None) -> None:
 
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+
 
 @pytest.fixture
 async def mock_retrieve_features(

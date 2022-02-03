@@ -1,3 +1,5 @@
+import warnings
+
 from functools import cached_property
 from typing import Sequence, get_args
 
@@ -107,4 +109,7 @@ class BaseCustomSettings(BaseSettings):
         # Kept for legacy
         # Optional to use to make the code more readable
         # More explicit and pylance seems to get less confused
+        warnings.warn(
+            "please use constructor instead of `create_from_envs`", DeprecationWarning
+        )
         return cls(**overrides)
