@@ -106,7 +106,7 @@ async def _get_user_groups_ids(conn: SAConnection, user_id: int) -> List[int]:
     return user_group_ids
 
 
-async def _is_project_present(conn: SAConnection, project_id: ProjectID) -> bool:
+async def _project_exists(conn: SAConnection, project_id: ProjectID) -> bool:
     stmt = sa.select([projects.c.id]).where(projects.c.uuid == project_id)
     result: ResultProxy = await conn.execute(stmt)
     row: Optional[RowProxy] = await result.first()
@@ -181,12 +181,10 @@ async def get_project_access_rights(
     """
     Returns access-rights of user (user_id) over a project resource (project_id)
     """
-    # when the project is removed, the project will no longer exist
-    # instead of returning AccessRights.none()
-    # an error will be raised
-    # this allows to handle the removal of the project data after the project was
-    # remove from the database
-    if not await _is_project_present(conn, project_id):
+    # raising an error if the project is missing,
+    # helps to better the error code by not returning
+    # AccessRights.none()
+    if not await _project_exists(conn, project_id):
         raise ProjectNotFoundtError(project_id)
 
     user_group_ids: List[int] = await _get_user_groups_ids(conn, user_id)
