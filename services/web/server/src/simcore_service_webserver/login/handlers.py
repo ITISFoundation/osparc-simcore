@@ -2,11 +2,9 @@ import logging
 from typing import Dict
 
 from aiohttp import web
-from yarl import URL
-
 from servicelib import observer
 from servicelib.aiohttp.rest_utils import extract_and_validate
-from simcore_service_webserver.utils_rate_limiting import global_rate_limit_route
+from yarl import URL
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..groups_api import auto_add_user_to_groups
@@ -27,6 +25,7 @@ from .utils import (
     render_and_send_mail,
     themed,
 )
+from .utils_rate_limiting import global_rate_limit_route
 
 # FIXME: do not use cfg singleton. use instead cfg = request.app[APP_LOGIN_CONFIG]
 
@@ -34,7 +33,7 @@ log = logging.getLogger(__name__)
 
 
 def to_names(enum_cls, names):
-    """ ensures names are in enum be retrieving each of them """
+    """ensures names are in enum be retrieving each of them"""
     # FIXME: with asyncpg need to user NAMES
     return [getattr(enum_cls, att).name for att in names.split()]
 

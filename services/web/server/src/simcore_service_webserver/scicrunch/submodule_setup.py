@@ -5,7 +5,6 @@ import logging
 
 from aiohttp import web
 from pydantic import ValidationError
-from simcore_service_webserver.session_settings import assert_valid_config
 
 from .service_client import SciCrunch
 from .settings import assert_valid_config
