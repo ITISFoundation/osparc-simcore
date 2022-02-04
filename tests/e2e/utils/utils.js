@@ -490,6 +490,15 @@ async function typeInInputElement(page, inputSelector, text) {
   });
 }
 
+async function waitUntilVisible(page, selector, timeout = 10000) {
+  const start = new Date().getTime();
+  let isVisible = false;
+  while (!isVisible && ((new Date().getTime() - start) < timeout)) {
+    isVisible = isElementVisible(page, selector);
+    await this.sleep(1000);
+  }
+}
+
 function isElementVisible(page, selector) {
   return page.evaluate(selector => {
     const element = document.querySelector(selector)
@@ -533,6 +542,7 @@ module.exports = {
   parseCommandLineArgumentsStudyDispatcherParams,
   getGrayLogSnapshotUrl,
   typeInInputElement,
+  waitUntilVisible,
   isElementVisible,
   clickLoggerTitle,
 }
