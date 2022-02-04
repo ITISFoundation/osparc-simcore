@@ -233,6 +233,8 @@ pyrsistent==0.18.0
     # via jsonschema
 python-dotenv==0.18.0
     # via docker-compose
+python-magic==0.4.25
+    # via -r requirements/_base.in
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
