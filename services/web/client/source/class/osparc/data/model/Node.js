@@ -888,41 +888,32 @@ qx.Class.define("osparc.data.model.Node", {
 
       const iframe = new osparc.component.widget.PersistentIframe();
       osparc.utils.Utils.setIdToWidget(iframe, "PersistentIframe");
-      iframe.addListener("restart", () => {
-        this.__restartIFrame();
-      }, this);
+      iframe.addListener("restart", () => this.__restartIFrame(), this);
       this.setIFrame(iframe);
     },
 
     __restartIFrame: function() {
       if (this.getServiceUrl() !== null) {
-        this.getIFrame().resetSource();
-        if (this.getKey().includes("3d-viewer")) {
-          // HACK: add this argument to only load the defined colorMaps
-          // https://github.com/Kitware/visualizer/commit/197acaf
-          const srvUrl = this.getServiceUrl();
-          let arg = "?serverColorMaps";
-          if (srvUrl[srvUrl.length - 1] !== "/") {
-            arg = "/" + arg;
-          }
-          this.getIFrame().setSource(srvUrl + arg);
-        } else {
+        const loadIframe = () => {
+          this.getIFrame().resetSource();
           this.getIFrame().setSource(this.getServiceUrl());
+        };
+
+        // restart button pushed
+        if (this.getIFrame().getSource().includes(this.getServiceUrl())) {
+          loadIframe();
         }
 
-        if (this.getKey().includes("raw-graphs")) {
-          // Listen to the postMessage from RawGraphs, posting a new graph
-          window.addEventListener("message", e => {
-            const {
-              id,
-              imgData
-            } = e.data;
-            if (imgData && id === "svgChange") {
-              const img = document.createElement("img");
-              img.src = imgData;
-              this.setThumbnail(img.outerHTML);
-            }
-          }, false);
+        const loadingPage = this.getLoadingPage();
+        const bounds = loadingPage.getBounds();
+        const domEle = loadingPage.getContentElement().getDomElement();
+        const boundsCR = domEle ? domEle.getBoundingClientRect() : null;
+        if (bounds !== null && boundsCR && boundsCR.width > 0) {
+          loadIframe();
+        } else {
+          // lazy loading
+          console.debug("lazy load", this.getNodeId());
+          loadingPage.addListenerOnce("appear", () => loadIframe(), this);
         }
       }
     },
