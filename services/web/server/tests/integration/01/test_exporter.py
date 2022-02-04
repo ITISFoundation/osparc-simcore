@@ -35,7 +35,9 @@ import aioredis
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.test_utils import TestClient
+from models_library.projects import ProjectID
 from pytest_simcore.docker_registry import _pull_push_service
+from pytest_simcore.helpers.utils_login import AUserDict
 from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
@@ -171,6 +173,23 @@ def assemble_tmp_file_path(file_name: str) -> Iterator[Path]:
     finally:
         file_path.unlink()
         tmp_store_dir.rmdir()
+
+
+@pytest.fixture
+async def cleanup_project_and_data(
+    client: TestClient, login_user_and_import_study: Tuple[ProjectID, AUserDict]
+) -> AsyncIterator[None]:
+    yield
+
+    imported_project_uuid, _ = login_user_and_import_study
+
+    # project cleanup when finished
+    url_delete = client.app.router["delete_project"].url_for(
+        project_id=f"{imported_project_uuid}"
+    )
+    assert url_delete == URL(f"/{API_VTAG}/projects/{imported_project_uuid}")
+    async with await client.delete(f"{url_delete}", timeout=10) as export_response:
+        assert export_response.status == 204, await export_response.text()
 
 
 async def query_project_from_db(
@@ -370,22 +389,20 @@ async def import_study_from_file(client, file_path: Path) -> str:
 
 async def test_import_export_import_duplicate(
     client: TestClient,
-    login_user_and_import_study: Callable,
+    login_user_and_import_study: Tuple[ProjectID, AUserDict],
     aiopg_engine: aiopg.sa.engine.Engine,
-    exported_project: Path,
     push_services_to_registry: None,
     redis_client: aioredis.Redis,
     simcore_services_ready: None,
     grant_access_rights: None,
+    cleanup_project_and_data: None,
 ):
     """
     Checks if the full "import -> export -> import -> duplicate" cycle
     produces the same result in the DB.
     """
 
-    imported_project_uuid, user = await login_user_and_import_study(
-        client, exported_project
-    )
+    imported_project_uuid, user = login_user_and_import_study
 
     headers = {X_PRODUCT_NAME_HEADER: "osparc"}
 
@@ -493,14 +510,6 @@ async def test_import_export_import_duplicate(
         condition_operator=operator.eq,
     )
 
-    # project cleanup when finished
-    url_delete = client.app.router["delete_project"].url_for(
-        project_id=f"{imported_project_uuid}"
-    )
-    assert url_delete == URL(f"/{API_VTAG}/projects/{imported_project_uuid}")
-    async with await client.delete(f"{url_delete}", timeout=10) as export_response:
-        assert export_response.status == 204, await export_response.text()
-
 
 @pytest.fixture
 def mock_file_downloader(monkeypatch: MonkeyPatch) -> None:
@@ -516,8 +525,7 @@ def mock_file_downloader(monkeypatch: MonkeyPatch) -> None:
 
 async def test_download_error_reporting(
     client: TestClient,
-    exported_project: Path,
-    login_user_and_import_study: Callable,
+    login_user_and_import_study: Tuple[ProjectID, AUserDict],
     push_services_to_registry: None,
     aiopg_engine: aiopg.sa.engine.Engine,
     redis_client: aioredis.Redis,
@@ -526,9 +534,7 @@ async def test_download_error_reporting(
     mock_file_downloader: None,
 ):
     # not testing agains all versions, results will be the same
-    imported_project_uuid, _ = await login_user_and_import_study(
-        client, exported_project
-    )
+    imported_project_uuid, _ = login_user_and_import_study
 
     headers = {X_PRODUCT_NAME_HEADER: "osparc"}
 

@@ -1,7 +1,7 @@
 # pylint:disable=redefined-outer-name,unused-argument,too-many-arguments
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, Final, Set
+from typing import Any, Dict, Final, Set, Tuple
 
 import aioboto3
 import aiopg
@@ -9,6 +9,7 @@ import aiopg.sa
 import aioredis
 from aiohttp.test_utils import TestClient
 from models_library.projects import ProjectID
+from pytest_simcore.helpers.utils_login import AUserDict
 from simcore_service_webserver._meta import API_VTAG
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -69,7 +70,7 @@ async def _fetch_stored_files(
 
 async def test_s3_cleanup_after_removal(
     client: TestClient,
-    login_user_and_import_study: Callable,
+    login_user_and_import_study: Tuple[ProjectID, AUserDict],
     minio_config: Dict[str, Any],
     exported_project: Path,
     aiopg_engine: aiopg.sa.engine.Engine,
@@ -77,9 +78,7 @@ async def test_s3_cleanup_after_removal(
     docker_registry: str,
     simcore_services_ready: None,
 ):
-    imported_project_uuid, _ = await login_user_and_import_study(
-        client, exported_project
-    )
+    imported_project_uuid, _ = login_user_and_import_study
 
     async def _files_in_s3() -> Set[str]:
         return await _fetch_stored_files(
@@ -93,8 +92,8 @@ async def test_s3_cleanup_after_removal(
         project_id=f"{imported_project_uuid}"
     )
     assert url_delete == URL(f"/{API_VTAG}/projects/{imported_project_uuid}")
-    async with await client.delete(f"{url_delete}", timeout=10) as export_response:
-        assert export_response.status == 204, await export_response.text()
+    async with await client.delete(f"{url_delete}", timeout=10) as delete_response:
+        assert delete_response.status == 204, await delete_response.text()
 
     # since it takes time for the task to properly remove the data
     # try a few times before giving up and failing the test
