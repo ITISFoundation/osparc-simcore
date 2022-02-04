@@ -390,6 +390,16 @@ qx.Class.define("osparc.data.model.Study", {
       return null;
     },
 
+    isPipelineRunning: function() {
+      const pipelineState = this.getPipelineState();
+      return [
+        "PUBLISHED",
+        "PENDING",
+        "STARTED",
+        "RETRY"
+      ].includes(pipelineState);
+    },
+
     isLocked: function() {
       if (this.getState() && "locked" in this.getState()) {
         return this.getState()["locked"]["value"];
