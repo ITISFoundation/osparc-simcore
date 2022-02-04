@@ -897,33 +897,7 @@ qx.Class.define("osparc.data.model.Node", {
     __restartIFrame: function() {
       if (this.getServiceUrl() !== null) {
         this.getIFrame().resetSource();
-        if (this.getKey().includes("3d-viewer")) {
-          // HACK: add this argument to only load the defined colorMaps
-          // https://github.com/Kitware/visualizer/commit/197acaf
-          const srvUrl = this.getServiceUrl();
-          let arg = "?serverColorMaps";
-          if (srvUrl[srvUrl.length - 1] !== "/") {
-            arg = "/" + arg;
-          }
-          this.getIFrame().setSource(srvUrl + arg);
-        } else {
-          this.getIFrame().setSource(this.getServiceUrl());
-        }
-
-        if (this.getKey().includes("raw-graphs")) {
-          // Listen to the postMessage from RawGraphs, posting a new graph
-          window.addEventListener("message", e => {
-            const {
-              id,
-              imgData
-            } = e.data;
-            if (imgData && id === "svgChange") {
-              const img = document.createElement("img");
-              img.src = imgData;
-              this.setThumbnail(img.outerHTML);
-            }
-          }, false);
-        }
+        this.getIFrame().setSource(this.getServiceUrl());
       }
     },
 
