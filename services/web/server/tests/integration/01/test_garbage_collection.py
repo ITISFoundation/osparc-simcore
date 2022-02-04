@@ -53,27 +53,10 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = ["minio"]
 
 
-
 GARBAGE_COLLECTOR_INTERVAL = 1
 SERVICE_DELETION_DELAY = 1
 # ensure enough time has passed and GC was triggered
 WAIT_FOR_COMPLETE_GC_CYCLE = GARBAGE_COLLECTOR_INTERVAL + SERVICE_DELETION_DELAY + 2
-
-
-@pytest.fixture(autouse=True)
-def __drop_and_recreate_postgres__(database_from_template_before_each_function) -> None:
-    yield
-
-
-@pytest.fixture(autouse=True)
-async def __delete_all_redis_keys__(redis_service: RedisConfig):
-    client = await aioredis.create_redis_pool(redis_service.dsn, encoding="utf-8")
-    await client.flushall()
-    client.close()
-    await client.wait_closed()
-
-    yield
-    # do nothing on teadown
 
 
 @pytest.fixture
@@ -95,18 +78,11 @@ async def director_v2_service_mock() -> aioresponses:
         mock.get(
             get_computation_pattern,
             status=202,
-            payload={"state": str(RunningState.NOT_STARTED.value)},
+            payload={"state": f"{RunningState.NOT_STARTED.value}"},
             repeat=True,
         )
         mock.delete(delete_computation_pattern, status=204, repeat=True)
         yield mock
-
-
-@pytest.fixture(autouse=True)
-async def auto_mock_director_v2(
-    director_v2_service_mock: aioresponses,
-) -> aioresponses:
-    return director_v2_service_mock
 
 
 @pytest.fixture
@@ -117,6 +93,9 @@ def client(
     postgres_with_template_db,
     mock_orphaned_services,
     monkeypatch_setenv_from_app_config: Callable,
+    database_from_template_before_each_function: None,
+    delete_all_redis_keys: None,
+    director_v2_service_mock: aioresponses,
 ):
     cfg = deepcopy(app_config)
 
@@ -182,10 +161,10 @@ async def get_template_project(client, user, project_data: Dict, access_rights=N
     _, _, all_group = await list_user_groups(client.app, user["id"])
 
     # the information comes from a file, randomize it
-    project_data["name"] = "Fake template" + str(uuid4())
-    project_data["uuid"] = str(uuid4())
+    project_data["name"] = f"Fake template {uuid4()}"
+    project_data["uuid"] = f"{uuid4()}"
     project_data["accessRights"] = {
-        str(all_group["gid"]): {"read": True, "write": False, "delete": False}
+        f"{all_group['gid']}": {"read": True, "write": False, "delete": False}
     }
     if access_rights is not None:
         project_data["accessRights"].update(access_rights)
@@ -224,10 +203,10 @@ async def change_user_role(
 async def connect_to_socketio(client, user, socketio_client_factory: Callable):
     """Connect a user to a socket.io"""
     socket_registry = get_registry(client.server.app)
-    cur_client_session_id = str(uuid4())
+    cur_client_session_id = f"{uuid4()}"
     sio = await socketio_client_factory(cur_client_session_id, client)
     resource_key = {
-        "user_id": str(user["id"]),
+        "user_id": f"{user['id']}",
         "client_session_id": cur_client_session_id,
     }
     assert await socket_registry.find_keys(("socket_id", sio.sid)) == [resource_key]
@@ -494,7 +473,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     project = await new_project(
         client,
         u1,
-        access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
+        access_rights={f"{g1['gid']}": {"read": True, "write": True, "delete": False}},
     )
 
     # mark u1 as guest
