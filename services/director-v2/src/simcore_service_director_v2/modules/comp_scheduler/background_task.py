@@ -6,7 +6,6 @@ from typing import Any, Callable, Coroutine
 
 from fastapi import FastAPI
 
-from ...core.errors import ComputationalBackendNotConnectedError
 from . import factory
 
 logger = logging.getLogger(__name__)
@@ -27,9 +26,6 @@ async def scheduler_task(app: FastAPI) -> None:
         except CancelledError:
             logger.info("Computational scheduler task cancelled")
             raise
-        except ComputationalBackendNotConnectedError:
-            logger.info("trying to reconnect to computational backend...")
-            await scheduler.reconnect_backend()
         except Exception:  # pylint: disable=broad-except
             if not app.state.comp_scheduler_running:
                 logger.warning("Forced to stop computational scheduler")
