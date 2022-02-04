@@ -17,15 +17,16 @@
 
 
 fastapi
+httpx
 pydantic
 uvicorn
-httpx
 
-docker-compose
+aio-pika
 aiodocker
 aiofiles
-PyYAML
-async-timeout
 async_generator
-aio-pika
+async-timeout
+docker-compose
+python-magic
+PyYAML
 watchdog

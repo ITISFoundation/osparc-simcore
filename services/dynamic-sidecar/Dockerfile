@@ -55,7 +55,8 @@ ENV SC_BUILD_TARGET=build
 
 RUN apt-get update &&\
   apt-get install -y --no-install-recommends \
-  build-essential
+  build-essential \
+  libmagic1
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
@@ -104,6 +105,10 @@ FROM base as production
 
 ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production
+
+RUN apt-get update &&\
+  apt-get install -y --no-install-recommends \
+  libmagic1
 
 ENV PYTHONOPTIMIZE=TRUE
 
