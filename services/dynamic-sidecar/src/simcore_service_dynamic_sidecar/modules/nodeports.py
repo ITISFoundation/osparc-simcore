@@ -146,7 +146,8 @@ async def dispatch_update_for_directory(directory_path: Path) -> None:
 
 
 def _is_zip_file(file_path: Path) -> bool:
-    return str(magic.from_file(file_path, mime=True)) == "application/zip"
+    mime_type = magic.from_file(file_path, mime=True)
+    return f"{mime_type}" == "application/zip"
 
 
 async def _get_data_from_port(port: Port) -> Tuple[Port, ItemConcreteValue]:
