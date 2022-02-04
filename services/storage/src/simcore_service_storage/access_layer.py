@@ -181,9 +181,6 @@ async def get_project_access_rights(
     """
     Returns access-rights of user (user_id) over a project resource (project_id)
     """
-    # raising an error if the project is missing,
-    # helps to better the error code by not returning
-    # AccessRights.none()
     if not await _project_exists(conn, project_id):
         raise ProjectNotFoundtError(project_id)
 
