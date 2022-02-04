@@ -474,7 +474,8 @@ async def test_proper_pipeline_is_scheduled(
     [
         ComputationalBackendNotConnectedError(msg="faked disconnected backend"),
         ComputationalSchedulerChangedError(
-            "some_old_scheduler_id", "some_new_scheduler_id"
+            original_scheduler_id="some_old_scheduler_id",
+            current_scheduler_id="some_new_scheduler_id",
         ),
     ],
 )
