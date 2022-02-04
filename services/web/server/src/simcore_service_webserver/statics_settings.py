@@ -127,5 +127,8 @@ class StaticWebserverModuleSettings(BaseCustomSettings):
     STATIC_WEBSERVER_URL: AnyHttpUrl = Field(
         "http://static-webserver:8000",
         description="url fort static content",
-        env=["STATIC_WEBSERVER_URL", "WEBSERVER_STATIC_WEBSERVER_URL"],  # legacy
+        env=[
+            "STATIC_WEBSERVER_URL",
+            "WEBSERVER_STATIC_MODULE_STATIC_WEB_SERVER_URL",
+        ],  # legacy
     )
