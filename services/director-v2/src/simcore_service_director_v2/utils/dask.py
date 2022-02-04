@@ -363,7 +363,8 @@ def check_scheduler_is_still_the_same(
     if current_scheduler_id != original_scheduler_id:
         logger.error("The computational backend changed!")
         raise ComputationalSchedulerChangedError(
-            original_scheduler_id, current_scheduler_id
+            original_scheduler_id=original_scheduler_id,
+            current_scheduler_id=current_scheduler_id,
         )
 
 
