@@ -894,17 +894,21 @@ qx.Class.define("osparc.data.model.Node", {
 
     __restartIFrame: function() {
       if (this.getServiceUrl() !== null) {
+        const loadIframe = () => {
+          this.getIFrame().resetSource();
+          this.getIFrame().setSource(this.getServiceUrl());
+        };
+
         const loadingPage = this.getLoadingPage();
-        const iframe = this.getIFrame();
-        if (loadingPage.getBounds() === null) {
-          // lazy loading
-          loadingPage.addListenerOnce("appear", () => {
-            iframe.resetSource();
-            iframe.setSource(this.getServiceUrl());
-          }, this);
+        const bounds = loadingPage.getBounds();
+        const domEle = loadingPage.getContentElement().getDomElement();
+        const boundsCR = domEle ? domEle.getBoundingClientRect() : null;
+        if (bounds !== null && boundsCR && boundsCR.width > 0) {
+          loadIframe();
         } else {
-          iframe.resetSource();
-          iframe.setSource(this.getServiceUrl());
+          // lazy loading
+          console.debug("lazy load", this.getNodeId());
+          loadingPage.addListenerOnce("appear", () => loadIframe(), this);
         }
       }
     },
