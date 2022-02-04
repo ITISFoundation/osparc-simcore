@@ -42,14 +42,13 @@ from simcore_postgres_database.models.services import (
     services_meta_data,
 )
 from simcore_service_webserver._constants import X_PRODUCT_NAME_HEADER
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.db_models import projects
 from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
 from simcore_service_webserver.exporter.file_downloader import ParallelDownloader
 from simcore_service_webserver.storage_handlers import get_file_download_url
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from yarl import URL
-
-API_PREFIX = "/v0"
 
 log = logging.getLogger(__name__)
 
@@ -376,7 +375,7 @@ async def get_checksums_for_files_in_storage(
 
 async def import_study_from_file(client, file_path: Path) -> str:
     url_import = client.app.router["import_project"].url_for()
-    assert url_import == URL(API_PREFIX + "/projects:import")
+    assert url_import == URL(f"/{API_VTAG}/projects:import")
 
     data = {"fileName": open(file_path, mode="rb")}
     async with await client.post(url_import, data=data, timeout=10) as import_response:
@@ -414,7 +413,7 @@ async def test_import_export_import_duplicate(
         project_id=str(imported_project_uuid)
     )
 
-    assert url_export == URL(API_PREFIX + f"/projects/{imported_project_uuid}:xport")
+    assert url_export == URL(f"/{API_VTAG}/projects/{imported_project_uuid}:xport")
     async with await client.post(
         f"{url_export}", headers=headers, timeout=10
     ) as export_response:
@@ -440,7 +439,7 @@ async def test_import_export_import_duplicate(
         project_id=str(imported_project_uuid)
     )
     assert url_duplicate == URL(
-        API_PREFIX + f"/projects/{imported_project_uuid}:duplicate"
+        f"/{API_VTAG}/projects/{imported_project_uuid}:duplicate"
     )
     async with await client.post(
         f"{url_duplicate}", headers=headers, timeout=10
@@ -517,7 +516,7 @@ async def test_import_export_import_duplicate(
     url_delete = client.app.router["delete_project"].url_for(
         project_id=str(imported_project_uuid)
     )
-    assert url_delete == URL(API_PREFIX + f"/projects/{imported_project_uuid}")
+    assert url_delete == URL(f"/{API_VTAG}/projects/{imported_project_uuid}")
     async with await client.delete(f"{url_delete}", timeout=10) as export_response:
         assert export_response.status == 204, await export_response.text()
 
@@ -557,7 +556,7 @@ async def test_download_error_reporting(
         project_id=str(imported_project_uuid)
     )
 
-    assert url_export == URL(API_PREFIX + f"/projects/{imported_project_uuid}:xport")
+    assert url_export == URL(f"/{API_VTAG}/projects/{imported_project_uuid}:xport")
     async with await client.post(
         f"{url_export}", headers=headers, timeout=10
     ) as export_response:

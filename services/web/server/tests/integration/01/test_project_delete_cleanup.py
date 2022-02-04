@@ -11,6 +11,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from models_library.projects import ProjectID
 from models_library.settings.redis import RedisConfig
+from simcore_service_webserver._meta import API_VTAG
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -33,7 +34,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 S3_DATA_REMOVAL_SECONDS: Final[int] = 2
-API_PREFIX = "/v0"
 
 # FIXTURES
 
@@ -114,7 +114,7 @@ async def test_s3_cleanup_after_removal(
     url_delete = client.app.router["delete_project"].url_for(
         project_id=str(imported_project_uuid)
     )
-    assert url_delete == URL(API_PREFIX + f"/projects/{imported_project_uuid}")
+    assert url_delete == URL(f"/{API_VTAG}/projects/{imported_project_uuid}")
     async with await client.delete(f"{url_delete}", timeout=10) as export_response:
         assert export_response.status == 204, await export_response.text()
 

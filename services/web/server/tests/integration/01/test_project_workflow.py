@@ -22,6 +22,7 @@ from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import catalog
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2 import setup_director_v2
@@ -35,8 +36,6 @@ from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-
-API_VERSION = "v0"
 
 # Selection of core and tool services started in this swarm fixture (integration)
 pytest_simcore_core_services_selection = [
@@ -58,7 +57,7 @@ def client(
     app_config,  # waits until swarm with *_services are up
     monkeypatch_setenv_from_app_config: Callable,
 ):
-    assert app_config["rest"]["version"] == API_VERSION
+    assert app_config["rest"]["version"] == API_VTAG
 
     app_config["main"]["testing"] = True
 

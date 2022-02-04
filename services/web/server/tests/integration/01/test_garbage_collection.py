@@ -18,6 +18,7 @@ from models_library.settings.redis import RedisConfig
 from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
 from servicelib.aiohttp.application import create_safe_application
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects, users
 from simcore_service_webserver.director.module_setup import setup_director
@@ -52,7 +53,7 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = ["minio"]
 
 
-API_VERSION = "v0"
+
 GARBAGE_COLLECTOR_INTERVAL = 1
 SERVICE_DELETION_DELAY = 1
 # ensure enough time has passed and GC was triggered
@@ -119,7 +120,7 @@ def client(
 ):
     cfg = deepcopy(app_config)
 
-    assert cfg["rest"]["version"] == API_VERSION
+    assert cfg["rest"]["version"] == API_VTAG
     assert cfg["rest"]["enabled"]
 
     cfg["projects"]["enabled"] = True

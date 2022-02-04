@@ -4,17 +4,18 @@ import asyncio
 import sys
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Dict, Tuple, Any
+from typing import Any, Callable, Dict, Tuple
 from unittest import mock
 from uuid import UUID
 
 import aiopg
 import aiopg.sa
-from pytest_simcore.helpers.utils_environs import EnvVarsDict
 import pytest
 from models_library.projects import ProjectID
+from pytest_simcore.helpers.utils_environs import EnvVarsDict
 from pytest_simcore.helpers.utils_login import AUserDict, log_client_in
 from servicelib.aiohttp.application import create_safe_application
+from simcore_service_webserver._meta import API_VTAG
 from simcore_service_webserver.application import (
     setup_director,
     setup_director_v2,
@@ -38,8 +39,6 @@ from simcore_service_webserver.scicrunch.submodule_setup import (
 from simcore_service_webserver.security_roles import UserRole
 from yarl import URL
 
-API_VERSION = "v0"
-API_PREFIX = f"/{API_VERSION}"
 # store only lowercase "v1", "v2", etc...
 SUPPORTED_EXPORTER_VERSIONS = {"v1", "v2"}
 
@@ -57,7 +56,7 @@ def client(
     monkeypatch_setenv_from_app_config(app_config)
     cfg = deepcopy(app_config)
 
-    assert cfg["rest"]["version"] == API_VERSION
+    assert cfg["rest"]["version"] == API_VTAG
     assert cfg["rest"]["enabled"]
     cfg["projects"]["enabled"] = True
     cfg["director"]["enabled"] = True
@@ -107,7 +106,7 @@ def login_user_and_import_study() -> Callable:
         assert version_from_name in SUPPORTED_EXPORTER_VERSIONS, assert_error
 
         url_import = client.app.router["import_project"].url_for()
-        assert url_import == URL(API_PREFIX + "/projects:import")
+        assert url_import == URL(f"/{API_VTAG}/projects:import")
 
         data = {"fileName": open(export_version, mode="rb")}
         async with await client.post(
