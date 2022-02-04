@@ -4,12 +4,13 @@ import asyncio
 import sys
 from copy import deepcopy
 from pathlib import Path
-from typing import Callable, Dict, Tuple
+from typing import Callable, Dict, Tuple, Any
 from unittest import mock
 from uuid import UUID
 
 import aiopg
 import aiopg.sa
+from pytest_simcore.helpers.utils_environs import EnvVarsDict
 import pytest
 from models_library.projects import ProjectID
 from pytest_simcore.helpers.utils_login import AUserDict, log_client_in
@@ -50,8 +51,10 @@ def client(
     app_config: Dict,
     postgres_with_template_db: aiopg.sa.engine.Engine,
     mock_orphaned_services: mock.Mock,
+    monkeypatch_setenv_from_app_config: Callable[[EnvVarsDict], Dict[str, Any]],
 ):
 
+    monkeypatch_setenv_from_app_config(app_config)
     cfg = deepcopy(app_config)
 
     assert cfg["rest"]["version"] == API_VERSION
