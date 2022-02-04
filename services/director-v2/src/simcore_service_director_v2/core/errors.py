@@ -132,6 +132,11 @@ class ComputationalBackendNotConnectedError(PydanticErrorMixin, SchedulerError):
     msg_template = "The dask computational backend is not connected"
 
 
+class ComputationalBackendTaskNotFoundError(PydanticErrorMixin, SchedulerError):
+    code = "computational_backend.task_not_found"
+    msg_template = "The dask computational backend does not know about the task"
+
+
 class ConfigurationError(DirectorException):
     """An error in the director-v2 configuration"""
 

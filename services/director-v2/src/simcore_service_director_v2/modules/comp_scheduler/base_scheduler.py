@@ -26,6 +26,7 @@ from pydantic import PositiveInt
 
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
+    ComputationalBackendTaskNotFoundError,
     ComputationalSchedulerChangedError,
     InsuficientComputationalResourcesError,
     InvalidPipelineError,
@@ -208,6 +209,12 @@ class BaseCompScheduler(ABC):
         ...
 
     @abstractmethod
+    async def _get_tasks_status(
+        self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
+    ) -> List[RunningState]:
+        ...
+
+    @abstractmethod
     async def _stop_tasks(
         self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
     ) -> None:
@@ -232,6 +239,7 @@ class BaseCompScheduler(ABC):
         pipeline_tasks: Dict[str, CompTaskAtDB] = {}
         pipeline_result: RunningState = RunningState.UNKNOWN
         tasks_to_start: Set[NodeID] = set()
+        tasks_to_check: Set[NodeID] = set()
 
         # 1. Update the run states
         try:
@@ -254,15 +262,21 @@ class BaseCompScheduler(ABC):
 
             tasks_to_mark_as_aborted: Set[NodeID] = set()
             for node_id in tasks_to_schedule:
-                if pipeline_tasks[str(node_id)].state == RunningState.FAILED:
+                if pipeline_tasks[f"{node_id}"].state == RunningState.FAILED:
                     tasks_to_mark_as_aborted.update(nx.bfs_tree(pipeline_dag, node_id))
                     tasks_to_mark_as_aborted.remove(
                         node_id
                     )  # do not mark the failed one as aborted
 
-                if pipeline_tasks[str(node_id)].state == RunningState.PUBLISHED:
+                if pipeline_tasks[f"{node_id}"].state == RunningState.PUBLISHED:
                     # the nodes that are published shall be started
                     tasks_to_start.add(node_id)
+
+                if pipeline_tasks[f"{node_id}"].state in (
+                    RunningState.STARTED,
+                    RunningState.PENDING,
+                ):
+                    tasks_to_check.add(node_id)
 
             comp_tasks_repo: CompTasksRepository = cast(
                 CompTasksRepository, get_repository(self.db_engine, CompTasksRepository)
@@ -295,6 +309,18 @@ class BaseCompScheduler(ABC):
             )
             pipeline_result = RunningState.ABORTED
             await self._set_run_result(user_id, project_id, iteration, pipeline_result)
+
+        # if tasks_to_check:
+        #     # ensure these tasks still exist in the backend, if not we abort these
+        #     logger.error("Tasks to check: %s", f"{tasks_to_check=}")
+        #     tasks_backend_status = await self._get_tasks_status(
+        #         cluster_id, [pipeline_tasks[f"{node_id}"] for node_id in tasks_to_check]
+        #     )
+        #     logger.error(
+        #         "Tasks checked: %s vs %s",
+        #         f"{tasks_to_check=}",
+        #         f"{tasks_backend_status=}",
+        #     )
 
         # 2. Are we finished??
         if not pipeline_dag.nodes() or pipeline_result in COMPLETED_STATES:
@@ -339,12 +365,18 @@ class BaseCompScheduler(ABC):
         ]
         try:
             await self._stop_tasks(cluster_id, running_tasks)
-        except ComputationalBackendNotConnectedError:
-            logger.error(
-                "The computational backend is disconnected. Tasks cannot be aborted properly!"
-            )
-        except ComputationalSchedulerChangedError as exc:
-            logger.error("%s", exc)
+        except (
+            ComputationalBackendNotConnectedError,
+            ComputationalSchedulerChangedError,
+            ComputationalBackendTaskNotFoundError,
+        ) as exc:
+            logger.error("ISSUE WHILE STOPPING")
+            # logger.error("%s", exc)
+            # await comp_tasks_repo.set_project_tasks_state(
+            #     project_id,
+            #     [NodeID(k) for k in tasks_to_stop.keys()],
+            #     RunningState.ABORTED,
+            # )
         except asyncio.CancelledError:
             logger.warning(
                 "The task stopping was cancelled, there might be still be running tasks!"

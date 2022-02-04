@@ -104,6 +104,12 @@ class DaskScheduler(BaseCompScheduler):
             ]
         )
 
+    async def _get_tasks_status(
+        self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
+    ) -> List[RunningState]:
+        async with _cluster_dask_client(cluster_id, self) as client:
+            return await client.get_tasks_status([f"{t.job_id}" for t in tasks])
+
     async def _stop_tasks(
         self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
     ) -> None:

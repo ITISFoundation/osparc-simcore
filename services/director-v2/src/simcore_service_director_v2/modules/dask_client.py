@@ -32,6 +32,7 @@ from models_library.clusters import (
 )
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.projects_state import RunningState
 from pydantic.networks import AnyUrl
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -39,6 +40,7 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 from ..core.errors import (
+    ComputationalBackendTaskNotFoundError,
     ConfigurationError,
     DaskClientRequestError,
     DaskClusterError,
@@ -63,6 +65,15 @@ from ..utils.dask import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+_DASK_TASK_STATUS_RUNNING_STATE_MAP = {
+    "pending": RunningState.PENDING,
+    "cancelled": RunningState.ABORTED,
+    "finished": RunningState.SUCCESS,
+    "lost": RunningState.FAILED,
+    "error": RunningState.FAILED,
+}
 
 
 @dataclass
@@ -389,6 +400,28 @@ class DaskClient:
                 raise
         return list_of_node_id_to_job_id
 
+    async def get_tasks_status(self, job_ids: List[str]) -> List[RunningState]:
+        logger.debug("cancelling tasks with job_ids: [%s]", job_ids)
+        task_statuses = []
+        for job_id in job_ids:
+            task_future = self._taskid_to_future_map.get(job_id)
+            if not task_future:
+                # this task was not created in this client
+                # try to find it in the scheduler
+                task_future = distributed.Future(job_id, self.dask_subsystem.client)
+                workers_with_the_job = await self.dask_subsystem.client.who_has(job_id)
+                logger.error("workers with the job: %s", f"{workers_with_the_job}")
+                logger.error("task status: %s", f"{task_future.status}")
+                task_statuses.append(RunningState.UNKNOWN)
+                continue
+
+            task_statuses.append(
+                _DASK_TASK_STATUS_RUNNING_STATE_MAP.get(
+                    task_future.status, RunningState.UNKNOWN
+                )
+            )
+        return task_statuses
+
     async def abort_computation_tasks(self, job_ids: List[str]) -> None:
         # Dask future may be cancelled, but only a future that was not already taken by
         # a sidecar can be cancelled that way.
@@ -404,3 +437,12 @@ class DaskClient:
                 )
                 await task_future.cancel()
                 logger.debug("Dask task %s cancelled", task_future.key)
+            else:
+                task_future = distributed.Future(job_id, self.dask_subsystem.client)
+                if task_future.status == "pending":
+                    workers_with_the_job = await self.dask_subsystem.client.who_has(
+                        job_id
+                    )
+                    if not workers_with_the_job:
+                        raise ComputationalBackendTaskNotFoundError()
+                logger.error("%s", f"{task_future=}")
