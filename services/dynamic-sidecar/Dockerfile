@@ -12,7 +12,10 @@ LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
 
 RUN set -eux && \
   apt-get update && \
-  apt-get install -y gosu && \
+  apt-get install -y \
+  gosu \
+  libmagic1 \
+  && \
   rm -rf /var/lib/apt/lists/* && \
   # verify that the binary works
   gosu nobody true
@@ -55,8 +58,7 @@ ENV SC_BUILD_TARGET=build
 
 RUN apt-get update &&\
   apt-get install -y --no-install-recommends \
-  build-essential \
-  libmagic1
+  build-essential
 
 # NOTE: python virtualenv is used here such that installed
 # packages may be moved to production image easily by copying the venv
@@ -105,10 +107,6 @@ FROM base as production
 
 ENV SC_BUILD_TARGET=production \
   SC_BOOT_MODE=production
-
-RUN apt-get update &&\
-  apt-get install -y --no-install-recommends \
-  libmagic1
 
 ENV PYTHONOPTIMIZE=TRUE
 
