@@ -97,7 +97,8 @@ describe('tags testing', () => {
     expect(await tagFilterMenu.evaluate(el => el.innerText)).toContain(TAG_NAME);
   }, ourTimeout);
 
-  test('assign tag and reflect changes', async () => {
+  // wait until card gets unlocked. Tags will anyway be replaced by folder in the coming weeks
+  test.skip('assign tag and reflect changes', async () => {
     await page.waitForSelector(
       '[qxclass="osparc.dashboard.GridButtonItem"] > [qxclass="osparc.ui.basic.Thumbnail"]',
       {
@@ -116,7 +117,8 @@ describe('tags testing', () => {
     expect(await displayedTag.evaluate(el => el.innerText)).toContain(TAG_NAME);
   }, ourTimeout);
 
-  test('change tag and reflect changes', async () => {
+  // wait until card gets unlocked. Tags will anyway be replaced by folder in the coming weeks
+  test.skip('change tag and reflect changes', async () => {
     // Change the tag
     await waitAndClick(page, '[osparc-test-id="userMenuMainBtn"]');
     await waitAndClick(page, '[osparc-test-id="userMenuPreferencesBtn"]');

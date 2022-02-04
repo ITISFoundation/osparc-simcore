@@ -22,7 +22,6 @@ async function runTutorial() {
     await tutorial.start();
     const studyData = await tutorial.openTemplate(1000);
     studyId = studyData["data"]["uuid"];
-    console.log("Study ID:", studyId);
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     await tutorial.waitForServices(workbenchData["studyId"], [workbenchData["nodeIds"][0]], startTimeout);

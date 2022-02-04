@@ -368,7 +368,16 @@ def check_scheduler_is_still_the_same(
         )
 
 
-def check_client_can_connect_to_scheduler(client: distributed.Client):
+def check_communication_with_scheduler_is_open(client: distributed.Client):
+    if (
+        client.scheduler_comm
+        and client.scheduler_comm.comm is not None
+        and client.scheduler_comm.comm.closed()
+    ):
+        raise ComputationalBackendNotConnectedError()
+
+
+def check_scheduler_status(client: distributed.Client):
     client_status = client.status
     if client_status not in "running":
         logger.error(
