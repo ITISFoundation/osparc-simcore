@@ -57,12 +57,14 @@ qx.Class.define("osparc.data.model.Study", {
       quality: studyData.quality || this.getQuality()
     });
 
-    const wbData = studyData.workbench || this.getWorkbench();
+    const wbData = studyData.workbench || {};
     const workbench = new osparc.data.model.Workbench(wbData, studyData.ui);
     this.setWorkbench(workbench);
     workbench.setStudy(this);
 
     this.setUi(new osparc.data.model.StudyUI(studyData.ui));
+
+    this.__applyState();
   },
 
   properties: {
@@ -126,7 +128,7 @@ qx.Class.define("osparc.data.model.Study", {
     workbench: {
       check: "osparc.data.model.Workbench",
       nullable: false,
-      init: {}
+      init: null
     },
 
     ui: {
@@ -158,7 +160,8 @@ qx.Class.define("osparc.data.model.Study", {
     state: {
       check: "Object",
       nullable: true,
-      event: "changeState"
+      event: "changeState",
+      apply: "__applyState"
     },
 
     readOnly: {
@@ -421,6 +424,19 @@ qx.Class.define("osparc.data.model.Study", {
         this.setReadOnly(!canIWrite);
       } else {
         this.setReadOnly(true);
+      }
+    },
+
+    __applyState: function() {
+      if (this.getWorkbench() === null) {
+        return;
+      }
+      const isPipelineRunning = this.isPipelineRunning();
+      const nodes = this.getWorkbench().getNodes(true);
+      for (const node of Object.values(nodes)) {
+        if (node.isPropertyInitialized("propsForm") && node.getPropsForm()) {
+          node.getPropsForm().setEnabled(!isPipelineRunning);
+        }
       }
     },
 
