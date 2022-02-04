@@ -888,16 +888,33 @@ qx.Class.define("osparc.data.model.Node", {
 
       const iframe = new osparc.component.widget.PersistentIframe();
       osparc.utils.Utils.setIdToWidget(iframe, "PersistentIframe");
-      iframe.addListener("restart", () => {
-        this.__restartIFrame();
-      }, this);
+      iframe.addListener("restart", () => this.__restartIFrame(), this);
       this.setIFrame(iframe);
     },
 
     __restartIFrame: function() {
       if (this.getServiceUrl() !== null) {
-        this.getIFrame().resetSource();
-        this.getIFrame().setSource(this.getServiceUrl());
+        const loadIframe = () => {
+          this.getIFrame().resetSource();
+          this.getIFrame().setSource(this.getServiceUrl());
+        };
+
+        // restart button pushed
+        if (this.getIFrame().getSource().includes(this.getServiceUrl())) {
+          loadIframe();
+        }
+
+        const loadingPage = this.getLoadingPage();
+        const bounds = loadingPage.getBounds();
+        const domEle = loadingPage.getContentElement().getDomElement();
+        const boundsCR = domEle ? domEle.getBoundingClientRect() : null;
+        if (bounds !== null && boundsCR && boundsCR.width > 0) {
+          loadIframe();
+        } else {
+          // lazy loading
+          console.debug("lazy load", this.getNodeId());
+          loadingPage.addListenerOnce("appear", () => loadIframe(), this);
+        }
       }
     },
 
