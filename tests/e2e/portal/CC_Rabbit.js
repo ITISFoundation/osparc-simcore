@@ -22,7 +22,6 @@ async function runTutorial () {
     const page = await tutorial.beforeScript();
     const studyData = await tutorial.openStudyLink();
     const studyId = studyData["data"]["uuid"];
-    console.log("Study ID:", studyId);
 
     await tutorial.waitFor(10000, 'Some time for loading the workbench');
     await utils.takeScreenshot(page, screenshotPrefix + 'workbench_loaded');
