@@ -110,11 +110,11 @@ def client(
 @pytest.fixture
 async def login_user_and_import_study(
     client: TestClient,
-    exported_project: Path,
+    exported_project_file: Path,
 ) -> Tuple[ProjectID, AUserDict]:
 
     user = await log_client_in(client=client, user_data={"role": UserRole.USER.name})
-    export_file_name = exported_project.name
+    export_file_name = exported_project_file.name
     version_from_name = export_file_name.split("#")[0]
 
     assert_error = (
@@ -126,7 +126,7 @@ async def login_user_and_import_study(
     url_import = client.app.router["import_project"].url_for()
     assert url_import == URL(f"/{API_VTAG}/projects:import")
 
-    data = {"fileName": open(exported_project, mode="rb")}
+    data = {"fileName": open(exported_project_file, mode="rb")}
     async with await client.post(url_import, data=data, timeout=10) as import_response:
         assert import_response.status == 200, await import_response.text()
         reply_data = await import_response.json()
@@ -143,7 +143,7 @@ def exporter_version(request) -> str:
 
 
 @pytest.fixture
-def exported_project(exporter_version: str) -> Path:
+def exported_project_file(exporter_version: str) -> Path:
     # These files are generated from the front-end
     # when the formatter be finished
     current_dir = (
