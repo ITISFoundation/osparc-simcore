@@ -35,10 +35,6 @@ qx.Class.define("osparc.component.permissions.Service", {
 
     const initCollabs = this.self().getEveryoneObj();
     this.base(arguments, serializedData, [initCollabs]);
-
-    // add a dropdown menu for selection the service version
-    const versionSelectionSection = this.__createVersionSelectionSection();
-    this._addAt(versionSelectionSection, 0);
   },
 
   events: {
@@ -92,68 +88,6 @@ qx.Class.define("osparc.component.permissions.Service", {
   },
 
   members: {
-    __versionsBox: null,
-
-    __createVersionSelectionSection: function() {
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
-        alignY: "middle"
-      }));
-
-      const versionLabel = new qx.ui.basic.Label(this.tr("Service Version"));
-      hBox.add(versionLabel);
-      const versionsBox = this.__versionsBox = new osparc.ui.toolbar.SelectBox();
-      hBox.add(versionsBox);
-
-      this.__populateOwnedVersions();
-
-      versionsBox.addListener("changeSelection", () => {
-        const selection = versionsBox.getSelection();
-        if (selection && selection.length) {
-          const serviceVersion = selection[0].getLabel();
-          if (serviceVersion !== this._serializedData["version"]) {
-            const store = osparc.store.Store.getInstance();
-            store.getServicesDAGs(false)
-              .then(services => {
-                const serviceData = osparc.utils.Services.getFromObject(services, this._serializedData["key"], serviceVersion);
-                this._serializedData = osparc.utils.Utils.deepCloneObject(serviceData);
-                this.getCollaborators();
-              });
-          }
-        }
-      }, this);
-
-      return hBox;
-    },
-
-    __populateOwnedVersions: function() {
-      const store = osparc.store.Store.getInstance();
-      store.getServicesDAGs(false)
-        .then(services => {
-          const myEmail = osparc.auth.Data.getInstance().getEmail();
-          const versions = osparc.utils.Services.getOwnedServices(services, this._serializedData["key"], myEmail);
-          const selectBox = this.__versionsBox;
-          versions.reverse();
-          let item = null;
-          versions.forEach(version => {
-            item = new qx.ui.form.ListItem(version);
-            selectBox.add(item);
-            if (this._serializedData["version"] === version) {
-              selectBox.setSelection([item]);
-            }
-          });
-        });
-    },
-
-    __getSelectedService: function() {
-      const selected = this.__serviceBrowser.getSelected();
-      const key = selected.getKey();
-      let version = this.__versionsBox.getSelection()[0].getLabel().toString();
-      if (version == this.self(arguments).LATEST.toString()) {
-        version = this.__versionsBox.getChildrenContainer().getSelectables()[1].getLabel();
-      }
-      return osparc.utils.Services.getFromArray(this.__allServicesList, key, version);
-    },
-
     _isUserOwner: function() {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const aceessRights = this._serializedData["access_rights"];

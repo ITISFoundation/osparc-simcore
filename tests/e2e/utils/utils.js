@@ -203,7 +203,7 @@ async function __getHost(page) {
   return host;
 }
 
-async function __makeRequest(page, endpoint, apiVersion = "v0") {
+async function makeRequest(page, endpoint, apiVersion = "v0") {
   const host = await __getHost(page);
   // https://github.com/Netflix/pollyjs/issues/149#issuecomment-481108446
   await page.setBypassCSP(true);
@@ -264,7 +264,7 @@ async function waitForResponse(page, url) {
 async function isServiceReady(page, studyId, nodeId) {
   const endPoint = "/projects/" + studyId + "/nodes/" + nodeId;
   console.log("-- Is service ready", endPoint);
-  const resp = await __makeRequest(page, endPoint);
+  const resp = await makeRequest(page, endPoint);
   if (resp === null) {
     return false;
   }
@@ -282,7 +282,7 @@ async function isServiceReady(page, studyId, nodeId) {
 async function getServiceUrl(page, studyId, nodeId) {
   const endPoint = "/projects/" + studyId + "/nodes/" + nodeId;
   console.log("-- get service url", endPoint);
-  const resp = await __makeRequest(page, endPoint);
+  const resp = await makeRequest(page, endPoint);
   if (resp === null) {
     return null;
   }
@@ -325,7 +325,7 @@ async function isServiceConnected(page, studyId, nodeId) {
 async function getStudyState(page, studyId) {
   const endPoint = "/projects/" + studyId + "/state";
   console.log("-- Get study state", endPoint);
-  const resp = await __makeRequest(page, endPoint);
+  const resp = await makeRequest(page, endPoint);
   if (resp === null) {
     return null;
   }
@@ -353,7 +353,7 @@ async function isStudyDone(page, studyId) {
 async function isStudyUnlocked(page, studyId) {
   const endPoint = "/projects/" + studyId + "/state";
   console.log("-- Is study closed", endPoint);
-  const resp = await __makeRequest(page, endPoint);
+  const resp = await makeRequest(page, endPoint);
   if (resp === null) {
     return false;
   }
@@ -490,6 +490,15 @@ async function typeInInputElement(page, inputSelector, text) {
   });
 }
 
+async function waitUntilVisible(page, selector, timeout = 10000) {
+  const start = new Date().getTime();
+  let isVisible = false;
+  while (!isVisible && ((new Date().getTime() - start) < timeout)) {
+    isVisible = isElementVisible(page, selector);
+    await this.sleep(1000);
+  }
+}
+
 function isElementVisible(page, selector) {
   return page.evaluate(selector => {
     const element = document.querySelector(selector)
@@ -504,6 +513,7 @@ async function clickLoggerTitle(page) {
 
 
 module.exports = {
+  makeRequest,
   getUserAndPass,
   getDomain,
   getNodeTreeItemIDs,
@@ -532,6 +542,7 @@ module.exports = {
   parseCommandLineArgumentsStudyDispatcherParams,
   getGrayLogSnapshotUrl,
   typeInInputElement,
+  waitUntilVisible,
   isElementVisible,
   clickLoggerTitle,
 }
