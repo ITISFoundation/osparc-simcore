@@ -406,6 +406,23 @@ async def replace_project(request: web.Request):
         if current_project["accessRights"] != new_project["accessRights"]:
             await check_permission(request, "project.access_rights.update")
 
+        # NOTE: This measure avoid having a state with different nodes in the
+        # comptask table and the project's workbench column.
+        # The limitation is that nodeports only "sees" those in the comptask
+        # which are blocked while the pipeline runs. Then
+        # any extra link created while the pipelin is running can not
+        # be managed by nodeports because it basically "cannot see it"
+        #
+        # This is a conservative approach until nodeports logic is modified
+        # to tackle this state.
+        #
+        if await director_v2_api.is_pipeline_running(
+            request.app, user_id, project_uuid
+        ):
+            raise web.HTTPConflict(
+                reason="Project cannot be modified while pipeline is still running."
+            )
+
         new_project = await db.replace_user_project(
             new_project, user_id, f"{project_uuid}", include_templates=True
         )
