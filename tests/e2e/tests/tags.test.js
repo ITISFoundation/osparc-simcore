@@ -106,6 +106,8 @@ describe('tags testing', () => {
     );
     // wait until card gets unlocked. Tags will anyway be replaced by folder in the coming weeks
     await utils.sleep(10000);
+    // Assign to study
+    await waitAndClick(page, '[qxclass="osparc.dashboard.GridButtonItem"] [osparc-test-id="studyItemMenuButton"]');
     await waitAndClick(page, '[osparc-test-id="moreInfoBtn"]');
     await waitAndClick(page, '[osparc-test-id="editStudyEditTagsBtn"]');
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagToggleButton"]');
