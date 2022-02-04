@@ -40,6 +40,7 @@ from simcore_sdk.node_ports_v2 import links, port_utils
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
+    ComputationalSchedulerChangedError,
     InsuficientComputationalResourcesError,
     MissingComputationalResourcesError,
 )
@@ -328,16 +329,18 @@ async def dask_sub_consumer_task(
     while True:
         try:
             logger.info(
-                "starting consumer task for topic '%s'", task_event.topic_name()
+                "starting dask consumer task for topic '%s'", task_event.topic_name()
             )
             await dask_sub_consumer(task_event, handler, dask_client)
         except asyncio.CancelledError:
-            logger.info("stopped consumer task for topic '%s'", task_event.topic_name())
+            logger.info(
+                "stopped dask consumer task for topic '%s'", task_event.topic_name()
+            )
             raise
         except Exception:  # pylint: disable=broad-except
             _REST_TIMEOUT_S: Final[int] = 1
             logger.exception(
-                "unknown exception in consumer task for topic '%s', restarting task in %s sec...",
+                "unknown exception in dask consumer task for topic '%s', restarting task in %s sec...",
                 task_event.topic_name(),
                 _REST_TIMEOUT_S,
             )
@@ -351,6 +354,18 @@ def from_node_reqs_to_dask_resources(
     dask_resources = node_reqs.dict(exclude_unset=True, by_alias=True)
     logger.debug("transformed to dask resources: %s", dask_resources)
     return dask_resources
+
+
+def check_scheduler_is_still_the_same(
+    original_scheduler_id: str, client: distributed.Client
+):
+    current_scheduler_id = client.scheduler_info()["id"]
+    if current_scheduler_id != original_scheduler_id:
+        logger.error("The computational backend changed!")
+        raise ComputationalSchedulerChangedError(
+            original_scheduler_id=original_scheduler_id,
+            current_scheduler_id=current_scheduler_id,
+        )
 
 
 def check_client_can_connect_to_scheduler(client: distributed.Client):
