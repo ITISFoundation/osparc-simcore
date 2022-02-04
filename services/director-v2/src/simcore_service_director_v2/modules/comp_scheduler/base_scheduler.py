@@ -26,6 +26,7 @@ from pydantic import PositiveInt
 
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
+    ComputationalSchedulerChangedError,
     InsuficientComputationalResourcesError,
     InvalidPipelineError,
     MissingComputationalResourcesError,
@@ -342,6 +343,8 @@ class BaseCompScheduler(ABC):
             logger.error(
                 "The computational backend is disconnected. Tasks cannot be aborted properly!"
             )
+        except ComputationalSchedulerChangedError as exc:
+            logger.error("%s", exc)
         except asyncio.CancelledError:
             logger.warning(
                 "The task stopping was cancelled, there might be still be running tasks!"
@@ -409,10 +412,17 @@ class BaseCompScheduler(ABC):
                     project_id, [r.node_id], RunningState.FAILED
                 )
                 # TODO: we should set some specific state so the user may know what to do
-            elif isinstance(r, ComputationalBackendNotConnectedError):
+            elif isinstance(
+                r,
+                (
+                    ComputationalBackendNotConnectedError,
+                    ComputationalSchedulerChangedError,
+                ),
+            ):
                 logger.error(
-                    "The computational backend is disconnected. Tasks are set back "
-                    "to PUBLISHED state until scheduler comes back!"
+                    "Issue with computational backend: %s. Tasks are set back "
+                    "to PUBLISHED state until scheduler comes back!",
+                    r,
                 )
                 # we should try re-connecting.
                 # in the meantime we cannot schedule tasks on the scheduler,
