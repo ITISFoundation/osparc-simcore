@@ -98,11 +98,6 @@ class DaskClientsPool:
                     )
 
                 assert dask_client  # nosec
-                logger.debug(
-                    "returning %s, connected to %s",
-                    f"{dask_client=}",
-                    f"{dask_client.dask_subsystem.client.scheduler_info()=}",
-                )
                 return dask_client
 
         try:
