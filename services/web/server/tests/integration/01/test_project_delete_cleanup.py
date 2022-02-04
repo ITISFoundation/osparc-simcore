@@ -90,7 +90,7 @@ async def test_s3_cleanup_after_removal(
     assert len(await _files_in_s3()) > 0
 
     url_delete = client.app.router["delete_project"].url_for(
-        project_id=str(imported_project_uuid)
+        project_id=f"{imported_project_uuid}"
     )
     assert url_delete == URL(f"/{API_VTAG}/projects/{imported_project_uuid}")
     async with await client.delete(f"{url_delete}", timeout=10) as export_response:

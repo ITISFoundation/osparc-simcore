@@ -391,7 +391,7 @@ async def test_import_export_import_duplicate(
 
     # export newly imported project
     url_export = client.app.router["export_project"].url_for(
-        project_id=str(imported_project_uuid)
+        project_id=f"{imported_project_uuid}"
     )
 
     assert url_export == URL(f"/{API_VTAG}/projects/{imported_project_uuid}:xport")
@@ -417,7 +417,7 @@ async def test_import_export_import_duplicate(
 
     # duplicate newly imported project
     url_duplicate = client.app.router["duplicate_project"].url_for(
-        project_id=str(imported_project_uuid)
+        project_id=f"{imported_project_uuid}"
     )
     assert url_duplicate == URL(
         f"/{API_VTAG}/projects/{imported_project_uuid}:duplicate"
@@ -495,7 +495,7 @@ async def test_import_export_import_duplicate(
 
     # project cleanup when finished
     url_delete = client.app.router["delete_project"].url_for(
-        project_id=str(imported_project_uuid)
+        project_id=f"{imported_project_uuid}"
     )
     assert url_delete == URL(f"/{API_VTAG}/projects/{imported_project_uuid}")
     async with await client.delete(f"{url_delete}", timeout=10) as export_response:
@@ -534,7 +534,7 @@ async def test_download_error_reporting(
 
     # export newly imported project
     url_export = client.app.router["export_project"].url_for(
-        project_id=str(imported_project_uuid)
+        project_id=f"{imported_project_uuid}"
     )
 
     assert url_export == URL(f"/{API_VTAG}/projects/{imported_project_uuid}:xport")
