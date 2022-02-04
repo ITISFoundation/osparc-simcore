@@ -231,21 +231,21 @@ async def test_workflow(
             assert projects[0][key] == fake_project_data[key]
     assert projects[0]["prjOwner"] == logged_user["email"]
     assert projects[0]["accessRights"] == {
-        str(primary_group["gid"]): {"read": True, "write": True, "delete": True}
+        f"{primary_group['gid']}": {"read": True, "write": True, "delete": True}
     }
 
     modified_project = deepcopy(projects[0])
     modified_project["name"] = "some other name"
     modified_project["description"] = "John Raynor killed Kerrigan"
 
-    new_node_id = str(uuid4())
+    new_node_id = f"{uuid4()}"
     modified_project["workbench"][new_node_id] = modified_project["workbench"].pop(
         list(modified_project["workbench"].keys())[0]
     )
     modified_project["workbench"][new_node_id]["position"]["x"] = 0
     # share with some group
     modified_project["accessRights"].update(
-        {str(standard_groups[0]["gid"]): {"read": True, "write": True, "delete": False}}
+        {f"{standard_groups[0]['gid']}": {"read": True, "write": True, "delete": False}}
     )
     # modify
     pid = modified_project["uuid"]

@@ -432,7 +432,7 @@ async def test_import_export_import_duplicate(
         duplicated_project_uuid = reply_data["data"]["uuid"]
 
     imported_project = await query_project_from_db(
-        aiopg_engine, str(imported_project_uuid)
+        aiopg_engine, f"{imported_project_uuid}"
     )
     reimported_project = await query_project_from_db(
         aiopg_engine, reimported_project_uuid

@@ -510,8 +510,8 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
         client,
         u1,
         access_rights={
-            str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
-            str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
+            f"{q_u2.primary_gid}": {"read": True, "write": True, "delete": False},
+            f"{q_u3.primary_gid}": {"read": True, "write": True, "delete": False},
         },
     )
 
@@ -553,7 +553,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
     project = await new_project(
         client,
         u1,
-        access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
+        access_rights={f"{g1['gid']}": {"read": True, "write": True, "delete": False}},
     )
 
     # mark u1 as guest
@@ -622,7 +622,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     project = await new_project(
         client,
         u1,
-        access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
+        access_rights={f"{g1['gid']}": {"read": True, "write": True, "delete": False}},
     )
 
     # mark u1 as guest
@@ -698,8 +698,8 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
         client,
         u1,
         access_rights={
-            str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
-            str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
+            f"{q_u2.primary_gid}": {"read": True, "write": True, "delete": False},
+            f"{q_u3.primary_gid}": {"read": True, "write": True, "delete": False},
         },
     )
 
@@ -769,8 +769,8 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
         client,
         u1,
         access_rights={
-            str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
-            str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
+            f"{q_u2.primary_gid}": {"read": True, "write": True, "delete": False},
+            f"{q_u3.primary_gid}": {"read": True, "write": True, "delete": False},
         },
     )
 
@@ -847,8 +847,8 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
         client,
         u1,
         access_rights={
-            str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
-            str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
+            f"{q_u2.primary_gid}": {"read": True, "write": True, "delete": False},
+            f"{q_u3.primary_gid}": {"read": True, "write": True, "delete": False},
         },
     )
 
@@ -889,7 +889,7 @@ async def test_t11_owner_and_all_users_in_group_marked_as_guests(
     project = await new_project(
         client,
         u1,
-        access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
+        access_rights={f"{g1['gid']}": {"read": True, "write": True, "delete": False}},
     )
 
     # mark all users as guest
