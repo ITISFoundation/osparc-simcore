@@ -188,8 +188,7 @@ async def cleanup_project_and_data(
         project_id=f"{imported_project_uuid}"
     )
     assert url_delete == URL(f"/{API_VTAG}/projects/{imported_project_uuid}")
-    async with await client.delete(f"{url_delete}", timeout=10) as export_response:
-        assert export_response.status == 204, await export_response.text()
+    await client.delete(f"{url_delete}", timeout=10)
 
 
 async def query_project_from_db(

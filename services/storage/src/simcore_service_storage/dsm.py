@@ -981,8 +981,8 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
                 # will be granted for the project to be remove.
                 # In this situation it is safe to remove the project
                 logger.info(
-                    "Could not find a project for project_id=%s, but removal will continue",
-                    project_id,
+                    "Could not find a project for %s, but removal will continue",
+                    f"{project_id=}",
                 )
 
             delete_me = file_meta_data.delete().where(
