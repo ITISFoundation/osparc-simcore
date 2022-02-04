@@ -1191,7 +1191,6 @@ qx.Class.define("osparc.data.model.Node", {
 
       // FIXME: Apparently no all services are inmediately ready when they publish the port
       // ping the service until it is accessible through the platform
-
       const waitFor = 500;
       qx.event.Timer.once(ev => {
         this.__restartIFrame();

@@ -209,7 +209,7 @@ domain and the intended context of use",
     },
 
     getKnownLimitations: function(metaData) {
-      if ("quality" in metaData && "annotations" in metaData["quality"] && "limitations" in metaData["quality"]["annotations"]) {
+      if (metaData && "quality" in metaData && "annotations" in metaData["quality"] && "limitations" in metaData["quality"]["annotations"]) {
         return metaData["quality"]["annotations"]["limitations"];
       }
       return "";

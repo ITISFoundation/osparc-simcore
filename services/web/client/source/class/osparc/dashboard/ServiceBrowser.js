@@ -93,7 +93,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       return servicesLayout;
     },
 
-    __createStudyFromService: function(key, version) {
+    _createStudyFromService: function(key, version) {
       if (!this._checkLoggedIn()) {
         return;
       }
@@ -127,6 +127,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     _resetServiceItem: function(serviceData) {
+      serviceData["resourceType"] = "service";
       const servicesList = this.__servicesLatestList;
       const index = servicesList.findIndex(service => service["key"] === serviceData["key"] && service["version"] === serviceData["version"]);
       if (index !== -1) {
@@ -146,7 +147,6 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         const serviceItem = this.__createServiceItem(service, this._resourcesContainer.getMode());
         serviceItem.addListener("updateQualityService", e => {
           const updatedServiceData = e.getData();
-          updatedServiceData["resourceType"] = "service";
           this._resetServiceItem(updatedServiceData);
         }, this);
         this._resourcesContainer.add(serviceItem);
@@ -165,149 +165,18 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
         position: "bottom-right"
       });
 
-      const moreInfoButton = this._getMoreInfoMenuButton(studyData);
+      const moreInfoButton = this._getMoreOptionsMenuButton(studyData);
       if (moreInfoButton) {
         menu.add(moreInfoButton);
-      }
-
-      const permissionsButton = this.__getPermissionsMenuButton(studyData);
-      if (permissionsButton) {
-        menu.add(permissionsButton);
-      }
-
-      if (osparc.data.model.Node.isComputational(studyData) && "quality" in studyData) {
-        const qualityButton = this._getQualityMenuButton(studyData);
-        menu.add(qualityButton);
       }
 
       return menu;
     },
 
-    __getPermissionsMenuButton: function(studyData) {
-      const permissionsButton = new qx.ui.menu.Button(this.tr("Sharing"));
-      permissionsButton.addListener("execute", () => {
-        this.__openPermissions(studyData);
-      }, this);
-
-      if (this.__isUserAnyServiceVersionOwner(studyData)) {
-        return permissionsButton;
-      }
-
-      return null;
-    },
-
     __itemClicked: function(item) {
       const key = item.getUuid();
-      this.__createStudyFromService(key, null);
+      this._createStudyFromService(key, null);
       this.resetSelection();
-    },
-
-    _openServiceDetails: function(serviceData) {
-      const view = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-
-      const serviceVersionsList = new qx.ui.form.SelectBox().set({
-        allowGrowX: false,
-        font: "text-14"
-      });
-      const store = osparc.store.Store.getInstance();
-      store.getServicesDAGs()
-        .then(services => {
-          const versions = osparc.utils.Services.getVersions(services, serviceData["key"]);
-          if (versions) {
-            let selectedItem = null;
-            versions.reverse().forEach(version => {
-              const listItem = new qx.ui.form.ListItem(version).set({
-                font: "text-14"
-              });
-              serviceVersionsList.add(listItem);
-              if (serviceData["version"] === version) {
-                selectedItem = listItem;
-              }
-            });
-            if (selectedItem) {
-              serviceVersionsList.setSelection([selectedItem]);
-            }
-          }
-        });
-      view.add(serviceVersionsList);
-
-      const serviceDetails = new osparc.servicecard.Large(serviceData);
-      view.add(serviceDetails, {
-        flex: 1
-      });
-
-      const openButton = new qx.ui.form.Button(this.tr("Open")).set({
-        allowGrowX: false,
-        alignX: "right"
-      });
-      osparc.utils.Utils.setIdToWidget(openButton, "startServiceBtn");
-      view.add(openButton);
-
-      const title = this.tr("Service information");
-      const width = 600;
-      const height = 700;
-      const win = osparc.ui.window.Window.popUpInWindow(view, title, width, height);
-
-      serviceVersionsList.addListener("changeSelection", () => {
-        const selection = serviceVersionsList.getSelection();
-        if (selection && selection.length) {
-          const serviceVersion = selection[0].getLabel();
-          store.getServicesDAGs()
-            .then(services => {
-              const selectedService = osparc.utils.Services.getFromObject(services, serviceData["key"], serviceVersion);
-              serviceDetails.setService(selectedService);
-            });
-        }
-      }, this);
-
-      serviceDetails.addListener("updateService", e => {
-        const updatedServiceData = e.getData();
-        this._resetServiceItem(updatedServiceData);
-      });
-
-      openButton.addListener("execute", () => {
-        win.close();
-        const currentService = serviceDetails.getService();
-        this.__createStudyFromService(currentService["key"], currentService["version"]);
-      });
-    },
-
-    __openPermissions: function(studyData) {
-      const permissionsView = new osparc.component.permissions.Service(studyData);
-      const title = this.tr("Available to");
-      osparc.ui.window.Window.popUpInWindow(permissionsView, title, 400, 300);
-      permissionsView.addListener("updateService", e => {
-        const newServiceData = e.getData();
-        this._resetServiceItem(newServiceData);
-      });
-    },
-
-    __openClassifiers: function(studyData) {
-      const title = this.tr("Classifiers");
-      let classifiers = null;
-      if (osparc.data.model.Study.isOwner(studyData)) {
-        classifiers = new osparc.component.metadata.ClassifiersEditor(studyData);
-        const win = osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
-        classifiers.addListener("updateClassifiers", e => {
-          win.close();
-          const updatedResource = e.getData();
-          this._resetServiceItem(updatedResource);
-        }, this);
-      } else {
-        classifiers = new osparc.component.metadata.ClassifiersViewer(studyData);
-        osparc.ui.window.Window.popUpInWindow(classifiers, title, 400, 400);
-      }
-    },
-
-    __isUserAnyServiceVersionOwner: function(studyData) {
-      if (osparc.utils.Resources.isService(studyData)) {
-        const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-        orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
-
-        const ownedServices = osparc.utils.Services.getOwnedServices(this.__servicesAll, studyData["key"]);
-        return ownedServices.length;
-      }
-      return false;
     },
 
     __addNewServiceButtons: function() {
