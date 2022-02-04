@@ -35,7 +35,6 @@ import aioredis
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.test_utils import TestClient
-from models_library.settings.redis import RedisConfig
 from pytest_simcore.docker_registry import _pull_push_service
 from simcore_postgres_database.models.services import (
     services_access_rights,
@@ -77,24 +76,6 @@ KEYS_TO_IGNORE_FROM_COMPARISON = {
     "eTag",  # this must change
     REMAPPING_KEY,
 }
-
-
-@pytest.fixture(autouse=True)
-def __drop_and_recreate_postgres__(
-    database_from_template_before_each_function,
-) -> Iterator[None]:
-    yield
-
-
-@pytest.fixture(autouse=True)
-async def __delete_all_redis_keys__(redis_service: RedisConfig):
-    client = await aioredis.create_redis_pool(redis_service.dsn, encoding="utf-8")
-    await client.flushall()
-    client.close()
-    await client.wait_closed()
-
-    yield
-    # do nothing on teadown
 
 
 ################ utils

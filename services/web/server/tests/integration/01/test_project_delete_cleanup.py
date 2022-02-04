@@ -1,16 +1,14 @@
 # pylint:disable=redefined-outer-name,unused-argument,too-many-arguments
 import logging
 from pathlib import Path
-from typing import Any, Callable, Dict, Final, Iterator, Set
+from typing import Any, Callable, Dict, Final, Set
 
 import aioboto3
 import aiopg
 import aiopg.sa
 import aioredis
-import pytest
 from aiohttp.test_utils import TestClient
 from models_library.projects import ProjectID
-from models_library.settings.redis import RedisConfig
 from simcore_service_webserver._meta import API_VTAG
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -34,26 +32,6 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 S3_DATA_REMOVAL_SECONDS: Final[int] = 2
-
-# FIXTURES
-
-
-@pytest.fixture(autouse=True)
-def __drop_and_recreate_postgres__(
-    database_from_template_before_each_function,
-) -> Iterator[None]:
-    yield
-
-
-@pytest.fixture(autouse=True)
-async def __delete_all_redis_keys__(redis_service: RedisConfig):
-    client = await aioredis.create_redis_pool(redis_service.dsn, encoding="utf-8")
-    await client.flushall()
-    client.close()
-    await client.wait_closed()
-
-    yield
-    # do nothing on teadown
 
 
 # UTILS

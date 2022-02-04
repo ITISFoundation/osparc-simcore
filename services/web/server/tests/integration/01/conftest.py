@@ -1,17 +1,20 @@
 # pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
 
 import asyncio
 import sys
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, AsyncIterable, Callable, Dict, Tuple
 from unittest import mock
 from uuid import UUID
 
 import aiopg
 import aiopg.sa
+import aioredis
 import pytest
 from models_library.projects import ProjectID
+from models_library.settings.redis import RedisConfig
 from pytest_simcore.helpers.utils_environs import EnvVarsDict
 from pytest_simcore.helpers.utils_login import AUserDict, log_client_in
 from servicelib.aiohttp.application import create_safe_application
@@ -44,13 +47,26 @@ SUPPORTED_EXPORTER_VERSIONS = {"v1", "v2"}
 
 
 @pytest.fixture
+async def delete_all_redis_keys(redis_service: RedisConfig) -> AsyncIterable[None]:
+    client = await aioredis.create_redis_pool(redis_service.dsn, encoding="utf-8")
+    await client.flushall()
+    client.close()
+    await client.wait_closed()
+
+    yield
+    # do nothing on teadown
+
+
+@pytest.fixture
 def client(
     loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_config: Dict,
+    monkeypatch_setenv_from_app_config: Callable[[EnvVarsDict], Dict[str, Any]],
     postgres_with_template_db: aiopg.sa.engine.Engine,
     mock_orphaned_services: mock.Mock,
-    monkeypatch_setenv_from_app_config: Callable[[EnvVarsDict], Dict[str, Any]],
+    database_from_template_before_each_function: None,
+    delete_all_redis_keys: None,
 ):
 
     monkeypatch_setenv_from_app_config(app_config)
