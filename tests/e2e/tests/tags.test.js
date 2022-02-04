@@ -98,16 +98,16 @@ describe('tags testing', () => {
   }, ourTimeout);
 
   test('assign tag and reflect changes', async () => {
-    utils.takeScreenshot(page, "0");
-    await utils.waitUntilVisible(page, '[qxclass="osparc.dashboard.GridButtonItem"] > [qxclass="osparc.ui.basic.Thumbnail"]')
-    utils.takeScreenshot(page, "1");
-    // Assign to study
-    await waitAndClick(page, '[qxclass="osparc.dashboard.GridButtonItem"] [osparc-test-id="studyItemMenuButton"]');
-    utils.takeScreenshot(page, "4");
+    await page.waitForSelector(
+      '[qxclass="osparc.dashboard.GridButtonItem"] > [qxclass="osparc.ui.basic.Thumbnail"]',
+      {
+        hidden: true
+      }
+    );
+    // wait until card gets unlocked. Tags will anyway be replaced by folder in the coming weeks
+    await utils.sleep(10000);
     await waitAndClick(page, '[osparc-test-id="moreInfoBtn"]');
-    utils.takeScreenshot(page, "5");
     await waitAndClick(page, '[osparc-test-id="editStudyEditTagsBtn"]');
-    utils.takeScreenshot(page, "6");
     await waitAndClick(page, '[qxclass="osparc.component.form.tag.TagToggleButton"]');
     await waitAndClick(page, '[osparc-test-id="saveTagsBtn"]');
     // UI displays the change
