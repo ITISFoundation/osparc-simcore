@@ -899,6 +899,11 @@ qx.Class.define("osparc.data.model.Node", {
           this.getIFrame().setSource(this.getServiceUrl());
         };
 
+        // restart button pushed
+        if (this.getIFrame().getSource().includes(this.getServiceUrl())) {
+          loadIframe();
+        }
+
         const loadingPage = this.getLoadingPage();
         const bounds = loadingPage.getBounds();
         const domEle = loadingPage.getContentElement().getDomElement();
