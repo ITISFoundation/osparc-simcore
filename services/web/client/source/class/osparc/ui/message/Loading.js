@@ -40,10 +40,17 @@ qx.Class.define("osparc.ui.message.Loading", {
     this.base(arguments);
     this._setLayout(new qx.ui.layout.HBox());
 
+    this.set({
+      alignX: "center"
+    });
     this.__buildLayout(showMaximize);
 
-    this.setHeader(header);
-    this.setMessages(messages);
+    if (header) {
+      this.setHeader(header);
+    }
+    if (messages.length) {
+      this.setMessages(messages);
+    }
   },
 
   properties: {
@@ -88,22 +95,19 @@ qx.Class.define("osparc.ui.message.Loading", {
       });
       atom.getChildControl("icon").getContentElement().addClass("rotate");
 
-      const messages = this.__messages = new qx.ui.container.Composite(new qx.ui.layout.VBox(10)).set({
+      const messages = this.__messages = new qx.ui.container.Composite(new qx.ui.layout.VBox(10).set({
+        alignX: "center"
+      })).set({
         padding: 20
       });
 
       const loadingWidget = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+        alignX: "center",
         alignY: "middle"
       }));
-      loadingWidget.add(new qx.ui.core.Widget(), {
-        flex: 1
-      });
       loadingWidget.add(image);
       loadingWidget.add(atom);
       loadingWidget.add(messages);
-      loadingWidget.add(new qx.ui.core.Widget(), {
-        flex: 1
-      });
 
       this._add(new qx.ui.core.Widget(), {
         flex: 1
