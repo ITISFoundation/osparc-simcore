@@ -321,6 +321,8 @@ class TutorialBase {
 
   async openNode(nodePosInTree = 0) {
     await auto.openNode(this.__page, nodePosInTree);
+    // Iframes get loaded on demand, wait 2"
+    await this.waitFor(2000);
     await this.takeScreenshot('openNode_' + nodePosInTree);
   }
 

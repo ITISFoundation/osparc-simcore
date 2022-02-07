@@ -41,7 +41,7 @@ async function runTutorial () {
 
 
     // open kember viewer
-    auto.openNode(page, 1);
+    await tutorial.openNode(1);
 
     await tutorial.waitFor(2000);
     await utils.takeScreenshot(page, screenshotPrefix + 'iFrame0');
