@@ -14,6 +14,7 @@ import tenacity
 from aiohttp import (
     ClientConnectionError,
     ClientError,
+    ClientResponse,
     ClientResponseError,
     ClientSession,
     web,
@@ -1014,12 +1015,12 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
     retry=retry_if_exception_type(ClientConnectionError),
 )
 async def _save_service_state(service_host_name: str, session: aiohttp.ClientSession):
-    service_url = "http://{service_host_name}/state"
+    response: ClientResponse
     async with session.post(
-        service_url,
+        url="http://{service_host_name}/state",
         timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
-        raise_for_status=True,
     ) as response:
+        response.raise_for_status()
         log.info(
             "Service '%s' successfully saved its state: %s",
             service_host_name,
