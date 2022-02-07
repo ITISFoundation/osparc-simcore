@@ -562,8 +562,12 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
         })
         .catch(error => {
-          console.error(error);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Error saving the study"), "ERROR");
+          if ("status" in error && error.status === 409) {
+            osparc.component.message.FlashMessenger.getInstance().logAs(error.message, "ERROR");
+          } else {
+            console.error(error);
+            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Error saving the study"), "ERROR");
+          }
           this.__getStudyLogger().error(null, "Error updating pipeline");
           // Need to throw the error to be able to handle it later
           throw error;
