@@ -1017,7 +1017,7 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
 async def _save_service_state(service_host_name: str, session: aiohttp.ClientSession):
     response: ClientResponse
     async with session.post(
-        url="http://{service_host_name}/state",
+        url=f"http://{service_host_name}/state",
         timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
     ) as response:
         response.raise_for_status()
