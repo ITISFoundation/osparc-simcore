@@ -35,6 +35,7 @@ from simcore_service_webserver.application import (
     setup_storage,
     setup_users,
 )
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.scicrunch.submodule_setup import (
@@ -80,6 +81,7 @@ def client(
 
     # fake config
     app = create_safe_application(cfg)
+    setup_settings(app)
 
     # activates only security+restAPI sub-modules
     setup_db(app)

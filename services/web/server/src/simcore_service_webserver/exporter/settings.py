@@ -24,8 +24,6 @@ class ExporterSettings(BaseCustomSettings):
 
 
 def get_settings(app: Application) -> ExporterSettings:
-    # settings = app[APP_SETTINGS_KEY].WEBSERVER_EXPORTER
-    # assert settings  # nosec
-    # return settings
-    # ANE -> PC: how was this working before?
-    return ExporterSettings()
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_EXPORTER
+    assert settings  # nosec
+    return settings

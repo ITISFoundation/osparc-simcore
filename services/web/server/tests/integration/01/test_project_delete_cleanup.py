@@ -1,6 +1,5 @@
 # pylint:disable=redefined-outer-name,unused-argument,too-many-arguments
 import logging
-from pathlib import Path
 from typing import Any, Dict, Final, Set, Tuple
 
 import aioboto3
