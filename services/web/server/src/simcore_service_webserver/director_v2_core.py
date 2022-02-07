@@ -212,21 +212,6 @@ async def create_or_update_pipeline(
 
 
 @log_decorator(logger=log)
-async def is_pipeline_running(
-    app: web.Application, user_id: PositiveInt, project_id: UUID
-) -> bool:
-
-    # TODO: make it cheaper by /computations/{project_id}/state
-    pipeline = await get_computation_task(app, user_id, project_id)
-    if pipeline is None:
-        # the pipeline might not exist and that is ok
-        # FIXME:  or some error happened so ... we assume is not running??
-        return False  # not running
-
-    return pipeline.state.is_running()
-
-
-@log_decorator(logger=log)
 async def get_computation_task(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> Optional[ComputationTask]:

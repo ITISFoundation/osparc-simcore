@@ -56,7 +56,7 @@ from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
 from simcore_service_director_v2.core.settings import AppSettings, RCloneSettings
-from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskGet
+from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
@@ -853,7 +853,7 @@ async def test_nodeports_integration(
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationTaskGet.parse_obj(response.json())
+    task_out = ComputationTaskOut.parse_obj(response.json())
 
     # check the contents is correct: a pipeline that just started gets PUBLISHED
     await assert_computation_task_out_obj(
