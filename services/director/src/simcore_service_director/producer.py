@@ -1,5 +1,3 @@
-# pylint: disable=C0111, R0913
-
 import asyncio
 import json
 import logging
@@ -11,6 +9,7 @@ from pprint import pformat
 from typing import Dict, List, Optional, Tuple
 
 import aiodocker
+import aiohttp
 import tenacity
 from aiohttp import (
     ClientConnectionError,
@@ -26,7 +25,7 @@ from servicelib.monitor_services import (  # pylint: disable=no-name-in-module
     service_started,
     service_stopped,
 )
-from tenacity._asyncio import AsyncRetrying
+from tenacity import retry
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
@@ -1008,6 +1007,26 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
             ) from err
 
 
+@retry(
+    wait=wait_fixed(2),
+    stop=stop_after_delay(10),
+    reraise=True,
+    retry=retry_if_exception_type(ClientConnectionError),
+)
+async def _save_service_state(service_host_name: str, session: aiohttp.ClientSession):
+    service_url = "http://{service_host_name}/state"
+    async with session.post(
+        service_url,
+        timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
+        raise_for_status=True,
+    ) as response:
+        log.info(
+            "Service '%s' successfully saved its state: %s",
+            service_host_name,
+            f"{response}",
+        )
+
+
 @run_sequentially_in_context(target_args=["node_uuid"])
 async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -> None:
     log.debug("stopping service with uuid %s", node_uuid)
@@ -1051,26 +1070,9 @@ async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -
         if save_state:
             log.debug("saving state of service %s...", service_host_name)
             try:
-                async for attempt in AsyncRetrying(
-                    wait=wait_fixed(2),
-                    stop=stop_after_delay(10),
-                    reraise=True,
-                    retry=retry_if_exception_type(ClientConnectionError),
-                ):
-                    with attempt:
-                        session = app[APP_CLIENT_SESSION_KEY]
-                        service_url = "http://{service_host_name}/state"
-                        async with session.post(
-                            service_url,
-                            timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
-                            raise_for_status=True,
-                        ) as response:
-                            log.info(
-                                "Service '%s' successfully saved its state: %s",
-                                service_host_name,
-                                f"{response}",
-                            )
-
+                await _save_service_state(
+                    service_host_name, session=app[APP_CLIENT_SESSION_KEY]
+                )
             except ClientResponseError as err:
                 raise ServiceStateSaveError(
                     node_uuid,
