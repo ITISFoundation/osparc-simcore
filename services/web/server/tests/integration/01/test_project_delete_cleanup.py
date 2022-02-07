@@ -72,7 +72,6 @@ async def test_s3_cleanup_after_removal(
     client: TestClient,
     login_user_and_import_study: Tuple[ProjectID, AUserDict],
     minio_config: Dict[str, Any],
-    exported_project_file: Path,
     aiopg_engine: aiopg.sa.engine.Engine,
     redis_client: aioredis.Redis,
     docker_registry: str,

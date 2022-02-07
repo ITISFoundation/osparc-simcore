@@ -107,6 +107,24 @@ def client(
     )
 
 
+@pytest.fixture(scope="session", params=["v1", "v2"])
+def exporter_version(request) -> str:
+    return request.param
+
+
+@pytest.fixture
+def exported_project_file(tests_data_dir: Path, exporter_version: str) -> Path:
+    exporter_dir = tests_data_dir / "exporter"
+    assert exporter_dir.exists()
+    exported_files = {x for x in exporter_dir.glob("*.osparc")}
+
+    for exported_file in exported_files:
+        if exported_file.name.startswith(exporter_version):
+            return exported_file
+
+    raise FileNotFoundError(f"{exporter_version=} not found in {exported_files}")
+
+
 @pytest.fixture
 async def login_user_and_import_study(
     client: TestClient,
@@ -135,28 +153,3 @@ async def login_user_and_import_study(
     imported_project_uuid = reply_data["data"]["uuid"]
 
     return UUID(imported_project_uuid), user
-
-
-@pytest.fixture(scope="session", params=["v1", "v2"])
-def exporter_version(request) -> str:
-    return request.param
-
-
-@pytest.fixture
-def exported_project_file(exporter_version: str) -> Path:
-    # These files are generated from the front-end
-    # when the formatter be finished
-    current_dir = (
-        Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-    )
-    data_dir = current_dir.parent.parent / "data"
-    assert data_dir.exists(), "expected folder under tests/data"
-    exporter_dir = data_dir / "exporter"
-    assert exporter_dir.exists()
-    exported_files = {x for x in exporter_dir.glob("*.osparc")}
-
-    for exported_file in exported_files:
-        if exported_file.name.startswith(exporter_version):
-            return exported_file
-
-    raise FileNotFoundError(f"{exporter_version=} not found in {exported_files}")
