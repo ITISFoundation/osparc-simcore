@@ -208,13 +208,23 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       if (study) {
         const startButtons = this.__getStartButtons();
         const stopButton = this.__stopButton;
-        const isPipelineRunning = study.isPipelineRunning();
-        if (isPipelineRunning) {
-          startButtons.forEach(startButton => startButton.setFetching(true));
-          stopButton.setEnabled(true);
-        } else {
-          startButtons.forEach(startButton => startButton.setFetching(false));
-          stopButton.setEnabled(false);
+        const pipelineState = study.getPipelineState();
+        if (pipelineState) {
+          switch (pipelineState) {
+            case "PENDING":
+            case "PUBLISHED":
+            case "STARTED":
+              startButtons.forEach(startButton => startButton.setFetching(true));
+              stopButton.setEnabled(true);
+              break;
+            case "NOT_STARTED":
+            case "SUCCESS":
+            case "FAILED":
+            default:
+              startButtons.forEach(startButton => startButton.setFetching(false));
+              stopButton.setEnabled(false);
+              break;
+          }
         }
       }
     }
