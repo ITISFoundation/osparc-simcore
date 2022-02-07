@@ -406,7 +406,7 @@ class TutorialBase {
   }
 
   async removeStudy(studyId) {
-    await this.waitFor(5000, 'Wait for to be unlocked');
+    await this.waitFor(5000, 'Wait to be unlocked');
     await this.takeScreenshot("deleteFirstStudy_before");
     try {
       // await this.waitForStudyUnlocked(studyId);
