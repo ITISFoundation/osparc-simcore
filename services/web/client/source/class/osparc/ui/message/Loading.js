@@ -91,7 +91,8 @@ qx.Class.define("osparc.ui.message.Loading", {
         icon: "@FontAwesome5Solid/circle-notch/32",
         font: "nav-bar-label",
         alignX: "center",
-        gap: 15
+        gap: 15,
+        allowGrowX: false
       });
       atom.getChildControl("icon").getContentElement().addClass("rotate");
 
