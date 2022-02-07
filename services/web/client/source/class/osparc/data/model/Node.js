@@ -882,14 +882,19 @@ qx.Class.define("osparc.data.model.Node", {
       return this.tr("Starting ") + label;
     },
 
+    __getExtraMessages: function() {
+      if (this.getKey() && this.getKey().includes("pub-nat-med")) {
+        return [
+          this.tr("This might take a couple of minutes")
+        ];
+      }
+      return [];
+    },
+
     __initLoadingIPage: function() {
-      const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), [], true);
-      this.addListener("changeLabel", e => {
-        loadingPage.setHeader(this.__getLoadingPageHeader());
-      }, this);
-      this.getStatus().addListener("changeInteractive", e => {
-        loadingPage.setHeader(this.__getLoadingPageHeader());
-      }, this);
+      const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), this.__getExtraMessages(), true);
+      this.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
+      this.getStatus().addListener("changeInteractive", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
       this.setLoadingPage(loadingPage);
     },
 
