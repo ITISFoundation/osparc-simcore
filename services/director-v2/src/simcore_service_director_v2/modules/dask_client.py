@@ -49,9 +49,10 @@ from ..models.domains.comp_tasks import Image
 from ..models.schemas.constants import ClusterID, UserID
 from ..utils.dask import (
     UserCompleteCB,
-    check_client_can_connect_to_scheduler,
+    check_communication_with_scheduler_is_open,
     check_if_cluster_is_able_to_run_pipeline,
     check_scheduler_is_still_the_same,
+    check_scheduler_status,
     compute_input_data,
     compute_output_data_schema,
     compute_service_log_file_upload_link,
@@ -224,7 +225,7 @@ class DaskClient:
                 dask_subsystem = await _create_internal_client_based_on_auth(
                     endpoint, authentication
                 )
-                check_client_can_connect_to_scheduler(dask_subsystem.client)
+                check_scheduler_status(dask_subsystem.client)
                 instance = cls(
                     app=app,
                     dask_subsystem=dask_subsystem,
@@ -322,7 +323,8 @@ class DaskClient:
             check_scheduler_is_still_the_same(
                 self.dask_subsystem.scheduler_id, self.dask_subsystem.client
             )
-            check_client_can_connect_to_scheduler(self.dask_subsystem.client)
+            check_communication_with_scheduler_is_open(self.dask_subsystem.client)
+            check_scheduler_status(self.dask_subsystem.client)
             # NOTE: in case it's a gateway we do not check a priori if the task
             # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)
             # might also auto-scale and the gateway does not know that a priori.
@@ -382,7 +384,7 @@ class DaskClient:
                 logger.debug("Dask task %s started", task_future.key)
             except Exception:
                 # Dask raises a base Exception here in case of connection error, this will raise a more precise one
-                check_client_can_connect_to_scheduler(self.dask_subsystem.client)
+                check_scheduler_status(self.dask_subsystem.client)
                 # if the connection is good, then the problem is different, so we re-raise
                 raise
         return list_of_node_id_to_job_id
