@@ -156,7 +156,8 @@ qx.Class.define("osparc.data.model.Node", {
     propsForm: {
       check: "osparc.component.form.renderer.PropForm",
       init: null,
-      nullable: true
+      nullable: true,
+      apply: "__applyPropsForm"
     },
 
     propsFormEditor: {
@@ -511,6 +512,15 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.__outputWidget) {
         this.__outputWidget.populatePortsData();
       }
+    },
+
+    __applyPropsForm: function() {
+      const checkIsPipelineRunning = () => {
+        const isPipelineRunning = this.getStudy().isPipelineRunning();
+        this.getPropsForm().setEnabled(!isPipelineRunning);
+      };
+      this.getStudy().addListener("changeState", () => checkIsPipelineRunning(), this);
+      checkIsPipelineRunning();
     },
 
     getInputsDefaultWidget: function() {

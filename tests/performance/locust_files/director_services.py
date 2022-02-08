@@ -22,7 +22,7 @@ class WebApiUser(FastHttpUser):
     @task()
     def get_services(self):
         self.client.get(
-            "v0/services?user_id=" + self.user_id,
+            f"v0/services?user_id={self.user_id}",
             headers={
                 "x-simcore-products-name": "osparc",
             },

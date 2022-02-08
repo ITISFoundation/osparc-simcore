@@ -29,8 +29,6 @@ async function runTutorial () {
     await tutorial.waitFor(5000, 'Some time for starting the service');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
 
-    await tutorial.openNode(1);
-
     await tutorial.waitFor(2000);
     await utils.takeScreenshot(page, screenshotPrefix + 'iFrame0');
 
