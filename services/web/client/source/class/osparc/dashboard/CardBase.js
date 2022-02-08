@@ -40,6 +40,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
     SHARED_ALL: "@FontAwesome5Solid/globe/14",
     NEW_ICON: "@FontAwesome5Solid/plus/",
+    FOLDER_ICON: "@FontAwesome5Solid/folder/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
     STUDY_ICON: "@FontAwesome5Solid/file-alt/",
     TEMPLATE_ICON: "@FontAwesome5Solid/copy/",
