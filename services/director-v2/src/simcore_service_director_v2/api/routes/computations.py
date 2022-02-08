@@ -162,7 +162,7 @@ async def create_computation(
         )
 
     except ProjectNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
 
 
 @router.get(
@@ -204,7 +204,7 @@ async def get_computation(
 
     # filter the tasks by the effective pipeline
     filtered_tasks = [
-        t for t in all_tasks if str(t.node_id) in list(pipeline_dag.nodes())
+        t for t in all_tasks if f"{t.node_id}" in set(pipeline_dag.nodes())
     ]
     pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
@@ -270,7 +270,7 @@ async def stop_computation_project(
         complete_dag = create_complete_dag_from_tasks(tasks)
         # filter the tasks by the effective pipeline
         filtered_tasks = [
-            t for t in tasks if str(t.node_id) in list(pipeline_dag.nodes())
+            t for t in tasks if f"{t.node_id}" in set(pipeline_dag.nodes())
         ]
         pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
@@ -287,9 +287,9 @@ async def stop_computation_project(
         )
 
     except ProjectNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
     except SchedulerError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
 
 
 @router.delete(
@@ -368,4 +368,4 @@ async def delete_pipeline(
         await computation_pipelines.delete_pipeline(project_id)
 
     except ProjectNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
