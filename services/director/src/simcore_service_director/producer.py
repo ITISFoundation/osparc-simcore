@@ -28,7 +28,7 @@ from servicelib.monitor_services import (  # pylint: disable=no-name-in-module
 )
 from tenacity import retry
 from tenacity.retry import retry_if_exception_type
-from tenacity.stop import stop_after_delay
+from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 from . import config, docker_utils, exceptions, registry_proxy
@@ -1010,7 +1010,7 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
 
 @retry(
     wait=wait_fixed(2),
-    stop=stop_after_delay(10),
+    stop=stop_after_attempt(3),
     reraise=True,
     retry=retry_if_exception_type(ClientConnectionError),
 )
