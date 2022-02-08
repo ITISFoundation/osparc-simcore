@@ -18,8 +18,8 @@
 qx.Class.define("osparc.dashboard.SearchBarFilter", {
   extend: osparc.component.filter.UIFilter,
 
-  construct: function() {
-    this.base(arguments, "searchBarFilter", "searchBarFilter");
+  construct: function(resourceType) {
+    this.base(arguments, "searchBarFilter-"+resourceType, "searchBarFilter");
 
     this._setLayout(new qx.ui.layout.HBox(5));
 

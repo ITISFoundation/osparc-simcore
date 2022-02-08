@@ -401,7 +401,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _shouldApplyFilter: function(data) {
-      data = "searchBarFilter" in data ? data["searchBarFilter"] : data;
+      const filterId = "searchBarFilter-" + this.getResourceType();
+      data = filterId in data ? data[filterId] : data;
       if (this._filterText(data.text)) {
         return true;
       }
@@ -415,7 +416,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _shouldReactToFilter: function(data) {
-      data = "searchBarFilter" in data ? data["searchBarFilter"] : data;
+      const filterId = "searchBarFilter-" + this.getResourceType();
+      data = filterId in data ? data[filterId] : data;
       if (data.text && data.text.length > 1) {
         return true;
       }

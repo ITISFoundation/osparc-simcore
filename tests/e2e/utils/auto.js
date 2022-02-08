@@ -177,17 +177,17 @@ async function dashboardOpenService(page, serviceName) {
 
 async function __filterStudiesByText(page, studyName) {
   await __dashboardStudiesBrowser(page);
-  await __typeInSearchBarFilter(page, "studies", studyName);
+  await __typeInSearchBarFilter(page, "study", studyName);
 }
 
 async function __filterTemplatesByText(page, templateName) {
   await __dashboardTemplatesBrowser(page);
-  await __typeInSearchBarFilter(page, "templates", templateName);
+  await __typeInSearchBarFilter(page, "template", templateName);
 }
 
 async function __filterServicesByText(page, serviceName) {
   await __dashboardServicesBrowser(page);
-  await __typeInSearchBarFilter(page, "services", serviceName);
+  await __typeInSearchBarFilter(page, "service", serviceName);
 }
 
 async function __typeInSearchBarFilter(page, resource, text) {
