@@ -213,9 +213,16 @@ async def running_interactive_services_delete(
     )
     try:
         await producer.stop_service(request.app, service_uuid, save_state)
+
     except exceptions.ServiceUUIDNotFoundError as err:
         raise web_exceptions.HTTPNotFound(reason=str(err))
     except Exception as err:
+        # server errors are logged (>=500)
+        log.exception(
+            "Failed to delete dynamic service %s (save_state=%s)",
+            service_uuid,
+            save_state,
+        )
         raise web_exceptions.HTTPInternalServerError(reason=str(err))
 
     return web.json_response(status=204)
