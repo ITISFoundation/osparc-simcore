@@ -92,4 +92,4 @@ def is_pipeline_running(pipeline_state: RunningState) -> bool:
 
 
 def is_pipeline_stopped(pipeline_state: RunningState) -> bool:
-    return pipeline_state.is_stopped()
+    return not pipeline_state.is_running()

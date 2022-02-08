@@ -35,9 +35,6 @@ class RunningState(str, Enum):
             RunningState.RETRY,
         )
 
-    def is_stopped(self) -> bool:
-        return not self.is_running()
-
 
 @unique
 class DataState(str, Enum):

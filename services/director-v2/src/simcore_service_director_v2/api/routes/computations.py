@@ -145,7 +145,7 @@ async def create_computation(
         filtered_tasks = [
             t
             for t in inserted_comp_tasks
-            if f"{t.node_id}" in list(minimal_computational_dag.nodes())
+            if f"{t.node_id}" in set(minimal_computational_dag.nodes())
         ]
         pipeline_state = get_pipeline_state_from_task_states(filtered_tasks)
 
