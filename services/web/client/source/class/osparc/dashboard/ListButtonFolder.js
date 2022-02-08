@@ -41,9 +41,19 @@ qx.Class.define("osparc.dashboard.ListButtonFolder", {
       this.setIcon(osparc.dashboard.CardBase.FOLDER_ICON);
     },
 
-    __applyId: function() {
+    __applyId: function(value) {
       const tags = osparc.store.Store.getInstance().getTags();
-      console.log(tags);
+      const foundTag = tags.find(tag => tag.id === value);
+      if (foundTag) {
+        const title = this.getChildControl("title");
+        title.setValue(foundTag.name);
+
+        const description = this.getChildControl("description");
+        description.setValue(foundTag.description);
+
+        const icon = this.getChildControl("icon").getChildControl("image");
+        icon.setTextColor(foundTag.color);
+      }
     },
 
     _onToggleChange: function(e) {

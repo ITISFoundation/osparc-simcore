@@ -374,6 +374,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(studyItem)) {
           this._resourcesContainer.remove(studyItem);
         }
+        if (this.self().isFolderButtonItem(studyItem)) {
+          this._resourcesContainer.remove(studyItem);
+        }
       }
       this._addResourcesToList(studiesList);
     },
