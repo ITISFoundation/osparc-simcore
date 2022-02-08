@@ -57,7 +57,7 @@ qx.Class.define("osparc.data.model.Study", {
       quality: studyData.quality || this.getQuality()
     });
 
-    const wbData = studyData.workbench || {};
+    const wbData = studyData.workbench || this.getWorkbench();
     const workbench = new osparc.data.model.Workbench(wbData, studyData.ui);
     this.setWorkbench(workbench);
     workbench.setStudy(this);
@@ -126,7 +126,7 @@ qx.Class.define("osparc.data.model.Study", {
     workbench: {
       check: "osparc.data.model.Workbench",
       nullable: false,
-      init: null
+      init: {}
     },
 
     ui: {
