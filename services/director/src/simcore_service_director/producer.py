@@ -1,5 +1,3 @@
-# pylint: disable=C0111, R0913
-
 import asyncio
 import json
 import logging
@@ -11,8 +9,16 @@ from pprint import pformat
 from typing import Dict, List, Optional, Tuple
 
 import aiodocker
+import aiohttp
 import tenacity
-from aiohttp import ClientConnectionError, ClientSession, web
+from aiohttp import (
+    ClientConnectionError,
+    ClientError,
+    ClientResponse,
+    ClientResponseError,
+    ClientSession,
+    web,
+)
 from servicelib.async_utils import (  # pylint: disable=no-name-in-module
     run_sequentially_in_context,
 )
@@ -20,6 +26,10 @@ from servicelib.monitor_services import (  # pylint: disable=no-name-in-module
     service_started,
     service_stopped,
 )
+from tenacity import retry
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 
 from . import config, docker_utils, exceptions, registry_proxy
 from .config import (
@@ -27,6 +37,7 @@ from .config import (
     CPU_RESOURCE_LIMIT_KEY,
     MEM_RESOURCE_LIMIT_KEY,
 )
+from .exceptions import ServiceStateSaveError
 from .services_common import ServicesCommonSettings
 from .system_utils import get_system_extra_hosts_raw
 from .utils import parse_as_datetime
@@ -997,6 +1008,26 @@ async def get_service_details(app: web.Application, node_uuid: str) -> Dict:
             ) from err
 
 
+@retry(
+    wait=wait_fixed(2),
+    stop=stop_after_attempt(3),
+    reraise=True,
+    retry=retry_if_exception_type(ClientConnectionError),
+)
+async def _save_service_state(service_host_name: str, session: aiohttp.ClientSession):
+    response: ClientResponse
+    async with session.post(
+        url=f"http://{service_host_name}/state",
+        timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
+    ) as response:
+        response.raise_for_status()
+        log.info(
+            "Service '%s' successfully saved its state: %s",
+            service_host_name,
+            f"{response}",
+        )
+
+
 @run_sequentially_in_context(target_args=["node_uuid"])
 async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -> None:
     log.debug("stopping service with uuid %s", node_uuid)
@@ -1020,7 +1051,9 @@ async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -
         # error if no service with such an id exists
         if not list_running_services_with_uuid:
             raise exceptions.ServiceUUIDNotFoundError(node_uuid)
+
         log.debug("found service(s) with uuid %s", list_running_services_with_uuid)
+
         # save the state of the main service if it can
         service_details = await get_service_details(app, node_uuid)
         # FIXME: the exception for the 3d-viewer shall be removed once the dy-sidecar comes in
@@ -1033,42 +1066,40 @@ async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -
             if not "3d-viewer" in service_details["service_host"]
             else "",
         )
-        log.debug("saving state of service %s...", service_host_name)
+
+        # If state save is enforced, it will fail if not completed
         if save_state:
+            log.debug("saving state of service %s...", service_host_name)
             try:
-                session = app[APP_CLIENT_SESSION_KEY]
-                service_url = "http://" + service_host_name + "/" + "state"
-                async with session.post(
-                    service_url,
-                    timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
-                ) as response:
-                    if 199 < response.status < 300:
-                        log.debug(
-                            "service %s successfully saved its state", service_host_name
-                        )
-                    else:
-                        log.warning(
-                            "service %s does not allow saving state, answered %s",
-                            service_host_name,
-                            await response.text(),
-                        )
-            except ClientConnectionError:
-                log.warning(
-                    "service %s could not be contacted, state not saved",
-                    service_host_name,
+                await _save_service_state(
+                    service_host_name, session=app[APP_CLIENT_SESSION_KEY]
                 )
+            except ClientResponseError as err:
+                raise ServiceStateSaveError(
+                    node_uuid,
+                    reason=f"service {service_host_name} rejected to save state, "
+                    f"responded {err.message} (status {err.status})",
+                ) from err
+
+            except ClientError as err:
+                raise ServiceStateSaveError(
+                    node_uuid, reason=f"service {service_host_name} unreachable [{err}]"
+                ) from err
 
         # remove the services
         try:
-            log.debug("removing services...")
+            log.debug("removing services ...")
             for service in list_running_services_with_uuid:
+                log.debug("removing %s", service["Spec"]["Name"])
                 await client.services.delete(service["Spec"]["Name"])
-            log.debug("removed services, now removing network...")
+
         except aiodocker.exceptions.DockerError as err:
             raise exceptions.GenericDockerError(
                 "Error while removing services", err
             ) from err
+
         # remove network(s)
+        log.debug("removed services, now removing network...")
         await _remove_overlay_network_of_swarm(client, node_uuid)
         log.debug("removed network")
 
