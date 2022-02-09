@@ -152,8 +152,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # HELPERS  --------------------------------------------------------
 
-    def is_enabled(self, plugin_name: str):
-        return getattr(self, f"WEBSERVER_{plugin_name.upper()}", None) is not None
+    def is_enabled(self, field_name: str) -> bool:
+        return getattr(self, field_name, None) is not None
+
+    def is_plugin(self, field_name: str) -> bool:
+        if field := self.__fields__.get(field_name):
+            if "auto_default_from_env" in field.field_info.extra and field.allow_none:
+                return True
+        return False
 
     def public_dict(self) -> Dict[str, Any]:
         """Data publicaly available"""
@@ -182,6 +188,18 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             exclude_none=True,
             by_alias=True,
         )
+
+        # gets names of disabled plugins
+        plugins_disabled = []
+        # NOTE: this list is limited for security reasons. An umbounded list
+        # might reveal critical info on the settings of a deploy.
+        selected_plugins = ["WEBSERVER_EXPORTER", "WEBSERVER_SCICRUNCH"]
+        for field_name in selected_plugins:
+            if self.is_plugin(field_name) and not self.is_enabled(field_name):
+                plugins_disabled.append(field_name)
+
+        data["plugins_disabled"] = plugins_disabled
+
         # Alias in addition MUST be camelcase here
         return {snake_to_camel(k): v for k, v in data.items()}
 
@@ -317,9 +335,9 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
             ),
         },
         "clusters": {"enabled": True},
-        "computation": {"enabled": app_settings.is_enabled("COMPUTATION")},
-        "diagnostics": {"enabled": app_settings.is_enabled("DIAGNOSTICS")},
-        "director-v2": {"enabled": app_settings.is_enabled("DIRECTOR_V2")},
+        "computation": {"enabled": app_settings.is_enabled("WEBSERVER_COMPUTATION")},
+        "diagnostics": {"enabled": app_settings.is_enabled("WEBSERVER_DIAGNOSTICS")},
+        "director-v2": {"enabled": app_settings.is_enabled("WEBSERVER_DIRECTOR_V2")},
         "exporter": {"enabled": app_settings.WEBSERVER_EXPORTER is not None},
         "groups": {"enabled": True},
         "meta_modeling": {"enabled": True},
