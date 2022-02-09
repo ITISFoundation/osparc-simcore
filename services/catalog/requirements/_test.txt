@@ -7,7 +7,6 @@
 aiohttp==3.7.4.post0
     # via
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/constraints.txt
     #   pytest-aiohttp
 alembic==1.7.4
     # via
@@ -239,7 +238,9 @@ toml==0.10.2
     #   pylint
     #   pytest
 tomli==1.2.2
-    # via coverage
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   coverage
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt
