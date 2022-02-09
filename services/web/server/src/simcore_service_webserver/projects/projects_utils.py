@@ -4,14 +4,17 @@ from copy import deepcopy
 from typing import Any, AnyStr, Dict, List, Match, Optional, Set, Tuple, Union
 from uuid import UUID, uuid1, uuid5
 
-from models_library.projects_nodes_io import BaseFileLink, DownloadLink, PortLink
 from servicelib.decorators import safe_return
 from yarl import URL
 
 from .project_models import ProjectDict
 
 log = logging.getLogger(__name__)
-variable_pattern = re.compile(r"^{{\W*(\w+)\W*}}$")
+
+VARIABLE_PATTERN = re.compile(r"^{{\W*(\w+)\W*}}$")
+
+# NOTE: InputTypes/OutputTypes that are NOT links
+NOT_IO_LINK_TYPES_TUPLE = (str, int, float, bool)
 
 
 def clone_project_document(
@@ -111,7 +114,7 @@ def substitute_parameterized_inputs(
             isinstance(value, str)
             and access.get(name, "ReadAndWrite") == "ReadAndWrite"
         ):
-            match = variable_pattern.match(value)
+            match = VARIABLE_PATTERN.match(value)
             return match
         return None
 
@@ -270,10 +273,12 @@ def any_node_inputs_changed(
             # for new nodes, detect only added link
             for input_name, input_value in updated_node.get("inputs", {}).items():
                 # TODO: how to ensure this list of "links types" is up-to-date!??
-                # These types represent links that node-ports need to handle
-                if isinstance(input_value, PortLink, DownloadLink, BaseFileLink):
+                # Anything outside of the PRIMITIVE_TYPES_TUPLE, is interpreted as links
+                # that node-ports need to handle. This is a simpler check with ProjectDict
+                # since otherwise test will require constructing BaseModels on input_values
+                if not isinstance(input_value, NOT_IO_LINK_TYPES_TUPLE):
                     log.debug(
-                        "Change detected in projects[%s].workbench[%s].inputs[%s]=%s",
+                        "Change detected in projects[%s].workbench[%s].inputs[%s]=%s. Link was added.",
                         f"{project_uuid=}",
                         f"{node_id=}",
                         f"{input_name}",
