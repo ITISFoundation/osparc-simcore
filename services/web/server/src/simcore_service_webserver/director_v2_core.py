@@ -212,6 +212,26 @@ async def create_or_update_pipeline(
 
 
 @log_decorator(logger=log)
+async def is_pipeline_running(
+    app: web.Application, user_id: PositiveInt, project_id: UUID
+) -> Optional[bool]:
+
+    # TODO: make it cheaper by /computations/{project_id}/state. First trial shows
+    # that the efficiency gain is minimal but should be considered specially if the handler
+    # gets heavier with time
+    pipeline = await get_computation_task(app, user_id, project_id)
+    if pipeline is None:
+        # NOTE: at the time of this modification, error handling in `get_computation_task`
+        # is still limited and any type of errors is transformed into a None. Therefore
+        # at this point we cannot discern whether the pipeline is running or not.
+        # In order to define the "UNKNOWN" state we return None, which in an
+        # if statement casts to False
+        return None
+
+    return pipeline.state.is_running()
+
+
+@log_decorator(logger=log)
 async def get_computation_task(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> Optional[ComputationTask]:

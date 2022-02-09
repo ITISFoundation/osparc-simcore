@@ -33,7 +33,7 @@ from shared_comp_utils import (
     create_pipeline,
 )
 from simcore_sdk.node_ports_common import config as node_ports_config
-from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
+from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskGet
 from starlette import status
 from starlette.testclient import TestClient
 from yarl import URL
@@ -393,7 +393,7 @@ async def test_run_partial_computation(
             if index in params.subgraph_elements
         ],
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
     # check the contents is correctb
     await assert_computation_task_out_obj(
         async_client,
@@ -455,7 +455,7 @@ async def test_run_partial_computation(
         ],
         force_restart=True,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
 
     await assert_computation_task_out_obj(
         async_client,
@@ -490,7 +490,7 @@ async def test_run_computation(
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
 
     # check the contents is correct: a pipeline that just started gets PUBLISHED
     await assert_computation_task_out_obj(
@@ -553,7 +553,7 @@ async def test_run_computation(
         expected_response_status_code=status.HTTP_201_CREATED,
         force_restart=True,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
     # check the contents is correct
     await assert_computation_task_out_obj(
         async_client,
@@ -600,7 +600,7 @@ async def test_abort_computation(
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
@@ -640,7 +640,7 @@ async def test_abort_computation(
     assert (
         response.status_code == status.HTTP_202_ACCEPTED
     ), f"response code is {response.status_code}, error: {response.text}"
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
     assert (
         str(task_out.url)
         == f"{async_client.base_url}/v2/computations/{sleepers_project.uuid}"
@@ -678,7 +678,7 @@ async def test_update_and_delete_computation(
         start_pipeline=False,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
@@ -697,7 +697,7 @@ async def test_update_and_delete_computation(
         start_pipeline=False,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
@@ -716,7 +716,7 @@ async def test_update_and_delete_computation(
         start_pipeline=False,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
@@ -735,7 +735,7 @@ async def test_update_and_delete_computation(
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
     # check the contents is correctb
     await assert_computation_task_out_obj(
         async_client,
