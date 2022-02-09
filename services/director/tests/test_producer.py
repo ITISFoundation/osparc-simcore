@@ -96,7 +96,9 @@ async def run_services(
     # teardown stop the services
     for service in started_services:
         service_uuid = service["service_uuid"]
-        await producer.stop_service(aiohttp_mock_app, service_uuid, save_state=False)
+        # NOTE: All fake services have no save-state entrypoint, but since save_state=True
+        #       the legacy rule will apply and save will be skipped.
+        await producer.stop_service(aiohttp_mock_app, service_uuid, save_state=True)
         with pytest.raises(exceptions.ServiceUUIDNotFoundError):
             await producer.get_service_details(aiohttp_mock_app, service_uuid)
 
