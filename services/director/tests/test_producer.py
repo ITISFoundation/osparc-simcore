@@ -96,6 +96,9 @@ async def run_services(
     # teardown stop the services
     for service in started_services:
         service_uuid = service["service_uuid"]
+        # NOTE: Fake services are not even web-services therefore we cannot
+        # even emulate a legacy dy-service that does not implement a save-state feature
+        # so here we must make save_state=False
         await producer.stop_service(aiohttp_mock_app, service_uuid, save_state=False)
         with pytest.raises(exceptions.ServiceUUIDNotFoundError):
             await producer.get_service_details(aiohttp_mock_app, service_uuid)
