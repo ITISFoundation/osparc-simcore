@@ -145,7 +145,7 @@ paramiko==2.9.2
     # via docker
 passlib==1.7.4
     # via -r requirements/_test.in
-platformdirs==2.4.1
+platformdirs==2.5.0
     # via pylint
 pluggy==1.0.0
     # via pytest
