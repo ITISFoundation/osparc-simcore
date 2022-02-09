@@ -46,10 +46,15 @@ def main():
     before, after = parse_changes(filepath)
 
     # format
-    print("before", len(before))
-    print("after", len(after))
+    print("Stats")
+    print("- #packages before:", len(before))
+    print("- #packages after :", len(after))
+    print()
 
-    print("| | name | before | after| upgrade |\n |--|--|--|--|--|")
+    COLUMNS = ["#", "name", "before", "after", "upgrade"]
+
+    print("|" + "|".join(COLUMNS) + "|")
+    print("|" + "|".join(["-" * len(c) for c in COLUMNS]) + "|")
     for i, name in enumerate(sorted(before.keys()), start=1):
         # TODO: where are these libraries?
         # TODO: are they first dependencies?
