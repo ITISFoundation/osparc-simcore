@@ -80,7 +80,7 @@ packaging==21.3
     #   pytest-sugar
 pint==0.18
     # via -r requirements/_test.in
-platformdirs==2.4.1
+platformdirs==2.5.0
     # via pylint
 pluggy==1.0.0
     # via pytest
