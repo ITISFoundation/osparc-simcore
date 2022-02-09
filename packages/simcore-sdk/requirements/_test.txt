@@ -108,7 +108,7 @@ packaging==21.3
     #   -c requirements/_base.txt
     #   pytest
     #   pytest-sugar
-platformdirs==2.4.1
+platformdirs==2.5.0
     # via pylint
 pluggy==1.0.0
     # via pytest
