@@ -29,7 +29,7 @@ class ParallelDownloader:
         """starts the download and waits for all files to finish"""
         exporter_settings = get_settings(app)
         assert (  # nosec
-            exporter_settings is None
+            exporter_settings is not None
         ), "this call was not expected with a disabled plugin"  # nosec
 
         results = await self.downloader.run_download(
