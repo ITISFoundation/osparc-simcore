@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import re
+from copy import deepcopy
 from typing import Dict
 
 import pytest
@@ -19,6 +20,15 @@ from simcore_service_webserver.application_settings import (
 from simcore_service_webserver.cli import parse, setup_parser
 
 # FIXTURES -----------------------------
+
+
+@pytest.fixture
+def mock_env_devel_environment(mock_env_devel_environment: Dict[str, str], monkeypatch):
+    # TODO: added tmp override of this fixture to overcome new tmp WEBSERVER_EXPORTER=null  added in .env-devel
+    # When removed again, we can delete this fixture
+    mock_env_devel_environment.pop("WEBSERVER_EXPORTER", None)
+    monkeypatch.delenv("WEBSERVER_EXPORTER", raising=True)
+    return deepcopy(mock_env_devel_environment)
 
 
 @pytest.fixture
