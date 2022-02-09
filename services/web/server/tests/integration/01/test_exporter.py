@@ -154,8 +154,6 @@ def client(
     cfg["director"]["enabled"] = True
     cfg["exporter"]["enabled"] = True
 
-    # Overrides values in .env-devel
-    monkeypatch.delenv("WEBSERVER_EXPORTER")
     monkeypatch_setenv_from_app_config(cfg)
 
     # app setup ----------------------------------
