@@ -67,6 +67,9 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects
 from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
 from simcore_service_webserver.exporter.file_downloader import ParallelDownloader
+from simcore_service_webserver.exporter.settings import (
+    get_settings as get_exporter_settings,
+)
 from simcore_service_webserver.scicrunch.submodule_setup import (
     setup_scicrunch_submodule,
 )
@@ -140,20 +143,28 @@ def client(
     postgres_with_template_db: aiopg.sa.engine.Engine,
     mock_orphaned_services: mock.Mock,
     monkeypatch_setenv_from_app_config: Callable,
+    monkeypatch,
 ):
+    # test config & env vars ----------------------
     cfg = deepcopy(app_config)
-
     assert cfg["rest"]["version"] == API_VERSION
     assert cfg["rest"]["enabled"]
+
     cfg["projects"]["enabled"] = True
     cfg["director"]["enabled"] = True
+    cfg["exporter"]["enabled"] = True
 
-    # fake config
+    # Overrides values in .env-devel
+    monkeypatch.delenv("WEBSERVER_EXPORTER")
     monkeypatch_setenv_from_app_config(cfg)
+
+    # app setup ----------------------------------
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules
     setup_settings(app)
+    assert get_exporter_settings(app) is not None, "Should capture defaults"
+
     setup_db(app)
     setup_session(app)
     setup_security(app)
@@ -164,7 +175,7 @@ def client(
     setup_projects(app)
     setup_director(app)
     setup_director_v2(app)
-    setup_exporter(app)
+    setup_exporter(app)  # <---- under test
     setup_storage(app)
     setup_products(app)
     setup_catalog(app)
