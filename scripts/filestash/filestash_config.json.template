@@ -83,7 +83,7 @@
           "label": "S3",
           "type": "s3",
           "advanced": true,
-          "path": "simcore",
+          "path": "$S3_BUCKET_NAME",
           "endpoint": "$S3_ENDPOINT"
       }
   ]

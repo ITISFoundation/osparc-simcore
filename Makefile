@@ -196,11 +196,10 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 
 .stack-ops.yml: .env $(docker-compose-configs)
 	# Compiling config file for filestash
+	@export S3_ENDPOINT="${S3_ENDPOINT}"; \
+	export S3_BUCKET_NAME="${S3_BUCKET_NAME}"; \
+	python3 scripts/filestash/create_config.py
 	# Creating config for ops stack to $@
-	# TODO call python scrip for processing tempalte and generating config
-	export S3_ENDPOINT=$S3_ENDPOINT
-	export S3_BUCKET_NAME=$S3_BUCKET_NAME
-	@python3 scripts/filestash/create_config.py
 	@docker-compose --env-file .env --file services/docker-compose-ops.yml --log-level=ERROR config > $@
 
 
