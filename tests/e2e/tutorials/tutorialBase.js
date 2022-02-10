@@ -321,6 +321,8 @@ class TutorialBase {
 
   async openNode(nodePosInTree = 0) {
     await auto.openNode(this.__page, nodePosInTree);
+    // Iframes get loaded on demand, wait 5"
+    await this.waitFor(5000);
     await this.takeScreenshot('openNode_' + nodePosInTree);
   }
 
@@ -404,6 +406,7 @@ class TutorialBase {
   }
 
   async removeStudy(studyId) {
+    await this.waitFor(5000, 'Wait to be unlocked');
     await this.takeScreenshot("deleteFirstStudy_before");
     try {
       // await this.waitForStudyUnlocked(studyId);

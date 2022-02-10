@@ -84,7 +84,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
     },
 
     _createLayout: function() {
-      const servicesLayout = this._createResourcesLayout("services");
+      const servicesLayout = this._createResourcesLayout("service");
 
       this.__addNewServiceButtons();
 

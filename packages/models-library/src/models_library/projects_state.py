@@ -27,6 +27,14 @@ class RunningState(str, Enum):
     FAILED = "FAILED"
     ABORTED = "ABORTED"
 
+    def is_running(self) -> bool:
+        return self in (
+            RunningState.PUBLISHED,
+            RunningState.PENDING,
+            RunningState.STARTED,
+            RunningState.RETRY,
+        )
+
 
 @unique
 class DataState(str, Enum):
