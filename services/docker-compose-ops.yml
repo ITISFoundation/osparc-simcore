@@ -69,6 +69,24 @@ services:
       timeout: 20s
       retries: 3
 
+  filestash:
+    container_name: filestash
+    image: machines/filestash
+    restart: always
+    ports:
+      - "9002:8334"
+    volumes:
+      - ${PWD}/_tmp/filestash_config.json:/app/data/state/config/config.json
+    networks:
+      - simcore_default
+
+  onlyoffice:
+    container_name: filestash_oods
+    image: onlyoffice/documentserver
+    restart: always
+    networks:
+      - simcore_default
+
   redis-commander:
     image: rediscommander/redis-commander:latest
     init: true
