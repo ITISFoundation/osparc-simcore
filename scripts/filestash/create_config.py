@@ -19,7 +19,10 @@ CONFIG_JSON = CONFIG_TEMP_DIR / "filestash_config.json"
 def patch_env_vars() -> None:
     endpoint = os.environ["S3_ENDPOINT"]
     if not endpoint.startswith("http"):
-        endpoint = f"http://{endpoint}"
+        protocol = (
+            "https" if os.environ["S3_SECURE"].lower() in {"1", "true"} else "http"
+        )
+        endpoint = f"{protocol}://{endpoint}"
 
     os.environ["S3_ENDPOINT"] = endpoint
 
