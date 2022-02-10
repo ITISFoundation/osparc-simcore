@@ -143,7 +143,6 @@ def client(
     postgres_with_template_db: aiopg.sa.engine.Engine,
     mock_orphaned_services: mock.Mock,
     monkeypatch_setenv_from_app_config: Callable,
-    monkeypatch,
 ):
     # test config & env vars ----------------------
     cfg = deepcopy(app_config)

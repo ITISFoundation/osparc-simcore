@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from aiohttp import web
 from models_library.basic_types import (
@@ -161,6 +161,19 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 return True
         return False
 
+    def _get_disabled_public_plugins(self) -> List[str]:
+        plugins_disabled = []
+        # NOTE: this list is limited for security reasons. An unbounded list
+        # might reveal critical info on the settings of a deploy to the client.
+        PUBLIC_PLUGIN_CANDIDATES = [
+            "WEBSERVER_EXPORTER",
+            "WEBSERVER_SCICRUNCH",
+        ]
+        for field_name in PUBLIC_PLUGIN_CANDIDATES:
+            if self.is_plugin(field_name) and not self.is_enabled(field_name):
+                plugins_disabled.append(field_name)
+        return plugins_disabled
+
     def public_dict(self) -> Dict[str, Any]:
         """Data publicaly available"""
         return self.dict(
@@ -188,17 +201,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             exclude_none=True,
             by_alias=True,
         )
-
-        # gets names of disabled plugins
-        plugins_disabled = []
-        # NOTE: this list is limited for security reasons. An umbounded list
-        # might reveal critical info on the settings of a deploy.
-        selected_plugins = ["WEBSERVER_EXPORTER", "WEBSERVER_SCICRUNCH"]
-        for field_name in selected_plugins:
-            if self.is_plugin(field_name) and not self.is_enabled(field_name):
-                plugins_disabled.append(field_name)
-
-        data["plugins_disabled"] = plugins_disabled
+        data["plugins_disabled"] = self._get_disabled_public_plugins()
 
         # Alias in addition MUST be camelcase here
         return {snake_to_camel(k): v for k, v in data.items()}
