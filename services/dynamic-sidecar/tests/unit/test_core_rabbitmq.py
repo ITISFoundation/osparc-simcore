@@ -2,6 +2,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 import asyncio
+import datetime
 import json
 import uuid
 from asyncio import AbstractEventLoop
@@ -21,7 +22,11 @@ from models_library.settings.rabbit import RabbitConfig
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dynamic_sidecar.core.application import assemble_application
-from simcore_service_dynamic_sidecar.core.rabbitmq import SLEEP_BETWEEN_SENDS, RabbitMQ
+from simcore_service_dynamic_sidecar.core.rabbitmq import (
+    LOG_DATETIME_FORMAT,
+    SLEEP_BETWEEN_SENDS,
+    RabbitMQ,
+)
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
 pytestmark = pytest.mark.asyncio
@@ -163,14 +168,26 @@ async def test_rabbitmq(
 
     assert len(incoming_data) == 2, f"missing incoming data: {pformat(incoming_data)}"
 
-    assert incoming_data[0] == LoggerRabbitMessage(
+    timestamp_length = len(LOG_DATETIME_FORMAT)
+
+    def _strip_datetime(logger_message: LoggerRabbitMessage) -> LoggerRabbitMessage:
+        stripped_messages = []
+        for message in logger_message.messages:
+            datetime_str = message[:timestamp_length]
+            assert datetime.datetime.strptime(datetime_str, LOG_DATETIME_FORMAT)
+            stripped_messages.append(message[timestamp_length + 1 :])
+
+        logger_message.messages = stripped_messages
+        return logger_message
+
+    assert _strip_datetime(incoming_data[0]) == LoggerRabbitMessage(
         messages=[log_msg] + log_messages,
         node_id=node_id,
         project_id=project_id,
         user_id=user_id,
     )
 
-    assert incoming_data[1] == LoggerRabbitMessage(
+    assert _strip_datetime(incoming_data[1]) == LoggerRabbitMessage(
         messages=log_more_messages,
         node_id=node_id,
         project_id=project_id,

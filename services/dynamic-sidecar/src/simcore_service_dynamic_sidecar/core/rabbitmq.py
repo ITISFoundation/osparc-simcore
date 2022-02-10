@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import datetime
 import logging
 import os
 import socket
 from asyncio import CancelledError, Queue, Task
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Final, List, Optional, Union
 
 import aio_pika
 from fastapi import FastAPI
@@ -28,7 +29,8 @@ log = logging.getLogger(__file__)
 # limit logs displayed
 logging.getLogger("aio_pika").setLevel(logging.WARNING)
 
-SLEEP_BETWEEN_SENDS: float = 1.0
+SLEEP_BETWEEN_SENDS: Final[float] = 1.0
+LOG_DATETIME_FORMAT: Final[str] = "%m/%d %H:%M:%S"
 
 
 def _close_callback(sender: Any, exc: Optional[BaseException]) -> None:
@@ -168,8 +170,10 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
         if isinstance(log_msg, str):
             log_msg = [log_msg]
 
+        time_string = datetime.datetime.utcnow().strftime(LOG_DATETIME_FORMAT)
         for message in log_msg:
-            await self._channel_queues[self.CHANNEL_LOG].put(message)
+            with_timestamp = f"{time_string} {message}"
+            await self._channel_queues[self.CHANNEL_LOG].put(with_timestamp)
 
     async def close(self) -> None:
         if self._channel is not None:
