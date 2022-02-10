@@ -15,7 +15,6 @@ from .config import APP_CLIENT_SOCKET_REGISTRY_KEY, APP_RESOURCE_MANAGER_TASKS_K
 from .garbage_collector import setup_garbage_collector
 from .redis import setup_redis_client
 from .registry import RedisResourceRegistry
-from .settings import assert_valid_config
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +28,7 @@ def setup_resource_manager(app: web.Application) -> bool:
     # ----------------------------------------------
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas
-    assert_valid_config(app)
+    # assert_valid_config(app)
     # ---------------------------------------------
 
     app[APP_RESOURCE_MANAGER_TASKS_KEY] = []

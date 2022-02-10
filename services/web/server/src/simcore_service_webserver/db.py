@@ -20,7 +20,6 @@ from simcore_postgres_database.utils_aiopg import (
 from tenacity import retry
 
 from .db_config import CONFIG_SECTION_NAME
-from .db_settings import assert_valid_config
 
 THIS_MODULE_NAME = __name__.split(".")[-1]
 THIS_SERVICE_NAME = "postgres"
@@ -99,7 +98,7 @@ def setup_db(app: web.Application):
     # ----------------------------------------------
     # TODO: temporary, just to check compatibility between
     # trafaret and pydantic schemas
-    assert_valid_config(app)
+    # assert_valid_config(app)
     # ---------------------------------------------
 
     # ensures keys exist
