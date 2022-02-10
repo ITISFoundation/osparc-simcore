@@ -208,7 +208,10 @@ def test_settings_constructs(app_settings: ApplicationSettings):
 
 
 def test_settings_to_client_statics(app_settings: ApplicationSettings):
+
     statics = app_settings.to_client_statics()
+    # can jsonify
+    print(json.dumps(statics, indent=1))
 
     # all key in camelcase
     assert all(
@@ -218,9 +221,22 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
 
     # special alias
     assert statics["stackName"] == "master-simcore"
+    assert not statics["pluginsDisabled"]
 
-    # can jsonify
-    print(json.dumps(statics))
+
+def test_settings_to_client_statics_plugins(
+    mock_webserver_service_environment, monkeypatch
+):
+    disable_plugins = {"WEBSERVER_EXPORTER", "WEBSERVER_SCICRUNCH"}
+    for name in disable_plugins:
+        monkeypatch.setenv(name, "null")
+
+    settings = ApplicationSettings()
+    statics = settings.to_client_statics()
+
+    print(json.dumps(statics, indent=1))
+
+    assert set(statics["pluginsDisabled"]) == disable_plugins
 
 
 def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):
