@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Protocol
 
 from aiohttp import web
 
-from .application_keys import APP_CONFIG_KEY
+from .application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
 
@@ -137,6 +137,7 @@ def app_module_setup(
 
             if category == ModuleCategory.ADDON:
                 # NOTE: ONLY addons can be enabled/disabled
+
                 # TODO: sometimes section is optional, check in config schema
                 cfg = app[APP_CONFIG_KEY]
 
@@ -153,6 +154,20 @@ def app_module_setup(
                     logger.info(
                         "Skipping '%s' setup. Explicitly disabled in config",
                         module_name,
+                    )
+                    return False
+
+            # NOTE: if not disabled by config, it can be disabled by settings
+            # FIXME: hard-coded webserver temporary
+            app_settings = app.get(APP_SETTINGS_KEY)
+            if app_settings:
+                settings_name = f"WEBSERVER_{module_name.split('.')[-1].upper()}"
+                print(settings_name)
+                if getattr(app_settings, settings_name, None) is None:
+                    logger.info(
+                        "Skipping '%s' setup. Plugin disabled in application_settings.%s",
+                        module_name,
+                        settings_name,
                     )
                     return False
 
