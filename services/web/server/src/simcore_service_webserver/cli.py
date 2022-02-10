@@ -28,7 +28,7 @@ from settings_library.utils_cli import create_settings_command
 
 from .application import create_application, run_service
 from .application__schema import CLI_DEFAULT_CONFIGFILE, app_schema
-from .application_settings import ApplicationSettings
+from .application_settings import ApplicationSettings, convert_to_app_config
 from .cli_config import add_cli_options, config_from_options
 from .log import setup_logging
 from .utils import search_osparc_repo_dir
@@ -109,18 +109,22 @@ def parse(args: Optional[List], parser: ArgumentParser) -> Dict:
 
 
 def _setup_app(args: Optional[List] = None) -> Tuple[web.Application, Dict]:
-    # parse & config file
-    parser = ArgumentParser(description="Service to manage data webserver in simcore.")
-    setup_parser(parser)
-    config = parse(args, parser)
 
-    # service log level
-    slow_duration = float(
-        os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0)
-    )  # TODO: move to settings.py::ApplicationSettings
-    setup_logging(level=config["main"]["log_level"], slow_duration=slow_duration)
+    settings = ApplicationSettings.create_from_envs()
+    if args:
+        # parse & config file
+        parser = ArgumentParser(
+            description="Service to manage data webserver in simcore."
+        )
+        setup_parser(parser)
+        config = parse(args, parser)
+    else:
+        config = convert_to_app_config(settings)
 
-    # run
+    setup_logging(
+        level=settings.log_level,
+        slow_duration=settings.AIODEBUG_SLOW_DURATION_SECS,
+    )
     app = create_application(config)
     return (app, config)
 
