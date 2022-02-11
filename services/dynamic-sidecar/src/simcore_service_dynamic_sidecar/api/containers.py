@@ -525,6 +525,7 @@ async def restarts_containers(
     command_timeout: float = Query(
         10.0, description="docker-compose stop command timeout default"
     ),
+    app: FastAPI = Depends(get_application),
     settings: DynamicSidecarSettings = Depends(get_settings),
     shared_store: SharedStore = Depends(get_shared_store),
     rabbitmq: RabbitMQ = Depends(get_rabbitmq),
@@ -538,6 +539,9 @@ async def restarts_containers(
             status.HTTP_404_NOT_FOUND,
             detail="No spec for docker-compose command was found",
         )
+
+    for container_name in shared_store.container_names:
+        await stop_log_fetching(app, container_name)
 
     command = (
         "docker-compose --project-name {project} --file {file_path} "
@@ -554,6 +558,9 @@ async def restarts_containers(
         error_message = (f"'{command}' finished with errors\n{stdout}",)
         logger.warning(error_message)
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=stdout)
+
+    for container_name in shared_store.container_names:
+        await start_log_fetching(app, container_name)
 
     await _send_message(rabbitmq, "Service was restarted please reload the UI")
     await rabbitmq.send_event_reload_iframe()
