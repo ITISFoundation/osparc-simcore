@@ -73,7 +73,8 @@ def create_settings_command(
 
             assert logger is not None  # nosec
             logger.error(
-                "Invalid application settings. Typically an environment variable is missing or mistyped :\n%s",
+                "Invalid settings. "
+                "Typically this is due to an environment variable missing or misspelled :\n%s",
                 "\n".join(
                     [
                         HEADER_STR.format("detail"),

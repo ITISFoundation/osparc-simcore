@@ -72,17 +72,20 @@ def fake_granular_env_file_content() -> str:
 
 
 def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
-    result = cli_runner.invoke(cli, ["--help"])
+    # NOTE: this tests is mostly here to raise awareness about what options
+    # are exposed in the CLI so we can add tests if there is any update
+    #
+    result = cli_runner.invoke(cli, ["--help"], catch_exceptions=False)
     print(result.stdout)
     assert result.exit_code == 0, result
 
     # first command
-    result = cli_runner.invoke(cli, ["run", "--help"])
+    result = cli_runner.invoke(cli, ["run", "--help"], catch_exceptions=False)
     print(result.stdout)
     assert result.exit_code == 0, result
 
     # settings command
-    result = cli_runner.invoke(cli, ["settings", "--help"])
+    result = cli_runner.invoke(cli, ["settings", "--help"], catch_exceptions=False)
     print(result.stdout)
 
     assert "--compact" in result.stdout
@@ -113,15 +116,34 @@ HELP = """
 
 
 def test_settings_as_json(
-    cli: typer.Typer, fake_settings_class, mock_environment, cli_runner: CliRunner
+    cli: typer.Typer,
+    fake_settings_class: Type[BaseCustomSettings],
+    mock_environment,
+    cli_runner: CliRunner,
 ):
 
-    result = cli_runner.invoke(cli, ["settings", "--as-json"])
+    result = cli_runner.invoke(cli, ["settings", "--as-json"], catch_exceptions=False)
     print(result.stdout)
 
     # reuse resulting json to build settings
     settings: Dict = json.loads(result.stdout)
     assert fake_settings_class.parse_obj(settings)
+
+
+def test_settings_as_json_schema(
+    cli: typer.Typer,
+    fake_settings_class: Type[BaseCustomSettings],
+    mock_environment,
+    cli_runner: CliRunner,
+):
+
+    result = cli_runner.invoke(
+        cli, ["settings", "--as-json-schema"], catch_exceptions=False
+    )
+    print(result.stdout)
+
+    # reuse resulting json to build settings
+    settings_schema: Dict = json.loads(result.stdout)
 
 
 def test_cli_default_settings_envs(
@@ -139,6 +161,7 @@ def test_cli_default_settings_envs(
         cli_settings_output = cli_runner.invoke(
             cli,
             ["settings", "--show-secrets"],
+            catch_exceptions=False,
         ).stdout
 
     # now let's use these as env vars
@@ -207,6 +230,7 @@ def test_cli_compact_settings_envs(
         setting_env_content_compact = cli_runner.invoke(
             cli,
             ["settings", "--compact"],
+            catch_exceptions=False,
         ).stdout
 
     # now we use these as env vars

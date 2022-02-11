@@ -1,5 +1,4 @@
 import warnings
-
 from functools import cached_property
 from typing import Sequence, get_args
 
@@ -90,6 +89,7 @@ class BaseCustomSettings(BaseSettings):
                     assert field.field_info.default_factory is None
 
                     field.default_factory = create_settings_from_env(field)
+                    field.default = None
                     # Having a default value, makes this field automatically optional
                     field.required = False
 
