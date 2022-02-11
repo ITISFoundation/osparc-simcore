@@ -243,9 +243,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __reloadSnapshotsAndIterations: function() {
-      osparc.utils.DisabledPlugins.isCheckpointsDisabled()
-        .then(isDisabled => {
-          if (!isDisabled) {
+      osparc.utils.DisabledPlugins.isVersionControlDisabled()
+        .then(isVCDisabled => {
+          if (!isVCDisabled) {
             const store = osparc.store.Store.getInstance();
             store.invalidate("snapshots");
             store.invalidate("iterations");
@@ -255,9 +255,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
               .then(snapshots => {
                 store.setSnapshots(snapshots);
                 if (snapshots.length) {
-                  study.getIterations()
-                    .then(iterations => {
-                      store.setIterations(iterations);
+                  osparc.utils.DisabledPlugins.isMetaModelingDisabled()
+                    .then(isMMDisabled => {
+                      if (!isMMDisabled) {
+                        study.getIterations()
+                          .then(iterations => {
+                            store.setIterations(iterations);
+                          });
+                      }
                     });
                 }
               });
