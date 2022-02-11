@@ -26,6 +26,8 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
     EXPORT: "WEBSERVER_EXPORTER",
     DUPLICATE: "WEBSERVER_EXPORTER",
     SCICRUNCH: "WEBSERVER_SCICRUNCH",
+    VERSION_CONTROL: "WEBSERVER_VERSION_CONTROL",
+    META_MODELING: "WEBSERVER_META_MODELING",
 
     isExportDisabled: function() {
       return this.self().isPluginDisabled(this.self().EXPORT);
@@ -37,6 +39,14 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
 
     isScicrunchDisabled: function() {
       return this.self().isPluginDisabled(this.self().SCICRUNCH);
+    },
+
+    isVersionControlDisabled: function() {
+      return this.self().isPluginDisabled(this.self().VERSION_CONTROL);
+    },
+
+    isMetaModelingDisabled: function() {
+      return this.self().isPluginDisabled(this.self().META_MODELING);
     },
 
     isPluginDisabled: function(key) {
