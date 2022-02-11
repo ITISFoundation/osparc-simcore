@@ -1022,7 +1022,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }
 
         let tries = 0;
-        const maxTries = 50;
+        const maxTries = 40;
         const sleepFor = 100;
         const allNodesVisible = nodeUIss => nodeUIss.every(nodeUI => nodeUI.getCurrentBounds() !== null);
         while (!allNodesVisible(nodeUIs) && tries < maxTries) {

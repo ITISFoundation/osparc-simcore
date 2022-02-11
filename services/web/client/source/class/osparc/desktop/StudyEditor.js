@@ -162,6 +162,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       study.buildWorkbench();
       study.openStudy()
         .then(() => {
+          this.__workbenchView.setStudy(study);
+          this.__slideshowView.setStudy(study);
+
           study.initStudy();
 
           osparc.data.Resources.get("organizations")
@@ -235,9 +238,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.fireEvent("forceBackToDashboard");
         })
         .finally(() => this._hideLoadingPage());
-
-      this.__workbenchView.setStudy(study);
-      this.__slideshowView.setStudy(study);
 
       this.__updatingStudy = 0;
     },
