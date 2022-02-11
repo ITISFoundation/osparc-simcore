@@ -807,8 +807,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         flex: 1
       });
       this.__studyOptionsPage.add(this.__getSlideshowSection());
-      this.__studyOptionsPage.add(this.__getSnapshotsSection());
-      this.__studyOptionsPage.add(this.__getIterationsSection());
+
+      osparc.utils.DisabledPlugins.isCheckpointsDisabled()
+        .then(isDisabled => {
+          if (!isDisabled) {
+            this.__studyOptionsPage.add(this.__getSnapshotsSection());
+            this.__studyOptionsPage.add(this.__getIterationsSection());
+          }
+        });
     },
 
     __getSlideshowSection: function() {
