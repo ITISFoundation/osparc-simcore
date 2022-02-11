@@ -168,10 +168,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         always=True,
     )
     @classmethod
-    def enable_only_if_dev_features_allowed(cls, v, values):
-        """Ensures that plugins 'under development' get programatically disabled if WEBSERVER_DEV_FEATURES_ENABLED=False"""
+    def enable_only_if_dev_features_allowed(cls, v, values, field):
+        """Ensures that plugins 'under development' get programatically
+        disabled if WEBSERVER_DEV_FEATURES_ENABLED=False
+        """
         if values["WEBSERVER_DEV_FEATURES_ENABLED"]:
             return v
+        if v:
+            log.warning("%s still under development and will be disabled.", field.name)
         return False if isinstance(v, bool) else None
 
     class Config(BaseCustomSettings.Config):
