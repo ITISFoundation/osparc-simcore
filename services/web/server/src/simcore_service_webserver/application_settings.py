@@ -157,6 +157,21 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_USERS: bool = True
     WEBSERVER_VERSION_CONTROL: bool = True
 
+    @validator(
+        "WEBSERVER_META_MODELING",
+        "WEBSERVER_VERSION_CONTROL",
+        "WEBSERVER_CLUSTERS",
+        pre=True,
+        always=True,
+    )
+    @classmethod
+    def enable_only_if_dev_features_allowed(cls, v, values):
+        """Ensures that plugins under development get programatically disabled if WEBSERVER_DEV_FEATURES_ENABLED=False"""
+        # NOTE: keep the list of plugins under-develpment up-to-date
+        if values["WEBSERVER_DEV_FEATURES_ENABLED"]:
+            return v
+        return False if isinstance(v, bool) else None
+
     class Config(BaseCustomSettings.Config):
         # NOTE: FutureWarning: aliases are no longer used by BaseSettings to define which environment variables to read.
         #       Instead use the "env" field setting. See https://pydantic-docs.helpmanual.io/usage/settings/#environment-variable-names
@@ -183,20 +198,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     def is_enabled(self, field_name: str) -> bool:
         return bool(getattr(self, field_name, None))
 
-    def is_plugin(self, field_name: str) -> bool:
-        if field := self.__fields__.get(field_name):
-            # TODO: more reliable definition of a "plugin" (extra var? e.g. Field( ... , x_advertise_plugin=True))
-            if (
-                "auto_default_from_env" in field.field_info.extra and field.allow_none
-            ) or field.type_ == bool:
-                return True
-        return False
-
     def _get_disabled_public_plugins(self) -> List[str]:
         plugins_disabled = []
         # NOTE: this list is limited for security reasons. An unbounded list
         # might reveal critical info on the settings of a deploy to the client.
+        # TODO: more reliable definition of a "plugin" and whether it can be advertised or not
+        # (extra var? e.g. Field( ... , x_advertise_plugin=True))
         PUBLIC_PLUGIN_CANDIDATES = {
+            "WEBSERVER_CLUSTERS",
             "WEBSERVER_EXPORTER",
             "WEBSERVER_META_MODELING",
             "WEBSERVER_SCICRUNCH",

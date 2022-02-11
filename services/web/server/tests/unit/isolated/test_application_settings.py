@@ -22,6 +22,17 @@ from simcore_service_webserver.cli import parse, setup_parser
 
 
 @pytest.fixture
+def mock_env_devel_environment(
+    mock_env_devel_environment: Dict[str, str], monkeypatch
+) -> Dict[str, str]:
+    # Overrides to ensure dev-features are enabled testings
+    # TODO: move this to the base conftest!
+    monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "1")
+    mock_env_devel_environment["WEBSERVER_DEV_FEATURES_ENABLED"] = "1"
+    return mock_env_devel_environment
+
+
+@pytest.fixture
 def mock_env_makefile(monkeypatch):
     """envvars produced @Makefile (export)"""
 

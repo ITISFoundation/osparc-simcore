@@ -88,11 +88,8 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     # projects
     setup_projects(app)
     # project add-ons
-    if settings.WEBSERVER_DEV_FEATURES_ENABLED:
-        setup_version_control(app)
-        setup_meta_modeling(app)
-    else:
-        log.info("Skipping add-ons under development: version-control and meta")
+    setup_version_control(app)
+    setup_meta_modeling(app)
 
     # TODO: classify
     setup_activity(app)
