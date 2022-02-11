@@ -28,7 +28,8 @@ from settings_library.utils_cli import create_settings_command
 
 from .application import create_application, run_service
 from .application__schema import CLI_DEFAULT_CONFIGFILE, app_schema
-from .application_settings import ApplicationSettings, convert_to_app_config
+from .application_settings import ApplicationSettings
+from .application_settings_utils import convert_to_app_config
 from .cli_config import add_cli_options, config_from_options
 from .log import setup_logging
 from .utils import search_osparc_repo_dir
