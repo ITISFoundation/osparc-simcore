@@ -162,12 +162,12 @@ def app_module_setup(
             app_settings = app.get(APP_SETTINGS_KEY)
             if app_settings:
                 settings_name = f"WEBSERVER_{module_name.split('.')[-1].upper()}"
-                print(settings_name)
+                logger.debug("Checking %s", f"{settings_name=}")
                 if getattr(app_settings, settings_name, None) is None:
                     logger.info(
-                        "Skipping '%s' setup. Plugin disabled in application_settings.%s",
-                        module_name,
-                        settings_name,
+                        "Skipping setup %s. %s disabled",
+                        f"{module_name=}",
+                        f"{settings_name=}",
                     )
                     return False
 
