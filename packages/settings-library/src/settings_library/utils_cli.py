@@ -11,7 +11,14 @@ from ._constants import HEADER_STR
 from .base import BaseCustomSettings
 
 
-def print_as_envfile(settings_obj, *, compact: bool, verbose: bool, show_secrets: bool):
+def print_as_envfile(
+    settings_obj,
+    *,
+    compact: bool,
+    verbose: bool,
+    show_secrets: bool,
+    **pydantic_export_options,
+):
     for field in settings_obj.__fields__.values():
 
         value = getattr(settings_obj, field.name)
@@ -20,7 +27,7 @@ def print_as_envfile(settings_obj, *, compact: bool, verbose: bool, show_secrets
 
         if isinstance(value, BaseSettings):
             if compact:
-                value = f"'{value.json()}'"  # flat
+                value = f"'{value.json(**pydantic_export_options)}'"  # flat
             else:
                 if verbose:
                     typer.echo(f"\n# --- {field.name} --- ")
@@ -37,8 +44,10 @@ def print_as_envfile(settings_obj, *, compact: bool, verbose: bool, show_secrets
         typer.echo(f"{field.name}={value}")
 
 
-def print_as_json(settings_obj, *, compact=False):
-    typer.echo(settings_obj.json(indent=None if compact else 2))
+def print_as_json(settings_obj, *, compact=False, **pydantic_export_options):
+    typer.echo(
+        settings_obj.json(indent=None if compact else 2, **pydantic_export_options)
+    )
 
 
 def create_settings_command(
@@ -58,8 +67,14 @@ def create_settings_command(
         compact: bool = typer.Option(False, help="Print compact form"),
         verbose: bool = False,
         show_secrets: bool = False,
+        exclude_unset: bool = typer.Option(
+            False,
+            help="displays settings that were explicitly set"
+            "This represents current config (i.e. required+ defaults overriden).",
+        ),
     ):
         """Resolves settings and prints envfile"""
+        pydantic_export_options = {"exclude_unset": exclude_unset}
 
         if as_json_schema:
             typer.echo(settings_cls.schema_json(indent=0 if compact else 2))
@@ -96,13 +111,14 @@ def create_settings_command(
             raise
 
         if as_json:
-            print_as_json(settings_obj, compact=compact)
+            print_as_json(settings_obj, compact=compact, **pydantic_export_options)
         else:
             print_as_envfile(
                 settings_obj,
                 compact=compact,
                 verbose=verbose,
                 show_secrets=show_secrets,
+                **pydantic_export_options,
             )
 
     return settings

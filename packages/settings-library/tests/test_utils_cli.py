@@ -99,19 +99,24 @@ def test_compose_commands(cli: typer.Typer, cli_runner: CliRunner):
 
 
 HELP = """
-    Usage: app settings [OPTIONS]
+Usage: app settings [OPTIONS]
 
-    Resolves settings and prints envfile
+  Resolves settings and prints envfile
 
-    Options:
-    --as-json / --no-as-json        [default: no-as-json]
-    --as-json-schema / --no-as-json-schema
-                                    [default: no-as-json-schema]
-    --compact / --no-compact        Print compact form  [default: no-compact]
-    --verbose / --no-verbose        [default: no-verbose]
-    --show-secrets / --no-show-secrets
-                                    [default: no-show-secrets]
-    --help                          Show this message and exit.
+Options:
+  --as-json / --no-as-json        [default: no-as-json]
+  --as-json-schema / --no-as-json-schema
+                                  [default: no-as-json-schema]
+  --compact / --no-compact        Print compact form  [default: no-compact]
+  --verbose / --no-verbose        [default: no-verbose]
+  --show-secrets / --no-show-secrets
+                                  [default: no-show-secrets]
+  --exclude-unset / --no-exclude-unset
+                                  displays settings that were explicitly setThis
+                                  represents current config (i.e. required+
+                                  defaults overriden).  [default: no-exclude-
+                                  unset]
+  --help                          Show this message and exit.
 """
 
 

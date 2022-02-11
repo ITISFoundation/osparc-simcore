@@ -1,4 +1,3 @@
-import warnings
 from functools import cached_property
 from typing import Sequence, get_args
 
@@ -88,10 +87,10 @@ class BaseCustomSettings(BaseSettings):
                     assert field.field_info.default is Undefined
                     assert field.field_info.default_factory is None
 
+                    # Transform it into something like `Field(default_factory=create_settings_from_env(field))`
                     field.default_factory = create_settings_from_env(field)
                     field.default = None
-                    # Having a default value, makes this field automatically optional
-                    field.required = False
+                    field.required = False  # has a default now
 
             elif issubclass(field_type, BaseSettings):
                 raise ValueError(
@@ -106,10 +105,7 @@ class BaseCustomSettings(BaseSettings):
 
     @classmethod
     def create_from_envs(cls, **overrides):
-        # Kept for legacy
+        # Kept for legacy. Identical to the constructor.
         # Optional to use to make the code more readable
         # More explicit and pylance seems to get less confused
-        warnings.warn(
-            "please use constructor instead of `create_from_envs`", DeprecationWarning
-        )
         return cls(**overrides)
