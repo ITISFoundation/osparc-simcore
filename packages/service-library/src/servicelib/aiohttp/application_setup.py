@@ -157,19 +157,19 @@ def app_module_setup(
                     )
                     return False
 
-            # NOTE: if not disabled by config, it can be disabled by settings
-            # FIXME: hard-coded webserver temporary
-            app_settings = app.get(APP_SETTINGS_KEY)
-            if app_settings:
-                settings_name = f"WEBSERVER_{module_name.split('.')[-1].upper()}"
-                logger.debug("Checking %s", f"{settings_name=}")
-                if getattr(app_settings, settings_name, None) is None:
-                    logger.info(
-                        "Skipping setup %s. %s disabled",
-                        f"{module_name=}",
-                        f"{settings_name=}",
-                    )
-                    return False
+                # NOTE: if not disabled by config, it can be disabled by settings
+                # FIXME: hard-coded webserver temporary
+                app_settings = app.get(APP_SETTINGS_KEY)
+                if app_settings:
+                    settings_name = f"WEBSERVER_{module_name.split('.')[-1].upper()}"
+                    logger.debug("Checking addon's %s ", f"{settings_name=}")
+                    if getattr(app_settings, settings_name, None) is None:
+                        logger.info(
+                            "Skipping setup %s. %s disabled",
+                            f"{module_name=}",
+                            f"{settings_name=}",
+                        )
+                        return False
 
             if depends:
                 uninitialized = [
