@@ -254,6 +254,7 @@ qx.Class.define("osparc.data.model.Node", {
     __posX: null,
     __posY: null,
     __unresponsiveRetries: null,
+    __stopRequestingStatus: null,
 
     getWorkbench: function() {
       return this.getStudy().getWorkbench();
@@ -496,7 +497,7 @@ qx.Class.define("osparc.data.model.Node", {
         });
     },
 
-    stopInBackend: function() {
+    __deleteInBackend: function() {
       // remove node in the backend
       const params = {
         url: {
@@ -1051,29 +1052,23 @@ qx.Class.define("osparc.data.model.Node", {
     },
     __onNodeState: function(data) {
       const serviceState = data["service_state"];
+      const nodeId = data["service_uuid"];
       const status = this.getStatus();
+      console.log(serviceState);
       switch (serviceState) {
         case "idle": {
           status.setInteractive("idle");
-          const interval = 1000;
-          qx.event.Timer.once(() => this.__nodeState(), this, interval);
-          break;
-        }
-        case "starting":
-        case "pulling": {
-          status.setInteractive(serviceState);
-          const interval = 5000;
+          const interval = 2000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
         }
         case "pending": {
           if (data["service_message"]) {
-            const serviceId = data["service_uuid"];
             const serviceName = this.getLabel();
             const serviceMessage = data["service_message"];
             const msg = `The service "${serviceName}" is waiting for available ` +
               `resources. Please inform support and provide the following message ` +
-              `in case this does not resolve in a few minutes: "${serviceId}" ` +
+              `in case this does not resolve in a few minutes: "${nodeId}" ` +
               `reported "${serviceMessage}"`;
             const msgData = {
               nodeId: this.getNodeId(),
@@ -1086,12 +1081,17 @@ qx.Class.define("osparc.data.model.Node", {
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
         }
+        case "starting":
+        case "pulling": {
+          status.setInteractive(serviceState);
+          const interval = 5000;
+          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          break;
+        }
         case "running": {
-          const nodeId = data["service_uuid"];
           if (nodeId !== this.getNodeId()) {
             return;
           }
-
           const {
             srvUrl,
             isDynamicV2
@@ -1114,7 +1114,6 @@ qx.Class.define("osparc.data.model.Node", {
           this.fireDataEvent("showInLogger", msgData);
           return;
         }
-
         default:
           console.error(serviceState, "service state not supported");
           break;
@@ -1122,7 +1121,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
     __nodeState: function() {
       // Check if study is still there
-      if (this.getStudy() === null) {
+      if (this.getStudy() === null || this.__stopRequestingStatus === true) {
+        console.log("stop callign me");
         return;
       }
       // Check if node is still there
@@ -1231,10 +1231,14 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     removeNode: function() {
-      this.stopInBackend();
+      this.__deleteInBackend();
       this.removeIFrame();
       this.__removeInnerNodes();
       this.__detachFromParent();
+    },
+
+    stopRequestingStatus: function() {
+      this.__stopRequestingStatus = true;
     },
 
     removeIFrame: function() {
