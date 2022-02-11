@@ -205,6 +205,7 @@ services:
       - STORAGE_PORT=${STORAGE_PORT:-8080}
       - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
       - WEBSERVER_LOGLEVEL=${LOG_LEVEL:-WARNING}
+      - WEBSERVER_RESOURCE_MANAGER=null
     env_file:
       - ../.env
     deploy:
