@@ -13,12 +13,23 @@ from aiohttp import web
 from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
     ApplicationSettings,
-    convert_to_app_config,
     setup_settings,
 )
+from simcore_service_webserver.application_settings_utils import convert_to_app_config
 from simcore_service_webserver.cli import parse, setup_parser
 
 # FIXTURES -----------------------------
+
+
+@pytest.fixture
+def mock_env_devel_environment(
+    mock_env_devel_environment: Dict[str, str], monkeypatch
+) -> Dict[str, str]:
+    # Overrides to ensure dev-features are enabled testings
+    # TODO: move this to the base conftest!
+    monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "1")
+    mock_env_devel_environment["WEBSERVER_DEV_FEATURES_ENABLED"] = "1"
+    return mock_env_devel_environment
 
 
 @pytest.fixture
@@ -230,6 +241,9 @@ def test_settings_to_client_statics_plugins(
     disable_plugins = {"WEBSERVER_EXPORTER", "WEBSERVER_SCICRUNCH"}
     for name in disable_plugins:
         monkeypatch.setenv(name, "null")
+
+    monkeypatch.setenv("WEBSERVER_VERSION_CONTROL", "0")
+    disable_plugins.add("WEBSERVER_VERSION_CONTROL")
 
     settings = ApplicationSettings()
     statics = settings.to_client_statics()
