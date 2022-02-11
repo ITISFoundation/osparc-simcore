@@ -13,9 +13,9 @@ from aiohttp import web
 from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
     ApplicationSettings,
-    convert_to_app_config,
     setup_settings,
 )
+from simcore_service_webserver.application_settings_utils import convert_to_app_config
 from simcore_service_webserver.cli import parse, setup_parser
 
 # FIXTURES -----------------------------
