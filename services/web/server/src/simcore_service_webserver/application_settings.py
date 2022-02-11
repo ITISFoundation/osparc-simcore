@@ -181,11 +181,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # HELPERS  --------------------------------------------------------
 
     def is_enabled(self, field_name: str) -> bool:
-        return getattr(self, field_name, None) is not None
+        return bool(getattr(self, field_name, None))
 
     def is_plugin(self, field_name: str) -> bool:
         if field := self.__fields__.get(field_name):
-            if "auto_default_from_env" in field.field_info.extra and field.allow_none:
+            # TODO: more reliable definition of a "plugin" (extra var?)
+            if (
+                "auto_default_from_env" in field.field_info.extra and field.allow_none
+            ) or field.type_ == bool:
                 return True
         return False
 
@@ -195,10 +198,12 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         # might reveal critical info on the settings of a deploy to the client.
         PUBLIC_PLUGIN_CANDIDATES = [
             "WEBSERVER_EXPORTER",
+            "WEBSERVER_META_MODELING",
             "WEBSERVER_SCICRUNCH",
+            "WEBSERVER_VERSION_CONTROL",
         ]
         for field_name in PUBLIC_PLUGIN_CANDIDATES:
-            if self.is_plugin(field_name) and not self.is_enabled(field_name):
+            if not self.is_enabled(field_name):
                 plugins_disabled.append(field_name)
         return plugins_disabled
 

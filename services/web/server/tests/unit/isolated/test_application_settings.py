@@ -231,6 +231,9 @@ def test_settings_to_client_statics_plugins(
     for name in disable_plugins:
         monkeypatch.setenv(name, "null")
 
+    monkeypatch.setenv("WEBSERVER_VERSION_CONTROL", "0")
+    disable_plugins.add("WEBSERVER_VERSION_CONTROL")
+
     settings = ApplicationSettings()
     statics = settings.to_client_statics()
 
