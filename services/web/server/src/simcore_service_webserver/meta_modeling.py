@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
     ModuleCategory.ADDON,
     depends=[
         "simcore_service_webserver.projects",
-        "simcore_service_webserver.version_control",
+        ## FIXME: tmp disabled so it can start "simcore_service_webserver.version_control",
     ],
     logger=log,
 )
