@@ -28,7 +28,7 @@ isort==5.10.1
     # via
     #   -c requirements/_test.txt
     #   -r requirements/../../../requirements/devenv.txt
-jinja2==2.11.3
+jinja2==3.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -79,7 +79,7 @@ tomli==1.2.3
     #   -c requirements/_test.txt
     #   black
     #   pep517
-typing-extensions==3.10.0.2
+typing-extensions==4.0.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
