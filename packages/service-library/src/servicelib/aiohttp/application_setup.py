@@ -59,8 +59,9 @@ def app_module_setup(
     category: ModuleCategory,
     *,
     depends: Optional[List[str]] = None,
-    config_section: str = None,
-    config_enabled: str = None,
+    config_section: Optional[str] = None,
+    config_enabled: Optional[str] = None,
+    settings_name: Optional[str] = None,
     logger: logging.Logger = log,
 ) -> Callable:
     """Decorator that marks a function as 'a setup function' for a given module in an application
@@ -104,6 +105,11 @@ def app_module_setup(
     else:
         # if passes config_enabled, invalidates info on section
         section = None
+
+    # FIXME: hard-coded WEBSERVER_ temporary
+    module_settings_name = (
+        settings_name or f"WEBSERVER_{module_name.split('.')[-1].upper()}"
+    )
 
     def _decorate(setup_func: _SetupFunc):
 
@@ -158,16 +164,22 @@ def app_module_setup(
                     return False
 
                 # NOTE: if not disabled by config, it can be disabled by settings
-                # FIXME: hard-coded webserver temporary
                 app_settings = app.get(APP_SETTINGS_KEY)
                 if app_settings:
-                    settings_name = f"WEBSERVER_{module_name.split('.')[-1].upper()}"
-                    logger.debug("Checking addon's %s ", f"{settings_name=}")
-                    if getattr(app_settings, settings_name, None) is None:
+                    logger.debug("Checking addon's %s ", f"{module_settings_name=}")
+                    if module_settings_name == settings_name and not hasattr(
+                        app_settings, module_settings_name
+                    ):
+                        raise ValueError(
+                            f"Invalid option {settings_name=} in module's setup {setup_func.__name__}. "
+                            f"It must be a field in {app_settings.__class__}"
+                        )
+
+                    if getattr(app_settings, module_settings_name, None) is None:
                         logger.info(
                             "Skipping setup %s. %s disabled",
                             f"{module_name=}",
-                            f"{settings_name=}",
+                            f"{module_settings_name=}",
                         )
                         return False
 
