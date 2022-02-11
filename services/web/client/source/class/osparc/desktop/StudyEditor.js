@@ -243,18 +243,23 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __reloadSnapshotsAndIterations: function() {
-      const store = osparc.store.Store.getInstance();
-      store.invalidate("snapshots");
-      store.invalidate("iterations");
+      osparc.utils.DisabledPlugins.isCheckpointsDisabled()
+        .then(isDisabled => {
+          if (!isDisabled) {
+            const store = osparc.store.Store.getInstance();
+            store.invalidate("snapshots");
+            store.invalidate("iterations");
 
-      const study = this.getStudy();
-      study.getSnapshots()
-        .then(snapshots => {
-          store.setSnapshots(snapshots);
-          if (snapshots.length) {
-            study.getIterations()
-              .then(iterations => {
-                store.setIterations(iterations);
+            const study = this.getStudy();
+            study.getSnapshots()
+              .then(snapshots => {
+                store.setSnapshots(snapshots);
+                if (snapshots.length) {
+                  study.getIterations()
+                    .then(iterations => {
+                      store.setIterations(iterations);
+                    });
+                }
               });
           }
         });
