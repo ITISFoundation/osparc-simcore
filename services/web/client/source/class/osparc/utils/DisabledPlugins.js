@@ -41,7 +41,9 @@ qx.Class.define("osparc.utils.DisabledPlugins", {
     },
 
     isCheckpointsDisabled: function() {
-      return true;
+      return new Promise((resolve, reject) => {
+        resolve(true);
+      });
       // return this.self().isPluginDisabled(this.self().CHECKPOINTS);
     },
 
