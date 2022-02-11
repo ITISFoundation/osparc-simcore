@@ -23,6 +23,11 @@ class _SetupFunc(Protocol):
         ...
 
 
+class _ApplicationSettings(Protocol):
+    def is_enabled(self, field_name: str) -> bool:
+        ...
+
+
 class ModuleCategory(Enum):
     SYSTEM = 0
     ADDON = 1
@@ -42,16 +47,26 @@ class DependencyError(ApplicationSetupError):
     pass
 
 
-def _is_app_module_enabled(cfg: Dict, parts: List[str], section) -> bool:
-    # navigates app_config (cfg) searching for section
-    searched_config = deepcopy(cfg)
-    for part in parts:
-        if section and part == "enabled":
-            # if section exists, no need to explicitly enable it
-            return strtobool(f"{searched_config.get(part, True)}")
-        searched_config = searched_config[part]
-    assert isinstance(searched_config, bool)  # nosec
-    return searched_config
+def _is_addon_enabled_from_config(
+    cfg: Dict[str, Any], dotted_section: str, section
+) -> bool:
+    try:
+        parts: List[str] = dotted_section.split(".")
+        # navigates app_config (cfg) searching for section
+        searched_config = deepcopy(cfg)
+        for part in parts:
+            if section and part == "enabled":
+                # if section exists, no need to explicitly enable it
+                return strtobool(f"{searched_config.get(part, True)}")
+            searched_config = searched_config[part]
+
+    except KeyError as ee:
+        raise ApplicationSetupError(
+            f"Cannot find required option '{dotted_section}' in app config's section '{ee}'"
+        ) from ee
+    else:
+        assert isinstance(searched_config, bool)  # nosec
+        return searched_config
 
 
 def app_module_setup(
@@ -144,18 +159,9 @@ def app_module_setup(
             if category == ModuleCategory.ADDON:
                 # NOTE: ONLY addons can be enabled/disabled
 
-                # TODO: sometimes section is optional, check in config schema
+                # TODO: cfg will be fully replaced by app_settings section below
                 cfg = app[APP_CONFIG_KEY]
-
-                try:
-                    is_enabled = _is_app_module_enabled(
-                        cfg, config_enabled.split("."), section
-                    )
-                except KeyError as ee:
-                    raise ApplicationSetupError(
-                        f"Cannot find required option '{config_enabled}' in app config's section '{ee}'"
-                    ) from ee
-
+                is_enabled = _is_addon_enabled_from_config(cfg, config_enabled, section)
                 if not is_enabled:
                     logger.info(
                         "Skipping '%s' setup. Explicitly disabled in config",
@@ -164,9 +170,10 @@ def app_module_setup(
                     return False
 
                 # NOTE: if not disabled by config, it can be disabled by settings
-                app_settings = app.get(APP_SETTINGS_KEY)
+                app_settings: Optional[_ApplicationSettings] = app.get(APP_SETTINGS_KEY)
                 if app_settings:
                     logger.debug("Checking addon's %s ", f"{module_settings_name=}")
+
                     if module_settings_name == settings_name and not hasattr(
                         app_settings, module_settings_name
                     ):
@@ -175,9 +182,9 @@ def app_module_setup(
                             f"It must be a field in {app_settings.__class__}"
                         )
 
-                    if getattr(app_settings, module_settings_name, None) is None:
+                    if app_settings.is_enabled(module_settings_name):
                         logger.info(
-                            "Skipping setup %s. %s disabled",
+                            "Skipping setup %s. %s disabled in settings",
                             f"{module_name=}",
                             f"{module_settings_name=}",
                         )
@@ -188,14 +195,16 @@ def app_module_setup(
                     dep for dep in depends if dep not in app[APP_SETUP_KEY]
                 ]
                 if uninitialized:
-                    msg = f"Cannot setup app module '{module_name}' because the following dependencies are still uninitialized: {uninitialized}"
-                    log.error(msg)
-                    raise DependencyError(msg)
+                    raise DependencyError(
+                        f"Cannot setup app module '{module_name}' because the "
+                        f"following dependencies are still uninitialized: {uninitialized}"
+                    )
 
             if module_name in app[APP_SETUP_KEY]:
-                msg = f"'{module_name}' was already initialized in {app}. Setup can only be executed once per app."
-                logger.error(msg)
-                raise ApplicationSetupError(msg)
+                raise ApplicationSetupError(
+                    f"'{module_name}' was already initialized in {app}."
+                    " Setup can only be executed once per app."
+                )
 
             # execution of setup
             try:
