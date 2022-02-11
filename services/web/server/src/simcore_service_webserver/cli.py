@@ -140,7 +140,7 @@ async def app_factory() -> web.Application:
         if app_settings.SC_BOOT_MODE == BuildTargetEnum.DEVELOPMENT
         else "server-docker-prod.yaml",
     ]
-    app, _ = _setup_app(args)
+    app, _ = _setup_app()
 
     return app
 
