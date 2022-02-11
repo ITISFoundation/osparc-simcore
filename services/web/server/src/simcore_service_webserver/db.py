@@ -93,7 +93,7 @@ def get_engine_state(app: web.Application) -> Dict[str, Any]:
     return {}
 
 
-@app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
+@app_module_setup(__name__, ModuleCategory.ADDON, logger=log)
 def setup_db(app: web.Application):
     # ----------------------------------------------
     # TODO: temporary, just to check compatibility between

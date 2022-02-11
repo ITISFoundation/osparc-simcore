@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 
 @app_module_setup(
-    "simcore_service_webserver.socketio", ModuleCategory.SYSTEM, logger=log
+    "simcore_service_webserver.socketio", ModuleCategory.ADDON, logger=log
 )
 def setup_socketio(app: web.Application):
 

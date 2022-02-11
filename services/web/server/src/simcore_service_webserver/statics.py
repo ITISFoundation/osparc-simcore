@@ -183,7 +183,9 @@ async def get_statics_json(request: web.Request):  # pylint: disable=unused-argu
     return web.Response(body=statics_json, content_type="application/json")
 
 
-@app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
+@app_module_setup(
+    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_FRONTEND", logger=log
+)
 def setup_statics(app: web.Application) -> None:
     settings: StaticWebserverModuleSettings = assemble_settings(app)
 
