@@ -158,6 +158,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_VERSION_CONTROL: bool = True
 
     @validator(
+        # List of plugins under-development (keep up-to-date)
+        # TODO: consider mark as dev-feature in field extras of Config attr.
+        # Then they can be automtically advertised
         "WEBSERVER_META_MODELING",
         "WEBSERVER_VERSION_CONTROL",
         "WEBSERVER_CLUSTERS",
@@ -166,8 +169,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     @classmethod
     def enable_only_if_dev_features_allowed(cls, v, values):
-        """Ensures that plugins under development get programatically disabled if WEBSERVER_DEV_FEATURES_ENABLED=False"""
-        # NOTE: keep the list of plugins under-develpment up-to-date
+        """Ensures that plugins 'under development' get programatically disabled if WEBSERVER_DEV_FEATURES_ENABLED=False"""
         if values["WEBSERVER_DEV_FEATURES_ENABLED"]:
             return v
         return False if isinstance(v, bool) else None
