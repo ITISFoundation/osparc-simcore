@@ -114,6 +114,22 @@ def app(mock_environment: None) -> FastAPI:
     return assemble_application()
 
 
+@pytest.fixture
+def mock_datetime_utc_now(
+    monkeypatch: MonkeyPatch,
+) -> datetime.date:
+    # Note: since datetime is unmutable, best approach is to
+    # mock a function returning it in the module where it is used
+    current_datetime = datetime.datetime.utcnow()
+
+    monkeypatch.setattr(
+        "simcore_service_dynamic_sidecar.core.rabbitmq._get_utc_now",
+        lambda: current_datetime,
+    )
+
+    return current_datetime
+
+
 # UTILS
 
 
@@ -128,6 +144,7 @@ async def test_rabbitmq(
     project_id: ProjectID,
     node_id: NodeID,
     app: FastAPI,
+    mock_datetime_utc_now: datetime.date,
 ):
     rabbit = RabbitMQ(app)
     assert rabbit
@@ -168,27 +185,20 @@ async def test_rabbitmq(
 
     assert len(incoming_data) == 2, f"missing incoming data: {pformat(incoming_data)}"
 
-    timestamp_length = len(LOG_DATETIME_FORMAT)
+    time_string = mock_datetime_utc_now.strftime(LOG_DATETIME_FORMAT)
 
-    def _strip_datetime(logger_message: LoggerRabbitMessage) -> LoggerRabbitMessage:
-        stripped_messages = []
-        for message in logger_message.messages:
-            datetime_str = message[:timestamp_length]
-            assert datetime.datetime.strptime(datetime_str, LOG_DATETIME_FORMAT)
-            stripped_messages.append(message[timestamp_length + 1 :])
+    def _add_timestamp(messages: List[str]) -> List[str]:
+        return [f"{time_string} {x}" for x in messages]
 
-        logger_message.messages = stripped_messages
-        return logger_message
-
-    assert _strip_datetime(incoming_data[0]) == LoggerRabbitMessage(
-        messages=[log_msg] + log_messages,
+    assert incoming_data[0] == LoggerRabbitMessage(
+        messages=_add_timestamp([log_msg] + log_messages),
         node_id=node_id,
         project_id=project_id,
         user_id=user_id,
     )
 
-    assert _strip_datetime(incoming_data[1]) == LoggerRabbitMessage(
-        messages=log_more_messages,
+    assert incoming_data[1] == LoggerRabbitMessage(
+        messages=_add_timestamp(log_more_messages),
         node_id=node_id,
         project_id=project_id,
         user_id=user_id,

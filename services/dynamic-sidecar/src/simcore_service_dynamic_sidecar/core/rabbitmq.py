@@ -61,6 +61,10 @@ async def _wait_till_rabbit_responsive(url: str) -> None:
             await connection.close()
 
 
+def _get_utc_now() -> datetime.date:
+    return datetime.datetime.utcnow()
+
+
 class RabbitMQ:  # pylint: disable = too-many-instance-attributes
     CHANNEL_LOG = "logger"
 
@@ -170,7 +174,7 @@ class RabbitMQ:  # pylint: disable = too-many-instance-attributes
         if isinstance(log_msg, str):
             log_msg = [log_msg]
 
-        time_string = datetime.datetime.utcnow().strftime(LOG_DATETIME_FORMAT)
+        time_string = _get_utc_now().strftime(LOG_DATETIME_FORMAT)
         for message in log_msg:
             with_timestamp = f"{time_string} {message}"
             await self._channel_queues[self.CHANNEL_LOG].put(with_timestamp)
