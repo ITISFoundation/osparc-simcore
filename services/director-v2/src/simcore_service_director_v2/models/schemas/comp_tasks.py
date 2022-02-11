@@ -9,7 +9,7 @@ from ...models.schemas.constants import ClusterID
 from ..schemas.constants import UserID
 
 
-class ComputationTaskOut(ComputationTask):
+class ComputationTaskGet(ComputationTask):
     url: AnyHttpUrl = Field(
         ..., description="the link where to get the status of the task"
     )

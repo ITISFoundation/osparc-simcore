@@ -465,7 +465,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const renameStudyButton = this.__getRenameStudyMenuButton(studyData);
       menu.add(renameStudyButton);
 
-      const duplicateStudyButton = this.__getDuplicateStudyMenuButton(studyData);
+      const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
       const exportButton = this.__getExportMenuButton(studyData);
@@ -527,17 +527,26 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __getDuplicateStudyMenuButton: function(studyData) {
-      const duplicateStudyButton = new qx.ui.menu.Button(this.tr("Duplicate"));
-      osparc.utils.Utils.setIdToWidget(duplicateStudyButton, "duplicateStudy");
-      duplicateStudyButton.addListener("execute", () => {
+    __getDuplicateMenuButton: function(studyData) {
+      const duplicateButton = new qx.ui.menu.Button(this.tr("Duplicate"));
+      duplicateButton.exclude();
+      osparc.utils.DisabledPlugins.isDuplicateDisabled()
+        .then(isDisabled => {
+          duplicateButton.setVisibility(isDisabled ? "excluded" : "visible");
+        });
+      duplicateButton.addListener("execute", () => {
         this.__duplicateStudy(studyData);
       }, this);
-      return duplicateStudyButton;
+      return duplicateButton;
     },
 
     __getExportMenuButton: function(studyData) {
       const exportButton = new qx.ui.menu.Button(this.tr("Export"));
+      exportButton.exclude();
+      osparc.utils.DisabledPlugins.isExportDisabled()
+        .then(isDisabled => {
+          exportButton.setVisibility(isDisabled ? "excluded" : "visible");
+        });
       exportButton.addListener("execute", () => {
         this.__exportStudy(studyData);
       }, this);

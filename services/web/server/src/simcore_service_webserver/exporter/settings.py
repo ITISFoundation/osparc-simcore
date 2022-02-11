@@ -1,3 +1,5 @@
+from typing import Optional
+
 from aiohttp.web import Application
 from pydantic import Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
@@ -23,7 +25,6 @@ class ExporterSettings(BaseCustomSettings):
     )
 
 
-def get_settings(app: Application) -> ExporterSettings:
+def get_settings(app: Application) -> Optional[ExporterSettings]:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_EXPORTER
-    assert settings  # nosec
     return settings

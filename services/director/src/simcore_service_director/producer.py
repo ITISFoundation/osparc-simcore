@@ -5,6 +5,7 @@ import re
 from datetime import datetime, timedelta
 from distutils.version import StrictVersion
 from enum import Enum
+from http import HTTPStatus
 from pprint import pformat
 from typing import Dict, List, Optional, Tuple
 
@@ -1020,17 +1021,39 @@ async def _save_service_state(service_host_name: str, session: aiohttp.ClientSes
         url=f"http://{service_host_name}/state",
         timeout=ServicesCommonSettings().director_dynamic_service_save_timeout,
     ) as response:
-        response.raise_for_status()
-        log.info(
-            "Service '%s' successfully saved its state: %s",
-            service_host_name,
-            f"{response}",
-        )
+        try:
+            response.raise_for_status()
+
+        except ClientResponseError as err:
+            if err.status in (HTTPStatus.METHOD_NOT_ALLOWED, HTTPStatus.NOT_FOUND):
+                # NOTE: Legacy Override. Some old services do not have a state entrypoint defined
+                # therefore we assume there is nothing to be saved and do not raise exception
+                # Responses found so far:
+                #   METHOD NOT ALLOWED https://httpstatuses.com/405
+                #   NOT FOUND https://httpstatuses.com/404
+                #
+                log.warning(
+                    "Service '%s' does not seem to implement save state functionality: %s. Skipping save",
+                    service_host_name,
+                    err,
+                )
+            else:
+                # re-reaise
+                raise
+        else:
+            log.info(
+                "Service '%s' successfully saved its state: %s",
+                service_host_name,
+                f"{response}",
+            )
 
 
 @run_sequentially_in_context(target_args=["node_uuid"])
 async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -> None:
-    log.debug("stopping service with uuid %s", node_uuid)
+    log.debug(
+        "stopping service with node_uuid=%s, save_state=%s", node_uuid, save_state
+    )
+
     # get the docker client
     async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
         try:

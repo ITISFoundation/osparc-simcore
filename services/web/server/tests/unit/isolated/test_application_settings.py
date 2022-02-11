@@ -13,12 +13,23 @@ from aiohttp import web
 from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
     ApplicationSettings,
-    convert_to_app_config,
     setup_settings,
 )
+from simcore_service_webserver.application_settings_utils import convert_to_app_config
 from simcore_service_webserver.cli import parse, setup_parser
 
 # FIXTURES -----------------------------
+
+
+@pytest.fixture
+def mock_env_devel_environment(
+    mock_env_devel_environment: Dict[str, str], monkeypatch
+) -> Dict[str, str]:
+    # Overrides to ensure dev-features are enabled testings
+    # TODO: move this to the base conftest!
+    monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "1")
+    mock_env_devel_environment["WEBSERVER_DEV_FEATURES_ENABLED"] = "1"
+    return mock_env_devel_environment
 
 
 @pytest.fixture
@@ -208,7 +219,10 @@ def test_settings_constructs(app_settings: ApplicationSettings):
 
 
 def test_settings_to_client_statics(app_settings: ApplicationSettings):
+
     statics = app_settings.to_client_statics()
+    # can jsonify
+    print(json.dumps(statics, indent=1))
 
     # all key in camelcase
     assert all(
@@ -218,9 +232,25 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
 
     # special alias
     assert statics["stackName"] == "master-simcore"
+    assert not statics["pluginsDisabled"]
 
-    # can jsonify
-    print(json.dumps(statics))
+
+def test_settings_to_client_statics_plugins(
+    mock_webserver_service_environment, monkeypatch
+):
+    disable_plugins = {"WEBSERVER_EXPORTER", "WEBSERVER_SCICRUNCH"}
+    for name in disable_plugins:
+        monkeypatch.setenv(name, "null")
+
+    monkeypatch.setenv("WEBSERVER_VERSION_CONTROL", "0")
+    disable_plugins.add("WEBSERVER_VERSION_CONTROL")
+
+    settings = ApplicationSettings()
+    statics = settings.to_client_statics()
+
+    print(json.dumps(statics, indent=1))
+
+    assert set(statics["pluginsDisabled"]) == disable_plugins
 
 
 def test_avoid_sensitive_info_in_public(app_settings: ApplicationSettings):
