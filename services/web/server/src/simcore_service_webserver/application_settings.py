@@ -1,4 +1,5 @@
 import logging
+from functools import cached_property
 from typing import Any, Dict, List, Optional
 
 from aiohttp import web
@@ -9,6 +10,7 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
+from pydantic import validator
 from pydantic.fields import Field
 from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
@@ -63,6 +65,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     # RUNTIME  -----------------------------------------------------------
     # settings defined from environs defined when container runs
     # NOTE: keep alphabetically if possible
+    AIODEBUG_SLOW_DURATION_SECS: float = 0
 
     SWARM_STACK_NAME: Optional[str] = Field(
         None, description="Stack name defined upon deploy (see main Makefile)"
@@ -138,6 +141,22 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True, description="tracing plugin"
     )
 
+    # enabled-like settings
+    WEBSERVER_CLUSTERS: bool = True
+    WEBSERVER_GROUPS: bool = True
+    WEBSERVER_META_MODELING: bool = True
+    WEBSERVER_PRODUCTS: bool = True
+    WEBSERVER_PROJECTS: bool = True
+    WEBSERVER_PUBLICATIONS: bool = True
+    WEBSERVER_REMOTE_DEBUG: bool = True
+    WEBSERVER_REST: bool = True
+    WEBSERVER_SOCKETIO: bool = True
+    WEBSERVER_STUDIES_ACCESS: bool = True
+    WEBSERVER_STUDIES_DISPATCHER: bool = True
+    WEBSERVER_TAGS: bool = True
+    WEBSERVER_USERS: bool = True
+    WEBSERVER_VERSION_CONTROL: bool = True
+
     class Config(BaseCustomSettings.Config):
         # NOTE: FutureWarning: aliases are no longer used by BaseSettings to define which environment variables to read.
         #       Instead use the "env" field setting. See https://pydantic-docs.helpmanual.io/usage/settings/#environment-variable-names
@@ -149,6 +168,15 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             "SWARM_STACK_NAME": "stack_name",
         }
         alias_generator = lambda s: s.lower()
+
+    @cached_property
+    def log_level(self) -> int:
+        return getattr(logging, self.WEBSERVER_LOG_LEVEL.upper())
+
+    @validator("WEBSERVER_LOG_LEVEL")
+    @classmethod
+    def valid_log_level(cls, value) -> str:
+        return cls.validate_log_level(value)
 
     # HELPERS  --------------------------------------------------------
 
@@ -235,7 +263,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
             "enabled": 1 if app_settings.WEBSERVER_TRACING is not None else 0,
             "zipkin_endpoint": f"{getattr(app_settings.WEBSERVER_TRACING, 'TRACING_ZIPKIN_ENDPOINT', None)}",
         },
-        "socketio": {"enabled": True},
+        "socketio": {"enabled": app_settings.WEBSERVER_SOCKETIO},
         "director": {
             "enabled": app_settings.WEBSERVER_DIRECTOR is not None,
             "host": getattr(app_settings.WEBSERVER_DIRECTOR, "DIRECTOR_HOST", None),
@@ -322,8 +350,11 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
             "port": getattr(app_settings.WEBSERVER_CATALOG, "CATALOG_PORT", None),
             "version": getattr(app_settings.WEBSERVER_CATALOG, "CATALOG_VTAG", None),
         },
-        "rest": {"version": app_settings.API_VTAG, "enabled": True},
-        "projects": {"enabled": True},
+        "rest": {
+            "version": app_settings.API_VTAG,
+            "enabled": app_settings.WEBSERVER_REST,
+        },
+        "projects": {"enabled": app_settings.WEBSERVER_PROJECTS},
         "session": {
             "secret_key": app_settings.WEBSERVER_SESSION.SESSION_SECRET_KEY.get_secret_value()
         },
@@ -337,28 +368,28 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
                 app_settings.WEBSERVER_ACTIVITY, "PROMETHEUS_VTAG", None
             ),
         },
-        "clusters": {"enabled": True},
+        "clusters": {"enabled": app_settings.WEBSERVER_CLUSTERS},
         "computation": {"enabled": app_settings.is_enabled("WEBSERVER_COMPUTATION")},
         "diagnostics": {"enabled": app_settings.is_enabled("WEBSERVER_DIAGNOSTICS")},
         "director-v2": {"enabled": app_settings.is_enabled("WEBSERVER_DIRECTOR_V2")},
         "exporter": {"enabled": app_settings.WEBSERVER_EXPORTER is not None},
-        "groups": {"enabled": True},
-        "meta_modeling": {"enabled": True},
-        "products": {"enabled": True},
-        "publications": {"enabled": True},
-        "remote_debug": {"enabled": True},
+        "groups": {"enabled": app_settings.WEBSERVER_GROUPS},
+        "meta_modeling": {"enabled": app_settings.WEBSERVER_META_MODELING},
+        "products": {"enabled": app_settings.WEBSERVER_PRODUCTS},
+        "publications": {"enabled": app_settings.WEBSERVER_PUBLICATIONS},
+        "remote_debug": {"enabled": app_settings.WEBSERVER_REMOTE_DEBUG},
         "security": {"enabled": True},
         "statics": {
             "enabled": app_settings.WEBSERVER_FRONTEND is not None
             and app_settings.WEBSERVER_STATICWEB is not None
         },
         # NOTE:  app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
-        "studies_access": {"enabled": True},
+        "studies_access": {"enabled": app_settings.WEBSERVER_STUDIES_ACCESS},
         # NOTE  app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
-        "studies_dispatcher": {"enabled": True},
-        "tags": {"enabled": True},
-        "users": {"enabled": True},
-        "version_control": {"enabled": True},
+        "studies_dispatcher": {"enabled": app_settings.WEBSERVER_STUDIES_DISPATCHER},
+        "tags": {"enabled": app_settings.WEBSERVER_TAGS},
+        "users": {"enabled": app_settings.WEBSERVER_USERS},
+        "version_control": {"enabled": app_settings.WEBSERVER_VERSION_CONTROL},
     }
 
     return cfg
