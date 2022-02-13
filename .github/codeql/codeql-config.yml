@@ -3,8 +3,9 @@ name: "ospac-simcore CodeQL config"
 disable-default-queries: false
 
 paths:
-  - '**/src'
-  - '**/source'
-  - 'services/web/server/src/simcore_service_webserver'
+  - packages/settings-library
+  - services/web/server/src/simcore_service_webserver
+  - "**/src"
+  - "**/source"
 paths-ignore:
-  - '**/tests/**'
+  - "**/tests"
