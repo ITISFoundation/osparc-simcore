@@ -20,6 +20,7 @@ from .director.module_setup import setup_director
 from .director_v2 import setup_director_v2
 from .email import setup_email
 from .exporter.module_setup import setup_exporter
+from .garbage_collector import setup_garbage_collector
 from .groups import setup_groups
 from .login.module_setup import setup_login
 from .meta_modeling import setup_meta_modeling
@@ -78,11 +79,15 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_login(app)
 
     # interaction with other backend services
-    setup_redis(app)
     setup_director(app)
     setup_director_v2(app)
     setup_storage(app)
     setup_catalog(app)
+    setup_redis(app)
+
+    # resource management
+    setup_garbage_collector(app)
+    setup_resource_manager(app)
 
     # users
     setup_users(app)
@@ -96,7 +101,6 @@ def create_application(config: Dict[str, Any]) -> web.Application:
 
     # TODO: classify
     setup_activity(app)
-    setup_resource_manager(app)
     setup_tags(app)
     setup_publications(app)
     setup_products(app)
