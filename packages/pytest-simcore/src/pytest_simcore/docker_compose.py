@@ -283,6 +283,12 @@ def ops_docker_compose_file(
     return docker_compose_path
 
 
+def safe_artifact_name(name):
+    # Artifact names: Invalid characters include:
+    # Double quote ", Colon :, Less than <, Greater than >, Vertical bar |, Asterisk *, Question mark ?, Carriage return \r, Line feed \n
+    return name.replace(",")
+
+
 @pytest.hookimpl()
 def pytest_exception_interact(node, call, report):
     # get the node root dir (guaranteed to exist)
