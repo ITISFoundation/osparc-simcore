@@ -11,7 +11,7 @@ from models_library.basic_types import (
     VersionTag,
 )
 from pydantic import validator
-from pydantic.fields import Field
+from pydantic.fields import Field, ModelField
 from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
@@ -169,7 +169,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         always=True,
     )
     @classmethod
-    def enable_only_if_dev_features_allowed(cls, v, values, field):
+    def enable_only_if_dev_features_allowed(cls, v, values, field: ModelField):
         """Ensures that plugins 'under development' get programatically
         disabled if WEBSERVER_DEV_FEATURES_ENABLED=False
         """
@@ -177,7 +177,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             return v
         if v:
             log.warning("%s still under development and will be disabled.", field.name)
-        return False if isinstance(v, bool) else None
+        return None if field.allow_none else False
 
     class Config(BaseCustomSettings.Config):
         # NOTE: FutureWarning: aliases are no longer used by BaseSettings to define which environment variables to read.
