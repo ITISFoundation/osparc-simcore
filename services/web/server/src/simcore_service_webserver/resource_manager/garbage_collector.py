@@ -23,7 +23,7 @@ from ..projects.projects_api import (
 )
 from ..projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
 from ..projects.projects_exceptions import ProjectNotFoundError
-from ..resource_manager.redis import get_redis_lock_manager
+from ..redis import get_redis_lock_manager
 from ..users_api import (
     delete_user,
     get_guest_user_ids_and_names,

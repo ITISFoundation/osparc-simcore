@@ -26,6 +26,7 @@ from .meta_modeling import setup_meta_modeling
 from .products import setup_products
 from .projects.module_setup import setup_projects
 from .publications import setup_publications
+from .redis import setup_redis
 from .remote_debug import setup_remote_debugging
 from .resource_manager.module_setup import setup_resource_manager
 from .rest import setup_rest
@@ -75,9 +76,13 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_computation(app)
     setup_socketio(app)
     setup_login(app)
+
+    # interaction with other backend services
+    setup_redis(app)
     setup_director(app)
     setup_director_v2(app)
     setup_storage(app)
+    setup_catalog(app)
 
     # users
     setup_users(app)
@@ -93,7 +98,6 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_activity(app)
     setup_resource_manager(app)
     setup_tags(app)
-    setup_catalog(app)
     setup_publications(app)
     setup_products(app)
     setup_studies_access(app)
