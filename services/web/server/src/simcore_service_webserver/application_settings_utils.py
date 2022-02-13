@@ -71,7 +71,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
         },
         # added to support legacy ----
         "garbage_collector": {
-            "enable": app_settings.WEBSERVER_GARBAGE_COLLECTOR is not None
+            "enabled": app_settings.WEBSERVER_GARBAGE_COLLECTOR is not None
         },
         "redis": {"enabled": app_settings.WEBSERVER_REDIS is not None},
         # -----------------------------
