@@ -4,7 +4,11 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .garbage_collector_core import TASK_CONFIG, TASK_NAME, collect_garbage_periodically
+from .garbage_collector_core import (
+    GC_TASK_CONFIG,
+    GC_TASK_NAME,
+    collect_garbage_periodically,
+)
 from .projects.projects_db import setup_projects_db
 
 logger = logging.getLogger(__name__)
@@ -14,10 +18,12 @@ async def _start_background_task(app: web.Application):
     # SETUP ------
     # create a background task to collect garbage periodically
     assert not any(  # nosec
-        t.get_name() == TASK_NAME for t in asyncio.all_tasks()
+        t.get_name() == GC_TASK_NAME for t in asyncio.all_tasks()
     ), "Garbage collector task already running. ONLY ONE expected"  # nosec
 
-    gc_bg_task = asyncio.create_task(collect_garbage_periodically(app), name=TASK_NAME)
+    gc_bg_task = asyncio.create_task(
+        collect_garbage_periodically(app), name=GC_TASK_NAME
+    )
 
     # FIXME: added this config to overcome the state in which the
     # task cancelation is ignored and the exceptions enter in a loop
@@ -27,7 +33,7 @@ async def _start_background_task(app: web.Application):
     # Implemented with a mutable dict to avoid
     #   DeprecationWarning: Changing state of started or joined application is deprecated
     #
-    app[TASK_CONFIG] = {"force_stop": False, "name": TASK_NAME}
+    app[GC_TASK_CONFIG] = {"force_stop": False, "name": GC_TASK_NAME}
 
     yield
 
@@ -39,7 +45,7 @@ async def _start_background_task(app: web.Application):
         ack = gc_bg_task.cancel()
         assert ack  # nosec
 
-        app[TASK_CONFIG]["force_stop"] = True
+        app[GC_TASK_CONFIG]["force_stop"] = True
 
         await gc_bg_task
 

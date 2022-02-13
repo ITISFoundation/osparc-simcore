@@ -38,15 +38,15 @@ from .users_api import (
 )
 from .users_to_groups_api import get_users_for_gid
 
-TASK_NAME = f"{__name__}.collect_garbage_periodically"
-TASK_CONFIG = f"{TASK_NAME}.config"
-
-logger = logging.getLogger(__name__)
-database_errors = (
+GC_TASK_NAME = f"{__name__}.collect_garbage_periodically"
+GC_TASK_CONFIG = f"{GC_TASK_NAME}.config"
+_DATABASE_ERRORS = (
     DatabaseError,
     asyncpg.exceptions.PostgresError,
     ProjectNotFoundError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 async def collect_garbage_periodically(app: web.Application):
@@ -58,7 +58,7 @@ async def collect_garbage_periodically(app: web.Application):
             while True:
                 await collect_garbage(app)
 
-                if app[TASK_CONFIG].get("force_stop", False):
+                if app[GC_TASK_CONFIG].get("force_stop", False):
                     raise Exception("Forced to stop garbage collection")
 
                 await asyncio.sleep(interval)
@@ -74,7 +74,7 @@ async def collect_garbage_periodically(app: web.Application):
                 exc_info=True,
             )
 
-            if app[TASK_CONFIG].get("force_stop", False):
+            if app[GC_TASK_CONFIG].get("force_stop", False):
                 logger.warning("Forced to stop garbage collection")
                 break
 
@@ -470,7 +470,7 @@ async def remove_guest_user_with_all_its_resources(
         )
         await remove_user(app=app, user_id=user_id)
 
-    except database_errors as error:
+    except _DATABASE_ERRORS as error:
         logger.warning(
             "Failure in database while removing user (%s) and its resources with %s",
             f"{user_id=}",
@@ -687,7 +687,7 @@ async def replace_current_owner(
             app=app, primary_gid=new_project_owner_gid
         )
 
-    except database_errors:
+    except _DATABASE_ERRORS:
         logger.exception(
             "Could not recover new user id from gid %s", new_project_owner_gid
         )
@@ -715,7 +715,7 @@ async def replace_current_owner(
             project_data=project,
             project_uuid=project_uuid,
         )
-    except database_errors:
+    except _DATABASE_ERRORS:
         logger.exception(
             "Could not remove old owner and replaced it with user %s",
             new_project_owner_id,
@@ -726,7 +726,7 @@ async def remove_user(app: web.Application, user_id: int) -> None:
     """Tries to remove a user, if the users still exists a warning message will be displayed"""
     try:
         await delete_user(app, user_id)
-    except database_errors as err:
+    except _DATABASE_ERRORS as err:
         logger.warning(
             "User '%s' still has some projects, could not be deleted [%s]", user_id, err
         )
