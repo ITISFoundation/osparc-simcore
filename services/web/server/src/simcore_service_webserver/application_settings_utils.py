@@ -69,9 +69,12 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
                 "port": getattr(app_settings.WEBSERVER_REDIS, "REDIS_PORT", None),
             },
         },
-        "redis": {
-            "enabled": app_settings.WEBSERVER_REDIS is not None
-        },  # added to support legacy
+        # added to support legacy ----
+        "garbage_collector": {
+            "enable": app_settings.WEBSERVER_GARBAGE_COLLECTOR is not None
+        },
+        "redis": {"enabled": app_settings.WEBSERVER_REDIS is not None},
+        # -----------------------------
         "login": {
             "enabled": app_settings.WEBSERVER_LOGIN is not None,
             "registration_invitation_required": 1
@@ -213,6 +216,9 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
             _set_enable("WEBSERVER_REDIS", section2)
             envs["REDIS_HOST"] = section2.get("host")
             envs["REDIS_PORT"] = section2.get("port")
+
+    if section := cfg.get("garbage_collector"):
+        _set_enable("WEBSERVER_GARBAGE_COLLECTOR", section)
 
     if section := cfg.get("login"):
         _set_enable("WEBSERVER_LOGIN", section)

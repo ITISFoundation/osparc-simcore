@@ -10,30 +10,33 @@ from aioredlock import Aioredlock
 from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 
-from .. import director_v2_api, users_exceptions
-from ..db_models import GroupType
-from ..director.director_exceptions import DirectorException, ServiceNotFoundError
-from ..groups_api import get_group_from_gid
-from ..projects.projects_api import (
+from . import director_v2_api, users_exceptions
+from .db_models import GroupType
+from .director.director_exceptions import DirectorException, ServiceNotFoundError
+from .groups_api import get_group_from_gid
+from .projects.projects_api import (
     delete_project,
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
     remove_project_interactive_services,
 )
-from ..projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
-from ..projects.projects_exceptions import ProjectNotFoundError
-from ..redis import get_redis_lock_manager
-from ..users_api import (
+from .projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
+from .projects.projects_exceptions import ProjectNotFoundError
+from .redis import get_redis_lock_manager
+from .resource_manager.config import (
+    GUEST_USER_RC_LOCK_FORMAT,
+    get_garbage_collector_interval,
+)
+from .resource_manager.registry import RedisResourceRegistry, get_registry
+from .users_api import (
     delete_user,
     get_guest_user_ids_and_names,
     get_user,
     get_user_id_from_gid,
     is_user_guest,
 )
-from ..users_to_groups_api import get_users_for_gid
-from .config import GUEST_USER_RC_LOCK_FORMAT, get_garbage_collector_interval
-from .registry import RedisResourceRegistry, get_registry
+from .users_to_groups_api import get_users_for_gid
 
 logger = logging.getLogger(__name__)
 database_errors = (
@@ -46,46 +49,41 @@ TASK_NAME = f"{__name__}.collect_garbage_periodically"
 TASK_CONFIG = f"{TASK_NAME}.config"
 
 
-def setup_garbage_collector(app: web.Application):
-    async def _setup_background_task(app: web.Application):
-        # SETUP ------
-        # create a background task to collect garbage periodically
-        assert not any(  # nosec
-            t.get_name() == TASK_NAME for t in asyncio.all_tasks()
-        ), "Garbage collector task already running. ONLY ONE expected"  # nosec
+async def start_background_task(app: web.Application):
+    # SETUP ------
+    # create a background task to collect garbage periodically
+    assert not any(  # nosec
+        t.get_name() == TASK_NAME for t in asyncio.all_tasks()
+    ), "Garbage collector task already running. ONLY ONE expected"  # nosec
 
-        gc_bg_task = asyncio.create_task(
-            collect_garbage_periodically(app), name=TASK_NAME
-        )
+    gc_bg_task = asyncio.create_task(collect_garbage_periodically(app), name=TASK_NAME)
 
-        # FIXME: added this config to overcome the state in which the
-        # task cancelation is ignored and the exceptions enter in a loop
-        # that never stops the background task. This flag is an additional
-        # mechanism to enforce stopping the background task
-        #
-        # Implemented with a mutable dict to avoid
-        #   DeprecationWarning: Changing state of started or joined application is deprecated
-        #
-        app[TASK_CONFIG] = {"force_stop": False, "name": TASK_NAME}
+    # FIXME: added this config to overcome the state in which the
+    # task cancelation is ignored and the exceptions enter in a loop
+    # that never stops the background task. This flag is an additional
+    # mechanism to enforce stopping the background task
+    #
+    # Implemented with a mutable dict to avoid
+    #   DeprecationWarning: Changing state of started or joined application is deprecated
+    #
+    app[TASK_CONFIG] = {"force_stop": False, "name": TASK_NAME}
 
-        yield
+    yield
 
-        # TEAR-DOWN -----
-        # controlled cancelation of the gc task
-        try:
-            logger.info("Stopping garbage collector...")
+    # TEAR-DOWN -----
+    # controlled cancelation of the gc task
+    try:
+        logger.info("Stopping garbage collector...")
 
-            ack = gc_bg_task.cancel()
-            assert ack  # nosec
+        ack = gc_bg_task.cancel()
+        assert ack  # nosec
 
-            app[TASK_CONFIG]["force_stop"] = True
+        app[TASK_CONFIG]["force_stop"] = True
 
-            await gc_bg_task
+        await gc_bg_task
 
-        except asyncio.CancelledError:
-            assert gc_bg_task.cancelled()  # nosec
-
-    app.cleanup_ctx.append(_setup_background_task)
+    except asyncio.CancelledError:
+        assert gc_bg_task.cancelled()  # nosec
 
 
 async def collect_garbage_periodically(app: web.Application):

@@ -18,6 +18,7 @@ from models_library.settings.redis import RedisConfig
 from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
 from servicelib.aiohttp.application import create_safe_application
+from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects, users
 from simcore_service_webserver.director.module_setup import setup_director
@@ -29,7 +30,6 @@ from simcore_service_webserver.groups_api import (
 )
 from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.projects.module_setup import setup_projects
-from simcore_service_webserver.resource_manager import garbage_collector
 from simcore_service_webserver.resource_manager.module_setup import (
     setup_resource_manager,
 )
@@ -377,7 +377,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
 
     await connect_to_socketio(client, logged_guest_user, socketio_client_factory)
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector.collect_garbage(app=client.app)
+    await garbage_collector_core.collect_garbage(app=client.app)
 
     assert await assert_user_in_database(aiopg_engine, logged_guest_user) is True
     assert (
@@ -403,7 +403,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
         client, logged_guest_user, socketio_client_factory
     )
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector.collect_garbage(app=client.app)
+    await garbage_collector_core.collect_garbage(app=client.app)
 
     # check user and project are still in the DB
     assert await assert_user_in_database(aiopg_engine, logged_guest_user) is True
@@ -413,7 +413,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 
     await disconnect_user_from_socketio(client, sio_connection_data)
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector.collect_garbage(app=client.app)
+    await garbage_collector_core.collect_garbage(app=client.app)
 
     # check user and project are no longer in the DB
     async with aiopg_engine.acquire() as conn:

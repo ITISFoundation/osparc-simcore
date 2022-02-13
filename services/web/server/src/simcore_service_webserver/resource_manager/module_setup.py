@@ -15,9 +15,9 @@ from servicelib.aiohttp.application_setup import (
     app_module_setup,
 )
 
+from ..garbage_collector import setup_garbage_collector
 from ..redis import setup_redis
 from .config import APP_CLIENT_SOCKET_REGISTRY_KEY, APP_RESOURCE_MANAGER_TASKS_KEY
-from .garbage_collector import setup_garbage_collector
 from .registry import RedisResourceRegistry
 
 logger = logging.getLogger(__name__)
@@ -42,5 +42,10 @@ def setup_resource_manager(app: web.Application) -> bool:
         logger.info("Skips setting up redis client: %s", err)
 
     app[APP_CLIENT_SOCKET_REGISTRY_KEY] = RedisResourceRegistry(app)
-    setup_garbage_collector(app)
+
+    try:
+        setup_garbage_collector(app)
+    except AlreadyInitializedError as err:
+        logger.info("Skips setting up garbage collector task: %s", err)
+
     return True
