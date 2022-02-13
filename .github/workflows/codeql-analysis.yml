@@ -1,6 +1,8 @@
-# codeQL    : https://codeql.github.com/docs/codeql-overview/
-# GH-Action : https://github.com/github/codeql-action
-# LGTM      : https://lgtm.com/#explore
+#
+# codeQL       : https://codeql.github.com/docs/codeql-overview/
+# GH-Action    : https://github.com/github/codeql-action
+# LGTM         : https://lgtm.com/#explore
+# codeql-config: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-a-custom-configuration-file
 #
 name: "CodeQL"
 
