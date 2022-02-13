@@ -3,7 +3,13 @@ name: "ospac-simcore CodeQL config"
 disable-default-queries: false
 
 paths:
-  - packages/settings-library
+  - packages/dask-task-models-library/src
+  - packages/service-integration/src/service_integration
+  - packages/postgres-database/src/simcore_postgres_database
+  - packages/service-library/src/service_library
+  - packages/settings-library/src/settings_library
+  - packages/models-library/src/models_library
+  - packages/simcore-sdk/src/simcore_sdk
   - services/web/server/src/simcore_service_webserver
   - "**/src"
   - "**/source"
