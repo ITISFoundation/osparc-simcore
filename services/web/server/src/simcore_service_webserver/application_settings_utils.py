@@ -69,6 +69,9 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
                 "port": getattr(app_settings.WEBSERVER_REDIS, "REDIS_PORT", None),
             },
         },
+        "redis": {
+            "enabled": app_settings.WEBSERVER_REDIS is not None
+        },  # added to support legacy
         "login": {
             "enabled": app_settings.WEBSERVER_LOGIN is not None,
             "registration_invitation_required": 1
