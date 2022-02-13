@@ -80,9 +80,11 @@ def _get_app_settings_and_field_name(
     app_settings: Optional[_ApplicationSettings] = app.get(APP_SETTINGS_KEY)
     settings_field_name = arg_settings_name
 
-    if arg_settings_name and app_settings:
-        # FIXME: hard-coded WEBSERVER_ temporary
-        settings_field_name = f"WEBSERVER_{arg_module_name.split('.')[-1].upper()}"
+    if app_settings:
+
+        if not settings_field_name:
+            # FIXME: hard-coded WEBSERVER_ temporary
+            settings_field_name = f"WEBSERVER_{arg_module_name.split('.')[-1].upper()}"
 
         logger.debug("Checking addon's %s ", f"{settings_field_name=}")
 
@@ -191,7 +193,7 @@ def app_module_setup(
                     )
                     return False
 
-                # NOTE: if not disabled by config, it can be disabled by settings
+                # NOTE: if not disabled by config, it can be disabled by settings (tmp while legacy maintained)
                 app_settings, module_settings_name = _get_app_settings_and_field_name(
                     app,
                     module_name,
@@ -203,7 +205,7 @@ def app_module_setup(
                 if (
                     app_settings
                     and module_settings_name
-                    and app_settings.is_enabled(module_settings_name)
+                    and not app_settings.is_enabled(module_settings_name)
                 ):
                     logger.info(
                         "Skipping setup %s. %s disabled in settings",
