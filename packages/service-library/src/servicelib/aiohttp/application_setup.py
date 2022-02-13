@@ -40,11 +40,15 @@ class SkipModuleSetup(Exception):
 
 
 class ApplicationSetupError(Exception):
-    pass
+    ...
 
 
 class DependencyError(ApplicationSetupError):
-    pass
+    ...
+
+
+class AlreadyInitializedError(ApplicationSetupError):
+    ...
 
 
 def _is_addon_enabled_from_config(
@@ -95,6 +99,10 @@ def _get_app_settings_and_field_name(
             )
 
     return app_settings, settings_field_name
+
+
+def is_initialized(module_name: str, app: web.Application) -> bool:
+    return module_name in app[APP_SETUP_KEY]
 
 
 def app_module_setup(
@@ -215,17 +223,16 @@ def app_module_setup(
                     return False
 
             if depends:
-                uninitialized = [
-                    dep for dep in depends if dep not in app[APP_SETUP_KEY]
-                ]
+                # TODO: no need to enforce. Use to deduce order instead.
+                uninitialized = [dep for dep in depends if not is_initialized(dep, app)]
                 if uninitialized:
                     raise DependencyError(
                         f"Cannot setup app module '{module_name}' because the "
                         f"following dependencies are still uninitialized: {uninitialized}"
                     )
 
-            if module_name in app[APP_SETUP_KEY]:
-                raise ApplicationSetupError(
+            if is_initialized(module_name, app):
+                raise AlreadyInitializedError(
                     f"'{module_name}' was already initialized in {app}."
                     " Setup can only be executed once per app."
                 )
