@@ -269,17 +269,6 @@ up-latest:
 	@$(_show_endpoints)
 
 
-.PHONY: run-devel run-prod
-run-devel: .stack-simcore-development.yml .init-swarm
-	# runs $(target) sevice with $(cmd)
-	@docker-compose --file $< run $(target) $(cmd)
-
-
-run-prod: .stack-simcore-production.yml .init-swarm
-	# runs $(target) sevice with $(cmd)
-	@docker-compose --file $< run $(target) $(cmd)
-
-
 .PHONY: down leave
 down: ## Stops and removes stack
 	# Removing stacks in reverse order to creation
