@@ -10,6 +10,7 @@ from .garbage_collector_core import (
     TASK_NAME,
     collect_garbage_periodically,
 )
+from .projects.projects_db import setup_projects_db
 
 logger = logging.getLogger(MODULE_LOGGER_NAME)
 
@@ -58,4 +59,8 @@ async def _start_background_task(app: web.Application):
     logger=logger,
 )
 def setup_garbage_collector(app: web.Application):
+
+    ## project-api needs access to db
+    setup_projects_db(app)
+
     app.cleanup_ctx.append(_start_background_task)
