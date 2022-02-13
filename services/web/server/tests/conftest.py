@@ -113,7 +113,10 @@ def monkeypatch_setenv_from_app_config(monkeypatch) -> Callable:
         print("  - app_config=\n", json_dumps(app_config, indent=1))
         envs = convert_to_environ_vars(app_config)
 
-        print("  - convert_to_environ_vars(app_cfg)=\n", json_dumps(envs, indent=1))
+        print(
+            "  - convert_to_environ_vars(app_cfg)=\n",
+            json_dumps(envs, indent=1, sort_keys=True),
+        )
 
         for env_key, env_value in envs.items():
             monkeypatch.setenv(env_key, f"{env_value}")
