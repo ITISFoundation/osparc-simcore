@@ -164,7 +164,7 @@ def app_module_setup(
             logger.warning("Rename '%s' to contain 'setup'", setup_func.__name__)
 
         # metadata info
-        def setup_metadata() -> Dict:
+        def setup_metadata() -> Dict[str, Any]:
             return {
                 "module_name": module_name,
                 "dependencies": depends,
@@ -264,17 +264,18 @@ def app_module_setup(
             return completed
 
         _wrapper.metadata = setup_metadata
-        _wrapper.MARK = "setup"
+        _wrapper.mark_as_simcore_servicelib_setup_func = True
 
         return _wrapper
 
     return _decorate
 
 
-def is_setup_function(fun):
+def is_setup_function(fun: Callable) -> bool:
+    # TODO: use _SetupFunc protocol to check in runtime
     return (
         inspect.isfunction(fun)
-        and getattr(fun, "MARK", None) == "setup"
+        and hasattr(fun, "mark_as_simcore_servicelib_setup_func")
         and any(
             param.annotation == web.Application
             for _, param in inspect.signature(fun).parameters.items()
