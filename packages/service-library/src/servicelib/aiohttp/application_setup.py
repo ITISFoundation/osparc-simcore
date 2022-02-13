@@ -5,7 +5,7 @@ from copy import deepcopy
 from datetime import datetime
 from distutils.util import strtobool
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Protocol
+from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 
 from aiohttp import web
 
@@ -69,6 +69,32 @@ def _is_addon_enabled_from_config(
         return searched_config
 
 
+def _get_app_settings_and_field_name(
+    app: web.Application,
+    arg_module_name: str,
+    arg_settings_name: Optional[str],
+    setup_func_name: str,
+    logger: logging.Logger,
+) -> Tuple[Optional[_ApplicationSettings], Optional[str]]:
+
+    app_settings: Optional[_ApplicationSettings] = app.get(APP_SETTINGS_KEY)
+    settings_field_name = arg_settings_name
+
+    if arg_settings_name and app_settings:
+        # FIXME: hard-coded WEBSERVER_ temporary
+        settings_field_name = f"WEBSERVER_{arg_module_name.split('.')[-1].upper()}"
+
+        logger.debug("Checking addon's %s ", f"{settings_field_name=}")
+
+        if not hasattr(app_settings, settings_field_name):
+            raise ValueError(
+                f"Invalid option {arg_settings_name=} in module's setup {setup_func_name}. "
+                f"It must be a field in {app_settings.__class__}"
+            )
+
+    return app_settings, settings_field_name
+
+
 def app_module_setup(
     module_name: str,
     category: ModuleCategory,
@@ -121,11 +147,6 @@ def app_module_setup(
         # if passes config_enabled, invalidates info on section
         section = None
 
-    # FIXME: hard-coded WEBSERVER_ temporary
-    module_settings_name = (
-        settings_name or f"WEBSERVER_{module_name.split('.')[-1].upper()}"
-    )
-
     def _decorate(setup_func: _SetupFunc):
 
         if "setup" not in setup_func.__name__:
@@ -170,25 +191,25 @@ def app_module_setup(
                     return False
 
                 # NOTE: if not disabled by config, it can be disabled by settings
-                app_settings: Optional[_ApplicationSettings] = app.get(APP_SETTINGS_KEY)
-                if app_settings:
-                    logger.debug("Checking addon's %s ", f"{module_settings_name=}")
+                app_settings, module_settings_name = _get_app_settings_and_field_name(
+                    app,
+                    module_name,
+                    settings_name,
+                    setup_func.__name__,
+                    logger,
+                )
 
-                    if module_settings_name == settings_name and not hasattr(
-                        app_settings, module_settings_name
-                    ):
-                        raise ValueError(
-                            f"Invalid option {settings_name=} in module's setup {setup_func.__name__}. "
-                            f"It must be a field in {app_settings.__class__}"
-                        )
-
-                    if app_settings.is_enabled(module_settings_name):
-                        logger.info(
-                            "Skipping setup %s. %s disabled in settings",
-                            f"{module_name=}",
-                            f"{module_settings_name=}",
-                        )
-                        return False
+                if (
+                    app_settings
+                    and module_settings_name
+                    and app_settings.is_enabled(module_settings_name)
+                ):
+                    logger.info(
+                        "Skipping setup %s. %s disabled in settings",
+                        f"{module_name=}",
+                        f"{module_settings_name=}",
+                    )
+                    return False
 
             if depends:
                 uninitialized = [
