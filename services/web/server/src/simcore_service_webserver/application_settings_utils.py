@@ -165,14 +165,16 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
 
 
 def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
+    """Creates envs dict out of config dict"""
     # NOTE: maily used for testing traferet vs settings_library
     # pylint:disable=too-many-branches
     # pylint:disable=too-many-statements
     envs = {}
 
-    def _set_enable(section_name, section):
+    def _set_if_disabled(field_name, section):
         if not section.get("enabled"):
-            envs[section_name] = "null"
+            field = ApplicationSettings.__fields__[field_name]
+            envs[field_name] = "null" if field.allow_none else "0"
 
     if main := cfg.get("main"):
         envs["WEBSERVER_PORT"] = main.get("port")
@@ -180,11 +182,11 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
         envs["WEBSERVER_STUDIES_ACCESS_ENABLED"] = main.get("studies_access_enabled")
 
     if section := cfg.get("tracing"):
-        _set_enable("WEBSERVER_TRACING", section)
+        _set_if_disabled("WEBSERVER_TRACING", section)
         envs["TRACING_ZIPKIN_ENDPOINT"] = section.get("zipkin_endpoint")
 
     if section := cfg.get("director"):
-        _set_enable("WEBSERVER_DIRECTOR", section)
+        _set_if_disabled("WEBSERVER_DIRECTOR", section)
         envs["DIRECTOR_HOST"] = section.get("host")
         envs["DIRECTOR_PORT"] = section.get("port")
         envs["DIRECTOR_VTAG"] = section.get("version")
@@ -200,10 +202,10 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
             envs["POSTGRES_PORT"] = section.get("port")
             envs["POSTGRES_USER"] = section.get("user")
 
-        _set_enable("WEBSERVER_DB", db)
+        _set_if_disabled("WEBSERVER_DB", db)
 
     if section := cfg.get("resource_manager"):
-        _set_enable("WEBSERVER_RESOURCE_MANAGER", section)
+        _set_if_disabled("WEBSERVER_RESOURCE_MANAGER", section)
 
         envs["WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS"] = section.get(
             "resource_deletion_timeout_seconds"
@@ -213,15 +215,15 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
         )
 
         if section2 := section.get("redis"):
-            _set_enable("WEBSERVER_REDIS", section2)
+            _set_if_disabled("WEBSERVER_REDIS", section2)
             envs["REDIS_HOST"] = section2.get("host")
             envs["REDIS_PORT"] = section2.get("port")
 
     if section := cfg.get("garbage_collector"):
-        _set_enable("WEBSERVER_GARBAGE_COLLECTOR", section)
+        _set_if_disabled("WEBSERVER_GARBAGE_COLLECTOR", section)
 
     if section := cfg.get("login"):
-        _set_enable("WEBSERVER_LOGIN", section)
+        _set_if_disabled("WEBSERVER_LOGIN", section)
 
         envs["LOGIN_REGISTRATION_INVITATION_REQUIRED"] = section.get(
             "registration_invitation_required"
@@ -240,14 +242,14 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
         envs["SMTP_PASSWORD"] = section.get("password")
 
     if section := cfg.get("storage"):
-        _set_enable("WEBSERVER_STORAGE", section)
+        _set_if_disabled("WEBSERVER_STORAGE", section)
 
         envs["STORAGE_HOST"] = section.get("host")
         envs["STORAGE_PORT"] = section.get("port")
         envs["STORAGE_VTAG"] = section.get("version")
 
     if section := cfg.get("catalog"):
-        _set_enable("WEBSERVER_CATALOG", section)
+        _set_if_disabled("WEBSERVER_CATALOG", section)
 
         envs["CATALOG_HOST"] = section.get("host")
         envs["CATALOG_PORT"] = section.get("port")
@@ -257,25 +259,25 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
         envs["SESSION_SECRET_KEY"] = section.get("secret_key")
 
     if section := cfg.get("activity"):
-        _set_enable("WEBSERVER_ACTIVITY", section)
+        _set_if_disabled("WEBSERVER_ACTIVITY", section)
 
         envs["PROMETHEUS_PORT"] = section.get("prometheus_port")
         envs["PROMETHEUS_VTAG"] = section.get("prometheus_api_version")
 
     if section := cfg.get("computation"):
-        _set_enable("COMPUTATION", section)
+        _set_if_disabled("WEBSERVER_COMPUTATION", section)
 
     if section := cfg.get("diagnostics"):
-        _set_enable("DIAGNOSTICS", section)
+        _set_if_disabled("WEBSERVER_DIAGNOSTICS", section)
 
     if section := cfg.get("director-v2"):
-        _set_enable("DIRECTOR_V2", section)
+        _set_if_disabled("WEBSERVER_DIRECTOR_V2", section)
 
     if section := cfg.get("exporter"):
-        _set_enable("WEBSERVER_EXPORTER", section)
+        _set_if_disabled("WEBSERVER_EXPORTER", section)
 
     if section := cfg.get("statics"):
-        _set_enable("WEBSERVER_FRONTEND", section)
-        _set_enable("WEBSERVER_STATICWEB", section)
+        _set_if_disabled("WEBSERVER_FRONTEND", section)
+        _set_if_disabled("WEBSERVER_STATICWEB", section)
 
     return {k: v for k, v in envs.items() if v is not None}
