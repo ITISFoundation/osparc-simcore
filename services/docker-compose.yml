@@ -241,8 +241,24 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
+    environment:
+      # TODO: clean this. Currently needed for config legacy
+      - CATALOG_HOST=${CATALOG_HOST:-catalog}
+      - CATALOG_PORT=${CATALOG_PORT:-8000}
+      - DIAGNOSTICS_MAX_AVG_LATENCY=10
+      - DIAGNOSTICS_MAX_TASK_DELAY=30
+      - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
+      - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
+      - DIRECTOR_V2_HOST=${DIRECTOR_V2_HOST:-director-v2}
+      - DIRECTOR_V2_PORT=${DIRECTOR_V2_PORT:-8000}
+      - STORAGE_HOST=${STORAGE_HOST:-storage}
+      - STORAGE_PORT=${STORAGE_PORT:-8080}
+      - SWARM_STACK_NAME=${SWARM_STACK_NAME:-simcore}
+      - WEBSERVER_LOGLEVEL=${LOG_LEVEL:-WARNING}
     env_file:
+      - ../.env
       - ../.env-webserver-garbage-collector
+
     deploy:
       placement:
         constraints:
