@@ -38,11 +38,10 @@ from .users_api import (
 )
 from .users_to_groups_api import get_users_for_gid
 
-MODULE_LOGGER_NAME = "simcore_service_webserver.garbage_collector"
 TASK_NAME = f"{__name__}.collect_garbage_periodically"
 TASK_CONFIG = f"{TASK_NAME}.config"
 
-logger = logging.getLogger(MODULE_LOGGER_NAME)
+logger = logging.getLogger(__name__)
 database_errors = (
     DatabaseError,
     asyncpg.exceptions.PostgresError,

@@ -4,15 +4,10 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .garbage_collector_core import (
-    MODULE_LOGGER_NAME,
-    TASK_CONFIG,
-    TASK_NAME,
-    collect_garbage_periodically,
-)
+from .garbage_collector_core import TASK_CONFIG, TASK_NAME, collect_garbage_periodically
 from .projects.projects_db import setup_projects_db
 
-logger = logging.getLogger(MODULE_LOGGER_NAME)
+logger = logging.getLogger(__name__)
 
 
 async def _start_background_task(app: web.Application):
