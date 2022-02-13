@@ -38,52 +38,16 @@ from .users_api import (
 )
 from .users_to_groups_api import get_users_for_gid
 
-logger = logging.getLogger(__name__)
+MODULE_LOGGER_NAME = "simcore_service_webserver.garbage_collector"
+TASK_NAME = f"{__name__}.collect_garbage_periodically"
+TASK_CONFIG = f"{TASK_NAME}.config"
+
+logger = logging.getLogger(MODULE_LOGGER_NAME)
 database_errors = (
     DatabaseError,
     asyncpg.exceptions.PostgresError,
     ProjectNotFoundError,
 )
-
-TASK_NAME = f"{__name__}.collect_garbage_periodically"
-TASK_CONFIG = f"{TASK_NAME}.config"
-
-
-async def start_background_task(app: web.Application):
-    # SETUP ------
-    # create a background task to collect garbage periodically
-    assert not any(  # nosec
-        t.get_name() == TASK_NAME for t in asyncio.all_tasks()
-    ), "Garbage collector task already running. ONLY ONE expected"  # nosec
-
-    gc_bg_task = asyncio.create_task(collect_garbage_periodically(app), name=TASK_NAME)
-
-    # FIXME: added this config to overcome the state in which the
-    # task cancelation is ignored and the exceptions enter in a loop
-    # that never stops the background task. This flag is an additional
-    # mechanism to enforce stopping the background task
-    #
-    # Implemented with a mutable dict to avoid
-    #   DeprecationWarning: Changing state of started or joined application is deprecated
-    #
-    app[TASK_CONFIG] = {"force_stop": False, "name": TASK_NAME}
-
-    yield
-
-    # TEAR-DOWN -----
-    # controlled cancelation of the gc task
-    try:
-        logger.info("Stopping garbage collector...")
-
-        ack = gc_bg_task.cancel()
-        assert ack  # nosec
-
-        app[TASK_CONFIG]["force_stop"] = True
-
-        await gc_bg_task
-
-    except asyncio.CancelledError:
-        assert gc_bg_task.cancelled()  # nosec
 
 
 async def collect_garbage_periodically(app: web.Application):
