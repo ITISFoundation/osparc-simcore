@@ -5,5 +5,6 @@ disable-default-queries: false
 paths:
   - '**/src'
   - '**/source'
+  - '../../services/web/server/src/simcore_service_webserver'
 paths-ignore:
   - '**/tests/**'
