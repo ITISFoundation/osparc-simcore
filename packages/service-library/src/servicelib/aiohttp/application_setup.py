@@ -119,6 +119,7 @@ def app_module_setup(
     :param depends: list of module_names that must be called first, defaults to None
     :param config_section: explicit configuration section, defaults to None (i.e. the name of the module, or last entry of the name if dotted)
     :param config_enabled: option in config to enable, defaults to None which is '$(module-section).enabled' (config_section and config_enabled are mutually exclusive)
+    :param settings_name: field name in the app's settings that corresponds to this module. Defaults to the name of the module with app prefix.
     :raises DependencyError
     :raises ApplicationSetupError
     :return: True if setup was completed or False if setup was skipped
