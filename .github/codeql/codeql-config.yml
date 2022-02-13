@@ -1,6 +1,8 @@
 name: "ospac-simcore CodeQL config"
 
 disable-default-queries: false
+#queries:
+#  - uses: security-and-quality
 
 paths:
   - packages/dask-task-models-library/src
@@ -10,7 +12,14 @@ paths:
   - packages/settings-library/src/settings_library
   - packages/models-library/src/models_library
   - packages/simcore-sdk/src/simcore_sdk
+  - services/storage/src/simcore_service_storage
+  - services/datcore-adapter/src/simcore_service_datcore_adapter
+  - services/dask-sidecar/src/simcore_service_dask_sidecar
+  - services/api-server/src/simcore_service_api_server
+  - services/director-v2/src/simcore_service_director_v2
   - services/web/server/src/simcore_service_webserver
+  - services/dynamic-sidecar/src/simcore_service_dynamic_sidecar
+  - services/catalog/src/simcore_service_catalog
   - "**/src"
   - "**/source"
 paths-ignore:
