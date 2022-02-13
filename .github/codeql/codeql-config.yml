@@ -3,7 +3,10 @@ name: "ospac-simcore CodeQL config"
 disable-default-queries: false
 
 paths:
+  - src
   - '**/src/**'
   - '**/source/**'
 paths-ignore:
+  - tests
+  - test
   - '**/tests/**'
