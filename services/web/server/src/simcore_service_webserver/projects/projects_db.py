@@ -860,6 +860,5 @@ class ProjectDBAPI:
 
 
 def setup_projects_db(app: web.Application):
-    if APP_PROJECT_DBAPI not in app:
-        db = ProjectDBAPI(app)
-        app[APP_PROJECT_DBAPI] = db
+    db = ProjectDBAPI(app)
+    app[APP_PROJECT_DBAPI] = db
