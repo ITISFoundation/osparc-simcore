@@ -17,7 +17,7 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
-from typing import Dict, List
+from typing import AsyncIterable, Dict, List
 from unittest import mock
 
 import pytest
@@ -158,7 +158,7 @@ def app_config(_webserver_dev_config: Dict, aiohttp_unused_port) -> Dict:
 @pytest.fixture
 def mock_orphaned_services(mocker: MockerFixture) -> mock.Mock:
     remove_orphaned_services = mocker.patch(
-        "simcore_service_webserver.resource_manager.garbage_collector.remove_orphaned_services",
+        "simcore_service_webserver.garbage_collector_core.remove_orphaned_services",
         return_value="",
     )
     return remove_orphaned_services
@@ -171,7 +171,9 @@ async def primary_group(client, logged_user) -> Dict[str, str]:
 
 
 @pytest.fixture
-async def standard_groups(client, logged_user: Dict) -> List[Dict[str, str]]:
+async def standard_groups(
+    client, logged_user: Dict
+) -> AsyncIterable[List[Dict[str, str]]]:
     # create a separate admin account to create some standard groups for the logged user
     sparc_group = {
         "gid": "5",  # this will be replaced
@@ -195,21 +197,25 @@ async def standard_groups(client, logged_user: Dict) -> List[Dict[str, str]]:
         await add_user_in_group(
             client.app,
             admin_user["id"],
-            sparc_group["gid"],
+            int(sparc_group["gid"]),
             new_user_id=logged_user["id"],
         )
         await add_user_in_group(
             client.app,
             admin_user["id"],
-            team_black_group["gid"],
+            int(team_black_group["gid"]),
             new_user_email=logged_user["email"],
         )
 
         _, standard_groups, _ = await list_user_groups(client.app, logged_user["id"])
+
         yield standard_groups
+
         # clean groups
-        await delete_user_group(client.app, admin_user["id"], sparc_group["gid"])
-        await delete_user_group(client.app, admin_user["id"], team_black_group["gid"])
+        await delete_user_group(client.app, admin_user["id"], int(sparc_group["gid"]))
+        await delete_user_group(
+            client.app, admin_user["id"], int(team_black_group["gid"])
+        )
 
 
 @pytest.fixture
