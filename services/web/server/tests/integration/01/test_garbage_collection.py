@@ -359,7 +359,7 @@ async def assert_one_owner_for_project(
 def mock_garbage_collector_task(mocker):
     """patch the setup of the garbage collector so we can call it manually"""
     mocker.patch(
-        "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
+        "simcore_service_webserver.garbage_collector.setup_garbage_collector",
         return_value="",
     )
 
