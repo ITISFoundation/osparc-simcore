@@ -88,6 +88,10 @@ async def import_project(request: web.Request):
     # bumping this requests's max size
     # pylint: disable=protected-access
     exporter_settings = get_settings(request.app)
+    assert (  # nosec
+        exporter_settings is not None
+    ), "this call was not expected with a disabled plugin"  # nosec
+
     request._client_max_size = exporter_settings.EXPORTER_MAX_UPLOAD_FILE_SIZE * ONE_GB
 
     post_contents = await request.post()

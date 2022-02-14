@@ -435,10 +435,18 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     stopStudy: function() {
-      this.removeIFrames();
+      this.__stopRequestingStatus();
+      this.__removeIFrames();
     },
 
-    removeIFrames: function() {
+    __stopRequestingStatus: function() {
+      const nodes = this.getWorkbench().getNodes(true);
+      for (const node of Object.values(nodes)) {
+        node.stopRequestingStatus();
+      }
+    },
+
+    __removeIFrames: function() {
       const nodes = this.getWorkbench().getNodes(true);
       for (const node of Object.values(nodes)) {
         node.removeIFrame();

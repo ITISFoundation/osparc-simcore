@@ -4,15 +4,15 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-astroid==2.9.0
+astroid==2.9.3
     # via pylint
-attrs==21.2.0
+attrs==21.4.0
     # via pytest
 certifi==2021.10.8
     # via requests
-charset-normalizer==2.0.8
+charset-normalizer==2.0.11
     # via requests
-coverage==6.1.2
+coverage==6.3.1
     # via
     #   -r requirements/_test.in
     #   coveralls
@@ -27,7 +27,7 @@ iniconfig==1.1.1
     # via pytest
 isort==5.10.1
     # via pylint
-lazy-object-proxy==1.6.0
+lazy-object-proxy==1.7.1
     # via astroid
 mccabe==0.6.1
     # via pylint
@@ -35,17 +35,17 @@ packaging==21.3
     # via
     #   pytest
     #   pytest-sugar
-platformdirs==2.4.0
+platformdirs==2.5.0
     # via pylint
 pluggy==1.0.0
     # via pytest
 py==1.11.0
     # via pytest
-pylint==2.12.1
+pylint==2.12.2
     # via -r requirements/_test.in
-pyparsing==3.0.6
+pyparsing==3.0.7
     # via packaging
-pytest==6.2.5
+pytest==7.0.0
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -56,7 +56,7 @@ pytest-cov==3.0.0
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
     # via -r requirements/_test.in
-pytest-mock==3.6.1
+pytest-mock==3.7.0
     # via -r requirements/_test.in
 pytest-runner==5.3.1
     # via -r requirements/_test.in
@@ -64,22 +64,23 @@ pytest-sugar==0.9.4
     # via -r requirements/_test.in
 python-dotenv==0.19.2
     # via -r requirements/_test.in
-requests==2.26.0
+requests==2.27.1
     # via coveralls
 termcolor==1.1.0
     # via pytest-sugar
 toml==0.10.2
+    # via pylint
+tomli==1.2.3
     # via
-    #   pylint
+    #   -c requirements/../../../requirements/constraints.txt
+    #   coverage
     #   pytest
-tomli==1.2.2
-    # via coverage
-typing-extensions==4.0.0
+typing-extensions==4.0.1
     # via
     #   -c requirements/_base.txt
     #   astroid
     #   pylint
-urllib3==1.26.7
+urllib3==1.26.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
