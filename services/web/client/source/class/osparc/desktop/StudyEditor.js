@@ -608,13 +608,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
     },
 
-    __fadeElement: function() {
+    __fadeElement: function(elem) {
       // flash effect
       const fadeAnimation = {
-        duration: 500,
+        duration: 300,
         keyFrames: {
           0 : {
-            "opacity" : 1
+            "opacity" : 1,
+            "background-color": "#FFF"
           },
           50 : {
             "opacity": 0
@@ -624,7 +625,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         }
       };
-      qx.bom.element.AnimationJs.animate(this.__workbenchView.getWorkbenchPanel(), fadeAnimation);
+      qx.bom.element.AnimationCss.animate(elem, fadeAnimation);
     },
 
     takeScreenshot: function(screenshotBtn) {
@@ -632,7 +633,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const iframes = Array.from(document.getElementsByTagName("iframe"));
       const visibleIframe = iframes.find(iframe => iframe.offsetTop >= 0);
       const elem = visibleIframe === undefined ? this.__workbenchView.getWorkbenchPanel().getContentElement().getDomElement() : visibleIframe.contentDocument.body;
-      this.__fadeElement(this.__workbenchView.getWorkbenchPanel());
+      this.__fadeElement(elem);
       screenshotBtn.setFetching(true);
       html2canvas.takeScreenshot(elem)
         .then(screenshot => {
