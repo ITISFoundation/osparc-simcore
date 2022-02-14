@@ -14,9 +14,6 @@
      * Odei Maiz (odeimaiz)
 
 ************************************************************************ */
-/**
-  * @ignore(fetch)
-  */
 
 /**
  * Singleton class that is used as entrypoint to the webserver.
