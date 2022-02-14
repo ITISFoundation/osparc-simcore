@@ -13,7 +13,7 @@ from .application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
 
 log = logging.getLogger(__name__)
 
-APP_SETUP_KEY = f"{__name__ }.setup"
+APP_SETUP_COMPLETED_KEY = f"{__name__ }.setup"
 
 
 class _SetupFunc(Protocol):
@@ -33,6 +33,9 @@ class ModuleCategory(Enum):
     ADDON = 1
 
 
+# ERRORS ------------------------------------------------------------------
+
+
 class SkipModuleSetup(Exception):
     def __init__(self, *, reason) -> None:
         self.reason = reason
@@ -47,8 +50,7 @@ class DependencyError(ApplicationSetupError):
     ...
 
 
-class AlreadyInitializedError(ApplicationSetupError):
-    ...
+# HELPERS ------------------------------------------------------------------
 
 
 def _is_addon_enabled_from_config(
@@ -101,8 +103,11 @@ def _get_app_settings_and_field_name(
     return app_settings, settings_field_name
 
 
-def is_initialized(module_name: str, app: web.Application) -> bool:
-    return module_name in app[APP_SETUP_KEY]
+# PUBLIC API ------------------------------------------------------------------
+
+
+def is_setup_completed(module_name: str, app: web.Application) -> bool:
+    return module_name in app[APP_SETUP_COMPLETED_KEY]
 
 
 def app_module_setup(
@@ -185,8 +190,8 @@ def app_module_setup(
                 f"{depends}",
             )
 
-            if APP_SETUP_KEY not in app:
-                app[APP_SETUP_KEY] = []
+            if APP_SETUP_COMPLETED_KEY not in app:
+                app[APP_SETUP_COMPLETED_KEY] = []
 
             if category == ModuleCategory.ADDON:
                 # NOTE: ONLY addons can be enabled/disabled
@@ -224,31 +229,35 @@ def app_module_setup(
 
             if depends:
                 # TODO: no need to enforce. Use to deduce order instead.
-                uninitialized = [dep for dep in depends if not is_initialized(dep, app)]
+                uninitialized = [
+                    dep for dep in depends if not is_setup_completed(dep, app)
+                ]
                 if uninitialized:
                     raise DependencyError(
                         f"Cannot setup app module '{module_name}' because the "
                         f"following dependencies are still uninitialized: {uninitialized}"
                     )
 
-            if is_initialized(module_name, app):
-                raise AlreadyInitializedError(
-                    f"'{module_name}' was already initialized in {app}."
-                    " Setup can only be executed once per app."
-                )
-
             # execution of setup
             try:
+                if is_setup_completed(module_name, app):
+                    raise SkipModuleSetup(
+                        reason=f"'{module_name}' was already initialized in {app}."
+                        " Setup can only be executed once per app."
+                    )
+
                 completed = setup_func(app, *args, **kargs)
 
                 # post-setup
                 if completed is None:
                     completed = True
 
-                if completed:
-                    app[APP_SETUP_KEY].append(module_name)
+                if completed:  # registers completed setup
+                    app[APP_SETUP_COMPLETED_KEY].append(module_name)
                 else:
-                    raise SkipModuleSetup(reason="Undefined")
+                    raise SkipModuleSetup(
+                        reason="Undefined (setup function returned false)"
+                    )
 
             except SkipModuleSetup as exc:
                 logger.warning("Skipping '%s' setup: %s", module_name, exc.reason)
