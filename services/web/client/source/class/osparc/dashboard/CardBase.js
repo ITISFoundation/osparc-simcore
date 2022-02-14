@@ -60,12 +60,14 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return false;
     },
 
-    filterTags: function(checks, tags) {
-      if (tags && tags.length) {
-        const includesAll = tags.every(tag => checks.includes(tag));
-        return !includesAll;
+    filterTags: function(checks, activeTags) {
+      if (checks && checks.length) {
+        // if study has tags, only show if it is active
+        const includesSome = activeTags.some(activeTag => checks.includes(activeTag));
+        return !includesSome;
       }
-      return false;
+      // if study doesn't have tags, only show if there are no tags selected
+      return (activeTags && activeTags.length);
     },
 
     filterClassifiers: function(checks, classifiers) {
@@ -393,7 +395,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _filterTags: function(tags) {
-      const checks = this.getTags().map(tag => tag.name);
+      const checks = this.getTags().map(tag => tag.id);
       return this.self().filterTags(checks, tags);
     },
 
@@ -429,7 +431,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (data.text && data.text.length > 1) {
         return true;
       }
-      if (data.tags && data.tags.length) {
+      if (data.tags) {
         return true;
       }
       if (data.classifiers && data.classifiers.length) {
