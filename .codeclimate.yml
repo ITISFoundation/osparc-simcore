@@ -16,7 +16,7 @@ checks:
   file-lines:
     enabled: true
     config:
-      threshold: 510
+      threshold: 500
   method-complexity:
     enabled: false
     config:
@@ -56,7 +56,7 @@ plugins:
     channel: "eslint-6"
     config:
       extensions:
-      - .js
+        - .js
 
 exclude_patterns:
   - "config/"
