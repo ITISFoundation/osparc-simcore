@@ -34,7 +34,7 @@ qx.Class.define("osparc.dashboard.GridButtonFolder", {
   },
 
   statics: {
-    ICON_SIZE: 100
+    ICON_SIZE: 80
   },
 
   members: {
