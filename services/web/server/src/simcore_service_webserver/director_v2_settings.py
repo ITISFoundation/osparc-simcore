@@ -27,11 +27,11 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
 
 
 def get_settings(app: web.Application) -> DirectorV2Settings:
-    WEBSERVER_DIRECTOR_V2 = DirectorV2Settings()
 
     if settings := app.get(APP_SETTINGS_KEY):
-        assert settings.WEBSERVER_DIRECTOR_V2 == WEBSERVER_DIRECTOR_V2  # nosec
+        return settings.WEBSERVER_DIRECTOR_V2
 
+    WEBSERVER_DIRECTOR_V2 = DirectorV2Settings()
     return WEBSERVER_DIRECTOR_V2
 
 
