@@ -71,6 +71,9 @@ qx.Class.define("osparc.dashboard.ListButtonFolder", {
       if (this.__filterText(filterData.text)) {
         return true;
       }
+      if (filterData.tags && filterData.tags.length) {
+        return true;
+      }
       if (filterData.classifiers && filterData.classifiers.length) {
         return true;
       }
@@ -80,6 +83,9 @@ qx.Class.define("osparc.dashboard.ListButtonFolder", {
     _shouldReactToFilter: function(data) {
       const filterData = data["searchBarFilter-study"];
       if (filterData.text && filterData.text.length > 1) {
+        return true;
+      }
+      if (filterData.tags && filterData.tags.length) {
         return true;
       }
       if (filterData.classifiers && filterData.classifiers.length) {
