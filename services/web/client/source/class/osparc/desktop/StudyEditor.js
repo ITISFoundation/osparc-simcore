@@ -608,11 +608,31 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
     },
 
+    __fadeElement: function() {
+      // flash effect
+      const fadeAnimation = {
+        duration: 500,
+        keyFrames: {
+          0 : {
+            "opacity" : 1
+          },
+          50 : {
+            "opacity": 0
+          },
+          100 : {
+            "opacity": 1
+          }
+        }
+      };
+      qx.bom.element.AnimationJs.animate(this.__workbenchView.getWorkbenchPanel(), fadeAnimation);
+    },
+
     takeScreenshot: function(screenshotBtn) {
       const html2canvas = osparc.wrapper.Html2canvas.getInstance();
       const iframes = Array.from(document.getElementsByTagName("iframe"));
       const visibleIframe = iframes.find(iframe => iframe.offsetTop >= 0);
-      const elem = visibleIframe === undefined ? this.getContentElement().getDomElement() : visibleIframe.contentDocument.body;
+      const elem = visibleIframe === undefined ? this.__workbenchView.getWorkbenchPanel().getContentElement().getDomElement() : visibleIframe.contentDocument.body;
+      this.__fadeElement(this.__workbenchView.getWorkbenchPanel());
       screenshotBtn.setFetching(true);
       html2canvas.takeScreenshot(elem)
         .then(screenshot => {

@@ -215,6 +215,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return control || this.base(arguments, id);
     },
 
+    getWorkbenchPanel: function() {
+      return this.__workbenchPanel;
+    },
+
     __getSidePanelsNewWidth: function(collapsed, sidePanels, collapsibleView) {
       const content = collapsibleView.getContent();
       if (sidePanels && sidePanels.getBounds() && content && content.getBounds()) {
