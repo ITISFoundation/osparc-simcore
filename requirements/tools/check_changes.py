@@ -1,12 +1,12 @@
 import re
 import subprocess
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 from packaging.version import Version
 
-BEFORE_PATTERN = re.compile(r"^-([\w-]+)==([0-9\.]+)")
-AFTER_PATTERN = re.compile(r"^\+([\w-]+)==([0-9\.]+)")
+BEFORE_PATTERN = re.compile(r"^-([\w-]+)==([0-9\.post]+)")
+AFTER_PATTERN = re.compile(r"^\+([\w-]+)==([0-9\.post]+)")
 
 
 def dump_changes(filename: Path):
@@ -23,7 +23,7 @@ def tag_upgrade(from_version: Version, to_version: Version):
 
 
 def parse_changes(filename: Path):
-
+    changes = []
     before = defaultdict(list)
     after = defaultdict(list)
     with filename.open() as fh:
@@ -31,10 +31,11 @@ def parse_changes(filename: Path):
             if match := BEFORE_PATTERN.match(line):
                 name, version = match.groups()
                 before[name].append(Version(version))
+                changes.append(name)
             elif match := AFTER_PATTERN.match(line):
                 name, version = match.groups()
                 after[name].append(Version(version))
-    return before, after
+    return before, after, Counter(changes)
 
 
 def main():
@@ -43,7 +44,7 @@ def main():
     if not filepath.exists():
         dump_changes(filepath)
 
-    before, after = parse_changes(filepath)
+    before, after, counts = parse_changes(filepath)
 
     # format
     print("Stats")
@@ -51,7 +52,7 @@ def main():
     print("- #packages after :", len(after))
     print()
 
-    COLUMNS = ["#", "name", "before", "after", "upgrade"]
+    COLUMNS = ["#", "name", "before", "after", "upgrade", " count"]
 
     print("|" + "|".join(COLUMNS) + "|")
     print("|" + "|".join(["-" * len(c) for c in COLUMNS]) + "|")
@@ -76,6 +77,8 @@ def main():
             f"{tag_upgrade(sorted(set(before[name]))[-1], sorted(set(after[name]))[-1]):10s}"
             if to_versions
             else "",
+            "|",
+            counts[name],
             "|",
         )
 

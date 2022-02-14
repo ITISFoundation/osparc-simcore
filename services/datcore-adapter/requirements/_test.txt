@@ -44,7 +44,7 @@ docopt==0.6.2
     #   coveralls
 execnet==1.9.0
     # via pytest-xdist
-faker==12.1.0
+faker==12.3.0
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -92,7 +92,7 @@ pylint==2.12.2
     # via -r requirements/_test.in
 pyparsing==3.0.7
     # via packaging
-pytest==7.0.0
+pytest==7.0.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -103,7 +103,7 @@ pytest==7.0.0
     #   pytest-mock
     #   pytest-sugar
     #   pytest-xdist
-pytest-asyncio==0.18.0
+pytest-asyncio==0.18.1
     # via -r requirements/_test.in
 pytest-cov==3.0.0
     # via -r requirements/_test.in
