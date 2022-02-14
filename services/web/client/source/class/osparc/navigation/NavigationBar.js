@@ -62,7 +62,8 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   },
 
   events: {
-    "backToDashboardPressed": "qx.event.type.Event"
+    "backToDashboardPressed": "qx.event.type.Event",
+    "takeScreenshot": "qx.event.type.Event"
   },
 
   properties: {
@@ -169,12 +170,13 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("left-items").add(control);
           break;
         case "screenshot-button":
-          control = new osparc.ui.form.FetchButton(null, "@FontAwesome5Solid/camera/16").set({
-            ...this.self().BUTTON_OPTIONS
+          control = new osparc.ui.form.FetchButton(null, "@FontAwesome5Solid/camera/22").set({
+            ...this.self().BUTTON_OPTIONS,
+            toolTipText: this.tr("Take screenshot and set as Thumbnail")
           });
           osparc.utils.Utils.setIdToWidget(control, "takeScreenshotBtn");
           control.addListener("execute", () => this.fireEvent("takeScreenshot"), this);
-          this._add(control);
+          this.getChildControl("left-items").add(control);
           break;
         case "read-only-icon":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/eye/22").set({
