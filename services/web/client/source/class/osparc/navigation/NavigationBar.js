@@ -170,7 +170,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
           this.getChildControl("left-items").add(control);
           break;
         case "screenshot-button":
-          control = new osparc.ui.form.FetchButton(null, "@FontAwesome5Solid/camera/22").set({
+          control = new osparc.ui.form.FetchButton(null, "@FontAwesome5Solid/camera/20").set({
             ...this.self().BUTTON_OPTIONS,
             toolTipText: this.tr("Take screenshot and set as Thumbnail")
           });
