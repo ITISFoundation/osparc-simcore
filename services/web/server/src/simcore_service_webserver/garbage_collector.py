@@ -1,56 +1,12 @@
-import asyncio
 import logging
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .garbage_collector_core import (
-    GC_TASK_CONFIG,
-    GC_TASK_NAME,
-    collect_garbage_periodically,
-)
+from .garbage_collector_task import run_background_task
 from .projects.projects_db import setup_projects_db
 
 logger = logging.getLogger(__name__)
-
-
-async def _start_background_task(app: web.Application):
-    # SETUP ------
-    # create a background task to collect garbage periodically
-    assert not any(  # nosec
-        t.get_name() == GC_TASK_NAME for t in asyncio.all_tasks()
-    ), "Garbage collector task already running. ONLY ONE expected"  # nosec
-
-    gc_bg_task = asyncio.create_task(
-        collect_garbage_periodically(app), name=GC_TASK_NAME
-    )
-
-    # FIXME: added this config to overcome the state in which the
-    # task cancelation is ignored and the exceptions enter in a loop
-    # that never stops the background task. This flag is an additional
-    # mechanism to enforce stopping the background task
-    #
-    # Implemented with a mutable dict to avoid
-    #   DeprecationWarning: Changing state of started or joined application is deprecated
-    #
-    app[GC_TASK_CONFIG] = {"force_stop": False, "name": GC_TASK_NAME}
-
-    yield
-
-    # TEAR-DOWN -----
-    # controlled cancelation of the gc task
-    try:
-        logger.info("Stopping garbage collector...")
-
-        ack = gc_bg_task.cancel()
-        assert ack  # nosec
-
-        app[GC_TASK_CONFIG]["force_stop"] = True
-
-        await gc_bg_task
-
-    except asyncio.CancelledError:
-        assert gc_bg_task.cancelled()  # nosec
 
 
 @app_module_setup(
@@ -64,4 +20,4 @@ def setup_garbage_collector(app: web.Application):
     ## project-api needs access to db
     setup_projects_db(app)
 
-    app.cleanup_ctx.append(_start_background_task)
+    app.cleanup_ctx.append(run_background_task)

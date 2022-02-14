@@ -1,4 +1,7 @@
-import asyncio
+""" Core implementation of garbage collector
+
+"""
+
 import logging
 from itertools import chain
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -24,10 +27,7 @@ from .projects.projects_api import (
 from .projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
 from .projects.projects_exceptions import ProjectNotFoundError
 from .redis import get_redis_lock_manager
-from .resource_manager.config import (
-    GUEST_USER_RC_LOCK_FORMAT,
-    get_garbage_collector_interval,
-)
+from .resource_manager.config import GUEST_USER_RC_LOCK_FORMAT
 from .resource_manager.registry import RedisResourceRegistry, get_registry
 from .users_api import (
     delete_user,
@@ -38,8 +38,6 @@ from .users_api import (
 )
 from .users_to_groups_api import get_users_for_gid
 
-GC_TASK_NAME = f"{__name__}.collect_garbage_periodically"
-GC_TASK_CONFIG = f"{GC_TASK_NAME}.config"
 _DATABASE_ERRORS = (
     DatabaseError,
     asyncpg.exceptions.PostgresError,
@@ -47,41 +45,6 @@ _DATABASE_ERRORS = (
 )
 
 logger = logging.getLogger(__name__)
-
-
-async def collect_garbage_periodically(app: web.Application):
-
-    while True:
-        logger.info("Starting garbage collector...")
-        try:
-            interval = get_garbage_collector_interval(app)
-            while True:
-                await collect_garbage(app)
-
-                if app[GC_TASK_CONFIG].get("force_stop", False):
-                    raise Exception("Forced to stop garbage collection")
-
-                await asyncio.sleep(interval)
-
-        except asyncio.CancelledError:
-            logger.info("Garbage collection task was cancelled, it will not restart!")
-            # do not catch Cancellation errors
-            raise
-
-        except Exception:  # pylint: disable=broad-except
-            logger.warning(
-                "There was an error during garbage collection, restarting...",
-                exc_info=True,
-            )
-
-            if app[GC_TASK_CONFIG].get("force_stop", False):
-                logger.warning("Forced to stop garbage collection")
-                break
-
-            # will wait 5 seconds to recover before restarting to avoid restart loops
-            # - it might be that db/redis is down, etc
-            #
-            await asyncio.sleep(5)
 
 
 async def collect_garbage(app: web.Application):
