@@ -2,18 +2,19 @@
 # Specifies third-party dependencies for 'services/web/server/src'
 #
 --constraint ../../../../requirements/constraints.txt
+--constraint ./constraints.txt
 
-# intra-repo packages CONSTRAINTS
+# intra-repo packages
 #   - Input-requirements on intra-repo packages are tested using latest updates
 #   - Added as constraints instead of requirements in order to avoid polluting base.txt
 #   - Will be installed when prod.txt or dev.txt
 #
---constraint ../../../../packages/models-library/requirements/_base.in
---constraint ../../../../packages/postgres-database/requirements/_base.in
---constraint ../../../../packages/settings-library/requirements/_base.in
+--requirement ../../../../packages/models-library/requirements/_base.in
+--requirement ../../../../packages/postgres-database/requirements/_base.in
+--requirement ../../../../packages/settings-library/requirements/_base.in
 # simcore-service-library[aiohttp]
---constraint ../../../../packages/service-library/requirements/_base.in
---constraint ../../../../packages/service-library/requirements/_aiohttp.in
+--requirement ../../../../packages/service-library/requirements/_base.in
+--requirement ../../../../packages/service-library/requirements/_aiohttp.in
 
 
 # aiohttp + extensions
@@ -31,9 +32,12 @@ gunicorn[setproctitle]
 # socket_id saved in redis does not correspond to client's sio
 python-socketio~=4.6.1
 
-# databases
+# postgres db
 aiopg[sa]
 asyncpg
+
+# i/o
+aiofiles
 
 # redis
 aioredis
@@ -67,6 +71,7 @@ aiodebug
 change_case
 expiringdict
 semantic_version
+tenacity
 
 # import/export excel
 parfive

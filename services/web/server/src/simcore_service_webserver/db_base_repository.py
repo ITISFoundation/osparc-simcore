@@ -7,7 +7,7 @@ from typing import Optional
 from aiohttp import web
 from aiopg.sa.engine import Engine
 
-from .constants import APP_DB_ENGINE_KEY, RQT_USERID_KEY
+from ._constants import APP_DB_ENGINE_KEY, RQT_USERID_KEY
 
 
 class BaseRepository:

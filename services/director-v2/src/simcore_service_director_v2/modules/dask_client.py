@@ -49,8 +49,10 @@ from ..models.domains.comp_tasks import Image
 from ..models.schemas.constants import ClusterID, UserID
 from ..utils.dask import (
     UserCompleteCB,
-    check_client_can_connect_to_scheduler,
+    check_communication_with_scheduler_is_open,
     check_if_cluster_is_able_to_run_pipeline,
+    check_scheduler_is_still_the_same,
+    check_scheduler_status,
     compute_input_data,
     compute_output_data_schema,
     compute_service_log_file_upload_link,
@@ -66,6 +68,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DaskSubSystem:
     client: distributed.Client
+    scheduler_id: str
     gateway: Optional[dask_gateway.Gateway]
     gateway_cluster: Optional[dask_gateway.GatewayCluster]
 
@@ -80,14 +83,16 @@ class DaskSubSystem:
 
 async def _connect_to_dask_scheduler(endpoint: AnyUrl) -> DaskSubSystem:
     try:
+        client = await distributed.Client(
+            f"{endpoint}",
+            asynchronous=True,
+            name=f"director-v2_{socket.gethostname()}_{os.getpid()}",
+        )
         return DaskSubSystem(
-            await distributed.Client(
-                f"{endpoint}",
-                asynchronous=True,
-                name=f"director-v2_{socket.gethostname()}_{os.getpid()}",
-            ),
-            None,
-            None,
+            client=client,
+            scheduler_id=client.scheduler_info()["id"],
+            gateway=None,
+            gateway_cluster=None,
         )
     except (TypeError) as exc:
         raise ConfigurationError(
@@ -141,10 +146,15 @@ async def _connect_with_gateway_and_create_cluster(
         assert cluster  # nosec
         logger.info("Cluster dashboard available: %s", cluster.dashboard_link)
         # NOTE: we scale to 1 worker as they are global
-        await cluster.scale(1)
+        await cluster.adapt(active=True)
         client = await cluster.get_client()
         assert client  # nosec
-        return DaskSubSystem(client, gateway, cluster)
+        return DaskSubSystem(
+            client=client,
+            scheduler_id=client.scheduler_info()["id"],
+            gateway=gateway,
+            gateway_cluster=cluster,
+        )
     except (TypeError) as exc:
         raise ConfigurationError(
             f"Cluster has invalid configuration: {endpoint=}, {auth_params=}"
@@ -215,7 +225,7 @@ class DaskClient:
                 dask_subsystem = await _create_internal_client_based_on_auth(
                     endpoint, authentication
                 )
-                check_client_can_connect_to_scheduler(dask_subsystem.client)
+                check_scheduler_status(dask_subsystem.client)
                 instance = cls(
                     app=app,
                     dask_subsystem=dask_subsystem,
@@ -310,8 +320,11 @@ class DaskClient:
             dask_resources = from_node_reqs_to_dask_resources(
                 node_image.node_requirements
             )
-
-            check_client_can_connect_to_scheduler(self.dask_subsystem.client)
+            check_scheduler_is_still_the_same(
+                self.dask_subsystem.scheduler_id, self.dask_subsystem.client
+            )
+            check_communication_with_scheduler_is_open(self.dask_subsystem.client)
+            check_scheduler_status(self.dask_subsystem.client)
             # NOTE: in case it's a gateway we do not check a priori if the task
             # is runnable because we CAN'T. A cluster might auto-scale, the worker(s)
             # might also auto-scale and the gateway does not know that a priori.
@@ -371,7 +384,7 @@ class DaskClient:
                 logger.debug("Dask task %s started", task_future.key)
             except Exception:
                 # Dask raises a base Exception here in case of connection error, this will raise a more precise one
-                check_client_can_connect_to_scheduler(self.dask_subsystem.client)
+                check_scheduler_status(self.dask_subsystem.client)
                 # if the connection is good, then the problem is different, so we re-raise
                 raise
         return list_of_node_id_to_job_id

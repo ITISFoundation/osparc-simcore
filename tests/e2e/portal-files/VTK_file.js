@@ -35,8 +35,6 @@ async function runTutorial () {
   try {
     const page = await tutorial.beforeScript();
     const studyData = await tutorial.openStudyLink();
-    const studyId = studyData["data"]["uuid"];
-    console.log("Study ID:", studyId);
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     const nodeIdViewer = workbenchData["nodeIds"][1];

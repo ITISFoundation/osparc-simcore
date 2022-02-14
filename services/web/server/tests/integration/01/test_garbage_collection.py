@@ -110,22 +110,28 @@ async def auto_mock_director_v2(
 
 @pytest.fixture
 def client(
-    loop, aiohttp_client, app_config, postgres_with_template_db, mock_orphaned_services
+    loop,
+    aiohttp_client,
+    app_config,
+    postgres_with_template_db,
+    mock_orphaned_services,
+    monkeypatch_setenv_from_app_config: Callable,
 ):
     cfg = deepcopy(app_config)
 
     assert cfg["rest"]["version"] == API_VERSION
     assert cfg["rest"]["enabled"]
+
     cfg["projects"]["enabled"] = True
     cfg["director"]["enabled"] = True
-    cfg["resource_manager"][
-        "garbage_collection_interval_seconds"
-    ] = GARBAGE_COLLECTOR_INTERVAL  # increase speed of garbage collection
-    cfg["resource_manager"][
-        "resource_deletion_timeout_seconds"
-    ] = SERVICE_DELETION_DELAY  # reduce deletion delay
+    cfg["resource_manager"].update(
+        {
+            "garbage_collection_interval_seconds": GARBAGE_COLLECTOR_INTERVAL,  # increase speed of garbage collection
+            "resource_deletion_timeout_seconds": SERVICE_DELETION_DELAY,  # reduce deletion delay
+        }
+    )
 
-    # fake config
+    monkeypatch_setenv_from_app_config(cfg)
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules

@@ -13,6 +13,7 @@ from typing import Any, Dict
 from unittest import mock
 
 import aiopg
+import httpx
 import pytest
 from _helpers import (  # type: ignore
     PublishedProject,
@@ -22,7 +23,6 @@ from _helpers import (  # type: ignore
 from _pytest.monkeypatch import MonkeyPatch
 from dask_task_models_library.container_tasks.io import FileUrl, TaskOutputData
 from faker import Faker
-from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink
 from pydantic.networks import AnyUrl
@@ -222,12 +222,13 @@ def app_with_db(
     postgres_host_config: Dict[str, str],
 ):
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
 
 
 async def test_compute_input_data(
     app_with_db: None,
     aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
-    minimal_app: FastAPI,
+    async_client: httpx.AsyncClient,
     user_id: UserID,
     published_project: PublishedProject,
     fake_io_schema: Dict[str, Dict[str, str]],
@@ -263,7 +264,10 @@ async def test_compute_input_data(
         side_effect=return_fake_input_value(),
     )
     computed_input_data = await compute_input_data(
-        minimal_app, user_id, published_project.project.uuid, sleeper_task.node_id
+        async_client._transport.app,
+        user_id,
+        published_project.project.uuid,
+        sleeper_task.node_id,
     )
     mocked_node_ports_get_value_fct.assert_has_calls(
         [mock.call(mock.ANY) for n in fake_io_data.keys()]

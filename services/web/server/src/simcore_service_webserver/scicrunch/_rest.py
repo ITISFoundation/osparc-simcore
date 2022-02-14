@@ -21,8 +21,8 @@ from aiohttp import ClientSession
 from pydantic import BaseModel, Field
 from yarl import URL
 
-from ._config import SciCrunchSettings
 from .models import ResourceHit
+from .settings import SciCrunchSettings
 
 logger = logging.getLogger(__name__)
 

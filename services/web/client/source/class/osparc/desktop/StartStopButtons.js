@@ -71,7 +71,9 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       if (!this.__startButton.isFetching()) {
         const runnableNodes = [];
         selectedNodeIds.forEach(selectedNodeId => {
-          runnableNodes.push(this.getStudy().getWorkbench().getNode(selectedNodeId));
+          if (this.getStudy()) {
+            runnableNodes.push(this.getStudy().getWorkbench().getNode(selectedNodeId));
+          }
         });
         const isSelectionRunnable = runnableNodes.length && runnableNodes.some(node => node && (node.isComputational() || node.isIterator()));
         if (isSelectionRunnable) {
@@ -195,7 +197,11 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __checkButtonsVisible: function() {
       const allNodes = this.getStudy().getWorkbench().getNodes(true);
       const isRunnable = Object.values(allNodes).some(node => (node.isComputational() || node.isIterator()));
-      this.__getStartButtons().forEach(startBtn => startBtn.setEnabled(isRunnable));
+      this.__getStartButtons().forEach(startBtn => {
+        if (!startBtn.isFetching()) {
+          startBtn.setEnabled(isRunnable);
+        }
+      }, this);
 
       const isReadOnly = this.getStudy().isReadOnly();
       this.setVisibility(isReadOnly ? "excluded" : "visible");
@@ -204,26 +210,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     __updateRunButtonsStatus: function() {
       const study = this.getStudy();
       if (study) {
-        const startButtons = this.__getStartButtons();
-        const stopButton = this.__stopButton;
-        const pipelineState = study.getPipelineState();
-        if (pipelineState) {
-          switch (pipelineState) {
-            case "PENDING":
-            case "PUBLISHED":
-            case "STARTED":
-              startButtons.forEach(startButton => startButton.setFetching(true));
-              stopButton.setEnabled(true);
-              break;
-            case "NOT_STARTED":
-            case "SUCCESS":
-            case "FAILED":
-            default:
-              startButtons.forEach(startButton => startButton.setFetching(false));
-              stopButton.setEnabled(false);
-              break;
-          }
-        }
+        this.setRunning(study.isPipelineRunning());
       }
     }
   }

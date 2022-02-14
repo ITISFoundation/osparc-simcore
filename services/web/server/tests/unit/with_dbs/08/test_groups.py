@@ -5,13 +5,13 @@
 
 import random
 from copy import deepcopy
-from typing import Dict, List
+from typing import Callable, Dict, List
 
 import pytest
 from _helpers import standard_role_response
 from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser, create_user, log_client_in
+from pytest_simcore.helpers.utils_login import create_user, log_client_in
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.groups import setup_groups
@@ -26,20 +26,25 @@ from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
-
-## BUG FIXES #######################################################
 from simcore_service_webserver.utils import gravatar_hash
 
 API_VERSION = "v0"
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_db):
+def client(
+    loop,
+    aiohttp_client,
+    app_cfg,
+    postgres_db,
+    monkeypatch_setenv_from_app_config: Callable,
+):
     cfg = deepcopy(app_cfg)
 
     port = cfg["main"]["port"]
 
     assert cfg["rest"]["version"] == API_VERSION
+    monkeypatch_setenv_from_app_config(cfg)
 
     # fake config
     app = create_safe_application(cfg)

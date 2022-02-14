@@ -15,7 +15,7 @@ from pydantic import ConfigError, ValidationError, validator
 from pydantic.main import BaseModel
 from pydantic.networks import HttpUrl
 from pytest_simcore.helpers.utils_services import list_fake_file_consumers
-from simcore_service_webserver.constants import APP_JSONSCHEMA_SPECS_KEY
+from simcore_service_webserver._constants import APP_JSONSCHEMA_SPECS_KEY
 from simcore_service_webserver.projects import projects_api
 from simcore_service_webserver.studies_dispatcher._projects import (
     UserInfo,

@@ -18,16 +18,19 @@ import logging
 import os
 import sys
 from argparse import ArgumentParser
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+import typer
 from aiohttp import web
 from models_library.basic_types import BuildTargetEnum
+from settings_library.utils_cli import create_settings_command
 
 from .application import create_application, run_service
-from .application_config import CLI_DEFAULT_CONFIGFILE, app_schema
+from .application__schema import CLI_DEFAULT_CONFIGFILE, app_schema
+from .application_settings import ApplicationSettings
 from .cli_config import add_cli_options, config_from_options
 from .log import setup_logging
-from .settings import ApplicationSettings
 from .utils import search_osparc_repo_dir
 
 # ptsvd cause issues with ProcessPoolExecutor
@@ -122,22 +125,50 @@ def _setup_app(args: Optional[List] = None) -> Tuple[web.Application, Dict]:
     return (app, config)
 
 
-def main(args: Optional[List] = None):
-    app, config = _setup_app(args)
-    run_service(app, config)
-
-
 async def app_factory() -> web.Application:
     # parse & config file
     app_settings = ApplicationSettings()
-    assert app_settings.build_target  # nosec
+    assert app_settings.SC_BUILD_TARGET  # nosec
     log.info("Application settings: %s", f"{app_settings.json(indent=2)}")
     args = [
         "--config",
         "server-docker-dev.yaml"
-        if app_settings.boot_mode == BuildTargetEnum.DEVELOPMENT
+        if app_settings.SC_BOOT_MODE == BuildTargetEnum.DEVELOPMENT
         else "server-docker-prod.yaml",
     ]
     app, _ = _setup_app(args)
 
     return app
+
+
+# CLI -------------
+
+main = typer.Typer(name="simcore-service-webserver")
+main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=log))
+
+
+@main.command()
+def run(
+    config: Path = typer.Argument("config.yaml", help="Configuration file"),
+    print_config: bool = False,
+    print_config_vars: bool = False,
+    check_config: bool = False,
+):
+    args = [
+        "--config",
+        str(config),
+    ]
+
+    if print_config:
+        args.append(
+            "--print-config",
+        )
+
+    if print_config_vars:
+        args.append("--print-config-vars")
+
+    if check_config:
+        args.append("--check-config")
+
+    app, cfg = _setup_app(args)
+    run_service(app, cfg)

@@ -23,8 +23,8 @@ from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from servicelib.utils import logged_gather
 from tenacity import retry
 
-from .computation_config import ComputationSettings
-from .computation_config import get_settings as get_computation_settings
+from .computation_settings import ComputationSettings
+from .computation_settings import get_settings as get_computation_settings
 from .projects import projects_api
 from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 from .socketio.events import (
@@ -172,15 +172,12 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
                     # Declaring queue
                     queue = await channel.declare_queue(
                         f"webserver_{exchange_name}_{socket.gethostname()}_{os.getpid()}",
-                        exclusive=True,
                         arguments={"x-message-ttl": 60000},
                     )
                     # Binding the queue to the exchange
                     await queue.bind(exchange)
                     # process
-                    async with queue.iterator(
-                        exclusive=True, **consumer_kwargs
-                    ) as queue_iter:
+                    async with queue.iterator(**consumer_kwargs) as queue_iter:
                         async for message in queue_iter:
                             log.debug(
                                 "Received message from exchange %s", exchange_name

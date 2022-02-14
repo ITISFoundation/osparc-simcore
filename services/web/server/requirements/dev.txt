@@ -8,7 +8,6 @@
 
 # installs base + tests requirements
 --requirement _base.txt
---constraint _packages.txt
 --requirement _test.txt
 --requirement _tools.txt
 
@@ -16,7 +15,6 @@
 --editable ../../../packages/models-library/
 --editable ../../../packages/postgres-database/
 --editable ../../../packages/settings-library/
---editable ../../../packages/simcore-sdk/
 --editable ../../../packages/service-library[aiohttp]
 --editable ../../../packages/pytest-simcore/
 

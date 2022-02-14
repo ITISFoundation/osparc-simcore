@@ -2,9 +2,10 @@
 
     Typically dumped in statics.json
 """
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
-from pydantic import AnyHttpUrl, BaseModel, BaseSettings, Field, HttpUrl
+from pydantic import AnyHttpUrl, BaseModel, Field, HttpUrl
+from settings_library.base import BaseCustomSettings
 
 from .utils import snake_to_camel
 
@@ -26,6 +27,7 @@ class OsparcDependency(BaseModel):
 
 
 def discover_osparc_dependencies() -> List[OsparcDependency]:
+    # TODO: move this data to a file
     return [
         OsparcDependency(
             name="adminer",
@@ -78,54 +80,55 @@ def discover_osparc_dependencies() -> List[OsparcDependency]:
     ]
 
 
-class FrontEndAppSettings(BaseSettings):
+class FrontEndAppSettings(BaseCustomSettings):
 
     # urls to manuals
-    manual_main_url: Optional[HttpUrl] = None
-    manual_extra_url: Optional[HttpUrl] = None
+    WEBSERVER_MANUAL_MAIN_URL: Optional[HttpUrl] = None
+    WEBSERVER_MANUAL_EXTRA_URL: Optional[HttpUrl] = None
 
     # extra feedback url
-    feedback_form_url: Optional[HttpUrl] = None
+    WEBSERVER_FEEDBACK_FORM_URL: Optional[HttpUrl] = None
 
     # fogbugz
-    fogbugz_login_url: Optional[HttpUrl] = None
+    WEBSERVER_FOGBUGZ_LOGIN_URL: Optional[HttpUrl] = None
     # NEW case url (see product overrides env_prefix = WEBSERVER_S4L_ ... )
     # SEE https://support.fogbugz.com/hc/en-us/articles/360011241594-Generating-a-Case-Template-with-bookmarklets
     # https://<your_fogbugz_URL>.fogbugz.com/f/cases/new?command=new&pg=pgEditBug&ixProject=<project-id>&ixArea=<area_id>&ixCategory=<category_id>&ixPersonAssignedTo=<assigned_user_id>&sTitle=<title_of_case>&sEvent=<body_of text>
-    fogbugz_newcase_url: Optional[HttpUrl] = None
-    s4l_fogbugz_newcase_url: Optional[HttpUrl] = None
-    tis_fogbugz_newcase_url: Optional[HttpUrl] = None
+    WEBSERVER_FOGBUGZ_NEWCASE_URL: Optional[HttpUrl] = None
+    WEBSERVER_S4L_FOGBUGZ_NEWCASE_URL: Optional[HttpUrl] = None
+    WEBSERVER_TIS_FOGBUGZ_NEWCASE_URL: Optional[HttpUrl] = None
 
-    osparc_dependencies: List[OsparcDependency] = Field(
+    WEBSERVER_OSPARC_DEPENDENCIES: List[OsparcDependency] = Field(
         default_factory=discover_osparc_dependencies
     )
 
-    class Config:
-        case_sensitive = False
-        alias_generator = snake_to_camel
-        env_prefix = "WEBSERVER_"
-
-    # ---
-
-    def to_statics(self) -> Dict:
-        return self.dict(
+    def to_statics(self) -> Dict[str, Any]:
+        data = self.dict(
             exclude_none=True,
             by_alias=True,
         )
+        return {
+            snake_to_camel(k.replace("WEBSERVER_", "").lower()): v
+            for k, v in data.items()
+        }
 
 
-class StaticWebserverModuleSettings(BaseSettings):
-    enabled: bool = Field(
+class StaticWebserverModuleSettings(BaseCustomSettings):
+    # TODO: remove
+    STATIC_WEBSERVER_ENABLED: bool = Field(
         True,
         description=(
             "if enabled it will try to fetch and cache the 3 product index webpages"
         ),
+        env=["STATIC_WEBSERVER_ENABLED", "WEBSERVER_STATIC_MODULE_ENABLED"],  # legacy
     )
 
-    static_web_server_url: AnyHttpUrl = Field(
-        "http://static-webserver:8000", description="url fort static content"
+    # TODO: host/port
+    STATIC_WEBSERVER_URL: AnyHttpUrl = Field(
+        "http://static-webserver:8000",
+        description="url fort static content",
+        env=[
+            "STATIC_WEBSERVER_URL",
+            "WEBSERVER_STATIC_MODULE_STATIC_WEB_SERVER_URL",
+        ],  # legacy
     )
-
-    class Config:
-        case_sensitive = False
-        env_prefix = "WEBSERVER_STATIC_MODULE_"

@@ -6,7 +6,7 @@
 import random
 from copy import deepcopy
 from itertools import repeat
-from typing import Dict, List, Type
+from typing import Callable, Dict, List, Type
 from unittest.mock import MagicMock
 
 import faker
@@ -34,12 +34,20 @@ API_VERSION = "v0"
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_db):
+def client(
+    loop,
+    aiohttp_client,
+    app_cfg,
+    postgres_db,
+    monkeypatch_setenv_from_app_config: Callable,
+):
     cfg = deepcopy(app_cfg)
 
     port = cfg["main"]["port"]
 
     assert cfg["rest"]["version"] == API_VERSION
+
+    monkeypatch_setenv_from_app_config(cfg)
 
     # fake config
     app = create_safe_application(cfg)

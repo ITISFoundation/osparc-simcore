@@ -11,9 +11,11 @@ def validate_instance(instance: Dict, schema: Dict, *, log_errors=True):
         validate(instance, schema)
     except ValidationError:
         if log_errors:
-            log.exception("Node validation error:")
+            log.exception("%s\n%s\nNode validation error:", f"{instance}", f"{schema=}")
         raise
     except SchemaError:
         if log_errors:
-            log.exception("Schema validation error:")
+            log.exception(
+                "%s\n%s\nSchema valdation error:", f"{instance}", f"{schema=}"
+            )
         raise

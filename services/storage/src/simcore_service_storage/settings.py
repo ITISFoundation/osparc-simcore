@@ -3,10 +3,10 @@ from typing import List, Optional
 from pydantic import Field, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import LogLevel, PortInt
-from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
+from settings_library.utils_logging import MixinLoggingSettings
 
 from .datcore_adapter.datcore_adapter_settings import DatcoreAdapterSettings
 
@@ -39,13 +39,13 @@ class Settings(BaseCustomSettings, MixinLoggingSettings):
         None, description="Pennsieve API secret ONLY for testing purposes"
     )
 
-    STORAGE_POSTGRES: PostgresSettings
+    STORAGE_POSTGRES: PostgresSettings = Field(auto_default_from_env=True)
 
-    STORAGE_S3: S3Settings
+    STORAGE_S3: S3Settings = Field(auto_default_from_env=True)
 
-    STORAGE_TRACING: Optional[TracingSettings]
+    STORAGE_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
-    DATCORE_ADAPTER: DatcoreAdapterSettings
+    DATCORE_ADAPTER: DatcoreAdapterSettings = Field(auto_default_from_env=True)
 
     STORAGE_SYNC_METADATA_TIMEOUT: PositiveInt = Field(
         180, description="Timeout (seconds) for metadata sync task"

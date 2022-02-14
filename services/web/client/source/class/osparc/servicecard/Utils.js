@@ -207,7 +207,12 @@ qx.Class.define("osparc.servicecard.Utils", {
 
         if (extraInfo.action) {
           extraInfo.action.button.addListener("execute", () => {
-            extraInfo.action.callback.call(extraInfo.action.ctx);
+            const cb = extraInfo.action.callback;
+            if (typeof cb === "string") {
+              extraInfo.action.ctx.fireEvent(cb);
+            } else {
+              cb.call(extraInfo.action.ctx);
+            }
           }, this);
           moreInfo.add(extraInfo.action.button, {
             row: i,

@@ -7,9 +7,8 @@ from servicelib.aiohttp.rest_routing import (
     map_handlers_with_operations,
 )
 
-from ..constants import APP_OPENAPI_SPECS_KEY
+from .._constants import APP_OPENAPI_SPECS_KEY
 from . import handlers
-from .config import assert_valid_config
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +20,6 @@ logger = logging.getLogger(__name__)
     logger=logger,
 )
 def setup_activity(app: web.Application):
-
-    # ----------------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    assert_valid_config(app)
-    # ---------------------------------------------
 
     # setup routes ------------
     specs = app[APP_OPENAPI_SPECS_KEY]

@@ -19,7 +19,6 @@ import yaml
 from aiohttp import web
 from aioresponses.core import CallbackResult, aioresponses
 from servicelib.aiohttp.client_session import get_client_session
-from simcore_service_webserver.director.config import DirectorSettings
 from simcore_service_webserver.director.director_api import (
     get_running_interactive_services,
     get_service_by_key_version,
@@ -27,6 +26,7 @@ from simcore_service_webserver.director.director_api import (
     stop_services,
 )
 from simcore_service_webserver.director.module_setup import setup_director
+from simcore_service_webserver.director.settings import DirectorSettings
 from yarl import URL
 
 
@@ -310,12 +310,15 @@ def app_mock():
 
     # mocks loading config
     settings = DirectorSettings()
-    app[director_config.APP_CONFIG_KEY] = {
-        director_config.CONFIG_SECTION_NAME: json.loads(
-            settings.json(exclude={"url"}, by_alias=True)
-        )
-    }
 
+    app[director_config.APP_CONFIG_KEY] = {
+        director_config.CONFIG_SECTION_NAME: {
+            "host": settings.DIRECTOR_HOST,
+            "port": settings.DIRECTOR_PORT,
+            "version": settings.DIRECTOR_VTAG,
+            "enabled": True,
+        }
+    }
     assert setup_director(app, disable_routes=True)
 
     return app

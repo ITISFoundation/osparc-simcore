@@ -6,9 +6,9 @@ from models_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
 from pydantic import Field, PositiveInt
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings
-from settings_library.logging_utils import MixinLoggingSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.tracing import TracingSettings
+from settings_library.utils_logging import MixinLoggingSettings
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +37,13 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
         description="Enables development features. WARNING: make sure it is disabled in production .env file!",
     )
 
-    CATALOG_POSTGRES: Optional[PostgresSettings]
+    CATALOG_POSTGRES: Optional[PostgresSettings] = Field(auto_default_from_env=True)
 
-    CATALOG_CLIENT_REQUEST: Optional[ClientRequestSettings]
+    CATALOG_CLIENT_REQUEST: Optional[ClientRequestSettings] = Field(
+        auto_default_from_env=True
+    )
 
-    CATALOG_DIRECTOR: Optional[DirectorSettings]
+    CATALOG_DIRECTOR: Optional[DirectorSettings] = Field(auto_default_from_env=True)
 
     # BACKGROUND TASK
     CATALOG_BACKGROUND_TASK_REST_TIME: PositiveInt = 60

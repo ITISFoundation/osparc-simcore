@@ -4,9 +4,9 @@ import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List
 from uuid import uuid4
-from faker import Faker
 
 import pytest
+from faker import Faker
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )

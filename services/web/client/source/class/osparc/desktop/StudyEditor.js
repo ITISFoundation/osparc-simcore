@@ -77,6 +77,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     this._add(viewsStack, {
       flex: 1
     });
+
+    this.__updatingStudy = 0;
   },
 
   events: {
@@ -114,6 +116,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __slideshowView: null,
     __autoSaveTimer: null,
     __lastSavedStudy: null,
+    __updatingStudy: null,
+    __updateThrottled: null,
 
     setStudyData: function(studyData) {
       return new Promise((resolve, reject) => {
@@ -158,6 +162,9 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       study.buildWorkbench();
       study.openStudy()
         .then(() => {
+          this.__workbenchView.setStudy(study);
+          this.__slideshowView.setStudy(study);
+
           study.initStudy();
 
           osparc.data.Resources.get("organizations")
@@ -232,23 +239,32 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         })
         .finally(() => this._hideLoadingPage());
 
-      this.__workbenchView.setStudy(study);
-      this.__slideshowView.setStudy(study);
+      this.__updatingStudy = 0;
     },
 
     __reloadSnapshotsAndIterations: function() {
-      const store = osparc.store.Store.getInstance();
-      store.invalidate("snapshots");
-      store.invalidate("iterations");
+      osparc.utils.DisabledPlugins.isVersionControlDisabled()
+        .then(isVCDisabled => {
+          if (!isVCDisabled) {
+            const store = osparc.store.Store.getInstance();
+            store.invalidate("snapshots");
+            store.invalidate("iterations");
 
-      const study = this.getStudy();
-      study.getSnapshots()
-        .then(snapshots => {
-          store.setSnapshots(snapshots);
-          if (snapshots.length) {
-            study.getIterations()
-              .then(iterations => {
-                store.setIterations(iterations);
+            const study = this.getStudy();
+            study.getSnapshots()
+              .then(snapshots => {
+                store.setSnapshots(snapshots);
+                if (snapshots.length) {
+                  osparc.utils.DisabledPlugins.isMetaModelingDisabled()
+                    .then(isMMDisabled => {
+                      if (!isMMDisabled) {
+                        study.getIterations()
+                          .then(iterations => {
+                            store.setIterations(iterations);
+                          });
+                      }
+                    });
+                }
               });
           }
         });
@@ -509,7 +525,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
 
     __startAutoSaveTimer: function() {
-      const diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
       // Save every 3 seconds
       const interval = 3000;
       let timer = this.__autoSaveTimer = new qx.event.Timer(interval);
@@ -517,26 +532,38 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
           return;
         }
-        const newObj = this.getStudy().serialize();
-        const delta = diffPatcher.diff(this.__lastSavedStudy, newObj);
-        if (delta) {
-          let deltaKeys = Object.keys(delta);
-          // lastChangeDate and creationDate should not be taken into account as data change
-          [
-            "creationDate",
-            "lastChangeDate"
-          ].forEach(prop => {
-            const index = deltaKeys.indexOf(prop);
-            if (index > -1) {
-              deltaKeys.splice(index, 1);
-            }
-          });
-          if (deltaKeys.length > 0) {
+        this.__checkStudyChanges();
+      }, this);
+      timer.start();
+    },
+
+    __checkStudyChanges: function() {
+      const newObj = this.getStudy().serialize();
+      const diffPatcher = osparc.wrapper.JsonDiffPatch.getInstance();
+      const delta = diffPatcher.diff(this.__lastSavedStudy, newObj);
+      if (delta) {
+        let deltaKeys = Object.keys(delta);
+        // lastChangeDate and creationDate should not be taken into account as data change
+        [
+          "creationDate",
+          "lastChangeDate"
+        ].forEach(prop => {
+          const index = deltaKeys.indexOf(prop);
+          if (index > -1) {
+            deltaKeys.splice(index, 1);
+          }
+        });
+
+        if (deltaKeys.length > 0) {
+          if (this.__updatingStudy > 0) {
+            // throttle update
+            console.log("throttle update");
+            this.__updateThrottled = true;
+          } else {
             this.updateStudyDocument(false);
           }
         }
-      }, this);
-      timer.start();
+      }
     },
 
     __stopAutoSaveTimer: function() {
@@ -556,17 +583,30 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         });
       }
 
+      this.__updatingStudy++;
       const newObj = this.getStudy().serialize();
       return this.getStudy().updateStudy(newObj, run)
-        .then(data => {
+        .then(() => {
           this.__lastSavedStudy = osparc.wrapper.JsonDiffPatch.getInstance().clone(newObj);
         })
         .catch(error => {
-          console.error(error);
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Error saving the study"), "ERROR");
+          if ("status" in error && error.status === 409) {
+            osparc.component.message.FlashMessenger.getInstance().logAs(error.message, "ERROR");
+          } else {
+            console.error(error);
+            osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Error saving the study"), "ERROR");
+          }
           this.__getStudyLogger().error(null, "Error updating pipeline");
           // Need to throw the error to be able to handle it later
           throw error;
+        })
+        .finally(() => {
+          this.__updatingStudy--;
+          if (this.__updateThrottled && this.__updatingStudy === 0) {
+            console.log("throttle update done");
+            this.__updateThrottled = false;
+            this.updateStudyDocument(false);
+          }
         });
     },
 

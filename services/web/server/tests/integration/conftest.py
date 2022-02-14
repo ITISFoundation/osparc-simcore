@@ -27,7 +27,8 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
 from pytest_simcore.helpers.utils_docker import get_service_published_port
 from pytest_simcore.helpers.utils_login import NewUser
-from simcore_service_webserver.application_config import app_schema
+from simcore_service_webserver._resources import resources as app_resources
+from simcore_service_webserver.application__schema import app_schema
 from simcore_service_webserver.cli import create_environ
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
@@ -35,7 +36,6 @@ from simcore_service_webserver.groups_api import (
     delete_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.resources import resources as app_resources
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 

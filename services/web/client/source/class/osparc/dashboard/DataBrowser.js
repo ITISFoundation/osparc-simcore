@@ -87,7 +87,8 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
     },
 
     // overridden
-    _initResources: function() {
+    initResources: function() {
+      this._hideLoadingPage();
       this.__buildLayout();
 
       this.addListener("appear", () => {
@@ -160,7 +161,7 @@ qx.Class.define("osparc.dashboard.DataBrowser", {
     },
 
     __selectionChanged: function(selectedItem) {
-      this.__selectedFileLayout.itemSelected(selectedItem);
+      this.__selectedFileLayout.setItemSelected(selectedItem);
     }
   }
 });

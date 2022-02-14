@@ -2,8 +2,9 @@
 
 import asyncio
 import json
+import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set
 
 import aiodocker
 import httpx
@@ -28,8 +29,40 @@ SERVICES_ARE_READY_TIMEOUT = 2 * 60
 SEPARATOR = "=" * 50
 
 
+class _VolumeNotExpectedError(Exception):
+    def __init__(self, volume_name: str) -> None:
+        super().__init__(f"Volume {volume_name} should have been removed")
+
+
+log = logging.getLogger(__name__)
+
+
 def is_legacy(node_data: Node) -> bool:
     return node_data.label == "LEGACY"
+
+
+async def ensure_volume_cleanup(
+    docker_client: aiodocker.Docker, node_uuid: str
+) -> None:
+    async def _get_volume_names() -> Set[str]:
+        volumes_list = await docker_client.volumes.list()
+        volume_names: Set[str] = {x["Name"] for x in volumes_list["Volumes"]}
+        return volume_names
+
+    for volume_name in await _get_volume_names():
+        if volume_name.startswith(f"dy-sidecar_{node_uuid}"):
+            # docker volume results to be in use and it takes a bit to remove
+            # it once done with it
+            async for attempt in AsyncRetrying(
+                reraise=False,
+                stop=stop_after_attempt(15),
+                wait=wait_fixed(5),
+            ):
+                with attempt:
+                    # if volume is still found raise an exception
+                    # by the time this finishes all volumes should have been removed
+                    if volume_name in await _get_volume_names():
+                        raise _VolumeNotExpectedError(volume_name)
 
 
 async def ensure_network_cleanup(
@@ -151,7 +184,7 @@ async def assert_start_service(
     }
 
     result = await director_v2_client.post(
-        "/v2/dynamic_services", json=data, headers=headers, allow_redirects=True
+        "/v2/dynamic_services", json=data, headers=headers, follow_redirects=True
     )
     assert result.status_code == httpx.codes.CREATED, result.text
 
@@ -164,7 +197,7 @@ async def get_service_data(
 
     # result =
     response = await director_v2_client.get(
-        f"/v2/dynamic_services/{service_uuid}", allow_redirects=False
+        f"/v2/dynamic_services/{service_uuid}", follow_redirects=False
     )
     if response.status_code == httpx.codes.TEMPORARY_REDIRECT:
         # NOTE: so we have a redirect, and it seems the director_v2_client does not like it at all
@@ -230,7 +263,7 @@ async def assert_retrieve_service(
         f"/v2/dynamic_services/{service_uuid}:retrieve",
         json=dict(port_keys=[]),
         headers=headers,
-        allow_redirects=True,
+        follow_redirects=True,
     )
     assert result.status_code == httpx.codes.OK, result.text
     json_result = result.json()
@@ -245,7 +278,7 @@ async def assert_stop_service(
     director_v2_client: httpx.AsyncClient, service_uuid: str
 ) -> None:
     result = await director_v2_client.delete(
-        f"/v2/dynamic_services/{service_uuid}", allow_redirects=True
+        f"/v2/dynamic_services/{service_uuid}", follow_redirects=True
     )
     assert result.status_code == httpx.codes.NO_CONTENT
     assert result.text == ""
@@ -286,7 +319,7 @@ async def _inspect_service_and_print_logs(
         print(f"{formatted_logs}\n{SEPARATOR} - {tag}")
 
 
-def _run_command(command: str) -> str:
+def run_command(command: str) -> str:
     # using asyncio.create_subprocess_shell is slower
     # and sometimes ir randomly hangs forever
 
@@ -306,11 +339,11 @@ async def _port_forward_legacy_service(  # pylint: disable=redefined-outer-name
 
     # Legacy services are started --endpoint-mode dnsrr, it needs to
     # be changed to vip otherwise the port forward will not work
-    result = _run_command(f"docker service update {service_name} --endpoint-mode=vip")
+    result = run_command(f"docker service update {service_name} --endpoint-mode=vip")
     assert "verify: Service converged" in result
 
     # Finally forward the port on a random assigned port.
-    result = _run_command(
+    result = run_command(
         f"docker service update {service_name} --publish-add :{internal_port}"
     )
     assert "verify: Service converged" in result
@@ -396,3 +429,10 @@ async def assert_services_reply_200(
                 service_name=service_data["service_host"],
                 is_legacy=is_legacy(node_data),
             )
+
+
+async def sleep_for(interval: PositiveInt, reason: str) -> None:
+    assert interval > 0
+    for i in range(1, interval + 1):
+        await asyncio.sleep(1)
+        print(f"[{i}/{interval}]Sleeping: {reason}")

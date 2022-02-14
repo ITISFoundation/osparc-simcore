@@ -12,8 +12,9 @@ from servicelib.aiohttp.rest_routing import (
     map_handlers_with_operations,
 )
 
-from ..constants import APP_OPENAPI_SPECS_KEY
-from .config import APP_DIRECTOR_API_KEY, assert_valid_config
+from .._constants import APP_OPENAPI_SPECS_KEY
+from .config import APP_DIRECTOR_API_KEY
+from .settings import assert_valid_config
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ def setup_director(
     # ---------------------------------------------
 
     # director service API base url, e.g. http://director:8081/v0
-    app[APP_DIRECTOR_API_KEY] = str(settings.url)
+    app[APP_DIRECTOR_API_KEY] = str(settings.base_url)
 
     # setup routes ------------
     if not disable_routes:

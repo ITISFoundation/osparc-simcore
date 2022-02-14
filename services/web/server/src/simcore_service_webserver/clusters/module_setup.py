@@ -15,8 +15,7 @@ from servicelib.aiohttp.application_setup import (
     app_module_setup,
 )
 
-from ..constants import APP_SETTINGS_KEY
-from ..settings import ApplicationSettings
+from .._constants import APP_SETTINGS_KEY
 from . import handlers
 
 log = logging.getLogger(__file__)
@@ -29,9 +28,10 @@ log = logging.getLogger(__file__)
     logger=log,
 )
 def setup_clusters(app: web.Application):
-    settings: ApplicationSettings = app[APP_SETTINGS_KEY]
-    if not settings.WEBSERVER_DEV_FEATURES_ENABLED:
-        raise SkipModuleSetup(reason="Development feature")
+    if not app[APP_SETTINGS_KEY].WEBSERVER_CLUSTERS:
+        raise SkipModuleSetup(
+            reason="{__name__} plugin was explictly disabled in the app settings"
+        )
 
     app.add_routes(handlers.routes)
 

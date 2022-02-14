@@ -10,11 +10,11 @@ aiohttp==3.8.1
     #   -r requirements/_test.in
 aiosignal==1.2.0
     # via aiohttp
-anyio==3.4.0
+anyio==3.5.0
     # via httpcore
-async-timeout==4.0.1
+async-timeout==4.0.2
     # via aiohttp
-attrs==21.2.0
+attrs==21.4.0
     # via
     #   aiohttp
     #   jsonschema
@@ -24,26 +24,26 @@ certifi==2021.10.8
     #   httpcore
     #   httpx
     #   requests
-charset-normalizer==2.0.8
+charset-normalizer==2.0.11
     # via
     #   aiohttp
     #   httpx
     #   requests
-coverage==6.1.2
+coverage==6.3.1
     # via pytest-cov
 docker==5.0.3
     # via -r requirements/_test.in
-faker==9.8.3
+faker==12.1.0
     # via -r requirements/_test.in
-frozenlist==1.2.0
+frozenlist==1.3.0
     # via
     #   aiohttp
     #   aiosignal
 h11==0.12.0
     # via httpcore
-httpcore==0.14.3
+httpcore==0.14.7
     # via httpx
-httpx==0.21.1
+httpx==0.22.0
     # via -r requirements/_test.in
 idna==3.3
     # via
@@ -57,9 +57,9 @@ importlib-resources==5.4.0 ; python_version < "3.9"
     #   jsonschema
 iniconfig==1.1.1
     # via pytest
-jsonschema==4.2.1
+jsonschema==4.4.0
     # via -r requirements/_test.in
-multidict==5.2.0
+multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
@@ -69,16 +69,16 @@ pluggy==1.0.0
     # via pytest
 py==1.11.0
     # via pytest
-pyparsing==3.0.6
+pyparsing==3.0.7
     # via packaging
-pyrsistent==0.18.0
+pyrsistent==0.18.1
     # via jsonschema
-pytest==6.2.5
+pytest==7.0.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
-pytest-asyncio==0.16.0
+pytest-asyncio==0.18.0
     # via -r requirements/_test.in
 pytest-cov==3.0.0
     # via -r requirements/_test.in
@@ -90,7 +90,7 @@ pyyaml==6.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_test.in
-requests==2.26.0
+requests==2.27.1
     # via docker
 rfc3986==1.5.0
     # via httpx
@@ -103,21 +103,18 @@ sniffio==1.2.0
     #   httpx
 tenacity==8.0.1
     # via -r requirements/_test.in
-text-unidecode==1.3
-    # via faker
-toml==0.10.2
-    # via pytest
-tomli==1.2.2
-    # via coverage
-typing-extensions==4.0.0
-    # via async-timeout
-urllib3==1.26.7
+tomli==1.2.3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   coverage
+    #   pytest
+urllib3==1.26.8
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-websocket-client==1.2.1
+websocket-client==1.2.3
     # via docker
 yarl==1.7.2
     # via aiohttp
-zipp==3.6.0
+zipp==3.7.0
     # via importlib-resources

@@ -1,6 +1,5 @@
 # pylint: disable=unsubscriptable-object
 
-
 import json
 from enum import Enum
 from functools import cached_property
@@ -97,12 +96,18 @@ class PathMappingsLabel(BaseModel):
         description="optional list of paths which contents need to be persisted",
     )
 
+    state_exclude: Optional[List[str]] = Field(
+        None,
+        description="optional list unix shell rules used to exclude files from the state",
+    )
+
     class Config(_BaseConfig):
         schema_extra = {
             "example": {
                 "outputs_path": "/tmp/outputs",  # nosec
                 "inputs_path": "/tmp/inputs",  # nosec
                 "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # nosec
+                "state_exclude": ["/tmp/strip_me/*", "*.py"],  # nosec
             }
         }
 

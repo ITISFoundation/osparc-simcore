@@ -26,8 +26,8 @@ from .helpers import (
     FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
 )
 from .helpers.constants import HEADER_STR
+from .helpers.typing_env import EnvVarsDict
 from .helpers.utils_docker import get_ip, run_docker_compose_config, save_docker_infos
-from .helpers.utils_environs import EnvVarsDict
 
 
 @pytest.fixture(scope="session")

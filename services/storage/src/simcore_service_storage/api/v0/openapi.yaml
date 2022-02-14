@@ -1129,6 +1129,13 @@ components:
                         - ABORTED
                       type: string
                   additionalProperties: false
+                bootOptions:
+                  title: Boot Options
+                  description: 'Some services provide alternative parameters to be injected at boot time. The user selection should be stored here, and it will overwrite the services''s defaults.'
+                  type: object
+                  patternProperties:
+                    '[a-zA-Z][a-azA-Z0-9_]*':
+                      type: string
           additionalProperties: true
         ui:
           type: object

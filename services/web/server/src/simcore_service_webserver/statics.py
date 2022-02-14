@@ -13,18 +13,20 @@ from typing import Dict
 from aiohttp import web
 from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientError
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.aiohttp.client_session import get_client_session
-from tenacity import (
-    AsyncRetrying,
-    before_log,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_fixed,
+from servicelib.aiohttp.application_setup import (
+    ModuleCategory,
+    SkipModuleSetup,
+    app_module_setup,
 )
+from servicelib.aiohttp.client_session import get_client_session
+from tenacity._asyncio import AsyncRetrying
+from tenacity.before import before_log
+from tenacity.retry import retry_if_exception_type
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_fixed
 from yarl import URL
 
-from .constants import (
+from ._constants import (
     APP_SETTINGS_KEY,
     INDEX_RESOURCE_NAME,
     RQ_PRODUCT_FRONTEND_KEY,
@@ -90,16 +92,15 @@ async def _assemble_cached_indexes(app: web.Application):
     session: ClientSession = get_client_session(app)
 
     for frontend_name in FRONTEND_APPS_AVAILABLE:
-        url = URL(settings.static_web_server_url) / frontend_name
+        url = URL(settings.STATIC_WEBSERVER_URL) / frontend_name
         log.info("Fetching index from %s", url)
-
         try:
+            body = ""
             # web-static server might still not be up
             async for attempt in AsyncRetrying(**RETRY_ON_STARTUP_POLICY):
                 with attempt:
                     response = await session.get(url, raise_for_status=True)
-
-            body = await response.text()
+                    body = await response.text()
 
         except ClientError as err:
             log.error("Could not fetch index from static server: %s", err)
@@ -108,13 +109,15 @@ async def _assemble_cached_indexes(app: web.Application):
             raise RuntimeError(
                 f"Could not fetch index at {str(url)}. Stopping application boot"
             ) from err
+        else:
+            # fixes relative paths
+            body = body.replace(
+                f"../resource/{frontend_name}", f"resource/{frontend_name}"
+            )
+            body = body.replace("boot.js", f"{frontend_name}/boot.js")
 
-        # fixes relative paths
-        body = body.replace(f"../resource/{frontend_name}", f"resource/{frontend_name}")
-        body = body.replace("boot.js", f"{frontend_name}/boot.js")
-
-        log.info("Storing index for %s", url)
-        cached_indexes[frontend_name] = body
+            log.info("Storing index for %s", url)
+            cached_indexes[frontend_name] = body
 
     app[APP_FRONTEND_CACHED_INDEXES_KEY] = cached_indexes
 
@@ -183,9 +186,11 @@ async def get_statics_json(request: web.Request):  # pylint: disable=unused-argu
 @app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
 def setup_statics(app: web.Application) -> None:
     settings: StaticWebserverModuleSettings = assemble_settings(app)
-    if not settings.enabled:
-        log.warning("Static webserver module is disabled")
-        return
+
+    if not settings.STATIC_WEBSERVER_ENABLED:
+        raise SkipModuleSetup(
+            reason="static-webserver module was disabled in configuration"
+        )
 
     # serves information composed by making 3 http requests (once for each product)
     # to the index.html in each of the 3 product directories /osparc, /tis and /s4l

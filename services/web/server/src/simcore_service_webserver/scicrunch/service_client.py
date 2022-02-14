@@ -13,7 +13,6 @@ from pydantic import ValidationError
 from servicelib.aiohttp.client_session import get_client_session
 from yarl import URL
 
-from ._config import SciCrunchSettings
 from ._resolver import ResolvedItem, resolve_rrid
 from ._rest import ResourceHit, autocomplete_by_name, get_resource_fields
 from .errors import (
@@ -24,6 +23,7 @@ from .errors import (
     map_to_scicrunch_error,
 )
 from .models import ResearchResource, normalize_rrid_tags
+from .settings import SciCrunchSettings
 
 logger = logging.getLogger(__name__)
 

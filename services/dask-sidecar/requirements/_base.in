@@ -22,6 +22,7 @@ aiofiles
 aiohttp
 requests
 dask[complete]
+dask-gateway
 pydantic[email,dotenv]
 
 # compression

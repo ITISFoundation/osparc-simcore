@@ -26,8 +26,9 @@
  * - Main Stack
  *   - Dashboard Stack
  *     - StudyBrowser
+ *     - TemplateBrowser
+ *     - ServiceBrowser
  *     - DataManager
- *     - ExploreBrowser
  *   - StudyEditor
  *
  * <pre class='javascript'>
@@ -47,12 +48,19 @@ qx.Class.define("osparc.desktop.MainPage", {
     const navBar = this.__navBar = this.__createNavigationBar();
     this._add(navBar);
 
-    const mainStack = this.__mainStack = this.__createMainStack();
-    this._add(mainStack, {
-      flex: 1
-    });
+    // Some resources request before building the main stack
+    const store = osparc.store.Store.getInstance();
+    Promise.all([
+      store.getAllClassifiers(true),
+      store.getTags()
+    ]).then(() => {
+      const mainStack = this.__mainStack = this.__createMainStack();
+      this._add(mainStack, {
+        flex: 1
+      });
 
-    this.__attachHandlers();
+      this.__attachHandlers();
+    });
   },
 
   members: {
@@ -104,12 +112,12 @@ qx.Class.define("osparc.desktop.MainPage", {
       const dashboardBtn = this.__navBar.getChildControl("dashboard-button");
       dashboardBtn.setFetching(true);
       const studyId = this.__studyEditor.getStudy().getUuid();
-      this.__studyEditor.updateStudyDocument()
+      this.__studyEditor.updateStudyDocument(false)
         .then(() => {
           this.__studyEditor.closeEditor();
           this.__showDashboard();
           this.__dashboard.getStudyBrowser().invalidateStudies();
-          this.__dashboard.getStudyBrowser().reloadStudies();
+          this.__dashboard.getStudyBrowser().reloadResources();
           this.__dashboard.getStudyBrowser().resetSelection();
           this.__dashboard.getStudyBrowser().reloadStudy(studyId)
             .then(() => {
@@ -140,16 +148,17 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __createDashboardStack: function() {
       const dashboard = this.__dashboard = new osparc.dashboard.Dashboard();
+      const tabsBar = dashboard.getChildControl("bar");
+      tabsBar.set({
+        paddingBottom: 8
+      });
+      this.__navBar.addDashboardTabButtons(tabsBar);
       const minNStudyItemsPerRow = 5;
       const itemWidth = osparc.dashboard.GridButtonBase.ITEM_WIDTH + osparc.dashboard.GridButtonBase.SPACING;
       dashboard.setMinWidth(minNStudyItemsPerRow * itemWidth + 8);
-      const sideSearch = new osparc.dashboard.SideSearch().set({
-        maxWidth: 330,
-        minWidth: 220
-      });
       const fitResourceCards = () => {
         const w = document.documentElement.clientWidth;
-        const nStudies = Math.floor((w - 2*sideSearch.getSizeHint().width - 8) / itemWidth);
+        const nStudies = Math.floor((w - 2*260 - 8) / itemWidth);
         const newWidth = nStudies * itemWidth + 8;
         if (newWidth > dashboard.getMinWidth()) {
           dashboard.setWidth(newWidth);
@@ -159,14 +168,8 @@ qx.Class.define("osparc.desktop.MainPage", {
       };
       fitResourceCards();
       window.addEventListener("resize", () => fitResourceCards());
-      dashboard.bind("selection", sideSearch, "visibility", {
-        converter: value => {
-          const tabIndex = dashboard.getChildren().indexOf(value[0]);
-          return [0, 1].includes(tabIndex) ? "visible" : "hidden";
-        }
-      });
       const dashboardLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      dashboardLayout.add(sideSearch, {
+      dashboardLayout.add(new qx.ui.core.Widget(), {
         flex: 1
       });
       dashboardLayout.add(dashboard);
@@ -178,10 +181,12 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     __attachHandlers: function() {
       const studyBrowser = this.__dashboard.getStudyBrowser();
-      const exploreBrowser = this.__dashboard.getExploreBrowser();
+      const templateBrowser = this.__dashboard.getTemplateBrowser();
+      const serviceBrowser = this.__dashboard.getServiceBrowser();
       [
         studyBrowser,
-        exploreBrowser
+        templateBrowser,
+        serviceBrowser
       ].forEach(browser => {
         browser.addListener("startStudy", e => {
           const startStudyData = e.getData();
@@ -189,9 +194,7 @@ qx.Class.define("osparc.desktop.MainPage", {
         }, this);
       });
 
-      studyBrowser.addListener("updateTemplates", () => {
-        exploreBrowser.reloadStudies();
-      }, this);
+      studyBrowser.addListener("updateTemplates", () => templateBrowser.reloadResources(), this);
     },
 
     __showDashboard: function() {
