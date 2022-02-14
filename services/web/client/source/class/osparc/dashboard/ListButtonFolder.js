@@ -55,6 +55,14 @@ qx.Class.define("osparc.dashboard.ListButtonFolder", {
       }
     },
 
+    // overridden
+    _applyLastChangeDate: function(value, old) {
+      if (value) {
+        const label = this.getChildControl("last-change");
+        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+      }
+    },
+
     _onToggleChange: function(e) {
       this.setValue(false);
     },

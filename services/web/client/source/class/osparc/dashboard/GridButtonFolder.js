@@ -69,6 +69,14 @@ qx.Class.define("osparc.dashboard.GridButtonFolder", {
       image.setSource(imgSrc);
     },
 
+    // overridden
+    _applyLastChangeDate: function(value, old) {
+      if (value) {
+        const label = this.getChildControl("subtitle-text");
+        label.setValue(osparc.utils.Utils.formatDateAndTime(value));
+      }
+    },
+
     _onToggleChange: function(e) {
       this.setValue(false);
     },
