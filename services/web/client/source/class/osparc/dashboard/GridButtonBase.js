@@ -51,6 +51,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
   statics: {
     ITEM_WIDTH: 190,
     ITEM_HEIGHT: 220,
+    ICON_SIZE: 50,
     PADDING: 10,
     V_SPACING: 6,
     SPACING: 15,
@@ -129,7 +130,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     // overridden
     _applyIcon: function(value, old) {
       if (value.includes("@FontAwesome5Solid/")) {
-        value += "50";
+        value += this.self().ICON_SIZE;
       }
       const image = this.getChildControl("icon").getChildControl("image");
       image.set({

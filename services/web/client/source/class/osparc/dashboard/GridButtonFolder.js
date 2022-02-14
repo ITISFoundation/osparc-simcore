@@ -33,6 +33,10 @@ qx.Class.define("osparc.dashboard.GridButtonFolder", {
     }
   },
 
+  statics: {
+    ICON_SIZE: 100
+  },
+
   members: {
     __buildLayout: function() {
       const title = this.getChildControl("title");
@@ -54,6 +58,16 @@ qx.Class.define("osparc.dashboard.GridButtonFolder", {
         const icon = this.getChildControl("icon").getChildControl("image");
         icon.setTextColor(foundTag.color);
       }
+    },
+
+    // overridden
+    _applyIcon: function(value) {
+      this.base(arguments, value);
+
+      const image = this.getChildControl("icon").getChildControl("image");
+      let imgSrc = image.getSource();
+      imgSrc = imgSrc.replace("/"+osparc.dashboard.GridButtonBase.ICON_SIZE, "/"+this.self().ICON_SIZE);
+      image.setSource(imgSrc);
     },
 
     _onToggleChange: function(e) {
