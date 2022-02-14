@@ -124,7 +124,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True, description="login plugin"
     )
     WEBSERVER_REDIS: Optional[RedisSettings] = Field(auto_default_from_env=True)
-    WEBSERVER_RESOURCE_MANAGER: Optional[ResourceManagerSettings] = Field(
+    WEBSERVER_RESOURCE_MANAGER: ResourceManagerSettings = Field(
         auto_default_from_env=True, description="resource_manager plugin"
     )
     WEBSERVER_S3: Optional[S3Settings] = Field(auto_default_from_env=True)
