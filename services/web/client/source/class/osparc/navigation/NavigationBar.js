@@ -62,7 +62,6 @@ qx.Class.define("osparc.navigation.NavigationBar", {
   },
 
   events: {
-    "dashboardPressed": "qx.event.type.Event",
     "backToDashboardPressed": "qx.event.type.Event"
   },
 
