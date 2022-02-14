@@ -169,12 +169,12 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       textField.addListener("deactivate", () => this.__hideFilterMenu(), this);
       textField.addListener("keypress", e => {
         if (e.getKeyIdentifier() === "Enter") {
-          this.__filter();
+          this.filter();
         } else {
           this.__hideFilterMenu();
         }
       }, this);
-      textField.addListener("changeValue", () => this.__filter(), this);
+      textField.addListener("changeValue", () => this.filter(), this);
 
       const resetButton = this.getChildControl("reset-button");
       resetButton.addListener("execute", () => this.__resetFilters(), this);
@@ -269,7 +269,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         chip.exclude();
         this.setCurrentFolder(id);
       }
-      this.__filter();
+      this.filter();
     },
 
     __removeChip: function(type, id) {
@@ -277,7 +277,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const chipFound = activeFilter.getChildren().find(chip => chip.type === type && chip.id === id);
       if (chipFound) {
         activeFilter.remove(chipFound);
-        this.__filter();
+        this.filter();
       }
     },
 
@@ -286,17 +286,17 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const chipFound = activeFilter.getChildren().find(chip => chip.type === "tag");
       if (chipFound) {
         activeFilter.remove(chipFound);
-        this.__filter();
+        this.filter();
       }
     },
 
     __resetFilters: function() {
       this.getChildControl("active-filters").removeAll();
       this.getChildControl("text-field").resetValue();
-      this.__filter();
+      this.filter();
     },
 
-    __filter: function() {
+    filter: function() {
       const filterData = {
         tags: [],
         classifiers: [],
