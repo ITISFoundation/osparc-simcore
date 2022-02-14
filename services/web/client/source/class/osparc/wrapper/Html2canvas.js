@@ -33,7 +33,7 @@ qx.Class.define("osparc.wrapper.Html2canvas", {
 
   statics: {
     NAME: "html2canvas",
-    VERSION: "1.1.4",
+    VERSION: "1.4.1",
     URL: "https://github.com/niklasvh/html2canvas"
   },
 
