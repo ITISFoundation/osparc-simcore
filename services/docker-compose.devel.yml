@@ -70,6 +70,10 @@ services:
       - WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS=15
       - WEBSERVER_LOGLEVEL=${LOG_LEVEL:-DEBUG}
 
+  webserver-garbage-collector:
+    volumes: *webserver-volumes
+    environment: *webserver-environment
+
   dask-sidecar:
     volumes:
       &dev-dask-sidecar-volumes
