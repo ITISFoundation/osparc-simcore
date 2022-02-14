@@ -7,6 +7,7 @@ import socket
 from dataclasses import dataclass, field
 from typing import Awaitable, Callable, Dict, List, Optional, Tuple, Union
 
+import dask
 import dask.distributed
 import dask_gateway
 import distributed
@@ -350,8 +351,7 @@ class DaskClient:
                 user_id, project_id, node_id
             )
             try:
-                task_future = self.dask_subsystem.client.submit(
-                    remote_fct,
+                dask_delayed_fct = dask.delayed(remote_fct, name=job_id, pure=False)(
                     docker_auth=DockerBasicAuth(
                         server_address=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.resolved_registry_url,
                         username=self.app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY.REGISTRY_USER,
@@ -363,10 +363,18 @@ class DaskClient:
                     output_data_keys=output_data_keys,
                     log_file_url=log_file_url,
                     command=["run"],
-                    key=job_id,
+                    dask_key_name=job_id,
+                )
+                task_future = self.dask_subsystem.client.compute(
+                    dask_delayed_fct,
                     resources=dask_resources,
                     retries=0,
                 )
+                # this persists the future in the cluster
+                await self.dask_subsystem.client.publish_dataset(
+                    task_future, name=job_id
+                )
+
                 task_future.add_done_callback(
                     functools.partial(
                         done_dask_callback,
@@ -378,9 +386,9 @@ class DaskClient:
 
                 self._taskid_to_future_map[job_id] = task_future
                 list_of_node_id_to_job_id.append((node_id, job_id))
-                dask.distributed.fire_and_forget(
-                    task_future
-                )  # this should ensure the task will run even if the future goes out of scope
+                # dask.distributed.fire_and_forget(
+                #     task_future
+                # )  # this should ensure the task will run even if the future goes out of scope
                 logger.debug("Dask task %s started", task_future.key)
             except Exception:
                 # Dask raises a base Exception here in case of connection error, this will raise a more precise one
