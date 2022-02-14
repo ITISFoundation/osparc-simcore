@@ -4,9 +4,9 @@
 #
 #    pip-compile --output-file=requirements/_fastapi.txt --strip-extras requirements/_fastapi.in
 #
-anyio==3.3.4
+anyio==3.5.0
     # via starlette
-fastapi==0.71.0
+fastapi==0.73.0
     # via
     #   -r requirements/_fastapi.in
     #   fastapi-contrib
@@ -41,5 +41,5 @@ tornado==6.1
     # via
     #   jaeger-client
     #   threadloop
-typing-extensions==4.0.0
+typing-extensions==4.0.1
     # via pydantic

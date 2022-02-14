@@ -67,7 +67,7 @@ chardet==4.0.0
     #   requests
 charset-normalizer==2.0.10
     # via httpx
-click==7.1.2
+click==8.0.3
     # via
     #   typer
     #   uvicorn

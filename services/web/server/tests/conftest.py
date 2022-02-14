@@ -12,7 +12,7 @@ import pytest
 import simcore_service_webserver
 from pytest_simcore.helpers.utils_login import AUserDict, LoggedUser
 from servicelib.json_serialization import json_dumps
-from simcore_service_webserver.application_settings import convert_to_environ_vars
+from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db_models import UserRole
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
