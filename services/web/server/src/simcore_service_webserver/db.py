@@ -95,11 +95,6 @@ def get_engine_state(app: web.Application) -> Dict[str, Any]:
 
 @app_module_setup(__name__, ModuleCategory.ADDON, logger=log)
 def setup_db(app: web.Application):
-    # ----------------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    # assert_valid_config(app)
-    # ---------------------------------------------
 
     # ensures keys exist
     app[APP_DB_ENGINE_KEY] = None

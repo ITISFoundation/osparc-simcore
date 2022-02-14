@@ -29,12 +29,6 @@ logger = logging.getLogger(__name__)
 def setup_resource_manager(app: web.Application) -> bool:
     """Sets up resource manager subsystem in the application"""
 
-    # ----------------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    # assert_valid_config(app)
-    # ---------------------------------------------
-
     app[APP_RESOURCE_MANAGER_TASKS_KEY] = []
     try:
         setup_redis(app)

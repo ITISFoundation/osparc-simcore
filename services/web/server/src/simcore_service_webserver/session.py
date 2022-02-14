@@ -51,11 +51,6 @@ def setup_session(app: web.Application):
     while len(secret_key_bytes) < 32:
         secret_key_bytes += secret_key_bytes
 
-    # -------------------------------
-    # TODO: currently cfg and settings in place until former is dropped
-    # assert_valid_config(secret_key_bytes.decode("utf-8"))  # nosec
-    # -------------------------------
-
     # EncryptedCookieStorage urlsafe_b64decode inside if passes bytes
     storage = EncryptedCookieStorage(
         secret_key=secret_key_bytes[:32], cookie_name="osparc.WEBAPI_SESSION"
