@@ -53,6 +53,13 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       check: ["study", "template", "service"],
       init: null,
       nullable: false
+    },
+
+    currentFolder: {
+      check: "Number",
+      init: null,
+      nullable: true,
+      apply: "__applyCurrentFolder"
     }
   },
 
@@ -64,7 +71,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       switch (id) {
         case "home-button": {
           control = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/home/16");
-          control.addListener("execute", () => this.__goHome(), this);
+          control.addListener("execute", () => this.setCurrentFolder(null), this);
           this._add(control);
           break;
         }
@@ -116,7 +123,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     __buildLayout: function() {
       if (this.getResourceType() === "study") {
         this.getChildControl("home-button");
-        this.__goHome();
+        this.setCurrentFolder(null);
       }
       this.getChildControl("search-icon");
       this.getChildControl("active-filters");
@@ -124,20 +131,18 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.getChildControl("reset-button");
     },
 
-    __goHome: function() {
+    __applyCurrentFolder: function(tagId) {
       const currentFolder = this.getChildControl("current-folder-chip");
-      currentFolder.exclude();
+      currentFolder.setVisibility(tagId ? "visible" : "excluded");
 
-      this.__removeTags();
-    },
-
-    __addCurrentFolder: function(tagId) {
-      const currentFolder = this.getChildControl("current-folder-chip");
-      currentFolder.show();
-      const tags = osparc.store.Store.getInstance().getTags();
-      const tagFound = tags.find(tag => tag.id === tagId);
-      if (tagFound) {
-        currentFolder.setValue("/"+tagFound.name);
+      if (tagId) {
+        const tags = osparc.store.Store.getInstance().getTags();
+        const tagFound = tags.find(tag => tag.id === tagId);
+        if (tagFound) {
+          currentFolder.setValue("/"+tagFound.name);
+        }
+      } else {
+        this.__removeTags();
       }
     },
 
@@ -262,7 +267,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       activeFilter.add(chip);
       if (type === "tag") {
         chip.exclude();
-        this.__addCurrentFolder(id);
+        this.setCurrentFolder(id);
       }
       this.__filter();
     },
