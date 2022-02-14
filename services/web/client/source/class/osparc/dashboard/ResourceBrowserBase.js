@@ -76,6 +76,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
   members: {
     _topBar: null,
+    _searchBarFilter: null,
     _secondaryBar: null,
     _resourcesContainer: null,
     _viewGridBtn: null,
@@ -140,7 +141,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         alignY: "middle"
       });
 
-      const searchBarFilter = new osparc.dashboard.SearchBarFilter(resourceType);
+      const searchBarFilter = this._searchBarFilter = new osparc.dashboard.SearchBarFilter(resourceType);
       const textField = searchBarFilter.getChildControl("text-field");
       osparc.utils.Utils.setIdToWidget(textField, resourceType ? "searchBarFilter-textField-"+resourceType : "searchBarFilter-textField");
       topBar.add(searchBarFilter, {
