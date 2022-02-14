@@ -49,8 +49,7 @@ qx.Class.define("osparc.dashboard.GridButtonFolder", {
       const tags = osparc.store.Store.getInstance().getTags();
       const foundTag = tags.find(tag => tag.id === value);
       if (foundTag) {
-        const title = this.getChildControl("title");
-        title.setValue(foundTag.name);
+        this.setTitle(foundTag.name);
 
         const description = this.getChildControl("subtitle-text");
         description.setValue(foundTag.description);
@@ -74,11 +73,32 @@ qx.Class.define("osparc.dashboard.GridButtonFolder", {
       this.setValue(false);
     },
 
+    __filterText: function(text) {
+      const checks = [
+        this.getTitle()
+      ];
+      return osparc.dashboard.CardBase.filterText(checks, text);
+    },
+
     _shouldApplyFilter: function(data) {
+      const filterData = data["searchBarFilter-study"];
+      if (this.__filterText(filterData.text)) {
+        return true;
+      }
+      if (filterData.classifiers && filterData.classifiers.length) {
+        return true;
+      }
       return false;
     },
 
     _shouldReactToFilter: function(data) {
+      const filterData = data["searchBarFilter-study"];
+      if (filterData.text && filterData.text.length > 1) {
+        return true;
+      }
+      if (filterData.classifiers && filterData.classifiers.length) {
+        return true;
+      }
       return false;
     }
   }
