@@ -211,8 +211,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const folderBtn = (mode === "grid") ? new osparc.dashboard.GridButtonFolder() : new osparc.dashboard.ListButtonFolder();
       folderBtn.subscribeToFilterGroup("searchBarFilter");
       folderBtn.setId(tagId);
-      folderBtn.addListener("tap", e => {
-        console.log("open folder");
+      folderBtn.addListener("tap", () => {
+        this.resetSelection();
+        this._searchBarFilter.addChip("tag", tagId);
       }, this);
       return folderBtn;
     },

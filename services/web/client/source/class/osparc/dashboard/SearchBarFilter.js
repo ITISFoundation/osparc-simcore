@@ -216,7 +216,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           const tagButton = new qx.ui.menu.Button(tag.name, "@FontAwesome5Solid/folder/12");
           tagButton.getChildControl("icon").setTextColor(tag.color);
           tagsMenu.add(tagButton);
-          tagButton.addListener("execute", () => this.__addChip("tag", tag.id, tag.name), this);
+          tagButton.addListener("execute", () => this.addChip("tag", tag.id, tag.name), this);
         });
         menuButton.setMenu(tagsMenu);
       }
@@ -230,7 +230,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         classifiers.forEach(classifier => {
           const classifierButton = new qx.ui.menu.Button(classifier.display_name);
           classifiersMenu.add(classifierButton);
-          classifierButton.addListener("execute", () => this.__addChip("classifier", classifier.classifier, classifier.display_name), this);
+          classifierButton.addListener("execute", () => this.addChip("classifier", classifier.classifier, classifier.display_name), this);
         });
         menuButton.setMenu(classifiersMenu);
       }
@@ -257,11 +257,29 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       return chipButton;
     },
 
-    __addChip: function(type, id, label) {
+    addChip: function(type, id, label) {
       const activeFilter = this.getChildControl("active-filters");
       const chipFound = activeFilter.getChildren().find(chip => chip.type === type && chip.id === id);
       if (chipFound) {
         return;
+      }
+      if (label === undefined) {
+        switch (type) {
+          case "classifier": {
+            const classifierFound = osparc.store.Store.getInstance().getClassifiers().find(classifier => classifier.classfiier === id);
+            if (classifierFound) {
+              label = classifierFound.display_name;
+            }
+            break;
+          }
+          case "tag": {
+            const tagFound = osparc.store.Store.getInstance().getTags().find(tag => tag.id === id);
+            if (tagFound) {
+              label = tagFound.name;
+            }
+            break;
+          }
+        }
       }
       const chip = this.__createChip(type, id, label);
       activeFilter.add(chip);
@@ -291,6 +309,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     __resetFilters: function() {
+      this.setCurrentFolder(null);
       this.getChildControl("active-filters").removeAll();
       this.getChildControl("text-field").resetValue();
       this.filter();
