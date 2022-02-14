@@ -37,10 +37,6 @@ qx.Class.define("osparc.wrapper.Html2canvas", {
     URL: "https://github.com/niklasvh/html2canvas"
   },
 
-  construct: function() {
-    this.base(arguments);
-  },
-
   properties: {
     libReady: {
       nullable: false,
