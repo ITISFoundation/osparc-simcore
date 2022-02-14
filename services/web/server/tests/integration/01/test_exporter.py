@@ -70,6 +70,7 @@ from simcore_service_webserver.exporter.file_downloader import ParallelDownloade
 from simcore_service_webserver.exporter.settings import (
     get_settings as get_exporter_settings,
 )
+from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.scicrunch.submodule_setup import (
     setup_scicrunch_submodule,
 )
@@ -178,6 +179,7 @@ def client(
     setup_catalog(app)
     setup_scicrunch_submodule(app)
     assert setup_resource_manager(app)
+    setup_garbage_collector(app)
 
     yield loop.run_until_complete(
         aiohttp_client(

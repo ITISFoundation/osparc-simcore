@@ -23,6 +23,7 @@ from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects, users
 from simcore_service_webserver.director.module_setup import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
+from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
@@ -146,6 +147,7 @@ def client(
     setup_director(app)
     setup_director_v2(app)
     assert setup_resource_manager(app)
+    setup_garbage_collector(app)
 
     yield loop.run_until_complete(
         aiohttp_client(

@@ -86,8 +86,8 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_redis(app)
 
     # resource management
-    setup_garbage_collector(app)
     setup_resource_manager(app)
+    setup_garbage_collector(app)
 
     # users
     setup_users(app)

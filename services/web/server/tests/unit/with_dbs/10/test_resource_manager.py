@@ -74,15 +74,6 @@ CHECK_BACKGROUND_RETRY_POLICY = dict(
 
 
 @pytest.fixture
-def mock_garbage_collector_task(mocker):
-    """patch the setup of the garbage collector so we can call it manually"""
-    mocker.patch(
-        "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
-        return_value="",
-    )
-
-
-@pytest.fixture
 def mock_delete_data_folders_for_project(mocker):
     mocker.patch(
         "simcore_service_webserver.projects.projects_api.delete_data_folders_of_project",
@@ -92,7 +83,6 @@ def mock_delete_data_folders_for_project(mocker):
 
 @pytest.fixture
 def client(
-    mock_garbage_collector_task,
     loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_cfg: Dict[str, Any],
