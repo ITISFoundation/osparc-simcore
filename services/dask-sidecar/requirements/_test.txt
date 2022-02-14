@@ -53,7 +53,7 @@ docker==5.0.3
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
-faker==12.1.0
+faker==12.3.0
     # via -r requirements/_test.in
 frozenlist==1.2.0
     # via
@@ -116,7 +116,7 @@ pyparsing==2.4.7
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   packaging
-pytest==7.0.0
+pytest==7.0.1
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -127,9 +127,9 @@ pytest==7.0.0
     #   pytest-localftpserver
     #   pytest-mock
     #   pytest-sugar
-pytest-aiohttp==1.0.3
+pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
-pytest-asyncio==0.18.0
+pytest-asyncio==0.18.1
     # via pytest-aiohttp
 pytest-cov==3.0.0
     # via -r requirements/_test.in
