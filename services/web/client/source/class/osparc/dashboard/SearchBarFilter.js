@@ -19,7 +19,16 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
   extend: osparc.component.filter.UIFilter,
 
   construct: function(resourceType) {
-    this.base(arguments, "searchBarFilter-"+resourceType, "searchBarFilter");
+    const filterId = resourceType ? "searchBarFilter-"+resourceType : "searchBarFilter";
+    const filterGroupId = "searchBarFilter";
+
+    this.base(arguments, filterId, filterGroupId);
+
+    if (resourceType) {
+      this.set({
+        resourceType
+      });
+    }
 
     this._setLayout(new qx.ui.layout.HBox(5));
 
@@ -39,12 +48,33 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this.__attachEventHandlers();
   },
 
+  properties: {
+    resourceType: {
+      check: ["study", "template", "service"],
+      init: null,
+      nullable: false
+    }
+  },
+
   members: {
     __filtersMenu: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "home-button": {
+          control = new qx.ui.toolbar.Button(null, "@FontAwesome5Solid/home/16");
+          control.addListener("execute", () => this.__goHome(), this);
+          this._add(control);
+          break;
+        }
+        case "current-folder-chip": {
+          control = new qx.ui.basic.Label().set({
+            alignY: "middle"
+          });
+          this._add(control);
+          break;
+        }
         case "search-icon":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/search/16").set({
             backgroundColor: "transparent",
@@ -84,10 +114,31 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     },
 
     __buildLayout: function() {
+      if (this.getResourceType() === "study") {
+        this.getChildControl("home-button");
+        this.__goHome();
+      }
       this.getChildControl("search-icon");
       this.getChildControl("active-filters");
       this.getChildControl("text-field");
       this.getChildControl("reset-button");
+    },
+
+    __goHome: function() {
+      const currentFolder = this.getChildControl("current-folder-chip");
+      currentFolder.exclude();
+
+      this.__removeTags();
+    },
+
+    __addCurrentFolder: function(tagId) {
+      const currentFolder = this.getChildControl("current-folder-chip");
+      currentFolder.show();
+      const tags = osparc.store.Store.getInstance().getTags();
+      const tagFound = tags.find(tag => tag.id === tagId);
+      if (tagFound) {
+        currentFolder.setValue("/"+tagFound.name);
+      }
     },
 
     __buildFiltersMenu: function() {
@@ -96,7 +147,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
       const menu = this.__filtersMenu;
       menu.removeAll();
-      const tagsButton = new qx.ui.menu.Button(this.tr("Tags"), "@FontAwesome5Solid/tags/12");
+      const tagsButton = new qx.ui.menu.Button(this.tr("Folders"), "@FontAwesome5Solid/folder/12");
       osparc.utils.Utils.setIdToWidget(tagsButton, "searchBarFilter-tags-button");
       this.__addTags(tagsButton);
       menu.add(tagsButton);
@@ -157,10 +208,10 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         const tagsMenu = new qx.ui.menu.Menu();
         osparc.utils.Utils.setIdToWidget(tagsMenu, "searchBarFilter-tags-menu");
         tags.forEach(tag => {
-          const tagButton = new qx.ui.menu.Button(tag.name, "@FontAwesome5Solid/tag/12");
+          const tagButton = new qx.ui.menu.Button(tag.name, "@FontAwesome5Solid/folder/12");
           tagButton.getChildControl("icon").setTextColor(tag.color);
           tagsMenu.add(tagButton);
-          tagButton.addListener("execute", () => this.__addChip("tag", tag.name, tag.name), this);
+          tagButton.addListener("execute", () => this.__addChip("tag", tag.id, tag.name), this);
         });
         menuButton.setMenu(tagsMenu);
       }
@@ -209,12 +260,25 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
       const chip = this.__createChip(type, id, label);
       activeFilter.add(chip);
+      if (type === "tag") {
+        chip.exclude();
+        this.__addCurrentFolder(id);
+      }
       this.__filter();
     },
 
     __removeChip: function(type, id) {
       const activeFilter = this.getChildControl("active-filters");
       const chipFound = activeFilter.getChildren().find(chip => chip.type === type && chip.id === id);
+      if (chipFound) {
+        activeFilter.remove(chipFound);
+        this.__filter();
+      }
+    },
+
+    __removeTags: function() {
+      const activeFilter = this.getChildControl("active-filters");
+      const chipFound = activeFilter.getChildren().find(chip => chip.type === "tag");
       if (chipFound) {
         activeFilter.remove(chipFound);
         this.__filter();
