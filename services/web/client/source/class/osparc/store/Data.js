@@ -212,7 +212,7 @@ qx.Class.define("osparc.store.Data", {
       });
     },
 
-    dataURItoBlob: function(dataURI, type = "image/png") {
+    __dataURItoBlob: function(dataURI, type = "image/png") {
       const binary = atob(dataURI.split(",")[1]);
       const array = [];
       for (let i = 0; i < binary.length; i++) {
@@ -235,7 +235,7 @@ qx.Class.define("osparc.store.Data", {
               const xhr = new XMLHttpRequest();
               xhr.open("PUT", url, true);
 
-              const blobData = this.dataURItoBlob(screenshot);
+              const blobData = this.__dataURItoBlob(screenshot);
               xhr.setRequestHeader("Content-Encoding", "base64");
               xhr.setRequestHeader("Content-Type", "image/png");
 
