@@ -9,11 +9,7 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import (
-    ModuleCategory,
-    SkipModuleSetup,
-    app_module_setup,
-)
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .._constants import APP_SETTINGS_KEY
 from . import handlers
@@ -28,10 +24,7 @@ log = logging.getLogger(__file__)
     logger=log,
 )
 def setup_clusters(app: web.Application):
-    if not app[APP_SETTINGS_KEY].WEBSERVER_CLUSTERS:
-        raise SkipModuleSetup(
-            reason="{__name__} plugin was explictly disabled in the app settings"
-        )
+    assert app[APP_SETTINGS_KEY].WEBSERVER_CLUSTERS  # nosec
 
     app.add_routes(handlers.routes)
 
