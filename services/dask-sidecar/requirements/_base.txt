@@ -51,7 +51,7 @@ charset-normalizer==2.0.6
     # via
     #   aiohttp
     #   requests
-click==7.1.2
+click==8.0.3
     # via distributed
 cloudpickle==2.0.0
     # via

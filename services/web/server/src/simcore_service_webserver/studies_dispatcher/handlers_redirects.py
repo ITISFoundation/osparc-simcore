@@ -37,6 +37,7 @@ def create_redirect_response(
 
     Front-end can then render this data either in an error or a view page
     """
+    # TODO: Uniform encoding in front-end fragments  https://github.com/ITISFoundation/osparc-simcore/issues/1975
     log.debug("page: '%s' parameters: '%s'", page, parameters)
 
     page = page.strip(" /")
