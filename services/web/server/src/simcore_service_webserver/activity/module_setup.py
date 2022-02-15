@@ -6,9 +6,11 @@ from servicelib.aiohttp.rest_routing import (
     iter_path_operations,
     map_handlers_with_operations,
 )
+from simcore_service_webserver.activity.settings import get_plugin_settings
 
 from .._constants import APP_OPENAPI_SPECS_KEY
 from . import handlers
+from .settings import get_plugin_settings
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,7 @@ logger = logging.getLogger(__name__)
     logger=logger,
 )
 def setup_activity(app: web.Application):
+    assert get_plugin_settings(app)  # nosec
 
     # setup routes ------------
     specs = app[APP_OPENAPI_SPECS_KEY]
