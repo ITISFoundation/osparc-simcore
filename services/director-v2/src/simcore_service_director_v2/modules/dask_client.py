@@ -40,7 +40,6 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 from ..core.errors import (
-    ComputationalBackendTaskNotFoundError,
     ConfigurationError,
     DaskClientRequestError,
     DaskClusterError,
@@ -68,10 +67,11 @@ logger = logging.getLogger(__name__)
 
 
 _DASK_TASK_STATUS_RUNNING_STATE_MAP = {
-    "pending": RunningState.PENDING,
-    "cancelled": RunningState.ABORTED,
-    "finished": RunningState.SUCCESS,
-    "lost": RunningState.FAILED,
+    "new": RunningState.PENDING,
+    "released": RunningState.PENDING,
+    "waiting": RunningState.PENDING,
+    "no-worker": RunningState.PENDING,
+    "processing": RunningState.STARTED,
     "error": RunningState.FAILED,
 }
 
@@ -205,7 +205,6 @@ class DaskClient:
     settings: DaskSchedulerSettings
     cancellation_dask_pub: distributed.Pub
 
-    _taskid_to_future_map: Dict[str, distributed.Future] = field(default_factory=dict)
     _subscribed_tasks: List[asyncio.Task] = field(default_factory=list)
 
     @classmethod
@@ -378,17 +377,25 @@ class DaskClient:
                     resources=dask_resources,
                     retries=0,
                 )
+
+                async def _task_done_callback(event_data: TaskStateEvent) -> None:
+                    await self.dask_subsystem.client.unpublish_dataset(
+                        event_data.job_id
+                    )
+                    return await callback(event_data)
+
                 task_future.add_done_callback(
                     functools.partial(
                         done_dask_callback,
-                        task_to_future_map=self._taskid_to_future_map,
-                        user_callback=callback,
+                        user_callback=_task_done_callback,
                         main_loop=asyncio.get_event_loop(),
                     )
                 )
 
-                self._taskid_to_future_map[job_id] = task_future
                 list_of_node_id_to_job_id.append((node_id, job_id))
+                await self.dask_subsystem.client.publish_dataset(
+                    task_future, name=job_id
+                )
                 dask.distributed.fire_and_forget(
                     task_future
                 )  # this should ensure the task will run even if the future goes out of scope
@@ -401,26 +408,19 @@ class DaskClient:
         return list_of_node_id_to_job_id
 
     async def get_tasks_status(self, job_ids: List[str]) -> List[RunningState]:
-        logger.debug("cancelling tasks with job_ids: [%s]", job_ids)
         task_statuses = []
-        for job_id in job_ids:
-            task_future = self._taskid_to_future_map.get(job_id)
-            if not task_future:
-                # this task was not created in this client
-                # try to find it in the scheduler
-                task_future = distributed.Future(job_id, self.dask_subsystem.client)
-                workers_with_the_job = await self.dask_subsystem.client.who_has(job_id)
-                logger.error("workers with the job: %s", f"{workers_with_the_job}")
-                logger.error("task status: %s", f"{task_future.status}")
-                task_statuses.append(RunningState.UNKNOWN)
-                continue
+        # try to get the task from the scheduler
+        task_statuses = await self.dask_subsystem.client.run_on_scheduler(
+            lambda dask_scheduler: dask_scheduler.get_task_status(keys=job_ids)
+        )
+        logger.debug("found dask task statuses: %s", f"{task_statuses=}")
 
-            task_statuses.append(
-                _DASK_TASK_STATUS_RUNNING_STATE_MAP.get(
-                    task_future.status, RunningState.UNKNOWN
-                )
+        return [
+            _DASK_TASK_STATUS_RUNNING_STATE_MAP.get(
+                task_statuses.get(job_id, "lost"), RunningState.UNKNOWN
             )
-        return task_statuses
+            for job_id in job_ids
+        ]
 
     async def abort_computation_tasks(self, job_ids: List[str]) -> None:
         # Dask future may be cancelled, but only a future that was not already taken by
@@ -430,19 +430,14 @@ class DaskClient:
         # process, and report when it is finished and properly cancelled.
         logger.debug("cancelling tasks with job_ids: [%s]", job_ids)
         for job_id in job_ids:
-            task_future = self._taskid_to_future_map.get(job_id)
-            if task_future:
+            if task_future := distributed.Future(job_id, self.dask_subsystem.client):
                 self.cancellation_dask_pub.put(  # type: ignore
                     TaskCancelEvent(job_id=job_id).json()
                 )
                 await task_future.cancel()
                 logger.debug("Dask task %s cancelled", task_future.key)
-            else:
-                task_future = distributed.Future(job_id, self.dask_subsystem.client)
-                if task_future.status == "pending":
-                    workers_with_the_job = await self.dask_subsystem.client.who_has(
-                        job_id
-                    )
-                    if not workers_with_the_job:
-                        raise ComputationalBackendTaskNotFoundError()
-                logger.error("%s", f"{task_future=}")
+            # if task_future.status == "pending":
+            #     workers_with_the_job = await self.dask_subsystem.client.who_has(job_id)
+            #     if not workers_with_the_job:
+            #         raise ComputationalBackendTaskNotFoundError()
+            # logger.error("%s", f"{task_future=}")

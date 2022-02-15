@@ -310,17 +310,18 @@ class BaseCompScheduler(ABC):
             pipeline_result = RunningState.ABORTED
             await self._set_run_result(user_id, project_id, iteration, pipeline_result)
 
-        # if tasks_to_check:
-        #     # ensure these tasks still exist in the backend, if not we abort these
-        #     logger.error("Tasks to check: %s", f"{tasks_to_check=}")
-        #     tasks_backend_status = await self._get_tasks_status(
-        #         cluster_id, [pipeline_tasks[f"{node_id}"] for node_id in tasks_to_check]
-        #     )
-        #     logger.error(
-        #         "Tasks checked: %s vs %s",
-        #         f"{tasks_to_check=}",
-        #         f"{tasks_backend_status=}",
-        #     )
+        if tasks_to_check:
+            # ensure these tasks still exist in the backend, if not we abort these
+            tasks_backend_status = await self._get_tasks_status(
+                cluster_id, [pipeline_tasks[f"{node_id}"] for node_id in tasks_to_check]
+            )
+            tasks_theoretical_status = [task.state for task in pipeline_tasks.values()]
+            logger.error(
+                "Project %s Tasks checked: %s vs %s",
+                f"{project_id}",
+                f"{tasks_theoretical_status=}",
+                f"{tasks_backend_status=}",
+            )
 
         # 2. Are we finished??
         if not pipeline_dag.nodes() or pipeline_result in COMPLETED_STATES:
