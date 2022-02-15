@@ -160,7 +160,7 @@ def client(
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules
-    setup_settings(app)
+    assert setup_settings(app)
     assert get_exporter_settings(app) is not None, "Should capture defaults"
 
     setup_db(app)

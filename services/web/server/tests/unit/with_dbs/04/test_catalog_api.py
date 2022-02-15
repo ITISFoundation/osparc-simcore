@@ -18,6 +18,7 @@ from simcore_service_webserver.application import (
     setup_security,
     setup_session,
 )
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.catalog_client import KCATALOG_ORIGIN
 from simcore_service_webserver.db_models import UserRole
 
@@ -37,6 +38,7 @@ def client(
 
     monkeypatch_setenv_from_app_config(app_cfg)
     app = create_safe_application(app_cfg)
+    assert setup_settings(app)
 
     # patch all
     setup_db(app)

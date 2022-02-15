@@ -77,6 +77,7 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
     url = client.app.router["close_project"].url_for(project_id=project_uuid)
     resp = await client.post(url, json=client_session_id)
     await assert_status(resp, web.HTTPNoContent)
+    from simcore_service_webserver.application_settings import setup_settings
 
 
 # FIXTURES -----------------------------------------------------------------------------
@@ -108,6 +109,9 @@ def client(
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules
+
+    assert setup_settings(app)
+
     setup_db(app)
     setup_session(app)
     setup_security(app)

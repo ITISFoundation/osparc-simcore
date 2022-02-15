@@ -22,6 +22,7 @@ from pytest_simcore.helpers.utils_projects import NewProject, delete_all_project
 from servicelib import async_utils
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import catalog
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director.module_setup import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
@@ -70,6 +71,8 @@ def client(
     app = create_safe_application(cfg)
 
     # setup app
+
+    assert setup_settings(app)
     setup_db(app)
     setup_session(app)
     setup_security(app)

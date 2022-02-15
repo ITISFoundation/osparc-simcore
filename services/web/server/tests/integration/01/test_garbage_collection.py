@@ -19,6 +19,7 @@ from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import garbage_collector_core
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects, users
 from simcore_service_webserver.director.module_setup import setup_director
@@ -136,6 +137,7 @@ def client(
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules
+    assert setup_settings(app)
     setup_db(app)
     setup_session(app)
     setup_security(app)

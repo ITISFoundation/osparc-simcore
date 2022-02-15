@@ -30,6 +30,7 @@ from pytest_simcore.helpers.utils_projects import NewProject, delete_all_project
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from simcore_service_webserver import catalog
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.director.module_setup import setup_director
@@ -87,6 +88,8 @@ def client(
     monkeypatch_setenv_from_app_config(cfg)
 
     app = create_safe_application(cfg)
+
+    assert setup_settings(app)
 
     # setup app
     setup_db(app)

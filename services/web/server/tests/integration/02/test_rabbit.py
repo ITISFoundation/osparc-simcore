@@ -25,6 +25,7 @@ from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.rabbit_service import RabbitExchanges
 from servicelib.aiohttp.application import create_safe_application
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.diagnostics import setup_diagnostics
@@ -164,6 +165,8 @@ def client(
 
     monkeypatch_setenv_from_app_config(app_config)
     app = create_safe_application(app_config)
+
+    assert setup_settings(app)
 
     setup_db(app)
     setup_session(app)

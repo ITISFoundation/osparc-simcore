@@ -30,6 +30,7 @@ from simcore_postgres_database.webserver_models import (
     comp_tasks,
 )
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.computation_utils import DB_TO_RUNNING_STATE
 from simcore_service_webserver.db import setup_db
@@ -171,6 +172,7 @@ def client(
     monkeypatch_setenv_from_app_config(cfg)
     app = create_safe_application(app_config)
 
+    assert setup_settings(app)
     setup_db(app)
     setup_session(app)
     setup_security(app)

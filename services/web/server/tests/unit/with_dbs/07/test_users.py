@@ -21,6 +21,7 @@ from pytest_simcore.helpers.utils_tokens import (
     get_token_from_db,
 )
 from servicelib.aiohttp.application import create_safe_application
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
 from simcore_service_webserver.groups import setup_groups
 from simcore_service_webserver.login.module_setup import setup_login
@@ -51,6 +52,7 @@ def client(
 
     # fake config
     app = create_safe_application(cfg)
+    assert setup_settings(app)
 
     setup_db(app)
     setup_session(app)

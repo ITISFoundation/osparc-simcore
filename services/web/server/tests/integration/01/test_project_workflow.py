@@ -22,6 +22,7 @@ from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import catalog
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2 import setup_director_v2
@@ -68,6 +69,8 @@ def client(
 
     monkeypatch_setenv_from_app_config(app_config)
     app = create_safe_application(app_config)
+
+    assert setup_settings(app)
 
     setup_db(app)
     setup_session(app)
