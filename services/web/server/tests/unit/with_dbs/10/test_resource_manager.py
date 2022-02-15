@@ -28,6 +28,7 @@ from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director.module_setup import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
@@ -77,7 +78,6 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
     url = client.app.router["close_project"].url_for(project_id=project_uuid)
     resp = await client.post(url, json=client_session_id)
     await assert_status(resp, web.HTTPNoContent)
-    from simcore_service_webserver.application_settings import setup_settings
 
 
 # FIXTURES -----------------------------------------------------------------------------
