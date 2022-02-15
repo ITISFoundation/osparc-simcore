@@ -260,7 +260,7 @@ def app_module_setup(
                     )
 
             except SkipModuleSetup as exc:
-                logger.warning("Skipping '%s' setup: %s", module_name, exc.reason)
+                logger.info("Skipping '%s' setup: %s", module_name, exc.reason)
                 completed = False
 
             elapsed = datetime.now() - started
