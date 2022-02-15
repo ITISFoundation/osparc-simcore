@@ -3,7 +3,7 @@
       "name": null,
       "port": null,
       "host": null,
-      "secret_key": "zUMyrLIDRMJKEdWw",
+      "secret_key": "$REPLACE_SECRET_KEY",
       "force_ssl": null,
       "editor": null,
       "fork_button": null,

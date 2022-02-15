@@ -6,6 +6,8 @@ Notes:
 """
 
 import os
+import random
+import string
 import tempfile
 
 from distutils.util import strtobool
@@ -17,6 +19,10 @@ TEMPLATE_PATH = SCRIPT_DIR / "filestash_config.json.template"
 CONFIG_JSON = Path(tempfile.mkdtemp()) / "filestash_config.json"
 
 
+def random_secret_key(length: int = 16) -> str:
+    return "".join(random.choice(string.ascii_letters) for _ in range(length))
+
+
 def patch_env_vars() -> None:
     endpoint = os.environ["S3_ENDPOINT"]
     if not endpoint.startswith("http"):
@@ -24,6 +30,8 @@ def patch_env_vars() -> None:
         endpoint = f"{protocol}://{endpoint}"
 
     os.environ["S3_ENDPOINT"] = endpoint
+
+    os.environ["REPLACE_SECRET_KEY"] = random_secret_key()
 
 
 def main() -> None:
