@@ -235,7 +235,6 @@ _DASK_FUTURE_TIMEOUT_S: Final[int] = 5
 
 def done_dask_callback(
     dask_future: distributed.Future,
-    task_to_future_map: Dict[str, distributed.Future],
     user_callback: UserCompleteCB,
     main_loop: asyncio.AbstractEventLoop,
 ):
@@ -280,8 +279,6 @@ def done_dask_callback(
             exc_info=True,
         )
     finally:
-        # remove the future from the dict to remove any handle to the future, so the worker can free the memory
-        task_to_future_map.pop(job_id)
         logger.debug("dispatching callback to finish task '%s'", job_id)
         assert event_data  # nosec
         try:
