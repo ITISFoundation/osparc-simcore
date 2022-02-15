@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime
 from logging import getLogger
-from typing import Dict
+from typing import Dict, TypedDict
 
 import asyncpg
 from aiohttp import web
@@ -13,6 +13,18 @@ from .utils import get_random_string
 log = getLogger(__name__)
 
 APP_LOGIN_STORAGE_KEY = f"{__name__}.APP_LOGIN_STORAGE_KEY"
+
+
+# SEE packages/postgres-database/src/simcore_postgres_database/models/confirmations.py
+class _ConfirmationDictRequired(TypedDict):
+    code: str
+    user_id: int
+    action: str
+
+
+class ConfirmationDict(_ConfirmationDictRequired, total=False):
+    data: Dict
+    created_at: datetime
 
 
 class AsyncpgStorage:
@@ -51,7 +63,7 @@ class AsyncpgStorage:
                 code = get_random_string(30)
                 if not await sql.find_one(conn, self.confirm_tbl, {"code": code}):
                     break
-            confirmation = {
+            confirmation: ConfirmationDict = {
                 "code": code,
                 "user_id": user["id"],
                 "action": action,

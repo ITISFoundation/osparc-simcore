@@ -18,7 +18,7 @@ APP_LOGIN_OPTIONS_KEY = f"{__name__}.APP_LOGIN_OPTIONS_KEY"
 
 class LoginSettings(BaseCustomSettings):
     LOGIN_REGISTRATION_CONFIRMATION_REQUIRED: bool = Field(
-        ...,
+        True,
         env=[
             "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED",
             "WEBSERVER_LOGIN_REGISTRATION_CONFIRMATION_REQUIRED",

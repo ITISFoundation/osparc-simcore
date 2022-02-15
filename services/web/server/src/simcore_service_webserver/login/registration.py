@@ -5,10 +5,11 @@
 """
 import json
 import logging
-from pprint import pformat
+from datetime import datetime
 from typing import Dict, Optional
 
 from aiohttp import web
+from servicelib.json_serialization import json_dumps
 from yarl import URL
 
 from ..db_models import UserStatus
@@ -19,7 +20,7 @@ from .confirmation import (
     validate_confirmation_code,
 )
 from .settings import LoginOptions
-from .storage import AsyncpgStorage
+from .storage import AsyncpgStorage, ConfirmationDict
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ async def check_registration(
     if user:
         # Resets pending confirmation if re-registers?
         if user["status"] == UserStatus.CONFIRMATION_PENDING.value:
-            _confirmation = await db.get_confirmation(
+            _confirmation: ConfirmationDict = await db.get_confirmation(
                 {"user": user, "action": ConfirmationAction.REGISTRATION.value}
             )
 
@@ -93,13 +94,13 @@ async def check_invitation(
 ):
     confirmation = None
     if invitation:
-        confirmation = await validate_confirmation_code(invitation, db)
+        confirmation = await validate_confirmation_code(invitation, db, cfg)
 
     if confirmation:
         # FIXME: check if action=invitation??
         log.info(
             "Invitation code used. Deleting %s",
-            pformat(get_confirmation_info(cfg, confirmation)),
+            json_dumps(get_confirmation_info(cfg, confirmation), indent=1),
         )
         await db.delete_confirmation(confirmation)
     else:
@@ -112,10 +113,18 @@ async def check_invitation(
         )
 
 
-def get_confirmation_info(cfg: LoginOptions, confirmation):
+class ConfirmationInfoDict(ConfirmationDict):
+    expires: datetime
+    url: str
+
+
+def get_confirmation_info(
+    cfg: LoginOptions, confirmation: ConfirmationDict
+) -> ConfirmationInfoDict:
+
     info = dict(confirmation)
-    # data column is a string
     try:
+        # data column is a string
         info["data"] = json.loads(confirmation["data"])
     except json.decoder.JSONDecodeError:
         log.warning("Failed to load data from confirmation. Skipping 'data' field.")
@@ -129,7 +138,9 @@ def get_confirmation_info(cfg: LoginOptions, confirmation):
     return info
 
 
-def get_invitation_url(confirmation, origin: Optional[URL] = None) -> URL:
+def get_invitation_url(
+    confirmation: ConfirmationDict, origin: Optional[URL] = None
+) -> URL:
     code = confirmation["code"]
     is_invitation = confirmation["action"] == ConfirmationAction.INVITATION.name
 

@@ -355,7 +355,7 @@ async def email_confirmation(request: web.Request):
 
     code = params["code"]
 
-    confirmation = await validate_confirmation_code(code, db)
+    confirmation = await validate_confirmation_code(code, db, cfg)
 
     if confirmation:
         action = confirmation["action"]
@@ -398,7 +398,7 @@ async def reset_password_allowed(request: web.Request):
             reason=cfg.MSG_PASSWORD_MISMATCH, content_type="application/json"
         )  # 409
 
-    confirmation = await validate_confirmation_code(code, db)
+    confirmation = await validate_confirmation_code(code, db, cfg)
 
     if confirmation:
         user = await db.get_user({"id": confirmation["user_id"]})
