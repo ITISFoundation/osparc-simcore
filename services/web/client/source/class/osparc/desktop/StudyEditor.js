@@ -611,7 +611,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __fadeElement: function(elem) {
       // flash effect
       const fadeAnimation = {
-        duration: 300,
+        duration: 50,
         keyFrames: {
           0 : {
             "opacity" : 1,
@@ -625,27 +625,29 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         }
       };
-      qx.bom.element.AnimationCss.animate(elem, fadeAnimation);
+      return qx.bom.element.AnimationCss.animate(elem, fadeAnimation);
     },
 
     takeScreenshot: function(screenshotBtn) {
       const html2canvas = osparc.wrapper.Html2canvas.getInstance();
       const iframes = Array.from(document.getElementsByTagName("iframe"));
-      const visibleIframe = iframes.find(iframe => iframe.offsetTop >= 0);
+      const visibleIframe = iframes.find(iframe => iframe.offsetTop !== osparc.component.widget.PersistentIframe.HIDDEN_TOP);
       const elem = visibleIframe === undefined ? this.__workbenchView.getWorkbenchPanel().getContentElement().getDomElement() : visibleIframe.contentDocument.body;
-      this.__fadeElement(elem);
       screenshotBtn.setFetching(true);
-      html2canvas.takeScreenshot(elem)
-        .then(screenshot => {
-          const filename = "screenshot.png";
-          screenshot.name = filename;
-          const dataStore = osparc.store.Data.getInstance();
-          dataStore.uploadScreenshotToS3(screenshot, this.getStudy().getUuid())
-            .then(link => {
-              this.getStudy().setThumbnail(link);
-            });
-        })
-        .finally(() => screenshotBtn.setFetching(false));
+      const animation = this.__fadeElement(elem);
+      animation.addListener("end", () => {
+        html2canvas.takeScreenshot(elem)
+          .then(screenshot => {
+            const filename = "screenshot.png";
+            screenshot.name = filename;
+            const dataStore = osparc.store.Data.getInstance();
+            dataStore.uploadScreenshotToS3(screenshot, this.getStudy().getUuid())
+              .then(link => {
+                this.getStudy().setThumbnail(link);
+              });
+          })
+          .finally(() => screenshotBtn.setFetching(false));
+      });
     },
 
     closeEditor: function() {
