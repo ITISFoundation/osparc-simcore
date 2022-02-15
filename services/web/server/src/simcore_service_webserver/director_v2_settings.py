@@ -26,13 +26,10 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
         return URL(self._build_api_base_url(prefix="DIRECTOR_V2"))
 
 
-def get_settings(app: web.Application) -> DirectorV2Settings:
-
-    if settings := app.get(APP_SETTINGS_KEY):
-        return settings.WEBSERVER_DIRECTOR_V2
-
-    WEBSERVER_DIRECTOR_V2 = DirectorV2Settings()
-    return WEBSERVER_DIRECTOR_V2
+def get_plugin_settings(app: web.Application) -> DirectorV2Settings:
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_DIRECTOR_V2
+    assert settings  # nosec
+    return settings
 
 
 def get_client_session(app: web.Application) -> ClientSession:

@@ -1,6 +1,7 @@
 import logging
 
 from aiohttp import web
+from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.rest_routing import (
     iter_path_operations,
@@ -12,6 +13,7 @@ from ._constants import APP_OPENAPI_SPECS_KEY
 from .director_v2_abc import set_project_run_policy
 from .director_v2_core import DefaultProjectRunPolicy, DirectorV2ApiClient, set_client
 from .director_v2_settings import CONFIG_SECTION_NAME
+from .rest import setup_rest
 
 log = logging.getLogger(__file__)
 
@@ -23,20 +25,18 @@ log = logging.getLogger(__file__)
     logger=log,
 )
 def setup_director_v2(app: web.Application):
+    assert app[APP_SETTINGS_KEY].WEBSERVER_DIRECTOR_V2  # nosec
 
+    # dependencies
+    setup_rest(app)
+
+    # lcietn
     set_client(app, DirectorV2ApiClient(app))
 
     # routes
-    if not APP_OPENAPI_SPECS_KEY in app:
-        log.warning(
-            "rest submodule not initialised? computation routes will not be defined!"
-        )
-        return
-
     set_project_run_policy(app, DefaultProjectRunPolicy())
 
     specs = app[APP_OPENAPI_SPECS_KEY]
-    # bind routes with handlers
     routes = map_handlers_with_operations(
         {
             "start_pipeline": director_v2_handlers.start_pipeline,

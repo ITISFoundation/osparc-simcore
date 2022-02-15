@@ -19,7 +19,11 @@ from tenacity.wait import wait_random
 from yarl import URL
 
 from .director_v2_abc import AbstractProjectRunPolicy
-from .director_v2_settings import DirectorV2Settings, get_client_session, get_settings
+from .director_v2_settings import (
+    DirectorV2Settings,
+    get_client_session,
+    get_plugin_settings,
+)
 
 log = logging.getLogger(__file__)
 
@@ -58,7 +62,7 @@ class DirectorServiceError(Exception):
 class DirectorV2ApiClient:
     def __init__(self, app: web.Application) -> None:
         self._app = app
-        self._settings: DirectorV2Settings = get_settings(app)
+        self._settings: DirectorV2Settings = get_plugin_settings(app)
 
     async def start(self, project_id: ProjectID, user_id: UserID, **options) -> str:
         computation_task_out = await _request_director_v2(
@@ -176,7 +180,7 @@ class DefaultProjectRunPolicy(AbstractProjectRunPolicy):
 async def is_healthy(app: web.Application) -> bool:
     try:
         session = get_client_session(app)
-        settings: DirectorV2Settings = get_settings(app)
+        settings: DirectorV2Settings = get_plugin_settings(app)
         health_check_url = settings.base_url.parent
         await session.get(
             url=health_check_url,
@@ -195,7 +199,7 @@ async def is_healthy(app: web.Application) -> bool:
 async def create_or_update_pipeline(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> Optional[DataType]:
-    settings: DirectorV2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_plugin_settings(app)
 
     backend_url = settings.base_url / "computations"
     body = {"user_id": user_id, "project_id": f"{project_id}"}
@@ -235,7 +239,7 @@ async def is_pipeline_running(
 async def get_computation_task(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> Optional[ComputationTask]:
-    settings: DirectorV2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = (settings.base_url / f"computations/{project_id}").update_query(
         user_id=user_id
     )
@@ -261,7 +265,7 @@ async def get_computation_task(
 async def delete_pipeline(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> None:
-    settings: DirectorV2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_plugin_settings(app)
 
     backend_url = settings.base_url / f"computations/{project_id}"
     body = {"user_id": user_id, "force": True}
@@ -276,7 +280,7 @@ async def delete_pipeline(
 async def request_retrieve_dyn_service(
     app: web.Application, service_uuid: str, port_keys: List[str]
 ) -> None:
-    settings: DirectorV2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = settings.base_url / f"dynamic_services/{service_uuid}:retrieve"
     body = {"port_keys": port_keys}
 
@@ -324,7 +328,7 @@ async def start_service(
         "X-Dynamic-Sidecar-Request-Scheme": request_scheme,
     }
 
-    settings: DirectorV2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = settings.base_url / "dynamic_services"
 
     started_service = await _request_director_v2(
@@ -352,7 +356,7 @@ async def get_services(
     if project_id:
         params["project_id"] = project_id
 
-    settings: DirectorV2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = settings.base_url / "dynamic_services"
 
     services = await _request_director_v2(
@@ -374,7 +378,7 @@ async def stop_service(
 
     timeout = ServicesCommonSettings().webserver_director_stop_service_timeout
 
-    settings: DirectorV2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = (settings.base_url / f"dynamic_services/{service_uuid}").update_query(
         save_state="true" if save_state else "false",
     )
@@ -390,7 +394,7 @@ async def list_running_dynamic_services(
     """
     Retruns the running dynamic services from director-v0 and director-v2
     """
-    settings: DirectorV2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_plugin_settings(app)
     url = settings.base_url / "dynamic_services"
     backend_url = url.with_query(user_id=str(user_id), project_id=str(project_id))
 
@@ -425,7 +429,7 @@ async def stop_services(
 
 @log_decorator(logger=log)
 async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
-    settings: DirectorV2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = settings.base_url / f"dynamic_services/{node_uuid}"
 
     service_state = await _request_director_v2(
@@ -445,7 +449,7 @@ async def retrieve(
     # TODO: PC -> ANE: all settings MUST be in app[APP_SETTINGS_KEY]
     timeout = ServicesCommonSettings().storage_service_upload_download_timeout
 
-    settings: DirectorV2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = settings.base_url / "dynamic_services" / f"{node_uuid}:retrieve"
     body = dict(port_keys=port_keys)
 
@@ -469,7 +473,7 @@ async def restart(app: web.Application, node_uuid: str) -> None:
     # TODO: PC -> ANE: all settings MUST be in app[APP_SETTINGS_KEY]
     timeout = ServicesCommonSettings().restart_containers_timeout
 
-    settings: DirectorV2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = settings.base_url / f"dynamic_services/{node_uuid}:restart"
 
     await _request_director_v2(
