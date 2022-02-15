@@ -64,6 +64,7 @@ ROLES_PERMISSIONS = {
             "project.template.create",
             "project.classifier.*",  # "study.classifier"
             "project.tag.*",  # "study.tag"
+            "project.folder.*",  # "study.folder"
             "user.profile.update",  # "user.user.update",
             # "user.role.update"
             "user.apikey.*",  # "user.apikey.create",
