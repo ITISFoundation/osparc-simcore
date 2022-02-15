@@ -8,7 +8,7 @@ from typing import Any, AsyncIterator, Dict, Optional
 from aiohttp import web
 from aiopg.sa import Engine, create_engine
 from servicelib.aiohttp.aiopg_utils import is_pg_responsive
-from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY, APP_SETTINGS_KEY
+from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.json_serialization import json_dumps
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
@@ -21,7 +21,7 @@ from simcore_postgres_database.utils_aiopg import (
 )
 from tenacity import retry
 
-from .db_settings import PostgresSettings
+from .db_settings import PostgresSettings, get_plugin_settings
 
 THIS_MODULE_NAME = __name__.split(".")[-1]
 THIS_SERVICE_NAME = "postgres"
@@ -52,9 +52,7 @@ async def _ensure_pg_ready(settings: PostgresSettings) -> Engine:
 
 async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
 
-    settings: Optional[PostgresSettings] = app[APP_SETTINGS_KEY].WEBSERVER_DB
-    assert settings  # nosec
-
+    settings = get_plugin_settings(app)
     aiopg_engine = await _ensure_pg_ready(settings)
     app[APP_DB_ENGINE_KEY] = aiopg_engine
 

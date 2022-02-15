@@ -1,9 +1,17 @@
+from typing import Optional
+
 from aiohttp.web import Application
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from settings_library.postgres import PostgresSettings
 
 from ._constants import APP_SETTINGS_KEY
 from .db_config import CONFIG_SECTION_NAME
+
+
+def get_plugin_settings(app: Application) -> PostgresSettings:
+    settings: Optional[PostgresSettings] = app[APP_SETTINGS_KEY].WEBSERVER_DB
+    assert settings  # nosec
+    return settings
 
 
 def assert_valid_config(app: Application):
