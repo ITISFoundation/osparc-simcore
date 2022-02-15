@@ -1,27 +1,27 @@
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=no-name-in-module
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+# pylint: disable=unused-variable
 
 import asyncio
 import logging
 import time
-from typing import Coroutine
+from typing import Coroutine, Dict
 
 import pytest
 import simcore_service_webserver
 from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
-from simcore_service_webserver.diagnostics import (
-    kMAX_AVG_RESP_LATENCY,
-    setup_diagnostics,
-)
+from simcore_service_webserver._constants import APP_SETTINGS_KEY
+from simcore_service_webserver.application_settings import setup_settings
+from simcore_service_webserver.diagnostics import setup_diagnostics
 from simcore_service_webserver.diagnostics_core import (
     HealthError,
     assert_healthy_app,
     kLATENCY_PROBE,
 )
+from simcore_service_webserver.diagnostics_settings import DiagnosticsSettings
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from tenacity import before_log, retry, stop_after_attempt, wait_fixed
@@ -68,11 +68,26 @@ async def health_check_emulator(
         await asyncio.sleep(interval)
 
 
-@pytest.fixture
-def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix, monkeypatch):
-    SLOW_HANDLER_DELAY_SECS = 2.0  # secs
+SLOW_HANDLER_DELAY_SECS = 2.0  # secs
 
-    # pylint:disable=unused-variable
+
+@pytest.fixture
+def mock_environment(mock_env_devel_environment: Dict[str, str], monkeypatch):
+    monkeypatch.setenv("AIODEBUG_SLOW_DURATION_SECS", f"{SLOW_HANDLER_DELAY_SECS / 10}")
+    monkeypatch.setenv("DIAGNOSTICS_MAX_TASK_DELAY", f"{SLOW_HANDLER_DELAY_SECS}")
+    monkeypatch.setenv("DIAGNOSTICS_MAX_AVG_LATENCY", f"{2.0}")
+    monkeypatch.setenv("DIAGNOSTICS_START_SENSING_DELAY", f"{0}")  # inmidiately
+
+
+@pytest.fixture
+def client(
+    loop,
+    aiohttp_unused_port,
+    aiohttp_client,
+    api_version_prefix,
+    mock_environment: None,
+):
+
     routes = web.RouteTableDef()
 
     @routes.get("/error")
@@ -107,30 +122,24 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix, monkey
         return web.json_response({"data": True, "error": None})
 
     # -----
-
-    app = create_safe_application()
-
     main = {"port": aiohttp_unused_port(), "host": "localhost"}
-    app[APP_CONFIG_KEY] = {
+    cfg = {
         "main": main,
         "rest": {"enabled": True, "version": api_version_prefix},
         "diagnostics": {"enabled": True},
     }
 
+    app = create_safe_application(cfg)
+
     # activates some sub-modules
+    assert setup_settings(app)
     setup_security(app)
     setup_rest(app)
 
-    monkeypatch.setenv("AIODEBUG_SLOW_DURATION_SECS", f"{SLOW_HANDLER_DELAY_SECS / 10}")
-    monkeypatch.setenv("DIAGNOSTICS_MAX_TASK_DELAY", f"{SLOW_HANDLER_DELAY_SECS}")
-    monkeypatch.setenv("DIAGNOSTICS_MAX_AVG_LATENCY", f"{2.0}")
-    monkeypatch.setenv("DIAGNOSTICS_START_SENSING_DELAY", f"{0}")  # inmidiately
+    setup_diagnostics(app)
 
-    setup_diagnostics(
-        app,
-    )
-
-    assert app[kMAX_AVG_RESP_LATENCY] == 2.0
+    settings: DiagnosticsSettings = app[APP_SETTINGS_KEY].WEBSERVER_DIAGNOSTICS
+    assert settings.DIAGNOSTICS_MAX_AVG_LATENCY == 2.0
 
     app.router.add_routes(routes)
 
@@ -187,7 +196,9 @@ async def test_diagnose_on_failure(client):
 
 
 async def test_diagnose_on_response_delays(client):
-    tmax = client.app[kMAX_AVG_RESP_LATENCY]
+    settings: DiagnosticsSettings = client.app[APP_SETTINGS_KEY].WEBSERVER_DIAGNOSTICS
+
+    tmax = settings.DIAGNOSTICS_MAX_AVG_LATENCY
     coros = [client.get(f"/delay/{1.1*tmax}") for _ in range(10)]
 
     tic = time.time()
