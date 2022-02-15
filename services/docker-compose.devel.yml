@@ -60,16 +60,19 @@ services:
 
   webserver:
     volumes:
+      &webserver-volumes
       - ./web/server:/devel/services/web/server
       - ./web/client/source-output:/devel/services/web/client
       - ../packages:/devel/packages
     environment:
+      &webserver-environment
       - SC_BOOT_MODE=debug-ptvsd
       - WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS=15
       - WEBSERVER_LOGLEVEL=${LOG_LEVEL:-DEBUG}
 
   dask-sidecar:
-    volumes: &dev-dask-sidecar-volumes
+    volumes:
+      &dev-dask-sidecar-volumes
       - ./dask-sidecar:/devel/services/dask-sidecar
       - ../packages:/devel/packages
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro

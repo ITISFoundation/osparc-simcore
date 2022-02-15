@@ -95,7 +95,7 @@ def app_cfg(
         "director",
         "groups",
         "publications",
-        "resource_manager",
+        "garbage_collector",
         "smtp",
         "socketio",
         "storage",
@@ -109,9 +109,10 @@ def app_cfg(
         "login",
         "products",
         "projects",
-        "version_control",  # MODULE UNDER TEST
+        "resource_manager",
         "rest",
         "users",
+        "version_control",  # MODULE UNDER TEST
     }
 
     assert include.intersection(exclude) == set()

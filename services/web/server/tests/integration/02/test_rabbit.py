@@ -175,17 +175,8 @@ def client(
     setup_computation(app)
     setup_director_v2(app)
     setup_socketio(app)
-
-    # GC not relevant for these test-suite,
-    mocker.patch(
-        "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
-        side_effect=lambda app: print(
-            f"PATCH @{__name__}:"
-            "Garbage collector disabled."
-            "Mock bypasses setup_garbage_collector to skip initializing the GC"
-        ),
-    )
     setup_resource_manager(app)
+    # GC not relevant for these test-suite,
 
     return loop.run_until_complete(
         aiohttp_client(

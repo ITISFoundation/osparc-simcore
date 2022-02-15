@@ -56,7 +56,7 @@ plugins:
     channel: "eslint-6"
     config:
       extensions:
-      - .js
+        - .js
 
 exclude_patterns:
   - "config/"

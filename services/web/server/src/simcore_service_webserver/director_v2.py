@@ -20,19 +20,20 @@ log = logging.getLogger(__file__)
     __name__,
     ModuleCategory.ADDON,
     config_section=CONFIG_SECTION_NAME,
-    depends=["simcore_service_webserver.rest"],
     logger=log,
 )
 def setup_director_v2(app: web.Application):
-    set_project_run_policy(app, DefaultProjectRunPolicy())
 
     set_client(app, DirectorV2ApiClient(app))
 
+    # routes
     if not APP_OPENAPI_SPECS_KEY in app:
         log.warning(
             "rest submodule not initialised? computation routes will not be defined!"
         )
         return
+
+    set_project_run_policy(app, DefaultProjectRunPolicy())
 
     specs = app[APP_OPENAPI_SPECS_KEY]
     # bind routes with handlers
