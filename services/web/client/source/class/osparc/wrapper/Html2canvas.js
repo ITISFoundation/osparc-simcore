@@ -67,14 +67,18 @@ qx.Class.define("osparc.wrapper.Html2canvas", {
     },
 
     takeScreenshot: function(element) {
+      const width = 900;
+      const height = 600;
       return new Promise((resolve, reject) => {
         const bgColor = qx.theme.manager.Color.getInstance().resolve("background-main");
         html2canvas(element, {
           allowTaint: true,
           useCORS: true,
           backgroundColor: bgColor,
-          width: 1440,
-          height: 900
+          windowWidth: width,
+          windowHeight: height,
+          width: width,
+          height: height
         })
           .then(canvas => {
             const image = canvas.toDataURL("image/png");
