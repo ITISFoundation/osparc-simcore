@@ -8,9 +8,9 @@ from servicelib.request_keys import RQT_USERID_KEY
 
 from .email_settings import SMTPSettings
 from .email_settings import get_plugin_settings as get_email_settings
-from .login.cfg import get_storage
 from .login.decorators import login_required
-from .login.utils import common_themed
+from .login.settings import get_plugin_storage  # FIXME: remove this dependency
+from .login.utils import themed
 
 log = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ async def service_submission(request: web.Request):
         env in os.environ.get("SWARM_STACK_NAME", "")
         for env in ("production", "staging")
     )
-    db = get_storage(request.app)
+    db = get_plugin_storage(request.app)
     user = await db.get_user({"id": request[RQT_USERID_KEY]})
     user_email = user.get("email")
     if not is_real_usage:
@@ -69,7 +69,7 @@ async def service_submission(request: web.Request):
         await render_and_send_mail(
             request,
             to=support_email_address,
-            template=common_themed(EMAIL_TEMPLATE_NAME),
+            template=themed("templates/common", EMAIL_TEMPLATE_NAME),
             context={
                 "user": user_email,
                 "data": json2html.convert(
