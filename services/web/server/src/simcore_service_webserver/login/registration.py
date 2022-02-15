@@ -12,20 +12,24 @@ from aiohttp import web
 from yarl import URL
 
 from ..db_models import UserStatus
-from .cfg import cfg
 from .confirmation import (
     ConfirmationAction,
     get_expiration_date,
     is_confirmation_expired,
     validate_confirmation_code,
 )
+from .settings import LoginOptions
 from .storage import AsyncpgStorage
 
 log = logging.getLogger(__name__)
 
 
 async def check_registration(
-    email: str, password: str, confirm: Optional[str], db: AsyncpgStorage
+    email: str,
+    password: str,
+    confirm: Optional[str],
+    db: AsyncpgStorage,
+    cfg: LoginOptions,
 ):
     # email : required & formats
     # password: required & secure[min length, ...]
@@ -53,7 +57,7 @@ async def check_registration(
                 {"user": user, "action": ConfirmationAction.REGISTRATION.value}
             )
 
-            if is_confirmation_expired(_confirmation):
+            if is_confirmation_expired(cfg, _confirmation):
                 await db.delete_confirmation(_confirmation)
                 await db.delete_user(user)
                 return
@@ -84,7 +88,9 @@ async def create_invitation(host: Dict, guest: str, db: AsyncpgStorage):
     return confirmation
 
 
-async def check_invitation(invitation: Optional[str], db: AsyncpgStorage):
+async def check_invitation(
+    invitation: Optional[str], db: AsyncpgStorage, cfg: LoginOptions
+):
     confirmation = None
     if invitation:
         confirmation = await validate_confirmation_code(invitation, db)
@@ -93,7 +99,7 @@ async def check_invitation(invitation: Optional[str], db: AsyncpgStorage):
         # FIXME: check if action=invitation??
         log.info(
             "Invitation code used. Deleting %s",
-            pformat(get_confirmation_info(confirmation)),
+            pformat(get_confirmation_info(cfg, confirmation)),
         )
         await db.delete_confirmation(confirmation)
     else:
@@ -106,7 +112,7 @@ async def check_invitation(invitation: Optional[str], db: AsyncpgStorage):
         )
 
 
-def get_confirmation_info(confirmation):
+def get_confirmation_info(cfg: LoginOptions, confirmation):
     info = dict(confirmation)
     # data column is a string
     try:
@@ -115,7 +121,7 @@ def get_confirmation_info(confirmation):
         log.warning("Failed to load data from confirmation. Skipping 'data' field.")
 
     # extra
-    info["expires"] = get_expiration_date(confirmation)
+    info["expires"] = get_expiration_date(cfg, confirmation)
 
     if confirmation["action"] == ConfirmationAction.INVITATION.name:
         info["url"] = get_invitation_url(confirmation)
@@ -123,7 +129,7 @@ def get_confirmation_info(confirmation):
     return info
 
 
-def get_invitation_url(confirmation, origin: URL = None) -> URL:
+def get_invitation_url(confirmation, origin: Optional[URL] = None) -> URL:
     code = confirmation["code"]
     is_invitation = confirmation["action"] == ConfirmationAction.INVITATION.name
 
