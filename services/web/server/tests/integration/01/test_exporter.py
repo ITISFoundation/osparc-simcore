@@ -68,7 +68,7 @@ from simcore_service_webserver.db_models import projects
 from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
 from simcore_service_webserver.exporter.file_downloader import ParallelDownloader
 from simcore_service_webserver.exporter.settings import (
-    get_settings as get_exporter_settings,
+    get_plugin_settings as get_exporter_settings,
 )
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.scicrunch.submodule_setup import (

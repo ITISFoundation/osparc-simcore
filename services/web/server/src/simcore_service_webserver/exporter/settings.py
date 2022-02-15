@@ -1,5 +1,3 @@
-from typing import Optional
-
 from aiohttp.web import Application
 from pydantic import Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
@@ -25,6 +23,7 @@ class ExporterSettings(BaseCustomSettings):
     )
 
 
-def get_settings(app: Application) -> Optional[ExporterSettings]:
+def get_plugin_settings(app: Application) -> ExporterSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_EXPORTER
+    assert settings, "this call was not expected with a disabled plugin"  # nosec
     return settings
