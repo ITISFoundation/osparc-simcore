@@ -533,7 +533,7 @@ paths:
       folder:
         - project
       summary: Links an existing folder with an existing study
-      operationId: add_folder
+      operationId: set_folder
       responses:
         "200":
           description: The folder has been successfully linked to the study
@@ -546,11 +546,11 @@ paths:
     delete:
       folder:
         - project
-      summary: Removes an existing link between a folder and a study
+      summary: Unlinks an existing link between a folder and a study
       operationId: remove_folder
       responses:
         "200":
-          description: The folder has been successfully removed from the study
+          description: The folder has been successfully unlinked
           content:
             application/json:
               schema:
