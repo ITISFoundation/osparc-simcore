@@ -133,7 +133,7 @@ def get_confirmation_info(
     info["expires"] = get_expiration_date(cfg, confirmation)
 
     if confirmation["action"] == ConfirmationAction.INVITATION.name:
-        info["url"] = get_invitation_url(confirmation)
+        info["url"] = f"{get_invitation_url(confirmation)}"
 
     return info
 

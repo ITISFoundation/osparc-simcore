@@ -55,7 +55,7 @@ async def test_unknown_email(
 async def test_banned_user(client: TestClient, cfg: LoginOptions, capsys):
     reset_url = client.app.router["auth_reset_password"].url_for()
 
-    async with NewUser({"status": UserStatus.BANNED.name}) as user:
+    async with NewUser({"status": UserStatus.BANNED.name}, app=client.app) as user:
         rp = await client.post(
             reset_url,
             json={
@@ -73,7 +73,9 @@ async def test_banned_user(client: TestClient, cfg: LoginOptions, capsys):
 async def test_inactive_user(client: TestClient, cfg: LoginOptions, capsys):
     reset_url = client.app.router["auth_reset_password"].url_for()
 
-    async with NewUser({"status": UserStatus.CONFIRMATION_PENDING.name}) as user:
+    async with NewUser(
+        {"status": UserStatus.CONFIRMATION_PENDING.name}, app=client.app
+    ) as user:
         rp = await client.post(
             reset_url,
             json={

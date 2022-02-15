@@ -13,7 +13,6 @@ from simcore_service_webserver.login.settings import (
     LoginOptions,
     LoginSettings,
     get_plugin_options,
-    get_plugin_settings,
 )
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 
@@ -32,13 +31,6 @@ def db(client: TestClient) -> AsyncpgStorage:
     db: AsyncpgStorage = get_plugin_storage(client.app)
     assert db
     return db
-
-
-@pytest.fixture
-def settings(client: TestClient) -> LoginSettings:
-    settings = get_plugin_settings(client.app)
-    assert settings
-    return settings
 
 
 # TESTS ---------------------------------------------------------------------------
@@ -81,13 +73,17 @@ async def test_registration_with_existing_email(client: TestClient, cfg: LoginOp
 @pytest.mark.skip("TODO: Feature still not implemented")
 async def test_registration_with_expired_confirmation(
     client: TestClient,
-    settings: LoginSettings,
     cfg: LoginOptions,
     db: AsyncpgStorage,
-    monkeypatch,
+    mocker,
 ):
-    monkeypatch.setattr(settings, "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED", True)
-    monkeypatch.setattr(settings, "LOGIN_REGISTRATION_CONFIRMATION_LIFETIME", -1)
+    mocker.patch(
+        "simcore_service_webserver.login.settings.get_plugin_settings",
+        return_value=LoginSettings(
+            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
+            LOGIN_REGISTRATION_INVITATION_REQUIRED=True,
+        ),
+    )
 
     url = client.app.router["auth_register"].url_for()
 
@@ -110,12 +106,17 @@ async def test_registration_with_expired_confirmation(
 
 async def test_registration_without_confirmation(
     client: TestClient,
-    settings: LoginSettings,
     cfg: LoginOptions,
     db: AsyncpgStorage,
-    monkeypatch,
+    mocker,
 ):
-    monkeypatch.setattr(settings, "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED", False)
+    mocker.patch(
+        "simcore_service_webserver.login.handlers.get_plugin_settings",
+        return_value=LoginSettings(
+            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
+            LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
+        ),
+    )
 
     url = client.app.router["auth_register"].url_for()
     r = await client.post(
@@ -133,13 +134,18 @@ async def test_registration_without_confirmation(
 
 async def test_registration_with_confirmation(
     client: TestClient,
-    settings: LoginSettings,
     cfg: LoginOptions,
     db: AsyncpgStorage,
     capsys,
-    monkeypatch,
+    mocker,
 ):
-    monkeypatch.setitem(settings, "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED", True)
+    mocker.patch(
+        "simcore_service_webserver.login.handlers.get_plugin_settings",
+        return_value=LoginSettings(
+            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=True,
+            LOGIN_REGISTRATION_INVITATION_REQUIRED=False,
+        ),
+    )
 
     url = client.app.router["auth_register"].url_for()
     r = await client.post(
@@ -182,17 +188,19 @@ async def test_registration_with_confirmation(
 )
 async def test_registration_with_invitation(
     client: TestClient,
-    settings: LoginSettings,
     cfg: LoginOptions,
     db: AsyncpgStorage,
     is_invitation_required,
     has_valid_invitation,
     expected_response,
-    monkeypatch,
+    mocker,
 ):
-    monkeypatch.setitem(settings, "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED", False)
-    monkeypatch.setitem(
-        settings, "LOGIN_REGISTRATION_INVITATION_REQUIRED", is_invitation_required
+    mocker.patch(
+        "simcore_service_webserver.login.handlers.get_plugin_settings",
+        return_value=LoginSettings(
+            LOGIN_REGISTRATION_CONFIRMATION_REQUIRED=False,
+            LOGIN_REGISTRATION_INVITATION_REQUIRED=is_invitation_required,
+        ),
     )
 
     #
