@@ -628,26 +628,50 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return qx.bom.element.AnimationCss.animate(elem, fadeAnimation);
     },
 
-    takeScreenshot: function(screenshotBtn) {
-      const html2canvas = osparc.wrapper.Html2canvas.getInstance();
-      const iframes = Array.from(document.getElementsByTagName("iframe"));
-      const visibleIframe = iframes.find(iframe => iframe.offsetTop !== osparc.component.widget.PersistentIframe.HIDDEN_TOP);
-      const elem = visibleIframe === undefined ? this.__workbenchView.getWorkbenchPanel().getContentElement().getDomElement() : visibleIframe.contentDocument.body;
+    __capture: async function(screenshotBtn) {
       screenshotBtn.setFetching(true);
-      const animation = this.__fadeElement(elem);
-      animation.addListener("end", () => {
-        html2canvas.takeScreenshot(elem)
-          .then(screenshot => {
-            const filename = "screenshot.png";
-            screenshot.name = filename;
-            const dataStore = osparc.store.Data.getInstance();
-            dataStore.uploadScreenshotToS3(screenshot, this.getStudy().getUuid())
-              .then(link => {
-                this.getStudy().setThumbnail(link);
-              });
-          })
-          .finally(() => screenshotBtn.setFetching(false));
-      });
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+      const video = document.createElement("video");
+
+      try {
+        const captureStream = await navigator.getUserMedia();
+        video.srcObject = captureStream;
+        context.drawImage(video, 0, 0, window.width, window.height);
+        const frame = canvas.toDataURL("image/png");
+        captureStream.getTracks().forEach(track => track.stop());
+        window.location.href = frame;
+        screenshotBtn.setFetching(false);
+      } catch (err) {
+        console.error("Error: " + err);
+      }
+    },
+
+    takeScreenshot: function(screenshotBtn) {
+      screenshotBtn.setFetching(true);
+      const useHtml2Canvas = true;
+      if (useHtml2Canvas) {
+        const html2canvas = osparc.wrapper.Html2canvas.getInstance();
+        const iframes = Array.from(document.getElementsByTagName("iframe"));
+        const visibleIframe = iframes.find(iframe => iframe.offsetTop !== osparc.component.widget.PersistentIframe.HIDDEN_TOP);
+        const elem = visibleIframe === undefined ? this.__workbenchView.getWorkbenchPanel().getContentElement().getDomElement() : visibleIframe.contentDocument.body;
+        const animation = this.__fadeElement(elem);
+        animation.addListener("end", () => {
+          html2canvas.takeScreenshot(elem)
+            .then(screenshot => {
+              const filename = "screenshot.png";
+              screenshot.name = filename;
+              const dataStore = osparc.store.Data.getInstance();
+              dataStore.uploadScreenshotToS3(screenshot, this.getStudy().getUuid())
+                .then(link => {
+                  this.getStudy().setThumbnail(link);
+                });
+            })
+            .finally(() => screenshotBtn.setFetching(false));
+        });
+      } else {
+        this.__capture(screenshotBtn);
+      }
     },
 
     closeEditor: function() {
