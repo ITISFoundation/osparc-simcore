@@ -9,7 +9,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .computation_comp_tasks_listening_task import setup as setup_comp_tasks_listener
 from .computation_config import CONFIG_SECTION_NAME
-from .computation_settings import create_settings as create_computation_settings
+from .computation_settings import get_plugin_settings
 from .computation_subscribe import setup_rabbitmq_consumer
 
 log = logging.getLogger(__file__)
@@ -25,8 +25,7 @@ log = logging.getLogger(__file__)
     ],  # depends on diagnostics for setting the instrumentation
 )
 def setup_computation(app: web.Application):
-    # create settings and injects in app
-    create_computation_settings(app)
+    assert get_plugin_settings(app)  # nosec
 
     # subscribe to rabbit upon startup for logs, progress and other
     # metrics on the execution reported by sidecars
