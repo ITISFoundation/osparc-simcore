@@ -25,6 +25,11 @@ class SciCrunchSettings(BaseCustomSettings):
     )
 
 
+def get_plugin_settings(app: web.Application) -> SciCrunchSettings:
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_SCICRUNCH
+    return settings
+
+
 def assert_valid_config(app: web.Application):
 
     WEBSERVER_SCICRUNCH = SciCrunchSettings()

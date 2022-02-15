@@ -12,8 +12,8 @@ from servicelib.aiohttp.rest_routing import (
 )
 
 from . import groups_handlers
-from ._constants import APP_OPENAPI_SPECS_KEY
-from .scicrunch.submodule_setup import setup_scicrunch_submodule
+from ._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
+from .scicrunch.module_setup import setup_scicrunch
 
 logger = logging.getLogger(__name__)
 
@@ -21,13 +21,16 @@ logger = logging.getLogger(__name__)
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
+    settings_name="WEBSERVER_GROUPS",
     depends=["simcore_service_webserver.rest", "simcore_service_webserver.users"],
     logger=logger,
 )
 def setup_groups(app: web.Application):
 
+    assert app[APP_SETTINGS_KEY].WEBSERVER_GROUPS
+
     # prepares scicrunch api
-    setup_scicrunch_submodule(app)
+    setup_scicrunch(app)
 
     # routes
     specs = app[APP_OPENAPI_SPECS_KEY]

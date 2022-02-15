@@ -15,12 +15,10 @@ from aiohttp import web
 from aioresponses.core import aioresponses
 from servicelib.aiohttp.client_session import get_client_session
 from simcore_service_webserver.application_settings import setup_settings
+from simcore_service_webserver.scicrunch.module_setup import setup_scicrunch
 from simcore_service_webserver.scicrunch.service_client import (
     ResearchResource,
     SciCrunch,
-)
-from simcore_service_webserver.scicrunch.submodule_setup import (
-    setup_scicrunch_submodule,
 )
 
 
@@ -100,7 +98,7 @@ async def fake_app(mock_env_devel_environment, loop):
 
     app = web.Application()
     setup_settings(app)
-    setup_scicrunch_submodule(app)
+    setup_scicrunch(app)
 
     yield app
 

@@ -107,6 +107,7 @@ def create_schema() -> T.Dict:
             addon_section("tags", optional=True): minimal_addon_schema(),
             addon_section("users", optional=True): minimal_addon_schema(),
             addon_section("version_control", optional=True): minimal_addon_schema(),
+            addon_section("scicrunch", optional=True): minimal_addon_schema(),
         }
     )
 

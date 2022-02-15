@@ -71,9 +71,7 @@ from simcore_service_webserver.exporter.settings import (
     get_plugin_settings as get_exporter_settings,
 )
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
-from simcore_service_webserver.scicrunch.submodule_setup import (
-    setup_scicrunch_submodule,
-)
+from simcore_service_webserver.scicrunch.module_setup import setup_scicrunch
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.storage_handlers import get_file_download_url
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -177,7 +175,7 @@ def client(
     setup_storage(app)
     setup_products(app)
     setup_catalog(app)
-    setup_scicrunch_submodule(app)
+    setup_scicrunch(app)
     assert setup_resource_manager(app)
     setup_garbage_collector(app)
 
