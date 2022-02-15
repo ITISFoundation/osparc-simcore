@@ -6,22 +6,21 @@ Notes:
 """
 
 import os
+import tempfile
 
+from distutils.util import strtobool
 from pathlib import Path
 from string import Template
 
-SCRIPT_DIR = Path(__file__).absolute().parent
+SCRIPT_DIR = Path(__file__).resolve().parent
 TEMPLATE_PATH = SCRIPT_DIR / "filestash_config.json.template"
-CONFIG_TEMP_DIR = SCRIPT_DIR / ".." / ".." / "_tmp"
-CONFIG_JSON = CONFIG_TEMP_DIR / "filestash_config.json"
+CONFIG_JSON = Path(tempfile.mkdtemp()) / "filestash_config.json"
 
 
 def patch_env_vars() -> None:
     endpoint = os.environ["S3_ENDPOINT"]
     if not endpoint.startswith("http"):
-        protocol = (
-            "https" if os.environ["S3_SECURE"].lower() in {"1", "true"} else "http"
-        )
+        protocol = "https" if strtobool(os.environ["S3_SECURE"].lower()) else "http"
         endpoint = f"{protocol}://{endpoint}"
 
     os.environ["S3_ENDPOINT"] = endpoint
@@ -36,8 +35,11 @@ def main() -> None:
 
     config_json = Template(template_content).substitute(os.environ)
 
-    CONFIG_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+    assert CONFIG_JSON.parent.exists()
     CONFIG_JSON.write_text(config_json)
+
+    # path of configuration file is exported as env var
+    print(f"{CONFIG_JSON}")
 
 
 if __name__ == "__main__":

@@ -77,8 +77,8 @@ endif
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
-S3_ENDPOINT := $(get_my_ip):9001
-export S3_ENDPOINT
+#S3_ENDPOINT := $(get_my_ip):9001
+#export S3_ENDPOINT
 
 
 
@@ -196,11 +196,12 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 
 .stack-ops.yml: .env $(docker-compose-configs)
 	# Compiling config file for filestash
-	@set -o allexport; \
+	$(eval TMP_PATH_TO_FILESTASH_CONFIG=$(shell set -o allexport; \
 	source $(CURDIR)/.env; \
 	set +o allexport; \
-	python3 scripts/filestash/create_config.py
+	python3 scripts/filestash/create_config.py))
 	# Creating config for ops stack to $@
+	# -> filestash config at $(TMP_PATH_TO_FILESTASH_CONFIG)
 	@docker-compose --env-file .env --file services/docker-compose-ops.yml --log-level=ERROR config > $@
 
 

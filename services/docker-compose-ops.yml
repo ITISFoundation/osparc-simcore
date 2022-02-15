@@ -76,7 +76,7 @@ services:
     ports:
       - "9002:8334"
     volumes:
-      - ${PWD}/_tmp/filestash_config.json:/app/data/state/config/config.json
+      - ${PWD}/${TMP_PATH_TO_FILESTASH_CONFIG}:/app/data/state/config/config.json
     networks:
       - simcore_default
 
