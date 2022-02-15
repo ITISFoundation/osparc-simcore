@@ -9,7 +9,7 @@ from servicelib.request_keys import RQT_USERID_KEY
 from .email_settings import SMTPSettings
 from .email_settings import get_plugin_settings as get_email_settings
 from .login.decorators import login_required
-from .login.settings import get_plugin_storage  # FIXME: remove this dependency
+from .login.storage import AsyncpgStorage, get_plugin_storage
 from .login.utils import themed
 
 log = logging.getLogger(__name__)
@@ -51,7 +51,9 @@ async def service_submission(request: web.Request):
         env in os.environ.get("SWARM_STACK_NAME", "")
         for env in ("production", "staging")
     )
-    db = get_plugin_storage(request.app)
+
+    # TODO: remove this dependency and use db instead
+    db: AsyncpgStorage = get_plugin_storage(request.app)
     user = await db.get_user({"id": request[RQT_USERID_KEY]})
     user_email = user.get("email")
     if not is_real_usage:

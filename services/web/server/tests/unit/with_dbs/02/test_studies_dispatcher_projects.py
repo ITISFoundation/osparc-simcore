@@ -96,7 +96,7 @@ async def test_add_new_project_from_model_instance(
         return_value=None,
     )
 
-    async with NewUser() as user_db:
+    async with NewUser(app=client.app) as user_db:
         try:
             # preparation
             await auto_add_user_to_groups(client.app, user_db["id"])

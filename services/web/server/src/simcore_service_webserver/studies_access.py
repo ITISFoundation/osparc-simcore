@@ -61,12 +61,12 @@ async def create_temporary_user(request: web.Request):
     """
     TODO: user should have an expiration date and limited persmissions!
     """
-    from .login.cfg import get_storage
     from .login.handlers import ACTIVE, GUEST
+    from .login.storage import AsyncpgStorage, get_plugin_storage
     from .login.utils import get_client_ip, get_random_string
     from .security_api import encrypt_password
 
-    db = get_storage(request.app)
+    db: AsyncpgStorage = get_plugin_storage(request.app)
     lock_manager: Aioredlock = get_redis_lock_manager(request.app)
 
     # TODO: avatar is an icon of the hero!
@@ -125,10 +125,10 @@ async def create_temporary_user(request: web.Request):
 
 # TODO: from .users import get_user?
 async def get_authorized_user(request: web.Request) -> Dict:
-    from .login.cfg import get_storage
+    from .login.storage import AsyncpgStorage, get_plugin_storage
     from .security_api import authorized_userid
 
-    db = get_storage(request.app)
+    db: AsyncpgStorage = get_plugin_storage(request.app)
     userid = await authorized_userid(request)
     user = await db.get_user({"id": userid})
     return user

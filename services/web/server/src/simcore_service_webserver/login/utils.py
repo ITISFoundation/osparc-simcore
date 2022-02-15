@@ -19,7 +19,7 @@ from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.json_serialization import json_dumps
 
 from .._resources import resources
-from .settings import APP_LOGIN_OPTIONS_KEY, LoginOptions
+from .settings import LoginOptions, get_plugin_options
 
 log = getLogger(__name__)
 
@@ -117,7 +117,7 @@ def flash_response(msg: str, level: str = "INFO") -> web.Response:
 
 
 async def send_mail(app: web.Application, msg: MIMEText):
-    cfg: LoginOptions = app[APP_LOGIN_OPTIONS_KEY]
+    cfg: LoginOptions = get_plugin_options(app)
 
     msg["From"] = cfg.SMTP_SENDER
     smtp_args = dict(

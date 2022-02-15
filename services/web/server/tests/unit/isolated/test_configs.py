@@ -13,17 +13,10 @@ from typing import Any, Callable, Dict, List, Set, Tuple
 import pytest
 import trafaret
 from pytest_simcore.helpers.utils_environs import eval_service_environ
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import is_setup_function
 from simcore_service_webserver._resources import resources
 from simcore_service_webserver.application__schema import create_schema
 from simcore_service_webserver.cli import parse, setup_parser
-from simcore_service_webserver.db_config import CONFIG_SECTION_NAME as DB_SECTION
-from simcore_service_webserver.email_config import CONFIG_SECTION_NAME as SMTP_SECTION
-from simcore_service_webserver.login.cfg import DEFAULTS as CONFIG_DEFAULTS
-from simcore_service_webserver.login.cfg import Cfg
-from simcore_service_webserver.login.config import CONFIG_SECTION_NAME as LOGIN_SECTION
-from simcore_service_webserver.login.config import create_login_internal_config
 
 config_yaml_filenames = [str(name) for name in resources.listdir("config")]
 
@@ -170,42 +163,6 @@ def test_schema_sections(
     sections_in_schema = [section.name for section in app_config_schema.keys]
 
     assert sorted(sections_in_schema) == sorted(expected_sections)
-
-
-@pytest.mark.parametrize("configfile", config_yaml_filenames)
-def test_creation_of_login_config(configfile, service_webserver_environ):
-    parser = setup_parser(argparse.ArgumentParser("test-parser"))
-
-    with mock.patch("os.environ", service_webserver_environ):
-        app_config = parse(["-c", configfile], parser)
-
-        for key, value in app_config.items():
-            assert value != "None", "Use instead Null in {} for {}".format(
-                configfile, key
-            )
-
-        # sections of app config used
-        assert LOGIN_SECTION in app_config.keys()
-        assert SMTP_SECTION in app_config.keys()
-        assert DB_SECTION in app_config.keys()
-
-        # creates update config
-        fake_app = {APP_CONFIG_KEY: app_config}
-        fake_storage = object()
-
-        update_cfg = create_login_internal_config(fake_app, fake_storage)
-        assert all(
-            value.lower() is not ["none", "null", ""]
-            for value in update_cfg.values()
-            if isinstance(value, str)
-        )
-
-        # creates login.cfg
-        login_internal_cfg = Cfg(CONFIG_DEFAULTS)
-        try:
-            login_internal_cfg.configure(update_cfg)
-        except ValueError as ee:
-            pytest.fail(f"{ee}: \n {update_cfg}")
 
 
 @pytest.mark.parametrize("configfile", config_yaml_filenames)

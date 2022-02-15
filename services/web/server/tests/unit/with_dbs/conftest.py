@@ -462,7 +462,8 @@ async def all_group(client, logged_user) -> Dict[str, str]:
 
 def _path_mail(monkeypatch):
     async def send_mail(*args):
-        print("=== EMAIL TO: {}\n=== SUBJECT: {}\n=== BODY:\n{}".format(*args))
+        _app, recipient, subject, body = args
+        print(f"=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}")
 
     monkeypatch.setattr(
         simcore_service_webserver.login.utils, "compose_mail", send_mail

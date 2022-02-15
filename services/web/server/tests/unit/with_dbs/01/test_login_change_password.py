@@ -3,15 +3,24 @@
 # pylint: disable=unused-variable
 
 
+import pytest
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser
-from simcore_service_webserver.login.cfg import APP_LOGIN_CONFIG
+from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 
 NEW_PASSWORD = "NewPassword1*&^"
 
 
-async def test_unauthorized_to_change_password(client):
+@pytest.fixture
+def cfg(client: TestClient) -> LoginOptions:
+    cfg = get_plugin_options(client.app)
+    assert cfg
+    return cfg
+
+
+async def test_unauthorized_to_change_password(client: TestClient):
     url = client.app.router["auth_change_password"].url_for()
     rsp = await client.post(
         url,
@@ -25,8 +34,7 @@ async def test_unauthorized_to_change_password(client):
     await assert_status(rsp, web.HTTPUnauthorized)
 
 
-async def test_wrong_current_password(client):
-    cfg = client.app[APP_LOGIN_CONFIG]
+async def test_wrong_current_password(client: TestClient, cfg: LoginOptions):
     url = client.app.router["auth_change_password"].url_for()
 
     async with LoggedUser(client):
@@ -44,8 +52,7 @@ async def test_wrong_current_password(client):
         await assert_status(rsp, web.HTTPUnprocessableEntity, cfg.MSG_WRONG_PASSWORD)
 
 
-async def test_wrong_confirm_pass(client):
-    cfg = client.app[APP_LOGIN_CONFIG]
+async def test_wrong_confirm_pass(client: TestClient, cfg: LoginOptions):
     url = client.app.router["auth_change_password"].url_for()
 
     async with LoggedUser(client) as user:
@@ -62,9 +69,7 @@ async def test_wrong_confirm_pass(client):
         await assert_status(rsp, web.HTTPConflict, cfg.MSG_PASSWORD_MISMATCH)
 
 
-async def test_success(client):
-    cfg = client.app[APP_LOGIN_CONFIG]
-
+async def test_success(client: TestClient, cfg: LoginOptions):
     url = client.app.router["auth_change_password"].url_for()
     login_url = client.app.router["auth_login"].url_for()
     logout_url = client.app.router["auth_logout"].url_for()
@@ -97,9 +102,3 @@ async def test_success(client):
         assert rsp.status == 200
         assert rsp.url_obj.path == login_url.path
         await assert_status(rsp, web.HTTPOk, cfg.MSG_LOGGED_IN)
-
-
-if __name__ == "__main__":
-    import pytest
-
-    pytest.main([__file__, "--maxfail=1"])

@@ -3,18 +3,48 @@
 # pylint:disable=redefined-outer-name
 import pytest
 from aiohttp import web
-
+from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_error, assert_status
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
-from simcore_service_webserver.login.cfg import cfg, get_storage
 from simcore_service_webserver.login.registration import get_confirmation_info
+from simcore_service_webserver.login.settings import (
+    LoginOptions,
+    LoginSettings,
+    get_plugin_options,
+    get_plugin_settings,
+)
+from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 
 EMAIL, PASSWORD = "tester@test.com", "password"
 
 
-async def test_regitration_availibility(client):
+@pytest.fixture
+def cfg(client: TestClient) -> LoginOptions:
+    cfg = get_plugin_options(client.app)
+    assert cfg
+    return cfg
+
+
+@pytest.fixture
+def db(client: TestClient) -> AsyncpgStorage:
+    db: AsyncpgStorage = get_plugin_storage(client.app)
+    assert db
+    return db
+
+
+@pytest.fixture
+def settings(client: TestClient) -> LoginSettings:
+    settings = get_plugin_settings(client.app)
+    assert settings
+    return settings
+
+
+# TESTS ---------------------------------------------------------------------------
+
+
+async def test_regitration_availibility(client: TestClient):
     url = client.app.router["auth_register"].url_for()
     r = await client.post(
         url,
@@ -28,16 +58,15 @@ async def test_regitration_availibility(client):
     await assert_status(r, web.HTTPOk)
 
 
-async def test_regitration_is_not_get(client):
+async def test_regitration_is_not_get(client: TestClient):
     url = client.app.router["auth_register"].url_for()
     r = await client.get(url)
     await assert_error(r, web.HTTPMethodNotAllowed)
 
 
-async def test_registration_with_existing_email(client):
-    db = get_storage(client.app)
+async def test_registration_with_existing_email(client: TestClient, cfg: LoginOptions):
     url = client.app.router["auth_register"].url_for()
-    async with NewUser() as user:
+    async with NewUser(app=client.app) as user:
         r = await client.post(
             url,
             json={
@@ -50,11 +79,16 @@ async def test_registration_with_existing_email(client):
 
 
 @pytest.mark.skip("TODO: Feature still not implemented")
-async def test_registration_with_expired_confirmation(client, monkeypatch):
-    monkeypatch.setitem(cfg, "REGISTRATION_CONFIRMATION_REQUIRED", True)
-    monkeypatch.setitem(cfg, "REGISTRATION_CONFIRMATION_LIFETIME", -1)
+async def test_registration_with_expired_confirmation(
+    client: TestClient,
+    settings: LoginSettings,
+    cfg: LoginOptions,
+    db: AsyncpgStorage,
+    monkeypatch,
+):
+    monkeypatch.setattr(settings, "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED", True)
+    monkeypatch.setattr(settings, "LOGIN_REGISTRATION_CONFIRMATION_LIFETIME", -1)
 
-    db = get_storage(client.app)
     url = client.app.router["auth_register"].url_for()
 
     async with NewUser({"status": UserStatus.CONFIRMATION_PENDING.name}) as user:
@@ -74,9 +108,15 @@ async def test_registration_with_expired_confirmation(client, monkeypatch):
     await assert_error(r, web.HTTPConflict, cfg.MSG_EMAIL_EXISTS)
 
 
-async def test_registration_without_confirmation(client, monkeypatch):
-    monkeypatch.setitem(cfg, "REGISTRATION_CONFIRMATION_REQUIRED", False)
-    db = get_storage(client.app)
+async def test_registration_without_confirmation(
+    client: TestClient,
+    settings: LoginSettings,
+    cfg: LoginOptions,
+    db: AsyncpgStorage,
+    monkeypatch,
+):
+    monkeypatch.setattr(settings, "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED", False)
+
     url = client.app.router["auth_register"].url_for()
     r = await client.post(
         url, json={"email": EMAIL, "password": PASSWORD, "confirm": PASSWORD}
@@ -91,9 +131,16 @@ async def test_registration_without_confirmation(client, monkeypatch):
     await db.delete_user(user)
 
 
-async def test_registration_with_confirmation(client, capsys, monkeypatch):
-    monkeypatch.setitem(cfg, "REGISTRATION_CONFIRMATION_REQUIRED", True)
-    db = get_storage(client.app)
+async def test_registration_with_confirmation(
+    client: TestClient,
+    settings: LoginSettings,
+    cfg: LoginOptions,
+    db: AsyncpgStorage,
+    capsys,
+    monkeypatch,
+):
+    monkeypatch.setitem(settings, "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED", True)
+
     url = client.app.router["auth_register"].url_for()
     r = await client.post(
         url, json={"email": EMAIL, "password": PASSWORD, "confirm": PASSWORD}
@@ -134,15 +181,19 @@ async def test_registration_with_confirmation(client, capsys, monkeypatch):
     ],
 )
 async def test_registration_with_invitation(
-    client, is_invitation_required, has_valid_invitation, expected_response
+    client: TestClient,
+    settings: LoginSettings,
+    cfg: LoginOptions,
+    db: AsyncpgStorage,
+    is_invitation_required,
+    has_valid_invitation,
+    expected_response,
+    monkeypatch,
 ):
-    from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
-    from simcore_service_webserver.login.config import CONFIG_SECTION_NAME
-
-    client.app[APP_CONFIG_KEY][CONFIG_SECTION_NAME] = {
-        "registration_confirmation_required": False,
-        "registration_invitation_required": is_invitation_required,
-    }
+    monkeypatch.setitem(settings, "LOGIN_REGISTRATION_CONFIRMATION_REQUIRED", False)
+    monkeypatch.setitem(
+        settings, "LOGIN_REGISTRATION_INVITATION_REQUIRED", is_invitation_required
+    )
 
     #
     # User gets an email with a link as
@@ -151,7 +202,7 @@ async def test_registration_with_invitation(
     # Front end then creates the following request
     #
     async with NewInvitation(client) as confirmation:
-        print(get_confirmation_info(confirmation))
+        print(get_confirmation_info(cfg, confirmation))
 
         url = client.app.router["auth_register"].url_for()
 
@@ -176,9 +227,4 @@ async def test_registration_with_invitation(
             await assert_status(r, expected_response)
 
         if is_invitation_required and has_valid_invitation:
-            db = get_storage(client.app)
             assert not await db.get_confirmation(confirmation)
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "--maxfail=1"])

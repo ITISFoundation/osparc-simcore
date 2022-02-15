@@ -4,12 +4,15 @@ from logging import getLogger
 from typing import Dict
 
 import asyncpg
+from aiohttp import web
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from . import sql
 from .utils import get_random_string
 
 log = getLogger(__name__)
+
+APP_LOGIN_STORAGE_KEY = f"{__name__}.APP_LOGIN_STORAGE_KEY"
 
 
 class AsyncpgStorage:
@@ -68,6 +71,12 @@ class AsyncpgStorage:
     async def delete_confirmation(self, confirmation):
         async with self.pool.acquire() as conn:
             await sql.delete(conn, self.confirm_tbl, {"code": confirmation["code"]})
+
+
+def get_plugin_storage(app: web.Application) -> AsyncpgStorage:
+    storage = app.get(APP_LOGIN_STORAGE_KEY)
+    assert storage, "login plugin was not initialized"  # nosec
+    return storage
 
 
 # helpers ----------------------------

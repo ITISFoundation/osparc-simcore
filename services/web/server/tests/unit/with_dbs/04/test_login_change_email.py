@@ -1,18 +1,27 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
+import pytest
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import LoggedUser, NewUser, parse_link
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
-from simcore_service_webserver.login.cfg import APP_LOGIN_CONFIG
+from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from yarl import URL
 
 NEW_EMAIL = "new@mail.com"
 
 
-async def test_unauthorized_to_change_email(client):
+@pytest.fixture
+def cfg(client: TestClient) -> LoginOptions:
+    cfg = get_plugin_options(client.app)
+    assert cfg
+    return cfg
+
+
+async def test_unauthorized_to_change_email(client: TestClient):
     url = client.app.router["auth_change_email"].url_for()
     rsp = await client.post(
         url,
@@ -24,11 +33,11 @@ async def test_unauthorized_to_change_email(client):
     await assert_status(rsp, web.HTTPUnauthorized)
 
 
-async def test_change_to_existing_email(client):
+async def test_change_to_existing_email(client: TestClient):
     url = client.app.router["auth_change_email"].url_for()
 
     async with LoggedUser(client) as user:
-        async with NewUser() as other:
+        async with NewUser(app=client.app) as other:
             rsp = await client.post(
                 url,
                 json={
@@ -40,8 +49,7 @@ async def test_change_to_existing_email(client):
             )
 
 
-async def test_change_and_confirm(client, capsys):
-    cfg = client.app[APP_LOGIN_CONFIG]
+async def test_change_and_confirm(client: TestClient, cfg: LoginOptions, capsys):
 
     url = client.app.router["auth_change_email"].url_for()
     index_url = client.app.router[INDEX_RESOURCE_NAME].url_for()
@@ -90,9 +98,3 @@ async def test_change_and_confirm(client, capsys):
         payload = await rsp.json()
         assert rsp.url_obj.path == login_url.path
         await assert_status(rsp, web.HTTPOk, cfg.MSG_LOGGED_IN)
-
-
-if __name__ == "__main__":
-    import pytest
-
-    pytest.main([__file__, "--maxfail=1"])

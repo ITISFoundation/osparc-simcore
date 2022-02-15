@@ -6,7 +6,6 @@ import attr
 import pytest
 from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import LoggedUser
 from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.login.api_keys_handlers import CRUD as ApiKeysCRUD
 

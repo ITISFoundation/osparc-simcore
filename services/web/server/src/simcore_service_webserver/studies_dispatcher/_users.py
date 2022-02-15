@@ -14,8 +14,8 @@ from aiohttp import web
 from aioredlock import Aioredlock
 from pydantic import BaseModel
 
-from ..login.cfg import get_storage
 from ..login.handlers import ACTIVE, GUEST
+from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils import get_client_ip, get_random_string
 from ..redis import get_redis_lock_manager
 from ..resource_manager.config import GUEST_USER_RC_LOCK_FORMAT
@@ -49,7 +49,7 @@ async def _get_authorized_user(request: web.Request) -> Optional[Dict]:
 
 
 async def _create_temporary_user(request: web.Request):
-    db = get_storage(request.app)
+    db: AsyncpgStorage = get_plugin_storage(request.app)
     lock_manager: Aioredlock = get_redis_lock_manager(request.app)
 
     # TODO: avatar is an icon of the hero!

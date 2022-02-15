@@ -22,18 +22,9 @@ from .settings import (
     LoginSettings,
     get_plugin_options,
     get_plugin_settings,
-    get_plugin_storage,
 )
-from .storage import AsyncpgStorage
-from .utils import (
-    common_themed,
-    flash_response,
-    get_client_ip,
-    render_and_send_mail,
-    themed,
-)
-
-# FIXME: do not use cfg singleton. use instead cfg = request.app[APP_LOGIN_CONFIG]
+from .storage import AsyncpgStorage, get_plugin_storage
+from .utils import flash_response, get_client_ip, render_and_send_mail, themed
 
 log = logging.getLogger(__name__)
 
@@ -100,7 +91,7 @@ async def register(request: web.Request):
         return response
 
     confirmation_ = await db.create_confirmation(user, REGISTRATION)
-    link = await make_confirmation_link(request, confirmation_)
+    link = make_confirmation_link(request, confirmation_)
     try:
         await render_and_send_mail(
             request,
@@ -235,9 +226,6 @@ async def reset_password(request: web.Request):
                 email,
                 themed(cfg.COMMON_THEME, "reset_password_email_failed.html"),
                 context={
-                    "auth": {
-                        "cfg": cfg,
-                    },
                     "host": request.host,
                     "reason": err.reason,
                 },
@@ -247,7 +235,7 @@ async def reset_password(request: web.Request):
             raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err
     else:
         confirmation = await db.create_confirmation(user, action=RESET_PASSWORD)
-        link = await make_confirmation_link(request, confirmation)
+        link = make_confirmation_link(request, confirmation)
         try:
             # primary reset email with a URL and the normal instructions.
             await render_and_send_mail(
@@ -255,9 +243,6 @@ async def reset_password(request: web.Request):
                 email,
                 themed(cfg.COMMON_THEME, "reset_password_email.html"),
                 context={
-                    "auth": {
-                        "cfg": cfg,
-                    },
                     "host": request.host,
                     "link": link,
                 },
@@ -297,16 +282,13 @@ async def change_email(request: web.Request):
 
     # create new confirmation to ensure email is actually valid
     confirmation = await db.create_confirmation(user, CHANGE_EMAIL, email)
-    link = await make_confirmation_link(request, confirmation)
+    link = make_confirmation_link(request, confirmation)
     try:
         await render_and_send_mail(
             request,
             email,
-            common_themed("change_email_email.html"),
-            {
-                "auth": {
-                    "cfg": cfg,
-                },
+            themed(cfg.COMMON_THEME, "change_email_email.html"),
+            context={
                 "host": request.host,
                 "link": link,
             },

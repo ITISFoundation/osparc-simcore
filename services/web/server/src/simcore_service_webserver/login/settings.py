@@ -8,13 +8,11 @@ from pydantic.types import PositiveFloat, PositiveInt, SecretStr
 from settings_library.base import BaseCustomSettings
 
 from .._constants import APP_SETTINGS_KEY
-from .storage import AsyncpgStorage
 
 _DAYS = 1.0
 _MINUTES = 1.0 / 24.0 / 60.0
 
 
-APP_LOGIN_STORAGE_KEY = f"{__name__}.APP_LOGIN_STORAGE_KEY"
 APP_LOGIN_OPTIONS_KEY = f"{__name__}.APP_LOGIN_OPTIONS_KEY"
 
 
@@ -73,26 +71,23 @@ class LoginOptions(BaseModel):
     MSG_PASSWORD_MISMATCH: str = "Password and confirmation do not match"
     MSG_USER_BANNED: str = "This user is banned"
     MSG_ACTIVATION_REQUIRED: str = (
-        "You have to activate your account via email, before you can login",
+        "You have to activate your account via email, before you can login"
     )
     MSG_EMAIL_EXISTS: str = "This email is already registered"
     MSG_OFTEN_RESET_PASSWORD: str = (
-        (
-            "You can not request of restoring your password so often. Please, use"
-            " the link we sent you recently"
-        ),
+        "You can not request of restoring your password so often. Please, use"
+        " the link we sent you recently"
     )
+
     MSG_CANT_SEND_MAIL: str = "Can't send email, try a little later"
     MSG_PASSWORDS_NOT_MATCH: str = "Passwords must match"
     MSG_PASSWORD_CHANGED: str = "Your password is changed"
     MSG_CHANGE_EMAIL_REQUESTED: str = (
-        "Please, click on the verification link" " we sent to your new email address"
+        "Please, click on the verification link we sent to your new email address"
     )
     MSG_EMAIL_CHANGED: str = "Your email is changed"
     MSG_AUTH_FAILED: str = "Authorization failed"
-    MSG_EMAIL_SENT: str = (
-        "An email has been sent to {email} with further instructions",
-    )
+    MSG_EMAIL_SENT: str = "An email has been sent to {email} with further instructions"
 
 
 def get_plugin_settings(app: web.Application) -> LoginSettings:
@@ -105,9 +100,3 @@ def get_plugin_options(app: web.Application) -> LoginOptions:
     options = app.get(APP_LOGIN_OPTIONS_KEY)
     assert options, "login plugin was not initialized"  # nosec
     return options
-
-
-def get_plugin_storage(app: web.Application) -> AsyncpgStorage:
-    storage = app.get(APP_LOGIN_STORAGE_KEY)
-    assert storage, "login plugin was not initialized"  # nosec
-    return storage

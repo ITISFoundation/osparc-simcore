@@ -29,9 +29,9 @@ async def validate_confirmation_code(code: str, db: AsyncpgStorage):
     return confirmation
 
 
-async def make_confirmation_link(request, confirmation):
+def make_confirmation_link(request, confirmation) -> str:
     link = request.app.router["auth_confirmation"].url_for(code=confirmation["code"])
-    return "{}://{}{}".format(request.scheme, request.host, link)
+    return f"{request.scheme}://{request.host}{link}"
 
 
 def get_expiration_date(cfg: LoginOptions, confirmation):

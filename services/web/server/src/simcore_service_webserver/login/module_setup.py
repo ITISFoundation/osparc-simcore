@@ -14,8 +14,8 @@ from ..email_settings import SMTPSettings
 from ..email_settings import get_plugin_settings as get_email_plugin_settings
 from ..rest import setup_rest
 from .routes import create_routes
-from .settings import APP_LOGIN_OPTIONS_KEY, APP_LOGIN_STORAGE_KEY, LoginOptions
-from .storage import AsyncpgStorage
+from .settings import APP_LOGIN_OPTIONS_KEY, LoginOptions
+from .storage import APP_LOGIN_STORAGE_KEY, AsyncpgStorage
 
 log = logging.getLogger(__name__)
 
@@ -23,25 +23,20 @@ log = logging.getLogger(__name__)
 MAX_TIME_TO_CLOSE_POOL_SECS = 5
 
 
-async def _setup_config_and_pgpool(app: web.Application):
-    """
-        - gets input configs from different subsystems and initializes cfg (internal configuration)
-        - creates a postgress pool and asyncpg storage object
-
-    :param app: fully setup application on startup
-    :type app: web.Application
-    """
+async def _setup_login_storage_and_options(app: web.Application):
     db_settings: PostgresSettings = get_db_plugin_settings(app)
     email_settings: SMTPSettings = get_email_plugin_settings(app)
 
+    # storage
     pool: asyncpg.pool.Pool = await asyncpg.create_pool(
-        dsn=db_settings.dsn_with_query(),
+        dsn=db_settings.dsn_with_query,
         min_size=db_settings.POSTGRES_MINSIZE,
         max_size=db_settings.POSTGRES_MAXSIZE,
         loop=asyncio.get_event_loop(),
     )
     app[APP_LOGIN_STORAGE_KEY] = storage = AsyncpgStorage(pool)
 
+    # options
     cfg = email_settings.dict(exclude_unset=True)
     if INDEX_RESOURCE_NAME in app.router:
         cfg["LOGIN_REDIRECT"] = f"{app.router[INDEX_RESOURCE_NAME].url_for()}"
@@ -62,6 +57,7 @@ async def _setup_config_and_pgpool(app: web.Application):
 @app_module_setup(
     "simcore_service_webserver.login",
     ModuleCategory.ADDON,
+    settings_name="WEBSERVER_LOGIN",
     depends=[f"simcore_service_webserver.{mod}" for mod in ("rest", "db")],
     logger=log,
 )
@@ -78,5 +74,5 @@ def setup_login(app: web.Application):
     app.router.add_routes(routes)
 
     # signals
-    app.cleanup_ctx.append(_setup_config_and_pgpool)
+    app.cleanup_ctx.append(_setup_login_storage_and_options)
     return True
