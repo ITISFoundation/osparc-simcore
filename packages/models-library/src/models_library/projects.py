@@ -129,6 +129,7 @@ class Project(BaseProjectModel):
 
     # Classification
     tags: Optional[List[int]] = []
+    folder: Optional[int] = None
     classifiers: Optional[List[ClassifierID]] = Field(
         default_factory=list,
         description="Contains the reference to the project classifiers",

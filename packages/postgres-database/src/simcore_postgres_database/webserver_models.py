@@ -9,6 +9,7 @@ from .models.classifiers import group_classifiers
 from .models.comp_pipeline import StateType, comp_pipeline
 from .models.comp_tasks import DB_CHANNEL_NAME, NodeClass, comp_tasks
 from .models.confirmations import ConfirmationAction, confirmations
+from .models.folders import folders, study_folder
 from .models.groups import GroupType, groups, user_to_groups
 from .models.products import products
 from .models.projects import ProjectType, projects
@@ -35,6 +36,8 @@ __all__ = [
     "StateType",
     "study_tags",
     "tags",
+    "study_folder",
+    "folders",
     "tokens",
     "user_to_groups",
     "UserRole",

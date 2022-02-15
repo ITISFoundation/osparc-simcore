@@ -1,0 +1,59 @@
+paths:
+  /folders:
+    get:
+      folders:
+        - folder
+      summary: List all folders for the current user
+      operationId: list_folders
+      responses:
+        '200':
+          description: List of folders
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/folder.yaml#/FolderListEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    post:
+      folders:
+        - folder
+      summary: Creates a new folder
+      operationId: create_folder
+      responses:
+        '200':
+          description: The created folder
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/folder.yaml#/FolderEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+  /folders/{folder_id}:
+    parameters:
+      - name: folder_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      folders:
+        - folder
+      summary: Updates a folder
+      operationId: update_folder
+      responses:
+        '200':
+          description: The updated folder
+          content:
+            application/json:
+              schema:
+                $ref: './components/schemas/folder.yaml#/FolderEnveloped'
+        default:
+          $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
+    delete:
+      folders:
+        - folder
+      summary: Deletes an existing folder
+      operationId: delete_folder
+      responses:
+        '204':
+          description: The folder has been successfully deleted
