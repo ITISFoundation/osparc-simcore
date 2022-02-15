@@ -42,9 +42,9 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, monkeypatch) -> Dict[str, Any]
         "computation",
         "diagnostics",
         "director",
+        "garbage_collector",
         "groups",
         "publications",
-        "resource_manager",
         "smtp",
         "socketio",
         "storage",
@@ -56,12 +56,14 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, monkeypatch) -> Dict[str, Any]
     include = {
         "db",
         "login",
+        "meta_modeling",  # MODULE UNDER TEST
         "products",
         "projects",
-        "version_control",
+        "redis",
+        "resource_manager",
         "rest",
         "users",
-        "meta_modeling",  # MODULE UNDER TEST
+        "version_control",
     }
 
     assert include.intersection(exclude) == set()

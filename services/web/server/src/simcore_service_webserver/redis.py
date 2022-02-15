@@ -6,12 +6,13 @@ import aioredis
 from aiohttp import web
 from aioredlock import Aioredlock
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from .config import (
+from .resource_manager.config import (
     APP_CLIENT_REDIS_CLIENT_KEY,
     APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY,
     APP_CLIENT_REDIS_LOCK_MANAGER_KEY,
@@ -86,7 +87,22 @@ async def redis_client(app: web.Application):
     await lock_manager.destroy()
 
 
-def setup_redis_client(app: web.Application):
+def get_redis_client(app: web.Application) -> aioredis.Redis:
+    return app[APP_CLIENT_REDIS_CLIENT_KEY]
+
+
+def get_redis_lock_manager(app: web.Application) -> Aioredlock:
+    return app[APP_CLIENT_REDIS_LOCK_MANAGER_KEY]
+
+
+def get_redis_lock_manager_client(app: web.Application) -> aioredis.Redis:
+    return app[APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY]
+
+
+@app_module_setup(
+    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_REDIS", logger=log
+)
+def setup_redis(app: web.Application):
     app[APP_CLIENT_REDIS_CLIENT_KEY] = None
 
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
@@ -98,15 +114,3 @@ def setup_redis_client(app: web.Application):
     log.debug("Setting up %s [service: %s] ...", __name__, THIS_SERVICE_NAME)
 
     app.cleanup_ctx.append(redis_client)
-
-
-def get_redis_client(app: web.Application) -> aioredis.Redis:
-    return app[APP_CLIENT_REDIS_CLIENT_KEY]
-
-
-def get_redis_lock_manager(app: web.Application) -> Aioredlock:
-    return app[APP_CLIENT_REDIS_LOCK_MANAGER_KEY]
-
-
-def get_redis_lock_manager_client(app: web.Application) -> aioredis.Redis:
-    return app[APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY]
