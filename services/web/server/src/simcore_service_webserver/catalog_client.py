@@ -19,7 +19,7 @@ from yarl import URL
 
 from ._constants import X_PRODUCT_NAME_HEADER
 from ._meta import api_version_prefix
-from .catalog_config import KCATALOG_ORIGIN, KCATALOG_VERSION_PREFIX
+from .catalog_settings import CatalogSettings, get_plugin_settings
 
 logger = logging.getLogger(__name__)
 
@@ -27,15 +27,11 @@ logger = logging.getLogger(__name__)
 async def is_service_responsive(app: web.Application):
     """Returns true if catalog is ready"""
     try:
-        origin: Optional[URL] = app.get(KCATALOG_ORIGIN)
-        if not origin:
-            raise ValueError(
-                "KCATALOG_ORIGIN was not initialized (app module was not enabled?)"
-            )
+        session: ClientSession = get_client_session(app)
+        settings: CatalogSettings = get_plugin_settings(app)
 
-        client: ClientSession = get_client_session(app)
-        await client.get(
-            origin,
+        await session.get(
+            settings.origin,
             ssl=False,
             raise_for_status=True,
             timeout=ClientTimeout(total=2, connect=1),
@@ -103,12 +99,13 @@ async def make_request_and_envelope_response(
 async def get_services_for_user_in_product(
     app: web.Application, user_id: int, product_name: str, *, only_key_versions: bool
 ) -> List[Dict]:
-    url = (
-        URL(app[KCATALOG_ORIGIN])
-        .with_path(app[KCATALOG_VERSION_PREFIX] + "/services")
-        .with_query({"user_id": user_id, "details": f"{not only_key_versions}"})
+    session: ClientSession = get_client_session(app)
+    settings: CatalogSettings = get_plugin_settings(app)
+
+    url = (URL(settings.base_url) / "services").with_query(
+        {"user_id": user_id, "details": f"{not only_key_versions}"}
     )
-    session = get_client_session(app)
+
     try:
         async with session.get(
             url,
@@ -121,6 +118,7 @@ async def get_services_for_user_in_product(
                 )
                 return []
             return await resp.json()
+
     except asyncio.TimeoutError as err:
         logger.warning("Catalog service connection timeout error")
         raise web.HTTPServiceUnavailable(
@@ -135,25 +133,21 @@ async def get_service(
     service_version: str,
     product_name: str,
 ) -> Dict[str, Any]:
+    session: ClientSession = get_client_session(app)
+    settings: CatalogSettings = get_plugin_settings(app)
+
     url = (
-        URL(app[KCATALOG_ORIGIN])
-        .with_path(
-            app[KCATALOG_VERSION_PREFIX]
-            + f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
-        )
-        .with_query(
-            {
-                "user_id": user_id,
-            }
-        )
-    )
-    session = get_client_session(app)
+        URL(settings.base_url)
+        / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}"
+    ).with_query({"user_id": user_id})
+
     try:
         async with session.get(
             url, headers={X_PRODUCT_NAME_HEADER: product_name}
         ) as resp:
             resp.raise_for_status()  # FIXME: error handling for session and response exceptions
             return await resp.json()
+
     except asyncio.TimeoutError as err:
         logger.warning("Catalog service connection timeout error")
         raise web.HTTPServiceUnavailable(
@@ -169,25 +163,21 @@ async def update_service(
     product_name: str,
     update_data: Dict[str, Any],
 ) -> Dict[str, Any]:
+    session: ClientSession = get_client_session(app)
+    settings: CatalogSettings = get_plugin_settings(app)
+
     url = (
-        URL(app[KCATALOG_ORIGIN])
-        .with_path(
-            app[KCATALOG_VERSION_PREFIX]
-            + f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
-        )
-        .with_query(
-            {
-                "user_id": user_id,
-            }
-        )
-    )
-    session = get_client_session(app)
+        URL(settings.base_url)
+        / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}"
+    ).with_query({"user_id": user_id})
+
     try:
         async with session.patch(
             url, headers={X_PRODUCT_NAME_HEADER: product_name}, json=update_data
         ) as resp:
             resp.raise_for_status()  # FIXME: error handling for session and response exceptions
             return await resp.json()
+
     except asyncio.TimeoutError as err:
         logger.warning("Catalog service connection timeout error")
         raise web.HTTPServiceUnavailable(
