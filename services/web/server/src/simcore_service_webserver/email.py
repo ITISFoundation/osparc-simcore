@@ -25,6 +25,7 @@ log = logging.getLogger(__name__)
     __name__, ModuleCategory.ADDON, config_section=CONFIG_SECTION_NAME, logger=log
 )
 def setup_email(app: web.Application, debug: bool = False):
+    # TODO: move debug as settings flag
 
     tmpl_dir = resources.get_path("templates")
     if not tmpl_dir.exists():
