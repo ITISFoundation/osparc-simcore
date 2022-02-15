@@ -202,7 +202,11 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 	python3 scripts/filestash/create_config.py))
 	# Creating config for ops stack to $@
 	# -> filestash config at $(TMP_PATH_TO_FILESTASH_CONFIG)
-	@docker-compose --env-file .env --file services/docker-compose-ops.yml --log-level=ERROR config > $@
+	@$(shell \
+		export TMP_PATH_TO_FILESTASH_CONFIG="${TMP_PATH_TO_FILESTASH_CONFIG}"; \
+		docker-compose --env-file .env --file services/docker-compose-ops.yml --log-level=DEBUG config > $@ \
+	)
+
 
 
 .PHONY: up-devel up-prod up-version up-latest .deploy-ops
@@ -210,7 +214,8 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 .deploy-ops: .stack-ops.yml
 	# Deploy stack 'ops'
 ifndef ops_disabled
-	@docker stack deploy --with-registry-auth -c $< ops
+	# -> filestash config at $(TMP_PATH_TO_FILESTASH_CONFIG)
+	docker stack deploy --with-registry-auth -c $< ops
 else
 	@echo "Explicitly disabled with ops_disabled flag in CLI"
 endif
