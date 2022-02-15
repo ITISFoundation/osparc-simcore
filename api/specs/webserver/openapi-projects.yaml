@@ -530,7 +530,7 @@ paths:
         schema:
           type: string
     put:
-      folder:
+      tags:
         - project
       summary: Links an existing folder with an existing study
       operationId: set_folder
@@ -544,7 +544,7 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
     delete:
-      folder:
+      tags:
         - project
       summary: Unlinks an existing link between a folder and a study
       operationId: remove_folder

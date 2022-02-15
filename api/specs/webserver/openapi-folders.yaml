@@ -1,7 +1,7 @@
 paths:
   /folders:
     get:
-      folders:
+      tags:
         - folder
       summary: List all folders for the current user
       operationId: list_folders
@@ -15,7 +15,7 @@ paths:
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
     post:
-      folders:
+      tags:
         - folder
       summary: Creates a new folder
       operationId: create_folder
@@ -36,7 +36,7 @@ paths:
         schema:
           type: integer
     put:
-      folders:
+      tags:
         - folder
       summary: Updates a folder
       operationId: update_folder
@@ -50,7 +50,7 @@ paths:
         default:
           $ref: './openapi.yaml#/components/responses/DefaultErrorResponse'
     delete:
-      folders:
+      tags:
         - folder
       summary: Deletes an existing folder
       operationId: delete_folder

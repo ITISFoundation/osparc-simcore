@@ -37,6 +37,7 @@ tags:
       Grouping the paths and operations that perform changes on the TAG entity.
       Tags are customized visual elements that help the user group and quickly identify different items
       on the interface. They can also be used for searching and filtering purposes.
+  - name: folder
   - name: node
     description: |
       The simcore frontend provides a bunch of custom ui elements for nodes to interact with users.
@@ -2070,6 +2071,9 @@ paths:
                   type: array
                   items:
                     type: integer
+                folder:
+                  description: Folder ID that contains the project
+                  type: integer
                 classifiers:
                   type: array
                   description: Contains the reference to the project classifiers
@@ -2880,6 +2884,46 @@ paths:
       responses:
         '200':
           description: The tag has been successfully removed from the study
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects/post/responses/201/content/application~1json/schema'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/projects/{study_uuid}/folder/{folder_id}':
+    parameters:
+      - name: folder_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: study_uuid
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      tags:
+        - project
+      summary: Links an existing folder with an existing study
+      operationId: set_folder
+      responses:
+        '200':
+          description: The folder has been successfully linked to the study
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1projects/post/responses/201/content/application~1json/schema'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    delete:
+      tags:
+        - project
+      summary: Unlinks an existing link between a folder and a study
+      operationId: remove_folder
+      responses:
+        '200':
+          description: The folder has been successfully unlinked
           content:
             application/json:
               schema:
@@ -3801,6 +3845,100 @@ paths:
       responses:
         '204':
           description: The tag has been successfully deleted
+  /folders:
+    get:
+      tags:
+        - folder
+      summary: List all folders for the current user
+      operationId: list_folders
+      responses:
+        '200':
+          description: List of folders
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    required:
+                      - folders
+                    properties:
+                      folders:
+                        type: array
+                        items:
+                          $ref: '#/paths/~1folders/post/responses/200/content/application~1json/schema/properties/data'
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    post:
+      tags:
+        - folder
+      summary: Creates a new folder
+      operationId: create_folder
+      responses:
+        '200':
+          description: The created folder
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    required:
+                      - name
+                      - color
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      description:
+                        type: string
+                      color:
+                        type: string
+                        pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+                  error:
+                    nullable: true
+                    default: null
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/folders/{folder_id}':
+    parameters:
+      - name: folder_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      tags:
+        - folder
+      summary: Updates a folder
+      operationId: update_folder
+      responses:
+        '200':
+          description: The updated folder
+          content:
+            application/json:
+              schema:
+                $ref: '#/paths/~1folders/post/responses/200/content/application~1json/schema'
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+    delete:
+      tags:
+        - folder
+      summary: Deletes an existing folder
+      operationId: delete_folder
+      responses:
+        '204':
+          description: The folder has been successfully deleted
   /publications/service-submission:
     post:
       tags:
