@@ -4,12 +4,14 @@
     - settings
 """
 from functools import cached_property
+from typing import Optional
 
 from aiohttp import web
 from models_library.basic_types import PortInt, VersionTag
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT, MixinServiceSettings
 
+from ._constants import APP_SETTINGS_KEY
 from .catalog_config import get_config
 
 
@@ -25,6 +27,12 @@ class CatalogSettings(BaseCustomSettings, MixinServiceSettings):
     @cached_property
     def origin(self) -> str:
         return self._build_origin_url(prefix="CATALOG")
+
+
+def get_plugin_settings(app: web.Application) -> CatalogSettings:
+    settings: Optional[CatalogSettings] = app[APP_SETTINGS_KEY].WEBSERVER_CATALOG
+    assert settings  # nosec
+    return settings
 
 
 def assert_valid_config(app: web.Application):

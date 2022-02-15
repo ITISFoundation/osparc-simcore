@@ -8,8 +8,8 @@ from copy import deepcopy
 from pprint import pformat
 
 import pytest
-from simcore_service_webserver.catalog_api_handlers import RESPONSE_MODEL_POLICY
-from simcore_service_webserver.catalog_api_models import (
+from simcore_service_webserver.catalog_handlers import RESPONSE_MODEL_POLICY
+from simcore_service_webserver.catalog_models import (
     ServiceInputApiOut,
     ServiceOutputApiOut,
     replace_service_input_outputs,

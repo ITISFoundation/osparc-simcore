@@ -1,5 +1,5 @@
 from models_library.services import ServiceInput, ServiceOutput
-from simcore_service_webserver.catalog_api_handlers import can_connect
+from simcore_service_webserver.catalog_handlers import can_connect
 
 
 def test_can_connect():

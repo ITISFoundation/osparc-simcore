@@ -11,7 +11,7 @@ from pydantic import ValidationError
 from . import catalog_client
 from ._constants import RQ_PRODUCT_KEY
 from ._meta import api_version_prefix
-from .catalog_api_models import (
+from .catalog_models import (
     ServiceInputApiOut,
     ServiceInputKey,
     ServiceKey,

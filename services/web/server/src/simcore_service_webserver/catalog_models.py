@@ -24,7 +24,7 @@ FAKE_UNIT_TO_FORMATS = {"SECOND": ("s", "seconds"), "METER": ("m", "meters")}
 
 
 class CannotFormatUnitError(ValueError):
-    """ Either unit is not provided or is invalid or is not registered """
+    """Either unit is not provided or is invalid or is not registered"""
 
 
 def get_formatted_unit(data: dict):
@@ -143,7 +143,7 @@ class ServiceOutputApiOut(ServiceOutput, _BaseCommonApiExtension):
 
 
 def replace_service_input_outputs(service: Dict[str, Any], **export_options):
-    """ Thin wrapper to replace i/o ports in returned service model """
+    """Thin wrapper to replace i/o ports in returned service model"""
     # This is a fast solution until proper models are available for the web API
 
     for input_key in service["inputs"]:
