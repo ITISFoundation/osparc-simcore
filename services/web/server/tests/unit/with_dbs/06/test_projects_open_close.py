@@ -62,18 +62,8 @@ DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
 
 
 @pytest.fixture
-def mock_garbage_collector_task(mocker):
-    """patch the setup of the garbage collector so we can call it manually"""
-    mocker.patch(
-        "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
-        return_value="",
-    )
-
-
-@pytest.fixture
 def client(
     loop,
-    mock_garbage_collector_task,
     aiohttp_client,
     app_cfg,
     postgres_db,

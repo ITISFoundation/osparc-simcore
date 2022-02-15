@@ -11,7 +11,7 @@ from models_library.basic_types import (
     VersionTag,
 )
 from pydantic import validator
-from pydantic.fields import Field
+from pydantic.fields import Field, ModelField
 from settings_library.base import BaseCustomSettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
@@ -124,7 +124,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True, description="login plugin"
     )
     WEBSERVER_REDIS: Optional[RedisSettings] = Field(auto_default_from_env=True)
-    WEBSERVER_RESOURCE_MANAGER: Optional[ResourceManagerSettings] = Field(
+    WEBSERVER_RESOURCE_MANAGER: ResourceManagerSettings = Field(
         auto_default_from_env=True, description="resource_manager plugin"
     )
     WEBSERVER_S3: Optional[S3Settings] = Field(auto_default_from_env=True)
@@ -143,6 +143,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
     WEBSERVER_CLUSTERS: bool = True
+    WEBSERVER_GARBAGE_COLLECTOR: bool = True
     WEBSERVER_GROUPS: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_PRODUCTS: bool = True
@@ -168,11 +169,15 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         always=True,
     )
     @classmethod
-    def enable_only_if_dev_features_allowed(cls, v, values):
-        """Ensures that plugins 'under development' get programatically disabled if WEBSERVER_DEV_FEATURES_ENABLED=False"""
+    def enable_only_if_dev_features_allowed(cls, v, values, field: ModelField):
+        """Ensures that plugins 'under development' get programatically
+        disabled if WEBSERVER_DEV_FEATURES_ENABLED=False
+        """
         if values["WEBSERVER_DEV_FEATURES_ENABLED"]:
             return v
-        return False if isinstance(v, bool) else None
+        if v:
+            log.warning("%s still under development and will be disabled.", field.name)
+        return None if field.allow_none else False
 
     class Config(BaseCustomSettings.Config):
         # NOTE: FutureWarning: aliases are no longer used by BaseSettings to define which environment variables to read.
