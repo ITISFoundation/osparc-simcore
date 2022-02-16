@@ -6,6 +6,7 @@ import logging
 import traceback
 from collections import deque
 from typing import Any, Awaitable, Deque, Dict, List, Optional, Set, Union
+import aiodocker
 
 from fastapi import (
     APIRouter,
@@ -595,7 +596,14 @@ async def attach_container_to_network(
             )
             return
 
-        network = await docker.networks.get(item.network_id)
+        try:
+            network = await docker.networks.get(item.network_id)
+        except aiodocker.docker.DockerError:
+            raise HTTPException(
+                status.HTTP_404_NOT_FOUND,
+                detail="No network with id={item.network_id} found",
+            )
+
         await network.connect(
             {
                 "Container": id,
@@ -628,7 +636,14 @@ async def detach_container_from_network(
             )
             return
 
-        network = await docker.networks.get(item.network_id)
+        try:
+            network = await docker.networks.get(item.network_id)
+        except aiodocker.docker.DockerError:
+            raise HTTPException(
+                status.HTTP_404_NOT_FOUND,
+                detail="No network with id={item.network_id} found",
+            )
+
         await network.disconnect({"Container": id})
 
 
