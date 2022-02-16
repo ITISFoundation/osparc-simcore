@@ -349,10 +349,15 @@ async def _remove_single_orphaned_service(
             # let's be conservative here.
             # 1. opened project disappeared from redis?
             # 2. something bad happened when closing a project?
-            user_id = int(interactive_service.get("user_id", 0))
+            user_id = int(interactive_service.get("user_id", -1))
+            is_invalid_user_id = user_id <= 0
+            save_state = True
 
-            save_state = not await is_user_guest(app, user_id) if user_id else True
+            if is_invalid_user_id or await is_user_guest(app, user_id):
+                save_state = False
+
             await director_v2_api.stop_service(app, service_uuid, save_state)
+
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
 
