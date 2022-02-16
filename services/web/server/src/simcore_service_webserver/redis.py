@@ -5,35 +5,39 @@ from typing import Optional
 import aioredis
 from aiohttp import web
 from aioredlock import Aioredlock
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from settings_library.redis import RedisSettings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
+from ._constants import APP_SETTINGS_KEY
 from .resource_manager.config import (
     APP_CLIENT_REDIS_CLIENT_KEY,
     APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY,
     APP_CLIENT_REDIS_LOCK_MANAGER_KEY,
-    CONFIG_SECTION_NAME,
 )
 
 log = logging.getLogger(__name__)
 
-THIS_SERVICE_NAME = "redis"
-DSN = "redis://{host}:{port}"
 _MINUTE = 60
 _WAIT_SECS = 2
 
 
-async def redis_client(app: web.Application):
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    endpoint = DSN.format(**cfg["redis"])
+def get_plugin_settings(app: web.Application) -> RedisSettings:
+    settings: Optional[RedisSettings] = app[APP_SETTINGS_KEY].WEBSERVER_REDIS
+    assert settings, "redis plugin was not initialized"  # nosec
+    return settings
 
-    async def create_client(url) -> aioredis.Redis:
+
+async def redis_client(app: web.Application):
+    redis_settings: RedisSettings = get_plugin_settings(app)
+
+    async def create_client(address) -> aioredis.Redis:
         # create redis client
         client: Optional[aioredis.Redis] = None
+
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(1 * _MINUTE),
             wait=wait_fixed(_WAIT_SECS),
@@ -41,26 +45,28 @@ async def redis_client(app: web.Application):
             reraise=True,
         ):
             with attempt:
-                client = await aioredis.create_redis_pool(url, encoding="utf-8")
+                client = await aioredis.create_redis_pool(address, encoding="utf-8")
                 if not client:
                     raise ValueError("Expected aioredis client instance, got {client}")
                 log.info(
                     "Connection to %s succeeded [%s]",
-                    f"redis at {endpoint=}",
+                    f"redis at {address=}",
                     json.dumps(attempt.retry_state.retry_object.statistics),
                 )
         assert client  # no sec
         return client
 
+    origin_url = f"redis://{redis_settings.HOST}:{redis_settings.PORT}"
     log.info(
-        "Connecting to %s",
-        f"redis at {endpoint=}",
+        "Connecting to redis at %s",
+        f"{origin_url=}",
     )
-    app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await create_client(endpoint)
+    app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await create_client(origin_url)
     assert client  # nosec
 
+    # TODO: use RedisDsn.build(**redis_settings.build_kwargs()) via a Mixin?
     # create lock manager but use DB 1
-    lock_db_url = endpoint + "/1"
+    lock_db_url = origin_url + "/1"
     # create a client for it as well
     app[
         APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY
@@ -105,12 +111,7 @@ def get_redis_lock_manager_client(app: web.Application) -> aioredis.Redis:
 def setup_redis(app: web.Application):
     app[APP_CLIENT_REDIS_CLIENT_KEY] = None
 
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-
-    if not cfg["redis"]["enabled"]:
-        return
-
     # app is created at this point but not yet started
-    log.debug("Setting up %s [service: %s] ...", __name__, THIS_SERVICE_NAME)
+    log.debug("Setting up %s [service: %s] ...", __name__, "redis")
 
     app.cleanup_ctx.append(redis_client)
