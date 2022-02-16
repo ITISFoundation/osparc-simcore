@@ -8,10 +8,11 @@ from typing import Any, Dict, Tuple
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
 from pydantic.types import PositiveInt
+from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from yarl import URL
 
-from .storage_config import get_client_session, get_storage_config
+from .storage_settings import StorageSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
 
@@ -19,12 +20,9 @@ TOTAL_TIMEOUT_TO_COPY_DATA_SECS = 60 * 60
 
 
 def _get_storage_client(app: web.Application) -> Tuple[ClientSession, URL]:
-    cfg = get_storage_config(app)
-
+    settings: StorageSettings = get_plugin_settings(app)
     # storage service API endpoint
-    endpoint = URL.build(scheme="http", host=cfg["host"], port=cfg["port"]).with_path(
-        cfg["version"]
-    )
+    endpoint = URL(settings.base_url)
 
     session = get_client_session(app)
     return session, endpoint

@@ -177,12 +177,12 @@ def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
         Emulates the reply of the '/' path when the static-webserver is disabled
         """
         html = textwrap.dedent(
-            """\
+            f"""\
             <!DOCTYPE html>
             <html>
             <body>
                 <h1>OSPARC-SIMCORE</h1>
-                <p> This is a result of disable_static_webserver fixture for product OSPARC</p>
+                <p> This is a result of disable_static_webserver fixture for product OSPARC ({__file__})</p>
             </body>
             </html>
             """
@@ -190,7 +190,7 @@ def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
         return web.Response(text=html)
 
     # mount and serve some staic mocked content
-    monkeypatch.setenv("WEBSERVER_STATIC_MODULE_ENABLED", "false")
+    monkeypatch.setenv("WEBSERVER_STATICWEB", "null")
 
     def add_index_route(app: web.Application) -> None:
         app.router.add_get("/", _mocked_index_html, name=INDEX_RESOURCE_NAME)
