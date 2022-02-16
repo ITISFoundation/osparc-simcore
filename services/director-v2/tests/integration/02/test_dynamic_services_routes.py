@@ -230,7 +230,7 @@ async def test_requires_dynamic_sidecar(
     test_client: TestClient, key_version_expected: List[Tuple[ServiceKeyVersion, bool]]
 ) -> None:
     for service_key_version, expected in key_version_expected:
-        response: Response = await test_client.get(
+        response: Response = await test_client.post(
             f"/v2/dynamic_services/dynamic-sidecar:required",
             json=service_key_version.dict(),
         )
