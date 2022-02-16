@@ -5,7 +5,7 @@ from typing import Callable
 
 from aiohttp import web
 
-from .config import APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY, get_socket_server
+from .server import APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY, get_socket_server
 
 socketio_handlers_registry = []
 
