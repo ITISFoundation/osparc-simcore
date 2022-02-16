@@ -17,7 +17,7 @@ from ._constants import (
 )
 from ._meta import API_VTAG
 from .db_models import products
-from .statics import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
+from .statics_constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
 
 log = logging.getLogger(__name__)
 
