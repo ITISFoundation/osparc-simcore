@@ -18,15 +18,15 @@ from uuid import UUID, uuid5
 from aiohttp import web
 from aiohttp_session import get_session
 from aioredlock import Aioredlock
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from ._constants import INDEX_RESOURCE_NAME
 from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from .login.decorators import login_required
-from .redis import get_redis_lock_manager
+from .redis import get_plugin_settings, get_redis_lock_manager
 from .security_api import is_anonymous, remember
 from .storage_api import copy_data_folders_from_project
+from .studies_access_settings import StudiesAccessSettings, get_plugin_settings
 from .utils import compose_error_msg
 
 log = logging.getLogger(__name__)
@@ -283,12 +283,12 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 @app_module_setup(__name__, ModuleCategory.ADDON, logger=log)
 def setup_studies_access(app: web.Application):
 
-    cfg = app[APP_CONFIG_KEY]["main"]
-    # TODO: temporarily used to toggle to logged users
+    settings: StudiesAccessSettings = get_plugin_settings(app)
+
     study_handler = get_redirection_to_study_page
-    if not cfg["studies_access_enabled"]:
+    if settings.is_login_required():
         study_handler = login_required(get_redirection_to_study_page)
-        log.warning(
+        log.info(
             "'%s' config explicitly disables anonymous users from this feature",
             __name__,
         )

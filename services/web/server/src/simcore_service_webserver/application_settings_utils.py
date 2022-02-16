@@ -18,8 +18,10 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
             "port": app_settings.WEBSERVER_PORT,
             "log_level": f"{app_settings.WEBSERVER_LOG_LEVEL}",
             "testing": False,  # TODO: deprecate!
-            "studies_access_enabled": 1
-            if app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED
+            "studies_access_enabled": int(
+                app_settings.WEBSERVER_STUDIES_ACCESS.STUDIES_ACCESS_ANONYMOUS_ALLOWED
+            )
+            if app_settings.WEBSERVER_STUDIES_ACCESS
             else 0,
         },
         "tracing": {

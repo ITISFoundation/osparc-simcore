@@ -38,6 +38,7 @@ from .scicrunch.settings import SciCrunchSettings
 from .session_settings import SessionSettings
 from .statics_settings import FrontEndAppSettings, StaticWebserverModuleSettings
 from .storage_settings import StorageSettings
+from .studies_access_settings import StudiesAccessSettings
 from .utils import snake_to_camel
 
 log = logging.getLogger(__name__)
@@ -84,7 +85,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_SESSION: SessionSettings = Field(
         auto_default_from_env=True, description="sesion module"
     )
-    WEBSERVER_STUDIES_ACCESS_ENABLED: bool
 
     # PLUGINS ----------------
 
@@ -148,6 +148,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_STORAGE: Optional[StorageSettings] = Field(
         auto_default_from_env=True, description="storage service client's plugin"
     )
+    WEBSERVER_STUDIES_ACCESS: Optional[StudiesAccessSettings] = Field(
+        auto_default_from_env=True, description="studies access plugin plugin"
+    )
     WEBSERVER_TRACING: Optional[TracingSettings] = Field(
         auto_default_from_env=True, description="tracing plugin"
     )
@@ -161,7 +164,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_PUBLICATIONS: bool = True
     WEBSERVER_REMOTE_DEBUG: bool = True
     WEBSERVER_SOCKETIO: bool = True
-    WEBSERVER_STUDIES_ACCESS: bool = True
     WEBSERVER_STUDIES_DISPATCHER: bool = True
     WEBSERVER_TAGS: bool = True
     WEBSERVER_USERS: bool = True
