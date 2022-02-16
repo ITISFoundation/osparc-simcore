@@ -414,7 +414,7 @@ async def test_interactive_services_removed_after_logout(
         reraise=True, stop=stop_after_delay(10), wait=wait_fixed(1)
     ):
         with attempt:
-            mocked_director_v2_api["director_v2_core.stop_service"].assert_awaited_with(
+            mocked_director_v2_api["director_v2_core.stop_service"].assert_any_await(
                 app=client.server.app,
                 service_uuid=service["service_uuid"],
                 save_state=expected_save_state,
