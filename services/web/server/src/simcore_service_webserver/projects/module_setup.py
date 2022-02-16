@@ -16,10 +16,9 @@ from servicelib.aiohttp.rest_routing import (
     map_handlers_with_operations,
 )
 
-from .._constants import APP_OPENAPI_SPECS_KEY
+from .._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from .._resources import resources
 from . import projects_handlers, projects_nodes_handlers, projects_tags_handlers
-from .config import CONFIG_SECTION_NAME
 from .projects_access import setup_projects_access
 from .projects_db import setup_projects_db
 
@@ -50,7 +49,7 @@ def _create_routes(tag, specs, *handlers_module, disable_login: bool = False):
     )
 
     if disable_login:
-        logger.debug("%s:\n%s", CONFIG_SECTION_NAME, pformat(routes))
+        logger.debug("%s:\n%s", "projects", pformat(routes))
 
     return routes
 
@@ -62,6 +61,7 @@ def _create_routes(tag, specs, *handlers_module, disable_login: bool = False):
     logger=logger,
 )
 def setup_projects(app: web.Application) -> bool:
+    assert app[APP_SETTINGS_KEY].WEBSERVER_PROJECTS is True  # nosec
 
     # API routes
     specs = app[APP_OPENAPI_SPECS_KEY]
@@ -91,8 +91,8 @@ def setup_projects(app: web.Application) -> bool:
         project_schema = json.load(fh)
 
     if APP_JSONSCHEMA_SPECS_KEY in app:
-        app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME] = project_schema
+        app[APP_JSONSCHEMA_SPECS_KEY]["projects"] = project_schema
     else:
-        app[APP_JSONSCHEMA_SPECS_KEY] = {CONFIG_SECTION_NAME: project_schema}
+        app[APP_JSONSCHEMA_SPECS_KEY] = {"projects": project_schema}
 
     return True
