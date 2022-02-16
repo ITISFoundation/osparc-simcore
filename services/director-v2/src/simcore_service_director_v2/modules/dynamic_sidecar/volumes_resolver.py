@@ -80,7 +80,7 @@ class DynamicSidecarVolumesPathsResolver:
         return f"{path}".replace(os.sep, "_")
 
     @classmethod
-    def _source(cls, compose_namespace: str, path: Path) -> str:
+    def source(cls, compose_namespace: str, path: Path) -> str:
         return f"{compose_namespace}{cls._volume_name(path)}"
 
     @classmethod
@@ -92,7 +92,7 @@ class DynamicSidecarVolumesPathsResolver:
         dynamic-sidecar) is running.
         """
         return {
-            "Source": cls._source(compose_namespace, path),
+            "Source": cls.source(compose_namespace, path),
             "Target": cls.target(path),
             "Type": "volume",
             "VolumeOptions": {"Labels": {"uuid": f"{node_uuid}"}},
@@ -108,7 +108,7 @@ class DynamicSidecarVolumesPathsResolver:
         r_clone_settings: RCloneSettings,
     ) -> Dict[str, Any]:
         return {
-            "Source": cls._source(compose_namespace, path),
+            "Source": cls.source(compose_namespace, path),
             "Target": cls.target(path),
             "Type": "volume",
             "VolumeOptions": {
