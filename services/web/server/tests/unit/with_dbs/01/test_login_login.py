@@ -2,15 +2,19 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import json
+import time
+
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
+from cryptography import fernet
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver.db_models import UserStatus
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
+from simcore_service_webserver.session_settings import get_plugin_settings
 
 EMAIL, PASSWORD = "tester@test.com", "password"
 
@@ -112,31 +116,16 @@ async def test_proxy_login(
     restricted_url = client.app.router["get_my_profile"].url_for()
     assert str(restricted_url) == "/v0/me"
 
-    def build_proxy_session_cookie(identity: str):
+    def _build_proxy_session_cookie(identity: str):
         # NOTE: Creates proxy session for authenticated uses in the api-server.
         # Will be used as temporary solution until common authentication
         # service is in place
         #
-        import base64
-        import json
-        import time
-
-        from cryptography import fernet
 
         # Based on aiohttp_session and aiohttp_security
         # HACK to get secret for testing purposes
-        cfg = client.app[APP_CONFIG_KEY]["session"]
-        secret_key_bytes = cfg["secret_key"].encode("utf-8")
-
-        while len(secret_key_bytes) < 32:
-            secret_key_bytes += secret_key_bytes
-        secret_key = secret_key_bytes[:32]
-
-        if isinstance(secret_key, str):
-            pass
-        elif isinstance(secret_key, (bytes, bytearray)):
-            secret_key = base64.urlsafe_b64encode(secret_key)
-        _fernet = fernet.Fernet(secret_key)
+        session_settings = get_plugin_settings(client.app)
+        _fernet = fernet.Fernet(session_settings.SESSION_SECRET_KEY.get_secret_value())
 
         # builds session cookie
         cookie_name = "osparc.WEBAPI_SESSION"
@@ -155,7 +144,9 @@ async def test_proxy_login(
     # ---
     async with NewUser(app=client.app) as user:
         cookies = (
-            build_proxy_session_cookie(identity=user["email"]) if cookie_enabled else {}
+            _build_proxy_session_cookie(identity=user["email"])
+            if cookie_enabled
+            else {}
         )
 
         resp = await client.get(restricted_url, cookies=cookies)
