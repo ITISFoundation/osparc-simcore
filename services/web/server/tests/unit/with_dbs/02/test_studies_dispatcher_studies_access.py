@@ -63,7 +63,6 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, redis_service):
         "socketio",
         "resource_manager",
         "users",
-        "studies_access",
         "products",
     }
 

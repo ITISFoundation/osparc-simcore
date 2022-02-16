@@ -11,7 +11,6 @@ class StudiesDispatcherSettings(BaseCustomSettings):
         env=["STUDIES_ACCESS_ANONYMOUS_ALLOWED", "WEBSERVER_STUDIES_ACCESS_ENABLED"],
     )
 
-    @property
     def is_login_required(self):
         return not self.STUDIES_ACCESS_ANONYMOUS_ALLOWED
 

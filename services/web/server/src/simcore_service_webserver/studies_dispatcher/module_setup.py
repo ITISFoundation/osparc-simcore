@@ -17,6 +17,22 @@ from .settings import StudiesDispatcherSettings, get_plugin_settings
 logger = logging.getLogger(__name__)
 
 
+def _setup_studies_access(app: web.Application, settings: StudiesDispatcherSettings):
+    # TODO: integrate when _studies_access is fully integrated
+
+    # Redirects routes
+    study_handler = get_redirection_to_study_page
+    if settings.is_login_required():
+        study_handler = login_required(get_redirection_to_study_page)
+
+    # TODO: make sure that these routes are filtered properly in active middlewares
+    app.router.add_routes(
+        [
+            web.get(r"/study/{id}", study_handler, name="study"),
+        ]
+    )
+
+
 @app_module_setup(
     "simcore_service_webserver.studies_dispatcher",
     ModuleCategory.ADDON,
@@ -26,25 +42,17 @@ logger = logging.getLogger(__name__)
 def setup_studies_dispatcher(app: web.Application) -> bool:
     settings: StudiesDispatcherSettings = get_plugin_settings(app)
 
-    study_handler = get_redirection_to_study_page
-    redirect_handler = get_redirection_to_viewer
+    _setup_studies_access(app, settings)
 
     # Redirects routes
+    redirect_handler = get_redirection_to_viewer
     if settings.is_login_required():
-        study_handler = login_required(get_redirection_to_study_page)
         redirect_handler = login_required(get_redirection_to_viewer)
 
         logger.info(
             "'%s' config explicitly disables anonymous users from this feature",
             __name__,
         )
-
-    # TODO: make sure that these routes are filtered properly in active middlewares
-    app.router.add_routes(
-        [
-            web.get(r"/study/{id}", study_handler, name="study"),
-        ]
-    )
 
     app.router.add_routes(
         [web.get("/view", redirect_handler, name="get_redirection_to_viewer")]

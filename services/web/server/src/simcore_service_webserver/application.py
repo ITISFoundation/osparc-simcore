@@ -36,7 +36,6 @@ from .session import setup_session
 from .socketio.module_setup import setup_socketio
 from .statics import setup_statics
 from .storage import setup_storage
-from .studies_access import setup_studies_access
 from .studies_dispatcher.module_setup import setup_studies_dispatcher
 from .tags import setup_tags
 from .tracing import setup_app_tracing
@@ -104,7 +103,6 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_tags(app)
     setup_publications(app)
     setup_products(app)
-    setup_studies_access(app)
     setup_studies_dispatcher(app)
     setup_exporter(app)
     setup_clusters(app)

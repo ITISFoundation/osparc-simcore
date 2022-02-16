@@ -155,8 +155,6 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
             "enabled": app_settings.WEBSERVER_FRONTEND is not None
             and app_settings.WEBSERVER_STATICWEB is not None
         },
-        # NOTE:  app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
-        "studies_access": {"enabled": app_settings.WEBSERVER_STUDIES_ACCESS},
         # NOTE  app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
         "studies_dispatcher": {"enabled": app_settings.WEBSERVER_STUDIES_DISPATCHER},
         "tags": {"enabled": app_settings.WEBSERVER_TAGS},

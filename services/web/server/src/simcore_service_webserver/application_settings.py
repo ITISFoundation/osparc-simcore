@@ -38,7 +38,7 @@ from .scicrunch.settings import SciCrunchSettings
 from .session_settings import SessionSettings
 from .statics_settings import FrontEndAppSettings, StaticWebserverModuleSettings
 from .storage_settings import StorageSettings
-from .studies_access_settings import StudiesAccessSettings
+from .studies_dispatcher.settings import StudiesDispatcherSettings
 from .utils import snake_to_camel
 
 log = logging.getLogger(__name__)
@@ -148,7 +148,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_STORAGE: Optional[StorageSettings] = Field(
         auto_default_from_env=True, description="storage service client's plugin"
     )
-    WEBSERVER_STUDIES_DISPATCHER: Optional[StudiesAccessSettings] = Field(
+    WEBSERVER_STUDIES_DISPATCHER: Optional[StudiesDispatcherSettings] = Field(
         auto_default_from_env=True, description="studies dispatcher plugin"
     )
 

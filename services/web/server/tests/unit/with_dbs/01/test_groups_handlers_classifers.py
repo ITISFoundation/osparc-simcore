@@ -32,7 +32,6 @@ def app_cfg(default_app_cfg, aiohttp_unused_port):
         "publications",
         "catalog",
         "computation",
-        "studies_access",
         "products",
         "socketio",
         "resource_manager",
