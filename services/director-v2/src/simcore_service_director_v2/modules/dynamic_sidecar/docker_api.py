@@ -376,11 +376,14 @@ async def remove_dynamic_sidecar_volumes(node_uuid: NodeID) -> bool:
             filters={"label": f"uuid={node_uuid}"}
         )
         volumes = volumes_response["Volumes"]
+        log.debug("Removing volumes: %s", [v["Name"] for v in volumes])
+        if len(volumes) == 0:
+            log.warning("Expected to find at least 1 volume to remove, 0 were found")
+
         for volume_data in volumes:
             volume = await client.volumes.get(volume_data["Name"])
             await volume.delete()
 
-        log.debug("Remove volumes: %s", [v["Name"] for v in volumes])
         return True
 
 
