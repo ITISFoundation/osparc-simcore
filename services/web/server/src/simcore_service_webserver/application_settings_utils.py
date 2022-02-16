@@ -148,6 +148,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
         "publications": {"enabled": app_settings.WEBSERVER_PUBLICATIONS},
         "remote_debug": {"enabled": app_settings.WEBSERVER_REMOTE_DEBUG},
         "security": {"enabled": True},
+        "scicrunch": {"enabled": app_settings.WEBSERVER_SCICRUNCH is not None},
         "statics": {
             "enabled": app_settings.WEBSERVER_FRONTEND is not None
             and app_settings.WEBSERVER_STATICWEB is not None
