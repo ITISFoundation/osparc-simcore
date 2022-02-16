@@ -3,21 +3,26 @@
 # pylint:disable=redefined-outer-name
 import time
 from random import randint
-from typing import Dict, Iterable, List
+from typing import Callable, Dict, List
 from uuid import uuid4
 
+import aioredis
 import pytest
-from simcore_service_webserver.resource_manager.config import (
-    APP_CLIENT_REDIS_CLIENT_KEY,
-    APP_CLIENT_SOCKET_REGISTRY_KEY,
-    APP_CONFIG_KEY,
-    CONFIG_SECTION_NAME,
+from _pytest.monkeypatch import MonkeyPatch
+from aiohttp import web
+from servicelib.aiohttp.application import create_safe_application
+from servicelib.aiohttp.application_setup import is_setup_completed
+from simcore_service_webserver.application_settings import setup_settings
+from simcore_service_webserver.resource_manager.module_setup import (
+    setup_resource_manager,
 )
 from simcore_service_webserver.resource_manager.registry import (
     ALIVE_SUFFIX,
     RESOURCE_SUFFIX,
     RedisResourceRegistry,
+    get_registry,
 )
+from simcore_service_webserver.resource_manager.settings import get_plugin_settings
 from simcore_service_webserver.resource_manager.websocket_manager import (
     UserSessionID,
     managed_resource,
@@ -25,28 +30,50 @@ from simcore_service_webserver.resource_manager.websocket_manager import (
 
 
 @pytest.fixture
-def redis_enabled_app(redis_client) -> Dict:
-    app = {
-        APP_CLIENT_REDIS_CLIENT_KEY: redis_client,
-        APP_CLIENT_SOCKET_REGISTRY_KEY: None,
-        APP_CONFIG_KEY: {CONFIG_SECTION_NAME: {"resource_deletion_timeout_seconds": 3}},
-    }
-    yield app
+def mock_env_devel_environment(
+    mock_env_devel_environment: Dict[str, str], monkeypatch: MonkeyPatch
+):
+    monkeypatch.setenv("RESOURCE_MANAGER_RESOURCE_TTL_S", "3")
 
 
 @pytest.fixture
-def redis_registry(redis_enabled_app) -> Iterable[RedisResourceRegistry]:
-    registry = RedisResourceRegistry(redis_enabled_app)
-    redis_enabled_app[APP_CLIENT_SOCKET_REGISTRY_KEY] = registry
-    yield registry
+def redis_enabled_app(
+    redis_client: aioredis.Redis, mocker, mock_env_devel_environment
+) -> web.Application:
+
+    # app.cleanup_ctx.append(redis_client) in setup_redis would create a client and connect
+    # to a real redis service. Instead, we mock the get_redis_client access
+    mocker.patch(
+        "simcore_service_webserver.redis.get_redis_client", return_value=redis_client
+    )
+    mocker.patch(
+        "simcore_service_webserver.resource_manager.registry.get_redis_client",
+        return_value=redis_client,
+    )
+    # ------------------
+
+    app = create_safe_application()
+    assert setup_settings(app)
+    assert setup_resource_manager(app)
+
+    assert is_setup_completed("simcore_service_webserver.redis", app)
+    assert get_plugin_settings(app).RESOURCE_MANAGER_RESOURCE_TTL_S == 3
+    assert get_registry(app)
+
+    return app
 
 
 @pytest.fixture
-def user_ids():
-    def create_user_id(number: int) -> List[int]:
+def redis_registry(redis_enabled_app: web.Application) -> RedisResourceRegistry:
+    return get_registry(redis_enabled_app)
+
+
+@pytest.fixture
+def create_user_ids():
+    def _do(number: int) -> List[int]:
         return [i for i in range(number)]
 
-    return create_user_id
+    return _do
 
 
 @pytest.mark.parametrize(
@@ -59,7 +86,9 @@ def user_ids():
         ),
     ],
 )
-async def test_redis_registry_hashes(loop, redis_enabled_app, key, hash_key):
+async def test_redis_registry_hashes(
+    loop, redis_enabled_app: web.Application, key, hash_key
+):
     # pylint: disable=protected-access
     assert RedisResourceRegistry._hash_key(key) == hash_key
     assert (
@@ -68,7 +97,7 @@ async def test_redis_registry_hashes(loop, redis_enabled_app, key, hash_key):
     assert RedisResourceRegistry._decode_hash_key(f"{hash_key}:{ALIVE_SUFFIX}") == key
 
 
-async def test_redis_registry(loop, redis_registry):
+async def test_redis_registry(loop, redis_registry: RedisResourceRegistry):
     random_value = randint(1, 10)
     key = {f"key_{x}": f"value_{x}" for x in range(random_value)}
     second_key = {f"sec_key_{x}": f"sec_value_{x}" for x in range(random_value)}
@@ -141,7 +170,9 @@ async def test_redis_registry(loop, redis_registry):
         )
 
 
-async def test_redis_registry_key_will_always_expire(loop, redis_registry):
+async def test_redis_registry_key_will_always_expire(
+    loop, redis_registry: RedisResourceRegistry
+):
     get_random_int = lambda: randint(1, 10)
     first_key = {f"key_{x}": f"value_{x}" for x in range(get_random_int())}
     second_key = {f"sec_key_{x}": f"sec_value_{x}" for x in range(get_random_int())}
@@ -164,11 +195,16 @@ async def test_redis_registry_key_will_always_expire(loop, redis_registry):
     assert len(dead_keys) == 2
 
 
-async def test_websocket_manager(loop, redis_enabled_app, redis_registry, user_ids):
+async def test_websocket_manager(
+    loop,
+    redis_enabled_app: web.Application,
+    redis_registry: RedisResourceRegistry,
+    create_user_ids: Callable,
+):
 
     # create some user ids and socket ids
     NUM_USER_IDS = 5
-    list_user_ids = user_ids(NUM_USER_IDS)
+    list_user_ids = create_user_ids(NUM_USER_IDS)
     NUM_SOCKET_IDS = 6
 
     res_key = "some_key"

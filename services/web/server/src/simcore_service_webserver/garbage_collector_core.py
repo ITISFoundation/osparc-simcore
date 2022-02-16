@@ -16,6 +16,7 @@ from simcore_postgres_database.errors import DatabaseError
 from . import director_v2_api, users_exceptions
 from .db_models import GroupType
 from .director.director_exceptions import DirectorException, ServiceNotFoundError
+from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from .groups_api import get_group_from_gid
 from .projects.projects_api import (
     delete_project,
@@ -27,7 +28,6 @@ from .projects.projects_api import (
 from .projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
 from .projects.projects_exceptions import ProjectNotFoundError
 from .redis import get_redis_lock_manager
-from .resource_manager.config import GUEST_USER_RC_LOCK_FORMAT
 from .resource_manager.registry import RedisResourceRegistry, get_registry
 from .users_api import (
     delete_user,

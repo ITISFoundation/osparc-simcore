@@ -22,9 +22,9 @@ from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from ._constants import INDEX_RESOURCE_NAME
+from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from .login.decorators import login_required
 from .redis import get_redis_lock_manager
-from .resource_manager.config import GUEST_USER_RC_LOCK_FORMAT
 from .security_api import is_anonymous, remember
 from .storage_api import copy_data_folders_from_project
 from .utils import compose_error_msg

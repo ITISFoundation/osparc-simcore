@@ -6,19 +6,13 @@
 
 from copy import deepcopy
 
-from aiohttp.web import Application
+from aiohttp import web
 from pydantic import Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
 from settings_library.redis import RedisSettings
 
-from .config import CONFIG_SECTION_NAME
-
-CONFIG_SECTION_NAME = "resource_manager"
-
-
-# lock names and format strings
-GUEST_USER_RC_LOCK_FORMAT = f"{__name__}:redlock:garbage_collect_user:{{user_id}}"
+from ._constants import CONFIG_SECTION_NAME
 
 
 class ResourceManagerSettings(BaseCustomSettings):
@@ -33,18 +27,14 @@ class ResourceManagerSettings(BaseCustomSettings):
         ],
     )
 
-    RESOURCE_MANAGER_GARBAGE_COLLECTION_INTERVAL_S: PositiveInt = Field(
-        30,
-        description="Waiting time between consecutive runs of the garbage-colector",
-        # legacy
-        env=[
-            "RESOURCE_MANAGER_GARBAGE_COLLECTION_INTERVAL_S",
-            "WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS",  # legacy
-        ],
-    )
+
+def get_plugin_settings(app: web.Application) -> ResourceManagerSettings:
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_RESOURCE_MANAGER
+    assert settings, "plugin was not initialized"  # nosec
+    return settings
 
 
-def assert_valid_config(app: Application):
+def assert_valid_config(app: web.Application):
     cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
 
     WEBSERVER_RESOURCE_MANAGER = ResourceManagerSettings()

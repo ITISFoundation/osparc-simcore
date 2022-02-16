@@ -30,6 +30,7 @@ from .diagnostics_settings import DiagnosticsSettings
 from .director.settings import DirectorSettings
 from .director_v2_settings import DirectorV2Settings
 from .exporter.settings import ExporterSettings
+from .garbage_collector_settings import GarbageCollectorSettings
 from .login.settings import LoginSettings
 from .resource_manager.settings import ResourceManagerSettings
 from .scicrunch.settings import SciCrunchSettings
@@ -143,7 +144,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
     WEBSERVER_CLUSTERS: bool = True
-    WEBSERVER_GARBAGE_COLLECTOR: bool = True
+    WEBSERVER_GARBAGE_COLLECTOR: Optional[GarbageCollectorSettings] = Field(
+        auto_default_from_env=True, description="garbage collector plugin"
+    )
     WEBSERVER_GROUPS: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_PRODUCTS: bool = True

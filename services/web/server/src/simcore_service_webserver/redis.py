@@ -13,7 +13,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
 from ._constants import APP_SETTINGS_KEY
-from .resource_manager.config import (
+from .redis_constants import (
     APP_CLIENT_REDIS_CLIENT_KEY,
     APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY,
     APP_CLIENT_REDIS_LOCK_MANAGER_KEY,
@@ -56,7 +56,7 @@ async def redis_client(app: web.Application):
         assert client  # no sec
         return client
 
-    origin_url = f"redis://{redis_settings.HOST}:{redis_settings.PORT}"
+    origin_url = f"redis://{redis_settings.REDIS_HOST}:{redis_settings.REDIS_PORT}"
     log.info(
         "Connecting to redis at %s",
         f"{origin_url=}",
@@ -94,7 +94,9 @@ async def redis_client(app: web.Application):
 
 
 def get_redis_client(app: web.Application) -> aioredis.Redis:
-    return app[APP_CLIENT_REDIS_CLIENT_KEY]
+    redis_client = app[APP_CLIENT_REDIS_CLIENT_KEY]
+    assert redis_client is not None, "redis plugin was not init"  # nosec
+    return redis_client
 
 
 def get_redis_lock_manager(app: web.Application) -> Aioredlock:
@@ -109,9 +111,4 @@ def get_redis_lock_manager_client(app: web.Application) -> aioredis.Redis:
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_REDIS", logger=log
 )
 def setup_redis(app: web.Application):
-    app[APP_CLIENT_REDIS_CLIENT_KEY] = None
-
-    # app is created at this point but not yet started
-    log.debug("Setting up %s [service: %s] ...", __name__, "redis")
-
     app.cleanup_ctx.append(redis_client)

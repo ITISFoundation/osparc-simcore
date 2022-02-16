@@ -21,13 +21,18 @@ from typing import Dict, Iterator, List, Optional, Union
 
 from aiohttp import web
 
-from .config import get_service_deletion_timeout
 from .registry import get_registry
+from .settings import ResourceManagerSettings, get_plugin_settings
 
 log = logging.getLogger(__file__)
 
 SOCKET_ID_KEY = "socket_id"
 PROJECT_ID_KEY = "project_id"
+
+
+def get_service_deletion_timeout(app: web.Application) -> int:
+    settings: ResourceManagerSettings = get_plugin_settings(app)
+    return settings.RESOURCE_MANAGER_RESOURCE_TTL_S
 
 
 @dataclass(order=True, frozen=True)

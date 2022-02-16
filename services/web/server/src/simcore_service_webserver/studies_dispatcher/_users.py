@@ -14,11 +14,11 @@ from aiohttp import web
 from aioredlock import Aioredlock
 from pydantic import BaseModel
 
+from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..login.handlers import ACTIVE, GUEST
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils import get_client_ip, get_random_string
 from ..redis import get_redis_lock_manager
-from ..resource_manager.config import GUEST_USER_RC_LOCK_FORMAT
 from ..security_api import authorized_userid, encrypt_password, is_anonymous, remember
 from ..users_api import get_user
 from ..users_exceptions import UserNotFoundError
