@@ -5,7 +5,7 @@ from copy import deepcopy
 from datetime import datetime
 from distutils.util import strtobool
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
+from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, TypedDict
 
 from aiohttp import web
 
@@ -48,6 +48,13 @@ class ApplicationSetupError(Exception):
 
 class DependencyError(ApplicationSetupError):
     ...
+
+
+class SetupMetadataDict(TypedDict):
+    module_name: str
+    dependencies: List[str]
+    config_section: str
+    config_enabled: str
 
 
 # HELPERS ------------------------------------------------------------------
@@ -169,7 +176,7 @@ def app_module_setup(
             logger.warning("Rename '%s' to contain 'setup'", setup_func.__name__)
 
         # metadata info
-        def setup_metadata() -> Dict[str, Any]:
+        def setup_metadata() -> SetupMetadataDict:
             return {
                 "module_name": module_name,
                 "dependencies": depends,
@@ -194,17 +201,21 @@ def app_module_setup(
                 app[APP_SETUP_COMPLETED_KEY] = []
 
             if category == ModuleCategory.ADDON:
-                # NOTE: ONLY addons can be enabled/disabled
+                # ONLY addons can be enabled/disabled
 
-                # TODO: cfg will be fully replaced by app_settings section below
-                cfg = app[APP_CONFIG_KEY]
-                is_enabled = _is_addon_enabled_from_config(cfg, config_enabled, section)
-                if not is_enabled:
-                    logger.info(
-                        "Skipping '%s' setup. Explicitly disabled in config",
-                        module_name,
+                if settings_name is None:
+                    # Fall back to config if settings_name is not explicitly defined
+                    # TODO: deprecate
+                    cfg = app[APP_CONFIG_KEY]
+                    is_enabled = _is_addon_enabled_from_config(
+                        cfg, config_enabled, section
                     )
-                    return False
+                    if not is_enabled:
+                        logger.info(
+                            "Skipping '%s' setup. Explicitly disabled in config",
+                            module_name,
+                        )
+                        return False
 
                 # NOTE: if not disabled by config, it can be disabled by settings (tmp while legacy maintained)
                 app_settings, module_settings_name = _get_app_settings_and_field_name(
