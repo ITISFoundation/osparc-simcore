@@ -24,6 +24,8 @@ log = logging.getLogger(__name__)
 _MINUTE = 60
 _WAIT_SECS = 2
 
+# SETTINGS --------------------------------------------------------------------------
+
 
 def get_plugin_settings(app: web.Application) -> RedisSettings:
     settings: Optional[RedisSettings] = app[APP_SETTINGS_KEY].WEBSERVER_REDIS
@@ -31,7 +33,8 @@ def get_plugin_settings(app: web.Application) -> RedisSettings:
     return settings
 
 
-async def redis_client(app: web.Application):
+# EVENTS --------------------------------------------------------------------------
+async def setup_redis_client(app: web.Application):
     redis_settings: RedisSettings = get_plugin_settings(app)
 
     async def create_client(address) -> aioredis.Redis:
@@ -94,9 +97,9 @@ async def redis_client(app: web.Application):
 
 
 def get_redis_client(app: web.Application) -> aioredis.Redis:
-    redis_client = app[APP_CLIENT_REDIS_CLIENT_KEY]
-    assert redis_client is not None, "redis plugin was not init"  # nosec
-    return redis_client
+    client = app[APP_CLIENT_REDIS_CLIENT_KEY]
+    assert client is not None, "redis plugin was not init"  # nosec
+    return client
 
 
 def get_redis_lock_manager(app: web.Application) -> Aioredlock:
@@ -107,8 +110,11 @@ def get_redis_lock_manager_client(app: web.Application) -> aioredis.Redis:
     return app[APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY]
 
 
+# PLUGIN SETUP --------------------------------------------------------------------------
+
+
 @app_module_setup(
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_REDIS", logger=log
 )
 def setup_redis(app: web.Application):
-    app.cleanup_ctx.append(redis_client)
+    app.cleanup_ctx.append(setup_redis_client)
