@@ -214,7 +214,7 @@ async def storage_subsystem_mock(storage_subsystem_mock, mocker):
 
     # Mocks copy_data_folders_from_project BUT under studies_access
     mock = mocker.patch(
-        "simcore_service_webserver.studies_access.copy_data_folders_from_project"
+        "simcore_service_webserver.studies_dispatcher._studies_access.copy_data_folders_from_project"
     )
 
     async def _mock_copy_data_from_project(app, src_prj, dst_prj, nodes_map, user_id):

@@ -8,7 +8,7 @@
     - access to security
     - access to login
 
-FIXME: Refactor to reduce modules coupling! See all TODO: .``from ...`` comments
+TODO: Refactor to reduce modules coupling! See all TODO: .``from ...`` comments
 """
 import logging
 from functools import lru_cache
@@ -18,19 +18,17 @@ from uuid import UUID, uuid5
 from aiohttp import web
 from aiohttp_session import get_session
 from aioredlock import Aioredlock
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ._constants import INDEX_RESOURCE_NAME
-from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
-from .login.decorators import login_required
-from .redis import get_plugin_settings, get_redis_lock_manager
-from .security_api import is_anonymous, remember
-from .storage_api import copy_data_folders_from_project
-from .studies_access_settings import StudiesAccessSettings, get_plugin_settings
-from .utils import compose_error_msg
+from .._constants import INDEX_RESOURCE_NAME
+from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
+from ..redis import get_redis_lock_manager
+from ..security_api import is_anonymous, remember
+from ..storage_api import copy_data_folders_from_project
+from ..utils import compose_error_msg
 
 log = logging.getLogger(__name__)
 
+# TODO: Integrate this in studies_dispatcher
 BASE_UUID = UUID("71e0eb5e-0797-4469-89ba-00a0df4d338a")
 
 
@@ -50,7 +48,7 @@ async def get_public_project(app: web.Application, project_uuid: str):
     """
     Returns project if project_uuid is a template and is marked as published, otherwise None
     """
-    from .projects.projects_db import APP_PROJECT_DBAPI
+    from ..projects.projects_db import APP_PROJECT_DBAPI
 
     db = app[APP_PROJECT_DBAPI]
     prj = await db.get_template_project(project_uuid, only_published=True)
@@ -61,10 +59,10 @@ async def create_temporary_user(request: web.Request):
     """
     TODO: user should have an expiration date and limited persmissions!
     """
-    from .login.handlers import ACTIVE, GUEST
-    from .login.storage import AsyncpgStorage, get_plugin_storage
-    from .login.utils import get_client_ip, get_random_string
-    from .security_api import encrypt_password
+    from ..login.handlers import ACTIVE, GUEST
+    from ..login.storage import AsyncpgStorage, get_plugin_storage
+    from ..login.utils import get_client_ip, get_random_string
+    from ..security_api import encrypt_password
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     lock_manager: Aioredlock = get_redis_lock_manager(request.app)
@@ -125,8 +123,8 @@ async def create_temporary_user(request: web.Request):
 
 # TODO: from .users import get_user?
 async def get_authorized_user(request: web.Request) -> Dict:
-    from .login.storage import AsyncpgStorage, get_plugin_storage
-    from .security_api import authorized_userid
+    from ..login.storage import AsyncpgStorage, get_plugin_storage
+    from ..security_api import authorized_userid
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
     userid = await authorized_userid(request)
@@ -144,9 +142,9 @@ async def copy_study_to_account(
     - Replaces template parameters by values passed in query
     - Avoids multiple copies of the same template on each account
     """
-    from .projects.projects_db import APP_PROJECT_DBAPI
-    from .projects.projects_exceptions import ProjectNotFoundError
-    from .projects.projects_utils import (
+    from ..projects.projects_db import APP_PROJECT_DBAPI
+    from ..projects.projects_exceptions import ProjectNotFoundError
+    from ..projects.projects_utils import (
         clone_project_document,
         substitute_parameterized_inputs,
     )
@@ -278,26 +276,3 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
     # WARNING: do NOT raise this response. From aiohttp 3.7.X, response is rebuild and cookie ignore.
     # TODO: PC: security with SessionIdentityPolicy, session with EncryptedCookieStorage -> remember() and raise response.
     return response
-
-
-@app_module_setup(__name__, ModuleCategory.ADDON, logger=log)
-def setup_studies_access(app: web.Application):
-
-    settings: StudiesAccessSettings = get_plugin_settings(app)
-
-    study_handler = get_redirection_to_study_page
-    if settings.is_login_required():
-        study_handler = login_required(get_redirection_to_study_page)
-        log.info(
-            "'%s' config explicitly disables anonymous users from this feature",
-            __name__,
-        )
-
-    # TODO: make sure that these routes are filtered properly in active middlewares
-    app.router.add_routes(
-        [
-            web.get(r"/study/{id}", study_handler, name="study"),
-        ]
-    )
-
-    return True

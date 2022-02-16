@@ -148,9 +148,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_STORAGE: Optional[StorageSettings] = Field(
         auto_default_from_env=True, description="storage service client's plugin"
     )
-    WEBSERVER_STUDIES_ACCESS: Optional[StudiesAccessSettings] = Field(
-        auto_default_from_env=True, description="studies access plugin plugin"
+    WEBSERVER_STUDIES_DISPATCHER: Optional[StudiesAccessSettings] = Field(
+        auto_default_from_env=True, description="studies dispatcher plugin"
     )
+
     WEBSERVER_TRACING: Optional[TracingSettings] = Field(
         auto_default_from_env=True, description="tracing plugin"
     )
@@ -164,7 +165,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_PUBLICATIONS: bool = True
     WEBSERVER_REMOTE_DEBUG: bool = True
     WEBSERVER_SOCKETIO: bool = True
-    WEBSERVER_STUDIES_DISPATCHER: bool = True
     WEBSERVER_TAGS: bool = True
     WEBSERVER_USERS: bool = True
     WEBSERVER_VERSION_CONTROL: bool = True

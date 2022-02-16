@@ -4,7 +4,7 @@ from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
 
 
-class StudiesAccessSettings(BaseCustomSettings):
+class StudiesDispatcherSettings(BaseCustomSettings):
     STUDIES_ACCESS_ANONYMOUS_ALLOWED: bool = Field(
         False,
         description="If enabled, the study links are accessible to anonymous users",
@@ -16,7 +16,7 @@ class StudiesAccessSettings(BaseCustomSettings):
         return not self.STUDIES_ACCESS_ANONYMOUS_ALLOWED
 
 
-def get_plugin_settings(app: web.Application) -> StudiesAccessSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_STUDIES_ACCESS
+def get_plugin_settings(app: web.Application) -> StudiesDispatcherSettings:
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_STUDIES_DISPATCHER
     assert settings, "setup_settings not called?"  # nosec
     return settings

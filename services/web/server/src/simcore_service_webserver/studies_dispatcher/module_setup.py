@@ -7,28 +7,45 @@ from servicelib.aiohttp.rest_routing import (
     map_handlers_with_operations,
 )
 
-from .._constants import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
+from .._constants import APP_OPENAPI_SPECS_KEY
 from ..login.decorators import login_required
+from ._studies_access import get_redirection_to_study_page
 from .handlers_redirects import get_redirection_to_viewer
 from .handlers_rest import rest_handler_functions
+from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
-    "simcore_service_webserver.studies_dispatcher", ModuleCategory.ADDON, logger=logger
+    "simcore_service_webserver.studies_dispatcher",
+    ModuleCategory.ADDON,
+    settings_name="WEBSERVER_STUDIES_DISPATCHER",
+    logger=logger,
 )
 def setup_studies_dispatcher(app: web.Application) -> bool:
-    cfg = app[APP_CONFIG_KEY]["main"]
+    settings: StudiesDispatcherSettings = get_plugin_settings(app)
+
+    study_handler = get_redirection_to_study_page
+    redirect_handler = get_redirection_to_viewer
 
     # Redirects routes
-    redirect_handler = get_redirection_to_viewer
-    if not cfg["studies_access_enabled"]:
+    if settings.is_login_required():
+        study_handler = login_required(get_redirection_to_study_page)
         redirect_handler = login_required(get_redirection_to_viewer)
-        logger.warning(
+
+        logger.info(
             "'%s' config explicitly disables anonymous users from this feature",
             __name__,
         )
+
+    # TODO: make sure that these routes are filtered properly in active middlewares
+    app.router.add_routes(
+        [
+            web.get(r"/study/{id}", study_handler, name="study"),
+        ]
+    )
+
     app.router.add_routes(
         [web.get("/view", redirect_handler, name="get_redirection_to_viewer")]
     )
