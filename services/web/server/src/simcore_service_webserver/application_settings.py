@@ -273,7 +273,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
 def setup_settings(app: web.Application) -> ApplicationSettings:
     app[APP_SETTINGS_KEY] = settings = ApplicationSettings.create_from_envs()
-    log.info("Captured app settings:\n%s", app[APP_SETTINGS_KEY].json(indent=1))
+    log.info(
+        "Captured app settings:\n%s",
+        app[APP_SETTINGS_KEY].json(indent=1, sort_keys=True),
+    )
     return settings
 
 

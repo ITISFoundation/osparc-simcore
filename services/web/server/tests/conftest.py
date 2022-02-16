@@ -110,7 +110,7 @@ def monkeypatch_setenv_from_app_config(monkeypatch) -> Callable:
     def _patch(app_config: Dict) -> Dict[str, str]:
         assert isinstance(app_config, dict)
 
-        print("  - app_config=\n", json_dumps(app_config, indent=1))
+        print("  - app_config=\n", json_dumps(app_config, indent=1, sort_keys=True))
         envs = convert_to_environ_vars(app_config)
 
         print(
