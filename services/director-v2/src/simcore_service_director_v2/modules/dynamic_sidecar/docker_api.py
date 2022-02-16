@@ -442,6 +442,7 @@ async def get_or_create_networks_ids(
                     "Driver": "overlay",
                     "Labels": {
                         "com.simcore.description": "study service communication network",
+                        # TODO: use below when closing project and GC to remove network
                         "project_id": f"{project_id}",
                     },
                     "Attachable": True,
