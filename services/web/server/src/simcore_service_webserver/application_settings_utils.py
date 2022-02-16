@@ -281,4 +281,25 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
         _set_if_disabled("WEBSERVER_FRONTEND", section)
         _set_if_disabled("WEBSERVER_STATICWEB", section)
 
+    for settings_name in (
+        "WEBSERVER_CLUSTERS",
+        "WEBSERVER_GARBAGE_COLLECTOR",
+        "WEBSERVER_GROUPS",
+        "WEBSERVER_META_MODELING",
+        "WEBSERVER_PRODUCTS",
+        "WEBSERVER_PROJECTS",
+        "WEBSERVER_PUBLICATIONS",
+        "WEBSERVER_REMOTE_DEBUG",
+        "WEBSERVER_REST",
+        "WEBSERVER_SOCKETIO",
+        "WEBSERVER_STUDIES_ACCESS",
+        "WEBSERVER_STUDIES_DISPATCHER",
+        "WEBSERVER_TAGS",
+        "WEBSERVER_USERS",
+        "WEBSERVER_VERSION_CONTROL",
+    ):
+        section_name = settings_name.replace("WEBSERVER_", "").lower()
+        if section := cfg.get(section_name):
+            _set_if_disabled(settings_name, section)
+
     return {k: v for k, v in envs.items() if v is not None}
