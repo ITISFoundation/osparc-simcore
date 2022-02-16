@@ -6,15 +6,20 @@
 import json
 import re
 import uuid as uuidlib
-from typing import Dict, Optional
+from typing import Dict, Optional, Type
 
 from aiohttp import web
+from aiohttp.test_utils import TestClient
+from models_library.projects_state import ProjectState
 from simcore_service_webserver._resources import resources
+from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
     DB_EXCLUSIVE_COLUMNS,
 )
 from simcore_service_webserver.utils import now_str
+
+from .utils_assert import assert_status
 
 fake_template_resources = [
     "data/" + name
@@ -132,3 +137,24 @@ class NewProject:
         assert self.app  # nosec
         if self.clear_all:
             await delete_all_projects(self.app)
+
+
+async def assert_get_same_project(
+    client: TestClient,
+    project: ProjectDict,
+    expected: Type[web.HTTPException],
+    api_vtag="/v0",
+) -> Dict:
+    # GET /v0/projects/{project_id}
+
+    # with a project owned by user
+    url = client.app.router["get_project"].url_for(project_id=project["uuid"])
+    assert str(url) == f"{api_vtag}/projects/{project['uuid']}"
+    resp = await client.get(url)
+    data, error = await assert_status(resp, expected)
+
+    if not error:
+        project_state = data.pop("state")
+        assert data == project
+        assert ProjectState(**project_state)
+    return data
