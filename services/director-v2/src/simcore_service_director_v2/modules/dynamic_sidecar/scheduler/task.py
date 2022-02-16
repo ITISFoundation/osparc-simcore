@@ -3,6 +3,7 @@ import contextlib
 import logging
 import traceback
 from asyncio import Lock, Queue, Task, sleep
+from collections import deque
 from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Deque, Dict, List, Optional
@@ -13,7 +14,8 @@ from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
-from models_library.sharing_networks import SharingNetworks
+from models_library.sharing_networks import DockerNetworkAlias
+from servicelib.utils import logged_gather
 
 from ....core.settings import (
     DynamicServicesSchedulerSettings,
@@ -287,102 +289,93 @@ class DynamicSidecarsScheduler:
 
         return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
 
-    async def attach_container_to_network(
-        self,
-        node_uuid: NodeID,
-        container_name: str,
-        network_id: str,
-        network_aliases: List[str],
+    async def attach_sharing_network(
+        self, node_id: NodeID, network_id: str, network_alias: DockerNetworkAlias
     ) -> None:
-        if node_uuid not in self._inverse_search_mapping:
-            raise DynamicSidecarNotFoundError(node_uuid)
+        if node_id not in self._inverse_search_mapping:
+            raise DynamicSidecarNotFoundError(node_id)
 
-        service_name = self._inverse_search_mapping[node_uuid]
-        scheduler_data: SchedulerData = self._to_observe[service_name].scheduler_data
+        service_name = self._inverse_search_mapping[node_id]
+        scheduler_data = self._to_observe[service_name].scheduler_data
 
         dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
             self.app
         )
 
-        # check this
-        _ = await dynamic_sidecar_client.get_entrypoint_container_name(
-            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
-            dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+        # this has an entrypoint which needs to be the main container
+        # all other container need to be appended with some other name
+        containers_status = await dynamic_sidecar_client.containers_docker_status(
+            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
         )
+        sorted_container_names = sorted(containers_status.keys())
 
-        await dynamic_sidecar_client.attach_container_to_network(
-            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
-            container_id=container_name,
-            network_id=network_id,
-            network_aliases=network_aliases,
-        )
+        if len(sorted_container_names) == 1:
+            # attach to the only existing container
+            # even if it was started by providing a docker compose spec
+            await dynamic_sidecar_client.attach_container_to_network(
+                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
+                container_id=sorted_container_names[0],
+                network_id=network_id,
+                network_aliases=[network_alias],
+            )
+        elif scheduler_data.container_http_entry and len(sorted_container_names) > 1:
+            # when there is more that one container
+            entrypoint_container_name = await dynamic_sidecar_client.get_entrypoint_container_name(
+                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
+                dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+            )
 
-    async def attach_networks_to_containers(
-        self,
-        network_names_to_ids: Dict[str, str],
-        sharing_networks: SharingNetworks,
-    ) -> None:
-        def _get_scheduler_data(node_uuid: NodeID) -> SchedulerData:
-            if node_uuid not in self._inverse_search_mapping:
-                raise DynamicSidecarNotFoundError(node_uuid)
+            tasks = deque()
 
-            service_name = self._inverse_search_mapping[node_uuid]
-            return self._to_observe[service_name].scheduler_data
+            for k, container_name in enumerate(sorted_container_names):
+                # by default we attach `alias-0`, `alias-1`, etc...
+                # to all containers
+                aliases = [f"{network_alias}-{k}"]
+                if container_name == entrypoint_container_name:
+                    # by definition the entrypoint container will be exposed as the `alias``
+                    aliases.append(network_alias)
 
-        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
-            self.app
-        )
-
-        for network_name, node_to_alias in sharing_networks.items():
-            network_id = network_names_to_ids[network_name]
-            for node_id, alias in node_to_alias.items():
-                scheduler_data = _get_scheduler_data(node_id)
-
-                # this has an entrypoint which needs to be the main container
-                # all other container need to be appended with some other name
-                containers_status = (
-                    await dynamic_sidecar_client.containers_docker_status(
-                        dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
+                tasks.append(
+                    dynamic_sidecar_client.attach_container_to_network(
+                        dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
+                        container_id=container_name,
+                        network_id=network_id,
+                        network_aliases=aliases,
                     )
                 )
-                sorted_container_names = sorted(containers_status.keys())
 
-                if len(sorted_container_names) == 1:
-                    # attach to the only existing container
-                    # even if it was started by providing a docker compose spec
-                    await self.attach_container_to_network(
-                        node_uuid=node_id,
-                        container_name=sorted_container_names[0],
-                        network_id=network_id,
-                        network_aliases=[alias],
-                    )
-                elif (
-                    scheduler_data.container_http_entry
-                    and len(sorted_container_names) > 1
-                ):
-                    # when there is more that one container
-                    entrypoint_container_name = await dynamic_sidecar_client.get_entrypoint_container_name(
-                        dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
-                        dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
-                    )
-                    for k, container_name in enumerate(sorted_container_names):
-                        # by default we attach `alias-0`, `alias-1`, etc...
-                        # to all containers
-                        aliases = [f"{alias}-{k}"]
-                        if container_name == entrypoint_container_name:
-                            # by definition the entrypoint container will be exposed as the `alias``
-                            aliases.append(alias)
+            await logged_gather(*tasks)
+        else:
+            raise DynamicSidecarError(
+                f"Unexpected case, there was an errorr with the setup {sorted_container_names}"
+            )
 
-                        await self.attach_container_to_network(
-                            node_uuid=node_id,
-                            container_name=container_name,
-                            network_id=network_id,
-                            network_aliases=aliases,
-                        )
-                else:
-                    raise DynamicSidecarError(
-                        f"Unexpected case, there was an errorr with the setup {sorted_container_names}"
-                    )
+    async def detach_sharing_network(self, node_id: NodeID, network_id: str) -> None:
+        if node_id not in self._inverse_search_mapping:
+            raise DynamicSidecarNotFoundError(node_id)
+
+        service_name = self._inverse_search_mapping[node_id]
+        scheduler_data = self._to_observe[service_name].scheduler_data
+
+        dynamic_sidecar_client: DynamicSidecarClient = get_dynamic_sidecar_client(
+            self.app
+        )
+
+        # the network needs to be detached from all started containers
+        containers_status = await dynamic_sidecar_client.containers_docker_status(
+            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
+        )
+
+        await logged_gather(
+            *[
+                dynamic_sidecar_client.detach_container_from_network(
+                    dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
+                    container_id=container_name,
+                    network_id=network_id,
+                )
+                for container_name in containers_status
+            ]
+        )
 
     async def restart_containers(self, node_uuid: NodeID) -> None:
         """Restarts containers without saving or restoring the state or I/O ports"""
