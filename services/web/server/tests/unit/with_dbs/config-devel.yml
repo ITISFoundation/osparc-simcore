@@ -75,9 +75,6 @@ studies_access:
   enabled: false
 tags:
   enabled: false
-tracing:
-  enabled: false
-  zipkin_endpoint: http://jaeger:9411
 users:
   enabled: true
 groups:

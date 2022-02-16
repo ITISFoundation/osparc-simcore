@@ -14,19 +14,19 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
     cfg = {
         "version": "1.0",
         "main": {
-            "host": app_settings.WEBSERVER_HOST,
+            "host": app_settings.WEBSERVER_SERVER_HOST,
             "port": app_settings.WEBSERVER_PORT,
             "log_level": f"{app_settings.WEBSERVER_LOG_LEVEL}",
             "testing": False,  # TODO: deprecate!
             "studies_access_enabled": int(
-                app_settings.WEBSERVER_STUDIES_ACCESS.STUDIES_ACCESS_ANONYMOUS_ALLOWED
+                app_settings.WEBSERVER_STUDIES_DISPATCHER.STUDIES_ACCESS_ANONYMOUS_ALLOWED
             )
-            if app_settings.WEBSERVER_STUDIES_ACCESS
+            if app_settings.WEBSERVER_STUDIES_DISPATCHER
             else 0,
         },
         "tracing": {
             "enabled": 1 if app_settings.WEBSERVER_TRACING is not None else 0,
-            "zipkin_endpoint": f"{getattr(app_settings.WEBSERVER_TRACING, 'TRACING_ZIPKIN_ENDPOINT', None)}",
+            #     "zipkin_endpoint": f"{getattr(app_settings.WEBSERVER_TRACING, 'TRACING_ZIPKIN_ENDPOINT', None)}",
         },
         "socketio": {"enabled": app_settings.WEBSERVER_SOCKETIO},
         "director": {
@@ -61,8 +61,8 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
                 None,
             ),
             "garbage_collection_interval_seconds": getattr(
-                app_settings.WEBSERVER_RESOURCE_MANAGER,
-                "RESOURCE_MANAGER_GARBAGE_COLLECTION_INTERVAL_S",
+                app_settings.WEBSERVER_GARBAGE_COLLECTOR,
+                "GARBAGE_COLLECTOR_INTERVAL_S",
                 None,
             ),
             "redis": {
@@ -156,7 +156,9 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
             and app_settings.WEBSERVER_STATICWEB is not None
         },
         # NOTE  app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
-        "studies_dispatcher": {"enabled": app_settings.WEBSERVER_STUDIES_DISPATCHER},
+        "studies_dispatcher": {
+            "enabled": app_settings.WEBSERVER_STUDIES_DISPATCHER is not None
+        },
         "tags": {"enabled": app_settings.WEBSERVER_TAGS},
         "users": {"enabled": app_settings.WEBSERVER_USERS},
         "version_control": {"enabled": app_settings.WEBSERVER_VERSION_CONTROL},
@@ -173,9 +175,14 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
     envs = {}
 
     def _set_if_disabled(field_name, section):
-        if not section.get("enabled"):
-            field = ApplicationSettings.__fields__[field_name]
+        # Assumes that by default is enabled
+        enabled = section.get("enabled", True)
+        field = ApplicationSettings.__fields__[field_name]
+        if not enabled:
             envs[field_name] = "null" if field.allow_none else "0"
+        else:
+            if field.type_ == bool:
+                envs[field_name] = "1"
 
     if main := cfg.get("main"):
         envs["WEBSERVER_PORT"] = main.get("port")
@@ -184,7 +191,7 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
 
     if section := cfg.get("tracing"):
         _set_if_disabled("WEBSERVER_TRACING", section)
-        envs["TRACING_ZIPKIN_ENDPOINT"] = section.get("zipkin_endpoint")
+        # envs["TRACING_ZIPKIN_ENDPOINT"] = section.get("zipkin_endpoint")
 
     if section := cfg.get("director"):
         _set_if_disabled("WEBSERVER_DIRECTOR", section)

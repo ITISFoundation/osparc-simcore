@@ -28,7 +28,7 @@ def setup_app_tracing(app: web.Application):
     return setup_tracing(
         app,
         service_name=service_name,
-        host=app_settings.WEBSERVER_HOST,  # nosec
+        host=app_settings.WEBSERVER_SERVER_HOST,  # nosec
         port=app_settings.WEBSERVER_PORT,
         jaeger_base_url=settings.TRACING_ZIPKIN_ENDPOINT,
         # TODO: skip all routes that are ouside vX ??

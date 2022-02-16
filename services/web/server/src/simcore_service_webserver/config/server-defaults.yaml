@@ -5,9 +5,6 @@ main:
   port: 8080
   testing: true
   studies_access_enabled: True
-tracing:
-  enabled: True
-  zipkin_endpoint: http://jaeger:9411
 diagnostics:
   enabled: True
 director:

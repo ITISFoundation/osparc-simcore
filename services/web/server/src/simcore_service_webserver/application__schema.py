@@ -98,13 +98,14 @@ def create_schema() -> T.Dict:
             addon_section("publications", optional=True): minimal_addon_schema(),
             addon_section("redis", optional=True): minimal_addon_schema(),
             addon_section("remote_debug", optional=True): minimal_addon_schema(),
+            addon_section("scicrunch", optional=True): minimal_addon_schema(),
             addon_section("security", optional=True): minimal_addon_schema(),
             addon_section("statics", optional=True): minimal_addon_schema(),
             addon_section("studies_dispatcher", optional=True): minimal_addon_schema(),
             addon_section("tags", optional=True): minimal_addon_schema(),
+            addon_section("tracing", optional=True): minimal_addon_schema(),
             addon_section("users", optional=True): minimal_addon_schema(),
             addon_section("version_control", optional=True): minimal_addon_schema(),
-            addon_section("scicrunch", optional=True): minimal_addon_schema(),
         }
     )
 
