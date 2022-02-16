@@ -21,7 +21,7 @@ def setup_app_tracing(app: web.Application):
     app_settings = app[APP_SETTINGS_KEY]
     settings: TracingSettings = get_plugin_settings(app)
 
-    service_name = app_settings.TRACING_CLIENT_NAME
+    service_name = settings.TRACING_CLIENT_NAME
     if service_name == UNDEFINED_CLIENT_NAME:
         service_name = "simcore_service_webserver"
 
