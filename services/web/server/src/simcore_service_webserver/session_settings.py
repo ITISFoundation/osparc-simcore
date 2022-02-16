@@ -1,10 +1,13 @@
 import base64
 import binascii
 
+from aiohttp import web
 from pydantic.class_validators import validator
 from pydantic.fields import Field
 from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
+
+from ._constants import APP_SETTINGS_KEY
 
 
 class SessionSettings(BaseCustomSettings):
@@ -35,6 +38,12 @@ class SessionSettings(BaseCustomSettings):
                 'TIP: create new key with python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"'
             )
         return v
+
+
+def get_plugin_settings(app: web.Application) -> SessionSettings:
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_SESSION
+    assert settings, "setup_settings not called?"  # nosec
+    return settings
 
 
 def assert_valid_config(secret_key: str):
