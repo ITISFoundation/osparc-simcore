@@ -320,6 +320,27 @@ class DynamicSidecarClient:
             log_httpx_http_error(url, "POST", traceback.format_exc())
             raise e
 
+    async def detach_container_from_network(
+        self, dynamic_sidecar_endpoint: str, container_id: str, network_id: str
+    ) -> None:
+        url = get_url(
+            dynamic_sidecar_endpoint, f"/v1/containers/{container_id}/networks:detach"
+        )
+        data = dict(network_id=network_id)
+        try:
+            async with httpx.AsyncClient(timeout=self._save_restore_timeout) as client:
+                response = await client.post(url, json=data)
+            if response.status_code != status.HTTP_204_NO_CONTENT:
+                message = (
+                    f"ERROR while attaching network to container: "
+                    f"status={response.status_code}, body={response.text}"
+                )
+                logging.warning(message)
+                raise DynamicSchedulerException(message)
+        except httpx.HTTPError as e:
+            log_httpx_http_error(url, "POST", traceback.format_exc())
+            raise e
+
 
 async def setup_api_client(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client setup")
