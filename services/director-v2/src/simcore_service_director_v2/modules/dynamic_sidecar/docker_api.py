@@ -422,7 +422,7 @@ async def is_dynamic_service_running(
         return len(dynamic_sidecar_services) == 1
 
 
-async def get_networks_ids(
+async def get_or_create_networks_ids(
     networks: List[str], project_id: ProjectID
 ) -> Dict[str, str]:
     async def _get_id_from_name(client, network_name: str) -> str:
@@ -441,8 +441,8 @@ async def get_networks_ids(
                     "Name": network,
                     "Driver": "overlay",
                     "Labels": {
-                        "com.simcore.description": "internal network for service to service communication",
-                        "project_id": f"{project_id}",  # TODO: remove this when project is closing
+                        "com.simcore.description": "study service communication network",
+                        "project_id": f"{project_id}",
                     },
                     "Attachable": True,
                     "Internal": True,  # no internet access
