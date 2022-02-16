@@ -121,7 +121,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
         },
         "rest": {
             "version": app_settings.API_VTAG,
-            "enabled": app_settings.WEBSERVER_REST,
+            "enabled": app_settings.WEBSERVER_REST is not None,
         },
         "projects": {"enabled": app_settings.WEBSERVER_PROJECTS},
         "session": {

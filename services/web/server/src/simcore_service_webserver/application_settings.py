@@ -33,6 +33,7 @@ from .exporter.settings import ExporterSettings
 from .garbage_collector_settings import GarbageCollectorSettings
 from .login.settings import LoginSettings
 from .resource_manager.settings import ResourceManagerSettings
+from .rest_settings import RestSettings
 from .scicrunch.settings import SciCrunchSettings
 from .session_settings import SessionSettings
 from .statics_settings import FrontEndAppSettings, StaticWebserverModuleSettings
@@ -121,10 +122,19 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True, description="front-end static settings"
     )
 
+    WEBSERVER_GARBAGE_COLLECTOR: Optional[GarbageCollectorSettings] = Field(
+        auto_default_from_env=True, description="garbage collector plugin"
+    )
+
     WEBSERVER_LOGIN: Optional[LoginSettings] = Field(
         auto_default_from_env=True, description="login plugin"
     )
     WEBSERVER_REDIS: Optional[RedisSettings] = Field(auto_default_from_env=True)
+
+    WEBSERVER_REST: Optional[RestSettings] = Field(
+        auto_default_from_env=True, description="rest api plugin"
+    )
+
     WEBSERVER_RESOURCE_MANAGER: ResourceManagerSettings = Field(
         auto_default_from_env=True, description="resource_manager plugin"
     )
@@ -144,16 +154,12 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
     WEBSERVER_CLUSTERS: bool = True
-    WEBSERVER_GARBAGE_COLLECTOR: Optional[GarbageCollectorSettings] = Field(
-        auto_default_from_env=True, description="garbage collector plugin"
-    )
     WEBSERVER_GROUPS: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_PRODUCTS: bool = True
     WEBSERVER_PROJECTS: bool = True
     WEBSERVER_PUBLICATIONS: bool = True
     WEBSERVER_REMOTE_DEBUG: bool = True
-    WEBSERVER_REST: bool = True
     WEBSERVER_SOCKETIO: bool = True
     WEBSERVER_STUDIES_ACCESS: bool = True
     WEBSERVER_STUDIES_DISPATCHER: bool = True

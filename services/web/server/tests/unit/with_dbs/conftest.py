@@ -15,7 +15,7 @@ import textwrap
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, AsyncIterator, Callable, Dict, Iterator, List
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import aioredis
@@ -27,12 +27,12 @@ import simcore_service_webserver.utils
 import sqlalchemy as sa
 import trafaret_config
 from _helpers import MockedStorageSubsystem  # type: ignore
+from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
 from servicelib.common_aiopg_utils import DSN
-from simcore_service_webserver import rest
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application__schema import app_schema as app_schema
@@ -51,14 +51,11 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 @pytest.fixture(autouse=True)
-def disable_swagger_doc_generation() -> Iterator[None]:
+def disable_swagger_doc_generation(monkeypatch: MonkeyPatch):
     """
     by not enabling the swagger documentation, 1.8s per test is gained
     """
-    with patch.dict(
-        rest.setup_rest.__wrapped__.__kwdefaults__, {"swagger_doc_enabled": False}
-    ):
-        yield
+    monkeypatch.setenv("REST_SWAGGER_API_DOC_ENABLED", "0")
 
 
 @pytest.fixture(scope="session")
@@ -83,7 +80,7 @@ def default_app_cfg(osparc_simcore_root_dir: Path) -> Dict[str, Any]:
 
 
 @pytest.fixture(scope="session")
-def docker_compose_file(default_app_cfg, monkeypatch_session) -> str:
+def docker_compose_file(default_app_cfg, monkeypatch_session: MonkeyPatch) -> str:
     """Overrides pytest-docker fixture"""
 
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
@@ -121,7 +118,7 @@ def app_cfg(default_app_cfg, aiohttp_unused_port) -> Dict[str, Any]:
 def web_server(
     loop,
     app_cfg: Dict,
-    monkeypatch,
+    monkeypatch: MonkeyPatch,
     postgres_db,
     aiohttp_server,
     disable_static_webserver,
@@ -168,7 +165,7 @@ def client(
 
 
 @pytest.fixture
-def disable_static_webserver(monkeypatch) -> Callable:
+def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
     """
     Disables the static-webserver module.
     Avoids fecthing and caching index.html pages
