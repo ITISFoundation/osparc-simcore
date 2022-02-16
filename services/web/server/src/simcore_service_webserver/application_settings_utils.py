@@ -14,7 +14,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
     cfg = {
         "version": "1.0",
         "main": {
-            "host": "0.0.0.0",
+            "host": app_settings.WEBSERVER_HOST,
             "port": app_settings.WEBSERVER_PORT,
             "log_level": f"{app_settings.WEBSERVER_LOG_LEVEL}",
             "testing": False,  # TODO: deprecate!

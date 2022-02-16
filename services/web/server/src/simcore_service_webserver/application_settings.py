@@ -81,6 +81,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel.WARNING.value,
         env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
+    WEBSERVER_HOST: str = "0.0.0.0"  # nosec
     WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
     WEBSERVER_SESSION: SessionSettings = Field(
         auto_default_from_env=True, description="sesion module"

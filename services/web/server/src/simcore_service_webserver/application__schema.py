@@ -24,7 +24,6 @@ from . import (
     rest__schema,
     session__schema,
     storage__schema,
-    tracing,
 )
 from ._resources import resources
 from .activity import _schema as activity__schema
@@ -70,7 +69,6 @@ def create_schema() -> T.Dict:
                     ),
                 }
             ),
-            addon_section(tracing.CONFIG_SECTION_NAME, optional=True): tracing.schema,
             db__schema.CONFIG_SECTION_NAME: db__schema.schema,
             director__schema.CONFIG_SECTION_NAME: director__schema.schema,
             rest__schema.CONFIG_SECTION_NAME: rest__schema.schema,
