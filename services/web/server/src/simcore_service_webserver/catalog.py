@@ -8,6 +8,7 @@ from aiohttp import web
 from aiohttp.web_routedef import RouteDef
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.rest_routing import iter_path_operations
+from yarl import URL
 
 from . import catalog_client, catalog_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY, RQ_PRODUCT_KEY, X_PRODUCT_NAME_HEADER
@@ -42,7 +43,7 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
     # path & queries
     backend_url = to_backend_service(
         request.rel_url,
-        settings.origin,
+        URL(settings.origin),
         settings.CATALOG_VTAG,
     )
     # FIXME: hack
