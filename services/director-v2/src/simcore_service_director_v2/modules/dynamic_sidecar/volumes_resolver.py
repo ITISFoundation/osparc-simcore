@@ -25,7 +25,7 @@ def _get_s3_volume_driver_config(
             "s3-endpoint": r_clone_settings.endpoint,
             "path": f"{r_clone_settings.S3_BUCKET_NAME}/{project_id}/{node_uuid}/{storage_directory_name}",
             "allow-other": "true",
-            "vfs-cache-mode": "minimal",
+            "vfs-cache-mode": r_clone_settings.R_CLONE_VFS_CACHE_MODE.value,
             # Directly connected to how much time it takes for
             # files to appear on remote s3, please se discussion
             # SEE https://forum.rclone.org/t/file-added-to-s3-on-one-machine-not-visible-on-2nd-machine-unless-mount-is-restarted/20645

@@ -49,6 +49,13 @@ class S3Provider(str, Enum):
     MINIO = "MINIO"
 
 
+class VFSCacheMode(str, Enum):
+    OFF = "off"
+    MINIMAL = "minimal"
+    WRITES = "writes"
+    FILL = "full"
+
+
 class RCloneSettings(S3Settings):
     R_CLONE_S3_PROVIDER: S3Provider
 
@@ -59,6 +66,10 @@ class RCloneSettings(S3Settings):
     R_CLONE_POLL_INTERVAL_SECONDS: PositiveInt = Field(
         9,
         description="time to wait between polling for changes",
+    )
+    R_CLONE_VFS_CACHE_MODE: VFSCacheMode = Field(
+        VFSCacheMode.MINIMAL,
+        description="used primarly for easy testing without requiring requiring code changes",
     )
 
     @validator("R_CLONE_POLL_INTERVAL_SECONDS")
