@@ -10,8 +10,10 @@ from typing import Callable, Dict, List
 import pytest
 from _helpers import standard_role_response
 from aiohttp import web
+from aiohttp.test_utils import TestClient
+from pytest_simcore.helpers import utils_login
 from pytest_simcore.helpers.utils_assert import assert_status
-from pytest_simcore.helpers.utils_login import create_user, log_client_in
+from pytest_simcore.helpers.utils_login import log_client_in
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
@@ -22,6 +24,10 @@ from simcore_service_webserver.groups_api import (
     auto_add_user_to_groups,
 )
 from simcore_service_webserver.login.module_setup import setup_login
+from simcore_service_webserver.login.storage import AsyncpgStorage
+from simcore_service_webserver.login.storage import (
+    get_plugin_storage as get_login_plugin_storage,
+)
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
@@ -39,7 +45,7 @@ def client(
     app_cfg,
     postgres_db,
     monkeypatch_setenv_from_app_config: Callable,
-):
+) -> TestClient:
     cfg = deepcopy(app_cfg)
 
     port = cfg["main"]["port"]
@@ -64,6 +70,16 @@ def client(
         aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
     )
     return client
+
+
+@pytest.fixture
+def create_user(client: TestClient) -> Callable:
+    db: AsyncpgStorage = get_login_plugin_storage(client.app)
+
+    async def do(data=None):
+        return await utils_login.create_user(db, data)
+
+    return do
 
 
 # --------------------------------------------------------------------------
@@ -260,6 +276,7 @@ async def test_add_remove_users_from_group(
     logged_user,
     user_role,
     expected,
+    create_user: Callable,
 ):
 
     new_group = {
@@ -412,6 +429,7 @@ async def test_group_access_rights(
     logged_user,
     user_role,
     expected,
+    create_user: Callable,
 ):
     # Use-case:
     # 1. create a group
