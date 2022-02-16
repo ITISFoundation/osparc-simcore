@@ -34,6 +34,15 @@ class SharingNetworks(BaseModel):
     def __getitem__(self, item):
         return self.__root__[item]
 
+    def __setitem__(self, item, value):
+        self.__root__[item] = value
+
+    def items(self):
+        return self.__root__.items()
+
+    def get(self, item, default=None):
+        return self.__root__.get(item, default)
+
     class Config:
         schema_extra = {
             "examples": [

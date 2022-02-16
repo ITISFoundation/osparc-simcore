@@ -15,6 +15,7 @@ from .projects_nodes import Node
 from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
+from .sharing_networks import SharingNetworks
 
 ProjectID = UUID
 ProjectIDStr = constr(regex=UUID_RE)
@@ -85,6 +86,14 @@ class ProjectAtDB(ProjectCommons):
 
     published: Optional[bool] = Field(
         False, description="Defines if a study is available publicly"
+    )
+
+    sharing_networks: SharingNetworks = Field(
+        {},
+        description=(
+            "Networks which connect nodes from the project. Each node "
+            "is given a user defined alias by which it is identified on the network."
+        ),
     )
 
     @validator("project_type", pre=True)

@@ -36,6 +36,10 @@ class ServicesCommonSettings(BaseSettings):
         1 * _MINUTE, description="timeout of containers restart"
     )
 
+    network_attach_detach_timeout: PositiveInt = Field(
+        1 * _MINUTE, description="timeout to attach/detach a network"
+    )
+
     class Config:
         env_prefix = "SERVICES_COMMON_"
         case_sensitive = False
