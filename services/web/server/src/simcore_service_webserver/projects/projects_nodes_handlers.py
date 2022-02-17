@@ -15,10 +15,6 @@ from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
 from . import projects_api
 from .projects_exceptions import ProjectNotFoundError
-from models_library.sharing_networks import (
-    validate_network_alias,
-    validate_network_name,
-)
 
 log = logging.getLogger(__name__)
 
@@ -111,43 +107,6 @@ async def post_retrieve(request: web.Request) -> web.Response:
         node_uuid = request.match_info["node_id"]
         data = await request.json()
         port_keys = data.get("port_keys", [])
-
-        # below code will be removed, this is just for testing/demo
-        from .. import sharing_networks
-        from uuid import UUID
-
-        project_uuid = request.match_info["project_id"]
-        user_id: int = request[RQT_USERID_KEY]
-
-        network_name = "default_network"
-        validate_network_name(network_name)
-        await sharing_networks.add_network(
-            project_id=UUID(project_uuid), network_name=network_name
-        )
-
-        project = await projects_api.get_project_for_user(
-            request.app,
-            project_uuid=project_uuid,
-            user_id=user_id,
-        )
-
-        network_alias = project["workbench"][node_uuid]["label"]
-        validate_network_alias(network_alias)
-        await sharing_networks.add_node(
-            project_id=UUID(project_uuid),
-            node_id=UUID(node_uuid),
-            network_name=network_name,
-            network_alias=network_alias,
-        )
-
-        project_sharing_networks = await sharing_networks.get_sharing_networks(
-            project_id=UUID(project_uuid)
-        )
-        await director_v2_api.attach_networks_to_containers(
-            app=request.app,
-            project_id=UUID(project_uuid),
-            sharing_networks=project_sharing_networks,
-        )
 
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err

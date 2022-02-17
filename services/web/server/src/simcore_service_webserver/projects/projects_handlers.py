@@ -38,6 +38,7 @@ from .projects_utils import (
     get_project_unavailable_services,
     project_uses_available_services,
 )
+from .. import sharing_networks
 
 # When the user requests a project with a repo, the working copy might differ from
 # the repo project. A middleware in the meta module (if active) will resolve
@@ -127,6 +128,15 @@ async def create_projects(
             else:
                 # TODO: take skeleton and fill instead
                 new_project = predefined
+
+        # there is no previous project so current_project is set to
+        # contain an empty sharing_networks object
+        current_project = {"sharing_networks": {}}
+        await sharing_networks.propagate_changes(
+            app=request.app,
+            current_project=current_project,
+            new_project_data=new_project,
+        )
 
         # re-validate data
         await projects_api.validate_project(request.app, new_project)
@@ -405,6 +415,12 @@ async def replace_project(request: web.Request):
 
         if current_project["accessRights"] != new_project["accessRights"]:
             await check_permission(request, "project.access_rights.update")
+
+        await sharing_networks.propagate_changes(
+            app=request.app,
+            current_project=current_project,
+            new_project_data=new_project,
+        )
 
         new_project = await db.replace_user_project(
             new_project, user_id, f"{project_uuid}", include_templates=True

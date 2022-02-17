@@ -1,102 +1,200 @@
-from typing import AsyncIterator, Dict
-from _pytest.fixtures import fail_fixturefunc
+import logging
+from collections import namedtuple
+from typing import Any, Dict, Set
+from uuid import UUID
+
+from aiohttp.web import Application
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
 from models_library.sharing_networks import (
-    SharingNetworks,
     DockerNetworkAlias,
     DockerNetworkName,
+    SharingNetworks,
+    validate_network_alias,
+    validate_network_name,
 )
+from pydantic import ValidationError
+from servicelib.utils import logged_gather
 
-from contextlib import asynccontextmanager
+from . import director_v2_api
 
+logger = logging.getLogger(__name__)
 
-_SHARING_NETWORKS: Dict[ProjectID, SharingNetworks] = {}
+SHARING_NETWORK_PREFIX = "shr-ntwrk"
 
-
-@asynccontextmanager
-async def networks_manager(project_id: ProjectID) -> AsyncIterator[SharingNetworks]:
-    # TODO replace implementation with loading and storing to the DB
-    if project_id not in _SHARING_NETWORKS:
-        _SHARING_NETWORKS[project_id] = {}
-
-    yield _SHARING_NETWORKS[project_id]
-
-    # add saving to the database once the object context manger finishes
+_ToRemove = namedtuple("_ToRemove", "project_id, node_id, network_name")
+_ToAdd = namedtuple("_ToAdd", "project_id, node_id, network_name, network_alias")
 
 
-class BaseNetworksException(Exception):
-    pass
+def _network_name(project_id: ProjectID, user_defined: str) -> DockerNetworkName:
+    network_name = f"{SHARING_NETWORK_PREFIX}_{project_id}_{user_defined}"
+    return validate_network_name(network_name)
 
 
-class InvalidServiceLabelException(BaseNetworksException):
-    pass
+def _network_alias(label: str) -> DockerNetworkAlias:
+    return validate_network_alias(label)
 
 
-class NetworkNotDefinedException(BaseNetworksException):
-    pass
-
-
-async def add_network(project_id: ProjectID, network_name: DockerNetworkName) -> None:
-    """creates network if missing"""
-    async with networks_manager(project_id) as project_networks:
-        if network_name not in project_networks:
-            project_networks[network_name] = {}
-
-
-async def remove_network(
-    project_id: ProjectID, network_name: DockerNetworkName
-) -> None:
-    """removes network if present"""
-    async with networks_manager(project_id) as project_networks:
-        if network_name in project_networks:
-            # TODO: send an update before removing all to DV2 to remove delete network
-            # and detach containers
-            del project_networks[network_name]
-
-
-async def add_node(
+async def _send_network_configuration_to_dynamic_sidecar(
+    app: Application,
     project_id: ProjectID,
-    node_id: NodeID,
-    network_name: DockerNetworkName,
-    network_alias: DockerNetworkAlias,
+    new_sharing_networks: SharingNetworks,  # TODO: rename to new
+    sharing_networks: SharingNetworks,  # TODO. rename to existing
 ) -> None:
-    """adds node to network or update network name"""
+    """
+    Propagates the network configuration to the dynamic-sidecars.
+    Note:
+    - All unused networks will be removed from each service.
+    - All required networks will be attached to each service.
+    - Networks which are in use will not be removed.
+    """
 
-    send_update = False
-    async with networks_manager(project_id) as project_networks:
-        if network_name not in project_networks:
-            raise NetworkNotDefinedException(f"Network {network_name} was not defined!")
+    # REMOVING
+    to_remove_items: Set[_ToRemove] = set()
 
-        project_networks[network_name][node_id] = network_alias
-        send_update = True
+    # if network no longer exist remove it from all nodes
+    for new_network_name, node_ids_and_aliases in new_sharing_networks.items():
+        if new_network_name not in sharing_networks:
+            for node_id in node_ids_and_aliases:
+                to_remove_items.add(
+                    _ToRemove(
+                        project_id=project_id,
+                        node_id=node_id,
+                        network_name=new_network_name,
+                    )
+                )
+    # if node does not exist for the network, remove it
+    # if alias is different remove the network
+    for new_network_name, node_ids_and_aliases in new_sharing_networks.items():
+        existing_node_ids_and_aliases = sharing_networks.get(new_network_name, {})
+        for node_id, alias in node_ids_and_aliases.items():
+            # node does not exist
+            if node_id not in existing_node_ids_and_aliases:
+                to_remove_items.add(
+                    _ToRemove(
+                        project_id=project_id,
+                        node_id=node_id,
+                        network_name=new_network_name,
+                    )
+                )
+            else:
+                existing_alias = existing_node_ids_and_aliases[node_id]
+                # alias is different
+                if existing_alias != alias:
+                    to_remove_items.add(
+                        _ToRemove(
+                            project_id=project_id,
+                            node_id=node_id,
+                            network_name=new_network_name,
+                        )
+                    )
 
-    if send_update:
-        # TODO: send update to DV2
-        pass
+    await logged_gather(
+        *[
+            director_v2_api.detach_network_from_dynamic_sidecar(
+                app=app,
+                project_id=to_remove.project_id,
+                node_id=to_remove.node_id,
+                network_name=to_remove.network_name,
+            )
+            for to_remove in to_remove_items
+        ]
+    )
+
+    # ADDING
+    to_add_items: Set[_ToAdd] = set()
+    # all aliases which are different or missing should be added
+    for new_network_name, node_ids_and_aliases in new_sharing_networks.items():
+        existing_node_ids_and_aliases = sharing_networks.get(new_network_name, {})
+        for node_id, alias in node_ids_and_aliases.items():
+            existing_alias = existing_node_ids_and_aliases.get(node_id)
+            if alias != existing_alias:
+                to_add_items.add(
+                    _ToAdd(
+                        project_id=project_id,
+                        node_id=node_id,
+                        network_name=new_network_name,
+                        network_alias=alias,
+                    )
+                )
+
+    await logged_gather(
+        *[
+            director_v2_api.attach_network_to_dynamic_sidecar(
+                app=app,
+                project_id=to_add.project_id,
+                node_id=to_add.node_id,
+                network_name=to_add.network_name,
+                network_alias=to_add.network_alias,
+            )
+            for to_add in to_add_items
+        ]
+    )
 
 
-async def remove_node(
-    project_id: ProjectID, network_name: DockerNetworkName, node_id: NodeID
+async def _get_sharing_networks_for_default_network(
+    app: Application, new_project_data: Dict[str, Any]
+) -> SharingNetworks:
+    """
+    Until a proper UI is in place all container need to
+    be on the same network.
+    Return an updated version of the sharing_networks
+    """
+    new_sharing_networks: SharingNetworks = SharingNetworks()
+
+    default_network = _network_name(UUID(new_project_data["uuid"]), "default")
+    new_sharing_networks[default_network] = {}
+
+    for node_uuid, node_content in new_project_data["workbench"].items():
+        # only add dynamic-sidecar nodes
+        if not await director_v2_api.requires_dynamic_sidecar(
+            app,
+            service_key=node_content["key"],
+            service_version=node_content["version"],
+        ):
+            continue
+
+        # only add if network label is valid, otherwise it will be skipped
+        try:
+            network_alias = _network_alias(node_content["label"])
+        except ValidationError:
+            # TODO: need to inform frontend somehow about this issue!!!
+            # maybe a Log message will be fine, when renaming
+            # mauybe we need to refactor the message delivery in the dynamic-sidecar
+            # and pull it in a shared module for this, for now
+            logger.warning(
+                "Service with label '%s' cannot be added to the network %s",
+                node_content["label"],
+                default_network,
+            )
+            continue
+
+        new_sharing_networks[default_network][UUID(node_uuid)] = network_alias
+
+    return new_sharing_networks
+
+
+async def propagate_changes(
+    app: Application, current_project: Dict[str, Any], new_project_data: Dict[str, Any]
 ) -> None:
-    """removes node from network"""
-    send_update = False
-    async with networks_manager(project_id) as project_networks:
-        if network_name not in project_networks:
-            raise NetworkNotDefinedException(f"Network {network_name} was not defined!")
+    """
+    Automatically updates the networks based on the incoming new sharing_networks.
+    It is assumed that this will be updated by the fronted.
+    NOTE: this needs to be called before saving the `new_project_data` to the database
+    """
 
-        if node_id in project_networks[network_name]:
-            del project_networks[network_name][node_id]
-            send_update = True
+    old_sharing_networks = SharingNetworks.parse_obj(
+        current_project["sharing_networks"]
+    )
 
-    if send_update:
-        # TODO: send update to DV2
-        pass
+    # NOTE: when UI is in place this is no longer required
+    # for now all services are placed on the same default network
+    new_project_data[
+        "sharing_networks"
+    ] = await _get_sharing_networks_for_default_network(app, new_project_data)
 
-
-async def get_sharing_networks(project_id: ProjectID) -> Dict[str, Dict[str, str]]:
-    def _transform_value(value: Dict[NodeID, str]) -> Dict[str, str]:
-        return {str(k): v for k, v in value.items()}
-
-    async with networks_manager(project_id) as project_networks:
-        return {k: _transform_value(v) for k, v in project_networks.items()}
+    await _send_network_configuration_to_dynamic_sidecar(
+        app=app,
+        project_id=UUID(new_project_data["uuid"]),
+        new_sharing_networks=new_project_data["sharing_networks"],
+        sharing_networks=old_sharing_networks,
+    )
