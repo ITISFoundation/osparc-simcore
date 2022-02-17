@@ -133,13 +133,13 @@ async def _send_network_configuration_to_dynamic_sidecar(
 
 async def _get_sharing_networks_for_default_network(
     app: Application, new_project_data: Dict[str, Any]
-) -> SharingNetworks:
+) -> Dict[str, Any]:
     """
     Until a proper UI is in place all container need to
     be on the same network.
     Return an updated version of the sharing_networks
     """
-    new_sharing_networks: SharingNetworks = SharingNetworks()
+    new_sharing_networks: SharingNetworks = SharingNetworks.parse_obj({})
 
     default_network = _network_name(UUID(new_project_data["uuid"]), "default")
     new_sharing_networks[default_network] = {}
@@ -170,7 +170,7 @@ async def _get_sharing_networks_for_default_network(
 
         new_sharing_networks[default_network][UUID(node_uuid)] = network_alias
 
-    return new_sharing_networks
+    return new_sharing_networks.dict()
 
 
 async def propagate_changes(
@@ -192,9 +192,13 @@ async def propagate_changes(
         "sharing_networks"
     ] = await _get_sharing_networks_for_default_network(app, new_project_data)
 
+    logger.debug("new_sharing_networks=%s", new_project_data["sharing_networks"])
+
     await _send_network_configuration_to_dynamic_sidecar(
         app=app,
         project_id=UUID(new_project_data["uuid"]),
-        new_sharing_networks=new_project_data["sharing_networks"],
+        new_sharing_networks=SharingNetworks.parse_obj(
+            new_project_data["sharing_networks"]
+        ),
         sharing_networks=old_sharing_networks,
     )
