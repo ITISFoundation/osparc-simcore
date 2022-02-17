@@ -203,7 +203,7 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 	# Creating config for ops stack to $@
 	# -> filestash config at $(TMP_PATH_TO_FILESTASH_CONFIG)
 	@$(shell \
-		export TMP_PATH_TO_FILESTASH_CONFIG="${TMP_PATH_TO_FILESTASH_CONFIG}"; \
+		export TMP_PATH_TO_FILESTASH_CONFIG="${TMP_PATH_TO_FILESTASH_CONFIG}" && \
 		docker-compose --env-file .env --file services/docker-compose-ops.yml --log-level=DEBUG config > $@ \
 	)
 
