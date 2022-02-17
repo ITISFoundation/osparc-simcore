@@ -18,7 +18,6 @@ from settings_library.postgres import PostgresSettings
 from settings_library.prometheus import PrometheusSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
@@ -92,8 +91,8 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
 
-    WEBSERVER_SESSION: SessionSettings = Field(
-        auto_default_from_env=True, description="sesion module"
+    WEBSERVER_FRONTEND: Optional[FrontEndAppSettings] = Field(
+        auto_default_from_env=True, description="front-end static settings"
     )
 
     # PLUGINS ----------------
@@ -128,10 +127,6 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True, description="exporter plugin"
     )
 
-    WEBSERVER_FRONTEND: Optional[FrontEndAppSettings] = Field(
-        auto_default_from_env=True, description="front-end static settings"
-    )
-
     WEBSERVER_GARBAGE_COLLECTOR: Optional[GarbageCollectorSettings] = Field(
         auto_default_from_env=True, description="garbage collector plugin"
     )
@@ -148,10 +143,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_RESOURCE_MANAGER: ResourceManagerSettings = Field(
         auto_default_from_env=True, description="resource_manager plugin"
     )
-    WEBSERVER_S3: Optional[S3Settings] = Field(auto_default_from_env=True)
     WEBSERVER_SCICRUNCH: Optional[SciCrunchSettings] = Field(
         auto_default_from_env=True, description="scicrunch plugin"
     )
+    WEBSERVER_SESSION: SessionSettings = Field(
+        auto_default_from_env=True, description="session plugin"
+    )
+
     WEBSERVER_STATICWEB: Optional[StaticWebserverModuleSettings] = Field(
         auto_default_from_env=True, description="static-webserver service plugin"
     )
@@ -178,6 +176,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_TAGS: bool = True
     WEBSERVER_USERS: bool = True
     WEBSERVER_VERSION_CONTROL: bool = True
+
+    #
+    WEBSERVER_SECURITY: bool = Field(
+        True,
+        description="This is a place-holder for future settings."
+        "Currently this is a system plugin and cannot be disabled",
+    )
 
     @validator(
         # List of plugins under-development (keep up-to-date)

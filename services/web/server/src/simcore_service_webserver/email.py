@@ -12,7 +12,6 @@ from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from ._resources import resources
-from .email_config import CONFIG_SECTION_NAME
 
 # TODO: move login/utils.py email functionality here!
 # from email.mime.text import MIMEText
@@ -22,7 +21,7 @@ log = logging.getLogger(__name__)
 
 
 @app_module_setup(
-    __name__, ModuleCategory.ADDON, config_section=CONFIG_SECTION_NAME, logger=log
+    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_EMAIL", logger=log
 )
 def setup_email(app: web.Application, debug: bool = False):
     # TODO: move debug as settings flag

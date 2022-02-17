@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 @app_module_setup(
     "simcore_service_webserver.exporter",
     ModuleCategory.ADDON,
+    settings_name="WEBSERVER_EXPORTER",
     logger=logger,
 )
 def setup_exporter(app: web.Application) -> bool:

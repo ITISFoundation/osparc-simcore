@@ -19,7 +19,10 @@ logger = logging.getLogger(__name__)
 
 
 @app_module_setup(
-    "simcore_service_webserver.resource_manager", ModuleCategory.SYSTEM, logger=logger
+    "simcore_service_webserver.resource_manager",
+    ModuleCategory.SYSTEM,
+    settings_name="WEBSERVER_RESOURCE_MANAGER",
+    logger=logger,
 )
 def setup_resource_manager(app: web.Application) -> bool:
     """Sets up resource manager subsystem in the application"""

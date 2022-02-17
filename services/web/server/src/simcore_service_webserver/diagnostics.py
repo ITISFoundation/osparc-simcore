@@ -17,8 +17,8 @@ log = logging.getLogger(__name__)
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
+    settings_name="WEBSERVER_DIAGNOSTICS",
     depends=["simcore_service_webserver.rest"],
-    config_section="diagnostics",
     logger=log,
 )
 def setup_diagnostics(

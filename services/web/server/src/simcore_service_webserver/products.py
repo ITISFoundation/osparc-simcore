@@ -100,7 +100,11 @@ async def discover_product_middleware(request, handler):
 
 
 @app_module_setup(
-    __name__, ModuleCategory.ADDON, depends=["simcore_service_webserver.db"], logger=log
+    __name__,
+    ModuleCategory.ADDON,
+    depends=["simcore_service_webserver.db"],
+    settings_name="WEBSERVER_PRODUCTS",
+    logger=log,
 )
 def setup_products(app: web.Application):
 

@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 @app_module_setup(
     "simcore_service_webserver.director",
     ModuleCategory.ADDON,
+    settings_name="WEBSERVER_DIRECTOR",
     depends=[],
     logger=logger,
 )

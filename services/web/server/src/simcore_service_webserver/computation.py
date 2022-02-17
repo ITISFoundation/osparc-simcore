@@ -8,7 +8,6 @@ from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .computation_comp_tasks_listening_task import setup as setup_comp_tasks_listener
-from .computation_config import CONFIG_SECTION_NAME
 from .computation_settings import get_plugin_settings
 from .computation_subscribe import setup_rabbitmq_consumer
 
@@ -18,7 +17,7 @@ log = logging.getLogger(__file__)
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
-    config_section=CONFIG_SECTION_NAME,
+    settings_name="WEBSERVER_COMPUTATION",
     logger=log,
     depends=[
         "simcore_service_webserver.diagnostics"

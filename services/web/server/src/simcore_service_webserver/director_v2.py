@@ -12,7 +12,6 @@ from . import director_v2_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY
 from .director_v2_abc import set_project_run_policy
 from .director_v2_core import DefaultProjectRunPolicy, DirectorV2ApiClient, set_client
-from .director_v2_settings import CONFIG_SECTION_NAME
 from .rest import setup_rest
 
 log = logging.getLogger(__file__)
@@ -21,7 +20,7 @@ log = logging.getLogger(__file__)
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
-    config_section=CONFIG_SECTION_NAME,
+    settings_name="WEBSERVER_DIRECTOR_V2",
     logger=log,
 )
 def setup_director_v2(app: web.Application):

@@ -37,7 +37,9 @@ def generate_key():
     return secret_key
 
 
-@app_module_setup(__name__, ModuleCategory.ADDON, logger=logger)
+@app_module_setup(
+    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_SESSION", logger=logger
+)
 def setup_session(app: web.Application):
     """
     Inits and registers a session middleware in aiohttp.web.Application

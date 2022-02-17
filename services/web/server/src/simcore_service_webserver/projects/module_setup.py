@@ -57,6 +57,7 @@ def _create_routes(tag, specs, *handlers_module, disable_login: bool = False):
 @app_module_setup(
     "simcore_service_webserver.projects",
     ModuleCategory.ADDON,
+    settings_name="WEBSERVER_PROJECTS",
     depends=[f"simcore_service_webserver.{mod}" for mod in ("rest", "db")],
     logger=logger,
 )

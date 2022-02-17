@@ -17,7 +17,9 @@ def get_plugin_settings(app: web.Application) -> TracingSettings:
     return settings
 
 
-@app_module_setup(__name__, ModuleCategory.ADDON, logger=log)
+@app_module_setup(
+    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_TRACING", logger=log
+)
 def setup_app_tracing(app: web.Application):
     app_settings = app[APP_SETTINGS_KEY]
     settings: TracingSettings = get_plugin_settings(app)

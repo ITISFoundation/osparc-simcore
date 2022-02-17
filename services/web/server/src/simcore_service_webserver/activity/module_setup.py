@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 @app_module_setup(
     "simcore_service_webserver.activity",
     category=ModuleCategory.ADDON,
+    settings_name="WEBSERVER_ACTIVITY",
     depends=["simcore_service_webserver.rest"],
     logger=logger,
 )

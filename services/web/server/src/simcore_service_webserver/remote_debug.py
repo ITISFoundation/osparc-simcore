@@ -15,7 +15,13 @@ logger = logging.getLogger(__name__)
 _REMOTE_DEBUGGING_PORT = 3000
 
 
-@app_module_setup(__name__, ModuleCategory.ADDON, logger=logger, depends=[])
+@app_module_setup(
+    __name__,
+    ModuleCategory.ADDON,
+    settings_name="WEBSERVER_REMOTE_DEBUG",
+    logger=logger,
+    depends=[],
+)
 def setup_remote_debugging(app: web.Application):
     application_settings: ApplicationSettings = app[APP_SETTINGS_KEY]
     assert application_settings.WEBSERVER_REMOTE_DEBUG is True  # nosec

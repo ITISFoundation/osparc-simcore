@@ -13,7 +13,9 @@ from . import storage_routes
 log = logging.getLogger(__name__)
 
 
-@app_module_setup(__name__, ModuleCategory.ADDON, logger=log)
+@app_module_setup(
+    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STORAGE", logger=log
+)
 def setup_storage(app: web.Application):
 
     specs = app[APP_OPENAPI_SPECS_KEY]  # validated openapi specs

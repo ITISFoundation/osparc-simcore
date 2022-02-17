@@ -16,7 +16,10 @@ log = logging.getLogger(__name__)
 
 
 @app_module_setup(
-    "simcore_service_webserver.socketio", ModuleCategory.ADDON, logger=log
+    "simcore_service_webserver.socketio",
+    ModuleCategory.ADDON,
+    settings_name="WEBSERVER_SOCKETIO",
+    logger=log,
 )
 def setup_socketio(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_SOCKETIO  # nosec

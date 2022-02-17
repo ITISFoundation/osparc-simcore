@@ -73,6 +73,7 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
+    settings_name="WEBSERVER_CATALOG",
     depends=["simcore_service_webserver.rest"],
     logger=logger,
 )
