@@ -6,8 +6,10 @@ from uuid import UUID
 import aiohttp
 from aiohttp import ClientTimeout, web
 from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import ComputationTask
 from models_library.settings.services_common import ServicesCommonSettings
+from models_library.sharing_networks import DockerNetworkAlias, DockerNetworkName
 from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
@@ -445,40 +447,63 @@ async def retrieve(
 
 
 @log_decorator(logger=log)
-async def attach_networks_to_containers(
-    app: web.Application,
-    project_id: ProjectID,
-    sharing_networks: Dict[str, Dict[str, str]],
-) -> None:
-    timeout = ServicesCommonSettings().storage_service_upload_download_timeout
-
+async def requires_dynamic_sidecar(
+    app: web.Application, service_key: str, service_version: str
+) -> bool:
     director2_settings: Directorv2Settings = get_settings(app)
     backend_url = (
         URL(director2_settings.endpoint)
         / "dynamic_services"
-        / f"networks/{project_id}:attach"
+        / "dynamic-sidecar:required"
     )
-    body = dict(project_id=f"{project_id}", sharing_networks=sharing_networks)
-    log.debug("Request body %s", body)
+    body = dict(key=service_key, version=service_version)
+
+    return await _request_director_v2(
+        app, "POST", backend_url, data=body, expected_status=web.HTTPOk
+    )
+
+
+@log_decorator(logger=log)
+async def attach_network_to_dynamic_sidecar(
+    app: web.Application,
+    project_id: ProjectID,
+    node_id: NodeID,
+    network_name: DockerNetworkName,
+    network_alias: DockerNetworkAlias,
+) -> None:
+    timeout = ServicesCommonSettings().network_attach_detach_timeout
+
+    director2_settings: Directorv2Settings = get_settings(app)
+    backend_url = (
+        URL(director2_settings.endpoint) / "dynamic_services" / f"networks:attach"
+    )
+    body = dict(
+        project_id=f"{project_id}",
+        node_id=f"{node_id}",
+        network_name=network_name,
+        network_alias=network_alias,
+    )
     await _request_director_v2(
         app, "POST", backend_url, expected_status=web.HTTPOk, data=body, timeout=timeout
     )
 
 
-async def restart(app: web.Application, node_uuid: str) -> None:
-    # when triggering retrieve endpoint
-    # this will allow to sava bigger datasets from the services
-    timeout = ServicesCommonSettings().restart_containers_timeout
+@log_decorator(logger=log)
+async def detach_network_from_dynamic_sidecar(
+    app: web.Application,
+    project_id: ProjectID,
+    node_id: NodeID,
+    network_name: DockerNetworkName,
+) -> None:
+    timeout = ServicesCommonSettings().network_attach_detach_timeout
 
     director2_settings: Directorv2Settings = get_settings(app)
     backend_url = (
-        URL(director2_settings.endpoint) / "dynamic_services" / f"{node_uuid}:restart"
+        URL(director2_settings.endpoint) / "dynamic_services" / f"networks:detach"
     )
-
+    body = dict(
+        project_id=f"{project_id}", node_id=f"{node_id}", network_name=network_name
+    )
     await _request_director_v2(
-        app,
-        "POST",
-        backend_url,
-        expected_status=web.HTTPOk,
-        timeout=timeout,
+        app, "POST", backend_url, expected_status=web.HTTPOk, data=body, timeout=timeout
     )
