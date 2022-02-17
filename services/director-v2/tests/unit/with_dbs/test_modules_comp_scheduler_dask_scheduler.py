@@ -543,11 +543,11 @@ async def test_handling_of_disconnected_dask_scheduler(
 
 
 async def test_lost_task_properly_recovered(
+    aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
     running_project: RunningProject,
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,
     user_id: PositiveInt,
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
     mocked_node_ports: None,
     mocked_clean_task_output_fct: mock.MagicMock,
     mocked_scheduler_task: None,
@@ -556,7 +556,23 @@ async def test_lost_task_properly_recovered(
     the dask client or director-v2 was restarted, thus the task is still
     in RUNNING state in the database, but the tasks have disappeared"""
 
-    ...
+    await manually_run_comp_scheduler(scheduler)
+    # since the tasks have disappeared, what is the obvious thing?
+    # 1. fail the computations?
+    # 2. if possible recover them if they finished? and then continue with whatever comes after?
+    # 3. if they cannot be recovered, then go back to 1.?
+    await assert_comp_tasks_state(
+        aiopg_engine,
+        running_project.project.uuid,
+        [running_project.tasks[1].node_id, running_project.tasks[3].node_id],
+        exp_state=RunningState.FAILED,
+    )
+    await assert_comp_tasks_state(
+        aiopg_engine,
+        running_project.project.uuid,
+        [running_project.tasks[2].node_id, running_project.tasks[4].node_id],
+        exp_state=RunningState.ABORTED,
+    )
 
 
 @pytest.mark.parametrize("state", COMPLETED_STATES)
@@ -590,7 +606,7 @@ async def test_completed_task_properly_updates_state(
     await assert_comp_tasks_state(
         aiopg_engine,
         published_project.project.uuid,
-        [published_project.tasks[0].node_id],
+        [published_project.tasks[1].node_id],
         exp_state=state,
     )
 

@@ -428,8 +428,4 @@ def runs(
 
     # cleanup
     with postgres_db.connect() as conn:
-        conn.execute(
-            comp_pipeline.delete().where(
-                comp_pipeline.c.project_id.in_(created_run_ids)
-            )
-        )
+        conn.execute(comp_runs.delete().where(comp_runs.c.run_id.in_(created_run_ids)))

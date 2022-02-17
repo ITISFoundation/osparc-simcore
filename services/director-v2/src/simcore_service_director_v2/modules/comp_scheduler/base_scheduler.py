@@ -239,7 +239,6 @@ class BaseCompScheduler(ABC):
         pipeline_tasks: Dict[str, CompTaskAtDB] = {}
         pipeline_result: RunningState = RunningState.UNKNOWN
         tasks_to_start: Set[NodeID] = set()
-        tasks_to_check: Set[NodeID] = set()
 
         # 1. Update the run states
         try:
@@ -257,16 +256,14 @@ class BaseCompScheduler(ABC):
                 }
             )
 
-            # find the tasks that need scheduling
+            # find the tasks that need scheduling (these are the ones with no unfilled dependency, e.g. degree 0)
             tasks_to_schedule = [node_id for node_id, degree in pipeline_dag.in_degree() if degree == 0]  # type: ignore
 
-            tasks_to_mark_as_aborted: Set[NodeID] = set()
+            tasks_in_execution: Set[NodeID] = set()
+            tasks_failed: Set[NodeID] = set()
             for node_id in tasks_to_schedule:
                 if pipeline_tasks[f"{node_id}"].state == RunningState.FAILED:
-                    tasks_to_mark_as_aborted.update(nx.bfs_tree(pipeline_dag, node_id))
-                    tasks_to_mark_as_aborted.remove(
-                        node_id
-                    )  # do not mark the failed one as aborted
+                    tasks_failed.add(node_id)
 
                 if pipeline_tasks[f"{node_id}"].state == RunningState.PUBLISHED:
                     # the nodes that are published shall be started
@@ -276,19 +273,54 @@ class BaseCompScheduler(ABC):
                     RunningState.STARTED,
                     RunningState.PENDING,
                 ):
-                    tasks_to_check.add(node_id)
+                    tasks_in_execution.add(node_id)
 
-            comp_tasks_repo: CompTasksRepository = cast(
-                CompTasksRepository, get_repository(self.db_engine, CompTasksRepository)
-            )
-
-            if tasks_to_mark_as_aborted:
-                await comp_tasks_repo.set_project_tasks_state(
-                    project_id, list(tasks_to_mark_as_aborted), RunningState.ABORTED
+            # let's check the executing tasks are really executing, else we move them to the failed ones
+            if tasks_in_execution:
+                # ensure these tasks still exist in the backend, if not we abort these
+                tasks_backend_status = await self._get_tasks_status(
+                    cluster_id,
+                    [pipeline_tasks[f"{node_id}"] for node_id in tasks_in_execution],
                 )
-            # update the current states
-            for node_id in tasks_to_mark_as_aborted:
+                for node_id, backend_state in zip(
+                    tasks_in_execution, tasks_backend_status
+                ):
+                    if backend_state == RunningState.UNKNOWN:
+                        tasks_failed.add(node_id)
+                        # these tasks should be running but they are not available in the backend
+                        # so let's fail them, the next scheduler round will stop them all
+                        logger.error(
+                            "Project %s: %s has %s, aborting it",
+                            f"{project_id}",
+                            f"{node_id}",
+                            f"{backend_state=}",
+                        )
+
+            # set the tasks after a failed one as aborted
+            tasks_following_failed_tasks: Set[NodeID] = set()
+            for node_id in tasks_failed:
+                pipeline_tasks[f"{node_id}"].state = RunningState.FAILED
+                tasks_following_failed_tasks.update(nx.bfs_tree(pipeline_dag, node_id))
+                tasks_following_failed_tasks.remove(
+                    node_id
+                )  # do not mark the failed one as aborted
+            # mark now the aborted ones (that follow a failed one)
+            for node_id in tasks_following_failed_tasks:
                 pipeline_tasks[f"{node_id}"].state = RunningState.ABORTED
+
+            # update the current states in DB
+            comp_tasks_repo: CompTasksRepository = cast(
+                CompTasksRepository,
+                get_repository(self.db_engine, CompTasksRepository),
+            )
+            if tasks_following_failed_tasks:
+                await comp_tasks_repo.set_project_tasks_state(
+                    project_id, list(tasks_following_failed_tasks), RunningState.ABORTED
+                )
+            if tasks_failed:
+                await comp_tasks_repo.set_project_tasks_state(
+                    project_id, list(tasks_failed), RunningState.FAILED
+                )
 
             # compute and update the current status of the run
             pipeline_result = await self._update_run_result_from_tasks(
@@ -310,23 +342,10 @@ class BaseCompScheduler(ABC):
             pipeline_result = RunningState.ABORTED
             await self._set_run_result(user_id, project_id, iteration, pipeline_result)
 
-        if tasks_to_check:
-            # ensure these tasks still exist in the backend, if not we abort these
-            tasks_backend_status = await self._get_tasks_status(
-                cluster_id, [pipeline_tasks[f"{node_id}"] for node_id in tasks_to_check]
-            )
-            tasks_theoretical_status = [task.state for task in pipeline_tasks.values()]
-            logger.error(
-                "Project %s Tasks checked: %s vs %s",
-                f"{project_id}",
-                f"{tasks_theoretical_status=}",
-                f"{tasks_backend_status=}",
-            )
-
         # 2. Are we finished??
         if not pipeline_dag.nodes() or pipeline_result in COMPLETED_STATES:
             # there is nothing left, the run is completed, we're done here
-            self.scheduled_pipelines.pop((user_id, project_id, iteration))
+            self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
             logger.info(
                 "pipeline %s scheduling completed with result %s",
                 f"{project_id=}",
