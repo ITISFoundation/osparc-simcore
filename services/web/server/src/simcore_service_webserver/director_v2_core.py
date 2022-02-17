@@ -25,7 +25,7 @@ from .director_v2_settings import (
     get_plugin_settings,
 )
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 _APP_DIRECTOR_V2_CLIENT_KEY = f"{__name__}.DirectorV2ApiClient"
 

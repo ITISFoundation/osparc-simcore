@@ -11,7 +11,7 @@ from .computation_comp_tasks_listening_task import setup as setup_comp_tasks_lis
 from .computation_settings import get_plugin_settings
 from .computation_subscribe import setup_rabbitmq_consumer
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 
 @app_module_setup(

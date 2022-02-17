@@ -18,7 +18,7 @@ from .security_access_model import RoleBasedAccessModel
 from .security_authorization import AuthorizationPolicy
 from .security_roles import ROLES_PERMISSIONS
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 
 @app_module_setup(

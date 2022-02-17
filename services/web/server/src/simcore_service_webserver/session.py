@@ -27,7 +27,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 
 from .session_settings import SessionSettings, get_plugin_settings
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def generate_key():

@@ -26,7 +26,7 @@ from .server import get_socket_server
 ANONYMOUS_USER_ID = -1
 _SOCKET_IO_AIOHTTP_REQUEST_KEY = "aiohttp.request"
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 
 @register_socketio_handler

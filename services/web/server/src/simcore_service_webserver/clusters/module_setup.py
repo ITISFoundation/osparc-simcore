@@ -14,7 +14,7 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from .._constants import APP_SETTINGS_KEY
 from . import handlers
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 
 @app_module_setup(

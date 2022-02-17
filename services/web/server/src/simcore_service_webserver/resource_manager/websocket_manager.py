@@ -24,7 +24,7 @@ from aiohttp import web
 from .registry import get_registry
 from .settings import ResourceManagerSettings, get_plugin_settings
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 SOCKET_ID_KEY = "socket_id"
 PROJECT_ID_KEY = "project_id"

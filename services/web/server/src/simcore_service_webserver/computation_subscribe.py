@@ -34,7 +34,7 @@ from .socketio.events import (
     send_messages,
 )
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 
 async def progress_message_parser(app: web.Application, data: bytes) -> None:

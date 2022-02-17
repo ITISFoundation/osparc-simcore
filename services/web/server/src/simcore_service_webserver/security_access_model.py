@@ -14,7 +14,7 @@ import attr
 
 from .db_models import UserRole
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 ContextType = Optional[Dict[str, Any]]
 
