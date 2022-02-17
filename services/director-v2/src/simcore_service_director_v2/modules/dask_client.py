@@ -71,7 +71,8 @@ _DASK_TASK_STATUS_RUNNING_STATE_MAP = {
     "waiting": RunningState.PENDING,
     "no-worker": RunningState.PENDING,
     "processing": RunningState.STARTED,
-    "error": RunningState.FAILED,
+    "memory": RunningState.SUCCESS,
+    "erred": RunningState.FAILED,
 }
 
 
@@ -380,7 +381,7 @@ class DaskClient:
                 async def _task_done_callback(event_data: TaskStateEvent) -> None:
                     await self.dask_subsystem.client.unpublish_dataset(
                         event_data.job_id
-                    )
+                    )  # type: ignore
                     return await callback(event_data)
 
                 task_future.add_done_callback(
@@ -394,7 +395,7 @@ class DaskClient:
                 list_of_node_id_to_job_id.append((node_id, job_id))
                 await self.dask_subsystem.client.publish_dataset(
                     task_future, name=job_id
-                )
+                )  # type: ignore
 
                 logger.debug("Dask task %s started", task_future.key)
             except Exception:
@@ -409,7 +410,7 @@ class DaskClient:
         # try to get the task from the scheduler
         task_statuses = await self.dask_subsystem.client.run_on_scheduler(
             lambda dask_scheduler: dask_scheduler.get_task_status(keys=job_ids)
-        )
+        )  # type: ignore
         logger.debug("found dask task statuses: %s", f"{task_statuses=}")
 
         return [

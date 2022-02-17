@@ -13,6 +13,7 @@ from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List, Optional
 from unittest import mock
 from uuid import uuid4
 
+import distributed
 import pytest
 from _dask_helpers import DaskGatewayServer
 from _pytest.monkeypatch import MonkeyPatch
@@ -27,8 +28,9 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from distributed import Scheduler, Sub
+from distributed import Event, Scheduler, Sub
 from distributed.deploy.spec import SpecCluster
+from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.clusters import NoAuthentication, SimpleAuthentication
 from models_library.projects import ProjectID
@@ -50,7 +52,7 @@ from simcore_service_director_v2.modules.dask_client import DaskClient
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_random
+from tenacity.wait import wait_fixed, wait_random
 from yarl import URL
 
 _ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS = 20
@@ -634,6 +636,87 @@ async def test_changed_scheduler_raises_exception(
                 remote_fct=None,
             )
     mocked_user_completed_cb.assert_not_called()
+
+
+@pytest.mark.parametrize("fail_remote_fct", [False, True])
+async def test_get_tasks_status(
+    dask_client: DaskClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    cluster_id: ClusterID,
+    cpu_image: ImageParams,
+    mocked_node_ports: None,
+    mocked_user_completed_cb: mock.AsyncMock,
+    faker: Faker,
+    fail_remote_fct: bool,
+):
+    # NOTE: this must be inlined so that the test works,
+    # the dask-worker must be able to import the function
+    _DASK_EVENT_NAME = faker.pystr()
+
+    def fake_remote_fct(
+        docker_auth: DockerBasicAuth,
+        service_key: str,
+        service_version: str,
+        input_data: TaskInputData,
+        output_data_keys: TaskOutputDataSchema,
+        log_file_url: AnyUrl,
+        command: List[str],
+    ) -> TaskOutputData:
+        # wait here until the client allows us to continue
+        start_event = Event(_DASK_EVENT_NAME)
+        start_event.wait(timeout=5)
+        if fail_remote_fct:
+            raise ValueError("We fail because we're told to!")
+        return TaskOutputData.parse_obj({"some_output_key": 123})
+
+    node_id_to_job_ids = await dask_client.send_computation_tasks(
+        user_id=user_id,
+        project_id=project_id,
+        cluster_id=cluster_id,
+        tasks=cpu_image.fake_tasks,
+        callback=mocked_user_completed_cb,
+        remote_fct=fake_remote_fct,
+    )
+    assert node_id_to_job_ids
+    assert len(node_id_to_job_ids) == 1
+    node_id, job_id = node_id_to_job_ids[0]
+    assert node_id in cpu_image.fake_tasks
+    # let's get a dask future for the task here so dask will not remove the task from the scheduler at the end
+    computation_future = distributed.Future(key=job_id)
+    assert computation_future
+
+    # depending on speed, this will be pending first
+    async def _wait_for_task_status(expected_status: RunningState):
+        async for attempt in AsyncRetrying(
+            reraise=True,
+            stop=stop_after_delay(_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS),
+            wait=wait_fixed(1),
+        ):
+            with attempt:
+                print(
+                    f"waiting for task to be {expected_status=}, "
+                    f"Attempt={attempt.retry_state.attempt_number}"
+                )
+                tasks_status = await dask_client.get_tasks_status([job_id])
+                assert tasks_status
+                assert len(tasks_status) == 1
+                print(f"current {tasks_status=}")
+                assert tasks_status[0] == expected_status
+
+    await _wait_for_task_status(RunningState.STARTED)
+
+    # let the remote fct run through now
+    start_event = Event(_DASK_EVENT_NAME, dask_client.dask_subsystem.client)
+    await start_event.set()  # type: ignore
+    # it will become successful hopefuly
+    await _wait_for_task_status(
+        RunningState.FAILED if fail_remote_fct else RunningState.SUCCESS
+    )
+
+    # removing the future will let dask eventually delete the task from its memory, so its status becomes undefined
+    del computation_future
+    await _wait_for_task_status(RunningState.UNKNOWN)
 
 
 @pytest.mark.parametrize(
