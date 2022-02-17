@@ -430,12 +430,7 @@ class DaskClient:
         for job_id in job_ids:
             if task_future := distributed.Future(job_id, self.dask_subsystem.client):
                 self.cancellation_dask_pub.put(  # type: ignore
-                    TaskCancelEvent(job_id=job_id).json()
+                    TaskCancelEvent(job_id=job_id).json()  # type: ignore
                 )
-                await task_future.cancel()
+                await task_future.cancel()  # type: ignore
                 logger.debug("Dask task %s cancelled", task_future.key)
-            # if task_future.status == "pending":
-            #     workers_with_the_job = await self.dask_subsystem.client.who_has(job_id)
-            #     if not workers_with_the_job:
-            #         raise ComputationalBackendTaskNotFoundError()
-            # logger.error("%s", f"{task_future=}")
