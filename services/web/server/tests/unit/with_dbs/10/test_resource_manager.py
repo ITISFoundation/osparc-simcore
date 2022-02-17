@@ -55,7 +55,7 @@ from simcore_service_webserver.users import setup_users
 from simcore_service_webserver.users_api import delete_user
 from simcore_service_webserver.users_exceptions import UserNotFoundError
 from tenacity._asyncio import AsyncRetrying
-from tenacity.stop import stop_after_delay
+from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
@@ -411,9 +411,14 @@ async def test_interactive_services_removed_after_logout(
 
     # assert dynamic service is removed *this is done in a fire/forget way so give a bit of leeway
     async for attempt in AsyncRetrying(
-        reraise=True, stop=stop_after_delay(10), wait=wait_fixed(1)
+        reraise=True, stop=stop_after_attempt(10), wait=wait_fixed(1)
     ):
         with attempt:
+            logger.warning(
+                "Waiting for stop to have been called service_uuid=%s, save_state=%s",
+                service["service_uuid"],
+                expected_save_state,
+            )
             mocked_director_v2_api["director_v2_core.stop_service"].assert_awaited_with(
                 app=client.server.app,
                 service_uuid=service["service_uuid"],
