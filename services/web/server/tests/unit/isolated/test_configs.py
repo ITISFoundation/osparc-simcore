@@ -11,7 +11,6 @@ from types import ModuleType
 from typing import Any, Callable, Dict, List, Set, Tuple
 
 import pytest
-import trafaret
 from pytest_simcore.helpers.utils_environs import eval_service_environ
 from servicelib.aiohttp.application_setup import is_setup_function
 from simcore_service_webserver._resources import resources
@@ -20,7 +19,7 @@ config_yaml_filenames = [str(name) for name in resources.listdir("config")]
 
 
 @pytest.fixture(scope="session")
-def app_config_schema() -> trafaret.Dict:
+def app_config_schema():
     raise RuntimeError("DEPRECATED. MUST NOT BE USED")
 
 
@@ -127,9 +126,7 @@ def test_setup_per_app_subsystem(app_submodules_with_setup_funs):
 
 
 @pytest.mark.skip(reason="DEPRECATED")
-def test_schema_sections(
-    app_config_schema: trafaret.Dict, app_modules_metadata: List[Dict]
-):
+def test_schema_sections(app_config_schema, app_modules_metadata: List[Dict]):
     """
     CONVENTION:
         Every section in the config-file (except for 'version' and 'main')
