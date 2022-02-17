@@ -21,6 +21,8 @@ from dask.distributed import get_worker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.events import (
     TaskCancelEvent,
+    TaskLogEvent,
+    TaskProgressEvent,
     TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import (
@@ -48,7 +50,7 @@ from simcore_service_director_v2.core.errors import (
 from simcore_service_director_v2.models.domains.comp_tasks import Image
 from simcore_service_director_v2.models.schemas.constants import ClusterID, UserID
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
-from simcore_service_director_v2.modules.dask_client import DaskClient
+from simcore_service_director_v2.modules.dask_client import DaskClient, TaskHandlers
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -722,6 +724,86 @@ async def test_get_tasks_status(
     # removing the future will let dask eventually delete the task from its memory, so its status becomes undefined
     del computation_future
     await _wait_for_task_status(RunningState.UNKNOWN)
+
+
+@pytest.fixture
+async def fake_task_handlers(mocker: MockerFixture) -> TaskHandlers:
+    return TaskHandlers(mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock())
+
+
+async def test_dask_sub_handlers(
+    dask_client: DaskClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    cluster_id: ClusterID,
+    cpu_image: ImageParams,
+    mocked_node_ports: None,
+    mocked_user_completed_cb: mock.AsyncMock,
+    fake_task_handlers: TaskHandlers,
+):
+    dask_client.register_handlers(fake_task_handlers)
+    _DASK_START_EVENT = "start"
+
+    def fake_remote_fct(
+        docker_auth: DockerBasicAuth,
+        service_key: str,
+        service_version: str,
+        input_data: TaskInputData,
+        output_data_keys: TaskOutputDataSchema,
+        log_file_url: AnyUrl,
+        command: List[str],
+    ) -> TaskOutputData:
+
+        state_pub = distributed.Pub(TaskStateEvent.topic_name())
+        progress_pub = distributed.Pub(TaskProgressEvent.topic_name())
+        logs_pub = distributed.Pub(TaskLogEvent.topic_name())
+        state_pub.put("my name is state")
+        progress_pub.put("my name is progress")
+        logs_pub.put("my name is logs")
+        # tell the client we are done
+        published_event = Event(name=_DASK_START_EVENT)
+        published_event.set()
+
+        return TaskOutputData.parse_obj({"some_output_key": 123})
+
+    # run the computation
+    node_id_to_job_ids = await dask_client.send_computation_tasks(
+        user_id=user_id,
+        project_id=project_id,
+        cluster_id=cluster_id,
+        tasks=cpu_image.fake_tasks,
+        callback=mocked_user_completed_cb,
+        remote_fct=fake_remote_fct,
+    )
+    assert node_id_to_job_ids
+    assert len(node_id_to_job_ids) == 1
+    node_id, job_id = node_id_to_job_ids[0]
+    assert node_id in cpu_image.fake_tasks
+    computation_future = distributed.Future(job_id)
+    print("--> waiting for job to finish...")
+    await distributed.wait(computation_future, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)  # type: ignore
+    assert computation_future.done()
+    print("job finished, now checking that we received the publications...")
+
+    async for attempt in AsyncRetrying(
+        reraise=True,
+        wait=wait_fixed(1),
+        stop=stop_after_delay(5),
+    ):
+        with attempt:
+            print(
+                f"waiting for call in mocked fct {fake_task_handlers}, "
+                f"Attempt={attempt.retry_state.attempt_number}"
+            )
+            # we should have received data in our TaskHandlers
+            fake_task_handlers.task_change_handler.assert_called_with(
+                "my name is state"
+            )
+            fake_task_handlers.task_progress_handler.assert_called_with(
+                "my name is progress"
+            )
+            fake_task_handlers.task_log_handler.assert_called_with("my name is logs")
+    await _wait_for_call(mocked_user_completed_cb)
 
 
 @pytest.mark.parametrize(
