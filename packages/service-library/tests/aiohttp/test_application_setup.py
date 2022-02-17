@@ -9,11 +9,11 @@ import pytest
 from aiohttp import web
 from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import (
-    APP_SETUP_KEY,
     DependencyError,
     ModuleCategory,
     SkipModuleSetup,
     app_module_setup,
+    is_setup_completed,
 )
 
 log = Mock()
@@ -91,7 +91,7 @@ def test_marked_setup(app_config, app):
     assert setup_foo(app, 1)
 
     assert setup_foo.metadata()["module_name"] == "package.foo"
-    assert setup_foo.metadata()["module_name"] in app[APP_SETUP_KEY]
+    assert is_setup_completed(setup_foo.metadata()["module_name"], app)
 
     app_config["foo"]["enabled"] = False
     assert not setup_foo(app, 2)

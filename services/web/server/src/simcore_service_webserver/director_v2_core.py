@@ -21,7 +21,7 @@ from tenacity.wait import wait_random
 from yarl import URL
 
 from .director_v2_abc import AbstractProjectRunPolicy
-from .director_v2_settings import Directorv2Settings, get_client_session, get_settings
+from .director_v2_settings import DirectorV2Settings, get_client_session, get_settings
 
 log = logging.getLogger(__file__)
 
@@ -60,14 +60,13 @@ class DirectorServiceError(Exception):
 class DirectorV2ApiClient:
     def __init__(self, app: web.Application) -> None:
         self._app = app
-        self._settings: Directorv2Settings = get_settings(app)
-        self._base_url = URL(self._settings.endpoint)
+        self._settings: DirectorV2Settings = get_settings(app)
 
     async def start(self, project_id: ProjectID, user_id: UserID, **options) -> str:
         computation_task_out = await _request_director_v2(
             self._app,
             "POST",
-            self._base_url / "computations",
+            self._settings.base_url / "computations",
             expected_status=web.HTTPCreated,
             data={"user_id": user_id, "project_id": project_id, **options},
         )
@@ -78,7 +77,7 @@ class DirectorV2ApiClient:
         await _request_director_v2(
             self._app,
             "POST",
-            self._base_url / "computations" / f"{project_id}:stop",
+            self._settings.base_url / "computations" / f"{project_id}:stop",
             expected_status=web.HTTPAccepted,
             data={"user_id": user_id},
         )
@@ -179,8 +178,8 @@ class DefaultProjectRunPolicy(AbstractProjectRunPolicy):
 async def is_healthy(app: web.Application) -> bool:
     try:
         session = get_client_session(app)
-        settings: Directorv2Settings = get_settings(app)
-        health_check_url = URL(settings.endpoint).parent
+        settings: DirectorV2Settings = get_settings(app)
+        health_check_url = settings.base_url.parent
         await session.get(
             url=health_check_url,
             ssl=False,
@@ -198,9 +197,9 @@ async def is_healthy(app: web.Application) -> bool:
 async def create_or_update_pipeline(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> Optional[DataType]:
-    settings: Directorv2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_settings(app)
 
-    backend_url = URL(f"{settings.endpoint}/computations")
+    backend_url = settings.base_url / "computations"
     body = {"user_id": user_id, "project_id": f"{project_id}"}
     # request to director-v2
     try:
@@ -215,11 +214,31 @@ async def create_or_update_pipeline(
 
 
 @log_decorator(logger=log)
+async def is_pipeline_running(
+    app: web.Application, user_id: PositiveInt, project_id: UUID
+) -> Optional[bool]:
+
+    # TODO: make it cheaper by /computations/{project_id}/state. First trial shows
+    # that the efficiency gain is minimal but should be considered specially if the handler
+    # gets heavier with time
+    pipeline = await get_computation_task(app, user_id, project_id)
+    if pipeline is None:
+        # NOTE: at the time of this modification, error handling in `get_computation_task`
+        # is still limited and any type of errors is transformed into a None. Therefore
+        # at this point we cannot discern whether the pipeline is running or not.
+        # In order to define the "UNKNOWN" state we return None, which in an
+        # if statement casts to False
+        return None
+
+    return pipeline.state.is_running()
+
+
+@log_decorator(logger=log)
 async def get_computation_task(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> Optional[ComputationTask]:
-    settings: Directorv2Settings = get_settings(app)
-    backend_url = URL(f"{settings.endpoint}/computations/{project_id}").update_query(
+    settings: DirectorV2Settings = get_settings(app)
+    backend_url = (settings.base_url / f"computations/{project_id}").update_query(
         user_id=user_id
     )
 
@@ -244,9 +263,9 @@ async def get_computation_task(
 async def delete_pipeline(
     app: web.Application, user_id: PositiveInt, project_id: UUID
 ) -> None:
-    settings: Directorv2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_settings(app)
 
-    backend_url = URL(f"{settings.endpoint}/computations/{project_id}")
+    backend_url = settings.base_url / f"computations/{project_id}"
     body = {"user_id": user_id, "force": True}
 
     # request to director-v2
@@ -259,8 +278,8 @@ async def delete_pipeline(
 async def request_retrieve_dyn_service(
     app: web.Application, service_uuid: str, port_keys: List[str]
 ) -> None:
-    settings: Directorv2Settings = get_settings(app)
-    backend_url = URL(f"{settings.endpoint}/dynamic_services/{service_uuid}:retrieve")
+    settings: DirectorV2Settings = get_settings(app)
+    backend_url = settings.base_url / f"dynamic_services/{service_uuid}:retrieve"
     body = {"port_keys": port_keys}
 
     try:
@@ -307,8 +326,8 @@ async def start_service(
         "X-Dynamic-Sidecar-Request-Scheme": request_scheme,
     }
 
-    settings: Directorv2Settings = get_settings(app)
-    backend_url = URL(settings.endpoint) / "dynamic_services"
+    settings: DirectorV2Settings = get_settings(app)
+    backend_url = settings.base_url / "dynamic_services"
 
     started_service = await _request_director_v2(
         app,
@@ -335,8 +354,8 @@ async def get_services(
     if project_id:
         params["project_id"] = project_id
 
-    settings: Directorv2Settings = get_settings(app)
-    backend_url = URL(settings.endpoint) / "dynamic_services"
+    settings: DirectorV2Settings = get_settings(app)
+    backend_url = settings.base_url / "dynamic_services"
 
     services = await _request_director_v2(
         app, "GET", backend_url, params=params, expected_status=web.HTTPOk
@@ -353,12 +372,12 @@ async def stop_service(
     # stopping a service can take a lot of time
     # bumping the stop command timeout to 1 hour
     # this will allow to sava bigger datasets from the services
+    # TODO: PC -> ANE: all settings MUST be in app[APP_SETTINGS_KEY]
+
     timeout = ServicesCommonSettings().webserver_director_stop_service_timeout
 
-    settings: Directorv2Settings = get_settings(app)
-    backend_url = (
-        URL(settings.endpoint) / "dynamic_services" / f"{service_uuid}"
-    ).update_query(
+    settings: DirectorV2Settings = get_settings(app)
+    backend_url = (settings.base_url / f"dynamic_services/{service_uuid}").update_query(
         save_state="true" if save_state else "false",
     )
     await _request_director_v2(
@@ -373,8 +392,8 @@ async def list_running_dynamic_services(
     """
     Retruns the running dynamic services from director-v0 and director-v2
     """
-    settings: Directorv2Settings = get_settings(app)
-    url = URL(settings.endpoint) / "dynamic_services"
+    settings: DirectorV2Settings = get_settings(app)
+    url = settings.base_url / "dynamic_services"
     backend_url = url.with_query(user_id=str(user_id), project_id=str(project_id))
 
     services = await _request_director_v2(
@@ -408,8 +427,8 @@ async def stop_services(
 
 @log_decorator(logger=log)
 async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
-    settings: Directorv2Settings = get_settings(app)
-    backend_url = URL(settings.endpoint) / "dynamic_services" / f"{node_uuid}"
+    settings: DirectorV2Settings = get_settings(app)
+    backend_url = settings.base_url / f"dynamic_services/{node_uuid}"
 
     service_state = await _request_director_v2(
         app, "GET", backend_url, expected_status=web.HTTPOk
@@ -425,12 +444,11 @@ async def retrieve(
 ) -> DataBody:
     # when triggering retrieve endpoint
     # this will allow to sava bigger datasets from the services
+    # TODO: PC -> ANE: all settings MUST be in app[APP_SETTINGS_KEY]
     timeout = ServicesCommonSettings().storage_service_upload_download_timeout
 
-    director2_settings: Directorv2Settings = get_settings(app)
-    backend_url = (
-        URL(director2_settings.endpoint) / "dynamic_services" / f"{node_uuid}:retrieve"
-    )
+    settings: DirectorV2Settings = get_settings(app)
+    backend_url = settings.base_url / "dynamic_services" / f"{node_uuid}:retrieve"
     body = dict(port_keys=port_keys)
 
     retry_result = await _request_director_v2(
@@ -444,6 +462,25 @@ async def retrieve(
 
     assert isinstance(retry_result, dict)  # nosec
     return retry_result
+
+
+@log_decorator(logger=log)
+async def restart(app: web.Application, node_uuid: str) -> None:
+    # when triggering retrieve endpoint
+    # this will allow to sava bigger datasets from the services
+    # TODO: PC -> ANE: all settings MUST be in app[APP_SETTINGS_KEY]
+    timeout = ServicesCommonSettings().restart_containers_timeout
+
+    settings: DirectorV2Settings = get_settings(app)
+    backend_url = settings.base_url / f"dynamic_services/{node_uuid}:restart"
+
+    await _request_director_v2(
+        app,
+        "POST",
+        backend_url,
+        expected_status=web.HTTPOk,
+        timeout=timeout,
+    )
 
 
 @log_decorator(logger=log)

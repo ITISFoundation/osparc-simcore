@@ -13,11 +13,9 @@ from urllib.parse import quote
 import pytest
 from aioresponses.core import CallbackResult, aioresponses
 from helpers import json_schema_validator
-
 from servicelib.rest_responses import (  # pylint: disable=no-name-in-module
     unwrap_envelope,
 )
-
 from simcore_service_director import main, resources, rest
 
 
@@ -226,7 +224,7 @@ async def _start_get_stop_services(
     project_id,
     api_version_prefix: str,
     save_state: Optional[bool],
-    exp_save_state_call: bool,
+    expected_save_state_call: bool,
     mocker,
 ):
     params = {}
@@ -370,7 +368,7 @@ async def _start_get_stop_services(
                 f"/{api_version_prefix}/running_interactive_services/{params['service_uuid']}",
                 params=query_params,
             )
-            if exp_save_state_call:
+            if expected_save_state_call:
                 mocked_save_state_cb.assert_called_once()
 
         text = await web_response.text()
@@ -405,7 +403,7 @@ async def test_running_services_post_and_delete_no_swarm(
 
 
 @pytest.mark.parametrize(
-    "save_state, exp_save_state_call", [(True, True), (False, False), (None, True)]
+    "save_state, expected_save_state_call", [(True, True), (False, False), (None, True)]
 )
 async def test_running_services_post_and_delete(
     configure_swarm_stack_name,
@@ -416,7 +414,7 @@ async def test_running_services_post_and_delete(
     project_id,
     api_version_prefix,
     save_state: Optional[bool],
-    exp_save_state_call: bool,
+    expected_save_state_call: bool,
     mocker,
 ):
     await _start_get_stop_services(
@@ -426,7 +424,7 @@ async def test_running_services_post_and_delete(
         project_id,
         api_version_prefix,
         save_state,
-        exp_save_state_call,
+        expected_save_state_call,
         mocker,
     )
 

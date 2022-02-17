@@ -4,11 +4,8 @@ import aioredlock
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.projects_state import Owner, ProjectLocked, ProjectStatus
-from simcore_service_webserver.resource_manager.redis import (
-    get_redis_lock_manager,
-    get_redis_lock_manager_client,
-)
 
+from ..redis import get_redis_lock_manager, get_redis_lock_manager_client
 from ..users_api import UserNameDict
 
 PROJECT_REDIS_LOCK_KEY: str = "project:{}"

@@ -1,4 +1,7 @@
-import asyncio
+""" Core implementation of garbage collector
+
+"""
+
 import logging
 from itertools import chain
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -10,117 +13,38 @@ from aioredlock import Aioredlock
 from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
 
-from .. import director_v2_api, users_exceptions
-from ..db_models import GroupType
-from ..director.director_exceptions import DirectorException, ServiceNotFoundError
-from ..groups_api import get_group_from_gid
-from ..projects.projects_api import (
+from . import director_v2_api, users_exceptions
+from .db_models import GroupType
+from .director.director_exceptions import DirectorException, ServiceNotFoundError
+from .groups_api import get_group_from_gid
+from .projects.projects_api import (
     delete_project,
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
     remove_project_interactive_services,
 )
-from ..projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
-from ..projects.projects_exceptions import ProjectNotFoundError
-from ..resource_manager.redis import get_redis_lock_manager
-from ..users_api import (
+from .projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
+from .projects.projects_exceptions import ProjectNotFoundError
+from .redis import get_redis_lock_manager
+from .resource_manager.config import GUEST_USER_RC_LOCK_FORMAT
+from .resource_manager.registry import RedisResourceRegistry, get_registry
+from .users_api import (
     delete_user,
     get_guest_user_ids_and_names,
     get_user,
     get_user_id_from_gid,
     is_user_guest,
 )
-from ..users_to_groups_api import get_users_for_gid
-from .config import GUEST_USER_RC_LOCK_FORMAT, get_garbage_collector_interval
-from .registry import RedisResourceRegistry, get_registry
+from .users_to_groups_api import get_users_for_gid
 
-logger = logging.getLogger(__name__)
-database_errors = (
+_DATABASE_ERRORS = (
     DatabaseError,
     asyncpg.exceptions.PostgresError,
     ProjectNotFoundError,
 )
 
-TASK_NAME = f"{__name__}.collect_garbage_periodically"
-TASK_CONFIG = f"{TASK_NAME}.config"
-
-
-def setup_garbage_collector(app: web.Application):
-    async def _setup_background_task(app: web.Application):
-        # SETUP ------
-        # create a background task to collect garbage periodically
-        assert not any(  # nosec
-            t.get_name() == TASK_NAME for t in asyncio.all_tasks()
-        ), "Garbage collector task already running. ONLY ONE expected"  # nosec
-
-        gc_bg_task = asyncio.create_task(
-            collect_garbage_periodically(app), name=TASK_NAME
-        )
-
-        # FIXME: added this config to overcome the state in which the
-        # task cancelation is ignored and the exceptions enter in a loop
-        # that never stops the background task. This flag is an additional
-        # mechanism to enforce stopping the background task
-        #
-        # Implemented with a mutable dict to avoid
-        #   DeprecationWarning: Changing state of started or joined application is deprecated
-        #
-        app[TASK_CONFIG] = {"force_stop": False, "name": TASK_NAME}
-
-        yield
-
-        # TEAR-DOWN -----
-        # controlled cancelation of the gc task
-        try:
-            logger.info("Stopping garbage collector...")
-
-            ack = gc_bg_task.cancel()
-            assert ack  # nosec
-
-            app[TASK_CONFIG]["force_stop"] = True
-
-            await gc_bg_task
-
-        except asyncio.CancelledError:
-            assert gc_bg_task.cancelled()  # nosec
-
-    app.cleanup_ctx.append(_setup_background_task)
-
-
-async def collect_garbage_periodically(app: web.Application):
-
-    while True:
-        logger.info("Starting garbage collector...")
-        try:
-            interval = get_garbage_collector_interval(app)
-            while True:
-                await collect_garbage(app)
-
-                if app[TASK_CONFIG].get("force_stop", False):
-                    raise Exception("Forced to stop garbage collection")
-
-                await asyncio.sleep(interval)
-
-        except asyncio.CancelledError:
-            logger.info("Garbage collection task was cancelled, it will not restart!")
-            # do not catch Cancellation errors
-            raise
-
-        except Exception:  # pylint: disable=broad-except
-            logger.warning(
-                "There was an error during garbage collection, restarting...",
-                exc_info=True,
-            )
-
-            if app[TASK_CONFIG].get("force_stop", False):
-                logger.warning("Forced to stop garbage collection")
-                break
-
-            # will wait 5 seconds to recover before restarting to avoid restart loops
-            # - it might be that db/redis is down, etc
-            #
-            await asyncio.sleep(5)
+logger = logging.getLogger(__name__)
 
 
 async def collect_garbage(app: web.Application):
@@ -509,7 +433,7 @@ async def remove_guest_user_with_all_its_resources(
         )
         await remove_user(app=app, user_id=user_id)
 
-    except database_errors as error:
+    except _DATABASE_ERRORS as error:
         logger.warning(
             "Failure in database while removing user (%s) and its resources with %s",
             f"{user_id=}",
@@ -726,7 +650,7 @@ async def replace_current_owner(
             app=app, primary_gid=new_project_owner_gid
         )
 
-    except database_errors:
+    except _DATABASE_ERRORS:
         logger.exception(
             "Could not recover new user id from gid %s", new_project_owner_gid
         )
@@ -754,7 +678,7 @@ async def replace_current_owner(
             project_data=project,
             project_uuid=project_uuid,
         )
-    except database_errors:
+    except _DATABASE_ERRORS:
         logger.exception(
             "Could not remove old owner and replaced it with user %s",
             new_project_owner_id,
@@ -765,7 +689,7 @@ async def remove_user(app: web.Application, user_id: int) -> None:
     """Tries to remove a user, if the users still exists a warning message will be displayed"""
     try:
         await delete_user(app, user_id)
-    except database_errors as err:
+    except _DATABASE_ERRORS as err:
         logger.warning(
             "User '%s' still has some projects, could not be deleted [%s]", user_id, err
         )

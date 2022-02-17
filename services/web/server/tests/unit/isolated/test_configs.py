@@ -8,7 +8,7 @@ import inspect
 import unittest.mock as mock
 from pathlib import Path
 from types import ModuleType
-from typing import Dict, List, Set
+from typing import Any, Callable, Dict, List, Set, Tuple
 
 import pytest
 import trafaret
@@ -88,19 +88,40 @@ def app_submodules_with_setup_funs(package_dir: Path) -> Set[ModuleType]:
 
 
 @pytest.fixture(scope="session")
-def app_subsystems(app_submodules_with_setup_funs: Set[ModuleType]) -> List[Dict]:
-    metadata = {}
+def app_modules_metadata(
+    app_submodules_with_setup_funs: Set[ModuleType],
+) -> List[Dict[str, Any]]:
+    NameFuncPair = Tuple[str, Callable]
+
+    register: Set[str] = set()
+    setup_funcs_metadata: List[Dict[str, Any]] = []
+
     for module in app_submodules_with_setup_funs:
-        setup_members = inspect.getmembers(module, is_setup_function)
+        # SEE packages/service-library/src/servicelib/aiohttp/application_setup.py
+        setup_members: List[NameFuncPair] = inspect.getmembers(
+            module, is_setup_function
+        )
         assert (
             setup_members
-        ), f"None of {[s[0] for s in setup_members]} are setup funs for {module.__name__}"
+        ), f"None of {[s[0] for s in setup_members]} found in {module.__name__} are valid setup functions for"
 
-        setup_fun_name, setup_fun = setup_members[0]
-        module_name = setup_fun.metadata()["module_name"]
-        metadata[module_name] = setup_fun.metadata()
+        assert len(setup_members), "One setup per module"
 
-    return list(metadata.values())
+        for setup_fun_name, setup_fun in setup_members:
+            metadata = setup_fun.metadata()
+            print(f"{setup_fun_name=} -> {metadata=}")
+            # NOTE: same setup_fun can always be imported from the original module
+            # therefore there are some cases in which more than one setup_func is
+            # present. Here we make sure we do not duplicate them
+            if setup_fun_name not in register:
+                setup_funcs_metadata.append(metadata)
+            register.add(setup_fun_name)
+
+    assert len(app_submodules_with_setup_funs) == len(
+        setup_funcs_metadata
+    ), "One setup func per module setup"
+
+    return list(setup_funcs_metadata)
 
 
 # TESTS ----------------------------------------------------------------------
@@ -130,13 +151,17 @@ def test_setup_per_app_subsystem(app_submodules_with_setup_funs):
         ), f"None of {setup_members} are setup funs for {module.__name__}"
 
 
-def test_schema_sections(app_config_schema: trafaret.Dict, app_subsystems: List[Dict]):
+def test_schema_sections(
+    app_config_schema: trafaret.Dict, app_modules_metadata: List[Dict]
+):
     """
     CONVENTION:
         Every section in the config-file (except for 'version' and 'main')
         is named after an application's subsystem
     """
-    expected_sections = [metadata["config_section"] for metadata in app_subsystems] + [
+    expected_sections = [
+        metadata["config_section"] for metadata in app_modules_metadata
+    ] + [
         "version",
         "main",
     ]

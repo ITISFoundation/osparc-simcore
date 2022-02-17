@@ -11,7 +11,7 @@ from . import director_v2_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY
 from .director_v2_abc import set_project_run_policy
 from .director_v2_core import DefaultProjectRunPolicy, DirectorV2ApiClient, set_client
-from .director_v2_settings import CONFIG_SECTION_NAME, create_settings
+from .director_v2_settings import CONFIG_SECTION_NAME
 
 log = logging.getLogger(__file__)
 
@@ -20,22 +20,20 @@ log = logging.getLogger(__file__)
     __name__,
     ModuleCategory.ADDON,
     config_section=CONFIG_SECTION_NAME,
-    depends=["simcore_service_webserver.rest"],
     logger=log,
 )
 def setup_director_v2(app: web.Application):
-    # create settings and injects in app
-    create_settings(app)
-
-    set_project_run_policy(app, DefaultProjectRunPolicy())
 
     set_client(app, DirectorV2ApiClient(app))
 
+    # routes
     if not APP_OPENAPI_SPECS_KEY in app:
         log.warning(
             "rest submodule not initialised? computation routes will not be defined!"
         )
         return
+
+    set_project_run_policy(app, DefaultProjectRunPolicy())
 
     specs = app[APP_OPENAPI_SPECS_KEY]
     # bind routes with handlers

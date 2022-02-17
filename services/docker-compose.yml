@@ -112,6 +112,11 @@ services:
       - DYNAMIC_SIDECAR_IMAGE=${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
       - EXTRA_HOSTS_SUFFIX=${EXTRA_HOSTS_SUFFIX:-undefined}
       - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - R_CLONE_S3_PROVIDER=${R_CLONE_S3_PROVIDER}
       - MONITORING_ENABLED=${MONITORING_ENABLED:-True}
       - SIMCORE_SERVICES_NETWORK_NAME=interactive_services_subnet
       - TRACING_THRIFT_COMPACT_ENDPOINT=${TRACING_THRIFT_COMPACT_ENDPOINT}
@@ -224,6 +229,10 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.path=/v0/
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.timeout=1000ms
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie=true
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.samesite=lax
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.httponly=true
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.secure=true
         - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_retry.retry.attempts=2
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.service=${SWARM_STACK_NAME}_webserver
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.rule=hostregexp(`{host:.+}`)
@@ -349,8 +358,7 @@ services:
       - default
 
   postgres:
-    image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27\
-      c02d8adb8feb20f"
+    image: "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
@@ -405,8 +413,7 @@ services:
       ]
 
   redis:
-    image: "redis:5.0.9-alpine@sha256:b011c1ca7fa97ed92d6c5995e5dd752dc37fe157c1b60\
-      ce96a6e35701851dabc"
+    image: "redis:5.0.9-alpine@sha256:b011c1ca7fa97ed92d6c5995e5dd752dc37fe157c1b60ce96a6e35701851dabc"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     networks:

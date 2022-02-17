@@ -7,8 +7,14 @@ from uuid import UUID, uuid1, uuid5
 from servicelib.decorators import safe_return
 from yarl import URL
 
+from .project_models import ProjectDict
+
 log = logging.getLogger(__name__)
-variable_pattern = re.compile(r"^{{\W*(\w+)\W*}}$")
+
+VARIABLE_PATTERN = re.compile(r"^{{\W*(\w+)\W*}}$")
+
+# NOTE: InputTypes/OutputTypes that are NOT links
+NOT_IO_LINK_TYPES_TUPLE = (str, int, float, bool)
 
 
 def clone_project_document(
@@ -108,7 +114,7 @@ def substitute_parameterized_inputs(
             isinstance(value, str)
             and access.get(name, "ReadAndWrite") == "ReadAndWrite"
         ):
-            match = variable_pattern.match(value)
+            match = VARIABLE_PATTERN.match(value)
             return match
         return None
 
@@ -223,3 +229,60 @@ async def project_get_depending_nodes(
 def extract_dns_without_default_port(url: URL) -> str:
     port = "" if url.port == 80 else f":{url.port}"
     return f"{url.host}{port}"
+
+
+def any_node_inputs_changed(
+    updated_project: ProjectDict, current_project: ProjectDict
+) -> bool:
+    """Returns true if any change is detected in the node inputs of the updated project
+
+    Based on the limitation we are detecting with this check, new nodes only account for
+    a "change" if they add link inputs.
+    """
+    # NOTE: should not raise exceptions in production
+
+    project_uuid = current_project["uuid"]
+
+    assert (  # nosec
+        updated_project.get("uuid") == project_uuid
+    ), f"Expected same project, got {updated_project.get('uuid')}!={project_uuid}"
+
+    assert (  # nosec
+        "workbench" in updated_project
+    ), f"expected validated model but got {list(updated_project.keys())=}"
+
+    assert (  # nosec
+        "workbench" in current_project
+    ), f"expected validated model but got {list(current_project.keys())=}"
+
+    # detect input changes in existing nodes
+    for node_id, updated_node in updated_project["workbench"].items():
+        if current_node := current_project["workbench"].get(node_id, None):
+            if (updated_inputs := updated_node.get("inputs")) != current_node.get(
+                "inputs"
+            ):
+                log.debug(
+                    "Change detected in projects[%s].workbench[%s].%s",
+                    f"{project_uuid=}",
+                    f"{node_id=}",
+                    f"{updated_inputs=}",
+                )
+                return True
+
+        else:
+            # for new nodes, detect only added link
+            for input_name, input_value in updated_node.get("inputs", {}).items():
+                # TODO: how to ensure this list of "links types" is up-to-date!??
+                # Anything outside of the PRIMITIVE_TYPES_TUPLE, is interpreted as links
+                # that node-ports need to handle. This is a simpler check with ProjectDict
+                # since otherwise test will require constructing BaseModels on input_values
+                if not isinstance(input_value, NOT_IO_LINK_TYPES_TUPLE):
+                    log.debug(
+                        "Change detected in projects[%s].workbench[%s].inputs[%s]=%s. Link was added.",
+                        f"{project_uuid=}",
+                        f"{node_id=}",
+                        f"{input_name}",
+                        f"{input_value}",
+                    )
+                    return True
+    return False

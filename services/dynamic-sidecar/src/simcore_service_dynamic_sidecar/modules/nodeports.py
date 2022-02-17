@@ -5,11 +5,11 @@ import shutil
 import sys
 import tempfile
 import time
-import zipfile
 from collections import deque
 from pathlib import Path
 from typing import Coroutine, Deque, Dict, List, Optional, Set, Tuple, cast
 
+import magic
 from pydantic import ByteSize
 from servicelib.archiving_utils import PrunableFolder, archive_dir, unarchive_dir
 from servicelib.async_utils import run_sequentially_in_context
@@ -145,6 +145,11 @@ async def dispatch_update_for_directory(directory_path: Path) -> None:
 # INPUTS section
 
 
+def _is_zip_file(file_path: Path) -> bool:
+    mime_type = magic.from_file(file_path, mime=True)
+    return f"{mime_type}" == "application/zip"
+
+
 async def _get_data_from_port(port: Port) -> Tuple[Port, ItemConcreteValue]:
     tag = f"[{port.key}] "
     logger.info("%s transfer started for %s", tag, port.key)
@@ -221,7 +226,7 @@ async def download_target_ports(
                 dest_path.mkdir(exist_ok=True, parents=True)
                 data[port.key] = {"key": port.key, "value": str(dest_path)}
 
-                if zipfile.is_zipfile(downloaded_file):
+                if _is_zip_file(downloaded_file):
 
                     dest_folder = PrunableFolder(dest_path)
 

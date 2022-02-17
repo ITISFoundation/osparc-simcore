@@ -6,11 +6,13 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Dict
+from typing import Callable, Dict
 
 import pytest
 import simcore_service_webserver
 from pytest_simcore.helpers.utils_login import AUserDict, LoggedUser
+from servicelib.json_serialization import json_dumps
+from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db_models import UserRole
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -25,6 +27,7 @@ logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 
 # imports the fixtures for the integration tests
 pytest_plugins = [
+    "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
@@ -100,3 +103,24 @@ async def logged_user(client, user_role: UserRole) -> AUserDict:
         print("-----> logged in user", user["name"], user_role)
         yield user
         print("<----- logged out user", user["name"], user_role)
+
+
+@pytest.fixture
+def monkeypatch_setenv_from_app_config(monkeypatch) -> Callable:
+    def _patch(app_config: Dict) -> Dict[str, str]:
+        assert isinstance(app_config, dict)
+
+        print("  - app_config=\n", json_dumps(app_config, indent=1))
+        envs = convert_to_environ_vars(app_config)
+
+        print(
+            "  - convert_to_environ_vars(app_cfg)=\n",
+            json_dumps(envs, indent=1, sort_keys=True),
+        )
+
+        for env_key, env_value in envs.items():
+            monkeypatch.setenv(env_key, f"{env_value}")
+
+        return envs
+
+    return _patch

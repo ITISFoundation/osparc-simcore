@@ -5,45 +5,34 @@ from functools import cached_property
 
 from aiohttp import ClientSession, web
 from models_library.basic_types import PortInt, VersionTag
-from pydantic import AnyHttpUrl, BaseSettings, Field
 from servicelib.aiohttp.application_keys import APP_CLIENT_SESSION_KEY
+from settings_library.base import BaseCustomSettings
+from settings_library.utils_service import DEFAULT_FASTAPI_PORT, MixinServiceSettings
+from yarl import URL
+
+from ._constants import APP_SETTINGS_KEY
 
 SERVICE_NAME = "director-v2"
 CONFIG_SECTION_NAME = SERVICE_NAME
 
 
-class Directorv2Settings(BaseSettings):
-    enabled: bool = True
-    host: str = "director-v2"
-    port: PortInt = 8000
-    vtag: VersionTag = Field(
-        "v2", alias="version", description="Director-v2 service API's version tag"
-    )
+class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
+    DIRECTOR_V2_HOST: str = "director-v2"
+    DIRECTOR_V2_PORT: PortInt = DEFAULT_FASTAPI_PORT
+    DIRECTOR_V2_VTAG: VersionTag = "v2"
 
     @cached_property
-    def endpoint(self) -> str:
-        return AnyHttpUrl.build(
-            scheme="http",
-            host=self.host,
-            port=f"{self.port}",
-            path=f"/{self.vtag}",
-        )
-
-    class Config(BaseSettings.Config):
-        # TODO: This will not be necessary when refactored with BaseCustomSettings
-        env_prefix = "DIRECTOR_V2_"
-        keep_untouched = (cached_property,)
+    def base_url(self) -> URL:
+        return URL(self._build_api_base_url(prefix="DIRECTOR_V2"))
 
 
-def create_settings(app: web.Application) -> Directorv2Settings:
-    settings = Directorv2Settings()
-    # NOTE: we are saving it in a separate item to config
-    app[f"{__name__}.Directorv2Settings"] = settings
-    return settings
+def get_settings(app: web.Application) -> DirectorV2Settings:
 
+    if settings := app.get(APP_SETTINGS_KEY):
+        return settings.WEBSERVER_DIRECTOR_V2
 
-def get_settings(app: web.Application) -> Directorv2Settings:
-    return app[f"{__name__}.Directorv2Settings"]
+    WEBSERVER_DIRECTOR_V2 = DirectorV2Settings()
+    return WEBSERVER_DIRECTOR_V2
 
 
 def get_client_session(app: web.Application) -> ClientSession:

@@ -51,7 +51,7 @@ charset-normalizer==2.0.6
     # via
     #   aiohttp
     #   requests
-click==7.1.2
+click==8.0.3
     # via distributed
 cloudpickle==2.0.0
     # via
@@ -192,7 +192,7 @@ ptyprocess==0.7.0
     # via terminado
 pycparser==2.20
     # via cffi
-pydantic==1.8.2
+pydantic==1.9.0
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt

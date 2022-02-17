@@ -98,6 +98,7 @@ class TutorialBase {
       if (!needsRegister) {
         await this.login();
       }
+      await this.__printMe();
     }
     catch (err) {
       console.error("Error starting", err);
@@ -112,12 +113,26 @@ class TutorialBase {
     try {
       await this.__goTo();
       resp = await this.__responsesQueue.waitUntilResponse("open", openStudyTimeout);
+      await this.__printMe();
+      const studyId = resp["data"]["uuid"];
+      console.log("Study ID:", studyId);
     }
     catch (err) {
       console.error(this.__templateName, "could not be started", err);
       throw (err);
     }
     return resp;
+  }
+
+  async __printMe() {
+    const resp = await utils.makeRequest(this.__page, "/me");
+    if (resp) {
+      console.log("login:", resp["login"]);
+      console.log("user_id:", resp["id"]);
+    }
+    else {
+      console.log("Not found");
+    }
   }
 
   async registerIfNeeded() {
@@ -197,6 +212,8 @@ class TutorialBase {
       assert(templateFound, "Expected template, got nothing. TIP: did you inject templates in database??")
       await this.__responsesQueue.waitUntilResponse("projects?from_template=");
       resp = await this.__responsesQueue.waitUntilResponse("open");
+      const studyId = resp["data"]["uuid"];
+      console.log("Study ID:", studyId);
     }
     catch (err) {
       console.error(`"${this.__templateName}" template could not be started:\n`, err);
@@ -215,6 +232,8 @@ class TutorialBase {
       const serviceFound = await auto.dashboardOpenService(this.__page, this.__templateName);
       assert(serviceFound, "Expected service, got nothing. TIP: is it available??");
       resp = await this.__responsesQueue.waitUntilResponse("open");
+      const studyId = resp["data"]["uuid"];
+      console.log("Study ID:", studyId);
     }
     catch (err) {
       console.error(`"${this.__templateName}" service could not be started:\n`, err);
@@ -302,6 +321,8 @@ class TutorialBase {
 
   async openNode(nodePosInTree = 0) {
     await auto.openNode(this.__page, nodePosInTree);
+    // Iframes get loaded on demand, wait 5"
+    await this.waitFor(5000);
     await this.takeScreenshot('openNode_' + nodePosInTree);
   }
 
@@ -385,6 +406,7 @@ class TutorialBase {
   }
 
   async removeStudy(studyId) {
+    await this.waitFor(5000, 'Wait to be unlocked');
     await this.takeScreenshot("deleteFirstStudy_before");
     try {
       // await this.waitForStudyUnlocked(studyId);

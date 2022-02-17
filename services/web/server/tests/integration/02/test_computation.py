@@ -2,9 +2,12 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
+
+
 import asyncio
 import json
 import time
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Type, Union
 
@@ -154,13 +157,18 @@ def client(
     aiohttp_client: Callable,
     app_config: Dict[str, Any],  ## waits until swarm with *_services are up
     mocker: MockerFixture,
+    monkeypatch_setenv_from_app_config: Callable,
 ) -> TestClient:
-    assert app_config["rest"]["version"] == API_VTAG
 
-    app_config["storage"]["enabled"] = False
-    app_config["main"]["testing"] = True
+    cfg = deepcopy(app_config)
+
+    assert cfg["rest"]["version"] == API_VTAG
+
+    cfg["storage"]["enabled"] = False
+    cfg["main"]["testing"] = True
 
     # fake config
+    monkeypatch_setenv_from_app_config(cfg)
     app = create_safe_application(app_config)
 
     setup_db(app)
@@ -174,17 +182,8 @@ def client(
     setup_projects(app)
     setup_computation(app)
     setup_director_v2(app)
-
-    # GC not included in this test-suite,
-    mocker.patch(
-        "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
-        side_effect=lambda app: print(
-            f"PATCH @{__name__}:"
-            "Garbage collector disabled."
-            "Mock bypasses setup_garbage_collector to skip initializing the GC"
-        ),
-    )
     setup_resource_manager(app)
+    # no garbage collector
 
     return loop.run_until_complete(
         aiohttp_client(

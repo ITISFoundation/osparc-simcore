@@ -54,7 +54,7 @@ rest:
 projects:
   enabled: True
 session:
-  secret_key: "TODO: Replace with a key of at least length 32"
+  secret_key: "REPLACE_ME_with_result__Fernet_generate_key="
 activity:
   enabled: True
   prometheus_host: http://prometheus

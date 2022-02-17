@@ -280,7 +280,7 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
         const tagsContainer = this.getChildControl("tags");
         tagsContainer.removeAll();
         tags.forEach(tag => {
-          const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "sideSearchFilter");
+          const tagUI = new osparc.ui.basic.Tag(tag.name, tag.color, "searchBarFilter");
           tagUI.setFont("text-12");
           tagsContainer.add(tagUI);
         });

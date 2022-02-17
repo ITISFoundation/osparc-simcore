@@ -41,7 +41,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -82,7 +82,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -126,7 +126,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -183,7 +183,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -246,7 +246,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -308,7 +308,7 @@ jobs:
         # KEEP 3.6 Development of this service is frozen
         python: [3.6]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -365,7 +365,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -426,7 +426,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -485,7 +485,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -542,7 +542,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -601,7 +601,7 @@ jobs:
       matrix:
         node: [14]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -639,7 +639,7 @@ jobs:
       matrix:
         python: [3.8, 3.9]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -683,7 +683,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -741,7 +741,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -798,7 +798,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -855,7 +855,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -912,7 +912,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -969,7 +969,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1026,7 +1026,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1083,7 +1083,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1140,7 +1140,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1197,7 +1197,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1254,7 +1254,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1311,7 +1311,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1368,7 +1368,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1425,7 +1425,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1482,7 +1482,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1539,7 +1539,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1596,7 +1596,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1653,7 +1653,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1711,7 +1711,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1784,7 +1784,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1857,7 +1857,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1930,7 +1930,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1953,6 +1953,8 @@ jobs:
 
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup rclone docker volume plugin
+        run: sudo ./ci/github/helpers/install_rclone.bash
       - name: setup python environment
         uses: actions/setup-python@v2
         with:
@@ -2004,7 +2006,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -2077,7 +2079,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -2118,6 +2120,12 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash install
       - name: test
         run: ./ci/github/system-testing/public-api.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./test_failures
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/public-api.bash clean_up
@@ -2131,7 +2139,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -2177,7 +2185,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.job }}_docker_logs
-          path: ./tests/swarm-deploy/test_failures
+          path: ./test_failures
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
@@ -2192,7 +2200,7 @@ jobs:
         python: [3.8]
         node: [14]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -2277,7 +2285,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -2424,7 +2432,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1

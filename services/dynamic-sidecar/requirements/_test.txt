@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-async-asgi-testclient==1.4.7
+async-asgi-testclient==1.4.9
     # via -r requirements/_test.in
 attrs==20.3.0
     # via
@@ -18,9 +18,9 @@ chardet==4.0.0
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==6.1.2
+coverage==6.3.1
     # via pytest-cov
-faker==9.8.3
+faker==12.1.0
     # via -r requirements/_test.in
 idna==2.10
     # via
@@ -44,20 +44,20 @@ pyparsing==2.4.7
     # via
     #   -c requirements/_base.txt
     #   packaging
-pytest==6.2.5
+pytest==7.0.0
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-lazy-fixture
     #   pytest-mock
-pytest-asyncio==0.16.0
+pytest-asyncio==0.18.0
     # via -r requirements/_test.in
 pytest-cov==3.0.0
     # via -r requirements/_test.in
 pytest-lazy-fixture==0.6.3
     # via -r requirements/_test.in
-pytest-mock==3.6.1
+pytest-mock==3.7.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
@@ -69,17 +69,16 @@ six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
-text-unidecode==1.3
-    # via faker
-toml==0.10.2
-    # via pytest
-tomli==1.2.2
-    # via coverage
-types-aiofiles==0.8.2
+tomli==1.2.3
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   coverage
+    #   pytest
+types-aiofiles==0.8.3
     # via -r requirements/_test.in
 types-pkg-resources==0.1.3
     # via -r requirements/_test.in
-types-pyyaml==6.0.1
+types-pyyaml==6.0.4
     # via -r requirements/_test.in
 urllib3==1.26.6
     # via

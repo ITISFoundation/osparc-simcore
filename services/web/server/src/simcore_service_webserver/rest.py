@@ -19,9 +19,8 @@ from servicelib.aiohttp.rest_middlewares import (
 
 from . import rest_routes
 from ._constants import APP_OPENAPI_SPECS_KEY
-from ._meta import api_version_prefix
+from ._meta import API_VTAG, api_version_prefix
 from .diagnostics_settings import get_diagnostics_config
-from .rest_settings import assert_valid_config
 from .rest_utils import get_openapi_specs_path, load_openapi_specs
 
 log = logging.getLogger(__name__)
@@ -34,14 +33,7 @@ log = logging.getLogger(__name__)
     logger=log,
 )
 def setup_rest(app: web.Application, *, swagger_doc_enabled: bool = True):
-    # ----------------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    cfg = assert_valid_config(app)
-    # ---------------------------------------------
-
-    api_version_dir = cfg["version"]
-    spec_path = get_openapi_specs_path(api_version_dir)
+    spec_path = get_openapi_specs_path(api_version_dir=API_VTAG)
 
     # validated openapi specs
     app[APP_OPENAPI_SPECS_KEY] = specs = load_openapi_specs(spec_path)

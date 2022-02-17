@@ -6,13 +6,11 @@ import logging
 from typing import Any, Dict
 
 from aiohttp import web
-from models_library.rest_pagination import monkey_patch_pydantic_url_regex
 from servicelib.aiohttp.application import create_safe_application
 
-from ._constants import APP_SETTINGS_KEY
 from ._meta import WELCOME_MSG
 from .activity.module_setup import setup_activity
-from .application_settings import ApplicationSettings, setup_settings
+from .application_settings import setup_settings
 from .catalog import setup_catalog
 from .clusters.module_setup import setup_clusters
 from .computation import setup_computation
@@ -22,12 +20,14 @@ from .director.module_setup import setup_director
 from .director_v2 import setup_director_v2
 from .email import setup_email
 from .exporter.module_setup import setup_exporter
+from .garbage_collector import setup_garbage_collector
 from .groups import setup_groups
 from .login.module_setup import setup_login
 from .meta_modeling import setup_meta_modeling
 from .products import setup_products
 from .projects.module_setup import setup_projects
 from .publications import setup_publications
+from .redis import setup_redis
 from .remote_debug import setup_remote_debugging
 from .resource_manager.module_setup import setup_resource_manager
 from .rest import setup_rest
@@ -42,9 +42,6 @@ from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
 from .version_control import setup_version_control
-
-monkey_patch_pydantic_url_regex()
-
 
 log = logging.getLogger(__name__)
 
@@ -61,7 +58,6 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     app = create_safe_application(config)
 
     setup_settings(app)
-    settings: ApplicationSettings = app[APP_SETTINGS_KEY]
 
     # WARNING: setup order matters
     # TODO: create dependency mechanism
@@ -81,9 +77,17 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_computation(app)
     setup_socketio(app)
     setup_login(app)
+
+    # interaction with other backend services
     setup_director(app)
     setup_director_v2(app)
     setup_storage(app)
+    setup_catalog(app)
+    setup_redis(app)
+
+    # resource management
+    setup_resource_manager(app)
+    setup_garbage_collector(app)
 
     # users
     setup_users(app)
@@ -92,17 +96,12 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     # projects
     setup_projects(app)
     # project add-ons
-    if settings.WEBSERVER_DEV_FEATURES_ENABLED:
-        setup_version_control(app)
-        setup_meta_modeling(app)
-    else:
-        log.info("Skipping add-ons under development: version-control and meta")
+    setup_version_control(app)
+    setup_meta_modeling(app)
 
     # TODO: classify
     setup_activity(app)
-    setup_resource_manager(app)
     setup_tags(app)
-    setup_catalog(app)
     setup_publications(app)
     setup_products(app)
     setup_studies_access(app)

@@ -18,14 +18,18 @@ import logging
 import os
 import sys
 from argparse import ArgumentParser
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+import typer
 from aiohttp import web
 from models_library.basic_types import BuildTargetEnum
+from settings_library.utils_cli import create_settings_command
 
 from .application import create_application, run_service
 from .application__schema import CLI_DEFAULT_CONFIGFILE, app_schema
 from .application_settings import ApplicationSettings
+from .application_settings_utils import convert_to_app_config
 from .cli_config import add_cli_options, config_from_options
 from .log import setup_logging
 from .utils import search_osparc_repo_dir
@@ -105,39 +109,94 @@ def parse(args: Optional[List], parser: ArgumentParser) -> Dict:
     return config
 
 
-def _setup_app(args: Optional[List] = None) -> Tuple[web.Application, Dict]:
-    # parse & config file
+def _setup_app_from_config(args: List) -> Tuple[web.Application, Dict]:
+    # parse args & config file
     parser = ArgumentParser(description="Service to manage data webserver in simcore.")
     setup_parser(parser)
     config = parse(args, parser)
 
-    # service log level
-    slow_duration = float(
-        os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0)
-    )  # TODO: move to settings.py::ApplicationSettings
-    setup_logging(level=config["main"]["log_level"], slow_duration=slow_duration)
+    setup_logging(
+        level=config["main"]["log_level"],
+        slow_duration=float(os.environ.get("AIODEBUG_SLOW_DURATION_SECS", 0)),
+    )
 
-    # run
     app = create_application(config)
     return (app, config)
 
 
-def main(args: Optional[List] = None):
-    app, config = _setup_app(args)
-    run_service(app, config)
+def _setup_app_from_settings(
+    settings: ApplicationSettings,
+) -> Tuple[web.Application, Dict]:
+
+    config = convert_to_app_config(settings)
+
+    setup_logging(
+        level=settings.log_level,
+        slow_duration=settings.AIODEBUG_SLOW_DURATION_SECS,
+    )
+
+    app = create_application(config)
+    return (app, config)
 
 
 async def app_factory() -> web.Application:
-    # parse & config file
+    """Created to launch app from gunicorn (see docker/boot.sh)"""
     app_settings = ApplicationSettings()
-    assert app_settings.build_target  # nosec
+    assert app_settings.SC_BUILD_TARGET  # nosec
+
     log.info("Application settings: %s", f"{app_settings.json(indent=2)}")
-    args = [
-        "--config",
-        "server-docker-dev.yaml"
-        if app_settings.boot_mode == BuildTargetEnum.DEVELOPMENT
-        else "server-docker-prod.yaml",
-    ]
-    app, _ = _setup_app(args)
+
+    if os.environ.get("WEBSERVER_RUN_USE_SETTINGS", False):
+        app, _ = _setup_app_from_settings(app_settings)
+
+    else:
+        args = [
+            "--config",
+            "server-docker-dev.yaml"
+            if app_settings.SC_BOOT_MODE == BuildTargetEnum.DEVELOPMENT
+            else "server-docker-prod.yaml",
+        ]
+        app, _ = _setup_app_from_config(args)
 
     return app
+
+
+# CLI -------------
+
+main = typer.Typer(name="simcore-service-webserver")
+main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=log))
+
+
+@main.command()
+def run(
+    config: Path = typer.Argument("config.yaml", help="Configuration file"),
+    print_config: bool = False,
+    print_config_vars: bool = False,
+    check_config: bool = False,
+    use_settings: bool = False,  # NOTE: sync with WEBSERVER_RUN_USE_SETTINGS's default
+):
+    if use_settings:
+        app_settings = ApplicationSettings()
+        app, cfg = _setup_app_from_settings(app_settings)
+
+    else:
+        # NOTE: legacy
+        args = [
+            "--config",
+            str(config),
+        ]
+
+        if print_config:
+            args.append(
+                "--print-config",
+            )
+
+        if print_config_vars:
+            args.append("--print-config-vars")
+
+        if check_config:
+            args.append("--check-config")
+
+        app, cfg = _setup_app_from_config(args)
+
+    run_service(app, cfg)

@@ -36,7 +36,9 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
 
     getMaximizeWidgetId: function(maximize) {
       return maximize ? "restoreBtn" : "maximizeBtn";
-    }
+    },
+
+    HIDDEN_TOP: -10000
   },
 
   properties: {
@@ -96,7 +98,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       let standin = new qx.html.Element("div");
       let appRoot = this.getApplicationRoot();
       appRoot.add(iframe, {
-        top:-10000
+        top: this.self().HIDDEN_TOP
       });
       const restartButton = this.__restartButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/redo-alt/14").set({
         zIndex: 20,
@@ -112,7 +114,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       }, this);
       osparc.utils.Utils.setIdToWidget(restartButton, "iFrameRestartBtn");
       appRoot.add(restartButton, {
-        top:-10000
+        top: this.self().HIDDEN_TOP
       });
       let zoomButton = this.__zoomButton = new qx.ui.form.Button(null).set({
         icon: this.self().getZoomIcon(false),
@@ -122,7 +124,7 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       });
       osparc.utils.Utils.setIdToWidget(zoomButton, this.self().getMaximizeWidgetId(false));
       appRoot.add(zoomButton, {
-        top:-10000
+        top: this.self().HIDDEN_TOP
       });
       zoomButton.addListener("execute", e => {
         this.maximizeIFrame(!this.hasState("maximized"));
@@ -133,13 +135,13 @@ qx.Class.define("osparc.component.widget.PersistentIframe", {
       });
       standin.addListener("disappear", e => {
         iframe.setLayoutProperties({
-          top: -10000
+          top: this.self().HIDDEN_TOP
         });
         restartButton.setLayoutProperties({
-          top: -10000
+          top: this.self().HIDDEN_TOP
         });
         zoomButton.setLayoutProperties({
-          top: -10000
+          top: this.self().HIDDEN_TOP
         });
       });
       this.addListener("move", e => {

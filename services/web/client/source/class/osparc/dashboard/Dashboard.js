@@ -68,27 +68,36 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
   members: {
     __studyBrowser: null,
-    __exploreBrowser: null,
+    __templateBrowser: null,
+    __serviceBrowser: null,
+    __dataBrowser: null,
 
     getStudyBrowser: function() {
       return this.__studyBrowser;
     },
 
-    getExploreBrowser: function() {
-      return this.__exploreBrowser;
+    getTemplateBrowser: function() {
+      return this.__templateBrowser;
+    },
+
+    getServiceBrowser: function() {
+      return this.__serviceBrowser;
     },
 
     __createMainViewLayout: function() {
       const tabs = [{
-        label: this.tr("Studies"),
+        label: this.tr("STUDIES"),
         buildLayout: this.__createStudyBrowser
       }, {
-        label: this.tr("Discover"),
-        buildLayout: this.__createExploreBrowser
+        label: this.tr("TEMPLATES"),
+        buildLayout: this.__createTemplateBrowser
+      }, {
+        label: this.tr("SERVICES"),
+        buildLayout: this.__createServiceBrowser
       }];
       if (!osparc.utils.Utils.isProduct("s4l")) {
         tabs.push({
-          label: this.tr("Data"),
+          label: this.tr("DATA"),
           buildLayout: this.__createDataBrowser}
         );
       }
@@ -117,6 +126,28 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
         this.add(tabPage);
       }, this);
+
+      const preResourcePromises = [];
+      const store = osparc.store.Store.getInstance();
+      preResourcePromises.push(store.getVisibleMembers());
+      preResourcePromises.push(store.getServicesDAGs(true));
+      if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
+        preResourcePromises.push(osparc.data.Resources.get("tags"));
+      }
+      Promise.all(preResourcePromises)
+        .then(() => {
+          [
+            this.__studyBrowser,
+            this.__templateBrowser,
+            this.__serviceBrowser,
+            this.__dataBrowser
+          ].forEach(resourceBrowser => {
+            if (resourceBrowser) {
+              resourceBrowser.initResources();
+            }
+          });
+        })
+        .catch(err => console.error(err));
     },
 
     __createStudyBrowser: function() {
@@ -124,14 +155,19 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       return studiesView;
     },
 
-    __createDataBrowser: function() {
-      const dataManagerView = new osparc.dashboard.DataBrowser();
-      return dataManagerView;
+    __createTemplateBrowser: function() {
+      const templatesView = this.__templateBrowser = new osparc.dashboard.TemplateBrowser();
+      return templatesView;
     },
 
-    __createExploreBrowser: function() {
-      const exploreView = this.__exploreBrowser = new osparc.dashboard.ExploreBrowser();
-      return exploreView;
+    __createServiceBrowser: function() {
+      const servicesView = this.__serviceBrowser = new osparc.dashboard.ServiceBrowser();
+      return servicesView;
+    },
+
+    __createDataBrowser: function() {
+      const dataManagerView = this.__dataBrowser = new osparc.dashboard.DataBrowser();
+      return dataManagerView;
     }
   }
 });

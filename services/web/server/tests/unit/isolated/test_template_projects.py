@@ -10,8 +10,8 @@ import pytest
 from jsonschema import SchemaError
 from servicelib.aiohttp.jsonschema_specs import create_jsonschema_specs
 from simcore_service_webserver.projects.projects_utils import (
+    VARIABLE_PATTERN,
     substitute_parameterized_inputs,
-    variable_pattern,
 )
 from yarl import URL
 
@@ -35,8 +35,8 @@ def mock_parametrized_project(fake_data_dir):
 
     # check parameterized
     inputs = prj["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"]
-    assert variable_pattern.match(inputs["Na"])
-    assert variable_pattern.match(inputs["BCL"])
+    assert VARIABLE_PATTERN.match(inputs["Na"])
+    assert VARIABLE_PATTERN.match(inputs["BCL"])
     return prj
 
 

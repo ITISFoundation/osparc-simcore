@@ -13,12 +13,13 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from simcore_postgres_database.errors import ProgrammingError
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.login.cfg import get_storage
 from sqlalchemy import and_, literal_column
 
 from .db_models import GroupType, groups, tokens, user_to_groups, users
 from .groups_utils import convert_groups_db_to_schema
+from .login.cfg import get_storage
 from .login.storage import AsyncpgStorage
 from .security_api import clean_auth_policy_cache
 from .users_exceptions import UserNotFoundError
@@ -112,17 +113,21 @@ async def update_user_profile(
 
 async def is_user_guest(app: web.Application, user_id: int) -> bool:
     """Returns True if the user exists and is a GUEST"""
-    db = get_storage(app)
-    user = await db.get_user({"id": user_id})
-    if not user:
-        logger.warning("Could not find user with id '%s'", user_id)
-        return False
+    engine: Engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        try:
+            user_role = await conn.scalar(
+                sa.select([users.c.role]).where(users.c.id == int(user_id))
+            )
+            return user_role == UserRole.GUEST
 
-    return bool(UserRole(user["role"]) == UserRole.GUEST)
+        except ProgrammingError as err:
+            logger.warning("Could not find user with %s [%s]", f"{user_id=}", err)
+            return False
 
 
 async def get_guest_user_ids_and_names(app: web.Application) -> List[Tuple[int, str]]:
-    engine = app[APP_DB_ENGINE_KEY]
+    engine: Engine = app[APP_DB_ENGINE_KEY]
     result = deque()
     async with engine.acquire() as conn:
         async for row in conn.execute(

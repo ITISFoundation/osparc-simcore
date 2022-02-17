@@ -37,7 +37,7 @@ class ProjectType(str, Enum):
     STANDARD = "STANDARD"
 
 
-class ProjectCommons(BaseModel):
+class BaseProjectModel(BaseModel):
     # Description of the project
     uuid: ProjectID = Field(
         ...,
@@ -75,7 +75,7 @@ class ProjectCommons(BaseModel):
         return v
 
 
-class ProjectAtDB(ProjectCommons):
+class ProjectAtDB(BaseProjectModel):
     # Model used to READ from database
 
     id: int = Field(..., description="The table primary index")
@@ -108,7 +108,7 @@ class ProjectAtDB(ProjectCommons):
         use_enum_values = True
 
 
-class Project(ProjectCommons):
+class Project(BaseProjectModel):
     # NOTE: This is the pydantic pendant of project-v0.0.1.json used in the API of the webserver/webclient
     # NOT for usage with DB!!
 

@@ -1,7 +1,8 @@
-from functools import cached_property
-
 # pylint: disable=no-self-argument
 # pylint: disable=no-self-use
+
+from enum import Enum
+from functools import cached_property
 from pathlib import Path
 from typing import Dict, Optional, Set
 
@@ -12,13 +13,14 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
-from models_library.sharing_networks import SERVICE_NETWORK_RE
-from pydantic import AnyHttpUrl, Field, PositiveFloat, validator
+from models_library.services import SERVICE_NETWORK_RE
+from pydantic import AnyHttpUrl, Field, PositiveFloat, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
@@ -39,6 +41,56 @@ ORG_LABELS_TO_SCHEMA_LABELS: Dict[str, str] = {
 }
 
 SUPPORTED_TRAEFIK_LOG_LEVELS: Set[str] = {"info", "debug", "warn", "error"}
+
+
+class S3Provider(str, Enum):
+    AWS = "AWS"
+    CEPH = "CEPH"
+    MINIO = "MINIO"
+
+
+class VFSCacheMode(str, Enum):
+    OFF = "off"
+    MINIMAL = "minimal"
+    WRITES = "writes"
+    FILL = "full"
+
+
+class RCloneSettings(S3Settings):
+    R_CLONE_S3_PROVIDER: S3Provider
+
+    R_CLONE_DIR_CACHE_TIME_SECONDS: PositiveInt = Field(
+        10,
+        description="time to cache directory entries for",
+    )
+    R_CLONE_POLL_INTERVAL_SECONDS: PositiveInt = Field(
+        9,
+        description="time to wait between polling for changes",
+    )
+    R_CLONE_VFS_CACHE_MODE: VFSCacheMode = Field(
+        VFSCacheMode.MINIMAL,
+        description="used primarly for easy testing without requiring requiring code changes",
+    )
+
+    @validator("R_CLONE_POLL_INTERVAL_SECONDS")
+    @classmethod
+    def enforce_r_clone_requirement(cls, v, values) -> PositiveInt:
+        dir_cache_time = values["R_CLONE_DIR_CACHE_TIME_SECONDS"]
+        if not v < dir_cache_time:
+            raise ValueError(
+                (
+                    f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower "
+                    f"than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
+                )
+            )
+        return v
+
+    @cached_property
+    def endpoint(self) -> str:
+        if not self.S3_ENDPOINT.startswith("http"):
+            scheme = "https" if self.S3_SECURE else "http"
+            return f"{scheme}://{self.S3_ENDPOINT}"
+        return self.S3_ENDPOINT
 
 
 class DirectorV0Settings(BaseCustomSettings):
@@ -153,12 +205,16 @@ class DynamicSidecarSettings(BaseCustomSettings):
         description="Names the traefik zone for services that must be accessible from platform http entrypoint",
     )
 
+    DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(auto_default_from_env=True)
+
     SWARM_STACK_NAME: str = Field(
         ...,
         description="in case there are several deployments on the same docker swarm, it is attached as a label on all spawned services",
     )
 
-    DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings
+    DYNAMIC_SIDECAR_PROXY_SETTINGS: DynamicSidecarProxySettings = Field(
+        auto_default_from_env=True
+    )
 
     DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION: str = Field(
         "3.8", description="docker-compose version used in the compose-specs"
@@ -193,9 +249,11 @@ class DynamicServicesSettings(BaseCustomSettings):
         True, description="Enables/Disables the dynamic_sidecar submodule"
     )
 
-    DYNAMIC_SIDECAR: DynamicSidecarSettings
+    DYNAMIC_SIDECAR: DynamicSidecarSettings = Field(auto_default_from_env=True)
 
-    DYNAMIC_SCHEDULER: DynamicServicesSchedulerSettings
+    DYNAMIC_SCHEDULER: DynamicServicesSchedulerSettings = Field(
+        auto_default_from_env=True
+    )
 
 
 class PGSettings(PostgresSettings):
@@ -269,27 +327,27 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
     # ptvsd settings
     DIRECTOR_V2_REMOTE_DEBUG_PORT: PortInt = 3000
 
-    CLIENT_REQUEST: ClientRequestSettings
+    CLIENT_REQUEST: ClientRequestSettings = Field(auto_default_from_env=True)
 
     # App modules settings ---------------------
 
-    DIRECTOR_V0: DirectorV0Settings
+    DIRECTOR_V0: DirectorV0Settings = Field(auto_default_from_env=True)
 
-    DYNAMIC_SERVICES: DynamicServicesSettings
+    DYNAMIC_SERVICES: DynamicServicesSettings = Field(auto_default_from_env=True)
 
-    POSTGRES: PGSettings
+    POSTGRES: PGSettings = Field(auto_default_from_env=True)
 
-    DIRECTOR_V2_RABBITMQ: RabbitSettings
+    DIRECTOR_V2_RABBITMQ: RabbitSettings = Field(auto_default_from_env=True)
 
     STORAGE_ENDPOINT: str = Field("storage:8080", env="STORAGE_ENDPOINT")
 
     TRAEFIK_SIMCORE_ZONE: str = Field("internal_simcore_stack")
 
-    DASK_SCHEDULER: DaskSchedulerSettings
+    DASK_SCHEDULER: DaskSchedulerSettings = Field(auto_default_from_env=True)
 
-    DIRECTOR_V2_TRACING: Optional[TracingSettings] = None
+    DIRECTOR_V2_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 
-    DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings
+    DIRECTOR_V2_DOCKER_REGISTRY: RegistrySettings = Field(auto_default_from_env=True)
 
     @validator("LOG_LEVEL", pre=True)
     @classmethod

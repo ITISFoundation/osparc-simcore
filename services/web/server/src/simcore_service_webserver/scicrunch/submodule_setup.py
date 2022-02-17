@@ -2,22 +2,22 @@
     Notice that this is used as a submodule of groups'a app module
 """
 import logging
-from typing import Any, MutableMapping, Optional
 
+from aiohttp import web
 from pydantic import ValidationError
 
-from ._settings import SciCrunchSettings
 from .service_client import SciCrunch
+from .settings import assert_valid_config
 
 logger = logging.getLogger(__name__)
 
 
-def setup_scicrunch_submodule(
-    app: MutableMapping[str, Any], *, cfg: Optional[SciCrunchSettings] = None
-):
+def setup_scicrunch_submodule(app: web.Application):
     try:
-        cfg = SciCrunchSettings()
-        api = SciCrunch.acquire_instance(app, cfg)
+        # TODO: assert_valid_config is tmp
+        settings = assert_valid_config(app)
+
+        api = SciCrunch.acquire_instance(app, settings)
         assert api == SciCrunch.get_instance(app)  # nosec
 
     except ValidationError as err:

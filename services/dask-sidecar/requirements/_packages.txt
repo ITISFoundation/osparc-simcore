@@ -10,7 +10,7 @@ aiofiles==0.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-click==7.1.2
+click==8.0.3
     # via
     #   -c requirements/_base.txt
     #   distributed
@@ -85,7 +85,7 @@ psutil==5.8.0
     # via
     #   -c requirements/_base.txt
     #   distributed
-pydantic==1.8.2
+pydantic==1.9.0
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt

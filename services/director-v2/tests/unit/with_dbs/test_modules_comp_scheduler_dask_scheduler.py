@@ -33,8 +33,10 @@ from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
     ComputationalBackendNotConnectedError,
+    ComputationalSchedulerChangedError,
     ConfigurationError,
     PipelineNotFoundError,
+    SchedulerError,
 )
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
@@ -75,6 +77,7 @@ def minimal_dask_scheduler_config(
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "1")
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
 
 
 @pytest.fixture
@@ -466,6 +469,16 @@ async def test_proper_pipeline_is_scheduled(
     assert scheduler.scheduled_pipelines == {}
 
 
+@pytest.mark.parametrize(
+    "backend_error",
+    [
+        ComputationalBackendNotConnectedError(msg="faked disconnected backend"),
+        ComputationalSchedulerChangedError(
+            original_scheduler_id="some_old_scheduler_id",
+            current_scheduler_id="some_new_scheduler_id",
+        ),
+    ],
+)
 async def test_handling_of_disconnected_dask_scheduler(
     mocked_scheduler_task: None,
     dask_spec_local_cluster: SpecCluster,
@@ -475,13 +488,12 @@ async def test_handling_of_disconnected_dask_scheduler(
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
     mocker: MockerFixture,
     published_project: PublishedProject,
+    backend_error: SchedulerError,
 ):
     # this will create a non connected backend issue that will trigger re-connection
     mocked_dask_client_send_task = mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.send_computation_tasks",
-        side_effect=ComputationalBackendNotConnectedError(
-            msg="faked disconnected backend"
-        ),
+        side_effect=backend_error,
     )
 
     # running the pipeline will now raise and the tasks are set back to PUBLISHED

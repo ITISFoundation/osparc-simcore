@@ -1,10 +1,17 @@
+import json
 import logging
 from collections import deque
-from typing import Any, Deque, Dict, List, Optional, Type
+from typing import Any, Deque, Dict, List, Optional, Set, Type
 
 import httpx
 from fastapi import FastAPI
-from models_library.service_settings_labels import SimcoreServiceSettingsLabel
+from models_library.projects import ProjectAtDB
+from models_library.projects_nodes import Node
+from models_library.service_settings_labels import (
+    SimcoreServiceLabels,
+    SimcoreServiceSettingsLabel,
+)
+from models_library.services import ServiceKeyVersion
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
@@ -12,13 +19,17 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential, wait_fixed
 
-from ....core.settings import DynamicSidecarSettings
+from ....api.dependencies.database import get_base_repository
+from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import (
     DockerContainerInspect,
     DynamicSidecarStatus,
     SchedulerData,
 )
+from ....modules.db.repositories import BaseRepository
 from ....modules.director_v0 import DirectorV0Client
+from ...db.repositories.projects import ProjectsRepository
+from .._namepsace import get_compose_namespace
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     create_network,
@@ -38,13 +49,21 @@ from ..docker_service_specs import (
     merge_settings_before_use,
 )
 from ..errors import (
-    DynamicSidecarNetworkError,
+    DynamicSidecarUnexpectedResponseStatus,
     EntrypointContainerNotFoundError,
     GenericDockerError,
 )
+from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
 from .abc import DynamicSchedulerEvent
+from .events_utils import disabled_directory_watcher
 
 logger = logging.getLogger(__name__)
+
+
+def _fetch_repo_outside_of_request(
+    app: FastAPI, repo_type: Type[BaseRepository]
+) -> BaseRepository:
+    return get_base_repository(engine=app.state.engine, repo_type=repo_type)
 
 
 def _get_director_v0_client(app: FastAPI) -> DirectorV0Client:
@@ -91,10 +110,27 @@ class CreateSidecars(DynamicSchedulerEvent):
         # the provided docker-compose spec
         # also other encodes the env vars to target the proper container
         director_v0_client: DirectorV0Client = _get_director_v0_client(app)
+
+        # fetching project form DB and fetching user settings
+        projects_repository = _fetch_repo_outside_of_request(app, ProjectsRepository)
+        project: ProjectAtDB = await projects_repository.get_project(
+            project_id=scheduler_data.project_id
+        )
+
+        node_uuid_str = str(scheduler_data.node_uuid)
+        node: Optional[Node] = project.workbench.get(node_uuid_str)
+        boot_options = (
+            node.boot_options
+            if node is not None and node.boot_options is not None
+            else {}
+        )
+        logger.info("%s", f"{boot_options=}")
+
         settings: SimcoreServiceSettingsLabel = await merge_settings_before_use(
             director_v0_client=director_v0_client,
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
+            service_user_selection_boot_options=boot_options,
         )
 
         # these configuration should guarantee 245 address network
@@ -178,7 +214,7 @@ class GetStatus(DynamicSchedulerEvent):
             ] = await dynamic_sidecar_client.containers_inspect(
                 dynamic_sidecar_endpoint
             )
-        except (httpx.HTTPError, DynamicSidecarNetworkError):
+        except (httpx.HTTPError, DynamicSidecarUnexpectedResponseStatus):
             # After the service creation it takes a bit of time for the container to start
             # If the same message appears in the log multiple times in a row (for the same
             # service) something might be wrong with the service.
@@ -213,14 +249,48 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        app_settings: AppSettings = app.state.settings
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
-        logger.info("Calling into dynamic-sidecar to restore state")
-        await dynamic_sidecar_client.service_restore_state(dynamic_sidecar_endpoint)
-        logger.info("State restored by dynamic-sidecar")
+        async with disabled_directory_watcher(
+            dynamic_sidecar_client, dynamic_sidecar_endpoint
+        ):
+            tasks = [
+                dynamic_sidecar_client.service_pull_output_ports(
+                    dynamic_sidecar_endpoint
+                )
+            ]
+            # When enabled no longer downloads state via nodeports
+            # S3 is used to store state paths
+            if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+                tasks.append(
+                    dynamic_sidecar_client.service_restore_state(
+                        dynamic_sidecar_endpoint
+                    )
+                )
+            await logged_gather(*tasks)
 
-        scheduler_data.dynamic_sidecar.service_environment_prepared = True
+            # inside this directory create the missing dirs, fetch those form the labels
+            director_v0_client: DirectorV0Client = _get_director_v0_client(app)
+            simcore_service_labels: SimcoreServiceLabels = (
+                await director_v0_client.get_service_labels(
+                    service=ServiceKeyVersion(
+                        key=scheduler_data.key, version=scheduler_data.version
+                    )
+                )
+            )
+            service_outputs_labels = json.loads(
+                simcore_service_labels.dict().get("io.simcore.outputs", "{}")
+            ).get("outputs", {})
+            logger.debug(
+                "Creating dirs from service outputs labels: %s", service_outputs_labels
+            )
+            await dynamic_sidecar_client.service_outputs_create_dirs(
+                dynamic_sidecar_endpoint, service_outputs_labels
+            )
+
+            scheduler_data.dynamic_sidecar.service_environment_prepared = True
 
 
 class CreateUserServices(DynamicSchedulerEvent):
@@ -372,8 +442,9 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 str(e),
             )
 
+        app_settings: AppSettings = app.state.settings
         dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+            app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
 
         if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
@@ -384,15 +455,21 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 "Calling into dynamic-sidecar to save state and pushing data to nodeports"
             )
             try:
-                await logged_gather(
+                tasks = [
                     dynamic_sidecar_client.service_push_output_ports(
                         dynamic_sidecar_endpoint,
-                    ),
-                    dynamic_sidecar_client.service_save_state(
-                        dynamic_sidecar_endpoint,
-                    ),
-                )
-                logger.info("State saved by dynamic-sidecar")
+                    )
+                ]
+                # When enabled no longer uploads state via nodeports
+                # S3 is used to store state paths
+                if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+                    tasks.append(
+                        dynamic_sidecar_client.service_save_state(
+                            dynamic_sidecar_endpoint,
+                        )
+                    )
+                await logged_gather(*tasks)
+                logger.info("Ports data pushed by dynamic-sidecar")
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(
                     (
@@ -414,6 +491,22 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         )
 
         # remove created inputs and outputs volumes
+
+        # compute which volumes we expected to be removed
+        # in case the expected volumes differ from the removed ones
+        # show an error
+        compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
+        expected_volumes_to_remove: Set[str] = {
+            DynamicSidecarVolumesPathsResolver.source(
+                compose_namespace=compose_namespace, path=path
+            )
+            for path in [
+                scheduler_data.paths_mapping.inputs_path,
+                scheduler_data.paths_mapping.outputs_path,
+            ]
+            + scheduler_data.paths_mapping.state_paths
+        }
+
         async for attempt in AsyncRetrying(
             wait=wait_exponential(min=1),
             stop=stop_after_delay(20),
@@ -423,7 +516,21 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 logger.info(
                     "Trying to remove volumes for %s", scheduler_data.service_name
                 )
-                await remove_dynamic_sidecar_volumes(scheduler_data.node_uuid)
+
+                removed_volumes = await remove_dynamic_sidecar_volumes(
+                    scheduler_data.node_uuid
+                )
+
+                if expected_volumes_to_remove != removed_volumes:
+                    logger.warning(
+                        (
+                            "Attention expected to remove %s, instead only removed %s. "
+                            "Please check with check that all expected to remove volumes "
+                            "are now gone."
+                        ),
+                        expected_volumes_to_remove,
+                        removed_volumes,
+                    )
 
         logger.debug(
             "Removed dynamic-sidecar created services for '%s'",
