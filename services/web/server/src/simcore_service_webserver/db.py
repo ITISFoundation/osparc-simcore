@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 @retry(**PostgresRetryPolicyUponInitialization(log).kwargs)
 async def _ensure_pg_ready(settings: PostgresSettings) -> Engine:
 
-    log.info("Connenting to postgres with %s", f"{settings=}")
+    log.info("Connecting to postgres with %s", f"{settings=}")
     engine = await create_engine(
         settings.dsn,
         application_name=settings.POSTGRES_CLIENT_NAME,
