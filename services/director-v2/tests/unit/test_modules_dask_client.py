@@ -376,10 +376,12 @@ async def test_abort_send_computation_task(
     image_params: ImageParams,
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
+    faker: Faker,
 ):
+    _DASK_EVENT_NAME = faker.pystr()
     # NOTE: this must be inlined so that the test works,
     # the dask-worker must be able to import the function
-    def fake_sidecar_fct(
+    def fake_remote_fct(
         docker_auth: DockerBasicAuth,
         service_key: str,
         service_version: str,
@@ -396,6 +398,9 @@ async def test_abort_send_computation_task(
         assert task is not None
         print(f"--> task {task=} started")
         assert task.annotations == expected_annotations
+        # tell the client we are started
+        start_event = Event(_DASK_EVENT_NAME)
+        start_event.set()
         # sleep a bit in case someone is aborting us
         print("--> waiting for task to be aborted...")
         for msg in sub:
@@ -416,7 +421,7 @@ async def test_abort_send_computation_task(
         tasks=image_params.fake_tasks,
         callback=mocked_user_completed_cb,
         remote_fct=functools.partial(
-            fake_sidecar_fct, expected_annotations=image_params.expected_annotations
+            fake_remote_fct, expected_annotations=image_params.expected_annotations
         ),
     )
     assert node_id_to_job_ids
@@ -424,8 +429,8 @@ async def test_abort_send_computation_task(
     node_id, job_id = node_id_to_job_ids[0]
     assert node_id in image_params.fake_tasks
 
-    # let the task start
-    await asyncio.sleep(2)
+    start_event = Event(_DASK_EVENT_NAME)
+    await start_event.wait(timeout=10)  # type: ignore
 
     # now let's abort the computation
     await dask_client.abort_computation_tasks([job_id])
