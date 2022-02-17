@@ -43,7 +43,7 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
     # path & queries
     backend_url = to_backend_service(
         request.rel_url,
-        URL(settings.origin),
+        URL(settings.base_url),
         settings.CATALOG_VTAG,
     )
     # FIXME: hack

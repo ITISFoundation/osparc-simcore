@@ -31,7 +31,7 @@ async def is_service_responsive(app: web.Application):
         settings: CatalogSettings = get_plugin_settings(app)
 
         await session.get(
-            settings.origin,
+            settings.base_url,
             ssl=False,
             raise_for_status=True,
             timeout=ClientTimeout(total=2, connect=1),
@@ -102,7 +102,7 @@ async def get_services_for_user_in_product(
     session: ClientSession = get_client_session(app)
     settings: CatalogSettings = get_plugin_settings(app)
 
-    url = (URL(settings.base_url) / "services").with_query(
+    url = (URL(settings.api_base_url) / "services").with_query(
         {"user_id": user_id, "details": f"{not only_key_versions}"}
     )
 
@@ -137,7 +137,7 @@ async def get_service(
     settings: CatalogSettings = get_plugin_settings(app)
 
     url = (
-        URL(settings.base_url)
+        URL(settings.api_base_url)
         / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}"
     ).with_query({"user_id": user_id})
 
@@ -167,7 +167,7 @@ async def update_service(
     settings: CatalogSettings = get_plugin_settings(app)
 
     url = (
-        URL(settings.base_url)
+        URL(settings.api_base_url)
         / f"services/{urllib.parse.quote_plus(service_key)}/{service_version}"
     ).with_query({"user_id": user_id})
 

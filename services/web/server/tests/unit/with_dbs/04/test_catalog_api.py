@@ -60,7 +60,7 @@ def client(
 @pytest.fixture
 def mock_catalog_service_api_responses(client, aioresponses_mocker):
     settings: CatalogSettings = get_plugin_settings(client.app)
-    url_pattern = re.compile(f"^{settings.origin}+/.*$")
+    url_pattern = re.compile(f"^{settings.base_url}+/.*$")
 
     aioresponses_mocker.get(url_pattern, payload={"data": {}})
     aioresponses_mocker.post(url_pattern, payload={"data": {}})
