@@ -77,8 +77,8 @@ endif
 get_my_ip := $(shell hostname --all-ip-addresses | cut --delimiter=" " --fields=1)
 
 # NOTE: this is only for WSL2 as the WSL2 subsystem IP is changing on each reboot
-#S3_ENDPOINT := $(get_my_ip):9001
-#export S3_ENDPOINT
+S3_ENDPOINT := $(get_my_ip):9001
+export S3_ENDPOINT
 
 
 
