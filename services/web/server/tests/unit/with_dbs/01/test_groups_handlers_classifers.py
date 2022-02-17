@@ -8,10 +8,11 @@ from copy import deepcopy
 import pytest
 from aiohttp import web_exceptions
 from aioresponses.core import aioresponses
+from pytest_simcore.helpers.utils_dict import ConfigDict
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg, aiohttp_unused_port):
+def app_cfg(default_app_cfg: ConfigDict, aiohttp_unused_port):
     """App's configuration used for every test in this module
 
     NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup

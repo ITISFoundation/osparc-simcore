@@ -13,7 +13,7 @@ import sys
 import textwrap
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable, Dict, Iterator, List
+from typing import AsyncIterator, Callable, Dict, Iterator, List
 from unittest.mock import MagicMock
 from uuid import uuid4
 
@@ -24,11 +24,11 @@ import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
 import sqlalchemy as sa
-import yaml
 from _helpers import MockedStorageSubsystem  # type: ignore
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.common_aiopg_utils import DSN
@@ -43,7 +43,6 @@ from simcore_service_webserver.groups_api import (
 from yarl import URL
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-
 
 # DEPLOYED SERVICES FOR TESTSUITE SESSION -----------------------------------
 
@@ -61,18 +60,9 @@ def disable_swagger_doc_generation(
 
 
 @pytest.fixture(scope="session")
-def default_app_cfg(tests_data_dir: Path) -> Dict[str, Any]:
-    # NOTE: ONLY used at the session scopes
-    cfg_path = tests_data_dir / "with_dbs" / "default_data_config.yaml"
-    assert cfg_path.exists()
-    # WARNING: changes to this fixture during testing propagates to other tests. Use cfg = deepcopy(cfg_dict)
-    # FIXME:  free cfg_dict but deepcopy shall be r/w
-    config: Dict = yaml.safe_load(cfg_path.read_text())
-    return config
-
-
-@pytest.fixture(scope="session")
-def docker_compose_file(default_app_cfg, monkeypatch_session: MonkeyPatch) -> str:
+def docker_compose_file(
+    default_app_cfg: ConfigDict, monkeypatch_session: MonkeyPatch
+) -> str:
     """Overrides pytest-docker fixture"""
 
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
@@ -85,16 +75,16 @@ def docker_compose_file(default_app_cfg, monkeypatch_session: MonkeyPatch) -> st
     compose_path = CURRENT_DIR / "docker-compose-devel.yml"
 
     assert compose_path.exists()
-    return str(compose_path)
+    return f"{compose_path}"
 
 
 # WEB SERVER/CLIENT FIXTURES ------------------------------------------------
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg, aiohttp_unused_port) -> Dict[str, Any]:
-    """Can be overriden in any test module to configure
-    the app accordingly
+def app_cfg(default_app_cfg: ConfigDict, aiohttp_unused_port) -> ConfigDict:
+    """
+    NOTE: SHOULD be overriden in any test module to configure the app accordingly
     """
     cfg = deepcopy(default_app_cfg)
 
@@ -109,11 +99,11 @@ def app_cfg(default_app_cfg, aiohttp_unused_port) -> Dict[str, Any]:
 @pytest.fixture
 def web_server(
     loop,
-    app_cfg: Dict,
+    app_cfg: ConfigDict,
     monkeypatch: MonkeyPatch,
     postgres_db,
-    aiohttp_server,
-    disable_static_webserver,
+    aiohttp_server: Callable,
+    disable_static_webserver: Callable,
     monkeypatch_setenv_from_app_config: Callable,
 ) -> TestServer:
 

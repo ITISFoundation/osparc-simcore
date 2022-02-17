@@ -15,7 +15,9 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable
 
 import pytest
+import yaml
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
+from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_projects import empty_project_data
 from simcore_service_webserver._resources import resources
 from simcore_service_webserver.rest_utils import (
@@ -24,6 +26,7 @@ from simcore_service_webserver.rest_utils import (
 )
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
 
 log = logging.getLogger(__name__)
 
@@ -91,3 +94,13 @@ def disable_gc_manual_guest_users(mocker):
 def openapi_specs(api_version_prefix) -> OpenApiSpecs:
     spec_path = get_openapi_specs_path(api_version_prefix)
     return load_openapi_specs(spec_path)
+
+
+@pytest.fixture(scope="session")
+def default_app_cfg(tests_data_dir: Path) -> ConfigDict:
+    # NOTE: ONLY used at the session scopes
+    cfg_path = tests_data_dir / "with_dbs" / "default_data_config.yaml"
+    assert cfg_path.exists()
+
+    config: Dict = yaml.safe_load(cfg_path.read_text())
+    return config

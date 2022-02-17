@@ -10,6 +10,7 @@ from typing import Callable, Dict
 
 import pytest
 import simcore_service_webserver
+from _pytest.monkeypatch import MonkeyPatch
 from pytest_simcore.helpers.utils_login import AUserDict, LoggedUser
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
@@ -106,7 +107,10 @@ async def logged_user(client, user_role: UserRole) -> AUserDict:
 
 
 @pytest.fixture
-def monkeypatch_setenv_from_app_config(monkeypatch) -> Callable:
+def monkeypatch_setenv_from_app_config(monkeypatch: MonkeyPatch) -> Callable:
+    # TODO: Change signature to be analogous to
+    # packages/pytest-simcore/src/pytest_simcore/helpers/utils_envs.py
+    # That solution is more flexible e.g. for context manager with monkeypatch
     def _patch(app_config: Dict) -> Dict[str, str]:
         assert isinstance(app_config, dict)
 
