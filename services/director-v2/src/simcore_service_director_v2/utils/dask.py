@@ -363,7 +363,9 @@ def from_node_reqs_to_dask_resources(
     node_reqs: NodeRequirements,
 ) -> Dict[str, Union[int, float]]:
     """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
-    dask_resources = node_reqs.dict(exclude_unset=True, by_alias=True)
+    dask_resources = node_reqs.dict(
+        exclude_unset=True, by_alias=True, exclude_none=True
+    )
     logger.debug("transformed to dask resources: %s", dask_resources)
     return dask_resources
 
@@ -414,8 +416,13 @@ def check_if_cluster_is_able_to_run_pipeline(
         def gen_check(
             task_resources: Dict[str, Any], worker_resources: Dict[str, Any]
         ) -> Iterable[bool]:
-            for r in task_resources:
-                yield worker_resources.get(r, 0) >= task_resources[r]
+            for name, required_value in task_resources.items():
+                if required_value is None:
+                    yield True
+                elif worker_has := worker_resources.get(name):
+                    yield worker_has >= required_value
+                else:
+                    yield False
 
         return all(gen_check(task_resources, worker_resources))
 

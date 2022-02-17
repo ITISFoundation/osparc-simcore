@@ -7,7 +7,6 @@ import socket
 from dataclasses import dataclass, field
 from typing import Awaitable, Callable, Dict, List, Optional, Tuple, Union
 
-import dask.distributed
 import dask_gateway
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
@@ -396,9 +395,7 @@ class DaskClient:
                 await self.dask_subsystem.client.publish_dataset(
                     task_future, name=job_id
                 )
-                dask.distributed.fire_and_forget(
-                    task_future
-                )  # this should ensure the task will run even if the future goes out of scope
+
                 logger.debug("Dask task %s started", task_future.key)
             except Exception:
                 # Dask raises a base Exception here in case of connection error, this will raise a more precise one

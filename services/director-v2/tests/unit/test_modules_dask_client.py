@@ -9,7 +9,7 @@ import functools
 import json
 import time
 from dataclasses import dataclass
-from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List
+from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List, Optional
 from unittest import mock
 from uuid import uuid4
 
@@ -34,7 +34,7 @@ from models_library.clusters import NoAuthentication, SimpleAuthentication
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
-from pydantic import AnyUrl
+from pydantic import AnyUrl, ByteSize
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.errors import (
@@ -54,9 +54,9 @@ from tenacity.wait import wait_random
 _ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS = 20
 
 
-async def _wait_for_call(mocked_fct):
+async def _wait_for_call(mocked_fct, timeout: Optional[int] = None):
     async for attempt in AsyncRetrying(
-        stop=stop_after_delay(10),
+        stop=stop_after_delay(timeout or 10),
         wait=wait_random(0, 1),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
@@ -107,7 +107,6 @@ async def create_dask_client_from_scheduler(
         assert client.app == minimal_app
         assert client.settings == minimal_app.state.settings.DASK_SCHEDULER
         assert client.cancellation_dask_pub
-        assert not client._taskid_to_future_map
         assert not client._subscribed_tasks
 
         assert client.dask_subsystem.client
@@ -146,7 +145,6 @@ async def create_dask_client_from_gateway(
         assert client.app == minimal_app
         assert client.settings == minimal_app.state.settings.DASK_SCHEDULER
         assert client.cancellation_dask_pub
-        assert not client._taskid_to_future_map
         assert not client._subscribed_tasks
 
         assert client.dask_subsystem.client
@@ -194,7 +192,7 @@ def node_id() -> NodeID:
 class ImageParams:
     image: Image
     expected_annotations: Dict[str, Any]
-    fake_task: Dict[NodeID, Image]
+    fake_tasks: Dict[NodeID, Image]
 
 
 @pytest.fixture
@@ -202,8 +200,10 @@ def cpu_image(node_id: NodeID) -> ImageParams:
     image = Image(
         name="simcore/services/comp/pytest/cpu_image",
         tag="1.5.5",
-        node_requirements=NodeRequirements(CPU=1, RAM="128 MiB"),
-    )
+        node_requirements=NodeRequirements(
+            CPU=1, RAM=parse_obj_as(ByteSize, "128 MiB"), GPU=None, MPI=None
+        ),
+    )  # type: ignore
     return ImageParams(
         image=image,
         expected_annotations={
@@ -212,7 +212,7 @@ def cpu_image(node_id: NodeID) -> ImageParams:
                 "RAM": 128 * 1024 * 1024,
             }
         },
-        fake_task={node_id: image},
+        fake_tasks={node_id: image},
     )
 
 
@@ -221,8 +221,10 @@ def gpu_image(node_id: NodeID) -> ImageParams:
     image = Image(
         name="simcore/services/comp/pytest/gpu_image",
         tag="1.4.7",
-        node_requirements=NodeRequirements(CPU=1, GPU=1, RAM="256 MiB"),
-    )
+        node_requirements=NodeRequirements(
+            CPU=1, GPU=1, RAM=parse_obj_as(ByteSize, "256 MiB"), MPI=None
+        ),
+    )  # type: ignore
     return ImageParams(
         image=image,
         expected_annotations={
@@ -232,7 +234,7 @@ def gpu_image(node_id: NodeID) -> ImageParams:
                 "RAM": 256 * 1024 * 1024,
             },
         },
-        fake_task={node_id: image},
+        fake_tasks={node_id: image},
     )
 
 
@@ -241,8 +243,10 @@ def mpi_image(node_id: NodeID) -> ImageParams:
     image = Image(
         name="simcore/services/comp/pytest/mpi_image",
         tag="1.4.5123",
-        node_requirements=NodeRequirements(CPU=2, RAM="128 MiB", MPI=1),
-    )
+        node_requirements=NodeRequirements(
+            CPU=2, RAM=parse_obj_as(ByteSize, "128 MiB"), MPI=1, GPU=None
+        ),
+    )  # type: ignore
     return ImageParams(
         image=image,
         expected_annotations={
@@ -252,7 +256,7 @@ def mpi_image(node_id: NodeID) -> ImageParams:
                 "RAM": 128 * 1024 * 1024,
             },
         },
-        fake_task={node_id: image},
+        fake_tasks={node_id: image},
     )
 
 
@@ -288,11 +292,7 @@ async def mocked_user_completed_cb(mocker: MockerFixture) -> mock.AsyncMock:
     return mocker.AsyncMock()
 
 
-async def test_dask_client(loop: asyncio.AbstractEventLoop, dask_client: DaskClient):
-    assert dask_client
-
-
-async def test_dask_cluster_through_client(
+async def test_dask_cluster_executes_simple_functions(
     loop: asyncio.AbstractEventLoop, dask_client: DaskClient
 ):
     def test_fct_add(x: int, y: int) -> int:
@@ -300,7 +300,8 @@ async def test_dask_cluster_through_client(
 
     future = dask_client.dask_subsystem.client.submit(test_fct_add, 2, 5)
     assert future
-    result = await future.result(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)
+
+    result = await future.result(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)  # type: ignore
     assert result == 7
 
 
@@ -335,27 +336,24 @@ async def test_send_computation_task(
         return TaskOutputData.parse_obj({"some_output_key": 123})
 
     # NOTE: We pass another fct so it can run in our localy created dask cluster
-    await dask_client.send_computation_tasks(
+    node_id_to_job_ids = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
         cluster_id=cluster_id,
-        tasks=image_params.fake_task,
+        tasks=image_params.fake_tasks,
         callback=mocked_user_completed_cb,
         remote_fct=functools.partial(
             fake_sidecar_fct, expected_annotations=image_params.expected_annotations
         ),
     )
-    assert (
-        len(dask_client._taskid_to_future_map) == 1
-    ), "dask client did not store the future of the task sent"
-
-    job_id, future = list(dask_client._taskid_to_future_map.items())[0]
+    assert node_id_to_job_ids
+    assert len(node_id_to_job_ids) == 1
+    node_id, job_id = node_id_to_job_ids[0]
+    assert node_id in image_params.fake_tasks
     # this waits for the computation to run
-    task_result = await future.result(timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS)
-    assert isinstance(task_result, TaskOutputData)
-    assert task_result["some_output_key"] == 123
-    assert future.key == job_id
-    await _wait_for_call(mocked_user_completed_cb)
+    await _wait_for_call(
+        mocked_user_completed_cb, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS
+    )
     mocked_user_completed_cb.assert_called_once()
     mocked_user_completed_cb.assert_called_with(
         TaskStateEvent(
@@ -364,9 +362,6 @@ async def test_send_computation_task(
             state=RunningState.SUCCESS,
         )
     )
-    assert (
-        len(dask_client._taskid_to_future_map) == 0
-    ), "the list of futures was not cleaned correctly"
 
 
 async def test_abort_send_computation_task(
@@ -410,27 +405,26 @@ async def test_abort_send_computation_task(
 
         return TaskOutputData.parse_obj({"some_output_key": 123})
 
-    await dask_client.send_computation_tasks(
+    node_id_to_job_ids = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
         cluster_id=cluster_id,
-        tasks=image_params.fake_task,
+        tasks=image_params.fake_tasks,
         callback=mocked_user_completed_cb,
         remote_fct=functools.partial(
             fake_sidecar_fct, expected_annotations=image_params.expected_annotations
         ),
     )
-    assert (
-        len(dask_client._taskid_to_future_map) == 1
-    ), "dask client did not store the future of the task sent"
+    assert node_id_to_job_ids
+    assert len(node_id_to_job_ids) == 1
+    node_id, job_id = node_id_to_job_ids[0]
+    assert node_id in image_params.fake_tasks
+
     # let the task start
     await asyncio.sleep(2)
 
     # now let's abort the computation
-    job_id, future = list(dask_client._taskid_to_future_map.items())[0]
-    assert future.key == job_id
     await dask_client.abort_computation_tasks([job_id])
-    assert future.cancelled() == True
     await _wait_for_call(mocked_user_completed_cb)
     mocked_user_completed_cb.assert_called_once()
     mocked_user_completed_cb.assert_called_with(
@@ -440,9 +434,6 @@ async def test_abort_send_computation_task(
             state=RunningState.ABORTED,
         )
     )
-    assert (
-        len(dask_client._taskid_to_future_map) == 0
-    ), "the list of futures was not cleaned correctly"
 
 
 async def test_failed_task_returns_exceptions(
@@ -470,25 +461,23 @@ async def test_failed_task_returns_exceptions(
             "sadly we are failing to execute anything cause we are dumb..."
         )
 
-    await dask_client.send_computation_tasks(
+    node_id_to_job_ids = await dask_client.send_computation_tasks(
         user_id=user_id,
         project_id=project_id,
         cluster_id=cluster_id,
-        tasks=gpu_image.fake_task,
+        tasks=gpu_image.fake_tasks,
         callback=mocked_user_completed_cb,
         remote_fct=fake_failing_sidecar_fct,
     )
-    assert (
-        len(dask_client._taskid_to_future_map) == 1
-    ), "dask client did not store the future of the task sent"
+    assert node_id_to_job_ids
+    assert len(node_id_to_job_ids) == 1
+    node_id, job_id = node_id_to_job_ids[0]
+    assert node_id in image_params.fake_tasks
 
-    job_id, future = list(dask_client._taskid_to_future_map.items())[0]
     # this waits for the computation to run
-    with pytest.raises(ValueError):
-        task_result = await future.result(
-            timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS
-        )
-    await _wait_for_call(mocked_user_completed_cb)
+    await _wait_for_call(
+        mocked_user_completed_cb, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS
+    )
     mocked_user_completed_cb.assert_called_once()
     assert mocked_user_completed_cb.call_args[0][0].job_id == job_id
     assert mocked_user_completed_cb.call_args[0][0].state == RunningState.FAILED
@@ -520,7 +509,7 @@ async def test_missing_resource_send_computation_task(
         for worker_key, worker_info in scheduler_info["workers"].items()
         if "MPI" in worker_info["resources"]
     ]
-    await dask_client.dask_subsystem.client.retire_workers(workers=workers_to_remove)
+    await dask_client.dask_subsystem.client.retire_workers(workers=workers_to_remove)  # type: ignore
     await asyncio.sleep(5)  # a bit of time is needed so the cluster adapts
 
     # now let's adapt the task so it needs mpi
@@ -531,13 +520,10 @@ async def test_missing_resource_send_computation_task(
             user_id=user_id,
             project_id=project_id,
             cluster_id=cluster_id,
-            tasks=image_params.fake_task,
+            tasks=image_params.fake_tasks,
             callback=mocked_user_completed_cb,
             remote_fct=None,
         )
-    assert (
-        len(dask_client._taskid_to_future_map) == 0
-    ), "dask client should not store any future here"
     mocked_user_completed_cb.assert_not_called()
 
 
@@ -557,8 +543,13 @@ async def test_too_many_resources_send_computation_task(
     image = Image(
         name="simcore/services/comp/pytest",
         tag="1.4.5",
-        node_requirements=NodeRequirements(CPU=10000000000000000, RAM="128 MiB"),
-    )
+        node_requirements=NodeRequirements(
+            CPU=10000000000000000,
+            RAM=parse_obj_as(ByteSize, "128 MiB"),
+            MPI=None,
+            GPU=None,
+        ),
+    )  # type: ignore
     fake_task = {node_id: image}
 
     # let's have a big number of CPUs
@@ -571,9 +562,7 @@ async def test_too_many_resources_send_computation_task(
             callback=mocked_user_completed_cb,
             remote_fct=None,
         )
-    assert (
-        len(dask_client._taskid_to_future_map) == 0
-    ), "dask client should not store any future here"
+
     mocked_user_completed_cb.assert_not_called()
 
 
@@ -597,13 +586,10 @@ async def test_disconnected_backend_send_computation_task(
             user_id=user_id,
             project_id=project_id,
             cluster_id=cluster_id,
-            tasks=cpu_image.fake_task,
+            tasks=cpu_image.fake_tasks,
             callback=mocked_user_completed_cb,
             remote_fct=None,
         )
-    assert (
-        len(dask_client._taskid_to_future_map) == 0
-    ), "dask client should not store any future here"
     mocked_user_completed_cb.assert_not_called()
 
 
