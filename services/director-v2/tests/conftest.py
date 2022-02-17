@@ -11,7 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from pprint import pformat
 from random import randint
-from typing import Any, AsyncIterable, Callable, Dict, Iterable, List
+from typing import Any, AsyncIterable, Callable, Dict, Iterable, Iterator, List
 from uuid import uuid4
 
 import dotenv
@@ -26,12 +26,14 @@ from models_library.projects import Node, ProjectAtDB, Workbench
 from pydantic.main import BaseModel
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
+from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
+from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.utils.computations import to_node_class
 from sqlalchemy import literal_column
@@ -248,7 +250,7 @@ def user_id() -> PositiveInt:
 
 
 @pytest.fixture(scope="module")
-def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Dict:
+def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Iterator[Dict]:
     with postgres_db.connect() as con:
         # removes all users before continuing
         con.execute(users.delete())
@@ -317,13 +319,13 @@ def pipeline(
 ) -> Iterable[Callable[..., CompPipelineAtDB]]:
     created_pipeline_ids: List[str] = []
 
-    def creator(**overrides) -> CompPipelineAtDB:
+    def creator(**pipeline_kwargs) -> CompPipelineAtDB:
         pipeline_config = {
             "project_id": f"{uuid4()}",
             "dag_adjacency_list": {},
             "state": StateType.NOT_STARTED,
         }
-        pipeline_config.update(**overrides)
+        pipeline_config.update(**pipeline_kwargs)
         with postgres_db.connect() as conn:
             result = conn.execute(
                 comp_pipeline.insert()
@@ -349,7 +351,7 @@ def pipeline(
 def tasks(postgres_db: sa.engine.Engine) -> Iterable[Callable[..., List[CompTaskAtDB]]]:
     created_task_ids: List[int] = []
 
-    def creator(project: ProjectAtDB, **overrides) -> List[CompTaskAtDB]:
+    def creator(project: ProjectAtDB, **overrides_kwargs) -> List[CompTaskAtDB]:
         created_tasks: List[CompTaskAtDB] = []
         for internal_id, (node_id, node_data) in enumerate(project.workbench.items()):
             task_config = {
@@ -372,15 +374,14 @@ def tasks(postgres_db: sa.engine.Engine) -> Iterable[Callable[..., List[CompTask
                 }
                 if node_data.outputs
                 else {},
-                "image": Image(
-                    name=node_data.key,
-                    tag=node_data.version,
-                ).dict(by_alias=True, exclude_unset=True),
+                "image": Image(name=node_data.key, tag=node_data.version).dict(
+                    by_alias=True, exclude_unset=True
+                ),  # type: ignore
                 "node_class": to_node_class(node_data.key),
                 "internal_id": internal_id + 1,
                 "submit": datetime.utcnow(),
             }
-            task_config.update(**overrides)
+            task_config.update(**overrides_kwargs)
             with postgres_db.connect() as conn:
                 result = conn.execute(
                     comp_tasks.insert()
@@ -398,4 +399,37 @@ def tasks(postgres_db: sa.engine.Engine) -> Iterable[Callable[..., List[CompTask
     with postgres_db.connect() as conn:
         conn.execute(
             comp_tasks.delete().where(comp_tasks.c.task_id.in_(created_task_ids))
+        )
+
+
+@pytest.fixture
+def runs(
+    postgres_db: sa.engine.Engine, user_db: Dict
+) -> Iterable[Callable[..., CompRunsAtDB]]:
+    created_run_ids: List[int] = []
+
+    def creator(project: ProjectAtDB, **run_kwargs) -> CompRunsAtDB:
+        run_config = {
+            "project_uuid": f"{project.uuid}",
+            "user_id": f"{user_db['id']}",
+            "iteration": 1,
+            "result": StateType.NOT_STARTED,
+        }
+        run_config.update(**run_kwargs)
+        with postgres_db.connect() as conn:
+            result = conn.execute(
+                comp_runs.insert().values(**run_config).returning(literal_column("*"))
+            )
+            new_run = CompRunsAtDB.parse_obj(result.first())
+            created_run_ids.append(new_run.run_id)
+            return new_run
+
+    yield creator
+
+    # cleanup
+    with postgres_db.connect() as conn:
+        conn.execute(
+            comp_pipeline.delete().where(
+                comp_pipeline.c.project_id.in_(created_run_ids)
+            )
         )

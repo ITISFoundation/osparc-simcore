@@ -370,7 +370,7 @@ class BaseCompScheduler(ABC):
             ComputationalBackendNotConnectedError,
             ComputationalSchedulerChangedError,
             ComputationalBackendTaskNotFoundError,
-        ) as exc:
+        ):
             logger.error("ISSUE WHILE STOPPING")
             # logger.error("%s", exc)
             # await comp_tasks_repo.set_project_tasks_state(

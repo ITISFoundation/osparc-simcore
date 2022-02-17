@@ -13,11 +13,11 @@ from unittest import mock
 import aiopg
 import httpx
 import pytest
-from _helpers import PublishedProject  # type: ignore
-from _helpers import assert_comp_run_state  # type: ignore
+from _helpers import assert_comp_run_state  # type: ignore; type: ignore
 from _helpers import assert_comp_tasks_state  # type: ignore
 from _helpers import manually_run_comp_scheduler  # type: ignore
 from _helpers import set_comp_task_state  # type: ignore
+from _helpers import PublishedProject, RunningProject
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import SpecCluster
 from dask_task_models_library.container_tasks.events import TaskStateEvent
@@ -117,6 +117,8 @@ def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
 
 @pytest.fixture
 def mocked_scheduler_task(monkeypatch: MonkeyPatch) -> None:
+    """disables the scheduler task, note that it needs to be triggered manually then"""
+
     async def mocked_scheduler_task(app: FastAPI) -> None:
         return None
 
@@ -538,6 +540,23 @@ async def test_handling_of_disconnected_dask_scheduler(
     await assert_comp_run_state(
         aiopg_engine, user_id, published_project.project.uuid, RunningState.ABORTED
     )
+
+
+async def test_lost_task_properly_recovered(
+    running_project: RunningProject,
+    scheduler: BaseCompScheduler,
+    minimal_app: FastAPI,
+    user_id: PositiveInt,
+    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    mocked_node_ports: None,
+    mocked_clean_task_output_fct: mock.MagicMock,
+    mocked_scheduler_task: None,
+):
+    """A lost task is a task that was run, but for some reason
+    the dask client or director-v2 was restarted, thus the task is still
+    in RUNNING state in the database, but the tasks have disappeared"""
+
+    ...
 
 
 @pytest.mark.parametrize("state", COMPLETED_STATES)
