@@ -15,7 +15,6 @@ from settings_library.utils_service import (
 )
 
 from ._constants import APP_SETTINGS_KEY
-from .catalog_config import get_config
 
 
 class CatalogSettings(BaseCustomSettings, MixinServiceSettings):
@@ -47,21 +46,3 @@ def get_plugin_settings(app: web.Application) -> CatalogSettings:
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, CatalogSettings)  # nosec
     return settings
-
-
-def assert_valid_config(app: web.Application):
-    cfg = get_config(app)
-
-    # new settings
-    WEBSERVER_CATALOG = CatalogSettings()
-    assert isinstance(WEBSERVER_CATALOG, CatalogSettings)  # nosec
-
-    # compare with old config
-    assert cfg == {  # nosec
-        "enabled": WEBSERVER_CATALOG is not None,
-        "host": WEBSERVER_CATALOG.CATALOG_HOST,
-        "port": WEBSERVER_CATALOG.CATALOG_PORT,
-        "version": WEBSERVER_CATALOG.CATALOG_VTAG,
-    }
-
-    return cfg, WEBSERVER_CATALOG

@@ -7,11 +7,8 @@ from aiohttp.test_utils import TestClient
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.client_session import APP_CLIENT_SESSION_KEY
 from simcore_service_webserver._meta import api_version_prefix
-from simcore_service_webserver.catalog import (
-    is_service_responsive,
-    setup_catalog,
-    to_backend_service,
-)
+from simcore_service_webserver.catalog import is_service_responsive, setup_catalog
+from simcore_service_webserver.catalog_client import to_backend_service
 from simcore_service_webserver.rest import APP_OPENAPI_SPECS_KEY, load_openapi_specs
 from yarl import URL
 
