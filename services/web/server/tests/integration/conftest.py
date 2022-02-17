@@ -97,15 +97,15 @@ def webserver_environ(
 
 
 @pytest.fixture(scope="session")
-def default_app_config_file(tests_data_dir: Path) -> Path:
-    cfg_path = tests_data_dir / "with_dbs" / "default_app_config-integration.yaml"
+def default_app_config_integration_file(tests_data_dir: Path) -> Path:
+    cfg_path = tests_data_dir / "default_app_config-integration.yaml"
     assert cfg_path.exists()
     return cfg_path
 
 
 @pytest.fixture(scope="module")
 def _default_app_config_for_integration_tests(
-    default_app_config_file: Path,
+    default_app_config_integration_file: Path,
     webserver_environ: Dict,
     osparc_simcore_root_dir: Path,
 ) -> ConfigDict:
@@ -131,7 +131,7 @@ def _default_app_config_for_integration_tests(
     test_environ["OSPARC_SIMCORE_REPO_ROOTDIR"] = f"{osparc_simcore_root_dir}"
 
     # recreate config-file
-    config_template = Template(default_app_config_file.read_text())
+    config_template = Template(default_app_config_integration_file.read_text())
     config_text = config_template.substitute(**test_environ)
     cfg: ConfigDict = yaml.safe_load(config_text)
 

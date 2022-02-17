@@ -43,6 +43,21 @@ def api_version_prefix() -> str:
     return "v0"
 
 
+@pytest.fixture(scope="session")
+def default_app_config_unit_file(tests_data_dir: Path) -> Path:
+    cfg_path = tests_data_dir / "default_app_config-unit.yaml"
+    assert cfg_path.exists()
+    return cfg_path
+
+
+@pytest.fixture(scope="session")
+def default_app_cfg(default_app_config_unit_file: Path) -> ConfigDict:
+    # NOTE: ONLY used at the session scopes
+    # TODO: create instead a loader function and return a Callable
+    config: Dict = yaml.safe_load(default_app_config_unit_file.read_text())
+    return config
+
+
 @pytest.fixture
 def empty_project() -> Callable:
     def factory():
@@ -94,14 +109,3 @@ def disable_gc_manual_guest_users(mocker):
 def openapi_specs(api_version_prefix) -> OpenApiSpecs:
     spec_path = get_openapi_specs_path(api_version_prefix)
     return load_openapi_specs(spec_path)
-
-
-@pytest.fixture(scope="session")
-def default_app_cfg(tests_data_dir: Path) -> ConfigDict:
-    # NOTE: ONLY used at the session scopes
-    # TODO: create instead a loader function and return a Callable
-    cfg_path = tests_data_dir / "with_dbs" / "default_app_config-unit.yaml"
-    assert cfg_path.exists()
-
-    config: Dict = yaml.safe_load(cfg_path.read_text())
-    return config
