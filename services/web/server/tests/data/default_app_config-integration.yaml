@@ -1,0 +1,62 @@
+# Runs insides a container
+---
+version: "1.0"
+main:
+  host: 0.0.0.0
+  port: 8080
+  log_level: ${WEBSERVER_LOGLEVEL}
+  testing: True
+  studies_access_enabled: True
+socketio:
+  enabled: True
+director:
+  host: ${DIRECTOR_HOST}
+  port: ${DIRECTOR_PORT}
+  version: "v0"
+catalog:
+  host: ${CATALOG_HOST}
+  port: ${CATALOG_PORT}
+  version: v0
+db:
+  postgres:
+    database: ${POSTGRES_DB}
+    endpoint: ${POSTGRES_ENDPOINT}
+    user: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    host: ${POSTGRES_HOST}
+    port: ${POSTGRES_PORT}
+    minsize: 1
+    maxsize: 50
+resource_manager:
+  enabled: True
+  resource_deletion_timeout_seconds: ${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}
+  garbage_collection_interval_seconds: ${WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS}
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
+activity:
+  enabled: True
+  prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}
+  prometheus_port: ${WEBSERVER_PROMETHEUS_PORT}
+  prometheus_api_version: ${WEBSERVER_PROMETHEUS_API_VERSION}
+login:
+  enabled: True
+  registration_invitation_required: False
+  registration_confirmation_required: False
+smtp:
+  sender: "OSPARC support <support@osparc.io>"
+  host: ${SMTP_HOST}
+  port: ${SMTP_PORT}
+  tls: False
+  username: Null
+  password: Null
+rest:
+  version: v0
+projects:
+  enabled: True
+storage:
+  host: ${STORAGE_HOST}
+  port: ${STORAGE_PORT}
+  version: v0
+session:
+  secret_key: ${WEBSERVER_SESSION_SECRET_KEY}

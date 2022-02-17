@@ -6,7 +6,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Callable, Dict
+from typing import AsyncIterator, Callable, Dict
 
 import pytest
 import simcore_service_webserver
@@ -91,7 +91,7 @@ def fake_project(tests_data_dir: Path) -> Dict:
 
 
 @pytest.fixture()
-async def logged_user(client, user_role: UserRole) -> AUserDict:
+async def logged_user(client, user_role: UserRole) -> AsyncIterator[AUserDict]:
     """adds a user in db and logs in with client
 
     NOTE: `user_role` fixture is defined as a parametrization below!!!
