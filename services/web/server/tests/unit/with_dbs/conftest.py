@@ -9,7 +9,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import os
 import sys
 import textwrap
 from copy import deepcopy
@@ -25,7 +24,7 @@ import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
 import sqlalchemy as sa
-import trafaret_config
+import yaml
 from _helpers import MockedStorageSubsystem  # type: ignore
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
@@ -35,7 +34,6 @@ from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.common_aiopg_utils import DSN
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.application__schema import app_schema as app_schema
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
@@ -51,32 +49,26 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 @pytest.fixture(autouse=True)
-def disable_swagger_doc_generation(monkeypatch: MonkeyPatch):
+def disable_swagger_doc_generation(
+    monkeypatch: MonkeyPatch, osparc_simcore_root_dir: Path
+):
     """
     by not enabling the swagger documentation, 1.8s per test is gained
     """
     monkeypatch.setenv("REST_SWAGGER_API_DOC_ENABLED", "0")
+    # TODO: after removing config, this might be used.
+    # monkeypatch.setenv("OSPARC_SIMCORE_REPO_ROOTDIR", f"{osparc_simcore_root_dir}")
 
 
 @pytest.fixture(scope="session")
-def default_app_cfg(osparc_simcore_root_dir: Path) -> Dict[str, Any]:
+def default_app_cfg(tests_data_dir: Path) -> Dict[str, Any]:
     # NOTE: ONLY used at the session scopes
-    cfg_path = CURRENT_DIR / "config.yaml"
+    cfg_path = tests_data_dir / "with_dbs" / "default_data_config.yaml"
     assert cfg_path.exists()
-
-    variables = dict(os.environ)
-    variables.update(
-        {
-            "OSPARC_SIMCORE_REPO_ROOTDIR": str(osparc_simcore_root_dir),
-        }
-    )
-
-    # validates and fills all defaults/optional entries that normal load would not do
-    cfg_dict = trafaret_config.read_and_validate(cfg_path, app_schema, vars=variables)
-
     # WARNING: changes to this fixture during testing propagates to other tests. Use cfg = deepcopy(cfg_dict)
     # FIXME:  free cfg_dict but deepcopy shall be r/w
-    return cfg_dict
+    config: Dict = yaml.safe_load(cfg_path.read_text())
+    return config
 
 
 @pytest.fixture(scope="session")
