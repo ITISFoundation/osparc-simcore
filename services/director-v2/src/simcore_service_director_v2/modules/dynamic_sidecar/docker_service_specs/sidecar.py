@@ -75,9 +75,7 @@ def get_dynamic_sidecar_spec(
     of the dynamic service. The director-v2 directly coordinates with
     the dynamic-sidecar for this purpose.
     """
-    compose_namespace = get_compose_namespace(
-        scheduler_data.node_uuid, dynamic_sidecar_settings.SWARM_STACK_NAME
-    )
+    compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
 
     mounts = [
         # docker socket needed to use the docker api

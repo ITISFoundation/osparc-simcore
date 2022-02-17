@@ -495,9 +495,7 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         # compute which volumes we expected to be removed
         # in case the expected volumes differ from the removed ones
         # show an error
-        compose_namespace = get_compose_namespace(
-            scheduler_data.node_uuid, dynamic_sidecar_settings.SWARM_STACK_NAME
-        )
+        compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
         expected_volumes_to_remove: Set[str] = {
             DynamicSidecarVolumesPathsResolver.source(
                 compose_namespace=compose_namespace, path=path
