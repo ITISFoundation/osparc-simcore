@@ -60,6 +60,25 @@ class SetupMetadataDict(TypedDict):
 # HELPERS ------------------------------------------------------------------
 
 
+def _parse_and_validate_arguments(
+    module_name, depends, config_section, config_enabled
+) -> Tuple:
+    module_name = module_name.replace(".__init__", "")
+    depends = depends or []
+
+    if config_section and config_enabled:
+        raise ValueError("Can only set config_section or config_enabled but not both")
+
+    section = config_section or module_name.split(".")[-1]
+    if config_enabled is None:
+        config_enabled = f"{section}.enabled"
+    else:
+        # if passes config_enabled, invalidates info on section
+        section = None
+
+    return module_name, depends, section, config_enabled
+
+
 def _is_addon_enabled_from_config(
     cfg: Dict[str, Any], dotted_section: str, section
 ) -> bool:
@@ -121,11 +140,13 @@ def app_module_setup(
     module_name: str,
     category: ModuleCategory,
     *,
+    # TODO: use settings_name as module_name!!
+    settings_name: Optional[str] = None,
     depends: Optional[List[str]] = None,
+    logger: logging.Logger = log,
+    # TODO: deprecate these options
     config_section: Optional[str] = None,
     config_enabled: Optional[str] = None,
-    settings_name: Optional[str] = None,
-    logger: logging.Logger = log,
 ) -> Callable:
     """Decorator that marks a function as 'a setup function' for a given module in an application
 
@@ -157,18 +178,9 @@ def app_module_setup(
     # TODO: resilience to failure. if this setup fails, then considering dependencies, is it fatal or app can start?
     # TODO: enforce signature as def setup(app: web.Application, **kwargs) -> web.Application
 
-    module_name = module_name.replace(".__init__", "")
-    depends = depends or []
-
-    if config_section and config_enabled:
-        raise ValueError("Can only set config_section or config_enabled but not both")
-
-    section = config_section or module_name.split(".")[-1]
-    if config_enabled is None:
-        config_enabled = f"{section}.enabled"
-    else:
-        # if passes config_enabled, invalidates info on section
-        section = None
+    module_name, depends, section, config_enabled = _parse_and_validate_arguments(
+        module_name, depends, config_section, config_enabled
+    )
 
     def _decorate(setup_func: _SetupFunc):
 
@@ -285,6 +297,8 @@ def app_module_setup(
 
         _wrapper.metadata = setup_metadata
         _wrapper.mark_as_simcore_servicelib_setup_func = True
+        # NOTE: this is added by functools.wraps decorated
+        assert _wrapper.__wrapped__ == setup_func  # nosec
 
         return _wrapper
 
