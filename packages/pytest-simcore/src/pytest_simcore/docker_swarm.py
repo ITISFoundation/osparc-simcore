@@ -217,13 +217,30 @@ def docker_stack(
     # make up-version
     stacks_deployed: Dict[str, Dict] = {}
     for key, stack_name, compose_file in stacks:
-        subprocess.run(
-            f"docker stack deploy --with-registry-auth -c {compose_file.name} {stack_name}".split(
-                " "
-            ),
-            check=True,
-            cwd=compose_file.parent,
-        )
+        try:
+            subprocess.run(
+                [
+                    "docker",
+                    "stack",
+                    "deploy",
+                    "--with-registry-auth",
+                    "--compose-file",
+                    f"{compose_file.name}",
+                    f"{stack_name}",
+                ],
+                check=True,
+                cwd=compose_file.parent,
+            )
+        except subprocess.CalledProcessError as err:
+            print(
+                "docker_stack failed",
+                f"{' '.join(err.cmd)=}",
+                f"{err.returncode=}",
+                f"{err.stdout=}",
+                f"{err.stderr=}",
+            )
+            raise
+
         stacks_deployed[key] = {
             "name": stack_name,
             "compose": yaml.safe_load(compose_file.read_text()),

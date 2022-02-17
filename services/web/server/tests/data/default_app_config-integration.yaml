@@ -10,14 +10,17 @@ main:
 socketio:
   enabled: True
 director:
+  enabled: True
   host: ${DIRECTOR_HOST}
   port: ${DIRECTOR_PORT}
   version: "v0"
 catalog:
+  enabled: True
   host: ${CATALOG_HOST}
   port: ${CATALOG_PORT}
   version: v0
 db:
+  enabled: True
   postgres:
     database: ${POSTGRES_DB}
     endpoint: ${POSTGRES_ENDPOINT}
@@ -44,6 +47,7 @@ login:
   registration_invitation_required: False
   registration_confirmation_required: False
 smtp:
+  enabled: True
   sender: "OSPARC support <support@osparc.io>"
   host: ${SMTP_HOST}
   port: ${SMTP_PORT}
@@ -51,12 +55,15 @@ smtp:
   username: Null
   password: Null
 rest:
+  enabled: True
   version: v0
 projects:
   enabled: True
 storage:
+  enabled: True
   host: ${STORAGE_HOST}
   port: ${STORAGE_PORT}
   version: v0
 session:
+  enabled: True
   secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
