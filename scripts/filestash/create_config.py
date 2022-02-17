@@ -2,7 +2,7 @@
 Parses the configuration template and injects it where the platform expects it
 Notes:
 - Admin credentials for filestash are admin:adminadmin
-- $ must be escaped with $$ in the teemplate file
+- $ must be escaped with $$ in the template file
 """
 
 import os
