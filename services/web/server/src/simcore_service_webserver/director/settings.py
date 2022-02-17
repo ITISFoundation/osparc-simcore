@@ -1,5 +1,4 @@
 from functools import cached_property
-from typing import Dict, Tuple
 
 from aiohttp.web import Application
 from models_library.basic_types import PortInt, VersionTag
@@ -8,9 +7,6 @@ from settings_library.utils_service import DEFAULT_AIOHTTP_PORT, MixinServiceSet
 from yarl import URL
 
 from .._constants import APP_SETTINGS_KEY
-from .config import get_config
-
-APP_DIRECTOR_API_KEY = __name__ + ".director_api"
 
 
 class DirectorSettings(BaseCustomSettings, MixinServiceSettings):
@@ -28,18 +24,3 @@ def get_plugin_settings(app: Application) -> DirectorSettings:
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, DirectorSettings)  # nosec
     return settings
-
-
-def assert_valid_config(app: Application) -> Tuple[Dict, DirectorSettings]:
-    cfg = get_config(app)
-
-    WEBSERVER_DIRECTOR = DirectorSettings()
-
-    assert cfg == {  # nosec
-        "enabled": WEBSERVER_DIRECTOR is not None,
-        "host": WEBSERVER_DIRECTOR.DIRECTOR_HOST,
-        "port": WEBSERVER_DIRECTOR.DIRECTOR_PORT,
-        "version": WEBSERVER_DIRECTOR.DIRECTOR_VTAG,
-    }
-
-    return cfg, WEBSERVER_DIRECTOR
