@@ -27,7 +27,7 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from distributed import Sub
+from distributed import Scheduler, Sub
 from distributed.deploy.spec import SpecCluster
 from fastapi.applications import FastAPI
 from models_library.clusters import NoAuthentication, SimpleAuthentication
@@ -39,6 +39,7 @@ from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.errors import (
     ComputationalBackendNotConnectedError,
+    ComputationalSchedulerChangedError,
     InsuficientComputationalResourcesError,
     MissingComputationalResourcesError,
 )
@@ -50,6 +51,7 @@ from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_random
+from yarl import URL
 
 _ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS = 20
 
@@ -472,7 +474,7 @@ async def test_failed_task_returns_exceptions(
     assert node_id_to_job_ids
     assert len(node_id_to_job_ids) == 1
     node_id, job_id = node_id_to_job_ids[0]
-    assert node_id in image_params.fake_tasks
+    assert node_id in gpu_image.fake_tasks
 
     # this waits for the computation to run
     await _wait_for_call(
@@ -566,7 +568,7 @@ async def test_too_many_resources_send_computation_task(
     mocked_user_completed_cb.assert_not_called()
 
 
-async def test_disconnected_backend_send_computation_task(
+async def test_disconnected_backend_raises_exception(
     dask_spec_local_cluster: SpecCluster,
     local_dask_gateway_server: DaskGatewayServer,
     dask_client: DaskClient,
@@ -590,6 +592,47 @@ async def test_disconnected_backend_send_computation_task(
             callback=mocked_user_completed_cb,
             remote_fct=None,
         )
+    mocked_user_completed_cb.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "dask_client", ["create_dask_client_from_scheduler"], indirect=True
+)
+async def test_changed_scheduler_raises_exception(
+    dask_spec_local_cluster: SpecCluster,
+    dask_client: DaskClient,
+    user_id: UserID,
+    project_id: ProjectID,
+    cluster_id: ClusterID,
+    cpu_image: ImageParams,
+    mocked_node_ports: None,
+    mocked_user_completed_cb: mock.AsyncMock,
+):
+    # change the scheduler (stop the current one and start another at the same address)
+    scheduler_address = URL(dask_spec_local_cluster.scheduler_address)
+    await dask_spec_local_cluster.close()  # type: ignore
+
+    scheduler = {
+        "cls": Scheduler,
+        "options": {"dashboard_address": ":8787", "port": scheduler_address.port},
+    }
+    async with SpecCluster(
+        scheduler=scheduler, asynchronous=True, name="pytest_cluster"
+    ) as cluster:
+        assert URL(cluster.scheduler_address) == scheduler_address
+
+        # leave a bit of time to allow the client to reconnect automatically
+        await asyncio.sleep(2)
+
+        with pytest.raises(ComputationalSchedulerChangedError):
+            await dask_client.send_computation_tasks(
+                user_id=user_id,
+                project_id=project_id,
+                cluster_id=cluster_id,
+                tasks=cpu_image.fake_tasks,
+                callback=mocked_user_completed_cb,
+                remote_fct=None,
+            )
     mocked_user_completed_cb.assert_not_called()
 
 
