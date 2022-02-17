@@ -83,9 +83,15 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     # TODO: find a better name!?
     WEBSERVER_SERVER_HOST: str = Field(
-        "0.0.0.0", description="hostname to serve within the container"
+        "0.0.0.0",  # nosec
+        description="host name to serve within the container."
+        "NOTE that this different from WEBSERVER_HOST env which is the host seen outside the container",
+    )
+    WEBSERVER_HOST: Optional[str] = Field(
+        None, env=["WEBSERVER_HOST", "HOST", "HOSTNAME"]
     )
     WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
+
     WEBSERVER_SESSION: SessionSettings = Field(
         auto_default_from_env=True, description="sesion module"
     )
