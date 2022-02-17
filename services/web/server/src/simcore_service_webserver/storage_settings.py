@@ -22,4 +22,5 @@ class StorageSettings(BaseCustomSettings, MixinServiceSettings):
 def get_plugin_settings(app: web.Application) -> StorageSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_STORAGE
     assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, StorageSettings)  # nosec
     return settings

@@ -27,6 +27,8 @@ class SciCrunchSettings(BaseCustomSettings):
 
 def get_plugin_settings(app: web.Application) -> SciCrunchSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_SCICRUNCH
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, SciCrunchSettings)  # nosec
     return settings
 
 

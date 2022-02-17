@@ -46,6 +46,7 @@ class DiagnosticsSettings(BaseCustomSettings):
 def get_plugin_settings(app: Application) -> DiagnosticsSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_DIAGNOSTICS
     assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, DiagnosticsSettings)  # nosec
     return settings
 
 

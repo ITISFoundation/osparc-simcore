@@ -19,5 +19,6 @@ class ResourceManagerSettings(BaseCustomSettings):
 
 def get_plugin_settings(app: web.Application) -> ResourceManagerSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_RESOURCE_MANAGER
-    assert settings, "plugin was not initialized"  # nosec
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, ResourceManagerSettings)  # nosec
     return settings

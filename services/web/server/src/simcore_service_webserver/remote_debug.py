@@ -29,7 +29,7 @@ def setup_remote_debugging(app: web.Application):
             import ptvsd
 
             ptvsd.enable_attach(
-                address=("0.0.0.0", _REMOTE_DEBUGGING_PORT),
+                address=("0.0.0.0", _REMOTE_DEBUGGING_PORT),  # nosec
             )
         except ImportError as err:
             raise Exception(

@@ -8,5 +8,6 @@ from .._constants import APP_SETTINGS_KEY
 
 def get_plugin_settings(app: web.Application) -> PrometheusSettings:
     settings: Optional[PrometheusSettings] = app[APP_SETTINGS_KEY].WEBSERVER_ACTIVITY
-    assert settings  # nosec
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, PrometheusSettings)  # nosec
     return settings

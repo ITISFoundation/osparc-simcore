@@ -270,7 +270,9 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         identity = user["email"]
 
         await remember(request, response, identity)
-        assert (await get_session(request))["AIOHTTP_SECURITY"] == identity
+
+        assert (await get_session(request))["AIOHTTP_SECURITY"] == identity  # nosec
+
         # NOTE: session is encrypted and stored in a cookie in the session middleware
 
     # WARNING: do NOT raise this response. From aiohttp 3.7.X, response is rebuild and cookie ignore.

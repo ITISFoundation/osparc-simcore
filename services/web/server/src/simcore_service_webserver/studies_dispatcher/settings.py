@@ -18,4 +18,5 @@ class StudiesDispatcherSettings(BaseCustomSettings):
 def get_plugin_settings(app: web.Application) -> StudiesDispatcherSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_STUDIES_DISPATCHER
     assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, StudiesDispatcherSettings)  # nosec
     return settings

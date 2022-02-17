@@ -4,7 +4,6 @@
     - settings
 """
 from functools import cached_property
-from typing import Optional
 
 from aiohttp import web
 from models_library.basic_types import PortInt, VersionTag
@@ -30,8 +29,9 @@ class CatalogSettings(BaseCustomSettings, MixinServiceSettings):
 
 
 def get_plugin_settings(app: web.Application) -> CatalogSettings:
-    settings: Optional[CatalogSettings] = app[APP_SETTINGS_KEY].WEBSERVER_CATALOG
-    assert settings  # nosec
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_CATALOG
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, CatalogSettings)  # nosec
     return settings
 
 
@@ -40,10 +40,10 @@ def assert_valid_config(app: web.Application):
 
     # new settings
     WEBSERVER_CATALOG = CatalogSettings()
-    assert isinstance(WEBSERVER_CATALOG, CatalogSettings)
+    assert isinstance(WEBSERVER_CATALOG, CatalogSettings)  # nosec
 
     # compare with old config
-    assert cfg == {
+    assert cfg == {  # nosec
         "enabled": WEBSERVER_CATALOG is not None,
         "host": WEBSERVER_CATALOG.CATALOG_HOST,
         "port": WEBSERVER_CATALOG.CATALOG_PORT,

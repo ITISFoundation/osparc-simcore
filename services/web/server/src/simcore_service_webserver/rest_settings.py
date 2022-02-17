@@ -10,5 +10,6 @@ class RestSettings(BaseCustomSettings):
 
 def get_plugin_settings(app: web.Application) -> RestSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_REST
-    assert settings, "rest plugin probably not initialized"  # nosec
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, RestSettings)  # nosec
     return settings

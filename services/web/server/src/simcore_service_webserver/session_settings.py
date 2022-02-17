@@ -27,6 +27,7 @@ class SessionSettings(BaseCustomSettings, MixinSessionSettings):
 def get_plugin_settings(app: web.Application) -> SessionSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_SESSION
     assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, SessionSettings)  # nosec
     return settings
 
 

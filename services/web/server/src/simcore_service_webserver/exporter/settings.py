@@ -25,5 +25,6 @@ class ExporterSettings(BaseCustomSettings):
 
 def get_plugin_settings(app: Application) -> ExporterSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_EXPORTER
-    assert settings, "this call was not expected with a disabled plugin"  # nosec
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, ExporterSettings)  # nosec
     return settings

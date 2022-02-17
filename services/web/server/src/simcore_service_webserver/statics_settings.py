@@ -132,4 +132,5 @@ class StaticWebserverModuleSettings(BaseCustomSettings):
 def get_plugin_settings(app: web.Application) -> StaticWebserverModuleSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_STATICWEB
     assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, StaticWebserverModuleSettings)  # nosec
     return settings

@@ -92,11 +92,13 @@ class LoginOptions(BaseModel):
 
 def get_plugin_settings(app: web.Application) -> LoginSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_LOGIN
-    assert settings, "login plugin was not initialized"  # nosec
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, LoginSettings)  # nosec
     return settings
 
 
 def get_plugin_options(app: web.Application) -> LoginOptions:
     options = app.get(APP_LOGIN_OPTIONS_KEY)
     assert options, "login plugin was not initialized"  # nosec
+    assert isinstance(options, LoginOptions)  # nosec
     return options

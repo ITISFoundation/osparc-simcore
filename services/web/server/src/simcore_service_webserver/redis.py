@@ -29,7 +29,8 @@ _WAIT_SECS = 2
 
 def get_plugin_settings(app: web.Application) -> RedisSettings:
     settings: Optional[RedisSettings] = app[APP_SETTINGS_KEY].WEBSERVER_REDIS
-    assert settings, "redis plugin was not initialized"  # nosec
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, RedisSettings)  # nosec
     return settings
 
 

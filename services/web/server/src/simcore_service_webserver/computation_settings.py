@@ -14,5 +14,6 @@ from ._constants import APP_SETTINGS_KEY
 
 def get_plugin_settings(app: Application) -> RabbitSettings:
     settings: Optional[RabbitSettings] = app[APP_SETTINGS_KEY].WEBSERVER_COMPUTATION
-    assert settings  # nosec
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, RabbitSettings)  # nosec
     return settings

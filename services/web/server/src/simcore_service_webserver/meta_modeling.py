@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
     logger=log,
 )
 def setup_meta_modeling(app: web.Application):
-    assert app[APP_SETTINGS_KEY].WEBSERVER_META_MODELING
+    assert app[APP_SETTINGS_KEY].WEBSERVER_META_MODELING  # nosec
 
     app.add_routes(meta_modeling_handlers.routes)
     app.middlewares.append(projects_redirection_middleware)

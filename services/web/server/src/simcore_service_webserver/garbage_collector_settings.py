@@ -21,6 +21,6 @@ class GarbageCollectorSettings(BaseCustomSettings):
 
 def get_plugin_settings(app: web.Application) -> GarbageCollectorSettings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_GARBAGE_COLLECTOR
-    assert settings, "plugin was not initialized"  # nosec
+    assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, GarbageCollectorSettings)  # nosec
     return settings

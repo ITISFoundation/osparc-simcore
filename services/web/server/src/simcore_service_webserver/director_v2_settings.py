@@ -28,7 +28,8 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
 
 def get_plugin_settings(app: web.Application) -> DirectorV2Settings:
     settings = app[APP_SETTINGS_KEY].WEBSERVER_DIRECTOR_V2
-    assert settings  # nosec
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, DirectorV2Settings)  # nosec
     return settings
 
 

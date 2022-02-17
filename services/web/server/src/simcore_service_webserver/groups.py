@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 )
 def setup_groups(app: web.Application):
 
-    assert app[APP_SETTINGS_KEY].WEBSERVER_GROUPS
+    assert app[APP_SETTINGS_KEY].WEBSERVER_GROUPS  # nosec
 
     # prepares scicrunch api
     setup_scicrunch(app)
