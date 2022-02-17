@@ -1,21 +1,20 @@
 """ Subsystem that renders and sends emails
 
-
 """
+# TODO: move login/utils.py email functionality here!
+# from email.mime.text import MIMEText
+# import aiosmtplib
+# import jinja2 TODO: check
+
+
 import logging
 
 import aiohttp_jinja2
-
-# import jinja2 TODO: check
 import jinja_app_loader
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from ._resources import resources
-
-# TODO: move login/utils.py email functionality here!
-# from email.mime.text import MIMEText
-# import aiosmtplib
 
 log = logging.getLogger(__name__)
 
