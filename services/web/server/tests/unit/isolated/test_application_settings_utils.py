@@ -8,7 +8,7 @@ from simcore_service_webserver.application_settings_utils import (
 )
 
 
-def test_settings_infered_from_config(
+def test_settings_infered_from_default_tests_config(
     default_app_cfg: ConfigDict, monkeypatch_setenv_from_app_config: Callable
 ):
     envs = monkeypatch_setenv_from_app_config(default_app_cfg)
@@ -19,4 +19,6 @@ def test_settings_infered_from_config(
     print("settings=\n", settings.json(indent=1, sort_keys=True))
 
     infered_config = convert_to_app_config(settings)
+
     assert default_app_cfg == infered_config
+    assert set(default_app_cfg.keys()) == set(infered_config.keys())

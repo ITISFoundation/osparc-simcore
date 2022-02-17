@@ -99,7 +99,8 @@ def openapi_specs(api_version_prefix) -> OpenApiSpecs:
 @pytest.fixture(scope="session")
 def default_app_cfg(tests_data_dir: Path) -> ConfigDict:
     # NOTE: ONLY used at the session scopes
-    cfg_path = tests_data_dir / "with_dbs" / "default_data_config.yaml"
+    # TODO: create instead a loader function and return a Callable
+    cfg_path = tests_data_dir / "with_dbs" / "default_app_config.yaml"
     assert cfg_path.exists()
 
     config: Dict = yaml.safe_load(cfg_path.read_text())
