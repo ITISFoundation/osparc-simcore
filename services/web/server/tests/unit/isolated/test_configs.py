@@ -15,15 +15,13 @@ import trafaret
 from pytest_simcore.helpers.utils_environs import eval_service_environ
 from servicelib.aiohttp.application_setup import is_setup_function
 from simcore_service_webserver._resources import resources
-from simcore_service_webserver.application__schema import create_schema
-from simcore_service_webserver.cli import parse, setup_parser
 
 config_yaml_filenames = [str(name) for name in resources.listdir("config")]
 
 
 @pytest.fixture(scope="session")
 def app_config_schema() -> trafaret.Dict:
-    return create_schema()
+    raise RuntimeError("DEPRECATED. MUST NOT BE USED")
 
 
 @pytest.fixture(scope="session")
@@ -120,22 +118,6 @@ def app_modules_metadata(
 # TESTS ----------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("configfile", config_yaml_filenames)
-def test_correctness_under_environ(configfile, service_webserver_environ):
-    parser = setup_parser(argparse.ArgumentParser("test-parser"))
-
-    with mock.patch("os.environ", service_webserver_environ):
-        cmd = ["-c", configfile]
-        config = parse(cmd, parser)
-
-        for key, value in config.items():
-            assert value != "None", "Use instead Null in {} for {}".format(
-                configfile, key
-            )
-
-        # adds some defaults checks here
-
-
 def test_setup_per_app_subsystem(app_submodules_with_setup_funs):
     for module in app_submodules_with_setup_funs:
         setup_members = inspect.getmembers(module, is_setup_function)
@@ -144,6 +126,7 @@ def test_setup_per_app_subsystem(app_submodules_with_setup_funs):
         ), f"None of {setup_members} are setup funs for {module.__name__}"
 
 
+@pytest.mark.skip(reason="DEPRECATED")
 def test_schema_sections(
     app_config_schema: trafaret.Dict, app_modules_metadata: List[Dict]
 ):
@@ -165,6 +148,7 @@ def test_schema_sections(
     assert sorted(sections_in_schema) == sorted(expected_sections)
 
 
+@pytest.mark.skip(reason="DEPRECATED")
 @pytest.mark.parametrize("configfile", config_yaml_filenames)
 def test_resource_manager_config_section(configfile, service_webserver_environ):
     parser = setup_parser(argparse.ArgumentParser("test-parser"))

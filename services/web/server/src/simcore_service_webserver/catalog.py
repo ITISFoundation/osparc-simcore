@@ -77,12 +77,10 @@ async def _reverse_proxy_handler(request: web.Request) -> web.Response:
     depends=["simcore_service_webserver.rest"],
     logger=logger,
 )
-def setup_catalog(app: web.Application, *, disable_auth=False):
+def setup_catalog(app: web.Application):
     # TODO: remove option disable_auth and replace by mocker.patch
 
     # resolve url
-    specs = app[APP_OPENAPI_SPECS_KEY]  # validated openapi specs
-
     exclude: List[str] = []
     route_def: RouteDef
     for route_def in catalog_handlers.routes:
@@ -92,12 +90,9 @@ def setup_catalog(app: web.Application, *, disable_auth=False):
     app.add_routes(catalog_handlers.routes)
 
     # bind the rest routes with the reverse-proxy-handler
-    # FIXME: this would reroute **anything** to the catalog service!
-    handler = (
-        _reverse_proxy_handler.__wrapped__ if disable_auth else _reverse_proxy_handler
-    )
+    specs = app[APP_OPENAPI_SPECS_KEY]  # validated openapi specs
     routes = [
-        web.route(method.upper(), path, handler, name=operation_id)
+        web.route(method.upper(), path, _reverse_proxy_handler, name=operation_id)
         for method, path, operation_id, tags in iter_path_operations(specs)
         if "catalog" in tags and operation_id not in exclude
     ]

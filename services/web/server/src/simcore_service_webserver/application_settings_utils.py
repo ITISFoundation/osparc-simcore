@@ -1,3 +1,10 @@
+# NOTE: Conversion helpers like 'convert_to_app_config' and 'convert_to_environ_vars' allows us
+# to fall back to an equivalent config or environs provided some settings.
+#
+# This allows to keep many of the logic layers based on a given config whose
+# refactoring would report very little. E.g. many test fixtures were based on given configs
+#
+
 import logging
 from typing import Any, Dict
 

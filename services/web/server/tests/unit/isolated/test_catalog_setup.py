@@ -1,13 +1,12 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import pytest
+from aiohttp.test_utils import TestClient
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.client_session import APP_CLIENT_SESSION_KEY
 from simcore_service_webserver._meta import api_version_prefix
-from simcore_service_webserver.application__schema import load_default_config
 from simcore_service_webserver.catalog import (
     is_service_responsive,
     setup_catalog,
@@ -18,43 +17,21 @@ from yarl import URL
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, monkeypatch):
-    monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "1")
-
-    cfg = load_default_config()
-    app = create_safe_application(cfg)
+def client(loop, aiohttp_client: TestClient):
+    app = create_safe_application()
 
     app[APP_OPENAPI_SPECS_KEY] = load_openapi_specs()
+    setup_catalog.__wrapped__(app)
 
-    # __wrapped__ avoids app modules dependency checks
-    setup_catalog.__wrapped__(app, disable_auth=True)
-
-    # needs to start application ...
     yield loop.run_until_complete(aiohttp_client(app))
 
 
 @pytest.fixture
 def mock_api_calls_to_catalog(client, mocker):
-    client_session = client.app[APP_CLIENT_SESSION_KEY]
+    raise NotImplementedError("TODO: Use aioresponse to emulate catalog responses")
 
-    class MockClientSession(mocker.MagicMock):
-        async def __aenter__(self):
-            # Mocks aiohttp.ClientResponse
-            # https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse
-            resp = mocker.Mock()
-            resp.json.return_value = {}
 
-            resp.status = 200
-            return resp
-
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            pass
-
-    mock = mocker.Mock(return_value=MockClientSession())
-    client_session.get = mock
-    client_session.post = mock
-    client_session.request = mock
-    yield mock
+# TESTS -------------------------------------------------------------------
 
 
 def test_url_translation():

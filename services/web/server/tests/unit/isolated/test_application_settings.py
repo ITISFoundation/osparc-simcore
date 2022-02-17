@@ -16,7 +16,6 @@ from simcore_service_webserver.application_settings import (
     setup_settings,
 )
 from simcore_service_webserver.application_settings_utils import convert_to_app_config
-from simcore_service_webserver.cli import parse, setup_parser
 
 # FIXTURES -----------------------------
 
@@ -169,6 +168,8 @@ def app_settings(mock_webserver_service_environment) -> ApplicationSettings:
     ]
 )
 def app_config(request, mock_webserver_service_environment) -> Dict:
+    from simcore_service_webserver.cli_config import parse, setup_parser
+
     parser = setup_parser(argparse.ArgumentParser("test-parser"))
     config = parse(["-c", request.param], parser)
     print("app config [request.param]:\n", json.dumps(config, indent=1))
@@ -178,6 +179,7 @@ def app_config(request, mock_webserver_service_environment) -> Dict:
 # TESTS -----------------------------
 
 
+@pytest.mark.skip(reason="DEPRECATED")
 def test_app_settings_with_prod_config(
     app_config: Dict, app_settings: ApplicationSettings
 ):
