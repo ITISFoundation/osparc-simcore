@@ -10,9 +10,9 @@ Once the scheduler determines a task shall run, its state is set to PENDING, so 
 The sidecar will then change the state to STARTED, then to SUCCESS or FAILED.
 
 """
-
 import asyncio
 import logging
+import traceback
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Callable, Dict, List, Optional, Set, Tuple, cast
@@ -434,8 +434,9 @@ class BaseCompScheduler(ABC):
                 )
             elif isinstance(r, Exception):
                 logger.error(
-                    "Unexpected error happened when scheduling task due to following error %s",
+                    "Unexpected error happened when scheduling task due to following error %s\n%s",
                     f"{r}",
+                    "".join(traceback.format_tb(r.__traceback__)),
                 )
                 await comp_tasks_repo.set_project_tasks_state(
                     project_id, [t], RunningState.FAILED
