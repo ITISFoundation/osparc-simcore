@@ -3,7 +3,7 @@
 objects = $(wildcard *.json)
 outputs := $(objects:.json=-converted.yaml)
 
-TOOL_IMAGE_NAME := json-schema-to-openapi-schema
+TOOL_IMAGE_NAME := library/json-schema-to-openapi-schema
 
 
 # target: all – convert all json-schemas to open-api compatible and formats them in yaml
