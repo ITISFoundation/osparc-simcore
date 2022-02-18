@@ -1,5 +1,6 @@
 from typing import Callable
 
+import pytest
 from pytest_simcore.helpers.utils_dict import ConfigDict
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.application_settings_utils import (
@@ -8,6 +9,7 @@ from simcore_service_webserver.application_settings_utils import (
 )
 
 
+@pytest.mark.skip(reason="UNDER DEV")
 def test_settings_infered_from_default_tests_config(
     default_app_cfg: ConfigDict, monkeypatch_setenv_from_app_config: Callable
 ):
