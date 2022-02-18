@@ -92,6 +92,16 @@ def scheduler(
 
 
 @pytest.fixture
+def mocked_dask_client(mocker: MockerFixture) -> mock.MagicMock:
+    mocked_dask_client = mocker.patch(
+        "simcore_service_director_v2.modules.dask_clients_pool.DaskClient",
+        autospec=True,
+    )
+    mocked_dask_client.create.return_value = mocked_dask_client
+    return mocked_dask_client
+
+
+@pytest.fixture
 def mocked_dask_client_send_task(mocker: MockerFixture) -> mock.MagicMock:
     mocked_dask_client_send_task = mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.send_computation_tasks"
@@ -272,11 +282,11 @@ async def test_misconfigured_pipeline_is_not_scheduled(
 
 
 async def test_proper_pipeline_is_scheduled(
+    mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,
     user_id: PositiveInt,
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    mocked_dask_client_send_task: mock.MagicMock,
     published_project: PublishedProject,
     mocked_scheduler_task: None,
 ):
@@ -308,6 +318,10 @@ async def test_proper_pipeline_is_scheduled(
     ]
     # trigger the scheduler
     await manually_run_comp_scheduler(scheduler)
+    # the client should be created here
+    mocked_dask_client.create.assert_called_once_with(
+        app=mock.ANY, settings=mock.ANY, endpoint=mock.ANY, authentication=mock.ANY
+    )
     # the tasks are set to pending, so they are ready to be taken, and the dask client is triggered
     await assert_comp_tasks_state(
         aiopg_engine,
@@ -322,7 +336,8 @@ async def test_proper_pipeline_is_scheduled(
         [p.node_id for p in published_project.tasks if p not in published_tasks],
         exp_state=RunningState.PUBLISHED,
     )
-    mocked_dask_client_send_task.assert_has_calls(
+
+    mocked_dask_client.send_computation_tasks.assert_has_calls(
         calls=[
             mock.call(
                 user_id=user_id,
@@ -335,7 +350,7 @@ async def test_proper_pipeline_is_scheduled(
         ],
         any_order=True,
     )
-    mocked_dask_client_send_task.reset_mock()
+    mocked_dask_client.send_computation_tasks.reset_mock()
 
     # trigger the scheduler
     await manually_run_comp_scheduler(scheduler)
@@ -353,7 +368,7 @@ async def test_proper_pipeline_is_scheduled(
         [p.node_id for p in published_tasks],
         exp_state=RunningState.PENDING,
     )
-    mocked_dask_client_send_task.assert_not_called()
+    mocked_dask_client.send_computation_tasks.assert_not_called()
 
     # change 1 task to RUNNING
     running_task_id = published_tasks[0].node_id
@@ -373,7 +388,7 @@ async def test_proper_pipeline_is_scheduled(
         [running_task_id],
         exp_state=RunningState.STARTED,
     )
-    mocked_dask_client_send_task.assert_not_called()
+    mocked_dask_client.send_computation_tasks.assert_not_called()
 
     # change the task to SUCCESS
     await set_comp_task_state(
@@ -399,7 +414,7 @@ async def test_proper_pipeline_is_scheduled(
         [next_published_task.node_id],
         exp_state=RunningState.PENDING,
     )
-    mocked_dask_client_send_task.assert_called_once_with(
+    mocked_dask_client.send_computation_tasks.assert_called_once_with(
         user_id=user_id,
         project_id=published_project.project.uuid,
         cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
@@ -408,7 +423,7 @@ async def test_proper_pipeline_is_scheduled(
         },
         callback=cast(DaskScheduler, scheduler)._on_task_completed,
     )
-    mocked_dask_client_send_task.reset_mock()
+    mocked_dask_client.send_computation_tasks.reset_mock()
 
     # change 1 task to RUNNING
     await set_comp_task_state(
@@ -427,7 +442,7 @@ async def test_proper_pipeline_is_scheduled(
         [next_published_task.node_id],
         exp_state=RunningState.STARTED,
     )
-    mocked_dask_client_send_task.assert_not_called()
+    mocked_dask_client.send_computation_tasks.assert_not_called()
 
     # now change the task to FAILED
     await set_comp_task_state(
@@ -446,7 +461,7 @@ async def test_proper_pipeline_is_scheduled(
         [next_published_task.node_id],
         exp_state=RunningState.FAILED,
     )
-    mocked_dask_client_send_task.assert_not_called()
+    mocked_dask_client.send_computation_tasks.assert_not_called()
 
     # now change the other task to SUCCESS
     other_task = published_tasks[1]
@@ -466,7 +481,7 @@ async def test_proper_pipeline_is_scheduled(
         [other_task.node_id],
         exp_state=RunningState.SUCCESS,
     )
-    mocked_dask_client_send_task.assert_not_called()
+    mocked_dask_client.send_computation_tasks.assert_not_called()
     # the scheduled pipeline shall be removed
     assert scheduler.scheduled_pipelines == {}
 
