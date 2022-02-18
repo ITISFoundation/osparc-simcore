@@ -54,7 +54,7 @@ def _setup_app_from_settings(
         slow_duration=settings.AIODEBUG_SLOW_DURATION_SECS,
     )
 
-    app = create_application(config={})
+    app = create_application()
     return (app, config)
 
 

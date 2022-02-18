@@ -43,8 +43,10 @@ garbage_collector:
   enabled: True
 groups:
   enabled: False
+# https://github.com/ITISFoundation/osparc-simcore/blob/0e9a59a76a88c12d59d4a568339a1757adab464a/services/web/server/src/simcore_service_webserver/login/_schema.py
 login:
   enabled: True
+  registration_confirmation_required: True
 meta_modeling:
   enabled: False
 products:

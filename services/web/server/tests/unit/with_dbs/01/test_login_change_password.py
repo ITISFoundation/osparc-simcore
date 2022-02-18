@@ -23,7 +23,7 @@ def cfg(client: TestClient) -> LoginOptions:
 async def test_unauthorized_to_change_password(client: TestClient):
     url = client.app.router["auth_change_password"].url_for()
     rsp = await client.post(
-        url,
+        f"{url}",
         json={
             "current": " fake",
             "new": NEW_PASSWORD,
@@ -39,7 +39,7 @@ async def test_wrong_current_password(client: TestClient, cfg: LoginOptions):
 
     async with LoggedUser(client):
         rsp = await client.post(
-            url,
+            f"{url}",
             json={
                 "current": "wrongpassword",
                 "new": NEW_PASSWORD,
@@ -57,7 +57,7 @@ async def test_wrong_confirm_pass(client: TestClient, cfg: LoginOptions):
 
     async with LoggedUser(client) as user:
         rsp = await client.post(
-            url,
+            f"{url}",
             json={
                 "current": user["raw_password"],
                 "new": NEW_PASSWORD,
@@ -76,7 +76,7 @@ async def test_success(client: TestClient, cfg: LoginOptions):
 
     async with LoggedUser(client) as user:
         rsp = await client.post(
-            url,
+            f"{url}",
             json={
                 "current": user["raw_password"],
                 "new": NEW_PASSWORD,
@@ -88,12 +88,12 @@ async def test_success(client: TestClient, cfg: LoginOptions):
         assert cfg.MSG_PASSWORD_CHANGED in await rsp.text()
         await assert_status(rsp, web.HTTPOk, cfg.MSG_PASSWORD_CHANGED)
 
-        rsp = await client.post(logout_url)
+        rsp = await client.post(f"{logout_url}")
         assert rsp.status == 200
         assert rsp.url_obj.path == logout_url.path
 
         rsp = await client.post(
-            login_url,
+            f"{logout_url}",
             json={
                 "email": user["email"],
                 "password": NEW_PASSWORD,

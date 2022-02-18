@@ -1,7 +1,6 @@
 """ Main application
 
 """
-import json
 import logging
 from typing import Any, Dict
 
@@ -45,16 +44,11 @@ from .version_control import setup_version_control
 log = logging.getLogger(__name__)
 
 
-def create_application(config: Dict[str, Any]) -> web.Application:
+def create_application() -> web.Application:
     """
     Initializes service
     """
-    log.debug(
-        "Initializing app with config:\n%s",
-        json.dumps(config, indent=2, sort_keys=True),
-    )
-
-    app = create_safe_application(config)
+    app = create_safe_application()
 
     setup_settings(app)
 

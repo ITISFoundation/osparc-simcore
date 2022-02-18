@@ -112,7 +112,7 @@ def web_server(
     monkeypatch_setenv_from_app_config(cfg)
 
     # original APP
-    app = create_application(cfg)
+    app = create_application()
 
     # with patched email
     _path_mail(monkeypatch)

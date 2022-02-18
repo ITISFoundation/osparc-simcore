@@ -34,7 +34,7 @@ def client(
         return web.json_response(dict(session))
 
     monkeypatch_setenv_from_app_config(app_cfg)
-    app = create_application(app_cfg)
+    app = create_application()
 
     app.add_routes(extra_test_routes)
 
