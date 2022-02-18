@@ -434,7 +434,11 @@ class BaseCompScheduler(ABC):
                 )
             elif isinstance(r, Exception):
                 logger.error(
-                    "Unexpected error happened when scheduling task due to following error %s\n%s",
+                    "Unexpected error for %s with %s on %s happened when scheduling %s:\n%s\n%s",
+                    f"{user_id=}",
+                    f"{project_id=}",
+                    f"{cluster_id=}",
+                    f"{tasks=}",
                     f"{r}",
                     "".join(traceback.format_tb(r.__traceback__)),
                 )
