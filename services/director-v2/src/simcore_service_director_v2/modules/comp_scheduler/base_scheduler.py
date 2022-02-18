@@ -47,6 +47,27 @@ from ..db.repositories.comp_tasks import CompTasksRepository
 logger = logging.getLogger(__name__)
 
 
+async def _parse_task_states(
+    node_ids: List[NodeID], pipeline_tasks: Dict[str, CompTaskAtDB]
+) -> Tuple[Set[NodeID], Set[NodeID], Set[NodeID]]:
+    # parse task states
+    tasks_in_execution: Set[NodeID] = set()
+    tasks_failed: Set[NodeID] = set()
+    tasks_to_start: Set[NodeID] = set()
+    for node_id in node_ids:
+        if pipeline_tasks[f"{node_id}"].state == RunningState.FAILED:
+            tasks_failed.add(node_id)
+        elif pipeline_tasks[f"{node_id}"].state == RunningState.PUBLISHED:
+            # the nodes that are published shall be started
+            tasks_to_start.add(node_id)
+        elif pipeline_tasks[f"{node_id}"].state in (
+            RunningState.STARTED,
+            RunningState.PENDING,
+        ):
+            tasks_in_execution.add(node_id)
+    return (tasks_to_start, tasks_in_execution, tasks_failed)
+
+
 @dataclass
 class ScheduledPipelineParams:
     cluster_id: ClusterID
@@ -246,7 +267,6 @@ class BaseCompScheduler(ABC):
             pipeline_tasks: Dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(
                 project_id, pipeline_dag
             )
-
             # filter out the tasks that were already successfully completed
             pipeline_dag.remove_nodes_from(
                 {
@@ -255,26 +275,12 @@ class BaseCompScheduler(ABC):
                     if t.state == RunningState.SUCCESS
                 }
             )
-
             # find the tasks that need scheduling (these are the ones with no unfilled dependency, e.g. degree 0)
             tasks_to_schedule = [node_id for node_id, degree in pipeline_dag.in_degree() if degree == 0]  # type: ignore
 
-            tasks_in_execution: Set[NodeID] = set()
-            tasks_failed: Set[NodeID] = set()
-            for node_id in tasks_to_schedule:
-                if pipeline_tasks[f"{node_id}"].state == RunningState.FAILED:
-                    tasks_failed.add(node_id)
-
-                if pipeline_tasks[f"{node_id}"].state == RunningState.PUBLISHED:
-                    # the nodes that are published shall be started
-                    tasks_to_start.add(node_id)
-
-                if pipeline_tasks[f"{node_id}"].state in (
-                    RunningState.STARTED,
-                    RunningState.PENDING,
-                ):
-                    tasks_in_execution.add(node_id)
-
+            tasks_to_start, tasks_in_execution, tasks_failed = await _parse_task_states(
+                tasks_to_schedule, pipeline_tasks
+            )
             # let's check the executing tasks are really executing, else we move them to the failed ones
             if tasks_in_execution:
                 # ensure these tasks still exist in the backend, if not we abort these
@@ -296,19 +302,19 @@ class BaseCompScheduler(ABC):
                             f"{backend_state=}",
                         )
 
-            # set the tasks after a failed one as aborted
+            # NOTE: some tasks might be lost, they are marked as FAILED, and all
+            # the tasks following a FAILED task are marked as ABORTED
             tasks_following_failed_tasks: Set[NodeID] = set()
             for node_id in tasks_failed:
                 pipeline_tasks[f"{node_id}"].state = RunningState.FAILED
                 tasks_following_failed_tasks.update(nx.bfs_tree(pipeline_dag, node_id))
-                tasks_following_failed_tasks.remove(
-                    node_id
-                )  # do not mark the failed one as aborted
+                # remove the failed task from that list of nodes
+                tasks_following_failed_tasks.remove(node_id)
             # mark now the aborted ones (that follow a failed one)
             for node_id in tasks_following_failed_tasks:
                 pipeline_tasks[f"{node_id}"].state = RunningState.ABORTED
 
-            # update the current states in DB
+            # update the current states back in DB
             comp_tasks_repo: CompTasksRepository = cast(
                 CompTasksRepository,
                 get_repository(self.db_engine, CompTasksRepository),
