@@ -176,7 +176,7 @@ kFILENAME_TOO_LONG = 36
 _NORMPATH_COUNT = 0
 
 
-def normpath(filename: str) -> Path:
+def shorten_path(filename: str) -> Path:
     # These paths are composed using test name hierarchies
     # when the test is parametrized, it uses the str of the
     # object as id which could result in path that goes over
@@ -211,7 +211,7 @@ def save_docker_infos(destination_path: Path):
 
         except OSError as err:
             if err.errno == kFILENAME_TOO_LONG:
-                destination_path = normpath(err.filename)
+                destination_path = shorten_path(err.filename)
                 destination_path.mkdir(parents=True, exist_ok=True)
 
         for container in all_containers:
@@ -227,7 +227,7 @@ def save_docker_infos(destination_path: Path):
 
                 except OSError as err:
                     if err.errno == kFILENAME_TOO_LONG:
-                        normpath(err.filename).write_text(
+                        shorten_path(err.filename).write_text(
                             COLOR_ENCODING_RE.sub("", logs)
                         )
 
@@ -238,7 +238,7 @@ def save_docker_infos(destination_path: Path):
                     )
                 except OSError as err:
                     if err.errno == kFILENAME_TOO_LONG:
-                        normpath(err.filename).write_text(
+                        shorten_path(err.filename).write_text(
                             json.dumps(container.attrs, indent=2)
                         )
 
