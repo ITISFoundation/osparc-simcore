@@ -16,7 +16,7 @@ activity:
 catalog:
   enabled: true
 clusters:
-  enabled: false
+  enabled: true
 computation:
   enabled: false
 # https://github.com/ITISFoundation/osparc-simcore/blob/0e9a59a76a88c12d59d4a568339a1757adab464a/services/web/server/src/simcore_service_webserver/db__schema.py
