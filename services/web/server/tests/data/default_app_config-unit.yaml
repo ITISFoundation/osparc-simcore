@@ -19,6 +19,7 @@ clusters:
   enabled: False
 computation:
   enabled: False
+# https://github.com/ITISFoundation/osparc-simcore/blob/0e9a59a76a88c12d59d4a568339a1757adab464a/services/web/server/src/simcore_service_webserver/db__schema.py
 db:
   enabled: True
   postgres:
@@ -34,8 +35,6 @@ diagnostics:
   enabled: False
 director:
   enabled: False
-  host: director
-  port: 8001
 director-v2:
   enabled: False
 exporter:
@@ -54,12 +53,19 @@ projects:
   enabled: False
 publications:
   enabled: True
-redis:
-  enabled: True
 remote_debug:
   enabled: False
+# https://github.com/ITISFoundation/osparc-simcore/blob/0e9a59a76a88c12d59d4a568339a1757adab464a/services/web/server/src/simcore_service_webserver/resource_manager/_schema.py
 resource_manager:
   enabled: True
+  resource_deletion_timeout_seconds: 900
+  garbage_collection_interval_seconds: 30
+  redis:
+    host: 127.0.0.1
+    port: 6379
+redis:
+  enabled: True
+# NOTE: redis options are in resource_manager.redis (legacy)
 rest:
   enabled: True
   version: v0
