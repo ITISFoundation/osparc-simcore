@@ -7,6 +7,7 @@
 # pylint:disable=no-name-in-module
 
 
+import asyncio
 from typing import Any, Callable, Dict, Iterator, cast
 from unittest import mock
 
@@ -84,7 +85,7 @@ def minimal_dask_scheduler_config(
 def scheduler(
     minimal_dask_scheduler_config: None,
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    dask_spec_local_cluster: SpecCluster,
+    # dask_spec_local_cluster: SpecCluster,
     minimal_app: FastAPI,
 ) -> BaseCompScheduler:
     assert minimal_app.state.scheduler is not None
@@ -99,14 +100,6 @@ def mocked_dask_client(mocker: MockerFixture) -> mock.MagicMock:
     )
     mocked_dask_client.create.return_value = mocked_dask_client
     return mocked_dask_client
-
-
-@pytest.fixture
-def mocked_dask_client_send_task(mocker: MockerFixture) -> mock.MagicMock:
-    mocked_dask_client_send_task = mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.send_computation_tasks"
-    )
-    return mocked_dask_client_send_task
 
 
 @pytest.fixture
@@ -592,6 +585,7 @@ async def test_lost_task_properly_recovered(
 
 @pytest.mark.parametrize("state", COMPLETED_STATES)
 async def test_completed_task_properly_updates_state(
+    mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,
     user_id: PositiveInt,
@@ -618,6 +612,7 @@ async def test_completed_task_properly_updates_state(
         state=state,
     )
     await dask_scheduler._on_task_completed(state_event)
+    await asyncio.sleep(4)
     await assert_comp_tasks_state(
         aiopg_engine,
         published_project.project.uuid,
@@ -632,7 +627,7 @@ async def test_failed_or_aborted_task_cleans_output_files(
     minimal_app: FastAPI,
     user_id: PositiveInt,
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    mocked_dask_client_send_task: mock.MagicMock,
+    mocked_dask_client: mock.MagicMock,
     published_project: PublishedProject,
     state: RunningState,
     mocked_clean_task_output_fct: mock.MagicMock,
