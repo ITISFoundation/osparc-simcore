@@ -38,8 +38,7 @@ def get_plugin_settings(app: web.Application) -> RedisSettings:
 async def setup_redis_client(app: web.Application):
     redis_settings: RedisSettings = get_plugin_settings(app)
 
-    async def create_client(address) -> aioredis.Redis:
-        # create redis client
+    async def _create_client(address: str) -> aioredis.Redis:
         client: Optional[aioredis.Redis] = None
 
         async for attempt in AsyncRetrying(
@@ -50,14 +49,13 @@ async def setup_redis_client(app: web.Application):
         ):
             with attempt:
                 client = await aioredis.create_redis_pool(address, encoding="utf-8")
-                if not client:
-                    raise ValueError("Expected aioredis client instance, got {client}")
                 log.info(
-                    "Connection to %s succeeded [%s]",
+                    "Connection to %s succeeded with %s [%s]",
                     f"redis at {address=}",
+                    f"{client=}",
                     json.dumps(attempt.retry_state.retry_object.statistics),
                 )
-        assert client  # no sec
+        assert client  # nosec
         return client
 
     origin_url = f"redis://{redis_settings.REDIS_HOST}:{redis_settings.REDIS_PORT}"
@@ -65,17 +63,19 @@ async def setup_redis_client(app: web.Application):
         "Connecting to redis at %s",
         f"{origin_url=}",
     )
-    app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await create_client(origin_url)
+    app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await _create_client(origin_url)
     assert client  # nosec
 
     # TODO: use RedisDsn.build(**redis_settings.build_kwargs()) via a Mixin?
     # create lock manager but use DB 1
     lock_db_url = origin_url + "/1"
+
     # create a client for it as well
     app[
         APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY
-    ] = client_lock_db = await create_client(lock_db_url)
+    ] = client_lock_db = await _create_client(lock_db_url)
     assert client_lock_db  # nosec
+
     app[APP_CLIENT_REDIS_LOCK_MANAGER_KEY] = lock_manager = Aioredlock([lock_db_url])  # type: ignore
     assert lock_manager  # nosec
 
