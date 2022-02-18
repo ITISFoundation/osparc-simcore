@@ -9,19 +9,19 @@ main:
   host: 127.0.0.1
   log_level: DEBUG
   port: 8080
-  testing: True
-  studies_access_enabled: True
+  testing: true
+  studies_access_enabled: true
 activity:
-  enabled: False
+  enabled: false
 catalog:
-  enabled: True
+  enabled: true
 clusters:
-  enabled: False
+  enabled: false
 computation:
-  enabled: False
+  enabled: false
 # https://github.com/ITISFoundation/osparc-simcore/blob/0e9a59a76a88c12d59d4a568339a1757adab464a/services/web/server/src/simcore_service_webserver/db__schema.py
 db:
-  enabled: True
+  enabled: true
   postgres:
     database: test
     user: admin
@@ -32,50 +32,53 @@ db:
     minsize: 1
     endpoint: 127.0.0.1:5432
 diagnostics:
-  enabled: False
+  enabled: false
 director:
-  enabled: False
+  enabled: false
+  host: director
+  port: 8001
+  version: v0
 director-v2:
-  enabled: False
+  enabled: true
 exporter:
-  enabled: False
+  enabled: false
 garbage_collector:
-  enabled: True
+  enabled: true
 groups:
-  enabled: False
+  enabled: true
 # https://github.com/ITISFoundation/osparc-simcore/blob/0e9a59a76a88c12d59d4a568339a1757adab464a/services/web/server/src/simcore_service_webserver/login/_schema.py
 login:
-  enabled: True
-  registration_confirmation_required: True
-  registration_invitation_required: True
+  enabled: true
+  registration_confirmation_required: true
+  registration_invitation_required: true
 meta_modeling:
-  enabled: False
+  enabled: false
 products:
-  enabled: True
+  enabled: true
 projects:
-  enabled: False
+  enabled: false
 publications:
-  enabled: True
+  enabled: true
 remote_debug:
-  enabled: False
+  enabled: false
 # https://github.com/ITISFoundation/osparc-simcore/blob/0e9a59a76a88c12d59d4a568339a1757adab464a/services/web/server/src/simcore_service_webserver/resource_manager/_schema.py
 resource_manager:
-  enabled: True
+  enabled: true
   resource_deletion_timeout_seconds: 900
   garbage_collection_interval_seconds: 30
   redis:
     host: 127.0.0.1
     port: 6379
 redis:
-  enabled: True
+  enabled: true
 # NOTE: redis options are in resource_manager.redis (legacy)
 rest:
-  enabled: True
+  enabled: true
   version: v0
 scicrunch:
-  enabled: False
+  enabled: false
 security:
-  enabled: True
+  enabled: true
 session:
   # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
   secret_key: "tjwiMSLe0Xd9dwMlAVQT9pYY9JEnr7rcH05fkUcukVs="
@@ -83,25 +86,26 @@ smtp:
   sender: "OSPARC support <support@osparc.io>"
   host: mail.foo.com
   port: 25
-  tls: False
+  tls: false
   username: None,
   password: None
 socketio:
-  enabled: True
+  enabled: true
 statics:
-  enabled: True
+  enabled: true
 storage:
-  enabled: True
+  enabled: true
   host: localhost
   port: 11111
   version: v5 # FAKE API VERSION
 studies_dispatcher:
-  enabled: True
+  enabled: true
 tags:
-  enabled: True
+  enabled: true
 tracing:
-  enabled: 0
+  enabled: false
+  zipkin_endpoint: http://jaeger:9411
 users:
-  enabled: True
+  enabled: true
 version_control:
-  enabled: False
+  enabled: false
