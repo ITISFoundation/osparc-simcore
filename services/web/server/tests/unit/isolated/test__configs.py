@@ -2,10 +2,8 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import argparse
 import importlib
 import inspect
-import unittest.mock as mock
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, Dict, List, Set, Tuple
@@ -13,9 +11,6 @@ from typing import Any, Callable, Dict, List, Set, Tuple
 import pytest
 from pytest_simcore.helpers.utils_environs import eval_service_environ
 from servicelib.aiohttp.application_setup import is_setup_function
-from simcore_service_webserver._resources import resources
-
-config_yaml_filenames = [str(name) for name in resources.listdir("config")]
 
 
 @pytest.fixture(scope="session")
@@ -143,41 +138,3 @@ def test_schema_sections(app_config_schema, app_modules_metadata: List[Dict]):
     sections_in_schema = [section.name for section in app_config_schema.keys]
 
     assert sorted(sections_in_schema) == sorted(expected_sections)
-
-
-@pytest.mark.skip(reason="DEPRECATED")
-@pytest.mark.parametrize("configfile", config_yaml_filenames)
-def test_resource_manager_config_section(configfile, service_webserver_environ):
-    parser = setup_parser(argparse.ArgumentParser("test-parser"))
-
-    with mock.patch("os.environ", service_webserver_environ):
-        app_config = parse(["-c", configfile], parser)
-
-        # NOTE: during PR #1401 some tests starting failing because these
-        # config entries were returning the wrong type.
-        # I would expect traferet to auto-cast.
-        # Let's check against multiple configs
-        #
-        # >>> import trafaret as t
-        # >>> t.Int().check(3)
-        # 3
-        # >>> t.Int().check("3")
-        # '3'
-        # >>> t.ToInt().check("3")
-        # 3
-        # >>> t.ToInt().check(3)
-        # 3
-        #
-        # NOTE: Changelog 2.0.2 https://trafaret.readthedocs.io/en/latest/changelog.html
-        #   construct for int and float will use ToInt and ToFloat
-        #
-        # RESOLVED: changing the schema from Int() -> ToInt()
-        assert isinstance(app_config["resource_manager"]["enabled"], bool)
-
-        # Checks implementations of .resource_manager.config.get_* helpers
-        assert isinstance(
-            app_config["resource_manager"]["resource_deletion_timeout_seconds"], int
-        )
-        assert isinstance(
-            app_config["resource_manager"]["garbage_collection_interval_seconds"], int
-        )
