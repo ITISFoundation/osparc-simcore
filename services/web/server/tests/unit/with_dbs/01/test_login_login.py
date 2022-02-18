@@ -12,6 +12,7 @@ from cryptography import fernet
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.rest_responses import unwrap_envelope
+from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.db_models import UserStatus
 from simcore_service_webserver.login.settings import LoginOptions, get_plugin_options
 from simcore_service_webserver.session_settings import get_plugin_settings
@@ -20,12 +21,23 @@ EMAIL, PASSWORD = "tester@test.com", "password"
 
 
 @pytest.fixture
-def cfg(client: TestClient) -> LoginOptions:
-    cfg: LoginOptions = get_plugin_options(client.app)
-    return cfg
+def login_options(client: TestClient) -> LoginOptions:
+    options: LoginOptions = get_plugin_options(client.app)
+    return options
 
 
-async def test_login_with_unknown_email(client: TestClient, cfg: LoginOptions):
+def test_login_plugin_setup_succeeded(client: TestClient):
+
+    print(client.app[APP_SETTINGS_KEY].json(indent=1, sort_keys=True))
+
+    # this should raise AssertionError if not succeedd
+    settings = get_plugin_settings(client.app)
+    assert settings
+
+
+async def test_login_with_unknown_email(
+    client: TestClient, login_options: LoginOptions
+):
     url = client.app.router["auth_login"].url_for()
     r = await client.post(
         f"{url}", json={"email": "unknown@email.com", "password": "wrong."}
@@ -34,16 +46,18 @@ async def test_login_with_unknown_email(client: TestClient, cfg: LoginOptions):
 
     assert r.status == web.HTTPUnauthorized.status_code, str(payload)
     assert r.url_obj.path == url.path
-    assert cfg.MSG_UNKNOWN_EMAIL in await r.text()
+    assert login_options.MSG_UNKNOWN_EMAIL in await r.text()
 
 
-async def test_login_with_wrong_password(client: TestClient, cfg: LoginOptions):
+async def test_login_with_wrong_password(
+    client: TestClient, login_options: LoginOptions
+):
     url = client.app.router["auth_login"].url_for()
 
     r = await client.post(f"{url}")
     payload = await r.json()
 
-    assert cfg.MSG_WRONG_PASSWORD not in await r.text(), str(payload)
+    assert login_options.MSG_WRONG_PASSWORD not in await r.text(), str(payload)
 
     async with NewUser(app=client.app) as user:
         r = await client.post(
@@ -56,13 +70,13 @@ async def test_login_with_wrong_password(client: TestClient, cfg: LoginOptions):
         payload = await r.json()
     assert r.status == web.HTTPUnauthorized.status_code, str(payload)
     assert r.url_obj.path == url.path
-    assert cfg.MSG_WRONG_PASSWORD in await r.text()
+    assert login_options.MSG_WRONG_PASSWORD in await r.text()
 
 
-async def test_login_banned_user(client: TestClient, cfg: LoginOptions):
+async def test_login_banned_user(client: TestClient, login_options: LoginOptions):
     url = client.app.router["auth_login"].url_for()
     r = await client.post(f"{url}")
-    assert cfg.MSG_USER_BANNED not in await r.text()
+    assert login_options.MSG_USER_BANNED not in await r.text()
 
     async with NewUser({"status": UserStatus.BANNED.name}, app=client.app) as user:
         r = await client.post(
@@ -72,13 +86,13 @@ async def test_login_banned_user(client: TestClient, cfg: LoginOptions):
 
     assert r.status == web.HTTPUnauthorized.status_code, str(payload)
     assert r.url_obj.path == url.path
-    assert cfg.MSG_USER_BANNED in payload["error"]["errors"][0]["message"]
+    assert login_options.MSG_USER_BANNED in payload["error"]["errors"][0]["message"]
 
 
-async def test_login_inactive_user(client: TestClient, cfg: LoginOptions):
+async def test_login_inactive_user(client: TestClient, login_options: LoginOptions):
     url = client.app.router["auth_login"].url_for()
     r = await client.post(f"{url}")
-    assert cfg.MSG_ACTIVATION_REQUIRED not in await r.text()
+    assert login_options.MSG_ACTIVATION_REQUIRED not in await r.text()
 
     async with NewUser(
         {"status": UserStatus.CONFIRMATION_PENDING.name}, app=client.app
@@ -88,10 +102,10 @@ async def test_login_inactive_user(client: TestClient, cfg: LoginOptions):
         )
     assert r.status == web.HTTPUnauthorized.status_code
     assert r.url_obj.path == url.path
-    assert cfg.MSG_ACTIVATION_REQUIRED in await r.text()
+    assert login_options.MSG_ACTIVATION_REQUIRED in await r.text()
 
 
-async def test_login_successfully(client: TestClient, cfg: LoginOptions):
+async def test_login_successfully(client: TestClient, login_options: LoginOptions):
     url = client.app.router["auth_login"].url_for()
 
     async with NewUser(app=client.app) as user:
@@ -103,7 +117,7 @@ async def test_login_successfully(client: TestClient, cfg: LoginOptions):
 
     assert not error
     assert data
-    assert cfg.MSG_LOGGED_IN in data["message"]
+    assert login_options.MSG_LOGGED_IN in data["message"]
 
 
 @pytest.mark.parametrize(

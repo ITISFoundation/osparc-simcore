@@ -181,12 +181,6 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
     # pylint:disable=too-many-statements
     envs = {}
 
-    # TODO: warning, sometimes env[] = section.get() might add a None if the
-    # section is not complete
-    def _set_if_defined(env_name, section, section_name):
-        if section_name in section:
-            envs[env_name] = section[section_name]
-
     def _set_if_disabled(field_name, section):
         # Assumes that by default is enabled
         enabled = section.get("enabled", True)
@@ -322,4 +316,5 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
         if section := cfg.get(section_name):
             _set_if_disabled(settings_name, section)
 
+    # NOTE: The final envs list prunes all env vars set to None
     return {k: v for k, v in envs.items() if v is not None}

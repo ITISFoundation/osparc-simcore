@@ -47,6 +47,7 @@ groups:
 login:
   enabled: True
   registration_confirmation_required: True
+  registration_invitation_required: True
 meta_modeling:
   enabled: False
 products:
