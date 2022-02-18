@@ -171,6 +171,22 @@ def run_docker_compose_config(
 
 
 COLOR_ENCODING_RE = re.compile(r"\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]")
+MAX_PATH_CHAR_LEN_ALLOWED = 260 - 10
+
+
+def normpath(path: Path):
+    # These paths are composed using test name hierarchies
+    # when the test is parametrized, it uses the str of the
+    # object as id which could result in path that goes over
+    # allowed limit (260 characters).
+    # This helper function tries to normalize the path
+    # Another possibility would be that the path has some
+    # problematic characters but so far we did not find any case ...
+    if len(f"{path}") > MAX_PATH_CHAR_LEN_ALLOWED:
+        parts = path.parts
+        MAX_PART_LEN = int(MAX_PATH_CHAR_LEN_ALLOWED / len(parts))
+        return Path(*(p[:MAX_PART_LEN] for p in parts))
+    return path
 
 
 def save_docker_infos(destination_path: Path):
@@ -180,6 +196,7 @@ def save_docker_infos(destination_path: Path):
     all_containers = client.containers.list(all=True)
 
     if all_containers:
+        destination_path = normpath(destination_path)
         destination_path.mkdir(parents=True, exist_ok=True)
 
         for container in all_containers:
@@ -187,12 +204,12 @@ def save_docker_infos(destination_path: Path):
             try:
                 # logs w/o coloring characters
                 logs: str = container.logs(timestamps=True, tail=1000).decode()
-                (destination_path / f"{container.name}.log").write_text(
+                normpath(destination_path / f"{container.name}.log").write_text(
                     COLOR_ENCODING_RE.sub("", logs)
                 )
 
                 # inspect attrs
-                (destination_path / f"{container.name}.json").write_text(
+                normpath(destination_path / f"{container.name}.json").write_text(
                     json.dumps(container.attrs, indent=2)
                 )
             except Exception as err:  # pylint: disable=broad-except
