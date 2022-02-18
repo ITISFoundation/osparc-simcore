@@ -50,7 +50,7 @@ groups:
 login:
   enabled: true
   registration_confirmation_required: true
-  registration_invitation_required: true
+  registration_invitation_required: false
 meta_modeling:
   enabled: false
 products:
