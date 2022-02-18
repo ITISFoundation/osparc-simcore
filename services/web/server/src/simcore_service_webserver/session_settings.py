@@ -29,11 +29,3 @@ def get_plugin_settings(app: web.Application) -> SessionSettings:
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, SessionSettings)  # nosec
     return settings
-
-
-def assert_valid_config(secret_key: str):
-
-    WEBSERVER_SESSION = SessionSettings()
-    assert (  # nosec
-        WEBSERVER_SESSION.SESSION_SECRET_KEY.get_secret_value() == secret_key
-    )  # nosec
