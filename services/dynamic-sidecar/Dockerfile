@@ -10,15 +10,24 @@ FROM python:${PYTHON_VERSION}-slim-buster as base
 
 LABEL maintainer="Andrei Neagu <neagu@itis.swiss>"
 
+ARG R_CLONE_VERSION="v1.57.0"
+
 RUN set -eux && \
   apt-get update && \
   apt-get install -y \
   gosu \
   libmagic1 \
+  curl \
   && \
   rm -rf /var/lib/apt/lists/* && \
   # verify that the binary works
-  gosu nobody true
+  gosu nobody true && \
+  apt-get clean && \
+  # install rclone
+  curl -sLO "https://downloads.rclone.org/${R_CLONE_VERSION}/rclone-${R_CLONE_VERSION}-linux-amd64.deb" && \
+  dpkg --install "rclone-${R_CLONE_VERSION}-linux-amd64.deb" && \
+  rm "rclone-${R_CLONE_VERSION}-linux-amd64.deb"
+
 
 # simcore-user uid=8004(scu) gid=8004(scu) groups=8004(scu)
 ENV SC_USER_ID=8004 \
@@ -45,7 +54,6 @@ ENV PATH="${VIRTUAL_ENV}/bin:$PATH"
 # directory where dynamic-sidecar stores creates and shares
 # volumes between itself and the spawned containers
 ENV DY_VOLUMES="/dy-volumes"
-
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
@@ -120,7 +128,7 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DY_VOLUMES} ${DY_VOLUMES}
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
-# disabled healthcheck as director-v2 is already taking care of it 
+# disabled healthcheck as director-v2 is already taking care of it
 # in oder to have similar performance a more aggressive healethcek
 # would be required.
 # removing the healthchek would not cause any issues at this point
