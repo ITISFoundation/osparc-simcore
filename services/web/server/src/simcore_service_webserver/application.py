@@ -21,10 +21,10 @@ from .email import setup_email
 from .exporter.plugin import setup_exporter
 from .garbage_collector import setup_garbage_collector
 from .groups import setup_groups
-from .login.module_setup import setup_login
+from .login.plugin import setup_login
 from .meta_modeling import setup_meta_modeling
 from .products import setup_products
-from .projects.module_setup import setup_projects
+from .projects.plugin import setup_projects
 from .publications import setup_publications
 from .redis import setup_redis
 from .remote_debug import setup_remote_debugging

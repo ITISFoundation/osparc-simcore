@@ -30,8 +30,8 @@ from simcore_service_webserver.groups_api import (
     create_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.login.module_setup import setup_login
-from simcore_service_webserver.projects.module_setup import setup_projects
+from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.resource_manager.module_setup import (
     setup_resource_manager,
 )

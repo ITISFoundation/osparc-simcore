@@ -23,7 +23,7 @@ from simcore_service_webserver.groups_api import (
     DEFAULT_GROUP_READ_ACCESS_RIGHTS,
     auto_add_user_to_groups,
 )
-from simcore_service_webserver.login.module_setup import setup_login
+from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.login.storage import AsyncpgStorage
 from simcore_service_webserver.login.storage import (
     get_plugin_storage as get_login_plugin_storage,
