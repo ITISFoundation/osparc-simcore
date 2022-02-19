@@ -13,7 +13,7 @@ from servicelib.aiohttp.rest_routing import (
 
 from . import groups_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
-from .scicrunch.module_setup import setup_scicrunch
+from .scicrunch.plugin import setup_scicrunch
 
 logger = logging.getLogger(__name__)
 

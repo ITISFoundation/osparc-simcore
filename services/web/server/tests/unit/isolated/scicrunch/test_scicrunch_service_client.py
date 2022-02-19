@@ -15,7 +15,7 @@ from aioresponses.core import aioresponses
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.client_session import get_client_session
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.scicrunch.module_setup import setup_scicrunch
+from simcore_service_webserver.scicrunch.plugin import setup_scicrunch
 from simcore_service_webserver.scicrunch.service_client import (
     ResearchResource,
     SciCrunch,

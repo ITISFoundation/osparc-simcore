@@ -71,7 +71,7 @@ from simcore_service_webserver.exporter.settings import (
     get_plugin_settings as get_exporter_settings,
 )
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
-from simcore_service_webserver.scicrunch.module_setup import setup_scicrunch
+from simcore_service_webserver.scicrunch.plugin import setup_scicrunch
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.storage_handlers import get_file_download_url
 from sqlalchemy.dialects.postgresql import insert as pg_insert
