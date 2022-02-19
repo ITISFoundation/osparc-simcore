@@ -17,6 +17,10 @@ catalog:
   host: ${CATALOG_HOST}
   port: ${CATALOG_PORT}
   version: v0
+clusters:
+  enabled: false
+computation:
+  enabled: false
 db:
   enabled: true
   postgres:
