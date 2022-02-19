@@ -13,9 +13,7 @@ from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.resource_manager.module_setup import (
-    setup_resource_manager,
-)
+from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
     ALIVE_SUFFIX,
     RESOURCE_SUFFIX,

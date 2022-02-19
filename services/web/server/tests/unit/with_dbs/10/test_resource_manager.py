@@ -39,9 +39,7 @@ from simcore_service_webserver.projects.projects_api import (
     remove_project_interactive_services,
 )
 from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
-from simcore_service_webserver.resource_manager.module_setup import (
-    setup_resource_manager,
-)
+from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
     RedisResourceRegistry,
     get_registry,

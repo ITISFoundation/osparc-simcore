@@ -28,7 +28,7 @@ from .projects.plugin import setup_projects
 from .publications import setup_publications
 from .redis import setup_redis
 from .remote_debug import setup_remote_debugging
-from .resource_manager.module_setup import setup_resource_manager
+from .resource_manager.plugin import setup_resource_manager
 from .rest import setup_rest
 from .security import setup_security
 from .session import setup_session

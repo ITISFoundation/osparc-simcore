@@ -30,9 +30,7 @@ from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects.plugin import setup_projects
-from simcore_service_webserver.resource_manager.module_setup import (
-    setup_resource_manager,
-)
+from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole

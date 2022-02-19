@@ -32,9 +32,7 @@ from simcore_service_webserver.groups_api import (
 )
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects.plugin import setup_projects
-from simcore_service_webserver.resource_manager.module_setup import (
-    setup_resource_manager,
-)
+from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import get_registry
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
