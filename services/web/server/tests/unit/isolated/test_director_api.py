@@ -24,7 +24,7 @@ from simcore_service_webserver.director.director_api import (
     start_service,
     stop_services,
 )
-from simcore_service_webserver.director.module_setup import setup_director
+from simcore_service_webserver.director.plugin import setup_director
 from yarl import URL
 
 

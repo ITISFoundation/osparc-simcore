@@ -15,7 +15,7 @@ from .clusters.plugin import setup_clusters
 from .computation import setup_computation
 from .db import setup_db
 from .diagnostics import setup_diagnostics
-from .director.module_setup import setup_director
+from .director.plugin import setup_director
 from .director_v2 import setup_director_v2
 from .email import setup_email
 from .exporter.module_setup import setup_exporter
