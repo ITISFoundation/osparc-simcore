@@ -32,7 +32,7 @@ from .resource_manager.plugin import setup_resource_manager
 from .rest import setup_rest
 from .security import setup_security
 from .session import setup_session
-from .socketio.module_setup import setup_socketio
+from .socketio.plugin import setup_socketio
 from .statics import setup_statics
 from .storage import setup_storage
 from .studies_dispatcher.module_setup import setup_studies_dispatcher
