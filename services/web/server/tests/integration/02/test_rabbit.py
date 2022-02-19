@@ -25,6 +25,7 @@ from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.rabbit_service import RabbitExchanges
 from servicelib.aiohttp.application import create_safe_application
+from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
@@ -167,6 +168,7 @@ def client(
     app = create_safe_application(app_config)
 
     assert setup_settings(app)
+    assert app[APP_SETTINGS_KEY].WEBSERVER_COMPUTATION
 
     setup_db(app)
     setup_session(app)

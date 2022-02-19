@@ -20,7 +20,7 @@ catalog:
 clusters:
   enabled: false
 computation:
-  enabled: false
+  enabled: true
 db:
   enabled: true
   postgres:

@@ -126,8 +126,10 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
 
     log.info("Creating pika connection pool for %s", rabbit_broker)
     await wait_till_rabbitmq_responsive(f"{rabbit_broker}")
-    # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
-    async def get_connection() -> aio_pika.Connection:
+    # NOTE: to show the connection name in the rabbitMQ UI see there
+    # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
+    #
+    async def _get_connection() -> aio_pika.Connection:
         return await aio_pika.connect_robust(
             f"{rabbit_broker}"
             + f"?name={__name__}_{socket.gethostname()}_{os.getpid()}",
@@ -135,10 +137,11 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
         )
 
     app[APP_RABBITMQ_POOL_KEY] = connection_pool = aio_pika.pool.Pool(
-        get_connection, max_size=2
+        _get_connection, max_size=2
     )
+    assert connection_pool  # nosec
 
-    async def get_channel() -> aio_pika.Channel:
+    async def _get_channel() -> aio_pika.Channel:
         async with connection_pool.acquire() as connection:
             channel = await connection.channel()
             # Finding a suitable prefetch value is a matter of trial and error
@@ -153,11 +156,11 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
             await channel.set_qos(prefetch_count=100)
             return channel
 
-    channel_pool = aio_pika.pool.Pool(get_channel, max_size=10)
+    channel_pool = aio_pika.pool.Pool(_get_channel, max_size=10)
 
     consumer_running = True
 
-    async def exchange_consumer(
+    async def _exchange_consumer(
         exchange_name: str,
         parse_handler: Callable[[web.Application, bytes], Awaitable[None]],
         consumer_kwargs: Dict[str, Any],
@@ -221,7 +224,7 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
         ),
     ]:
         task = asyncio.create_task(
-            exchange_consumer(exchange_name, message_parser, consumer_kwargs)
+            _exchange_consumer(exchange_name, message_parser, consumer_kwargs)
         )
         consumer_tasks.append(task)
 

@@ -7,7 +7,7 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .computation_comp_tasks_listening_task import setup as setup_comp_tasks_listener
+from .computation_comp_tasks_listening_task import create_comp_tasks_listening_task
 from .computation_settings import get_plugin_settings
 from .computation_subscribe import setup_rabbitmq_consumer
 
@@ -26,9 +26,9 @@ log = logging.getLogger(__name__)
 def setup_computation(app: web.Application):
     assert get_plugin_settings(app)  # nosec
 
-    # subscribe to rabbit upon startup for logs, progress and other
+    # Subscribe to rabbit upon startup for logs, progress and other
     # metrics on the execution reported by sidecars
     app.cleanup_ctx.append(setup_rabbitmq_consumer)
 
-    # setup comp_task listener
-    setup_comp_tasks_listener(app)
+    # Creates a task to listen to comp_task pg-db's table events
+    app.cleanup_ctx.append(create_comp_tasks_listening_task)
