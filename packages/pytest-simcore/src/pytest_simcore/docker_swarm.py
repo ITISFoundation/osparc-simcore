@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 
 
 #
-# NOTE this file must be PYTHON >=3.6 COMPATIBLE because it is used by the director service
+# NOTE: this file must be PYTHON >=3.6 COMPATIBLE because it is used by the director service
 #
 
 # HELPERS --------------------------------------------------------------------------------
@@ -234,10 +234,10 @@ def docker_stack(
         except subprocess.CalledProcessError as err:
             print(
                 "docker_stack failed",
-                f"{' '.join(err.cmd)=}",
-                f"{err.returncode=}",
-                f"{err.stdout=}",
-                f"{err.stderr=}",
+                f"{' '.join(err.cmd)}",
+                f"returncode={err.returncode}",
+                f"stdout={err.stdout}",
+                f"stderr={err.stderr}",
             )
             raise
 
