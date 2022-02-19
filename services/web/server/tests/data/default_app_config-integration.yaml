@@ -3,67 +3,97 @@
 version: "1.0"
 main:
   host: 0.0.0.0
-  port: 8080
   log_level: ${WEBSERVER_LOGLEVEL}
-  testing: True
-  studies_access_enabled: True
-socketio:
-  enabled: True
-director:
-  enabled: True
-  host: ${DIRECTOR_HOST}
-  port: ${DIRECTOR_PORT}
-  version: "v0"
+  port: 8080
+  studies_access_enabled: true
+  testing: true
+activity:
+  enabled: true
+  prometheus_api_version: ${WEBSERVER_PROMETHEUS_API_VERSION}
+  prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}
+  prometheus_port: ${WEBSERVER_PROMETHEUS_PORT}
 catalog:
-  enabled: True
+  enabled: true
   host: ${CATALOG_HOST}
   port: ${CATALOG_PORT}
   version: v0
 db:
-  enabled: True
+  enabled: true
   postgres:
     database: ${POSTGRES_DB}
     endpoint: ${POSTGRES_ENDPOINT}
-    user: ${POSTGRES_USER}
-    password: ${POSTGRES_PASSWORD}
     host: ${POSTGRES_HOST}
-    port: ${POSTGRES_PORT}
-    minsize: 1
     maxsize: 50
+    minsize: 1
+    password: ${POSTGRES_PASSWORD}
+    port: ${POSTGRES_PORT}
+    user: ${POSTGRES_USER}
+director:
+  enabled: true
+  host: ${DIRECTOR_HOST}
+  port: ${DIRECTOR_PORT}
+  version: v0
+director-v2:
+  enabled: true
+exporter:
+  enabled: false
+garbage_collector:
+  enabled: true
+groups:
+  enabled: true
+login:
+  enabled: true
+  registration_confirmation_required: false
+  registration_invitation_required: false
+meta_modeling:
+  enabled: false
+products:
+  enabled: true
+projects:
+  enabled: true
+publications:
+  enabled: true
+remote_debug:
+  enabled: false
 resource_manager:
-  enabled: True
-  resource_deletion_timeout_seconds: ${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}
+  enabled: true
   garbage_collection_interval_seconds: ${WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS}
   redis:
     host: ${REDIS_HOST}
     port: ${REDIS_PORT}
-activity:
-  enabled: True
-  prometheus_host: ${WEBSERVER_PROMETHEUS_HOST}
-  prometheus_port: ${WEBSERVER_PROMETHEUS_PORT}
-  prometheus_api_version: ${WEBSERVER_PROMETHEUS_API_VERSION}
-login:
-  enabled: True
-  registration_invitation_required: False
-  registration_confirmation_required: False
-smtp:
-  enabled: True
-  sender: "OSPARC support <support@osparc.io>"
-  host: ${SMTP_HOST}
-  port: ${SMTP_PORT}
-  tls: False
-  username: Null
-  password: Null
+  resource_deletion_timeout_seconds: ${WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS}
 rest:
-  enabled: True
+  enabled: true
   version: v0
-projects:
-  enabled: True
+session:
+  enabled: true
+  secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
+security:
+  enabled: true
+smtp:
+  enabled: true
+  host: ${SMTP_HOST}
+  password: null
+  port: ${SMTP_PORT}
+  sender: OSPARC support <support@osparc.io>
+  tls: false
+  username: null
+socketio:
+  enabled: true
+statics:
+  enabled: true
 storage:
-  enabled: True
+  enabled: true
   host: ${STORAGE_HOST}
   port: ${STORAGE_PORT}
   version: v0
-session:
-  enabled: True
-  secret_key: ${WEBSERVER_SESSION_SECRET_KEY}
+studies_dispatcher:
+  enabled: true
+tags:
+  enabled: true
+tracing:
+  enabled: false
+users:
+  enabled: true
+version_control:
+  enabled: false
