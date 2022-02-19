@@ -11,7 +11,7 @@ import logging
 import re
 from copy import deepcopy
 from pprint import pprint
-from typing import AsyncIterator, Dict
+from typing import AsyncIterator, Callable, Dict
 
 import pytest
 from aiohttp import ClientResponse, ClientSession, web
@@ -19,6 +19,7 @@ from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectLocked, ProjectStatus
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import UserRole
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.aiohttp.rest_responses import unwrap_envelope
@@ -26,12 +27,15 @@ from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.projects_api import delete_project
 from simcore_service_webserver.users_api import delete_user, is_user_guest
+from yarl import URL
 
 SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg, aiohttp_unused_port, redis_service):
+def app_cfg(
+    default_app_cfg: ConfigDict, aiohttp_unused_port: Callable, redis_service: URL
+):
     """App's configuration used for every test in this module
 
     NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup

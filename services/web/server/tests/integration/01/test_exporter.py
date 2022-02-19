@@ -124,10 +124,8 @@ def __drop_and_recreate_postgres__(
 
 
 @pytest.fixture(autouse=True)
-async def __delete_all_redis_keys__(redis_service_up_settings: RedisSettings):
-    client = await aioredis.create_redis_pool(
-        redis_service_up_settings.dsn, encoding="utf-8"
-    )
+async def __delete_all_redis_keys__(redis_settings: RedisSettings):
+    client = await aioredis.create_redis_pool(redis_settings.dsn, encoding="utf-8")
     await client.flushall()
     client.close()
     await client.wait_closed()

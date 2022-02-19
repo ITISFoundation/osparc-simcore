@@ -335,6 +335,7 @@ def postgres_db(
 
 @pytest.fixture(scope="session")
 def redis_service(docker_services, docker_ip) -> URL:
+    # WARNING: overrides pytest_simcore.redis_service.redis_server function-scoped fixture!
 
     host = docker_ip
     port = docker_services.port_for("redis", 6379)
@@ -349,7 +350,7 @@ def redis_service(docker_services, docker_ip) -> URL:
 
 
 @pytest.fixture
-async def redis_client(loop, redis_service):
+async def redis_client(loop, redis_service: URL):
     client = await aioredis.create_redis_pool(str(redis_service), encoding="utf-8")
     yield client
 

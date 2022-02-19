@@ -120,7 +120,7 @@ def patch_list_viewers_info_in_handlers_rest(mocker):
 def app_cfg(
     default_app_cfg,
     aiohttp_unused_port,
-    redis_service,
+    redis_service: URL,
     # patch_list_viewers_info_in_handlers_rest,
     inject_tables,
 ):

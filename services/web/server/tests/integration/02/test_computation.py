@@ -153,7 +153,7 @@ def client(
     loop: asyncio.AbstractEventLoop,
     postgres_session: sa.orm.session.Session,
     rabbit_service: RabbitConfig,
-    redis_service_up_settings: RedisSettings,
+    redis_settings: RedisSettings,
     simcore_services_ready: None,
     aiohttp_client: Callable,
     app_config: Dict[str, Any],  ## waits until swarm with *_services are up

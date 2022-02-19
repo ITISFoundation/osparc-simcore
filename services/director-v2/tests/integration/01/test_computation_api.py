@@ -23,9 +23,9 @@ from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from models_library.settings.rabbit import RabbitConfig
-from models_library.settings.redis import RedisConfig
 from pydantic.types import PositiveInt
 from pytest_mock.plugin import MockerFixture
+from settings_library.redis import RedisSettings
 from shared_comp_utils import (
     COMPUTATION_URL,
     assert_and_wait_for_pipeline_status,
@@ -75,7 +75,7 @@ def minimal_configuration(
     jupyter_service: Dict[str, str],
     dask_scheduler_service: None,
     dask_sidecar_service: None,
-    redis_service: RedisConfig,
+    redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
     rabbit_service: RabbitConfig,
