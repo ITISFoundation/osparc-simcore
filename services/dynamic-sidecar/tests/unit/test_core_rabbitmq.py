@@ -94,12 +94,14 @@ def mock_environment(
     monkeypatch_module.setenv(
         "DY_SIDECAR_STATE_EXCLUDE", json.dumps([str(x) for x in state_exclude_dirs])
     )
-    monkeypatch_module.setenv("RABBIT_HOST", rabbit_service.host)
-    monkeypatch_module.setenv("RABBIT_PORT", f"{rabbit_service.port}")
-    monkeypatch_module.setenv("RABBIT_USER", rabbit_service.user)
+    # TODO: PC->ANE: this is already guaranteed in the pytest_simcore.rabbit_service fixture
+    monkeypatch_module.setenv("RABBIT_HOST", rabbit_service.RABBIT_HOST)
+    monkeypatch_module.setenv("RABBIT_PORT", f"{rabbit_service.RABBIT_PORT}")
+    monkeypatch_module.setenv("RABBIT_USER", rabbit_service.RABBIT_USER)
     monkeypatch_module.setenv(
-        "RABBIT_PASSWORD", rabbit_service.password.get_secret_value()
+        "RABBIT_PASSWORD", rabbit_service.RABBIT_PASSWORD.get_secret_value()
     )
+    # ---
 
     monkeypatch_module.setattr(mounted_fs, "DY_VOLUMES", mock_dy_volumes)
 
