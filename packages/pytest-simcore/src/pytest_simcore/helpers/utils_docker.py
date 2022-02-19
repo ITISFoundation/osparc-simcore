@@ -14,6 +14,12 @@ from tenacity.after import after_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
+COLOR_ENCODING_RE = re.compile(r"\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]")
+MAX_PATH_CHAR_LEN_ALLOWED = 260
+kFILENAME_TOO_LONG = 36
+_NORMPATH_COUNT = 0
+
+
 log = logging.getLogger(__name__)
 
 
@@ -170,12 +176,6 @@ def run_docker_compose_config(
     return compose_file
 
 
-COLOR_ENCODING_RE = re.compile(r"\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]")
-MAX_PATH_CHAR_LEN_ALLOWED = 260
-kFILENAME_TOO_LONG = 36
-_NORMPATH_COUNT = 0
-
-
 def shorten_path(filename: str) -> Path:
     # These paths are composed using test name hierarchies
     # when the test is parametrized, it uses the str of the
@@ -184,7 +184,7 @@ def shorten_path(filename: str) -> Path:
     # This helper function tries to normalize the path
     # Another possibility would be that the path has some
     # problematic characters but so far we did not find any case ...
-    global _NORMPATH_COUNT
+    global _NORMPATH_COUNT  # pylint: disable=global-statement
 
     if len(filename) > MAX_PATH_CHAR_LEN_ALLOWED:
         _NORMPATH_COUNT += 1
@@ -196,7 +196,7 @@ def shorten_path(filename: str) -> Path:
             limit = MAX_PATH_CHAR_LEN_ALLOWED - 10
             filename = filename[:limit] + f"{_NORMPATH_COUNT}{path.suffix}"
 
-        return Path(filename)
+    return Path(filename)
 
 
 def save_docker_infos(destination_path: Path):
