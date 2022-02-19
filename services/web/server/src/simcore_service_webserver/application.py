@@ -35,7 +35,7 @@ from .session import setup_session
 from .socketio.plugin import setup_socketio
 from .statics import setup_statics
 from .storage import setup_storage
-from .studies_dispatcher.module_setup import setup_studies_dispatcher
+from .studies_dispatcher.plugin import setup_studies_dispatcher
 from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
