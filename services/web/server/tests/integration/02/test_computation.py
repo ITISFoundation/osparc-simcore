@@ -17,11 +17,11 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.projects_state import RunningState
 from models_library.settings.rabbit import RabbitConfig
-from models_library.settings.redis import RedisConfig
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.json_serialization import json_dumps
+from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.webserver_models import (
     NodeClass,
@@ -153,7 +153,7 @@ def client(
     loop: asyncio.AbstractEventLoop,
     postgres_session: sa.orm.session.Session,
     rabbit_service: RabbitConfig,
-    redis_service: RedisConfig,
+    redis_service_up_settings: RedisSettings,
     simcore_services_ready: None,
     aiohttp_client: Callable,
     app_config: Dict[str, Any],  ## waits until swarm with *_services are up

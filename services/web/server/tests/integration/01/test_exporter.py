@@ -37,10 +37,10 @@ import aioredis
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.test_utils import TestClient
-from models_library.settings.redis import RedisConfig
 from pytest_simcore.docker_registry import _pull_push_service
 from pytest_simcore.helpers.utils_login import log_client_in
 from servicelib.aiohttp.application import create_safe_application
+from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
@@ -124,8 +124,10 @@ def __drop_and_recreate_postgres__(
 
 
 @pytest.fixture(autouse=True)
-async def __delete_all_redis_keys__(redis_service: RedisConfig):
-    client = await aioredis.create_redis_pool(redis_service.dsn, encoding="utf-8")
+async def __delete_all_redis_keys__(redis_service_up_settings: RedisSettings):
+    client = await aioredis.create_redis_pool(
+        redis_service_up_settings.dsn, encoding="utf-8"
+    )
     await client.flushall()
     client.close()
     await client.wait_closed()

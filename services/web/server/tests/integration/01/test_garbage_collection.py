@@ -14,10 +14,10 @@ import aioredis
 import pytest
 from aioresponses import aioresponses
 from models_library.projects_state import RunningState
-from models_library.settings.redis import RedisConfig
 from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
 from servicelib.aiohttp.application import create_safe_application
+from settings_library.redis import RedisSettings
 from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
@@ -67,8 +67,10 @@ def __drop_and_recreate_postgres__(database_from_template_before_each_function) 
 
 
 @pytest.fixture(autouse=True)
-async def __delete_all_redis_keys__(redis_service: RedisConfig):
-    client = await aioredis.create_redis_pool(redis_service.dsn, encoding="utf-8")
+async def __delete_all_redis_keys__(redis_service_up_settings: RedisSettings):
+    client = await aioredis.create_redis_pool(
+        redis_service_up_settings.dsn, encoding="utf-8"
+    )
     await client.flushall()
     client.close()
     await client.wait_closed()
