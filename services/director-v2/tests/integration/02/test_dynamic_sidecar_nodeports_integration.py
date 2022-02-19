@@ -37,10 +37,10 @@ from models_library.projects import Node, ProjectAtDB, ProjectID, Workbench
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
-from models_library.settings.rabbit import RabbitConfig
 from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_ip
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
@@ -124,7 +124,7 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
-    rabbit_service: RabbitConfig,
+    rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     storage_service: URL,
     dask_scheduler_service: None,
@@ -269,7 +269,7 @@ def mock_env(
     monkeypatch: MonkeyPatch,
     network_name: str,
     dev_features_enabled: str,
-    rabbit_service: RabbitConfig,
+    rabbit_service: RabbitSettings,
 ) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}

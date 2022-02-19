@@ -16,11 +16,11 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.projects_state import RunningState
-from models_library.settings.rabbit import RabbitConfig
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.json_serialization import json_dumps
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.webserver_models import (
@@ -152,7 +152,7 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
 def client(
     loop: asyncio.AbstractEventLoop,
     postgres_session: sa.orm.session.Session,
-    rabbit_service: RabbitConfig,
+    rabbit_service: RabbitSettings,
     redis_settings: RedisSettings,
     simcore_services_ready: None,
     aiohttp_client: Callable,

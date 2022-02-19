@@ -14,8 +14,8 @@ import pytest
 import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from models_library.projects import ProjectAtDB
-from models_library.settings.rabbit import RabbitConfig
 from pytest_simcore.helpers.utils_docker import get_ip
+from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_service_director_v2.core.application import init_app
@@ -59,7 +59,7 @@ def minimal_configuration(
     redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
-    rabbit_service: RabbitConfig,
+    rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     storage_service: URL,
     ensure_swarm_and_networks: None,

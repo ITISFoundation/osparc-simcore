@@ -24,7 +24,7 @@ async def redis_settings(
     docker_stack: Dict,  # stack is up
     testing_environ_vars: Dict,
 ) -> RedisSettings:
-    """Settings of a redis service that is up and responsive"""
+    """Returns the settings of a redis service that is up and responsive"""
 
     prefix = testing_environ_vars["SWARM_STACK_NAME"]
     assert f"{prefix}_redis" in docker_stack["services"]
@@ -44,7 +44,10 @@ def redis_service(
     redis_settings: RedisSettings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> RedisSettings:
-    """Sets env vars for a redis service is up and responsive. Use this fixture to setup client app"""
+    """Sets env vars for a redis service is up and responsive and returns its settings as well
+
+    NOTE: Use this fixture to setup client app
+    """
     monkeypatch.setenv("REDIS_HOST", redis_settings.REDIS_HOST)
     monkeypatch.setenv("REDIS_PORT", str(redis_settings.REDIS_PORT))
     return redis_settings

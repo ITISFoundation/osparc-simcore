@@ -17,9 +17,9 @@ from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.rabbitmq_messages import LoggerRabbitMessage
-from models_library.settings.rabbit import RabbitConfig
 from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
+from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar.core.application import assemble_application
 from simcore_service_dynamic_sidecar.core.rabbitmq import SLEEP_BETWEEN_SENDS, RabbitMQ
 from simcore_service_dynamic_sidecar.modules import mounted_fs
@@ -75,7 +75,7 @@ def mock_environment(
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
-    rabbit_service: RabbitConfig,
+    rabbit_service: RabbitSettings,
 ) -> None:
     monkeypatch_module.setenv("SC_BOOT_MODE", "production")
     monkeypatch_module.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", compose_namespace)
@@ -116,7 +116,7 @@ def app(mock_environment: None) -> FastAPI:
 
 
 async def test_rabbitmq(
-    rabbit_service: RabbitConfig,
+    rabbit_service: RabbitSettings,
     rabbit_queue: aio_pika.Queue,
     mocker: MockerFixture,
     user_id: UserID,

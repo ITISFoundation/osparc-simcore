@@ -20,11 +20,11 @@ from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
     ProgressRabbitMessage,
 )
-from models_library.settings.rabbit import RabbitConfig
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.rabbit_service import RabbitExchanges
 from servicelib.aiohttp.application import create_safe_application
+from settings_library.rabbit import RabbitSettings
 from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.computation import setup_computation
@@ -157,7 +157,7 @@ def client(
     loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_config: Dict[str, Any],  ## waits until swarm with *_services are up
-    rabbit_service: RabbitConfig,  ## waits until rabbit is responsive and set env vars
+    rabbit_service: RabbitSettings,  ## waits until rabbit is responsive and set env vars
     postgres_db: sa.engine.Engine,
     mocker: MockerFixture,
     monkeypatch_setenv_from_app_config: Callable,
