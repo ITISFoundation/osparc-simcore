@@ -13,6 +13,7 @@ from simcore_service_webserver.application_settings_utils import (
 def test_settings_infered_from_default_tests_config(
     default_app_cfg: ConfigDict, monkeypatch_setenv_from_app_config: Callable
 ):
+    # TODO: use app_config_for_production_legacy
     envs = monkeypatch_setenv_from_app_config(default_app_cfg)
     assert envs == convert_to_environ_vars(default_app_cfg)
 
