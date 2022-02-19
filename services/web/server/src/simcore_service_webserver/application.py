@@ -8,7 +8,7 @@ from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
 
 from ._meta import WELCOME_MSG
-from .activity.module_setup import setup_activity
+from .activity.plugin import setup_activity
 from .application_settings import setup_settings
 from .catalog import setup_catalog
 from .clusters.module_setup import setup_clusters
