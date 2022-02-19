@@ -70,35 +70,38 @@ async def test_wrong_confirm_pass(client: TestClient, cfg: LoginOptions):
 
 
 async def test_success(client: TestClient, cfg: LoginOptions):
-    url = client.app.router["auth_change_password"].url_for()
-    login_url = client.app.router["auth_login"].url_for()
-    logout_url = client.app.router["auth_logout"].url_for()
+    url_change_password = client.app.router["auth_change_password"].url_for()
+    url_login = client.app.router["auth_login"].url_for()
+    url_logout = client.app.router["auth_logout"].url_for()
 
     async with LoggedUser(client) as user:
+        # change password
         rsp = await client.post(
-            f"{url}",
+            f"{url_change_password}",
             json={
                 "current": user["raw_password"],
                 "new": NEW_PASSWORD,
                 "confirm": NEW_PASSWORD,
             },
         )
-        assert rsp.url_obj.path == url.path
+        assert rsp.url_obj.path == url_change_password.path
         assert rsp.status == 200
         assert cfg.MSG_PASSWORD_CHANGED in await rsp.text()
         await assert_status(rsp, web.HTTPOk, cfg.MSG_PASSWORD_CHANGED)
 
-        rsp = await client.post(f"{logout_url}")
+        # logout
+        rsp = await client.post(f"{url_logout}")
         assert rsp.status == 200
-        assert rsp.url_obj.path == logout_url.path
+        assert rsp.url_obj.path == url_logout.path
 
+        # login with new password
         rsp = await client.post(
-            f"{logout_url}",
+            f"{url_login}",
             json={
                 "email": user["email"],
                 "password": NEW_PASSWORD,
             },
         )
         assert rsp.status == 200
-        assert rsp.url_obj.path == login_url.path
+        assert rsp.url_obj.path == url_login.path
         await assert_status(rsp, web.HTTPOk, cfg.MSG_LOGGED_IN)
