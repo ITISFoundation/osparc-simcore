@@ -52,6 +52,8 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
     ].forEach(event => {
       this.addListener(event, e => this.__resizeMe(), this);
     });
+
+    this.setHeight(1);
   },
 
   properties: {

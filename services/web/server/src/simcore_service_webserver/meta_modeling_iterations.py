@@ -17,7 +17,6 @@ from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
 from models_library.services import ServiceDockerData
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
-from simcore_service_webserver.version_control_errors import UserUndefined
 
 from .meta_modeling_function_nodes import (
     FRONTEND_SERVICE_TO_CALLABLE,
@@ -29,6 +28,7 @@ from .meta_modeling_version_control import (
     VersionControlForMetaModeling,
 )
 from .utils import compute_sha1_on_small_dataset, now_str
+from .version_control_errors import UserUndefined
 
 log = logging.getLogger(__file__)
 

@@ -21,8 +21,9 @@ qx.Class.define("osparc.studycard.Large", {
 
   /**
     * @param study {osparc.data.model.Study|Object} Study or Serialized Study Object
+    * @param openOptions {Boolean} open edit options in new window or fire event
     */
-  construct: function(study) {
+  construct: function(study, openOptions = true) {
     this.base(arguments);
 
     this.set({
@@ -38,6 +39,10 @@ qx.Class.define("osparc.studycard.Large", {
       this.setStudy(studyModel);
     }
 
+    if (openOptions !== undefined) {
+      this.setOpenOptions(openOptions);
+    }
+
     this.addListenerOnce("appear", () => {
       this.__rebuildLayout();
     }, this);
@@ -47,6 +52,9 @@ qx.Class.define("osparc.studycard.Large", {
   },
 
   events: {
+    "openAccessRights": "qx.event.type.Event",
+    "openClassifiers": "qx.event.type.Event",
+    "openQuality": "qx.event.type.Event",
     "updateStudy": "qx.event.type.Data",
     "updateTags": "qx.event.type.Data"
   },
@@ -55,6 +63,12 @@ qx.Class.define("osparc.studycard.Large", {
     study: {
       check: "osparc.data.model.Study",
       init: null,
+      nullable: false
+    },
+
+    openOptions: {
+      check: "Boolean",
+      init: true,
       nullable: false
     }
   },
@@ -161,7 +175,7 @@ qx.Class.define("osparc.studycard.Large", {
         view: this.__createAccessRights(),
         action: {
           button: osparc.utils.Utils.getViewButton(),
-          callback: this.__openAccessRights,
+          callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
           ctx: this
         }
       }, {
@@ -169,7 +183,7 @@ qx.Class.define("osparc.studycard.Large", {
         view: this.__createClassifiers(),
         action: (this.getStudy().getClassifiers().length || this.__isOwner()) ? {
           button: osparc.utils.Utils.getViewButton(),
-          callback: this.__openClassifiers,
+          callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
           ctx: this
         } : null
       }];
@@ -180,7 +194,7 @@ qx.Class.define("osparc.studycard.Large", {
           view: this.__createQuality(),
           action: {
             button: osparc.utils.Utils.getViewButton(),
-            callback: this.__openQuality,
+            callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
             ctx: this
           }
         });

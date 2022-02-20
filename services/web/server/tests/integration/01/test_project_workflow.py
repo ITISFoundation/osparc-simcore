@@ -12,8 +12,7 @@ import asyncio
 import json
 from copy import deepcopy
 from pathlib import Path
-from pprint import pprint
-from typing import Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 from uuid import uuid4
 
 import pytest
@@ -26,6 +25,7 @@ from simcore_service_webserver import catalog
 from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2 import setup_director_v2
+from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.login.module_setup import setup_login
 from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects.module_setup import setup_projects
@@ -57,6 +57,7 @@ def client(
     mock_orphaned_services,
     aiohttp_client,
     app_config,  # waits until swarm with *_services are up
+    monkeypatch_setenv_from_app_config: Callable,
 ):
     assert app_config["rest"]["version"] == API_VERSION
 
@@ -65,8 +66,7 @@ def client(
     app_config["storage"]["enabled"] = False
     app_config["computation"]["enabled"] = False
 
-    pprint(app_config)
-
+    monkeypatch_setenv_from_app_config(app_config)
     app = create_safe_application(app_config)
 
     setup_db(app)
@@ -75,6 +75,7 @@ def client(
     setup_rest(app)
     setup_login(app)
     setup_resource_manager(app)
+    setup_garbage_collector(app)
     assert setup_projects(app)
     setup_catalog(app)
     setup_products(app)

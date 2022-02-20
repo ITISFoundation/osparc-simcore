@@ -25,7 +25,6 @@ from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.rabbit_service import RabbitExchanges
 from servicelib.aiohttp.application import create_safe_application
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.diagnostics import setup_diagnostics
@@ -159,12 +158,12 @@ def client(
     rabbit_service: RabbitConfig,  ## waits until rabbit is responsive and set env vars
     postgres_db: sa.engine.Engine,
     mocker: MockerFixture,
+    monkeypatch_setenv_from_app_config: Callable,
 ):
     app_config["storage"]["enabled"] = False
 
-    # fake config
-    app = create_safe_application()
-    app[APP_CONFIG_KEY] = app_config
+    monkeypatch_setenv_from_app_config(app_config)
+    app = create_safe_application(app_config)
 
     setup_db(app)
     setup_session(app)
@@ -176,17 +175,8 @@ def client(
     setup_computation(app)
     setup_director_v2(app)
     setup_socketio(app)
-
-    # GC not relevant for these test-suite,
-    mocker.patch(
-        "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
-        side_effect=lambda app: print(
-            f"PATCH @{__name__}:"
-            "Garbage collector disabled."
-            "Mock bypasses setup_garbage_collector to skip initializing the GC"
-        ),
-    )
     setup_resource_manager(app)
+    # GC not relevant for these test-suite,
 
     return loop.run_until_complete(
         aiohttp_client(

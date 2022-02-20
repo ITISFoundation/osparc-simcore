@@ -1,13 +1,14 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
+# pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
-# pylint:disable=protected-access
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
 
 import asyncio
 import time
 import uuid
 from dataclasses import dataclass
+from typing import Callable
 
 import docker
 import pytest
@@ -23,10 +24,10 @@ async def run_services(
     docker_swarm,
     user_id,
     project_id,
-):
+) -> Callable:
     started_services = []
 
-    async def push_start_services(number_comp, number_dyn, dependant=False):
+    async def push_start_services(number_comp: int, number_dyn: int, dependant=False):
         pushed_services = await push_services(
             number_comp, number_dyn, inter_dependent_services=dependant
         )
@@ -95,7 +96,10 @@ async def run_services(
     # teardown stop the services
     for service in started_services:
         service_uuid = service["service_uuid"]
-        await producer.stop_service(aiohttp_mock_app, service_uuid, True)
+        # NOTE: Fake services are not even web-services therefore we cannot
+        # even emulate a legacy dy-service that does not implement a save-state feature
+        # so here we must make save_state=False
+        await producer.stop_service(aiohttp_mock_app, service_uuid, save_state=False)
         with pytest.raises(exceptions.ServiceUUIDNotFoundError):
             await producer.get_service_details(aiohttp_mock_app, service_uuid)
 

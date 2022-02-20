@@ -81,7 +81,7 @@ chardet==4.0.0
     #   requests
 charset-normalizer==2.0.7
     # via httpx
-click==7.1.2
+click==8.0.3
     # via
     #   typer
     #   uvicorn
@@ -233,6 +233,8 @@ pyrsistent==0.18.0
     # via jsonschema
 python-dotenv==0.18.0
     # via docker-compose
+python-magic==0.4.25
+    # via -r requirements/_base.in
 pyyaml==5.4.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

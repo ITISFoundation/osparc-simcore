@@ -8,23 +8,23 @@ aiohttp==3.8.1
     # via -r requirements.in
 aiosignal==1.2.0
     # via aiohttp
-anyio==3.4.0
+anyio==3.5.0
     # via starlette
-async-timeout==4.0.1
+async-timeout==4.0.2
     # via aiohttp
-attrs==21.2.0
+attrs==21.4.0
     # via aiohttp
 certifi==2021.10.8
     # via requests
-charset-normalizer==2.0.8
+charset-normalizer==2.0.11
     # via
     #   aiohttp
     #   requests
 docker==5.0.3
     # via -r requirements.in
-fastapi==0.70.0
+fastapi==0.73.0
     # via -r requirements.in
-frozenlist==1.2.0
+frozenlist==1.3.0
     # via
     #   aiohttp
     #   aiosignal
@@ -33,7 +33,7 @@ idna==3.3
     #   anyio
     #   requests
     #   yarl
-multidict==5.2.0
+multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
@@ -41,19 +41,17 @@ pydantic==1.9.0
     # via fastapi
 pyjwt==2.3.0
     # via -r requirements.in
-requests==2.26.0
+requests==2.27.1
     # via docker
 sniffio==1.2.0
     # via anyio
-starlette==0.16.0
+starlette==0.17.1
     # via fastapi
-typing-extensions==4.0.0
-    # via
-    #   async-timeout
-    #   pydantic
-urllib3==1.26.7
+typing-extensions==4.0.1
+    # via pydantic
+urllib3==1.26.8
     # via requests
-websocket-client==1.2.1
+websocket-client==1.2.3
     # via docker
 yarl==1.7.2
     # via aiohttp

@@ -107,7 +107,7 @@ qx.Class.define("osparc.desktop.MainPage", {
       const dashboardBtn = this.__navBar.getChildControl("dashboard-button");
       dashboardBtn.setFetching(true);
       const studyId = this.__studyEditor.getStudy().getUuid();
-      this.__studyEditor.updateStudyDocument()
+      this.__studyEditor.updateStudyDocument(false)
         .then(() => {
           this.__studyEditor.closeEditor();
           this.__showDashboard();

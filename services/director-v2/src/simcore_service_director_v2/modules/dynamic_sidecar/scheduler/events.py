@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import deque
-from typing import Any, Deque, Dict, List, Optional, Type
+from typing import Any, Deque, Dict, List, Optional, Set, Type
 
 import httpx
 from fastapi import FastAPI
@@ -20,15 +20,16 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential, wait_fixed
 
 from ....api.dependencies.database import get_base_repository
-from ....core.settings import DynamicSidecarSettings
-from ....modules.db.repositories import BaseRepository
+from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import (
     DockerContainerInspect,
     DynamicSidecarStatus,
     SchedulerData,
 )
+from ....modules.db.repositories import BaseRepository
 from ....modules.director_v0 import DirectorV0Client
 from ...db.repositories.projects import ProjectsRepository
+from .._namepsace import get_compose_namespace
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     create_network,
@@ -52,9 +53,9 @@ from ..errors import (
     EntrypointContainerNotFoundError,
     GenericDockerError,
 )
+from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
 from .abc import DynamicSchedulerEvent
 from .events_utils import disabled_directory_watcher
-
 
 logger = logging.getLogger(__name__)
 
@@ -248,19 +249,27 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        app_settings: AppSettings = app.state.settings
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
         async with disabled_directory_watcher(
             dynamic_sidecar_client, dynamic_sidecar_endpoint
         ):
-            # below tasks can take a while, running them in parallel
-            await logged_gather(
-                dynamic_sidecar_client.service_restore_state(dynamic_sidecar_endpoint),
+            tasks = [
                 dynamic_sidecar_client.service_pull_output_ports(
                     dynamic_sidecar_endpoint
-                ),
-            )
+                )
+            ]
+            # When enabled no longer downloads state via nodeports
+            # S3 is used to store state paths
+            if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+                tasks.append(
+                    dynamic_sidecar_client.service_restore_state(
+                        dynamic_sidecar_endpoint
+                    )
+                )
+            await logged_gather(*tasks)
 
             # inside this directory create the missing dirs, fetch those form the labels
             director_v0_client: DirectorV0Client = _get_director_v0_client(app)
@@ -433,8 +442,9 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 str(e),
             )
 
+        app_settings: AppSettings = app.state.settings
         dynamic_sidecar_settings: DynamicSidecarSettings = (
-            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+            app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
 
         if scheduler_data.dynamic_sidecar.service_removal_state.can_save:
@@ -445,15 +455,21 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 "Calling into dynamic-sidecar to save state and pushing data to nodeports"
             )
             try:
-                await logged_gather(
+                tasks = [
                     dynamic_sidecar_client.service_push_output_ports(
                         dynamic_sidecar_endpoint,
-                    ),
-                    dynamic_sidecar_client.service_save_state(
-                        dynamic_sidecar_endpoint,
-                    ),
-                )
-                logger.info("State saved by dynamic-sidecar")
+                    )
+                ]
+                # When enabled no longer uploads state via nodeports
+                # S3 is used to store state paths
+                if not app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+                    tasks.append(
+                        dynamic_sidecar_client.service_save_state(
+                            dynamic_sidecar_endpoint,
+                        )
+                    )
+                await logged_gather(*tasks)
+                logger.info("Ports data pushed by dynamic-sidecar")
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(
                     (
@@ -475,6 +491,22 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         )
 
         # remove created inputs and outputs volumes
+
+        # compute which volumes we expected to be removed
+        # in case the expected volumes differ from the removed ones
+        # show an error
+        compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
+        expected_volumes_to_remove: Set[str] = {
+            DynamicSidecarVolumesPathsResolver.source(
+                compose_namespace=compose_namespace, path=path
+            )
+            for path in [
+                scheduler_data.paths_mapping.inputs_path,
+                scheduler_data.paths_mapping.outputs_path,
+            ]
+            + scheduler_data.paths_mapping.state_paths
+        }
+
         async for attempt in AsyncRetrying(
             wait=wait_exponential(min=1),
             stop=stop_after_delay(20),
@@ -484,7 +516,21 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 logger.info(
                     "Trying to remove volumes for %s", scheduler_data.service_name
                 )
-                await remove_dynamic_sidecar_volumes(scheduler_data.node_uuid)
+
+                removed_volumes = await remove_dynamic_sidecar_volumes(
+                    scheduler_data.node_uuid
+                )
+
+                if expected_volumes_to_remove != removed_volumes:
+                    logger.warning(
+                        (
+                            "Attention expected to remove %s, instead only removed %s. "
+                            "Please check with check that all expected to remove volumes "
+                            "are now gone."
+                        ),
+                        expected_volumes_to_remove,
+                        removed_volumes,
+                    )
 
         logger.debug(
             "Removed dynamic-sidecar created services for '%s'",

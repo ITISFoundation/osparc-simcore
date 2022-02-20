@@ -1,4 +1,9 @@
-# pylint:disable=redefined-outer-name,unused-argument,too-many-arguments
+# pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
+
 import asyncio
 import cgi
 import itertools
@@ -17,7 +22,6 @@ from typing import (
     Awaitable,
     Callable,
     Dict,
-    Iterable,
     Iterator,
     List,
     Set,
@@ -57,11 +61,16 @@ from simcore_service_webserver.application import (
     setup_storage,
     setup_users,
 )
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects
 from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
 from simcore_service_webserver.exporter.file_downloader import ParallelDownloader
+from simcore_service_webserver.exporter.settings import (
+    get_settings as get_exporter_settings,
+)
+from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.scicrunch.submodule_setup import (
     setup_scicrunch_submodule,
 )
@@ -134,18 +143,26 @@ def client(
     app_config: Dict,
     postgres_with_template_db: aiopg.sa.engine.Engine,
     mock_orphaned_services: mock.Mock,
+    monkeypatch_setenv_from_app_config: Callable,
 ):
+    # test config & env vars ----------------------
     cfg = deepcopy(app_config)
-
     assert cfg["rest"]["version"] == API_VERSION
     assert cfg["rest"]["enabled"]
+
     cfg["projects"]["enabled"] = True
     cfg["director"]["enabled"] = True
+    cfg["exporter"]["enabled"] = True
 
-    # fake config
+    monkeypatch_setenv_from_app_config(cfg)
+
+    # app setup ----------------------------------
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules
+    setup_settings(app)
+    assert get_exporter_settings(app) is not None, "Should capture defaults"
+
     setup_db(app)
     setup_session(app)
     setup_security(app)
@@ -156,12 +173,13 @@ def client(
     setup_projects(app)
     setup_director(app)
     setup_director_v2(app)
-    setup_exporter(app)
+    setup_exporter(app)  # <---- under test
     setup_storage(app)
     setup_products(app)
     setup_catalog(app)
     setup_scicrunch_submodule(app)
     assert setup_resource_manager(app)
+    setup_garbage_collector(app)
 
     yield loop.run_until_complete(
         aiohttp_client(
@@ -267,7 +285,7 @@ def push_services_to_registry(docker_registry: str, node_meta_schema: Dict) -> N
 
 
 @contextmanager
-def assemble_tmp_file_path(file_name: str) -> Iterable[Path]:
+def assemble_tmp_file_path(file_name: str) -> Iterator[Path]:
     # pylint: disable=protected-access
     # let us all thank codeclimate for this beautiful piece of code
     tmp_store_dir = Path("/") / f"tmp/{next(tempfile._get_candidate_names())}"

@@ -6,9 +6,14 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from servicelib.aiohttp.application_setup import (
+    ModuleCategory,
+    SkipModuleSetup,
+    app_module_setup,
+)
 
 from . import meta_modeling_handlers
+from ._constants import APP_SETTINGS_KEY
 from .director_v2_api import get_project_run_policy, set_project_run_policy
 from .meta_modeling_projects import meta_project_policy, projects_redirection_middleware
 
@@ -20,11 +25,17 @@ log = logging.getLogger(__name__)
     ModuleCategory.ADDON,
     depends=[
         "simcore_service_webserver.projects",
-        "simcore_service_webserver.version_control",
+        ## FIXME: tmp disabled so it can start "simcore_service_webserver.version_control",
     ],
     logger=log,
 )
 def setup_meta_modeling(app: web.Application):
+
+    if not app[APP_SETTINGS_KEY].WEBSERVER_META_MODELING:
+        raise SkipModuleSetup(
+            reason="{__name__} plugin was explictly disabled in the app settings"
+        )
+
     app.add_routes(meta_modeling_handlers.routes)
     app.middlewares.append(projects_redirection_middleware)
 

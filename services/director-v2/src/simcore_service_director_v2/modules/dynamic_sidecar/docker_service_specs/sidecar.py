@@ -5,8 +5,8 @@ from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from servicelib.json_serialization import json_dumps
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
-from ....models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
+from .._namepsace import get_compose_namespace
 from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
 from .settings import inject_settings_to_create_service_params
 
@@ -75,10 +75,7 @@ def get_dynamic_sidecar_spec(
     of the dynamic service. The director-v2 directly coordinates with
     the dynamic-sidecar for this purpose.
     """
-    # To avoid collisions for started docker resources a unique identifier is computed:
-    # - avoids container level collisions on same node
-    # - avoids volume level collisions on same node
-    compose_namespace = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{scheduler_data.node_uuid}"
+    compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
 
     mounts = [
         # docker socket needed to use the docker api
@@ -102,14 +99,35 @@ def get_dynamic_sidecar_spec(
     for path_to_mount in [
         scheduler_data.paths_mapping.inputs_path,
         scheduler_data.paths_mapping.outputs_path,
-    ] + scheduler_data.paths_mapping.state_paths:
+    ]:
         mounts.append(
             DynamicSidecarVolumesPathsResolver.mount_entry(
                 compose_namespace=compose_namespace,
                 path=path_to_mount,
-                node_uuid=f"{scheduler_data.node_uuid}",
+                node_uuid=scheduler_data.node_uuid,
             )
         )
+    # state paths now get mounted via different driver and are synced to s3 automatically
+    for path_to_mount in scheduler_data.paths_mapping.state_paths:
+        # for now only enable this with dev features enabled
+        if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+            mounts.append(
+                DynamicSidecarVolumesPathsResolver.mount_r_clone(
+                    compose_namespace=compose_namespace,
+                    path=path_to_mount,
+                    project_id=scheduler_data.project_id,
+                    node_uuid=scheduler_data.node_uuid,
+                    r_clone_settings=dynamic_sidecar_settings.DYNAMIC_SIDECAR_R_CLONE_SETTINGS,
+                )
+            )
+        else:
+            mounts.append(
+                DynamicSidecarVolumesPathsResolver.mount_entry(
+                    compose_namespace=compose_namespace,
+                    path=path_to_mount,
+                    node_uuid=scheduler_data.node_uuid,
+                )
+            )
 
     endpint_spec = {}
 

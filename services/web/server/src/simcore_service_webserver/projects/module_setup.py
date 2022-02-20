@@ -22,7 +22,6 @@ from . import projects_handlers, projects_nodes_handlers, projects_tags_handlers
 from .config import CONFIG_SECTION_NAME
 from .projects_access import setup_projects_access
 from .projects_db import setup_projects_db
-from .settings import assert_valid_config
 
 logger = logging.getLogger(__name__)
 
@@ -63,11 +62,6 @@ def _create_routes(tag, specs, *handlers_module, disable_login: bool = False):
     logger=logger,
 )
 def setup_projects(app: web.Application) -> bool:
-    # ----------------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    assert_valid_config(app)
-    # ---------------------------------------------
 
     # API routes
     specs = app[APP_OPENAPI_SPECS_KEY]

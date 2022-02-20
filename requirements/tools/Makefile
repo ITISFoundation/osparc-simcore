@@ -74,7 +74,10 @@ reqs-all: guard-UPGRADE_OPTION ## updates a give package repository-wise (e.g. m
 	# Upgrading $(upgrade) ALL requirements
 	@$(foreach p,${_inputs-all},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OPTION);)
 
-
+reqs-ci: ## upgrades requirements for pylint recipe in CI
+	cd $(REPODIR)/ci/helpers \
+	&& rm requirements.txt \
+	&& pip-compile --output-file=requirements.txt requirements.in
 
 IMAGE_NAME:=local/python-devkit:${PYTHON_VERSION}
 

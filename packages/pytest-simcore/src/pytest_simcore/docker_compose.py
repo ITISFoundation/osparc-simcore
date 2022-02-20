@@ -11,6 +11,7 @@
 import json
 import os
 import shutil
+import subprocess
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -19,7 +20,8 @@ from typing import Any, Dict, Iterator, List
 import pytest
 import yaml
 from _pytest.config import ExitCode
-from dotenv import dotenv_values
+from _pytest.monkeypatch import MonkeyPatch
+from dotenv import dotenv_values, set_key
 
 from .helpers import (
     FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
@@ -155,8 +157,45 @@ def simcore_docker_compose(
 
 
 @pytest.fixture(scope="module")
+def inject_filestash_config_path(
+    osparc_simcore_scripts_dir: Path,
+    monkeypatch_module: MonkeyPatch,
+    env_file_for_testing: Path,
+) -> None:
+    create_filestash_config_py = (
+        osparc_simcore_scripts_dir / "filestash" / "create_config.py"
+    )
+
+    # ensures .env at git_root_dir, which will be used as current directory
+    assert env_file_for_testing.exists()
+    env_values = dotenv_values(env_file_for_testing)
+
+    process = subprocess.run(
+        ["python3", f"{create_filestash_config_py}"],
+        shell=False,
+        check=True,
+        stdout=subprocess.PIPE,
+        env=env_values,
+    )
+    filestash_config_json_path = Path(process.stdout.decode("utf-8").strip())
+    assert filestash_config_json_path.exists()
+
+    set_key(
+        env_file_for_testing,
+        "TMP_PATH_TO_FILESTASH_CONFIG",
+        f"{filestash_config_json_path}",
+    )
+    monkeypatch_module.setenv(
+        "TMP_PATH_TO_FILESTASH_CONFIG", f"{filestash_config_json_path}"
+    )
+
+
+@pytest.fixture(scope="module")
 def ops_docker_compose(
-    osparc_simcore_root_dir: Path, env_file_for_testing: Path, temp_folder: Path
+    osparc_simcore_root_dir: Path,
+    env_file_for_testing: Path,
+    temp_folder: Path,
+    inject_filestash_config_path: None,
 ) -> Dict[str, Any]:
     """Filters only services in docker-compose-ops.yml and returns yaml data
 

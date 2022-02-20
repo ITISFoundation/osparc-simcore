@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_dask-distributed.txt --strip-extras requirements/_dask-distributed.in
 #
-click==7.1.2
+click==8.0.3
     # via
     #   -c requirements/./_base.txt
     #   distributed

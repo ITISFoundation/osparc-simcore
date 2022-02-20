@@ -1,7 +1,6 @@
 // node 2D_Plot.js [url_prefix] [template_uuid] [--demo]
 
 const tutorialBase = require('../tutorials/tutorialBase');
-const auto = require('../utils/auto');
 const utils = require('../utils/utils');
 
 const args = process.argv.slice(2);
@@ -22,8 +21,6 @@ async function runTutorial () {
   try {
     const page = await tutorial.beforeScript();
     const studyData = await tutorial.openStudyLink();
-    const studyId = studyData["data"]["uuid"];
-    console.log("Study ID:", studyId);
 
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
     const nodeIdViewer = workbenchData["nodeIds"][1];
@@ -31,9 +28,6 @@ async function runTutorial () {
 
     await tutorial.waitFor(5000, 'Some time for starting the service');
     await utils.takeScreenshot(page, screenshotPrefix + 'service_started');
-
-    // await tutorial.openNode(1);
-    auto.openNode(page, 1);
 
     await tutorial.waitFor(2000);
     await utils.takeScreenshot(page, screenshotPrefix + 'iFrame0');

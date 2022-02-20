@@ -96,6 +96,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     __workbenchPanel: null,
     __workbenchPanelPage: null,
     __workbenchUI: null,
+    __workbenchUIConnected: null,
     __iframePage: null,
     __loggerView: null,
     __currentNodeId: null,
@@ -491,31 +492,34 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           }
         }
       });
-      workbenchUI.addListener("changeSelectedNode", e => {
-        const nodeId = e.getData();
-        if (nodeId) {
+
+      if (this.__workbenchUIConnected === null) {
+        workbenchUI.addListener("changeSelectedNode", e => {
+          const nodeId = e.getData();
+          if (nodeId) {
+            studyTreeItem.resetSelection();
+            this.__nodesTree.nodeSelected(nodeId);
+            const workbench = this.getStudy().getWorkbench();
+            const node = workbench.getNode(nodeId);
+            this.__populateSecondPanel(node);
+            this.__evalIframe(node);
+            this.__loggerView.setCurrentNodeId(nodeId);
+          } else {
+            // empty selection
+            this.__studyTreeItem.selectStudyItem();
+          }
+        });
+        workbenchUI.addListener("nodeSelected", e => {
           studyTreeItem.resetSelection();
+          const nodeId = e.getData();
           this.__nodesTree.nodeSelected(nodeId);
           const workbench = this.getStudy().getWorkbench();
           const node = workbench.getNode(nodeId);
           this.__populateSecondPanel(node);
-          this.__evalIframe(node);
+          this.__openIframeTab(node);
           this.__loggerView.setCurrentNodeId(nodeId);
-        } else {
-          // empty selection
-          this.__studyTreeItem.selectStudyItem();
-        }
-      });
-      workbenchUI.addListener("nodeSelected", e => {
-        studyTreeItem.resetSelection();
-        const nodeId = e.getData();
-        this.__nodesTree.nodeSelected(nodeId);
-        const workbench = this.getStudy().getWorkbench();
-        const node = workbench.getNode(nodeId);
-        this.__populateSecondPanel(node);
-        this.__openIframeTab(node);
-        this.__loggerView.setCurrentNodeId(nodeId);
-      }, this);
+        }, this);
+      }
 
       nodesTree.addListener("fullscreenNode", e => {
         studyTreeItem.resetSelection();
@@ -541,18 +545,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__removeNode(nodeId);
       }, this);
 
-      workbenchUI.addListener("removeNode", e => {
-        const nodeId = e.getData();
-        this.__removeNode(nodeId);
-      }, this);
-      workbenchUI.addListener("removeNodes", e => {
-        const nodeIds = e.getData();
-        this.__removeNodes(nodeIds);
-      }, this);
-      workbenchUI.addListener("removeEdge", e => {
-        const edgeId = e.getData();
-        this.__removeEdge(edgeId);
-      }, this);
+      if (this.__workbenchUIConnected === null) {
+        workbenchUI.addListener("removeNode", e => {
+          const nodeId = e.getData();
+          this.__removeNode(nodeId);
+        }, this);
+        workbenchUI.addListener("removeNodes", e => {
+          const nodeIds = e.getData();
+          this.__removeNodes(nodeIds);
+        }, this);
+        workbenchUI.addListener("removeEdge", e => {
+          const edgeId = e.getData();
+          this.__removeEdge(edgeId);
+        }, this);
+      }
 
       const workbench = this.getStudy().getWorkbench();
       workbench.addListener("pipelineChanged", this.__workbenchChanged, this);
@@ -570,6 +576,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           tabViewLeftPanel.setSelection([this.__storagePage]);
         }
       }, this);
+
+      this.__workbenchUIConnected = true;
     },
 
     __attachSocketEventHandlers: function() {
@@ -799,8 +807,20 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         flex: 1
       });
       this.__studyOptionsPage.add(this.__getSlideshowSection());
-      this.__studyOptionsPage.add(this.__getSnapshotsSection());
-      this.__studyOptionsPage.add(this.__getIterationsSection());
+
+      osparc.utils.DisabledPlugins.isVersionControlDisabled()
+        .then(isDisabled => {
+          if (!isDisabled) {
+            this.__studyOptionsPage.add(this.__getSnapshotsSection());
+          }
+        });
+
+      osparc.utils.DisabledPlugins.isMetaModelingDisabled()
+        .then(isDisabled => {
+          if (!isDisabled) {
+            this.__studyOptionsPage.add(this.__getIterationsSection());
+          }
+        });
     },
 
     __getSlideshowSection: function() {

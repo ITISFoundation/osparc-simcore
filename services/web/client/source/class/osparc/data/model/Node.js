@@ -156,7 +156,8 @@ qx.Class.define("osparc.data.model.Node", {
     propsForm: {
       check: "osparc.component.form.renderer.PropForm",
       init: null,
-      nullable: true
+      nullable: true,
+      apply: "__applyPropsForm"
     },
 
     propsFormEditor: {
@@ -253,6 +254,7 @@ qx.Class.define("osparc.data.model.Node", {
     __posX: null,
     __posY: null,
     __unresponsiveRetries: null,
+    __stopRequestingStatus: null,
 
     getWorkbench: function() {
       return this.getStudy().getWorkbench();
@@ -495,7 +497,7 @@ qx.Class.define("osparc.data.model.Node", {
         });
     },
 
-    stopInBackend: function() {
+    __deleteInBackend: function() {
       // remove node in the backend
       const params = {
         url: {
@@ -511,6 +513,15 @@ qx.Class.define("osparc.data.model.Node", {
       if (this.__outputWidget) {
         this.__outputWidget.populatePortsData();
       }
+    },
+
+    __applyPropsForm: function() {
+      const checkIsPipelineRunning = () => {
+        const isPipelineRunning = this.getStudy().isPipelineRunning();
+        this.getPropsForm().setEnabled(!isPipelineRunning);
+      };
+      this.getStudy().addListener("changeState", () => checkIsPipelineRunning(), this);
+      checkIsPipelineRunning();
     },
 
     getInputsDefaultWidget: function() {
@@ -872,14 +883,19 @@ qx.Class.define("osparc.data.model.Node", {
       return this.tr("Starting ") + label;
     },
 
+    __getExtraMessages: function() {
+      if (this.getKey() && this.getKey().includes("pub-nat-med")) {
+        return [
+          this.tr("This might take a couple of minutes")
+        ];
+      }
+      return [];
+    },
+
     __initLoadingIPage: function() {
-      const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), [], true);
-      this.addListener("changeLabel", e => {
-        loadingPage.setHeader(this.__getLoadingPageHeader());
-      }, this);
-      this.getStatus().addListener("changeInteractive", e => {
-        loadingPage.setHeader(this.__getLoadingPageHeader());
-      }, this);
+      const loadingPage = new osparc.ui.message.Loading(this.__getLoadingPageHeader(), this.__getExtraMessages(), true);
+      this.addListener("changeLabel", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
+      this.getStatus().addListener("changeInteractive", () => loadingPage.setHeader(this.__getLoadingPageHeader()), this);
       this.setLoadingPage(loadingPage);
     },
 
@@ -888,41 +904,32 @@ qx.Class.define("osparc.data.model.Node", {
 
       const iframe = new osparc.component.widget.PersistentIframe();
       osparc.utils.Utils.setIdToWidget(iframe, "PersistentIframe");
-      iframe.addListener("restart", () => {
-        this.__restartIFrame();
-      }, this);
+      iframe.addListener("restart", () => this.__restartIFrame(), this);
       this.setIFrame(iframe);
     },
 
     __restartIFrame: function() {
       if (this.getServiceUrl() !== null) {
-        this.getIFrame().resetSource();
-        if (this.getKey().includes("3d-viewer")) {
-          // HACK: add this argument to only load the defined colorMaps
-          // https://github.com/Kitware/visualizer/commit/197acaf
-          const srvUrl = this.getServiceUrl();
-          let arg = "?serverColorMaps";
-          if (srvUrl[srvUrl.length - 1] !== "/") {
-            arg = "/" + arg;
-          }
-          this.getIFrame().setSource(srvUrl + arg);
-        } else {
+        const loadIframe = () => {
+          this.getIFrame().resetSource();
           this.getIFrame().setSource(this.getServiceUrl());
+        };
+
+        // restart button pushed
+        if (this.getIFrame().getSource().includes(this.getServiceUrl())) {
+          loadIframe();
         }
 
-        if (this.getKey().includes("raw-graphs")) {
-          // Listen to the postMessage from RawGraphs, posting a new graph
-          window.addEventListener("message", e => {
-            const {
-              id,
-              imgData
-            } = e.data;
-            if (imgData && id === "svgChange") {
-              const img = document.createElement("img");
-              img.src = imgData;
-              this.setThumbnail(img.outerHTML);
-            }
-          }, false);
+        const loadingPage = this.getLoadingPage();
+        const bounds = loadingPage.getBounds();
+        const domEle = loadingPage.getContentElement().getDomElement();
+        const boundsCR = domEle ? domEle.getBoundingClientRect() : null;
+        if (bounds !== null && boundsCR && boundsCR.width > 0) {
+          loadIframe();
+        } else {
+          // lazy loading
+          console.debug("lazy load", this.getNodeId());
+          loadingPage.addListenerOnce("appear", () => loadIframe(), this);
         }
       }
     },
@@ -1045,29 +1052,23 @@ qx.Class.define("osparc.data.model.Node", {
     },
     __onNodeState: function(data) {
       const serviceState = data["service_state"];
+      const nodeId = data["service_uuid"];
       const status = this.getStatus();
+      console.log(serviceState);
       switch (serviceState) {
         case "idle": {
           status.setInteractive("idle");
-          const interval = 1000;
-          qx.event.Timer.once(() => this.__nodeState(), this, interval);
-          break;
-        }
-        case "starting":
-        case "pulling": {
-          status.setInteractive(serviceState);
-          const interval = 5000;
+          const interval = 2000;
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
         }
         case "pending": {
           if (data["service_message"]) {
-            const serviceId = data["service_uuid"];
             const serviceName = this.getLabel();
             const serviceMessage = data["service_message"];
             const msg = `The service "${serviceName}" is waiting for available ` +
               `resources. Please inform support and provide the following message ` +
-              `in case this does not resolve in a few minutes: "${serviceId}" ` +
+              `in case this does not resolve in a few minutes: "${nodeId}" ` +
               `reported "${serviceMessage}"`;
             const msgData = {
               nodeId: this.getNodeId(),
@@ -1080,12 +1081,17 @@ qx.Class.define("osparc.data.model.Node", {
           qx.event.Timer.once(() => this.__nodeState(), this, interval);
           break;
         }
+        case "starting":
+        case "pulling": {
+          status.setInteractive(serviceState);
+          const interval = 5000;
+          qx.event.Timer.once(() => this.__nodeState(), this, interval);
+          break;
+        }
         case "running": {
-          const nodeId = data["service_uuid"];
           if (nodeId !== this.getNodeId()) {
             return;
           }
-
           const {
             srvUrl,
             isDynamicV2
@@ -1108,7 +1114,6 @@ qx.Class.define("osparc.data.model.Node", {
           this.fireDataEvent("showInLogger", msgData);
           return;
         }
-
         default:
           console.error(serviceState, "service state not supported");
           break;
@@ -1116,7 +1121,8 @@ qx.Class.define("osparc.data.model.Node", {
     },
     __nodeState: function() {
       // Check if study is still there
-      if (this.getStudy() === null) {
+      if (this.getStudy() === null || this.__stopRequestingStatus === true) {
+        console.log("stop callign me");
         return;
       }
       // Check if node is still there
@@ -1200,7 +1206,6 @@ qx.Class.define("osparc.data.model.Node", {
 
       // FIXME: Apparently no all services are inmediately ready when they publish the port
       // ping the service until it is accessible through the platform
-
       const waitFor = 500;
       qx.event.Timer.once(ev => {
         this.__restartIFrame();
@@ -1226,10 +1231,14 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     removeNode: function() {
-      this.stopInBackend();
+      this.__deleteInBackend();
       this.removeIFrame();
       this.__removeInnerNodes();
       this.__detachFromParent();
+    },
+
+    stopRequestingStatus: function() {
+      this.__stopRequestingStatus = true;
     },
 
     removeIFrame: function() {

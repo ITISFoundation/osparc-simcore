@@ -34,12 +34,16 @@ fi
 # RUNNING application
 #
 if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
-  # NOTE: ptvsd is programmatically enabled inside of the service
-  # this way we can have reload in place as well
-  exec uvicorn simcore_service_datcore_adapter.main:the_app \
-    --reload \
-    --host 0.0.0.0 \
-    --reload-dir services/datcore-adapter/src/simcore_service_datcore_adapter
+  reload_dir_packages=$(find /devel/packages -maxdepth 3 -type d -path "*/src/*" ! -path "*.*" -exec echo '--reload-dir {} \' \;)
+
+  exec sh -c "
+    cd services/datcore-adapter/src/simcore_service_datcore_adapter && \
+    uvicorn main:the_app \
+      --host 0.0.0.0 \
+      --reload \
+      $reload_dir_packages
+      --reload-dir .
+  "
 else
   exec uvicorn simcore_service_datcore_adapter.main:the_app \
     --host 0.0.0.0
