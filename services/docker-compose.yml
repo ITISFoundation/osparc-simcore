@@ -405,16 +405,23 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     command:
+      # redis server will write a backup every 60 seconds if at least 1 key was changed
+      # also aof (append only) is also enabled such that we get full durability at the expense
+      # of backup size. The backup is written into /data.
+      # https://redis.io/topics/persistence
       [
         "redis-server",
         "--save",
         "60 1",
         "--loglevel",
-        "warning"
+        "verbose",
+        "--databases",
+        "3",
+        "--appendonly",
+        "yes"
       ]
     networks:
       - default
-      - computational_services_subnet
     volumes:
       - redis-data:/data
     healthcheck:
