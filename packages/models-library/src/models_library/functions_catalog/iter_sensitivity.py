@@ -3,7 +3,13 @@ from typing import Any, Dict, List
 from pydantic import schema_of
 
 from ..services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
-from ._utils import EN, FRONTEND_SERVICE_KEY_PREFIX, OM, get_fake_thumbnail, register
+from ._utils import (
+    EN,
+    FRONTEND_SERVICE_KEY_PREFIX,
+    OM,
+    create_fake_thumbnail_url,
+    register,
+)
 
 LIST_NUMBERS_SCHEMA: Dict[str, Any] = schema_of(List[float], title="list[number]")
 
@@ -18,7 +24,7 @@ META = ServiceDockerData.parse_obj(
         "description": "Increases/decreases one dimension of the reference parameters at every iteration",
         "authors": [EN, OM],
         "contact": OM["email"],
-        "thumbnail": get_fake_thumbnail("sensitivity"),
+        "thumbnail": create_fake_thumbnail_url("sensitivity"),
         "inputs": {
             "paramrefs": {
                 "label": "paramrefs",

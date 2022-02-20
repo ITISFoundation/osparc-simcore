@@ -1,7 +1,7 @@
 from typing import Optional
 
 from ..services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
-from ._utils import FRONTEND_SERVICE_KEY_PREFIX, OM, get_fake_thumbnail, register
+from ._utils import FRONTEND_SERVICE_KEY_PREFIX, OM, create_fake_thumbnail_url, register
 
 
 def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDockerData:
@@ -15,7 +15,7 @@ def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDock
             "type": ServiceType.FRONTEND,
             "name": LABEL,
             "description": "Iterates over a sequence of integers from start (inclusive) to stop (exclusive) by step",
-            "thumbnail": get_fake_thumbnail(f"{type_name}"),
+            "thumbnail": create_fake_thumbnail_url(f"{type_name}"),
             "authors": [
                 OM,
             ],

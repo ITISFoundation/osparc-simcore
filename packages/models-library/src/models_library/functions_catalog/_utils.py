@@ -22,7 +22,7 @@ OM: Dict[str, str] = {
 _NodeKeyVersionPair = Tuple[str, str]
 
 
-def get_fake_thumbnail(label) -> str:
+def create_fake_thumbnail_url(label: str) -> str:
     return f"https://fakeimg.pl/100x100/ff0000%2C128/000%2C255/?text={quote(label)}"
 
 

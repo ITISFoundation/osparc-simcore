@@ -19,7 +19,7 @@ from pydantic import (
 )
 
 from .basic_regex import VERSION_RE
-from .boot_options import EnvVarKey
+from .basic_types import EnvVarKey
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
     DatCoreFileLink,
