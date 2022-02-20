@@ -6,7 +6,6 @@ from typing import AsyncIterator, Dict, Optional
 
 from fastapi import FastAPI
 from models_library.clusters import Cluster, NoAuthentication
-from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.clusters import ClusterType
 
 from ..core.errors import (
@@ -14,8 +13,6 @@ from ..core.errors import (
     ComputationalSchedulerChangedError,
     ConfigurationError,
     DaskClientAcquisisitonError,
-    InsuficientComputationalResourcesError,
-    MissingComputationalResourcesError,
 )
 from ..core.settings import DaskSchedulerSettings
 from ..models.schemas.constants import ClusterID
@@ -102,30 +99,20 @@ class DaskClientsPool:
 
         try:
             dask_client = await _concurently_safe_acquire_client()
-            yield dask_client
-        except (
-            MissingComputationalResourcesError,
-            InsuficientComputationalResourcesError,
-        ):
-            raise
-        except (
-            asyncio.CancelledError,
-            ComputationalBackendNotConnectedError,
-            ComputationalSchedulerChangedError,
-        ):
-            # cleanup and re-raise
-            if dask_client := self._cluster_to_client_map.pop(cluster.id, None):
-                await dask_client.delete()
-            raise
         except Exception as exc:
-            # cleanup and re-raise
-            if dask_client := self._cluster_to_client_map.pop(cluster.id, None):
-                await dask_client.delete()
-            logger.error(
-                "could not create/access dask computational cluster %s",
-                json_dumps(cluster),
-            )
             raise DaskClientAcquisisitonError(cluster=cluster, error=exc) from exc
+        else:
+            try:
+                yield dask_client
+            except (
+                asyncio.CancelledError,
+                ComputationalBackendNotConnectedError,
+                ComputationalSchedulerChangedError,
+            ):
+                # cleanup and re-raise
+                if dask_client := self._cluster_to_client_map.pop(cluster.id, None):
+                    await dask_client.delete()
+                raise
 
 
 def setup(app: FastAPI, settings: DaskSchedulerSettings) -> None:
