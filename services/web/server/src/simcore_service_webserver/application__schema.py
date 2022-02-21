@@ -93,6 +93,7 @@ def create_schema() -> T.Dict:
             addon_section("diagnostics", optional=True): minimal_addon_schema(),
             addon_section("director-v2", optional=True): minimal_addon_schema(),
             addon_section("exporter", optional=True): minimal_addon_schema(),
+            addon_section("folders", optional=True): minimal_addon_schema(),
             addon_section("garbage_collector", optional=True): minimal_addon_schema(),
             addon_section("groups", optional=True): minimal_addon_schema(),
             addon_section("meta_modeling", optional=True): minimal_addon_schema(),

@@ -142,6 +142,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
         "diagnostics": {"enabled": app_settings.is_enabled("WEBSERVER_DIAGNOSTICS")},
         "director-v2": {"enabled": app_settings.is_enabled("WEBSERVER_DIRECTOR_V2")},
         "exporter": {"enabled": app_settings.WEBSERVER_EXPORTER is not None},
+        "folders": {"enabled": app_settings.WEBSERVER_FOLDERS},
         "groups": {"enabled": app_settings.WEBSERVER_GROUPS},
         "meta_modeling": {"enabled": app_settings.WEBSERVER_META_MODELING},
         "products": {"enabled": app_settings.WEBSERVER_PRODUCTS},

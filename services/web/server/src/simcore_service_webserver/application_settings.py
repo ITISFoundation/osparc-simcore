@@ -155,6 +155,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_STUDIES_ACCESS: bool = True
     WEBSERVER_STUDIES_DISPATCHER: bool = True
     WEBSERVER_TAGS: bool = True
+    WEBSERVER_FOLDERS: bool = True
     WEBSERVER_USERS: bool = True
     WEBSERVER_VERSION_CONTROL: bool = True
 

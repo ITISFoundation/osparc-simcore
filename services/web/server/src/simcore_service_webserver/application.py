@@ -20,6 +20,7 @@ from .director.module_setup import setup_director
 from .director_v2 import setup_director_v2
 from .email import setup_email
 from .exporter.module_setup import setup_exporter
+from .folders import setup_folders
 from .garbage_collector import setup_garbage_collector
 from .groups import setup_groups
 from .login.module_setup import setup_login
@@ -102,6 +103,7 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     # TODO: classify
     setup_activity(app)
     setup_tags(app)
+    setup_folders(app)
     setup_publications(app)
     setup_products(app)
     setup_studies_access(app)
