@@ -7,6 +7,7 @@ from typing import List
 
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskLogEvent, TaskStateEvent
 from dask_task_models_library.container_tasks.io import (
     TaskInputData,
@@ -122,7 +123,7 @@ async def _run_computational_sidecar_async(
                 output_data = await sidecar.run(command=command)
             log.debug("completed run of sidecar with result %s", f"{output_data=}")
             return output_data
-    except asyncio.CancelledError:
+    except asyncio.CancelledError as exc:
         publish_event(
             task_publishers.logs,
             TaskLogEvent.from_dask_worker(log="[sidecar] task run was aborted"),
@@ -134,7 +135,7 @@ async def _run_computational_sidecar_async(
         log.info(
             "run of sidecar for %s was cancelled", f"{service_key}:{service_version}"
         )
-        raise
+        raise TaskCancelledError from exc
 
 
 def run_computational_sidecar(

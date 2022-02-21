@@ -73,6 +73,8 @@ _DASK_TASK_STATUS_RUNNING_STATE_MAP = {
     "erred": RunningState.FAILED,
 }
 
+DASK_DEFAULT_TIMEOUT_S = 1
+
 
 @dataclass
 class DaskSubSystem:
@@ -376,10 +378,11 @@ class DaskClient:
                     retries=0,
                 )
 
-                def done_callback(_: distributed.Future):
+                def _done_callback(_: distributed.Future):
+                    # NOTE: this fct is called from a separate thread!
                     callback()
 
-                task_future.add_done_callback(done_callback)
+                task_future.add_done_callback(_done_callback)
 
                 list_of_node_id_to_job_id.append((node_id, job_id))
                 await self.dask_subsystem.client.publish_dataset(
@@ -393,6 +396,16 @@ class DaskClient:
                 # if the connection is good, then the problem is different, so we re-raise
                 raise
         return list_of_node_id_to_job_id
+
+    async def get_task_status(self, job_id: str) -> RunningState:
+        task_status = await self.dask_subsystem.client.run_on_scheduler(
+            lambda dask_scheduler: dask_scheduler.get_task_status(keys=[job_id])
+        )  # type: ignore
+        logger.debug("found dask status: %s", f"{task_status=}")
+        dask_status = task_status.get(job_id, "lost")
+        return _DASK_TASK_STATUS_RUNNING_STATE_MAP.get(
+            dask_status, RunningState.UNKNOWN
+        )
 
     async def get_tasks_status(self, job_ids: List[str]) -> List[RunningState]:
         task_statuses = []
@@ -440,6 +453,13 @@ class DaskClient:
                 )
                 await task_future.cancel()  # type: ignore
                 logger.debug("Dask task %s cancelled", task_future.key)
+
+    async def get_task_result(self, job_id: str) -> TaskOutputData:
+        logger.debug("getting result of %s", f"{job_id=}")
+        task_future = distributed.Future(job_id)
+        assert task_future  # nosec
+
+        return await task_future.result(timeout=DASK_DEFAULT_TIMEOUT_S)  # type: ignore
 
     async def get_tasks_results(self, job_ids: List[str]) -> List[TaskStateEvent]:
         logger.debug("getting results for %s", f"{job_ids=}")
