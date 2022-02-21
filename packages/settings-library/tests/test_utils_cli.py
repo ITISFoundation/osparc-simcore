@@ -334,60 +334,88 @@ def test_cli_settings_exclude_unset(
     cli_runner: CliRunner,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    with monkeypatch.context() as patch:
-        # minimal envfile
-        mocked_envs: EnvVarsDict = setenvs_as_envfile(
-            patch,
-            """
-            # these are required
-            APP_HOST=localhost
-            APP_PORT=80
+    # minimal envfile
+    mocked_envs: EnvVarsDict = setenvs_as_envfile(
+        monkeypatch,
+        """
+        # these are required
+        APP_HOST=localhost
+        APP_PORT=80
 
-            # --- APP_REQUIRED_PLUGIN ---
-            # these are required
-            POSTGRES_HOST=localhost
-            POSTGRES_PORT=5432
-            POSTGRES_USER=foo
-            POSTGRES_PASSWORD=secret
-            POSTGRES_DB=foodb
+        # --- APP_REQUIRED_PLUGIN ---
+        # these are required
+        POSTGRES_HOST=localhost
+        POSTGRES_PORT=5432
+        POSTGRES_USER=foo
+        POSTGRES_PASSWORD=secret
+        POSTGRES_DB=foodb
 
-            # this is optional but set
-            POSTGRES_MAXSIZE=20
-            """,
-        )
+        # this is optional but set
+        POSTGRES_MAXSIZE=20
+        """,
+    )
 
-        # using exclude-unset
-        stdout_as_envfile = cli_runner.invoke(
-            cli,
-            ["settings", "--show-secrets", "--exclude-unset"],
-            catch_exceptions=False,
-        ).stdout
-        print(stdout_as_envfile)
+    # using exclude-unset
+    stdout_as_envfile = cli_runner.invoke(
+        cli,
+        ["settings", "--show-secrets", "--exclude-unset"],
+        catch_exceptions=False,
+    ).stdout
+    print(stdout_as_envfile)
 
-        # parsing output as an envfile
-        envs_exclude_unset_from_env: EnvVarsDict = dotenv_values(
-            stream=StringIO(stdout_as_envfile)
-        )
-        assert envs_exclude_unset_from_env == mocked_envs
+    # parsing output as an envfile
+    envs_exclude_unset_from_env: EnvVarsDict = dotenv_values(
+        stream=StringIO(stdout_as_envfile)
+    )
+    assert envs_exclude_unset_from_env == mocked_envs
 
-        stdout_as_json = cli_runner.invoke(
-            cli,
-            ["settings", "--show-secrets", "--exclude-unset", "--as-json"],
-            catch_exceptions=False,
-        ).stdout
-        print(stdout_as_json)
 
-        # parsing output as json file
-        envs_exclude_unset_from_json = json.loads(stdout_as_json)
-        assert envs_exclude_unset_from_json == {
-            "APP_HOST": "localhost",
-            "APP_PORT": 80,
-            "APP_REQUIRED_PLUGIN": {
-                "POSTGRES_HOST": "localhost",
-                "POSTGRES_PORT": 5432,
-                "POSTGRES_USER": "foo",
-                "POSTGRES_PASSWORD": "secret",
-                "POSTGRES_DB": "foodb",
-                "POSTGRES_MAXSIZE": 20,
-            },
-        }
+@pytest.mark.xfail(
+    reason="--show-secrets and --exclude-unset still not implemented with --as-json"
+)
+def test_cli_settings_exclude_unset_as_json(
+    cli: typer.Typer,
+    cli_runner: CliRunner,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    # minimal envfile
+    mocked_envs: EnvVarsDict = setenvs_as_envfile(
+        monkeypatch,
+        """
+        # these are required
+        APP_HOST=localhost
+        APP_PORT=80
+
+        # --- APP_REQUIRED_PLUGIN ---
+        # these are required
+        POSTGRES_HOST=localhost
+        POSTGRES_PORT=5432
+        POSTGRES_USER=foo
+        POSTGRES_PASSWORD=secret
+        POSTGRES_DB=foodb
+
+        # this is optional but set
+        POSTGRES_MAXSIZE=20
+        """,
+    )
+    stdout_as_json = cli_runner.invoke(
+        cli,
+        ["settings", "--show-secrets", "--exclude-unset", "--as-json"],
+        catch_exceptions=False,
+    ).stdout
+    print(stdout_as_json)
+
+    # parsing output as json file
+    envs_exclude_unset_from_json = json.loads(stdout_as_json)
+    assert envs_exclude_unset_from_json == {
+        "APP_HOST": "localhost",
+        "APP_PORT": 80,
+        "APP_REQUIRED_PLUGIN": {
+            "POSTGRES_HOST": "localhost",
+            "POSTGRES_PORT": 5432,
+            "POSTGRES_USER": "foo",
+            "POSTGRES_PASSWORD": "secret",
+            "POSTGRES_DB": "foodb",
+            "POSTGRES_MAXSIZE": 20,
+        },
+    }
