@@ -7,7 +7,7 @@
 # pylint:disable=no-name-in-module
 
 
-from typing import Any, Callable, Dict, Iterator, cast
+from typing import Any, Callable, Dict, Iterator, List, cast
 from unittest import mock
 
 import aiopg
@@ -551,6 +551,7 @@ async def test_handling_of_disconnected_dask_scheduler(
 
 
 async def test_lost_task_properly_recovered(
+    mocked_dask_client: mock.MagicMock,
     aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
     running_project: RunningProject,
     scheduler: BaseCompScheduler,
@@ -564,6 +565,10 @@ async def test_lost_task_properly_recovered(
     the dask client or director-v2 was restarted, thus the task is still
     in RUNNING state in the database, but the tasks have disappeared"""
 
+    async def mocked_get_task_status(job_ids: List[str]) -> List[RunningState]:
+        return [RunningState.UNKNOWN for j in job_ids]
+
+    mocked_dask_client.get_tasks_status = mocked_get_task_status
     await manually_run_comp_scheduler(scheduler)
     # since the tasks have disappeared, what is the obvious thing?
     # 1. fail the computations?
@@ -586,15 +591,15 @@ async def test_lost_task_properly_recovered(
 @pytest.mark.parametrize("state", COMPLETED_STATES)
 async def test_completed_task_properly_updates_state(
     mocked_dask_client: mock.MagicMock,
+    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
+    published_project: PublishedProject,
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,
     user_id: PositiveInt,
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    published_project: PublishedProject,
     mocked_node_ports: None,
     mocked_clean_task_output_fct: mock.MagicMock,
-    state: RunningState,
     mocked_scheduler_task: None,
+    state: RunningState,
 ):
     # we do have a published project where the comp services are in PUBLISHED state
     # here we will artifically call the completion handler in the scheduler
