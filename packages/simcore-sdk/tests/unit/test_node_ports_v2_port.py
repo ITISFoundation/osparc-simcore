@@ -15,6 +15,7 @@ from collections import namedtuple
 from pathlib import Path
 from typing import Any, Dict, Iterator, Optional, Type, Union
 from unittest.mock import AsyncMock
+
 import pytest
 from aiohttp.client import ClientSession
 from attr import dataclass
@@ -26,8 +27,9 @@ from simcore_sdk.node_ports_v2.port import Port
 from utils_port_v2 import create_valid_port_config
 from yarl import URL
 
+# HELPERS --------------------------------------------------------------------------------------
 
-##################### HELPERS
+
 def camel_to_snake(name):
     name = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", name).lower()
@@ -75,7 +77,7 @@ def e_tag() -> str:
     return "1212132546546321-1"
 
 
-##################### FIXTURES
+# FIXTURES --------------------------------------------------------------------------------------
 
 
 @pytest.fixture
@@ -224,7 +226,9 @@ def common_fixtures(
     node_config.STORAGE_ENDPOINT = "storage:8080"
 
 
-##################### TESTS
+# TESTS --------------------------------------------------------------------------------------
+
+
 @pytest.mark.parametrize(
     "port_cfg, exp_value_type, exp_value_converter, exp_value, exp_get_value, new_value, exp_new_value, exp_new_get_value",
     [
