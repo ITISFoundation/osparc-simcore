@@ -25,8 +25,8 @@ def validate_network_alias(value: str) -> DockerNetworkAlias:
     return ValidationModel(item=value).item
 
 
-class SharingNetworks(BaseModel):
-    __root__: Dict[DockerNetworkName, Dict[NodeID, DockerNetworkAlias]]
+class BaseModelDict(BaseModel):
+    __root__: Dict[Any, Any]
 
     def __iter__(self):
         return iter(self.__root__)
@@ -43,8 +43,33 @@ class SharingNetworks(BaseModel):
     def get(self, item, default=None):
         return self.__root__.get(item, default)
 
-    def dict(self) -> Dict[str, Any]:
-        return super().dict()["__root__"]
+    @staticmethod
+    def _convert_dict_uuid_keys(dict_data: Dict[Any, Any]) -> Dict[Any, Any]:
+        for key in dict_data.keys():
+            if isinstance(key, UUID):
+                dict_data[f"{key}"] = dict_data.pop(key)
+
+        return dict_data
+
+    def _iter(self, *args, **kwargs) -> "TupleGenerator":
+        # ensure dict key conversion works with either
+        # .json() and .dict() methods
+        for tuple_generator in super()._iter(*args, **kwargs):
+            dict_key, value = tuple_generator
+            if isinstance(value, dict):
+                value = self._convert_dict_uuid_keys(value)
+            yield dict_key, value
+
+    def dict(self, *args, **kwargs) -> Dict[str, Any]:
+        return super().dict(*args, **kwargs)["__root__"]
+
+
+class ContainerAliases(BaseModelDict):
+    __root__: Dict[NodeID, DockerNetworkAlias]
+
+
+class SharingNetworks(BaseModelDict):
+    __root__: Dict[DockerNetworkName, ContainerAliases]
 
     class Config:
         schema_extra = {
