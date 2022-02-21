@@ -18,6 +18,7 @@ from pydantic import (
 )
 
 from .basic_regex import VERSION_RE
+from .boot_options import EnvVarKey
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
     DatCoreFileLink,
@@ -26,7 +27,6 @@ from .projects_nodes_io import (
     PortLink,
     SimCoreFileLink,
 )
-from .boot_options import EnvVarKey
 from .projects_nodes_ui import Position
 from .projects_state import RunningState
 from .services import PROPERTY_KEY_RE, SERVICE_KEY_RE

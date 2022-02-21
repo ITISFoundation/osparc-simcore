@@ -1,5 +1,7 @@
-from typing import Any, Dict
+from collections import deque
+from typing import Any, Deque, Dict
 from uuid import UUID
+
 from pydantic import BaseModel, constr
 
 from .projects_nodes_io import NodeID
@@ -45,9 +47,13 @@ class BaseModelDict(BaseModel):
 
     @staticmethod
     def _convert_dict_uuid_keys(dict_data: Dict[Any, Any]) -> Dict[Any, Any]:
+        to_change: Deque[UUID] = deque()
         for key in dict_data.keys():
             if isinstance(key, UUID):
-                dict_data[f"{key}"] = dict_data.pop(key)
+                to_change.append(key)
+
+        for key in to_change:
+            dict_data[f"{key}"] = dict_data.pop(key)
 
         return dict_data
 
