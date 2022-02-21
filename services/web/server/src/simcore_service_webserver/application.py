@@ -30,6 +30,7 @@ from .redis import setup_redis
 from .remote_debug import setup_remote_debugging
 from .resource_manager.plugin import setup_resource_manager
 from .rest import setup_rest
+from .scicrunch.plugin import setup_scicrunch
 from .security import setup_security
 from .session import setup_session
 from .socketio.plugin import setup_socketio
@@ -65,10 +66,15 @@ def create_application() -> web.Application:
     setup_session(app)
     setup_security(app)
     setup_rest(app)
+
+    # monitoring
     setup_diagnostics(app)
-    setup_email(app)
+    setup_activity(app)
     setup_computation(app)
     setup_socketio(app)
+
+    # login
+    setup_email(app)
     setup_login(app)
 
     # interaction with other backend services
@@ -92,9 +98,10 @@ def create_application() -> web.Application:
     setup_version_control(app)
     setup_meta_modeling(app)
 
-    # TODO: classify
-    setup_activity(app)
+    # tagging
+    setup_scicrunch(app)
     setup_tags(app)
+
     setup_publications(app)
     setup_products(app)
     setup_studies_dispatcher(app)

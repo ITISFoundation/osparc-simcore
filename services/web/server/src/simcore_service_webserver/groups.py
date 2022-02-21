@@ -13,7 +13,6 @@ from servicelib.aiohttp.rest_routing import (
 
 from . import groups_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
-from .scicrunch.plugin import setup_scicrunch
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +27,6 @@ logger = logging.getLogger(__name__)
 def setup_groups(app: web.Application):
 
     assert app[APP_SETTINGS_KEY].WEBSERVER_GROUPS  # nosec
-
-    # prepares scicrunch api
-    setup_scicrunch(app)
 
     # routes
     specs = app[APP_OPENAPI_SPECS_KEY]

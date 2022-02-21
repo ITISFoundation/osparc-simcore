@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
     "simcore_service_webserver.scicrunch",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_SCICRUNCH",
+    # TODO: check if depends=["simcore_service_webserver.groups"],
     logger=logger,
 )
 def setup_scicrunch(app: web.Application):
