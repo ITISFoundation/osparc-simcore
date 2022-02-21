@@ -783,7 +783,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const name = folderEditor.getChildControl("title").getValue().trim();
         const description = folderEditor.getChildControl("description").getValue().trim();
         const color = folderEditor.getChildControl("color-picker").getChildControl("color-input").getValue();
-        const params = {
+        const params = {};
+        params["data"] = {
           name,
           description,
           color
