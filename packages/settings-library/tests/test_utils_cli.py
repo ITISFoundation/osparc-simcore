@@ -4,10 +4,12 @@
 
 import json
 import logging
+from io import StringIO
 from typing import Any, Dict, Type
 
 import pytest
 import typer
+from dotenv import dotenv_values
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_as_envfile
 from settings_library.base import BaseCustomSettings
@@ -156,7 +158,7 @@ def test_cli_default_settings_envs(
     fake_settings_class: Type[BaseCustomSettings],
     fake_granular_env_file_content: str,
     cli_runner: CliRunner,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     with monkeypatch.context() as patch:
         mocked_envs_1: EnvVarsDict = setenvs_as_envfile(
@@ -204,7 +206,7 @@ def test_cli_compact_settings_envs(
     fake_settings_class: Type[BaseCustomSettings],
     fake_granular_env_file_content: str,
     cli_runner: CliRunner,
-    monkeypatch,
+    monkeypatch: pytest.MonkeyPatch,
 ):
 
     with monkeypatch.context() as patch:
@@ -258,7 +260,10 @@ def test_cli_compact_settings_envs(
         assert settings_1 == settings_2
 
 
-def test_compact_format(monkeypatch, fake_settings_class):
+def test_compact_format(
+    monkeypatch: pytest.MonkeyPatch,
+    fake_settings_class: Type[BaseCustomSettings],
+):
     compact_envs: EnvVarsDict = setenvs_as_envfile(
         monkeypatch,
         """
@@ -275,7 +280,10 @@ def test_compact_format(monkeypatch, fake_settings_class):
     assert settings_from_envs1 == settings_from_init
 
 
-def test_granular_format(monkeypatch, fake_settings_class):
+def test_granular_format(
+    monkeypatch: pytest.MonkeyPatch,
+    fake_settings_class: Type[BaseCustomSettings],
+):
     setenvs_as_envfile(
         monkeypatch,
         """
@@ -319,3 +327,67 @@ def test_granular_format(monkeypatch, fake_settings_class):
             "POSTGRES_CLIENT_NAME": None,
         },
     )
+
+
+def test_cli_settings_exclude_unset(
+    cli: typer.Typer,
+    cli_runner: CliRunner,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    with monkeypatch.context() as patch:
+        # minimal envfile
+        mocked_envs: EnvVarsDict = setenvs_as_envfile(
+            patch,
+            """
+            # these are required
+            APP_HOST=localhost
+            APP_PORT=80
+
+            # --- APP_REQUIRED_PLUGIN ---
+            # these are required
+            POSTGRES_HOST=localhost
+            POSTGRES_PORT=5432
+            POSTGRES_USER=foo
+            POSTGRES_PASSWORD=secret
+            POSTGRES_DB=foodb
+
+            # this is optional but set
+            POSTGRES_MAXSIZE=20
+            """,
+        )
+
+        # using exclude-unset
+        stdout_as_envfile = cli_runner.invoke(
+            cli,
+            ["settings", "--show-secrets", "--exclude-unset"],
+            catch_exceptions=False,
+        ).stdout
+        print(stdout_as_envfile)
+
+        # parsing output as an envfile
+        envs_exclude_unset_from_env: EnvVarsDict = dotenv_values(
+            stream=StringIO(stdout_as_envfile)
+        )
+        assert envs_exclude_unset_from_env == mocked_envs
+
+        stdout_as_json = cli_runner.invoke(
+            cli,
+            ["settings", "--show-secrets", "--exclude-unset", "--as-json"],
+            catch_exceptions=False,
+        ).stdout
+        print(stdout_as_json)
+
+        # parsing output as json file
+        envs_exclude_unset_from_json = json.loads(stdout_as_json)
+        assert envs_exclude_unset_from_json == {
+            "APP_HOST": "localhost",
+            "APP_PORT": 80,
+            "APP_REQUIRED_PLUGIN": {
+                "POSTGRES_HOST": "localhost",
+                "POSTGRES_PORT": 5432,
+                "POSTGRES_USER": "foo",
+                "POSTGRES_PASSWORD": "secret",
+                "POSTGRES_DB": "foodb",
+                "POSTGRES_MAXSIZE": 20,
+            },
+        }
