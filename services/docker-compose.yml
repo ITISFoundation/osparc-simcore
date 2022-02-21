@@ -205,8 +205,8 @@ services:
       STORAGE_HOST: ${STORAGE_HOST:-storage}
       STORAGE_PORT: ${STORAGE_PORT:-8080}
       SWARM_STACK_NAME: ${SWARM_STACK_NAME:-simcore}
+      WEBSERVER_GARBAGE_COLLECTOR: "null"
       WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-WARNING}
-      WEBSERVER_GARBAGE_COLLECTOR: 0
     env_file:
       - ../.env
     deploy:
@@ -244,7 +244,7 @@ services:
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
       <<: *webserver-environment
-      WEBSERVER_GARBAGE_COLLECTOR: 1
+      WEBSERVER_GARBAGE_COLLECTOR: '{"GARBAGE_COLLECTOR_INTERVAL_S": 30}'
     env_file:
       - ../.env
       - ../.env-webserver-garbage-collector
