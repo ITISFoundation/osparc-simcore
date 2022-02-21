@@ -117,9 +117,7 @@ async def _request_director_v2(
                     # - `sometimes director-v0` (via redirects) replies
                     #   in plain text and this is considered an error
                     # - `director-v2` and `director-v0` can reply with 204 no content
-                    if response.status != expected_status.status_code or isinstance(
-                        payload, str
-                    ):
+                    if response.status != expected_status.status_code:
                         raise DirectorServiceError(response.status, reason=f"{payload}")
                     return payload
 
@@ -487,12 +485,8 @@ async def restart(app: web.Application, node_uuid: str) -> None:
 async def requires_dynamic_sidecar(
     app: web.Application, service_key: str, service_version: str
 ) -> bool:
-    director2_settings: Directorv2Settings = get_settings(app)
-    backend_url = (
-        URL(director2_settings.endpoint)
-        / "dynamic_services"
-        / "dynamic-sidecar:required"
-    )
+    settings: DirectorV2Settings = get_settings(app)
+    backend_url = URL(settings.base_url) / "dynamic_services/dynamic-sidecar:required"
     body = dict(key=service_key, version=service_version)
 
     return await _request_director_v2(
@@ -510,10 +504,8 @@ async def attach_network_to_dynamic_sidecar(
 ) -> None:
     timeout = ServicesCommonSettings().network_attach_detach_timeout
 
-    director2_settings: Directorv2Settings = get_settings(app)
-    backend_url = (
-        URL(director2_settings.endpoint) / "dynamic_services" / f"networks:attach"
-    )
+    settings: DirectorV2Settings = get_settings(app)
+    backend_url = URL(settings.base_url) / "dynamic_services/networks:attach"
     body = dict(
         project_id=f"{project_id}",
         node_id=f"{node_id}",
@@ -521,7 +513,12 @@ async def attach_network_to_dynamic_sidecar(
         network_alias=network_alias,
     )
     await _request_director_v2(
-        app, "POST", backend_url, expected_status=web.HTTPOk, data=body, timeout=timeout
+        app,
+        "POST",
+        backend_url,
+        expected_status=web.HTTPNoContent,
+        data=body,
+        timeout=timeout,
     )
 
 
@@ -534,13 +531,16 @@ async def detach_network_from_dynamic_sidecar(
 ) -> None:
     timeout = ServicesCommonSettings().network_attach_detach_timeout
 
-    director2_settings: Directorv2Settings = get_settings(app)
-    backend_url = (
-        URL(director2_settings.endpoint) / "dynamic_services" / f"networks:detach"
-    )
+    settings: DirectorV2Settings = get_settings(app)
+    backend_url = URL(settings.base_url) / "dynamic_services/networks:detach"
     body = dict(
         project_id=f"{project_id}", node_id=f"{node_id}", network_name=network_name
     )
     await _request_director_v2(
-        app, "POST", backend_url, expected_status=web.HTTPOk, data=body, timeout=timeout
+        app,
+        "POST",
+        backend_url,
+        expected_status=web.HTTPNoContent,
+        data=body,
+        timeout=timeout,
     )
