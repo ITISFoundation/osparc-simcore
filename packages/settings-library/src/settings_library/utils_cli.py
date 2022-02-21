@@ -4,7 +4,7 @@ from pprint import pformat
 from typing import Callable, Optional, Type
 
 import typer
-from pydantic import ValidationError
+from pydantic import SecretStr, ValidationError
 from pydantic.env_settings import BaseSettings
 
 from ._constants import HEADER_STR
@@ -95,6 +95,13 @@ def create_settings_command(
             return
 
         try:
+            if show_secrets:
+                settings_cls.Config.json_encoders[
+                    SecretStr
+                ] = lambda v: v.get_secret_value()
+            else:
+                settings_cls.Config.json_encoders.pop(SecretStr, None)
+
             settings_obj = settings_cls.create_from_envs()
 
         except ValidationError as err:
