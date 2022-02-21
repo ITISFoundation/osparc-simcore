@@ -435,11 +435,10 @@ class DaskClient:
         logger.debug("cancelling tasks with job_ids: [%s]", job_ids)
         for job_id in job_ids:
             if task_future := distributed.Future(job_id, self.dask_subsystem.client):
-                await task_future.cancel(force=True)  # type: ignore
                 self.cancellation_dask_pub.put(  # type: ignore
                     TaskCancelEvent(job_id=job_id).json()  # type: ignore
                 )
-
+                await task_future.cancel()  # type: ignore
                 logger.debug("Dask task %s cancelled", task_future.key)
 
     async def get_tasks_results(self, job_ids: List[str]) -> List[TaskStateEvent]:
