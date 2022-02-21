@@ -54,7 +54,8 @@ qx.Class.define("osparc.data.model.Study", {
       classifiers: studyData.classifiers || this.getClassifiers(),
       tags: studyData.tags || this.getTags(),
       state: studyData.state || this.getState(),
-      quality: studyData.quality || this.getQuality()
+      quality: studyData.quality || this.getQuality(),
+      sharingNetworks: studyData.sharingNetworks || this.getSharingNetworks()
     });
 
     const wbData = studyData.workbench || this.getWorkbench();
@@ -152,6 +153,13 @@ qx.Class.define("osparc.data.model.Study", {
       check: "Object",
       init: {},
       event: "changeQuality",
+      nullable: true
+    },
+
+    sharingNetworks: {
+      check: "Object",
+      init: {},
+      event: "changeSharingNetworks",
       nullable: true
     },
 
