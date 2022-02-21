@@ -298,14 +298,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       throw new Error("Abstract method called!");
     },
 
-    _resetStudiesList: function() {
-      throw new Error("Abstract method called!");
-    },
-
-    _resetTemplatesList: function() {
-      throw new Error("Abstract method called!");
-    },
-
     _createStudyFromService: function() {
       throw new Error("Abstract method called!");
     },

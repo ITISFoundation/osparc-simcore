@@ -64,15 +64,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     reloadResources: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        this._requestResources(false);
+        osparc.data.Resources.get("folders")
+          .then(() => {
+            this._requestResources(false);
+          }, this);
       } else {
-        this._resetStudiesList([]);
+        this.__resetStudiesList([]);
       }
     },
 
     invalidateStudies: function() {
       osparc.store.Store.getInstance().invalidate("studies");
-      this._resetStudiesList([]);
+      this.__resetStudiesList([]);
       this._resourcesContainer.nextRequest = null;
     },
 
@@ -168,7 +171,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
       this._resourcesContainer.addListener("changeMode", () => {
-        this._resetStudiesList();
+        this.__resetStudiesList();
 
         const studyItems = this._resourcesContainer.getChildren();
         studyItems.forEach((studyItem, i) => {
@@ -344,6 +347,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         this.invalidateStudies();
         this.reloadResources();
       }, this);
+      osparc.store.Store.getInstance().addListener("changeFolders", () => {
+        this.invalidateStudies();
+        this.reloadResources();
+      }, this);
     },
 
     __createStudyBtnClkd: function() {
@@ -399,10 +406,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       } else {
         studies[index] = studyData;
       }
-      this._resetStudiesList(studies);
+      this.__resetStudiesList(studies);
     },
 
-    _resetStudiesList: function(studiesList) {
+    __resetStudiesList: function(studiesList) {
       if (studiesList === undefined) {
         studiesList = this.__studies;
       }
