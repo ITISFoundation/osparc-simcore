@@ -129,6 +129,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const importStudyButton = this.__createImportButton();
       this._secondaryBar.add(importStudyButton);
+
+      const newFolderButton = this.__createNewFolderButton();
+      this._secondaryBar.add(newFolderButton);
+
       const studiesDeleteButton = this.__createDeleteButton(false);
       this._secondaryBar.add(studiesDeleteButton);
 
@@ -257,6 +261,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }, this);
       }, this);
       return importButton;
+    },
+
+    __createNewFolderButton: function() {
+      const newFolderButton = new qx.ui.form.Button(this.tr("New folder"));
+      newFolderButton.addListener("execute", () => this.__createNewFolder(), this);
+      return newFolderButton;
     },
 
     __createDeleteButton: function() {
@@ -753,6 +763,26 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       req.open("POST", "/v0/projects:import", true);
       req.send(body);
+    },
+
+    __createNewFolder: function() {
+      const folderEditor = new osparc.component.editor.FolderEditor();
+      const title = this.tr("New Folder");
+      const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 150);
+      folderEditor.addListener("createFolder", () => {
+        const name = folderEditor.getChildControl("title").getValue().trim();
+        const description = folderEditor.getChildControl("description").getValue().trim();
+        const color = folderEditor.getChildControl("color-picker").getChildControl("color-input").getValue();
+        const params = {
+          name,
+          description,
+          color
+        };
+        osparc.data.Resources.fetch("folders", "post", params)
+          .then(() => this.reloadResources(), this)
+          .catch(console.error);
+      }, this);
+      folderEditor.addListener("cancel", () => win.close());
     },
 
     __deleteStudy: function(studyData) {
