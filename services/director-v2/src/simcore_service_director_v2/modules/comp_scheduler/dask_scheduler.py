@@ -86,7 +86,7 @@ class DaskScheduler(BaseCompScheduler):
                 project_id=project_id,
                 cluster_id=cluster_id,
                 tasks=scheduled_tasks,
-                callback=self._on_task_completed,
+                callback=callback,
             )
             logger.debug(
                 "started following tasks (node_id, job_id)[%s] on cluster %s",
@@ -115,6 +115,19 @@ class DaskScheduler(BaseCompScheduler):
     ) -> None:
         async with _cluster_dask_client(cluster_id, self) as client:
             await client.abort_computation_tasks([f"{t.job_id}" for t in tasks])
+
+    async def _process_completed_tasks(
+        self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
+    ) -> None:
+        async with _cluster_dask_client(cluster_id, self) as client:
+            tasks_results = await client.get_tasks_results(
+                [f"{t.job_id}" for t in tasks]
+            )
+        await asyncio.gather(
+            *[self._on_task_completed(event) for event in tasks_results]
+        )
+        async with _cluster_dask_client(cluster_id, self) as client:
+            await client.release_tasks_results([f"{t.job_id}" for t in tasks])
 
     async def _on_task_completed(self, event: TaskStateEvent) -> None:
         logger.debug(
@@ -163,7 +176,6 @@ class DaskScheduler(BaseCompScheduler):
             result=event.state,
         )
         await self.rabbitmq_client.publish_message(message)
-        self._wake_up_scheduler_now()
 
     async def _task_state_change_handler(self, event: str) -> None:
         task_state_event = TaskStateEvent.parse_raw(event)

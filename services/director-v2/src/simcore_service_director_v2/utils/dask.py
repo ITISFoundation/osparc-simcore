@@ -233,19 +233,14 @@ UserCompleteCB = Callable[[TaskStateEvent], Awaitable[None]]
 _DASK_FUTURE_TIMEOUT_S: Final[int] = 5
 
 
-def done_dask_callback(
-    dask_future: distributed.Future,
-    user_callback: UserCompleteCB,
-    main_loop: asyncio.AbstractEventLoop,
-):
-    # NOTE: BEWARE we are called in a separate thread!!
+async def parse_dask_future_results(dask_future: distributed.Future) -> TaskStateEvent:
     job_id = dask_future.key
     event_data: Optional[TaskStateEvent] = None
     logger.debug("task '%s' completed with status %s", job_id, dask_future.status)
     try:
         if dask_future.status == "error":
-            task_exception = dask_future.exception(timeout=_DASK_FUTURE_TIMEOUT_S)
-            task_traceback = dask_future.traceback(timeout=_DASK_FUTURE_TIMEOUT_S)
+            task_exception = await dask_future.exception(timeout=_DASK_FUTURE_TIMEOUT_S)
+            task_traceback = await dask_future.traceback(timeout=_DASK_FUTURE_TIMEOUT_S)
             event_data = TaskStateEvent(
                 job_id=job_id,
                 state=RunningState.FAILED,
@@ -259,7 +254,7 @@ def done_dask_callback(
             event_data = TaskStateEvent(job_id=job_id, state=RunningState.ABORTED)
         else:
             task_result = cast(
-                TaskOutputData, dask_future.result(timeout=_DASK_FUTURE_TIMEOUT_S)
+                TaskOutputData, await dask_future.result(timeout=_DASK_FUTURE_TIMEOUT_S)
             )
             assert task_result  # no sec
             event_data = TaskStateEvent(
@@ -278,13 +273,20 @@ def done_dask_callback(
             job_id,
             exc_info=True,
         )
-    finally:
-        logger.debug("dispatching callback to finish task '%s'", job_id)
-        assert event_data  # nosec
-        try:
-            asyncio.run_coroutine_threadsafe(user_callback(event_data), main_loop)
-        except Exception:  # pylint: disable=broad-except
-            logger.exception("Unexpected issue while transmitting state to main thread")
+    return event_data
+
+
+def done_dask_callback(
+    dask_future: distributed.Future,
+    user_callback: UserCompleteCB,
+    main_loop: asyncio.AbstractEventLoop,
+):
+
+    try:
+        event_data = parse_dask_future_results(dask_future)
+        asyncio.run_coroutine_threadsafe(user_callback(event_data), main_loop)
+    except Exception:  # pylint: disable=broad-except
+        logger.exception("Unexpected issue while transmitting state to main thread")
 
 
 async def clean_task_output_and_log_files_if_invalid(

@@ -1,5 +1,4 @@
 import asyncio
-import functools
 import json
 import logging
 import os
@@ -48,7 +47,6 @@ from ..core.settings import DaskSchedulerSettings
 from ..models.domains.comp_tasks import Image
 from ..models.schemas.constants import ClusterID, UserID
 from ..utils.dask import (
-    UserCompleteCB,
     check_communication_with_scheduler_is_open,
     check_if_cluster_is_able_to_run_pipeline,
     check_scheduler_is_still_the_same,
@@ -57,9 +55,9 @@ from ..utils.dask import (
     compute_output_data_schema,
     compute_service_log_file_upload_link,
     dask_sub_consumer_task,
-    done_dask_callback,
     from_node_reqs_to_dask_resources,
     generate_dask_job_id,
+    parse_dask_future_results,
 )
 
 logger = logging.getLogger(__name__)
@@ -285,7 +283,7 @@ class DaskClient:
         project_id: ProjectID,
         cluster_id: ClusterID,
         tasks: Dict[NodeID, Image],
-        callback: UserCompleteCB,
+        callback: Callable,
         remote_fct: Callable = None,
     ) -> List[Tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
@@ -378,19 +376,10 @@ class DaskClient:
                     retries=0,
                 )
 
-                async def _task_done_callback(event_data: TaskStateEvent) -> None:
-                    await self.dask_subsystem.client.unpublish_dataset(
-                        event_data.job_id
-                    )  # type: ignore
-                    return await callback(event_data)
+                def done_callback(_: distributed.Future):
+                    callback()
 
-                task_future.add_done_callback(
-                    functools.partial(
-                        done_dask_callback,
-                        user_callback=_task_done_callback,
-                        main_loop=asyncio.get_event_loop(),
-                    )
-                )
+                task_future.add_done_callback(done_callback)
 
                 list_of_node_id_to_job_id.append((node_id, job_id))
                 await self.dask_subsystem.client.publish_dataset(
@@ -413,12 +402,29 @@ class DaskClient:
         )  # type: ignore
         logger.debug("found dask task statuses: %s", f"{task_statuses=}")
 
-        return [
-            _DASK_TASK_STATUS_RUNNING_STATE_MAP.get(
-                task_statuses.get(job_id, "lost"), RunningState.UNKNOWN
-            )
-            for job_id in job_ids
-        ]
+        running_states = []
+        for job_id in job_ids:
+            dask_status = task_statuses.get(job_id, "lost")
+            if dask_status == "memory":
+                if dask_future := distributed.Future(job_id):
+                    # NOTE: this is necessary so we get the results of the future (cancelled or done)
+                    await dask_future.result(timeout=2)
+                    if dask_future.cancelled():
+                        running_states.append(RunningState.ABORTED)
+                    elif dask_future.done():
+                        running_states.append(RunningState.SUCCESS)
+                    logger.debug(
+                        "task status is in memory, future status is %s",
+                        f"{dask_future=}",
+                    )
+            else:
+                running_states.append(
+                    _DASK_TASK_STATUS_RUNNING_STATE_MAP.get(
+                        dask_status, RunningState.UNKNOWN
+                    )
+                )
+
+        return running_states
 
     async def abort_computation_tasks(self, job_ids: List[str]) -> None:
         # Dask future may be cancelled, but only a future that was not already taken by
@@ -429,8 +435,23 @@ class DaskClient:
         logger.debug("cancelling tasks with job_ids: [%s]", job_ids)
         for job_id in job_ids:
             if task_future := distributed.Future(job_id, self.dask_subsystem.client):
+                await task_future.cancel(force=True)  # type: ignore
                 self.cancellation_dask_pub.put(  # type: ignore
                     TaskCancelEvent(job_id=job_id).json()  # type: ignore
                 )
-                await task_future.cancel()  # type: ignore
+
                 logger.debug("Dask task %s cancelled", task_future.key)
+
+    async def get_tasks_results(self, job_ids: List[str]) -> List[TaskStateEvent]:
+        logger.debug("getting results for %s", f"{job_ids=}")
+        results = []
+        for job_id in job_ids:
+            if task_future := distributed.Future(job_id, self.dask_subsystem.client):
+                state = await parse_dask_future_results(task_future)
+                results.append(state)
+        return results
+
+    async def release_tasks_results(self, job_ids: List[str]) -> None:
+        logger.debug("releasing results for %s", f"{job_ids=}")
+        for job_id in job_ids:
+            await self.dask_subsystem.client.unpublish_dataset(name=job_id)  # type: ignore
