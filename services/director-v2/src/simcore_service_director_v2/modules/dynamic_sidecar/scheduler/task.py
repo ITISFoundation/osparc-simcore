@@ -343,7 +343,7 @@ class DynamicSidecarsScheduler:
                 )
 
             await logged_gather(*tasks)
-        else:
+        elif len(sorted_container_names) > 0:
             raise DynamicSidecarError(
                 f"Unexpected case, there was an errorr with the setup {sorted_container_names}"
             )
@@ -360,9 +360,14 @@ class DynamicSidecarsScheduler:
         )
 
         # the network needs to be detached from all started containers
-        containers_status = await dynamic_sidecar_client.containers_docker_status(
-            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
-        )
+        try:
+            containers_status = await dynamic_sidecar_client.containers_docker_status(
+                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
+            )
+        except httpx.HTTPError as e:
+            # log for debug purposes but ignore
+            logger.info("Could not contact sidecar %s", f"{e}")
+            containers_status = []
 
         await logged_gather(
             *[
