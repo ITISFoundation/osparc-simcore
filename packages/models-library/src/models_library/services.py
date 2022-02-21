@@ -185,6 +185,16 @@ class BaseServiceIOModel(BaseModel):
                 "content_schema is defined but set the wrong type."
                 f"Expected type=ref_contentSchema but got ={ptype}."
             )
+
+        # TODO:  Check is a valid jsonschema? Use $ref to or active validation as in
+        # import jsonschema
+        # try:
+        #   jsonschema.validate({}, v)
+        # except SchemaError as err:
+        #   raise ValueError()
+        # except jsonschema.ValidationError as err:
+        #
+
         return v
 
 
@@ -193,6 +203,7 @@ class ServiceInput(BaseServiceIOModel):
     Metadata on a service input port
     """
 
+    # NOTE: should deprecate since schema include defaults as well
     default_value: Optional[Union[StrictBool, StrictInt, StrictFloat, str]] = Field(
         None, alias="defaultValue", examples=["Dog", True]
     )
@@ -230,6 +241,31 @@ class ServiceInput(BaseServiceIOModel):
                     "defaultValue": 0,
                     "unit": "second",
                     "widget": {"type": "TextArea", "details": {"minHeight": 3}},
+                },
+                {
+                    "label": "array_numbers",
+                    "description": "Some array of numbers",
+                    "type": "ref_contentSchema",
+                    "contentSchema": {
+                        "title": "list[number]",
+                        "type": "array",
+                        "items": {"type": "number"},
+                    },
+                },
+                {
+                    "label": "my_object",
+                    "description": "Some object",
+                    "type": "ref_contentSchema",
+                    "contentSchema": {
+                        "title": "an object named A",
+                        "type": "object",
+                        "properties": {
+                            "i": {"title": "Int", "type": "integer", "default": 3},
+                            "b": {"title": "Bool", "type": "boolean"},
+                            "s": {"title": "Str", "type": "string"},
+                        },
+                        "required": ["b", "s"],
+                    },
                 },
             ],
         }
