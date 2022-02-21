@@ -19,14 +19,14 @@ from socketio.exceptions import ConnectionRefusedError as SocketIOConnectionErro
 from ..groups_api import list_user_groups
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..resource_manager.websocket_manager import managed_resource
-from .config import get_socket_server
 from .events import SOCKET_IO_HEARTBEAT_EVENT, SocketMessageDict, send_messages
 from .handlers_utils import register_socketio_handler
+from .server import get_socket_server
 
 ANONYMOUS_USER_ID = -1
 _SOCKET_IO_AIOHTTP_REQUEST_KEY = "aiohttp.request"
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 
 @register_socketio_handler

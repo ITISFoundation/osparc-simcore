@@ -12,7 +12,7 @@ from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects import Node
 from pydantic import PositiveInt
-from pytest_simcore.helpers.utils_docker import get_ip
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
@@ -91,7 +91,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
     Normally director-v2 talks via docker-netwoks with the dynamic-sidecar.
     Since the director-v2 was started outside docker and is not
     running in a container, the service port needs to be exposed and the
-    url needs to be changed to get_ip()
+    url needs to be changed to get_localhost_ip()
 
     returns: the local endpoint
     """
@@ -119,11 +119,11 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
     async with scheduler._lock:  # pylint: disable=protected-access
         for entry in scheduler._to_observe.values():  # pylint: disable=protected-access
             if entry.scheduler_data.service_name == service_name:
-                entry.scheduler_data.dynamic_sidecar.hostname = f"{get_ip()}"
+                entry.scheduler_data.dynamic_sidecar.hostname = f"{get_localhost_ip()}"
                 entry.scheduler_data.dynamic_sidecar.port = port
 
                 endpoint = entry.scheduler_data.dynamic_sidecar.endpoint
-                assert endpoint == f"http://{get_ip()}:{port}"
+                assert endpoint == f"http://{get_localhost_ip()}:{port}"
                 break
 
     assert endpoint is not None
@@ -135,7 +135,7 @@ async def _get_proxy_port(node_uuid: str) -> PositiveInt:
     Normally director-v2 talks via docker-netwoks with the started proxy.
     Since the director-v2 was started outside docker and is not
     running in a container, the service port needs to be exposed and the
-    url needs to be changed to get_ip()
+    url needs to be changed to get_localhost_ip()
 
     returns: the local endpoint
     """
@@ -362,9 +362,9 @@ async def assert_service_is_available(  # pylint: disable=redefined-outer-name
     exposed_port: PositiveInt, is_legacy: bool, service_uuid: str
 ) -> None:
     service_address = (
-        f"http://{get_ip()}:{exposed_port}/x/{service_uuid}"
+        f"http://{get_localhost_ip()}:{exposed_port}/x/{service_uuid}"
         if is_legacy
-        else f"http://{get_ip()}:{exposed_port}"
+        else f"http://{get_localhost_ip()}:{exposed_port}"
     )
     print(f"checking service @ {service_address}")
 

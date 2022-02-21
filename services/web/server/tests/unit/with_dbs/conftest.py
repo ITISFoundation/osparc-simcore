@@ -9,13 +9,12 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-import os
 import sys
 import textwrap
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterator, Callable, Dict, Iterator, List
-from unittest.mock import MagicMock, patch
+from typing import AsyncIterator, Callable, Dict, Iterator, List
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import aioredis
@@ -25,17 +24,16 @@ import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
 import sqlalchemy as sa
-import trafaret_config
 from _helpers import MockedStorageSubsystem  # type: ignore
+from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
+from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_DB_ENGINE_KEY
+from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.common_aiopg_utils import DSN
-from simcore_service_webserver import rest
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
 from simcore_service_webserver.application import create_application
-from simcore_service_webserver.application__schema import app_schema as app_schema
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
@@ -46,44 +44,25 @@ from yarl import URL
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
-
 # DEPLOYED SERVICES FOR TESTSUITE SESSION -----------------------------------
 
 
 @pytest.fixture(autouse=True)
-def disable_swagger_doc_generation() -> Iterator[None]:
+def disable_swagger_doc_generation(
+    monkeypatch: MonkeyPatch, osparc_simcore_root_dir: Path
+):
     """
     by not enabling the swagger documentation, 1.8s per test is gained
     """
-    with patch.dict(
-        rest.setup_rest.__wrapped__.__kwdefaults__, {"swagger_doc_enabled": False}
-    ):
-        yield
+    monkeypatch.setenv("REST_SWAGGER_API_DOC_ENABLED", "0")
+    # TODO: after removing config, this might be used.
+    # monkeypatch.setenv("OSPARC_SIMCORE_REPO_ROOTDIR", f"{osparc_simcore_root_dir}")
 
 
 @pytest.fixture(scope="session")
-def default_app_cfg(osparc_simcore_root_dir: Path) -> Dict[str, Any]:
-    # NOTE: ONLY used at the session scopes
-    cfg_path = CURRENT_DIR / "config.yaml"
-    assert cfg_path.exists()
-
-    variables = dict(os.environ)
-    variables.update(
-        {
-            "OSPARC_SIMCORE_REPO_ROOTDIR": str(osparc_simcore_root_dir),
-        }
-    )
-
-    # validates and fills all defaults/optional entries that normal load would not do
-    cfg_dict = trafaret_config.read_and_validate(cfg_path, app_schema, vars=variables)
-
-    # WARNING: changes to this fixture during testing propagates to other tests. Use cfg = deepcopy(cfg_dict)
-    # FIXME:  free cfg_dict but deepcopy shall be r/w
-    return cfg_dict
-
-
-@pytest.fixture(scope="session")
-def docker_compose_file(default_app_cfg, monkeypatch_session) -> str:
+def docker_compose_file(
+    default_app_cfg: ConfigDict, monkeypatch_session: MonkeyPatch
+) -> str:
     """Overrides pytest-docker fixture"""
 
     cfg = deepcopy(default_app_cfg["db"]["postgres"])
@@ -96,16 +75,16 @@ def docker_compose_file(default_app_cfg, monkeypatch_session) -> str:
     compose_path = CURRENT_DIR / "docker-compose-devel.yml"
 
     assert compose_path.exists()
-    return str(compose_path)
+    return f"{compose_path}"
 
 
 # WEB SERVER/CLIENT FIXTURES ------------------------------------------------
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg, aiohttp_unused_port) -> Dict[str, Any]:
-    """Can be overriden in any test module to configure
-    the app accordingly
+def app_cfg(default_app_cfg: ConfigDict, aiohttp_unused_port) -> ConfigDict:
+    """
+    NOTE: SHOULD be overriden in any test module to configure the app accordingly
     """
     cfg = deepcopy(default_app_cfg)
 
@@ -120,11 +99,11 @@ def app_cfg(default_app_cfg, aiohttp_unused_port) -> Dict[str, Any]:
 @pytest.fixture
 def web_server(
     loop,
-    app_cfg: Dict,
-    monkeypatch,
+    app_cfg: ConfigDict,
+    monkeypatch: MonkeyPatch,
     postgres_db,
-    aiohttp_server,
-    disable_static_webserver,
+    aiohttp_server: Callable,
+    disable_static_webserver: Callable,
     monkeypatch_setenv_from_app_config: Callable,
 ) -> TestServer:
 
@@ -133,9 +112,7 @@ def web_server(
     monkeypatch_setenv_from_app_config(cfg)
 
     # original APP
-    app = create_application(cfg)
-
-    assert app[APP_CONFIG_KEY] == cfg
+    app = create_application()
 
     # with patched email
     _path_mail(monkeypatch)
@@ -168,7 +145,7 @@ def client(
 
 
 @pytest.fixture
-def disable_static_webserver(monkeypatch) -> Callable:
+def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
     """
     Disables the static-webserver module.
     Avoids fecthing and caching index.html pages
@@ -180,12 +157,12 @@ def disable_static_webserver(monkeypatch) -> Callable:
         Emulates the reply of the '/' path when the static-webserver is disabled
         """
         html = textwrap.dedent(
-            """\
+            f"""\
             <!DOCTYPE html>
             <html>
             <body>
                 <h1>OSPARC-SIMCORE</h1>
-                <p> This is a result of disable_static_webserver fixture for product OSPARC</p>
+                <p> This is a result of disable_static_webserver fixture for product OSPARC ({__file__})</p>
             </body>
             </html>
             """
@@ -193,7 +170,7 @@ def disable_static_webserver(monkeypatch) -> Callable:
         return web.Response(text=html)
 
     # mount and serve some staic mocked content
-    monkeypatch.setenv("WEBSERVER_STATIC_MODULE_ENABLED", "false")
+    monkeypatch.setenv("WEBSERVER_STATICWEB", "null")
 
     def add_index_route(app: web.Application) -> None:
         app.router.add_get("/", _mocked_index_html, name=INDEX_RESOURCE_NAME)
@@ -358,6 +335,7 @@ def postgres_db(
 
 @pytest.fixture(scope="session")
 def redis_service(docker_services, docker_ip) -> URL:
+    # WARNING: overrides pytest_simcore.redis_service.redis_server function-scoped fixture!
 
     host = docker_ip
     port = docker_services.port_for("redis", 6379)
@@ -372,7 +350,7 @@ def redis_service(docker_services, docker_ip) -> URL:
 
 
 @pytest.fixture
-async def redis_client(loop, redis_service):
+async def redis_client(loop, redis_service: URL):
     client = await aioredis.create_redis_pool(str(redis_service), encoding="utf-8")
     yield client
 
@@ -462,7 +440,8 @@ async def all_group(client, logged_user) -> Dict[str, str]:
 
 def _path_mail(monkeypatch):
     async def send_mail(*args):
-        print("=== EMAIL TO: {}\n=== SUBJECT: {}\n=== BODY:\n{}".format(*args))
+        _app, recipient, subject, body = args
+        print(f"=== EMAIL TO: {recipient}\n=== SUBJECT: {subject}\n=== BODY:\n{body}")
 
     monkeypatch.setattr(
         simcore_service_webserver.login.utils, "compose_mail", send_mail

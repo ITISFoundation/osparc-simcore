@@ -11,6 +11,7 @@ import simcore_service_director
 from aiohttp import ClientSession
 from simcore_service_director import config, resources
 
+# NOTE: that all the changes in these pytest-plugins MUST by py3.6 compatible!
 pytest_plugins = [
     "fixtures.fake_services",
     "pytest_simcore.docker_compose",

@@ -5,7 +5,7 @@ from copy import deepcopy
 from datetime import datetime
 from distutils.util import strtobool
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
+from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, TypedDict
 
 from aiohttp import web
 
@@ -50,7 +50,33 @@ class DependencyError(ApplicationSetupError):
     ...
 
 
+class SetupMetadataDict(TypedDict):
+    module_name: str
+    dependencies: List[str]
+    config_section: str
+    config_enabled: str
+
+
 # HELPERS ------------------------------------------------------------------
+
+
+def _parse_and_validate_arguments(
+    module_name, depends, config_section, config_enabled
+) -> Tuple:
+    module_name = module_name.replace(".__init__", "")
+    depends = depends or []
+
+    if config_section and config_enabled:
+        raise ValueError("Can only set config_section or config_enabled but not both")
+
+    section = config_section or module_name.split(".")[-1]
+    if config_enabled is None:
+        config_enabled = f"{section}.enabled"
+    else:
+        # if passes config_enabled, invalidates info on section
+        section = None
+
+    return module_name, depends, section, config_enabled
 
 
 def _is_addon_enabled_from_config(
@@ -114,11 +140,16 @@ def app_module_setup(
     module_name: str,
     category: ModuleCategory,
     *,
+    settings_name: Optional[str] = None,
     depends: Optional[List[str]] = None,
+    logger: logging.Logger = log,
+    # TODO: SEE https://github.com/ITISFoundation/osparc-simcore/issues/2008
+    # TODO: - settings_name becomes module_name!!
+    # TODO: - plugin base should be aware of setup and settings -> model instead of function?
+    # TODO: - depends mechanism will call registered setups List[Union[str, _SetupFunc]]
+    # TODO: - deprecate config options
     config_section: Optional[str] = None,
     config_enabled: Optional[str] = None,
-    settings_name: Optional[str] = None,
-    logger: logging.Logger = log,
 ) -> Callable:
     """Decorator that marks a function as 'a setup function' for a given module in an application
 
@@ -150,18 +181,9 @@ def app_module_setup(
     # TODO: resilience to failure. if this setup fails, then considering dependencies, is it fatal or app can start?
     # TODO: enforce signature as def setup(app: web.Application, **kwargs) -> web.Application
 
-    module_name = module_name.replace(".__init__", "")
-    depends = depends or []
-
-    if config_section and config_enabled:
-        raise ValueError("Can only set config_section or config_enabled but not both")
-
-    section = config_section or module_name.split(".")[-1]
-    if config_enabled is None:
-        config_enabled = f"{section}.enabled"
-    else:
-        # if passes config_enabled, invalidates info on section
-        section = None
+    module_name, depends, section, config_enabled = _parse_and_validate_arguments(
+        module_name, depends, config_section, config_enabled
+    )
 
     def _decorate(setup_func: _SetupFunc):
 
@@ -169,7 +191,7 @@ def app_module_setup(
             logger.warning("Rename '%s' to contain 'setup'", setup_func.__name__)
 
         # metadata info
-        def setup_metadata() -> Dict[str, Any]:
+        def setup_metadata() -> SetupMetadataDict:
             return {
                 "module_name": module_name,
                 "dependencies": depends,
@@ -194,17 +216,21 @@ def app_module_setup(
                 app[APP_SETUP_COMPLETED_KEY] = []
 
             if category == ModuleCategory.ADDON:
-                # NOTE: ONLY addons can be enabled/disabled
+                # ONLY addons can be enabled/disabled
 
-                # TODO: cfg will be fully replaced by app_settings section below
-                cfg = app[APP_CONFIG_KEY]
-                is_enabled = _is_addon_enabled_from_config(cfg, config_enabled, section)
-                if not is_enabled:
-                    logger.info(
-                        "Skipping '%s' setup. Explicitly disabled in config",
-                        module_name,
+                if settings_name is None:
+                    # Fall back to config if settings_name is not explicitly defined
+                    # TODO: deprecate
+                    cfg = app[APP_CONFIG_KEY]
+                    is_enabled = _is_addon_enabled_from_config(
+                        cfg, config_enabled, section
                     )
-                    return False
+                    if not is_enabled:
+                        logger.info(
+                            "Skipping '%s' setup. Explicitly disabled in config",
+                            module_name,
+                        )
+                        return False
 
                 # NOTE: if not disabled by config, it can be disabled by settings (tmp while legacy maintained)
                 app_settings, module_settings_name = _get_app_settings_and_field_name(
@@ -260,7 +286,7 @@ def app_module_setup(
                     )
 
             except SkipModuleSetup as exc:
-                logger.warning("Skipping '%s' setup: %s", module_name, exc.reason)
+                logger.info("Skipping '%s' setup: %s", module_name, exc.reason)
                 completed = False
 
             elapsed = datetime.now() - started
@@ -274,6 +300,8 @@ def app_module_setup(
 
         _wrapper.metadata = setup_metadata
         _wrapper.mark_as_simcore_servicelib_setup_func = True
+        # NOTE: this is added by functools.wraps decorated
+        assert _wrapper.__wrapped__ == setup_func  # nosec
 
         return _wrapper
 

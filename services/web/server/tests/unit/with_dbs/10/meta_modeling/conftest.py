@@ -48,7 +48,6 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, monkeypatch) -> Dict[str, Any]
         "smtp",
         "socketio",
         "storage",
-        "studies_access",
         "studies_dispatcher",
         "tags",
         "tracing",

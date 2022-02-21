@@ -8,15 +8,14 @@ from aiohttp_security.abc import AbstractAuthorizationPolicy
 from aiopg.sa import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from expiringdict import ExpiringDict
-from tenacity import retry
-
 from servicelib.aiohttp.aiopg_utils import PostgresRetryPolicyUponOperation
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
+from tenacity import retry
 
 from .db_models import UserStatus, users
 from .security_access_model import RoleBasedAccessModel, check_access
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 
 @attr.s(auto_attribs=True, frozen=True)
@@ -53,7 +52,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         return row
 
     async def authorized_userid(self, identity: str) -> Optional[int]:
-        """ Retrieve authorized user id.
+        """Retrieve authorized user id.
 
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
@@ -68,7 +67,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         permission: Union[str, Tuple],
         context: Optional[Dict] = None,
     ) -> bool:
-        """ Determines whether an identified user has permission
+        """Determines whether an identified user has permission
 
         :param identity: session identified corresponds to the user's email as defined in login.handlers.registration
         :param permission: name of the operation that user wants to execute OR a tuple as (operator.and_|operator.or_, name1, name2, ...)

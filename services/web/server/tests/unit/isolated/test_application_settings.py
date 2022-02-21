@@ -2,7 +2,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-name-in-module
 
-import argparse
 import json
 import os
 import re
@@ -10,13 +9,13 @@ from typing import Dict
 
 import pytest
 from aiohttp import web
+from pytest_simcore.helpers.utils_dict import ConfigDict
 from simcore_service_webserver.application_settings import (
     APP_SETTINGS_KEY,
     ApplicationSettings,
     setup_settings,
 )
 from simcore_service_webserver.application_settings_utils import convert_to_app_config
-from simcore_service_webserver.cli import parse, setup_parser
 
 # FIXTURES -----------------------------
 
@@ -163,24 +162,15 @@ def app_settings(mock_webserver_service_environment) -> ApplicationSettings:
     return settings
 
 
-@pytest.fixture(
-    params=[
-        "server-docker-prod.yaml",
-    ]
-)
-def app_config(request, mock_webserver_service_environment) -> Dict:
-    parser = setup_parser(argparse.ArgumentParser("test-parser"))
-    config = parse(["-c", request.param], parser)
-    print("app config [request.param]:\n", json.dumps(config, indent=1))
-    return config
-
-
 # TESTS -----------------------------
 
 
+@pytest.mark.skip(reason="DEPRECATED")
 def test_app_settings_with_prod_config(
-    app_config: Dict, app_settings: ApplicationSettings
+    app_config_for_production_legacy: ConfigDict,
+    app_settings: ApplicationSettings,
 ):
+
     # Ensures all plugins are enabled for this test
     assert app_settings.WEBSERVER_EMAIL is not None
     assert app_settings.WEBSERVER_ACTIVITY is not None
@@ -204,7 +194,7 @@ def test_app_settings_with_prod_config(
     # This test has been used to guide the design of new settings
     #
 
-    assert app_config == convert_to_app_config(app_settings)
+    assert app_config_for_production_legacy == convert_to_app_config(app_settings)
 
 
 def test_settings_constructs(app_settings: ApplicationSettings):

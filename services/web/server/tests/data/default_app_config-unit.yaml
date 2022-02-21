@@ -1,0 +1,111 @@
+#
+# This is the old application config bug including defaults values
+# It sets a default config that is used as base for all tests
+# It can be overriden by redefining a fixture app_config (see tests for examples)
+# It disables all non-essential plugins for tests (e.g. remote_debug, diagnostics, et)
+# T
+version: "1.0"
+main:
+  host: 127.0.0.1
+  log_level: DEBUG
+  port: 8080
+  testing: true
+  studies_access_enabled: true
+activity:
+  enabled: false
+catalog:
+  enabled: true
+clusters:
+  enabled: true
+computation:
+  enabled: false
+# https://github.com/ITISFoundation/osparc-simcore/blob/0e9a59a76a88c12d59d4a568339a1757adab464a/services/web/server/src/simcore_service_webserver/db__schema.py
+db:
+  enabled: true
+  postgres:
+    database: test
+    user: admin
+    password: admin
+    host: 127.0.0.1
+    port: 5432
+    maxsize: 5
+    minsize: 1
+    endpoint: 127.0.0.1:5432
+diagnostics:
+  enabled: false
+director:
+  enabled: false
+  host: director
+  port: 8001
+  version: v0
+director-v2:
+  enabled: true
+exporter:
+  enabled: false
+garbage_collector:
+  enabled: true
+groups:
+  enabled: true
+# https://github.com/ITISFoundation/osparc-simcore/blob/0e9a59a76a88c12d59d4a568339a1757adab464a/services/web/server/src/simcore_service_webserver/login/_schema.py
+login:
+  enabled: true
+  registration_confirmation_required: true
+  registration_invitation_required: false
+meta_modeling:
+  enabled: false
+products:
+  enabled: true
+projects:
+  enabled: false
+publications:
+  enabled: true
+remote_debug:
+  enabled: false
+# https://github.com/ITISFoundation/osparc-simcore/blob/0e9a59a76a88c12d59d4a568339a1757adab464a/services/web/server/src/simcore_service_webserver/resource_manager/_schema.py
+resource_manager:
+  enabled: true
+  resource_deletion_timeout_seconds: 900
+  garbage_collection_interval_seconds: 30
+  redis:
+    host: 127.0.0.1
+    port: 6379
+redis:
+  enabled: true
+# NOTE: redis options are in resource_manager.redis (legacy)
+rest:
+  enabled: true
+  version: v0
+scicrunch:
+  enabled: false
+security:
+  enabled: true
+session:
+  # python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key())"
+  secret_key: "tjwiMSLe0Xd9dwMlAVQT9pYY9JEnr7rcH05fkUcukVs="
+smtp:
+  sender: "OSPARC support <support@osparc.io>"
+  host: mail.foo.com
+  port: 25
+  tls: false
+  username: None,
+  password: None
+socketio:
+  enabled: true
+statics:
+  enabled: true
+storage:
+  enabled: true
+  host: localhost
+  port: 11111
+  version: v5 # FAKE API VERSION
+studies_dispatcher:
+  enabled: true
+tags:
+  enabled: true
+tracing:
+  enabled: false
+  zipkin_endpoint: http://jaeger:9411
+users:
+  enabled: true
+version_control:
+  enabled: false

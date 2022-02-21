@@ -10,7 +10,7 @@ import logging
 from aiohttp import web
 
 from .garbage_collector_core import collect_garbage
-from .resource_manager.config import get_garbage_collector_interval
+from .garbage_collector_settings import GarbageCollectorSettings, get_plugin_settings
 
 logger = logging.getLogger(__name__)
 
@@ -60,10 +60,12 @@ async def run_background_task(app: web.Application):
 
 async def collect_garbage_periodically(app: web.Application):
 
+    settings: GarbageCollectorSettings = get_plugin_settings(app)
+
     while True:
         logger.info("Starting garbage collector...")
         try:
-            interval = get_garbage_collector_interval(app)
+            interval = settings.GARBAGE_COLLECTOR_INTERVAL_S
             while True:
                 await collect_garbage(app)
 

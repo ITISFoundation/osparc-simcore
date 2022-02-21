@@ -12,17 +12,18 @@ import logging
 import aiohttp_security
 from aiohttp import web
 from aiohttp_security.session_identity import SessionIdentityPolicy
-
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .security_access_model import RoleBasedAccessModel
 from .security_authorization import AuthorizationPolicy
 from .security_roles import ROLES_PERMISSIONS
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 
-@app_module_setup(__name__, ModuleCategory.SYSTEM, logger=log)
+@app_module_setup(
+    __name__, ModuleCategory.SYSTEM, settings_name="WEBSERVER_SECURITY", logger=log
+)
 def setup_security(app: web.Application):
     # Once user is identified, an identity string is created for that user
     identity_policy = SessionIdentityPolicy()

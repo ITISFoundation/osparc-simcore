@@ -5,27 +5,32 @@
 """
 import json
 import logging
-from pprint import pformat
+from datetime import datetime
 from typing import Dict, Optional
 
 from aiohttp import web
+from servicelib.json_serialization import json_dumps
 from yarl import URL
 
 from ..db_models import UserStatus
-from .cfg import cfg
 from .confirmation import (
     ConfirmationAction,
     get_expiration_date,
     is_confirmation_expired,
     validate_confirmation_code,
 )
-from .storage import AsyncpgStorage
+from .settings import LoginOptions
+from .storage import AsyncpgStorage, ConfirmationDict
 
 log = logging.getLogger(__name__)
 
 
 async def check_registration(
-    email: str, password: str, confirm: Optional[str], db: AsyncpgStorage
+    email: str,
+    password: str,
+    confirm: Optional[str],
+    db: AsyncpgStorage,
+    cfg: LoginOptions,
 ):
     # email : required & formats
     # password: required & secure[min length, ...]
@@ -49,11 +54,11 @@ async def check_registration(
     if user:
         # Resets pending confirmation if re-registers?
         if user["status"] == UserStatus.CONFIRMATION_PENDING.value:
-            _confirmation = await db.get_confirmation(
+            _confirmation: ConfirmationDict = await db.get_confirmation(
                 {"user": user, "action": ConfirmationAction.REGISTRATION.value}
             )
 
-            if is_confirmation_expired(_confirmation):
+            if is_confirmation_expired(cfg, _confirmation):
                 await db.delete_confirmation(_confirmation)
                 await db.delete_user(user)
                 return
@@ -84,16 +89,18 @@ async def create_invitation(host: Dict, guest: str, db: AsyncpgStorage):
     return confirmation
 
 
-async def check_invitation(invitation: Optional[str], db: AsyncpgStorage):
+async def check_invitation(
+    invitation: Optional[str], db: AsyncpgStorage, cfg: LoginOptions
+):
     confirmation = None
     if invitation:
-        confirmation = await validate_confirmation_code(invitation, db)
+        confirmation = await validate_confirmation_code(invitation, db, cfg)
 
     if confirmation:
         # FIXME: check if action=invitation??
         log.info(
             "Invitation code used. Deleting %s",
-            pformat(get_confirmation_info(confirmation)),
+            json_dumps(get_confirmation_info(cfg, confirmation), indent=1),
         )
         await db.delete_confirmation(confirmation)
     else:
@@ -106,24 +113,34 @@ async def check_invitation(invitation: Optional[str], db: AsyncpgStorage):
         )
 
 
-def get_confirmation_info(confirmation):
+class ConfirmationInfoDict(ConfirmationDict):
+    expires: datetime
+    url: str
+
+
+def get_confirmation_info(
+    cfg: LoginOptions, confirmation: ConfirmationDict
+) -> ConfirmationInfoDict:
+
     info = dict(confirmation)
-    # data column is a string
     try:
+        # data column is a string
         info["data"] = json.loads(confirmation["data"])
     except json.decoder.JSONDecodeError:
         log.warning("Failed to load data from confirmation. Skipping 'data' field.")
 
     # extra
-    info["expires"] = get_expiration_date(confirmation)
+    info["expires"] = get_expiration_date(cfg, confirmation)
 
     if confirmation["action"] == ConfirmationAction.INVITATION.name:
-        info["url"] = get_invitation_url(confirmation)
+        info["url"] = f"{get_invitation_url(confirmation)}"
 
     return info
 
 
-def get_invitation_url(confirmation, origin: URL = None) -> URL:
+def get_invitation_url(
+    confirmation: ConfirmationDict, origin: Optional[URL] = None
+) -> URL:
     code = confirmation["code"]
     is_invitation = confirmation["action"] == ConfirmationAction.INVITATION.name
 

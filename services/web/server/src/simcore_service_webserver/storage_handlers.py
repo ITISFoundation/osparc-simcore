@@ -7,25 +7,24 @@ import urllib
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from aiohttp import web
-from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.aiohttp.client_session import get_client_session
 from servicelib.aiohttp.rest_responses import unwrap_envelope
 from servicelib.aiohttp.rest_utils import extract_and_validate
+from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
 
 from .login.decorators import login_required
 from .security_decorators import permission_required
-from .storage_config import get_client_session, get_storage_config
+from .storage_settings import StorageSettings, get_plugin_settings
 
 log = logging.getLogger(__name__)
 
 
 def _get_base_storage_url(app: web.Application) -> URL:
-    cfg = get_storage_config(app)
+    settings: StorageSettings = get_plugin_settings(app)
 
     # storage service API endpoint
-    return URL.build(scheme="http", host=cfg["host"], port=cfg["port"]).with_path(
-        cfg["version"]
-    )
+    return URL(settings.base_url)
 
 
 def _resolve_storage_url(request: web.Request) -> URL:

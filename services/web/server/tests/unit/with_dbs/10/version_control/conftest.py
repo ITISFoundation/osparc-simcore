@@ -99,7 +99,6 @@ def app_cfg(
         "smtp",
         "socketio",
         "storage",
-        "studies_access",
         "studies_dispatcher",
         "tags",
         "tracing",

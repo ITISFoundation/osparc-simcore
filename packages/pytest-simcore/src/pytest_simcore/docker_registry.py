@@ -14,7 +14,7 @@ import jsonschema
 import pytest
 import tenacity
 
-from .helpers.utils_docker import get_ip
+from .helpers.utils_docker import get_localhost_ip
 
 log = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ def docker_registry(keep_docker_up: bool) -> str:
     os.environ["REGISTRY_SSL"] = "False"
     os.environ["REGISTRY_AUTH"] = "False"
     # the registry URL is how to access from the container (e.g. for accessing the API)
-    os.environ["REGISTRY_URL"] = f"{get_ip()}:5000"
+    os.environ["REGISTRY_URL"] = f"{get_localhost_ip()}:5000"
     # the registry PATH is how the docker engine shall access the images (usually same as REGISTRY_URL but for testing)
     os.environ["REGISTRY_PATH"] = "127.0.0.1:5000"
     os.environ["REGISTRY_USER"] = "simcore"
