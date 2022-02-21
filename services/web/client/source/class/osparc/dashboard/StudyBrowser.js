@@ -46,8 +46,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   members: {
-    __studies: null,
     __newStudyBtn: null,
+    __folders: null,
+    __studies: null,
 
     reloadStudy: function(studyId) {
       const params = {
@@ -65,7 +66,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     reloadResources: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
         osparc.data.Resources.get("folders")
-          .then(() => {
+          .then(folders => {
+            this.__folders = folders;
             this._requestResources(false);
           }, this);
       } else {
@@ -82,6 +84,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // overridden
     initResources: function() {
       this.__studies = [];
+      this.__folders = [];
       const preResourcePromises = [];
       const store = osparc.store.Store.getInstance();
       preResourcePromises.push(store.getVisibleMembers());
@@ -428,7 +431,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     _addResourcesToList: function(studiesList) {
       osparc.dashboard.ResourceBrowserBase.sortStudyList(studiesList);
-      const studyList = this._resourcesContainer.getChildren();
+      const cardsList = this._resourcesContainer.getChildren();
       const currentFolder = this._searchBarFilter.getCurrentFolder();
       studiesList.forEach(study => {
         if (this.__studies.indexOf(study) === -1) {
@@ -440,7 +443,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (currentFolder === null) {
           // create folders/tags only in home directory
           study["tags"].forEach(tagId => {
-            const idx = studyList.findIndex(card => this.self().isFolderButtonItem(card) && card.getId() === tagId);
+            const idx = cardsList.findIndex(card => this.self().isFolderButtonItem(card) && card.getId() === tagId);
             if (idx !== -1) {
               return;
             }
@@ -450,17 +453,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           });
         }
 
-        const idx = studyList.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === study["uuid"]);
+        const idx = cardsList.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === study["uuid"]);
         if (idx !== -1) {
           return;
         }
         const studyItem = this.__createStudyItem(study);
         this._resourcesContainer.add(studyItem);
       });
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(studyList.filter(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)));
-      const idx = studyList.findIndex(card => (card instanceof osparc.dashboard.GridButtonLoadMore) || (card instanceof osparc.dashboard.ListButtonLoadMore));
+      osparc.dashboard.ResourceBrowserBase.sortStudyList(cardsList.filter(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)));
+      const idx = cardsList.findIndex(card => (card instanceof osparc.dashboard.GridButtonLoadMore) || (card instanceof osparc.dashboard.ListButtonLoadMore));
       if (idx !== -1) {
-        studyList.push(studyList.splice(idx, 1)[0]);
+        cardsList.push(cardsList.splice(idx, 1)[0]);
       }
       this._searchBarFilter.filter();
     },
