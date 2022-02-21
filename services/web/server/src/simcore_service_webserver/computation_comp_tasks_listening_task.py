@@ -190,19 +190,17 @@ async def comp_tasks_listening_task(app: web.Application) -> None:
             await asyncio.sleep(3)
 
 
-async def setup_comp_tasks_listening_task(app: web.Application):
+async def create_comp_tasks_listening_task(app: web.Application):
     task = asyncio.create_task(
         comp_tasks_listening_task(app), name="computation db listener"
     )
     log.debug("comp_tasks db listening task created %s", f"{task=}")
+
     yield
-    log.debug("cancelling comp_tasks db listening task...")
+
+    log.debug("cancelling comp_tasks db listening %s task...", f"{task=}")
     task.cancel()
-    log.debug("waiting for comp_tasks db listening task to stop")
+    log.debug("waiting for comp_tasks db listening %s to stop", f"{task=}")
     with suppress(asyncio.CancelledError):
         await task
-    log.debug("waiting for comp_tasks db listening task to stop completed")
-
-
-def setup(app: web.Application):
-    app.cleanup_ctx.append(setup_comp_tasks_listening_task)
+    log.debug("waiting for comp_tasks db listening %s to stop completed", f"{task=}")

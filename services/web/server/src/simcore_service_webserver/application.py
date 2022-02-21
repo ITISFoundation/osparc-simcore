@@ -1,7 +1,6 @@
 """ Main application
 
 """
-import json
 import logging
 from typing import Any, Dict
 
@@ -9,35 +8,35 @@ from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
 
 from ._meta import WELCOME_MSG
-from .activity.module_setup import setup_activity
+from .activity.plugin import setup_activity
 from .application_settings import setup_settings
 from .catalog import setup_catalog
-from .clusters.module_setup import setup_clusters
+from .clusters.plugin import setup_clusters
 from .computation import setup_computation
 from .db import setup_db
 from .diagnostics import setup_diagnostics
-from .director.module_setup import setup_director
+from .director.plugin import setup_director
 from .director_v2 import setup_director_v2
 from .email import setup_email
-from .exporter.module_setup import setup_exporter
+from .exporter.plugin import setup_exporter
 from .garbage_collector import setup_garbage_collector
 from .groups import setup_groups
-from .login.module_setup import setup_login
+from .login.plugin import setup_login
 from .meta_modeling import setup_meta_modeling
 from .products import setup_products
-from .projects.module_setup import setup_projects
+from .projects.plugin import setup_projects
 from .publications import setup_publications
 from .redis import setup_redis
 from .remote_debug import setup_remote_debugging
-from .resource_manager.module_setup import setup_resource_manager
+from .resource_manager.plugin import setup_resource_manager
 from .rest import setup_rest
+from .scicrunch.plugin import setup_scicrunch
 from .security import setup_security
 from .session import setup_session
-from .socketio.module_setup import setup_socketio
+from .socketio.plugin import setup_socketio
 from .statics import setup_statics
 from .storage import setup_storage
-from .studies_access import setup_studies_access
-from .studies_dispatcher.module_setup import setup_studies_dispatcher
+from .studies_dispatcher.plugin import setup_studies_dispatcher
 from .tags import setup_tags
 from .tracing import setup_app_tracing
 from .users import setup_users
@@ -46,16 +45,11 @@ from .version_control import setup_version_control
 log = logging.getLogger(__name__)
 
 
-def create_application(config: Dict[str, Any]) -> web.Application:
+def create_application() -> web.Application:
     """
     Initializes service
     """
-    log.debug(
-        "Initializing app with config:\n%s",
-        json.dumps(config, indent=2, sort_keys=True),
-    )
-
-    app = create_safe_application(config)
+    app = create_safe_application()
 
     setup_settings(app)
 
@@ -71,11 +65,16 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_db(app)
     setup_session(app)
     setup_security(app)
-    setup_rest(app, swagger_doc_enabled=True)
+    setup_rest(app)
+
+    # monitoring
     setup_diagnostics(app)
-    setup_email(app)
+    setup_activity(app)
     setup_computation(app)
     setup_socketio(app)
+
+    # login
+    setup_email(app)
     setup_login(app)
 
     # interaction with other backend services
@@ -99,12 +98,12 @@ def create_application(config: Dict[str, Any]) -> web.Application:
     setup_version_control(app)
     setup_meta_modeling(app)
 
-    # TODO: classify
-    setup_activity(app)
+    # tagging
+    setup_scicrunch(app)
     setup_tags(app)
+
     setup_publications(app)
     setup_products(app)
-    setup_studies_access(app)
     setup_studies_dispatcher(app)
     setup_exporter(app)
     setup_clusters(app)

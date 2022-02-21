@@ -15,7 +15,6 @@ import socketio
 from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
-from aioresponses import aioresponses
 from models_library.projects_access import Owner
 from models_library.projects_state import (
     ProjectLocked,
@@ -26,183 +25,19 @@ from models_library.projects_state import (
 )
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import log_client_in
-from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
-from servicelib.aiohttp.application import create_safe_application
+from pytest_simcore.helpers.utils_projects import assert_get_same_project
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
-from simcore_service_webserver import catalog
-from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.director.module_setup import setup_director
-from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.login.module_setup import setup_login
-from simcore_service_webserver.products import setup_products
-from simcore_service_webserver.projects.module_setup import setup_projects
 from simcore_service_webserver.projects.projects_handlers import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
-from simcore_service_webserver.resource_manager.module_setup import (
-    setup_resource_manager,
-)
-from simcore_service_webserver.rest import setup_rest
-from simcore_service_webserver.security import setup_security
-from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
-from simcore_service_webserver.socketio.module_setup import setup_socketio
-from simcore_service_webserver.tags import setup_tags
 from simcore_service_webserver.utils import now_str, to_datetime
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
 API_VERSION = "v0"
 RESOURCE_NAME = "projects"
 API_PREFIX = "/" + API_VERSION
-
-
-DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS: int = 3
-DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
-
-
-@pytest.fixture
-def client(
-    loop,
-    aiohttp_client,
-    app_cfg,
-    postgres_db,
-    mocked_director_v2_api,
-    mock_orphaned_services,
-    redis_client,  # this ensure redis is properly cleaned
-    monkeypatch_setenv_from_app_config: Callable,
-):
-    # config app
-    cfg = deepcopy(app_cfg)
-    port = cfg["main"]["port"]
-    cfg["projects"]["enabled"] = True
-    cfg["director"]["enabled"] = True
-    cfg["resource_manager"][
-        "garbage_collection_interval_seconds"
-    ] = DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS  # increase speed of garbage collection
-    cfg["resource_manager"][
-        "resource_deletion_timeout_seconds"
-    ] = DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS  # reduce deletion delay
-
-    monkeypatch_setenv_from_app_config(cfg)
-
-    app = create_safe_application(cfg)
-
-    # setup app
-    setup_db(app)
-    setup_session(app)
-    setup_security(app)
-    setup_rest(app)
-    setup_login(app)  # needed for login_utils fixtures
-    setup_resource_manager(app)
-    setup_socketio(app)
-    setup_director(app)
-    setup_director_v2(app)
-    setup_tags(app)
-    assert setup_projects(app)
-    setup_products(app)
-
-    # server and client
-    yield loop.run_until_complete(
-        aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
-    )
-
-    # teardown here ...
-
-
-@pytest.fixture
-async def user_project(client, fake_project, logged_user):
-    async with NewProject(
-        fake_project, client.app, user_id=logged_user["id"]
-    ) as project:
-        print("-----> added project", project["name"])
-        yield project
-        print("<----- removed project", project["name"])
-
-
-@pytest.fixture
-async def shared_project(client, fake_project, logged_user, all_group):
-    fake_project.update(
-        {
-            "accessRights": {
-                f"{all_group['gid']}": {"read": True, "write": False, "delete": False}
-            },
-        },
-    )
-    async with NewProject(
-        fake_project,
-        client.app,
-        user_id=logged_user["id"],
-    ) as project:
-        print("-----> added project", project["name"])
-        yield project
-        print("<----- removed project", project["name"])
-
-
-@pytest.fixture
-async def template_project(
-    client, fake_project, logged_user, all_group: Dict[str, str]
-):
-    project_data = deepcopy(fake_project)
-    project_data["name"] = "Fake template"
-    project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
-    project_data["accessRights"] = {
-        str(all_group["gid"]): {"read": True, "write": False, "delete": False}
-    }
-
-    async with NewProject(
-        project_data, client.app, user_id=None, clear_all=True
-    ) as template_project:
-        print("-----> added template project", template_project["name"])
-        yield template_project
-        print("<----- removed template project", template_project["name"])
-
-
-@pytest.fixture
-def fake_services():
-    def create_fakes(number_services: int) -> List[Dict]:
-        fake_services = [{"service_uuid": f"{i}_uuid"} for i in range(number_services)]
-        return fake_services
-
-    yield create_fakes
-
-
-@pytest.fixture
-async def project_db_cleaner(client):
-    yield
-    await delete_all_projects(client.app)
-
-
-@pytest.fixture
-async def catalog_subsystem_mock(
-    monkeypatch,
-) -> Callable[[Optional[Union[List[Dict], Dict]]], None]:
-    services_in_project = []
-
-    def creator(projects: Optional[Union[List[Dict], Dict]] = None) -> None:
-        for proj in projects or []:
-            services_in_project.extend(
-                [
-                    {"key": s["key"], "version": s["version"]}
-                    for _, s in proj["workbench"].items()
-                ]
-            )
-
-    async def mocked_get_services_for_user(*args, **kwargs):
-        return services_in_project
-
-    monkeypatch.setattr(
-        catalog, "get_services_for_user_in_product", mocked_get_services_for_user
-    )
-
-    return creator
-
-
-@pytest.fixture(autouse=True)
-async def director_v2_automock(
-    director_v2_service_mock: aioresponses,
-) -> aioresponses:
-    yield director_v2_service_mock
 
 
 # HELPERS -----------------------------------------------------------------------------------------
@@ -236,24 +71,6 @@ async def _list_projects(
 
     resp = await client.get(url)
     data, _ = await assert_status(resp, expected)
-    return data
-
-
-async def _assert_get_same_project(
-    client, project: Dict, expected: Type[web.HTTPException]
-) -> Dict:
-    # GET /v0/projects/{project_id}
-
-    # with a project owned by user
-    url = client.app.router["get_project"].url_for(project_id=project["uuid"])
-    assert str(url) == f"{API_PREFIX}/projects/{project['uuid']}"
-    resp = await client.get(url)
-    data, error = await assert_status(resp, expected)
-
-    if not error:
-        project_state = data.pop("state")
-        assert data == project
-        assert ProjectState(**project_state)
     return data
 
 
@@ -519,7 +336,7 @@ async def test_share_project(
         }
 
         # user 1 can always get to his project
-        await _assert_get_same_project(client, new_project, expected.ok)
+        await assert_get_same_project(client, new_project, expected.ok)
 
     # get another user logged in now
     user_2 = await log_client_in(
@@ -527,7 +344,7 @@ async def test_share_project(
     )
     if new_project:
         # user 2 can only get the project if user 2 has read access
-        await _assert_get_same_project(
+        await assert_get_same_project(
             client,
             new_project,
             expected.ok if share_rights["read"] else expected.forbidden,
@@ -849,58 +666,6 @@ async def test_project_node_lifetime(
     else:
         mocked_director_v2_api["director_v2_api.stop_service"].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
-
-
-@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, web.HTTPOk)])
-async def test_tags_to_studies(
-    client, logged_user, user_project, expected, test_tags_data, catalog_subsystem_mock
-):
-    catalog_subsystem_mock([user_project])
-    # Add test tags
-    tags = test_tags_data
-    added_tags = []
-    for tag in tags:
-        url = client.app.router["create_tag"].url_for()
-        resp = await client.post(url, json=tag)
-        added_tag, _ = await assert_status(resp, expected)
-        added_tags.append(added_tag)
-        # Add tag to study
-        url = client.app.router["add_tag"].url_for(
-            study_uuid=user_project.get("uuid"), tag_id=str(added_tag.get("id"))
-        )
-        resp = await client.put(url)
-        data, _ = await assert_status(resp, expected)
-        # Tag is included in response
-        assert added_tag.get("id") in data.get("tags")
-
-    # check the tags are in
-    user_project["tags"] = [tag["id"] for tag in added_tags]
-    data = await _assert_get_same_project(client, user_project, expected)
-
-    # Delete tag0
-    url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[0].get("id")))
-    resp = await client.delete(url)
-    await assert_status(resp, web.HTTPNoContent)
-    # Get project and check that tag is no longer there
-    user_project["tags"].remove(added_tags[0]["id"])
-    data = await _assert_get_same_project(client, user_project, expected)
-    assert added_tags[0].get("id") not in data.get("tags")
-
-    # Remove tag1 from project
-    url = client.app.router["remove_tag"].url_for(
-        study_uuid=user_project.get("uuid"), tag_id=str(added_tags[1].get("id"))
-    )
-    resp = await client.delete(url)
-    await assert_status(resp, expected)
-    # Get project and check that tag is no longer there
-    user_project["tags"].remove(added_tags[1]["id"])
-    data = await _assert_get_same_project(client, user_project, expected)
-    assert added_tags[1].get("id") not in data.get("tags")
-
-    # Delete tag1
-    url = client.app.router["delete_tag"].url_for(tag_id=str(added_tags[1].get("id")))
-    resp = await client.delete(url)
-    await assert_status(resp, web.HTTPNoContent)
 
 
 @pytest.fixture

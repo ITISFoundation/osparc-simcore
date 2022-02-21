@@ -30,7 +30,7 @@ from .meta_modeling_version_control import (
 from .utils import compute_sha1_on_small_dataset, now_str
 from .version_control_errors import UserUndefined
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 
 NodesDict = Dict[NodeID, Node]

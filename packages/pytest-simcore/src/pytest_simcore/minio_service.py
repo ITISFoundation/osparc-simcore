@@ -14,7 +14,7 @@ from minio.datatypes import Object
 from minio.deleteobjects import DeleteError, DeleteObject
 from tenacity import Retrying
 
-from .helpers.utils_docker import get_ip, get_service_published_port
+from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 
 log = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ def minio_config(
 
     config = {
         "client": {
-            "endpoint": f"{get_ip()}:{get_service_published_port('minio')}",
+            "endpoint": f"{get_localhost_ip()}:{get_service_published_port('minio')}",
             "access_key": testing_environ_vars["S3_ACCESS_KEY"],
             "secret_key": testing_environ_vars["S3_SECRET_KEY"],
             "secure": strtobool(testing_environ_vars["S3_SECURE"]) != 0,

@@ -13,7 +13,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from dask_gateway import Gateway, auth
 from distributed.deploy.spec import SpecCluster
 from models_library.clusters import Cluster, SimpleAuthentication
-from models_library.settings.rabbit import RabbitConfig
+from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from simcore_service_director_v2.models.schemas.clusters import ClusterOut
@@ -31,7 +31,7 @@ def clusters_config(
     mock_env: None,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
-    rabbit_service: RabbitConfig,
+    rabbit_service: RabbitSettings,
     monkeypatch: MonkeyPatch,
     dask_spec_local_cluster: SpecCluster,
 ):

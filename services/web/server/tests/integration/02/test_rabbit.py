@@ -20,25 +20,25 @@ from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
     ProgressRabbitMessage,
 )
-from models_library.settings.rabbit import RabbitConfig
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.rabbit_service import RabbitExchanges
 from servicelib.aiohttp.application import create_safe_application
+from settings_library.rabbit import RabbitSettings
+from simcore_service_webserver._constants import APP_SETTINGS_KEY
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.diagnostics import setup_diagnostics
 from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.login.module_setup import setup_login
-from simcore_service_webserver.projects.module_setup import setup_projects
-from simcore_service_webserver.resource_manager.module_setup import (
-    setup_resource_manager,
-)
+from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.projects.plugin import setup_projects
+from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio.module_setup import setup_socketio
+from simcore_service_webserver.socketio.plugin import setup_socketio
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -155,7 +155,7 @@ def client(
     loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_config: Dict[str, Any],  ## waits until swarm with *_services are up
-    rabbit_service: RabbitConfig,  ## waits until rabbit is responsive and set env vars
+    rabbit_service: RabbitSettings,  ## waits until rabbit is responsive and set env vars
     postgres_db: sa.engine.Engine,
     mocker: MockerFixture,
     monkeypatch_setenv_from_app_config: Callable,
@@ -164,6 +164,9 @@ def client(
 
     monkeypatch_setenv_from_app_config(app_config)
     app = create_safe_application(app_config)
+
+    assert setup_settings(app)
+    assert app[APP_SETTINGS_KEY].WEBSERVER_COMPUTATION
 
     setup_db(app)
     setup_session(app)

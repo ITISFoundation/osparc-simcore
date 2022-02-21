@@ -14,14 +14,15 @@ import aioredis
 import pytest
 from aioresponses import aioresponses
 from models_library.projects_state import RunningState
-from models_library.settings.redis import RedisConfig
 from pytest_simcore.helpers.utils_login import log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
 from servicelib.aiohttp.application import create_safe_application
+from settings_library.redis import RedisSettings
 from simcore_service_webserver import garbage_collector_core
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects, users
-from simcore_service_webserver.director.module_setup import setup_director
+from simcore_service_webserver.director.plugin import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.groups_api import (
@@ -29,17 +30,15 @@ from simcore_service_webserver.groups_api import (
     create_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.login.module_setup import setup_login
-from simcore_service_webserver.projects.module_setup import setup_projects
-from simcore_service_webserver.resource_manager.module_setup import (
-    setup_resource_manager,
-)
+from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.projects.plugin import setup_projects
+from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import get_registry
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio.module_setup import setup_socketio
+from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users import setup_users
 
 log = logging.getLogger(__name__)
@@ -66,8 +65,8 @@ def __drop_and_recreate_postgres__(database_from_template_before_each_function) 
 
 
 @pytest.fixture(autouse=True)
-async def __delete_all_redis_keys__(redis_service: RedisConfig):
-    client = await aioredis.create_redis_pool(redis_service.dsn, encoding="utf-8")
+async def __delete_all_redis_keys__(redis_settings: RedisSettings):
+    client = await aioredis.create_redis_pool(redis_settings.dsn, encoding="utf-8")
     await client.flushall()
     client.close()
     await client.wait_closed()
@@ -136,6 +135,7 @@ def client(
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules
+    assert setup_settings(app)
     setup_db(app)
     setup_session(app)
     setup_security(app)

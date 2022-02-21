@@ -16,7 +16,7 @@ from .login.decorators import RQT_USERID_KEY, login_required
 from .security_decorators import permission_required
 from .version_control_db import CommitID
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 # TODO: connect routes
 routes = web.RouteTableDef()

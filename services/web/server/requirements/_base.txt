@@ -240,7 +240,6 @@ pyyaml==5.4.1
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   aiohttp-swagger
     #   openapi-spec-validator
-    #   trafaret-config
 semantic-version==2.8.5
     # via -r requirements/_base.in
 setproctitle==1.2.2
@@ -274,12 +273,6 @@ tenacity==8.0.1
     #   -r requirements/_base.in
 tqdm==4.61.1
     # via parfive
-trafaret==2.1.0
-    # via
-    #   -r requirements/_base.in
-    #   trafaret-config
-trafaret-config==2.0.2
-    # via -r requirements/_base.in
 typer==0.4.0
     # via -r requirements/../../../../packages/settings-library/requirements/_base.in
 typing-extensions==3.10.0.2

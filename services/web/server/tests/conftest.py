@@ -6,10 +6,11 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Callable, Dict
+from typing import AsyncIterator, Callable, Dict
 
 import pytest
 import simcore_service_webserver
+from _pytest.monkeypatch import MonkeyPatch
 from pytest_simcore.helpers.utils_login import AUserDict, LoggedUser
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
@@ -90,7 +91,7 @@ def fake_project(tests_data_dir: Path) -> Dict:
 
 
 @pytest.fixture()
-async def logged_user(client, user_role: UserRole) -> AUserDict:
+async def logged_user(client, user_role: UserRole) -> AsyncIterator[AUserDict]:
     """adds a user in db and logs in with client
 
     NOTE: `user_role` fixture is defined as a parametrization below!!!
@@ -106,11 +107,14 @@ async def logged_user(client, user_role: UserRole) -> AUserDict:
 
 
 @pytest.fixture
-def monkeypatch_setenv_from_app_config(monkeypatch) -> Callable:
+def monkeypatch_setenv_from_app_config(monkeypatch: MonkeyPatch) -> Callable:
+    # TODO: Change signature to be analogous to
+    # packages/pytest-simcore/src/pytest_simcore/helpers/utils_envs.py
+    # That solution is more flexible e.g. for context manager with monkeypatch
     def _patch(app_config: Dict) -> Dict[str, str]:
         assert isinstance(app_config, dict)
 
-        print("  - app_config=\n", json_dumps(app_config, indent=1))
+        print("  - app_config=\n", json_dumps(app_config, indent=1, sort_keys=True))
         envs = convert_to_environ_vars(app_config)
 
         print(

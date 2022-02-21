@@ -21,7 +21,7 @@ from .db_models import UserStatus, users
 from .security_authorization import AuthorizationPolicy, RoleBasedAccessModel
 from .security_roles import UserRole
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 
 async def check_credentials(engine: Engine, email: str, password: str) -> bool:

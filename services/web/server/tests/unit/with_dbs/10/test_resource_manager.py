@@ -28,19 +28,18 @@ from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.director.module_setup import setup_director
+from simcore_service_webserver.director.plugin import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.login.module_setup import setup_login
-from simcore_service_webserver.projects.module_setup import setup_projects
+from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.projects_api import (
     delete_project,
     remove_project_interactive_services,
 )
 from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
-from simcore_service_webserver.resource_manager.module_setup import (
-    setup_resource_manager,
-)
+from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
     RedisResourceRegistry,
     get_registry,
@@ -50,7 +49,7 @@ from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
-from simcore_service_webserver.socketio.module_setup import setup_socketio
+from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users import setup_users
 from simcore_service_webserver.users_api import delete_user
 from simcore_service_webserver.users_exceptions import UserNotFoundError
@@ -108,6 +107,9 @@ def client(
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules
+
+    assert setup_settings(app)
+
     setup_db(app)
     setup_session(app)
     setup_security(app)

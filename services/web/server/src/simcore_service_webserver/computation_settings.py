@@ -4,24 +4,16 @@
     - settings
 """
 
+from typing import Optional
+
 from aiohttp.web import Application
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from settings_library.rabbit import RabbitSettings
 
-from .computation_config import CONFIG_SECTION_NAME
+from ._constants import APP_SETTINGS_KEY
 
 
-class ComputationSettings(RabbitSettings):
-    enabled: bool = True
-
-
-def create_settings(app: Application) -> ComputationSettings:
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    settings = ComputationSettings(**cfg)
-    # NOTE: we are saving it in a separate item to config
-    app[f"{__name__}.ComputationSettings"] = settings
+def get_plugin_settings(app: Application) -> RabbitSettings:
+    settings: Optional[RabbitSettings] = app[APP_SETTINGS_KEY].WEBSERVER_COMPUTATION
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, RabbitSettings)  # nosec
     return settings
-
-
-def get_settings(app: Application) -> ComputationSettings:
-    return app[f"{__name__}.ComputationSettings"]

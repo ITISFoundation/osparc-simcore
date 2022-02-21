@@ -4,6 +4,7 @@
 import logging
 
 from aiohttp import web
+from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.rest_routing import (
     get_handlers_from_namespace,
@@ -13,6 +14,7 @@ from servicelib.aiohttp.rest_routing import (
 
 from . import publication_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY
+from .email import setup_email
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +23,13 @@ logger = logging.getLogger(__name__)
     __name__,
     ModuleCategory.ADDON,
     depends=["simcore_service_webserver.rest"],
+    settings_name="WEBSERVER_PUBLICATIONS",
     logger=logger,
 )
 def setup_publications(app: web.Application):
+    assert app[APP_SETTINGS_KEY].WEBSERVER_PUBLICATIONS  # nosec
+
+    setup_email(app)
 
     # routes
     specs = app[APP_OPENAPI_SPECS_KEY]
