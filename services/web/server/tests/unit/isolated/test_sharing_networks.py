@@ -1,3 +1,6 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+
 from importlib import reload
 from typing import Any, Dict, Iterable, List
 from unittest.mock import AsyncMock, call
@@ -7,9 +10,10 @@ import pytest
 import simcore_service_webserver
 from models_library.projects import ProjectID
 from models_library.sharing_networks import SharingNetworks
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from pytest_mock.plugin import MockerFixture
 from simcore_service_webserver.sharing_networks import (
+    _get_sharing_networks_for_default_network,
     _send_network_configuration_to_dynamic_sidecar,
 )
 
@@ -175,6 +179,8 @@ def project_id() -> ProjectID:
 
 @pytest.fixture
 def mock_director_v2_api(mocker: MockerFixture) -> Iterable[Dict[str, AsyncMock]]:
+    requires_dynamic_sidecar_mock = AsyncMock()
+    requires_dynamic_sidecar_mock.return_value = True
     mocked_items = {
         "attach": mocker.patch(
             "simcore_service_webserver.director_v2_core.attach_network_to_dynamic_sidecar",
@@ -184,11 +190,24 @@ def mock_director_v2_api(mocker: MockerFixture) -> Iterable[Dict[str, AsyncMock]
             "simcore_service_webserver.director_v2_core.detach_network_from_dynamic_sidecar",
             AsyncMock(),
         ),
+        "requires_dynamic_sidecar": mocker.patch(
+            "simcore_service_webserver.director_v2_core.requires_dynamic_sidecar",
+            requires_dynamic_sidecar_mock,
+        ),
     }
 
     reload(simcore_service_webserver.director_v2_api)
 
     yield mocked_items
+
+
+@pytest.fixture
+def project_with_networkable_labels(
+    fake_project_data: Dict[str, Any],
+) -> Dict[str, Any]:
+    for node_data in fake_project_data["workbench"].values():
+        node_data["label"] = f"label_{uuid4()}"
+    return fake_project_data
 
 
 # TESTS
@@ -201,7 +220,6 @@ async def test_send_network_configuration_to_dynamic_sidecar(
     test_case_factory: List[TestCase],
 ) -> None:
     for test_case in test_case_factory:
-        test_case.existing_sharing_networks
 
         await _send_network_configuration_to_dynamic_sidecar(
             app=mock_app,
@@ -217,3 +235,11 @@ async def test_send_network_configuration_to_dynamic_sidecar(
         mock_director_v2_api["detach"].assert_has_awaits(
             test_case.expected_calls.detach, any_order=True
         )
+
+
+async def test_get_sharing_networks_for_default_network_is_json_serializable(
+    mock_app: AsyncMock, project_with_networkable_labels: Dict[str, Any]
+) -> None:
+    assert await _get_sharing_networks_for_default_network(
+        mock_app, new_project_data=project_with_networkable_labels
+    )

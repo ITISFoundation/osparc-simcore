@@ -1,4 +1,5 @@
 import logging
+import json
 from collections import namedtuple
 from typing import Any, Dict, Set
 from uuid import UUID
@@ -9,6 +10,7 @@ from models_library.sharing_networks import (
     DockerNetworkAlias,
     DockerNetworkName,
     SharingNetworks,
+    ContainerAliases,
     validate_network_alias,
     validate_network_name,
 )
@@ -142,7 +144,7 @@ async def _get_sharing_networks_for_default_network(
     new_sharing_networks: SharingNetworks = SharingNetworks.parse_obj({})
 
     default_network = _network_name(UUID(new_project_data["uuid"]), "default")
-    new_sharing_networks[default_network] = {}
+    new_sharing_networks[default_network] = ContainerAliases.parse_obj({})
 
     for node_uuid, node_content in new_project_data["workbench"].items():
         # only add dynamic-sidecar nodes
@@ -182,9 +184,7 @@ async def propagate_changes(
     NOTE: this needs to be called before saving the `new_project_data` to the database
     """
 
-    old_sharing_networks = SharingNetworks.parse_obj(
-        current_project["sharing_networks"]
-    )
+    old_sharing_networks = SharingNetworks.parse_obj(current_project["sharingNetworks"])
 
     # NOTE: when UI is in place this is no longer required
     # for now all services are placed on the same default network
