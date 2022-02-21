@@ -370,18 +370,24 @@ async def remove_dynamic_sidecar_network(network_name: str) -> bool:
         return False
 
 
-async def remove_dynamic_sidecar_volumes(node_uuid: NodeID) -> bool:
+async def remove_dynamic_sidecar_volumes(node_uuid: NodeID) -> Set[str]:
     async with docker_client() as client:
         volumes_response = await client.volumes.list(
             filters={"label": f"uuid={node_uuid}"}
         )
         volumes = volumes_response["Volumes"]
+        log.debug("Removing volumes: %s", [v["Name"] for v in volumes])
+        if len(volumes) == 0:
+            log.warning("Expected to find at least 1 volume to remove, 0 were found")
+
+        removed_volumes: Set[str] = set()
+
         for volume_data in volumes:
             volume = await client.volumes.get(volume_data["Name"])
             await volume.delete()
+            removed_volumes.add(volume_data["Name"])
 
-        log.debug("Remove volumes: %s", [v["Name"] for v in volumes])
-        return True
+        return removed_volumes
 
 
 async def list_dynamic_sidecar_services(

@@ -1,7 +1,7 @@
 import json
 import logging
 from collections import deque
-from typing import Any, Deque, Dict, List, Optional, Type
+from typing import Any, Deque, Dict, List, Optional, Set, Type
 
 import httpx
 from fastapi import FastAPI
@@ -29,6 +29,7 @@ from ....models.schemas.dynamic_services import (
 from ....modules.db.repositories import BaseRepository
 from ....modules.director_v0 import DirectorV0Client
 from ...db.repositories.projects import ProjectsRepository
+from .._namepsace import get_compose_namespace
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     create_network,
@@ -52,6 +53,7 @@ from ..errors import (
     EntrypointContainerNotFoundError,
     GenericDockerError,
 )
+from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
 from .abc import DynamicSchedulerEvent
 from .events_utils import disabled_directory_watcher
 
@@ -489,6 +491,22 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         )
 
         # remove created inputs and outputs volumes
+
+        # compute which volumes we expected to be removed
+        # in case the expected volumes differ from the removed ones
+        # show an error
+        compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
+        expected_volumes_to_remove: Set[str] = {
+            DynamicSidecarVolumesPathsResolver.source(
+                compose_namespace=compose_namespace, path=path
+            )
+            for path in [
+                scheduler_data.paths_mapping.inputs_path,
+                scheduler_data.paths_mapping.outputs_path,
+            ]
+            + scheduler_data.paths_mapping.state_paths
+        }
+
         async for attempt in AsyncRetrying(
             wait=wait_exponential(min=1),
             stop=stop_after_delay(20),
@@ -498,7 +516,21 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
                 logger.info(
                     "Trying to remove volumes for %s", scheduler_data.service_name
                 )
-                await remove_dynamic_sidecar_volumes(scheduler_data.node_uuid)
+
+                removed_volumes = await remove_dynamic_sidecar_volumes(
+                    scheduler_data.node_uuid
+                )
+
+                if expected_volumes_to_remove != removed_volumes:
+                    logger.warning(
+                        (
+                            "Attention expected to remove %s, instead only removed %s. "
+                            "Please check with check that all expected to remove volumes "
+                            "are now gone."
+                        ),
+                        expected_volumes_to_remove,
+                        removed_volumes,
+                    )
 
         logger.debug(
             "Removed dynamic-sidecar created services for '%s'",

@@ -69,6 +69,20 @@ services:
       timeout: 20s
       retries: 3
 
+  filestash:
+    image: machines/filestash:3a01b70
+    ports:
+      - "9002:8334"
+    volumes:
+      - ${TMP_PATH_TO_FILESTASH_CONFIG}:/app/data/state/config/config.json
+    networks:
+      - simcore_default
+
+  onlyoffice:
+    image: onlyoffice/documentserver:7.0.0.132
+    networks:
+      - simcore_default
+
   redis-commander:
     image: rediscommander/redis-commander:latest
     init: true
