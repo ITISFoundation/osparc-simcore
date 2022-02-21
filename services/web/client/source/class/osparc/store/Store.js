@@ -130,6 +130,11 @@ qx.Class.define("osparc.store.Store", {
       init: [],
       event: "changeTags"
     },
+    folders: {
+      check: "Array",
+      init: [],
+      event: "changeFolders"
+    },
     statics: {
       check: "Object",
       init: {}
