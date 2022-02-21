@@ -217,9 +217,9 @@
               ]
             },
             "contentSchema": {
-                "title": "Content Schema",
-                "description": "jsonschema of the content at this input/output. Required when type='ref_contentSchema'",
-                "type": "object"
+              "title": "Content Schema",
+              "description": "jsonschema of the content at this input/output. Required when type='ref_contentSchema'",
+              "type": "object"
             },
             "fileToKeyMap": {
               "description": "Place the data associated with the named keys in files",
