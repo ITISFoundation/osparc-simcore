@@ -140,11 +140,14 @@ def app_module_setup(
     module_name: str,
     category: ModuleCategory,
     *,
-    # TODO: use settings_name as module_name!!
     settings_name: Optional[str] = None,
     depends: Optional[List[str]] = None,
     logger: logging.Logger = log,
-    # TODO: deprecate these options
+    # TODO: SEE https://github.com/ITISFoundation/osparc-simcore/issues/2008
+    # TODO: - settings_name becomes module_name!!
+    # TODO: - plugin base should be aware of setup and settings -> model instead of function?
+    # TODO: - depends mechanism will call registered setups List[Union[str, _SetupFunc]]
+    # TODO: - deprecate config options
     config_section: Optional[str] = None,
     config_enabled: Optional[str] = None,
 ) -> Callable:

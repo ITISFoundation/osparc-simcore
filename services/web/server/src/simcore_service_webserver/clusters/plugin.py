@@ -20,6 +20,7 @@ log = logging.getLogger(__name__)
 @app_module_setup(
     "simcore_service_webserver.clusters",
     ModuleCategory.ADDON,
+    depends=["simcore_service_webserver.groups"],
     settings_name="WEBSERVER_CLUSTERS",
     logger=log,
 )
