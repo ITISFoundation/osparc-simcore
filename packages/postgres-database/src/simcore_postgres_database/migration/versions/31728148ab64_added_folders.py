@@ -24,6 +24,18 @@ def upgrade():
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=True),
         sa.Column("color", sa.String(), nullable=False),
+        sa.Column(
+            "created",
+            sa.DateTime(),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "modified",
+            sa.DateTime(),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(
             ["user_id"], ["users.id"], onupdate="CASCADE", ondelete="CASCADE"
         ),
