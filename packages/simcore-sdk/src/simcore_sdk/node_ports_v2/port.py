@@ -4,6 +4,7 @@ from pathlib import Path
 from pprint import pformat
 from typing import Any, Callable, Dict, Optional, Tuple, Type
 
+import jsonschema
 from models_library.services import PROPERTY_KEY_RE, BaseServiceIOModel
 from pydantic import AnyUrl, Field, PrivateAttr, validator
 
@@ -57,38 +58,78 @@ class Port(BaseServiceIOModel):
     _node_ports = PrivateAttr()
     _used_default_value: bool = PrivateAttr(False)
 
+    @validator("content_schema", always=True)
+    @classmethod
+    def valid_content_jsonschema(cls, v):
+        if v is not None:
+            try:
+                jsonschema.validate(instance={}, schema=v)
+            except jsonschema.SchemaError as err:
+                raise ValueError(
+                    f"Invalid json-schema in 'content_schema': {err}"
+                ) from err
+            except jsonschema.ValidationError:
+                pass
+        return v
+
     @validator("value", always=True)
     @classmethod
     def ensure_value(cls, v: DataItemValue, values: Dict[str, Any]) -> DataItemValue:
-        if "property_type" in values and port_utils.is_file_type(
-            values["property_type"]
-        ):
-            if v is not None and not isinstance(v, (FileLink, DownloadLink, PortLink)):
-                raise ValueError(
-                    f"[{values['property_type']}] must follow {FileLink.schema()}, {DownloadLink.schema()} or {PortLink.schema()}"
-                )
+        if property_type := values.get("property_type"):
+            if port_utils.is_file_type(property_type):
+                if v is not None and not isinstance(
+                    v, (FileLink, DownloadLink, PortLink)
+                ):
+                    raise ValueError(
+                        f"[{values['property_type']}] must follow {FileLink.schema()}, {DownloadLink.schema()} or {PortLink.schema()}"
+                    )
+            elif property_type == "ref_contentSchema":
+                try:
+                    content_schema = values["content_schema"]
+                    jsonschema.validate(instance=v, schema=content_schema)
+
+                except jsonschema.SchemaError as err:
+                    # NOTE: added this check because always=True
+                    raise ValueError(
+                        f"Invalid json-schema in {values.get('content_schema')=}: {err=}"
+                    ) from err
+                except jsonschema.ValidationError as err:
+                    raise ValueError(
+                        f"Value {v} does not validate against content_schema: {err=}"
+                    ) from err
+                except KeyError as err:
+                    raise ValueError(
+                        f"Expected content_schema, got {values.get('content_schema')=}: {err=}"
+                    ) from err
+
         return v
 
     def __init__(self, **data: Any):
         super().__init__(**data)
 
-        self._py_value_type = (
-            (Path, str)
-            if port_utils.is_file_type(self.property_type)
-            else (TYPE_TO_PYTYPE[self.property_type])
-        )
-        self._py_value_converter = (
-            Path
-            if port_utils.is_file_type(self.property_type)
-            else TYPE_TO_PYTYPE[self.property_type]
-        )
-        if (
-            self.value is None
-            and self.default_value is not None
-            and not port_utils.is_file_type(self.property_type)
-        ):
-            self.value = self.default_value
-            self._used_default_value = True
+        if port_utils.is_file_type(self.property_type):
+            self._py_value_type = (Path, str)
+            self._py_value_converter = Path
+
+        elif self.property_type == "ref_contentSchema":
+            self._py_value_type = (list, dict)
+            self._py_value_converter = lambda v: v
+
+            # TODO: extract defaults from schema
+            self._used_default_value = False
+
+        else:
+            assert self.property_type in TYPE_TO_PYTYPE  # nosec
+
+            self._py_value_type = TYPE_TO_PYTYPE[self.property_type]
+            self._py_value_converter = TYPE_TO_PYTYPE[self.property_type]
+
+            if self.value is None and self.default_value is not None:
+                self.value = self.default_value
+                self._used_default_value = True
+
+        assert self._py_value_type  # nosec
+        assert self._py_value_converter  # nosec
 
     async def get_value(self) -> Optional[ItemValue]:
         """returns the value of the link after resolving the port links"""
