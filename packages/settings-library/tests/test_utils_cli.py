@@ -5,7 +5,7 @@
 import json
 import logging
 from io import StringIO
-from typing import Any, Dict, Type
+from typing import Any, Callable, Dict, Type
 
 import pytest
 import typer
@@ -13,7 +13,10 @@ from dotenv import dotenv_values
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.utils_envs import setenvs_as_envfile
 from settings_library.base import BaseCustomSettings
-from settings_library.utils_cli import create_settings_command
+from settings_library.utils_cli import (
+    create_json_encoder_wo_secrets,
+    create_settings_command,
+)
 from typer.testing import CliRunner
 
 log = logging.getLogger(__name__)
@@ -68,6 +71,16 @@ def fake_granular_env_file_content() -> str:
         POSTGRES_CLIENT_NAME=None
         MODULE_VALUE=10
     """
+
+
+@pytest.fixture
+def export_as_dict() -> Callable:
+    def go(model_obj, **export_options):
+        return json.loads(
+            model_obj.json(encoder=create_json_encoder_wo_secrets(model_obj.__class__))
+        )
+
+    return go
 
 
 # TESTS -----------------------------------------------------------------------------------
@@ -129,7 +142,9 @@ def test_settings_as_json(
     cli_runner: CliRunner,
 ):
 
-    result = cli_runner.invoke(cli, ["settings", "--as-json"], catch_exceptions=False)
+    result = cli_runner.invoke(
+        cli, ["settings", "--as-json", "--show-secrets"], catch_exceptions=False
+    )
     print(result.stdout)
 
     # reuse resulting json to build settings
@@ -157,6 +172,7 @@ def test_cli_default_settings_envs(
     cli: typer.Typer,
     fake_settings_class: Type[BaseCustomSettings],
     fake_granular_env_file_content: str,
+    export_as_dict: Callable,
     cli_runner: CliRunner,
     monkeypatch: pytest.MonkeyPatch,
 ):
@@ -171,9 +187,9 @@ def test_cli_default_settings_envs(
             catch_exceptions=False,
         ).stdout
 
-    # now let's use these as env vars
     print(cli_settings_output)
 
+    # now let's use these as env vars
     with monkeypatch.context() as patch:
         mocked_envs_2: EnvVarsDict = setenvs_as_envfile(
             patch,
@@ -182,8 +198,7 @@ def test_cli_default_settings_envs(
         settings_object = fake_settings_class()
         assert settings_object
 
-        # NOTE: SEE BaseCustomSettings.Config.json_encoder for SecretStr
-        settings_dict_wo_secrets = json.loads(settings_object.json(indent=2))
+        settings_dict_wo_secrets = export_as_dict(settings_object)
         assert settings_dict_wo_secrets == {
             "APP_HOST": "localhost",
             "APP_PORT": 80,
@@ -205,6 +220,7 @@ def test_cli_compact_settings_envs(
     cli: typer.Typer,
     fake_settings_class: Type[BaseCustomSettings],
     fake_granular_env_file_content: str,
+    export_as_dict: Callable,
     cli_runner: CliRunner,
     monkeypatch: pytest.MonkeyPatch,
 ):
@@ -216,8 +232,7 @@ def test_cli_compact_settings_envs(
 
         settings_1 = fake_settings_class()
 
-        # NOTE: SEE BaseCustomSettings.Config.json_encoder for SecretStr
-        settings_1_dict_wo_secrets = json.loads(settings_1.json(indent=2))
+        settings_1_dict_wo_secrets = export_as_dict(settings_1)
         assert settings_1_dict_wo_secrets == {
             "APP_HOST": "localhost",
             "APP_PORT": 80,
@@ -236,7 +251,7 @@ def test_cli_compact_settings_envs(
 
         setting_env_content_compact = cli_runner.invoke(
             cli,
-            ["settings", "--compact"],
+            ["settings", "--compact", "--show-secrets"],
             catch_exceptions=False,
         ).stdout
 
