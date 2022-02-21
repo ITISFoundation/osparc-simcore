@@ -39,7 +39,7 @@ from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
 from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_docker import get_ip
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from shared_comp_utils import (
@@ -295,8 +295,8 @@ def mock_env(
     # patch host for dynamic-sidecar, not reachable via localhost
     # the dynamic-sidecar (running inside a container) will use
     # this address to reach the rabbit service
-    monkeypatch.setenv("RABBIT_HOST", f"{get_ip()}")
-    monkeypatch.setenv("POSTGRES_HOST", f"{get_ip()}")
+    monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
+    monkeypatch.setenv("POSTGRES_HOST", f"{get_localhost_ip()}")
     monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
     monkeypatch.setenv("DIRECTOR_V2_DEV_FEATURES_ENABLED", dev_features_enabled)
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")

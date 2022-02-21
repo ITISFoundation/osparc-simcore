@@ -14,7 +14,7 @@ from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
-from .helpers.utils_docker import get_service_published_port
+from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 
 log = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ async def redis_settings(
         "simcore_redis", testing_environ_vars["REDIS_PORT"]
     )
     # test runner is running on the host computer
-    settings = RedisSettings(REDIS_HOST="127.0.0.1", REDIS_PORT=int(port))
+    settings = RedisSettings(REDIS_HOST=get_localhost_ip(), REDIS_PORT=int(port))
     await wait_till_redis_responsive(settings.dsn)
 
     return settings

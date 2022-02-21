@@ -17,7 +17,7 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
-from .helpers.utils_docker import get_service_published_port
+from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 
 # HELPERS ------------------------------------------------------------------------------------
 
@@ -52,7 +52,7 @@ async def rabbit_settings(
     settings = RabbitSettings(
         RABBIT_USER=testing_environ_vars["RABBIT_USER"],
         RABBIT_PASSWORD=testing_environ_vars["RABBIT_PASSWORD"],
-        RABBIT_HOST="127.0.0.1",
+        RABBIT_HOST=get_localhost_ip(),
         RABBIT_PORT=int(port),
         RABBIT_CHANNELS=json.loads(testing_environ_vars["RABBIT_CHANNELS"]),
     )

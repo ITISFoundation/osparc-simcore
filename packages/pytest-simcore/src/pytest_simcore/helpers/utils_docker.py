@@ -23,17 +23,17 @@ _NORMPATH_COUNT = 0
 log = logging.getLogger(__name__)
 
 
-def get_ip() -> str:
+def get_localhost_ip(default="127.0.0.1") -> str:
+    """Return the IP address for localhost"""
+    local_ip = default
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         # doesn't even have to be reachable
         s.connect(("10.255.255.255", 1))
-        IP = s.getsockname()[0]
-    except Exception:  # pylint: disable=broad-except
-        IP = "127.0.0.1"
+        local_ip = s.getsockname()[0]
     finally:
         s.close()
-    return IP
+    return local_ip
 
 
 @retry(

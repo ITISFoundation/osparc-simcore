@@ -24,7 +24,7 @@ from tenacity.wait import wait_fixed
 from .helpers.constants import HEADER_STR, MINUTE
 from .helpers.typing_env import EnvVarsDict
 from .helpers.utils_dict import copy_from_dict
-from .helpers.utils_docker import get_ip
+from .helpers.utils_docker import get_localhost_ip
 
 log = logging.getLogger(__name__)
 
@@ -170,7 +170,7 @@ def docker_swarm(
     ):
         with attempt:
             if not _in_docker_swarm(docker_client):
-                docker_client.swarm.init(advertise_addr=get_ip())
+                docker_client.swarm.init(advertise_addr=get_localhost_ip())
             # if still not in swarm, raise an error to try and initialize again
             _in_docker_swarm(docker_client, raise_error=True)
 

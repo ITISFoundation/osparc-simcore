@@ -29,7 +29,11 @@ from .helpers import (
 )
 from .helpers.constants import HEADER_STR
 from .helpers.typing_env import EnvVarsDict
-from .helpers.utils_docker import get_ip, run_docker_compose_config, save_docker_infos
+from .helpers.utils_docker import (
+    get_localhost_ip,
+    run_docker_compose_config,
+    save_docker_infos,
+)
 
 
 @pytest.fixture(scope="session")
@@ -49,7 +53,7 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
     env_devel["LOG_LEVEL"] = "DEBUG"
 
     env_devel["REGISTRY_SSL"] = "False"
-    env_devel["REGISTRY_URL"] = "{}:5000".format(get_ip())
+    env_devel["REGISTRY_URL"] = "{}:5000".format(get_localhost_ip())
     env_devel["REGISTRY_PATH"] = "127.0.0.1:5000"
     env_devel["REGISTRY_USER"] = "simcore"
     env_devel["REGISTRY_PW"] = ""
@@ -301,7 +305,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: ExitCode) -> None:
 def _minio_fix(service_environs: Dict) -> Dict:
     """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work."""
     if "S3_ENDPOINT" in service_environs:
-        service_environs["S3_ENDPOINT"] = f"{get_ip()}:9001"
+        service_environs["S3_ENDPOINT"] = f"{get_localhost_ip()}:9001"
     return service_environs
 
 

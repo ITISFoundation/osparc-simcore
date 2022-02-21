@@ -14,7 +14,7 @@ import pytest
 import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from models_library.projects import ProjectAtDB
-from pytest_simcore.helpers.utils_docker import get_ip
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_sdk.node_ports_common import config as node_ports_config
@@ -162,7 +162,7 @@ async def director_v2_client(
     # patch host for dynamic-sidecar, not reachable via localhost
     # the dynamic-sidecar (running inside a container) will use
     # this address to reach the rabbit service
-    monkeypatch.setenv("RABBIT_HOST", f"{get_ip()}")
+    monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
 
     settings = AppSettings.create_from_envs()
 
