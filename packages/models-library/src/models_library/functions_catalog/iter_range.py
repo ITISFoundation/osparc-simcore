@@ -42,8 +42,8 @@ def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDock
             },
             "outputs": {
                 "out_1": {
-                    "label": "An {type_name}}",
-                    "description": "One {type_name} per iteration",
+                    "label": f"An {type_name}",
+                    "description": f"One {type_name} per iteration",
                     "type": type_name,
                 }
             },

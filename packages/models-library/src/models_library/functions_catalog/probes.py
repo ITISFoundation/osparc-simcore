@@ -23,8 +23,8 @@ def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDock
             "contact": OM["email"],
             "inputs": {
                 "in_1": {
-                    "label": "{type_name} Probe",
-                    "description": "Captures {type_name} values attached to it",
+                    "label": f"{type_name} Probe",
+                    "description": f"Captures {type_name} values attached to it",
                     "defaultValue": 0,
                     "type": type_name,
                 }
