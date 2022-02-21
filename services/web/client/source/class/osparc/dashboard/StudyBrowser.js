@@ -778,7 +778,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createNewFolder: function() {
       const folderEditor = new osparc.component.editor.FolderEditor();
       const title = this.tr("New Folder");
-      const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 300, 150);
+      const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 330, 235);
       folderEditor.addListener("createFolder", () => {
         const name = folderEditor.getChildControl("title").getValue().trim();
         const description = folderEditor.getChildControl("description").getValue().trim();
@@ -790,7 +790,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         };
         osparc.data.Resources.fetch("folders", "post", params)
           .then(() => this.reloadResources(), this)
-          .catch(console.error);
+          .catch(console.error)
+          .finally(folderEditor.getChildControl("create").setFetching(true));
       }, this);
       folderEditor.addListener("cancel", () => win.close());
     },

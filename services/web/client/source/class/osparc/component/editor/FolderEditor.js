@@ -30,7 +30,6 @@ qx.Class.define("osparc.component.editor.FolderEditor", {
     this.getChildControl("description");
     const colorPicker = this.getChildControl("color-picker");
     const colorInput = colorPicker.getChildControl("color-input");
-    this.__validator.add(colorInput, osparc.utils.Validators.hexColor);
     manager.add(colorInput, osparc.utils.Validators.hexColor);
     newFolder ? this.getChildControl("create") : this.getChildControl("save");
   },
