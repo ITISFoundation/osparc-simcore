@@ -143,7 +143,7 @@ async def create_projects(
 
         # there is no previous project so current_project is set to
         # contain an empty sharing_networks object
-        current_project = {"sharing_networks": {}}
+        current_project = {"sharingNetworks": {}}
         await sharing_networks.propagate_changes(
             app=request.app,
             current_project=current_project,
