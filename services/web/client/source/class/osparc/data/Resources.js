@@ -151,6 +151,16 @@ qx.Class.define("osparc.data.Resources", {
             useCache: false,
             method: "DELETE",
             url: statics.API + "/projects/{studyId}/tags/{tagId}"
+          },
+          addFolder: {
+            useCache: false,
+            method: "PUT",
+            url: statics.API + "/projects/{studyId}/folder/{folderId}"
+          },
+          removeFolder: {
+            useCache: false,
+            method: "DELETE",
+            url: statics.API + "/projects/{studyId}/folder/{folderId}"
           }
         }
       },
@@ -634,6 +644,31 @@ qx.Class.define("osparc.data.Resources", {
           delete: {
             method: "DELETE",
             url: statics.API + "/tags/{tagId}"
+          }
+        }
+      },
+      /*
+       * FOLDERS
+       */
+      "folders": {
+        idField: "id",
+        useCache: true,
+        endpoints: {
+          get: {
+            method: "GET",
+            url: statics.API + "/folders"
+          },
+          post: {
+            method: "POST",
+            url: statics.API + "/folders"
+          },
+          put: {
+            method: "PUT",
+            url: statics.API + "/folders/{folderId}"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/folders/{folderId}"
           }
         }
       },
