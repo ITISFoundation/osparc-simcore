@@ -7,18 +7,18 @@
 # pylint:disable=no-name-in-module
 
 
-import asyncio
 from typing import Any, Callable, Dict, Iterator, cast
 from unittest import mock
 
 import aiopg
 import httpx
 import pytest
-from _helpers import assert_comp_run_state  # type: ignore; type: ignore
+from _helpers import PublishedProject  # type: ignore
+from _helpers import RunningProject  # type: ignore
+from _helpers import assert_comp_run_state  # type: ignore
 from _helpers import assert_comp_tasks_state  # type: ignore
 from _helpers import manually_run_comp_scheduler  # type: ignore
 from _helpers import set_comp_task_state  # type: ignore
-from _helpers import PublishedProject, RunningProject
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import SpecCluster
 from dask_task_models_library.container_tasks.events import TaskStateEvent
@@ -604,7 +604,7 @@ async def test_completed_task_properly_updates_state(
         "12.34.55",
         user_id,
         published_project.project.uuid,
-        published_project.tasks[0].node_id,
+        published_project.tasks[1].node_id,
     )
     state_event = TaskStateEvent(
         job_id=job_id,
@@ -612,7 +612,7 @@ async def test_completed_task_properly_updates_state(
         state=state,
     )
     await dask_scheduler._on_task_completed(state_event)
-    await asyncio.sleep(4)
+
     await assert_comp_tasks_state(
         aiopg_engine,
         published_project.project.uuid,
