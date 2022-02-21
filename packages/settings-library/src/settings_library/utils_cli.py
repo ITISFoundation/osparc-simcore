@@ -20,10 +20,18 @@ def print_as_envfile(
     **pydantic_export_options,
 ):
     for field in settings_obj.__fields__.values():
+        exclude_unset = pydantic_export_options.get("exclude_unset", False)
+        auto_default_from_env = field.field_info.extra.get(
+            "auto_default_from_env", False
+        )
 
         value = getattr(settings_obj, field.name)
-        if show_secrets and hasattr(value, "get_secret_value"):
-            value = value.get_secret_value()
+
+        if exclude_unset and field.name not in settings_obj.__fields_set__:
+            if not auto_default_from_env:
+                continue
+            if value is None:
+                continue
 
         if isinstance(value, BaseSettings):
             if compact:
@@ -32,9 +40,15 @@ def print_as_envfile(
                 if verbose:
                     typer.echo(f"\n# --- {field.name} --- ")
                 print_as_envfile(
-                    value, compact=False, verbose=verbose, show_secrets=show_secrets
+                    value,
+                    compact=False,
+                    verbose=verbose,
+                    show_secrets=show_secrets,
+                    **pydantic_export_options,
                 )
                 continue
+        elif show_secrets and hasattr(value, "get_secret_value"):
+            value = value.get_secret_value()
 
         if verbose:
             field_info = field.field_info

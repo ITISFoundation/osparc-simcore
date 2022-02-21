@@ -18,7 +18,10 @@ class BaseCustomSettings(BaseSettings):
         allow_mutation = False
         frozen = True
         validate_all = True
-        json_encoders = {SecretStr: lambda v: v.get_secret_value()}
+        json_encoders = {
+            # FIXME: this should be optional via CLI --show-secret!
+            SecretStr: lambda v: v.get_secret_value()
+        }
 
     @classmethod
     def set_defaults_with_default_constructors(
