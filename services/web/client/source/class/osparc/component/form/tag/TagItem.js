@@ -61,8 +61,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     __description: null,
     __nameInput: null,
     __descriptionInput: null,
-    __colorInput: null,
-    __colorButton: null,
+    __colorPicker: null,
     __loadingIcon: null,
     __validationManager: null,
     /**
@@ -97,7 +96,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
       this._add(descInputContainer, {
         flex: 1
       });
-      this._add(this.__colorPicker());
+      this._add(this.__getColorPicker());
       this._add(this.__tagItemEditButtons());
     },
     __renderDisplayMode: function() {
@@ -158,32 +157,6 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
             });
           }
           control = this.__descriptionInput;
-          break;
-        case "colorinput":
-          // Color input in edit mode
-          if (this.__colorInput === null) {
-            this.__colorInput = new qx.ui.form.TextField().set({
-              value: this.getColor(),
-              width: 60,
-              required: true
-            });
-            this.__colorInput.bind("value", this.getChildControl("colorbutton"), "backgroundColor");
-            this.__colorInput.bind("value", this.getChildControl("colorbutton"), "textColor", {
-              converter: value => osparc.utils.Utils.getContrastedTextColor(qx.theme.manager.Color.getInstance().resolve(value))
-            });
-            this.__validationManager.add(this.__colorInput, osparc.utils.Validators.hexColor);
-          }
-          control = this.__colorInput;
-          break;
-        case "colorbutton":
-          // Random color generator button in edit mode
-          if (this.__colorButton === null) {
-            this.__colorButton = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/12");
-            this.__colorButton.addListener("execute", () => {
-              this.getChildControl("colorinput").setValue(osparc.utils.Utils.getRandomColor());
-            }, this);
-          }
-          control = this.__colorButton;
           break;
       }
       return control || this.base(arguments, id);
@@ -269,17 +242,16 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
     /**
      * Generates and returns the color input (edit mode)
      */
-    __colorPicker: function() {
+    __getColorPicker: function() {
+      const colorPicker = this.__colorPicker = new osparc.component.form.ColorPicker();
+      const colorInput = colorPicker.getChildControl("color-input");
+      this.__validationManager.add(colorInput, osparc.utils.Validators.hexColor);
       const container = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       container.add(new qx.ui.basic.Label(this.tr("Color")).set({
-        buddy: this.getChildControl("colorinput")
+        buddy: colorInput
       }));
-      const innerContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      const refreshButton = this.getChildControl("colorbutton");
-      const colorInput = this.getChildControl("colorinput");
-      innerContainer.add(refreshButton);
-      innerContainer.add(colorInput);
-      container.add(innerContainer);
+      container.add(colorPicker);
+      this.bind("color", colorPicker, "color");
       return container;
     },
     /**
@@ -290,7 +262,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
         id: this.isPropertyInitialized("id") ? this.getId() : null,
         name: this.getChildControl("nameinput").getValue().trim(),
         description: this.getChildControl("descriptioninput").getValue().trim(),
-        color: this.getChildControl("colorinput").getValue()
+        color: this.__colorPicker.getChildControl("color-input").getValue()
       };
     },
     _applyMode: function() {
