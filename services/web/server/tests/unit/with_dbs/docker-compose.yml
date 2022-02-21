@@ -22,6 +22,6 @@ services:
     command: postgres -c tcp_keepalives_idle=600 -c tcp_keepalives_interval=600 -c tcp_keepalives_count=5
 
   redis:
-    image: "redis:5.0.9-alpine@sha256:b011c1ca7fa97ed92d6c5995e5dd752dc37fe157c1b60ce96a6e35701851dabc"
+    image: "redis:6.2.6@sha256:4bed291aa5efb9f0d77b76ff7d4ab71eee410962965d052552db1fb80576431d"
     ports:
       - "6379:6379"
