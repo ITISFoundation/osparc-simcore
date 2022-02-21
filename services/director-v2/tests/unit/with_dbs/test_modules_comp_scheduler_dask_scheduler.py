@@ -550,7 +550,7 @@ async def test_handling_of_disconnected_dask_scheduler(
     )
 
 
-async def test_lost_task_properly_recovered(
+async def test_after_reboot_lost_task_fails_pipeline(
     mocked_dask_client: mock.MagicMock,
     aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
     running_project: RunningProject,
@@ -563,17 +563,15 @@ async def test_lost_task_properly_recovered(
 ):
     """A lost task is a task that was run, but for some reason
     the dask client or director-v2 was restarted, thus the task is still
-    in RUNNING state in the database, but the tasks have disappeared"""
+    in RUNNING state in the database, but the task has disappeared from the dask-scheduler. Therefore
+    it is in an unknown state, the pipeline should then fail."""
 
     async def mocked_get_task_status(job_ids: List[str]) -> List[RunningState]:
         return [RunningState.UNKNOWN for j in job_ids]
 
     mocked_dask_client.get_tasks_status = mocked_get_task_status
     await manually_run_comp_scheduler(scheduler)
-    # since the tasks have disappeared, what is the obvious thing?
-    # 1. fail the computations?
-    # 2. if possible recover them if they finished? and then continue with whatever comes after?
-    # 3. if they cannot be recovered, then go back to 1.?
+
     await assert_comp_tasks_state(
         aiopg_engine,
         running_project.project.uuid,
@@ -585,6 +583,12 @@ async def test_lost_task_properly_recovered(
         running_project.project.uuid,
         [running_project.tasks[2].node_id, running_project.tasks[4].node_id],
         exp_state=RunningState.ABORTED,
+    )
+    await assert_comp_run_state(
+        aiopg_engine,
+        user_id,
+        running_project.project.uuid,
+        exp_state=RunningState.FAILED,
     )
 
 
