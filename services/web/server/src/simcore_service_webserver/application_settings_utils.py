@@ -1,3 +1,10 @@
+# NOTE: Conversion helpers like 'convert_to_app_config' and 'convert_to_environ_vars' allows us
+# to fall back to an equivalent config or environs provided some settings.
+#
+# This allows to keep many of the logic layers based on a given config whose
+# refactoring would report very little. E.g. many test fixtures were based on given configs
+#
+
 import logging
 from typing import Any, Dict
 
@@ -14,17 +21,19 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
     cfg = {
         "version": "1.0",
         "main": {
-            "host": "0.0.0.0",
+            "host": app_settings.WEBSERVER_SERVER_HOST,
             "port": app_settings.WEBSERVER_PORT,
             "log_level": f"{app_settings.WEBSERVER_LOG_LEVEL}",
             "testing": False,  # TODO: deprecate!
-            "studies_access_enabled": 1
-            if app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED
+            "studies_access_enabled": int(
+                app_settings.WEBSERVER_STUDIES_DISPATCHER.STUDIES_ACCESS_ANONYMOUS_ALLOWED
+            )
+            if app_settings.WEBSERVER_STUDIES_DISPATCHER
             else 0,
         },
         "tracing": {
             "enabled": 1 if app_settings.WEBSERVER_TRACING is not None else 0,
-            "zipkin_endpoint": f"{getattr(app_settings.WEBSERVER_TRACING, 'TRACING_ZIPKIN_ENDPOINT', None)}",
+            #     "zipkin_endpoint": f"{getattr(app_settings.WEBSERVER_TRACING, 'TRACING_ZIPKIN_ENDPOINT', None)}",
         },
         "socketio": {"enabled": app_settings.WEBSERVER_SOCKETIO},
         "director": {
@@ -59,8 +68,8 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
                 None,
             ),
             "garbage_collection_interval_seconds": getattr(
-                app_settings.WEBSERVER_RESOURCE_MANAGER,
-                "RESOURCE_MANAGER_GARBAGE_COLLECTION_INTERVAL_S",
+                app_settings.WEBSERVER_GARBAGE_COLLECTOR,
+                "GARBAGE_COLLECTOR_INTERVAL_S",
                 None,
             ),
             "redis": {
@@ -121,7 +130,7 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
         },
         "rest": {
             "version": app_settings.API_VTAG,
-            "enabled": app_settings.WEBSERVER_REST,
+            "enabled": app_settings.WEBSERVER_REST is not None,
         },
         "projects": {"enabled": app_settings.WEBSERVER_PROJECTS},
         "session": {
@@ -148,14 +157,15 @@ def convert_to_app_config(app_settings: ApplicationSettings) -> Dict[str, Any]:
         "publications": {"enabled": app_settings.WEBSERVER_PUBLICATIONS},
         "remote_debug": {"enabled": app_settings.WEBSERVER_REMOTE_DEBUG},
         "security": {"enabled": True},
+        "scicrunch": {"enabled": app_settings.WEBSERVER_SCICRUNCH is not None},
         "statics": {
             "enabled": app_settings.WEBSERVER_FRONTEND is not None
             and app_settings.WEBSERVER_STATICWEB is not None
         },
-        # NOTE:  app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
-        "studies_access": {"enabled": app_settings.WEBSERVER_STUDIES_ACCESS},
         # NOTE  app_settings.WEBSERVER_STUDIES_ACCESS_ENABLED did not apply
-        "studies_dispatcher": {"enabled": app_settings.WEBSERVER_STUDIES_DISPATCHER},
+        "studies_dispatcher": {
+            "enabled": app_settings.WEBSERVER_STUDIES_DISPATCHER is not None
+        },
         "tags": {"enabled": app_settings.WEBSERVER_TAGS},
         "users": {"enabled": app_settings.WEBSERVER_USERS},
         "version_control": {"enabled": app_settings.WEBSERVER_VERSION_CONTROL},
@@ -172,9 +182,14 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
     envs = {}
 
     def _set_if_disabled(field_name, section):
-        if not section.get("enabled"):
-            field = ApplicationSettings.__fields__[field_name]
+        # Assumes that by default is enabled
+        enabled = section.get("enabled", True)
+        field = ApplicationSettings.__fields__[field_name]
+        if not enabled:
             envs[field_name] = "null" if field.allow_none else "0"
+        else:
+            if field.type_ == bool:
+                envs[field_name] = "1"
 
     if main := cfg.get("main"):
         envs["WEBSERVER_PORT"] = main.get("port")
@@ -183,7 +198,7 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
 
     if section := cfg.get("tracing"):
         _set_if_disabled("WEBSERVER_TRACING", section)
-        envs["TRACING_ZIPKIN_ENDPOINT"] = section.get("zipkin_endpoint")
+        # envs["TRACING_ZIPKIN_ENDPOINT"] = section.get("zipkin_endpoint")
 
     if section := cfg.get("director"):
         _set_if_disabled("WEBSERVER_DIRECTOR", section)
@@ -280,4 +295,26 @@ def convert_to_environ_vars(cfg: Dict[str, Any]) -> Dict[str, Any]:
         _set_if_disabled("WEBSERVER_FRONTEND", section)
         _set_if_disabled("WEBSERVER_STATICWEB", section)
 
+    for settings_name in (
+        "WEBSERVER_CLUSTERS",
+        "WEBSERVER_GARBAGE_COLLECTOR",
+        "WEBSERVER_GROUPS",
+        "WEBSERVER_META_MODELING",
+        "WEBSERVER_PRODUCTS",
+        "WEBSERVER_PROJECTS",
+        "WEBSERVER_PUBLICATIONS",
+        "WEBSERVER_REMOTE_DEBUG",
+        "WEBSERVER_REST",
+        "WEBSERVER_SOCKETIO",
+        "WEBSERVER_STUDIES_ACCESS",
+        "WEBSERVER_STUDIES_DISPATCHER",
+        "WEBSERVER_TAGS",
+        "WEBSERVER_USERS",
+        "WEBSERVER_VERSION_CONTROL",
+    ):
+        section_name = settings_name.replace("WEBSERVER_", "").lower()
+        if section := cfg.get(section_name):
+            _set_if_disabled(settings_name, section)
+
+    # NOTE: The final envs list prunes all env vars set to None
     return {k: v for k, v in envs.items() if v is not None}

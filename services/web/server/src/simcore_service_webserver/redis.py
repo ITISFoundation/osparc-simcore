@@ -5,35 +5,42 @@ from typing import Optional
 import aioredis
 from aiohttp import web
 from aioredlock import Aioredlock
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
+from settings_library.redis import RedisSettings
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-from .resource_manager.config import (
+from ._constants import APP_SETTINGS_KEY
+from .redis_constants import (
     APP_CLIENT_REDIS_CLIENT_KEY,
     APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY,
     APP_CLIENT_REDIS_LOCK_MANAGER_KEY,
-    CONFIG_SECTION_NAME,
 )
 
 log = logging.getLogger(__name__)
 
-THIS_SERVICE_NAME = "redis"
-DSN = "redis://{host}:{port}"
 _MINUTE = 60
 _WAIT_SECS = 2
 
+# SETTINGS --------------------------------------------------------------------------
 
-async def redis_client(app: web.Application):
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    endpoint = DSN.format(**cfg["redis"])
 
-    async def create_client(url) -> aioredis.Redis:
-        # create redis client
+def get_plugin_settings(app: web.Application) -> RedisSettings:
+    settings: Optional[RedisSettings] = app[APP_SETTINGS_KEY].WEBSERVER_REDIS
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, RedisSettings)  # nosec
+    return settings
+
+
+# EVENTS --------------------------------------------------------------------------
+async def setup_redis_client(app: web.Application):
+    redis_settings: RedisSettings = get_plugin_settings(app)
+
+    async def _create_client(address: str) -> aioredis.Redis:
         client: Optional[aioredis.Redis] = None
+
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(1 * _MINUTE),
             wait=wait_fixed(_WAIT_SECS),
@@ -41,31 +48,34 @@ async def redis_client(app: web.Application):
             reraise=True,
         ):
             with attempt:
-                client = await aioredis.create_redis_pool(url, encoding="utf-8")
-                if not client:
-                    raise ValueError("Expected aioredis client instance, got {client}")
+                client = await aioredis.create_redis_pool(address, encoding="utf-8")
                 log.info(
-                    "Connection to %s succeeded [%s]",
-                    f"redis at {endpoint=}",
+                    "Connection to %s succeeded with %s [%s]",
+                    f"redis at {address=}",
+                    f"{client=}",
                     json.dumps(attempt.retry_state.retry_object.statistics),
                 )
-        assert client  # no sec
+        assert client  # nosec
         return client
 
+    origin_url = f"redis://{redis_settings.REDIS_HOST}:{redis_settings.REDIS_PORT}"
     log.info(
-        "Connecting to %s",
-        f"redis at {endpoint=}",
+        "Connecting to redis at %s",
+        f"{origin_url=}",
     )
-    app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await create_client(endpoint)
+    app[APP_CLIENT_REDIS_CLIENT_KEY] = client = await _create_client(origin_url)
     assert client  # nosec
 
+    # TODO: use RedisDsn.build(**redis_settings.build_kwargs()) via a Mixin?
     # create lock manager but use DB 1
-    lock_db_url = endpoint + "/1"
+    lock_db_url = origin_url + "/1"
+
     # create a client for it as well
     app[
         APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY
-    ] = client_lock_db = await create_client(lock_db_url)
+    ] = client_lock_db = await _create_client(lock_db_url)
     assert client_lock_db  # nosec
+
     app[APP_CLIENT_REDIS_LOCK_MANAGER_KEY] = lock_manager = Aioredlock([lock_db_url])  # type: ignore
     assert lock_manager  # nosec
 
@@ -88,7 +98,9 @@ async def redis_client(app: web.Application):
 
 
 def get_redis_client(app: web.Application) -> aioredis.Redis:
-    return app[APP_CLIENT_REDIS_CLIENT_KEY]
+    client = app[APP_CLIENT_REDIS_CLIENT_KEY]
+    assert client is not None, "redis plugin was not init"  # nosec
+    return client
 
 
 def get_redis_lock_manager(app: web.Application) -> Aioredlock:
@@ -99,18 +111,11 @@ def get_redis_lock_manager_client(app: web.Application) -> aioredis.Redis:
     return app[APP_CLIENT_REDIS_LOCK_MANAGER_CLIENT_KEY]
 
 
+# PLUGIN SETUP --------------------------------------------------------------------------
+
+
 @app_module_setup(
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_REDIS", logger=log
 )
 def setup_redis(app: web.Application):
-    app[APP_CLIENT_REDIS_CLIENT_KEY] = None
-
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-
-    if not cfg["redis"]["enabled"]:
-        return
-
-    # app is created at this point but not yet started
-    log.debug("Setting up %s [service: %s] ...", __name__, THIS_SERVICE_NAME)
-
-    app.cleanup_ctx.append(redis_client)
+    app.cleanup_ctx.append(setup_redis_client)

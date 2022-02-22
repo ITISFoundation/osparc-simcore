@@ -2,6 +2,8 @@
 
 from typing import Any, Dict, Mapping, Optional, Set, Union
 
+ConfigDict = Dict[str, Any]
+
 
 def get_from_dict(obj: Mapping[str, Any], dotted_key: str, default=None) -> Any:
     keys = dotted_key.split(".")

@@ -70,9 +70,7 @@ services:
       retries: 3
 
   filestash:
-    container_name: filestash
     image: machines/filestash:3a01b70
-    restart: always
     ports:
       - "9002:8334"
     volumes:
@@ -81,9 +79,7 @@ services:
       - simcore_default
 
   onlyoffice:
-    container_name: filestash_oods
     image: onlyoffice/documentserver:7.0.0.132
-    restart: always
     networks:
       - simcore_default
 

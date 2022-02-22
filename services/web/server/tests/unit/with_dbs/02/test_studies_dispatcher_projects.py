@@ -5,9 +5,11 @@
 
 import logging
 from copy import deepcopy
+from typing import Callable
 
 import pytest
 from models_library.projects import Project
+from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_login import NewUser
 from pytest_simcore.helpers.utils_projects import delete_all_projects
 from pytest_simcore.helpers.utils_services import list_fake_file_consumers
@@ -21,12 +23,15 @@ from simcore_service_webserver.studies_dispatcher._projects import (
     create_viewer_project_model,
 )
 from simcore_service_webserver.users_api import get_user
+from yarl import URL
 
 FAKE_FILE_VIEWS = list_fake_file_consumers()
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg, aiohttp_unused_port, redis_service):
+def app_cfg(
+    default_app_cfg: ConfigDict, aiohttp_unused_port: Callable, redis_service: URL
+):
     """App's configuration used for every test in this module
 
     NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
@@ -48,7 +53,6 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, redis_service):
         "publications",
         "catalog",
         "computation",
-        "studies_access",
         "clusters",
     }
     include = {
@@ -96,7 +100,7 @@ async def test_add_new_project_from_model_instance(
         return_value=None,
     )
 
-    async with NewUser() as user_db:
+    async with NewUser(app=client.app) as user_db:
         try:
             # preparation
             await auto_add_user_to_groups(client.app, user_db["id"])

@@ -5,9 +5,6 @@
 from copy import deepcopy
 
 import pytest
-from aiohttp import web
-from pytest_simcore.helpers.utils_projects import create_project
-from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import application
 
 
@@ -19,7 +16,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_db):
     port = cfg["main"]["port"]
     cfg["projects"]["enabled"] = True
 
-    app = application.create_application(cfg)
+    app = application.create_application()
 
     # server and client
     return loop.run_until_complete(

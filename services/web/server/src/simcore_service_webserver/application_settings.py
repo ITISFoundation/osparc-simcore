@@ -18,7 +18,6 @@ from settings_library.postgres import PostgresSettings
 from settings_library.prometheus import PrometheusSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from settings_library.s3 import S3Settings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
@@ -30,12 +29,15 @@ from .diagnostics_settings import DiagnosticsSettings
 from .director.settings import DirectorSettings
 from .director_v2_settings import DirectorV2Settings
 from .exporter.settings import ExporterSettings
+from .garbage_collector_settings import GarbageCollectorSettings
 from .login.settings import LoginSettings
 from .resource_manager.settings import ResourceManagerSettings
+from .rest_settings import RestSettings
 from .scicrunch.settings import SciCrunchSettings
 from .session_settings import SessionSettings
 from .statics_settings import FrontEndAppSettings, StaticWebserverModuleSettings
 from .storage_settings import StorageSettings
+from .studies_dispatcher.settings import StudiesDispatcherSettings
 from .utils import snake_to_camel
 
 log = logging.getLogger(__name__)
@@ -78,11 +80,20 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         LogLevel.WARNING.value,
         env=["WEBSERVER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"],
     )
-    WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
-    WEBSERVER_SESSION: SessionSettings = Field(
-        auto_default_from_env=True, description="sesion module"
+    # TODO: find a better name!?
+    WEBSERVER_SERVER_HOST: str = Field(
+        "0.0.0.0",  # nosec
+        description="host name to serve within the container."
+        "NOTE that this different from WEBSERVER_HOST env which is the host seen outside the container",
     )
-    WEBSERVER_STUDIES_ACCESS_ENABLED: bool
+    WEBSERVER_HOST: Optional[str] = Field(
+        None, env=["WEBSERVER_HOST", "HOST", "HOSTNAME"]
+    )
+    WEBSERVER_PORT: PortInt = DEFAULT_AIOHTTP_PORT
+
+    WEBSERVER_FRONTEND: Optional[FrontEndAppSettings] = Field(
+        auto_default_from_env=True, description="front-end static settings"
+    )
 
     # PLUGINS ----------------
 
@@ -116,47 +127,62 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         auto_default_from_env=True, description="exporter plugin"
     )
 
-    WEBSERVER_FRONTEND: Optional[FrontEndAppSettings] = Field(
-        auto_default_from_env=True, description="front-end static settings"
+    WEBSERVER_GARBAGE_COLLECTOR: Optional[GarbageCollectorSettings] = Field(
+        auto_default_from_env=True, description="garbage collector plugin"
     )
 
     WEBSERVER_LOGIN: Optional[LoginSettings] = Field(
         auto_default_from_env=True, description="login plugin"
     )
     WEBSERVER_REDIS: Optional[RedisSettings] = Field(auto_default_from_env=True)
+
+    WEBSERVER_REST: Optional[RestSettings] = Field(
+        auto_default_from_env=True, description="rest api plugin"
+    )
+
     WEBSERVER_RESOURCE_MANAGER: ResourceManagerSettings = Field(
         auto_default_from_env=True, description="resource_manager plugin"
     )
-    WEBSERVER_S3: Optional[S3Settings] = Field(auto_default_from_env=True)
     WEBSERVER_SCICRUNCH: Optional[SciCrunchSettings] = Field(
         auto_default_from_env=True, description="scicrunch plugin"
     )
+    WEBSERVER_SESSION: SessionSettings = Field(
+        auto_default_from_env=True, description="session plugin"
+    )
+
     WEBSERVER_STATICWEB: Optional[StaticWebserverModuleSettings] = Field(
         auto_default_from_env=True, description="static-webserver service plugin"
     )
     WEBSERVER_STORAGE: Optional[StorageSettings] = Field(
         auto_default_from_env=True, description="storage service client's plugin"
     )
+    WEBSERVER_STUDIES_DISPATCHER: Optional[StudiesDispatcherSettings] = Field(
+        auto_default_from_env=True, description="studies dispatcher plugin"
+    )
+
     WEBSERVER_TRACING: Optional[TracingSettings] = Field(
         auto_default_from_env=True, description="tracing plugin"
     )
 
     # These plugins only require (for the moment) an entry to toggle between enabled/disabled
     WEBSERVER_CLUSTERS: bool = True
-    WEBSERVER_GARBAGE_COLLECTOR: bool = True
     WEBSERVER_GROUPS: bool = True
     WEBSERVER_META_MODELING: bool = True
     WEBSERVER_PRODUCTS: bool = True
     WEBSERVER_PROJECTS: bool = True
     WEBSERVER_PUBLICATIONS: bool = True
     WEBSERVER_REMOTE_DEBUG: bool = True
-    WEBSERVER_REST: bool = True
     WEBSERVER_SOCKETIO: bool = True
-    WEBSERVER_STUDIES_ACCESS: bool = True
-    WEBSERVER_STUDIES_DISPATCHER: bool = True
     WEBSERVER_TAGS: bool = True
     WEBSERVER_USERS: bool = True
     WEBSERVER_VERSION_CONTROL: bool = True
+
+    #
+    WEBSERVER_SECURITY: bool = Field(
+        True,
+        description="This is a place-holder for future settings."
+        "Currently this is a system plugin and cannot be disabled",
+    )
 
     @validator(
         # List of plugins under-development (keep up-to-date)
@@ -258,7 +284,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
 def setup_settings(app: web.Application) -> ApplicationSettings:
     app[APP_SETTINGS_KEY] = settings = ApplicationSettings.create_from_envs()
-    log.info("Captured app settings:\n%s", app[APP_SETTINGS_KEY].json(indent=1))
+    log.info(
+        "Captured app settings:\n%s",
+        app[APP_SETTINGS_KEY].json(indent=1, sort_keys=True),
+    )
     return settings
 
 

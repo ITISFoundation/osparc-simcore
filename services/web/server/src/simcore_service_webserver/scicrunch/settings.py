@@ -25,10 +25,8 @@ class SciCrunchSettings(BaseCustomSettings):
     )
 
 
-def assert_valid_config(app: web.Application):
-
-    WEBSERVER_SCICRUNCH = SciCrunchSettings()
-
-    if settings := app.get(APP_SETTINGS_KEY):
-        assert settings.WEBSERVER_SCICRUNCH == WEBSERVER_SCICRUNCH  # nosec
-    return WEBSERVER_SCICRUNCH
+def get_plugin_settings(app: web.Application) -> SciCrunchSettings:
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_SCICRUNCH
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, SciCrunchSettings)  # nosec
+    return settings

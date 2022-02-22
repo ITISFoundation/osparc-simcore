@@ -355,11 +355,13 @@ push-version: tag-version
 .PHONY: devenv devenv-all node-env
 
 .venv:
+	@python3 --version
 	python3 -m venv $@
 	$@/bin/pip3 --quiet install --upgrade \
 		pip~=21.3 \
 		wheel \
 		setuptools
+	@$@/bin/pip3 list --verbose
 
 devenv: .venv ## create a python virtual environment with dev tools (e.g. linters, etc)
 	$</bin/pip3 --quiet install -r requirements/devenv.txt

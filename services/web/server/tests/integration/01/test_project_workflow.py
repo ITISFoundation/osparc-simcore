@@ -22,16 +22,15 @@ from models_library.projects_state import ProjectState
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import catalog
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.catalog import setup_catalog
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
-from simcore_service_webserver.login.module_setup import setup_login
+from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.products import setup_products
-from simcore_service_webserver.projects.module_setup import setup_projects
-from simcore_service_webserver.resource_manager.module_setup import (
-    setup_resource_manager,
-)
+from simcore_service_webserver.projects.plugin import setup_projects
+from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
@@ -68,6 +67,8 @@ def client(
 
     monkeypatch_setenv_from_app_config(app_config)
     app = create_safe_application(app_config)
+
+    assert setup_settings(app)
 
     setup_db(app)
     setup_session(app)
