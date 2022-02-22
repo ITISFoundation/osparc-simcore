@@ -164,6 +164,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.bind("selection", importStudyButton, "enabled", {
         converter: selection => !selection.length
       });
+      this._searchBarFilter.bind("currentFolder", newFolderButton, "visibility", {
+        converter: currentFolder => currentFolder === null ? "visible" : "excluded"
+      });
       this._resourcesContainer.bind("selection", studiesDeleteButton, "visibility", {
         converter: selection => selection.length ? "visible" : "excluded"
       });

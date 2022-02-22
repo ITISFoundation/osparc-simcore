@@ -59,6 +59,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       check: "Number",
       init: null,
       nullable: true,
+      event: "changeCurrentFolder",
       apply: "__applyCurrentFolder"
     }
   },
@@ -76,7 +77,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           break;
         }
         case "current-folder-chip": {
-          control = new qx.ui.basic.Label().set({
+          control = new qx.ui.basic.Atom().set({
+            icon: "@FontAwesome5Solid/folder/16",
             alignY: "middle"
           });
           this._add(control);
@@ -139,7 +141,8 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         const folders = osparc.store.Store.getInstance().getFolders();
         const folderFound = folders.find(folder => folder.id === folderId);
         if (folderFound) {
-          currentFolder.setValue("/"+folderFound.name);
+          currentFolder.setLabel(folderFound.name);
+          currentFolder.getChildControl("icon").setTextColor(folderFound.color);
         }
       } else {
         this.__removeFolder();
