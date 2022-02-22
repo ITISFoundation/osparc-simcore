@@ -652,6 +652,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }, this);
         }
         folders.forEach(folder => {
+          if ("folder" in studyData && studyData["folder"] === folder.id) {
+            return;
+          }
           const folderButton = new qx.ui.menu.Button(folder.name, "@FontAwesome5Solid/folder/12");
           folderButton.getChildControl("icon").setTextColor(folder.color);
           foldersMenu.add(folderButton);
