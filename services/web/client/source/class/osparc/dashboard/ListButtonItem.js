@@ -36,10 +36,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     "updateQualityService": "qx.event.type.Data"
   },
 
-  statics: {
-    MENU_BTN_WIDTH: 25
-  },
-
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -109,8 +105,8 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           break;
         case "menu-selection-stack":
           control = new qx.ui.container.Stack().set({
-            minWidth: this.self().MENU_BTN_WIDTH,
-            minHeight: this.self().MENU_BTN_WIDTH,
+            minWidth: osparc.dashboard.ListButtonBase.MENU_BTN_WIDTH,
+            minHeight: osparc.dashboard.ListButtonBase.MENU_BTN_WIDTH,
             alignY: "middle"
           });
           this._addAt(control, osparc.dashboard.ListButtonBase.POS.OPTIONS);
@@ -125,18 +121,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           const menuSelectionStack = this.getChildControl("menu-selection-stack");
           control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16");
           menuSelectionStack.addAt(control, 2);
-          break;
-        }
-        case "menu-button": {
-          const menuSelectionStack = this.getChildControl("menu-selection-stack");
-          control = new qx.ui.form.MenuButton().set({
-            width: this.self().MENU_BTN_WIDTH,
-            height: this.self().MENU_BTN_WIDTH,
-            icon: "@FontAwesome5Solid/ellipsis-v/14",
-            focusable: false
-          });
-          osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
-          menuSelectionStack.addAt(control, 0);
           break;
         }
       }

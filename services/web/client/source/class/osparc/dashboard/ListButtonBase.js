@@ -39,6 +39,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
   statics: {
     ITEM_WIDTH: 600,
     ITEM_HEIGHT: 40,
+    MENU_BTN_WIDTH: 25,
     SPACING: 5,
     POS: {
       THUMBNAIL: 0,
@@ -87,6 +88,18 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             flex: 1
           });
           break;
+        case "menu-button": {
+          const menuSelectionStack = this.getChildControl("menu-selection-stack");
+          control = new qx.ui.form.MenuButton().set({
+            width: this.self().MENU_BTN_WIDTH,
+            height: this.self().MENU_BTN_WIDTH,
+            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            focusable: false
+          });
+          osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
+          menuSelectionStack.addAt(control, 0);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },

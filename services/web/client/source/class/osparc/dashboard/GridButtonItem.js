@@ -39,10 +39,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     "updateQualityService": "qx.event.type.Data"
   },
 
-  statics: {
-    MENU_BTN_WIDTH: 25
-  },
-
   members: {
     // overridden
     _createChildControlImpl: function(id) {
@@ -78,23 +74,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           });
           this._mainLayout.addAt(control, osparc.dashboard.GridButtonBase.POS.TAGS);
           break;
-        case "menu-button": {
-          this.getChildControl("title").set({
-            maxWidth: osparc.dashboard.GridButtonBase.ITEM_WIDTH - 2*osparc.dashboard.GridButtonBase.PADDING - this.self().MENU_BTN_WIDTH
-          });
-          control = new qx.ui.form.MenuButton().set({
-            width: this.self().MENU_BTN_WIDTH,
-            height: this.self().MENU_BTN_WIDTH,
-            icon: "@FontAwesome5Solid/ellipsis-v/14",
-            focusable: false
-          });
-          osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
-          this._add(control, {
-            top: -2,
-            right: -2
-          });
-          break;
-        }
         case "tick-unselected":
           control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16");
           this._add(control, {
