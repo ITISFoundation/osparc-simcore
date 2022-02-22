@@ -303,7 +303,7 @@ class DaskClient:
         project_id: ProjectID,
         cluster_id: ClusterID,
         tasks: Dict[NodeID, Image],
-        callback: Callable[[None], None],
+        callback: Callable[[], None],
         remote_fct: RemoteFct = None,
     ) -> List[Tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
