@@ -132,7 +132,6 @@ class DynamicSidecarClient:
     async def start_service_creation(
         self, dynamic_sidecar_endpoint: str, compose_spec: str
     ) -> None:
-        """returns: True if the compose up was submitted correctly"""
         url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers")
 
         response = await self._client.post(url, data=compose_spec)

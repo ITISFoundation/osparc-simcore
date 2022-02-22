@@ -318,7 +318,13 @@ class CreateUserServices(DynamicSchedulerEvent):
 
         # Starts dynamic SIDECAR -------------------------------------
         # creates a docker compose spec given the service key and tag
-        compose_spec = assemble_spec(
+        # fetching project form DB and fetching user settings
+        projects_repository = _fetch_repo_outside_of_request(app, ProjectsRepository)
+        project: ProjectAtDB = await projects_repository.get_project(
+            project_id=scheduler_data.project_id
+        )
+
+        compose_spec = await assemble_spec(
             app=app,
             service_key=scheduler_data.key,
             service_tag=scheduler_data.version,
@@ -326,6 +332,9 @@ class CreateUserServices(DynamicSchedulerEvent):
             compose_spec=scheduler_data.compose_spec,
             container_http_entry=scheduler_data.container_http_entry,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+            sharing_networks=project.sharing_networks,
+            node_uuid=scheduler_data.node_uuid,
+            project_id=scheduler_data.project_id,
         )
 
         await dynamic_sidecar_client.start_service_creation(

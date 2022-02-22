@@ -1,43 +1,24 @@
 import json
+import logging
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union
 
 import yaml
 from fastapi.applications import FastAPI
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import ComposeSpecLabel, PathMappingsLabel
+from models_library.sharing_networks import SharingNetworks
 from settings_library.docker_registry import RegistrySettings
 
+from ...modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ._constants import CONTAINER_NAME
 from .docker_service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
 
-
-def _inject_proxy_network_configuration(
-    service_spec: Dict[str, Any],
-    target_container: str,
-    dynamic_sidecar_network_name: str,
-) -> None:
-    """
-    Injects network configuration to allow the service
-    to be accessible on `uuid.services.SERVICE_DNS`
-    """
-
-    # add external network to existing networks defined in the container
-    service_spec["networks"] = {
-        dynamic_sidecar_network_name: {
-            "external": {"name": dynamic_sidecar_network_name},
-            "driver": "overlay",
-        }
-    }
-
-    # attach overlay network to container
-    target_container_spec = service_spec["services"][target_container]
-    container_networks = target_container_spec.get("networks", [])
-    container_networks.append(dynamic_sidecar_network_name)
-    target_container_spec["networks"] = container_networks
-
-
 EnvKeyEqValueList = List[str]
 EnvVarsMap = Dict[str, Optional[str]]
+
+logger = logging.getLogger(__name__)
 
 
 class _environment_section:
@@ -105,7 +86,85 @@ def _replace_env_vars_in_compose_spec(
     return stringified_service_spec
 
 
-def assemble_spec(
+def _inject_proxy_network_configuration(
+    service_spec: Dict[str, Any],
+    target_container: str,
+    dynamic_sidecar_network_name: str,
+) -> None:
+    """
+    Injects network configuration to allow the service
+    to be accessible on `uuid.services.SERVICE_DNS`
+    """
+
+    # add external network to existing networks defined in the container
+    networks = service_spec.get("networks", {})
+    networks[dynamic_sidecar_network_name] = {
+        "external": {"name": dynamic_sidecar_network_name},
+        "driver": "overlay",
+    }
+    service_spec["networks"] = networks
+
+    # attach overlay network to container
+    target_container_spec = service_spec["services"][target_container]
+    container_networks = target_container_spec.get("networks", [])
+    container_networks.append(dynamic_sidecar_network_name)
+    target_container_spec["networks"] = container_networks
+
+
+async def _inject_sharing_networks_configuration(
+    service_spec: Dict[str, Any],
+    sharing_networks: SharingNetworks,
+    node_uuid: NodeID,
+    target_container: str,
+    project_id: ProjectID,
+) -> None:
+    logger.debug("Extracting networks from %s", f"{sharing_networks=}")
+    networks = service_spec.get("networks", {})
+
+    for network_name, node_aliases in sharing_networks.items():
+        logger.debug("DEBUG: %s", f"{network_name=}")
+        if node_uuid not in node_aliases:
+            # this node is not part of this sharing network skipping
+            continue
+
+        # attach network to service spec
+        networks[network_name] = {
+            "external": {"name": network_name},
+            "driver": "overlay",
+        }
+
+        # make sure network exits, if not create it
+        await get_or_create_networks_ids([network_name], project_id)
+
+        # attach network to container spec
+        alias = node_aliases[node_uuid]
+        logger.debug("DEBUG: %s", f"{alias=}")
+        # ensure the containers always have the same names
+        for k, container_name in enumerate(sorted(service_spec["services"].keys())):
+            logger.debug("DEBUG: %s", f"{container_name=}")
+            container_spec = service_spec["services"][container_name]
+            container_networks = container_spec.get("networks", {})
+
+            # object might be a list need to convert to a dict
+            if isinstance(container_networks, list):
+                container_networks = {x: {} for x in container_networks}
+
+            # by defaults all containers are marked as `{alias}-0`, `{alias}-1`, etc...
+            # the target container also inherits the non enumerated alias
+            # this allows for more advanced usages in the context of multi container
+            # applications
+            container_aliases = [f"{alias}-{k}"]
+            if container_name == target_container:
+                container_aliases.append(alias)
+            container_networks[network_name] = {"aliases": container_aliases}
+
+            container_spec["networks"] = container_networks
+
+    # make sure networks is updates if missing
+    service_spec["networks"] = networks
+
+
+async def assemble_spec(
     app: FastAPI,
     service_key: str,
     service_tag: str,
@@ -113,6 +172,9 @@ def assemble_spec(
     compose_spec: Optional[ComposeSpecLabel],
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
+    sharing_networks: SharingNetworks,
+    node_uuid: NodeID,
+    project_id: ProjectID,
 ) -> str:
     """
     returns a docker-compose spec used by
@@ -130,7 +192,6 @@ def assemble_spec(
     # when no compose yaml file was provided
     if compose_spec is None:
         service_spec: Dict[str, Any] = {
-            # NOTE: latest version does NOT require
             "version": docker_compose_version,
             "services": {
                 CONTAINER_NAME: {
@@ -147,9 +208,17 @@ def assemble_spec(
     assert container_name is not None  # nosec
 
     _inject_proxy_network_configuration(
-        service_spec,
+        service_spec=service_spec,
         target_container=container_name,
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
+    )
+
+    await _inject_sharing_networks_configuration(
+        service_spec=service_spec,
+        sharing_networks=sharing_networks,
+        node_uuid=node_uuid,
+        target_container=container_name,
+        project_id=project_id,
     )
 
     _inject_paths_mappings(service_spec, paths_mapping)

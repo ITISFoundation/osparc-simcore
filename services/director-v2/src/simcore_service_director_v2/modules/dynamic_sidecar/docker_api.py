@@ -454,10 +454,24 @@ async def get_or_create_networks_ids(
                     "Attachable": True,
                     "Internal": True,  # no internet access
                 }
-                await client.networks.create(network_config)
+                try:
+                    await client.networks.create(network_config)
+                except aiodocker.exceptions.DockerError:
+                    # multiple calls to this function can be processed in parallel
+                    # this will cause creation to fail, it is OK to assume it already
+                    # exist an raise an error (see below)
+                    log.info(
+                        "Network %s might already exist, skipping creation", network
+                    )
 
         ids = await logged_gather(
             *[_get_id_from_name(client, network) for network in networks]
         )
+
+        if len(ids) != len(networks):
+            raise DynamicSidecarError(
+                f"Could create or find one or more networks {ids=} {networks=}"
+            )
+
     # pylint: disable=unnecessary-comprehension
     return {k: v for k, v in zip(networks, ids)}
