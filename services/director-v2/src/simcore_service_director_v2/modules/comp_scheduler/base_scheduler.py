@@ -320,7 +320,7 @@ class BaseCompScheduler(ABC):
             )
             # find the tasks that need scheduling (these are the ones with no unfilled dependency, e.g. degree 0)
             tasks_to_schedule = [node_id for node_id, degree in pipeline_dag.in_degree() if degree == 0]  # type: ignore
-            tasks_to_start, tasks_in_execution, tasks_failed = await _parse_task_states(
+            tasks_to_start, _, tasks_failed = await _parse_task_states(
                 tasks_to_schedule, pipeline_tasks
             )
 
