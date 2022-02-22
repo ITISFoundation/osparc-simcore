@@ -100,6 +100,7 @@ qx.Class.define("osparc.data.Permissions", {
           "user.token.create",
           "user.token.delete",
           "user.tag",
+          "user.folder",
           "user.organizations.create",
           "study.node.create",
           "study.node.delete",
@@ -115,6 +116,7 @@ qx.Class.define("osparc.data.Permissions", {
           "study.service.update",
           "study.classifier",
           "study.tag",
+          "study.folder",
           "study.slides"
         ],
         "tester": [

@@ -136,8 +136,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const importStudyButton = this.__createImportButton();
       this._secondaryBar.add(importStudyButton);
 
-      const newFolderButton = this.__createNewFolderButton();
-      this._secondaryBar.add(newFolderButton);
+      if (osparc.data.Permissions.getInstance().canDo("study.folder")) {
+        const newFolderButton = this.__createNewFolderButton();
+        this._secondaryBar.add(newFolderButton);
+        this._searchBarFilter.bind("currentFolder", newFolderButton, "visibility", {
+          converter: currentFolder => currentFolder === null ? "visible" : "excluded"
+        });
+      }
 
       const studiesDeleteButton = this.__createDeleteButton(false);
       this._secondaryBar.add(studiesDeleteButton);
@@ -163,9 +168,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       this._resourcesContainer.bind("selection", importStudyButton, "enabled", {
         converter: selection => !selection.length
-      });
-      this._searchBarFilter.bind("currentFolder", newFolderButton, "visibility", {
-        converter: currentFolder => currentFolder === null ? "visible" : "excluded"
       });
       this._resourcesContainer.bind("selection", studiesDeleteButton, "visibility", {
         converter: selection => selection.length ? "visible" : "excluded"
