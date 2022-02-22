@@ -871,7 +871,9 @@ class ProjectDBAPI:
         query = sa.select([study_folder.c.folder_id]).where(
             study_folder.c.study_id == project_id
         )
-        return [row.folder_id async for row in conn.execute(query)]
+        async with conn.execute(query) as result:
+            row = await result.first()
+            return row["folder_id"] if row else None
 
     async def get_all_node_ids_from_workbenches(
         self, project_uuid: str = None
