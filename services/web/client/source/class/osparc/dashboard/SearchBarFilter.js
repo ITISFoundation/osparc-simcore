@@ -131,18 +131,18 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       this.getChildControl("reset-button");
     },
 
-    __applyCurrentFolder: function(tagId) {
+    __applyCurrentFolder: function(folderId) {
       const currentFolder = this.getChildControl("current-folder-chip");
-      currentFolder.setVisibility(tagId ? "visible" : "excluded");
+      currentFolder.setVisibility(folderId ? "visible" : "excluded");
 
-      if (tagId) {
-        const tags = osparc.store.Store.getInstance().getTags();
-        const tagFound = tags.find(tag => tag.id === tagId);
-        if (tagFound) {
-          currentFolder.setValue("/"+tagFound.name);
+      if (folderId) {
+        const folders = osparc.store.Store.getInstance().getFolders();
+        const folderFound = folders.find(folder => folder.id === folderId);
+        if (folderFound) {
+          currentFolder.setValue("/"+folderFound.name);
         }
       } else {
-        this.__removeTags();
+        this.__removeFolder();
       }
     },
 
@@ -152,7 +152,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
       const menu = this.__filtersMenu;
       menu.removeAll();
-      const tagsButton = new qx.ui.menu.Button(this.tr("Folders"), "@FontAwesome5Solid/folder/12");
+      const tagsButton = new qx.ui.menu.Button(this.tr("Tags"), "@FontAwesome5Solid/tags/12");
       osparc.utils.Utils.setIdToWidget(tagsButton, "searchBarFilter-tags-button");
       this.__addTags(tagsButton);
       menu.add(tagsButton);
@@ -244,7 +244,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         paddingRight: 4,
         paddingLeft: 4,
         alignY: "middle",
-        toolTipText: chipLabel,
+        toolTipText: chipLabel || "",
         maxHeight: 26,
         maxWidth: 180
       });
@@ -283,7 +283,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
       const chip = this.__createChip(type, id, label);
       activeFilter.add(chip);
-      if (type === "tag") {
+      if (type === "folder") {
         chip.exclude();
         this.setCurrentFolder(id);
       }
@@ -299,9 +299,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       }
     },
 
-    __removeTags: function() {
+    __removeFolder: function() {
       const activeFilter = this.getChildControl("active-filters");
-      const chipFound = activeFilter.getChildren().find(chip => chip.type === "tag");
+      const chipFound = activeFilter.getChildren().find(chip => chip.type === "folder");
       if (chipFound) {
         activeFilter.remove(chipFound);
         this.filter();
@@ -319,6 +319,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
       const filterData = {
         tags: [],
         classifiers: [],
+        folder: null,
         text: this.getChildControl("text-field").getValue() ? this.getChildControl("text-field").getValue() : ""
       };
       this.getChildControl("active-filters").getChildren().forEach(chip => {
@@ -328,6 +329,9 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
             break;
           case "classifier":
             filterData.classifiers.push(chip.id);
+            break;
+          case "folder":
+            filterData.folder = chip.id;
             break;
         }
       });

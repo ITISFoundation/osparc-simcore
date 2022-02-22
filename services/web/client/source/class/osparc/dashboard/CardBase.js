@@ -60,14 +60,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return false;
     },
 
-    filterTags: function(checks, activeTags) {
-      if (checks && checks.length) {
-        // if study has tags, only show if it is active
-        const includesSome = activeTags.some(activeTag => checks.includes(activeTag));
-        return !includesSome;
+    filterTags: function(checks, tags) {
+      if (tags && tags.length) {
+        const includesAll = tags.every(tag => checks.includes(tag));
+        return !includesAll;
       }
-      // if study doesn't have tags, only show if there are no tags selected
-      return (activeTags && activeTags.length);
+      return false;
     },
 
     filterClassifiers: function(checks, classifiers) {
@@ -141,6 +139,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: "Array",
       apply: "_applyTags"
     },
+
+    folderId: {
+      check: "Number",
+      init: null,
+      nullable: true
+    },
+
 
     quality: {
       check: "Object",
@@ -404,6 +409,10 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return this.self().filterClassifiers(checks, classifiers);
     },
 
+    _filterFolder: function(folderId) {
+      return this.getFolderId() !== folderId;
+    },
+
     _shouldApplyFilter: function(data) {
       let filterId = "searchBarFilter";
       if (this.isPropertyInitialized("resourceType")) {
@@ -419,6 +428,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (this._filterClassifiers(data.classifiers)) {
         return true;
       }
+      if (this._filterFolder(data.classifiers)) {
+        return true;
+      }
       return false;
     },
 
@@ -431,10 +443,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (data.text && data.text.length > 1) {
         return true;
       }
-      if (data.tags) {
+      if (data.tags && data.tags.length) {
         return true;
       }
       if (data.classifiers && data.classifiers.length) {
+        return true;
+      }
+      if (data.folder) {
         return true;
       }
       return false;

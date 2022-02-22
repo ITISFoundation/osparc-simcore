@@ -6,9 +6,6 @@
  *          Odei Maiz (odeimaiz)
  */
 
-/**
- * Represents one tag in the preferences page.
- */
 qx.Class.define("osparc.component.form.ColorPicker", {
   extend: qx.ui.core.Widget,
 
