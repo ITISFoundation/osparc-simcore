@@ -4,7 +4,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, constr
 
+from .generics import DictModel
 from .projects_nodes_io import NodeID
+
 
 SERVICE_NETWORK_RE = r"^[a-zA-Z]([a-zA-Z0-9_-]{0,63})$"
 
@@ -27,24 +29,7 @@ def validate_network_alias(value: str) -> DockerNetworkAlias:
     return ValidationModel(item=value).item
 
 
-class BaseModelDict(BaseModel):
-    __root__: Dict[Any, Any]
-
-    def __iter__(self):
-        return iter(self.__root__)
-
-    def __getitem__(self, item):
-        return self.__root__[item]
-
-    def __setitem__(self, item, value):
-        self.__root__[item] = value
-
-    def items(self):
-        return self.__root__.items()
-
-    def get(self, item, default=None):
-        return self.__root__.get(item, default)
-
+class BaseModelDict(DictModel):
     @staticmethod
     def _convert_dict_uuid_keys(dict_data: Dict[Any, Any]) -> Dict[Any, Any]:
         to_change: Deque[UUID] = deque()
