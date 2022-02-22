@@ -58,7 +58,6 @@ from ..utils.dask import (
     dask_sub_consumer_task,
     from_node_reqs_to_dask_resources,
     generate_dask_job_id,
-    parse_dask_future_results,
 )
 
 logger = logging.getLogger(__name__)
@@ -417,21 +416,7 @@ class DaskClient:
         return list_of_node_id_to_job_id
 
     async def get_task_status(self, job_id: str) -> RunningState:
-        task_status = await self.dask_subsystem.client.run_on_scheduler(
-            lambda dask_scheduler: dask_scheduler.get_task_status(keys=[job_id])
-        )  # type: ignore
-        logger.debug("found dask status: %s", f"{task_status=}")
-        dask_status = task_status.get(job_id, "lost")
-        if dask_status == "erred":
-            # find out if this was a cancellation
-            exception = await distributed.Future(job_id).exception(timeout=DASK_DEFAULT_TIMEOUT_S)  # type: ignore
-            if isinstance(exception, TaskCancelledError):
-                return RunningState.ABORTED
-            return RunningState.FAILED
-
-        return _DASK_TASK_STATUS_RUNNING_STATE_MAP.get(
-            dask_status, RunningState.UNKNOWN
-        )
+        return (await self.get_tasks_status(job_ids=[job_id]))[0]
 
     async def get_tasks_status(self, job_ids: List[str]) -> List[RunningState]:
         task_statuses = []
@@ -444,18 +429,13 @@ class DaskClient:
         running_states = []
         for job_id in job_ids:
             dask_status = task_statuses.get(job_id, "lost")
-            if dask_status == "memory":
-                if dask_future := distributed.Future(job_id):
-                    # NOTE: this is necessary so we get the results of the future (cancelled or done)
-                    await dask_future.result(timeout=2)
-                    if dask_future.cancelled():
-                        running_states.append(RunningState.ABORTED)
-                    elif dask_future.done():
-                        running_states.append(RunningState.SUCCESS)
-                    logger.debug(
-                        "task status is in memory, future status is %s",
-                        f"{dask_future=}",
-                    )
+            if dask_status == "erred":
+                # find out if this was a cancellation
+                exception = await distributed.Future(job_id).exception(timeout=DASK_DEFAULT_TIMEOUT_S)  # type: ignore
+                if isinstance(exception, TaskCancelledError):
+                    running_states.append(RunningState.ABORTED)
+                else:
+                    running_states.append(RunningState.FAILED)
             else:
                 running_states.append(
                     _DASK_TASK_STATUS_RUNNING_STATE_MAP.get(
@@ -482,25 +462,11 @@ class DaskClient:
 
     async def get_task_result(self, job_id: str) -> TaskOutputData:
         logger.debug("getting result of %s", f"{job_id=}")
-        task_future = distributed.Future(job_id)
+        task_future = await self.dask_subsystem.client.get_dataset(name=job_id)  # type: ignore
         assert task_future  # nosec
 
         return await task_future.result(timeout=DASK_DEFAULT_TIMEOUT_S)  # type: ignore
 
-    async def get_tasks_results(self, job_ids: List[str]) -> List[TaskStateEvent]:
-        logger.debug("getting results for %s", f"{job_ids=}")
-        results = []
-        for job_id in job_ids:
-            if task_future := distributed.Future(job_id, self.dask_subsystem.client):
-                state = await parse_dask_future_results(task_future)
-                results.append(state)
-        return results
-
     async def release_task_result(self, job_id: str) -> None:
         logger.debug("releasing results for %s", f"{job_id=}")
         await self.dask_subsystem.client.unpublish_dataset(name=job_id)  # type: ignore
-
-    async def release_tasks_results(self, job_ids: List[str]) -> None:
-        logger.debug("releasing results for %s", f"{job_ids=}")
-        for job_id in job_ids:
-            await self.dask_subsystem.client.unpublish_dataset(name=job_id)  # type: ignore
