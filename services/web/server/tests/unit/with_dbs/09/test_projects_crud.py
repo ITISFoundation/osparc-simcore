@@ -25,6 +25,7 @@ from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.projects_handlers import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
+from simcore_service_webserver.sharing_networks import SHARING_NETWORK_PREFIX
 from simcore_service_webserver.utils import now_str, to_datetime
 from yarl import URL
 
@@ -180,6 +181,9 @@ async def _new_project(
             "ui": {},
             "dev": {},
             "quality": {},
+            "sharingNetworks": {
+                f"{SHARING_NETWORK_PREFIX}_{uuidlib.UUID(int=0)}_mocked": {}
+            },
         }
         if project:
             project_data.update(project)
@@ -343,6 +347,7 @@ async def test_new_project(
     expected,
     storage_subsystem_mock,
     project_db_cleaner,
+    mock_sharing_networks_network_name: None,
 ):
     new_project = await _new_project(
         client, expected.created, logged_user, primary_group
@@ -358,6 +363,7 @@ async def test_new_project_from_template(
     expected,
     storage_subsystem_mock,
     project_db_cleaner,
+    mock_sharing_networks_network_name: None,
 ):
     new_project = await _new_project(
         client,
@@ -386,6 +392,7 @@ async def test_new_project_from_template_with_body(
     expected,
     storage_subsystem_mock,
     project_db_cleaner,
+    mock_sharing_networks_network_name: None,
 ):
     predefined = {
         "uuid": "",
