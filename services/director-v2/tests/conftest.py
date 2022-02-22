@@ -23,6 +23,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from asgi_lifespan import LifespanManager
 from fastapi import FastAPI
 from models_library.projects import Node, ProjectAtDB, Workbench
+from models_library.projects_nodes_io import NodeID
 from pydantic.main import BaseModel
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
@@ -36,6 +37,7 @@ from simcore_service_director_v2.models.domains.comp_pipelines import CompPipeli
 from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.utils.computations import to_node_class
+from simcore_service_director_v2.utils.dask import generate_dask_job_id
 from sqlalchemy import literal_column
 from sqlalchemy.sql.expression import select
 from starlette.testclient import TestClient
@@ -348,7 +350,9 @@ def pipeline(
 
 
 @pytest.fixture
-def tasks(postgres_db: sa.engine.Engine) -> Iterable[Callable[..., List[CompTaskAtDB]]]:
+def tasks(
+    postgres_db: sa.engine.Engine, user_id: PositiveInt
+) -> Iterable[Callable[..., List[CompTaskAtDB]]]:
     created_task_ids: List[int] = []
 
     def creator(project: ProjectAtDB, **overrides_kwargs) -> List[CompTaskAtDB]:
@@ -374,12 +378,19 @@ def tasks(postgres_db: sa.engine.Engine) -> Iterable[Callable[..., List[CompTask
                 }
                 if node_data.outputs
                 else {},
-                "image": Image(name=node_data.key, tag=node_data.version).dict(
+                "image": Image(name=node_data.key, tag=node_data.version).dict(  # type: ignore
                     by_alias=True, exclude_unset=True
                 ),  # type: ignore
                 "node_class": to_node_class(node_data.key),
                 "internal_id": internal_id + 1,
                 "submit": datetime.utcnow(),
+                "job_id": generate_dask_job_id(
+                    service_key=node_data.key,
+                    service_version=node_data.version,
+                    user_id=user_id,
+                    project_id=project.uuid,
+                    node_id=NodeID(node_id),
+                ),
             }
             task_config.update(**overrides_kwargs)
             with postgres_db.connect() as conn:

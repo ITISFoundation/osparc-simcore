@@ -43,6 +43,7 @@ from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.errors import (
     ComputationalBackendNotConnectedError,
+    ComputationalBackendTaskNotFoundError,
     ComputationalSchedulerChangedError,
     InsuficientComputationalResourcesError,
     MissingComputationalResourcesError,
@@ -477,6 +478,9 @@ async def test_send_computation_task(
     await _assert_wait_for_task_status(
         job_id, dask_client, expected_status=RunningState.UNKNOWN
     )
+
+    with pytest.raises(ComputationalBackendTaskNotFoundError):
+        await dask_client.get_task_result(job_id)
 
 
 async def test_computation_task_is_persisted_on_dask_scheduler(

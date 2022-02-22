@@ -39,6 +39,8 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 from ..core.errors import (
+    ComputationalBackendTaskNotFoundError,
+    ComputationalBackendTaskResultsNotReadyError,
     ConfigurationError,
     DaskClientRequestError,
     DaskClusterError,
@@ -445,27 +447,33 @@ class DaskClient:
 
         return running_states
 
-    async def abort_computation_tasks(self, job_ids: List[str]) -> None:
+    async def abort_computation_task(self, job_id: str) -> None:
         # Dask future may be cancelled, but only a future that was not already taken by
         # a sidecar can be cancelled that way.
         # If the sidecar has already taken the job, then the cancellation must be user-defined.
         # therefore the dask PUB is used, and the dask-sidecar will then let the abort
         # process, and report when it is finished and properly cancelled.
-        logger.debug("cancelling tasks with job_ids: [%s]", job_ids)
-        for job_id in job_ids:
-            if task_future := distributed.Future(job_id, self.dask_subsystem.client):
-                self.cancellation_dask_pub.put(  # type: ignore
-                    TaskCancelEvent(job_id=job_id).json()  # type: ignore
-                )
-                await task_future.cancel()  # type: ignore
-                logger.debug("Dask task %s cancelled", task_future.key)
+        logger.debug("cancelling task with %s", f"{job_id=}")
+        try:
+            task_future = await self.dask_subsystem.client.get_dataset(name=job_id)  # type: ignore
+
+            self.cancellation_dask_pub.put(  # type: ignore
+                TaskCancelEvent(job_id=job_id).json()  # type: ignore
+            )
+            await task_future.cancel()  # type: ignore
+            logger.debug("Dask task %s cancelled", task_future.key)
+        except KeyError:
+            logger.warning("Unknown task cannot be aborted: %s", f"{job_id=}")
 
     async def get_task_result(self, job_id: str) -> TaskOutputData:
         logger.debug("getting result of %s", f"{job_id=}")
-        task_future = await self.dask_subsystem.client.get_dataset(name=job_id)  # type: ignore
-        assert task_future  # nosec
-
-        return await task_future.result(timeout=DASK_DEFAULT_TIMEOUT_S)  # type: ignore
+        try:
+            task_future = await self.dask_subsystem.client.get_dataset(name=job_id)  # type: ignore
+            return await task_future.result(timeout=DASK_DEFAULT_TIMEOUT_S)  # type: ignore
+        except KeyError as exc:
+            raise ComputationalBackendTaskNotFoundError(job_id=job_id) from exc
+        except distributed.TimeoutError as exc:
+            raise ComputationalBackendTaskResultsNotReadyError from exc
 
     async def release_task_result(self, job_id: str) -> None:
         logger.debug("releasing results for %s", f"{job_id=}")
