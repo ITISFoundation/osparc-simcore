@@ -133,7 +133,6 @@ async def create_dask_client_from_scheduler(
         assert client
         assert client.app == minimal_app
         assert client.settings == minimal_app.state.settings.DASK_SCHEDULER
-        assert client.cancellation_dask_pub
         assert not client._subscribed_tasks
 
         assert client.dask_subsystem.client
@@ -171,7 +170,6 @@ async def create_dask_client_from_gateway(
         assert client
         assert client.app == minimal_app
         assert client.settings == minimal_app.state.settings.DASK_SCHEDULER
-        assert client.cancellation_dask_pub
         assert not client._subscribed_tasks
 
         assert client.dask_subsystem.client
