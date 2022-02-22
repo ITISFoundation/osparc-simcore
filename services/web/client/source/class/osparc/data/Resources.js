@@ -152,7 +152,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "DELETE",
             url: statics.API + "/projects/{studyId}/tags/{tagId}"
           },
-          addFolder: {
+          setFolder: {
             useCache: false,
             method: "PUT",
             url: statics.API + "/projects/{studyId}/folder/{folderId}"

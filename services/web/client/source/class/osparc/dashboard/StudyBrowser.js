@@ -544,6 +544,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const renameStudyButton = this.__getRenameStudyMenuButton(studyData);
       menu.add(renameStudyButton);
 
+      const moveToButton = this.__getMoveToMenuButton(studyData);
+      if (moveToButton) {
+        menu.add(moveToButton);
+      }
+
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
@@ -586,6 +591,48 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         renamer.open();
       }, this);
       return renameButton;
+    },
+
+    __getMoveToMenuButton: function(studyData) {
+      const folders = osparc.store.Store.getInstance().getFolders();
+      if (osparc.data.Permissions.getInstance().canDo("study.tag") && folders.length) {
+        const moveToButton = new qx.ui.menu.Button(this.tr("Move to"));
+        const foldersMenu = new qx.ui.menu.Menu();
+        if (studyData.folder !== null) {
+          const folderButton = new qx.ui.menu.Button(this.tr("Root"), "@FontAwesome5Solid/folder/12");
+          foldersMenu.add(folderButton);
+          folderButton.addListener("execute", () => {
+            const params = {
+              url: {
+                studyId: studyData.uuid,
+                folderId: studyData.folder
+              }
+            };
+            osparc.data.Resources.fetch("studies", "removeFolder", params)
+              .then(() => this.reloadResources(), this)
+              .catch(console.error);
+          }, this);
+        }
+        folders.forEach(folder => {
+          const folderButton = new qx.ui.menu.Button(folder.name, "@FontAwesome5Solid/folder/12");
+          folderButton.getChildControl("icon").setTextColor(folder.color);
+          foldersMenu.add(folderButton);
+          folderButton.addListener("execute", () => {
+            const params = {
+              url: {
+                studyId: studyData.uuid,
+                folderId: folder.id
+              }
+            };
+            osparc.data.Resources.fetch("studies", "setFolder", params)
+              .then(() => this.reloadResources(), this)
+              .catch(console.error);
+          }, this);
+        });
+        moveToButton.setMenu(foldersMenu);
+        return moveToButton;
+      }
+      return null;
     },
 
     __updateStudy: function(studyData) {
