@@ -21,8 +21,9 @@ def print_as_envfile(
     show_secrets: bool,
     **pydantic_export_options,
 ):
+    exclude_unset = pydantic_export_options.get("exclude_unset", False)
+
     for field in settings_obj.__fields__.values():
-        exclude_unset = pydantic_export_options.get("exclude_unset", False)
         auto_default_from_env = field.field_info.extra.get(
             "auto_default_from_env", False
         )
@@ -102,18 +103,12 @@ def create_settings_command(
         ),
     ):
         """Resolves settings and prints envfile"""
-        pydantic_export_options: Dict[str, Any] = {"exclude_unset": exclude_unset}
 
         if as_json_schema:
             typer.echo(settings_cls.schema_json(indent=0 if compact else 2))
             return
 
         try:
-            if show_secrets:
-                # NOTE: this option is for json-only
-                pydantic_export_options["encoder"] = create_json_encoder_wo_secrets(
-                    settings_cls
-                )
 
             settings_obj = settings_cls.create_from_envs()
 
@@ -143,6 +138,13 @@ def create_settings_command(
                 exc_info=False,
             )
             raise
+
+        pydantic_export_options: Dict[str, Any] = {"exclude_unset": exclude_unset}
+        if show_secrets:
+            # NOTE: this option is for json-only
+            pydantic_export_options["encoder"] = create_json_encoder_wo_secrets(
+                settings_cls
+            )
 
         if as_json:
             print_as_json(settings_obj, compact=compact, **pydantic_export_options)
