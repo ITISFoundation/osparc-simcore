@@ -664,6 +664,7 @@ async def test_containers_restart(
     ],
 )
 async def test_attach_detach_container_to_network(
+    docker_swarm: None,
     test_client: TestClient,
     spec: Dict[str, Any],
     attachable_networks_and_ids: Dict[str, str],
