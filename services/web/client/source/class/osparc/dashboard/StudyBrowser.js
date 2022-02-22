@@ -520,19 +520,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.dashboard.ResourceBrowserBase.sortStudyList(studiesList);
       const cardsList = this._resourcesContainer.getChildren();
       const folders = osparc.store.Store.getInstance().getFolders();
-      // create folders only in home directory
-      if (this._searchBarFilter.getCurrentFolder() === null) {
-        folders.forEach(folder => {
-          const folderId = folder.id;
-          const idx = cardsList.findIndex(card => this.self().isFolderButtonItem(card) && card.getId() === folderId);
-          if (idx !== -1) {
-            return;
-          }
-          const folderItem = this.__createFolderItem(folderId);
-          folderItem.setLastChangeDate(new Date(folder["modified"]));
-          this._resourcesContainer.add(folderItem);
-        });
-      }
+      folders.sort(osparc.dashboard.ResourceBrowserBase.sortByProperty("modified"));
+      folders.forEach(folder => {
+        const folderId = folder.id;
+        const idx = cardsList.findIndex(card => this.self().isFolderButtonItem(card) && card.getId() === folderId);
+        if (idx !== -1) {
+          return;
+        }
+        const folderItem = this.__createFolderItem(folderId);
+        folderItem.setLastChangeDate(new Date(folder["modified"]));
+        this._resourcesContainer.add(folderItem);
+      });
 
       studiesList.forEach(study => {
         if (this.__studies.indexOf(study) === -1) {
