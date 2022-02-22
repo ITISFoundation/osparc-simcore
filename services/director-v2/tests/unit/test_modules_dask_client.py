@@ -630,7 +630,7 @@ async def test_abort_computation_tasks(
     await start_event.wait(timeout=10)  # type: ignore
 
     # now let's abort the computation
-    await dask_client.abort_computation_tasks([job_id])
+    await dask_client.abort_computation_task(job_id)
     await _assert_wait_for_cb_call(mocked_user_completed_cb)
     await _assert_wait_for_task_status(job_id, dask_client, RunningState.ABORTED)
 
