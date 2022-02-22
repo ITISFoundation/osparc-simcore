@@ -165,6 +165,14 @@ async def director_v2_service_mock(
     )
     aioresponses_mocker.delete(delete_computation_pattern, status=204, repeat=True)
 
+    aioresponses_mocker.post(
+        re.compile(
+            r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/dynamic-sidecar:required"
+        ),
+        status=web.HTTPOk.status_code,
+        repeat=True,
+    )
+
     return aioresponses_mocker
 
 
