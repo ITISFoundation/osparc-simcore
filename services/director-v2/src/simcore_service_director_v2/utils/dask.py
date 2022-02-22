@@ -375,6 +375,7 @@ def from_node_reqs_to_dask_resources(
 def check_scheduler_is_still_the_same(
     original_scheduler_id: str, client: distributed.Client
 ):
+    logger.debug("current %s", f"{client.scheduler_info()=}")
     current_scheduler_id = client.scheduler_info()["id"]
     if current_scheduler_id != original_scheduler_id:
         logger.error("The computational backend changed!")
