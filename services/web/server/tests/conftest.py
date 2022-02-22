@@ -7,6 +7,7 @@ import logging
 import sys
 from pathlib import Path
 from typing import AsyncIterator, Callable, Dict
+from uuid import UUID
 
 import pytest
 import simcore_service_webserver
@@ -15,6 +16,7 @@ from pytest_simcore.helpers.utils_login import AUserDict, LoggedUser
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.sharing_networks import SHARING_NETWORK_PREFIX
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -128,3 +130,12 @@ def monkeypatch_setenv_from_app_config(monkeypatch: MonkeyPatch) -> Callable:
         return envs
 
     return _patch
+
+
+@pytest.fixture
+def mock_sharing_networks_network_name(mocker) -> None:
+    remove_orphaned_services = mocker.patch(
+        "simcore_service_webserver.sharing_networks._network_name",
+        return_value=f"{SHARING_NETWORK_PREFIX}_{UUID(int=0)}_mocked",
+    )
+    return remove_orphaned_services
