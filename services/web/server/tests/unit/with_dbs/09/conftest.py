@@ -5,6 +5,7 @@
 
 from copy import deepcopy
 from typing import Any, AsyncIterable, Callable, Dict, List, Optional, Type, Union
+from uuid import UUID
 
 import pytest
 from aiohttp import web
@@ -34,6 +35,7 @@ from simcore_service_webserver.resource_manager.plugin import setup_resource_man
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
+from simcore_service_webserver.sharing_networks import SHARING_NETWORK_PREFIX
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.tags import setup_tags
 
@@ -163,6 +165,9 @@ async def template_project(
     project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
     project_data["accessRights"] = {
         str(all_group["gid"]): {"read": True, "write": False, "delete": False}
+    }
+    project_data["sharingNetworks"] = {
+        f"{SHARING_NETWORK_PREFIX}_{UUID(int=0)}_mocked": {}
     }
 
     async with NewProject(
