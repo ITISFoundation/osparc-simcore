@@ -50,7 +50,6 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
             icon: "@FontAwesome5Solid/ellipsis-v/"+(iconSize-11),
             focusable: false
           });
-          osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
           this._add(control, {
             row: 0,
             column: 3,
