@@ -155,6 +155,7 @@ async def _inject_sharing_networks_configuration(
             # applications
             container_aliases = [f"{alias}-{k}"]
             if container_name == target_container:
+                # by definition the entrypoint container will be exposed as the `alias`
                 container_aliases.append(alias)
             container_networks[network_name] = {"aliases": container_aliases}
 

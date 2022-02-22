@@ -300,53 +300,36 @@ class DynamicSidecarsScheduler:
             self.app
         )
 
-        # this has an entrypoint which needs to be the main container
-        # all other container need to be appended with some other name
         containers_status = await dynamic_sidecar_client.containers_docker_status(
             dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
         )
         sorted_container_names = sorted(containers_status.keys())
 
-        if len(sorted_container_names) == 1:
-            # attach to the only existing container
-            # even if it was started by providing a docker compose spec
-            await dynamic_sidecar_client.attach_container_to_network(
-                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
-                container_id=sorted_container_names[0],
-                network_id=network_id,
-                network_aliases=[network_alias],
-            )
-        elif scheduler_data.container_http_entry and len(sorted_container_names) > 1:
-            # when there is more that one container
-            entrypoint_container_name = await dynamic_sidecar_client.get_entrypoint_container_name(
-                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
-                dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
-            )
+        entrypoint_container_name = await dynamic_sidecar_client.get_entrypoint_container_name(
+            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
+            dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+        )
 
-            tasks = deque()
+        tasks = deque()
 
-            for k, container_name in enumerate(sorted_container_names):
-                # by default we attach `alias-0`, `alias-1`, etc...
-                # to all containers
-                aliases = [f"{network_alias}-{k}"]
-                if container_name == entrypoint_container_name:
-                    # by definition the entrypoint container will be exposed as the `alias``
-                    aliases.append(network_alias)
+        for k, container_name in enumerate(sorted_container_names):
+            # by default we attach `alias-0`, `alias-1`, etc...
+            # to all containers
+            aliases = [f"{network_alias}-{k}"]
+            if container_name == entrypoint_container_name:
+                # by definition the entrypoint container will be exposed as the `alias`
+                aliases.append(network_alias)
 
-                tasks.append(
-                    dynamic_sidecar_client.attach_container_to_network(
-                        dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
-                        container_id=container_name,
-                        network_id=network_id,
-                        network_aliases=aliases,
-                    )
+            tasks.append(
+                dynamic_sidecar_client.attach_container_to_network(
+                    dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
+                    container_id=container_name,
+                    network_id=network_id,
+                    network_aliases=aliases,
                 )
-
-            await logged_gather(*tasks)
-        elif len(sorted_container_names) > 0:
-            raise DynamicSidecarError(
-                f"Unexpected case, there was an errorr with the setup {sorted_container_names}"
             )
+
+        await logged_gather(*tasks)
 
     async def detach_sharing_network(self, node_id: NodeID, network_id: str) -> None:
         if node_id not in self._inverse_search_mapping:
