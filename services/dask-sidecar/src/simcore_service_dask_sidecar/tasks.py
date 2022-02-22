@@ -8,14 +8,13 @@ from typing import List
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
-from dask_task_models_library.container_tasks.events import TaskLogEvent, TaskStateEvent
+from dask_task_models_library.container_tasks.events import TaskLogEvent
 from dask_task_models_library.container_tasks.io import (
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
 )
 from distributed.worker import logger
-from models_library.projects_state import RunningState
 from pydantic.networks import AnyUrl
 
 from .computational_sidecar.core import ComputationalSidecar
@@ -127,10 +126,6 @@ async def _run_computational_sidecar_async(
         publish_event(
             task_publishers.logs,
             TaskLogEvent.from_dask_worker(log="[sidecar] task run was aborted"),
-        )
-        publish_event(
-            task_publishers.state,
-            TaskStateEvent.from_dask_worker(state=RunningState.ABORTED),
         )
         log.info(
             "run of sidecar for %s was cancelled", f"{service_key}:{service_version}"
