@@ -11,7 +11,6 @@ import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
-    TaskCancelEvent,
     TaskLogEvent,
     TaskProgressEvent,
     TaskStateEvent,
@@ -452,14 +451,10 @@ class DaskClient:
         logger.debug("cancelling task with %s", f"{job_id=}")
         try:
             task_future = await self.dask_subsystem.client.get_dataset(name=job_id)  # type: ignore
-            # NOTE: if the Publisher is not created on the fly, then if some worker restarts
-            # it will not listen to our cancellation order...
-            cancellation_dask_pub = distributed.Pub(
-                TaskCancelEvent.topic_name(), client=self.dask_subsystem.client
-            )
-            cancellation_dask_pub.put(
-                TaskCancelEvent(job_id=job_id).json()  # type: ignore
-            )
+            # NOTE: It seems there is a bug in the pubsub system in dask
+            # Event are more robust to connections/disconnections
+            cancel_event = await distributed.Event(name=job_id)
+            await cancel_event.set()
             await task_future.cancel()  # type: ignore
             logger.debug("Dask task %s cancelled", task_future.key)
         except KeyError:

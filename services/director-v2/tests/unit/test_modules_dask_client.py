@@ -20,7 +20,6 @@ from dask.distributed import get_worker
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
-    TaskCancelEvent,
     TaskLogEvent,
     TaskProgressEvent,
     TaskStateEvent,
@@ -30,7 +29,7 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputData,
     TaskOutputDataSchema,
 )
-from distributed import Event, Scheduler, Sub
+from distributed import Event, Scheduler
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi.applications import FastAPI
@@ -586,26 +585,22 @@ async def test_abort_computation_tasks(
         log_file_url: AnyUrl,
         command: List[str],
     ) -> TaskOutputData:
-        sub = Sub(TaskCancelEvent.topic_name())
         # get the task data
         worker = get_worker()
         task = worker.tasks.get(worker.get_current_task())
         assert task is not None
         print(f"--> task {task=} started")
+        cancel_event = Event(task.key)
         # tell the client we are started
         start_event = Event(_DASK_EVENT_NAME)
         start_event.set()
         # sleep a bit in case someone is aborting us
         print("--> waiting for task to be aborted...")
-        for msg in sub:
-            assert msg
-            print(f"--> received cancellation msg: {msg=}")
-            cancel_event = TaskCancelEvent.parse_raw(msg)  # type: ignore
-            assert cancel_event
-            if cancel_event.job_id == task.key:
-                print("--> raising cancellation error now")
-                # NOTE: asyncio.CancelledError is not propagated back to the client...
-                raise TaskCancelledError
+        cancel_event.wait(timeout=10)
+        if cancel_event.is_set():
+            # NOTE: asyncio.CancelledError is not propagated back to the client...
+            print("--> raising cancellation error now")
+            raise TaskCancelledError
 
         return TaskOutputData.parse_obj({"some_output_key": 123})
 

@@ -10,7 +10,6 @@ import distributed
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
     BaseTaskEvent,
-    TaskCancelEvent,
     TaskLogEvent,
     TaskProgressEvent,
     TaskStateEvent,
@@ -35,7 +34,7 @@ def _get_current_task_state() -> Optional[TaskState]:
     return worker.tasks.get(current_task)
 
 
-def is_current_task_aborted(sub: distributed.Sub) -> bool:
+def is_current_task_aborted() -> bool:
     task: Optional[TaskState] = _get_current_task_state()
     logger.debug("found following TaskState: %s", task)
     if task is None:
@@ -44,10 +43,9 @@ def is_current_task_aborted(sub: distributed.Sub) -> bool:
         return True
 
     with suppress(asyncio.TimeoutError):
-        msg = sub.get(timeout="100ms")
-        if msg:
-            cancel_event = TaskCancelEvent.parse_raw(msg)  # type: ignore
-            return bool(cancel_event.job_id == task.key)
+        cancel_event = distributed.Event(name=task.key)
+        if cancel_event.is_set():
+            return True
     return False
 
 
@@ -105,10 +103,9 @@ async def monitor_task_abortion(
             logger.debug(
                 "starting task to check for task cancellation for '%s'", f"{task_name=}"
             )
-            sub = distributed.Sub(TaskCancelEvent.topic_name())
             while await asyncio.sleep(_TASK_ABORTION_INTERVAL_CHECK_S, result=True):
                 logger.debug("checking if task should be cancelled")
-                if is_current_task_aborted(sub):
+                if is_current_task_aborted():
                     logger.debug(
                         "Task was aborted. Cancelling fct [%s]...", f"{task_name=}"
                     )

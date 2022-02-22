@@ -11,10 +11,7 @@ from typing import Any, Dict
 
 import distributed
 import pytest
-from dask_task_models_library.container_tasks.events import (
-    TaskCancelEvent,
-    TaskLogEvent,
-)
+from dask_task_models_library.container_tasks.events import TaskLogEvent
 from simcore_service_dask_sidecar.boot_mode import BootMode
 from simcore_service_dask_sidecar.dask_utils import (
     get_current_task_boot_mode,
@@ -57,15 +54,14 @@ async def test_publish_event(dask_client: distributed.Client):
 
 
 def _some_long_running_task() -> int:
-    dask_sub = distributed.Sub(TaskCancelEvent.topic_name())
-    assert is_current_task_aborted(dask_sub) == False
+    assert is_current_task_aborted() == False
     for i in range(300):
         print("running iteration", i)
         time.sleep(0.1)
-        if is_current_task_aborted(dask_sub):
+        if is_current_task_aborted():
             print("task is aborted")
             return -1
-    assert is_current_task_aborted(dask_sub)
+    assert is_current_task_aborted()
     return 12
 
 
@@ -80,12 +76,12 @@ def test_task_is_aborted(dask_client: distributed.Client):
         future.result(timeout=5)
 
 
-def test_task_is_aborted_using_pub(dask_client: distributed.Client):
+def test_task_is_aborted_using_event(dask_client: distributed.Client):
     job_id = "myfake_job_id"
     future = dask_client.submit(_some_long_running_task, key=job_id)
     time.sleep(1)
-    dask_pub = distributed.Pub(TaskCancelEvent.topic_name())
-    dask_pub.put(TaskCancelEvent(job_id=job_id).json())
+    dask_pub = distributed.Event(name=job_id)
+    dask_pub.set()
 
     result = future.result(timeout=2)
     assert result == -1
@@ -108,8 +104,8 @@ def test_monitor_task_abortion(dask_client: distributed.Client):
     future = dask_client.submit(_some_long_running_task_with_monitoring, key=job_id)
     time.sleep(1)
     # trigger cancellation
-    dask_pub = distributed.Pub(TaskCancelEvent.topic_name())
-    dask_pub.put(TaskCancelEvent(job_id=job_id).json())
+    dask_event = distributed.Event(job_id)
+    dask_event.set()
     result = future.result(timeout=10)
     assert result is None
 
