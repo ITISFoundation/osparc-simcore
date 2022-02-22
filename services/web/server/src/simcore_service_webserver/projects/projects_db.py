@@ -539,10 +539,18 @@ class ProjectDBAPI:
             project = await self._get_project(
                 conn, user_id, project_uuid, include_templates=True
             )
-            # pylint: disable=no-value-for-parameter
-            query = study_folder.insert().values(
-                study_id=project["id"], folder_id=folder_id
-            )
+
+            folder = await self._get_folder_by_project(conn, project_id=project["id"])
+            if folder:
+                query = (
+                    study_folder.update()
+                    .where(study_folder.c.study_id == project["id"])
+                    .values(study_id=project["id"], folder_id=folder_id)
+                )
+            else:
+                query = study_folder.insert().values(
+                    study_id=project["id"], folder_id=folder_id
+                )
             user_email = await self._get_user_email(conn, user_id)
             async with conn.execute(query) as result:
                 if result.rowcount == 1:
