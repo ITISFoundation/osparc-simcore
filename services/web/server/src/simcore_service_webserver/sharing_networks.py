@@ -172,7 +172,7 @@ async def _get_sharing_networks_for_default_network(
 
         new_sharing_networks[default_network][UUID(node_uuid)] = network_alias
 
-    return new_sharing_networks.dict()
+    return new_sharing_networks.dict(by_alias=True)
 
 
 async def propagate_changes(
@@ -189,16 +189,16 @@ async def propagate_changes(
     # NOTE: when UI is in place this is no longer required
     # for now all services are placed on the same default network
     new_project_data[
-        "sharing_networks"
+        "sharingNetworks"
     ] = await _get_sharing_networks_for_default_network(app, new_project_data)
 
-    logger.debug("new_sharing_networks=%s", new_project_data["sharing_networks"])
+    logger.debug("new_sharing_networks=%s", new_project_data["sharingNetworks"])
 
     await _send_network_configuration_to_dynamic_sidecar(
         app=app,
         project_id=UUID(new_project_data["uuid"]),
         new_sharing_networks=SharingNetworks.parse_obj(
-            new_project_data["sharing_networks"]
+            new_project_data["sharingNetworks"]
         ),
         sharing_networks=old_sharing_networks,
     )
