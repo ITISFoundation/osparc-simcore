@@ -75,12 +75,15 @@ def fake_granular_env_file_content() -> str:
 
 @pytest.fixture
 def export_as_dict() -> Callable:
-    def go(model_obj, **export_options):
+    def _export(model_obj, **export_options):
         return json.loads(
-            model_obj.json(encoder=create_json_encoder_wo_secrets(model_obj.__class__))
+            model_obj.json(
+                encoder=create_json_encoder_wo_secrets(model_obj.__class__),
+                **export_options
+            )
         )
 
-    return go
+    return _export
 
 
 # TESTS -----------------------------------------------------------------------------------
