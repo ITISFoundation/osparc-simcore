@@ -1,5 +1,4 @@
 import logging
-import json
 from collections import namedtuple
 from typing import Any, Dict, Set
 from uuid import UUID
