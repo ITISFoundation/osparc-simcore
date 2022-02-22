@@ -39,6 +39,7 @@ qx.Class.define("osparc.component.editor.FolderEditor", {
       check: "Number",
       init: 0,
       nullable: false,
+      apply: "__applyId",
       event: "changeId"
     },
 
@@ -143,6 +144,17 @@ qx.Class.define("osparc.component.editor.FolderEditor", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __applyId: function(value) {
+      const folderFound = osparc.store.Store.getInstance().getFolders().find(folder => value === folder.id);
+      if (folderFound) {
+        this.set({
+          label: folderFound.name,
+          description: folderFound.description,
+          color: folderFound.color
+        });
+      }
     }
   }
 });

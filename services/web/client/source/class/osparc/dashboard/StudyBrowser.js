@@ -265,9 +265,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             }
           };
           osparc.data.Resources.fetch("folders", "put", params)
-            .then(() => this.reloadResources(), this)
+            .then(() => {
+              win.close();
+              this.reloadResources();
+            }, this)
             .catch(console.error)
-            .finally(folderEditor.getChildControl("create").setFetching(true));
+            .finally(folderEditor.getChildControl("save").setFetching(false));
         }, this);
         folderEditor.addListener("cancel", () => win.close());
       }, this);
@@ -839,9 +842,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           color
         };
         osparc.data.Resources.fetch("folders", "post", params)
-          .then(() => this.reloadResources(), this)
+          .then(() => {
+            win.close();
+            this.reloadResources();
+          }, this)
           .catch(console.error)
-          .finally(folderEditor.getChildControl("create").setFetching(true));
+          .finally(folderEditor.getChildControl("create").setFetching(false));
       }, this);
       folderEditor.addListener("cancel", () => win.close());
     },
