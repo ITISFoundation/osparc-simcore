@@ -66,7 +66,12 @@ async def create_folder(request: web.Request):
                 color=folder_data["color"],
             )
             .returning(
-                folders.c.id, folders.c.name, folders.c.description, folders.c.color
+                folders.c.id,
+                folders.c.name,
+                folders.c.description,
+                folders.c.color,
+                folders.c.modified,
+                folders.c.created,
             )
         )
         async with conn.execute(query) as result:
