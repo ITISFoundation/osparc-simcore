@@ -35,11 +35,13 @@ from ..docker_api import (
     create_network,
     create_service_and_get_id,
     get_node_id_from_task_for_service,
+    get_sharing_networks_containers,
     get_swarm_network,
     is_dynamic_sidecar_missing,
     remove_dynamic_sidecar_network,
     remove_dynamic_sidecar_stack,
     remove_dynamic_sidecar_volumes,
+    try_to_remove_network,
 )
 from ..docker_compose_specs import assemble_spec
 from ..docker_service_specs import (
@@ -544,6 +546,20 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         logger.debug(
             "Removed dynamic-sidecar created services for '%s'",
             scheduler_data.service_name,
+        )
+
+        # if a sharing for the current project has no more
+        # containers attached to it (because the last service which
+        # was using it was removed), also removed the network
+        used_sharing_networks = await get_sharing_networks_containers(
+            project_id=scheduler_data.project_id
+        )
+        await logged_gather(
+            *[
+                try_to_remove_network(network_name)
+                for network_name, container_count in used_sharing_networks.items()
+                if container_count == 0
+            ]
         )
 
         await app.state.dynamic_sidecar_scheduler.finish_service_removal(

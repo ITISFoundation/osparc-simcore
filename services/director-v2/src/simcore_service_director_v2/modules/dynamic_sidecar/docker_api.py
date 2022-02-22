@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Deque, Dict, List, Optional, Set, Tuple
 
 import aiodocker
+from aiodocker.utils import clean_filters
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from servicelib.utils import logged_gather
@@ -37,7 +38,6 @@ def _monkey_patch_aiodocker() -> None:
     from distutils.version import LooseVersion
 
     from aiodocker import volumes
-    from aiodocker.utils import clean_filters
     from aiodocker.volumes import DockerVolume
 
     if LooseVersion(aiodocker.__version__) > LooseVersion("0.21.0"):
@@ -475,3 +475,37 @@ async def get_or_create_networks_ids(
 
     # pylint: disable=unnecessary-comprehension
     return {k: v for k, v in zip(networks, ids)}
+
+
+async def get_sharing_networks_containers(
+    project_id: ProjectID,
+) -> Dict[str, int]:
+    """
+    Returns all current sharing_networks for the project with
+    the amount of containers attached to them.
+    """
+    async with docker_client() as client:
+        filters = {"label": [f"project_id={project_id}"]}
+        params = {} if filters is None else {"filters": clean_filters(filters)}
+        filtered_networks = (
+            # pylint:disable=protected-access
+            await client.networks.docker._query_json("networks", params=params)
+        )
+
+    if not filtered_networks:
+        return {}
+
+    def _count_containers(item: Dict[str, Any]) -> int:
+        containers: Optional[List] = item.get("Containers")
+        return 0 if containers is None else len(containers)
+
+    return {x["Name"]: _count_containers(x) for x in filtered_networks}
+
+
+async def try_to_remove_network(network_name: str) -> None:
+    async with docker_client() as client:
+        network = await client.networks.get(network_name)
+        try:
+            return await network.delete()
+        except aiodocker.exceptions.DockerError:
+            log.warning("Could not remove network %s", network_name)
