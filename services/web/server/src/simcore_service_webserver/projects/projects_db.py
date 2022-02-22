@@ -124,6 +124,7 @@ def _convert_to_db_names(project_document_data: Dict) -> Dict:
     converted_args = {}
     exclude_keys = [
         "tags",
+        "folder",
         "prjOwner",
     ]  # No column for tags, prjOwner is a foreign key in db
     for key, value in project_document_data.items():
@@ -723,7 +724,7 @@ class ProjectDBAPI:
                     conn,
                     user_id,
                     project_uuid,
-                    exclude_foreign=["tags"],
+                    exclude_foreign=["tags", "folder"],
                     include_templates=include_templates,
                     for_update=True,
                 )
