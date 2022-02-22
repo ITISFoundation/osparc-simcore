@@ -132,8 +132,7 @@ qx.Class.define("osparc.store.Store", {
     },
     folders: {
       check: "Array",
-      init: [],
-      event: "changeFolders"
+      init: null
     },
     statics: {
       check: "Object",
@@ -161,7 +160,9 @@ qx.Class.define("osparc.store.Store", {
       const stored = this.get(resource);
       if (Array.isArray(stored)) {
         if (Array.isArray(data)) {
-          this.set(resource, data);
+          if (JSON.stringify(stored) !== JSON.stringify(data)) {
+            this.set(resource, data);
+          }
         } else {
           const idFields = Array.isArray(idField) ? idField : [idField];
           const element = stored.find(item => idFields.every(id => item[id] === data[id]));
