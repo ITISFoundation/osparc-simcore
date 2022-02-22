@@ -13,18 +13,18 @@ Folder:
     color:
       type: string
       pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
-  created:
-    type: string
-    description: folder creation date
-    pattern: >-
-      \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-    example: '2018-07-01T11:13:43Z'
-  modified:
-    type: string
-    description: last change date
-    pattern: >-
-      \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
-    example: '2018-07-01T11:13:43Z'
+    created:
+      type: string
+      description: folder creation date
+      pattern: >-
+        \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+      example: '2018-07-01T11:13:43Z'
+    modified:
+      type: string
+      description: last change date
+      pattern: >-
+        \d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|[0-5]\d)){2}(\.\d{3})?Z
+      example: '2018-07-01T11:13:43Z'
 
 FolderListEnveloped:
   type: object
