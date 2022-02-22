@@ -13,6 +13,7 @@ import logging
 import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable
+from uuid import UUID
 
 import pytest
 import yaml
@@ -24,6 +25,7 @@ from simcore_service_webserver.rest_utils import (
     get_openapi_specs_path,
     load_openapi_specs,
 )
+from simcore_service_webserver.sharing_networks import SHARING_NETWORK_PREFIX
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -109,3 +111,12 @@ def disable_gc_manual_guest_users(mocker):
 def openapi_specs(api_version_prefix) -> OpenApiSpecs:
     spec_path = get_openapi_specs_path(api_version_prefix)
     return load_openapi_specs(spec_path)
+
+
+@pytest.fixture
+def mock_sharing_networks_network_name(mocker) -> None:
+    remove_orphaned_services = mocker.patch(
+        "simcore_service_webserver.sharing_networks._network_name",
+        return_value=f"{SHARING_NETWORK_PREFIX}_{UUID(int=0)}_mocked",
+    )
+    return remove_orphaned_services
