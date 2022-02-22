@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+from sqlalchemy.sql import func
 
 from .base import metadata
 
@@ -33,4 +34,19 @@ folders = sa.Table(
     sa.Column("name", sa.String, nullable=False),
     sa.Column("description", sa.String, nullable=True),
     sa.Column("color", sa.String, nullable=False),
+    sa.Column(
+        "created",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        doc="Timestamp auto-generated upon creation",
+    ),
+    sa.Column(
+        "modified",
+        sa.DateTime(),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+        doc="Timestamp with last row update",
+    ),
 )
