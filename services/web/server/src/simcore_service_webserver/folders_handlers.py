@@ -40,7 +40,12 @@ async def update_folder(request: web.Request):
             )
             .where(and_(folders.c.id == folder_id, folders.c.user_id == uid))
             .returning(
-                folders.c.id, folders.c.name, folders.c.description, folders.c.color
+                folders.c.id,
+                folders.c.name,
+                folders.c.description,
+                folders.c.color,
+                folders.c.modified,
+                folders.c.created,
             )
         )
         async with conn.execute(query) as result:
