@@ -269,13 +269,12 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
     _createResourceItem: function(resourceData) {
       const tags = resourceData.tags ? osparc.store.Store.getInstance().getTags().filter(tag => resourceData.tags.includes(tag.id)) : [];
-      const folderFound = resourceData.folder ? osparc.store.Store.getInstance().getFolders().find(folder => resourceData.folder === folder.id) : null;
 
       const item = this._resourcesContainer.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
       item.set({
         resourceData,
         tags,
-        folderId: folderFound ? folderFound.id : null
+        folderId: resourceData.folder ? resourceData.folder : null
       });
 
       const menu = this._getResourceItemMenu(resourceData, item);
