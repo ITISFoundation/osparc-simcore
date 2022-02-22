@@ -7,6 +7,7 @@ from enum import Enum
 from typing import Any, AsyncIterator, Awaitable, Dict, Optional, cast
 
 import distributed
+from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
     BaseTaskEvent,
     TaskCancelEvent,
@@ -83,13 +84,19 @@ _TASK_ABORTION_INTERVAL_CHECK_S: int = 2
 
 
 @asynccontextmanager
-async def monitor_task_abortion(task_name: str) -> AsyncIterator[Awaitable[None]]:
+async def monitor_task_abortion(
+    task_name: str, log_publisher: distributed.Pub
+) -> AsyncIterator[Awaitable[None]]:
     async def cancel_task(task_name: str) -> None:
         tasks = asyncio.all_tasks()
         logger.debug("running tasks: %s", tasks)
         for task in tasks:
             if task.get_name() == task_name:
-                logger.info("canceling %s....................", f"{task=}")
+                publish_event(
+                    log_publisher,
+                    TaskLogEvent.from_dask_worker(log="[sidecar] cancelling task..."),
+                )
+                logger.debug("canceling %s....................", f"{task=}")
                 task.cancel()
                 break
 
@@ -116,6 +123,12 @@ async def monitor_task_abortion(task_name: str) -> AsyncIterator[Awaitable[None]
         )
 
         yield periodically_checking_task
+    except asyncio.CancelledError as exc:
+        publish_event(
+            log_publisher,
+            TaskLogEvent.from_dask_worker(log="[sidecar] task run was aborted"),
+        )
+        raise TaskCancelledError from exc
     finally:
         if periodically_checking_task:
             logger.debug(

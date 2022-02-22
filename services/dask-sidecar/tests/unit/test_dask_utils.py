@@ -93,7 +93,8 @@ def test_task_is_aborted_using_pub(dask_client: distributed.Client):
 
 def _some_long_running_task_with_monitoring() -> int:
     async def _long_running_task_async() -> int:
-        async with monitor_task_abortion(task_name=asyncio.current_task().get_name()):  # type: ignore
+        log_publisher = distributed.Pub(TaskLogEvent.topic_name())
+        async with monitor_task_abortion(task_name=asyncio.current_task().get_name(), log_publisher=log_publisher):  # type: ignore
             for i in range(300):
                 print("running iteration", i)
                 await asyncio.sleep(0.5)
