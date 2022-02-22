@@ -419,16 +419,16 @@ qx.Class.define("osparc.dashboard.CardBase", {
         filterId += "-" + this.getResourceType();
       }
       data = filterId in data ? data[filterId] : data;
-      if (this._filterText(data.text)) {
+      if ("text" in data && this._filterText(data.text)) {
         return true;
       }
-      if (this._filterTags(data.tags)) {
+      if ("tags" in data && this._filterTags(data.tags)) {
         return true;
       }
-      if (this._filterClassifiers(data.classifiers)) {
+      if ("classifiers" in data && this._filterClassifiers(data.classifiers)) {
         return true;
       }
-      if (this._filterFolder(data.folder)) {
+      if ("folder" in data && this._filterFolder(data.folder)) {
         return true;
       }
       return false;
