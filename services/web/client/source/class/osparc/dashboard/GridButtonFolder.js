@@ -46,16 +46,16 @@ qx.Class.define("osparc.dashboard.GridButtonFolder", {
     },
 
     __applyId: function(value) {
-      const tags = osparc.store.Store.getInstance().getTags();
-      const foundTag = tags.find(tag => tag.id === value);
-      if (foundTag) {
-        this.setTitle(foundTag.name);
+      const folders = osparc.store.Store.getInstance().getFolders();
+      const foundFolder = folders.find(folder => folder.id === value);
+      if (foundFolder) {
+        this.setTitle(foundFolder.name);
 
         const description = this.getChildControl("subtitle-text");
-        description.setValue(foundTag.description);
+        description.setValue(foundFolder.description);
 
         const icon = this.getChildControl("icon").getChildControl("image");
-        icon.setTextColor(foundTag.color);
+        icon.setTextColor(foundFolder.color);
       }
     },
 
@@ -88,6 +88,10 @@ qx.Class.define("osparc.dashboard.GridButtonFolder", {
       return osparc.dashboard.CardBase.filterText(checks, text);
     },
 
+    __filterFolder: function(folderId) {
+      return this.getId() !== folderId;
+    },
+
     _shouldApplyFilter: function(data) {
       const filterData = data["searchBarFilter-study"];
       if (this.__filterText(filterData.text)) {
@@ -97,6 +101,9 @@ qx.Class.define("osparc.dashboard.GridButtonFolder", {
         return true;
       }
       if (filterData.classifiers && filterData.classifiers.length) {
+        return true;
+      }
+      if (this.__filterFolder(filterData.folder)) {
         return true;
       }
       return false;
@@ -111,6 +118,9 @@ qx.Class.define("osparc.dashboard.GridButtonFolder", {
         return true;
       }
       if (filterData.classifiers && filterData.classifiers.length) {
+        return true;
+      }
+      if (filterData.folder) {
         return true;
       }
       return false;

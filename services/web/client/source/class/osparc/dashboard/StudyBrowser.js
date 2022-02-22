@@ -216,14 +216,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return newStudyBtn;
     },
 
-    __createFolderItem: function(tagId) {
+    __createFolderItem: function(folderId) {
       const mode = this._resourcesContainer.getMode();
       const folderBtn = (mode === "grid") ? new osparc.dashboard.GridButtonFolder() : new osparc.dashboard.ListButtonFolder();
       folderBtn.subscribeToFilterGroup("searchBarFilter");
-      folderBtn.setId(tagId);
+      folderBtn.setId(folderId);
       folderBtn.addListener("tap", () => {
         this.resetSelection();
-        this._searchBarFilter.addChip("tag", tagId);
+        this._searchBarFilter.addChip("folder", folderId);
       }, this);
       return folderBtn;
     },
@@ -442,15 +442,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
         if (currentFolder === null) {
           // create folders/tags only in home directory
-          study["tags"].forEach(tagId => {
-            const idx = cardsList.findIndex(card => this.self().isFolderButtonItem(card) && card.getId() === tagId);
+          if (study["folder"]) {
+            const folderId = study["folder"];
+            const idx = cardsList.findIndex(card => this.self().isFolderButtonItem(card) && card.getId() === folderId);
             if (idx !== -1) {
               return;
             }
-            const folderItem = this.__createFolderItem(tagId);
+            const folderItem = this.__createFolderItem(folderId);
             folderItem.setLastChangeDate(new Date(study["lastChangeDate"]));
             this._resourcesContainer.add(folderItem);
-          });
+          }
         }
 
         const idx = cardsList.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === study["uuid"]);
