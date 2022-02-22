@@ -1,5 +1,4 @@
 import json
-import logging
 from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union
 
@@ -17,8 +16,6 @@ from .docker_service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
 
 EnvKeyEqValueList = List[str]
 EnvVarsMap = Dict[str, Optional[str]]
-
-logger = logging.getLogger(__name__)
 
 
 class _environment_section:
@@ -118,11 +115,9 @@ async def _inject_sharing_networks_configuration(
     target_container: str,
     project_id: ProjectID,
 ) -> None:
-    logger.debug("Extracting networks from %s", f"{sharing_networks=}")
     networks = service_spec.get("networks", {})
 
     for network_name, node_aliases in sharing_networks.items():
-        logger.debug("DEBUG: %s", f"{network_name=}")
         if node_uuid not in node_aliases:
             # this node is not part of this sharing network skipping
             continue
@@ -138,10 +133,8 @@ async def _inject_sharing_networks_configuration(
 
         # attach network to container spec
         alias = node_aliases[node_uuid]
-        logger.debug("DEBUG: %s", f"{alias=}")
         # ensure the containers always have the same names
         for k, container_name in enumerate(sorted(service_spec["services"].keys())):
-            logger.debug("DEBUG: %s", f"{container_name=}")
             container_spec = service_spec["services"][container_name]
             container_networks = container_spec.get("networks", {})
 
