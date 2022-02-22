@@ -223,7 +223,6 @@ class DaskClient:
     app: FastAPI
     dask_subsystem: DaskSubSystem
     settings: DaskSchedulerSettings
-    cancellation_dask_pub: distributed.Pub
 
     _subscribed_tasks: List[asyncio.Task] = field(default_factory=list)
 
@@ -260,9 +259,6 @@ class DaskClient:
                     app=app,
                     dask_subsystem=dask_subsystem,
                     settings=settings,
-                    cancellation_dask_pub=distributed.Pub(
-                        TaskCancelEvent.topic_name(), client=dask_subsystem.client
-                    ),
                 )
                 logger.info(
                     "Connection to %s succeeded [%s]",
@@ -456,8 +452,12 @@ class DaskClient:
         logger.debug("cancelling task with %s", f"{job_id=}")
         try:
             task_future = await self.dask_subsystem.client.get_dataset(name=job_id)  # type: ignore
-
-            self.cancellation_dask_pub.put(  # type: ignore
+            # NOTE: if the Publisher is not created on the fly, then if some worker restarts
+            # it will not listen to our cancellation order...
+            cancellation_dask_pub = distributed.Pub(
+                TaskCancelEvent.topic_name(), client=self.dask_subsystem.client
+            )
+            cancellation_dask_pub.put(
                 TaskCancelEvent(job_id=job_id).json()  # type: ignore
             )
             await task_future.cancel()  # type: ignore
