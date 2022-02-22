@@ -261,7 +261,7 @@ async def test_requires_dynamic_sidecar(
 ) -> None:
     for service_key_version, expected in key_version_expected:
         response: Response = await test_client.post(
-            f"/v2/dynamic_services/dynamic-sidecar:required",
+            "/v2/dynamic_services/dynamic-sidecar:required",
             json=service_key_version.dict(),
         )
         assert response.status_code == 200, response.text
