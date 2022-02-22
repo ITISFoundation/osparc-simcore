@@ -116,8 +116,6 @@ async def monitor_task_abortion(task_name: str) -> AsyncIterator[Awaitable[None]
         )
 
         yield periodically_checking_task
-    except asyncio.CancelledError:
-        logger.warning("task '%s' was stopped through cancellation", task_name)
     finally:
         if periodically_checking_task:
             logger.debug(
