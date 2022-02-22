@@ -489,7 +489,7 @@ async def restart(app: web.Application, node_uuid: str) -> None:
 async def requires_dynamic_sidecar(
     app: web.Application, service_key: str, service_version: str
 ) -> bool:
-    settings: DirectorV2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = URL(settings.base_url) / "dynamic_services/dynamic-sidecar:required"
     body = dict(key=service_key, version=service_version)
 
@@ -508,7 +508,7 @@ async def attach_network_to_dynamic_sidecar(
 ) -> None:
     timeout = ServicesCommonSettings().network_attach_detach_timeout
 
-    settings: DirectorV2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = URL(settings.base_url) / "dynamic_services/networks:attach"
     body = dict(
         project_id=f"{project_id}",
@@ -535,7 +535,7 @@ async def detach_network_from_dynamic_sidecar(
 ) -> None:
     timeout = ServicesCommonSettings().network_attach_detach_timeout
 
-    settings: DirectorV2Settings = get_settings(app)
+    settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = URL(settings.base_url) / "dynamic_services/networks:detach"
     body = dict(
         project_id=f"{project_id}", node_id=f"{node_id}", network_name=network_name
