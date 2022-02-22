@@ -136,7 +136,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const importStudyButton = this.__createImportButton();
       this._secondaryBar.add(importStudyButton);
 
-      if (osparc.data.Permissions.getInstance().canDo("study.folder")) {
+      if (osparc.data.Permissions.getInstance().canDo("user.folder")) {
         const newFolderButton = this.__createNewFolderButton();
         this._secondaryBar.add(newFolderButton);
         this._searchBarFilter.bind("currentFolder", newFolderButton, "visibility", {
@@ -227,56 +227,61 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       folderBtn.setId(folderId);
       folderBtn.subscribeToFilterGroup("searchBarFilter");
 
-      const menu = this.__getFolderItemMenu(folderId, folderBtn);
-      const menuButton = folderBtn.getChildControl("menu-button");
-      menuButton.setMenu(menu);
+      if (osparc.data.Permissions.getInstance().canDo("user.folder")) {
+        const menu = this.__getFolderItemMenu(folderId, folderBtn);
+        const menuButton = folderBtn.getChildControl("menu-button");
+        menuButton.setMenu(menu);
+      }
 
       folderBtn.addListener("tap", () => {
         this.resetSelection();
         this._searchBarFilter.addChip("folder", folderId);
       }, this);
+
       return folderBtn;
     },
 
-    __getFolderItemMenu: function(folderId, button) {
+    __getFolderItemMenu: function(folderId) {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
       });
 
       const editButton = new qx.ui.menu.Button(this.tr("Edit"));
-      editButton.addListener("execute", () => {
-        const folderEditor = new osparc.component.editor.FolderEditor(false).set({
-          id: folderId
-        });
-        const title = this.tr("Edit Folder");
-        const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 330, 235);
-        folderEditor.addListener("updateFolder", () => {
-          const name = folderEditor.getChildControl("title").getValue().trim();
-          const description = folderEditor.getChildControl("description").getValue().trim();
-          const color = folderEditor.getChildControl("color-picker").getChildControl("color-input").getValue();
-          const params = {
-            url: {
-              folderId
-            },
-            data: {
-              name,
-              description,
-              color
-            }
-          };
-          osparc.data.Resources.fetch("folders", "put", params)
-            .then(() => {
-              win.close();
-              this.reloadResources();
-            }, this)
-            .catch(console.error)
-            .finally(folderEditor.getChildControl("save").setFetching(false));
-        }, this);
-        folderEditor.addListener("cancel", () => win.close());
-      }, this);
+      editButton.addListener("execute", () => this.__editFolder(folderId), this);
       menu.add(editButton);
 
       return menu;
+    },
+
+    __editFolder: function(folderId) {
+      const folderEditor = new osparc.component.editor.FolderEditor(false).set({
+        id: folderId
+      });
+      const title = this.tr("Edit Folder");
+      const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 330, 235);
+      folderEditor.addListener("updateFolder", () => {
+        const name = folderEditor.getChildControl("title").getValue().trim();
+        const description = folderEditor.getChildControl("description").getValue().trim();
+        const color = folderEditor.getChildControl("color-picker").getChildControl("color-input").getValue();
+        const params = {
+          url: {
+            folderId
+          },
+          data: {
+            name,
+            description,
+            color
+          }
+        };
+        osparc.data.Resources.fetch("folders", "put", params)
+          .then(() => {
+            win.close();
+            this.reloadResources();
+          }, this)
+          .catch(console.error)
+          .finally(folderEditor.getChildControl("save").setFetching(false));
+      }, this);
+      folderEditor.addListener("cancel", () => win.close());
     },
 
     __createStudyItem: function(studyData) {
@@ -594,7 +599,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getMoveToMenuButton: function(studyData) {
       const folders = osparc.store.Store.getInstance().getFolders();
-      if (osparc.data.Permissions.getInstance().canDo("study.tag") && folders.length) {
+      if (osparc.data.Permissions.getInstance().canDo("study.folder") && folders.length) {
         const moveToButton = new qx.ui.menu.Button(this.tr("Move to"));
         const foldersMenu = new qx.ui.menu.Menu();
         if (studyData.folder !== null) {
