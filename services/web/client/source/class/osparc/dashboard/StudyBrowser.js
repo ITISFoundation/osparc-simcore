@@ -609,7 +609,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               }
             };
             osparc.data.Resources.fetch("studies", "removeFolder", params)
-              .then(() => this.reloadResources(), this)
+              .then(() => {
+                this.invalidateStudies();
+                this.reloadResources();
+              }, this)
               .catch(console.error);
           }, this);
         }
@@ -625,7 +628,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               }
             };
             osparc.data.Resources.fetch("studies", "setFolder", params)
-              .then(() => this.reloadResources(), this)
+              .then(() => {
+                this.invalidateStudies();
+                this.reloadResources();
+              }, this)
               .catch(console.error);
           }, this);
         });
