@@ -81,7 +81,7 @@ class SharingNetworks(BaseModelDict):
         schema_extra = {
             "examples": [
                 {"nSetwork_name12-s": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
-                {"C": {UUID("5057e2c1-d392-4d31-b5c8-19f3db780390"): "ok"}},
+                {"C": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
                 {"shr-ntwrk_5c743ad2-8fdb-11ec-bb3a-02420a000008_default": {}},
             ],
             "invalid_examples": [

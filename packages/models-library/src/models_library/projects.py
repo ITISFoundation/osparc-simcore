@@ -158,6 +158,15 @@ class Project(BaseProjectModel):
     # Dev only
     dev: Optional[Dict] = Field(description="object used for development purposes only")
 
+    sharing_networks: SharingNetworks = Field(
+        {},
+        description=(
+            "Networks which connect nodes from the project. Each node "
+            "is given a user defined alias by which it is identified on the network."
+        ),
+        alias="sharingNetworks",
+    )
+
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"
         title = "osparc-simcore project"

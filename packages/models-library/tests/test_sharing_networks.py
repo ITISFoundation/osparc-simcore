@@ -1,5 +1,7 @@
+# pylint: disable=redefined-outer-name
 import json
 from typing import Any, Dict
+from uuid import UUID
 
 import pytest
 from models_library.sharing_networks import (
@@ -9,11 +11,32 @@ from models_library.sharing_networks import (
 )
 from pydantic import ValidationError
 
+# UTILS
+
+
+def _keys_as_uuid(data: Dict[str, Any]) -> Dict[UUID, Any]:
+    return {UUID(k): v for k, v in data.items()}
+
+
+def _keys_as_str(data: Dict[str, Any]) -> Dict[str, Any]:
+    return {f"{k}": v for k, v in data.items()}
+
+
+# FIXTURES
+
+
+@pytest.fixture(params=[True, False])
+def cast_to_uuid(request) -> bool:
+    return request.param
+
+
+# TESTS
+
 
 @pytest.mark.parametrize("example", SharingNetworks.Config.schema_extra["examples"])
-def test_sharing_networks(example: Dict) -> None:
-    def _keys_as_str(data: Dict[str, Any]) -> Dict[str, Any]:
-        return {f"{k}": v for k, v in data.items()}
+def test_sharing_networks(example: Dict, cast_to_uuid: bool) -> None:
+    if cast_to_uuid:
+        example = {k: _keys_as_uuid(v) for k, v in example.items()}
 
     expected_example = {k: _keys_as_str(v) for k, v in example.items()}
     sharing_networks = SharingNetworks.parse_obj(example)
