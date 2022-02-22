@@ -9,6 +9,7 @@ from typing import Awaitable, Callable, Dict, List, Optional, Tuple, Union
 import dask_gateway
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
+from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
     TaskCancelEvent,
     TaskLogEvent,
@@ -198,6 +199,24 @@ class TaskHandlers:
     task_log_handler: Callable[[str], Awaitable[None]]
 
 
+ServiceKey = str
+ServiceVersion = str
+LogFileUploadURL = AnyUrl
+Commands = List[str]
+RemoteFct = Callable[
+    [
+        DockerBasicAuth,
+        ServiceKey,
+        ServiceVersion,
+        TaskInputData,
+        TaskOutputDataSchema,
+        LogFileUploadURL,
+        Commands,
+    ],
+    TaskOutputData,
+]
+
+
 @dataclass
 class DaskClient:
     app: FastAPI
@@ -285,8 +304,8 @@ class DaskClient:
         project_id: ProjectID,
         cluster_id: ClusterID,
         tasks: Dict[NodeID, Image],
-        callback: Callable,
-        remote_fct: Callable = None,
+        callback: Callable[[None], None],
+        remote_fct: RemoteFct = None,
     ) -> List[Tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
@@ -403,6 +422,13 @@ class DaskClient:
         )  # type: ignore
         logger.debug("found dask status: %s", f"{task_status=}")
         dask_status = task_status.get(job_id, "lost")
+        if dask_status == "erred":
+            # find out if this was a cancellation
+            exception = await distributed.Future(job_id).exception(timeout=DASK_DEFAULT_TIMEOUT_S)  # type: ignore
+            if isinstance(exception, TaskCancelledError):
+                return RunningState.ABORTED
+            return RunningState.FAILED
+
         return _DASK_TASK_STATUS_RUNNING_STATE_MAP.get(
             dask_status, RunningState.UNKNOWN
         )
@@ -469,6 +495,10 @@ class DaskClient:
                 state = await parse_dask_future_results(task_future)
                 results.append(state)
         return results
+
+    async def release_task_result(self, job_id: str) -> None:
+        logger.debug("releasing results for %s", f"{job_id=}")
+        await self.dask_subsystem.client.unpublish_dataset(name=job_id)  # type: ignore
 
     async def release_tasks_results(self, job_ids: List[str]) -> None:
         logger.debug("releasing results for %s", f"{job_ids=}")

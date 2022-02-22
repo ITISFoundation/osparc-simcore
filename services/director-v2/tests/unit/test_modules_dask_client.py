@@ -60,7 +60,7 @@ from yarl import URL
 _ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS = 20
 
 
-async def _wait_for_call(mocked_fct, timeout: Optional[int] = None):
+async def _assert_wait_for_cb_call(mocked_fct, timeout: Optional[int] = None):
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(timeout or 10),
         wait=wait_random(0, 1),
@@ -73,10 +73,11 @@ async def _wait_for_call(mocked_fct, timeout: Optional[int] = None):
                 f"Attempt={attempt.retry_state.attempt_number}"
             )
             mocked_fct.assert_called_once()
+            mocked_fct.assert_called_with()
 
 
-async def _wait_for_task_status(
-    job_id: str, dask_client, expected_status: RunningState
+async def _assert_wait_for_task_status(
+    job_id: str, dask_client: DaskClient, expected_status: RunningState
 ):
     async for attempt in AsyncRetrying(
         reraise=True,
@@ -88,11 +89,10 @@ async def _wait_for_task_status(
                 f"waiting for task to be {expected_status=}, "
                 f"Attempt={attempt.retry_state.attempt_number}"
             )
-            tasks_status = await dask_client.get_tasks_status([job_id])
-            assert tasks_status
-            assert len(tasks_status) == 1
-            print(f"current {tasks_status=}")
-            assert tasks_status[0] == expected_status
+            current_task_status = await dask_client.get_task_status(job_id)
+            assert isinstance(current_task_status, RunningState)
+            print(f"{current_task_status=} vs {expected_status}")
+            assert current_task_status == expected_status
 
 
 @pytest.fixture
@@ -331,7 +331,9 @@ async def test_dask_cluster_executes_simple_functions(
     assert result == 7
 
 
-@pytest.mark.xfail(reason="This is probably an error in dask implementation...")
+@pytest.mark.xfail(
+    reason="BaseException is not propagated back by dask [https://github.com/dask/distributed/issues/5846]"
+)
 @pytest.mark.parametrize(
     "dask_client", ["create_dask_client_from_scheduler"], indirect=True
 )
@@ -351,7 +353,9 @@ async def test_dask_does_not_report_cancelled_error_in_task(dask_client: DaskCli
     )
 
 
-@pytest.mark.xfail(reason="This is probably an error in dask implementation...")
+@pytest.mark.xfail(
+    reason="BaseException is not propagated back by dask [https://github.com/dask/distributed/issues/5846]"
+)
 @pytest.mark.parametrize(
     "dask_client", ["create_dask_client_from_scheduler"], indirect=True
 )
@@ -446,21 +450,19 @@ async def test_send_computation_task(
     assert node_id in image_params.fake_tasks
 
     # check status goes to PENDING/STARTED
-    await _wait_for_task_status(
+    await _assert_wait_for_task_status(
         job_id, dask_client, expected_status=RunningState.STARTED
     )
 
     # using the event we let the remote fct continue
     event = distributed.Event(_DASK_EVENT_NAME)
     await event.set()  # type: ignore
-    await _wait_for_call(
+    await _assert_wait_for_cb_call(
         mocked_user_completed_cb, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS
     )
-    mocked_user_completed_cb.assert_called_once()
-    mocked_user_completed_cb.assert_called_with()
 
     # check the task status
-    await _wait_for_task_status(
+    await _assert_wait_for_task_status(
         job_id, dask_client, expected_status=RunningState.SUCCESS
     )
 
@@ -470,14 +472,14 @@ async def test_send_computation_task(
     assert task_result.get("some_output_key") == 123
 
     # now release the results
-    await dask_client.release_tasks_results([job_id])
+    await dask_client.release_task_result(job_id)
     # check the status now
-    await _wait_for_task_status(
+    await _assert_wait_for_task_status(
         job_id, dask_client, expected_status=RunningState.UNKNOWN
     )
 
 
-async def test_computation_task_is_published_on_dask_scheduler(
+async def test_computation_task_is_persisted_on_dask_scheduler(
     dask_client: DaskClient,
     user_id: UserID,
     project_id: ProjectID,
@@ -486,6 +488,55 @@ async def test_computation_task_is_published_on_dask_scheduler(
     mocked_node_ports: None,
     mocked_user_completed_cb: mock.AsyncMock,
 ):
+    """rationale:
+    When a task is submitted to the dask backend, a dask future is returned.
+    If the dask future goes out of scope, then the task is forgotten by the dask backend. So if
+    for some reason the client gets deleted, or the director-v2, then all the futures would
+    be deleted, thus stopping all the computations.
+    To aleviate this, it is possible to persist the futures directly in the dask-scheduler.
+
+    When submitting a computation task, the future corresponding to that task is "published" on the scheduler.
+    """
+    # NOTE: this must be inlined so that the test works,
+    # the dask-worker must be able to import the function
+    def fake_sidecar_fct(
+        docker_auth: DockerBasicAuth,
+        service_key: str,
+        service_version: str,
+        input_data: TaskInputData,
+        output_data_keys: TaskOutputDataSchema,
+        log_file_url: AnyUrl,
+        command: List[str],
+    ) -> TaskOutputData:
+        # get the task data
+        worker = get_worker()
+        task = worker.tasks.get(worker.get_current_task())
+        assert task is not None
+
+        return TaskOutputData.parse_obj({"some_output_key": 123})
+
+    # NOTE: We pass another fct so it can run in our localy created dask cluster
+    node_id_to_job_ids = await dask_client.send_computation_tasks(
+        user_id=user_id,
+        project_id=project_id,
+        cluster_id=cluster_id,
+        tasks=image_params.fake_tasks,
+        callback=mocked_user_completed_cb,
+        remote_fct=fake_sidecar_fct,
+    )
+    assert node_id_to_job_ids
+    assert len(node_id_to_job_ids) == 1
+    node_id, job_id = node_id_to_job_ids[0]
+    await _assert_wait_for_cb_call(
+        mocked_user_completed_cb, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS
+    )
+    # check the task status
+    await _assert_wait_for_task_status(
+        job_id, dask_client, expected_status=RunningState.SUCCESS
+    )
+    assert node_id in image_params.fake_tasks
+    # creating a new future shows that it is not done????
+    assert not distributed.Future(job_id).done()
 
     # as the task is published on the dask-scheduler when sending, it shall still be published on the dask scheduler
     list_of_persisted_datasets = await dask_client.dask_subsystem.client.list_datasets()  # type: ignore
@@ -494,17 +545,21 @@ async def test_computation_task_is_published_on_dask_scheduler(
     assert len(list_of_persisted_datasets) == 1
     assert job_id in list_of_persisted_datasets
     assert list_of_persisted_datasets[0] == job_id
+    # get the persisted future from the scheduler back
     task_future = await dask_client.dask_subsystem.client.get_dataset(name=job_id)  # type: ignore
     assert task_future
     assert isinstance(task_future, distributed.Future)
     assert task_future.key == job_id
+    # NOTE: the future was persisted BEFORE the computation was completed.. therefore it is not updated
+    # this is a bit weird, but it is so, this assertion demonstrates it. we need to await the results.
     assert not task_future.done()
     task_result = await task_future.result(timeout=2)  # type: ignore
-    assert (
-        task_future.done()
-    )  # NOTE: yes this is not very logical... one need to update the future manually
+    # now the future is done
+    assert task_future.done()
     assert isinstance(task_result, TaskOutputData)
     assert task_result.get("some_output_key") == 123
+    # try to create another future and this one is already done
+    assert distributed.Future(job_id).done()
 
 
 async def test_abort_computation_tasks(
@@ -547,7 +602,8 @@ async def test_abort_computation_tasks(
             assert cancel_event
             if cancel_event.job_id == task.key:
                 print("--> raising cancellation error now")
-                raise asyncio.CancelledError("task cancelled")
+                # NOTE: asyncio.CancelledError is not propagated back to the client...
+                raise TaskCancelledError
 
         return TaskOutputData.parse_obj({"some_output_key": 123})
 
@@ -563,15 +619,24 @@ async def test_abort_computation_tasks(
     assert len(node_id_to_job_ids) == 1
     node_id, job_id = node_id_to_job_ids[0]
     assert node_id in image_params.fake_tasks
+    await _assert_wait_for_task_status(job_id, dask_client, RunningState.STARTED)
 
+    # we wait to be sure the remote fct is started
     start_event = Event(_DASK_EVENT_NAME)
     await start_event.wait(timeout=10)  # type: ignore
 
     # now let's abort the computation
     await dask_client.abort_computation_tasks([job_id])
-    await _wait_for_call(mocked_user_completed_cb)
-    mocked_user_completed_cb.assert_called_once()
-    mocked_user_completed_cb.assert_called_with()
+    await _assert_wait_for_cb_call(mocked_user_completed_cb)
+    await _assert_wait_for_task_status(job_id, dask_client, RunningState.ABORTED)
+
+    # getting the results should throw the cancellation error
+    with pytest.raises(TaskCancelledError):
+        await dask_client.get_task_result(job_id)
+
+    # after releasing the results, the task shall be UNKNOWN
+    await dask_client.release_task_result(job_id)
+    await _assert_wait_for_task_status(job_id, dask_client, RunningState.UNKNOWN)
 
 
 async def test_failed_task_returns_exceptions(
@@ -613,14 +678,24 @@ async def test_failed_task_returns_exceptions(
     assert node_id in gpu_image.fake_tasks
 
     # this waits for the computation to run
-    await _wait_for_call(
+    await _assert_wait_for_cb_call(
         mocked_user_completed_cb, timeout=_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS
     )
-    mocked_user_completed_cb.assert_called_once()
-    assert mocked_user_completed_cb.call_args[0][0].job_id == job_id
-    assert mocked_user_completed_cb.call_args[0][0].state == RunningState.FAILED
-    mocked_user_completed_cb.call_args[0][0].msg.find("Traceback")
-    mocked_user_completed_cb.call_args[0][0].msg.find("raise ValueError")
+
+    # the computation status is FAILED
+    await _assert_wait_for_task_status(
+        job_id, dask_client, expected_status=RunningState.FAILED
+    )
+    with pytest.raises(
+        ValueError,
+        match="sadly we are failing to execute anything cause we are dumb...",
+    ):
+        await dask_client.get_task_result(job_id)
+
+    await dask_client.release_task_result(job_id)
+    await _assert_wait_for_task_status(
+        job_id, dask_client, expected_status=RunningState.UNKNOWN
+    )
 
 
 # currently in the case of a dask-gateway we do not check for missing resources
@@ -820,15 +895,21 @@ async def test_get_tasks_status(
     computation_future = distributed.Future(key=job_id)
     assert computation_future
 
-    # depending on speed, this will be pending first
-
-    await _wait_for_task_status(job_id, dask_client, RunningState.STARTED)
+    await _assert_wait_for_task_status(job_id, dask_client, RunningState.STARTED)
 
     # let the remote fct run through now
     start_event = Event(_DASK_EVENT_NAME, dask_client.dask_subsystem.client)
     await start_event.set()  # type: ignore
     # it will become successful hopefuly
-    await _wait_for_task_status(
+    await _assert_wait_for_task_status(
+        job_id,
+        dask_client,
+        RunningState.FAILED if fail_remote_fct else RunningState.SUCCESS,
+    )
+    # release the task results
+    await dask_client.release_task_result(job_id)
+    # the task is still present since we hold a future here
+    await _assert_wait_for_task_status(
         job_id,
         dask_client,
         RunningState.FAILED if fail_remote_fct else RunningState.SUCCESS,
@@ -836,7 +917,7 @@ async def test_get_tasks_status(
 
     # removing the future will let dask eventually delete the task from its memory, so its status becomes undefined
     del computation_future
-    await _wait_for_task_status(job_id, dask_client, RunningState.UNKNOWN)
+    await _assert_wait_for_task_status(job_id, dask_client, RunningState.UNKNOWN)
 
 
 @pytest.fixture
@@ -916,4 +997,4 @@ async def test_dask_sub_handlers(
                 "my name is progress"
             )
             fake_task_handlers.task_log_handler.assert_called_with("my name is logs")
-    await _wait_for_call(mocked_user_completed_cb)
+    await _assert_wait_for_cb_call(mocked_user_completed_cb)
