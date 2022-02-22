@@ -81,6 +81,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.nextRequest = null;
     },
 
+    revalidateStudy: function(studyId) {
+      osparc.store.Store.getInstance().remove("studies", "uuid", studyId);
+      this.__removeFromStudyList(studyId);
+      this.reloadStudy(studyId);
+    },
+
     // overridden
     initResources: function() {
       this.__studies = [];
@@ -643,8 +649,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             };
             osparc.data.Resources.fetch("studies", "removeFolder", params)
               .then(() => {
-                this.invalidateStudies();
-                this.reloadResources();
+                this.revalidateStudy(studyData.uuid);
               }, this)
               .catch(console.error);
           }, this);
@@ -665,8 +670,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             };
             osparc.data.Resources.fetch("studies", "setFolder", params)
               .then(() => {
-                this.invalidateStudies();
-                this.reloadResources();
+                this.revalidateStudy(studyData.uuid);
               }, this)
               .catch(console.error);
           }, this);
