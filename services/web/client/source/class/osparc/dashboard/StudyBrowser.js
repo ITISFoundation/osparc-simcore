@@ -483,28 +483,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     _addResourcesToList: function(studiesList) {
       osparc.dashboard.ResourceBrowserBase.sortStudyList(studiesList);
       const cardsList = this._resourcesContainer.getChildren();
-      const currentFolder = this._searchBarFilter.getCurrentFolder();
+      const folders = osparc.store.Store.getInstance().getFolders();
+      // create folders only in home directory
+      if (this._searchBarFilter.getCurrentFolder() === null) {
+        folders.forEach(folder => {
+          const folderId = folder.id;
+          const idx = cardsList.findIndex(card => this.self().isFolderButtonItem(card) && card.getId() === folderId);
+          if (idx !== -1) {
+            return;
+          }
+          const folderItem = this.__createFolderItem(folderId);
+          folderItem.setLastChangeDate(new Date(folder["modified"]));
+          this._resourcesContainer.add(folderItem);
+        });
+      }
+
       studiesList.forEach(study => {
         if (this.__studies.indexOf(study) === -1) {
           this.__studies.push(study);
         }
 
         study["resourceType"] = "study";
-
-        if (currentFolder === null) {
-          // create folders only in home directory
-          if (study["folder"]) {
-            const folderId = study["folder"];
-            const idx = cardsList.findIndex(card => this.self().isFolderButtonItem(card) && card.getId() === folderId);
-            if (idx !== -1) {
-              return;
-            }
-            const folderItem = this.__createFolderItem(folderId);
-            folderItem.setLastChangeDate(new Date(study["lastChangeDate"]));
-            this._resourcesContainer.add(folderItem);
-          }
-        }
-
         const idx = cardsList.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === study["uuid"]);
         if (idx !== -1) {
           return;
