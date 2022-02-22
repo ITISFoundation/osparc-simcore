@@ -531,10 +531,11 @@
     },
     "folder": {
       "description": "Folder ID that contains the project",
-      "type": [
-        "integer",
-        "null"
-      ]
+      "anyOf": [{
+        "type": "null"
+      }, {
+        "type": "integer"
+      }]
     },
     "classifiers": {
       "type": "array",
