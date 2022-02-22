@@ -250,6 +250,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       editButton.addListener("execute", () => this.__editFolder(folderId), this);
       menu.add(editButton);
 
+      menu.addSeparator();
+
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
+      deleteButton.addListener("execute", () => this.__deleteFolder(folderId), this);
+      menu.add(deleteButton);
+
       return menu;
     },
 
@@ -282,6 +288,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           .finally(folderEditor.getChildControl("save").setFetching(false));
       }, this);
       folderEditor.addListener("cancel", () => win.close());
+    },
+
+    __deleteFolder: function(folderId) {
+      // should the backend delete all the studies in the folder??
+      const params = {
+        url: {
+          folderId
+        }
+      };
+      osparc.data.Resources.fetch("folders", "delete", params)
+        .then(() => {
+          this.invalidateStudies();
+          this.reloadResources();
+        }, this)
+        .catch(console.error);
     },
 
     __createStudyItem: function(studyData) {
