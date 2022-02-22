@@ -1,5 +1,5 @@
+import json
 from typing import Any, Dict
-from uuid import UUID
 
 import pytest
 from models_library.sharing_networks import (
@@ -12,11 +12,13 @@ from pydantic import ValidationError
 
 @pytest.mark.parametrize("example", SharingNetworks.Config.schema_extra["examples"])
 def test_sharing_networks(example: Dict) -> None:
-    def _keys_as_uuid(data: Dict[str, Any]) -> Dict[UUID, Any]:
-        return {k if isinstance(k, UUID) else UUID(k): v for k, v in data.items()}
+    def _keys_as_str(data: Dict[str, Any]) -> Dict[str, Any]:
+        return {f"{k}": v for k, v in data.items()}
 
-    expected_example = {k: _keys_as_uuid(v) for k, v in example.items()}
-    assert SharingNetworks.parse_obj(example).dict() == expected_example
+    expected_example = {k: _keys_as_str(v) for k, v in example.items()}
+    sharing_networks = SharingNetworks.parse_obj(example)
+    assert sharing_networks.dict() == expected_example
+    assert sharing_networks.json() == json.dumps(expected_example)
 
 
 @pytest.mark.parametrize(
