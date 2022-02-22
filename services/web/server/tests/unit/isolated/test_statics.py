@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict
 
 import pytest
-from simcore_service_webserver.statics import (
+from simcore_service_webserver.statics_constants import (
     FRONTEND_APP_DEFAULT,
     FRONTEND_APPS_AVAILABLE,
 )

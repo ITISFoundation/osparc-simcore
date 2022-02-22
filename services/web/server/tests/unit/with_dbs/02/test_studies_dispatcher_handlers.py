@@ -13,14 +13,7 @@ import pytest
 import sqlalchemy as sa
 from aiohttp import ClientResponse, ClientSession, web
 from aioresponses import aioresponses
-from models_library.projects_state import (
-    Owner,
-    ProjectLocked,
-    ProjectRunningState,
-    ProjectState,
-    ProjectStatus,
-    RunningState,
-)
+from models_library.projects_state import ProjectLocked, ProjectStatus
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import UserRole
 from simcore_service_webserver import catalog
@@ -127,7 +120,7 @@ def patch_list_viewers_info_in_handlers_rest(mocker):
 def app_cfg(
     default_app_cfg,
     aiohttp_unused_port,
-    redis_service,
+    redis_service: URL,
     # patch_list_viewers_info_in_handlers_rest,
     inject_tables,
 ):
@@ -162,7 +155,6 @@ def app_cfg(
         "socketio",
         "resource_manager",
         "users",
-        "studies_access",
         "products",
         "studies_dispatcher",
     }

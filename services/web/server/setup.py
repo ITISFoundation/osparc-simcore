@@ -52,7 +52,6 @@ SETUP = dict(
         "": [
             "api/v0/openapi.yaml",
             "api/v0/schemas/*.json",
-            "config/*.y*ml",
             "data/*.json",
             "templates/**/*.html",
         ]

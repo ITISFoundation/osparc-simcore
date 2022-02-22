@@ -186,7 +186,7 @@ def setup(app: FastAPI, settings: Optional[WebServerSettings] = None) -> None:
 
     def on_startup() -> None:
         # normalize & encrypt
-        secret_key = _get_secret_key(settings)
+        secret_key = settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
         app.state.webserver_fernet = fernet.Fernet(secret_key)
 
         # init client

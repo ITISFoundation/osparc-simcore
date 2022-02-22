@@ -23,8 +23,7 @@ from servicelib.rabbitmq_utils import RabbitMQRetryPolicyUponInitialization
 from servicelib.utils import logged_gather
 from tenacity import retry
 
-from .computation_settings import ComputationSettings
-from .computation_settings import get_settings as get_computation_settings
+from .computation_settings import RabbitSettings, get_plugin_settings
 from .projects import projects_api
 from .projects.projects_exceptions import NodeNotFoundError, ProjectNotFoundError
 from .socketio.events import (
@@ -35,7 +34,7 @@ from .socketio.events import (
     send_messages,
 )
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 
 async def progress_message_parser(app: web.Application, data: bytes) -> None:
@@ -122,13 +121,15 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
     # TODO: catch and deal with missing connections:
     # e.g. CRITICAL:pika.adapters.base_connection:Could not get addresses to use: [Errno -2] Name or service not known (rabbit)
     # This exception is catch and pika persists ... WARNING:pika.connection:Could not connect, 5 attempts l
-    comp_settings: ComputationSettings = get_computation_settings(app)
-    rabbit_broker = comp_settings.dsn
+    settings: RabbitSettings = get_plugin_settings(app)
+    rabbit_broker = settings.dsn
 
     log.info("Creating pika connection pool for %s", rabbit_broker)
     await wait_till_rabbitmq_responsive(f"{rabbit_broker}")
-    # NOTE: to show the connection name in the rabbitMQ UI see there [https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url]
-    async def get_connection() -> aio_pika.Connection:
+    # NOTE: to show the connection name in the rabbitMQ UI see there
+    # https://www.bountysource.com/issues/89342433-setting-custom-connection-name-via-client_properties-doesn-t-work-when-connecting-using-an-amqp-url
+    #
+    async def _get_connection() -> aio_pika.Connection:
         return await aio_pika.connect_robust(
             f"{rabbit_broker}"
             + f"?name={__name__}_{socket.gethostname()}_{os.getpid()}",
@@ -136,10 +137,11 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
         )
 
     app[APP_RABBITMQ_POOL_KEY] = connection_pool = aio_pika.pool.Pool(
-        get_connection, max_size=2
+        _get_connection, max_size=2
     )
+    assert connection_pool  # nosec
 
-    async def get_channel() -> aio_pika.Channel:
+    async def _get_channel() -> aio_pika.Channel:
         async with connection_pool.acquire() as connection:
             channel = await connection.channel()
             # Finding a suitable prefetch value is a matter of trial and error
@@ -154,11 +156,11 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
             await channel.set_qos(prefetch_count=100)
             return channel
 
-    channel_pool = aio_pika.pool.Pool(get_channel, max_size=10)
+    channel_pool = aio_pika.pool.Pool(_get_channel, max_size=10)
 
     consumer_running = True
 
-    async def exchange_consumer(
+    async def _exchange_consumer(
         exchange_name: str,
         parse_handler: Callable[[web.Application, bytes], Awaitable[None]],
         consumer_kwargs: Dict[str, Any],
@@ -198,33 +200,31 @@ async def setup_rabbitmq_consumer(app: web.Application) -> AsyncIterator[None]:
                 if consumer_running:
                     await asyncio.sleep(_RABBITMQ_INTERVAL_BEFORE_RESTARTING_CONSUMER_S)
 
-    # TODO
-
     consumer_tasks = []
     for exchange_name, message_parser, consumer_kwargs in [
         (
-            comp_settings.RABBIT_CHANNELS["log"],
+            settings.RABBIT_CHANNELS["log"],
             log_message_parser,
             {"no_ack": True},
         ),
         (
-            comp_settings.RABBIT_CHANNELS["progress"],
+            settings.RABBIT_CHANNELS["progress"],
             progress_message_parser,
             {"no_ack": True},
         ),
         (
-            comp_settings.RABBIT_CHANNELS["instrumentation"],
+            settings.RABBIT_CHANNELS["instrumentation"],
             instrumentation_message_parser,
             {"no_ack": False},
         ),
         (
-            comp_settings.RABBIT_CHANNELS["events"],
+            settings.RABBIT_CHANNELS["events"],
             events_message_parser,
             {"no_ack": False},
         ),
     ]:
         task = asyncio.create_task(
-            exchange_consumer(exchange_name, message_parser, consumer_kwargs)
+            _exchange_consumer(exchange_name, message_parser, consumer_kwargs)
         )
         consumer_tasks.append(task)
 

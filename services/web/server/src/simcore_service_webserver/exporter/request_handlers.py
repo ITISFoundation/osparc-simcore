@@ -14,7 +14,7 @@ from ..users_api import get_user_name
 from .exceptions import ExporterException
 from .export_import import study_duplicate, study_export, study_import
 from .formatters import FormatterV1
-from .settings import get_settings
+from .settings import get_plugin_settings
 from .utils import CleanupFileResponse, get_empty_tmp_dir, remove_dir
 
 ONE_GB: int = 1024 * 1024 * 1024
@@ -87,7 +87,7 @@ async def export_project(request: web.Request):
 async def import_project(request: web.Request):
     # bumping this requests's max size
     # pylint: disable=protected-access
-    exporter_settings = get_settings(request.app)
+    exporter_settings = get_plugin_settings(request.app)
     assert (  # nosec
         exporter_settings is not None
     ), "this call was not expected with a disabled plugin"  # nosec

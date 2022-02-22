@@ -4,19 +4,12 @@
 """
 from typing import Any, Dict, List, Optional
 
+from aiohttp import web
 from pydantic import AnyHttpUrl, BaseModel, Field, HttpUrl
 from settings_library.base import BaseCustomSettings
 
+from ._constants import APP_SETTINGS_KEY
 from .utils import snake_to_camel
-
-APP_CLIENTAPPS_SETTINGS_KEY = f"{__file__}.client_apps_settings"
-
-
-# these are the apps built right now by web/client
-FRONTEND_APPS_AVAILABLE = frozenset({"osparc", "tis", "s4l"})
-FRONTEND_APP_DEFAULT = "osparc"
-
-assert FRONTEND_APP_DEFAULT in FRONTEND_APPS_AVAILABLE
 
 
 class OsparcDependency(BaseModel):
@@ -123,6 +116,8 @@ class StaticWebserverModuleSettings(BaseCustomSettings):
         env=["STATIC_WEBSERVER_ENABLED", "WEBSERVER_STATIC_MODULE_ENABLED"],  # legacy
     )
 
+    # TODO: move WEBSERVER_FRONTEND here??
+
     # TODO: host/port
     STATIC_WEBSERVER_URL: AnyHttpUrl = Field(
         "http://static-webserver:8000",
@@ -132,3 +127,10 @@ class StaticWebserverModuleSettings(BaseCustomSettings):
             "WEBSERVER_STATIC_MODULE_STATIC_WEB_SERVER_URL",
         ],  # legacy
     )
+
+
+def get_plugin_settings(app: web.Application) -> StaticWebserverModuleSettings:
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_STATICWEB
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, StaticWebserverModuleSettings)  # nosec
+    return settings
