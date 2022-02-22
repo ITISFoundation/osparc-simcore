@@ -224,13 +224,56 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __createFolderItem: function(folderId) {
       const mode = this._resourcesContainer.getMode();
       const folderBtn = (mode === "grid") ? new osparc.dashboard.GridButtonFolder() : new osparc.dashboard.ListButtonFolder();
-      folderBtn.subscribeToFilterGroup("searchBarFilter");
       folderBtn.setId(folderId);
+      folderBtn.subscribeToFilterGroup("searchBarFilter");
+
+      const menu = this.__getFolderItemMenu(folderId, folderBtn);
+      const menuButton = folderBtn.getChildControl("menu-button");
+      menuButton.setMenu(menu);
+
       folderBtn.addListener("tap", () => {
         this.resetSelection();
         this._searchBarFilter.addChip("folder", folderId);
       }, this);
       return folderBtn;
+    },
+
+    __getFolderItemMenu: function(folderId, button) {
+      const menu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
+
+      const editButton = new qx.ui.menu.Button(this.tr("Edit"));
+      editButton.addListener("execute", () => {
+        const folderEditor = new osparc.component.editor.FolderEditor(false).set({
+          id: folderId
+        });
+        const title = this.tr("Edit Folder");
+        const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 330, 235);
+        folderEditor.addListener("updateFolder", () => {
+          const name = folderEditor.getChildControl("title").getValue().trim();
+          const description = folderEditor.getChildControl("description").getValue().trim();
+          const color = folderEditor.getChildControl("color-picker").getChildControl("color-input").getValue();
+          const params = {
+            url: {
+              folderId
+            },
+            data: {
+              name,
+              description,
+              color
+            }
+          };
+          osparc.data.Resources.fetch("folders", "put", params)
+            .then(() => this.reloadResources(), this)
+            .catch(console.error)
+            .finally(folderEditor.getChildControl("create").setFetching(true));
+        }, this);
+        folderEditor.addListener("cancel", () => win.close());
+      }, this);
+      menu.add(editButton);
+
+      return menu;
     },
 
     __createStudyItem: function(studyData) {
