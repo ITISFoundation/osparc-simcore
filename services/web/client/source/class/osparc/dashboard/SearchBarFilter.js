@@ -213,7 +213,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
         const tagsMenu = new qx.ui.menu.Menu();
         osparc.utils.Utils.setIdToWidget(tagsMenu, "searchBarFilter-tags-menu");
         tags.forEach(tag => {
-          const tagButton = new qx.ui.menu.Button(tag.name, "@FontAwesome5Solid/folder/12");
+          const tagButton = new qx.ui.menu.Button(tag.name, "@FontAwesome5Solid/tag/12");
           tagButton.getChildControl("icon").setTextColor(tag.color);
           tagsMenu.add(tagButton);
           tagButton.addListener("execute", () => this.addChip("tag", tag.id, tag.name), this);

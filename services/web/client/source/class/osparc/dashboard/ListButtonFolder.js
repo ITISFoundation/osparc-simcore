@@ -75,7 +75,8 @@ qx.Class.define("osparc.dashboard.ListButtonFolder", {
     },
 
     __filterFolder: function(folderId) {
-      return this.getId() !== folderId;
+      // do not show if folder is selected
+      return folderId !== null;
     },
 
     _shouldApplyFilter: function(data) {

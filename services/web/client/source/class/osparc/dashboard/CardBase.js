@@ -428,7 +428,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (this._filterClassifiers(data.classifiers)) {
         return true;
       }
-      if (this._filterFolder(data.classifiers)) {
+      if (this._filterFolder(data.folder)) {
         return true;
       }
       return false;
@@ -449,7 +449,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (data.classifiers && data.classifiers.length) {
         return true;
       }
-      if (data.folder) {
+      if ("folder" in data) {
         return true;
       }
       return false;

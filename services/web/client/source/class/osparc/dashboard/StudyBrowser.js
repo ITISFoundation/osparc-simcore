@@ -441,7 +441,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         study["resourceType"] = "study";
 
         if (currentFolder === null) {
-          // create folders/tags only in home directory
+          // create folders only in home directory
           if (study["folder"]) {
             const folderId = study["folder"];
             const idx = cardsList.findIndex(card => this.self().isFolderButtonItem(card) && card.getId() === folderId);
