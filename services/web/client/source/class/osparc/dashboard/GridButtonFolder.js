@@ -25,15 +25,6 @@ qx.Class.define("osparc.dashboard.GridButtonFolder", {
     this.__buildLayout();
   },
 
-  properties: {
-    id: {
-      check: "Number",
-      nullable: false,
-      init: null,
-      apply: "__applyId"
-    }
-  },
-
   statics: {
     ICON_SIZE: 80
   },

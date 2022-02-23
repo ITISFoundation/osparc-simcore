@@ -16,6 +16,15 @@
 ************************************************************************ */
 
 qx.Mixin.define("osparc.dashboard.MButtonFolder", {
+  properties: {
+    id: {
+      check: "Number",
+      nullable: false,
+      init: null,
+      apply: "__applyId"
+    }
+  },
+
   members: {
     __buildLayout: function() {
       const title = this.getChildControl("title");

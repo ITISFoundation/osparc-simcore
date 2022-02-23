@@ -25,15 +25,6 @@ qx.Class.define("osparc.dashboard.ListButtonFolder", {
     this.__buildLayout();
   },
 
-  properties: {
-    id: {
-      check: "Number",
-      nullable: false,
-      init: null,
-      apply: "__applyId"
-    }
-  },
-
   members: {
     __applyId: function(value) {
       const folders = osparc.store.Store.getInstance().getFolders();
