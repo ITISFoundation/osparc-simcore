@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 
 async def _parse_task_states(
     node_ids: List[NodeID], pipeline_tasks: Dict[str, CompTaskAtDB]
-) -> Tuple[Set[NodeID], Set[NodeID], Set[NodeID]]:
+) -> Tuple[Set[NodeID], Set[NodeID]]:
     # parse task states
     tasks_in_execution: Set[NodeID] = set()
     tasks_failed: Set[NodeID] = set()
@@ -65,7 +65,7 @@ async def _parse_task_states(
             RunningState.PENDING,
         ):
             tasks_in_execution.add(node_id)
-    return (tasks_to_start, tasks_in_execution, tasks_failed)
+    return (tasks_to_start, tasks_failed)
 
 
 @dataclass
@@ -218,6 +218,40 @@ class BaseCompScheduler(ABC):
             final_state=(run_result in COMPLETED_STATES),
         )
 
+    async def _process_running_tasks(
+        self,
+        cluster_id: ClusterID,
+        project_id: ProjectID,
+        pipeline_tasks: Dict[str, CompTaskAtDB],
+    ):
+        tasks_completed: List[CompTaskAtDB] = []
+        if tasks_supposedly_processing := [
+            task
+            for task in pipeline_tasks.values()
+            if task.state in [RunningState.STARTED, RunningState.PENDING]
+        ]:
+            # ensure these tasks still exist in the backend, if not we abort these
+            tasks_backend_status = await self._get_tasks_status(
+                cluster_id, tasks_supposedly_processing
+            )
+            for task, backend_state in zip(
+                tasks_supposedly_processing, tasks_backend_status
+            ):
+                if backend_state == RunningState.UNKNOWN:
+                    tasks_completed.append(task)
+                    # these tasks should be running but they are not available in the backend, something bad happened
+                    logger.error(
+                        "Project %s: %s has %s, it disappeared from the computational backend"
+                        ", aborting the computational pipeline!",
+                        f"{project_id}",
+                        f"{task=}",
+                        f"{backend_state=}",
+                    )
+                elif backend_state in COMPLETED_STATES:
+                    tasks_completed.append(task)
+        if tasks_completed:
+            await self._process_completed_tasks(cluster_id, tasks_completed)
+
     @abstractmethod
     async def _start_tasks(
         self,
@@ -274,36 +308,7 @@ class BaseCompScheduler(ABC):
                 project_id, pipeline_dag
             )
             # start by processing the running tasks
-            async def _process_running_tasks(pipeline_tasks: Dict[str, CompTaskAtDB]):
-                tasks_completed: List[CompTaskAtDB] = []
-                if tasks_supposedly_processing := [
-                    task
-                    for task in pipeline_tasks.values()
-                    if task.state in [RunningState.STARTED, RunningState.PENDING]
-                ]:
-                    # ensure these tasks still exist in the backend, if not we abort these
-                    tasks_backend_status = await self._get_tasks_status(
-                        cluster_id, tasks_supposedly_processing
-                    )
-                    for task, backend_state in zip(
-                        tasks_supposedly_processing, tasks_backend_status
-                    ):
-                        if backend_state == RunningState.UNKNOWN:
-                            tasks_completed.append(task)
-                            # these tasks should be running but they are not available in the backend, something bad happened
-                            logger.error(
-                                "Project %s: %s has %s, it disappeared from the computational backend"
-                                ", aborting the computational pipeline!",
-                                f"{project_id}",
-                                f"{task=}",
-                                f"{backend_state=}",
-                            )
-                        elif backend_state in COMPLETED_STATES:
-                            tasks_completed.append(task)
-                if tasks_completed:
-                    await self._process_completed_tasks(cluster_id, tasks_completed)
-
-            await _process_running_tasks(pipeline_tasks)
+            await self._process_running_tasks(cluster_id, project_id, pipeline_tasks)
 
             # generate run result now
             # get the pipeline tasks again
@@ -320,7 +325,7 @@ class BaseCompScheduler(ABC):
             )
             # find the tasks that need scheduling (these are the ones with no unfilled dependency, e.g. degree 0)
             tasks_to_schedule = [node_id for node_id, degree in pipeline_dag.in_degree() if degree == 0]  # type: ignore
-            tasks_to_start, _, tasks_failed = await _parse_task_states(
+            tasks_to_start, tasks_failed = await _parse_task_states(
                 tasks_to_schedule, pipeline_tasks
             )
 

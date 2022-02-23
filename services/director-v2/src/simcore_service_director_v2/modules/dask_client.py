@@ -488,5 +488,5 @@ class DaskClient:
         logger.debug("releasing results for %s", f"{job_id=}")
         try:
             await self.dask_subsystem.client.unpublish_dataset(name=job_id)  # type: ignore
-        except KeyError as exc:
+        except KeyError:
             logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
