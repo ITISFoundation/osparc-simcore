@@ -472,7 +472,7 @@ async def create_output_dirs(request_mode: CreateDirsRequestItem) -> None:
 
 
 @containers_router.post(
-    "/containers/volumes:permissions",
+    "/containers/volumes/permissions:fix",
     summary="Makes permissions the same on all mounted volumes directories.",
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
@@ -487,7 +487,11 @@ async def volumes_fix_permissions() -> None:
         mounted_volumes.disk_outputs_path,
     ] + list(mounted_volumes.disk_state_paths()):
         hidden_file = volume_path / ".hidden_do_not_remove"
-        hidden_file.write_text("directory must not be empty")
+        hidden_file.write_text(
+            f"Directory must not be empty.\nCreated by {__file__}.\nRequired by "
+            "oSPARC internals to properly enforce permissions on this "
+            "directory and all its files"
+        )
 
 
 @containers_router.post(
