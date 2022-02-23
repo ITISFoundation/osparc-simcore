@@ -373,7 +373,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createNewFolderButton: function() {
-      const newFolderButton = new osparc.ui.form.FetchButton(this.tr("New folder"));
+      const newFolderButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/create_new_folder/18").set({
+        toolTipText: this.tr("Create new Folder")
+      });
       newFolderButton.addListener("execute", () => this.__createNewFolder(newFolderButton), this);
       return newFolderButton;
     },
