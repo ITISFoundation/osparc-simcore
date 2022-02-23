@@ -449,7 +449,7 @@
         "tags": [
           "containers"
         ],
-        "summary": "It is not required to create any directories here. Fixes permissions for the inputs directory to allign them to the outpus.",
+        "summary": "Fixes permissions for the inputs directory, making it the same as the inputs.",
         "operationId": "fix_inputs_dir_permissions_v1_containers_ports_inputs_permissions_post",
         "responses": {
           "204": {

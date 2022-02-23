@@ -508,7 +508,9 @@ async def test_container_create_outputs_dirs(
 
 
 async def test_fix_inputs_dir_permissions(test_client: TestClient) -> None:
-    response = await test_client.post(f"/{API_VTAG}/containers/ports/inputs:permissions")
+    response = await test_client.post(
+        f"/{API_VTAG}/containers/ports/inputs:permissions"
+    )
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
 

@@ -474,24 +474,22 @@ async def create_output_dirs(request_mode: CreateDirsRequestItem) -> None:
 @containers_router.post(
     "/containers/ports/inputs:permissions",
     summary=(
-        "It is not required to create any directories here. "
-        "Fixes permissions for the inputs directory to allign them to the outpus."
+        "Fixes permissions for the inputs directory, making it the same as the inputs."
     ),
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def fix_inputs_dir_permissions() -> None:
+    # NOTE: by creating a hidden file on all mounted volumes
+    # the same permissions are ensured and avoids
+    # issues when starting the services
     mounted_volumes: MountedVolumes = get_mounted_volumes()
-    inputs_path = mounted_volumes.disk_inputs_path
-
-    # Emulate data insertion and removal in the directory
-    # this wil adjust permissions
-    # when the container will mount the inputs directory it
-    # will have the same permissions as the outputs directory
-    # the file needs to be preset, if it is removed the permissions
-    # wil revert back and boot will fail
-    file_create_remove = inputs_path / ".hidden_do_not_remove"
-    file_create_remove.write_text("This file fixes permissions on boot")
+    for volume_path in [
+        mounted_volumes.disk_inputs_path,
+        mounted_volumes.disk_outputs_path,
+    ] + list(mounted_volumes.disk_state_paths()):
+        hidden_file = volume_path / ".hidden_do_not_remove"
+        hidden_file.write_text("directory must not be empty")
 
 
 @containers_router.post(
