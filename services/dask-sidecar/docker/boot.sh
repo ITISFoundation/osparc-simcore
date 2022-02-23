@@ -36,7 +36,8 @@ fi
 if [ ${DASK_START_AS_SCHEDULER+x} ]; then
   scheduler_version=$(dask-scheduler --version)
   mkdir --parents /home/scu/.config/dask
-  echo "logging: distributed: ${LOG_LEVEL:-warning} distributed.scheduler: ${LOG_LEVEL:-warning}" >> /home/scu/.config/dask/distributed.yaml
+  dask_logging=$(printf "logging:\n  distributed: %s\n  distributed.scheduler: %s" "${LOG_LEVEL:-warning}" "${LOG_LEVEL:-warning}")
+  echo "$dask_logging" >> /home/scu/.config/dask/distributed.yaml
 
   echo "$INFO" "Starting as dask-scheduler:${scheduler_version}..."
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
