@@ -476,14 +476,14 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_uuid}/tags/{tag_id}:
+  /projects/{study_uuid}/tags/{tag_id}:
     parameters:
       - name: tag_id
         in: path
         required: true
         schema:
           type: integer
-      - name: project_uuid
+      - name: study_uuid
         in: path
         required: true
         schema:

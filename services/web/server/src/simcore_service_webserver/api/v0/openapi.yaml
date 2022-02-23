@@ -2847,14 +2847,14 @@ paths:
       responses:
         default:
           description: any response appropriate in the iframe context
-  '/projects/{project_uuid}/tags/{tag_id}':
+  '/projects/{study_uuid}/tags/{tag_id}':
     parameters:
       - name: tag_id
         in: path
         required: true
         schema:
           type: integer
-      - name: project_uuid
+      - name: study_uuid
         in: path
         required: true
         schema:
