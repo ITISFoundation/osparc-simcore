@@ -17,6 +17,7 @@
 
 qx.Class.define("osparc.dashboard.GridButtonFolder", {
   extend: osparc.dashboard.GridButtonBase,
+  include: osparc.dashboard.MButtonFolder,
 
   construct: function() {
     this.base(arguments);
@@ -38,13 +39,6 @@ qx.Class.define("osparc.dashboard.GridButtonFolder", {
   },
 
   members: {
-    __buildLayout: function() {
-      const title = this.getChildControl("title");
-      title.setValue(this.tr("Folder"));
-
-      this.setIcon(osparc.dashboard.CardBase.FOLDER_ICON);
-    },
-
     __applyId: function(value) {
       const folders = osparc.store.Store.getInstance().getFolders();
       const foundFolder = folders.find(folder => folder.id === value);
@@ -75,56 +69,6 @@ qx.Class.define("osparc.dashboard.GridButtonFolder", {
         const label = this.getChildControl("subtitle-text");
         label.setValue(osparc.utils.Utils.formatDateAndTime(value));
       }
-    },
-
-    _onToggleChange: function(e) {
-      this.setValue(false);
-    },
-
-    __filterText: function(text) {
-      const checks = [
-        this.getTitle()
-      ];
-      return osparc.dashboard.CardBase.filterText(checks, text);
-    },
-
-    __filterFolder: function(folderId) {
-      // do not show if folder is selected
-      return folderId !== null;
-    },
-
-    _shouldApplyFilter: function(data) {
-      const filterData = data["searchBarFilter-study"];
-      if (this.__filterText(filterData.text)) {
-        return true;
-      }
-      if (filterData.tags && filterData.tags.length) {
-        return true;
-      }
-      if (filterData.classifiers && filterData.classifiers.length) {
-        return true;
-      }
-      if (this.__filterFolder(filterData.folder)) {
-        return true;
-      }
-      return false;
-    },
-
-    _shouldReactToFilter: function(data) {
-      const filterData = data["searchBarFilter-study"];
-      if (filterData.text && filterData.text.length > 1) {
-        return true;
-      }
-      if (filterData.tags && filterData.tags.length) {
-        return true;
-      }
-      if (filterData.classifiers && filterData.classifiers.length) {
-        return true;
-      }
-      if (filterData.folder) {
-        return true;
-      }
-      return false;
     }
   }
 });
