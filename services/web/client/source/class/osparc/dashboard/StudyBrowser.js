@@ -143,6 +143,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const importStudyButton = this.__createImportButton();
       this._secondaryBar.add(importStudyButton);
+      importStudyButton.exclude();
+      osparc.utils.DisabledPlugins.isImportDisabled()
+        .then(isDisabled => {
+          importStudyButton.setVisibility(isDisabled ? "excluded" : "visible");
+        });
 
       if (osparc.data.Permissions.getInstance().canDo("user.folder")) {
         const newFolderButton = this.__createNewFolderButton();
