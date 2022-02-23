@@ -264,7 +264,7 @@ async def dask_sub_consumer(
             dask_sub.name,
         )
         await handler(dask_event)
-        await asyncio.sleep(0.100)
+        await asyncio.sleep(0.010)
 
 
 async def dask_sub_consumer_task(
