@@ -52,7 +52,7 @@ async def set_folder_to_project(request: web.Request):
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
 
     return await db.set_folder(
-        project_id=project_id, user_id=user_id, folder_id=int(folder_id)
+        project_uuid=project_id, user_id=user_id, folder_id=int(folder_id)
     )
 
 
@@ -68,5 +68,5 @@ async def remove_folder_from_project(request: web.Request):
         request.match_info["project_id"],
     )
     return await db.remove_folder(
-        project_id=project_id, user_id=user_id, folder_id=int(folder_id)
+        project_uuid=project_id, user_id=user_id, folder_id=int(folder_id)
     )
