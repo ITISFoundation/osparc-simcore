@@ -17,11 +17,8 @@ from typing import Dict, Set, Tuple
 
 from aiopg.sa import Engine
 from fastapi import FastAPI
-from models_library.services import (
-    ServiceAccessRightsAtDB,
-    ServiceDockerData,
-    ServiceMetaDataAtDB,
-)
+from models_library.services import ServiceDockerData
+from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from packaging.version import Version
 from pydantic import ValidationError
 

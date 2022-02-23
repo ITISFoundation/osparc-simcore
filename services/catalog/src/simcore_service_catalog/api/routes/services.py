@@ -6,13 +6,8 @@ import urllib.parse
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from models_library.services import (
-    KEY_RE,
-    VERSION_RE,
-    ServiceAccessRightsAtDB,
-    ServiceMetaDataAtDB,
-    ServiceType,
-)
+from models_library.services import KEY_RE, VERSION_RE, ServiceType
+from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from pydantic import ValidationError, constr
 from pydantic.types import PositiveInt
 from starlette.requests import Request

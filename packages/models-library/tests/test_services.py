@@ -16,14 +16,13 @@ from models_library.services import (
     DYNAMIC_SERVICE_KEY_FORMAT,
     SERVICE_KEY_RE,
     BootOption,
-    ServiceAccessRightsAtDB,
     ServiceDockerData,
     ServiceInput,
     ServiceMetaData,
-    ServiceMetaDataAtDB,
     ServiceOutput,
     _BaseServiceCommonDataModel,
 )
+from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from pint import Unit, UnitRegistry
 
 
