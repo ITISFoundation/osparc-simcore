@@ -23,6 +23,7 @@ routes = web.RouteTableDef()
 @permission_required("project.read")
 async def list_projects_with_folder(request: web.Request):
     projects = await list_projects(request)
+    print("projects", projects)
     return projects
 
 
@@ -31,6 +32,7 @@ async def list_projects_with_folder(request: web.Request):
 @permission_required("project.read")
 async def get_project_with_folder(request: web.Request):
     project = await get_project(request)
+    print("project", project)
     return project
 
 

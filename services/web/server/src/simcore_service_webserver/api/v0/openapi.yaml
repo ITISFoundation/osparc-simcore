@@ -2900,7 +2900,9 @@ paths:
             type: string
             default: all
             enum:
+              - template
               - user
+              - all
         - name: show_hidden
           in: query
           schema:
