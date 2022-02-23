@@ -276,19 +276,6 @@ async def parse_dask_future_results(dask_future: distributed.Future) -> TaskStat
     return event_data
 
 
-def done_dask_callback(
-    dask_future: distributed.Future,
-    user_callback: UserCompleteCB,
-    main_loop: asyncio.AbstractEventLoop,
-):
-
-    try:
-        event_data = parse_dask_future_results(dask_future)
-        asyncio.run_coroutine_threadsafe(user_callback(event_data), main_loop)
-    except Exception:  # pylint: disable=broad-except
-        logger.exception("Unexpected issue while transmitting state to main thread")
-
-
 async def clean_task_output_and_log_files_if_invalid(
     db_engine: Engine, user_id: UserID, project_id: ProjectID, node_id: NodeID
 ) -> None:
