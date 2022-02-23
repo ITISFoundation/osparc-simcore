@@ -17,7 +17,6 @@ from uuid import uuid4
 
 import distributed
 from aiopg.sa.engine import Engine
-from dask_task_models_library.container_tasks.events import DaskTaskEvents
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     PortValue,
@@ -255,41 +254,35 @@ async def clean_task_output_and_log_files_if_invalid(
 
 
 async def dask_sub_consumer(
-    task_event: DaskTaskEvents,
+    dask_sub: distributed.Sub,
     handler: Callable[[str], Awaitable[None]],
-    dask_client: distributed.Client,
 ):
-    dask_sub = distributed.Sub(task_event.topic_name(), client=dask_client)
     async for dask_event in dask_sub:
         logger.debug(
             "received dask event '%s' of topic %s",
             dask_event,
-            task_event.topic_name(),
+            dask_sub.name,
         )
         await handler(dask_event)
+        await asyncio.sleep(0.100)
 
 
 async def dask_sub_consumer_task(
-    task_event: DaskTaskEvents,
+    dask_sub: distributed.Sub,
     handler: Callable[[str], Awaitable[None]],
-    dask_client: distributed.Client,
 ):
     while True:
         try:
-            logger.info(
-                "starting dask consumer task for topic '%s'", task_event.topic_name()
-            )
-            await dask_sub_consumer(task_event, handler, dask_client)
+            logger.info("starting dask consumer task for topic '%s'", dask_sub.name)
+            await dask_sub_consumer(dask_sub, handler)
         except asyncio.CancelledError:
-            logger.info(
-                "stopped dask consumer task for topic '%s'", task_event.topic_name()
-            )
+            logger.info("stopped dask consumer task for topic '%s'", dask_sub.name)
             raise
         except Exception:  # pylint: disable=broad-except
             _REST_TIMEOUT_S: Final[int] = 1
             logger.exception(
                 "unknown exception in dask consumer task for topic '%s', restarting task in %s sec...",
-                task_event.topic_name(),
+                dask_sub.name,
                 _REST_TIMEOUT_S,
             )
             await asyncio.sleep(_REST_TIMEOUT_S)

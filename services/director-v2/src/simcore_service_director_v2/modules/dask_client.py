@@ -223,6 +223,9 @@ class DaskClient:
     dask_subsystem: DaskSubSystem
     settings: DaskSchedulerSettings
 
+    state_sub: distributed.Sub
+    progress_sub: distributed.Sub
+    logs_sub: distributed.Sub
     _subscribed_tasks: List[asyncio.Task] = field(default_factory=list)
 
     @classmethod
@@ -258,6 +261,15 @@ class DaskClient:
                     app=app,
                     dask_subsystem=dask_subsystem,
                     settings=settings,
+                    state_sub=distributed.Sub(
+                        TaskStateEvent.topic_name(), client=dask_subsystem.client
+                    ),
+                    progress_sub=distributed.Sub(
+                        TaskProgressEvent.topic_name(), client=dask_subsystem.client
+                    ),
+                    logs_sub=distributed.Sub(
+                        TaskLogEvent.topic_name(), client=dask_subsystem.client
+                    ),
                 )
                 logger.info(
                     "Connection to %s succeeded [%s]",
@@ -277,21 +289,23 @@ class DaskClient:
         for task in self._subscribed_tasks:
             task.cancel()
         await asyncio.gather(*self._subscribed_tasks, return_exceptions=True)
+        # NOTE: if the Sub are deleted before, then the dask-scheduler goes in
+        # a bad state [https://github.com/dask/distributed/issues/3276]
         await self.dask_subsystem.close()
         logger.info("dask client properly closed")
 
     def register_handlers(self, task_handlers: TaskHandlers) -> None:
         _EVENT_CONSUMER_MAP = [
-            (TaskStateEvent, task_handlers.task_change_handler),
-            (TaskProgressEvent, task_handlers.task_progress_handler),
-            (TaskLogEvent, task_handlers.task_log_handler),
+            (self.state_sub, task_handlers.task_change_handler),
+            (self.progress_sub, task_handlers.task_progress_handler),
+            (self.logs_sub, task_handlers.task_log_handler),
         ]
         self._subscribed_tasks = [
             asyncio.create_task(
-                dask_sub_consumer_task(event, handler, self.dask_subsystem.client),
-                name=f"{event.topic_name()}_dask_sub_consumer_task",
+                dask_sub_consumer_task(dask_sub, handler),
+                name=f"{dask_sub.name}_dask_sub_consumer_task",
             )
-            for event, handler in _EVENT_CONSUMER_MAP
+            for dask_sub, handler in _EVENT_CONSUMER_MAP
         ]
 
     async def send_computation_tasks(
@@ -454,7 +468,7 @@ class DaskClient:
             # NOTE: It seems there is a bug in the pubsub system in dask
             # Event are more robust to connections/disconnections
             cancel_event = await distributed.Event(name=job_id)
-            await cancel_event.set()
+            await cancel_event.set()  # type: ignore
             await task_future.cancel()  # type: ignore
             logger.debug("Dask task %s cancelled", task_future.key)
         except KeyError:
@@ -472,4 +486,7 @@ class DaskClient:
 
     async def release_task_result(self, job_id: str) -> None:
         logger.debug("releasing results for %s", f"{job_id=}")
-        await self.dask_subsystem.client.unpublish_dataset(name=job_id)  # type: ignore
+        try:
+            await self.dask_subsystem.client.unpublish_dataset(name=job_id)  # type: ignore
+        except KeyError as exc:
+            logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
