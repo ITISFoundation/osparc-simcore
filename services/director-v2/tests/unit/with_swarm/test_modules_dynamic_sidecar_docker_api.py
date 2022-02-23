@@ -318,9 +318,9 @@ async def test_get_swarm_network_missing_network(
 ) -> None:
     with pytest.raises(DynamicSidecarError) as excinfo:
         await docker_api.get_swarm_network(dynamic_sidecar_settings)
-    assert (
-        str(excinfo.value)
-        == "Swarm network name is not configured, found following networks: []"
+    assert str(excinfo.value) == (
+        f"Swarm network name (searching for '*test_network_name*') is not configured."
+        f"Found following networks: []"
     )
 
 
