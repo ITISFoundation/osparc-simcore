@@ -507,10 +507,8 @@ async def test_container_create_outputs_dirs(
     assert mock_dir_watcher_on_any_event.call_count == 2 * len(mock_outputs_labels)
 
 
-async def test_fix_inputs_dir_permissions(test_client: TestClient) -> None:
-    response = await test_client.post(
-        f"/{API_VTAG}/containers/ports/inputs:permissions"
-    )
+async def test_volumes_fix_permissions(test_client: TestClient) -> None:
+    response = await test_client.post(f"/{API_VTAG}/containers/volumes:permissions")
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
     assert response.text == ""
 

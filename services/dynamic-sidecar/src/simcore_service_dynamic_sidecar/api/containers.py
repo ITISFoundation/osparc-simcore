@@ -472,14 +472,12 @@ async def create_output_dirs(request_mode: CreateDirsRequestItem) -> None:
 
 
 @containers_router.post(
-    "/containers/ports/inputs:permissions",
-    summary=(
-        "Fixes permissions for the inputs directory, making it the same as the inputs."
-    ),
+    "/containers/volumes:permissions",
+    summary="Makes permissions the same on all mounted volumes directories.",
     response_class=Response,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def fix_inputs_dir_permissions() -> None:
+async def volumes_fix_permissions() -> None:
     # NOTE: by creating a hidden file on all mounted volumes
     # the same permissions are ensured and avoids
     # issues when starting the services

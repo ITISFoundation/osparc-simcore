@@ -444,13 +444,13 @@
         }
       }
     },
-    "/v1/containers/ports/inputs:permissions": {
+    "/v1/containers/volumes:permissions": {
       "post": {
         "tags": [
           "containers"
         ],
-        "summary": "Fixes permissions for the inputs directory, making it the same as the inputs.",
-        "operationId": "fix_inputs_dir_permissions_v1_containers_ports_inputs_permissions_post",
+        "summary": "Makes permissions the same on all mounted volumes directories.",
+        "operationId": "volumes_fix_permissions_v1_containers_volumes_permissions_post",
         "responses": {
           "204": {
             "description": "Successful Response"

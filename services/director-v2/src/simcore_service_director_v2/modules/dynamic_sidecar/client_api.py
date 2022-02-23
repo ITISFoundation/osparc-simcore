@@ -218,15 +218,15 @@ class DynamicSidecarClient:
             )
 
     @log_decorator(logger=logger)
-    async def service_inputs_fix_permissions(
+    async def service_volumes_fix_permissions(
         self, dynamic_sidecar_endpoint: str
     ) -> None:
-        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/inputs:permissions")
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/volumes:permissions")
 
         response = await self._client.post(url)
         if response.status_code != status.HTTP_204_NO_CONTENT:
             raise DynamicSidecarUnexpectedResponseStatus(
-                response, "inputs fix permissions"
+                response, "volumes fix permissions"
             )
 
     @log_decorator(logger=logger)

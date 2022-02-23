@@ -291,7 +291,7 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
                     dynamic_sidecar_client.service_outputs_create_dirs(
                         dynamic_sidecar_endpoint, service_outputs_labels
                     ),
-                    dynamic_sidecar_client.service_inputs_fix_permissions(
+                    dynamic_sidecar_client.service_volumes_fix_permissions(
                         dynamic_sidecar_endpoint
                     ),
                 ]
