@@ -486,13 +486,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._startStudy(studyData);
           const currentFolder = this._searchBarFilter.getCurrentFolder();
           if (currentFolder) {
-            const paramsFolder = {
-              url: {
-                studyId: studyData.uuid,
-                folderId: currentFolder
-              }
-            };
-            osparc.data.Resources.fetch("studies", "setFolder", paramsFolder);
+            this.__moveStudyToFolder(studyData.uuid, currentFolder);
           }
         })
         .catch(err => {
@@ -656,7 +650,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       if (osparc.data.Permissions.getInstance().canDo("study.folder") && folders.length) {
         const moveToButton = new qx.ui.menu.Button(this.tr("Move to"));
         const foldersMenu = new qx.ui.menu.Menu();
-        if (studyData.folder !== null) {
+        if (studyData.folder) {
           const folderButton = new qx.ui.menu.Button(this.tr("Root"), "@FontAwesome5Solid/folder/12");
           foldersMenu.add(folderButton);
           folderButton.addListener("execute", () => {
@@ -672,6 +666,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
               }, this)
               .catch(console.error);
           }, this);
+        } else {
+          const newFolderButton = new qx.ui.menu.Button(this.tr("Create new Folder"), "@FontAwesome5Solid/plus/12");
+          foldersMenu.add(newFolderButton);
+          newFolderButton.addListener("execute", () => this.__createNewFolder(null, studyData.uuid), this);
         }
         folders.forEach(folder => {
           if ("folder" in studyData && studyData["folder"] === folder.id) {
@@ -679,25 +677,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
           const folderButton = new qx.ui.menu.Button(folder.name, "@FontAwesome5Solid/folder/12");
           folderButton.getChildControl("icon").setTextColor(folder.color);
+          folderButton.addListener("execute", () => this.__moveStudyToFolder(studyData.uuid, folder.id), this);
           foldersMenu.add(folderButton);
-          folderButton.addListener("execute", () => {
-            const params = {
-              url: {
-                studyId: studyData.uuid,
-                folderId: folder.id
-              }
-            };
-            osparc.data.Resources.fetch("studies", "setFolder", params)
-              .then(() => {
-                this.revalidateStudy(studyData.uuid);
-              }, this)
-              .catch(console.error);
-          }, this);
         });
         moveToButton.setMenu(foldersMenu);
         return moveToButton;
       }
       return null;
+    },
+
+    __moveStudyToFolder: function(studyId, folderId) {
+      const params = {
+        url: {
+          studyId,
+          folderId
+        }
+      };
+      osparc.data.Resources.fetch("studies", "setFolder", params)
+        .then(() => {
+          this.revalidateStudy(studyId);
+        }, this)
+        .catch(console.error);
     },
 
     __updateStudy: function(studyData) {
@@ -939,12 +939,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       req.send(body);
     },
 
-    __createNewFolder: function(btn) {
+    __createNewFolder: function(btn, andAssingStudy = null) {
       const folderEditor = new osparc.component.editor.FolderEditor();
       const title = this.tr("New Folder");
       const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 330, 235);
       folderEditor.addListener("createFolder", () => {
-        btn.setFetching(true);
+        if (btn) {
+          btn.setFetching(true);
+        }
         const name = folderEditor.getChildControl("title").getValue().trim();
         const description = folderEditor.getChildControl("description").getValue().trim();
         const color = folderEditor.getChildControl("color-picker").getChildControl("color-input").getValue();
@@ -955,17 +957,25 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           color
         };
         osparc.data.Resources.fetch("folders", "post", params)
-          .then(() => {
+          .then(newFolder => {
             win.close();
-            osparc.store.Store.getInstance().invalidate("folders");
-            this.invalidateStudies();
-            this.reloadResources();
+            if (andAssingStudy) {
+              this.__moveStudyToFolder(andAssingStudy, newFolder.id);
+            } else {
+              osparc.store.Store.getInstance().invalidate("folders");
+              this.invalidateStudies();
+              this.reloadResources();
+            }
           }, this)
           .catch(err => {
             console.error(err);
             folderEditor.getChildControl("create").setFetching(false);
           })
-          .finally(() => btn.setFetching(false));
+          .finally(() => {
+            if (btn) {
+              btn.setFetching(false);
+            }
+          });
       }, this);
       folderEditor.addListener("cancel", () => win.close());
     },
