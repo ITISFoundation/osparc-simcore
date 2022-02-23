@@ -286,8 +286,15 @@ class PrepareServicesEnvironment(DynamicSchedulerEvent):
             logger.debug(
                 "Creating dirs from service outputs labels: %s", service_outputs_labels
             )
-            await dynamic_sidecar_client.service_outputs_create_dirs(
-                dynamic_sidecar_endpoint, service_outputs_labels
+            await logged_gather(
+                *[
+                    dynamic_sidecar_client.service_outputs_create_dirs(
+                        dynamic_sidecar_endpoint, service_outputs_labels
+                    ),
+                    dynamic_sidecar_client.service_inputs_fix_permissions(
+                        dynamic_sidecar_endpoint
+                    ),
+                ]
             )
 
             scheduler_data.dynamic_sidecar.service_environment_prepared = True

@@ -444,6 +444,20 @@
         }
       }
     },
+    "/v1/containers/ports/inputs:permissions": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "It is not required to create any directories here. Fixes permissions for the inputs directory to allign them to the outpus.",
+        "operationId": "fix_inputs_dir_permissions_v1_containers_ports_inputs_permissions_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
     "/v1/containers/ports/outputs:pull": {
       "post": {
         "tags": [
