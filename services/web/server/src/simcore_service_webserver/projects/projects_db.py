@@ -441,7 +441,7 @@ class ProjectDBAPI:
             db_prj["tags"] = await self._get_tags_by_project(
                 conn, project_id=db_prj["id"]
             )
-            db_prj["folder"] = await self._get_folder_by_project(
+            db_prj["folder"] = await self.get_folder_by_project(
                 conn, project_id=db_prj["id"]
             )
             user_email = await self._get_user_email(conn, db_prj["prj_owner"])
@@ -495,7 +495,7 @@ class ProjectDBAPI:
             project["tags"] = tags
 
         if "folder" not in exclude_foreign:
-            folder = await self._get_folder_by_project(
+            folder = await self.get_folder_by_project(
                 connection, project_id=project_row.id
             )
             project["folder"] = folder
@@ -540,7 +540,7 @@ class ProjectDBAPI:
                 conn, user_id, project_uuid, include_templates=True
             )
 
-            folder = await self._get_folder_by_project(conn, project_id=project["id"])
+            folder = await self.get_folder_by_project(conn, project_id=project["id"])
             if folder:
                 query = (
                     study_folder.update()
@@ -703,7 +703,7 @@ class ProjectDBAPI:
                 tags = await self._get_tags_by_project(
                     conn, project_id=project[projects.c.id]
                 )
-                folder = await self._get_folder_by_project(
+                folder = await self.get_folder_by_project(
                     conn, project_id=project[projects.c.id]
                 )
                 return (
@@ -800,7 +800,7 @@ class ProjectDBAPI:
                 tags = await self._get_tags_by_project(
                     conn, project_id=project[projects.c.id]
                 )
-                folder = await self._get_folder_by_project(
+                folder = await self.get_folder_by_project(
                     conn, project_id=project[projects.c.id]
                 )
                 return _convert_to_schema_names(
@@ -876,7 +876,7 @@ class ProjectDBAPI:
         return [row.tag_id async for row in conn.execute(query)]
 
     @staticmethod
-    async def _get_folder_by_project(conn: SAConnection, project_id: str) -> List:
+    async def get_folder_by_project(conn: SAConnection, project_id: str) -> List:
         query = sa.select([study_folder.c.folder_id]).where(
             study_folder.c.study_id == project_id
         )
