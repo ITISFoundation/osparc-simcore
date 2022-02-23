@@ -46,7 +46,7 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects-with-folder/{project_uuid}:
+  /projects-with-folder/{project_id}:
     parameters:
       - name: project_id
         in: path
@@ -68,9 +68,9 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects-with-folder/{project_uuid}/folder/{folder_id}:
+  /projects-with-folder/{project_id}/folder/{folder_id}:
     parameters:
-      - name: project_uuid
+      - name: project_id
         in: path
         required: true
         schema:

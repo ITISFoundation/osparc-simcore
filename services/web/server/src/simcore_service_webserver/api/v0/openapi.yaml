@@ -2937,13 +2937,13 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/paths/~1projects-with-folder~1%7Bproject_uuid%7D/get/responses/200/content/application~1json/schema/properties/data'
+                      $ref: '#/paths/~1projects-with-folder~1%7Bproject_id%7D/get/responses/200/content/application~1json/schema/properties/data'
                   error:
                     nullable: true
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects-with-folder/{project_uuid}':
+  '/projects-with-folder/{project_id}':
     parameters:
       - name: project_id
         in: path
@@ -2979,9 +2979,9 @@ paths:
                     default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects-with-folder/{project_uuid}/folder/{folder_id}':
+  '/projects-with-folder/{project_id}/folder/{folder_id}':
     parameters:
-      - name: project_uuid
+      - name: project_id
         in: path
         required: true
         schema:
@@ -3002,7 +3002,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects-with-folder~1%7Bproject_uuid%7D/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1projects-with-folder~1%7Bproject_id%7D/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
     delete:
@@ -3016,7 +3016,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/paths/~1projects-with-folder~1%7Bproject_uuid%7D/get/responses/200/content/application~1json/schema'
+                $ref: '#/paths/~1projects-with-folder~1%7Bproject_id%7D/get/responses/200/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   '/projects/{project_uuid}/checkpoint/{ref_id}/iterations':

@@ -222,10 +222,10 @@ paths:
   # PROJECT WITH FOLDER -----------------------------------------------------------------
   /projects-with-folder:
     $ref: "./openapi-projects-with-folder.yaml#/paths/~1projects-with-folder"
-  /projects-with-folder/{project_uuid}:
-    $ref: "./openapi-projects-with-folder.yaml#/paths/~1projects-with-folder~1{project_uuid}"
-  /projects-with-folder/{project_uuid}/folder/{folder_id}:
-    $ref: "./openapi-projects-with-folder.yaml#/paths/~1projects-with-folder~1{project_uuid}~1folder~1{folder_id}"
+  /projects-with-folder/{project_id}:
+    $ref: "./openapi-projects-with-folder.yaml#/paths/~1projects-with-folder~1{project_id}"
+  /projects-with-folder/{project_id}/folder/{folder_id}:
+    $ref: "./openapi-projects-with-folder.yaml#/paths/~1projects-with-folder~1{project_id}~1folder~1{folder_id}"
 
   # META-PROJECTS -------------------------------------------------------------------------
 
