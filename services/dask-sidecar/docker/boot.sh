@@ -35,9 +35,8 @@ fi
 
 if [ ${DASK_START_AS_SCHEDULER+x} ]; then
   scheduler_version=$(dask-scheduler --version)
-  # this enables debuggin in the scheduler
-  # mkdir -p /home/scu/.config/dask
-  # echo "logging:\n  distributed: debug\n  distributed.scheduler: debug" >> ~/.config/dask/distributed.yaml
+  mkdir --parents /home/scu/.config/dask
+  echo "logging: distributed: ${LOG_LEVEL} distributed.scheduler: ${LOG_LEVEL}" >> /home/scu/.config/dask/distributed.yaml
 
   echo "$INFO" "Starting as dask-scheduler:${scheduler_version}..."
   if [ "${SC_BOOT_MODE}" = "debug-ptvsd" ]; then
