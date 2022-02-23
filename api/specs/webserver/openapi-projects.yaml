@@ -517,47 +517,6 @@ paths:
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 
-  /projects/{project_uuid}/folder/{folder_id}:
-    parameters:
-      - name: folder_id
-        in: path
-        required: true
-        schema:
-          type: integer
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-    put:
-      tags:
-        - project
-      summary: Links an existing folder with an existing study
-      operationId: set_folder
-      responses:
-        "200":
-          description: The folder has been successfully linked to the study
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProjectEnveloped"
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-    delete:
-      tags:
-        - project
-      summary: Unlinks an existing link between a folder and a study
-      operationId: remove_folder
-      responses:
-        "200":
-          description: The folder has been successfully unlinked
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ProjectEnveloped"
-        default:
-          $ref: "#/components/responses/DefaultErrorResponse"
-
 components:
   schemas:
     ClientSessionId:

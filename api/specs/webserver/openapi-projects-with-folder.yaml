@@ -1,0 +1,122 @@
+paths:
+  /projects-with-folder:
+    get:
+      tags:
+        - project
+      summary: List all projects + folder
+      operationId: list_projects_with_folder
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            default: "all"
+            enum: [user]
+        - name: show_hidden
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: includes projects marked as hidden in the listing
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          required: false
+          description: index to the first item to return
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 50
+          required: false
+          description: maximum number of items to return
+      responses:
+        "200":
+          description: list of projects with folder
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectWithFolderArrayEnveloped"
+
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /projects-with-folder/{project_id}:
+    parameters:
+      - name: project_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - project
+      summary: Gets given project + folder
+      operationId: get_project_with_folder
+      responses:
+        "200":
+          description: got detailed project + folder
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectWithFolderEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  /projects-with-folder/{project_uuid}/folder/{folder_id}:
+    parameters:
+      - name: project_uuid
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: folder_id
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      tags:
+        - project
+      summary: Links an existing folder with an existing study
+      operationId: set_folder_to_project
+      responses:
+        "200":
+          description: The folder has been successfully linked to the study
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectWithFolderEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+    delete:
+      tags:
+        - project
+      summary: Unlinks an existing link between a folder and a study
+      operationId: remove_folder_from_project
+      responses:
+        "200":
+          description: The folder has been successfully unlinked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectWithFolderEnveloped"
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+components:
+  schemas:
+    ProjectWithFolderArrayEnveloped:
+      $ref: "../common/schemas/project-with-folder.yaml#/components/schemas/ProjectWithFolderArrayEnveloped"
+
+    ProjectWithFolderEnveloped:
+      $ref: "../common/schemas/project-with-folder.yaml#/components/schemas/ProjectWithFolderEnveloped"
+
+  responses:
+    DefaultErrorResponse:
+      $ref: "./openapi.yaml#/components/responses/DefaultErrorResponse"
