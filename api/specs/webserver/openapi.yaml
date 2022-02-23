@@ -219,8 +219,13 @@ paths:
   /projects/{project_uuid}/tags/{tag_id}:
     $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1tags~1{tag_id}"
 
-  /projects/{project_uuid}/folder/{folder_id}:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1folder~1{folder_id}"
+  # PROJECT WITH FOLDER -----------------------------------------------------------------
+  /projects-with-folder:
+    $ref: "./openapi-projects-with-folder.yaml#/paths/~1projects-with-folder"
+  /projects-with-folder/{project_uuid}:
+    $ref: "./openapi-projects-with-folder.yaml#/paths/~1projects-with-folder~1{project_uuid}"
+  /projects-with-folder/{project_uuid}/folder/{folder_id}:
+    $ref: "./openapi-projects-with-folder.yaml#/paths/~1projects-with-folder~1{project_uuid}~1folder~1{folder_id}"
 
   # META-PROJECTS -------------------------------------------------------------------------
 
