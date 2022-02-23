@@ -546,7 +546,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             return;
           }
           const folderItem = this.__createFolderItem(folderId);
-          folderItem.setLastChangeDate(new Date(folder["modified"]));
           this._resourcesContainer.add(folderItem);
         });
       }

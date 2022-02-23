@@ -37,6 +37,9 @@ qx.Class.define("osparc.dashboard.ListButtonFolder", {
 
         const icon = this.getChildControl("icon").getChildControl("image");
         icon.setTextColor(foundFolder.color);
+
+        const lastChange = this.getChildControl("last-change");
+        lastChange.setValue(osparc.utils.Utils.formatDateAndTime(new Date(foundFolder.modified)));
       }
     },
 

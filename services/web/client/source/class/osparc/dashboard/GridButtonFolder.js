@@ -36,8 +36,8 @@ qx.Class.define("osparc.dashboard.GridButtonFolder", {
       if (foundFolder) {
         this.setTitle(foundFolder.name);
 
-        const description = this.getChildControl("subtitle-text");
-        description.setValue(foundFolder.description);
+        const label = this.getChildControl("subtitle-text");
+        label.setValue(osparc.utils.Utils.formatDateAndTime(new Date(foundFolder.modified)));
 
         const icon = this.getChildControl("icon").getChildControl("image");
         icon.setTextColor(foundFolder.color);
