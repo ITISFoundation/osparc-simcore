@@ -300,6 +300,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         osparc.data.Resources.fetch("folders", "put", params)
           .then(() => {
             win.close();
+            osparc.store.Store.getInstance().invalidate("folders");
+            this.invalidateStudies();
             this.reloadResources();
           }, this)
           .catch(console.error)
