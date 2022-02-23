@@ -22,6 +22,7 @@ from .links import (
     ItemValue,
     PortLink,
 )
+from .utils_schemas import jsonschema_validate_data, jsonschema_validate_schema
 
 log = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class Port(BaseServiceIOModel):
     widget: Optional[Dict[str, Any]] = None
 
     default_value: Optional[DataItemValue] = Field(None, alias="defaultValue")
-    value: Optional[DataItemValue]
+    value: Optional[DataItemValue] = None
 
     _py_value_type: Tuple[Type[ItemConcreteValue], ...] = PrivateAttr()
     _py_value_converter: Callable[[Any], ItemConcreteValue] = PrivateAttr()
@@ -63,43 +64,33 @@ class Port(BaseServiceIOModel):
     def valid_content_jsonschema(cls, v):
         if v is not None:
             try:
-                jsonschema.validate(instance={}, schema=v)
+                jsonschema_validate_schema(schema=v)
             except jsonschema.SchemaError as err:
                 raise ValueError(
                     f"Invalid json-schema in 'content_schema': {err}"
                 ) from err
-            except jsonschema.ValidationError:
-                pass
         return v
 
     @validator("value", always=True)
     @classmethod
     def ensure_value(cls, v: DataItemValue, values: Dict[str, Any]) -> DataItemValue:
-        if property_type := values.get("property_type"):
+        if v is not None and (property_type := values.get("property_type")):
             if port_utils.is_file_type(property_type):
-                if v is not None and not isinstance(
-                    v, (FileLink, DownloadLink, PortLink)
-                ):
+                if not isinstance(v, (FileLink, DownloadLink, PortLink)):
                     raise ValueError(
-                        f"[{values['property_type']}] must follow {FileLink.schema()}, {DownloadLink.schema()} or {PortLink.schema()}"
+                        f"[{values['property_type']}] must follow "
+                        f"{FileLink.schema()}, {DownloadLink.schema()} or {PortLink.schema()}"
                     )
             elif property_type == "ref_contentSchema":
                 try:
                     content_schema = values["content_schema"]
-                    jsonschema.validate(instance=v, schema=content_schema)
+                    v = jsonschema_validate_data(
+                        instance=v, schema=content_schema, return_with_default=True
+                    )
 
-                except jsonschema.SchemaError as err:
-                    # NOTE: added this check because always=True
-                    raise ValueError(
-                        f"Invalid json-schema in {values.get('content_schema')=}: {err=}"
-                    ) from err
                 except jsonschema.ValidationError as err:
                     raise ValueError(
                         f"Value {v} does not validate against content_schema: {err=}"
-                    ) from err
-                except KeyError as err:
-                    raise ValueError(
-                        f"Expected content_schema, got {values.get('content_schema')=}: {err=}"
                     ) from err
 
         return v
@@ -114,9 +105,6 @@ class Port(BaseServiceIOModel):
         elif self.property_type == "ref_contentSchema":
             self._py_value_type = (list, dict)
             self._py_value_converter = lambda v: v
-
-            # TODO: extract defaults from schema
-            self._used_default_value = False
 
         else:
             assert self.property_type in TYPE_TO_PYTYPE  # nosec
