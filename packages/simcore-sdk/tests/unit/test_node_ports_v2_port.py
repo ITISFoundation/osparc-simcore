@@ -11,9 +11,18 @@ import re
 import shutil
 import tempfile
 import threading
-from collections import namedtuple
 from pathlib import Path
-from typing import Any, Dict, Iterator, Optional, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 from unittest.mock import AsyncMock
 
 import pytest
@@ -22,8 +31,15 @@ from attr import dataclass
 from pydantic.error_wrappers import ValidationError
 from pytest_mock.plugin import MockerFixture
 from simcore_sdk.node_ports_v2 import exceptions, node_config
-from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
+from simcore_sdk.node_ports_v2.links import (
+    DataItemValue,
+    DownloadLink,
+    FileLink,
+    ItemConcreteValue,
+    PortLink,
+)
 from simcore_sdk.node_ports_v2.port import Port
+from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
 from utils_port_v2 import create_valid_port_config
 from yarl import URL
 
@@ -33,12 +49,6 @@ from yarl import URL
 def camel_to_snake(name):
     name = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", name).lower()
-
-
-PortParams = namedtuple(
-    "PortParams",
-    "port_cfg, exp_value_type, exp_value_converter, exp_value, exp_get_value, new_value, exp_new_value, exp_new_get_value",
-)
 
 
 def this_node_file_name() -> Path:
@@ -224,6 +234,17 @@ def common_fixtures(
     """this module main fixture"""
 
     node_config.STORAGE_ENDPOINT = "storage:8080"
+
+
+class PortParams(NamedTuple):
+    port_cfg: Union[InputsList, OutputsList]
+    exp_value_type: Union[Callable, Tuple[Callable, ...]]
+    exp_value_converter: Type[ItemConcreteValue]
+    exp_value: Union[DataItemValue, None]
+    exp_get_value: Union[int, float, bool, str, Path, None]
+    new_value: Union[int, float, bool, str, Path, None]
+    exp_new_value: Union[int, float, bool, str, Path, FileLink, None]
+    exp_new_get_value: Union[int, float, bool, str, Path, None]
 
 
 # TESTS --------------------------------------------------------------------------------------

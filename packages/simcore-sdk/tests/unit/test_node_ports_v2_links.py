@@ -1,9 +1,16 @@
-from typing import Dict
+from typing import Dict, get_args
 from uuid import uuid4
 
 import pytest
+from models_library.projects_nodes import InputTypes, OutputTypes
+from models_library.projects_nodes_io import BaseFileLink
 from pydantic import ValidationError
-from simcore_sdk.node_ports_v2.links import DownloadLink, FileLink, PortLink
+from simcore_sdk.node_ports_v2.links import (
+    DataItemValue,
+    DownloadLink,
+    FileLink,
+    PortLink,
+)
 
 
 def test_valid_port_link():
@@ -52,3 +59,22 @@ def test_invalid_download_link(download_link: Dict[str, str]):
 def test_invalid_file_link(file_link: Dict[str, str]):
     with pytest.raises(ValidationError):
         FileLink(**file_link)
+
+
+def test_data_item_synced_with_project_nodes_io_types():
+    # TODO: make sure things are in
+
+    input_types = list(get_args(InputTypes))
+    output_types = list(get_args(OutputTypes))
+
+    assert FileLink in get_args(DataItemValue)
+    # covers all BaseFileLink classes
+    found = {arg for arg in input_types if issubclass(arg, BaseFileLink)}
+    assert found
+    for f in found:
+        input_types.remove(f)
+
+    found = {arg for arg in output_types if issubclass(arg, BaseFileLink)}
+    assert found
+    for f in found:
+        output_types.remove(f)

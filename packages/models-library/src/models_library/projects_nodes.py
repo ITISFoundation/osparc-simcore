@@ -41,8 +41,7 @@ InputTypes = Union[
     Json,  # FIXME: remove if OM sends object/array. create project does NOT use pydantic
     str,
     PortLink,
-    SimCoreFileLink,
-    DatCoreFileLink,
+    Union[SimCoreFileLink, DatCoreFileLink],  # *FileLink to service
     DownloadLink,
     Union[List[Any], Dict[str, Any]],  # arrays | object
 ]
@@ -52,8 +51,7 @@ OutputTypes = Union[
     StrictFloat,
     Json,  # FIXME: remove if OM sends object/array
     str,
-    SimCoreFileLink,
-    DatCoreFileLink,
+    Union[SimCoreFileLink, DatCoreFileLink],  # *FileLink to service
     DownloadLink,
     Union[List[Any], Dict[str, Any]],  # arrays | object
 ]
