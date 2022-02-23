@@ -1,7 +1,6 @@
 import asyncio
 import collections
 import logging
-import traceback
 from typing import (
     Any,
     Awaitable,
@@ -13,17 +12,12 @@ from typing import (
     Optional,
     Tuple,
     Union,
-    cast,
-    get_args,
 )
 from uuid import uuid4
 
 import distributed
 from aiopg.sa.engine import Engine
-from dask_task_models_library.container_tasks.events import (
-    DaskTaskEvents,
-    TaskStateEvent,
-)
+from dask_task_models_library.container_tasks.events import DaskTaskEvents
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
     PortValue,
@@ -34,7 +28,6 @@ from dask_task_models_library.container_tasks.io import (
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import RunningState
 from pydantic import AnyUrl
 from servicelib.json_serialization import json_dumps
 from simcore_sdk import node_ports_v2
@@ -135,6 +128,8 @@ async def parse_output_data(
         await (await ports.outputs)[port_key].set_value(value_to_transfer)
 
 
+from typing import get_args
+
 _PVType = Optional[_NPItemValue]
 assert len(get_args(_PVType)) == len(  # nosec
     get_args(PortValue)
@@ -226,54 +221,6 @@ async def compute_service_log_file_upload_link(
         file_name=_LOGS_FILE_NAME,
     )
     return value_link
-
-
-UserCompleteCB = Callable[[TaskStateEvent], Awaitable[None]]
-
-_DASK_FUTURE_TIMEOUT_S: Final[int] = 5
-
-
-async def parse_dask_future_results(dask_future: distributed.Future) -> TaskStateEvent:
-    job_id = dask_future.key
-    event_data: Optional[TaskStateEvent] = None
-    logger.debug("task '%s' completed with status %s", job_id, dask_future.status)
-    try:
-        if dask_future.status == "error":
-            task_exception = await dask_future.exception(timeout=_DASK_FUTURE_TIMEOUT_S)
-            task_traceback = await dask_future.traceback(timeout=_DASK_FUTURE_TIMEOUT_S)
-            event_data = TaskStateEvent(
-                job_id=job_id,
-                state=RunningState.FAILED,
-                msg=json_dumps(
-                    traceback.format_exception(
-                        type(task_exception), value=task_exception, tb=task_traceback
-                    )
-                ),
-            )
-        elif dask_future.cancelled():
-            event_data = TaskStateEvent(job_id=job_id, state=RunningState.ABORTED)
-        else:
-            task_result = cast(
-                TaskOutputData, await dask_future.result(timeout=_DASK_FUTURE_TIMEOUT_S)
-            )
-            assert task_result  # no sec
-            event_data = TaskStateEvent(
-                job_id=job_id,
-                state=RunningState.SUCCESS,
-                msg=task_result.json(),
-            )
-    except distributed.TimeoutError:
-        event_data = TaskStateEvent(
-            job_id=job_id,
-            state=RunningState.FAILED,
-            msg=f"Timeout error getting results of '{job_id}'",
-        )
-        logger.error(
-            "fetching result of '%s' timed-out, please check",
-            job_id,
-            exc_info=True,
-        )
-    return event_data
 
 
 async def clean_task_output_and_log_files_if_invalid(
