@@ -25,15 +25,15 @@ async def set_folder(request: web.Request):
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
 
     try:
-        folder_id, study_uuid = (
+        folder_id, project_uuid = (
             request.match_info["folder_id"],
-            request.match_info["study_uuid"],
+            request.match_info["project_uuid"],
         )
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
 
     return await db.set_folder(
-        project_uuid=study_uuid, user_id=user_id, folder_id=int(folder_id)
+        project_uuid=project_uuid, user_id=user_id, folder_id=int(folder_id)
     )
 
 
@@ -44,10 +44,10 @@ async def remove_folder(request: web.Request):
     user_id: int = request[RQT_USERID_KEY]
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
 
-    folder_id, study_uuid = (
+    folder_id, project_uuid = (
         request.match_info["folder_id"],
-        request.match_info["study_uuid"],
+        request.match_info["project_uuid"],
     )
     return await db.remove_folder(
-        project_uuid=study_uuid, user_id=user_id, folder_id=int(folder_id)
+        project_uuid=project_uuid, user_id=user_id, folder_id=int(folder_id)
     )

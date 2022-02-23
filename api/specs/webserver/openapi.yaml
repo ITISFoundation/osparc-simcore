@@ -216,11 +216,11 @@ paths:
   /nodes/{nodeInstanceUUID}/iframe:
     $ref: "./openapi-node-v0.0.1.yaml#/paths/~1nodes~1{nodeInstanceUUID}~1iframe"
 
-  /projects/{study_uuid}/tags/{tag_id}:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{study_uuid}~1tags~1{tag_id}"
+  /projects/{project_uuid}/tags/{tag_id}:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1tags~1{tag_id}"
 
-  /projects/{study_uuid}/folder/{folder_id}:
-    $ref: "./openapi-projects.yaml#/paths/~1projects~1{study_uuid}~1folder~1{folder_id}"
+  /projects/{project_uuid}/folder/{folder_id}:
+    $ref: "./openapi-projects.yaml#/paths/~1projects~1{project_uuid}~1folder~1{folder_id}"
 
   # META-PROJECTS -------------------------------------------------------------------------
 

@@ -2852,14 +2852,14 @@ paths:
       responses:
         default:
           description: any response appropriate in the iframe context
-  '/projects/{study_uuid}/tags/{tag_id}':
+  '/projects/{project_uuid}/tags/{tag_id}':
     parameters:
       - name: tag_id
         in: path
         required: true
         schema:
           type: integer
-      - name: study_uuid
+      - name: project_uuid
         in: path
         required: true
         schema:
@@ -2892,14 +2892,14 @@ paths:
                 $ref: '#/paths/~1projects/post/responses/201/content/application~1json/schema'
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
-  '/projects/{study_uuid}/folder/{folder_id}':
+  '/projects/{project_uuid}/folder/{folder_id}':
     parameters:
       - name: folder_id
         in: path
         required: true
         schema:
           type: integer
-      - name: study_uuid
+      - name: project_uuid
         in: path
         required: true
         schema:
