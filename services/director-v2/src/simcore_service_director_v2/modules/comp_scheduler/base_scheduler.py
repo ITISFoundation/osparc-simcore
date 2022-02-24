@@ -241,8 +241,9 @@ class BaseCompScheduler(ABC):
                     tasks_completed.append(task)
                     # these tasks should be running but they are not available in the backend, something bad happened
                     logger.error(
-                        "Project %s: %s has %s, it disappeared from the computational backend"
-                        ", aborting the computational pipeline!",
+                        "Project %s: %s has %s. The task disappeared from the dask-scheduler"
+                        ", aborting the computational pipeline!\n"
+                        "TIP: Check if the connected dask-scheduler was restarted.",
                         f"{project_id}",
                         f"{task=}",
                         f"{backend_state=}",
