@@ -472,29 +472,6 @@ async def create_output_dirs(request_mode: CreateDirsRequestItem) -> None:
 
 
 @containers_router.post(
-    "/containers/volumes/permissions:fix",
-    summary="Makes permissions the same on all mounted volumes directories.",
-    response_class=Response,
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def volumes_fix_permissions() -> None:
-    # NOTE: by creating a hidden file on all mounted volumes
-    # the same permissions are ensured and avoids
-    # issues when starting the services
-    mounted_volumes: MountedVolumes = get_mounted_volumes()
-    for volume_path in [
-        mounted_volumes.disk_inputs_path,
-        mounted_volumes.disk_outputs_path,
-    ] + list(mounted_volumes.disk_state_paths()):
-        hidden_file = volume_path / ".hidden_do_not_remove"
-        hidden_file.write_text(
-            f"Directory must not be empty.\nCreated by {__file__}.\nRequired by "
-            "oSPARC internals to properly enforce permissions on this "
-            "directory and all its files"
-        )
-
-
-@containers_router.post(
     "/containers/ports/outputs:pull",
     summary="Pull output ports data",
     status_code=status.HTTP_200_OK,
