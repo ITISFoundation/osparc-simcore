@@ -1,7 +1,7 @@
 import asyncio
 import contextlib
 import logging
-from contextlib import asynccontextmanager, suppress
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, AsyncIterator, Awaitable, Dict, Optional, cast
@@ -42,10 +42,10 @@ def is_current_task_aborted() -> bool:
         # NOTE: this does not work in distributed mode, hence we need to use Events, Variables,or PubSub
         return True
 
-    with suppress(asyncio.TimeoutError):
-        cancel_event = distributed.Event(name=task.key)
-        if cancel_event.is_set():
-            return True
+    # NOTE: in distributed mode an event is necessary!
+    cancel_event = distributed.Event(name=task.key)
+    if cancel_event.is_set():
+        return True
     return False
 
 
