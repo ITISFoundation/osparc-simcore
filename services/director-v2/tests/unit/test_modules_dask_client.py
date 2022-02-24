@@ -25,6 +25,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import (
+    TaskCancelEventName,
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
@@ -590,7 +591,7 @@ async def test_abort_computation_tasks(
         task = worker.tasks.get(worker.get_current_task())
         assert task is not None
         print(f"--> task {task=} started")
-        cancel_event = Event(task.key)
+        cancel_event = Event(TaskCancelEventName.format(task.key))
         # tell the client we are started
         start_event = Event(_DASK_EVENT_NAME)
         start_event.set()
