@@ -18,7 +18,7 @@ META = ServiceDockerData.parse_obj(
         "name": "Sensitivity iterator",
         "description": "Increases/decreases one dimension of the reference parameters at every iteration",
         "authors": [EN, OM],
-        "contact": OM["email"],
+        "contact": OM.email,
         "thumbnail": create_fake_thumbnail_url("sensitivity"),
         "inputs": {
             "paramrefs": {

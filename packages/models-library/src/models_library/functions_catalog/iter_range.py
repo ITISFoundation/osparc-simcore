@@ -20,7 +20,7 @@ def create_metadata(type_name: str, prefix: Optional[str] = None) -> ServiceDock
             "authors": [
                 OM,
             ],
-            "contact": OM["email"],
+            "contact": OM.email,
             "inputs": {
                 "linspace_start": {
                     "label": "Start",

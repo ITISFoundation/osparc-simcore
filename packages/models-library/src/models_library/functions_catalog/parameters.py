@@ -29,7 +29,7 @@ def create_metadata(
             "authors": [
                 OM,
             ],
-            "contact": OM["email"],
+            "contact": OM.email,
             "inputs": {},
             "outputs": {
                 "out_1": {

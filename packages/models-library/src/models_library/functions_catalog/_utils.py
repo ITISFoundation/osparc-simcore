@@ -3,22 +3,21 @@ import os
 from typing import Dict, Tuple
 from urllib.parse import quote
 
-from ..services import ServiceDockerData
+from ..services import Author, ServiceDockerData
+
+# Expects env var: FUNCTION_SERVICES_AUTHORS='{"OM":{"name": ...}, "EN":{...} }'
+try:
+    AUTHORS = json.loads(os.environ.get("FUNCTION_SERVICES_AUTHORS", "{}"))
+except json.decoder.JSONDecodeError:
+    AUTHORS = {}
 
 DEFAULT = {
     "name": "Unknown",
     "email": "unknown@osparc.io",
     "affiliation": "unknown",
 }
-# Expects env var: FUNCTION_SERVICE_AUTHORS='{"OM":{"name": ...}, "EN":{...} }
-
-try:
-    AUTHORS = json.loads(os.environ.get("FUNCTION_SERVICE_AUTHORS", "{}"))
-except json.decoder.JSONDecodeError:
-    AUTHORS = {}
-
-EN: Dict[str, str] = AUTHORS.get("EN", DEFAULT)
-OM: Dict[str, str] = AUTHORS.get("OM", DEFAULT)
+EN = Author.parse_obj(AUTHORS.get("EN", DEFAULT))
+OM = Author.parse_obj(AUTHORS.get("OM", DEFAULT))
 
 
 _NodeKeyVersionPair = Tuple[str, str]

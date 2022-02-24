@@ -17,7 +17,7 @@ META = ServiceDockerData.parse_obj(
         "authors": [
             OM,
         ],
-        "contact": OM["email"],
+        "contact": OM.email,
         "inputs": {},
         "outputs": {
             "outFile": {
