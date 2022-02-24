@@ -62,14 +62,14 @@ def _wait_for_task_to_start():
     start_event.wait(timeout=DASK_TESTING_TIMEOUT_S)
 
 
-def _notifiy_task_is_started_and_ready():
+def _notify_task_is_started_and_ready():
     start_event = distributed.Event(DASK_TASK_STARTED_EVENT)
     start_event.set()
 
 
 def _some_long_running_task() -> int:
     assert is_current_task_aborted() == False
-    _notifiy_task_is_started_and_ready()
+    _notify_task_is_started_and_ready()
 
     for i in range(300):
         print("running iteration", i)
@@ -114,7 +114,7 @@ def _some_long_running_task_with_monitoring() -> int:
 
     async def _long_running_task_async() -> int:
         log_publisher = distributed.Pub(TaskLogEvent.topic_name())
-        _notifiy_task_is_started_and_ready()
+        _notify_task_is_started_and_ready()
         async with monitor_task_abortion(task_name=asyncio.current_task().get_name(), log_publisher=log_publisher):  # type: ignore
             for i in range(300):
                 print("running iteration", i)
