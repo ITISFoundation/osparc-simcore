@@ -3,13 +3,8 @@ from typing import Any, Dict, List
 from pydantic import schema_of
 
 from ..services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
-from ._utils import (
-    EN,
-    FRONTEND_SERVICE_KEY_PREFIX,
-    OM,
-    create_fake_thumbnail_url,
-    register,
-)
+from ._utils import EN, OM, create_fake_thumbnail_url, register
+from .constants import FUNCTION_SERVICE_KEY_PREFIX
 
 LIST_NUMBERS_SCHEMA: Dict[str, Any] = schema_of(List[float], title="list[number]")
 
@@ -17,9 +12,9 @@ LIST_NUMBERS_SCHEMA: Dict[str, Any] = schema_of(List[float], title="list[number]
 META = ServiceDockerData.parse_obj(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
-        "key": f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/sensitivity",
+        "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/data-iterator/sensitivity",
         "version": "1.0.0",
-        "type": ServiceType.FRONTEND,
+        "type": ServiceType.BACKEND,
         "name": "Sensitivity iterator",
         "description": "Increases/decreases one dimension of the reference parameters at every iteration",
         "authors": [EN, OM],

@@ -27,7 +27,7 @@ from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
 from ..services import access_rights
-from ..services.frontend_services import iter_service_docker_data
+from ..services.function_services import iter_service_docker_data
 
 logger = logging.getLogger(__name__)
 

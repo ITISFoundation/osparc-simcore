@@ -1,5 +1,6 @@
 from ..services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
-from ._utils import FRONTEND_SERVICE_KEY_PREFIX, OM, register
+from ._utils import OM, register
+from .constants import FUNCTION_SERVICE_KEY_PREFIX
 
 #
 # NOTE: DO not mistake with simcore/services/frontend/nodes-group/macros/
@@ -8,7 +9,7 @@ from ._utils import FRONTEND_SERVICE_KEY_PREFIX, OM, register
 META = ServiceDockerData.parse_obj(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
-        "key": f"{FRONTEND_SERVICE_KEY_PREFIX}/nodes-group",
+        "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/nodes-group",
         "version": "1.0.0",
         "type": ServiceType.FRONTEND,
         "name": "Group",

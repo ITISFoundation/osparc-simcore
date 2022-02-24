@@ -1,9 +1,7 @@
-from typing import Dict, Final, Tuple
+from typing import Dict, Tuple
 from urllib.parse import quote
 
 from ..services import ServiceDockerData
-
-FRONTEND_SERVICE_KEY_PREFIX: Final[str] = "simcore/services/frontend"
 
 EN: Dict[str, str] = {
     "name": "Esra Neufeld",

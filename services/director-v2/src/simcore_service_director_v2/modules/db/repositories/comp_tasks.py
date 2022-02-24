@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
-from models_library.frontend_services_catalog import iter_service_docker_data
+from models_library.function_services_catalog import iter_service_docker_data
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID

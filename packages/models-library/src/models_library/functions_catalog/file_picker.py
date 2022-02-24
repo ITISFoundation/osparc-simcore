@@ -1,12 +1,13 @@
 from typing import Final
 
 from ..services import LATEST_INTEGRATION_VERSION, ServiceDockerData, ServiceType
-from ._utils import FRONTEND_SERVICE_KEY_PREFIX, OM, register
+from ._utils import OM, register
+from .constants import FUNCTION_SERVICE_KEY_PREFIX
 
 META: Final = ServiceDockerData.parse_obj(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
-        "key": f"{FRONTEND_SERVICE_KEY_PREFIX}/file-picker",
+        "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/file-picker",
         "version": "1.0.0",
         "type": ServiceType.FRONTEND,
         "name": "File Picker",

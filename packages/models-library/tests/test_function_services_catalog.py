@@ -6,8 +6,8 @@
 from collections import defaultdict
 
 import pytest
-from models_library.frontend_services_catalog import (
-    is_frontend_service,
+from models_library.function_services_catalog import (
+    is_function_service,
     iter_service_docker_data,
 )
 from models_library.services import ServiceDockerData
@@ -19,7 +19,7 @@ from models_library.services import ServiceDockerData
 def test_create_frontend_services_metadata(image_metadata):
     assert isinstance(image_metadata, ServiceDockerData)
 
-    assert is_frontend_service(image_metadata.key)
+    assert is_function_service(image_metadata.key)
 
 
 def test_catalog_frontend_services_registry():

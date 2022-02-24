@@ -14,8 +14,8 @@ An example of meta-function is the "Integers Iterator" node.
 from copy import deepcopy
 from typing import Callable, Dict, Iterator, List, Tuple
 
-from models_library.frontend_services_catalog import (
-    FRONTEND_SERVICE_KEY_PREFIX,
+from models_library.function_services_catalog import (
+    FUNCTION_SERVICE_KEY_PREFIX,
     iter_service_docker_data,
 )
 from models_library.projects_nodes import Node, OutputTypes
@@ -28,12 +28,12 @@ _ServiceKeyVersionPair = Tuple[str, str]
 # META-FUNCTIONS ---------------------------------------------------
 
 # Catalog of front-end (i.e. non-docker) services
-FRONTEND_SERVICES_CATALOG: Dict[_ServiceKeyVersionPair, ServiceDockerData] = {
+FUNCTION_SERVICES_CATALOG: Dict[_ServiceKeyVersionPair, ServiceDockerData] = {
     (s.key, s.version): s for s in iter_service_docker_data()
 }
 
 
-FRONTEND_SERVICE_TO_CALLABLE: Dict[_ServiceKeyVersionPair, Callable] = {}
+FUNCTION_SERVICE_TO_CALLABLE: Dict[_ServiceKeyVersionPair, Callable] = {}
 
 
 @validate_arguments
@@ -44,17 +44,17 @@ def register(name: ServiceKey, version: ServiceVersion) -> Callable:
     """
     key: _ServiceKeyVersionPair = (name, version)
 
-    if key not in FRONTEND_SERVICES_CATALOG.keys():
+    if key not in FUNCTION_SERVICES_CATALOG.keys():
         raise ValueError(
-            f"No definition of {key} found in the {len(FRONTEND_SERVICES_CATALOG)=}"
+            f"No definition of {key} found in the {len(FUNCTION_SERVICES_CATALOG)=}"
         )
 
-    if key in FRONTEND_SERVICE_TO_CALLABLE.keys():
+    if key in FUNCTION_SERVICE_TO_CALLABLE.keys():
         raise ValueError(f"{key} is already registered")
 
     def _decorator(func: Callable):
         # TODO: ensure inputs/outputs map function signature
-        FRONTEND_SERVICE_TO_CALLABLE[key] = func
+        FUNCTION_SERVICE_TO_CALLABLE[key] = func
 
         # TODO: wrapper(args,kwargs): extract schemas for inputs and use them to validate inputs
         # before running
@@ -74,7 +74,7 @@ def _linspace_func(
         yield value
 
 
-@register(f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/int-range", "1.0.0")
+@register(f"{FUNCTION_SERVICE_KEY_PREFIX}/data-iterator/int-range", "1.0.0")
 def _linspace_generator(**kwargs) -> Iterator[Dict[str, OutputTypes]]:
     # maps generator with iterable outputs. can have non-iterable outputs
     # as well
@@ -111,7 +111,7 @@ def _sensitivity_func(
         yield (i, paramtestplus, paramtestminus)
 
 
-@register(f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/sensitivity", "1.0.0")
+@register(f"{FUNCTION_SERVICE_KEY_PREFIX}/data-iterator/sensitivity", "1.0.0")
 def _sensitivity_generator(**kwargs) -> Iterator[Dict[str, OutputTypes]]:
 
     for i, paramtestplus, paramtestminus in _sensitivity_func(**kwargs):
@@ -132,7 +132,7 @@ def create_param_node_from_iterator_with_outputs(iterator_node: Node) -> Node:
     #
 
     assert (  # nosec
-        iterator_node.key == f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/int-range"
+        iterator_node.key == f"{FUNCTION_SERVICE_KEY_PREFIX}/data-iterator/int-range"
     )  # nosec
     assert iterator_node.version == "1.0.0"  # nosec
 

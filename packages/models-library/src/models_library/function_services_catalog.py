@@ -17,9 +17,8 @@ from .functions_catalog import (
     parameters,
     probes,
 )
+from .functions_catalog.constants import FUNCTION_SERVICE_KEY_PREFIX
 from .services import ServiceDockerData
-
-FRONTEND_SERVICE_KEY_PREFIX = "simcore/services/frontend"
 
 logger = logging.getLogger(__name__)
 
@@ -55,24 +54,24 @@ def iter_service_docker_data() -> Iterator[ServiceDockerData]:
     for meta_obj in _CATALOG_REGISTRY.values():
         # NOTE: the originals are this way not modified from outside
         copied_meta_obj = meta_obj.copy(deep=True)
-        assert is_frontend_service(copied_meta_obj.key)  # nosec
+        assert is_function_service(copied_meta_obj.key)  # nosec
         yield copied_meta_obj
 
 
 # HELPER --------------------------------------
 
 
-def is_frontend_service(service_key: str) -> bool:
-    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/")
+def is_function_service(service_key: str) -> bool:
+    return service_key.startswith(f"{FUNCTION_SERVICE_KEY_PREFIX}/")
 
 
 def is_parameter_service(service_key: str) -> bool:
-    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/parameter/")
+    return service_key.startswith(f"{FUNCTION_SERVICE_KEY_PREFIX}/parameter/")
 
 
 def is_iterator_service(service_key: str) -> bool:
-    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/data-iterator/")
+    return service_key.startswith(f"{FUNCTION_SERVICE_KEY_PREFIX}/data-iterator/")
 
 
 def is_iterator_consumer_service(service_key: str) -> bool:
-    return service_key.startswith(f"{FRONTEND_SERVICE_KEY_PREFIX}/iterator-consumer/")
+    return service_key.startswith(f"{FUNCTION_SERVICE_KEY_PREFIX}/iterator-consumer/")
