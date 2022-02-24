@@ -1,20 +1,24 @@
+import json
+import os
 from typing import Dict, Tuple
 from urllib.parse import quote
 
 from ..services import ServiceDockerData
 
-EN: Dict[str, str] = {
-    "name": "Esra Neufeld",
-    "email": "neufeld@itis.swiss",
-    "affiliation": "IT'IS",
+DEFAULT = {
+    "name": "Unknown",
+    "email": "unknown@osparc.io",
+    "affiliation": "unknown",
 }
-OM: Dict[str, str] = {
-    "name": "Odei Maiz",
-    "email": "maiz@itis.swiss",
-    "affiliation": "IT'IS",
-}
-# TODO: how to avoid explicit names here to define ownership?
-#
+# Expects env var: FUNCTION_SERVICE_AUTHORS='{"OM":{"name": ...}, "EN":{...} }
+
+try:
+    AUTHORS = json.loads(os.environ.get("FUNCTION_SERVICE_AUTHORS", "{}"))
+except json.decoder.JSONDecodeError:
+    AUTHORS = {}
+
+EN: Dict[str, str] = AUTHORS.get("EN", DEFAULT)
+OM: Dict[str, str] = AUTHORS.get("OM", DEFAULT)
 
 
 _NodeKeyVersionPair = Tuple[str, str]
