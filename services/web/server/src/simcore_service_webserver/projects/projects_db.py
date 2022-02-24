@@ -32,8 +32,8 @@ from sqlalchemy.sql import and_, select
 
 from ..db_models import (
     GroupType,
+    folder_to_project,
     groups,
-    study_folder,
     study_tags,
     user_to_groups,
     users,
@@ -543,13 +543,13 @@ class ProjectDBAPI:
             folder = await self.get_folder_by_project(conn, project_id=project["id"])
             if folder:
                 query = (
-                    study_folder.update()
-                    .where(study_folder.c.study_id == project["id"])
-                    .values(study_id=project["id"], folder_id=folder_id)
+                    folder_to_project.update()
+                    .where(folder_to_project.c.project_id == project["id"])
+                    .values(project_id=project["id"], folder_id=folder_id)
                 )
             else:
-                query = study_folder.insert().values(
-                    study_id=project["id"], folder_id=folder_id
+                query = folder_to_project.insert().values(
+                    project_id=project["id"], folder_id=folder_id
                 )
             user_email = await self._get_user_email(conn, user_id)
             async with conn.execute(query) as result:
@@ -567,10 +567,10 @@ class ProjectDBAPI:
             )
             user_email = await self._get_user_email(conn, user_id)
             # pylint: disable=no-value-for-parameter
-            query = study_folder.delete().where(
+            query = folder_to_project.delete().where(
                 and_(
-                    study_folder.c.study_id == project["id"],
-                    study_folder.c.folder_id == folder_id,
+                    folder_to_project.c.project_id == project["id"],
+                    folder_to_project.c.folder_id == folder_id,
                 )
             )
             async with conn.execute(query):
@@ -877,8 +877,8 @@ class ProjectDBAPI:
 
     @staticmethod
     async def get_folder_by_project(conn: SAConnection, project_id: str) -> List:
-        query = sa.select([study_folder.c.folder_id]).where(
-            study_folder.c.study_id == project_id
+        query = sa.select([folder_to_project.c.folder_id]).where(
+            folder_to_project.c.project_id == project_id
         )
         async with conn.execute(query) as result:
             row = await result.first()

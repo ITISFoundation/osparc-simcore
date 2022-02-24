@@ -3,11 +3,11 @@ from sqlalchemy.sql import func
 
 from .base import metadata
 
-study_folder = sa.Table(
-    "study_folder",
+folder_to_project = sa.Table(
+    "folder_to_project",
     metadata,
     sa.Column(
-        "study_id",
+        "project_id",
         sa.BigInteger,
         sa.ForeignKey("projects.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
@@ -18,7 +18,7 @@ study_folder = sa.Table(
         sa.ForeignKey("folders.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     ),
-    sa.UniqueConstraint("study_id"),
+    sa.UniqueConstraint("project_id"),
 )
 
 folders = sa.Table(
