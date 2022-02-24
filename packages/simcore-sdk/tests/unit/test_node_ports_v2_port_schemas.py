@@ -7,11 +7,13 @@
 
 
 import json
-from typing import Any, Dict
+from copy import deepcopy
+from typing import Any, Dict, List
 from unittest.mock import AsyncMock
 
 import jsonschema
 import pytest
+from pydantic import BaseModel, conint, schema_of
 from pydantic.error_wrappers import ValidationError
 from simcore_sdk.node_ports_v2.port import Port
 from simcore_sdk.node_ports_v2.utils_schemas import (
@@ -104,6 +106,46 @@ async def test_port_with_array(mocker):
 
     await port.set_value(expected_value)
     assert await port.get_value() == expected_value
+
+
+async def test_port_with_array_of_object(mocker):
+    mocker.patch.object(Port, "_node_ports", new=AsyncMock())
+
+    class A(BaseModel):
+        i: conint(gt=3)  #
+        b: bool = False
+        s: str
+        l: List[int]
+
+    content_schema = schema_of(List[A], title="array[A]")
+
+    port_info = {
+        "label": "array_",
+        "description": "Some array of As",
+        "type": "ref_contentSchema",
+        "contentSchema": content_schema,
+    }
+    sample = [{"i": 5, "s": "x", "l": [1, 2]}, {"i": 6, "s": "y", "l": [2]}]
+    expected_value = [A(**i).dict() for i in sample]
+
+    print(json.dumps(port_info, indent=1))
+    print(json.dumps(expected_value, indent=1))
+
+    # valid data and should assign defaults
+    value = deepcopy(sample)
+    p = Port(key="k", value=value, **port_info)
+    assert p.value == expected_value
+
+    value = deepcopy(sample)
+    value[0]["i"] = 0  # violates >3 condition
+
+    with pytest.raises(ValidationError) as excinfo:
+        Port(key="k", value=value, **port_info)
+
+    assert (
+        "0 is less than or equal to the minimum of 3"
+        in excinfo.value.errors()[0]["msg"]
+    )
 
 
 async def test_port_with_object(mocker):

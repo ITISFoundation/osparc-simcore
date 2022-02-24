@@ -90,7 +90,7 @@ class Port(BaseServiceIOModel):
 
                 except jsonschema.ValidationError as err:
                     raise ValueError(
-                        f"Value {v} does not validate against content_schema: {err=}"
+                        f"{v} invalid against content_schema: {err.message}"
                     ) from err
 
         return v
