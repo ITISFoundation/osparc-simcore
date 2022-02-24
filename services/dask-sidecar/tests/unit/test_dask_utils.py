@@ -13,6 +13,7 @@ import distributed
 import pytest
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskLogEvent
+from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from simcore_service_dask_sidecar.boot_mode import BootMode
 from simcore_service_dask_sidecar.dask_utils import (
     get_current_task_boot_mode,
@@ -99,7 +100,7 @@ def test_task_is_aborted_using_event(dask_client: distributed.Client):
     future = dask_client.submit(_some_long_running_task, key=job_id)
     _wait_for_task_to_start()
 
-    dask_event = distributed.Event(name=job_id)
+    dask_event = distributed.Event(TaskCancelEventName.format(job_id))
     dask_event.set()
 
     result = future.result(timeout=2)
@@ -135,7 +136,7 @@ def test_monitor_task_abortion(dask_client: distributed.Client):
     future = dask_client.submit(_some_long_running_task_with_monitoring, key=job_id)
     _wait_for_task_to_start()
     # trigger cancellation
-    dask_event = distributed.Event(job_id)
+    dask_event = distributed.Event(TaskCancelEventName.format(job_id))
     dask_event.set()
     with pytest.raises(TaskCancelledError):
         future.result(timeout=DASK_TESTING_TIMEOUT_S)
