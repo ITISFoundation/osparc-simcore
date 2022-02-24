@@ -12,11 +12,11 @@ from .security_api import check_permission
 async def list_folders(request: web.Request):
     await check_permission(request, "folder.crud.*")
     uid, engine = request[RQT_USERID_KEY], request.app[APP_DB_ENGINE_KEY]
+    result = []
     async with engine.acquire() as conn:
         # pylint: disable=not-an-iterable
         columns = [col for col in folders.columns if col.key != "user_id"]
         query = sa.select(columns).where(folders.c.user_id == uid)
-        result = []
         async for row_proxy in conn.execute(query):
             row_dict = dict(row_proxy.items())
             result.append(row_dict)
@@ -52,7 +52,7 @@ async def update_folder(request: web.Request):
             if result.rowcount == 1:
                 row_proxy = await result.first()
                 return dict(row_proxy.items())
-            raise web.HTTPInternalServerError()
+            raise web.HTTPNotFound()
 
 
 @login_required
@@ -83,7 +83,7 @@ async def create_folder(request: web.Request):
             if result.rowcount == 1:
                 row_proxy = await result.first()
                 return dict(row_proxy.items())
-            raise web.HTTPInternalServerError()
+            raise web.HTTPConflict()
 
 
 @login_required
