@@ -39,7 +39,7 @@ def is_current_task_aborted() -> bool:
     logger.debug("found following TaskState: %s", task)
     if task is None:
         # the task was removed from the list of tasks this worker should work on, meaning it is aborted
-        # NOTE: this does not work in distributed mode, hence we need to use Variables,or PubSub
+        # NOTE: this does not work in distributed mode, hence we need to use Events, Variables,or PubSub
         return True
 
     with suppress(asyncio.TimeoutError):
