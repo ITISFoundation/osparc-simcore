@@ -4,9 +4,8 @@
 
 from typing import Optional
 
+from models_library.projects import Project
 from pydantic import Extra
-
-from .projects import Project
 
 
 class ProjectWithFolder(Project):
