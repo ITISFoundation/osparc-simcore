@@ -130,7 +130,7 @@ class DaskScheduler(BaseCompScheduler):
                 )
             await asyncio.gather(
                 *[
-                    self._on_task_completed(task, result)
+                    self._process_task_result(task, result)
                     for task, result in zip(tasks, tasks_results)
                 ]
             )
@@ -140,7 +140,7 @@ class DaskScheduler(BaseCompScheduler):
                     *[client.release_task_result(t.job_id) for t in tasks if t.job_id]
                 )
 
-    async def _on_task_completed(
+    async def _process_task_result(
         self, task: CompTaskAtDB, result: Union[Exception, TaskOutputData]
     ) -> None:
         logger.debug("received %s result: %s", f"{task=}", f"{result=}")
