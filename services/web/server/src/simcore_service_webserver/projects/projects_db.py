@@ -30,14 +30,7 @@ from simcore_postgres_database.webserver_models import ProjectType, projects
 from sqlalchemy import desc, literal_column
 from sqlalchemy.sql import and_, select
 
-from ..db_models import (
-    GroupType,
-    folder_to_project,
-    groups,
-    study_tags,
-    user_to_groups,
-    users,
-)
+from ..db_models import GroupType, groups, study_tags, user_to_groups, users
 from ..users_exceptions import UserNotFoundError
 from ..utils import format_datetime, now_str
 from .projects_exceptions import (
@@ -124,7 +117,6 @@ def _convert_to_db_names(project_document_data: Dict) -> Dict:
     converted_args = {}
     exclude_keys = [
         "tags",
-        "folder",
         "prjOwner",
     ]  # No column for tags, prjOwner is a foreign key in db
     for key, value in project_document_data.items():
@@ -441,9 +433,6 @@ class ProjectDBAPI:
             db_prj["tags"] = await self._get_tags_by_project(
                 conn, project_id=db_prj["id"]
             )
-            db_prj["folder"] = await self.get_folder_by_project(
-                conn, project_id=db_prj["id"]
-            )
             user_email = await self._get_user_email(conn, db_prj["prj_owner"])
             api_projects.append(_convert_to_schema_names(db_prj, user_email))
             project_types.append(db_prj["type"])
@@ -494,12 +483,6 @@ class ProjectDBAPI:
             )
             project["tags"] = tags
 
-        if "folder" not in exclude_foreign:
-            folder = await self.get_folder_by_project(
-                connection, project_id=project_row.id
-            )
-            project["folder"] = folder
-
         return project
 
     async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> Dict:
@@ -532,50 +515,6 @@ class ProjectDBAPI:
             async with conn.execute(query):
                 if tag_id in project["tags"]:
                     project["tags"].remove(tag_id)
-                return _convert_to_schema_names(project, user_email)
-
-    async def set_folder(self, user_id: int, project_uuid: str, folder_id: int) -> Dict:
-        async with self.engine.acquire() as conn:
-            project = await self._get_project(
-                conn, user_id, project_uuid, include_templates=True
-            )
-
-            folder = await self.get_folder_by_project(conn, project_id=project["id"])
-            if folder:
-                query = (
-                    folder_to_project.update()
-                    .where(folder_to_project.c.project_id == project["id"])
-                    .values(project_id=project["id"], folder_id=folder_id)
-                )
-            else:
-                query = folder_to_project.insert().values(
-                    project_id=project["id"], folder_id=folder_id
-                )
-            user_email = await self._get_user_email(conn, user_id)
-            async with conn.execute(query) as result:
-                if result.rowcount == 1:
-                    project["folder"] = folder_id
-                    return _convert_to_schema_names(project, user_email)
-                raise ProjectsException()
-
-    async def remove_folder(
-        self, user_id: int, project_uuid: str, folder_id: int
-    ) -> Dict:
-        async with self.engine.acquire() as conn:
-            project = await self._get_project(
-                conn, user_id, project_uuid, include_templates=True
-            )
-            user_email = await self._get_user_email(conn, user_id)
-            # pylint: disable=no-value-for-parameter
-            query = folder_to_project.delete().where(
-                and_(
-                    folder_to_project.c.project_id == project["id"],
-                    folder_to_project.c.folder_id == folder_id,
-                )
-            )
-            async with conn.execute(query):
-                if project["folder"] == folder_id:
-                    project["folder"] = None
                 return _convert_to_schema_names(project, user_email)
 
     async def get_user_project(self, user_id: int, project_uuid: str) -> Dict:
@@ -637,7 +576,7 @@ class ProjectDBAPI:
                     conn,
                     user_id,
                     project_uuid,
-                    exclude_foreign=["tags, folder"],
+                    exclude_foreign=["tags"],
                     include_templates=False,
                     for_update=True,
                 )
@@ -703,13 +642,8 @@ class ProjectDBAPI:
                 tags = await self._get_tags_by_project(
                     conn, project_id=project[projects.c.id]
                 )
-                folder = await self.get_folder_by_project(
-                    conn, project_id=project[projects.c.id]
-                )
                 return (
-                    _convert_to_schema_names(
-                        project, user_email, tags=tags, folder=folder
-                    ),
+                    _convert_to_schema_names(project, user_email, tags=tags),
                     changed_entries,
                 )
 
@@ -732,7 +666,7 @@ class ProjectDBAPI:
                     conn,
                     user_id,
                     project_uuid,
-                    exclude_foreign=["tags", "folder"],
+                    exclude_foreign=["tags"],
                     include_templates=include_templates,
                     for_update=True,
                 )
@@ -800,12 +734,7 @@ class ProjectDBAPI:
                 tags = await self._get_tags_by_project(
                     conn, project_id=project[projects.c.id]
                 )
-                folder = await self.get_folder_by_project(
-                    conn, project_id=project[projects.c.id]
-                )
-                return _convert_to_schema_names(
-                    project, user_email, tags=tags, folder=folder
-                )
+                return _convert_to_schema_names(project, user_email, tags=tags)
 
     async def delete_user_project(self, user_id: int, project_uuid: str):
         log.info(
@@ -874,15 +803,6 @@ class ProjectDBAPI:
             study_tags.c.study_id == project_id
         )
         return [row.tag_id async for row in conn.execute(query)]
-
-    @staticmethod
-    async def get_folder_by_project(conn: SAConnection, project_id: str) -> List:
-        query = sa.select([folder_to_project.c.folder_id]).where(
-            folder_to_project.c.project_id == project_id
-        )
-        async with conn.execute(query) as result:
-            row = await result.first()
-            return row["folder_id"] if row else None
 
     async def get_all_node_ids_from_workbenches(
         self, project_uuid: str = None

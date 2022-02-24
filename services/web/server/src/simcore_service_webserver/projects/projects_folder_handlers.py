@@ -9,7 +9,7 @@ from aiohttp import web
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
-from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .projects_folder_db import APP_PROJECT_FOLDER_DBAPI, ProjectFolderDB
 from .projects_handlers import get_project, list_projects
 
 log = logging.getLogger(__name__)
@@ -22,12 +22,10 @@ routes = web.RouteTableDef()
 @login_required
 @permission_required("project.read")
 async def list_projects_with_folder(request: web.Request):
+    db: ProjectFolderDB = request.config_dict[APP_PROJECT_FOLDER_DBAPI]
     projects = await list_projects(request)
-    #   for project in projects:
-    #       project["folder"] = await self.get_folder_by_project(
-    #           conn, project_id=project["id"]
-    #       )
-    print("projects", projects)
+    await db.add_folder_to_projects(projects["data"])
+    print("projects1", projects)
     return projects
 
 
@@ -35,11 +33,9 @@ async def list_projects_with_folder(request: web.Request):
 @login_required
 @permission_required("project.read")
 async def get_project_with_folder(request: web.Request):
+    db: ProjectFolderDB = request.config_dict[APP_PROJECT_FOLDER_DBAPI]
     project = await get_project(request)
-    #     prj["folder"] = await self.get_folder_by_project(
-    #         conn, project_id=prj["id"]
-    #     )
-    print("project", project)
+    await db.add_folder_to_project(project["data"])
     return project
 
 
@@ -48,7 +44,7 @@ async def get_project_with_folder(request: web.Request):
 @permission_required("project.folder.*")
 async def set_folder_to_project(request: web.Request):
     user_id: int = request[RQT_USERID_KEY]
-    db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
+    db: ProjectFolderDB = request.config_dict[APP_PROJECT_FOLDER_DBAPI]
 
     try:
         folder_id, project_id = (
@@ -68,7 +64,7 @@ async def set_folder_to_project(request: web.Request):
 @permission_required("project.folder.*")
 async def remove_folder_from_project(request: web.Request):
     user_id: int = request[RQT_USERID_KEY]
-    db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
+    db: ProjectFolderDB = request.config_dict[APP_PROJECT_FOLDER_DBAPI]
 
     folder_id, project_id = (
         request.match_info["folder_id"],
