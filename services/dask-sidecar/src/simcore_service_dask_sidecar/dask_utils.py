@@ -99,19 +99,16 @@ async def monitor_task_abortion(
                 break
 
     async def periodicaly_check_if_aborted(task_name: str) -> None:
-        try:
-            logger.debug(
-                "starting task to check for task cancellation for '%s'", f"{task_name=}"
-            )
-            while await asyncio.sleep(_TASK_ABORTION_INTERVAL_CHECK_S, result=True):
-                logger.debug("checking if task should be cancelled")
-                if is_current_task_aborted():
-                    logger.debug(
-                        "Task was aborted. Cancelling fct [%s]...", f"{task_name=}"
-                    )
-                    await cancel_task(task_name)
-        except asyncio.CancelledError:
-            pass
+        logger.debug(
+            "starting task to check for task cancellation for '%s'", f"{task_name=}"
+        )
+        while await asyncio.sleep(_TASK_ABORTION_INTERVAL_CHECK_S, result=True):
+            logger.debug("checking if task should be cancelled")
+            if is_current_task_aborted():
+                logger.debug(
+                    "Task was aborted. Cancelling fct [%s]...", f"{task_name=}"
+                )
+                await cancel_task(task_name)
 
     periodically_checking_task = None
     try:
