@@ -25,15 +25,15 @@ async def add_tag(request: web.Request):
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
 
     try:
-        tag_id, project_uuid = (
+        tag_id, study_uuid = (
             request.match_info["tag_id"],
-            request.match_info["project_uuid"],
+            request.match_info["study_uuid"],
         )
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
 
     return await db.add_tag(
-        project_uuid=project_uuid, user_id=user_id, tag_id=int(tag_id)
+        project_uuid=study_uuid, user_id=user_id, tag_id=int(tag_id)
     )
 
 
@@ -44,10 +44,10 @@ async def remove_tag(request: web.Request):
     user_id: int = request[RQT_USERID_KEY]
     db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
 
-    tag_id, project_uuid = (
+    tag_id, study_uuid = (
         request.match_info["tag_id"],
-        request.match_info["project_uuid"],
+        request.match_info["study_uuid"],
     )
     return await db.remove_tag(
-        project_uuid=project_uuid, user_id=user_id, tag_id=int(tag_id)
+        project_uuid=study_uuid, user_id=user_id, tag_id=int(tag_id)
     )

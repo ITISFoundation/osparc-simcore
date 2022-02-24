@@ -25,7 +25,7 @@ async def test_tags_to_studies(
         added_tags.append(added_tag)
         # Add tag to study
         url = client.app.router["add_tag"].url_for(
-            project_uuid=user_project.get("uuid"), tag_id=str(added_tag.get("id"))
+            study_uuid=user_project.get("uuid"), tag_id=str(added_tag.get("id"))
         )
         resp = await client.put(url)
         data, _ = await assert_status(resp, expected)
@@ -47,7 +47,7 @@ async def test_tags_to_studies(
 
     # Remove tag1 from project
     url = client.app.router["remove_tag"].url_for(
-        project_uuid=user_project.get("uuid"), tag_id=str(added_tags[1].get("id"))
+        study_uuid=user_project.get("uuid"), tag_id=str(added_tags[1].get("id"))
     )
     resp = await client.delete(url)
     await assert_status(resp, expected)
