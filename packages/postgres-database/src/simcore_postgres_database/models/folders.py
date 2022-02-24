@@ -28,13 +28,13 @@ folders = sa.Table(
     sa.Column(
         "user_id",
         sa.BigInteger,
-        sa.ForeignKeyConstraint(
-            ["user_id"],
-            ["users.id"],
+        sa.ForeignKey(
+            "users.id",
             name="fk_folders_user_id_users",
             ondelete="CASCADE",
             onupdate="CASCADE",
         ),
+        doc="User unique IDentifier",
         nullable=False,
     ),
     sa.Column("name", sa.String, nullable=False),

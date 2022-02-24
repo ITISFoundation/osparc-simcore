@@ -37,7 +37,10 @@ def upgrade():
             nullable=False,
         ),
         sa.ForeignKeyConstraint(
-            ["user_id"], ["users.id"], onupdate="CASCADE", ondelete="CASCADE"
+            ["user_id"],
+            ["users.id"],
+            onupdate="CASCADE",
+            ondelete="CASCADE",
         ),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -46,10 +49,16 @@ def upgrade():
         sa.Column("project_id", sa.BigInteger(), nullable=False),
         sa.Column("folder_id", sa.BigInteger(), nullable=False),
         sa.ForeignKeyConstraint(
-            ["project_id"], ["projects.id"], onupdate="CASCADE", ondelete="CASCADE"
+            ["project_id"],
+            ["projects.id"],
+            onupdate="CASCADE",
+            ondelete="CASCADE",
         ),
         sa.ForeignKeyConstraint(
-            ["folder_id"], ["folders.id"], onupdate="CASCADE", ondelete="CASCADE"
+            ["folder_id"],
+            ["folders.id"],
+            onupdate="CASCADE",
+            ondelete="CASCADE",
         ),
         sa.UniqueConstraint("project_id"),
     )
