@@ -17,7 +17,7 @@ class ProjectFolderDB(ProjectDBAPI):
         print("add_folder_to_project", project, project["uuid"])
         async with self.engine.acquire() as conn:
             project["folder"] = await self._get_folder_by_project(
-                conn, project_id=project["uuid"]
+                conn, project_uuid=project["uuid"]
             )
         return project
 
@@ -32,16 +32,18 @@ class ProjectFolderDB(ProjectDBAPI):
                 conn, user_id, project_uuid, include_templates=True
             )
 
-            folder = await self._get_folder_by_project(conn, project_id=project["uuid"])
+            folder = await self._get_folder_by_project(
+                conn, project_uuid=project["uuid"]
+            )
             if folder:
                 query = (
                     folder_to_project.update()
-                    .where(folder_to_project.c.project_id == project["uuid"])
-                    .values(project_id=project["uuid"], folder_id=folder_id)
+                    .where(folder_to_project.c.project_uuid == project["uuid"])
+                    .values(project_uuid=project["uuid"], folder_id=folder_id)
                 )
             else:
                 query = folder_to_project.insert().values(
-                    project_id=project["uuid"], folder_id=folder_id
+                    project_uuid=project["uuid"], folder_id=folder_id
                 )
             user_email = await self._get_user_email(conn, user_id)
             async with conn.execute(query) as result:
@@ -61,7 +63,7 @@ class ProjectFolderDB(ProjectDBAPI):
             # pylint: disable=no-value-for-parameter
             query = folder_to_project.delete().where(
                 and_(
-                    folder_to_project.c.project_id == project["uuid"],
+                    folder_to_project.c.project_uuid == project["uuid"],
                     folder_to_project.c.folder_id == folder_id,
                 )
             )
@@ -71,9 +73,9 @@ class ProjectFolderDB(ProjectDBAPI):
                 return _convert_to_schema_names(project, user_email)
 
     @staticmethod
-    async def _get_folder_by_project(conn: SAConnection, project_id: str) -> List:
+    async def _get_folder_by_project(conn: SAConnection, project_uuid: str) -> List:
         query = sa.select([folder_to_project.c.folder_id]).where(
-            folder_to_project.c.project_id == project_id
+            folder_to_project.c.project_uuid == project_uuid
         )
         async with conn.execute(query) as result:
             row = await result.first()
