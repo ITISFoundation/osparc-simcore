@@ -4,11 +4,15 @@
 
 
 import json
+from typing import Any, Dict
+
+import pytest
+from simcore_service_webserver.meta_modeling_results import extract_project_results
 
 
-def test_it():
-
-    workbench = {
+@pytest.fixture
+def fake_workbench() -> Dict[str, Any]:
+    return {
         "0f1e38c9-dcb7-443c-a745-91b97ac28ccc": {
             "key": "simcore/services/frontend/data-iterator/funky-range",
             "version": "1.0.0",
@@ -86,76 +90,32 @@ def test_it():
         },
     }
 
-    # table : Name, Pogress, Labels.... ,
-    # all projects are guaranted to be topologically identical (i.e. same node uuids )
 
-    progress = {}
+def test_extract_project_results(fake_workbench: Dict[str, Any]):
 
-    labels = {}  # nodeid -> label # NOTE labels are not uniqu
-    results = (
-        {}
-    )  # nodeid -> { port: value , ...} # results have two levels deep: node/port
-    for noid, node in workbench.items():
-        key_parts = node["key"].split("/")
+    results = extract_project_results(fake_workbench)
 
-        # evaluate progress
-        if "comp" in key_parts:
-            progress[noid] = node.get("progress", 0)
-
-        # evaluate results
-        if "probe" in key_parts:
-            label = node["label"]
-            values = {}
-            for port_name, node_input in node["inputs"].items():
-                try:
-                    values[port_name] = workbench[node_input["nodeUuid"]]["outputs"][
-                        node_input["output"]
-                    ]
-                except KeyError:
-                    # if not run, we know name but NOT value
-                    values[port_name] = "n/a"
-            results[noid], labels[noid] = values, label
-
-        elif "data-iterator" in key_parts:
-            label = node["label"]
-            try:
-                values = node["outputs"]  # {oid: value, ...}
-            except KeyError:
-                # if not iterated, we do not know NEITHER name NOT values
-                values = {}
-            results[noid], labels[noid] = values, label
-
-        elif "parameter" in key_parts:
-            label = node["label"]
-            values = node["outputs"]
-            results[noid], labels[noid] = values, label
-
-    print(json.dumps(labels, indent=1))
-    print(json.dumps(results, indent=1))
+    print(json.dumps(results.progress, indent=1))
+    print(json.dumps(results.labels, indent=1))
+    print(json.dumps(results.values, indent=1))
 
     # this has to be something that shall be deployable in a table
-    assert progress == {
+    assert results.progress == {
         "4c08265a-427b-4ac3-9eab-1d11c822ada4": 0,
         "e33c6880-1b1d-4419-82d7-270197738aa9": 100,
     }
 
     # labels are not unique, so there is a map to nodeids
-    assert labels == {
+    assert results.labels == {
         "0f1e38c9-dcb7-443c-a745-91b97ac28ccc": "Integer iterator",
         "2d0ce8b9-c9c3-43ce-ad2f-ad493898de37": "Probe Sensor - Integer",
         "445b44d1-59b3-425c-ac48-7c13e0f2ea5b": "Probe Sensor - Integer_2",
         "d76fca06-f050-4790-88a8-0aac10c87b39": "Boolean Parameter",
     }
     # this is basically a tree that defines columns
-    assert results == {
+    assert results.values == {
         "0f1e38c9-dcb7-443c-a745-91b97ac28ccc": {"out_1": 1, "out_2": [3, 4]},
         "2d0ce8b9-c9c3-43ce-ad2f-ad493898de37": {"in_1": 7},
         "445b44d1-59b3-425c-ac48-7c13e0f2ea5b": {"in_1": 1},
         "d76fca06-f050-4790-88a8-0aac10c87b39": {"out_1": True},
     }
-
-
-# t
-# Labels = Dict[NodeID, str]
-# NodeResults = Dict[PortName, Any]
-# ProjectResults = Dict[NodeID, NodeResults]

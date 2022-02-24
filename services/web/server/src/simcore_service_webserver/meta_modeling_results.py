@@ -1,0 +1,77 @@
+""" Access to the to projects module
+
+    - Adds a middleware to intercept /projects/* requests
+    - Implements a MetaProjectRunPolicy policy (see director_v2_abc.py) to define how meta-projects run
+
+"""
+
+
+import logging
+from typing import Any, Dict
+
+from models_library.projects_nodes import Outputs
+from models_library.projects_nodes_io import NodeIDStr
+from pydantic import BaseModel, Field, conint
+
+log = logging.getLogger(__name__)
+
+
+class ExtractedResults(BaseModel):
+    progress: Dict[NodeIDStr, conint(ge=0, lt=100)] = Field(
+        ..., description="Progress in each computational node"
+    )
+    labels: Dict[NodeIDStr, str] = Field(
+        ..., description="Maps captured node with a label"
+    )
+    values: Dict[NodeIDStr, Outputs] = Field(
+        ..., description="Captured outputs per node"
+    )
+
+
+def extract_project_results(workbench: Dict[str, Any]) -> ExtractedResults:
+    # table : Name, Pogress, Labels.... ,
+    # all projects are guaranted to be topologically identical (i.e. same node uuids )
+
+    progress = {}
+    # nodeid -> label # NOTE labels are not uniqu
+    labels = {}
+    # nodeid -> { port: value , ...} # results have two levels deep: node/port
+    results = {}
+
+    for noid, node in workbench.items():
+        key_parts = node["key"].split("/")
+
+        # evaluate progress
+        if "comp" in key_parts:
+            progress[noid] = node.get("progress", 0)
+
+        # evaluate results
+        if "probe" in key_parts:
+            label = node["label"]
+            values = {}
+            for port_name, node_input in node["inputs"].items():
+                try:
+                    values[port_name] = workbench[node_input["nodeUuid"]]["outputs"][
+                        node_input["output"]
+                    ]
+                except KeyError:
+                    # if not run, we know name but NOT value
+                    values[port_name] = "n/a"
+            results[noid], labels[noid] = values, label
+
+        elif "data-iterator" in key_parts:
+            label = node["label"]
+            try:
+                values = node["outputs"]  # {oid: value, ...}
+            except KeyError:
+                # if not iterated, we do not know NEITHER name NOT values
+                values = {}
+            results[noid], labels[noid] = values, label
+
+        elif "parameter" in key_parts:
+            label = node["label"]
+            values = node["outputs"]
+            results[noid], labels[noid] = values, label
+
+    res = ExtractedResults(progress=progress, labels=labels, values=results)
+    return res
