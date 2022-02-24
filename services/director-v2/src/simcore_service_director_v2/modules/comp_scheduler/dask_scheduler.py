@@ -116,7 +116,7 @@ class DaskScheduler(BaseCompScheduler):
     ) -> None:
         async with _cluster_dask_client(cluster_id, self) as client:
             await asyncio.gather(
-                *[client.abort_computation_task(t.job_id) for t in tasks]
+                *[client.abort_computation_task(t.job_id) for t in tasks if t.job_id]
             )
 
     async def _process_completed_tasks(
@@ -125,7 +125,7 @@ class DaskScheduler(BaseCompScheduler):
         try:
             async with _cluster_dask_client(cluster_id, self) as client:
                 tasks_results = await asyncio.gather(
-                    *[client.get_task_result(t.job_id) for t in tasks],
+                    *[client.get_task_result(t.job_id or "undefined") for t in tasks],
                     return_exceptions=True,
                 )
             await asyncio.gather(
@@ -137,7 +137,7 @@ class DaskScheduler(BaseCompScheduler):
         finally:
             async with _cluster_dask_client(cluster_id, self) as client:
                 await asyncio.gather(
-                    *[client.release_task_result(t.job_id) for t in tasks]
+                    *[client.release_task_result(t.job_id) for t in tasks if t.job_id]
                 )
 
     async def _on_task_completed(
