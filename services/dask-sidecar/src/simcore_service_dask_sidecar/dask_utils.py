@@ -14,6 +14,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskProgressEvent,
     TaskStateEvent,
 )
+from dask_task_models_library.container_tasks.io import TaskCancelEventName
 from distributed.worker import TaskState, get_worker
 
 from .boot_mode import BootMode
@@ -44,7 +45,7 @@ def is_current_task_aborted() -> bool:
         return True
 
     # NOTE: in distributed mode an event is necessary!
-    cancel_event = distributed.Event(name=task.key)
+    cancel_event = distributed.Event(name=TaskCancelEventName.format(task.key))
     if cancel_event.is_set():
         logger.debug("%s shall be aborted", f"{task=}")
         return True

@@ -1,33 +1,20 @@
 import asyncio
 import json
 import logging
-import os
-import socket
 from dataclasses import dataclass, field
-from typing import Awaitable, Callable, Dict, List, Optional, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple
 
-import dask_gateway
 import distributed
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
-from dask_task_models_library.container_tasks.events import (
-    TaskLogEvent,
-    TaskProgressEvent,
-    TaskStateEvent,
-)
 from dask_task_models_library.container_tasks.io import (
+    TaskCancelEventName,
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
 )
 from fastapi import FastAPI
-from models_library.clusters import (
-    ClusterAuthentication,
-    JupyterHubTokenAuthentication,
-    KerberosAuthentication,
-    NoAuthentication,
-    SimpleAuthentication,
-)
+from models_library.clusters import ClusterAuthentication
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -40,10 +27,6 @@ from tenacity.wait import wait_fixed
 from ..core.errors import (
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
-    ConfigurationError,
-    DaskClientRequestError,
-    DaskClusterError,
-    DaskGatewayServerError,
 )
 from ..core.settings import DaskSchedulerSettings
 from ..models.domains.comp_tasks import Image
@@ -60,6 +43,11 @@ from ..utils.dask import (
     from_node_reqs_to_dask_resources,
     generate_dask_job_id,
 )
+from ..utils.dask_client_utils import (
+    DaskSubSystem,
+    TaskHandlers,
+    create_internal_client_based_on_auth,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -75,128 +63,6 @@ _DASK_TASK_STATUS_RUNNING_STATE_MAP = {
 }
 
 DASK_DEFAULT_TIMEOUT_S = 1
-
-
-@dataclass
-class DaskSubSystem:
-    client: distributed.Client
-    scheduler_id: str
-    gateway: Optional[dask_gateway.Gateway]
-    gateway_cluster: Optional[dask_gateway.GatewayCluster]
-
-    async def close(self):
-        if self.client:
-            await self.client.close()  # type: ignore
-        if self.gateway_cluster:
-            await self.gateway_cluster.close()  # type: ignore
-        if self.gateway:
-            await self.gateway.close()  # type: ignore
-
-
-async def _connect_to_dask_scheduler(endpoint: AnyUrl) -> DaskSubSystem:
-    try:
-        client = await distributed.Client(
-            f"{endpoint}",
-            asynchronous=True,
-            name=f"director-v2_{socket.gethostname()}_{os.getpid()}",
-        )
-        return DaskSubSystem(
-            client=client,
-            scheduler_id=client.scheduler_info()["id"],
-            gateway=None,
-            gateway_cluster=None,
-        )
-    except (TypeError) as exc:
-        raise ConfigurationError(
-            f"Scheduler has invalid configuration: {endpoint=}"
-        ) from exc
-
-
-DaskGatewayAuths = Union[
-    dask_gateway.BasicAuth, dask_gateway.KerberosAuth, dask_gateway.JupyterHubAuth
-]
-
-
-async def _get_gateway_auth_from_params(
-    auth_params: ClusterAuthentication,
-) -> DaskGatewayAuths:
-    try:
-        if isinstance(auth_params, SimpleAuthentication):
-            return dask_gateway.BasicAuth(**auth_params.dict(exclude={"type"}))
-        if isinstance(auth_params, KerberosAuthentication):
-            return dask_gateway.KerberosAuth()
-        if isinstance(auth_params, JupyterHubTokenAuthentication):
-            return dask_gateway.JupyterHubAuth(auth_params.api_token)
-    except (TypeError, ValueError) as exc:
-        raise ConfigurationError(
-            f"Cluster has invalid configuration: {auth_params}"
-        ) from exc
-    raise ConfigurationError(f"Cluster has invalid configuration: {auth_params=}")
-
-
-async def _connect_with_gateway_and_create_cluster(
-    endpoint: AnyUrl, auth_params: ClusterAuthentication
-) -> DaskSubSystem:
-    try:
-        gateway_auth = await _get_gateway_auth_from_params(auth_params)
-        gateway = dask_gateway.Gateway(
-            address=f"{endpoint}", auth=gateway_auth, asynchronous=True
-        )
-        # if there is already a cluster that means we can re-connect to it,
-        # and IT SHALL BE the first in the list
-        cluster_reports_list = await gateway.list_clusters()
-        cluster = None
-        if cluster_reports_list:
-            assert (
-                len(cluster_reports_list) == 1
-            ), "More than 1 cluster at this location, that is unexpected!!"  # nosec
-            cluster = await gateway.connect(
-                cluster_reports_list[0].name, shutdown_on_close=False
-            )
-        else:
-            cluster = await gateway.new_cluster(shutdown_on_close=False)
-        assert cluster  # nosec
-        logger.info("Cluster dashboard available: %s", cluster.dashboard_link)
-        # NOTE: we scale to 1 worker as they are global
-        await cluster.adapt(active=True)
-        client = await cluster.get_client()
-        assert client  # nosec
-        return DaskSubSystem(
-            client=client,
-            scheduler_id=client.scheduler_info()["id"],
-            gateway=gateway,
-            gateway_cluster=cluster,
-        )
-    except (TypeError) as exc:
-        raise ConfigurationError(
-            f"Cluster has invalid configuration: {endpoint=}, {auth_params=}"
-        ) from exc
-    except (ValueError) as exc:
-        # this is when a 404=NotFound,422=MalformedData comes up
-        raise DaskClientRequestError(endpoint=endpoint, error=exc) from exc
-    except (dask_gateway.GatewayClusterError) as exc:
-        # this is when a 409=Conflict/Cannot complete request comes up
-        raise DaskClusterError(endpoint=endpoint, error=exc) from exc
-    except (dask_gateway.GatewayServerError) as exc:
-        # this is when a 500 comes up
-        raise DaskGatewayServerError(endpoint=endpoint, error=exc) from exc
-
-
-async def _create_internal_client_based_on_auth(
-    endpoint: AnyUrl, authentication: ClusterAuthentication
-) -> DaskSubSystem:
-    if isinstance(authentication, NoAuthentication):
-        # if no auth then we go for a standard scheduler connection
-        return await _connect_to_dask_scheduler(endpoint)
-    # we do have some auth, so it is going through a gateway
-    return await _connect_with_gateway_and_create_cluster(endpoint, authentication)
-
-
-@dataclass
-class TaskHandlers:
-    task_change_handler: Callable[[str], Awaitable[None]]
-    task_progress_handler: Callable[[str], Awaitable[None]]
-    task_log_handler: Callable[[str], Awaitable[None]]
 
 
 ServiceKey = str
@@ -223,9 +89,6 @@ class DaskClient:
     dask_subsystem: DaskSubSystem
     settings: DaskSchedulerSettings
 
-    state_sub: distributed.Sub
-    progress_sub: distributed.Sub
-    logs_sub: distributed.Sub
     _subscribed_tasks: List[asyncio.Task] = field(default_factory=list)
 
     @classmethod
@@ -253,7 +116,7 @@ class DaskClient:
                     endpoint,
                     attempt.retry_state.attempt_number,
                 )
-                dask_subsystem = await _create_internal_client_based_on_auth(
+                dask_subsystem = await create_internal_client_based_on_auth(
                     endpoint, authentication
                 )
                 check_scheduler_status(dask_subsystem.client)
@@ -261,15 +124,6 @@ class DaskClient:
                     app=app,
                     dask_subsystem=dask_subsystem,
                     settings=settings,
-                    state_sub=distributed.Sub(
-                        TaskStateEvent.topic_name(), client=dask_subsystem.client
-                    ),
-                    progress_sub=distributed.Sub(
-                        TaskProgressEvent.topic_name(), client=dask_subsystem.client
-                    ),
-                    logs_sub=distributed.Sub(
-                        TaskLogEvent.topic_name(), client=dask_subsystem.client
-                    ),
                 )
                 logger.info(
                     "Connection to %s succeeded [%s]",
@@ -289,16 +143,14 @@ class DaskClient:
         for task in self._subscribed_tasks:
             task.cancel()
         await asyncio.gather(*self._subscribed_tasks, return_exceptions=True)
-        # NOTE: if the Sub are deleted before, then the dask-scheduler goes in
-        # a bad state [https://github.com/dask/distributed/issues/3276]
         await self.dask_subsystem.close()
         logger.info("dask client properly closed")
 
     def register_handlers(self, task_handlers: TaskHandlers) -> None:
         _EVENT_CONSUMER_MAP = [
-            (self.state_sub, task_handlers.task_change_handler),
-            (self.progress_sub, task_handlers.task_progress_handler),
-            (self.logs_sub, task_handlers.task_log_handler),
+            (self.dask_subsystem.state_sub, task_handlers.task_change_handler),
+            (self.dask_subsystem.progress_sub, task_handlers.task_progress_handler),
+            (self.dask_subsystem.logs_sub, task_handlers.task_log_handler),
         ]
         self._subscribed_tasks = [
             asyncio.create_task(
@@ -315,7 +167,7 @@ class DaskClient:
         cluster_id: ClusterID,
         tasks: Dict[NodeID, Image],
         callback: Callable[[], None],
-        remote_fct: RemoteFct = None,
+        remote_fct: Optional[RemoteFct] = None,
     ) -> List[Tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
@@ -467,7 +319,9 @@ class DaskClient:
             task_future = await self.dask_subsystem.client.get_dataset(name=job_id)  # type: ignore
             # NOTE: It seems there is a bug in the pubsub system in dask
             # Event are more robust to connections/disconnections
-            cancel_event = await distributed.Event(name=job_id)
+            cancel_event = await distributed.Event(
+                name=TaskCancelEventName.format(job_id)
+            )
             await cancel_event.set()  # type: ignore
             await task_future.cancel()  # type: ignore
             logger.debug("Dask task %s cancelled", task_future.key)
