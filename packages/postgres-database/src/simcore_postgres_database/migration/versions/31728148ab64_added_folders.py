@@ -46,11 +46,11 @@ def upgrade():
     )
     op.create_table(
         "folder_to_project",
-        sa.Column("project_id", sa.BigInteger(), nullable=False),
+        sa.Column("project_uuid", sa.String(), nullable=False),
         sa.Column("folder_id", sa.BigInteger(), nullable=False),
         sa.ForeignKeyConstraint(
-            ["project_id"],
-            ["projects.id"],
+            ["project_uuid"],
+            ["projects.uuid"],
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
@@ -60,7 +60,7 @@ def upgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.UniqueConstraint("project_id"),
+        sa.UniqueConstraint("project_uuid"),
     )
     # ### end Alembic commands ###
 
