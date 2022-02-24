@@ -341,6 +341,8 @@ class DaskClient:
     async def release_task_result(self, job_id: str) -> None:
         logger.debug("releasing results for %s", f"{job_id=}")
         try:
+            # first check if the key exists
+            await self.dask_subsystem.client.get_dataset(name=job_id)  # type: ignore
             await self.dask_subsystem.client.unpublish_dataset(name=job_id)  # type: ignore
         except KeyError:
             logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
