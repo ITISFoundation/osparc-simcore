@@ -53,7 +53,6 @@ qx.Class.define("osparc.data.model.Study", {
       lastChangeDate: studyData.lastChangeDate ? new Date(studyData.lastChangeDate) : this.getLastChangeDate(),
       classifiers: studyData.classifiers || this.getClassifiers(),
       tags: studyData.tags || this.getTags(),
-      folder: studyData.folder || this.getFolder(),
       state: studyData.state || this.getState(),
       quality: studyData.quality || this.getQuality()
     });
@@ -139,13 +138,6 @@ qx.Class.define("osparc.data.model.Study", {
       check: "Array",
       init: [],
       event: "changeTags",
-      nullable: true
-    },
-
-    folder: {
-      check: "Number",
-      init: null,
-      event: "changeFolder",
       nullable: true
     },
 
