@@ -48,7 +48,6 @@ LATEST_INTEGRATION_VERSION = "1.0.0"
 
 # CONSTRAINT TYPES -------------------------------------------
 
-
 PropertyName = constr(regex=PROPERTY_KEY_RE)
 FileName = constr(regex=FILENAME_RE)
 
@@ -60,6 +59,21 @@ class ServiceType(str, Enum):
     COMPUTATIONAL = "computational"
     DYNAMIC = "dynamic"
     FRONTEND = "frontend"
+    BACKEND = "backend"
+
+
+# TODO: create a flags enum that accounts for every column
+#
+# | service name    | defininition | implementation | runs                    | ``ServiceType``               |                 |
+# | --------------- | ------------ | -------------- | ----------------------- | ----------------------------- | --------------- |
+# | ``file-picker`` | BE           | FE             | FE                      | ``ServiceType.FRONTEND``      | function        |
+# | ``isolve``      | DI-labels    | DI             | Dask-BE (own container) | ``ServiceType.COMPUTATIONAL`` | container       |
+# | ``jupyter-*``   | DI-labels    | DI             | DySC-BE (own container) | ``ServiceType.DYNAMIC``       | container       |
+# | ``iterator-*``  | BE           | BE             | BE    (webserver)       | ``ServiceType.BACKEND``       | function        |
+# | ``pyfun-*``     | BE           | BE             | Dask-BE  (dask-sidecar) | ``ServiceType.COMPUTATIONAL`` | function        |
+#
+#
+# where FE (front-end), DI (docker image), Dask/DySC (dask/dynamic sidecar), BE (backend).
 
 
 # MODELS -------------------------------------------
