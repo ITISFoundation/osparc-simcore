@@ -2,7 +2,7 @@
 
 """
 import logging
-from typing import List, NamedTuple, Optional, Tuple
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -14,6 +14,7 @@ from pydantic.networks import HttpUrl
 
 from ._meta import api_version_prefix as VTAG
 from .meta_modeling_iterations import ProjectIteration
+from .meta_modeling_results import ExtractedResults, extract_project_results
 from .meta_modeling_version_control import VersionControlForMetaModeling
 from .rest_constants import RESPONSE_MODEL_POLICY
 from .security_decorators import permission_required
@@ -138,7 +139,7 @@ class ParentMetaProjectRef(BaseModel):
     ref_id: CheckpointID
 
 
-class ProjectIterationAsItem(BaseModel):
+class BaseMetaProjectIteration(BaseModel):
     name: str = Field(
         ...,
         description="Iteration's resource name [AIP-122](https://google.aip.dev/122)",
@@ -153,9 +154,17 @@ class ProjectIterationAsItem(BaseModel):
         "A working copy is a real project where this iteration is run",
     )
 
+
+class ProjectIterationItem(BaseMetaProjectIteration):
+
     workcopy_project_url: HttpUrl = Field(
         ..., description="reference to a working copy project"
     )
+    url: HttpUrl = Field(..., description="self reference")
+
+
+class ProjectIterationResultItem(BaseMetaProjectIteration):
+    results: ExtractedResults
     url: HttpUrl = Field(..., description="self reference")
 
 
@@ -206,7 +215,7 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
 
     # parse and validate response ----
     page_items = [
-        ProjectIterationAsItem(
+        ProjectIterationItem(
             name=f"projects/{_project_uuid}/checkpoint/{commit_id}/iterations/{iter_id}",
             parent=ParentMetaProjectRef(project_id=_project_uuid, ref_id=commit_id),
             workcopy_project_id=wcp_id,
@@ -223,7 +232,7 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
         for wcp_id, iter_id in iterations.items
     ]
 
-    page = Page[ProjectIterationAsItem].parse_obj(
+    page = Page[ProjectIterationItem].parse_obj(
         paginate_data(
             chunk=page_items,
             request_url=request.url,
@@ -270,7 +279,7 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
 
     # parse and validate response ----
     iterations_items = [
-        ProjectIterationAsItem(
+        ProjectIterationItem(
             name=f"projects/{_project_uuid}/checkpoint/{commit_id}/iterations/{iter_id}",
             parent=ParentMetaProjectRef(project_id=_project_uuid, ref_id=commit_id),
             workcopy_project_id=wcp_id,
@@ -297,4 +306,97 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
 # )
 # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
 async def _get_meta_project_iterations_handler(request: web.Request) -> web.Response:
+    raise NotImplementedError
+
+
+@routes.get(
+    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/-/results",
+    name=f"{__name__}._list_meta_project_iterations_results_handler",
+)
+async def _list_meta_project_iterations_results_handler(
+    request: web.Request,
+) -> web.Response:
+    # parse and validate request ----
+    url_for = create_url_for_function(request)
+    vc_repo = VersionControlForMetaModeling(request)
+
+    _project_uuid = ProjectID(request.match_info["project_uuid"])
+    _ref_id = request.match_info["ref_id"]
+
+    _limit = int(request.query.get("limit", DEFAULT_NUMBER_OF_ITEMS_PER_PAGE))
+    _offset = int(request.query.get("offset", 0))
+
+    try:
+        commit_id = CommitID(_ref_id)
+    except ValueError as err:
+        # e.g. HEAD
+        raise NotImplementedError(
+            "cannot convert ref (e.g. HEAD) -> commit id"
+        ) from err
+
+    # core function ----
+    iterations = await _get_project_iterations_range(
+        vc_repo, _project_uuid, commit_id, offset=_offset, limit=_limit
+    )
+
+    if iterations.total_count == 0:
+        raise web.HTTPNotFound(
+            reason=f"No iterations found for project {_project_uuid=}/{commit_id=}"
+        )
+
+    assert len(iterations.items) <= _limit  # nosec
+
+    # get every project from the database and extract results
+    # TODO: fetch ALL project iterations at once. Otherwise they will have different results
+    projects_data: List[Dict[str, Any]] = []
+    for project_id, commit_id in iterations.items:
+        prj = await vc_repo.get_project(
+            f"{project_id}", include=["uuid", "name", "workbench"]
+        )
+        projects_data.append(prj)
+
+    results: List[ExtractedResults] = []
+    for prj in projects_data:
+        # TODO: if raises?
+        res = extract_project_results(prj)
+        results.append(res)
+
+    # parse and validate response ----
+    page_items = [
+        ProjectIterationResultItem(
+            name=f"projects/{_project_uuid}/checkpoint/{commit_id}/iterations/{iter_id}/results",
+            parent=ParentMetaProjectRef(project_id=_project_uuid, ref_id=commit_id),
+            workcopy_project_id=wcp_id,
+            results=res,
+            url=url_for(
+                f"{__name__}._list_meta_project_iterations_results_handler",
+                project_uuid=_project_uuid,
+                ref_id=commit_id,
+            ),
+        )
+        for (wcp_id, iter_id), res in zip(iterations.items, results)
+    ]
+
+    page = Page[ProjectIterationResultItem].parse_obj(
+        paginate_data(
+            chunk=page_items,
+            request_url=request.url,
+            total=iterations.total_count,
+            limit=_limit,
+            offset=_offset,
+        )
+    )
+    return web.Response(
+        text=page.json(**RESPONSE_MODEL_POLICY),
+        content_type="application/json",
+    )
+
+
+# @routes.get(
+#     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}/results",
+#     name=f"{__name__}._get_meta_project_iterations_handler",
+# )
+async def _get_meta_project_iteration_results_handler(
+    request: web.Request,
+) -> web.Response:
     raise NotImplementedError

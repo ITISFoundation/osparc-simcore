@@ -20,10 +20,7 @@ from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.projects import projects
 from simcore_service_webserver._constants import APP_DB_ENGINE_KEY
 from simcore_service_webserver.director_v2_api import get_project_run_policy
-from simcore_service_webserver.meta_modeling_handlers import (
-    Page,
-    ProjectIterationAsItem,
-)
+from simcore_service_webserver.meta_modeling_handlers import Page, ProjectIterationItem
 from simcore_service_webserver.meta_modeling_projects import (
     meta_project_policy,
     projects_redirection_middleware,
@@ -138,7 +135,7 @@ async def test_iterators_workflow(
         f"/v0/projects/{project_uuid}/checkpoint/{head_ref_id}/iterations?offset=0"
     )
     body = await resp.json()
-    first_iterlist = Page[ProjectIterationAsItem].parse_obj(body).data
+    first_iterlist = Page[ProjectIterationItem].parse_obj(body).data
 
     assert len(first_iterlist) == 3
 
@@ -228,7 +225,7 @@ async def test_iterators_workflow(
         f"/v0/projects/{project_uuid}/checkpoint/{head_ref_id}/iterations?offset=0"
     )
     body = await resp.json()
-    second_iterlist = Page[ProjectIterationAsItem].parse_obj(body).data
+    second_iterlist = Page[ProjectIterationItem].parse_obj(body).data
 
     assert len(second_iterlist) == 4
     assert len(set(it.workcopy_project_id for it in second_iterlist)) == len(
