@@ -7,9 +7,9 @@ folder_to_project = sa.Table(
     "folder_to_project",
     metadata,
     sa.Column(
-        "project_id",
-        sa.BigInteger,
-        sa.ForeignKey("projects.id", onupdate="CASCADE", ondelete="CASCADE"),
+        "project_uuid",
+        sa.String,
+        sa.ForeignKey("projects.uuid", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     ),
     sa.Column(
@@ -18,7 +18,7 @@ folder_to_project = sa.Table(
         sa.ForeignKey("folders.id", onupdate="CASCADE", ondelete="CASCADE"),
         nullable=False,
     ),
-    sa.UniqueConstraint("project_id"),
+    sa.UniqueConstraint("project_uuid"),
 )
 
 folders = sa.Table(
