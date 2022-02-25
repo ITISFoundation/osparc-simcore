@@ -25,7 +25,6 @@ async def list_projects_with_folder(request: web.Request):
     db: ProjectFolderDB = request.config_dict[APP_PROJECT_FOLDER_DBAPI]
     projects = await list_projects(request)
     await db.add_folder_to_projects(projects["data"])
-    print("projects1", projects)
     return projects
 
 
