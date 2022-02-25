@@ -1,3 +1,13 @@
+"""The dask client is the osparc part that communicates with a
+dask-scheduler/worker backend directly or through a dask-gateway.
+
+From dask documentation any Data or function must follow the criteria to be
+usable in dask [http://distributed.dask.org/en/stable/limitations.html?highlight=cloudpickle#assumptions-on-functions-and-data]:
+from cloudpickle import dumps, loads
+loads(dumps(my_object))
+
+"""
+
 import asyncio
 import json
 import logging
