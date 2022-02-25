@@ -150,8 +150,7 @@ qx.Class.define("osparc.servicecard.Utils", {
       */
     createThumbnail: function(serviceData, maxWidth, maxHeight = 160) {
       const image = new osparc.ui.basic.Thumbnail(null, maxWidth, maxHeight);
-      const img = image.getChildControl("image");
-      img.set({
+      image.set({
         source: "thumbnail" in serviceData && serviceData["thumbnail"] !== "" ? serviceData["thumbnail"] : osparc.dashboard.GridButtonItem.SERVICE_ICON
       });
       return image;
