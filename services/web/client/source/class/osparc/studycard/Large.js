@@ -102,21 +102,22 @@ qx.Class.define("osparc.studycard.Large", {
       let thumbnailWidth = widgetWidth - 2*this.self().PADDING;
       const maxThumbnailHeight = extraInfo.length*20;
       const slim = widgetWidth < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING - 20;
+      let hBox = null;
       if (slim) {
         this._add(extraInfoLayout);
-        thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
-        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
-        this._add(thumbnailLayout);
       } else {
-        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
+        hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
           alignX: "center"
         }));
         hBox.add(extraInfoLayout);
         thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
-        thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
-        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
+      }
+      thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
+      const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
+      const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
+      if (slim) {
+        this._add(thumbnailLayout);
+      } else {
         hBox.add(thumbnailLayout, {
           flex: 1
         });
