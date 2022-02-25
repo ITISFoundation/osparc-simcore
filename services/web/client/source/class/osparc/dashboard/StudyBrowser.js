@@ -265,10 +265,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createSelectButton: function() {
-      const selectButton = new qx.ui.form.ToggleButton(this.tr("Select"), "@FontAwesome5Solid/check/12").set({
+      const selectButton = new qx.ui.form.ToggleButton().set({
         marginRight: 8
       });
       selectButton.bind("value", this, "multiSelection");
+      selectButton.bind("value", selectButton, "label", {
+        converter: val => val ? this.tr("Cancel Selection") : this.tr("Select Studies")
+      });
       this.bind("multiSelection", selectButton, "value");
       return selectButton;
     },
