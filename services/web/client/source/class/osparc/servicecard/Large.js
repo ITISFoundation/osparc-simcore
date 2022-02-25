@@ -317,21 +317,15 @@ qx.Class.define("osparc.servicecard.Large", {
 
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
-      const thubmnailEditor = new osparc.component.widget.Renamer(this.getService()["thumbnail"], null, title);
-      thubmnailEditor.addListener("labelChanged", e => {
-        thubmnailEditor.close();
-        const dirty = e.getData()["newLabel"];
-        const clean = osparc.wrapper.DOMPurify.getInstance().sanitize(dirty);
-        if ((dirty && dirty !== clean) || (clean !== "" && !osparc.utils.Utils.isValidHttpUrl(clean))) {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Error checking thumbnail link"), "WARNING");
-        } else {
-          this.__updateService({
-            "thumbnail": clean
-          });
-        }
+      const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(this.getStudy().getThumbnail());
+      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, 300, 140);
+      thumbnailEditor.addListener("updateThumbnail", e => {
+        win.close();
+        const validUrl = e.getData();
+        this.__updateService({
+          "thumbnail": validUrl
+        });
       }, this);
-      thubmnailEditor.center();
-      thubmnailEditor.open();
     },
 
     __openDescriptionEditor: function() {
