@@ -9,13 +9,23 @@ folder_to_project = sa.Table(
     sa.Column(
         "project_uuid",
         sa.String,
-        sa.ForeignKey("projects.uuid", onupdate="CASCADE", ondelete="CASCADE"),
+        sa.ForeignKey(
+            "projects.uuid",
+            name="fk_folder_to_project_project_uuid_projects",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
         nullable=False,
     ),
     sa.Column(
         "folder_id",
         sa.BigInteger,
-        sa.ForeignKey("folders.id", onupdate="CASCADE", ondelete="CASCADE"),
+        sa.ForeignKey(
+            "folders.id",
+            name="fk_folder_to_project_folder_id_folders",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
         nullable=False,
     ),
     sa.UniqueConstraint("project_uuid"),
