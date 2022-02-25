@@ -266,7 +266,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createSelectButton: function() {
       const selectButton = new qx.ui.form.ToggleButton(this.tr("Select"), "@FontAwesome5Solid/check/12").set({
-        marginRight: 5
+        marginRight: 8
       });
       selectButton.addListener("changeValue", e => {
         const val = e.getData();
@@ -332,6 +332,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const commandEsc = new qx.ui.command.Command("Esc");
       commandEsc.addListener("execute", e => {
         this.resetSelection();
+        this.setMultiSelectionMode(false);
       });
       osparc.store.Store.getInstance().addListener("changeTags", () => {
         this.invalidateStudies();

@@ -120,7 +120,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const topBar = this.__createTopBar(resourceType);
       resourcesLayout.add(topBar);
 
-      const secondaryBar = this._secondaryBar = new qx.ui.container.Composite(new qx.ui.layout.HBox());
+      const secondaryBar = this._secondaryBar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       resourcesLayout.add(secondaryBar);
 
       const resourcesContainer = this._resourcesContainer = this.__createResourcesContainer();
