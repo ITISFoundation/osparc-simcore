@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=requirements/_dask-distributed.txt --strip-extras requirements/_dask-distributed.in
 #
+blosc==1.10.6
+    # via -r requirements/_dask-distributed.in
 click==8.0.3
     # via
     #   -c requirements/./_base.txt
@@ -13,12 +15,12 @@ cloudpickle==2.0.0
     #   -c requirements/./_base.txt
     #   dask
     #   distributed
-dask==2021.12.0
+dask==2022.2.0
     # via
     #   -c requirements/./_base.txt
     #   -r requirements/_dask-distributed.in
     #   distributed
-distributed==2021.12.0
+distributed==2022.2.0
     # via
     #   -c requirements/./_base.txt
     #   dask
@@ -38,6 +40,8 @@ locket==0.2.1
     # via
     #   -c requirements/./_base.txt
     #   partd
+lz4==4.0.0
+    # via -r requirements/_dask-distributed.in
 markupsafe==2.0.1
     # via
     #   -c requirements/./_base.txt
@@ -50,6 +54,7 @@ packaging==20.4
     # via
     #   -c requirements/./_base.txt
     #   dask
+    #   distributed
 partd==1.2.0
     # via
     #   -c requirements/./_base.txt

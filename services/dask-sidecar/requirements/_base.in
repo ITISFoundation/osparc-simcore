@@ -25,9 +25,7 @@ dask[complete]
 dask-gateway
 pydantic[email,dotenv]
 
-# compression
-blosc
-lz4
+
 
 # Cython implementation of Toolz: A set of utility functions for iterators, functions, and dictionaries.
 cytoolz
