@@ -16,6 +16,7 @@ from ..api_resources import (
 )
 
 # FIXME: all ints and bools will be floats
+# TODO: evaluate how coupled is this to InputTypes/OUtputTypes
 ArgumentType = Union[File, float, int, bool, str, None]
 KeywordArguments = Dict[str, ArgumentType]
 PositionalArguments = List[ArgumentType]
