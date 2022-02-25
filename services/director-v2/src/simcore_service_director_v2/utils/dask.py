@@ -161,10 +161,6 @@ async def compute_input_data(
         value: _PVType = await port.get_value()
 
         # Mapping _PVType -> PortValue
-        #
-        # FIXME: add map from List[AnyUrl] -> List[FileUrl] ???
-        # FIXME: how to distinguish between a url as data (e.g a thumbnail in a data object) or a
-        #        real link to be downloaded?
         if isinstance(value, AnyUrl):
             input_data[port.key] = FileUrl(
                 url=value,
