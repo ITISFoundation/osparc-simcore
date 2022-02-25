@@ -444,20 +444,6 @@
         }
       }
     },
-    "/v1/containers/volumes/permissions:fix": {
-      "post": {
-        "tags": [
-          "containers"
-        ],
-        "summary": "Makes permissions the same on all mounted volumes directories.",
-        "operationId": "volumes_fix_permissions_v1_containers_volumes_permissions_fix_post",
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          }
-        }
-      }
-    },
     "/v1/containers/ports/outputs:pull": {
       "post": {
         "tags": [
