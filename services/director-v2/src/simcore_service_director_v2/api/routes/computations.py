@@ -92,7 +92,7 @@ async def create_computation(
         if is_pipeline_running(pipeline_state):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Projet {job.project_id=} already started, current {pipeline_state=}",
+                detail=f"Project {job.project_id} already started, current state is {pipeline_state}",
             )
 
         # create the complete DAG graph
