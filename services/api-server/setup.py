@@ -54,11 +54,6 @@ SETUP = dict(
         "": "src",
     },
     include_package_data=True,
-    package_data={
-        "": [
-            "mocks/*.y*ml",
-        ]
-    },
     install_requires=PROD_REQUIREMENTS,
     test_suite="tests",
     tests_require=TEST_REQUIREMENTS,
