@@ -339,7 +339,7 @@ qx.Class.define("osparc.studycard.Large", {
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
       const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(this.getStudy().getThumbnail());
-      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, 300, 140);
+      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, 300, 120);
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
         const validUrl = e.getData();

@@ -18,20 +18,22 @@
 qx.Class.define("osparc.component.editor.ThumbnailEditor", {
   extend: qx.ui.core.Widget,
 
-  construct: function(url) {
+  construct: function(url, suggestions = []) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(8));
 
-    if (url) {
-      this.set({
-        url
-      });
-    }
-
     this._createChildControlImpl("url-field");
+    this._createChildControlImpl("suggestions");
     this._createChildControlImpl("cancel-btn");
     this._createChildControlImpl("save-btn");
+
+    if (url) {
+      this.setUrl(url);
+    }
+    if (suggestions) {
+      this.setSuggestions(suggestions);
+    }
   },
 
   properties: {
@@ -40,6 +42,14 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
       init: "",
       nullable: false,
       event: "changeUrl"
+    },
+
+    suggestions: {
+      check: "Array",
+      init: [],
+      nullable: true,
+      event: "changeSuggestions",
+      apply: "__applySuggestions"
     }
   },
 
@@ -72,6 +82,13 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
           this.bind("url", control, "value");
           this._add(control);
           break;
+        case "suggested-thumbnails":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+          this.bind("suggestions", control, "visibility", {
+            converter: val => val && val.length ? "visible" : "excluded"
+          });
+          this._add(control);
+          break;
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
             alignX: "right"
@@ -102,6 +119,13 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __applySuggestions: function(suggestions) {
+      const suggestionsLayout = this.getChildControl("suggested-thumbnails");
+      suggestions.forEach(suggestion => {
+        console.log(suggestion);
+      });
     }
   }
 });
