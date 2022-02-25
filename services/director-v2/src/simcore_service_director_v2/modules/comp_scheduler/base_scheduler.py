@@ -418,13 +418,8 @@ class BaseCompScheduler(ABC):
             ComputationalBackendTaskNotFoundError,
         ):
             logger.error("ISSUE WHILE STOPPING")
-            # logger.error("%s", exc)
-            # await comp_tasks_repo.set_project_tasks_state(
-            #     project_id,
-            #     [NodeID(k) for k in tasks_to_stop.keys()],
-            #     RunningState.ABORTED,
-            # )
         except asyncio.CancelledError:
+            # TODO: what shall we do with cancelling stop task when the director-v2 goes off? should it be shielded?
             logger.warning(
                 "The task stopping was cancelled, there might be still be running tasks!"
             )
