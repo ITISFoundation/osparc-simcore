@@ -336,7 +336,9 @@ async def test_dask_cluster_executes_simple_functions(
 @pytest.mark.parametrize(
     "dask_client", ["create_dask_client_from_scheduler"], indirect=True
 )
-async def test_dask_does_not_report_cancelled_error_in_task(dask_client: DaskClient):
+async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
+    dask_client: DaskClient,
+):
     def fct_that_raise_cancellation_error():
         import asyncio  # pylint: disable=reimported
 
