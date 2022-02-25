@@ -16,8 +16,13 @@ def get_types(annotation) -> Tuple:
 
     def _transform(annotated_type):
         for primitive_type in (float, bool, int, str):
-            if issubclass(annotated_type, primitive_type):
-                return primitive_type
+            try:
+                if issubclass(annotated_type, primitive_type):
+                    return primitive_type
+            except TypeError:
+                # List[Any] or Dict[str, Any]
+                pass
+
         return annotated_type
 
     return tuple(map(_transform, annotated_types))

@@ -7,8 +7,8 @@ from typing import Any, Dict, Tuple
 from fastapi import status
 from fastapi.applications import FastAPI
 from fastapi.exceptions import HTTPException
-from models_library.frontend_services_catalog import (
-    is_frontend_service,
+from models_library.function_services_catalog import (
+    is_function_service,
     is_iterator_consumer_service,
     is_iterator_service,
     is_parameter_service,
@@ -23,7 +23,7 @@ def _as_dict(model_instance: ServiceDockerData) -> Dict[str, Any]:
     return model_instance.dict(by_alias=True, exclude_unset=True)
 
 
-def get_frontend_service(key, version) -> Dict[str, Any]:
+def get_function_service(key, version) -> Dict[str, Any]:
     try:
         found = next(
             s
@@ -38,7 +38,7 @@ def get_frontend_service(key, version) -> Dict[str, Any]:
         ) from err
 
 
-def setup_frontend_services(app: FastAPI):
+def setup_function_services(app: FastAPI):
     """
     Setup entrypoint for this app module.
 
@@ -54,7 +54,7 @@ def setup_frontend_services(app: FastAPI):
                 #  - Iterator
                 #  - Iterator consumer
                 or not is_parameter_service(key)
-                or not is_frontend_service(key)
+                or not is_function_service(key)
                 or not is_iterator_service(key)
                 or not is_iterator_consumer_service(key)
             )
@@ -70,7 +70,7 @@ def setup_frontend_services(app: FastAPI):
 
 
 __all__: Tuple[str, ...] = (
-    "get_frontend_service",
-    "is_frontend_service",
-    "setup_frontend_services",
+    "get_function_service",
+    "is_function_service",
+    "setup_function_services",
 )

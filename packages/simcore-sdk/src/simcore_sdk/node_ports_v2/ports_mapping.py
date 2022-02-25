@@ -8,7 +8,7 @@ from .port import Port
 
 PortKey: Type[str] = constr(regex=PROPERTY_KEY_RE)
 
-
+# TODO: could use new models_library.generic.DictModel[PortKey, Port] instead
 class BasePortsMapping(BaseModel):
     __root__: Dict[PortKey, Port]
 

@@ -4,17 +4,17 @@
 # pylint:disable=protected-access
 
 import pytest
-from models_library.frontend_services_catalog import (
-    is_frontend_service,
+from simcore_service_catalog.models.schemas.services import ServiceDockerData
+from simcore_service_catalog.services.function_services import (
+    is_function_service,
     iter_service_docker_data,
 )
-from models_library.services import ServiceDockerData
 
 
 @pytest.mark.parametrize(
     "image_metadata", iter_service_docker_data(), ids=lambda obj: obj.name
 )
-def test_create_frontend_services_metadata(image_metadata):
+def test_create_services_metadata(image_metadata: ServiceDockerData):
     assert isinstance(image_metadata, ServiceDockerData)
 
-    assert is_frontend_service(image_metadata.key)
+    assert is_function_service(image_metadata.key)
