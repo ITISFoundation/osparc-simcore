@@ -57,11 +57,10 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
       });
     });
 
+    const image = this.getChildControl("image");
     if (source) {
       this.setSource(source);
     }
-
-    const image = this.getChildControl("image");
     if (maxWidth) {
       image.setMaxWidth(maxWidth);
     }
