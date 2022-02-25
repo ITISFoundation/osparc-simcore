@@ -332,7 +332,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const commandEsc = new qx.ui.command.Command("Esc");
       commandEsc.addListener("execute", e => {
         this.resetSelection();
-        this.setMultiSelectionMode(false);
+        this.setMultiSelection(false);
       });
       osparc.store.Store.getInstance().addListener("changeTags", () => {
         this.invalidateStudies();
