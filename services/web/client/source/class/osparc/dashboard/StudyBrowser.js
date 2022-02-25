@@ -268,10 +268,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const selectButton = new qx.ui.form.ToggleButton(this.tr("Select"), "@FontAwesome5Solid/check/12").set({
         marginRight: 8
       });
-      selectButton.addListener("changeValue", e => {
-        const val = e.getData();
-        this.setMultiSelection(val);
-      });
+      selectButton.bind("value", this, "multiSelection");
+      this.bind("multiSelection", selectButton, "value");
       return selectButton;
     },
 
