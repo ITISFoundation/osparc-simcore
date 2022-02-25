@@ -39,6 +39,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     "updateTemplates": "qx.event.type.Event"
   },
 
+  properties: {
+    multiSelection: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeMultiSelection",
+      apply: "__applyMultiSelection"
+    }
+  },
+
   members: {
     __studies: null,
     __newStudyBtn: null,
@@ -131,8 +141,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       const importStudyButton = this.__createImportButton();
       this._secondaryBar.add(importStudyButton);
+      importStudyButton.exclude();
+      osparc.utils.DisabledPlugins.isImportDisabled()
+        .then(isDisabled => {
+          importStudyButton.setVisibility(isDisabled ? "excluded" : "visible");
+        });
+
+      this._secondaryBar.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
+
       const studiesDeleteButton = this.__createDeleteButton(false);
       this._secondaryBar.add(studiesDeleteButton);
+
+      const selectStudiesButton = this.__createSelectButton();
+      this._secondaryBar.add(selectStudiesButton);
 
       osparc.utils.Utils.setIdToWidget(this._resourcesContainer, "studiesList");
 
@@ -142,19 +165,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const loadingStudiesBtn = this._createLoadMoreButton("studiesLoading");
       this._resourcesContainer.add(loadingStudiesBtn);
 
-      this._resourcesContainer.addListener("changeSelection", e => {
-        const nSelected = e.getData().length;
-        this._resourcesContainer.getChildren().forEach(studyItem => {
-          if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(studyItem)) {
-            studyItem.setMultiSelectionMode(Boolean(nSelected));
-          }
-        });
-      }, this);
-      this._resourcesContainer.bind("selection", this.__newStudyBtn, "enabled", {
-        converter: selection => !selection.length
+      this.bind("multiSelection", this.__newStudyBtn, "enabled", {
+        converter: val => !val
       });
-      this._resourcesContainer.bind("selection", importStudyButton, "enabled", {
-        converter: selection => !selection.length
+      this.bind("multiSelection", importStudyButton, "enabled", {
+        converter: val => !val
       });
       this._resourcesContainer.bind("selection", studiesDeleteButton, "visibility", {
         converter: selection => selection.length ? "visible" : "excluded"
@@ -247,6 +262,28 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       }, this);
       return deleteButton;
+    },
+
+    __createSelectButton: function() {
+      const selectButton = new qx.ui.form.ToggleButton(this.tr("Select"), "@FontAwesome5Solid/check/12").set({
+        marginRight: 5
+      });
+      selectButton.addListener("changeValue", e => {
+        const val = e.getData();
+        this.setMultiSelection(val);
+      });
+      return selectButton;
+    },
+
+    __applyMultiSelection: function(value) {
+      this._resourcesContainer.getChildren().forEach(studyItem => {
+        if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(studyItem)) {
+          studyItem.setMultiSelectionMode(value);
+          if (value === false) {
+            studyItem.setValue(false);
+          }
+        }
+      });
     },
 
     __getStudyAndStart: function(loadStudyId) {
@@ -427,11 +464,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         position: "bottom-right"
       });
 
-      const selectButton = this.__getSelectMenuButton(item, studyData);
-      if (selectButton) {
-        menu.add(selectButton);
-      }
-
       const renameStudyButton = this.__getRenameStudyMenuButton(studyData);
       menu.add(renameStudyButton);
 
@@ -451,15 +483,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       return menu;
-    },
-
-    __getSelectMenuButton: function(item) {
-      const selectButton = new qx.ui.menu.Button(this.tr("Select"));
-      selectButton.addListener("execute", () => {
-        item.setValue(true);
-        this._resourcesContainer.setLastSelectedItem(item);
-      }, this);
-      return selectButton;
     },
 
     __getRenameStudyMenuButton: function(studyData) {
@@ -550,8 +573,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __itemClicked: function(item, isShiftPressed) {
       const studiesCont = this._resourcesContainer;
-      const selected = item.getValue();
-      const selection = studiesCont.getSelection();
 
       if (isShiftPressed) {
         const lastIdx = studiesCont.getLastSelectedIndex();
@@ -566,7 +587,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       studiesCont.setLastSelectedIndex(studiesCont.getIndex(item));
 
-      if (selected && selection.length === 1) {
+      if (!item.isMultiSelectionMode()) {
         const studyData = this.__getStudyData(item.getUuid(), false);
         this._startStudy(studyData);
       }
