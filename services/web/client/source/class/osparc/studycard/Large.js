@@ -338,8 +338,18 @@ qx.Class.define("osparc.studycard.Large", {
 
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
-      const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(this.getStudy().getThumbnail());
-      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, 300, 120);
+      const oldThumbnail = this.getStudy().getThumbnail();
+      const suggestions = [];
+      const wb = this.getStudy().getWorkbench();
+      const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
+      Object.values(nodes).forEach(node => {
+        const srvMetadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
+        if (srvMetadata["thumbnail"]) {
+          suggestions.push(srvMetadata["thumbnail"]);
+        }
+      });
+      const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(oldThumbnail, suggestions);
+      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length ? 500 : 300, suggestions.length ? 280 : 120);
       thumbnailEditor.addListener("updateThumbnail", e => {
         win.close();
         const validUrl = e.getData();

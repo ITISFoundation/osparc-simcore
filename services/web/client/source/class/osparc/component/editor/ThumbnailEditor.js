@@ -24,7 +24,8 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
     this._setLayout(new qx.ui.layout.VBox(8));
 
     this._createChildControlImpl("url-field");
-    this._createChildControlImpl("suggestions");
+    this.__asdf = this.getChildControl("scroll-thumbnails");
+
     this._createChildControlImpl("cancel-btn");
     this._createChildControlImpl("save-btn");
 
@@ -82,12 +83,30 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
           this.bind("url", control, "value");
           this._add(control);
           break;
-        case "suggested-thumbnails":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-          this.bind("suggestions", control, "visibility", {
-            converter: val => val && val.length ? "visible" : "excluded"
+        case "scroll-thumbnails":
+          control = new qx.ui.container.SlideBar().set({
+            maxHeight: 170
           });
-          this._add(control);
+          control.getChildControl("button-backward").set({
+            maxWidth: 30,
+            maxHeight: 30,
+            alignY: "middle",
+            marginRight: 5,
+            icon: "@FontAwesome5Solid/ellipsis-h/16",
+            backgroundColor: "transparent"
+          });
+          control.getChildControl("button-forward").set({
+            maxWidth: 30,
+            maxHeight: 30,
+            alignY: "middle",
+            marginLeft: 5,
+            icon: "@FontAwesome5Solid/ellipsis-h/16",
+            backgroundColor: "transparent"
+          });
+          control.setLayout(new qx.ui.layout.HBox(5));
+          this._add(control, {
+            flex: 1
+          });
           break;
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
@@ -122,9 +141,11 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
     },
 
     __applySuggestions: function(suggestions) {
-      const suggestionsLayout = this.getChildControl("suggested-thumbnails");
+      // const suggestionsLayout = this.getChildControl("suggested-thumbnails");
+      this.__asdf.removeAll();
       suggestions.forEach(suggestion => {
-        console.log(suggestion);
+        const thumbnail = new osparc.ui.basic.Thumbnail(suggestion, 170, 124);
+        this.__asdf.add(thumbnail);
       });
     }
   }
