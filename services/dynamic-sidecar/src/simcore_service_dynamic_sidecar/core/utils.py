@@ -29,6 +29,8 @@ CommandResult = namedtuple("CommandResult", "finished_without_errors, decoded_st
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
 
+HIDDEN_FILE_NAME = ".hidden_do_not_remove"
+
 logger = logging.getLogger(__name__)
 
 
@@ -169,7 +171,7 @@ async def volumes_fix_permissions() -> None:
         mounted_volumes.disk_inputs_path,
         mounted_volumes.disk_outputs_path,
     ] + list(mounted_volumes.disk_state_paths()):
-        hidden_file = volume_path / ".hidden_do_not_remove"
+        hidden_file = volume_path / HIDDEN_FILE_NAME
         hidden_file.write_text(
             f"Directory must not be empty.\nCreated by {__file__}.\nRequired by "
             "oSPARC internals to properly enforce permissions on this "
