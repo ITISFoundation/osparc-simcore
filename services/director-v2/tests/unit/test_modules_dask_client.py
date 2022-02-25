@@ -78,11 +78,14 @@ async def _assert_wait_for_cb_call(mocked_fct, timeout: Optional[int] = None):
 
 
 async def _assert_wait_for_task_status(
-    job_id: str, dask_client: DaskClient, expected_status: RunningState
+    job_id: str,
+    dask_client: DaskClient,
+    expected_status: RunningState,
+    timeout: Optional[int] = None,
 ):
     async for attempt in AsyncRetrying(
         reraise=True,
-        stop=stop_after_delay(_ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS),
+        stop=stop_after_delay(timeout or _ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS),
         wait=wait_fixed(1),
     ):
         with attempt:
@@ -476,7 +479,7 @@ async def test_send_computation_task(
     await dask_client.release_task_result(job_id)
     # check the status now
     await _assert_wait_for_task_status(
-        job_id, dask_client, expected_status=RunningState.UNKNOWN
+        job_id, dask_client, expected_status=RunningState.UNKNOWN, timeout=60
     )
 
     with pytest.raises(ComputationalBackendTaskNotFoundError):
@@ -636,7 +639,9 @@ async def test_abort_computation_tasks(
 
     # after releasing the results, the task shall be UNKNOWN
     await dask_client.release_task_result(job_id)
-    await _assert_wait_for_task_status(job_id, dask_client, RunningState.UNKNOWN)
+    await _assert_wait_for_task_status(
+        job_id, dask_client, RunningState.UNKNOWN, timeout=60
+    )
 
 
 async def test_failed_task_returns_exceptions(
@@ -694,7 +699,7 @@ async def test_failed_task_returns_exceptions(
 
     await dask_client.release_task_result(job_id)
     await _assert_wait_for_task_status(
-        job_id, dask_client, expected_status=RunningState.UNKNOWN
+        job_id, dask_client, expected_status=RunningState.UNKNOWN, timeout=60
     )
 
 
@@ -917,7 +922,9 @@ async def test_get_tasks_status(
 
     # removing the future will let dask eventually delete the task from its memory, so its status becomes undefined
     del computation_future
-    await _assert_wait_for_task_status(job_id, dask_client, RunningState.UNKNOWN)
+    await _assert_wait_for_task_status(
+        job_id, dask_client, RunningState.UNKNOWN, timeout=60
+    )
 
 
 @pytest.fixture
