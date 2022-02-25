@@ -23,11 +23,11 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
 
     this._setLayout(new qx.ui.layout.VBox(8));
 
-    this._createChildControlImpl("url-field");
-    this.__thumbnails = this.getChildControl("scroll-thumbnails");
+    this.getChildControl("url-field");
+    this.getChildControl("scroll-thumbnails");
 
-    this._createChildControlImpl("cancel-btn");
-    this._createChildControlImpl("save-btn");
+    this.getChildControl("cancel-btn");
+    this.getChildControl("save-btn");
 
     if (url) {
       this.setUrl(url);
@@ -71,8 +71,6 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
   },
 
   members: {
-    __thumbnails: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -85,11 +83,22 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
           this.bind("url", control, "value");
           this._add(control);
           break;
-        case "scroll-thumbnails":
+        case "thumbnails-layout": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+          const label = new qx.ui.basic.Label(this.tr("or pick one from the list of services:"));
+          control.add(label);
+          this._add(control, {
+            flex: 1
+          });
+          break;
+        }
+        case "scroll-thumbnails": {
+          const thumbnailsLayout = this.getChildControl("thumbnails-layout");
           control = new qx.ui.container.SlideBar().set({
             alignX: "center",
             maxHeight: 170
           });
+          thumbnailsLayout.add(control);
           [
             control.getChildControl("button-backward"),
             control.getChildControl("button-forward")
@@ -107,10 +116,8 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
           control.setLayout(new qx.ui.layout.HBox(5).set({
             alignX: "center"
           }));
-          this._add(control, {
-            flex: 1
-          });
           break;
+        }
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
             alignX: "right"
@@ -143,13 +150,14 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
     },
 
     __applySuggestions: function(suggestions) {
-      this.__thumbnails.removeAll();
+      const thumbnailsLayout = this.getChildControl("scroll-thumbnails");
+      thumbnailsLayout.removeAll();
       suggestions.forEach(suggestion => {
         const thumbnail = new osparc.ui.basic.Thumbnail(suggestion, 170, 124);
         thumbnail.addListener("tap", () => {
           this.setUrl(thumbnail.getChildControl("image").getSource());
         });
-        this.__thumbnails.add(thumbnail);
+        thumbnailsLayout.add(thumbnail);
       });
     }
   }
