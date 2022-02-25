@@ -670,13 +670,17 @@ async def test_handling_scheduling_after_reboot(
     await assert_comp_tasks_state(
         aiopg_engine,
         running_project.project.uuid,
-        [running_project.tasks[1].node_id, running_project.tasks[3].node_id],
+        [
+            running_project.tasks[1].node_id,
+            running_project.tasks[2].node_id,
+            running_project.tasks[3].node_id,
+        ],
         exp_state=reboot_state.expected_task_state_group1,
     )
     await assert_comp_tasks_state(
         aiopg_engine,
         running_project.project.uuid,
-        [running_project.tasks[2].node_id, running_project.tasks[4].node_id],
+        [running_project.tasks[4].node_id],
         exp_state=reboot_state.expected_task_state_group2,
     )
     await assert_comp_run_state(

@@ -20,13 +20,12 @@ from typing import Callable, Dict, List, Optional, Set, Tuple, cast
 import networkx as nx
 from aiopg.sa.engine import Engine
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
 from pydantic import PositiveInt
 
 from ...core.errors import (
     ComputationalBackendNotConnectedError,
-    ComputationalBackendTaskNotFoundError,
     ComputationalSchedulerChangedError,
     InsuficientComputationalResourcesError,
     InvalidPipelineError,
@@ -45,27 +44,6 @@ from ..db.repositories.comp_runs import CompRunsRepository
 from ..db.repositories.comp_tasks import CompTasksRepository
 
 logger = logging.getLogger(__name__)
-
-
-async def _parse_task_states(
-    node_ids: List[NodeID], pipeline_tasks: Dict[str, CompTaskAtDB]
-) -> Tuple[Set[NodeID], Set[NodeID]]:
-    # parse task states
-    tasks_in_execution: Set[NodeID] = set()
-    tasks_failed: Set[NodeID] = set()
-    tasks_to_start: Set[NodeID] = set()
-    for node_id in node_ids:
-        if pipeline_tasks[f"{node_id}"].state == RunningState.FAILED:
-            tasks_failed.add(node_id)
-        elif pipeline_tasks[f"{node_id}"].state == RunningState.PUBLISHED:
-            # the nodes that are published shall be started
-            tasks_to_start.add(node_id)
-        elif pipeline_tasks[f"{node_id}"].state in (
-            RunningState.STARTED,
-            RunningState.PENDING,
-        ):
-            tasks_in_execution.add(node_id)
-    return (tasks_to_start, tasks_failed)
 
 
 @dataclass
@@ -218,6 +196,30 @@ class BaseCompScheduler(ABC):
             final_state=(run_result in COMPLETED_STATES),
         )
 
+    async def _set_states_following_failed_to_aborted(
+        self, project_id: ProjectID, dag: nx.DiGraph
+    ) -> Dict[str, CompTaskAtDB]:
+        tasks: Dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(project_id, dag)
+        tasks_to_set_aborted: Set[NodeIDStr] = set()
+        for task in tasks.values():
+            if task.state == RunningState.FAILED:
+                tasks_to_set_aborted.update(nx.bfs_tree(dag, f"{task.node_id}"))
+                tasks_to_set_aborted.remove(f"{task.node_id}")
+        for task in tasks_to_set_aborted:
+            tasks[f"{task}"].state = RunningState.ABORTED
+        if tasks_to_set_aborted:
+            # update the current states back in DB
+            comp_tasks_repo: CompTasksRepository = cast(
+                CompTasksRepository,
+                get_repository(self.db_engine, CompTasksRepository),
+            )
+            await comp_tasks_repo.set_project_tasks_state(
+                project_id,
+                [NodeID(n) for n in tasks_to_set_aborted],
+                RunningState.ABORTED,
+            )
+        return tasks
+
     async def _update_states_from_comp_backend(
         self, cluster_id: ClusterID, project_id: ProjectID, pipeline_dag: nx.DiGraph
     ):
@@ -297,106 +299,60 @@ class BaseCompScheduler(ABC):
             f"{user_id=}",
         )
 
-        dag = nx.DiGraph()
-        comp_tasks: Dict[str, CompTaskAtDB] = {}
-        pipeline_result: RunningState = RunningState.UNKNOWN
-        tasks_to_start: Set[NodeID] = set()
-
         try:
-            dag = await self._get_pipeline_dag(project_id)
+            dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
             # 1. Update our list of tasks with data from backend (state, results)
             await self._update_states_from_comp_backend(cluster_id, project_id, dag)
-
-            # 2. now find what needs to be scheduled
-            comp_tasks: Dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(
+            # 2. Any task following a FAILED task shall be ABORTED
+            comp_tasks = await self._set_states_following_failed_to_aborted(
                 project_id, dag
             )
-            # filter the dag to represent the current tasks still to be scheduled
-            dag.remove_nodes_from(
-                {
-                    node_id
-                    for node_id, t in comp_tasks.items()
-                    if t.state == RunningState.SUCCESS
-                }
-            )
-            # find the tasks that need scheduling (these are the ones with no unfilled dependency, e.g. degree 0)
-            tasks_to_schedule = [node_id for node_id, degree in dag.in_degree() if degree == 0]  # type: ignore
-            tasks_to_start, tasks_failed = await _parse_task_states(
-                tasks_to_schedule, comp_tasks
-            )
-
-            # NOTE: if we have a FAILED task, then all
-            # the tasks following it are marked as ABORTED tasks
-            tasks_following_failed_tasks: Set[NodeID] = set()
-            for node_id in tasks_failed:
-                comp_tasks[f"{node_id}"].state = RunningState.FAILED
-                tasks_following_failed_tasks.update(nx.bfs_tree(dag, node_id))
-                # remove the failed task from that list of nodes
-                tasks_following_failed_tasks.remove(node_id)
-            # mark now the aborted ones (that follow a failed one)
-            for node_id in tasks_following_failed_tasks:
-                comp_tasks[f"{node_id}"].state = RunningState.ABORTED
-
-            # update the current states back in DB
-            comp_tasks_repo: CompTasksRepository = cast(
-                CompTasksRepository,
-                get_repository(self.db_engine, CompTasksRepository),
-            )
-            if tasks_following_failed_tasks:
-                await comp_tasks_repo.set_project_tasks_state(
-                    project_id, list(tasks_following_failed_tasks), RunningState.ABORTED
+            # 3. do we want to stop the pipeline now?
+            if marked_for_stopping:
+                await self._schedule_tasks_to_stop(project_id, cluster_id, comp_tasks)
+            else:
+                # let's get the tasks to schedule then
+                await self._schedule_tasks_to_start(
+                    user_id, project_id, cluster_id, comp_tasks, dag
                 )
-            if tasks_failed:
-                await comp_tasks_repo.set_project_tasks_state(
-                    project_id, list(tasks_failed), RunningState.FAILED
-                )
-
-            # compute and update the current status of the run
+            # 4. Update the run result
             pipeline_result = await self._update_run_result_from_tasks(
                 user_id, project_id, iteration, comp_tasks
             )
+            # 5. Are we done scheduling that pipeline?
+            if not dag.nodes() or pipeline_result in COMPLETED_STATES:
+                # there is nothing left, the run is completed, we're done here
+                self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
+                logger.info(
+                    "pipeline %s scheduling completed with result %s",
+                    f"{project_id=}",
+                    f"{pipeline_result=}",
+                )
         except PipelineNotFoundError:
             logger.warning(
                 "pipeline %s does not exist in comp_pipeline table, it will be removed from scheduler",
                 f"{project_id=}",
             )
-            pipeline_result = RunningState.ABORTED
-            await self._set_run_result(user_id, project_id, iteration, pipeline_result)
+            await self._set_run_result(
+                user_id, project_id, iteration, RunningState.ABORTED
+            )
+            self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
         except InvalidPipelineError as exc:
             logger.warning(
                 "pipeline %s appears to be misconfigured, it will be removed from scheduler. Please check pipeline:\n%s",
                 f"{project_id=}",
                 exc,
             )
-            pipeline_result = RunningState.ABORTED
-            await self._set_run_result(user_id, project_id, iteration, pipeline_result)
-
-        # 2. Are we finished??
-        if not dag.nodes() or pipeline_result in COMPLETED_STATES:
-            # there is nothing left, the run is completed, we're done here
+            await self._set_run_result(
+                user_id, project_id, iteration, RunningState.ABORTED
+            )
             self.scheduled_pipelines.pop((user_id, project_id, iteration), None)
-            logger.info(
-                "pipeline %s scheduling completed with result %s",
-                f"{project_id=}",
-                f"{pipeline_result=}",
-            )
-            return
-
-        # 3. Are we stopping??
-        if marked_for_stopping:
-            await self._schedule_tasks_to_stop(project_id, cluster_id, comp_tasks)
-            # the scheduled pipeline will be removed in the next iteration
-        else:
-            # 4. Schedule the next tasks,
-            await self._schedule_next_tasks(
-                user_id, project_id, cluster_id, comp_tasks, list(tasks_to_start)
-            )
 
     async def _schedule_tasks_to_stop(
         self,
         project_id: ProjectID,
         cluster_id: ClusterID,
-        tasks_to_stop: Dict[str, CompTaskAtDB],
+        comp_tasks: Dict[str, CompTaskAtDB],
     ) -> None:
         # get any running task and stop them
         comp_tasks_repo: CompTasksRepository = get_repository(
@@ -404,71 +360,67 @@ class BaseCompScheduler(ABC):
         )  # type: ignore
         await comp_tasks_repo.mark_project_published_tasks_as_aborted(project_id)
         # stop any remaining running task, these are already submitted
-        running_tasks = [
+        tasks_to_stop = [
             t
-            for t in tasks_to_stop.values()
+            for t in comp_tasks.values()
             if t.state
             in [RunningState.STARTED, RunningState.RETRY, RunningState.PENDING]
         ]
-        try:
-            await self._stop_tasks(cluster_id, running_tasks)
-        except (
-            ComputationalBackendNotConnectedError,
-            ComputationalSchedulerChangedError,
-            ComputationalBackendTaskNotFoundError,
-        ):
-            logger.error("ISSUE WHILE STOPPING")
-        except asyncio.CancelledError:
-            # TODO: what shall we do with cancelling stop task when the director-v2 goes off? should it be shielded?
-            logger.warning(
-                "The task stopping was cancelled, there might be still be running tasks!"
-            )
-            raise
-        logger.debug(
-            "pipeline '%s' is marked for cancellation. stopping tasks for [%s]",
-            f"{project_id=}",
-            f"{running_tasks=}",
-        )
+        await self._stop_tasks(cluster_id, tasks_to_stop)
 
-    async def _schedule_next_tasks(
+    async def _schedule_tasks_to_start(
         self,
         user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
         comp_tasks: Dict[str, CompTaskAtDB],
-        tasks: List[NodeID],
+        dag: nx.DiGraph,
     ):
-        if not tasks:
-            # nothing to do
-            return
-        # get tasks runtime requirements
-        tasks_to_reqs: Dict[NodeID, Image] = {
-            node_id: comp_tasks[f"{node_id}"].image for node_id in tasks
+        # filter out the successfully completed tasks
+        dag.remove_nodes_from(
+            {
+                node_id
+                for node_id, t in comp_tasks.items()
+                if t.state == RunningState.SUCCESS
+            }
+        )
+        next_task_node_ids = [node_id for node_id, degree in dag.in_degree() if degree == 0]  # type: ignore
+
+        # get the tasks to start
+        tasks_ready_to_start: Dict[NodeID, CompTaskAtDB] = {
+            node_id: comp_tasks[f"{node_id}"]
+            for node_id in next_task_node_ids
+            if comp_tasks[f"{node_id}"].state == RunningState.PUBLISHED
         }
 
-        # The sidecar only pick up tasks that are in PENDING state
+        if not tasks_ready_to_start:
+            # nothing to do
+            return
+
+        # Change the tasks state to PENDING
         comp_tasks_repo: CompTasksRepository = get_repository(
             self.db_engine, CompTasksRepository
         )  # type: ignore
         await comp_tasks_repo.set_project_tasks_state(
-            project_id, tasks, RunningState.PENDING
+            project_id, list(tasks_ready_to_start.keys()), RunningState.PENDING
         )
 
-        # we pass the tasks to the dask-client
+        # we pass the tasks to the dask-client in a gather such that each task can be stopped independently
         results = await asyncio.gather(
             *[
                 self._start_tasks(
                     user_id,
                     project_id,
                     cluster_id,
-                    scheduled_tasks={t: r},
+                    scheduled_tasks={node_id: task.image},
                     callback=self._wake_up_scheduler_now,
                 )
-                for t, r in tasks_to_reqs.items()
+                for node_id, task in tasks_ready_to_start.items()
             ],
             return_exceptions=True,
         )
-        for r, t in zip(results, tasks_to_reqs):
+        # let's parse the results
+        for r, t in zip(results, tasks_ready_to_start):
             if isinstance(
                 r,
                 (
@@ -503,7 +455,9 @@ class BaseCompScheduler(ABC):
                 # let's put these tasks back to PUBLISHED, so they might be re-submitted later
                 await asyncio.gather(
                     comp_tasks_repo.set_project_tasks_state(
-                        project_id, tasks, RunningState.PUBLISHED
+                        project_id,
+                        list(tasks_ready_to_start.keys()),
+                        RunningState.PUBLISHED,
                     ),
                 )
             elif isinstance(r, Exception):
@@ -512,7 +466,7 @@ class BaseCompScheduler(ABC):
                     f"{user_id=}",
                     f"{project_id=}",
                     f"{cluster_id=}",
-                    f"{tasks=}",
+                    f"{tasks_ready_to_start.keys()=}",
                     f"{r}",
                     "".join(traceback.format_tb(r.__traceback__)),
                 )
