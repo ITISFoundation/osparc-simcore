@@ -12,6 +12,7 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    get_args,
 )
 from uuid import uuid4
 
@@ -126,8 +127,6 @@ async def parse_output_data(
 
         await (await ports.outputs)[port_key].set_value(value_to_transfer)
 
-
-from typing import get_args
 
 _PVType = Optional[_NPItemValue]
 assert len(get_args(_PVType)) == len(  # nosec
