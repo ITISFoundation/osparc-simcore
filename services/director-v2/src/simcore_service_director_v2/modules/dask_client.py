@@ -276,7 +276,7 @@ class DaskClient:
         cluster_id: ClusterID,
         tasks: Dict[NodeID, Image],
         callback: UserCompleteCB,
-        remote_fct: Optional[Callable] = None,
+        remote_fct: Callable = None,
     ) -> List[Tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
         function that runs container will be started."""
@@ -308,9 +308,6 @@ class DaskClient:
 
         if remote_fct is None:
             remote_fct = _comp_sidecar_fct
-
-        # ----------------------------------------------
-
         list_of_node_id_to_job_id: List[Tuple[NodeID, str]] = []
         for node_id, node_image in tasks.items():
             job_id = generate_dask_job_id(
@@ -366,7 +363,6 @@ class DaskClient:
                     output_data_keys=output_data_keys,
                     log_file_url=log_file_url,
                     command=["run"],
-                    # client.submit options
                     key=job_id,
                     resources=dask_resources,
                     retries=0,
@@ -376,7 +372,7 @@ class DaskClient:
                         done_dask_callback,
                         task_to_future_map=self._taskid_to_future_map,
                         user_callback=callback,
-                        main_loop=asyncio.get_event_loop(),  # TODO: SAN how would changing e.g. to uvloop affect this?
+                        main_loop=asyncio.get_event_loop(),
                     )
                 )
 

@@ -15,7 +15,7 @@ import logging
 import traceback
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, cast
+from typing import Callable, Dict, List, Optional, Set, Tuple, cast
 
 import networkx as nx
 from aiopg.sa.engine import Engine
@@ -235,7 +235,7 @@ class BaseCompScheduler(ABC):
 
         # 1. Update the run states
         try:
-            pipeline_dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
+            pipeline_dag = await self._get_pipeline_dag(project_id)
             pipeline_tasks: Dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(
                 project_id, pipeline_dag
             )
@@ -250,19 +250,17 @@ class BaseCompScheduler(ABC):
             )
 
             # find the tasks that need scheduling
-            iter_tasks_to_schedule: Iterable[NodeID] = (
-                node_id for node_id, degree in pipeline_dag.in_degree() if degree == 0
-            )
+            tasks_to_schedule = [node_id for node_id, degree in pipeline_dag.in_degree() if degree == 0]  # type: ignore
 
             tasks_to_mark_as_aborted: Set[NodeID] = set()
-            for node_id in iter_tasks_to_schedule:
-                if pipeline_tasks[f"{node_id}"].state == RunningState.FAILED:
+            for node_id in tasks_to_schedule:
+                if pipeline_tasks[str(node_id)].state == RunningState.FAILED:
                     tasks_to_mark_as_aborted.update(nx.bfs_tree(pipeline_dag, node_id))
                     tasks_to_mark_as_aborted.remove(
                         node_id
                     )  # do not mark the failed one as aborted
 
-                if pipeline_tasks[f"{node_id}"].state == RunningState.PUBLISHED:
+                if pipeline_tasks[str(node_id)].state == RunningState.PUBLISHED:
                     # the nodes that are published shall be started
                     tasks_to_start.add(node_id)
 
