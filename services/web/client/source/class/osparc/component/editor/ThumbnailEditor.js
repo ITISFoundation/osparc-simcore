@@ -24,7 +24,7 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
     this._setLayout(new qx.ui.layout.VBox(8));
 
     this._createChildControlImpl("url-field");
-    this.__asdf = this.getChildControl("scroll-thumbnails");
+    this.__thumbnails = this.getChildControl("scroll-thumbnails");
 
     this._createChildControlImpl("cancel-btn");
     this._createChildControlImpl("save-btn");
@@ -71,6 +71,8 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
   },
 
   members: {
+    __thumbnails: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -85,31 +87,32 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
           break;
         case "scroll-thumbnails":
           control = new qx.ui.container.SlideBar().set({
+            alignX: "center",
             maxHeight: 170
           });
-          control.getChildControl("button-backward").set({
-            maxWidth: 30,
-            maxHeight: 30,
-            alignY: "middle",
-            marginRight: 5,
-            icon: "@FontAwesome5Solid/ellipsis-h/16",
-            backgroundColor: "transparent"
+          [
+            control.getChildControl("button-backward"),
+            control.getChildControl("button-forward")
+          ].forEach(btn => {
+            btn.set({
+              maxWidth: 30,
+              maxHeight: 30,
+              alignY: "middle",
+              marginLeft: 5,
+              marginRight: 5,
+              icon: "@FontAwesome5Solid/ellipsis-h/16",
+              backgroundColor: "transparent"
+            });
           });
-          control.getChildControl("button-forward").set({
-            maxWidth: 30,
-            maxHeight: 30,
-            alignY: "middle",
-            marginLeft: 5,
-            icon: "@FontAwesome5Solid/ellipsis-h/16",
-            backgroundColor: "transparent"
-          });
-          control.setLayout(new qx.ui.layout.HBox(5));
+          control.setLayout(new qx.ui.layout.HBox(5).set({
+            alignX: "center"
+          }));
           this._add(control, {
             flex: 1
           });
           break;
         case "buttons-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
             alignX: "right"
           }));
           this._add(control);
@@ -123,13 +126,12 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
         }
         case "save-btn": {
           const buttons = this.getChildControl("buttons-layout");
-          control = new osparc.ui.form.FetchButton(this.tr("Save"));
+          control = new qx.ui.form.Button(this.tr("Save"));
           control.addListener("execute", () => {
-            control.setFecthing(control);
             const urlField = this.getChildControl("url-field");
-            const validUrl = this.sanitizeUrl(urlField.getValue());
+            const validUrl = this.self().sanitizeUrl(urlField.getValue());
             if (validUrl) {
-              this.firedataEvent("updateThumbnail", validUrl);
+              this.fireDataEvent("updateThumbnail", validUrl);
             }
           }, this);
           buttons.add(control);
@@ -141,11 +143,13 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
     },
 
     __applySuggestions: function(suggestions) {
-      // const suggestionsLayout = this.getChildControl("suggested-thumbnails");
-      this.__asdf.removeAll();
+      this.__thumbnails.removeAll();
       suggestions.forEach(suggestion => {
         const thumbnail = new osparc.ui.basic.Thumbnail(suggestion, 170, 124);
-        this.__asdf.add(thumbnail);
+        thumbnail.addListener("tap", () => {
+          this.setUrl(thumbnail.getChildControl("image").getSource());
+        });
+        this.__thumbnails.add(thumbnail);
       });
     }
   }

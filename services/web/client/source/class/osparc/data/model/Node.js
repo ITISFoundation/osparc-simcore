@@ -213,6 +213,10 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   statics: {
+    isFrontend: function(metaData) {
+      return (metaData && metaData.key && metaData.key.includes("/frontend/"));
+    },
+
     isFilePicker: function(metaData) {
       return (metaData && metaData.key && metaData.key.includes("file-picker"));
     },
