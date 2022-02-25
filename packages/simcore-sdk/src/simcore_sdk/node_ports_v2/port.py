@@ -92,6 +92,12 @@ class Port(BaseServiceIOModel):
                     raise ValueError(
                         f"{v} invalid against content_schema: {err.message}"
                     ) from err
+            else:
+                if isinstance(v, (list, dict)):
+                    # TODO: SEE https://github.com/ITISFoundation/osparc-simcore/issues/2849
+                    raise ValueError(
+                        f"Containers as {v} currently only supported within content_schema"
+                    )
 
         return v
 
