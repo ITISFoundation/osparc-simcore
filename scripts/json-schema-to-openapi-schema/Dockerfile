@@ -1,4 +1,4 @@
-FROM node:14.15.4-buster-slim
+FROM node:14.19-buster-slim
 
 LABEL maintainer=sanderegg
 
