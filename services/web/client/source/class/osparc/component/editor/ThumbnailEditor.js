@@ -25,6 +25,8 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
 
     this.getChildControl("url-field");
     this.getChildControl("scroll-thumbnails");
+    const suggestionsLayout = this.getChildControl("thumbnails-layout");
+    suggestionsLayout.exclude();
 
     this.getChildControl("cancel-btn");
     this.getChildControl("save-btn");
@@ -159,6 +161,7 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
         });
         thumbnailsLayout.add(thumbnail);
       });
+      this.getChildControl("thumbnails-layout").setVisibility(suggestions.length ? "visible" : "excluded");
     }
   }
 });

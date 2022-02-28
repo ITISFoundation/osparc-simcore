@@ -345,7 +345,7 @@ qx.Class.define("osparc.studycard.Large", {
       const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
       Object.values(nodes).forEach(node => {
         const srvMetadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
-        if (!osparc.data.model.Node.isFrontend(node) && srvMetadata["thumbnail"]) {
+        if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
           suggestions.add(srvMetadata["thumbnail"]);
         }
       });
