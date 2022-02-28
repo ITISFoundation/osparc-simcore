@@ -127,12 +127,6 @@ qx.Class.define("osparc.studycard.Large", {
         this._add(hBox);
       }
 
-      if (this.getStudy().getDescription() || this.__isOwner()) {
-        const description = this.__createDescription();
-        const descriptionLayout = this.__createViewWithEdit(description, this.__openDescriptionEditor);
-        this._add(descriptionLayout);
-      }
-
       if (this.getStudy().getTags().length || this.__isOwner()) {
         const tags = this.__createTags();
         const tagsLayout = this.__createViewWithEdit(tags, this.__openTagsEditor);
@@ -140,6 +134,12 @@ qx.Class.define("osparc.studycard.Large", {
           osparc.utils.Utils.setIdToWidget(tagsLayout.getChildren()[1], "editStudyEditTagsBtn");
         }
         this._add(tagsLayout);
+      }
+
+      if (this.getStudy().getDescription() || this.__isOwner()) {
+        const description = this.__createDescription();
+        const descriptionLayout = this.__createViewWithEdit(description, this.__openDescriptionEditor);
+        this._add(descriptionLayout);
       }
     },
 
@@ -150,9 +150,7 @@ qx.Class.define("osparc.studycard.Large", {
       layout.add(view);
       if (this.__isOwner()) {
         const editBtn = osparc.utils.Utils.getEditButton();
-        editBtn.addListener("execute", () => {
-          cb.call(this);
-        }, this);
+        editBtn.addListener("execute", () => cb.call(this), this);
         layout.add(editBtn);
       }
 
@@ -180,14 +178,6 @@ qx.Class.define("osparc.studycard.Large", {
           callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
           ctx: this
         }
-      }, {
-        label: this.tr("Classifiers"),
-        view: this.__createClassifiers(),
-        action: (this.getStudy().getClassifiers().length || this.__isOwner()) ? {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
-          ctx: this
-        } : null
       }];
 
       if (this.getStudy().getQuality() && osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())) {
@@ -201,6 +191,16 @@ qx.Class.define("osparc.studycard.Large", {
           }
         });
       }
+
+      extraInfo.push({
+        label: this.tr("Classifiers"),
+        view: this.__createClassifiers(),
+        action: (this.getStudy().getClassifiers().length || this.__isOwner()) ? {
+          button: osparc.utils.Utils.getViewButton(),
+          callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
+          ctx: this
+        } : null
+      });
 
       if (osparc.data.Permissions.getInstance().isTester()) {
         extraInfo.unshift({
@@ -263,13 +263,13 @@ qx.Class.define("osparc.studycard.Large", {
       return osparc.studycard.Utils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
     },
 
+    __createTags: function() {
+      return osparc.studycard.Utils.createTags(this.getStudy());
+    },
+
     __createDescription: function() {
       const maxHeight = 400;
       return osparc.studycard.Utils.createDescription(this.getStudy(), maxHeight);
-    },
-
-    __createTags: function() {
-      return osparc.studycard.Utils.createTags(this.getStudy());
     },
 
     __openTitleEditor: function() {
