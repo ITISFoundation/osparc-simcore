@@ -904,6 +904,10 @@ async def test_nodeports_integration(
         dynamic_services_urls=dynamic_services_urls,
     )
 
+    # NOTE: Waits a bit for the DB to write the changes in
+    # comp_task for the upstream service.
+    await asyncio.sleep(2)
+
     await _assert_retrieve_completed(
         director_v2_client=async_client,
         service_uuid=services_node_uuids.dy_compose_spec,
