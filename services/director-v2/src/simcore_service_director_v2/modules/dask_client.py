@@ -289,7 +289,6 @@ class DaskClient:
         return (await self.get_tasks_status(job_ids=[job_id]))[0]
 
     async def get_tasks_status(self, job_ids: List[str]) -> List[RunningState]:
-        task_statuses = []
         # try to get the task from the scheduler
         task_statuses = await self.dask_subsystem.client.run_on_scheduler(
             lambda dask_scheduler: dask_scheduler.get_task_status(keys=job_ids)
