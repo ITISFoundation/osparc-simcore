@@ -122,8 +122,7 @@ class NewProject:
             self.params_override,
             self.user_id,
             force_uuid=self.force_uuid,
-            default_project_json=self.tests_data_dir
-            / "fake-template-projects.isan.json",
+            default_project_json=self.tests_data_dir / "fake-project.json",
         )
         return self.prj
 
