@@ -129,17 +129,19 @@ qx.Class.define("osparc.studycard.Large", {
 
       if (this.getStudy().getTags().length || this.__isOwner()) {
         const tags = this.__createTags();
-        const tagsLayout = this.__createViewWithEdit(tags, this.__openTagsEditor);
+        const editInTitle = this.__createViewWithEdit(tags.getChildren()[0], this.__openTagsEditor);
+        tags.addAt(editInTitle, 0);
         if (this.__isOwner()) {
-          osparc.utils.Utils.setIdToWidget(tagsLayout.getChildren()[1], "editStudyEditTagsBtn");
+          osparc.utils.Utils.setIdToWidget(editInTitle.getChildren()[1], "editStudyEditTagsBtn");
         }
-        this._add(tagsLayout);
+        this._add(tags);
       }
 
       if (this.getStudy().getDescription() || this.__isOwner()) {
         const description = this.__createDescription();
-        const descriptionLayout = this.__createViewWithEdit(description, this.__openDescriptionEditor);
-        this._add(descriptionLayout);
+        const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
+        description.addAt(editInTitle, 0);
+        this._add(description);
       }
     },
 
