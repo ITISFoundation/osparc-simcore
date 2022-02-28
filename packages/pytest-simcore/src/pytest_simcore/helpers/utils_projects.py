@@ -6,7 +6,7 @@
 import json
 import uuid as uuidlib
 from pathlib import Path
-from typing import Dict, Optional, Type
+from typing import Any, Dict, Optional, Type
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -36,10 +36,10 @@ def empty_project_data():
 
 async def create_project(
     app: web.Application,
-    params_override: Dict = None,
+    params_override: Optional[Dict[str, Any]] = None,
     user_id: Optional[int] = None,
     *,
-    default_project_json: Path,
+    default_project_json: Optional[Path] = None,
     force_uuid: bool = False,
 ) -> ProjectDict:
     """Injects new project in database for user or as template
@@ -53,7 +53,12 @@ async def create_project(
     """
     params_override = params_override or {}
 
-    project_data = json.loads(default_project_json.read_text())
+    project_data = {}
+    if default_project_json is not None:
+        # uses default_project_json as base
+        assert default_project_json.exists(), f"{default_project_json}"
+        project_data = json.loads(default_project_json.read_text())
+
     project_data.update(params_override)
 
     db = app[APP_PROJECT_DBAPI]

@@ -7,16 +7,17 @@ import logging
 import re
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any, AsyncIterable, Callable, Dict, List, Optional
 from uuid import uuid4
 
 import aiopg
+import aiopg.sa
 import aioredis
 import pytest
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import RunningState
-from pytest_simcore.helpers.utils_login import log_client_in
+from pytest_simcore.helpers.utils_login import AUserDict, log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.redis import RedisSettings
@@ -34,6 +35,7 @@ from simcore_service_webserver.groups_api import (
 )
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects.plugin import setup_projects
+from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import get_registry
 from simcore_service_webserver.rest import setup_rest
@@ -78,7 +80,7 @@ async def __delete_all_redis_keys__(redis_settings: RedisSettings):
 
 
 @pytest.fixture
-async def director_v2_service_mock() -> aioresponses:
+async def director_v2_service_mock() -> AsyncIterable[aioresponses]:
     """uses aioresponses to mock all calls of an aiohttpclient
     WARNING: any request done through the client will go through aioresponses. It is
     unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
@@ -174,9 +176,9 @@ async def login_guest_user(client: TestClient):
 
 async def new_project(
     client: TestClient,
-    user: Dict[str, Any],
+    user: AUserDict,
     tests_data_dir: Path,
-    access_rights: Dict[str, Any] = None,
+    access_rights: Optional[Dict[str, Any]] = None,
 ):
     """returns a project for the given user"""
     project_data = empty_project_data()
@@ -187,24 +189,34 @@ async def new_project(
         client.app,
         project_data,
         user["id"],
-        default_project_json=tests_data_dir / "fake-template-projects.isan.json",
+        default_project_json=tests_data_dir / "fake-template-projects.isan.2dplot.json",
     )
 
 
-async def get_template_project(client, user, project_data: Dict, access_rights=None):
+async def get_template_project(
+    client: TestClient,
+    user: AUserDict,
+    project_data: ProjectDict,
+    access_rights=None,
+):
     """returns a tempalte shared with all"""
     _, _, all_group = await list_user_groups(client.app, user["id"])
 
     # the information comes from a file, randomize it
-    project_data["name"] = "Fake template" + str(uuid4())
-    project_data["uuid"] = str(uuid4())
+    project_data["name"] = f"Fake template {uuid4()}"
+    project_data["uuid"] = f"{uuid4()}"
     project_data["accessRights"] = {
         str(all_group["gid"]): {"read": True, "write": False, "delete": False}
     }
     if access_rights is not None:
         project_data["accessRights"].update(access_rights)
 
-    return await create_project(client.app, project_data, user["id"])
+    return await create_project(
+        client.app,
+        project_data,
+        user["id"],
+        default_project_json=None,
+    )
 
 
 async def get_group(client, user):
@@ -238,7 +250,7 @@ async def change_user_role(
 async def connect_to_socketio(client, user, socketio_client_factory: Callable):
     """Connect a user to a socket.io"""
     socket_registry = get_registry(client.server.app)
-    cur_client_session_id = str(uuid4())
+    cur_client_session_id = f"{uuid4()}"
     sio = await socketio_client_factory(cur_client_session_id, client)
     resource_key = {
         "user_id": str(user["id"]),
