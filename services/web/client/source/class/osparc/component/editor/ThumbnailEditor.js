@@ -159,7 +159,7 @@ qx.Class.define("osparc.component.editor.ThumbnailEditor", {
         thumbnail.addListener("tap", () => {
           this.setUrl(thumbnail.getChildControl("image").getSource());
           thumbnailsLayout.getChildren().forEach(thumbnailImg => osparc.utils.Utils.removeBorder(thumbnailImg));
-          osparc.utils.Utils.addBorder(thumbnail, 1, "blue");
+          osparc.utils.Utils.addBorder(thumbnail, 1, "#007fd4"); // Visual Studio blue
         });
         thumbnailsLayout.add(thumbnail);
       });
