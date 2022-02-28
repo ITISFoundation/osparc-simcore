@@ -141,8 +141,9 @@ class BaseCompScheduler(ABC):
         pipeline_at_db: CompPipelineAtDB = await comp_pipeline_repo.get_pipeline(
             project_id
         )
-        pipeline_dag = pipeline_at_db.get_graph()
-        return pipeline_dag
+        dag = pipeline_at_db.get_graph()
+        logger.debug("%s: current %s", f"{project_id=}", f"{dag=}")
+        return dag
 
     async def _get_pipeline_tasks(
         self, project_id: ProjectID, pipeline_dag: nx.DiGraph
@@ -232,10 +233,15 @@ class BaseCompScheduler(ABC):
             for task in pipeline_tasks.values()
             if task.state in [RunningState.STARTED, RunningState.PENDING]
         ]:
+            logger.debug(
+                "Currently pending/running tasks are: %s",
+                f"{((task.node_id, task.state) for task in tasks_supposedly_processing)}",
+            )
             # ensure these tasks still exist in the backend, if not we abort these
             tasks_backend_status = await self._get_tasks_status(
                 cluster_id, tasks_supposedly_processing
             )
+            logger.debug("Computational states: %s", f"{tasks_backend_status=}")
             for task, backend_state in zip(
                 tasks_supposedly_processing, tasks_backend_status
             ):
