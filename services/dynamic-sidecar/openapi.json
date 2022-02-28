@@ -667,9 +667,14 @@
           },
           "type": {
             "title": "Type",
-            "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
+            "pattern": "^(number|integer|boolean|string|ref_contentSchema|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
             "type": "string",
             "description": "data type expected on this input glob matching for data type is allowed"
+          },
+          "contentSchema": {
+            "title": "Contentschema",
+            "type": "object",
+            "description": "jsonschema of this input/output. Required when type='ref_contentSchema'"
           },
           "fileToKeyMap": {
             "title": "Filetokeymap",
@@ -693,7 +698,7 @@
           }
         },
         "additionalProperties": false,
-        "description": "Metadata on a service input or output port"
+        "description": "Base class for service input/outputs"
       },
       "Structure": {
         "title": "Structure",

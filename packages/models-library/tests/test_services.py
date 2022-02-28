@@ -16,14 +16,13 @@ from models_library.services import (
     DYNAMIC_SERVICE_KEY_FORMAT,
     SERVICE_KEY_RE,
     BootOption,
-    ServiceAccessRightsAtDB,
-    ServiceCommonData,
     ServiceDockerData,
     ServiceInput,
     ServiceMetaData,
-    ServiceMetaDataAtDB,
     ServiceOutput,
+    _BaseServiceCommonDataModel,
 )
+from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from pint import Unit, UnitRegistry
 
 
@@ -38,7 +37,7 @@ def minimal_service_common_data() -> Dict[str, Any]:
 def test_create_minimal_service_common_data(
     minimal_service_common_data: Dict[str, Any]
 ):
-    service = ServiceCommonData(**minimal_service_common_data)
+    service = _BaseServiceCommonDataModel(**minimal_service_common_data)
 
     assert service.name == minimal_service_common_data["name"]
     assert service.description == minimal_service_common_data["description"]
@@ -49,7 +48,7 @@ def test_node_with_empty_thumbnail(minimal_service_common_data: Dict[str, Any]):
     service_data = minimal_service_common_data
     service_data.update({"thumbnail": ""})
 
-    service = ServiceCommonData(**minimal_service_common_data)
+    service = _BaseServiceCommonDataModel(**minimal_service_common_data)
 
     assert service.name == minimal_service_common_data["name"]
     assert service.description == minimal_service_common_data["description"]
@@ -64,7 +63,7 @@ def test_node_with_thumbnail(minimal_service_common_data: Dict[str, Any]):
         }
     )
 
-    service = ServiceCommonData(**minimal_service_common_data)
+    service = _BaseServiceCommonDataModel(**minimal_service_common_data)
 
     assert service.name == minimal_service_common_data["name"]
     assert service.description == minimal_service_common_data["description"]

@@ -1,7 +1,7 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=no-member
+# pylint: disable=no-member
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 from pathlib import Path
 from typing import Callable
