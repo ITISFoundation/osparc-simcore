@@ -6,12 +6,14 @@ import asyncio
 import logging
 import re
 from copy import deepcopy
-from typing import Callable, Dict, List
+from pathlib import Path
+from typing import Any, Callable, Dict, List
 from uuid import uuid4
 
 import aiopg
 import aioredis
 import pytest
+from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import RunningState
 from pytest_simcore.helpers.utils_login import log_client_in
@@ -160,22 +162,33 @@ def client(
 ################ utils
 
 
-async def login_user(client):
+async def login_user(client: TestClient):
     """returns a logged in regular user"""
     return await log_client_in(client=client, user_data={"role": UserRole.USER.name})
 
 
-async def login_guest_user(client):
+async def login_guest_user(client: TestClient):
     """returns a logged in Guest user"""
     return await log_client_in(client=client, user_data={"role": UserRole.GUEST.name})
 
 
-async def new_project(client, user, access_rights=None):
+async def new_project(
+    client: TestClient,
+    user: Dict[str, Any],
+    tests_data_dir: Path,
+    access_rights: Dict[str, Any] = None,
+):
     """returns a project for the given user"""
     project_data = empty_project_data()
     if access_rights is not None:
         project_data["accessRights"] = access_rights
-    return await create_project(client.app, project_data, user["id"])
+
+    return await create_project(
+        client.app,
+        project_data,
+        user["id"],
+        default_project_json=tests_data_dir / "fake-template-projects.isan.json",
+    )
 
 
 async def get_template_project(client, user, project_data: Dict, access_rights=None):
@@ -370,10 +383,13 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
     socketio_client_factory: Callable,
     aiopg_engine,
     redis_client,
+    tests_data_dir: Path,
 ):
     """while a GUEST user is connected GC will not remove none of its projects nor the user itself"""
     logged_guest_user = await login_guest_user(client)
-    empty_guest_user_project = await new_project(client, logged_guest_user)
+    empty_guest_user_project = await new_project(
+        client, logged_guest_user, tests_data_dir
+    )
     assert await assert_users_count(aiopg_engine, 1) is True
     assert await assert_projects_count(aiopg_engine, 1) is True
 
@@ -394,10 +410,13 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     socketio_client_factory: Callable,
     aiopg_engine,
     redis_client,
+    tests_data_dir: Path,
 ):
     """After a GUEST users with one opened project closes browser tab regularly (GC cleans everything)"""
     logged_guest_user = await login_guest_user(client)
-    empty_guest_user_project = await new_project(client, logged_guest_user)
+    empty_guest_user_project = await new_project(
+        client, logged_guest_user, tests_data_dir
+    )
     assert await assert_users_count(aiopg_engine, 1) is True
     assert await assert_projects_count(aiopg_engine, 1) is True
 
@@ -434,13 +453,15 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     socketio_client_factory: Callable,
     aiopg_engine,
     fake_project: Dict,
+    tests_data_dir: Path,
 ):
     """after a USER disconnects the GC will remove none of its projects or templates nor the user itself"""
     number_of_projects = 5
     number_of_templates = 5
     logged_user = await login_user(client)
     user_projects = [
-        await new_project(client, logged_user) for _ in range(number_of_projects)
+        await new_project(client, logged_user, tests_data_dir)
+        for _ in range(number_of_projects)
     ]
     user_template_projects = [
         await get_template_project(client, logged_user, fake_project)
@@ -474,7 +495,10 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
 
 
 async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owner_removal(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready,
+    client,
+    aiopg_engine,
+    tests_data_dir: Path,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -495,6 +519,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
     )
 
@@ -513,7 +538,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
 
 
 async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -531,6 +556,7 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={
             str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
             str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
@@ -552,7 +578,7 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
 
 
 async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on_owner_removal(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -575,6 +601,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
     )
 
@@ -619,7 +646,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
 
 
 async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_last_and_all_is_removed(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -644,6 +671,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
     )
 
@@ -699,7 +727,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
 
 
 async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_until_one_user_remains(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -719,6 +747,7 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={
             str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
             str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
@@ -768,7 +797,7 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
 
 
 async def test_t9_project_shared_with_other_users_transferred_between_them_and_then_removed(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -790,6 +819,7 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={
             str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
             str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
@@ -850,7 +880,7 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
 
 
 async def test_t10_owner_and_all_shared_users_marked_as_guests(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -868,6 +898,7 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={
             str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
             str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
@@ -890,7 +921,7 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
 
 
 async def test_t11_owner_and_all_users_in_group_marked_as_guests(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
 ):
     """
     USER "u1" creates a group and invites "u2" and "u3";
@@ -911,6 +942,7 @@ async def test_t11_owner_and_all_users_in_group_marked_as_guests(
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
     )
 

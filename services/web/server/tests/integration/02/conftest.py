@@ -35,12 +35,19 @@ def project_id() -> ProjectID:
 
 @pytest.fixture
 async def user_project(
-    client, fake_project: Dict, logged_user: Dict, project_id: ProjectID
+    client,
+    fake_project: Dict,
+    logged_user: Dict,
+    project_id: ProjectID,
+    tests_data_dir: Path,
 ) -> AsyncIterator[Dict]:
     fake_project["prjOwner"] = logged_user["name"]
     fake_project["uuid"] = f"{project_id}"
 
     async with NewProject(
-        fake_project, client.app, user_id=logged_user["id"]
+        fake_project,
+        client.app,
+        user_id=logged_user["id"],
+        tests_data_dir=tests_data_dir,
     ) as project:
         yield project

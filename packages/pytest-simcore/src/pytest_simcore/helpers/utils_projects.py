@@ -4,14 +4,13 @@
 # pylint: disable=no-value-for-parameter
 
 import json
-import re
 import uuid as uuidlib
+from pathlib import Path
 from typing import Dict, Optional, Type
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.projects_state import ProjectState
-from simcore_service_webserver._resources import resources
 from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_db import (
     APP_PROJECT_DBAPI,
@@ -20,18 +19,6 @@ from simcore_service_webserver.projects.projects_db import (
 from simcore_service_webserver.utils import now_str
 
 from .utils_assert import assert_status
-
-fake_template_resources = [
-    "data/" + name
-    for name in resources.listdir("data")
-    if re.match(r"^fake-template-(.+).json", name)
-]
-
-fake_project_resources = [
-    "data/" + name
-    for name in resources.listdir("data")
-    if re.match(r"^fake-user-(.+).json", name)
-]
 
 
 def empty_project_data():
@@ -47,18 +34,14 @@ def empty_project_data():
     }
 
 
-def load_data(name):
-    with resources.stream(name) as fp:
-        return json.load(fp)
-
-
 async def create_project(
     app: web.Application,
     params_override: Dict = None,
-    user_id=None,
+    user_id: Optional[int] = None,
     *,
-    force_uuid=False,
-) -> Dict:
+    default_project_json: Path,
+    force_uuid: bool = False,
+) -> ProjectDict:
     """Injects new project in database for user or as template
 
     :param params_override: predefined project properties (except for non-writeable e.g. uuid), defaults to None
@@ -70,7 +53,7 @@ async def create_project(
     """
     params_override = params_override or {}
 
-    project_data = load_data("data/fake-template-projects.isan.json")[0]
+    project_data = json.loads(default_project_json.read_text())
     project_data.update(params_override)
 
     db = app[APP_PROJECT_DBAPI]
@@ -109,6 +92,7 @@ class NewProject:
         clear_all: bool = True,
         user_id: Optional[int] = None,
         *,
+        tests_data_dir: Path,
         force_uuid: bool = False,
     ):
         assert app  # nosec
@@ -119,6 +103,10 @@ class NewProject:
         self.prj = {}
         self.clear_all = clear_all
         self.force_uuid = force_uuid
+        self.tests_data_dir = tests_data_dir
+
+        assert tests_data_dir.exists()
+        assert tests_data_dir.is_dir()
 
         if not self.clear_all:
             # TODO: add delete_project. Deleting a single project implies having to delete as well all dependencies created
@@ -128,8 +116,14 @@ class NewProject:
 
     async def __aenter__(self):
         assert self.app  # nosec
+
         self.prj = await create_project(
-            self.app, self.params_override, self.user_id, force_uuid=self.force_uuid
+            self.app,
+            self.params_override,
+            self.user_id,
+            force_uuid=self.force_uuid,
+            default_project_json=self.tests_data_dir
+            / "fake-template-projects.isan.json",
         )
         return self.prj
 
