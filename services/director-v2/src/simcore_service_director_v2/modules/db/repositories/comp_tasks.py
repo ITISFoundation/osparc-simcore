@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
-from models_library.frontend_services_catalog import iter_service_docker_data
+from models_library.function_services_catalog import iter_service_docker_data
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
@@ -39,9 +39,6 @@ _FRONTEND_SERVICES_CATALOG: Dict[str, ServiceDockerData] = {
     for meta in iter_service_docker_data()
     if any(name in meta.key for name in ["file-picker", "parameter", "data-iterator"])
 }
-assert (  # nosec
-    len(_FRONTEND_SERVICES_CATALOG) == 5
-), "If this fails, review filter above and update"  # nosec
 
 
 async def _generate_tasks_list_from_project(

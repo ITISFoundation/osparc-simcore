@@ -17,6 +17,9 @@ VersionStr = constr(regex=VERSION_RE)
 SHA1Str = constr(regex=r"^[a-fA-F0-9]{40}$")
 MD5Str = constr(regex=r"^[a-fA-F0-9]{32}$")
 
+# env var
+EnvVarKey = constr(regex=r"[a-zA-Z][a-azA-Z0-9_]*")
+
 
 class LogLevel(str, Enum):
     DEBUG = "DEBUG"

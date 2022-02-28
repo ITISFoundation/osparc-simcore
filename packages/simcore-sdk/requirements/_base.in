@@ -9,6 +9,7 @@
 aiofiles
 aiohttp
 aiopg[sa]
+jsonschema
 packaging
 pydantic[email]
 tenacity

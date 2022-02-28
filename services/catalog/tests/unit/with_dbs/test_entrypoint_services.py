@@ -1,9 +1,9 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=protected-access
-# pylint:disable=not-an-iterable
-# pylint:disable=no-value-for-parameter
+# pylint: disable=no-value-for-parameter
+# pylint: disable=not-an-iterable
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import asyncio
 from datetime import datetime
@@ -13,11 +13,8 @@ from typing import List, Optional
 import pytest
 import simcore_service_catalog.api.dependencies.director
 from fastapi import FastAPI
-from models_library.services import (
-    ServiceAccessRightsAtDB,
-    ServiceDockerData,
-    ServiceType,
-)
+from models_library.services import ServiceDockerData, ServiceType
+from models_library.services_db import ServiceAccessRightsAtDB
 from pydantic.types import PositiveInt
 from respx.router import MockRouter
 from simcore_service_catalog.api.routes import services

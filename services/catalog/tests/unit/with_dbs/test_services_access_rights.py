@@ -6,7 +6,8 @@ from typing import Callable, List
 
 from aiopg.sa.engine import Engine
 from fastapi import FastAPI
-from models_library.services import ServiceAccessRightsAtDB, ServiceDockerData
+from models_library.services import ServiceDockerData
+from models_library.services_db import ServiceAccessRightsAtDB
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.models.domain.group import GroupAtDB
 from simcore_service_catalog.services.access_rights import (
