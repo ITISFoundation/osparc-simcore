@@ -226,15 +226,11 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     },
 
     __setHoveredStyle: function() {
-      this.getContentElement().setStyles({
-        "border": "1px solid " + qx.theme.manager.Color.getInstance().resolve("background-selected")
-      });
+      osparc.utils.Utils.addBorder(this, 1, qx.theme.manager.Color.getInstance().resolve("background-selected"));
     },
 
     __setNotHoveredStyle: function() {
-      this.getContentElement().setStyles({
-        "border": "1px solid transparent"
-      });
+      osparc.utils.Utils.removeBorder(this);
     }
   }
 });

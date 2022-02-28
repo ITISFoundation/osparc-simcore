@@ -85,6 +85,10 @@ qx.Class.define("osparc.data.model.Workbench", {
     __rootNodes: null,
     __edges: null,
 
+    getWorkbenchInitData: function() {
+      return this.__workbenchInitData;
+    },
+
     buildWorkbench: function() {
       this.__rootNodes = {};
       this.__edges = {};
