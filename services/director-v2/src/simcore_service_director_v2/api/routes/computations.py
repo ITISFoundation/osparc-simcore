@@ -108,7 +108,6 @@ async def create_computation(
 
         # ok so put the tasks in the db
         await computation_pipelines.upsert_pipeline(
-            job.user_id,
             project.uuid,
             minimal_computational_dag,
             publish=job.start_pipeline or False,
