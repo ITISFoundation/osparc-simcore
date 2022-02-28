@@ -144,47 +144,54 @@ class DaskScheduler(BaseCompScheduler):
         self, task: CompTaskAtDB, result: Union[Exception, TaskOutputData]
     ) -> None:
         logger.debug("received %s result: %s", f"{task=}", f"{result=}")
-        assert task.job_id  # nosec
-        service_key, service_version, user_id, project_id, node_id = parse_dask_job_id(
-            task.job_id
-        )
+        task_final_state = RunningState.FAILED
 
-        task_final_state = RunningState.UNKNOWN
-        if isinstance(result, TaskOutputData):
-            # success!
-            task_final_state = RunningState.SUCCESS
+        if task.job_id is not None:
+            (
+                service_key,
+                service_version,
+                user_id,
+                project_id,
+                node_id,
+            ) = parse_dask_job_id(task.job_id)
+            assert task.project_id == project_id  # nosec
+            assert task.node_id == node_id  # nosec
 
-            await parse_output_data(
-                self.db_engine,
-                task.job_id,
-                result,
-            )
-        else:
-            if isinstance(result, TaskCancelledError):
-                task_final_state = RunningState.ABORTED
+            if isinstance(result, TaskOutputData):
+                # success!
+                task_final_state = RunningState.SUCCESS
+
+                await parse_output_data(
+                    self.db_engine,
+                    task.job_id,
+                    result,
+                )
             else:
-                task_final_state = RunningState.FAILED
-            # we need to remove any invalid files in the storage
-            await clean_task_output_and_log_files_if_invalid(
-                self.db_engine, user_id, project_id, node_id
+                if isinstance(result, TaskCancelledError):
+                    task_final_state = RunningState.ABORTED
+                else:
+                    task_final_state = RunningState.FAILED
+                # we need to remove any invalid files in the storage
+                await clean_task_output_and_log_files_if_invalid(
+                    self.db_engine, user_id, project_id, node_id
+                )
+            # instrumentation
+            message = InstrumentationRabbitMessage(
+                metrics="service_stopped",
+                user_id=user_id,
+                project_id=task.project_id,
+                node_id=task.node_id,
+                service_uuid=task.node_id,
+                service_type=NodeClass.COMPUTATIONAL,
+                service_key=service_key,
+                service_tag=service_version,
+                result=task_final_state,
             )
+            await self.rabbitmq_client.publish_message(message)
 
         await CompTasksRepository(self.db_engine).set_project_tasks_state(
-            project_id, [node_id], task_final_state
+            task.project_id, [task.node_id], task_final_state
         )
-        # instrumentation
-        message = InstrumentationRabbitMessage(
-            metrics="service_stopped",
-            user_id=user_id,
-            project_id=project_id,
-            node_id=node_id,
-            service_uuid=node_id,
-            service_type=NodeClass.COMPUTATIONAL,
-            service_key=service_key,
-            service_tag=service_version,
-            result=task_final_state,
-        )
-        await self.rabbitmq_client.publish_message(message)
 
     async def _task_state_change_handler(self, event: str) -> None:
         task_state_event = TaskStateEvent.parse_raw(event)
