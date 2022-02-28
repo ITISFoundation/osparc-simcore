@@ -106,7 +106,10 @@ async def get_swarm_network(dynamic_sidecar_settings: DynamicSidecarSettings) ->
     ]
     if not networks or len(networks) > 1:
         raise DynamicSidecarError(
-            f"Swarm network name is not configured, found following networks: {networks}"
+            (
+                f"Swarm network name (searching for '*{network_name}*') is not configured."
+                f"Found following networks: {networks}"
+            )
         )
     return networks[0]
 
