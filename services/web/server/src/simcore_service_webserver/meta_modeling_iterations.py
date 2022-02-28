@@ -17,6 +17,7 @@ from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
 from models_library.services import ServiceDockerData
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
+from pydantic.types import PositiveInt
 
 from .meta_modeling_function_nodes import (
     FUNCTION_SERVICE_TO_CALLABLE,
@@ -124,6 +125,8 @@ def extract_parameters(
 
 # DOMAIN MODEL for project iteration ------------------------------------------------------------
 
+IterationID = PositiveInt
+
 
 class ProjectIteration(BaseModel):
     """
@@ -135,10 +138,16 @@ class ProjectIteration(BaseModel):
 
     # version-control info
     repo_id: Optional[int] = None
-    repo_commit_id: CommitID = Field(...)
+    repo_commit_id: CommitID = Field(
+        ...,
+        description="this id makes it unique but does not guarantees order. See iter_index for that",
+    )
 
     # iteration info
-    iter_index: int = Field(...)
+    iteration_index: IterationID = Field(
+        ...,
+        description="Index that allows iterations to be sortable",
+    )
     total_count: Union[int, Literal["unbound"]] = "unbound"
     parameters_checksum: SHA1Str = Field(...)
 
@@ -159,7 +168,7 @@ class ProjectIteration(BaseModel):
         """Composes unique tag name for this iteration"""
         return compose_iteration_tag_name(
             repo_commit_id=self.repo_commit_id,
-            iter_index=self.iter_index,
+            iter_index=self.iteration_index,
             total_count=self.total_count,
             parameters_checksum=self.parameters_checksum,
         )
@@ -282,7 +291,7 @@ async def get_or_create_runnable_projects(
         project_iteration = ProjectIteration(
             repo_id=repo_id,
             repo_commit_id=main_commit_id,
-            iter_index=iter_index,
+            iteration_index=iter_index,
             total_count=total_count,
             parameters_checksum=_compute_params_checksum(parameters),
         )
