@@ -98,6 +98,9 @@ qx.Class.define("osparc.servicecard.Large", {
       thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
       const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
       const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
+      thumbnailLayout.getLayout().set({
+        alignX: "center"
+      });
 
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
         alignX: "center"
@@ -109,8 +112,9 @@ qx.Class.define("osparc.servicecard.Large", {
       this._add(hBox);
 
       const description = this.__createDescription();
-      const descriptionLayout = this.__createViewWithEdit(description, this.__openDescriptionEditor);
-      this._add(descriptionLayout);
+      const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
+      description.addAt(editInTitle, 0);
+      this._add(description);
 
       const rawMetadata = this.__createRawMetadata();
       const more = new osparc.desktop.PanelView(this.tr("raw metadata"), rawMetadata).set({
@@ -127,14 +131,10 @@ qx.Class.define("osparc.servicecard.Large", {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignY: "middle"
       }));
-      layout.add(view, {
-        flex: 1
-      });
+      layout.add(view);
       if (this.__isOwner()) {
         const editBtn = osparc.utils.Utils.getEditButton();
-        editBtn.addListener("execute", () => {
-          cb.call(this);
-        }, this);
+        editBtn.addListener("execute", () => cb.call(this), this);
         layout.add(editBtn);
       }
 
