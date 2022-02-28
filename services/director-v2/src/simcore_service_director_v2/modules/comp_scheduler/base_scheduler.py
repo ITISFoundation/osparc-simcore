@@ -15,7 +15,7 @@ import logging
 import traceback
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Set, Tuple, cast
+from typing import Dict, List, Optional, Set, Tuple, cast
 
 import networkx as nx
 from aiopg.sa.engine import Engine
@@ -268,7 +268,6 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         cluster_id: ClusterID,
         scheduled_tasks: Dict[NodeID, Image],
-        callback: Callable[[], None],
     ) -> None:
         ...
 
@@ -419,7 +418,6 @@ class BaseCompScheduler(ABC):
                     project_id,
                     cluster_id,
                     scheduled_tasks={node_id: task.image},
-                    callback=self._wake_up_scheduler_now,
                 )
                 for node_id, task in tasks_ready_to_start.items()
             ],

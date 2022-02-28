@@ -2,7 +2,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import AsyncIterator, Callable, Dict, List, Tuple, Union
+from typing import AsyncIterator, Dict, List, Tuple, Union
 
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
@@ -76,7 +76,6 @@ class DaskScheduler(BaseCompScheduler):
         project_id: ProjectID,
         cluster_id: ClusterID,
         scheduled_tasks: Dict[NodeID, Image],
-        callback: Callable[[], None],
     ):
         # now transfer the pipeline to the dask scheduler
         async with _cluster_dask_client(cluster_id, self) as client:
@@ -87,7 +86,7 @@ class DaskScheduler(BaseCompScheduler):
                 project_id=project_id,
                 cluster_id=cluster_id,
                 tasks=scheduled_tasks,
-                callback=callback,
+                callback=self._wake_up_scheduler_now,
             )
             logger.debug(
                 "started following tasks (node_id, job_id)[%s] on cluster %s",

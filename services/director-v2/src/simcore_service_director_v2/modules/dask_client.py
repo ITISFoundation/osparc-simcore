@@ -91,6 +91,7 @@ RemoteFct = Callable[
     ],
     TaskOutputData,
 ]
+UserCallbackInSepThread = Callable[[], None]
 
 
 @dataclass
@@ -176,7 +177,7 @@ class DaskClient:
         project_id: ProjectID,
         cluster_id: ClusterID,
         tasks: Dict[NodeID, Image],
-        callback: Callable[[], None],
+        callback: UserCallbackInSepThread,
         remote_fct: Optional[RemoteFct] = None,
     ) -> List[Tuple[NodeID, str]]:
         """actually sends the function remote_fct to be remotely executed. if None is kept then the default
@@ -269,11 +270,7 @@ class DaskClient:
                     retries=0,
                 )
 
-                def _done_callback(_: distributed.Future):
-                    # NOTE: this fct is called from a separate thread!
-                    callback()
-
-                task_future.add_done_callback(_done_callback)
+                task_future.add_done_callback(lambda: callback())
 
                 list_of_node_id_to_job_id.append((node_id, job_id))
                 await self.dask_subsystem.client.publish_dataset(
