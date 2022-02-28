@@ -359,6 +359,7 @@ qx.Class.define("osparc.studycard.Large", {
           "thumbnail": validUrl
         });
       }, this);
+      thumbnailEditor.addListener("cancel", () => win.close());
     },
 
     __openDescriptionEditor: function() {

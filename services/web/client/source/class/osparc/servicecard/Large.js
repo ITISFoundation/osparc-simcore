@@ -326,7 +326,7 @@ qx.Class.define("osparc.servicecard.Large", {
           "thumbnail": validUrl
         });
       }, this);
-    },
+      thumbnailEditor.addListener("cancel", () => win.close());
 
     __openDescriptionEditor: function() {
       const title = this.tr("Edit Description");
