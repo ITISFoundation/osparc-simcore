@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 
 class ExtractedResults(BaseModel):
-    progress: Dict[NodeIDStr, conint(ge=0, lt=100)] = Field(
+    progress: Dict[NodeIDStr, conint(ge=0, le=100)] = Field(
         ..., description="Progress in each computational node"
     )
     labels: Dict[NodeIDStr, str] = Field(
