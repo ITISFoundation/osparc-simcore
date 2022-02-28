@@ -115,6 +115,9 @@ qx.Class.define("osparc.studycard.Large", {
       thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
       const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
       const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
+      thumbnailLayout.getLayout().set({
+        alignX: "center"
+      });
       if (slim) {
         this._add(thumbnailLayout);
       } else {
@@ -144,9 +147,7 @@ qx.Class.define("osparc.studycard.Large", {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignY: "middle"
       }));
-      layout.add(view, {
-        flex: 1
-      });
+      layout.add(view);
       if (this.__isOwner()) {
         const editBtn = osparc.utils.Utils.getEditButton();
         editBtn.addListener("execute", () => {
