@@ -21,6 +21,9 @@ SYNCED_VERSIONS_SUFFIX = [
 # Add here paths to files containing project's data that can be validated with projects schema
 PROJECTS_PATHS = [
     "services/web/server/tests/data/fake-project.json",
+    "services/web/server/tests/data/fake-template-projects.isan.json",
+    "services/web/server/tests/data/fake-template-projects.json",
+    "services/web/server/tests/data/fake-template-projects.osparc.json",
     "services/web/server/tests/data/workbench_sleeper_payload.json",
 ]
 
