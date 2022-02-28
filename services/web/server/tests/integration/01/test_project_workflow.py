@@ -9,9 +9,7 @@
 """
 
 import asyncio
-import json
 from copy import deepcopy
-from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 from uuid import uuid4
 
@@ -30,6 +28,7 @@ from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.products import setup_products
 from simcore_service_webserver.projects.plugin import setup_projects
+from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
@@ -91,12 +90,6 @@ def client(
             },
         )
     )
-
-
-@pytest.fixture
-def fake_project_data(fake_data_dir: Path) -> Dict:
-    with (fake_data_dir / "fake-project.json").open() as fp:
-        return json.load(fp)
 
 
 @pytest.fixture
@@ -203,7 +196,7 @@ async def test_workflow(
     postgres_db: sa.engine.Engine,
     docker_registry: str,
     simcore_services_ready,
-    fake_project_data,
+    fake_project: ProjectDict,
     catalog_subsystem_mock,
     client,
     logged_user,
@@ -217,8 +210,8 @@ async def test_workflow(
     assert not projects
 
     # creation
-    await _request_create(client, fake_project_data)
-    catalog_subsystem_mock([fake_project_data])
+    await _request_create(client, fake_project)
+    catalog_subsystem_mock([fake_project])
     # list not empty
     projects = await _request_list(client)
     assert len(projects) == 1
@@ -232,7 +225,7 @@ async def test_workflow(
             "lastChangeDate",
             "accessRights",
         ):
-            assert projects[0][key] == fake_project_data[key]
+            assert projects[0][key] == fake_project[key]
     assert projects[0]["prjOwner"] == logged_user["email"]
     assert projects[0]["accessRights"] == {
         str(primary_group["gid"]): {"read": True, "write": True, "delete": True}

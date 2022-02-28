@@ -15,6 +15,7 @@ from pytest_simcore.helpers.utils_login import AUserDict, LoggedUser
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.projects.project_models import ProjectDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -84,7 +85,8 @@ def fake_data_dir(tests_data_dir: Path) -> Path:
 
 
 @pytest.fixture
-def fake_project(tests_data_dir: Path) -> Dict:
+def fake_project(tests_data_dir: Path) -> ProjectDict:
+    # TODO: rename as fake_project_data since it does not produce a BaseModel but its **data
     fpath = tests_data_dir / "fake-project.json"
     assert fpath.exists()
     return json.loads(fpath.read_text())

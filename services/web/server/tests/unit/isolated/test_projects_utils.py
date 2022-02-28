@@ -79,31 +79,29 @@ def test_clone_project_document(
     ],
 )
 async def test_project_get_depending_nodes(
-    fake_project_data: ProjectDict, node_uuid: str, expected_dependencies: Set[str]
+    fake_project: ProjectDict, node_uuid: str, expected_dependencies: Set[str]
 ):
-    set_of_depending_nodes = await project_get_depending_nodes(
-        fake_project_data, node_uuid
-    )
+    set_of_depending_nodes = await project_get_depending_nodes(fake_project, node_uuid)
     assert set_of_depending_nodes == expected_dependencies
 
 
-def test_any_node_inputs_changed(fake_project_data: ProjectDict):
+def test_any_node_inputs_changed(fake_project: ProjectDict):
 
-    current_project = deepcopy(fake_project_data)
-    updated_project = deepcopy(fake_project_data)
+    current_project = deepcopy(fake_project)
+    updated_project = deepcopy(fake_project)
 
     assert not any_node_inputs_changed(updated_project, current_project)
 
     assert (
-        fake_project_data == current_project
+        fake_project == current_project
     ), "any_node_inputs_changed MUST NOT modify data "
     assert (
-        fake_project_data == updated_project
+        fake_project == updated_project
     ), "any_node_inputs_changed MUST NOT modify data"
 
     # add new node w/ a link
     fake_node = deepcopy(
-        fake_project_data["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]
+        fake_project["workbench"]["5739e377-17f7-4f09-a6ad-62659fb7fdec"]
     )
     assert fake_node["inputs"] == {
         "Na": 0,
