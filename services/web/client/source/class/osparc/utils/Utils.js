@@ -224,6 +224,10 @@ qx.Class.define("osparc.utils.Utils", {
       widget.getContentElement().setStyle("border", width+"px solid " + color);
     },
 
+    removeBorder: function(widget) {
+      widget.getContentElement().setStyle("border", "0px solid");
+    },
+
     __setStyleToIFrame: function(domEl) {
       if (domEl && domEl.contentDocument && domEl.contentDocument.documentElement) {
         const iframeDocument = domEl.contentDocument.documentElement;

@@ -230,7 +230,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     },
 
     __setNotHoveredStyle: function() {
-      osparc.utils.Utils.addBorder(this, 0, "transparent");
+      osparc.utils.Utils.removeBorder(this);
     }
   }
 });

@@ -260,7 +260,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         alignY: "middle",
         backgroundColor
       });
-      osparc.utils.Utils.addBorder(this, 0);
+      osparc.utils.Utils.removeBorder(this);
       tabPageBtn.bind("value", tabPageBtn, "backgroundColor", {
         converter: val => val ? backgroundColor : "contrasted-background+"
       });

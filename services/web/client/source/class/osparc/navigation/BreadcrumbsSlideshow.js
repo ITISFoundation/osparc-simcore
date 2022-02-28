@@ -76,7 +76,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
             textColor: "text",
             backgroundColor: "background-main-lighter+"
           });
-          osparc.utils.Utils.addBorder(button, 0);
+          osparc.utils.Utils.removeBorder(button);
         }
       };
 
