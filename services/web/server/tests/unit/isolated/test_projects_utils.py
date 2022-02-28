@@ -29,12 +29,12 @@ def project_schema(project_schema_file: Path) -> Dict[str, Any]:
     "test_data_file_name",
     [
         "fake-project.json",
+        "fake-template-projects.hack08.notebooks.json",
         "fake-template-projects.isan.2dplot.json",
         "fake-template-projects.isan.matward.json",
         "fake-template-projects.isan.paraview.json",
         "fake-template-projects.isan.ucdavis.json",
         "fake-template-projects.sleepers.json",
-        "fake-template-projects.hack08.notebooks.json",
     ],
 )
 def test_clone_project_document(
