@@ -11,7 +11,7 @@ from typing import Any, Dict, Generator, Iterator, List, Literal, Optional, Tupl
 
 from aiohttp import web
 from models_library.basic_types import MD5Str, SHA1Str
-from models_library.frontend_services_catalog import is_iterator_service
+from models_library.function_services_catalog import is_iterator_service
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
 from models_library.services import ServiceDockerData
@@ -19,8 +19,8 @@ from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
 
 from .meta_modeling_function_nodes import (
-    FRONTEND_SERVICE_TO_CALLABLE,
-    FRONTEND_SERVICES_CATALOG,
+    FUNCTION_SERVICE_TO_CALLABLE,
+    FUNCTION_SERVICES_CATALOG,
 )
 from .meta_modeling_version_control import (
     CommitID,
@@ -58,7 +58,7 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
 
     for node_id, node in project_nodes.items():
         if is_iterator_service(node.key):
-            node_def = FRONTEND_SERVICES_CATALOG[(node.key, node.version)]
+            node_def = FUNCTION_SERVICES_CATALOG[(node.key, node.version)]
             # save
             iterable_nodes_defs.append(node_def)
             iterable_nodes.append(node)
@@ -71,7 +71,7 @@ def _build_project_iterations(project_nodes: NodesDict) -> List[_ParametersNodes
         assert node.inputs  # nosec
         assert node_def.inputs  # nosec
 
-        node_call = FRONTEND_SERVICE_TO_CALLABLE[(node.key, node.version)]
+        node_call = FUNCTION_SERVICE_TO_CALLABLE[(node.key, node.version)]
         g: Generator[NodeOutputsDict, None, None] = node_call(
             **{name: node.inputs[name] for name in node_def.inputs}
         )

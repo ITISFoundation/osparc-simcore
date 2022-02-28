@@ -24,7 +24,7 @@ from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.core.shared_handlers import (
     write_file_and_run_command,
 )
-from simcore_service_dynamic_sidecar.core.utils import async_command
+from simcore_service_dynamic_sidecar.core.utils import HIDDEN_FILE_NAME, async_command
 from simcore_service_dynamic_sidecar.core.validation import parse_compose_spec
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules.mounted_fs import (
@@ -498,7 +498,13 @@ async def test_directory_watcher_disabling(
         mounted_volumes: MountedVolumes = get_mounted_volumes()
         dir_name = mounted_volumes.disk_outputs_path / f"{uuid4()}"
         dir_name.mkdir(parents=True)
-        dir_count = len([1 for x in mounted_volumes.disk_outputs_path.glob("*")])
+        dir_count = len(
+            [
+                1
+                for x in mounted_volumes.disk_outputs_path.glob("*")
+                if not f"{x}".endswith(HIDDEN_FILE_NAME)
+            ]
+        )
         return dir_count
 
     EVENTS_PER_DIR_CREATION = 2

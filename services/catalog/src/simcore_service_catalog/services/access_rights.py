@@ -9,7 +9,8 @@ from urllib.parse import quote_plus
 
 from aiopg.sa.engine import Engine
 from fastapi import FastAPI
-from models_library.services import ServiceAccessRightsAtDB, ServiceDockerData
+from models_library.services import ServiceDockerData
+from models_library.services_db import ServiceAccessRightsAtDB
 from packaging.version import Version
 from pydantic.types import PositiveInt
 

@@ -14,6 +14,7 @@ from typing import (
     Tuple,
     Union,
     cast,
+    get_args,
 )
 from uuid import uuid4
 
@@ -25,6 +26,7 @@ from dask_task_models_library.container_tasks.events import (
 )
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
+    PortValue,
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
@@ -37,6 +39,8 @@ from pydantic import AnyUrl
 from servicelib.json_serialization import json_dumps
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import links, port_utils
+from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
+from simcore_sdk.node_ports_v2.port import Port
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -131,12 +135,19 @@ async def parse_output_data(
         await (await ports.outputs)[port_key].set_value(value_to_transfer)
 
 
+_PVType = Optional[_NPItemValue]
+assert len(get_args(_PVType)) == len(  # nosec
+    get_args(PortValue)
+), "Types returned by port.get_value() -> _PVType MUST map one-to-one to PortValue. See compute_input_data"
+
+
 async def compute_input_data(
     app: FastAPI,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
 ) -> TaskInputData:
+    """Retrieves values registered to the inputs of project_id/node_id"""
     ports = await _create_node_ports(
         db_engine=app.state.engine,
         user_id=user_id,
@@ -144,17 +155,21 @@ async def compute_input_data(
         node_id=node_id,
     )
     input_data = {}
+
+    port: Port
     for port in (await ports.inputs).values():
-        value_link = await port.get_value()
-        if isinstance(value_link, AnyUrl):
+        value: _PVType = await port.get_value()
+
+        # Mapping _PVType -> PortValue
+        if isinstance(value, AnyUrl):
             input_data[port.key] = FileUrl(
-                url=value_link,
+                url=value,
                 file_mapping=(
                     next(iter(port.file_to_key_map)) if port.file_to_key_map else None
                 ),
             )
         else:
-            input_data[port.key] = value_link
+            input_data[port.key] = value
     return TaskInputData.parse_obj(input_data)
 
 
