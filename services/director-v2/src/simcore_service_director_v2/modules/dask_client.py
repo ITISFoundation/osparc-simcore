@@ -270,8 +270,8 @@ class DaskClient:
                     resources=dask_resources,
                     retries=0,
                 )
-
-                task_future.add_done_callback(lambda: callback())
+                # NOTE: the callback is running in a secondary thread, and takes a future as arg
+                task_future.add_done_callback(lambda _: callback())
 
                 list_of_node_id_to_job_id.append((node_id, job_id))
                 await self.dask_subsystem.client.publish_dataset(
