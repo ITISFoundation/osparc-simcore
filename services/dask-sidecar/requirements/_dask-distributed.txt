@@ -5,7 +5,9 @@
 #    pip-compile --output-file=requirements/_dask-distributed.txt --strip-extras requirements/_dask-distributed.in
 #
 blosc==1.10.6
-    # via -r requirements/_dask-distributed.in
+    # via
+    #   -c requirements/./_base.txt
+    #   -r requirements/_dask-distributed.in
 click==8.0.3
     # via
     #   -c requirements/./_base.txt
@@ -41,7 +43,9 @@ locket==0.2.1
     #   -c requirements/./_base.txt
     #   partd
 lz4==4.0.0
-    # via -r requirements/_dask-distributed.in
+    # via
+    #   -c requirements/./_base.txt
+    #   -r requirements/_dask-distributed.in
 markupsafe==2.0.1
     # via
     #   -c requirements/./_base.txt

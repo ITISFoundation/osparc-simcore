@@ -39,6 +39,8 @@ attrs==20.2.0
     #   jsonschema
 bleach==3.3.0
     # via nbconvert
+blosc==1.10.6
+    # via -r requirements/_base.in
 bokeh==2.4.2
     # via dask
 certifi==2021.5.30
@@ -138,6 +140,8 @@ jupyterlab-pygments==0.1.2
     # via nbconvert
 locket==0.2.1
     # via partd
+lz4==4.0.0
+    # via -r requirements/_base.in
 markupsafe==2.0.1
     # via jinja2
 mistune==0.8.4
