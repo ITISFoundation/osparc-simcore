@@ -7,7 +7,6 @@
 
 import json
 from pathlib import Path
-from typing import Dict, List
 
 import jsonschema
 import pytest
@@ -19,23 +18,11 @@ SYNCED_VERSIONS_SUFFIX = [
     "-converted.yaml",  # equivalent openapi specs file (see scripts/json-schema-to-openapi-schema)
 ]
 
-
-# TODO: find json files under services with the word project or similar wildcard??
+# Add here paths to files containing project's data that can be validated with projects schema
 PROJECTS_PATHS = [
     "services/web/server/tests/data/fake-project.json",
     "services/web/server/tests/data/workbench_sleeper_payload.json",
-    "services/web/server/src/simcore_service_webserver/data/fake-template-projects.isan.json",
-    "services/web/server/src/simcore_service_webserver/data/fake-template-projects.osparc.json",
-    "services/web/server/src/simcore_service_webserver/data/fake-template-projects.json",
 ]
-
-# TODO: check schemas here!?
-# ./src/simcore_service_webserver/data/fake-materialDB-LF-getItemList.json
-# ./src/simcore_service_webserver/data/fake-modeler-LF-getItemList.json
-# ./src/simcore_service_webserver/data/fake-materialDB-LF-getItem.json
-# ./src/simcore_service_webserver/data/fake-materialDB-LF-Material2Entities.json
-# ./tests/integration/02/workbench_sleeper_dag_adjacency_list.json
-# ./tests/integration/02/workbench_sleeper_payload.json
 
 
 def _load_data(fpath: Path):
