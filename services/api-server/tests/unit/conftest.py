@@ -41,6 +41,8 @@ pytestmark = pytest.mark.asyncio
 pytest_plugins = [
     "pytest_simcore.repository_paths",
     "pytest_simcore.pydantic_models",
+    "pytest_simcore.pytest_global_environs",
+
 ]
 
 

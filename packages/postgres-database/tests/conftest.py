@@ -11,7 +11,10 @@ import sqlalchemy as sa
 import yaml
 from aiopg.sa.engine import Engine
 
-pytest_plugins = ["pytest_simcore.repository_paths"]
+pytest_plugins = [
+    "pytest_simcore.repository_paths",
+    "pytest_simcore.pytest_global_environs",
+]
 
 
 @pytest.fixture(scope="session")
@@ -49,7 +52,7 @@ def make_engine(postgres_service: str) -> Callable:
 
 
 def is_postgres_responsive(dsn) -> bool:
-    """Check if something responds to ``url`` """
+    """Check if something responds to ``url``"""
     try:
         engine = sa.create_engine(dsn)
         conn = engine.connect()

@@ -59,6 +59,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_services",
     "pytest_simcore.simcore_storage_service",
     "pytest_simcore.tmp_path_extra",
+    "pytest_simcore.pytest_global_environs",
 ]
 
 logger = logging.getLogger(__name__)
