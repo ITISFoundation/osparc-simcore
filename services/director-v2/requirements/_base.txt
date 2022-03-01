@@ -63,6 +63,7 @@ attrs==20.3.0
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
     #   aiohttp
+    #   jsonschema
 blosc==1.10.6
     # via -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
 certifi==2021.5.30
@@ -141,9 +142,7 @@ idna==2.10
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
-    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   anyio
     #   email-validator
     #   requests
@@ -187,6 +186,12 @@ jinja2==2.11.3
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
     #   fastapi
+jsonschema==3.2.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 locket==0.2.1
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -272,6 +277,8 @@ pyparsing==2.4.7
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   packaging
+pyrsistent==0.18.1
+    # via jsonschema
 python-dotenv==0.18.0
     # via
     #   pydantic
@@ -310,6 +317,7 @@ rfc3986==1.4.0
 six==1.15.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   jsonschema
     #   packaging
     #   python-multipart
     #   tenacity

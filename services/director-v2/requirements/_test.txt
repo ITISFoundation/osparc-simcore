@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aio_pika==6.8.0
+aio-pika==6.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -172,7 +172,9 @@ jmespath==0.10.0
     #   boto3
     #   botocore
 jsonschema==3.2.0
-    # via docker-compose
+    # via
+    #   -c requirements/_base.txt
+    #   docker-compose
 lazy-object-proxy==1.6.0
     # via astroid
 mako==1.1.5
@@ -237,8 +239,10 @@ pyparsing==2.4.7
     # via
     #   -c requirements/_base.txt
     #   packaging
-pyrsistent==0.18.0
-    # via jsonschema
+pyrsistent==0.18.1
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema
 pytest==6.2.5
     # via
     #   -r requirements/_test.in

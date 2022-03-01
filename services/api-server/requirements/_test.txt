@@ -97,7 +97,6 @@ httpx==0.22.0
 idna==2.10
     # via
     #   -c requirements/_base.txt
-    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   anyio
     #   requests
     #   rfc3986
