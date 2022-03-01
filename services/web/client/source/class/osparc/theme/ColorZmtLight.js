@@ -1,12 +1,12 @@
 qx.Theme.define("osparc.theme.ColorZmtLight", {
-  extend: osparc.theme.purple.Color,
+  extend: osparc.theme.zmtlight.Color,
   include: osparc.theme.mixin.Color,
   colors: {
     "workbench-edge-comp-active": "#888888",
     "workbench-edge-api-active": "#444444",
     "workbench-start-hint": "#AFAFAF",
 
-    "node-selected-background": "#5495d2",
+    "node-selected-background": "#999999",
     "node-title-text": "#232323",
     "node-port-text": "#454545",
 
@@ -19,6 +19,10 @@ qx.Theme.define("osparc.theme.ColorZmtLight", {
 
     "loading-page-background-color": "background-main",
     "loading-page-text": "#000000",
-    "loading-page-spinner": "#222222"
+    "loading-page-spinner": "#222222",
+
+    "contrasted-background++": "#BBB",
+    "scrollbar-passive": "contrasted-background+",
+    "scrollbar-active": "contrasted-background++"
   }
 });
