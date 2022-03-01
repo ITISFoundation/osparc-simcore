@@ -1,5 +1,5 @@
 
-qx.Class.define("osparc.theme.zmt.ColorEngine", {
+qx.Class.define("osparc.theme.colorProvider.ColorProvider", {
   type: "static",
 
   statics: {
@@ -5411,8 +5411,8 @@ qx.Class.define("osparc.theme.zmt.ColorEngine", {
       }
     },
 
-    getColor(cNumber) {
-      return this.self().colors["color"]["scales"]["zmt"][cNumber];
+    getColor(context, cNumber) {
+      return this.self().colors["color"]["scales"][context][cNumber];
     }
   }
 });
