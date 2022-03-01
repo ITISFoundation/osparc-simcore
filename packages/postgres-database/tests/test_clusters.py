@@ -22,6 +22,7 @@ async def user_id(pg_engine: Engine) -> AsyncIterable[int]:
         uid = await conn.scalar(
             users.insert().values(**(random_user())).returning(users.c.id)
         )
+    assert uid is not None
     yield uid
     # cleanup
     async with pg_engine.acquire() as conn:
@@ -35,6 +36,7 @@ async def user_group_id(pg_engine: Engine, user_id: int) -> int:
         primary_gid = await conn.scalar(
             sa.select([users.c.primary_gid]).where(users.c.id == user_id)
         )
+    assert primary_gid is not None
     return primary_gid
 
 
