@@ -39,6 +39,7 @@ from simcore_service_webserver.clusters.models import (
     ClusterType,
 )
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.engine.result import Result
 from sqlalchemy.sql.elements import literal_column
 
 
@@ -118,7 +119,7 @@ def cluster(
             }
         )
 
-        result = postgres_db.execute(
+        result: Result = postgres_db.execute(
             clusters.insert()
             .values(new_cluster.to_clusters_db(only_update=False))
             .returning(literal_column("*"))
