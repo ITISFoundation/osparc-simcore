@@ -4,6 +4,7 @@ from pprint import pformat
 from typing import Optional
 
 import pytest
+from cloudpickle import dumps, loads
 from dask_task_models_library.container_tasks.io import (
     FilePortSchema,
     FileUrl,
@@ -167,3 +168,21 @@ def test_create_task_output_from_task_does_not_throw_when_there_are_optional_ent
         output_file_ext=faker.file_name(),
     )
     assert len(task_output_data) == 0
+
+
+@pytest.mark.parametrize(
+    "model_cls",
+    (
+        TaskInputData,
+        TaskOutputDataSchema,
+        TaskOutputData,
+    ),
+)
+def test_objects_are_compatible_with_dask_requirements(model_cls, model_cls_examples):
+    # NOTE: fcts could also be passed through the same test
+    for name, example in model_cls_examples.items():
+        print(name, ":", pformat(example))
+
+        model_instance = model_cls.parse_obj(example)
+        reloaded_instance = loads(dumps(model_instance))
+        assert reloaded_instance == model_instance

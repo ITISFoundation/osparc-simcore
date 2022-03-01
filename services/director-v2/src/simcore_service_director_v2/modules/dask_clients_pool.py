@@ -42,7 +42,7 @@ class DaskClientsPool:
             endpoint=f"tcp://{settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
             authentication=NoAuthentication(),
             owner=1,  # FIXME: that is usually the everyone's group... but we do not know nor care about it in director-v2...
-        )
+        )  # type: ignore
 
     def register_handlers(self, task_handlers: TaskHandlers) -> None:
         self._task_handlers = task_handlers

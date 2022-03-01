@@ -17,6 +17,8 @@ from pydantic import (
 )
 from pydantic.types import constr
 
+TaskCancelEventName = "cancel_event_{}"
+
 
 class PortSchema(BaseModel):
     required: bool
