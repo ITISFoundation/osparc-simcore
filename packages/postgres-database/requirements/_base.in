@@ -2,14 +2,11 @@
 # Specifies third-party dependencies for 'simcore-postgres-database'
 #
 --constraint ../../../requirements/constraints.txt
-
+--constraint ./constraints.txt
 # sqlalchemy[postgresql_psycopg2binary]<1.4,>=1.1 (from aiopg[sa]==1.2.1->-r requirements/_test.in (line 14))
-sqlalchemy[postgresql_psycopg2binary]<1.4,>=1.1
+sqlalchemy[postgresql_psycopg2binary]
 
-# There are incompatible versions in the resolved dependencies:
-#   idna==3.1 (from -c requirements/_base.txt (line 9))
-#   idna<3,>=2.5 (from requests==2.25.1->docker==5.0.0->-r requirements/_migration.in (line 16))
-idna<3,>=2.5
+
 
 
 alembic
