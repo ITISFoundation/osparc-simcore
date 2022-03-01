@@ -3,6 +3,7 @@ qx.Class.define("osparc.theme.colorProvider.ColorProvider", {
   type: "static",
 
   statics: {
+    // nested-zmt-dark.json
     colors: {
       "color": {
         "scales": {
