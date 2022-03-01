@@ -336,6 +336,32 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
     "progressive-progressbar-indicator-done": "c01",
     "progressive-progressbar-indicator-undone": "c02",
     "progressive-progressbar-percent-background": "c00",
-    "progressive-progressbar-percent-text": "c02"
+    "progressive-progressbar-percent-text": "c02",
+
+
+
+    // OSPARC
+    "workbench-edge-comp-active": "#777777",
+    "workbench-edge-api-active": "#BBBBBB",
+    "workbench-start-hint": "#505050",
+
+    "node-selected-background": "#666666",
+    "node-title-text": "#DCDCDC",
+    "node-port-text": "#BABABA",
+
+    "logger-debug-message": "#FFFFFF",
+    "logger-info-message": "#FFFFFF",
+
+    "service-window-hint": "#808080",
+
+    "progressbar": "#60909e",
+
+    "loading-page-background-color": "#202020",
+    "loading-page-text": "#FFFFFF",
+    "loading-page-spinner": "#DDDDDD",
+
+    "contrasted-background++": "#666",
+    "scrollbar-passive": "contrasted-background+",
+    "scrollbar-active": "contrasted-background++"
   }
 });
