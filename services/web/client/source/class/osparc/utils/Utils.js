@@ -274,19 +274,19 @@ qx.Class.define("osparc.utils.Utils", {
       return color;
     },
 
-    getColorLuminance: function(hexColor) {
-      const rgb = qx.util.ColorUtil.hexStringToRgb(hexColor);
+    getColorLuminance: function(color) {
+      const rgb = qx.util.ColorUtil.isRgbString(color) ? color : qx.util.ColorUtil.hexStringToRgb(color);
       const luminance = 0.2126*(rgb[0]/255) + 0.7152*(rgb[1]/255) + 0.0722*(rgb[2]/255);
       return luminance;
     },
 
-    getContrastedTextColor: function(hexColor) {
-      const L = this.getColorLuminance(hexColor);
+    getContrastedTextColor: function(color) {
+      const L = this.getColorLuminance(color);
       return L > 0.35 ? "contrasted-text-dark" : "contrasted-text-light";
     },
 
-    getRoundedBinaryColor: function(hexColor) {
-      const L = this.getColorLuminance(hexColor);
+    getRoundedBinaryColor: function(color) {
+      const L = this.getColorLuminance(color);
       return L > 0.35 ? "#FFF" : "#000";
     },
 
