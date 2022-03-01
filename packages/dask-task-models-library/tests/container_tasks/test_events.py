@@ -8,7 +8,6 @@
 import pytest
 from dask_task_models_library.container_tasks.events import (
     BaseTaskEvent,
-    TaskCancelEvent,
     TaskLogEvent,
     TaskProgressEvent,
     TaskStateEvent,
@@ -23,9 +22,7 @@ def test_task_event_abstract():
         BaseTaskEvent(job_id="some_fake")  # type: ignore
 
 
-@pytest.mark.parametrize(
-    "model_cls", [TaskStateEvent, TaskProgressEvent, TaskLogEvent, TaskCancelEvent]
-)
+@pytest.mark.parametrize("model_cls", [TaskStateEvent, TaskProgressEvent, TaskLogEvent])
 def test_events_models_examples(model_cls):
     examples = model_cls.Config.schema_extra["examples"]
 

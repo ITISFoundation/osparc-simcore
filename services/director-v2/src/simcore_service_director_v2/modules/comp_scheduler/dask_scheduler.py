@@ -2,8 +2,9 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import AsyncIterator, Callable, Dict, List, Tuple
+from typing import AsyncIterator, Dict, List, Tuple, Union
 
+from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
     TaskProgressEvent,
@@ -32,7 +33,7 @@ from ...utils.dask import (
     parse_dask_job_id,
     parse_output_data,
 )
-from ...utils.scheduler import COMPLETED_STATES, get_repository
+from ...utils.scheduler import get_repository
 from ..db.repositories.comp_tasks import CompTasksRepository
 from ..rabbitmq import RabbitMQClient
 from .base_scheduler import BaseCompScheduler
@@ -75,7 +76,6 @@ class DaskScheduler(BaseCompScheduler):
         project_id: ProjectID,
         cluster_id: ClusterID,
         scheduled_tasks: Dict[NodeID, Image],
-        callback: Callable[[], None],
     ):
         # now transfer the pipeline to the dask scheduler
         async with _cluster_dask_client(cluster_id, self) as client:
@@ -86,7 +86,7 @@ class DaskScheduler(BaseCompScheduler):
                 project_id=project_id,
                 cluster_id=cluster_id,
                 tasks=scheduled_tasks,
-                callback=self._on_task_completed,
+                callback=self._wake_up_scheduler_now,
             )
             logger.debug(
                 "started following tasks (node_id, job_id)[%s] on cluster %s",
@@ -104,60 +104,93 @@ class DaskScheduler(BaseCompScheduler):
             ]
         )
 
+    async def _get_tasks_status(
+        self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
+    ) -> List[RunningState]:
+        async with _cluster_dask_client(cluster_id, self) as client:
+            return await client.get_tasks_status([f"{t.job_id}" for t in tasks])
+
     async def _stop_tasks(
         self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
     ) -> None:
         async with _cluster_dask_client(cluster_id, self) as client:
-            await client.abort_computation_tasks([f"{t.job_id}" for t in tasks])
-
-    async def _on_task_completed(self, event: TaskStateEvent) -> None:
-        logger.debug(
-            "received task completion: %s",
-            event,
-        )
-        service_key, service_version, user_id, project_id, node_id = parse_dask_job_id(
-            event.job_id
-        )
-
-        assert event.state in COMPLETED_STATES  # nosec
-
-        logger.info(
-            "task %s completed with state: %s\n%s",
-            event.job_id,
-            f"{event.state.value}".lower(),
-            event.msg,
-        )
-        if event.state == RunningState.SUCCESS:
-            # we need to parse the results
-            assert event.msg  # nosec
-            await parse_output_data(
-                self.db_engine,
-                event.job_id,
-                TaskOutputData.parse_raw(event.msg),
+            await asyncio.gather(
+                *[client.abort_computation_task(t.job_id) for t in tasks if t.job_id]
             )
-        else:
-            # we need to remove any invalid files in the storage
-            await clean_task_output_and_log_files_if_invalid(
-                self.db_engine, user_id, project_id, node_id
+
+    async def _process_completed_tasks(
+        self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
+    ) -> None:
+        try:
+            async with _cluster_dask_client(cluster_id, self) as client:
+                tasks_results = await asyncio.gather(
+                    *[client.get_task_result(t.job_id or "undefined") for t in tasks],
+                    return_exceptions=True,
+                )
+            await asyncio.gather(
+                *[
+                    self._process_task_result(task, result)
+                    for task, result in zip(tasks, tasks_results)
+                ]
             )
+        finally:
+            async with _cluster_dask_client(cluster_id, self) as client:
+                await asyncio.gather(
+                    *[client.release_task_result(t.job_id) for t in tasks if t.job_id]
+                )
+
+    async def _process_task_result(
+        self, task: CompTaskAtDB, result: Union[Exception, TaskOutputData]
+    ) -> None:
+        logger.debug("received %s result: %s", f"{task=}", f"{result=}")
+        task_final_state = RunningState.FAILED
+
+        if task.job_id is not None:
+            (
+                service_key,
+                service_version,
+                user_id,
+                project_id,
+                node_id,
+            ) = parse_dask_job_id(task.job_id)
+            assert task.project_id == project_id  # nosec
+            assert task.node_id == node_id  # nosec
+
+            if isinstance(result, TaskOutputData):
+                # success!
+                task_final_state = RunningState.SUCCESS
+
+                await parse_output_data(
+                    self.db_engine,
+                    task.job_id,
+                    result,
+                )
+            else:
+                if isinstance(result, TaskCancelledError):
+                    task_final_state = RunningState.ABORTED
+                else:
+                    task_final_state = RunningState.FAILED
+                # we need to remove any invalid files in the storage
+                await clean_task_output_and_log_files_if_invalid(
+                    self.db_engine, user_id, project_id, node_id
+                )
+            # instrumentation
+            message = InstrumentationRabbitMessage(
+                metrics="service_stopped",
+                user_id=user_id,
+                project_id=task.project_id,
+                node_id=task.node_id,
+                service_uuid=task.node_id,
+                service_type=NodeClass.COMPUTATIONAL,
+                service_key=service_key,
+                service_tag=service_version,
+                result=task_final_state,
+            )
+            await self.rabbitmq_client.publish_message(message)
 
         await CompTasksRepository(self.db_engine).set_project_tasks_state(
-            project_id, [node_id], event.state
+            task.project_id, [task.node_id], task_final_state
         )
-        # instrumentation
-        message = InstrumentationRabbitMessage(
-            metrics="service_stopped",
-            user_id=user_id,
-            project_id=project_id,
-            node_id=node_id,
-            service_uuid=node_id,
-            service_type=NodeClass.COMPUTATIONAL,
-            service_key=service_key,
-            service_tag=service_version,
-            result=event.state,
-        )
-        await self.rabbitmq_client.publish_message(message)
-        self._wake_up_scheduler_now()
 
     async def _task_state_change_handler(self, event: str) -> None:
         task_state_event = TaskStateEvent.parse_raw(event)

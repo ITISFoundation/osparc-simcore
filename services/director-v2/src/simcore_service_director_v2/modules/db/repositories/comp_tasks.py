@@ -18,7 +18,6 @@ from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ....models.schemas.services import ServiceExtras
 from ....utils.computations import to_node_class
 from ....utils.db import RUNNING_STATE_TO_DB
-from ....utils.logging_utils import log_decorator
 from ...director_v0 import DirectorV0Client
 from ..tables import NodeClass, StateType, comp_tasks
 from ._base import BaseRepository
@@ -102,7 +101,6 @@ async def _generate_tasks_list_from_project(
 
 
 class CompTasksRepository(BaseRepository):
-    @log_decorator(logger=logger)
     async def get_all_tasks(
         self,
         project_id: ProjectID,
@@ -119,7 +117,6 @@ class CompTasksRepository(BaseRepository):
 
         return tasks
 
-    @log_decorator(logger=logger)
     async def get_comp_tasks(
         self,
         project_id: ProjectID,
@@ -137,7 +134,6 @@ class CompTasksRepository(BaseRepository):
         logger.debug("found the tasks: %s", f"{tasks=}")
         return tasks
 
-    @log_decorator(logger=logger)
     async def upsert_tasks_from_project(
         self,
         project: ProjectAtDB,
@@ -199,7 +195,6 @@ class CompTasksRepository(BaseRepository):
             )
             return inserted_comp_tasks_db
 
-    @log_decorator(logger=logger)
     async def mark_project_published_tasks_as_aborted(
         self, project_id: ProjectID
     ) -> None:
@@ -216,7 +211,6 @@ class CompTasksRepository(BaseRepository):
             )
         logger.debug("marked project %s published tasks as aborted", f"{project_id=}")
 
-    @log_decorator(logger=logger)
     async def set_project_task_job_id(
         self, project_id: ProjectID, task: NodeID, job_id: str
     ) -> None:
@@ -236,7 +230,6 @@ class CompTasksRepository(BaseRepository):
             f"{job_id=}",
         )
 
-    @log_decorator(logger=logger)
     async def set_project_tasks_state(
         self, project_id: ProjectID, tasks: List[NodeID], state: RunningState
     ) -> None:
@@ -256,7 +249,6 @@ class CompTasksRepository(BaseRepository):
             f"{state=}",
         )
 
-    @log_decorator(logger=logger)
     async def delete_tasks_from_project(self, project: ProjectAtDB) -> None:
         async with self.db_engine.acquire() as conn:
             await conn.execute(

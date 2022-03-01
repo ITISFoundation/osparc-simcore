@@ -43,7 +43,7 @@ from ..dependencies.dynamic_services import (
 )
 
 router = APIRouter()
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 @router.get(
