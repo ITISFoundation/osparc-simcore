@@ -52,12 +52,13 @@
     },
     {
       "class": "osparc.Application",
-      "theme": "osparc.theme.ThemePurple",
+      "theme": "osparc.theme.ThemeZmtDark",
       "name": "tis",
       "title": "TI Treatment Planning",
       "include": [
         "iconfont.material.Load",
-        "iconfont.fontawesome5.Load"
+        "iconfont.fontawesome5.Load",
+        "osparc.theme.ThemeZmtLight"
       ],
       "environment": {
         "product.name": "tis"
