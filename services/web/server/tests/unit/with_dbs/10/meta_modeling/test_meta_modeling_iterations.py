@@ -20,7 +20,11 @@ from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.models.projects import projects
 from simcore_service_webserver._constants import APP_DB_ENGINE_KEY
 from simcore_service_webserver.director_v2_api import get_project_run_policy
-from simcore_service_webserver.meta_modeling_handlers import Page, ProjectIterationItem
+from simcore_service_webserver.meta_modeling_handlers import (
+    Page,
+    ProjectIterationItem,
+    ProjectIterationResultItem,
+)
 from simcore_service_webserver.meta_modeling_projects import (
     meta_project_policy,
     projects_redirection_middleware,
@@ -169,6 +173,16 @@ async def test_iterators_workflow(
 
     # ----------------------------------------------
 
+    # GET results of all iterations
+    # /projects/{project_uuid}/checkpoint/{ref_id}/iterations/-/results
+    resp = await client.get(
+        f"/v0/projects/{project_uuid}/checkpoint/{head_ref_id}/iterations/-/results"
+    )
+    assert resp.status == HTTPStatus.OK, await resp.text()
+    body = await resp.json()
+
+    results = Page[ProjectIterationResultItem].parse_obj(body).data
+
     # GET project and MODIFY iterator values----------------------------------------------
     #  - Change iterations from 0:4 -> HEAD+1
     resp = await client.get(f"/v0/projects/{project_uuid}")
@@ -225,7 +239,7 @@ async def test_iterators_workflow(
         f"/v0/projects/{project_uuid}/checkpoint/{head_ref_id}/iterations?offset=0"
     )
     body = await resp.json()
-    assert resp.status == 200, f"{body=}"  # nosec
+    assert resp.status == HTTPStatus.OK, f"{body=}"  # nosec
     second_iterlist = Page[ProjectIterationItem].parse_obj(body).data
 
     assert len(second_iterlist) == 4

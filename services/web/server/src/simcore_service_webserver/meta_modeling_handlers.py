@@ -2,7 +2,7 @@
 
 """
 import logging
-from typing import List, NamedTuple, Optional
+from typing import Callable, List, NamedTuple, Optional
 
 from aiohttp import web
 from models_library.projects import ProjectID
@@ -13,6 +13,7 @@ from pydantic.fields import Field
 from pydantic.networks import HttpUrl
 
 from ._meta import api_version_prefix as VTAG
+from .login.decorators import login_required
 from .meta_modeling_iterations import IterationID, ProjectIteration
 from .meta_modeling_results import ExtractedResults, extract_project_results
 from .meta_modeling_version_control import VersionControlForMetaModeling
@@ -204,13 +205,70 @@ class ProjectIterationItem(_BaseModelGet):
         ..., description="reference to a working copy project"
     )
 
+    @classmethod
+    def create(
+        cls,
+        meta_project_uuid,
+        meta_project_commit_id,
+        iteration_index,
+        project_id,
+        url_for: Callable,
+    ):
+        return cls(
+            name=f"projects/{meta_project_uuid}/checkpoint/{meta_project_commit_id}/iterations/{iteration_index}",
+            parent=ParentMetaProjectRef(
+                project_id=meta_project_uuid, ref_id=meta_project_commit_id
+            ),
+            iteration_index=iteration_index,
+            workcopy_project_id=project_id,
+            workcopy_project_url=url_for(
+                "get_project",
+                project_id=project_id,
+            ),
+            url=url_for(
+                f"{__name__}._get_meta_project_iterations_handler",
+                project_uuid=meta_project_uuid,
+                ref_id=meta_project_commit_id,
+                iter_id=iteration_index,
+            ),
+        )
+
 
 class ProjectIterationResultItem(ProjectIterationItem):
     results: ExtractedResults
 
+    @classmethod
+    def create(
+        cls,
+        meta_project_uuid,
+        meta_project_commit_id,
+        iteration_index,
+        project_id,
+        results,
+        url_for: Callable,
+    ):
+        return cls(
+            name=f"projects/{meta_project_uuid}/checkpoint/{meta_project_commit_id}/iterations/{iteration_index}/results",
+            parent=ParentMetaProjectRef(
+                project_id=meta_project_uuid, ref_id=meta_project_commit_id
+            ),
+            iteration_index=iteration_index,
+            workcopy_project_id=project_id,
+            results=results,
+            workcopy_project_url=url_for(
+                "get_project",
+                project_id=project_id,
+            ),
+            url=url_for(
+                f"{__name__}._get_meta_project_iteration_results_handler",
+                project_uuid=meta_project_uuid,
+                ref_id=meta_project_commit_id,
+                iter_id=iteration_index,
+            ),
+        )
+
 
 # ROUTES ------------------------------------------------------------
-
 
 routes = web.RouteTableDef()
 
@@ -219,6 +277,7 @@ routes = web.RouteTableDef()
     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations",
     name=f"{__name__}._list_meta_project_iterations_handler",
 )
+@login_required
 @permission_required("project.snapshot.read")
 async def _list_meta_project_iterations_handler(request: web.Request) -> web.Response:
     # TODO: check access to non owned projects user_id = request[RQT_USERID_KEY]
@@ -250,22 +309,12 @@ async def _list_meta_project_iterations_handler(request: web.Request) -> web.Res
 
     # parse and validate response ----
     page_items = [
-        ProjectIterationItem(
-            name=f"projects/{meta_project_uuid}/checkpoint/{meta_project_commit_id}/iterations/{item.iteration_index}",
-            parent=ParentMetaProjectRef(
-                project_id=meta_project_uuid, ref_id=meta_project_commit_id
-            ),
-            iteration_index=item.iteration_index,
-            workcopy_project_id=item.project_id,
-            workcopy_project_url=url_for(
-                "get_project",
-                project_id=item.project_id,
-            ),
-            url=url_for(
-                f"{__name__}._list_meta_project_iterations_handler",
-                project_uuid=meta_project_uuid,
-                ref_id=meta_project_commit_id,
-            ),
+        ProjectIterationItem.create(
+            meta_project_uuid,
+            meta_project_commit_id,
+            item.iteration_index,
+            item.project_id,
+            url_for,
         )
         for item in iterations_range.items
     ]
@@ -311,22 +360,12 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
 
     # parse and validate response ----
     iterations_items = [
-        ProjectIterationItem(
-            name=f"projects/{meta_project_uuid}/checkpoint/{meta_project_commit_id}/iterations/{item.iteration_index}",
-            parent=ParentMetaProjectRef(
-                project_id=meta_project_uuid, ref_id=meta_project_commit_id
-            ),
-            iteration_index=item.iteration_index,
-            workcopy_project_id=item.project_id,
-            workcopy_project_url=url_for(
-                "get_project",
-                project_id=item.project_id,
-            ),
-            url=url_for(
-                f"{__name__}._create_meta_project_iterations_handler",
-                project_uuid=meta_project_uuid,
-                ref_id=meta_project_commit_id,
-            ),
+        ProjectIterationItem.create(
+            meta_project_uuid,
+            meta_project_commit_id,
+            item.iteration_index,
+            item.project_id,
+            url_for,
         )
         for item in project_iterations
     ]
@@ -335,19 +374,24 @@ async def _create_meta_project_iterations_handler(request: web.Request) -> web.R
 
 
 # TODO: registry as route when implemented. Currently iteration is retrieved via GET /projects/{workcopy_project_id}
-# @routes.get(
-#     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}",
-#     name=f"{__name__}._get_meta_project_iterations_handler",
-# )
-# SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735
+@routes.get(
+    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}",
+    name=f"{__name__}._get_meta_project_iterations_handler",
+)
+@login_required
+@permission_required("project.snapshot.read")
 async def _get_meta_project_iterations_handler(request: web.Request) -> web.Response:
-    raise NotImplementedError
+    raise NotImplementedError(
+        "SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735"
+    )
 
 
 @routes.get(
     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/-/results",
     name=f"{__name__}._list_meta_project_iterations_results_handler",
 )
+@login_required
+@permission_required("project.snapshot.read")
 async def _list_meta_project_iterations_results_handler(
     request: web.Request,
 ) -> web.Response:
@@ -358,6 +402,7 @@ async def _list_meta_project_iterations_results_handler(
 
     url_for = create_url_for_function(request)
     vc_repo = VersionControlForMetaModeling(request)
+    assert vc_repo._user_id  # nosec
 
     # core function ----
     iterations_range = await _get_project_iterations_range(
@@ -390,19 +435,13 @@ async def _list_meta_project_iterations_results_handler(
 
     # parse and validate response ----
     page_items = [
-        ProjectIterationResultItem(
-            name=f"projects/{meta_project_uuid}/checkpoint/{meta_project_commit_id}/iterations/{item.iteration_index}/results",
-            parent=ParentMetaProjectRef(
-                project_id=meta_project_uuid, ref_id=meta_project_commit_id
-            ),
-            iteration_index=item.iteration_index,
-            workcopy_project_id=item.project_id,
-            results=_get_project_results(item.project_id),
-            url=url_for(
-                f"{__name__}._list_meta_project_iterations_results_handler",
-                project_uuid=meta_project_uuid,
-                ref_id=meta_project_commit_id,
-            ),
+        ProjectIterationResultItem.create(
+            meta_project_uuid,
+            meta_project_commit_id,
+            item.iteration_index,
+            item.project_id,
+            _get_project_results(item.project_id),
+            url_for,
         )
         for item in iterations_range.items
     ]
@@ -422,11 +461,15 @@ async def _list_meta_project_iterations_results_handler(
     )
 
 
-# @routes.get(
-#     f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}/results",
-#     name=f"{__name__}._get_meta_project_iterations_handler",
-# )
+@routes.get(
+    f"/{VTAG}/projects/{{project_uuid}}/checkpoint/{{ref_id}}/iterations/{{iter_id}}/results",
+    name=f"{__name__}._get_meta_project_iteration_results_handler",
+)
+@login_required
+@permission_required("project.snapshot.read")
 async def _get_meta_project_iteration_results_handler(
     request: web.Request,
 ) -> web.Response:
-    raise NotImplementedError
+    raise NotImplementedError(
+        "SEE https://github.com/ITISFoundation/osparc-simcore/issues/2735"
+    )
