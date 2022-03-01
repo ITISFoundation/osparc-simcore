@@ -14,7 +14,7 @@ from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from .computations import NodeClass, to_node_class
 from .logging_utils import log_decorator
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def _is_node_computational(node_key: str) -> bool:

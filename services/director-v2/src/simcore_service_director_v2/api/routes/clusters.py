@@ -17,7 +17,7 @@ from ..dependencies.dask import get_dask_clients_pool
 from ..dependencies.database import get_repository
 
 router = APIRouter()
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 
 async def _get_cluster_with_id(

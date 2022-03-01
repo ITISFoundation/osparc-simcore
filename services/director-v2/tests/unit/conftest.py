@@ -99,14 +99,8 @@ def cluster_id() -> NonNegativeInt:
 
 
 @pytest.fixture
-def cluster_id_resource_name(cluster_id: NonNegativeInt) -> str:
-    return f"CLUSTER_{cluster_id}"
-
-
-@pytest.fixture
 async def dask_spec_local_cluster(
     monkeypatch: MonkeyPatch,
-    cluster_id_resource_name: str,
 ) -> AsyncIterable[SpecCluster]:
     # in this mode we can precisely create a specific cluster
     workers = {
@@ -114,7 +108,7 @@ async def dask_spec_local_cluster(
             "cls": Worker,
             "options": {
                 "nthreads": 2,
-                "resources": {"CPU": 2, "RAM": 48e9, cluster_id_resource_name: 1},
+                "resources": {"CPU": 2, "RAM": 48e9},
             },
         },
         "gpu-worker": {
@@ -125,7 +119,6 @@ async def dask_spec_local_cluster(
                     "CPU": 1,
                     "GPU": 1,
                     "RAM": 48e9,
-                    cluster_id_resource_name: 1,
                 },
             },
         },
@@ -137,7 +130,6 @@ async def dask_spec_local_cluster(
                     "CPU": 8,
                     "MPI": 1,
                     "RAM": 768e9,
-                    cluster_id_resource_name: 1,
                 },
             },
         },
@@ -149,7 +141,6 @@ async def dask_spec_local_cluster(
                     "GPU": 1,
                     "MPI": 1,
                     "RAM": 768e9,
-                    cluster_id_resource_name: 1,
                 },
             },
         },
@@ -166,9 +157,7 @@ async def dask_spec_local_cluster(
 
 
 @pytest.fixture
-async def local_dask_gateway_server(
-    cluster_id_resource_name: str,
-) -> AsyncIterator[DaskGatewayServer]:
+async def local_dask_gateway_server() -> AsyncIterator[DaskGatewayServer]:
     c = traitlets.config.Config()
     c.DaskGateway.backend_class = UnsafeLocalBackend  # type: ignore
     c.DaskGateway.address = "127.0.0.1:0"  # type: ignore
@@ -178,7 +167,7 @@ async def local_dask_gateway_server(
     c.ClusterConfig.worker_cmd = [  # type: ignore
         "dask-worker",
         "--resources",
-        f"CPU=12,GPU=1,MPI=1,RAM={16e9},{cluster_id_resource_name}=1",
+        f"CPU=12,GPU=1,MPI=1,RAM={16e9}",
     ]
     # NOTE: This must be set such that the local unsafe backend creates a worker with enough cores/memory
     c.ClusterConfig.worker_cores = 12  # type: ignore

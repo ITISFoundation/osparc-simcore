@@ -5,22 +5,25 @@
 # pylint:disable=protected-access
 # pylint:disable=too-many-arguments
 # pylint:disable=no-name-in-module
+# pylint: disable=too-many-statements
 
 
-from typing import Any, Callable, Dict, Iterator, cast
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, Iterator, List, Union
 from unittest import mock
 
 import aiopg
 import httpx
 import pytest
 from _helpers import PublishedProject  # type: ignore
+from _helpers import RunningProject  # type: ignore
 from _helpers import assert_comp_run_state  # type: ignore
 from _helpers import assert_comp_tasks_state  # type: ignore
 from _helpers import manually_run_comp_scheduler  # type: ignore
 from _helpers import set_comp_task_state  # type: ignore
 from _pytest.monkeypatch import MonkeyPatch
 from dask.distributed import SpecCluster
-from dask_task_models_library.container_tasks.events import TaskStateEvent
+from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.io import TaskOutputData
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectAtDB
@@ -33,6 +36,8 @@ from simcore_postgres_database.models.comp_tasks import NodeClass
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
     ComputationalBackendNotConnectedError,
+    ComputationalBackendTaskNotFoundError,
+    ComputationalBackendTaskResultsNotReadyError,
     ComputationalSchedulerChangedError,
     ConfigurationError,
     PipelineNotFoundError,
@@ -45,10 +50,6 @@ from simcore_service_director_v2.modules.comp_scheduler import background_task
 from simcore_service_director_v2.modules.comp_scheduler.base_scheduler import (
     BaseCompScheduler,
 )
-from simcore_service_director_v2.modules.comp_scheduler.dask_scheduler import (
-    DaskScheduler,
-)
-from simcore_service_director_v2.utils.dask import generate_dask_job_id
 from simcore_service_director_v2.utils.scheduler import COMPLETED_STATES
 from starlette.testclient import TestClient
 
@@ -84,7 +85,7 @@ def minimal_dask_scheduler_config(
 def scheduler(
     minimal_dask_scheduler_config: None,
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    dask_spec_local_cluster: SpecCluster,
+    # dask_spec_local_cluster: SpecCluster,
     minimal_app: FastAPI,
 ) -> BaseCompScheduler:
     assert minimal_app.state.scheduler is not None
@@ -92,11 +93,13 @@ def scheduler(
 
 
 @pytest.fixture
-def mocked_dask_client_send_task(mocker: MockerFixture) -> mock.MagicMock:
-    mocked_dask_client_send_task = mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.DaskClient.send_computation_tasks"
+def mocked_dask_client(mocker: MockerFixture) -> mock.MagicMock:
+    mocked_dask_client = mocker.patch(
+        "simcore_service_director_v2.modules.dask_clients_pool.DaskClient",
+        autospec=True,
     )
-    return mocked_dask_client_send_task
+    mocked_dask_client.create.return_value = mocked_dask_client
+    return mocked_dask_client
 
 
 @pytest.fixture
@@ -104,6 +107,7 @@ def mocked_node_ports(mocker: MockerFixture):
     mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.parse_output_data",
         return_value=None,
+        autospec=True,
     )
 
 
@@ -112,15 +116,14 @@ def mocked_clean_task_output_fct(mocker: MockerFixture) -> mock.MagicMock:
     return mocker.patch(
         "simcore_service_director_v2.modules.comp_scheduler.dask_scheduler.clean_task_output_and_log_files_if_invalid",
         return_value=None,
+        autospec=True,
     )
 
 
 @pytest.fixture
-def mocked_scheduler_task(monkeypatch: MonkeyPatch) -> None:
-    async def mocked_scheduler_task(app: FastAPI) -> None:
-        return None
-
-    monkeypatch.setattr(background_task, "scheduler_task", mocked_scheduler_task)
+def mocked_scheduler_task(mocker: MockerFixture) -> None:
+    """disables the scheduler task, note that it needs to be triggered manually then"""
+    mocker.patch.object(background_task, "scheduler_task")
 
 
 @pytest.fixture
@@ -169,13 +172,13 @@ def test_scheduler_raises_exception_for_missing_dependencies(
 
 
 async def test_empty_pipeline_is_not_scheduled(
+    mocked_scheduler_task: None,
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,
     user_id: PositiveInt,
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    mocked_scheduler_task: None,
 ):
     empty_project = project()
 
@@ -270,13 +273,13 @@ async def test_misconfigured_pipeline_is_not_scheduled(
 
 
 async def test_proper_pipeline_is_scheduled(
+    mocked_scheduler_task: None,
+    mocked_dask_client: mock.MagicMock,
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,
     user_id: PositiveInt,
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    mocked_dask_client_send_task: mock.MagicMock,
     published_project: PublishedProject,
-    mocked_scheduler_task: None,
 ):
     # This calls adds starts the scheduling of a pipeline
     await scheduler.run_new_pipeline(
@@ -306,6 +309,10 @@ async def test_proper_pipeline_is_scheduled(
     ]
     # trigger the scheduler
     await manually_run_comp_scheduler(scheduler)
+    # the client should be created here
+    mocked_dask_client.create.assert_called_once_with(
+        app=mock.ANY, settings=mock.ANY, endpoint=mock.ANY, authentication=mock.ANY
+    )
     # the tasks are set to pending, so they are ready to be taken, and the dask client is triggered
     await assert_comp_tasks_state(
         aiopg_engine,
@@ -320,20 +327,21 @@ async def test_proper_pipeline_is_scheduled(
         [p.node_id for p in published_project.tasks if p not in published_tasks],
         exp_state=RunningState.PUBLISHED,
     )
-    mocked_dask_client_send_task.assert_has_calls(
+
+    mocked_dask_client.send_computation_tasks.assert_has_calls(
         calls=[
             mock.call(
                 user_id=user_id,
                 project_id=published_project.project.uuid,
                 cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
                 tasks={f"{p.node_id}": p.image},
-                callback=cast(DaskScheduler, scheduler)._on_task_completed,
+                callback=scheduler._wake_up_scheduler_now,
             )
             for p in published_tasks
         ],
         any_order=True,
     )
-    mocked_dask_client_send_task.reset_mock()
+    mocked_dask_client.send_computation_tasks.reset_mock()
 
     # trigger the scheduler
     await manually_run_comp_scheduler(scheduler)
@@ -351,7 +359,7 @@ async def test_proper_pipeline_is_scheduled(
         [p.node_id for p in published_tasks],
         exp_state=RunningState.PENDING,
     )
-    mocked_dask_client_send_task.assert_not_called()
+    mocked_dask_client.send_computation_tasks.assert_not_called()
 
     # change 1 task to RUNNING
     running_task_id = published_tasks[0].node_id
@@ -371,7 +379,7 @@ async def test_proper_pipeline_is_scheduled(
         [running_task_id],
         exp_state=RunningState.STARTED,
     )
-    mocked_dask_client_send_task.assert_not_called()
+    mocked_dask_client.send_computation_tasks.assert_not_called()
 
     # change the task to SUCCESS
     await set_comp_task_state(
@@ -397,16 +405,16 @@ async def test_proper_pipeline_is_scheduled(
         [next_published_task.node_id],
         exp_state=RunningState.PENDING,
     )
-    mocked_dask_client_send_task.assert_called_once_with(
+    mocked_dask_client.send_computation_tasks.assert_called_once_with(
         user_id=user_id,
         project_id=published_project.project.uuid,
         cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
         tasks={
             f"{next_published_task.node_id}": next_published_task.image,
         },
-        callback=cast(DaskScheduler, scheduler)._on_task_completed,
+        callback=scheduler._wake_up_scheduler_now,
     )
-    mocked_dask_client_send_task.reset_mock()
+    mocked_dask_client.send_computation_tasks.reset_mock()
 
     # change 1 task to RUNNING
     await set_comp_task_state(
@@ -425,7 +433,7 @@ async def test_proper_pipeline_is_scheduled(
         [next_published_task.node_id],
         exp_state=RunningState.STARTED,
     )
-    mocked_dask_client_send_task.assert_not_called()
+    mocked_dask_client.send_computation_tasks.assert_not_called()
 
     # now change the task to FAILED
     await set_comp_task_state(
@@ -444,7 +452,7 @@ async def test_proper_pipeline_is_scheduled(
         [next_published_task.node_id],
         exp_state=RunningState.FAILED,
     )
-    mocked_dask_client_send_task.assert_not_called()
+    mocked_dask_client.send_computation_tasks.assert_not_called()
 
     # now change the other task to SUCCESS
     other_task = published_tasks[1]
@@ -464,7 +472,7 @@ async def test_proper_pipeline_is_scheduled(
         [other_task.node_id],
         exp_state=RunningState.SUCCESS,
     )
-    mocked_dask_client_send_task.assert_not_called()
+    mocked_dask_client.send_computation_tasks.assert_not_called()
     # the scheduled pipeline shall be removed
     assert scheduler.scheduled_pipelines == {}
 
@@ -540,75 +548,144 @@ async def test_handling_of_disconnected_dask_scheduler(
     )
 
 
-@pytest.mark.parametrize("state", COMPLETED_STATES)
-async def test_completed_task_properly_updates_state(
+@dataclass
+class RebootState:
+    task_status: RunningState
+    task_result: Union[Exception, TaskOutputData]
+    expected_task_state_group1: RunningState
+    expected_task_state_group2: RunningState
+    expected_run_state: RunningState
+
+
+@pytest.mark.parametrize(
+    "reboot_state",
+    [
+        pytest.param(
+            RebootState(
+                RunningState.UNKNOWN,
+                ComputationalBackendTaskNotFoundError(job_id="fake_job_id"),
+                RunningState.FAILED,
+                RunningState.ABORTED,
+                RunningState.FAILED,
+            ),
+            id="reboot with lost tasks",
+        ),
+        pytest.param(
+            RebootState(
+                RunningState.ABORTED,
+                TaskCancelledError(job_id="fake_job_id"),
+                RunningState.ABORTED,
+                RunningState.ABORTED,
+                RunningState.ABORTED,
+            ),
+            id="reboot with aborted tasks",
+        ),
+        pytest.param(
+            RebootState(
+                RunningState.FAILED,
+                ValueError("some error during the call"),
+                RunningState.FAILED,
+                RunningState.ABORTED,
+                RunningState.FAILED,
+            ),
+            id="reboot with failed tasks",
+        ),
+        pytest.param(
+            RebootState(
+                RunningState.STARTED,
+                ComputationalBackendTaskResultsNotReadyError(job_id="fake_job_id"),
+                RunningState.STARTED,
+                RunningState.STARTED,
+                RunningState.STARTED,
+            ),
+            id="reboot with running tasks",
+        ),
+        pytest.param(
+            RebootState(
+                RunningState.SUCCESS,
+                TaskOutputData.parse_obj({"whatever_output": 123}),
+                RunningState.SUCCESS,
+                RunningState.SUCCESS,
+                RunningState.SUCCESS,
+            ),
+            id="reboot with completed tasks",
+        ),
+    ],
+)
+async def test_handling_scheduling_after_reboot(
+    mocked_scheduler_task: None,
+    mocked_dask_client: mock.MagicMock,
+    aiopg_engine: aiopg.sa.engine.Engine,  # type: ignore
+    running_project: RunningProject,
     scheduler: BaseCompScheduler,
     minimal_app: FastAPI,
     user_id: PositiveInt,
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    published_project: PublishedProject,
     mocked_node_ports: None,
     mocked_clean_task_output_fct: mock.MagicMock,
-    state: RunningState,
-    mocked_scheduler_task: None,
+    reboot_state: RebootState,
 ):
-    # we do have a published project where the comp services are in PUBLISHED state
-    # here we will artifically call the completion handler in the scheduler
-    dask_scheduler = cast(DaskScheduler, scheduler)
-    job_id = generate_dask_job_id(
-        "simcore/service/comp/pytest/fake",
-        "12.34.55",
-        user_id,
-        published_project.project.uuid,
-        published_project.tasks[0].node_id,
-    )
-    state_event = TaskStateEvent(
-        job_id=job_id,
-        msg=TaskOutputData.parse_obj({"output_1": "some fake data"}).json(),
-        state=state,
-    )
-    await dask_scheduler._on_task_completed(state_event)
+    """After the dask client is rebooted, or that the director-v2 reboots the scheduler
+    shall continue scheduling correctly. Even though the task might have continued to run
+    in the dask-scheduler."""
+
+    async def mocked_get_tasks_status(job_ids: List[str]) -> List[RunningState]:
+        return [reboot_state.task_status for j in job_ids]
+
+    mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status
+
+    async def mocked_get_task_result(_job_id: str) -> TaskOutputData:
+        if isinstance(reboot_state.task_result, Exception):
+            raise reboot_state.task_result
+        return reboot_state.task_result
+
+    mocked_dask_client.get_task_result.side_effect = mocked_get_task_result
+
+    await manually_run_comp_scheduler(scheduler)
+    # the status will be called once for all RUNNING tasks
+    mocked_dask_client.get_tasks_status.assert_called_once()
+    if reboot_state.expected_run_state in COMPLETED_STATES:
+        mocked_dask_client.get_task_result.assert_has_calls(
+            [
+                mock.call(t.job_id)
+                for t in running_project.tasks
+                if t.node_class == NodeClass.COMPUTATIONAL
+            ],
+            any_order=True,
+        )
+    else:
+        mocked_dask_client.get_task_result.assert_not_called()
+    if reboot_state.expected_run_state in [RunningState.ABORTED, RunningState.FAILED]:
+        # the clean up of the outputs should be done
+        mocked_clean_task_output_fct.assert_has_calls(
+            [
+                mock.call(mock.ANY, user_id, running_project.project.uuid, t.node_id)
+                for t in running_project.tasks
+                if t.node_class == NodeClass.COMPUTATIONAL
+            ],
+            any_order=True,
+        )
+    else:
+        mocked_clean_task_output_fct.assert_not_called()
+
     await assert_comp_tasks_state(
         aiopg_engine,
-        published_project.project.uuid,
-        [published_project.tasks[0].node_id],
-        exp_state=state,
+        running_project.project.uuid,
+        [
+            running_project.tasks[1].node_id,
+            running_project.tasks[2].node_id,
+            running_project.tasks[3].node_id,
+        ],
+        exp_state=reboot_state.expected_task_state_group1,
     )
-
-
-@pytest.mark.parametrize("state", [RunningState.ABORTED, RunningState.FAILED])
-async def test_failed_or_aborted_task_cleans_output_files(
-    scheduler: BaseCompScheduler,
-    minimal_app: FastAPI,
-    user_id: PositiveInt,
-    aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
-    mocked_dask_client_send_task: mock.MagicMock,
-    published_project: PublishedProject,
-    state: RunningState,
-    mocked_clean_task_output_fct: mock.MagicMock,
-    mocked_scheduler_task: None,
-):
-    # we do have a published project where the comp services are in PUBLISHED state
-    # here we will artifically call the completion handler in the scheduler
-    dask_scheduler = cast(DaskScheduler, scheduler)
-    job_id = generate_dask_job_id(
-        "simcore/service/comp/pytest/fake",
-        "12.34.55",
-        user_id,
-        published_project.project.uuid,
-        published_project.tasks[0].node_id,
-    )
-    state_event = TaskStateEvent(
-        job_id=job_id,
-        msg=TaskOutputData.parse_obj({"output_1": "some fake data"}).json(),
-        state=state,
-    )
-    await dask_scheduler._on_task_completed(state_event)
     await assert_comp_tasks_state(
         aiopg_engine,
-        published_project.project.uuid,
-        [published_project.tasks[0].node_id],
-        exp_state=state,
+        running_project.project.uuid,
+        [running_project.tasks[4].node_id],
+        exp_state=reboot_state.expected_task_state_group2,
     )
-
-    mocked_clean_task_output_fct.assert_called_once()
+    await assert_comp_run_state(
+        aiopg_engine,
+        user_id,
+        running_project.project.uuid,
+        exp_state=reboot_state.expected_run_state,
+    )

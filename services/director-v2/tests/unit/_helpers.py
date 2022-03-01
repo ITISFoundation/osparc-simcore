@@ -26,6 +26,11 @@ class PublishedProject:
     tasks: List[CompTaskAtDB]
 
 
+@dataclass
+class RunningProject(PublishedProject):
+    runs: CompRunsAtDB
+
+
 async def assert_comp_run_state(
     aiopg_engine: Iterator[aiopg.sa.engine.Engine],  # type: ignore
     user_id: UserID,
