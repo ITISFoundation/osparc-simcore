@@ -2,6 +2,7 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
   include: osparc.theme.mixin.Color,
 
   colors: {
+    /*
     "c00": "#FFFFFF", // L=100
     "c01": "#EFEFEF", // L=94
     "c02": "#C0C0C0", // L=75
@@ -17,6 +18,24 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
     "c12": "#202020", // L=13
     "c13": "#101010", // L=06
     "c14": "#000000", // L=00
+    */
+
+    "c00": osparc.theme.zmt.ColorEngine.getColor(105),
+    "c01": osparc.theme.zmt.ColorEngine.getColor(103),
+    "c02": osparc.theme.zmt.ColorEngine.getColor(101),
+    "c03": osparc.theme.zmt.ColorEngine.getColor(90),
+    "c04": osparc.theme.zmt.ColorEngine.getColor(80),
+    "c05": osparc.theme.zmt.ColorEngine.getColor(70),
+    "c06": osparc.theme.zmt.ColorEngine.getColor(40),
+    "c07": osparc.theme.zmt.ColorEngine.getColor(35),
+    "c08": osparc.theme.zmt.ColorEngine.getColor(30),
+    "c09": osparc.theme.zmt.ColorEngine.getColor(20),
+    "c10": osparc.theme.zmt.ColorEngine.getColor(20),
+    "c11": osparc.theme.zmt.ColorEngine.getColor(15),
+    "c12": osparc.theme.zmt.ColorEngine.getColor(10),
+    "c13": osparc.theme.zmt.ColorEngine.getColor(6),
+    "c14": osparc.theme.zmt.ColorEngine.getColor(4),
+
 
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
     "invalid-red": "#a04040",

@@ -2,181 +2,6 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
   include: osparc.theme.mixin.Color,
 
   colors: {
-    "2": [
-      1,
-      32,
-      50,
-      1
-    ],
-    "4": [
-      2,
-      42,
-      63,
-      1
-    ],
-    "5": [
-      3,
-      45,
-      68,
-      1
-    ],
-    "6": [
-      3,
-      49,
-      73,
-      1
-    ],
-    "8": [
-      4,
-      56,
-      83,
-      1
-    ],
-    "10": [
-      5,
-      62,
-      92,
-      1
-    ],
-    "15": [
-      7,
-      77,
-      113,
-      1
-    ],
-    "20": [
-      10,
-      91,
-      132,
-      1
-    ],
-    "25": [
-      13,
-      105,
-      151,
-      1
-    ],
-    "30": [
-      16,
-      117,
-      168,
-      1
-    ],
-    "35": [
-      20,
-      129,
-      184,
-      1
-    ],
-    "40": [
-      25,
-      140,
-      200,
-      1
-    ],
-    "45": [
-      32,
-      151,
-      214,
-      1
-    ],
-    "50": [
-      41,
-      162,
-      227,
-      1
-    ],
-    "55": [
-      53,
-      172,
-      239,
-      1
-    ],
-    "60": [
-      74,
-      182,
-      246,
-      1
-    ],
-    "65": [
-      97,
-      191,
-      250,
-      1
-    ],
-    "70": [
-      120,
-      200,
-      252,
-      1
-    ],
-    "75": [
-      141,
-      208,
-      253,
-      1
-    ],
-    "80": [
-      161,
-      216,
-      253,
-      1
-    ],
-    "85": [
-      179,
-      223,
-      254,
-      1
-    ],
-    "90": [
-      197,
-      231,
-      254,
-      1
-    ],
-    "95": [
-      214,
-      238,
-      254,
-      1
-    ],
-    "100": [
-      230,
-      245,
-      255,
-      1
-    ],
-    "101": [
-      234,
-      246,
-      255,
-      1
-    ],
-    "102": [
-      237,
-      247,
-      255,
-      1
-    ],
-    "103": [
-      240,
-      249,
-      255,
-      1
-    ],
-    "104": [
-      243,
-      250,
-      255,
-      1
-    ],
-    "105": [
-      246,
-      251,
-      255,
-      1
-    ],
-
     /*
     "c00": "#000000", // L=00
     "c01": "#202020", // L=13
@@ -195,21 +20,22 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
     "c14": "#FFFFFF", // L=100
     */
 
-    "c00": "2",
-    "c01": "5",
-    "c02": "8",
-    "c03": "15",
-    "c04": "10",
-    "c05": "20",
-    "c06": "30",
-    "c07": "40",
-    "c08": "50",
-    "c09": "65",
-    "c10": "85",
-    "c11": "95",
-    "c12": "101",
-    "c13": "103",
-    "c14": "105",
+    "c00": osparc.theme.zmt.ColorEngine.getColor(4),
+    "c01": osparc.theme.zmt.ColorEngine.getColor(6),
+    "c02": osparc.theme.zmt.ColorEngine.getColor(10),
+    "c03": osparc.theme.zmt.ColorEngine.getColor(15),
+    "c04": osparc.theme.zmt.ColorEngine.getColor(20),
+    "c05": osparc.theme.zmt.ColorEngine.getColor(30),
+    "c06": osparc.theme.zmt.ColorEngine.getColor(35),
+    "c07": osparc.theme.zmt.ColorEngine.getColor(40),
+    "c08": osparc.theme.zmt.ColorEngine.getColor(70),
+    "c09": osparc.theme.zmt.ColorEngine.getColor(80),
+    "c10": osparc.theme.zmt.ColorEngine.getColor(90),
+    "c11": osparc.theme.zmt.ColorEngine.getColor(95),
+    "c12": osparc.theme.zmt.ColorEngine.getColor(101),
+    "c13": osparc.theme.zmt.ColorEngine.getColor(103),
+    "c14": osparc.theme.zmt.ColorEngine.getColor(105),
+
 
     "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
     "invalid-red": "#a04040",
