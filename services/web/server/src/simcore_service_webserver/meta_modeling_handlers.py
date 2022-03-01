@@ -238,7 +238,7 @@ class ProjectIterationResultItem(ProjectIterationItem):
     results: ExtractedResults
 
     @classmethod
-    def create(
+    def create(  # pylint: disable=arguments-differ
         cls,
         meta_project_uuid,
         meta_project_commit_id,
@@ -402,7 +402,6 @@ async def _list_meta_project_iterations_results_handler(
 
     url_for = create_url_for_function(request)
     vc_repo = VersionControlForMetaModeling(request)
-    assert vc_repo._user_id  # nosec
 
     # core function ----
     iterations_range = await _get_project_iterations_range(

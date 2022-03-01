@@ -3098,6 +3098,39 @@ paths:
                         type:
                           title: Error Type
                           type: string
+  '/projects/{project_uuid}/checkpoint/{ref_id}/iterations/{iter_id}':
+    get:
+      tags:
+        - meta-projects
+      summary: Get Project Iterations
+      description: Get current project's iterations
+      operationId: simcore_service_webserver.meta_modeling_handlers._get_meta_project_iterations_handler
+      parameters:
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+        - required: true
+          schema:
+            title: Ref Id
+            anyOf:
+              - type: integer
+              - type: string
+          name: ref_id
+          in: path
+        - required: true
+          name: iter_id
+          schema:
+            type: integer
+          in: path
+      responses:
+        '200':
+          description: Successful Response
   '/projects/{project_uuid}/checkpoint/{ref_id}/iterations/-/results':
     get:
       tags:
@@ -3175,6 +3208,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/paths/~1projects~1%7Bproject_uuid%7D~1checkpoint~1%7Bref_id%7D~1iterations/get/responses/422/content/application~1json/schema'
+  '/projects/{project_uuid}/checkpoint/{ref_id}/iterations/{iter_id}/results':
+    get:
+      tags:
+        - meta-projects
+      summary: Get Project Iteration Results
+      description: Get current project's iterations
+      operationId: simcore_service_webserver.meta_modeling_handlers._get_meta_project_iteration_results_handler
+      parameters:
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+        - required: true
+          schema:
+            title: Ref Id
+            anyOf:
+              - type: integer
+              - type: string
+          name: ref_id
+          in: path
+        - required: true
+          schema:
+            type: integer
+          name: iter_id
+          in: path
+      responses:
+        '200':
+          description: Successful Response
   /repos/projects:
     get:
       tags:
