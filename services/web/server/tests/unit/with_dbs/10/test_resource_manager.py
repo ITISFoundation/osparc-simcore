@@ -8,6 +8,7 @@ import json
 import logging
 from asyncio import Future
 from copy import deepcopy
+from pathlib import Path
 from typing import Any, Callable, Dict
 from unittest import mock
 from unittest.mock import call
@@ -152,18 +153,32 @@ def socket_registry(client: TestClient) -> RedisResourceRegistry:
 
 
 @pytest.fixture
-async def empty_user_project(client, empty_project, logged_user) -> Dict[str, Any]:
+async def empty_user_project(
+    client,
+    empty_project,
+    logged_user,
+    tests_data_dir: Path,
+) -> Dict[str, Any]:
     project = empty_project()
-    async with NewProject(project, client.app, user_id=logged_user["id"]) as project:
+    async with NewProject(
+        project, client.app, user_id=logged_user["id"], tests_data_dir=tests_data_dir
+    ) as project:
         print("-----> added project", project["name"])
         yield project
         print("<----- removed project", project["name"])
 
 
 @pytest.fixture
-async def empty_user_project2(client, empty_project, logged_user) -> Dict[str, Any]:
+async def empty_user_project2(
+    client,
+    empty_project,
+    logged_user,
+    tests_data_dir: Path,
+) -> Dict[str, Any]:
     project = empty_project()
-    async with NewProject(project, client.app, user_id=logged_user["id"]) as project:
+    async with NewProject(
+        project, client.app, user_id=logged_user["id"], tests_data_dir=tests_data_dir
+    ) as project:
         print("-----> added project", project["name"])
         yield project
         print("<----- removed project", project["name"])
