@@ -18,7 +18,7 @@
 qx.Theme.define("osparc.theme.ThemeZmtLight", {
   meta:
   {
-    color: osparc.theme.ColorZmtLight,
+    color: osparc.theme.zmt.ColorLight,
     decoration: osparc.theme.Decoration,
     font: osparc.theme.Font,
     icon: qx.theme.icon.Oxygen,

@@ -1,4 +1,6 @@
-qx.Theme.define("osparc.theme.zmtlight.Color", {
+qx.Theme.define("osparc.theme.zmt.ColorLight", {
+  include: osparc.theme.mixin.Color,
+
   colors: {
     "c00": "#FFFFFF", // L=100
     "c01": "#EFEFEF", // L=94
