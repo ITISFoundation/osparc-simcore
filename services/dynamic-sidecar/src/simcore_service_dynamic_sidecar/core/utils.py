@@ -23,9 +23,13 @@ from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
+from ..modules.mounted_fs import MountedVolumes, get_mounted_volumes
+
 CommandResult = namedtuple("CommandResult", "finished_without_errors, decoded_stdout")
 
 TEMPLATE_SEARCH_PATTERN = r"%%(.*?)%%"
+
+HIDDEN_FILE_NAME = ".hidden_do_not_remove"
 
 logger = logging.getLogger(__name__)
 
@@ -156,3 +160,20 @@ def assemble_container_names(validated_compose_content: str) -> List[str]:
         service_data["container_name"]
         for service_data in parsed_compose_spec["services"].values()
     ]
+
+
+async def volumes_fix_permissions() -> None:
+    # NOTE: by creating a hidden file on all mounted volumes
+    # the same permissions are ensured and avoids
+    # issues when starting the services
+    mounted_volumes: MountedVolumes = get_mounted_volumes()
+    for volume_path in [
+        mounted_volumes.disk_inputs_path,
+        mounted_volumes.disk_outputs_path,
+    ] + list(mounted_volumes.disk_state_paths()):
+        hidden_file = volume_path / HIDDEN_FILE_NAME
+        hidden_file.write_text(
+            f"Directory must not be empty.\nCreated by {__file__}.\nRequired by "
+            "oSPARC internals to properly enforce permissions on this "
+            "directory and all its files"
+        )

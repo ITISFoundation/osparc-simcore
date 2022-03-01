@@ -8,10 +8,11 @@
 
 import copy
 import json
+from pathlib import Path
 
 import jsondiff
 import pytest
-from simcore_service_webserver._resources import resources
+from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.security_access_model import (
     RoleBasedAccessModel,
     check_access,
@@ -20,7 +21,7 @@ from simcore_service_webserver.security_roles import ROLES_PERMISSIONS, UserRole
 
 
 @pytest.fixture
-def access_model():
+def access_model() -> RoleBasedAccessModel:
     def can_update_inputs(context):
         current_data = context["current"]
         candidate_data = context["candidate"]
@@ -119,7 +120,7 @@ def test_access_model_loads():
     assert not all_roles.difference(roles_with_permissions)
 
 
-async def test_named_permissions(access_model):
+async def test_named_permissions(access_model: RoleBasedAccessModel):
 
     R = UserRole  # alias
 
@@ -136,7 +137,7 @@ async def test_named_permissions(access_model):
     assert R.TESTER in who_can_delete
 
 
-async def test_permissions_inheritance(access_model):
+async def test_permissions_inheritance(access_model: RoleBasedAccessModel):
     # ANONYMOUS <--- USER <--- TESTER
 
     R = UserRole
@@ -162,21 +163,17 @@ async def test_permissions_inheritance(access_model):
     assert not await access_model.can(R.TESTER, OPERATION)
 
 
-@pytest.mark.skip(reason="REVIEW")
-async def test_checked_permissions(access_model):
+async def test_checked_permissions(
+    access_model: RoleBasedAccessModel, tests_data_dir: Path
+):
     R = UserRole  # alias
-    MOCKPATH = "data/fake-template-projects.json"
 
-    with resources.stream(MOCKPATH) as fh:
-        data = json.load(fh)
-
-    current = {}
-    for prj in data:
-        if prj["uuid"] == "de2578c5-431e-1234-a1a7-f7d4f3a8f26b":
-            current = prj
-            break
-
-    assert current, "Did '%s' changed??" % MOCKPATH
+    current: ProjectDict = json.loads(
+        (tests_data_dir / "fake-template-projects.isan.ucdavis.json").read_text()
+    )
+    assert (
+        current["uuid"] == "de2578c5-431e-1234-a1a7-f7d4f3a8f26b"
+    ), "Did uuids of the fake changed"
 
     # updates both allowed and not allowed fields
     candidate = copy.deepcopy(current)
@@ -215,7 +212,7 @@ async def test_checked_permissions(access_model):
     )
 
 
-async def test_async_checked_permissions(access_model):
+async def test_async_checked_permissions(access_model: RoleBasedAccessModel):
     R = UserRole  # alias
 
     # add checked permissions
@@ -233,7 +230,7 @@ async def test_async_checked_permissions(access_model):
     )
 
 
-async def test_check_access_expressions(access_model):
+async def test_check_access_expressions(access_model: RoleBasedAccessModel):
     R = UserRole
 
     assert await check_access(access_model, R.ANONYMOUS, "study.stop")

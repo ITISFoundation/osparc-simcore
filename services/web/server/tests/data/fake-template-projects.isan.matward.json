@@ -1,0 +1,26 @@
+{
+  "uuid": "de2578c5-431e-420d-b82d-e80bfa272ebd",
+  "name": "ISAN: MattWard use case",
+  "description": "MattWard Solver/PostPro viewer",
+  "thumbnail": "",
+  "prjOwner": "MattWard",
+  "creationDate": "2019-04-30T08:52:20.937Z",
+  "lastChangeDate": "2019-04-30T08:59:26.090Z",
+  "tags": [],
+  "accessRights": {},
+  "workbench": {
+    "de2578c5-431e-4021-b2ef-b2e163bfbd16": {
+      "key": "simcore/services/dynamic/mattward-viewer",
+      "version": "2.9.0",
+      "label": "MattWard",
+      "inputs": {},
+      "inputNodes": [],
+      "outputs": {},
+      "progress": 0,
+      "position": {
+        "x": 100,
+        "y": 100
+      }
+    }
+  }
+}

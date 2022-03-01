@@ -44,7 +44,10 @@ from pytest_mock.plugin import MockerFixture
 from simcore_service_dask_sidecar.computational_sidecar.docker_utils import (
     LEGACY_SERVICE_LOG_FILE_NAME,
 )
-from simcore_service_dask_sidecar.computational_sidecar.errors import ServiceRunError
+from simcore_service_dask_sidecar.computational_sidecar.errors import (
+    ServiceBadFormattedOutputError,
+    ServiceRunError,
+)
 from simcore_service_dask_sidecar.computational_sidecar.models import (
     LEGACY_INTEGRATION_VERSION,
 )
@@ -293,6 +296,14 @@ def ubuntu_task_fail(ubuntu_task: ServiceExampleParam) -> ServiceExampleParam:
 
 
 @pytest.fixture()
+def ubuntu_task_unexpected_output(
+    ubuntu_task: ServiceExampleParam,
+) -> ServiceExampleParam:
+    ubuntu_task.command = ["/bin/bash", "-c", "echo we create nothingness"]
+    return ubuntu_task
+
+
+@pytest.fixture()
 def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
     with caplog.at_level(
         logging.INFO,
@@ -464,14 +475,7 @@ def test_failing_service_raises_exception(
     mock_service_envs: None,
     dask_subsystem_mock: Dict[str, MockerFixture],
     ubuntu_task_fail: ServiceExampleParam,
-    mocker: MockerFixture,
 ):
-    mocked_get_integration_version = mocker.patch(
-        "simcore_service_dask_sidecar.computational_sidecar.core.get_integration_version",
-        autospec=True,
-        return_value=ubuntu_task_fail.integration_version,
-    )
-
     with pytest.raises(ServiceRunError):
         run_computational_sidecar(
             ubuntu_task_fail.docker_basic_auth,
@@ -481,4 +485,23 @@ def test_failing_service_raises_exception(
             ubuntu_task_fail.output_data_keys,
             ubuntu_task_fail.log_file_url,
             ubuntu_task_fail.command,
+        )
+
+
+def test_running_service_that_generates_unexpected_data_raises_exception(
+    caplog_info_level: LogCaptureFixture,
+    loop: asyncio.AbstractEventLoop,
+    mock_service_envs: None,
+    dask_subsystem_mock: Dict[str, MockerFixture],
+    ubuntu_task_unexpected_output: ServiceExampleParam,
+):
+    with pytest.raises(ServiceBadFormattedOutputError):
+        run_computational_sidecar(
+            ubuntu_task_unexpected_output.docker_basic_auth,
+            ubuntu_task_unexpected_output.service_key,
+            ubuntu_task_unexpected_output.service_version,
+            ubuntu_task_unexpected_output.input_data,
+            ubuntu_task_unexpected_output.output_data_keys,
+            ubuntu_task_unexpected_output.log_file_url,
+            ubuntu_task_unexpected_output.command,
         )

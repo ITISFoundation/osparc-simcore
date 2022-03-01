@@ -186,15 +186,29 @@ qx.Class.define("osparc.studycard.Utils", {
       * @param maxHeight {Number} thumbnail's maxHeight
       */
     createThumbnail: function(study, maxWidth, maxHeight = 160) {
+      const noThumbnail = "osparc/no_photography_black_24dp.svg";
       const image = new osparc.ui.basic.Thumbnail(null, maxWidth, maxHeight);
-      const img = image.getChildControl("image");
       if (study instanceof osparc.data.model.Study) {
-        study.bind("thumbnail", img, "source", {
-          converter: thumbnail => thumbnail === "" ? osparc.dashboard.GridButtonItem.STUDY_ICON : thumbnail
+        study.bind("thumbnail", image, "source", {
+          converter: thumbnail => thumbnail ? thumbnail : noThumbnail,
+          onUpdate: (source, target) => {
+            if (source.getThumbnail() === "") {
+              target.getChildControl("image").set({
+                minWidth: 100,
+                minHeight: 100
+              });
+            }
+          }
+        });
+      } else if (study["thumbnail"]) {
+        image.set({
+          source: study["thumbnail"]
         });
       } else {
-        img.set({
-          source: study["thumbnail"] === "" ? osparc.dashboard.GridButtonItem.STUDY_ICON : study["thumbnail"]
+        image.set({
+          source: noThumbnail,
+          minWidth: 100,
+          minHeight: 100
         });
       }
       return image;

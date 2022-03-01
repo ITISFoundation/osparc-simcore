@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-import asyncio
 import subprocess
 import sys
 import time
@@ -73,9 +72,7 @@ def mock_service_envs(
 
 
 @pytest.fixture
-def dask_client(
-    loop: asyncio.AbstractEventLoop, mock_service_envs: None
-) -> Iterable[distributed.Client]:
+def dask_client(mock_service_envs: None) -> Iterable[distributed.Client]:
     print(pformat(dask.config.get("distributed")))
     with distributed.LocalCluster(
         worker_class=distributed.Worker,

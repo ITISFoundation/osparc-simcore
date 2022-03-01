@@ -62,27 +62,21 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
             textColor: "text-disabled",
             backgroundColor: "transparent"
           });
-          button.getContentElement().setStyles({
-            "border": "1px solid " + colorManager.resolve("text")
-          });
+          osparc.utils.Utils.addBorder(button, 1, colorManager.resolve("text"));
         } else if (button.getValue() === false) {
           // enabled but not current
           button.set({
             textColor: "text",
             backgroundColor: "transparent"
           });
-          button.getContentElement().setStyles({
-            "border": "1px solid " + colorManager.resolve("text")
-          });
+          osparc.utils.Utils.addBorder(button, 1, colorManager.resolve("text"));
         } else {
           // current
           button.set({
             textColor: "text",
             backgroundColor: "background-main-lighter+"
           });
-          button.getContentElement().setStyles({
-            "border": "0px"
-          });
+          osparc.utils.Utils.removeBorder(button);
         }
       };
 
