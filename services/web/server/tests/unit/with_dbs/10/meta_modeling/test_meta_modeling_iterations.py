@@ -225,6 +225,7 @@ async def test_iterators_workflow(
         f"/v0/projects/{project_uuid}/checkpoint/{head_ref_id}/iterations?offset=0"
     )
     body = await resp.json()
+    assert resp.status == 200, f"{body=}"  # nosec
     second_iterlist = Page[ProjectIterationItem].parse_obj(body).data
 
     assert len(second_iterlist) == 4
