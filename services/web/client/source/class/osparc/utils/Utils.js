@@ -275,7 +275,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     getColorLuminance: function(color) {
-      const rgb = qx.util.ColorUtil.isRgbString(color) ? color : qx.util.ColorUtil.hexStringToRgb(color);
+      const rgb = qx.util.ColorUtil.isRgbString(color) || qx.util.ColorUtil.isRgbaString(color) ? color : qx.util.ColorUtil.hexStringToRgb(color);
       const luminance = 0.2126*(rgb[0]/255) + 0.7152*(rgb[1]/255) + 0.0722*(rgb[2]/255);
       return luminance;
     },
