@@ -20,9 +20,9 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
     "c14": "#FFFFFF", // L=100
     */
 
-    "c00": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 4),
-    "c01": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 6),
-    "c02": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 10),
+    "c00": "#000000", // L=00
+    "c01": "#202020", // L=13
+    "c02": "#303030", // L=19
     "c03": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 15),
     "c04": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 20),
     "c05": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 30),
@@ -33,8 +33,8 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
     "c10": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 90),
     "c11": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 95),
     "c12": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 101),
-    "c13": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 103),
-    "c14": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 105),
+    "c13": "#EFEFEF", // L=88
+    "c14": "#FFFFFF", // L=100
 
 
     "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
