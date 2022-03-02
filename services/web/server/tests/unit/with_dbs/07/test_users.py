@@ -12,15 +12,18 @@ from unittest.mock import MagicMock
 import faker
 import pytest
 from aiohttp import web
+from aiohttp.test_utils import TestClient
 from aiopg.sa.connection import SAConnection
 from psycopg2 import OperationalError
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from pytest_simcore.helpers.utils_tokens import (
     create_token_in_db,
     delete_all_tokens_from_db,
     get_token_from_db,
 )
 from servicelib.aiohttp.application import create_safe_application
+from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
 from simcore_service_webserver.groups import setup_groups
@@ -30,6 +33,7 @@ from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.users import setup_users
+from simcore_service_webserver.users_api import is_user_guest
 
 API_VERSION = "v0"
 
@@ -110,6 +114,38 @@ async def fake_tokens(logged_user, tokens_db):
         )
         all_tokens.append(data)
     return all_tokens
+
+
+# TESTS --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        ("UserNotRegistered", False),
+        (UserRole.ANONYMOUS, False),
+        (UserRole.GUEST, True),
+        (UserRole.USER, False),
+        (UserRole.TESTER, False),
+    ],
+)
+async def test_is_user_guest(client: TestClient, user_role, expected: bool):
+
+    if user_role == "UserNotRegistered":
+        # WARNING! not even a user, so it cannot be a guest!
+        assert await is_user_guest(client.app, 123456789) == expected
+
+    else:
+        user: UserInfoDict
+
+        async with LoggedUser(
+            client,
+            {"role": user_role.name},
+            check_if_succeeds=user_role != UserRole.ANONYMOUS,
+        ) as user:
+            print(json_dumps(user, indent=1), "created in db")
+
+            assert await is_user_guest(client.app, user["id"]) == expected
 
 
 # --------------------------------------------------------------------------
