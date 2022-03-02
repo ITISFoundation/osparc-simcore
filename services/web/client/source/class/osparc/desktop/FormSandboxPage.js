@@ -54,6 +54,7 @@ qx.Class.define("osparc.desktop.FormSandboxPage", {
           this.__form.setData(jsonData)
         }
         catch (e) {
+          console.error(e)
           this.__form.setData(null)
         }
       })

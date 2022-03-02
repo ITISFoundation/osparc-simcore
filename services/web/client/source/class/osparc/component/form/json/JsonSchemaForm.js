@@ -79,7 +79,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         this.__submitBtn = new osparc.ui.form.FetchButton(this.tr("Submit"));
         this.__submitBtn.addListener("execute", () => {
           if (this.__isValidData()) {
-            const formData = this.toObject();
+            const formData = this.toObject(schema);
             if (this.__validate(schema, formData.json)) {
               this.fireDataEvent("submit", formData);
             }
@@ -148,7 +148,8 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         // Leaf
         const input = container.addInput(validation, this.__validationManager);
         if (data) {
-          input.setValue(data);
+          const isNumber = ["number", "integer"].includes(schema.type)
+          input.setValue(isNumber ? String(data) : data);
         }
         this.__inputItems.push(container);
       }
@@ -200,9 +201,9 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     /**
      * Uses objectPath library to construct a JS object with the values from the inputs.
      */
-    toObject: function() {
+    toObject: function(schema) {
       const obj = {
-        json: {}
+        json: schema.type === "array" ? [] : {}
       };
       const inputMap = {};
       // Retrieve paths
@@ -218,6 +219,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
       // Construct object
       Object.entries(inputMap).forEach(([path, item]) => {
         const input = item.getInput();
+        const type = item.getType();
         if (input instanceof osparc.ui.form.FileInput) {
           obj.files = obj.files || [];
           if (input.getFile()) {
@@ -226,7 +228,8 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         }
         const value = input.getValue();
         if (typeof value !== "undefined" && value !== null) {
-          objectPath.set(obj.json, path, input.getValue());
+          const isNumber = ["number", "integer"].includes(type)
+          objectPath.set(obj.json, path, isNumber ? Number(input.getValue()) : input.getValue());
         }
       });
       return obj;
