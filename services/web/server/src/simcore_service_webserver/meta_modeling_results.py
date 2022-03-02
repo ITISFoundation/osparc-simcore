@@ -55,11 +55,19 @@ class ExtractedResults(BaseModel):
 
 
 def extract_project_results(workbench: Dict[str, Any]) -> ExtractedResults:
-    # table : Name, Pogress, Labels.... ,
-    # all projects are guaranted to be topologically identical (i.e. same node uuids )
+    """Extracting results from a project's workbench section (i.e. pipeline).  Specifically:
 
+    - data sources (e.g. outputs from iterators, paramters)
+    - progress of evaluators (e.g. a computational service)
+    - data observers (basically inputs from probes)
+
+    NOTE: all projects produces from iterations preserve the same node uuids so
+    running this extraction on all projects from a iterations allows to create a
+    row for a table of results
+    """
+    # nodeid -> % progress
     progress = {}
-    # nodeid -> label # NOTE labels are not uniqu
+    # nodeid -> label (this map is necessary because cannot guaratee labels to be unique)
     labels = {}
     # nodeid -> { port: value , ...} # results have two levels deep: node/port
     results = {}
