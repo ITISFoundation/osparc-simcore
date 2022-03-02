@@ -17,8 +17,8 @@ from _helpers import (  # type: ignore
 )
 from aiohttp import web
 from aiohttp.test_utils import TestClient
-from aioresponses import aioresponses
 from models_library.projects_state import ProjectState
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
@@ -268,7 +268,7 @@ async def test_list_projects(
     template_project: Dict[str, Any],
     expected: Type[web.HTTPException],
     catalog_subsystem_mock: Callable[[Optional[Union[List[Dict], Dict]]], None],
-    director_v2_service_mock: aioresponses,
+    director_v2_service_responses_mock: AioResponsesMock,
 ):
     catalog_subsystem_mock([user_project, template_project])
     data, *_ = await _list_projects(client, expected)

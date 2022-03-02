@@ -8,10 +8,10 @@ from typing import Any, Dict, List
 
 import pytest
 from aiohttp import web
-from aioresponses import aioresponses as AioResponsesMock
 from aioresponses.core import CallbackResult
 from models_library.api_schemas_storage import FileMetaData
 from models_library.projects_state import RunningState
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from yarl import URL
 
 pytest_plugins = [
@@ -130,7 +130,7 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
 
 
 @pytest.fixture
-async def director_v2_service_mock(
+async def director_v2_service_responses_mock(
     aioresponses_mocker: AioResponsesMock,
 ) -> AioResponsesMock:
     """mocks responses of director-v2"""

@@ -21,8 +21,8 @@ from _helpers import MockedStorageSubsystem  # type: ignore
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioredis import Redis
-from aioresponses import aioresponses
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject
 from servicelib.aiohttp.application import create_safe_application
@@ -182,11 +182,6 @@ async def empty_user_project2(
         print("-----> added project", project["name"])
         yield project
         print("<----- removed project", project["name"])
-
-
-@pytest.fixture(autouse=True)
-async def director_v2_mock(director_v2_service_mock) -> aioresponses:
-    return director_v2_service_mock
 
 
 # TESTS -----------------------------------------------------------------------------
@@ -400,7 +395,7 @@ async def test_interactive_services_removed_after_logout(
     client_session_id_factory: Callable[[], str],
     socketio_client_factory: Callable,
     storage_subsystem_mock: MockedStorageSubsystem,  # when guest user logs out garbage is collected
-    director_v2_service_mock: aioresponses,
+    director_v2_service_responses_mock: AioResponsesMock,
     expected_save_state: bool,
 ):
     # login - logged_user fixture
@@ -459,6 +454,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     create_dynamic_service_mock,
     socketio_client_factory: Callable,
     client_session_id_factory: Callable[[], str],
+    director_v2_service_responses_mock: AioResponsesMock,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expected_save_state: bool,
     mocker: MockerFixture,
@@ -581,6 +577,7 @@ async def test_interactive_services_removed_per_project(
     socketio_client_factory: Callable,
     client_session_id_factory: Callable[[], str],
     asyncpg_storage_system_mock,
+    director_v2_service_responses_mock: AioResponsesMock,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expected_save_state: bool,
 ):
@@ -723,7 +720,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     create_dynamic_service_mock,
     client_session_id_factory: Callable[[], str],
     socketio_client_factory: Callable,
-    # asyncpg_storage_system_mock,
+    director_v2_service_responses_mock: AioResponsesMock,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expect_call: bool,
     expected_save_state: bool,
@@ -781,6 +778,7 @@ async def test_regression_removing_unexisting_user(
     empty_user_project,
     user_role,
     mock_delete_data_folders_for_project,
+    director_v2_service_responses_mock: AioResponsesMock,
 ) -> None:
     # regression test for https://github.com/ITISFoundation/osparc-simcore/issues/2504
 

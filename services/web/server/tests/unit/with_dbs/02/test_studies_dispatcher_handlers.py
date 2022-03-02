@@ -177,9 +177,9 @@ def app_cfg(
 
 @pytest.fixture(autouse=True)
 async def director_v2_automock(
-    director_v2_service_mock: aioresponses,
+    director_v2_service_responses_mock: aioresponses,
 ) -> Iterator[aioresponses]:
-    yield director_v2_service_mock
+    yield director_v2_service_responses_mock
 
 
 # REST-API -----------------------------------------------------------------------------------------------

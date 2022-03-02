@@ -122,8 +122,10 @@ async def unpublished_project(client, fake_project, tests_data_dir: Path):
 
 
 @pytest.fixture(autouse=True)
-async def director_v2_mock(director_v2_service_mock) -> AsyncIterator[aioresponses]:
-    yield director_v2_service_mock
+async def director_v2_mock(
+    director_v2_service_responses_mock,
+) -> AsyncIterator[aioresponses]:
+    yield director_v2_service_responses_mock
 
 
 async def _get_user_projects(client):

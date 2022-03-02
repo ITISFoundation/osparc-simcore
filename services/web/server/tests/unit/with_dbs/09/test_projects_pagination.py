@@ -4,7 +4,6 @@
 # pylint: disable=unused-variable
 
 import asyncio
-import uuid as uuidlib
 from copy import deepcopy
 from math import ceil
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
@@ -15,6 +14,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import ProjectState
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
@@ -237,7 +237,7 @@ async def test_list_projects_with_invalid_pagination_parameters(
     expected: ExpectedResponse,
     storage_subsystem_mock,
     catalog_subsystem_mock: Callable[[Optional[Union[List[Dict], Dict]]], None],
-    director_v2_service_mock: aioresponses,
+    director_v2_service_responses_mock: AioResponsesMock,
     project_db_cleaner,
     limit: int,
     offset: int,
@@ -261,7 +261,7 @@ async def test_list_projects_with_pagination(
     expected: ExpectedResponse,
     storage_subsystem_mock,
     catalog_subsystem_mock: Callable[[Optional[Union[List[Dict], Dict]]], None],
-    director_v2_service_mock: aioresponses,
+    director_v2_service_responses_mock: aioresponses,
     project_db_cleaner,
     limit: int,
 ):

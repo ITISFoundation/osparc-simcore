@@ -203,7 +203,7 @@ async def test_workflow(
     primary_group: Dict[str, str],
     standard_groups: List[Dict[str, str]],
     storage_subsystem_mock,
-    director_v2_service_mock,
+    director_v2_service_responses_mock,
 ):
     # empty list
     projects = await _request_list(client)

@@ -9,7 +9,6 @@ from typing import Any, AsyncIterable, Callable, Dict, List, Optional, Type, Uni
 
 import pytest
 from aiohttp import web
-from aioresponses import aioresponses
 from models_library.projects_access import Owner
 from models_library.projects_state import (
     ProjectLocked,
@@ -18,6 +17,7 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib import async_utils
@@ -238,10 +238,14 @@ async def catalog_subsystem_mock(
 
 
 @pytest.fixture(autouse=True)
-async def director_v2_automock(
-    director_v2_service_mock: aioresponses,
-) -> aioresponses:
-    yield director_v2_service_mock
+async def director_v2_service_responses_automock(
+    director_v2_service_responses_mock: AioResponsesMock,
+) -> AioResponsesMock:
+    # NOTE: auto-mock under this test-suite is justified (under unit/with_dbs/09)
+    # The director-v2 service is not in place and this test-suite covers projects
+    # unit-testing. All requests to director-v2 service are intercepted and mocked
+    # as defined in director_v2_service_responses_mock
+    yield director_v2_service_responses_mock
 
 
 @pytest.fixture()

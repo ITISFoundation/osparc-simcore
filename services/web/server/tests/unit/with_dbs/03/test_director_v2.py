@@ -3,25 +3,28 @@
 # pylint:disable=redefined-outer-name
 
 
-from typing import AsyncIterator, Dict
+from typing import Dict
 from uuid import UUID, uuid4
 
 import pytest
 from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
-from aioresponses import aioresponses
 from models_library.projects_state import RunningState
 from pydantic.types import PositiveInt
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver import director_v2_api
 from simcore_service_webserver.db_models import UserRole
 
 
 @pytest.fixture(autouse=True)
-async def auto_mock_director_v2(
-    director_v2_service_mock: aioresponses,
-) -> AsyncIterator[aioresponses]:
-    yield director_v2_service_mock
+async def director_v2_service_responses_mock_autouse(
+    director_v2_service_responses_mock: AioResponsesMock,
+) -> AioResponsesMock:
+    # NOTE: auto-mock under this test-suite is justified (under test_director_v2 test-suite)
+    # All requests to director-v2 service are intercepted and mocked
+    # as defined in director_v2_service_responses_mock
+    return director_v2_service_responses_mock
 
 
 @pytest.fixture

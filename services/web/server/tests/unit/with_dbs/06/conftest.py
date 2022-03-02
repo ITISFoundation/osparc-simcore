@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 
 import pytest
-from aioresponses import aioresponses
+from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_projects import NewProject, delete_all_projects
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import catalog
@@ -197,7 +197,10 @@ async def catalog_subsystem_mock(
 
 
 @pytest.fixture(autouse=True)
-async def director_v2_automock(
-    director_v2_service_mock: aioresponses,
-) -> aioresponses:
-    yield director_v2_service_mock
+async def director_v2_service_responses_mock_autouse(
+    director_v2_service_responses_mock: AioResponsesMock,
+) -> AioResponsesMock:
+    # NOTE: auto-mock under this test-suite is justified (under unit/with_dbs/06)
+    # All requests to director-v2 service are intercepted and responses are patched
+    # as defined in director_v2_service_responses_mock
+    yield director_v2_service_responses_mock
