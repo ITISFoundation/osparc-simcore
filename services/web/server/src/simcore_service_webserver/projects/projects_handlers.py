@@ -145,7 +145,7 @@ async def create_projects(
             assert source_project  # nosec
             if as_template:
                 # we need to lock the original study while copying the data
-                async with projects_api.lock_with_notification(
+                async with projects_api.lock_project_and_notify_state_update(
                     request.app,
                     source_project["uuid"],
                     ProjectStatus.CLONING,

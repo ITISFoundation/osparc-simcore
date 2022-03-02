@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from uuid import UUID, uuid4
 
 from aiohttp import web
+from models_library.projects_pipeline import ComputationTask
 from models_library.projects_state import (
     Owner,
     ProjectLocked,
@@ -231,7 +232,7 @@ async def retrieve_and_notify_project_locked_state(
 
 
 @contextlib.asynccontextmanager
-async def lock_with_notification(
+async def lock_project_and_notify_state_update(
     app: web.Application,
     project_uuid: str,
     status: ProjectStatus,
@@ -248,14 +249,20 @@ async def lock_with_notification(
             user_name,
         ):
             log.debug(
-                "Project [%s] lock acquired",
+                "Project [%s] lock acquired with %s, %s, %s",
                 f"{project_uuid=}",
+                f"{status=}",
+                f"{user_id=}",
+                f"{notify_users=}",
             )
             if notify_users:
+                # notifies as locked
                 await retrieve_and_notify_project_locked_state(
                     user_id, project_uuid, app
                 )
-            yield
+
+            yield  # none of the operations within the context can modify project
+
         log.debug(
             "Project [%s] lock released",
             f"{project_uuid=}",
@@ -266,13 +273,15 @@ async def lock_with_notification(
             user_id, project_uuid, app
         )
         log.error(
-            "Project [%s] already locked in state '%s'. Please check with support.",
+            "Project [%s] for %s already locked in state '%s'. Please check with support.",
             f"{project_uuid=}",
+            f"{user_id=}",
             f"{prj_states.locked.status=}",
         )
         raise
     finally:
         if notify_users:
+            # notifies as lock is released
             await retrieve_and_notify_project_locked_state(user_id, project_uuid, app)
 
 
@@ -291,24 +300,26 @@ async def remove_project_interactive_services(
         user_id,
     )
     try:
-        async with lock_with_notification(
+        user_name_data: UserNameDict = user_name or await get_user_name(app, user_id)
+        save_state: bool = not await is_user_guest(app, user_id)
+
+        async with lock_project_and_notify_state_update(
             app,
             project_uuid,
             ProjectStatus.CLOSING,
             user_id,
-            user_name or await get_user_name(app, user_id),
+            user_name_data,
             notify_users=notify_users,
         ):
             # save the state if the user is not a guest. if we do not know we save in any case.
             with suppress(director_v2_api.DirectorServiceError):
                 # here director exceptions are suppressed. in case the service is not found to preserve old behavior
+                # FIXME: running computational services shall also be stopped and removed?
                 await director_v2_api.stop_all_services_in_project(
                     app=app,
                     user_id=user_id,
                     project_id=project_uuid,
-                    save_state=not await is_user_guest(app, user_id)
-                    if user_id
-                    else True,
+                    save_state=save_state,
                 )
     except ProjectLockError:
         pass
@@ -647,7 +658,7 @@ async def try_open_project_for_user(
     user_id: int, project_uuid: str, client_session_id: str, app: web.Application
 ) -> bool:
     try:
-        async with lock_with_notification(
+        async with lock_project_and_notify_state_update(
             app,
             project_uuid,
             ProjectStatus.OPENING,
@@ -815,10 +826,14 @@ async def get_project_states_for_user(
     # for templates: the project is never locked and never opened. also the running state is always unknown
     lock_state = ProjectLocked(value=False, status=ProjectStatus.CLOSED)
     running_state = RunningState.UNKNOWN
+
+    computation_task: Optional[ComputationTask]
+
     lock_state, computation_task = await logged_gather(
         _get_project_lock_state(user_id, project_uuid, app),
         director_v2_api.get_computation_task(app, user_id, UUID(project_uuid)),
     )
+
     if computation_task:
         # get the running state
         running_state = computation_task.state

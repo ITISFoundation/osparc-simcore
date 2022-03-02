@@ -111,7 +111,7 @@ async def update_user_profile(
 
 
 async def is_user_guest(app: web.Application, user_id: int) -> bool:
-    """Returns True if the user exists and is a GUEST"""
+    """Returns True if the user EXISTS and is a GUEST"""
     engine: Engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         try:
@@ -119,9 +119,8 @@ async def is_user_guest(app: web.Application, user_id: int) -> bool:
                 sa.select([users.c.role]).where(users.c.id == int(user_id))
             )
             return user_role == UserRole.GUEST
-
         except ProgrammingError as err:
-            logger.warning("Could not find user with %s [%s]", f"{user_id=}", err)
+            logger.debug("Could not find user with %s [%s]", f"{user_id=}", err)
             return False
 
 
