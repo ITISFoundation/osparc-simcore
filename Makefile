@@ -232,7 +232,8 @@ TableWidth=140;\
 printf "%24s | %90s | %12s | %12s\n" Name Endpoint User Password;\
 printf "%.$${TableWidth}s\n" "$$separator";\
 printf "$$rows" 'oSparc platform' 'http://$(get_my_ip).nip.io:9081';\
-printf "$$rows" 'oSparc platform web API' 'http://$(get_my_ip).nip.io:9081/dev/doc';\
+printf "$$rows" 'oSparc web API doc' 'http://$(get_my_ip).nip.io:9081/dev/doc';\
+printf "$$rows" 'oSparc public API doc' 'http://$(get_my_ip).nip.io:8006/dev/doc';\
 printf "$$rows" 'Postgres DB' 'http://$(get_my_ip).nip.io:18080/?pgsql=postgres&username='$${POSTGRES_USER}'&db='$${POSTGRES_DB}'&ns=public' $${POSTGRES_USER} $${POSTGRES_PASSWORD};\
 printf "$$rows" Portainer 'http://$(get_my_ip).nip.io:9000' admin adminadmin;\
 printf "$$rows" Redis 'http://$(get_my_ip).nip.io:18081';\
