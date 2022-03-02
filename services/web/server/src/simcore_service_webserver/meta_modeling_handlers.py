@@ -180,7 +180,7 @@ class _BaseModelGet(BaseModel):
     name: str = Field(
         ...,
         description="Iteration's resource API name",
-        x_mark_resouce_name=True,  # [AIP-122](https://google.aip.dev/122)
+        # TODO: PC x_mark_resouce_name=True,  # [AIP-122](https://google.aip.dev/122)
     )
     parent: ParentMetaProjectRef = Field(
         ..., description="Reference to the the meta-project that created this iteration"
@@ -192,7 +192,7 @@ class _BaseModelGet(BaseModel):
 class ProjectIterationItem(_BaseModelGet):
     iteration_index: IterationID = Field(
         ...,
-        x_mark_resource_id_segment=True,  # [AIP-122](https://google.aip.dev/122)
+        # TODO: PC x_mark_resource_id_segment=True,  # [AIP-122](https://google.aip.dev/122)
     )
 
     workcopy_project_id: ProjectID = Field(
