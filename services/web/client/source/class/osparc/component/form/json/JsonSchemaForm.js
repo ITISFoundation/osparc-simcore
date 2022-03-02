@@ -25,23 +25,29 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     ]);
     ajvLoader.addListener("ready", e => {
       this.__ajv = new Ajv();
-      osparc.utils.Utils.fetchJSON(schemaUrl)
-        .then(schema => {
-          if (this.__validate(schema.$schema, schema)) {
-            // If schema is valid
-            if (data && this.__validate(schema, data)) {
-              // Validate data if present
-              this.__data = data;
+      if (schemaUrl) {
+        osparc.utils.Utils.fetchJSON(schemaUrl)
+          .then(schema => {
+            if (this.__validate(schema.$schema, schema)) {
+              // If schema is valid
+              this.__schema = schema
+              if (data && this.__validate(this.__schema, data)) {
+                // Data is valid
+                this.__data = data
+              }
+              return this.__schema
             }
-            return schema;
-          }
-          return null;
-        })
-        .then(this.__render)
-        .catch(err => {
-          console.error(err);
-          this.__render(null);
-        });
+            return null
+          })
+          .then(this.__render)
+          .catch(err => {
+            console.error(err);
+          });
+      }
+      if (data) {
+        this.setData(data)
+      }
+      this.fireEvent("ajvReady");
     }, this);
     ajvLoader.addListener("failed", console.error, this);
     this.__render = this.__render.bind(this);
@@ -49,6 +55,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
   },
   events: {
     "ready": "qx.event.type.Event",
+    "ajvReady": "qx.event.type.Event",
     "submit": "qx.event.type.Data"
   },
   members: {
@@ -248,6 +255,30 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         }
       });
       return this.__validationManager.validate();
+    },
+    setSchema: function(schema) {
+      if (this.__validate(schema.$schema, schema)) {
+        // If schema is valid
+        this.__schema = schema
+        if (this.__data && !this.__validate(this.__schema, this.__data)) {
+          // Data is invalid
+          this.__data = null
+        }
+      }
+      else {
+        this.__schema = null
+      }
+      this.__render(this.__schema)
+    },
+    setData: function(data) {
+      if (data && this.__validate(this.__schema, data)) {
+        // Data is valid
+        this.__data = data
+      }
+      else {
+        this.__data = null
+      }
+      this.__render(this.__schema)
     }
   }
 });
