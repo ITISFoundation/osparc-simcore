@@ -11,11 +11,11 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
     "c06": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 55),
     "c07": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 45),
     "c08": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 35),
-    "c09": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 25),
-    "c10": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 20),
-    "c11": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 15),
-    "c12": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 10),
-    "c13": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 5),
+    "c09": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 30),
+    "c10": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 25),
+    "c11": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 20),
+    "c12": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 15),
+    "c13": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 8),
     "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0),
 
 
@@ -24,12 +24,12 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
 
 
     // main
-    "background-main": [38, 43, 46],
-    "background-main-lighter": "c02",
-    "background-main-lighter+": "c03",
-    "contrasted-background": "c04",
-    "contrasted-background+": "c05",
-    "contrasted-background++": "c06",
+    "background-main": "c01",
+    "background-main-1": "c02",
+    "background-main-2": "c03",
+    "background-main-3": "c04",
+    "background-main-4": "c05",
+    "background-main-5": "c06",
 
     // text
     "text": "c11",
@@ -52,8 +52,8 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
     "window-caption-text-active": "c12",
 
     // material-button
-    "material-button-background": "c03",
-    "material-button-background-disabled": "c02",
+    "material-button-background": "c04",
+    "material-button-background-disabled": "c03",
     "material-button-background-hovered": "c05",
     "material-button-background-pressed": "c05",
     "material-button-text-disabled": "c07",
@@ -82,8 +82,8 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
     "tabview-button-background": "transparent",
 
     // scrollbar
-    "scrollbar-passive": "c02",
-    "scrollbar-active": "c04",
+    "scrollbar-passive": "c05",
+    "scrollbar-active": "c06",
 
     // form
     "button": "c05",
@@ -166,10 +166,6 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
 
     "loading-page-background-color": "#202020",
     "loading-page-text": "#FFFFFF",
-    "loading-page-spinner": "#DDDDDD",
-
-    "contrasted-background++": "#666",
-    "scrollbar-passive": "contrasted-background+",
-    "scrollbar-active": "contrasted-background++"
+    "loading-page-spinner": "#DDDDDD"
   }
 });

@@ -24,11 +24,11 @@ qx.Theme.define("osparc.theme.ColorLightBlue", {
 
     // main
     "background-main": "c01",
-    "background-main-lighter": "c02",
-    "background-main-lighter+": "c03",
-    "contrasted-background": "c04",
-    "contrasted-background+": "c05",
-    "contrasted-background++": "c06",
+    "background-main-1": "c02",
+    "background-main-2": "c03",
+    "background-main-3": "c04",
+    "background-main-4": "c05",
+    "background-main-5": "c06",
 
     // text
     "text": "c11",

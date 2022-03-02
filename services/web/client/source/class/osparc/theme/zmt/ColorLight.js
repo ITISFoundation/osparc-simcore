@@ -3,11 +3,11 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
 
   colors: {
     "c00": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0),
-    "c01": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 5),
-    "c02": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 10),
-    "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 15),
-    "c04": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 20),
-    "c05": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 25),
+    "c01": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 8),
+    "c02": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 15),
+    "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 20),
+    "c04": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 25),
+    "c05": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 30),
     "c06": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 35),
     "c07": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 45),
     "c08": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 45),
@@ -25,11 +25,11 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
 
     // main
     "background-main": "c01",
-    "background-main-lighter": "c02",
-    "background-main-lighter+": "c03",
-    "contrasted-background": "c04",
-    "contrasted-background+": "c05",
-    "contrasted-background++": "c06",
+    "background-main-1": "c02",
+    "background-main-2": "c03",
+    "background-main-3": "c04",
+    "background-main-4": "c05",
+    "background-main-5": "c06",
 
     // text
     "text": "c11",
@@ -82,8 +82,8 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
     "tabview-button-background": "transparent",
 
     // scrollbar
-    "scrollbar-passive": "c02",
-    "scrollbar-active": "c04",
+    "scrollbar-passive": "c05",
+    "scrollbar-active": "c06",
 
     // form
     "button": "c05",
@@ -166,10 +166,6 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
 
     "loading-page-background-color": "background-main",
     "loading-page-text": "#000000",
-    "loading-page-spinner": "#222222",
-
-    "contrasted-background++": "#BBB",
-    "scrollbar-passive": "contrasted-background+",
-    "scrollbar-active": "contrasted-background++"
+    "loading-page-spinner": "#222222"
   }
 });

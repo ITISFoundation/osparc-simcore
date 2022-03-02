@@ -188,9 +188,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           });
           const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
           collapsibleViewLeft.setContent(control);
-          control.setBackgroundColor("background-main-lighter+");
-          collapsibleViewLeft.getChildControl("expand-button").setBackgroundColor("background-main-lighter+");
-          collapsibleViewLeft.getChildControl("collapse-button").setBackgroundColor("background-main-lighter+");
+          control.setBackgroundColor("background-main-2");
+          collapsibleViewLeft.getChildControl("expand-button").setBackgroundColor("background-main-2");
+          collapsibleViewLeft.getChildControl("collapse-button").setBackgroundColor("background-main-2");
           break;
         }
         case "side-panel-right-tabs": {
@@ -262,7 +262,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       osparc.utils.Utils.removeBorder(tabPageBtn);
       tabPageBtn.bind("value", tabPageBtn, "backgroundColor", {
-        converter: val => val ? backgroundColor : "contrasted-background+"
+        converter: val => val ? backgroundColor : "background-main-4"
       });
       if (widget) {
         tabPage.add(widget, {
@@ -283,7 +283,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __initPrimaryColumn: function() {
-      const primaryColumnBGColor = "background-main-lighter+";
+      const primaryColumnBGColor = "background-main-2";
       const study = this.getStudy();
 
       const tabViewPrimary = this.getChildControl("side-panel-left-tabs");
@@ -296,7 +296,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const topBar = tabViewPrimary.getChildControl("bar");
       topBar.set({
-        backgroundColor: "contrasted-background+",
+        backgroundColor: "background-main-4",
         paddingLeft: 15
       });
       this.__addTopBarSpacer(topBar);
@@ -360,7 +360,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const topBar = tabViewSecondary.getChildControl("bar");
       topBar.set({
-        backgroundColor: "contrasted-background+",
+        backgroundColor: "background-main-4",
         paddingLeft: 15
       });
       this.__addTopBarSpacer(topBar);
@@ -446,7 +446,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __addTopBarSpacer: function(tabViewTopBar) {
       const spacer = new qx.ui.core.Widget().set({
-        backgroundColor: "contrasted-background+"
+        backgroundColor: "background-main-4"
       });
       tabViewTopBar.add(spacer, {
         flex: 1
@@ -455,7 +455,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __createCollapsibleViewSpacer: function() {
       const spacer = new qx.ui.core.Widget().set({
-        backgroundColor: "contrasted-background+",
+        backgroundColor: "background-main-4",
         height: this.self().TAB_BUTTON_HEIGHT
       });
       return spacer;

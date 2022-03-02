@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     this._setLayout(new qx.ui.layout.VBox());
 
     const slideshowToolbar = this.__slideshowToolbar = new osparc.desktop.SlideshowToolbar().set({
-      backgroundColor: "contrasted-background+"
+      backgroundColor: "background-main-4"
     });
 
     const collapseWithUserMenu = this.__collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
@@ -230,19 +230,19 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           "border-radius": "12px"
         });
         view.set({
-          backgroundColor: "background-main-lighter+",
+          backgroundColor: "background-main-2",
           maxWidth: node.isDynamic() ? null : 800,
           margin: this.self().CARD_MARGIN
         });
         if (node.isParameter()) {
           view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
           view.set({
-            backgroundColor: "contrasted-background+",
+            backgroundColor: "background-main-4",
             padding: 10
           });
         } else {
           view.getMainView().set({
-            backgroundColor: "contrasted-background+",
+            backgroundColor: "background-main-4",
             padding: 10,
             paddingBottom: 0
           });

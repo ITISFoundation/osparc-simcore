@@ -21,8 +21,8 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "loading-page-text": "#FFFFFF",
     "loading-page-spinner": "#DDDDDD",
 
-    "contrasted-background++": "#666",
-    "scrollbar-passive": "contrasted-background+",
-    "scrollbar-active": "contrasted-background++"
+    "background-main-5": "#666",
+    "scrollbar-passive": "background-main-4",
+    "scrollbar-active": "background-main-5"
   }
 });

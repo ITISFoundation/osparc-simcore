@@ -74,7 +74,7 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshow", {
           // current
           button.set({
             textColor: "text",
-            backgroundColor: "background-main-lighter+"
+            backgroundColor: "background-main-2"
           });
           osparc.utils.Utils.removeBorder(button);
         }

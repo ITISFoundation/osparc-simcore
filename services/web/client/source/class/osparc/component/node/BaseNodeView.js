@@ -117,7 +117,7 @@ qx.Class.define("osparc.component.node.BaseNodeView", {
       });
 
       const nodeStatusUI = this.__nodeStatusUI = new osparc.ui.basic.NodeStatusUI().set({
-        backgroundColor: "contrasted-background+"
+        backgroundColor: "background-main-4"
       });
       nodeStatusUI.getChildControl("label").setFont("text-14");
       header.add(nodeStatusUI);

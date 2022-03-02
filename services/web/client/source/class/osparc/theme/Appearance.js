@@ -36,13 +36,13 @@ qx.Theme.define("osparc.theme.Appearance", {
         const style = {
           decorator: "pb-listitem",
           padding: 5,
-          backgroundColor: "background-main-lighter+"
+          backgroundColor: "background-main-2"
         };
         if (states.hovered) {
-          style.backgroundColor = "contrasted-background";
+          style.backgroundColor = "background-main-3";
         }
         if (states.selected || states.checked) {
-          style.backgroundColor = "contrasted-background+";
+          style.backgroundColor = "background-main-4";
         }
         return style;
       }
@@ -56,10 +56,10 @@ qx.Theme.define("osparc.theme.Appearance", {
           backgroundColor: "transparent"
         };
         if (states.hovered) {
-          style.backgroundColor = "background-main-lighter+";
+          style.backgroundColor = "background-main-2";
         }
         if (states.selected || states.checked) {
-          style.backgroundColor = "contrasted-background";
+          style.backgroundColor = "background-main-3";
         }
         return style;
       }
@@ -274,7 +274,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     */
     sidepanel: {
       style: state => ({
-        backgroundColor: "background-main-lighter"
+        backgroundColor: "background-main-1"
       })
     },
 
@@ -296,7 +296,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     */
     "node-ports": {
       style: state => ({
-        backgroundColor: "background-main-lighter+"
+        backgroundColor: "background-main-2"
       })
     },
 
@@ -388,7 +388,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     "flash": {
       style: state => ({
         padding: 10,
-        backgroundColor: "background-main-lighter+",
+        backgroundColor: "background-main-2",
         decorator: "flash"
       })
     },
@@ -431,7 +431,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     */
     "hint": {
       style: state => ({
-        backgroundColor: "background-main-lighter+",
+        backgroundColor: "background-main-2",
         decorator: "hint",
         padding: 5
       })
@@ -447,7 +447,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       alias: "atom",
       style: state => ({
         decorator: "chip",
-        backgroundColor: "background-main-lighter",
+        backgroundColor: "background-main-1",
         padding: [3, 5]
       })
     },

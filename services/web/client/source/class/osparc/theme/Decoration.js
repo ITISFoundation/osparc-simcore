@@ -52,7 +52,7 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "outputPortHighlighted": {
       style: {
-        backgroundColor: "background-main-lighter+"
+        backgroundColor: "background-main-2"
       }
     },
 
