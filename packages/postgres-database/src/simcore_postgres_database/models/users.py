@@ -36,10 +36,6 @@ class UserRole(Enum):
     TESTER = "TESTER"
     ADMIN = "ADMIN"
 
-    @classmethod
-    def super_users(cls):
-        return list(itertools.takewhile(lambda e: e != cls.USER, cls))
-
     # TODO: add comparison https://portingguide.readthedocs.io/en/latest/comparisons.html
 
 
