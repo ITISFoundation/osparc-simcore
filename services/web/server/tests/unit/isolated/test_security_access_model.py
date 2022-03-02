@@ -85,13 +85,6 @@ def access_model() -> RoleBasedAccessModel:
 # TESTS -------------------------------------------------------------------------
 
 
-def test_roles():
-    super_users = UserRole.super_users()
-    assert super_users
-    assert UserRole.USER not in super_users
-    assert all(r in UserRole for r in super_users)
-
-
 def test_unique_permissions():
     # Limit for scalability. Test that unnecessary resources and/or actions are used
     # Enforce reusable permission layouts
