@@ -12,10 +12,6 @@ from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
-from simcore_service_webserver.director.settings import DirectorSettings
-from simcore_service_webserver.director.settings import (
-    get_plugin_settings as get_director_plugin_settings,
-)
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -382,14 +378,13 @@ async def stop_service(
     backend_url = (settings.base_url / f"dynamic_services/{service_uuid}").update_query(
         save_state="true" if save_state else "false",
     )
-    director_settings: DirectorSettings = get_director_plugin_settings(app)
 
     await _request_director_v2(
         app,
         "DELETE",
         backend_url,
         expected_status=web.HTTPNoContent,
-        timeout=director_settings.DIRECTOR_STOP_SERVICE_TIMEOUT,
+        timeout=settings.DIRECTOR_V2_STOP_SERVICE_TIMEOUT,
     )
 
 
