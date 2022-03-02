@@ -8,7 +8,7 @@
 /**
  * A generic form item to be used inside JsonSchemaForm.
  * It generates an appropriate header than can dynamically change for array items (if the user deletes one element).
- * Manages this dynamic keys to update the header and generate consistent output data object.
+ * Manages this dynamic keys to update the header and generate a consistent output data object.
  */
 qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
   extend: qx.ui.container.Composite,

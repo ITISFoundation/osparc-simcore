@@ -11,7 +11,7 @@ qx.Class.define("osparc.desktop.FormSandboxPage", {
     this.base()
     this.__buildLayout()
     this.__attachEventHandlers()
-    osparc.utils.Utils.fetchJSON("/resource/form/service.json")
+    osparc.utils.Utils.fetchJSON("/resource/form/test1.json")
       .then(schema => {
         const stringData = JSON.stringify(schema, null, 4)
         this.__schema.setValue(stringData)
@@ -19,14 +19,6 @@ qx.Class.define("osparc.desktop.FormSandboxPage", {
           this.__form.setSchema(schema)
         })
       })
-    osparc.utils.Utils.fetchJSON("/resource/form/service-data.json")
-      .then(data => {
-        const stringData = JSON.stringify(data, null, 4)
-        this.__data.setValue(stringData)
-        this.__form.addListenerOnce("ready", () => {
-          this.__form.setData(data)
-        })
-      });
   },
   members: {
     __schema: null,

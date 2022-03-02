@@ -138,7 +138,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         // Arrays allow to create new items with a button
         const arrayContainer = this.__expandArray(schema, data, depth);
         container.add(arrayContainer);
-        const addButton = new qx.ui.form.Button(`Add ${objectPath.get(schema, "items.title", key)}`, "@FontAwesome5Solid/plus-circle/14");
+        const addButton = new qx.ui.form.Button(`Add ${objectPath.get(schema, "items.title", schema.title || key)}`, "@FontAwesome5Solid/plus-circle/14");
         addButton.addListener("execute", () => {
           // key = -1 for an array item. we let JsonSchemaFormArray manage the array keys
           arrayContainer.add(this.__expand(-1, schema.items, null, depth+1));

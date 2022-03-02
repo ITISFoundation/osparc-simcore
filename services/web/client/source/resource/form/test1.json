@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Input Port 1",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "title": "input",
+    "properties": {
+      "i": {
+        "title": "Integer",
+        "exclusiveMinimum": 3,
+        "type": "integer"
+      },
+      "b": {
+        "title": "Bool",
+        "default": false,
+        "type": "boolean"
+      },
+      "s": {
+        "title": "String",
+        "type": "string"
+      },
+      "l": {
+        "title": "Array Ints",
+        "type": "array",
+        "items": {
+          "type": "integer"
+        }
+      }
+    },
+    "required": [
+      "i",
+      "s",
+      "l"
+    ]
+  }
+}
