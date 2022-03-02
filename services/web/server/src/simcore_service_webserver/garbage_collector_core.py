@@ -429,8 +429,9 @@ async def remove_guest_user_with_all_its_resources(
     try:
         user_role: Optional[UserRole] = await safe_get_user_role(app, user_id)
         if user_role is None or user_role > UserRole.GUEST:
-            # NOTE: This acts as a protection barrier to avoid removing resources to more
-            # priviledge users
+            # NOTE: This acts as a safety barrier to avoid removing resources
+            # from over-guest users (i.e. real users)
+            # NOTE: noticed that sometimes this function is called with unregistered users as well!
             return
 
         logger.debug(
