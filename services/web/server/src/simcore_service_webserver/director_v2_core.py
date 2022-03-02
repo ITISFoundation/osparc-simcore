@@ -7,7 +7,6 @@ import aiohttp
 from aiohttp import ClientTimeout, web
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
-from models_library.settings.services_common import ServicesCommonSettings
 from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
