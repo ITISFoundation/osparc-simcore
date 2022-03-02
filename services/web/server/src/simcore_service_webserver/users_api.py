@@ -5,6 +5,7 @@
 """
 
 import logging
+import warnings
 from collections import deque
 from typing import Any, Dict, List, Optional, Tuple, TypedDict
 
@@ -112,6 +113,11 @@ async def update_user_profile(
 
 async def is_user_guest(app: web.Application, user_id: int) -> bool:
     """Returns True if the user EXISTS and is a GUEST"""
+    warnings.warn(
+        f"{__name__}.is_user_guest is deprecated,"
+        "use instead safe_get_user_role and UserRole enums logic operators",
+        DeprecationWarning,
+    )
     engine: Engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         try:
@@ -132,6 +138,17 @@ async def safe_get_user_role(app: web.Application, user_id: int) -> Optional[Use
             sa.select([users.c.role]).where(users.c.id == int(user_id))
         )
         return UserRole(user_role) if user_role else None
+
+
+async def get_user_role(app: web.Application, user_id: int) -> UserRole:
+    """Returns user's role
+
+    raises UserNotFoundError
+    """
+    user_role = await safe_get_user_role(app, user_id)
+    if user_role is None:
+        raise UserNotFoundError(uid=user_id)
+    return user_role
 
 
 async def get_guest_user_ids_and_names(app: web.Application) -> List[Tuple[int, str]]:
@@ -172,6 +189,9 @@ class UserNameDict(TypedDict):
 
 
 async def get_user_name(app: web.Application, user_id: int) -> UserNameDict:
+    """
+    raises UserNotFoundError
+    """
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         user_name = await conn.scalar(
@@ -184,6 +204,9 @@ async def get_user_name(app: web.Application, user_id: int) -> UserNameDict:
 
 
 async def get_user(app: web.Application, user_id: int) -> Dict:
+    """
+    raises UserNotFoundError
+    """
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         result = await conn.execute(sa.select([users]).where(users.c.id == user_id))

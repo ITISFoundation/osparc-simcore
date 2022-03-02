@@ -428,10 +428,6 @@ async def remove_guest_user_with_all_its_resources(
 
     try:
         user_role: Optional[UserRole] = await safe_get_user_role(app, user_id)
-        assert (  # nosec
-            user_role is None
-        ), "Should have never been called w/o registered user"
-
         if user_role is None or user_role > UserRole.GUEST:
             # NOTE: This acts as a protection barrier to avoid removing resources to more
             # priviledge users

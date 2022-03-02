@@ -51,7 +51,7 @@ from ..storage_api import (
     delete_data_folders_of_project,
     delete_data_folders_of_project_node,
 )
-from ..users_api import UserRole, get_user_name, safe_get_user_role
+from ..users_api import UserRole, get_user_name, get_user_role
 from .project_lock import (
     ProjectLockError,
     UserNameDict,
@@ -301,12 +301,7 @@ async def remove_project_interactive_services(
     )
     try:
         user_name_data: UserNameDict = user_name or await get_user_name(app, user_id)
-        user_role: Optional[UserRole] = await safe_get_user_role(app, user_id)
-        assert user_role is not None, "get_user_name raises UserNotFoundError"  # nosec
-
-        save_state: bool = True
-        if user_role is None or user_role <= UserRole.GUEST:
-            save_state = False
+        user_role: UserRole = await get_user_role(app, user_id)
 
         async with lock_project_and_notify_state_update(
             app,
@@ -324,7 +319,7 @@ async def remove_project_interactive_services(
                     app=app,
                     user_id=user_id,
                     project_id=project_uuid,
-                    save_state=save_state,
+                    save_state=UserRole.GUEST < user_role,
                 )
     except ProjectLockError:
         pass
