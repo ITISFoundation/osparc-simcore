@@ -12,6 +12,10 @@ from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import logged_gather
+from simcore_service_webserver.director.settings import DirectorSettings
+from simcore_service_webserver.director.settings import (
+    get_plugin_settings as get_director_plugin_settings,
+)
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_attempt
@@ -374,16 +378,18 @@ async def stop_service(
     # stopping a service can take a lot of time
     # bumping the stop command timeout to 1 hour
     # this will allow to sava bigger datasets from the services
-    # TODO: PC -> ANE: all settings MUST be in app[APP_SETTINGS_KEY]
-
-    timeout = ServicesCommonSettings().webserver_director_stop_service_timeout
-
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = (settings.base_url / f"dynamic_services/{service_uuid}").update_query(
         save_state="true" if save_state else "false",
     )
+    director_settings: DirectorSettings = get_director_plugin_settings(app)
+
     await _request_director_v2(
-        app, "DELETE", backend_url, expected_status=web.HTTPNoContent, timeout=timeout
+        app,
+        "DELETE",
+        backend_url,
+        expected_status=web.HTTPNoContent,
+        timeout=director_settings.DIRECTOR_STOP_SERVICE_TIMEOUT,
     )
 
 
