@@ -5412,13 +5412,13 @@ qx.Class.define("osparc.theme.colorProvider.ColorProvider", {
       }
     },
 
-    resolve(path, obj, separator=".") {
-      const properties = Array.isArray(path) ? path : path.split(separator);
-      return properties.reduce((prev, curr) => prev && prev[curr], obj);
+    resolvePath(path, obj, defaultValue = null, separator=".") {
+      const keys = Array.isArray(path) ? path : path.split(separator);
+      return keys.reduce((prev, curr) => prev ? prev[curr] : defaultValue, obj);
     },
 
     getColor(path, cKey) {
-      return this.self().resolve(path, this.self().colors)[cKey];
+      return this.self().resolvePath(path, this.self().colors)[cKey];
     }
   }
 });
