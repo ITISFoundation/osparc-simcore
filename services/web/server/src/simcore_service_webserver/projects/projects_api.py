@@ -6,7 +6,6 @@
         - return data and successful HTTP responses (or raise them)
         - upon failure raise errors that can be also HTTP reponses
 """
-# pylint: disable=too-many-arguments
 
 import asyncio
 import contextlib

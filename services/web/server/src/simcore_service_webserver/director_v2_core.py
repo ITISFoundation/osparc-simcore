@@ -369,7 +369,7 @@ async def get_services(
 
 @log_decorator(logger=log)
 async def stop_service(
-    app: web.Application, service_uuid: str, save_state: Optional[bool] = True
+    app: web.Application, service_uuid: str, save_state: bool = True
 ) -> None:
     # stopping a service can take a lot of time
     # bumping the stop command timeout to 1 hour
@@ -412,7 +412,7 @@ async def stop_services(
     app: web.Application,
     user_id: Optional[PositiveInt] = None,
     project_id: Optional[str] = None,
-    save_state: Optional[bool] = True,
+    save_state: bool = True,
 ) -> None:
     """Stops all services in parallel"""
     running_dynamic_services = await get_services(
