@@ -12,6 +12,7 @@ from aiopg.sa.result import RowProxy
 from aioredlock import Aioredlock
 from servicelib.utils import logged_gather
 from simcore_postgres_database.errors import DatabaseError
+from simcore_postgres_database.models.users import UserRole
 
 from . import director_v2_api, users_exceptions
 from .db_models import GroupType
@@ -34,7 +35,7 @@ from .users_api import (
     get_guest_user_ids_and_names,
     get_user,
     get_user_id_from_gid,
-    is_user_guest,
+    safe_get_user_role,
 )
 from .users_to_groups_api import get_users_for_gid
 
@@ -351,11 +352,12 @@ async def _remove_single_orphaned_service(
             # let's be conservative here.
             # 1. opened project disappeared from redis?
             # 2. something bad happened when closing a project?
-            user_id = int(interactive_service.get("user_id", -1))
-            is_invalid_user_id = user_id <= 0
-            save_state = True
+            user_role: Optional[UserRole] = await safe_get_user_role(
+                app, user_id=int(interactive_service.get("user_id", -1))
+            )
 
-            if is_invalid_user_id or await is_user_guest(app, user_id):
+            save_state = True
+            if user_role is None or user_role <= UserRole.GUEST:
                 save_state = False
 
             await director_v2_api.stop_dynamic_service(app, service_uuid, save_state)
@@ -425,7 +427,14 @@ async def remove_guest_user_with_all_its_resources(
     """Removes a GUEST user with all its associated projects and S3/MinIO files"""
 
     try:
-        if not await is_user_guest(app, user_id):
+        user_role: Optional[UserRole] = await safe_get_user_role(app, user_id)
+        assert (  # nosec
+            user_role is None
+        ), "Should have never been called w/o registered user"
+
+        if user_role is None or user_role > UserRole.GUEST:
+            # NOTE: This acts as a protection barrier to avoid removing resources to more
+            # priviledge users
             return
 
         logger.debug(

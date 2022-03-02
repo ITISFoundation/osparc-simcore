@@ -6,7 +6,7 @@
 
 import logging
 from collections import deque
-from typing import Any, Dict, List, Tuple, TypedDict
+from typing import Any, Dict, List, Optional, Tuple, TypedDict
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -122,6 +122,16 @@ async def is_user_guest(app: web.Application, user_id: int) -> bool:
         except ProgrammingError as err:
             logger.debug("Could not find user with %s [%s]", f"{user_id=}", err)
             return False
+
+
+async def safe_get_user_role(app: web.Application, user_id: int) -> Optional[UserRole]:
+    """Returns user's role or None if it is not registered"""
+    engine: Engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        user_role: Optional[RowProxy] = await conn.scalar(
+            sa.select([users.c.role]).where(users.c.id == int(user_id))
+        )
+        return UserRole(user_role) if user_role else None
 
 
 async def get_guest_user_ids_and_names(app: web.Application) -> List[Tuple[int, str]]:

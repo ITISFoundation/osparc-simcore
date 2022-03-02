@@ -27,7 +27,11 @@ from servicelib.aiohttp.rest_responses import unwrap_envelope
 from simcore_service_webserver import catalog
 from simcore_service_webserver.log import setup_logging
 from simcore_service_webserver.projects.projects_api import delete_project
-from simcore_service_webserver.users_api import delete_user, is_user_guest
+from simcore_service_webserver.users_api import (
+    delete_user,
+    is_user_guest,
+    safe_get_user_role,
+)
 from yarl import URL
 
 SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
@@ -361,6 +365,7 @@ async def test_access_cookie_of_expired_user(
         #   - client still holds cookie with its identifier nonetheless
         #
         assert await is_user_guest(app, uid)
+        assert await safe_get_user_role(app, uid) == UserRole.GUEST
         projects = await _get_user_projects(client)
         assert len(projects) == 1
 
