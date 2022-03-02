@@ -45,12 +45,14 @@ class UserRole(Enum):
     TESTER = "TESTER"
     ADMIN = "ADMIN"
 
-    def as_level(self) -> int:
+    @property
+    def privilege_level(self) -> int:
         return _USER_ROLE_TO_LEVEL[self.name]
 
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         if self.__class__ is other.__class__:
-            return self.as_level() < other.as_level()
+            return self.privilege_level < other.privilege_level
+        return NotImplemented
 
 
 class UserStatus(Enum):
