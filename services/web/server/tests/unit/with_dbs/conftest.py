@@ -188,6 +188,7 @@ def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
 def computational_system_mock(mocker):
     mock_fun = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers.update_pipeline_db",
+        autospec=True,
         return_value="",
     )
     return mock_fun
@@ -213,6 +214,7 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
         "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project",
+        autospec=True,
         side_effect=async_mock,
     )
     return MockedStorageSubsystem(mock, mock1)
@@ -236,16 +238,16 @@ async def mocked_director_v2_api(mocker) -> Dict[str, MagicMock]:
     #  via the director_v2_api or director_v2_core modules
     #
     for func_name in (
-        "get_service_state",
-        "get_services",
-        "start_service",
-        "stop_service",
+        "get_dynamic_service_state",
+        "get_dynamic_services",
+        "start_dynamic_service",
+        "stop_dynamic_service",
     ):
         for mod_name in ("director_v2_api", "director_v2_core"):
             name = f"{mod_name}.{func_name}"
             mock[name] = mocker.patch(
                 f"simcore_service_webserver.{name}",
-                autospec=True,
+                autospec=True,  # errors if functions renamed or moved to another module while refactoring
                 return_value={},
             )
 
