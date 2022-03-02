@@ -1,6 +1,7 @@
 qx.Theme.define("osparc.theme.ColorDark", {
   // extend: osparc.theme.osparcdark.Color,
   include: osparc.theme.mixin.Color,
+
   colors: {
     "c00": "#000000", // L=00
     "c01": "#202020", // L=13
@@ -17,6 +18,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "c12": "#D0D0D0", // L=82
     "c13": "#EFEFEF", // L=88
     "c14": "#FFFFFF", // L=100
+
 
     "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
     "invalid-red": "#a04040",

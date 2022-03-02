@@ -1,6 +1,7 @@
 qx.Theme.define("osparc.theme.ColorLightBlue", {
   // extend: osparc.theme.osparcblue.Color,
   include: osparc.theme.mixin.Color,
+
   colors: {
     "c00": "#FFFFFF", // L=100
     "c01": "#EFEFEF", // L=94
@@ -18,9 +19,9 @@ qx.Theme.define("osparc.theme.ColorLightBlue", {
     "c13": "#101010", // L=06
     "c14": "#000000", // L=00
 
+
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
     "invalid-red": "#a04040",
-
 
     // main
     "background-main": "c01",

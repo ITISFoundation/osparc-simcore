@@ -22,7 +22,6 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
     "invalid-red": "#a04040",
 
-
     // main
     "background-main": "c01",
     "background-main-1": "c02",

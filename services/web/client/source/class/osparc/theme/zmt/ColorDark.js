@@ -22,7 +22,6 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
     "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
     "invalid-red": "#a04040",
 
-
     // main
     "background-main": "c01",
     "background-main-1": "c02",
