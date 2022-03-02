@@ -25,7 +25,7 @@ import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
 import sqlalchemy as sa
-from _helpers import MockedStorageSubsystem  # type: ignore
+from _helpers import MockedStorageSubsystem
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
@@ -281,8 +281,12 @@ def create_dynamic_service_mock(
 
         services.append(running_service_dict)
         # reset the future or an invalidStateError will appear as set_result sets the future to done
-        mocked_director_v2_api["director_v2_api.get_services"].return_value = services
-        mocked_director_v2_api["director_v2_core.get_services"].return_value = services
+        mocked_director_v2_api[
+            "director_v2_api.get_dynamic_services"
+        ].return_value = services
+        mocked_director_v2_api[
+            "director_v2_core.get_dynamic_services"
+        ].return_value = services
         return running_service_dict
 
     return create

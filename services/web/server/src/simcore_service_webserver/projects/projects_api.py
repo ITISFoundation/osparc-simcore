@@ -146,7 +146,7 @@ async def start_project_interactive_services(
         f"{project['uuid']=}",
         f"{user_id=}",
     )
-    running_services = await director_v2_api.get_services(
+    running_services = await director_v2_api.get_dynamic_services(
         request.app, user_id, project["uuid"]
     )
     log.debug(
@@ -166,7 +166,7 @@ async def start_project_interactive_services(
     log.debug("Starting services: %s", f"{project_needed_services=}")
 
     start_service_tasks = [
-        director_v2_api.start_service(
+        director_v2_api.start_dynamic_service(
             request.app,
             user_id=user_id,
             project_id=project["uuid"],
@@ -354,7 +354,7 @@ async def add_project_node(
     )
     node_uuid = service_id if service_id else str(uuid4())
     if _is_node_dynamic(service_key):
-        await director_v2_api.start_service(
+        await director_v2_api.start_dynamic_service(
             request.app,
             project_id=project_uuid,
             user_id=user_id,
@@ -374,7 +374,7 @@ async def get_project_node(
         "getting node %s in project %s for user %s", node_id, project_uuid, user_id
     )
 
-    list_of_interactive_services = await director_v2_api.get_services(
+    list_of_interactive_services = await director_v2_api.get_dynamic_services(
         request.app, project_id=project_uuid, user_id=user_id
     )
     # get the project if it is running
@@ -393,7 +393,7 @@ async def delete_project_node(
         "deleting node %s in project %s for user %s", node_uuid, project_uuid, user_id
     )
 
-    list_of_services = await director_v2_api.get_services(
+    list_of_services = await director_v2_api.get_dynamic_services(
         request.app, project_id=project_uuid, user_id=user_id
     )
     # stop the service if it is running
@@ -401,7 +401,7 @@ async def delete_project_node(
         if service["service_uuid"] == node_uuid:
             log.error("deleting service=%s", service)
             # no need to save the state of the node when deleting it
-            await director_v2_api.stop_service(
+            await director_v2_api.stop_dynamic_service(
                 request.app,
                 node_uuid,
                 save_state=False,

@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-
 import itertools
 import random
 from typing import Any, AsyncIterator, Callable, Dict, Iterable, Iterator, List, Tuple

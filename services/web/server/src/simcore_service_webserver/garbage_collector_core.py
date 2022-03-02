@@ -313,7 +313,9 @@ async def _remove_single_orphaned_service(
         )
         logger.info(message)
         try:
-            await director_v2_api.stop_service(app, service_uuid, save_state=False)
+            await director_v2_api.stop_dynamic_service(
+                app, service_uuid, save_state=False
+            )
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
         return
@@ -356,7 +358,7 @@ async def _remove_single_orphaned_service(
             if is_invalid_user_id or await is_user_guest(app, user_id):
                 save_state = False
 
-            await director_v2_api.stop_service(app, service_uuid, save_state)
+            await director_v2_api.stop_dynamic_service(app, service_uuid, save_state)
 
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
@@ -389,7 +391,7 @@ async def remove_orphaned_services(
 
     running_interactive_services: List[Dict[str, Any]] = []
     try:
-        running_interactive_services = await director_v2_api.get_services(app)
+        running_interactive_services = await director_v2_api.get_dynamic_services(app)
     except director_v2_api.DirectorServiceError:
         logger.debug(("Could not fetch running_interactive_services"))
 

@@ -299,7 +299,7 @@ async def request_retrieve_dyn_service(
 
 
 @log_decorator(logger=log)
-async def start_service(
+async def start_dynamic_service(
     app: web.Application,
     user_id: PositiveInt,
     project_id: str,
@@ -345,7 +345,7 @@ async def start_service(
 
 
 @log_decorator(logger=log)
-async def get_services(
+async def get_dynamic_services(
     app: web.Application,
     user_id: Optional[PositiveInt] = None,
     project_id: Optional[str] = None,
@@ -368,7 +368,7 @@ async def get_services(
 
 
 @log_decorator(logger=log)
-async def stop_service(
+async def stop_dynamic_service(
     app: web.Application, service_uuid: str, save_state: bool = True
 ) -> None:
     # stopping a service can take a lot of time
@@ -415,12 +415,12 @@ async def stop_all_services_in_project(
     save_state: bool = True,
 ) -> None:
     """Stops all services in parallel"""
-    running_dynamic_services = await get_services(
+    running_dynamic_services = await get_dynamic_services(
         app, user_id=user_id, project_id=project_id
     )
 
     services_to_stop = [
-        stop_service(
+        stop_dynamic_service(
             app=app, service_uuid=service["service_uuid"], save_state=save_state
         )
         for service in running_dynamic_services
@@ -429,7 +429,7 @@ async def stop_all_services_in_project(
 
 
 @log_decorator(logger=log)
-async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
+async def get_dynamic_service_state(app: web.Application, node_uuid: str) -> DataType:
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = settings.base_url / f"dynamic_services/{node_uuid}"
 

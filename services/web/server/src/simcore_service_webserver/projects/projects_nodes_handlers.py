@@ -85,7 +85,7 @@ async def get_node(request: web.Request) -> web.Response:
         )
 
         # NOTE: for legacy services a redirect to director-v0 is made
-        reply: Union[Dict, List] = await director_v2_api.get_service_state(
+        reply: Union[Dict, List] = await director_v2_api.get_dynamic_service_state(
             app=request.app, node_uuid=node_uuid
         )
 
