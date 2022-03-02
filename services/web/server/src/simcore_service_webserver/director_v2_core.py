@@ -408,7 +408,7 @@ async def list_running_dynamic_services(
 
 
 @log_decorator(logger=log)
-async def stop_services(
+async def stop_all_services_in_project(
     app: web.Application,
     user_id: Optional[PositiveInt] = None,
     project_id: Optional[str] = None,
