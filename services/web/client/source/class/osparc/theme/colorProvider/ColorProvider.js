@@ -5412,8 +5412,13 @@ qx.Class.define("osparc.theme.colorProvider.ColorProvider", {
       }
     },
 
-    getColor(context, cNumber) {
-      return this.self().colors["color"]["scales"][context][cNumber];
+    resolve(path, obj, separator=".") {
+      const properties = Array.isArray(path) ? path : path.split(separator);
+      return properties.reduce((prev, curr) => prev && prev[curr], obj);
+    },
+
+    getColor(path, cKey) {
+      return this.self().resolve(path, this.self().colors)[cKey];
     }
   }
 });
