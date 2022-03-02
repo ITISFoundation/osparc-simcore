@@ -64,6 +64,9 @@ SERVICE_DELETION_DELAY = 1
 WAIT_FOR_COMPLETE_GC_CYCLE = GARBAGE_COLLECTOR_INTERVAL + SERVICE_DELETION_DELAY + 2
 
 
+# FIXTURES ----------------------------------------------------------------------------------
+
+
 @pytest.fixture(autouse=True)
 def __drop_and_recreate_postgres__(database_from_template_before_each_function) -> None:
     yield
@@ -80,11 +83,15 @@ async def __delete_all_redis_keys__(redis_settings: RedisSettings):
     # do nothing on teadown
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 async def director_v2_service_responses_mock(
     director_v2_service_responses_mock: AioResponsesMock,
 ) -> AsyncIterable[AioResponsesMock]:
     # OVERRIDES pytest_simcore.aioreposnse_mocker.director_v2_service_responses_mock and appends
+    # NOTE: auto-mock under this test-suite module is justified since
+    # directorv2 service is not included in pytest_simcore_core_services_selection
+    # All requests to director-v2 service are intercepted and responses are patched
+    # as defined in director_v2_service_responses_mock
 
     get_computation_pattern = re.compile(
         r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*$"
@@ -155,7 +162,17 @@ def client(
     )
 
 
-################ utils
+@pytest.fixture
+def disable_garbage_collector_background_task(mocker):
+    """patch the setup of the garbage collector so we can call it manually"""
+    mocker.patch(
+        "simcore_service_webserver.garbage_collector.setup_garbage_collector",
+        autospec=True,
+        return_value="",
+    )
+
+
+# UTILS ----------------------------------------------------------------------------------
 
 
 async def login_user(client: TestClient):
@@ -371,20 +388,11 @@ async def assert_one_owner_for_project(
     return True
 
 
-################ end utils
-
-
-@pytest.fixture
-def mock_garbage_collector_task(mocker):
-    """patch the setup of the garbage collector so we can call it manually"""
-    mocker.patch(
-        "simcore_service_webserver.garbage_collector.setup_garbage_collector",
-        return_value="",
-    )
+# TESTS ---------------------------------------------------------------------------
 
 
 async def test_t1_while_guest_is_connected_no_resources_are_removed(
-    mock_garbage_collector_task,
+    disable_garbage_collector_background_task,
     client,
     socketio_client_factory: Callable,
     aiopg_engine,
@@ -410,7 +418,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
 
 
 async def test_t2_cleanup_resources_after_browser_is_closed(
-    mock_garbage_collector_task,
+    disable_garbage_collector_background_task,
     simcore_services_ready,
     client,
     socketio_client_factory: Callable,
