@@ -17,7 +17,7 @@ import pytest
 from aiohttp.test_utils import TestClient
 from models_library.projects_state import RunningState
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
-from pytest_simcore.helpers.utils_login import AUserDict, log_client_in
+from pytest_simcore.helpers.utils_login import UserInfoDict, log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
 from servicelib.aiohttp.application import create_safe_application
 from settings_library.redis import RedisSettings
@@ -187,7 +187,7 @@ async def login_guest_user(client: TestClient):
 
 async def new_project(
     client: TestClient,
-    user: AUserDict,
+    user: UserInfoDict,
     tests_data_dir: Path,
     access_rights: Optional[Dict[str, Any]] = None,
 ):
@@ -206,7 +206,7 @@ async def new_project(
 
 async def get_template_project(
     client: TestClient,
-    user: AUserDict,
+    user: UserInfoDict,
     project_data: ProjectDict,
     access_rights=None,
 ):

@@ -11,7 +11,7 @@ from typing import AsyncIterator, Callable, Dict
 import pytest
 import simcore_service_webserver
 from _pytest.monkeypatch import MonkeyPatch
-from pytest_simcore.helpers.utils_login import AUserDict, LoggedUser
+from pytest_simcore.helpers.utils_login import LoggedUser, UserInfoDict
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db_models import UserRole
@@ -94,7 +94,7 @@ def fake_project(tests_data_dir: Path) -> ProjectDict:
 
 
 @pytest.fixture()
-async def logged_user(client, user_role: UserRole) -> AsyncIterator[AUserDict]:
+async def logged_user(client, user_role: UserRole) -> AsyncIterator[UserInfoDict]:
     """adds a user in db and logs in with client
 
     NOTE: `user_role` fixture is defined as a parametrization below!!!
