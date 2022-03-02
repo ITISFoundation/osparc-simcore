@@ -83,7 +83,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
       return "orphan.osparc.form";
     },
     /**
-     * Function that returns an appropriate widget fot the given type.
+     * Function that returns an appropriate widget for the given type.
      *
      * @param {String} type Type of the input that will be used to determine the render behavior
      */
