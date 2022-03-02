@@ -24,18 +24,6 @@ class ServicesCommonSettings(BaseSettings):
             "big payloads it is important to have longer timeouts."
         ),
     )
-    storage_service_upload_download_timeout: PositiveInt = Field(
-        _HOUR,
-        description=(
-            "When dynamic services upload and download data from storage, "
-            "sometimes very big payloads are involved. In order to handle "
-            "such payloads it is required to have long timeouts which "
-            "allow the service to finish the operation."
-        ),
-    )
-    restart_containers_timeout: PositiveInt = Field(
-        1 * _MINUTE, description="timeout of containers restart"
-    )
 
     class Config:
         env_prefix = "SERVICES_COMMON_"

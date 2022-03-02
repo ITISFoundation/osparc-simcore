@@ -616,7 +616,7 @@ async def trigger_connected_service_retrieve(
 
     # call /retrieve on the nodes
     update_tasks = [
-        director_v2_api.request_retrieve_dyn_service(app, node, keys)
+        director_v2_api.retrieve_dynamic_service_inputs(app, node, keys)
         for node, keys in nodes_keys_to_update.items()
     ]
     await logged_gather(*update_tasks)

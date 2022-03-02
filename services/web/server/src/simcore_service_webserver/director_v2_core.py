@@ -30,9 +30,7 @@ log = logging.getLogger(__name__)
 _APP_DIRECTOR_V2_CLIENT_KEY = f"{__name__}.DirectorV2ApiClient"
 
 SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)  # type:ignore
-SERVICE_RETRIEVE_HTTP_TIMEOUT = ClientTimeout(
-    total=60 * 60, connect=None, sock_connect=5  # type:ignore
-)
+
 DEFAULT_RETRY_POLICY = dict(
     wait=wait_random(0, 1),
     stop=stop_after_attempt(2),
@@ -276,26 +274,7 @@ async def delete_pipeline(
     )
 
 
-@log_decorator(logger=log)
-async def request_retrieve_dyn_service(
-    app: web.Application, service_uuid: str, port_keys: List[str]
-) -> None:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / f"dynamic_services/{service_uuid}:retrieve"
-    body = {"port_keys": port_keys}
-
-    try:
-        await _request_director_v2(
-            app, "POST", backend_url, data=body, timeout=SERVICE_RETRIEVE_HTTP_TIMEOUT
-        )
-    except DirectorServiceError as exc:
-        log.warning(
-            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s:%s]",
-            service_uuid,
-            port_keys,
-            exc.status,
-            exc.reason,
-        )
+## DYNAMIC SERVICES ---------------------------------------------------------------------------
 
 
 @log_decorator(logger=log)
@@ -442,38 +421,46 @@ async def get_dynamic_service_state(app: web.Application, node_uuid: str) -> Dat
 
 
 @log_decorator(logger=log)
-async def retrieve(
-    app: web.Application, node_uuid: str, port_keys: List[str]
-) -> DataBody:
-    # when triggering retrieve endpoint
-    # this will allow to sava bigger datasets from the services
-    # TODO: PC -> ANE: all settings MUST be in app[APP_SETTINGS_KEY]
-    timeout = ServicesCommonSettings().storage_service_upload_download_timeout
-
+async def retrieve_dynamic_service_inputs(
+    app: web.Application, service_uuid: str, port_keys: List[str]
+) -> DataType:
+    """Pulls data from connections to the dynamic service inputs"""
     settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / "dynamic_services" / f"{node_uuid}:retrieve"
-    body = dict(port_keys=port_keys)
+    backend_url = settings.base_url / f"dynamic_services/{service_uuid}:retrieve"
 
-    retry_result = await _request_director_v2(
+    result = await _request_director_v2(
         app,
         "POST",
         backend_url,
-        expected_status=web.HTTPOk,
-        data=body,
-        timeout=timeout,
+        data={"port_keys": port_keys},
+        timeout=settings.get_service_retrieve_timeout(),
     )
-
-    assert isinstance(retry_result, dict)  # nosec
-    return retry_result
+    assert isinstance(result, dict)  # nosec
+    return result
 
 
 @log_decorator(logger=log)
-async def restart(app: web.Application, node_uuid: str) -> None:
-    # when triggering retrieve endpoint
-    # this will allow to sava bigger datasets from the services
-    # TODO: PC -> ANE: all settings MUST be in app[APP_SETTINGS_KEY]
-    timeout = ServicesCommonSettings().restart_containers_timeout
+async def safe_retrieve_dynamic_service_inputs(
+    app: web.Application, service_uuid: str, port_keys: List[str]
+) -> Optional[DataType]:
+    """Upon failure does not raise, but returns None"""
+    try:
 
+        result = await retrieve_dynamic_service_inputs(app, service_uuid, port_keys)
+        return result
+
+    except DirectorServiceError as exc:
+        log.warning(
+            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s:%s]",
+            service_uuid,
+            port_keys,
+            exc.status,
+            exc.reason,
+        )
+
+
+@log_decorator(logger=log)
+async def restart_dynamic_service(app: web.Application, node_uuid: str) -> None:
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = settings.base_url / f"dynamic_services/{node_uuid}:restart"
 
@@ -482,5 +469,5 @@ async def restart(app: web.Application, node_uuid: str) -> None:
         "POST",
         backend_url,
         expected_status=web.HTTPOk,
-        timeout=timeout,
+        timeout=settings.DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT,
     )

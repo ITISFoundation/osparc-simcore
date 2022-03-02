@@ -111,7 +111,9 @@ async def post_retrieve(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
 
     return web.json_response(
-        await director_v2_api.retrieve(request.app, node_uuid, port_keys),
+        await director_v2_api.retrieve_dynamic_service_inputs(
+            request.app, node_uuid, port_keys
+        ),
         dumps=json_dumps,
     )
 
@@ -125,7 +127,7 @@ async def post_restart(request: web.Request) -> web.Response:
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
 
-    await director_v2_api.restart(request.app, node_uuid)
+    await director_v2_api.restart_dynamic_service(request.app, node_uuid)
 
     return web.HTTPNoContent()
 
