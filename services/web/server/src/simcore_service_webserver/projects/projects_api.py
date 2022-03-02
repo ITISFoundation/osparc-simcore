@@ -315,7 +315,7 @@ async def remove_project_interactive_services(
             with suppress(director_v2_api.DirectorServiceError):
                 # here director exceptions are suppressed. in case the service is not found to preserve old behavior
                 # FIXME: running computational services shall also be stopped and removed?
-                await director_v2_api.stop_all_services_in_project(
+                await director_v2_api.stop_dynamic_services_in_project(
                     app=app,
                     user_id=user_id,
                     project_id=project_uuid,

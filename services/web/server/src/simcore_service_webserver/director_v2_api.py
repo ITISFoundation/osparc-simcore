@@ -23,8 +23,8 @@ from .director_v2_core import (
     restart,
     retrieve,
     start_dynamic_service,
-    stop_all_services_in_project,
     stop_dynamic_service,
+    stop_dynamic_services_in_project,
 )
 
 # director-v2 module internal API
@@ -45,5 +45,5 @@ __all__: Tuple[str, ...] = (
     "set_project_run_policy",
     "start_dynamic_service",
     "stop_dynamic_service",
-    "stop_all_services_in_project",
+    "stop_dynamic_services_in_project",
 )

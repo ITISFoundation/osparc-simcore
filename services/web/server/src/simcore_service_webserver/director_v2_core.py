@@ -408,24 +408,24 @@ async def list_running_dynamic_services(
 
 
 @log_decorator(logger=log)
-async def stop_all_services_in_project(
+async def stop_dynamic_services_in_project(
     app: web.Application,
     user_id: Optional[PositiveInt] = None,
     project_id: Optional[str] = None,
     save_state: bool = True,
 ) -> None:
-    """Stops all services in parallel"""
+    """Stops ALL dynamic services within the project in parallel"""
     running_dynamic_services = await get_dynamic_services(
         app, user_id=user_id, project_id=project_id
     )
 
-    services_to_stop = [
+    _stop_dynamic_service_coros = [
         stop_dynamic_service(
             app=app, service_uuid=service["service_uuid"], save_state=save_state
         )
         for service in running_dynamic_services
     ]
-    await logged_gather(*services_to_stop)
+    await logged_gather(*_stop_dynamic_service_coros)
 
 
 @log_decorator(logger=log)
