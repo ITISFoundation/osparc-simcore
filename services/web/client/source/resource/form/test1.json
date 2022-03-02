@@ -24,6 +24,7 @@
         "title": "Array Ints",
         "type": "array",
         "items": {
+          "title": "int",
           "type": "integer"
         }
       }

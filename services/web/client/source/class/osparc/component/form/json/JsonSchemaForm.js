@@ -185,9 +185,16 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
       } else {
         container.setLayout(new qx.ui.layout.VBox());
       }
-      Object.entries(schema.properties).forEach(([key, value]) => container.add(this.__expand(key, value, data ? data[key] : data, depth+1, {
-        required: schema.required && schema.required.includes(key)
-      })));
+      Object.entries(schema.properties).forEach(([key, value], index) => {
+        const allProps = Object.values(schema.properties)
+        const nextProp = index < allProps.length - 1 ? allProps[index+1] : null
+        container.add(this.__expand(key, value, data ? data[key] : data, depth+1, {
+          required: schema.required && schema.required.includes(key)
+        }), {
+          lineBreak: nextProp && nextProp.type === 'array' || value.type === 'array' ? true : false,
+          stretch: value.type === 'array' ? true : false
+        })
+      });
       return container;
     },
     /**

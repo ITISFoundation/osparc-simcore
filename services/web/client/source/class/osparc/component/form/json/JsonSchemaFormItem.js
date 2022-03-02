@@ -111,7 +111,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
           // falls through
         default:
           input = new qx.ui.form.TextField().set({
-            required: validation && validation.required
+            required: Boolean(validation && validation.required)
           });
           if (this.__schema.pattern) {
             validationManager.add(input, osparc.utils.Validators.regExp(RegExp(this.__schema.pattern)));
