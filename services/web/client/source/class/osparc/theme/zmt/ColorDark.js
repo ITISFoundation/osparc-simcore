@@ -2,39 +2,21 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
   include: osparc.theme.mixin.Color,
 
   colors: {
-    /*
-    "c00": "#000000", // L=00
-    "c01": "#202020", // L=13
-    "c02": "#303030", // L=19
-    "c03": "#404040", // L=25
-    "c04": "#505050", // L=31
-    "c05": "#606060", // L=38
-    "c06": "#707070", // L=44
-    "c07": "#808080", // L=50
-    "c08": "#909090", // L=56
-    "c09": "#A0A0A0", // L=63
-    "c10": "#B0B0B0", // L=69
-    "c11": "#C0C0C0", // L=75
-    "c12": "#D0D0D0", // L=82
-    "c13": "#EFEFEF", // L=88
-    "c14": "#FFFFFF", // L=100
-    */
-
-    "c00": "#000000", // L=00
-    "c01": "#202020", // L=13
-    "c02": "#303030", // L=19
-    "c03": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 15),
-    "c04": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 20),
-    "c05": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 30),
-    "c06": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 35),
-    "c07": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 40),
-    "c08": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 70),
-    "c09": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 80),
-    "c10": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 90),
-    "c11": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 95),
-    "c12": osparc.theme.colorProvider.ColorProvider.getColor("zmt", 101),
-    "c13": "#EFEFEF", // L=88
-    "c14": "#FFFFFF", // L=100
+    "c00": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105),
+    "c01": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 100),
+    "c02": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 95),
+    "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 85),
+    "c04": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 80),
+    "c05": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 70),
+    "c06": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 55),
+    "c07": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 45),
+    "c08": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 35),
+    "c09": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 25),
+    "c10": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 20),
+    "c11": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 15),
+    "c12": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 10),
+    "c13": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 5),
+    "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0),
 
 
     "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
@@ -42,7 +24,7 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
 
 
     // main
-    "background-main": "c01",
+    "background-main": [38, 43, 46],
     "background-main-lighter": "c02",
     "background-main-lighter+": "c03",
     "contrasted-background": "c04",
