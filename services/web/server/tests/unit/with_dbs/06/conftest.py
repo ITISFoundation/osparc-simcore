@@ -3,6 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 from copy import deepcopy
+from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 
 import pytest
@@ -85,9 +86,17 @@ def client(
 
 
 @pytest.fixture
-async def user_project(client, fake_project, logged_user):
+async def user_project(
+    client,
+    fake_project,
+    logged_user,
+    tests_data_dir: Path,
+):
     async with NewProject(
-        fake_project, client.app, user_id=logged_user["id"]
+        fake_project,
+        client.app,
+        user_id=logged_user["id"],
+        tests_data_dir=tests_data_dir,
     ) as project:
         print("-----> added project", project["name"])
         yield project
@@ -95,7 +104,13 @@ async def user_project(client, fake_project, logged_user):
 
 
 @pytest.fixture
-async def shared_project(client, fake_project, logged_user, all_group):
+async def shared_project(
+    client,
+    fake_project,
+    logged_user,
+    all_group,
+    tests_data_dir: Path,
+):
     fake_project.update(
         {
             "accessRights": {
@@ -107,6 +122,7 @@ async def shared_project(client, fake_project, logged_user, all_group):
         fake_project,
         client.app,
         user_id=logged_user["id"],
+        tests_data_dir=tests_data_dir,
     ) as project:
         print("-----> added project", project["name"])
         yield project
@@ -115,7 +131,11 @@ async def shared_project(client, fake_project, logged_user, all_group):
 
 @pytest.fixture
 async def template_project(
-    client, fake_project, logged_user, all_group: Dict[str, str]
+    client,
+    fake_project,
+    logged_user,
+    all_group: Dict[str, str],
+    tests_data_dir: Path,
 ):
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
@@ -125,7 +145,11 @@ async def template_project(
     }
 
     async with NewProject(
-        project_data, client.app, user_id=None, clear_all=True
+        project_data,
+        client.app,
+        user_id=None,
+        clear_all=True,
+        tests_data_dir=tests_data_dir,
     ) as template_project:
         print("-----> added template project", template_project["name"])
         yield template_project

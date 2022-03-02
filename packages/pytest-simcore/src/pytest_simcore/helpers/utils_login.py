@@ -13,6 +13,7 @@ from yarl import URL
 from .utils_assert import assert_status
 
 # WARNING: UserDict is already in https://docs.python.org/3/library/collections.html#collections.UserDict
+# TODO: move this to future simcore_service_webserver.users_models.py
 AUserDict = Dict[str, Any]
 
 TEST_MARKS = re.compile(r"TEST (\w+):(.*)")
