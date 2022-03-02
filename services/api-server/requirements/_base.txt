@@ -15,6 +15,7 @@ aiofiles==0.8.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/_base.in
 aiohttp==3.8.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
@@ -53,8 +54,8 @@ attrs==20.3.0
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
-    #   -r requirements/_base.in
     #   aiohttp
+    #   jsonschema
 certifi==2021.10.8
     # via
     #   httpcore
@@ -62,12 +63,12 @@ certifi==2021.10.8
     #   requests
 cffi==1.15.0
     # via cryptography
-charset-normalizer==2.0.11
+charset-normalizer==2.0.12
     # via
     #   aiohttp
     #   httpx
     #   requests
-click==8.0.3
+click==8.0.4
     # via
     #   typer
     #   uvicorn
@@ -90,7 +91,7 @@ email-validator==1.1.3
     # via
     #   fastapi
     #   pydantic
-fastapi==0.73.0
+fastapi==0.74.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   -r requirements/_base.in
@@ -125,7 +126,7 @@ idna==2.10
     #   requests
     #   rfc3986
     #   yarl
-importlib-metadata==4.11.0
+importlib-metadata==4.11.2
     # via alembic
 importlib-resources==5.4.0 ; python_version < "3.9"
     # via
@@ -139,9 +140,8 @@ importlib-resources==5.4.0 ; python_version < "3.9"
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/_base.in
     #   alembic
-itsdangerous==2.0.1
+itsdangerous==2.1.0
     # via fastapi
 jaeger-client==4.8.0
     # via fastapi-contrib
@@ -158,9 +158,15 @@ jinja2==3.0.3
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
+jsonschema==3.2.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 mako==1.1.6
     # via alembic
-markupsafe==2.0.1
+markupsafe==2.1.0
     # via
     #   jinja2
     #   mako
@@ -172,8 +178,10 @@ opentracing==2.4.0
     # via
     #   fastapi-contrib
     #   jaeger-client
-orjson==3.6.6
-    # via fastapi
+orjson==3.6.7
+    # via
+    #   -r requirements/_base.in
+    #   fastapi
 packaging==21.3
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
@@ -212,6 +220,8 @@ pyinstrument==4.1.1
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 pyparsing==3.0.7
     # via packaging
+pyrsistent==0.18.1
+    # via jsonschema
 python-dotenv==0.19.2
     # via
     #   pydantic
@@ -236,6 +246,7 @@ pyyaml==5.4.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/_base.in
     #   fastapi
     #   uvicorn
 requests==2.27.1
@@ -244,6 +255,7 @@ rfc3986==1.5.0
     # via httpx
 six==1.16.0
     # via
+    #   jsonschema
     #   python-multipart
     #   thrift
 sniffio==1.2.0
@@ -284,11 +296,13 @@ tornado==6.1
     # via
     #   jaeger-client
     #   threadloop
-tqdm==4.62.3
+tqdm==4.63.0
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 typer==0.4.0
-    # via -r requirements/../../../packages/settings-library/requirements/_base.in
-typing-extensions==4.0.1
+    # via
+    #   -r requirements/../../../packages/settings-library/requirements/_base.in
+    #   -r requirements/_base.in
+typing-extensions==4.1.1
     # via
     #   aiodebug
     #   pydantic
@@ -313,7 +327,7 @@ uvloop==0.16.0
     # via uvicorn
 watchgod==0.7
     # via uvicorn
-websockets==10.1
+websockets==10.2
     # via uvicorn
 yarl==1.7.2
     # via
@@ -324,3 +338,6 @@ zipp==3.7.0
     # via
     #   importlib-metadata
     #   importlib-resources
+
+# The following packages are considered to be unsafe in a requirements file:
+# setuptools
