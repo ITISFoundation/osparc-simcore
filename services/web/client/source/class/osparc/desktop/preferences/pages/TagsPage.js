@@ -26,9 +26,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     __addTagButton: null,
     __tagItems: null,
     __createComponents: function() {
-      this.__addTagButton = new qx.ui.form.Button(this.tr("Add new tag"), "@FontAwesome5Solid/plus-circle/14").set({
-        appearance: "toolbar-md-button"
-      });
+      this.__addTagButton = new qx.ui.form.Button(this.tr("Add new tag"), "@FontAwesome5Solid/plus-circle/14");
       osparc.utils.Utils.setIdToWidget(this.__addTagButton, "addTagBtn");
       osparc.data.Resources.get("tags")
         .then(tags => {

@@ -193,11 +193,13 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
      */
     __tagItemButtons: function() {
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      const editButton = new qx.ui.form.Button(this.tr("Edit")).set({
-        appearance: "link-button"
+      const editButton = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/pencil-alt/12",
+        toolTipText: this.tr("Edit")
       });
-      const deleteButton = new osparc.ui.form.FetchButton(this.tr("Delete")).set({
-        appearance: "link-button"
+      const deleteButton = new osparc.ui.form.FetchButton().set({
+        icon: "@FontAwesome5Solid/trash/12",
+        toolTipText: this.tr("Delete")
       });
       buttonContainer.add(editButton);
       buttonContainer.add(deleteButton);
