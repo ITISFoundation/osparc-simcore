@@ -38,14 +38,15 @@ qx.Class.define("osparc.ui.window.Confirmation", {
       let control;
       switch (id) {
         case "confirm-button": {
-          control = new qx.ui.toolbar.Button();
-          control.addListener("execute", e => {
+          control = new qx.ui.form.Button();
+          control.addListener("execute", () => {
             this.setConfirmed(true);
             this.close(1);
           }, this);
           const command = new qx.ui.command.Command("Enter");
           control.setCommand(command);
-          this.addButton(control);
+          const btnsLayout = this.getChildControl("buttons-layout");
+          btnsLayout.add(control);
           break;
         }
       }

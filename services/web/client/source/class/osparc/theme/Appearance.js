@@ -156,7 +156,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     "service-window/captionbar": {
       include: "window/captionbar",
       style: state => ({
-        backgroundColor: "material-button-background",
+        backgroundColor: "background-main-2",
         decorator: "workbench-small-cap-captionbar"
       })
     },
@@ -170,7 +170,7 @@ qx.Theme.define("osparc.theme.Appearance", {
 
     "dialog-window-content": {
       style: () => ({
-        backgroundColor: "material-button-background"
+        backgroundColor: "background-main-2"
       })
     },
     /*

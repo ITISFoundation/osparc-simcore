@@ -139,7 +139,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
         spacing: 3,
         width: 150,
         padding: 0,
-        backgroundColor: "material-button-background"
+        backgroundColor: "background-main-2"
       });
 
       const collaboratorsModel = this.__collaboratorsModel = new qx.data.Array();

@@ -600,9 +600,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
     // ANNOTATIONS //
 
     __createEditBtns: function() {
-      const editButton = new qx.ui.toolbar.Button(this.tr("Edit")).set({
-        appearance: "toolbar-md-button"
-      });
+      const editButton = new qx.ui.form.Button(this.tr("Edit"));
       this.bind("mode", editButton, "visibility", {
         converter: value => value === "display" ? "visible" : "excluded"
       });
@@ -610,9 +608,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         this.setMode("edit");
       }, this);
 
-      const saveButton = new osparc.ui.toolbar.FetchButton(this.tr("Save")).set({
-        appearance: "toolbar-md-button"
-      });
+      const saveButton = new osparc.ui.form.FetchButton(this.tr("Save"));
       this.bind("mode", saveButton, "visibility", {
         converter: value => value === "edit" ? "visible" : "excluded"
       });
@@ -620,9 +616,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         this.__save(saveButton);
       }, this);
 
-      const cancelButton = new qx.ui.toolbar.Button(this.tr("Cancel")).set({
-        appearance: "toolbar-md-button"
-      });
+      const cancelButton = new qx.ui.form.Button(this.tr("Cancel"));
       this.bind("mode", cancelButton, "visibility", {
         converter: value => value === "edit" ? "visible" : "excluded"
       });
@@ -630,7 +624,7 @@ qx.Class.define("osparc.component.metadata.QualityEditor", {
         this.setMode("display");
       }, this);
 
-      const buttonsToolbar = new qx.ui.toolbar.ToolBar();
+      const buttonsToolbar = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
       buttonsToolbar.add(editButton);
       buttonsToolbar.add(saveButton);
       buttonsToolbar.add(cancelButton);

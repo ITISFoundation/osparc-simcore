@@ -75,7 +75,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         spacing: 3,
         height: 150,
         width: 150,
-        backgroundColor: "material-button-background"
+        backgroundColor: "background-main-2"
       });
       orgsUIList.addListener("changeSelection", e => {
         this.__organizationSelected(e.getData());
@@ -159,7 +159,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         decorator: "no-border",
         spacing: 3,
         width: 150,
-        backgroundColor: "material-button-background"
+        backgroundColor: "background-main-2"
       });
 
       const membersModel = this.__membersModel = new qx.data.Array();

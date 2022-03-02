@@ -49,15 +49,16 @@ qx.Class.define("osparc.ui.window.Dialog", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "buttons-toolbar":
-          control = new qx.ui.toolbar.ToolBar();
-          control.addSpacer();
-          this.add(control);
+        case "buttons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+            alignX: "right"
+          }));
+          this._add(control);
           break;
         case "cancel-button": {
-          const btnToolbar = this.getChildControl("buttons-toolbar");
-          control = new qx.ui.toolbar.Button(this.tr("Cancel"));
-          btnToolbar.add(control);
+          const btnsLayout = this.getChildControl("buttons-layout");
+          control = new qx.ui.form.Button(this.tr("Cancel"));
+          btnsLayout.add(control);
           break;
         }
       }
@@ -72,7 +73,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
       this.add(this.__messageLabel, {
         flex: 1
       });
-      this.getChildControl("buttons-toolbar");
+      this.getChildControl("buttons-layout");
     },
 
     _applyMessage: function(message) {
@@ -84,7 +85,7 @@ qx.Class.define("osparc.ui.window.Dialog", {
      * @param {qx.ui.toolbar.Button} button Button that will be added to the bottom bar of the dialog.
      */
     addButton: function(button) {
-      const btnToolbar = this.getChildControl("buttons-toolbar");
+      const btnToolbar = this.getChildControl("buttons-layout");
       btnToolbar.add(button);
     },
 

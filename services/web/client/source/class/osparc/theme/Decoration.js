@@ -112,7 +112,7 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "service-browser": {
       style: {
-        color: "material-button-background"
+        color: "background-main-2"
       }
     },
 

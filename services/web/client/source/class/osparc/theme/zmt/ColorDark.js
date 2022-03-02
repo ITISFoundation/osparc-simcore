@@ -94,8 +94,8 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
     "border-lead": "c07",
 
     // window
-    "window-border": "c04",
-    "window-border-inner": "c01",
+    "window-border": "c03",
+    "window-border-inner": "c02",
 
     // group box
     "white-box-border": "c03",

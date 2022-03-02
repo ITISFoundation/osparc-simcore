@@ -15,7 +15,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     this.setLayout(new qx.ui.layout.Grow());
     this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__container.set({
-      backgroundColor: "material-button-background",
+      backgroundColor: "background-main-2",
       paddingLeft: 10
     });
     const scroll = new qx.ui.container.Scroll(this.__container);

@@ -78,7 +78,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         spacing: 3,
         height: 150,
         width: 150,
-        backgroundColor: "material-button-background"
+        backgroundColor: "background-main-2"
       });
       clustersList.addListener("changeSelection", e => {
         this.__clusterSelected(e.getData());
@@ -164,7 +164,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         decorator: "no-border",
         spacing: 3,
         width: 150,
-        backgroundColor: "material-button-background"
+        backgroundColor: "background-main-2"
       });
 
       const membersArrayModel = this.__membersArrayModel = new qx.data.Array();
