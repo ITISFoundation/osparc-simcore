@@ -12,9 +12,6 @@ from yarl import URL
 
 from ._constants import APP_SETTINGS_KEY
 
-SERVICE_NAME = "director-v2"
-CONFIG_SECTION_NAME = SERVICE_NAME
-
 
 class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
     DIRECTOR_V2_HOST: str = "director-v2"
