@@ -4,10 +4,14 @@
 
 
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Type
 
 import pytest
-from simcore_service_webserver.meta_modeling_results import extract_project_results
+from pydantic import BaseModel
+from simcore_service_webserver.meta_modeling_results import (
+    ExtractedResults,
+    extract_project_results,
+)
 
 
 @pytest.fixture
@@ -119,3 +123,16 @@ def test_extract_project_results(fake_workbench: Dict[str, Any]):
         "445b44d1-59b3-425c-ac48-7c13e0f2ea5b": {"in_1": 1},
         "d76fca06-f050-4790-88a8-0aac10c87b39": {"out_1": True},
     }
+
+
+@pytest.mark.parametrize(
+    "model_cls",
+    (ExtractedResults,),
+)
+def test_models_examples(
+    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Any]
+):
+    for name, example in model_cls_examples.items():
+        print(name, ":", json.dumps(example, indent=1))
+        model_instance = model_cls(**example)
+        assert model_instance, f"Failed with {name}"

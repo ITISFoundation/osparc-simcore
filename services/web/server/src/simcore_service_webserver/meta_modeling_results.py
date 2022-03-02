@@ -27,6 +27,32 @@ class ExtractedResults(BaseModel):
         ..., description="Captured outputs per node"
     )
 
+    class Config:
+        schema_extra = {
+            "example": {
+                # sample with 2 computational services, 2 data sources (iterator+parameter) and 2 observers (probes)
+                "progress": {
+                    "4c08265a-427b-4ac3-9eab-1d11c822ada4": 0,
+                    "e33c6880-1b1d-4419-82d7-270197738aa9": 100,
+                },
+                "labels": {
+                    "0f1e38c9-dcb7-443c-a745-91b97ac28ccc": "Integer iterator",
+                    "2d0ce8b9-c9c3-43ce-ad2f-ad493898de37": "Probe Sensor - Integer",
+                    "445b44d1-59b3-425c-ac48-7c13e0f2ea5b": "Probe Sensor - Integer_2",
+                    "d76fca06-f050-4790-88a8-0aac10c87b39": "Boolean Parameter",
+                },
+                "values": {
+                    "0f1e38c9-dcb7-443c-a745-91b97ac28ccc": {
+                        "out_1": 1,
+                        "out_2": [3, 4],
+                    },
+                    "2d0ce8b9-c9c3-43ce-ad2f-ad493898de37": {"in_1": 7},
+                    "445b44d1-59b3-425c-ac48-7c13e0f2ea5b": {"in_1": 1},
+                    "d76fca06-f050-4790-88a8-0aac10c87b39": {"out_1": True},
+                },
+            }
+        }
+
 
 def extract_project_results(workbench: Dict[str, Any]) -> ExtractedResults:
     # table : Name, Pogress, Labels.... ,
