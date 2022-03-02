@@ -46,6 +46,7 @@ script() {
       --log-date-format="%Y-%m-%d %H:%M:%S" \
       --cov=simcore_sdk --durations=10 --cov-append \
       --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+      --asyncio-mode=auto \
       -v -m "not travis" packages/simcore-sdk/tests/integration
   else
     echo "No changes detected. Skipping integration-testing of simcore-sdk."

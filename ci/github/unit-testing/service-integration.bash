@@ -18,6 +18,7 @@ test() {
     --log-date-format="%Y-%m-%d %H:%M:%S" \
     --cov=service_integration --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+    --asyncio-mode=auto \
     -v -m "not travis" packages/service-integration/tests
 }
 

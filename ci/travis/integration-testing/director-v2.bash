@@ -37,6 +37,7 @@ script() {
     --log-date-format="%Y-%m-%d %H:%M:%S" \
     --cov=simcore_service_director_v2 --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+    --asyncio-mode=auto \
     -v -m "not travis" services/director-v2/tests/integration
 }
 

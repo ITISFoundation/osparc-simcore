@@ -37,6 +37,7 @@ script() {
     --log-date-format="%Y-%m-%d %H:%M:%S" \
     --cov=simcore_service_webserver --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+    --asyncio-mode=auto \
     -v -m "not travis" services/web/server/tests/integration
   # TODO: https://github.com/ITISFoundation/osparc-simcore/issues/560
   #pytest --log-format="%(asctime)s %(levelname)s %(message)s" \
