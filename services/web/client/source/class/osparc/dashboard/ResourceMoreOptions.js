@@ -207,6 +207,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       if (osparc.utils.Resources.isService(resourceData)) {
         const openServiceButton = new qx.ui.form.Button(this.tr("Open")).set({
+          appearance: "strong-button",
           allowGrowX: false,
           alignX: "right"
         });
