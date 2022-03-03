@@ -272,6 +272,11 @@ class ServicesRepository(BaseRepository):
             )
         )
         async with self.db_engine.acquire() as conn:
+            # NOTE: this strange query compile is due to an incompatilility
+            # between aiopg.sa and sqlalchemy 1.4
+            # One of the maintainer of aiopg says:
+            # https://github.com/aio-libs/aiopg/issues/798#issuecomment-934256346
+            # we should drop aiopg.sa
             async for row in conn.execute(
                 f"{(query.compile(compile_kwargs={'literal_binds': True}))}"
             ):
