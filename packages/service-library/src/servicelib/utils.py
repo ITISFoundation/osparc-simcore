@@ -61,17 +61,17 @@ def search_osparc_repo_dir(start: Union[str, Path], max_iterations=8) -> Optiona
 
 
 # FUTURES
+def log_exception_callback(fut: asyncio.Future):
+    try:
+        fut.result()
+    except Exception:  # pylint: disable=broad-except
+        logger.exception("Error occured while running task!")
+
+
 def fire_and_forget_task(
     obj: Union[Coroutine, asyncio.Future, Awaitable]
 ) -> asyncio.Future:
     future = asyncio.ensure_future(obj)
-
-    def log_exception_callback(fut: asyncio.Future):
-        try:
-            fut.result()
-        except Exception:  # pylint: disable=broad-except
-            logger.exception("Error occured while running task!")
-
     future.add_done_callback(log_exception_callback)
     return future
 
