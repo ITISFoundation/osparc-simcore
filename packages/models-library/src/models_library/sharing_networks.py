@@ -2,11 +2,10 @@ from collections import deque
 from typing import Any, Deque, Dict
 from uuid import UUID
 
-from pydantic import BaseModel, constr
+from pydantic import constr, validate_arguments
 
 from .generics import DictModel
 from .projects_nodes_io import NodeID
-
 
 SERVICE_NETWORK_RE = r"^[a-zA-Z]([a-zA-Z0-9_-]{0,63})$"
 
@@ -15,18 +14,14 @@ DockerNetworkName = constr(regex=SERVICE_NETWORK_RE)
 DockerNetworkAlias = constr(regex=SERVICE_NETWORK_RE)
 
 
-def validate_network_name(value: str) -> DockerNetworkName:
-    class ValidationModel(BaseModel):
-        item: DockerNetworkName
-
-    return ValidationModel(item=value).item
+@validate_arguments
+def validate_network_name(value: DockerNetworkName) -> DockerNetworkName:
+    return value
 
 
-def validate_network_alias(value: str) -> DockerNetworkAlias:
-    class ValidationModel(BaseModel):
-        item: DockerNetworkAlias
-
-    return ValidationModel(item=value).item
+@validate_arguments
+def validate_network_alias(value: DockerNetworkAlias) -> DockerNetworkAlias:
+    return value
 
 
 class BaseModelDict(DictModel):
