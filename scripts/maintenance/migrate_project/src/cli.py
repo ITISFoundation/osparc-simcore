@@ -12,11 +12,11 @@ from r_clone import assemble_config_file, sync_file
 
 
 def main(config: Path):
-    assert config.exists()
+    assert config.exists()  # nosec
     settings = Settings.load_from_file(config)
     typer.echo(f"Detected settings:\n{settings.json(indent=2)}\n")
 
-    assert settings.source.s3.endpoint is not None
+    assert settings.source.s3.endpoint is not None  # nosec
     r_clone_config_path = assemble_config_file(
         # destination is AWS S3
         aws_access_key=settings.destination.s3.access_key,
@@ -44,7 +44,7 @@ def main(config: Path):
         # Move data
         for file_meta_data in files_meta_data_to_migrate:
             # replacing user id with target one
-            assert "user_id" in file_meta_data
+            assert "user_id" in file_meta_data  # nosec
             file_meta_data["user_id"] = settings.destination.user_id
 
             sync_file(
@@ -57,13 +57,13 @@ def main(config: Path):
 
         # insert projects
         for project in projects_to_migrate:
-            assert "prj_owner" in project
+            assert "prj_owner" in project  # nosec
             project["prj_owner"] = settings.destination.user_id
             # strip this field as it is not required
-            assert "id" in project
+            assert "id" in project  # nosec
             del project["id"]
 
-            assert "access_rights" in project
+            assert "access_rights" in project  # nosec
             project["access_rights"] = {
                 f"{settings.destination.user_gid}": {
                     "read": True,

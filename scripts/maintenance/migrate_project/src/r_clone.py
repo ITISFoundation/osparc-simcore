@@ -1,5 +1,5 @@
 from pathlib import Path
-from subprocess import PIPE, Popen
+from subprocess import PIPE, Popen  # nosec
 
 DESTINATION = "dst"
 SOURCE = "src"
@@ -46,7 +46,7 @@ def assemble_config_file(
         source=SOURCE,
     )
 
-    conf_path = Path("/tmp/rclone_config.ini")
+    conf_path = Path("/tmp/rclone_config.ini")  # nosec
     conf_path.write_text(config_content)
     return conf_path
 
@@ -68,7 +68,7 @@ def sync_file(
     r_clone_command = f"rclone --config {config_path} sync '{SOURCE}:{source_path.parent}' '{DESTINATION}:{destination_path.parent}' -P --include '{file_name}'"
     print(r_clone_command)
 
-    result = Popen(r_clone_command, stdout=PIPE, stderr=PIPE, shell=True)
+    result = Popen(r_clone_command, stdout=PIPE, stderr=PIPE, shell=True)  # nosec
     stdout, stderr = result.communicate()
     decoded_stdout = stdout.decode()
     if result.returncode != 0:
