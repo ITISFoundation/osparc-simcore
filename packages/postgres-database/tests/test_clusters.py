@@ -52,7 +52,7 @@ async def create_cluster(
             "type": ClusterType.ON_PREMISE,
             "description": None,
             "endpoint": faker.domain_name(),
-            "authentication": faker.pydict(value_types=str),
+            "authentication": faker.pydict(value_types=[str]),
         }
         insert_values.update(overrides)
         async with pg_engine.acquire() as conn:

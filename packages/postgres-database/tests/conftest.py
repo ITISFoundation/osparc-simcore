@@ -46,7 +46,8 @@ def make_engine(postgres_service: str) -> Callable:
     dsn = postgres_service
 
     def maker(*, is_async=True) -> Union[Awaitable[Engine], sa.engine.base.Engine]:
-        return aiopg.sa.create_engine(dsn) if is_async else sa.create_engine(dsn)
+        engine = aiopg.sa.create_engine(dsn) if is_async else sa.create_engine(dsn)
+        return engine
 
     return maker
 
