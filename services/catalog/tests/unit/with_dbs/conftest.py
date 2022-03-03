@@ -6,7 +6,7 @@
 import asyncio
 import itertools
 import random
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Tuple
+from typing import Any, AsyncIterator, Callable, Dict, Iterable, Iterator, List, Tuple
 
 import pytest
 import respx
@@ -43,14 +43,14 @@ def app(
 
 
 @pytest.fixture
-def client(loop: asyncio.AbstractEventLoop, app: FastAPI) -> Iterable[TestClient]:
+def client(event_loop: asyncio.AbstractEventLoop, app: FastAPI) -> Iterable[TestClient]:
     with TestClient(app) as cli:
         # Note: this way we ensure the events are run in the application
         yield cli
 
 
 @pytest.fixture()
-def director_mockup(app: FastAPI) -> MockRouter:
+def director_mockup(app: FastAPI) -> Iterator[MockRouter]:
 
     with respx.mock(
         base_url=app.state.settings.CATALOG_DIRECTOR.base_url,
@@ -84,7 +84,7 @@ def director_mockup(app: FastAPI) -> MockRouter:
 
 
 @pytest.fixture()
-async def products_names(aiopg_engine: Engine) -> Iterator[List[str]]:
+async def products_names(aiopg_engine: Engine) -> AsyncIterator[List[str]]:
     """Inits products db table and returns product names"""
     data = [
         # already upon creation: ("osparc", r"([\.-]{0,1}osparc[\.-])"),
@@ -110,7 +110,7 @@ async def products_names(aiopg_engine: Engine) -> Iterator[List[str]]:
 
 
 @pytest.fixture()
-async def user_groups_ids(aiopg_engine: Engine) -> Iterator[List[int]]:
+async def user_groups_ids(aiopg_engine: Engine) -> AsyncIterator[List[int]]:
     """Inits groups table and returns group identifiers"""
 
     cols = ("gid", "name", "description", "type", "thumbnail", "inclusion_rules")
@@ -145,7 +145,7 @@ async def user_groups_ids(aiopg_engine: Engine) -> Iterator[List[int]]:
 
 
 @pytest.fixture()
-async def services_db_tables_injector(aiopg_engine: Engine) -> Callable:
+async def services_db_tables_injector(aiopg_engine: Engine) -> AsyncIterator[Callable]:
     """Returns a helper function to init
     services_meta_data and services_access_rights tables
 
