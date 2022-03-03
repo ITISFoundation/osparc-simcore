@@ -171,3 +171,6 @@ packages/service-integration/compose-spec.json
 
 # temporary files by vscode
 Untitled*
+
+# ignore configuration files in scripts/maintenance/migrate_project
+scripts/maintenance/migrate_project/*.json
