@@ -37,13 +37,13 @@
     },
     {
       "class": "osparc.Application",
-      "theme": "osparc.theme.ThemeZmtDark",
+      "theme": "osparc.theme.zmt.ThemeDark",
       "name": "s4l",
       "title": "Sim4Life",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
-        "osparc.theme.ThemeZmtLight"
+        "osparc.theme.zmt.ThemeLight"
       ],
       "environment": {
         "product.name": "s4l"
@@ -52,13 +52,13 @@
     },
     {
       "class": "osparc.Application",
-      "theme": "osparc.theme.ThemeZmtDark",
+      "theme": "osparc.theme.zmt.ThemeDark",
       "name": "tis",
       "title": "TI Planning",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
-        "osparc.theme.ThemeZmtLight"
+        "osparc.theme.zmt.ThemeLight"
       ],
       "environment": {
         "product.name": "tis"
