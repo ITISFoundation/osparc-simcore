@@ -887,7 +887,6 @@ async def test_open_shared_project_2_users_locked(
 
 @pytest.mark.parametrize(*standard_role_response())
 async def test_open_shared_project_at_same_time(
-    loop,
     client: TestClient,
     client_on_running_server_factory: Callable,
     logged_user: Dict,

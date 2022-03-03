@@ -46,7 +46,7 @@ def parse_db(dsm_mockup_db):
 
 @pytest.fixture
 def client(
-    loop,
+    event_loop,
     unused_tcp_port_factory,
     aiohttp_client: TestClient,
     postgres_service,
@@ -83,7 +83,7 @@ def client(
     setup_dsm(app)
     setup_s3(app)
 
-    cli = loop.run_until_complete(
+    cli = event_loop.run_until_complete(
         aiohttp_client(
             app, server_kwargs={"port": settings.STORAGE_PORT, "host": "localhost"}
         )

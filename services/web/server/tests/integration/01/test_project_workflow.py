@@ -51,7 +51,7 @@ pytest_simcore_ops_services_selection = ["adminer"]  # + ["adminer"]
 
 @pytest.fixture
 def client(
-    loop,
+    event_loop,
     mock_orphaned_services,
     aiohttp_client,
     app_config,  # waits until swarm with *_services are up
@@ -81,7 +81,7 @@ def client(
     setup_products(app)
     setup_director_v2(app)
 
-    yield loop.run_until_complete(
+    yield event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={

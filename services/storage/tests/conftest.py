@@ -6,7 +6,6 @@
 # pylint: disable=unused-variable
 
 
-import asyncio
 import datetime
 import os
 import sys
@@ -378,14 +377,14 @@ def moduleless_app(event_loop, aiohttp_server) -> web.Application:
 
 @pytest.fixture(scope="function")
 def dsm_fixture(
-    s3_client, postgres_engine, loop, moduleless_app
+    s3_client, postgres_engine, event_loop, moduleless_app
 ) -> Iterable[DataStorageManager]:
 
     with ThreadPoolExecutor(3) as pool:
         dsm_fixture = DataStorageManager(
             s3_client=s3_client,
             engine=postgres_engine,
-            loop=loop,
+            loop=event_loop,
             pool=pool,
             simcore_bucket_name=BUCKET_NAME,
             has_project_db=False,
@@ -401,7 +400,6 @@ def dsm_fixture(
 
 @pytest.fixture(scope="function")
 async def datcore_structured_testbucket(
-    loop: asyncio.AbstractEventLoop,
     mock_files_factory: Callable[[int], List[Path]],
     moduleless_app,
 ):

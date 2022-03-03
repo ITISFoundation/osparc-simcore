@@ -52,7 +52,7 @@ async def mock_project_subsystem(
 
 @pytest.fixture
 async def comp_task_listening_task(
-    loop, mock_project_subsystem: Dict, client: TestClient
+    mock_project_subsystem: Dict, client: TestClient
 ) -> AsyncIterator:
     async for _comp_task in create_comp_tasks_listening_task(client.app):
         # first call creates the task, second call cleans it

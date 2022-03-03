@@ -84,9 +84,7 @@ def create_user_ids():
         ),
     ],
 )
-async def test_redis_registry_hashes(
-    loop, redis_enabled_app: web.Application, key, hash_key
-):
+async def test_redis_registry_hashes(redis_enabled_app: web.Application, key, hash_key):
     # pylint: disable=protected-access
     assert RedisResourceRegistry._hash_key(key) == hash_key
     assert (
@@ -169,7 +167,7 @@ async def test_redis_registry(redis_registry: RedisResourceRegistry):
 
 
 async def test_redis_registry_key_will_always_expire(
-    loop, redis_registry: RedisResourceRegistry
+    redis_registry: RedisResourceRegistry,
 ):
     get_random_int = lambda: randint(1, 10)
     first_key = {f"key_{x}": f"value_{x}" for x in range(get_random_int())}
@@ -194,7 +192,6 @@ async def test_redis_registry_key_will_always_expire(
 
 
 async def test_websocket_manager(
-    loop,
     redis_enabled_app: web.Application,
     redis_registry: RedisResourceRegistry,
     create_user_ids: Callable,

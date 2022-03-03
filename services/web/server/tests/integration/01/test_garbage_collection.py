@@ -115,7 +115,7 @@ async def auto_mock_director_v2(
 
 @pytest.fixture
 def client(
-    loop,
+    event_loop,
     aiohttp_client,
     app_config,
     postgres_with_template_db,
@@ -154,7 +154,7 @@ def client(
     assert setup_resource_manager(app)
     setup_garbage_collector(app)
 
-    yield loop.run_until_complete(
+    yield event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},
