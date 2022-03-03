@@ -112,6 +112,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       });
 
       const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add")).set({
+        appearance: "strong-button",
         allowGrowY: false,
         enabled: false
       });

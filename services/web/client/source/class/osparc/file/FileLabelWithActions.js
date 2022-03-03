@@ -61,18 +61,18 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
       let control;
       switch (id) {
         case "download-button":
-          control = new qx.ui.toolbar.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/16");
+          control = new qx.ui.form.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/16");
           osparc.utils.Utils.setIdToWidget(control, "filesTreeDownloadBtn");
           this._add(control);
           break;
         case "delete-button":
-          control = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/16").set({
+          control = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/16").set({
             appearance: "danger-button"
           });
           this._add(control);
           break;
         case "selected-label":
-          control = new osparc.ui.toolbar.Label();
+          control = new qx.ui.basic.Label();
           this._add(control, {
             flex: 1
           });

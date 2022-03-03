@@ -146,6 +146,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       });
 
       const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add")).set({
+        appearance: "strong-button",
         allowGrowY: false,
         enabled: false
       });
