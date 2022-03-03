@@ -669,7 +669,9 @@ async def test_project_node_lifetime(
 
 
 @pytest.fixture
-def client_on_running_server_factory(client: TestClient, loop) -> Iterator[Callable]:
+def client_on_running_server_factory(
+    client: TestClient, event_loop
+) -> Iterator[Callable]:
     # Creates clients connected to the same server as the reference client
     #
     # Implemented as aihttp_client but creates a client using a running server,
@@ -680,7 +682,7 @@ def client_on_running_server_factory(client: TestClient, loop) -> Iterator[Calla
     clients = []
 
     def go():
-        cli = TestClient(client.server, loop=loop)
+        cli = TestClient(client.server, loop=event_loop)
         assert client.server.started
         # AVOIDS client.start_server
         clients.append(cli)
@@ -702,7 +704,7 @@ def client_on_running_server_factory(client: TestClient, loop) -> Iterator[Calla
         while clients:
             await close_client_but_not_server(clients.pop())
 
-    loop.run_until_complete(finalize())
+    event_loop.run_until_complete(finalize())
 
 
 @pytest.mark.parametrize(*standard_role_response())

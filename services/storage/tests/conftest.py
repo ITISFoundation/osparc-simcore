@@ -175,7 +175,7 @@ def postgres_service_url(postgres_service, docker_services, docker_ip) -> str:
 
 
 @pytest.fixture(scope="function")
-async def postgres_engine(loop, postgres_service_url):
+async def postgres_engine(postgres_service_url):
     pg_engine = await create_engine(postgres_service_url)
 
     yield pg_engine
@@ -368,10 +368,10 @@ def dsm_mockup_db(
 
 
 @pytest.fixture(scope="function")
-def moduleless_app(loop, aiohttp_server) -> web.Application:
+def moduleless_app(event_loop, aiohttp_server) -> web.Application:
     app: web.Application = create_safe_application()
     # creates a dummy server
-    server = loop.run_until_complete(aiohttp_server(app))
+    server = event_loop.run_until_complete(aiohttp_server(app))
     # server is destroyed on exit https://docs.aiohttp.org/en/stable/testing.html#pytest_aiohttp.aiohttp_server
     return app
 

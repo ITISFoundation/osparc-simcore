@@ -42,7 +42,6 @@ pytest_plugins = [
     "pytest_simcore.repository_paths",
     "pytest_simcore.pydantic_models",
     "pytest_simcore.pytest_global_environs",
-
 ]
 
 
@@ -322,7 +321,7 @@ def sync_client(app: FastAPI) -> TestClient:
 
 
 @pytest.fixture
-async def test_user_id(loop, initialized_app) -> int:
+async def test_user_id(initialized_app) -> int:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
     async with initialized_app.state.engine.acquire() as conn:
         user_id = await RWUsersRepository(conn).create(
@@ -334,7 +333,7 @@ async def test_user_id(loop, initialized_app) -> int:
 
 
 @pytest.fixture
-async def test_api_key(loop, initialized_app, test_user_id) -> ApiKeyInDB:
+async def test_api_key(initialized_app, test_user_id) -> ApiKeyInDB:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
     async with initialized_app.state.engine.acquire() as conn:
         apikey = await RWApiKeysRepository(conn).create(

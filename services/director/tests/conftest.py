@@ -88,7 +88,7 @@ def configure_custom_registry(pytestconfig):
 
 
 @pytest.fixture
-async def aiohttp_mock_app(loop, mocker):
+async def aiohttp_mock_app(mocker):
     print("client session started ...")
     session = ClientSession()
 

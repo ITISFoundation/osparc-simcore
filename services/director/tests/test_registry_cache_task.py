@@ -25,7 +25,7 @@ def client(
     yield loop.run_until_complete(aiohttp_client(app, server_kwargs=server_kwargs))
 
 
-async def test_registry_caching_task(loop, client, push_services):
+async def test_registry_caching_task(client, push_services):
     app = client.app
     assert app
 

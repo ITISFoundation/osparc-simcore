@@ -95,7 +95,7 @@ async def test_redis_registry_hashes(
     assert RedisResourceRegistry._decode_hash_key(f"{hash_key}:{ALIVE_SUFFIX}") == key
 
 
-async def test_redis_registry(loop, redis_registry: RedisResourceRegistry):
+async def test_redis_registry(redis_registry: RedisResourceRegistry):
     random_value = randint(1, 10)
     key = {f"key_{x}": f"value_{x}" for x in range(random_value)}
     second_key = {f"sec_key_{x}": f"sec_value_{x}" for x in range(random_value)}

@@ -20,7 +20,7 @@ _logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="function")
-def push_services(loop, docker_registry, tmpdir):
+def push_services(docker_registry, tmpdir):
     registry_url = docker_registry
     tmp_dir = Path(tmpdir)
 

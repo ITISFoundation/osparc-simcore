@@ -33,7 +33,7 @@ def client(
     return client
 
 
-async def test_root_get(loop, client, api_version_prefix):
+async def test_root_get(client, api_version_prefix):
     web_response = await client.get(f"/{api_version_prefix}/")
     assert web_response.content_type == "application/json"
     assert web_response.status == 200

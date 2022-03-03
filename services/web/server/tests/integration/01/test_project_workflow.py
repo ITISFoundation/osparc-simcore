@@ -93,7 +93,7 @@ def client(
 
 
 @pytest.fixture
-async def storage_subsystem_mock(loop, mocker):
+async def storage_subsystem_mock(mocker):
     """
     Patches client calls to storage service
 

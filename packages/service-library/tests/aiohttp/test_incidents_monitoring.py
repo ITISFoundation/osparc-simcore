@@ -22,16 +22,16 @@ async def fails_to_reach_pg_db():
 
 
 @pytest.fixture
-def incidents_manager(loop):
+def incidents_manager(event_loop):
     incidents = []
     monitor_slow_callbacks.enable(slow_duration_secs=0.2, incidents=incidents)
 
-    f1a = asyncio.ensure_future(slow_task(0.3), loop=loop)
-    f1b = asyncio.ensure_future(slow_task(0.3), loop=loop)
-    f1c = asyncio.ensure_future(slow_task(0.4), loop=loop)
+    f1a = asyncio.ensure_future(slow_task(0.3), loop=event_loop)
+    f1b = asyncio.ensure_future(slow_task(0.3), loop=event_loop)
+    f1c = asyncio.ensure_future(slow_task(0.4), loop=event_loop)
 
     incidents_pg = None  # aiopg_utils.monitor_pg_responsiveness.enable()
-    f2 = asyncio.ensure_future(fails_to_reach_pg_db(), loop=loop)
+    f2 = asyncio.ensure_future(fails_to_reach_pg_db(), loop=event_loop)
 
     yield {"slow_callback": incidents, "posgres_responsive": incidents_pg}
 
