@@ -214,7 +214,7 @@ async def remove_disconnected_user_resources(
 
                 # ONLY GUESTS: if this user was a GUEST also remove it from the database
                 # with the only associated project owned
-                await remove_guest_user_with_all_its_resources(
+                await remove_all_resources_if_guest(
                     app=app,
                     user_id=int(dead_key["user_id"]),
                 )
@@ -289,7 +289,7 @@ async def remove_users_manually_marked_as_guests(
             f"{guest_user_id=}",
             f"{guest_user_name=}",
         )
-        await remove_guest_user_with_all_its_resources(
+        await remove_all_resources_if_guest(
             app=app,
             user_id=guest_user_id,
         )
@@ -420,13 +420,11 @@ async def remove_orphaned_services(
     logger.debug("Finished orphaned services removal")
 
 
-async def remove_guest_user_with_all_its_resources(
-    app: web.Application, user_id: int
-) -> None:
-    """Removes a GUEST user with all its associated projects and S3/MinIO files"""
-
+async def remove_all_resources_if_guest(app: web.Application, user_id: int) -> None:
+    """If user is <=GUEST, all associated projects and S3/MinIO files will be removed"""
     try:
-        if (user_role := await get_user_role(app, user_id)) < UserRole.GUEST:
+        user_role = await get_user_role(app, user_id)
+        if user_role <= UserRole.GUEST:
             # NOTE: This if-statement acts as a safety barrier to avoid removing resources
             # from over-guest users (i.e. real users)
 
