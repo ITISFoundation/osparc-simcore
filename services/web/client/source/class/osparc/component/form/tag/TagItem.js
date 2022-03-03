@@ -198,6 +198,7 @@ qx.Class.define("osparc.component.form.tag.TagItem", {
         toolTipText: this.tr("Edit")
       });
       const deleteButton = new osparc.ui.form.FetchButton().set({
+        appearance: "danger-button",
         icon: "@FontAwesome5Solid/trash/12",
         toolTipText: this.tr("Delete")
       });

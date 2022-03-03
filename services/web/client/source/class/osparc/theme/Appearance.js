@@ -320,7 +320,6 @@ qx.Theme.define("osparc.theme.Appearance", {
     "link-button": {
       include: "material-button",
       style: state => ({
-        decorator: "link-button",
         backgroundColor: "transparent",
         textColor: state.hovered ? "text" : "text-darker"
       })
@@ -377,6 +376,14 @@ qx.Theme.define("osparc.theme.Appearance", {
       include: "material-button/label",
       style: state => ({
         font: "text-14"
+      })
+    },
+
+    "danger-button": {
+      include: "material-button",
+      style: state => ({
+        backgroundColor: state.hovered ? "invalid-red" : null,
+        textColor: state.hovered ? "text" : "invalid-red"
       })
     },
 

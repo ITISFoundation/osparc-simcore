@@ -242,6 +242,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createDeleteButton: function() {
       const deleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14").set({
+        appearance: "danger-button",
         visibility: "excluded"
       });
       osparc.utils.Utils.setIdToWidget(deleteButton, "deleteStudiesBtn");
@@ -549,7 +550,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getDeleteStudyMenuButton: function(studyData) {
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete")).set({
+        appearance: "danger-button"
+      });
       osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
       deleteButton.addListener("execute", () => {
         const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();

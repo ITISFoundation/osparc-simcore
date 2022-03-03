@@ -199,7 +199,9 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         return null;
       }
 
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete")).set({
+        appearance: "danger-button"
+      });
       osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
       deleteButton.addListener("execute", () => {
         const win = this.__createConfirmWindow(false);

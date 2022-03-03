@@ -143,6 +143,7 @@ qx.Class.define("osparc.component.workbench.BaseNodeUI", {
       optionsMenu.add(infoBtn);
 
       const deleteBtn = new qx.ui.menu.Button().set({
+        appearance: "danger-button",
         label: this.tr("Delete"),
         icon: "@FontAwesome5Solid/trash/10"
       });

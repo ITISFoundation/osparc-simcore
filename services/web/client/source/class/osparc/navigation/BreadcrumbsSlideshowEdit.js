@@ -133,7 +133,9 @@ qx.Class.define("osparc.navigation.BreadcrumbsSlideshowEdit", {
         menu.add(hideButton);
       }
 
-      const deleteButton = new qx.ui.menu.Button("Delete", "@FontAwesome5Solid/trash/14");
+      const deleteButton = new qx.ui.menu.Button("Delete", "@FontAwesome5Solid/trash/14").set({
+        appearance: "danger-button"
+      });
       deleteButton.addListener("execute", () => {
         this.fireDataEvent("removeNode", btn.nodeId);
       });
