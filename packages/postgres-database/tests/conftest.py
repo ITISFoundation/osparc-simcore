@@ -3,7 +3,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from typing import Callable, Coroutine, Union
+from typing import AsyncIterator, Awaitable, Callable, Union
 
 import aiopg.sa
 import pytest
@@ -45,7 +45,7 @@ def postgres_service(docker_services, docker_ip, docker_compose_file) -> str:
 def make_engine(postgres_service: str) -> Callable:
     dsn = postgres_service
 
-    def maker(*, is_async=True) -> Union[Coroutine, Callable]:
+    def maker(*, is_async=True) -> Union[Awaitable[Engine], sa.engine.base.Engine]:
         return aiopg.sa.create_engine(dsn) if is_async else sa.create_engine(dsn)
 
     return maker
@@ -70,7 +70,7 @@ def db_metadata():
 
 
 @pytest.fixture
-async def pg_engine(loop, make_engine, db_metadata) -> Engine:
+async def pg_engine(make_engine, db_metadata) -> AsyncIterator[Engine]:
     async_engine = await make_engine(is_async=True)
 
     # NOTE: Using migration to upgrade/downgrade is not
