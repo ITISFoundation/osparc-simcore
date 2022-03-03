@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 
-import asyncio
 import itertools
 import random
 from typing import Any, AsyncIterator, Callable, Dict, Iterable, Iterator, List, Tuple
@@ -43,7 +42,7 @@ def app(
 
 
 @pytest.fixture
-def client(event_loop: asyncio.AbstractEventLoop, app: FastAPI) -> Iterable[TestClient]:
+def client(app: FastAPI) -> Iterable[TestClient]:
     with TestClient(app) as cli:
         # Note: this way we ensure the events are run in the application
         yield cli
