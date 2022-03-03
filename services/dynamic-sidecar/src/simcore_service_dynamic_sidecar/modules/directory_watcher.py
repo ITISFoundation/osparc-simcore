@@ -40,7 +40,7 @@ class AsyncLockedFloat:
 
 def async_run_once_after_event_chain(
     detection_interval: float,
-) -> Callable:
+) -> Callable[..., Callable[..., Optional[Any]]]:
     """
     The function's call is delayed by a period equal to the
     `detection_interval` and multiple calls during this
@@ -50,11 +50,13 @@ def async_run_once_after_event_chain(
     returns: decorator to be applied to async functions
     """
 
-    def internal(decorated_function: Callable[..., Awaitable]):
+    def internal(
+        decorated_function: Callable[..., Awaitable[Any]]
+    ) -> Callable[..., Optional[Any]]:
         last = AsyncLockedFloat(initial_value=None)
 
         @wraps(decorated_function)
-        async def wrapper(*args: Any, **kwargs: Any):
+        async def wrapper(*args: Any, **kwargs: Any) -> Optional[Any]:
             # skipping  the first time the event chain starts
             if await last.get_value() is None:
                 await last.set_value(time.time())
@@ -66,7 +68,7 @@ def async_run_once_after_event_chain(
             await asyncio.sleep(detection_interval)
 
             if last_read == await last.get_value():
-                return await decorated_function(*args, **kwargs)  # type: ignore
+                return await decorated_function(*args, **kwargs)
 
             return None
 
