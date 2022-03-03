@@ -201,13 +201,13 @@ async def remove_disconnected_user_resources(
                             notify_users=True,
                         )
 
-                    except ProjectNotFoundError as err:
+                    except (ProjectNotFoundError, UserNotFoundError) as err:
                         logger.warning(
                             (
-                                "Could not remove project interactive services user_id=%s "
-                                "project_uuid=%s. Check the logs above for details [%s]"
+                                "Could not remove project interactive services %s "
+                                "project_uuid=%s: %s"
                             ),
-                            user_id,
+                            f"{user_id=}",
                             resource_value,
                             err,
                         )
