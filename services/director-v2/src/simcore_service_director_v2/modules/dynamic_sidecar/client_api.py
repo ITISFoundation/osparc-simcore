@@ -97,6 +97,9 @@ class DynamicSidecarClient:
         except httpx.HTTPError:
             return False
 
+    async def close(self) -> None:
+        await self._client.aclose()
+
     @log_decorator(logger=logger)
     async def containers_inspect(self, dynamic_sidecar_endpoint: str) -> Dict[str, Any]:
         """
@@ -286,6 +289,12 @@ class DynamicSidecarClient:
 async def setup_api_client(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client setup")
     app.state.dynamic_sidecar_api_client = DynamicSidecarClient(app)
+
+
+async def close_api_client(app: FastAPI) -> None:
+    logger.debug("dynamic-sidecar api client closing...")
+    if client := app.state.dynamic_sidecar_api_client:
+        await client.close()
 
 
 def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
