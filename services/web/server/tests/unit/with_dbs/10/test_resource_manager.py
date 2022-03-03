@@ -391,7 +391,7 @@ async def test_interactive_services_removed_after_logout(
     logged_user: Dict[str, Any],
     empty_user_project: Dict[str, Any],
     mocked_director_v2_api: Dict[str, mock.MagicMock],
-    create_dynamic_service_mock,
+    create_dynamic_service_mock: Callable,
     client_session_id_factory: Callable[[], str],
     socketio_client_factory: Callable,
     storage_subsystem_mock: MockedStorageSubsystem,  # when guest user logs out garbage is collected
@@ -785,21 +785,34 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER, UserRole.TESTER, UserRole.GUEST])
 async def test_regression_removing_unexisting_user(
+    loop,
     client,
     logged_user,
     empty_user_project,
+    mocked_director_v2_api,  # mocks calls to director_v2 client
     user_role,
     mock_delete_data_folders_for_project,
     director_v2_service_responses_mock: AioResponsesMock,
 ) -> None:
     # regression test for https://github.com/ITISFoundation/osparc-simcore/issues/2504
 
-    # remove project
-    await delete_project(
+    spawned_tail_task = await delete_project(
         app=client.server.app,
         project_uuid=empty_user_project["uuid"],
         user_id=logged_user["id"],
     )
+
+    await spawned_tail_task
+    assert spawned_tail_task.done()
+    assert not spawned_tail_task.exception()
+
+    with pytest.raises(ProjectNotFoundError):
+        await remove_project_interactive_services(
+            user_id=logged_user["id"],
+            project_uuid=empty_user_project["uuid"],
+            app=client.server.app,
+        )
+
     # remove user
     await delete_user(app=client.server.app, user_id=logged_user["id"])
 
@@ -808,11 +821,4 @@ async def test_regression_removing_unexisting_user(
             user_id=logged_user["id"],
             project_uuid=empty_user_project["uuid"],
             app=client.server.app,
-        )
-    with pytest.raises(ProjectNotFoundError):
-        await remove_project_interactive_services(
-            user_id=logged_user["id"],
-            project_uuid=empty_user_project["uuid"],
-            app=client.server.app,
-            user_name={"first_name": "my name is", "last_name": "pytest"},
         )

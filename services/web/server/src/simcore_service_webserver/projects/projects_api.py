@@ -9,6 +9,7 @@
 
 import asyncio
 import contextlib
+import functools
 import json
 import logging
 from collections import defaultdict
@@ -32,7 +33,7 @@ from servicelib.aiohttp.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.aiohttp.jsonschema_validation import validate_instance
 from servicelib.json_serialization import json_dumps
 from servicelib.observer import observe
-from servicelib.utils import fire_and_forget_task, logged_gather
+from servicelib.utils import fire_and_forget_task, log_exception_callback, logged_gather
 
 from .. import director_v2_api
 from ..resource_manager.websocket_manager import (
@@ -51,7 +52,7 @@ from ..storage_api import (
     delete_data_folders_of_project,
     delete_data_folders_of_project_node,
 )
-from ..users_api import UserNotFoundError, UserRole, get_user_name, get_user_role
+from ..users_api import UserRole, get_user_name, get_user_role
 from .project_lock import (
     ProjectLockError,
     UserNameDict,
@@ -59,6 +60,7 @@ from .project_lock import (
     lock_project,
 )
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
+from .projects_exceptions import ProjectNotFoundError
 from .projects_utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
@@ -189,16 +191,35 @@ async def start_project_interactive_services(
                 log.error("Error while starting dynamic service %s", f"{entry=}")
 
 
-async def delete_project(app: web.Application, project_uuid: str, user_id: int) -> None:
+async def delete_project(
+    app: web.Application, project_uuid: str, user_id: int
+) -> asyncio.Task:
+    """It delets the project in two steps:
+
+    - awaits deletion of the project from the db table
+    - schedules a background task to rm services and stored data (as fire&forget)
+
+    Returns a reference to the scheduled task
+    """
+    # TODO: mark as deleted instead of delete!!!
     await _delete_project_from_db(app, project_uuid, user_id)
 
-    async def _remove_services_and_data():
-        await remove_project_interactive_services(
-            user_id, project_uuid, app, notify_users=False
-        )
+    async def _heavy_delete():
+        try:
+            await remove_project_interactive_services(
+                user_id, project_uuid, app, notify_users=False
+            )
+        except ProjectNotFoundError:
+            # This will never happen with notify_users=False, but just-in-case
+            # SEE notes in lock_project_and_notify_state_update
+            pass
+        # Here project_uuid/user_id are needed for storage
         await delete_data_folders_of_project(app, project_uuid, user_id)
 
-    fire_and_forget_task(_remove_services_and_data())
+    # delete the rest (data & services) in the background
+    task = asyncio.create_task(_heavy_delete(), name="delete_project.fire_and_forget")
+    task.add_done_callback(functools.partial(log_exception_callback, log))
+    return task
 
 
 @observe(event="SIGNAL_USER_DISCONNECTED")
@@ -240,6 +261,19 @@ async def lock_project_and_notify_state_update(
     user_name: UserNameDict,
     notify_users: bool = True,
 ):
+    # FIXME: PC: I find this function very error prone. For instance, the requirements
+    # on the input parameters depend on the value of 'notify_users', i.e. changes dynamically.
+    #
+    # If notify_users=True, then project_uuid has to be defined in the database since
+    # the notification function the state which is in the database. On the other hand,
+    # locking relies on the project entry in redis.
+    # These two references to the project (redis and the db) are not in sync leading to some. An
+    # example is ``stop_servic``
+    # incosistent states that heavily depend on the logic of the function.
+    #
+    # Perhaps locking and notifications should be
+    #
+    #
     try:
         async with await lock_project(
             app,
@@ -279,6 +313,7 @@ async def lock_project_and_notify_state_update(
             f"{prj_states.locked.status=}",
         )
         raise
+
     finally:
         if notify_users:
             # notifies as lock is released
@@ -291,24 +326,10 @@ async def remove_project_interactive_services(
     app: web.Application,
     notify_users: bool = True,
 ) -> None:
-
-    # helpers functions bound with some data
-    async def _stop_all_dynamic_services(
-        *,
-        uid: Optional[int],
-        save_state: bool,
-    ):
-        with suppress(director_v2_api.DirectorServiceError):
-            # Here director exceptions are suppressed.
-            # In case the service is not found to preserve old behavior
-            await director_v2_api.stop_dynamic_services_in_project(
-                app=app,
-                user_id=uid,
-                project_id=project_uuid,
-                save_state=save_state,
-            )
-
-    # ------
+    """
+    raises ProjectNotFoundError
+    raises UserNotFoundError
+    """
 
     log.debug(
         "Removing project interactive services for %s and %s and %s",
@@ -317,29 +338,35 @@ async def remove_project_interactive_services(
         f"{notify_users=}",
     )
 
-    try:
-        user_name_data = await get_user_name(app, user_id)
-        user_role: UserRole = await get_user_role(app, user_id)
+    # can raise User
+    user_name_data = await get_user_name(app, user_id)
+    user_role: UserRole = await get_user_role(app, user_id)
 
-        with suppress(ProjectLockError):
-            # NOTE: during the closing process, which might take awhile,
-            # the project is locked so no one opens it at the same time
-            # Users also might get notified
-            async with lock_project_and_notify_state_update(
-                app,
-                project_uuid,
-                ProjectStatus.CLOSING,
-                user_id,  # required
-                user_name_data,
-                notify_users=notify_users,
-            ):
-                await _stop_all_dynamic_services(
-                    uid=user_id, save_state=user_role > UserRole.GUEST
+    with suppress(ProjectLockError):
+        #
+        # - during the closing process, which might take awhile,
+        #    the project is locked so no one opens it at the same time
+        # - Users also might get notified
+        # - If project is already locked, just ignore
+        # -
+        async with lock_project_and_notify_state_update(
+            app,
+            project_uuid,
+            ProjectStatus.CLOSING,
+            user_id,  # required
+            user_name_data,
+            notify_users=notify_users,
+        ):
+            with suppress(director_v2_api.DirectorServiceError):
+                # FIXME:
+                # Here director exceptions are suppressed.
+                # In case the service is not found to preserve old behavior
+                await director_v2_api.stop_dynamic_services_in_project(
+                    app=app,
+                    user_id=user_id,
+                    project_id=project_uuid,
+                    save_state=user_role > UserRole.GUEST,
                 )
-
-    except UserNotFoundError:
-        # No user, therefore there is no lock on the project and also nobody gets notified
-        await _stop_all_dynamic_services(uid=None, save_state=False)
 
 
 async def _delete_project_from_db(
