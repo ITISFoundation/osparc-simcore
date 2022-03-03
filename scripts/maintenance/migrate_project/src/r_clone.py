@@ -1,5 +1,5 @@
 from pathlib import Path
-from subprocess import Popen, PIPE
+from subprocess import PIPE, Popen
 
 DESTINATION = "dst"
 SOURCE = "src"

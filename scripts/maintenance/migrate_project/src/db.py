@@ -1,17 +1,15 @@
-from uuid import UUID
-from typing import Deque, Dict, Iterator, Tuple, Optional, Any
-from contextlib import contextmanager
 from collections import deque
+from contextlib import contextmanager
+from typing import Any, Deque, Dict, Iterator, Optional, Tuple
+from uuid import UUID
 
-from sqlalchemy import create_engine, select, and_
+from models import DBConfig
+from simcore_postgres_database.models.file_meta_data import file_meta_data
+from simcore_postgres_database.models.projects import projects
+from sqlalchemy import and_, create_engine, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.engine.result import ResultProxy
-from models import DBConfig
-
-
-from simcore_postgres_database.models.projects import projects
-from simcore_postgres_database.models.file_meta_data import file_meta_data
 
 
 @contextmanager

@@ -1,26 +1,14 @@
-import json
 from pathlib import Path
-import typer
-from typing import Any
 
-from models import Settings
+import typer
 from db import (
     db_connection,
     get_project_and_files_to_migrate,
     insert_file_meta_data,
     insert_projects,
 )
+from models import Settings
 from r_clone import assemble_config_file, sync_file
-import datetime
-
-
-def default(o):
-    if isinstance(o, (datetime.date, datetime.datetime)):
-        return o.isoformat()
-
-
-def json_format(obj: Any) -> str:
-    return json.dumps(obj, indent=2, default=default)
 
 
 def main(config: Path):
