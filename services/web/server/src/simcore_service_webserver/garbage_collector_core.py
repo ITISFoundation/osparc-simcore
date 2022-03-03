@@ -198,10 +198,7 @@ async def remove_disconnected_user_resources(
                             user_id=int(dead_key["user_id"]),
                             project_uuid=resource_value,
                             app=app,
-                            user_name={
-                                "first_name": "garbage",
-                                "last_name": "collector",
-                            },
+                            notify_users=True,
                         )
 
                     except ProjectNotFoundError as err:

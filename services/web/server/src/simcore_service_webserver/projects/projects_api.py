@@ -51,7 +51,7 @@ from ..storage_api import (
     delete_data_folders_of_project,
     delete_data_folders_of_project_node,
 )
-from ..users_api import UserRole, get_user_name, get_user_role
+from ..users_api import UserNotFoundError, UserRole, get_user_name, get_user_role
 from .project_lock import (
     ProjectLockError,
     UserNameDict,
@@ -286,49 +286,70 @@ async def lock_project_and_notify_state_update(
 
 
 async def remove_project_interactive_services(
-    user_id: int,
+    user_id: Optional[int],  # Not guaranteed to exist
     project_uuid: str,
     app: web.Application,
     notify_users: bool = True,
-    user_name: Optional[UserNameDict] = None,
 ) -> None:
-    # NOTE: during the closing process, which might take awhile,
-    # the project is locked so no one opens it at the same time
+
+    # helpers functions bound with some data
+    async def _stop_all_dynamic_services(
+        *,
+        uid: Optional[int],
+        save_state: bool,
+    ):
+        with suppress(director_v2_api.DirectorServiceError):
+            # Here director exceptions are suppressed.
+            # In case the service is not found to preserve old behavior
+            await director_v2_api.stop_dynamic_services_in_project(
+                app=app,
+                user_id=uid,
+                project_id=project_uuid,
+                save_state=save_state,
+            )
+
+    # ------
+
     log.debug(
-        "removing project interactive services for project [%s] and user [%s]",
-        project_uuid,
-        user_id,
+        "Removing project interactive services for %s and %s and %s",
+        f"{project_uuid=}",
+        f"{user_id=}",
+        f"{notify_users=}",
     )
+
     try:
-        user_name_data: UserNameDict = user_name or await get_user_name(app, user_id)
+        user_name_data = await get_user_name(app, user_id)
         user_role: UserRole = await get_user_role(app, user_id)
 
-        async with lock_project_and_notify_state_update(
-            app,
-            project_uuid,
-            ProjectStatus.CLOSING,
-            user_id,
-            user_name_data,
-            notify_users=notify_users,
-        ):
-            # save the state if the user is not a guest. if we do not know we save in any case.
-            with suppress(director_v2_api.DirectorServiceError):
-                # here director exceptions are suppressed. in case the service is not found to preserve old behavior
-                # FIXME: running computational services shall also be stopped and removed?
-                await director_v2_api.stop_dynamic_services_in_project(
-                    app=app,
-                    user_id=user_id,
-                    project_id=project_uuid,
-                    save_state=UserRole.GUEST < user_role,
+        with suppress(ProjectLockError):
+            # NOTE: during the closing process, which might take awhile,
+            # the project is locked so no one opens it at the same time
+            # Users also might get notified
+            async with lock_project_and_notify_state_update(
+                app,
+                project_uuid,
+                ProjectStatus.CLOSING,
+                user_id,  # required
+                user_name_data,
+                notify_users=notify_users,
+            ):
+                await _stop_all_dynamic_services(
+                    uid=user_id, save_state=user_role > UserRole.GUEST
                 )
-    except ProjectLockError:
-        pass
+
+    except UserNotFoundError:
+        # No user, therefore there is no lock on the project and also nobody gets notified
+        await _stop_all_dynamic_services(uid=None, save_state=False)
 
 
 async def _delete_project_from_db(
     app: web.Application, project_uuid: str, user_id: int
 ) -> None:
-    log.debug("deleting project '%s' for user '%s' in database", project_uuid, user_id)
+    log.debug(
+        "deleting project '%s' for user '%s' in database",
+        f"{project_uuid=}",
+        f"{user_id=}",
+    )
     db = app[APP_PROJECT_DBAPI]
     await director_v2_api.delete_pipeline(app, user_id, UUID(project_uuid))
     await db.delete_user_project(user_id, project_uuid)
