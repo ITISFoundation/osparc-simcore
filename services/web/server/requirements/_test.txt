@@ -190,14 +190,17 @@ pytest==6.2.5
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
+    #   pytest-asyncio
     #   pytest-cov
     #   pytest-docker
     #   pytest-icdiff
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-aiohttp==0.3.0
+pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
+pytest-asyncio==0.18.1
+    # via pytest-aiohttp
 pytest-cov==3.0.0
     # via -r requirements/_test.in
 pytest-docker==0.10.3
