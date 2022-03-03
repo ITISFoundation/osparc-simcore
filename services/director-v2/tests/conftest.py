@@ -135,7 +135,7 @@ def mock_env(monkeypatch: MonkeyPatch, dynamic_sidecar_docker_image: str) -> Non
 
 
 @pytest.fixture(scope="function")
-def client(loop, mock_env: None) -> Iterable[TestClient]:
+def client(mock_env: None) -> Iterable[TestClient]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     print("Application settings\n", pformat(settings))

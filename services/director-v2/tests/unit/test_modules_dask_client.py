@@ -101,7 +101,6 @@ async def _assert_wait_for_task_status(
 
 @pytest.fixture
 def minimal_dask_config(
-    loop: asyncio.AbstractEventLoop,
     mock_env: None,
     project_env_devel_environment: Dict[str, Any],
     monkeypatch: MonkeyPatch,
@@ -320,9 +319,7 @@ def mocked_user_completed_cb(mocker: MockerFixture) -> mock.MagicMock:
     return mocker.MagicMock()
 
 
-async def test_dask_cluster_executes_simple_functions(
-    loop: asyncio.AbstractEventLoop, dask_client: DaskClient
-):
+async def test_dask_cluster_executes_simple_functions(dask_client: DaskClient):
     def test_fct_add(x: int, y: int) -> int:
         return x + y
 

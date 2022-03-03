@@ -34,7 +34,6 @@ MAX_INT64 = 9223372036854775807
 
 @pytest.fixture
 async def async_docker_client(
-    loop: asyncio.AbstractEventLoop,
     docker_swarm: None,
 ) -> AsyncIterator[aiodocker.docker.Docker]:
     async with aiodocker.Docker() as client:
