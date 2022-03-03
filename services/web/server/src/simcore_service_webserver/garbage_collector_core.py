@@ -35,8 +35,9 @@ from .users_api import (
     get_guest_user_ids_and_names,
     get_user,
     get_user_id_from_gid,
-    safe_get_user_role,
+    get_user_role,
 )
+from .users_exceptions import UserNotFoundError
 from .users_to_groups_api import get_users_for_gid
 
 _DATABASE_ERRORS = (
@@ -352,12 +353,13 @@ async def _remove_single_orphaned_service(
             # let's be conservative here.
             # 1. opened project disappeared from redis?
             # 2. something bad happened when closing a project?
-            user_role: Optional[UserRole] = await safe_get_user_role(
-                app, user_id=int(interactive_service.get("user_id", -1))
-            )
-
-            save_state = True
-            if user_role is None or user_role <= UserRole.GUEST:
+            try:
+                user_role: UserRole = await get_user_role(
+                    app, user_id=int(interactive_service.get("user_id", -1))
+                )
+                save_state = user_role > UserRole.GUEST
+            except UserNotFoundError:
+                # Don't know the user!
                 save_state = False
 
             await director_v2_api.stop_dynamic_service(app, service_uuid, save_state)
@@ -427,24 +429,22 @@ async def remove_guest_user_with_all_its_resources(
     """Removes a GUEST user with all its associated projects and S3/MinIO files"""
 
     try:
-        user_role: Optional[UserRole] = await safe_get_user_role(app, user_id)
-        if user_role is None or user_role > UserRole.GUEST:
-            # NOTE: This acts as a safety barrier to avoid removing resources
+        if (user_role := await get_user_role(app, user_id)) < UserRole.GUEST:
+            # NOTE: This if-statement acts as a safety barrier to avoid removing resources
             # from over-guest users (i.e. real users)
-            # NOTE: noticed that sometimes this function is called with unregistered users as well!
-            return
 
-        logger.debug(
-            "Deleting all projects of user with %s because it is a GUEST",
-            f"{user_id=}",
-        )
-        await remove_all_projects_for_user(app=app, user_id=user_id)
+            logger.debug(
+                "Deleting all projects of user with %s with %s",
+                f"{user_id=}",
+                f"{user_role=}",
+            )
+            await remove_all_projects_for_user(app=app, user_id=user_id)
 
-        logger.debug(
-            "Deleting user %s because it is a GUEST",
-            f"{user_id=}",
-        )
-        await remove_user(app=app, user_id=user_id)
+            logger.debug("Deleting user %s with %s", f"{user_id=}", f"{user_role=}")
+            await remove_user(app=app, user_id=user_id)
+
+    except UserNotFoundError:
+        pass
 
     except _DATABASE_ERRORS as error:
         logger.warning(
@@ -466,17 +466,11 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
         - if the project is not shared with any user but with groups of users, one
             of the users inside the group (which currently exists) will be picked as
             the new owner
+
+    raise users_exceptions.UsersNotFoundError
     """
     # recover user's primary_gid
-    try:
-        project_owner: Dict = await get_user(app=app, user_id=user_id)
-    except users_exceptions.UserNotFoundError:
-        logger.warning(
-            "Could not recover user data for user '%s', stopping removal of projects!",
-            f"{user_id=}",
-        )
-        return
-
+    project_owner: Dict = await get_user(app=app, user_id=user_id)
     user_primary_gid = int(project_owner["primary_gid"])
 
     # fetch all projects for the user

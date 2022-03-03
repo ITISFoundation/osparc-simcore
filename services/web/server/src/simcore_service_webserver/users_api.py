@@ -5,7 +5,6 @@
 """
 
 import logging
-import warnings
 from collections import deque
 from typing import Any, Dict, List, Optional, Tuple, TypedDict
 
@@ -14,7 +13,6 @@ from aiohttp import web
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import RowProxy
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
-from simcore_postgres_database.errors import ProgrammingError
 from simcore_postgres_database.models.users import UserRole
 from sqlalchemy import and_, literal_column
 
@@ -111,44 +109,20 @@ async def update_user_profile(
         assert resp.rowcount == 1  # nosec
 
 
-async def is_user_guest(app: web.Application, user_id: int) -> bool:
-    """Returns True if the user EXISTS and is a GUEST"""
-    warnings.warn(
-        f"{__name__}.is_user_guest is deprecated,"
-        "use instead safe_get_user_role and UserRole enums logic operators",
-        DeprecationWarning,
-    )
-    engine: Engine = app[APP_DB_ENGINE_KEY]
-    async with engine.acquire() as conn:
-        try:
-            user_role = await conn.scalar(
-                sa.select([users.c.role]).where(users.c.id == int(user_id))
-            )
-            return user_role == UserRole.GUEST
-        except ProgrammingError as err:
-            logger.debug("Could not find user with %s [%s]", f"{user_id=}", err)
-            return False
+async def get_user_role(app: web.Application, user_id: int) -> UserRole:
+    """Returns user's role
 
-
-async def safe_get_user_role(app: web.Application, user_id: int) -> Optional[UserRole]:
-    """Returns user's role or None if it is not registered"""
+    raises UserNotFoundError
+    raises aiopg erros
+    """
     engine: Engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         user_role: Optional[RowProxy] = await conn.scalar(
             sa.select([users.c.role]).where(users.c.id == int(user_id))
         )
-        return UserRole(user_role) if user_role else None
-
-
-async def get_user_role(app: web.Application, user_id: int) -> UserRole:
-    """Returns user's role
-
-    raises UserNotFoundError
-    """
-    user_role = await safe_get_user_role(app, user_id)
-    if user_role is None:
-        raise UserNotFoundError(uid=user_id)
-    return user_role
+        if user_role is None:
+            raise UserNotFoundError(uid=user_id)
+        return UserRole(user_role)
 
 
 async def get_guest_user_ids_and_names(app: web.Application) -> List[Tuple[int, str]]:
