@@ -139,7 +139,8 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "no-border": {
       style: {
-        width: 0
+        width: 1,
+        color: "transparent"
       }
     },
 
@@ -238,6 +239,13 @@ qx.Theme.define("osparc.theme.Decoration", {
       style: {
         width: 1,
         color: "c05"
+      }
+    },
+    "strong-bordered-button": {
+      include: "material-button",
+      style: {
+        width: 1,
+        color: "text"
       }
     }
   }

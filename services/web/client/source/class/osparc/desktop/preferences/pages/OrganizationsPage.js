@@ -46,7 +46,10 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
     __membersModel: null,
 
     __getCreateOrganizationSection: function() {
-      const createOrgBtn = new qx.ui.form.Button(this.tr("Create New Organization")).set({
+      const createOrgBtn = new qx.ui.form.Button().set({
+        appearance: "strong-button",
+        label: this.tr("New Organization"),
+        icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false
       });
       createOrgBtn.addListener("execute", function() {

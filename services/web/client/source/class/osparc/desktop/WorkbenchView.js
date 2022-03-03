@@ -324,7 +324,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       homeAndNodesTree.add(nodesTree);
 
       const addNewNodeBtn = new qx.ui.form.Button().set({
-        label: this.tr("New node"),
+        appearance: "strong-button",
+        label: this.tr("New Node"),
         icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false,
         alignX: "center",

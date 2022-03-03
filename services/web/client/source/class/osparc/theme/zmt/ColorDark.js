@@ -18,8 +18,9 @@ qx.Theme.define("osparc.theme.zmt.ColorDark", {
     "c13": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 8),
     "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0),
 
-
+    "strong-main": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.zmt", 40),
     "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
+
 
     // main
     "background-main": "c01",

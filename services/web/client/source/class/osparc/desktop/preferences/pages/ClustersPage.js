@@ -49,7 +49,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     __membersArrayModel: null,
 
     __getCreateClusterSection: function() {
-      const createClusterBtn = new qx.ui.form.Button(this.tr("Create New Cluster")).set({
+      const createClusterBtn = new qx.ui.form.Button().set({
+        appearance: "strong-button",
+        label: this.tr("New Cluster"),
+        icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false
       });
       createClusterBtn.addListener("execute", function() {
