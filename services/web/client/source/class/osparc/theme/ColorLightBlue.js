@@ -19,7 +19,7 @@ qx.Theme.define("osparc.theme.ColorLightBlue", {
     "c13": "#101010", // L=06
     "c14": "#000000", // L=00
 
-    "strong-main": "#707070",
+    "strong-main": "c05",
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
 
 
