@@ -231,6 +231,8 @@ qx.Theme.define("osparc.theme.Decoration", {
     "tagbutton": {
       include: "material-button",
       style: {
+        backgroundColor: "transparent",
+        shadowColor: "transparent",
         radius: 0
       }
     },
