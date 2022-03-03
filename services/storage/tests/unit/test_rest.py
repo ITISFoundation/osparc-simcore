@@ -47,7 +47,7 @@ def parse_db(dsm_mockup_db):
 @pytest.fixture
 def client(
     loop,
-    aiohttp_unused_port,
+    unused_tcp_port_factory,
     aiohttp_client: TestClient,
     postgres_service,
     postgres_service_url,
@@ -67,7 +67,7 @@ def client(
     for key, value in minio_service.items():
         monkeypatch.setenv(f"S3_{key.upper()}", f"{value}")
 
-    monkeypatch.setenv("STORAGE_PORT", str(aiohttp_unused_port()))
+    monkeypatch.setenv("STORAGE_PORT", str(unused_tcp_port_factory()))
     monkeypatch.setenv("STORAGE_LOG_LEVEL", "DEBUG")
     monkeypatch.setenv("STORAGE_TESTING", "1")
 

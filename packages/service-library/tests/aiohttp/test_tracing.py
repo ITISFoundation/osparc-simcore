@@ -17,9 +17,9 @@ DEFAULT_JAEGER_BASE_URL = "http://jaeger:9411"
 
 @pytest.fixture()
 def client(
-    loop: AbstractEventLoop, aiohttp_client: Callable, aiohttp_unused_port: Callable
+    loop: AbstractEventLoop, aiohttp_client: Callable, unused_tcp_port_factory: Callable
 ) -> TestClient:
-    ports = [aiohttp_unused_port() for _ in range(2)]
+    ports = [unused_tcp_port_factory() for _ in range(2)]
 
     async def redirect(request: web.Request) -> web.Response:
         return web.HTTPFound(location="/return/200")

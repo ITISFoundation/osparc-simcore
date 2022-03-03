@@ -3,7 +3,6 @@
 from asyncio import sleep
 
 import pytest
-
 from simcore_service_director import config, main, registry_cache_task, registry_proxy
 
 
@@ -11,7 +10,7 @@ from simcore_service_director import config, main, registry_cache_task, registry
 def client(
     loop,
     aiohttp_client,
-    aiohttp_unused_port,
+    unused_tcp_port_factory,
     configure_schemas_location,
     configure_registry_access,
 ):
@@ -19,7 +18,7 @@ def client(
     config.DIRECTOR_REGISTRY_CACHING_TTL = 5
     # config.DIRECTOR_REGISTRY_CACHING_TTL = 5
     app = main.setup_app()
-    server_kwargs = {"port": aiohttp_unused_port(), "host": "localhost"}
+    server_kwargs = {"port": unused_tcp_port_factory(), "host": "localhost"}
 
     registry_cache_task.setup(app)
 
