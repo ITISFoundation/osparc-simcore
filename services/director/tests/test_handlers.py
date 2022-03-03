@@ -23,12 +23,12 @@ from simcore_service_director import main, resources, rest
 def client(
     loop,
     aiohttp_client,
-    unused_tcp_port_factory,
+    aiohttp_unused_port,
     configure_schemas_location,
     configure_registry_access,
 ):
     app = main.setup_app()
-    server_kwargs = {"port": unused_tcp_port_factory(), "host": "localhost"}
+    server_kwargs = {"port": aiohttp_unused_port(), "host": "localhost"}
     client = loop.run_until_complete(aiohttp_client(app, server_kwargs=server_kwargs))
     return client
 
