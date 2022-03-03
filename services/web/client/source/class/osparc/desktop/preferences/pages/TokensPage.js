@@ -117,7 +117,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         column: 0
       });
 
-      const delAPIKeyBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash-alt/14");
+      const delAPIKeyBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash/14");
       delAPIKeyBtn.addListener("execute", e => {
         this.__deleteAPIKey(apiKeyLabel);
       }, this);
@@ -254,7 +254,10 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         });
       }
 
-      const delTokenBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash-alt/14");
+      const delTokenBtn = new qx.ui.form.Button().set({
+        appearance: "danger-button",
+        icon: "@FontAwesome5Solid/trash/14"
+      });
       delTokenBtn.addListener("execute", e => {
         this.__deleteToken(service);
       }, this);

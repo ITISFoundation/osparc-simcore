@@ -66,7 +66,7 @@ qx.Class.define("osparc.file.FileLabelWithActions", {
           this._add(control);
           break;
         case "delete-button":
-          control = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash-alt/16").set({
+          control = new qx.ui.toolbar.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/16").set({
             appearance: "danger-button"
           });
           this._add(control);
