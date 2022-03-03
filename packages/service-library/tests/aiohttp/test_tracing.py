@@ -17,7 +17,9 @@ DEFAULT_JAEGER_BASE_URL = "http://jaeger:9411"
 
 @pytest.fixture()
 def client(
-    loop: AbstractEventLoop, aiohttp_client: Callable, unused_tcp_port_factory: Callable
+    event_loop: AbstractEventLoop,
+    aiohttp_client: Callable,
+    unused_tcp_port_factory: Callable,
 ) -> TestClient:
     ports = [unused_tcp_port_factory() for _ in range(2)]
 
@@ -67,7 +69,7 @@ def client(
         skip_routes=routes_in_a_resource,
     )
 
-    return loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": ports[0]})
     )
 

@@ -37,7 +37,7 @@ tbl = sa.Table(
 
 @pytest.fixture
 async def postgres_service_with_fake_data(
-    request, loop, postgres_service: DataSourceName
+    request, postgres_service: DataSourceName
 ) -> DataSourceName:
     async def _create_table(engine: aiopg.sa.Engine):
         async with engine.acquire() as conn:
