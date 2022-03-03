@@ -201,22 +201,19 @@ qx.Class.define("osparc.utils.Utils", {
 
     getLogoPath: function() {
       let logoPath = null;
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const textColor = colorManager.resolve("text");
+      const luminance = this.getColorLuminance(textColor);
       const product = qx.core.Environment.get("product.name");
       switch (product) {
         case "s4l":
           logoPath = "osparc/s4l_logo.png";
           break;
         case "tis": {
-          const colorManager = qx.theme.manager.Color.getInstance();
-          const textColor = colorManager.resolve("text");
-          const luminance = this.getColorLuminance(textColor);
           logoPath = (luminance > 0.3) ? "osparc/tip-white.svg" : "osparc/tip-black.svg";
           break;
         }
         default: {
-          const colorManager = qx.theme.manager.Color.getInstance();
-          const textColor = colorManager.resolve("text");
-          const luminance = this.getColorLuminance(textColor);
           logoPath = (luminance > 0.3) ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
           break;
         }
