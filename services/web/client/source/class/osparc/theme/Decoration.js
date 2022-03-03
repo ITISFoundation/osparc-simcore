@@ -232,6 +232,13 @@ qx.Theme.define("osparc.theme.Decoration", {
       style: {
         radius: 0
       }
+    },
+    "bordered-button": {
+      include: "material-button",
+      style: {
+        width: 1,
+        color: "c05"
+      }
     }
   }
 });

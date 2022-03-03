@@ -379,9 +379,19 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
+    "strong-button": {
+      include: "material-button",
+      style: state => ({
+        decorator: "bordered-button",
+        backgroundColor: state.hovered ? "material-button-text-disabled" : null,
+        textColor: state.hovered ? "text" : "material-button-text-disabled"
+      })
+    },
+
     "danger-button": {
       include: "material-button",
       style: state => ({
+        decorator: "bordered-button",
         backgroundColor: state.hovered ? "failed-red" : null,
         textColor: state.hovered ? "text" : "failed-red"
       })
