@@ -8,7 +8,7 @@ from models_library.services import SERVICE_KEY_RE
 from ..models.domains.comp_tasks import CompTaskAtDB
 from ..modules.db.tables import NodeClass
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 _COMPLETED_STATES = (RunningState.ABORTED, RunningState.FAILED, RunningState.SUCCESS)
 _RUNNING_STATES = (RunningState.STARTED, RunningState.RETRY)

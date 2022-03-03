@@ -58,15 +58,12 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
     });
 
     const image = this.getChildControl("image");
-
     if (source) {
-      image.setSource(source);
+      this.setSource(source);
     }
-
     if (maxWidth) {
       image.setMaxWidth(maxWidth);
     }
-
     if (maxHeight) {
       image.setMaxHeight(maxHeight);
     }
@@ -79,6 +76,16 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
         this.recheckSize();
       }, this);
     });
+  },
+
+  properties: {
+    source: {
+      check : "String",
+      init : null,
+      nullable : true,
+      event : "changeSource",
+      apply : "__applySource"
+    }
   },
 
   members: {
@@ -100,6 +107,10 @@ qx.Class.define("osparc.ui.basic.Thumbnail", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    __applySource: function(val) {
+      this.getChildControl("image").setSource(val);
     },
 
     recheckSize: function() {

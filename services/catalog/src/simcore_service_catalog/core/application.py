@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     if settings is None:
         settings = AppSettings.create_from_envs()
-
+    assert settings  # nosec
     logging.basicConfig(level=settings.CATALOG_LOG_LEVEL.value)
     logging.root.setLevel(settings.CATALOG_LOG_LEVEL.value)
     logger.debug(settings.json(indent=2))
@@ -50,7 +50,6 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     )
     override_fastapi_openapi_method(app)
 
-    logger.debug(settings)
     app.state.settings = settings
 
     setup_function_services(app)

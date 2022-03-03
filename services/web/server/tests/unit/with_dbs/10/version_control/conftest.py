@@ -4,6 +4,7 @@
 
 import logging
 from copy import deepcopy
+from pathlib import Path
 from typing import Any, AsyncIterator, Awaitable, Callable, Dict
 from uuid import UUID
 
@@ -142,11 +143,13 @@ def project_uuid(user_project: ProjectDict) -> ProjectID:
 
 @pytest.fixture
 async def user_project(
-    client: TestClient, fake_project: ProjectDict, user_id
+    client: TestClient, fake_project: ProjectDict, user_id: int, tests_data_dir: Path
 ) -> AsyncIterator[ProjectDict]:
     # pylint: disable=no-value-for-parameter
 
-    async with NewProject(fake_project, client.app, user_id=user_id) as project:
+    async with NewProject(
+        fake_project, client.app, user_id=user_id, tests_data_dir=tests_data_dir
+    ) as project:
 
         yield project
 

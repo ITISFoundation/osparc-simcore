@@ -60,7 +60,7 @@ class DetachNetworkFromDynamicSidecarItem(BaseModel):
 
 
 router = APIRouter()
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 @router.get(

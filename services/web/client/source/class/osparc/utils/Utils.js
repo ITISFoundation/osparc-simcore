@@ -220,14 +220,12 @@ qx.Class.define("osparc.utils.Utils", {
       return logoPath;
     },
 
-    addBorder: function(widget, width = 1, where = "right") {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const binaryColor = osparc.utils.Utils.getRoundedBinaryColor(colorManager.resolve("background-main"));
-      widget.getContentElement().setStyle("border-"+where, width+"px solid " + binaryColor);
-      colorManager.addListener("changeTheme", () => {
-        const newBinaryColor = osparc.utils.Utils.getRoundedBinaryColor(colorManager.resolve("background-main"));
-        widget.getContentElement().setStyle("border-"+where, width+"px solid " + newBinaryColor);
-      }, this);
+    addBorder: function(widget, width = 1, color = "transparent") {
+      widget.getContentElement().setStyle("border", width+"px solid " + color);
+    },
+
+    removeBorder: function(widget) {
+      widget.getContentElement().setStyle("border", "0px solid");
     },
 
     __setStyleToIFrame: function(domEl) {

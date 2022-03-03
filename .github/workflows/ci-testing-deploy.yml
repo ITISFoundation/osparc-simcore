@@ -99,7 +99,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -143,7 +143,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -200,7 +200,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -263,7 +263,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -325,7 +325,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -382,7 +382,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -443,7 +443,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -502,7 +502,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -559,7 +559,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -656,7 +656,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -700,7 +700,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -758,7 +758,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -815,7 +815,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -872,7 +872,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -929,7 +929,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -986,7 +986,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1043,7 +1043,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1100,7 +1100,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1157,7 +1157,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1214,7 +1214,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1271,7 +1271,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1328,7 +1328,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1385,7 +1385,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1442,7 +1442,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1499,7 +1499,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1556,7 +1556,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1613,7 +1613,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1670,7 +1670,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1734,7 +1734,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1807,7 +1807,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1880,7 +1880,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1956,7 +1956,7 @@ jobs:
       - name: setup rclone docker volume plugin
         run: sudo ./ci/github/helpers/install_rclone.bash
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -2029,7 +2029,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -2102,7 +2102,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -2162,7 +2162,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -2223,7 +2223,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - uses: actions/setup-node@v2.5.1
@@ -2308,7 +2308,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version

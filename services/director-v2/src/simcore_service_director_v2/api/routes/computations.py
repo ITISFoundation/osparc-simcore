@@ -47,7 +47,7 @@ from ..dependencies.director_v0 import get_director_v0_client
 from ..dependencies.scheduler import get_scheduler
 
 router = APIRouter()
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 PIPELINE_ABORT_TIMEOUT_S = 10
 
@@ -108,7 +108,6 @@ async def create_computation(
 
         # ok so put the tasks in the db
         await computation_pipelines.upsert_pipeline(
-            job.user_id,
             project.uuid,
             minimal_computational_dag,
             publish=job.start_pipeline or False,
