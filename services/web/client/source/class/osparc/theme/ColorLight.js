@@ -19,8 +19,17 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "c13": "#101010", // L=06
     "c14": "#000000", // L=00
 
-
+    "strong-main": "c06",
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
+
+
+    // main
+    "background-main": "c01",
+    "background-main-1": "c02",
+    "background-main-2": "c03",
+    "background-main-3": "c04",
+    "background-main-4": "c05",
+    "background-main-5": "c06",
 
     // text
     "text": "c11",

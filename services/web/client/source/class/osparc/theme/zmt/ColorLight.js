@@ -10,7 +10,7 @@ qx.Theme.define("osparc.theme.zmt.ColorLight", {
     "c05": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 30),
     "c06": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 35),
     "c07": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 45),
-    "c08": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 45),
+    "c08": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 55),
     "c09": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 70),
     "c10": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 80),
     "c11": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 85),
