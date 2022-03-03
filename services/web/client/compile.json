@@ -37,13 +37,13 @@
     },
     {
       "class": "osparc.Application",
-      "theme": "osparc.theme.ThemeLightBlue",
+      "theme": "osparc.theme.ThemeZmtDark",
       "name": "s4l",
       "title": "Sim4Life",
       "include": [
         "iconfont.material.Load",
         "iconfont.fontawesome5.Load",
-        "osparc.theme.ThemeDark"
+        "osparc.theme.ThemeZmtLight"
       ],
       "environment": {
         "product.name": "s4l"

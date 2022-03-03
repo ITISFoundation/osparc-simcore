@@ -8,8 +8,6 @@ qx.Theme.define("osparc.theme.mixin.Color", {
     "failed-red": "#FF2D2D",
     "busy-orange": "#FFA500",
 
-    "danger-red": "#FF3333",
-
     "logger-warning-message": "#FFFF00",
     "logger-error-message": "#FF0000",
 

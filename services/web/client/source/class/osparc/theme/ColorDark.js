@@ -20,6 +20,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "c14": "#FFFFFF", // L=100
 
     "strong-main": "c05",
+    "danger-red": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.danger", 40),
     "a-bit-transparent": "rgba(0, 0, 0, 0.4)",
 
 
