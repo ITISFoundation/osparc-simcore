@@ -203,18 +203,18 @@ qx.Class.define("osparc.utils.Utils", {
       let logoPath = null;
       const colorManager = qx.theme.manager.Color.getInstance();
       const textColor = colorManager.resolve("text");
-      const luminance = this.getColorLuminance(textColor);
+      const lightLogo = this.getColorLuminance(textColor) > 0.4;
       const product = qx.core.Environment.get("product.name");
       switch (product) {
         case "s4l":
           logoPath = "osparc/s4l_logo.png";
           break;
         case "tis": {
-          logoPath = (luminance > 0.3) ? "osparc/tip-white.svg" : "osparc/tip-black.svg";
+          logoPath = lightLogo ? "osparc/tip-white.svg" : "osparc/tip-black.svg";
           break;
         }
         default: {
-          logoPath = (luminance > 0.3) ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
+          logoPath = lightLogo ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
           break;
         }
       }
@@ -276,7 +276,7 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     getColorLuminance: function(color) {
-      const rgb = qx.util.ColorUtil.isRgbString(color) || qx.util.ColorUtil.isRgbaString(color) ? color : qx.util.ColorUtil.hexStringToRgb(color);
+      const rgb = qx.util.ColorUtil.isRgbString(color) || qx.util.ColorUtil.isRgbaString(color) ? qx.util.ColorUtil.stringToRgb(color) : qx.util.ColorUtil.hexStringToRgb(color);
       const luminance = 0.2126*(rgb[0]/255) + 0.7152*(rgb[1]/255) + 0.0722*(rgb[2]/255);
       return luminance;
     },
