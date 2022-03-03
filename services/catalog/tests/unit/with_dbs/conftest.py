@@ -42,7 +42,7 @@ def app(
 
 
 @pytest.fixture
-def client(app: FastAPI) -> Iterable[TestClient]:
+def client(app: FastAPI) -> Iterator[TestClient]:
     with TestClient(app) as cli:
         # Note: this way we ensure the events are run in the application
         yield cli
