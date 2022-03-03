@@ -84,10 +84,9 @@ async def __delete_all_redis_keys__(redis_settings: RedisSettings):
 
 
 @pytest.fixture(autouse=True)
-async def director_v2_service_responses_mock(
+async def director_v2_service_responses_mock_autouse(
     director_v2_service_responses_mock: AioResponsesMock,
 ) -> AsyncIterable[AioResponsesMock]:
-    # OVERRIDES pytest_simcore.aioreposnse_mocker.director_v2_service_responses_mock and appends
     # NOTE: auto-mock under this test-suite module is justified since
     # directorv2 service is not included in pytest_simcore_core_services_selection
     # All requests to director-v2 service are intercepted and responses are patched
