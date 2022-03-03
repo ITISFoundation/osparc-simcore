@@ -382,8 +382,8 @@ qx.Theme.define("osparc.theme.Appearance", {
     "danger-button": {
       include: "material-button",
       style: state => ({
-        backgroundColor: state.hovered ? "invalid-red" : null,
-        textColor: state.hovered ? "text" : "invalid-red"
+        backgroundColor: state.hovered ? "failed-red" : null,
+        textColor: state.hovered ? "text" : "failed-red"
       })
     },
 

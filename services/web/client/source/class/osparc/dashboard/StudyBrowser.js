@@ -241,10 +241,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createDeleteButton: function() {
-      const deleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14").set({
-        appearance: "danger-button",
-        visibility: "excluded"
-      });
+      const deleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14");
       osparc.utils.Utils.setIdToWidget(deleteButton, "deleteStudiesBtn");
       deleteButton.addListener("execute", () => {
         const selection = this._resourcesContainer.getSelection();
@@ -550,9 +547,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getDeleteStudyMenuButton: function(studyData) {
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete")).set({
-        appearance: "danger-button"
-      });
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
       osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
       deleteButton.addListener("execute", () => {
         const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
@@ -795,6 +790,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const msg = isMulti ? this.tr("Are you sure you want to delete the studies?") : this.tr("Are you sure you want to delete the study?");
       const confirmationWin = new osparc.ui.window.Confirmation(msg);
       const confirmButton = confirmationWin.getConfirmButton();
+      confirmButton.set({
+        appearance: "danger-button"
+      });
       osparc.utils.Utils.setIdToWidget(confirmButton, "confirmDeleteStudyBtn");
       return confirmationWin;
     }

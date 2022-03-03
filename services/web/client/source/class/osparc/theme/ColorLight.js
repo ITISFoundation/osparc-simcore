@@ -21,7 +21,6 @@ qx.Theme.define("osparc.theme.ColorLight", {
 
 
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
-    "invalid-red": "#a04040",
 
     // text
     "text": "c11",
@@ -55,8 +54,8 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "material-textfield": "c07",
     "material-textfield-focused": "c11",
     "material-textfield-disabled": "c05",
-    "material-textfield-invalid": "invalid-red",
-    "invalid": "invalid-red",
+    "material-textfield-invalid": "failed-red",
+    "invalid": "failed-red",
 
     // backgrounds
     "background-selected": "c05",
@@ -96,7 +95,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     // 'border-main' is an alias of 'background-selected' (compatibility reasons)
     "border": "c04",
     "border-focused": "c09",
-    "border-invalid": "invalid-red",
+    "border-invalid": "failed-red",
     "border-disabled": "c01",
 
     // separator

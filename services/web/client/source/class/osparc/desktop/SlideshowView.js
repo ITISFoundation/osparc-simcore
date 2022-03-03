@@ -386,6 +386,9 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete node?");
         const win = new osparc.ui.window.Confirmation(msg);
+        win.getConfirmButton().set({
+          appearance: "danger-button"
+        });
         win.center();
         win.open();
         win.addListener("close", () => {

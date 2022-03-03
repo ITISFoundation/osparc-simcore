@@ -138,9 +138,7 @@ qx.Class.define("osparc.ui.list.ClusterListItem", {
       });
       menu.add(editClusterButton);
 
-      const deleteClusterButton = new qx.ui.menu.Button(this.tr("Delete")).set({
-        appearance: "danger-button"
-      });
+      const deleteClusterButton = new qx.ui.menu.Button(this.tr("Delete"));
       deleteClusterButton.addListener("execute", () => {
         this.fireDataEvent("deleteCluster", this.getKey());
       });

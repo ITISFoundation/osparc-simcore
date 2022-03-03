@@ -199,9 +199,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
         return null;
       }
 
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete")).set({
-        appearance: "danger-button"
-      });
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
       osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
       deleteButton.addListener("execute", () => {
         const win = this.__createConfirmWindow(false);
@@ -271,7 +269,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     __createConfirmWindow: function(isMulti) {
       const msg = isMulti ? this.tr("Are you sure you want to delete the studies?") : this.tr("Are you sure you want to delete the study?");
-      return new osparc.ui.window.Confirmation(msg);
+      const confWin = new osparc.ui.window.Confirmation(msg);
+      confWin.getChildControl("confirm-button").set({
+        appearance: "danger-button"
+      });
+      return confWin;
     }
   }
 });

@@ -136,6 +136,9 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
       const msg = this.tr("Do you want to delete the API key?");
       const win = new osparc.ui.window.Confirmation(msg);
+      win.getConfirmButton().set({
+        appearance: "danger-button"
+      });
       win.center();
       win.open();
       win.addListener("close", () => {
@@ -270,6 +273,9 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
       const msg = this.tr("Do you want to delete the Token?");
       const win = new osparc.ui.window.Confirmation(msg);
+      win.getConfirmButton().set({
+        appearance: "danger-button"
+      });
       win.center();
       win.open();
       win.addListener("close", () => {

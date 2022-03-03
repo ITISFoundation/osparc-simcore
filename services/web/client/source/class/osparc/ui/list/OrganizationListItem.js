@@ -85,9 +85,7 @@ qx.Class.define("osparc.ui.list.OrganizationListItem", {
       });
       menu.add(editOrgButton);
 
-      const deleteOrgButton = new qx.ui.menu.Button(this.tr("Delete")).set({
-        appearance: "danger-button"
-      });
+      const deleteOrgButton = new qx.ui.menu.Button(this.tr("Delete"));
       deleteOrgButton.addListener("execute", () => {
         this.fireDataEvent("deleteOrganization", this.getKey());
       });

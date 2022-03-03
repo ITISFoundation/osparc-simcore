@@ -107,7 +107,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         if (!e.getData()) {
           const msg = this.tr("Warning: deleting a study cannot be undone");
           const win = new osparc.ui.window.Confirmation(msg);
-          win.getConfirmButton().setLabel(this.tr("OK"));
+          win.getConfirmButton().set({
+            label: this.tr("OK"),
+            appearance: "danger-button"
+          });
           win.center();
           win.open();
           win.addListener("close", () => {
@@ -126,7 +129,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ConfirmationsPage", {
         if (!e.getData()) {
           const msg = this.tr("Warning: deleting a node cannot be undone");
           const win = new osparc.ui.window.Confirmation(msg);
-          win.getConfirmButton().setLabel(this.tr("OK"));
+          win.getConfirmButton().set({
+            label: this.tr("OK"),
+            appearance: "danger-button"
+          });
           win.center();
           win.open();
           win.addListener("close", () => {
