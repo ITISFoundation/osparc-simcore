@@ -82,15 +82,15 @@ def docker_compose_file(
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg: ConfigDict, aiohttp_unused_port) -> ConfigDict:
+def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
     """
     NOTE: SHOULD be overriden in any test module to configure the app accordingly
     """
     cfg = deepcopy(default_app_cfg)
 
     # fills ports on the fly
-    cfg["main"]["port"] = aiohttp_unused_port()
-    cfg["storage"]["port"] = aiohttp_unused_port()
+    cfg["main"]["port"] = unused_tcp_port_factory()
+    cfg["storage"]["port"] = unused_tcp_port_factory()
 
     # this fixture can be safely modified during test since it is renovated on every call
     return cfg
