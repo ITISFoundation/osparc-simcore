@@ -53,7 +53,10 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       const apiKeysList = this.__apiKeysList = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
       box.add(apiKeysList);
 
-      const requestAPIKeyBtn = this.__requestAPIKeyBtn = new osparc.ui.form.FetchButton(this.tr("Create API Key")).set({
+      const requestAPIKeyBtn = this.__requestAPIKeyBtn = new osparc.ui.form.FetchButton().set({
+        appearance: "strong-button",
+        label: this.tr("New API Key"),
+        icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false
       });
       requestAPIKeyBtn.addListener("execute", () => {
