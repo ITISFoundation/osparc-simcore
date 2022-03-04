@@ -3,6 +3,7 @@
 
 import asyncio
 import logging
+import urllib.parse
 from typing import Any, AsyncIterable, AsyncIterator, Callable, Dict, List, Tuple
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
@@ -256,13 +257,14 @@ async def test_start_status_stop(
     assert response.text == ""
 
 
-async def test_requires_dynamic_sidecar(
+async def test_services_dynamic_sidecar_require(
     test_client: TestClient, key_version_expected: List[Tuple[ServiceKeyVersion, bool]]
 ) -> None:
     for service_key_version, expected in key_version_expected:
+        quoted_key = urllib.parse.quote_plus(service_key_version.key)
+        version = service_key_version.version
         response: Response = await test_client.post(
-            "/v2/dynamic_services/dynamic-sidecar:required",
-            json=service_key_version.dict(),
+            f"/v0/services/{quoted_key}/{version}/dynamic-sidecar:require"
         )
         assert response.status_code == 200, response.text
         assert response.json() == expected
