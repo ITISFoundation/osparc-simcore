@@ -366,7 +366,7 @@ qx.Class.define("osparc.file.FilePicker", {
         width: 2
       });
       const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
-        backgroundColor: "contrasted-background",
+        backgroundColor: "background-main-3",
         showLeafs: false,
         minWidth: 150,
         width: 250
