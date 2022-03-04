@@ -2,12 +2,13 @@
 # pylint: disable=unused-argument
 
 import asyncio
-from typing import Any, AsyncIterator, Dict, List
+from typing import Any, AsyncIterable, AsyncIterator, Dict, List
 from uuid import UUID, uuid4
 
 import aiodocker
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
+from aiodocker.utils import clean_filters
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
@@ -230,6 +231,23 @@ async def cleanup_dynamic_sidecar_stack(
             await async_docker_client.services.delete(dynamic_sidecar_spec["name"])
             is True
         )
+
+
+@pytest.fixture
+async def project_id_labeled_network(
+    async_docker_client: aiodocker.docker.Docker, project_id: ProjectID
+) -> AsyncIterable[str]:
+    network_config = {
+        "Name": "test_network_by_project_id",
+        "Driver": "overlay",
+        "Labels": {"project_id": f"{project_id}"},
+    }
+    network_id = await docker_api.create_network(network_config)
+
+    yield network_id
+
+    network = await async_docker_client.networks.get(network_id)
+    await network.delete()
 
 
 # UTILS
@@ -570,3 +588,21 @@ async def test_is_dynamic_service_running(
         await docker_api.is_dynamic_service_running(node_uuid, dynamic_sidecar_settings)
         is True
     )
+
+
+async def test_get_sharing_networks_containers(
+    async_docker_client: aiodocker.docker.Docker,
+    project_id_labeled_network: str,
+    project_id: ProjectID,
+    docker_swarm: None,
+) -> None:
+    # make sure API does not change
+    params = {"filters": clean_filters({"label": [f"project_id={project_id}"]})}
+    filtered_networks = (
+        # pylint:disable=protected-access
+        await async_docker_client.networks.docker._query_json("networks", params=params)
+    )
+    assert len(filtered_networks) == 1
+    filtered_network = filtered_networks[0]
+
+    assert project_id_labeled_network == filtered_network["Id"]
