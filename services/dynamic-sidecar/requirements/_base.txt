@@ -20,7 +20,7 @@ aiofiles==0.8.0
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
-aiohttp==3.7.4.post0
+aiohttp==3.8.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -32,13 +32,14 @@ aiohttp==3.7.4.post0
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/./constraints.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aiodocker
 aiopg==1.3.3
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 aiormq==3.3.1
     # via aio-pika
+aiosignal==1.2.0
+    # via aiohttp
 alembic==1.7.4
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
@@ -51,7 +52,7 @@ asgiref==3.4.1
     # via uvicorn
 async-generator==1.10
     # via -r requirements/_base.in
-async-timeout==3.0.1
+async-timeout==4.0.2
     # via
     #   -r requirements/_base.in
     #   aiohttp
@@ -76,11 +77,11 @@ cffi==1.14.5
     #   cryptography
     #   pynacl
 chardet==4.0.0
+    # via requests
+charset-normalizer==2.0.7
     # via
     #   aiohttp
-    #   requests
-charset-normalizer==2.0.7
-    # via httpx
+    #   httpx
 click==8.0.3
     # via
     #   typer
@@ -130,6 +131,10 @@ fastapi==0.71.0
     #   fastapi-contrib
 fastapi-contrib==0.2.11
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+frozenlist==1.3.0
+    # via
+    #   aiohttp
+    #   aiosignal
 greenlet==1.1.2
     # via sqlalchemy
 h11==0.12.0
@@ -316,7 +321,6 @@ typer==0.4.0
 typing-extensions==3.10.0.2
     # via
     #   aiodocker
-    #   aiohttp
     #   pydantic
 urllib3==1.26.6
     # via
