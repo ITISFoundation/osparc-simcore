@@ -14,7 +14,7 @@ class GroupsRepository(BaseRepository):
     async def list_user_groups(self, user_id: int) -> List[GroupAtDB]:
         groups_in_db = []
         async with self.db_engine.connect() as conn:
-            async for row in conn.execute(
+            async for row in await conn.stream(
                 sa.select([groups])
                 .select_from(
                     user_to_groups.join(groups, user_to_groups.c.gid == groups.c.gid),
@@ -26,11 +26,10 @@ class GroupsRepository(BaseRepository):
 
     async def get_everyone_group(self) -> GroupAtDB:
         async with self.db_engine.connect() as conn:
-            row: sa.engine.result.Row = await (
-                await conn.execute(
-                    sa.select([groups]).where(groups.c.type == GroupType.EVERYONE)
-                )
-            ).first()
+            result = await conn.execute(
+                sa.select([groups]).where(groups.c.type == GroupType.EVERYONE)
+            )
+            row = result.first()
         if not row:
             raise RepositoryError(f"{GroupType.EVERYONE} groups was never initialized")
         return GroupAtDB(**row)
@@ -60,7 +59,7 @@ class GroupsRepository(BaseRepository):
     ) -> Dict[PositiveInt, Optional[EmailStr]]:
         service_owners = {}
         async with self.db_engine.connect() as conn:
-            async for row in conn.execute(
+            async for row in await conn.stream(
                 sa.select([users.c.primary_gid, users.c.email]).where(
                     users.c.primary_gid.in_(gids)
                 )

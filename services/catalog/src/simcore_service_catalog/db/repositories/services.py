@@ -75,7 +75,7 @@ class ServicesRepository(BaseRepository):
         services_in_db = []
 
         async with self.db_engine.connect() as conn:
-            async for row in conn.execute(
+            async for row in await conn.stream(
                 _make_list_services_query(
                     gids,
                     execute_access,
@@ -125,7 +125,7 @@ class ServicesRepository(BaseRepository):
 
         releases = []
         async with self.db_engine.connect() as conn:
-            async for row in conn.execute(query):
+            async for row in await conn.stream(query):
                 releases.append(ServiceMetaDataAtDB(**row))
 
         return releases
@@ -172,7 +172,7 @@ class ServicesRepository(BaseRepository):
             )
         async with self.db_engine.connect() as conn:
             result = await conn.execute(query)
-            row = await result.first()
+            row = result.first()
         if row:
             return ServiceMetaDataAtDB(**row)
 
@@ -200,7 +200,7 @@ class ServicesRepository(BaseRepository):
                     .values(**new_service.dict(by_alias=True))
                     .returning(literal_column("*"))
                 )
-                row = await result.first()
+                row = result.first()
                 assert row  # nosec
                 created_service = ServiceMetaDataAtDB(**row)
 
@@ -226,7 +226,7 @@ class ServicesRepository(BaseRepository):
                 .values(**patched_service.dict(by_alias=True, exclude_unset=True))
                 .returning(literal_column("*"))
             )
-            row = await result.first()
+            row = result.first()
             assert row  # nosec
         updated_service = ServiceMetaDataAtDB(**row)
         return updated_service
@@ -250,7 +250,7 @@ class ServicesRepository(BaseRepository):
         query = sa.select([services_access_rights]).where(search_expression)
 
         async with self.db_engine.connect() as conn:
-            async for row in conn.execute(query):
+            async for row in await conn.stream(query):
                 services_in_db.append(ServiceAccessRightsAtDB(**row))
         return services_in_db
 
@@ -272,7 +272,7 @@ class ServicesRepository(BaseRepository):
             )
         )
         async with self.db_engine.connect() as conn:
-            async for row in conn.execute(query):
+            async for row in await conn.stream(query):
                 service_to_access_rights[
                     (
                         row[services_access_rights.c.key],

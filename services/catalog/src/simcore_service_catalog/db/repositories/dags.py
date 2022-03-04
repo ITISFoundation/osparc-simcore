@@ -2,7 +2,6 @@ import json
 from typing import List, Optional
 
 import sqlalchemy as sa
-from sqlalchemy.engine.result import Row
 
 from ...models.domain.dag import DAGAtDB
 from ...models.schemas.dag import DAGIn
@@ -14,15 +13,13 @@ class DAGsRepository(BaseRepository):
     async def list_dags(self) -> List[DAGAtDB]:
         dagraphs = []
         async with self.db_engine.connect() as conn:
-            async for row in conn.execute(dags.select()):
+            async for row in await conn.stream(dags.select()):
                 dagraphs.append(DAGAtDB.parse_obj(row))
         return dagraphs
 
     async def get_dag(self, dag_id: int) -> Optional[DAGAtDB]:
         async with self.db_engine.connect() as conn:
-            row: Row = await (
-                await conn.execute(dags.select().where(dags.c.id == dag_id))
-            ).first()
+            row = await conn.execute(dags.select().where(dags.c.id == dag_id)).first()
         if row:
             return DAGAtDB(**row)
 
