@@ -96,7 +96,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
 
     __createFilterLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        margin: [7, 10]
+        appearance: "margined-layout"
       });
 
       const filters = new osparc.component.filter.group.ServiceFilterGroup("serviceCatalog").set({
@@ -143,7 +143,7 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
 
     __createButtonsLayout: function() {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        margin: [7, 10]
+        appearance: "margined-layout"
       });
 
       const versionLabel = new qx.ui.basic.Atom(this.tr("Version"));

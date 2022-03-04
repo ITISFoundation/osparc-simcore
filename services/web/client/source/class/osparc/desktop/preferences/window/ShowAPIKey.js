@@ -37,7 +37,7 @@ qx.Class.define("osparc.desktop.preferences.window.ShowAPIKey", {
       this._add(hBox2);
 
       const hBox3 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        margin: [7, 10]
+        appearance: "margined-layout"
       });
       const copyAPIKeyBtn = new qx.ui.form.Button(this.tr("Copy API Key"));
       copyAPIKeyBtn.addListener("execute", e => {

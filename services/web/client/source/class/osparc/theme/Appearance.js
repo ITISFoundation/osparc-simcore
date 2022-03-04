@@ -632,6 +632,12 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
+    "margined-layout": {
+      style: () => ({
+        margin: [7, 10]
+      })
+    },
+
     /*
     ---------------------------------------------------------------------------
       jsonforms
