@@ -476,8 +476,7 @@ async def get_or_create_networks_ids(
                 f"Could create or find one or more networks {ids=} {networks=}"
             )
 
-    # pylint: disable=unnecessary-comprehension
-    return {k: v for k, v in zip(networks, ids)}
+    return dict(zip(networks, ids))
 
 
 async def get_sharing_networks_containers(
@@ -488,8 +487,7 @@ async def get_sharing_networks_containers(
     the amount of containers attached to them.
     """
     async with docker_client() as client:
-        filters = {"label": [f"project_id={project_id}"]}
-        params = {} if filters is None else {"filters": clean_filters(filters)}
+        params = {"filters": clean_filters({"label": [f"project_id={project_id}"]})}
         filtered_networks = (
             # pylint:disable=protected-access
             await client.networks.docker._query_json("networks", params=params)
