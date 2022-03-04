@@ -263,7 +263,7 @@ qx.Class.define("osparc.file.FilePicker", {
         case "files-tree": {
           const treeFolderLayout = this.getChildControl("tree-folder-layout");
           control = new osparc.file.FilesTree().set({
-            backgroundColor: "contrasted-background",
+            backgroundColor: "background-main-3",
             showLeafs: false,
             minWidth: 150,
             width: 250

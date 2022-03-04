@@ -134,7 +134,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
     __createPage: function(title, widget, icon, id) {
       const tabPage = new qx.ui.tabview.Page().set({
-        backgroundColor: "material-button-background",
+        backgroundColor: "background-main-2",
         paddingLeft: 20,
         layout: new qx.ui.layout.VBox(10),
         icon: icon + "/24"
@@ -207,6 +207,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       if (osparc.utils.Resources.isService(resourceData)) {
         const openServiceButton = new qx.ui.form.Button(this.tr("Open")).set({
+          appearance: "strong-button",
           allowGrowX: false,
           alignX: "right"
         });
