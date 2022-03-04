@@ -510,6 +510,7 @@ async def attach_network_to_dynamic_sidecar(
     network_name: DockerNetworkName,
     network_alias: DockerNetworkAlias,
 ) -> None:
+    # TODO: refactor when merging https://github.com/ITISFoundation/osparc-simcore/pull/2867
     timeout = ServicesCommonSettings().network_attach_detach_timeout
 
     settings: DirectorV2Settings = get_plugin_settings(app)
@@ -537,6 +538,7 @@ async def detach_network_from_dynamic_sidecar(
     node_id: NodeID,
     network_name: DockerNetworkName,
 ) -> None:
+    # TODO: refactor when merging https://github.com/ITISFoundation/osparc-simcore/pull/2867
     timeout = ServicesCommonSettings().network_attach_detach_timeout
 
     settings: DirectorV2Settings = get_plugin_settings(app)
