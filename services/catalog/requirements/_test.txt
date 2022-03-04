@@ -8,6 +8,8 @@ aiohttp==3.8.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pytest-aiohttp
+aiopg==1.3.3
+    # via -r requirements/_test.in
 aiosignal==1.2.0
     # via aiohttp
 alembic==1.7.4
@@ -21,7 +23,9 @@ anyio==3.5.0
 astroid==2.9.3
     # via pylint
 async-timeout==4.0.2
-    # via aiohttp
+    # via
+    #   aiohttp
+    #   aiopg
 attrs==21.4.0
     # via
     #   aiohttp
@@ -159,6 +163,7 @@ pluggy==1.0.0
 psycopg2-binary==2.8.6
     # via
     #   -c requirements/_base.txt
+    #   aiopg
     #   sqlalchemy
 ptvsd==4.3.2
     # via -r requirements/_test.in
@@ -238,6 +243,7 @@ sqlalchemy==1.4.31
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   aiopg
     #   alembic
 texttable==1.6.4
     # via docker-compose

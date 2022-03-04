@@ -26,6 +26,7 @@ respx
 
 # migration due to pytest_simcore.postgres_service
 alembic
+aiopg[sa]
 docker
 click
 
