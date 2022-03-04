@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class ProjectsRepository(BaseRepository):
     async def list_services_from_published_templates(self) -> List[ServiceKeyVersion]:
         list_of_published_services: List[ServiceKeyVersion] = []
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             async for row in conn.execute(
                 sa.select([projects]).where(
                     (projects.c.type == ProjectType.TEMPLATE)

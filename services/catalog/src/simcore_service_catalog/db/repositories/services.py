@@ -74,7 +74,7 @@ class ServicesRepository(BaseRepository):
     ) -> List[ServiceMetaDataAtDB]:
         services_in_db = []
 
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             async for row in conn.execute(
                 _make_list_services_query(
                     gids,
@@ -124,7 +124,7 @@ class ServicesRepository(BaseRepository):
             query = query.limit(limit_count)
 
         releases = []
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             async for row in conn.execute(query):
                 releases.append(ServiceMetaDataAtDB(**row))
 
@@ -170,7 +170,7 @@ class ServicesRepository(BaseRepository):
                     )
                 )
             )
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             result = await conn.execute(query)
             row = await result.first()
         if row:
@@ -191,7 +191,7 @@ class ServicesRepository(BaseRepository):
                     f"{access_rights} does not correspond to service {new_service.key}:{new_service.version}"
                 )
 
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             # NOTE: this ensure proper rollback in case of issue
             async with conn.begin() as _transaction:
                 result = await conn.execute(
@@ -215,7 +215,7 @@ class ServicesRepository(BaseRepository):
         self, patched_service: ServiceMetaDataAtDB
     ) -> ServiceMetaDataAtDB:
         # update the services_meta_data table
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             result = await conn.execute(
                 # pylint: disable=no-value-for-parameter
                 services_meta_data.update()
@@ -249,7 +249,7 @@ class ServicesRepository(BaseRepository):
 
         query = sa.select([services_access_rights]).where(search_expression)
 
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             async for row in conn.execute(query):
                 services_in_db.append(ServiceAccessRightsAtDB(**row))
         return services_in_db
@@ -271,15 +271,8 @@ class ServicesRepository(BaseRepository):
                 else True
             )
         )
-        async with self.db_engine.acquire() as conn:
-            # NOTE: this strange query compile is due to an incompatilility
-            # between aiopg.sa and sqlalchemy 1.4
-            # One of the maintainer of aiopg says:
-            # https://github.com/aio-libs/aiopg/issues/798#issuecomment-934256346
-            # we should drop aiopg.sa
-            async for row in conn.execute(
-                f"{(query.compile(compile_kwargs={'literal_binds': True}))}"
-            ):
+        async with self.db_engine.connect() as conn:
+            async for row in conn.execute(query):
                 service_to_access_rights[
                     (
                         row[services_access_rights.c.key],
@@ -306,7 +299,7 @@ class ServicesRepository(BaseRepository):
                 set_=rights.dict(by_alias=True, exclude_unset=True),
             )
             try:
-                async with self.db_engine.acquire() as conn:
+                async with self.db_engine.connect() as conn:
                     await conn.execute(
                         # pylint: disable=no-value-for-parameter
                         on_update_stmt
@@ -321,7 +314,7 @@ class ServicesRepository(BaseRepository):
     async def delete_service_access_rights(
         self, delete_access_rights: List[ServiceAccessRightsAtDB]
     ) -> None:
-        async with self.db_engine.acquire() as conn:
+        async with self.db_engine.connect() as conn:
             for rights in delete_access_rights:
                 await conn.execute(
                     # pylint: disable=no-value-for-parameter
