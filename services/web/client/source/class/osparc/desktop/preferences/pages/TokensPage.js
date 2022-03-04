@@ -53,7 +53,10 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       const apiKeysList = this.__apiKeysList = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
       box.add(apiKeysList);
 
-      const requestAPIKeyBtn = this.__requestAPIKeyBtn = new osparc.ui.form.FetchButton(this.tr("Create API Key")).set({
+      const requestAPIKeyBtn = this.__requestAPIKeyBtn = new osparc.ui.form.FetchButton().set({
+        appearance: "strong-button",
+        label: this.tr("New API Key"),
+        icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false
       });
       requestAPIKeyBtn.addListener("execute", () => {
@@ -117,7 +120,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         column: 0
       });
 
-      const delAPIKeyBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash-alt/14");
+      const delAPIKeyBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash/14");
       delAPIKeyBtn.addListener("execute", e => {
         this.__deleteAPIKey(apiKeyLabel);
       }, this);
@@ -135,7 +138,10 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       }
 
       const msg = this.tr("Do you want to delete the API key?");
-      const win = new osparc.ui.window.Confirmation(msg);
+      const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
+      win.getConfirmButton().set({
+        appearance: "danger-button"
+      });
       win.center();
       win.open();
       win.addListener("close", () => {
@@ -251,7 +257,10 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
         });
       }
 
-      const delTokenBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/trash-alt/14");
+      const delTokenBtn = new qx.ui.form.Button().set({
+        appearance: "danger-button",
+        icon: "@FontAwesome5Solid/trash/14"
+      });
       delTokenBtn.addListener("execute", e => {
         this.__deleteToken(service);
       }, this);
@@ -269,7 +278,10 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
       }
 
       const msg = this.tr("Do you want to delete the Token?");
-      const win = new osparc.ui.window.Confirmation(msg);
+      const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
+      win.getConfirmButton().set({
+        appearance: "danger-button"
+      });
       win.center();
       win.open();
       win.addListener("close", () => {

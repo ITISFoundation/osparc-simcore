@@ -188,9 +188,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
           });
           const collapsibleViewLeft = this.getChildControl("collapsible-view-left");
           collapsibleViewLeft.setContent(control);
-          control.setBackgroundColor("background-main-lighter+");
-          collapsibleViewLeft.getChildControl("expand-button").setBackgroundColor("background-main-lighter+");
-          collapsibleViewLeft.getChildControl("collapse-button").setBackgroundColor("background-main-lighter+");
+          control.setBackgroundColor("background-main-2");
+          collapsibleViewLeft.getChildControl("expand-button").setBackgroundColor("background-main-2");
+          collapsibleViewLeft.getChildControl("collapse-button").setBackgroundColor("background-main-2");
           break;
         }
         case "side-panel-right-tabs": {
@@ -262,7 +262,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       });
       osparc.utils.Utils.removeBorder(tabPageBtn);
       tabPageBtn.bind("value", tabPageBtn, "backgroundColor", {
-        converter: val => val ? backgroundColor : "contrasted-background+"
+        converter: val => val ? backgroundColor : "background-main-4"
       });
       if (widget) {
         tabPage.add(widget, {
@@ -283,7 +283,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __initPrimaryColumn: function() {
-      const primaryColumnBGColor = "background-main-lighter+";
+      const primaryColumnBGColor = "background-main-2";
       const study = this.getStudy();
 
       const tabViewPrimary = this.getChildControl("side-panel-left-tabs");
@@ -296,7 +296,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const topBar = tabViewPrimary.getChildControl("bar");
       topBar.set({
-        backgroundColor: "contrasted-background+",
+        backgroundColor: "background-main-4",
         paddingLeft: 15
       });
       this.__addTopBarSpacer(topBar);
@@ -324,7 +324,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       homeAndNodesTree.add(nodesTree);
 
       const addNewNodeBtn = new qx.ui.form.Button().set({
-        label: this.tr("New node"),
+        appearance: "strong-button",
+        label: this.tr("New Node"),
         icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false,
         alignX: "center",
@@ -360,7 +361,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const topBar = tabViewSecondary.getChildControl("bar");
       topBar.set({
-        backgroundColor: "contrasted-background+",
+        backgroundColor: "background-main-4",
         paddingLeft: 15
       });
       this.__addTopBarSpacer(topBar);
@@ -446,7 +447,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __addTopBarSpacer: function(tabViewTopBar) {
       const spacer = new qx.ui.core.Widget().set({
-        backgroundColor: "contrasted-background+"
+        backgroundColor: "background-main-4"
       });
       tabViewTopBar.add(spacer, {
         flex: 1
@@ -455,7 +456,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __createCollapsibleViewSpacer: function() {
       const spacer = new qx.ui.core.Widget().set({
-        backgroundColor: "contrasted-background+",
+        backgroundColor: "background-main-4",
         height: this.self().TAB_BUTTON_HEIGHT
       });
       return spacer;
@@ -1101,7 +1102,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete the selected node?");
-        const win = new osparc.ui.window.Confirmation(msg);
+        const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
+        win.getConfirmButton().set({
+          appearance: "danger-button"
+        });
         win.center();
         win.open();
         win.addListener("close", () => {
@@ -1118,7 +1122,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete the selected ") + nodeIds.length + " nodes?";
-        const win = new osparc.ui.window.Confirmation(msg);
+        const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
+        win.getConfirmButton().set({
+          appearance: "danger-button"
+        });
         win.center();
         win.open();
         win.addListener("close", () => {

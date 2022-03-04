@@ -95,25 +95,24 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     __addBtn: null,
 
     __createFilterLayout: function() {
-      const toolbar = new qx.ui.toolbar.ToolBar();
-
-      const filterPart = new qx.ui.toolbar.Part().set({
-        spacing: 10
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+        appearance: "margined-layout"
       });
-      const filters = new osparc.component.filter.group.ServiceFilterGroup("serviceCatalog");
+
+      const filters = new osparc.component.filter.group.ServiceFilterGroup("serviceCatalog").set({
+        maxHeight: 25
+      });
       this.__textFilter = filters.getTextFilter().getChildControl("textfield", true);
-      filterPart.add(filters);
-      toolbar.add(filterPart);
+      layout.add(filters);
 
-      toolbar.addSpacer();
+      layout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
 
-      const controlsPart = new qx.ui.toolbar.Part();
-      // buttons for reloading services (is this necessary?)
-      const reloadBtn = new qx.ui.toolbar.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/16");
+      const reloadBtn = new qx.ui.form.Button(this.tr("Reload"), "@FontAwesome5Solid/sync-alt/12");
       reloadBtn.addListener("execute", () => this.__populateList(true), this);
-      controlsPart.add(reloadBtn);
-      toolbar.add(controlsPart);
-      return toolbar;
+      layout.add(reloadBtn);
+      return layout;
     },
 
     __createListLayout: function() {
@@ -143,40 +142,38 @@ qx.Class.define("osparc.component.workbench.ServiceCatalog", {
     },
 
     __createButtonsLayout: function() {
-      const toolbar = new qx.ui.toolbar.ToolBar();
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
+        appearance: "margined-layout"
+      });
 
-      const infoPart = new qx.ui.toolbar.Part();
       const versionLabel = new qx.ui.basic.Atom(this.tr("Version"));
-      infoPart.add(versionLabel);
-      const selectBox = this.__versionsBox = new osparc.ui.toolbar.SelectBox().set({
+      layout.add(versionLabel);
+      const selectBox = this.__versionsBox = new qx.ui.form.SelectBox().set({
         enabled: false
       });
-      infoPart.add(selectBox);
-      const infoBtn = this.__infoBtn = new qx.ui.toolbar.Button(null, "@MaterialIcons/info_outline/16").set({
+      layout.add(selectBox);
+      const infoBtn = this.__infoBtn = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/16").set({
         enabled: false
       });
-      infoBtn.addListener("execute", function() {
-        this.__showServiceDetails();
-      }, this);
-      infoPart.add(infoBtn);
-      toolbar.add(infoPart);
+      infoBtn.addListener("execute", () => this.__showServiceDetails(), this);
+      layout.add(infoBtn);
 
-      toolbar.addSpacer();
+      layout.add(new qx.ui.core.Spacer(), {
+        flex: 1
+      });
 
-      const buttonsPart = new qx.ui.toolbar.Part();
-      const addBtn = this.__addBtn = new qx.ui.toolbar.Button("Add").set({
+      const cancelBtn = new qx.ui.form.Button("Cancel");
+      cancelBtn.addListener("execute", this.__onCancel, this);
+      cancelBtn.setAllowGrowX(false);
+      layout.add(cancelBtn);
+      const addBtn = this.__addBtn = new qx.ui.form.Button("Add").set({
+        appearance: "strong-button",
         enabled: false
       });
       addBtn.addListener("execute", () => this.__onAddService(), this);
-      addBtn.setAllowGrowX(false);
-      buttonsPart.add(addBtn);
-      const cancelBtn = new qx.ui.toolbar.Button("Cancel");
-      cancelBtn.addListener("execute", this.__onCancel, this);
-      cancelBtn.setAllowGrowX(false);
-      buttonsPart.add(cancelBtn);
-      toolbar.add(buttonsPart);
+      layout.add(addBtn);
 
-      return toolbar;
+      return layout;
     },
 
     __createEvents: function() {

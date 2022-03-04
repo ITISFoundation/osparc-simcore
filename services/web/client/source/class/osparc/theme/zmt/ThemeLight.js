@@ -15,10 +15,10 @@
 
 ************************************************************************ */
 
-qx.Theme.define("osparc.theme.ThemePurple", {
+qx.Theme.define("osparc.theme.zmt.ThemeLight", {
   meta:
   {
-    color: osparc.theme.ColorPurple,
+    color: osparc.theme.zmt.ColorLight,
     decoration: osparc.theme.Decoration,
     font: osparc.theme.Font,
     icon: qx.theme.icon.Oxygen,

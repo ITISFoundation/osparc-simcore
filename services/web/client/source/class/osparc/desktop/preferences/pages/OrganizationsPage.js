@@ -46,7 +46,10 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
     __membersModel: null,
 
     __getCreateOrganizationSection: function() {
-      const createOrgBtn = new qx.ui.form.Button(this.tr("Create New Organization")).set({
+      const createOrgBtn = new qx.ui.form.Button().set({
+        appearance: "strong-button",
+        label: this.tr("New Organization"),
+        icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false
       });
       createOrgBtn.addListener("execute", function() {
@@ -75,7 +78,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         spacing: 3,
         height: 150,
         width: 150,
-        backgroundColor: "material-button-background"
+        backgroundColor: "background-main-2"
       });
       orgsUIList.addListener("changeSelection", e => {
         this.__organizationSelected(e.getData());
@@ -159,7 +162,7 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
         decorator: "no-border",
         spacing: 3,
         width: 150,
-        backgroundColor: "material-button-background"
+        backgroundColor: "background-main-2"
       });
 
       const membersModel = this.__membersModel = new qx.data.Array();
@@ -296,7 +299,10 @@ qx.Class.define("osparc.desktop.preferences.pages.OrganizationsPage", {
 
       const name = org.getLabel();
       const msg = this.tr("Are you sure you want to delete ") + name + "?";
-      const win = new osparc.ui.window.Confirmation(msg);
+      const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
+      win.getConfirmButton().set({
+        appearance: "danger-button"
+      });
       win.center();
       win.open();
       win.addListener("close", () => {

@@ -59,18 +59,18 @@ qx.Class.define("osparc.About", {
         contentPaddingLeft: 0,
         barPosition: "top"
       });
-      tabView.getChildControl("pane").setBackgroundColor("material-button-background");
+      tabView.getChildControl("pane").setBackgroundColor("background-main-2");
       this.add(tabView, {
         flex: 1
       });
 
       const frontendPage = new qx.ui.tabview.Page(this.tr("Front-end")).set({
         layout: new qx.ui.layout.VBox(5),
-        backgroundColor: "material-button-background"
+        backgroundColor: "background-main-2"
       });
       const backendPage = new qx.ui.tabview.Page(this.tr("Back-end")).set({
         layout: new qx.ui.layout.VBox(5),
-        backgroundColor: "material-button-background"
+        backgroundColor: "background-main-2"
       });
       tabView.add(frontendPage);
       tabView.add(backendPage);
