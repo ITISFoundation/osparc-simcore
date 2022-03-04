@@ -234,6 +234,7 @@ async def mocked_director_v2_api(loop, mocker) -> Dict[str, MagicMock]:
         "get_services",
         "start_service",
         "stop_service",
+        "requires_dynamic_sidecar",
     ):
         for mod_name in ("director_v2_api", "director_v2_core"):
             name = f"{mod_name}.{func_name}"
