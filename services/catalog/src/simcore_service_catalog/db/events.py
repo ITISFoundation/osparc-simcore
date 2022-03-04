@@ -30,7 +30,7 @@ async def connect_to_db(app: FastAPI) -> None:
             "server_settings": {"application_name": cfg.POSTGRES_CLIENT_NAME}
         },
     )
-    logger.debug("Connected to %s", engine.url)
+    logger.debug("Connected to %s", cfg.dsn)
 
     logger.debug("Checking db migrationn ...")
     try:

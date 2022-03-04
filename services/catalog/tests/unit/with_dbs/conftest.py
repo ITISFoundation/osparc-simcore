@@ -11,7 +11,6 @@ import pytest
 import respx
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
-from aiopg.sa.engine import Engine
 from faker import Faker
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
@@ -24,6 +23,7 @@ from simcore_service_catalog.db.tables import (
     services_meta_data,
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.testclient import TestClient
 
 
@@ -83,7 +83,9 @@ def director_mockup(app: FastAPI) -> Iterator[MockRouter]:
 
 
 @pytest.fixture()
-async def products_names(aiopg_engine: Engine) -> AsyncIterator[List[str]]:
+async def products_names(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[List[str]]:
     """Inits products db table and returns product names"""
     data = [
         # already upon creation: ("osparc", r"([\.-]{0,1}osparc[\.-])"),
@@ -93,7 +95,7 @@ async def products_names(aiopg_engine: Engine) -> AsyncIterator[List[str]]:
 
     # pylint: disable=no-value-for-parameter
 
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
         for name, regex in data:
             stmt = products.insert().values(name=name, host_regex=regex)
@@ -104,12 +106,14 @@ async def products_names(aiopg_engine: Engine) -> AsyncIterator[List[str]]:
     ] + [items[0] for items in data]
     yield names
 
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(products.delete())
 
 
 @pytest.fixture()
-async def user_groups_ids(aiopg_engine: Engine) -> AsyncIterator[List[int]]:
+async def user_groups_ids(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[List[int]]:
     """Inits groups table and returns group identifiers"""
 
     cols = ("gid", "name", "description", "type", "thumbnail", "inclusion_rules")
@@ -126,7 +130,7 @@ async def user_groups_ids(aiopg_engine: Engine) -> AsyncIterator[List[int]]:
     ]
     # pylint: disable=no-value-for-parameter
 
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         for row in data:
             # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
             stmt = groups.insert().values(**dict(zip(cols, row)))
@@ -138,13 +142,15 @@ async def user_groups_ids(aiopg_engine: Engine) -> AsyncIterator[List[int]]:
 
     yield gids
 
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(services_meta_data.delete())
         await conn.execute(groups.delete().where(groups.c.gid.in_(gids[1:])))
 
 
 @pytest.fixture()
-async def services_db_tables_injector(aiopg_engine: Engine) -> AsyncIterator[Callable]:
+async def services_db_tables_injector(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable]:
     """Returns a helper function to init
     services_meta_data and services_access_rights tables
 
@@ -175,7 +181,7 @@ async def services_db_tables_injector(aiopg_engine: Engine) -> AsyncIterator[Cal
     async def inject_in_db(fake_catalog: List[Tuple]):
         # [(service, ar1, ...), (service2, ar1, ...) ]
 
-        async with aiopg_engine.acquire() as conn:
+        async with sqlalchemy_async_engine.begin() as conn:
             # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
             for service in [items[0] for items in fake_catalog]:
                 insert_meta = pg_insert(services_meta_data).values(**service)
@@ -194,7 +200,7 @@ async def services_db_tables_injector(aiopg_engine: Engine) -> AsyncIterator[Cal
 
     yield inject_in_db
 
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(services_access_rights.delete())
         await conn.execute(services_meta_data.delete())
 

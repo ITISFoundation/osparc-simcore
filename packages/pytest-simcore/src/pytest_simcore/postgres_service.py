@@ -182,6 +182,22 @@ async def aiopg_engine(
 
 
 @pytest.fixture(scope="function")
+async def sqlalchemy_async_engine(
+    postgres_db: sa.engine.Engine,
+) -> AsyncIterator:
+    # NOTE: prevent having to import this if latest sqlalchemy not installed (temp)
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    engine = create_async_engine(
+        f"{postgres_db.url}".replace("postgresql", "postgresql+asyncpg")
+    )
+    assert engine
+    yield engine
+
+    await engine.dispose()
+
+
+@pytest.fixture(scope="function")
 def postgres_host_config(postgres_dsn: Dict[str, str], monkeypatch) -> Dict[str, str]:
     monkeypatch.setenv("POSTGRES_USER", postgres_dsn["user"])
     monkeypatch.setenv("POSTGRES_PASSWORD", postgres_dsn["password"])
@@ -195,7 +211,7 @@ def postgres_host_config(postgres_dsn: Dict[str, str], monkeypatch) -> Dict[str,
 
 
 @pytest.fixture(scope="module")
-def postgres_session(postgres_db: sa.engine.Engine) -> sa.orm.session.Session:
+def postgres_session(postgres_db: sa.engine.Engine) -> Iterator[sa.orm.session.Session]:
     from sqlalchemy.orm.session import Session
 
     Session_cls = sessionmaker(postgres_db)
