@@ -379,6 +379,76 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
+    "toolbar-xl-button": {
+      include: "toolbar-button",
+      alias: "toolbar-button",
+      style: state => ({
+        allowStretchY: false,
+        allowStretchX: false,
+        minHeight: 50,
+        center: true
+      })
+    },
+
+    "toolbar-xl-button/label": {
+      include: "toolbar-button/label",
+      style: state => ({
+        font: "title-16"
+      })
+    },
+
+    "toolbar-lg-button": {
+      include: "toolbar-button",
+      alias: "toolbar-button",
+      style: state => ({
+        allowStretchY: false,
+        allowStretchX: false,
+        minHeight: 35,
+        center: true
+      })
+    },
+
+    "toolbar-lg-button/label": {
+      include: "toolbar-button/label",
+      style: state => ({
+        font: "text-16"
+      })
+    },
+
+    "toolbar-md-button": {
+      include: "toolbar-button",
+      alias: "toolbar-button",
+      style: state => ({
+        allowStretchY: false,
+        allowStretchX: false,
+        minHeight: 25,
+        center: true
+      })
+    },
+
+    "toolbar-md-button/label": {
+      include: "toolbar-button/label",
+      style: state => ({
+        font: "text-14"
+      })
+    },
+
+    "no-shadow-button": {
+      alias: "atom",
+      style: function(states) {
+        var decorator = "toolbar-button";
+        if (states.hovered || states.pressed || states.checked) {
+          decorator += "-hovered";
+        }
+        return {
+          cursor: states.disabled ? undefined : "pointer",
+          decorator: decorator,
+          textColor: "material-button-text",
+          padding: [3, 5]
+        };
+      }
+    },
+
     "strong-button": {
       include: "material-button",
       style: state => ({
@@ -413,13 +483,6 @@ qx.Theme.define("osparc.theme.Appearance", {
         decorator: "flash-badge"
       })
     },
-
-    /*
-    ---------------------------------------------------------------------------
-      IFrame
-    ---------------------------------------------------------------------------
-    */
-    "iframe": {},
 
     /*
     ---------------------------------------------------------------------------
@@ -579,81 +642,6 @@ qx.Theme.define("osparc.theme.Appearance", {
         padding: 10,
         decorator: "border-editable"
       })
-    },
-
-    /*
-    ---------------------------------------------------------------------------
-      buttons
-    ---------------------------------------------------------------------------
-    */
-    "toolbar-xl-button": {
-      include: "toolbar-button",
-      alias: "toolbar-button",
-      style: state => ({
-        allowStretchY: false,
-        allowStretchX: false,
-        minHeight: 50,
-        center: true
-      })
-    },
-
-    "toolbar-xl-button/label": {
-      include: "toolbar-button/label",
-      style: state => ({
-        font: "title-16"
-      })
-    },
-
-    "toolbar-lg-button": {
-      include: "toolbar-button",
-      alias: "toolbar-button",
-      style: state => ({
-        allowStretchY: false,
-        allowStretchX: false,
-        minHeight: 35,
-        center: true
-      })
-    },
-
-    "toolbar-lg-button/label": {
-      include: "toolbar-button/label",
-      style: state => ({
-        font: "text-16"
-      })
-    },
-
-    "toolbar-md-button": {
-      include: "toolbar-button",
-      alias: "toolbar-button",
-      style: state => ({
-        allowStretchY: false,
-        allowStretchX: false,
-        minHeight: 25,
-        center: true
-      })
-    },
-
-    "toolbar-md-button/label": {
-      include: "toolbar-button/label",
-      style: state => ({
-        font: "text-14"
-      })
-    },
-
-    "no-shadow-button": {
-      alias: "atom",
-      style: function(states) {
-        var decorator = "toolbar-button";
-        if (states.hovered || states.pressed || states.checked) {
-          decorator += "-hovered";
-        }
-        return {
-          cursor: states.disabled ? undefined : "pointer",
-          decorator: decorator,
-          textColor: "material-button-text",
-          padding: [3, 5]
-        };
-      }
     }
   }
 });
