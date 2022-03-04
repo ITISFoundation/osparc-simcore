@@ -160,7 +160,6 @@ async def create_dynamic_service(
 @router.post(
     "/dynamic-sidecar:required",
     summary="returns True if service must be ran via dynamic-sidecar",
-    status_code=status.HTTP_200_OK,
 )
 @log_decorator(logger=logger)
 async def requires_dynamic_sidecar(
