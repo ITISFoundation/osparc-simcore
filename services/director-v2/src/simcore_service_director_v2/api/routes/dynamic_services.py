@@ -10,7 +10,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
-from models_library.sharing_networks import DockerNetworkAlias
+from models_library.sharing_networks import DockerNetworkAlias, DockerNetworkName
 from pydantic import BaseModel
 from starlette import status
 from starlette.datastructures import URL
@@ -49,14 +49,14 @@ from ..dependencies.dynamic_services import (
 class AttachNetworkToDynamicSidecarItem(BaseModel):
     project_id: ProjectID
     node_id: NodeID
-    network_name: DockerNetworkAlias
+    network_name: DockerNetworkName
     network_alias: DockerNetworkAlias
 
 
 class DetachNetworkFromDynamicSidecarItem(BaseModel):
     project_id: ProjectID
     node_id: NodeID
-    network_name: DockerNetworkAlias
+    network_name: DockerNetworkName
 
 
 router = APIRouter()
