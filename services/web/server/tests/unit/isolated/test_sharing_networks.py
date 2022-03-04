@@ -12,6 +12,7 @@ from models_library.projects import ProjectID
 from models_library.sharing_networks import SharingNetworks
 from pydantic import BaseModel
 from pytest_mock.plugin import MockerFixture
+from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.sharing_networks import (
     _get_sharing_networks_for_default_network,
     _send_network_configuration_to_dynamic_sidecar,
@@ -202,12 +203,10 @@ def mock_director_v2_api(mocker: MockerFixture) -> Iterable[Dict[str, AsyncMock]
 
 
 @pytest.fixture
-def project_with_networkable_labels(
-    fake_project_data: Dict[str, Any],
-) -> Dict[str, Any]:
-    for node_data in fake_project_data["workbench"].values():
+def project_with_networkable_labels(fake_project: ProjectDict) -> ProjectDict:
+    for node_data in fake_project["workbench"].values():
         node_data["label"] = f"label_{uuid4()}"
-    return fake_project_data
+    return fake_project
 
 
 # TESTS
@@ -238,7 +237,7 @@ async def test_send_network_configuration_to_dynamic_sidecar(
 
 
 async def test_get_sharing_networks_for_default_network_is_json_serializable(
-    mock_app: AsyncMock, project_with_networkable_labels: Dict[str, Any]
+    mock_app: AsyncMock, project_with_networkable_labels: ProjectDict
 ) -> None:
     assert await _get_sharing_networks_for_default_network(
         mock_app, new_project_data=project_with_networkable_labels
