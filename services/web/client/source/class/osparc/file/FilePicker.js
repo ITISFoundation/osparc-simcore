@@ -191,7 +191,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
       const outFileValue = osparc.file.FilePicker.getOutput(outputs);
       const urlEntry = new qx.ui.form.TextField().set({
-        value: outFileValue
+        value: outFileValue["downloadLink"]
       });
       form.add(urlEntry, "url", null, "url");
 
@@ -344,10 +344,9 @@ qx.Class.define("osparc.file.FilePicker", {
         const downloadLink = e.getData();
         const label = osparc.file.FileDownloadLink.extractLabelFromLink(downloadLink);
         this.__setOutputValueFromLink(downloadLink, label);
+        this.fireEvent("itemSelected");
       }, this);
-      layout.add(fileDownloadLink, {
-        flex: 1
-      });
+      layout.add(fileDownloadLink);
 
       this._add(layout);
     },
