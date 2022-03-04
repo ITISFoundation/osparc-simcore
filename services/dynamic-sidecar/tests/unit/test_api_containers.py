@@ -6,6 +6,7 @@ import asyncio
 import importlib
 import json
 from collections import namedtuple
+from inspect import signature
 from typing import Any, AsyncIterable, Dict, Iterable, List
 from unittest.mock import AsyncMock
 from uuid import uuid4
@@ -65,7 +66,7 @@ def compose_spec(dynamic_sidecar_network_name: str) -> str:
 
 
 @pytest.fixture
-def compose_spec_single_service(dynamic_sidecar_network_name: str) -> str:
+def compose_spec_single_service() -> str:
     return json.dumps(
         {
             "version": "3",
@@ -74,6 +75,21 @@ def compose_spec_single_service(dynamic_sidecar_network_name: str) -> str:
             },
         }
     )
+
+
+@pytest.fixture(params=["compose_spec", "compose_spec_single_service"])
+def selected_spec(request, compose_spec: str, compose_spec_single_service: str) -> str:
+    # check that fixture_name is present in this function's parameters
+    fixture_name = request.param
+    sig = signature(selected_spec)
+    assert fixture_name in sig.parameters, (
+        f"Provided fixture name {fixture_name} was not found "
+        f"as a parameter in the signature {sig}"
+    )
+
+    # returns the parameter by name from the ones declared in the signature
+    result: str = locals()[fixture_name]
+    return result
 
 
 async def _docker_ps_a_container_names() -> List[str]:
@@ -661,21 +677,13 @@ async def test_containers_restart(
         assert before.finished_at < after.finished_at
 
 
-@pytest.mark.parametrize(
-    "spec",
-    [
-        # pylint: disable=no-member
-        pytest.lazy_fixture("compose_spec"),
-        pytest.lazy_fixture("compose_spec_single_service"),
-    ],
-)
 async def test_attach_detach_container_to_network(
     docker_swarm: None,
     test_client: TestClient,
-    spec: Dict[str, Any],
+    selected_spec: str,
     attachable_networks_and_ids: Dict[str, str],
 ) -> None:
-    response = await test_client.post(f"/{API_VTAG}/containers", data=spec)
+    response = await test_client.post(f"/{API_VTAG}/containers", data=selected_spec)
     assert response.status_code == status.HTTP_202_ACCEPTED, response.text
     shared_store: SharedStore = test_client.application.state.shared_store
     container_names = shared_store.container_names

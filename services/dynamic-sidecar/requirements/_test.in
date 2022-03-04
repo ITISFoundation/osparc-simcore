@@ -6,7 +6,6 @@ pytest
 pytest-cov
 pytest-asyncio
 pytest-mock
-pytest-lazy-fixture
 async-asgi-testclient
 faker
 
