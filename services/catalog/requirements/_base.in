@@ -21,6 +21,7 @@ fastapi[all]
 pydantic[dotenv]
 
 # database
+asyncpg
 sqlalchemy[asyncio]
 
 # web client
