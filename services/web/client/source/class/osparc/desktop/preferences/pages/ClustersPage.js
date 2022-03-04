@@ -326,7 +326,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
 
       const name = cluster.getName();
       const msg = this.tr("Are you sure you want to delete ") + name + "?";
-      const win = new osparc.ui.window.Confirmation(msg);
+      const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
       win.getConfirmButton().set({
         appearance: "danger-button"
       });

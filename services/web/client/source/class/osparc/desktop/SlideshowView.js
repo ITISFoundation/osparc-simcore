@@ -162,7 +162,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const dependencies = node.getStatus().getDependencies();
       if (dependencies && dependencies.length) {
         const msg = this.tr("Do you want to run the required steps?");
-        const win = new osparc.ui.window.Confirmation(msg);
+        const win = new osparc.ui.window.Confirmation(msg, this.tr("Run"));
         win.center();
         win.open();
         win.addListener("close", () => {
@@ -385,7 +385,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete node?");
-        const win = new osparc.ui.window.Confirmation(msg);
+        const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
         win.getConfirmButton().set({
           appearance: "danger-button"
         });

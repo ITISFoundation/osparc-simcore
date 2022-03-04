@@ -1146,7 +1146,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete the selected node?");
-        const win = new osparc.ui.window.Confirmation(msg);
+        const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
         win.getConfirmButton().set({
           appearance: "danger-button"
         });
@@ -1166,7 +1166,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete the selected ") + nodeIds.length + " nodes?";
-        const win = new osparc.ui.window.Confirmation(msg);
+        const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
         win.getConfirmButton().set({
           appearance: "danger-button"
         });

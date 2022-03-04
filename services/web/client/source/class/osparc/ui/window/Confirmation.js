@@ -45,8 +45,7 @@ qx.Class.define("osparc.ui.window.Confirmation", {
           }, this);
           const command = new qx.ui.command.Command("Enter");
           control.setCommand(command);
-          const btnsLayout = this.getChildControl("buttons-layout");
-          btnsLayout.add(control);
+          this.addButton(control);
           break;
         }
       }
