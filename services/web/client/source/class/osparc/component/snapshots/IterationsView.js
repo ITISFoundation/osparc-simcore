@@ -240,6 +240,7 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
 
     __createDeleteIterationBtn: function() {
       const deleteIterationBtn = new qx.ui.form.Button(this.tr("Delete")).set({
+        appearance: "danger-button",
         allowGrowX: false,
         alignX: "left"
       });

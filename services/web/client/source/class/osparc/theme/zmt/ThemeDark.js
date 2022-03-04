@@ -5,20 +5,20 @@
    https://osparc.io
 
    Copyright:
-     2020 IT'IS Foundation, https://itis.swiss
+     2018 IT'IS Foundation, https://itis.swiss
 
    License:
      MIT: https://opensource.org/licenses/MIT
 
    Authors:
-     * Odei Maiz (odeimaiz)
+     * Tobias Oetiker (oetiker)
 
 ************************************************************************ */
 
-qx.Theme.define("osparc.theme.ThemeLightBlue", {
+qx.Theme.define("osparc.theme.zmt.ThemeDark", {
   meta:
   {
-    color: osparc.theme.ColorLightBlue,
+    color: osparc.theme.zmt.ColorDark,
     decoration: osparc.theme.Decoration,
     font: osparc.theme.Font,
     icon: qx.theme.icon.Oxygen,

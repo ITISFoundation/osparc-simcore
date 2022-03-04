@@ -134,6 +134,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "options-delete-button": {
           control = new qx.ui.menu.Button().set({
+            appearance: "danger-button",
             label: this.tr("Delete"),
             icon: "@FontAwesome5Solid/trash/10"
           });

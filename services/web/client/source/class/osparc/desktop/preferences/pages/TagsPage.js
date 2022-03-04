@@ -9,25 +9,33 @@
  * Preferences page for managing the user's tags.
  */
 qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
-  extend: qx.ui.tabview.Page,
+  extend: osparc.desktop.preferences.pages.BasePage,
+
   construct: function() {
-    this.base(arguments, null, "@FontAwesome5Solid/tags/24");
-    this.setLayout(new qx.ui.layout.Grow());
+    const iconSrc = "@FontAwesome5Solid/tags/24";
+    const title = this.tr("Tags");
+    this.base(arguments, title, iconSrc);
+
+    this.__createComponents();
     this.__container = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
     this.__container.set({
-      backgroundColor: "material-button-background",
+      backgroundColor: "background-main-2",
       paddingLeft: 10
     });
     const scroll = new qx.ui.container.Scroll(this.__container);
     this.add(scroll);
-    this.__createComponents();
   },
+
   members: {
+    __container: null,
     __addTagButton: null,
     __tagItems: null,
+
     __createComponents: function() {
-      this.__addTagButton = new qx.ui.form.Button(this.tr("Add new tag"), "@FontAwesome5Solid/plus-circle/14").set({
-        appearance: "toolbar-md-button"
+      this.__addTagButton = new qx.ui.form.Button().set({
+        appearance: "strong-button",
+        label: this.tr("New Tag"),
+        icon: "@FontAwesome5Solid/plus/14"
       });
       osparc.utils.Utils.setIdToWidget(this.__addTagButton, "addTagBtn");
       osparc.data.Resources.get("tags")
@@ -38,17 +46,19 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
         })
         .catch(err => console.error(err));
     },
+
     __renderLayout: function() {
       this.__container.removeAll();
-      // Print tag items
-      this.__tagItems.forEach(tagItem => this.__container.add(tagItem));
       // New tag button
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
         alignX: "center"
       }));
       buttonContainer.add(this.__addTagButton);
       this.__container.add(buttonContainer);
+      // Print tag items
+      this.__tagItems.forEach(tagItem => this.__container.add(tagItem));
     },
+
     __attachEventHandlers: function() {
       this.__addTagButton.addListener("execute", () => {
         const itemCount = this.__container.getChildren().length;
@@ -60,13 +70,10 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       });
       this.__tagItems.forEach(tagItem => this.__attachTagItemEvents(tagItem));
     },
+
     __attachTagItemEvents: function(tagItem) {
-      tagItem.addListener("cancelNewTag", e => {
-        this.__container.remove(e.getTarget());
-      }, this);
-      tagItem.addListener("deleteTag", e => {
-        this.__container.remove(e.getTarget());
-      });
+      tagItem.addListener("cancelNewTag", e => this.__container.remove(e.getTarget()), this);
+      tagItem.addListener("deleteTag", e => this.__container.remove(e.getTarget()));
     }
   }
 });

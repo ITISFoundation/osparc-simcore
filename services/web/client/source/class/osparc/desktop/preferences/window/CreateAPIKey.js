@@ -31,7 +31,7 @@ qx.Class.define("osparc.desktop.preferences.window.CreateAPIKey", {
   members: {
     __populateWindow: function() {
       const hBox1 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        padding: 5
+        appearance: "margined-layout"
       });
       const sTitle = new qx.ui.basic.Label(this.tr("API Key")).set({
         width: 50,
@@ -48,7 +48,7 @@ qx.Class.define("osparc.desktop.preferences.window.CreateAPIKey", {
       this._add(hBox1);
 
       const hBox2 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        padding: 5
+        appearance: "margined-layout"
       });
       hBox2.add(new qx.ui.core.Spacer(), {
         flex: 1
