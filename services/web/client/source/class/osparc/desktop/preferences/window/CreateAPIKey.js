@@ -31,7 +31,7 @@ qx.Class.define("osparc.desktop.preferences.window.CreateAPIKey", {
   members: {
     __populateWindow: function() {
       const hBox1 = new qx.ui.container.Composite(new qx.ui.layout.HBox(10)).set({
-        padding: 5
+        margin: [7, 10]
       });
       const sTitle = new qx.ui.basic.Label(this.tr("API Key")).set({
         width: 50,

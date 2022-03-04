@@ -52,7 +52,9 @@ qx.Class.define("osparc.ui.window.Dialog", {
         case "buttons-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
             alignX: "right"
-          }));
+          })).set({
+            margin: [7, 10]
+          });
           this._add(control);
           break;
         case "cancel-button": {
