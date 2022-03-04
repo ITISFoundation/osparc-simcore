@@ -167,7 +167,7 @@ async def director_v2_service_mock(
 
     aioresponses_mocker.post(
         re.compile(
-            r"^http://[a-z\-_]*director-v2:[0-9]+/v2/services/(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+/[-_a-zA-Z0-9]+/dynamic-sidecar:require"
+            r"^http://[a-z\-_]*director-v2:[0-9]+/v0/services/.*/dynamic-sidecar:require$"
         ),
         status=web.HTTPOk.status_code,
         repeat=True,
