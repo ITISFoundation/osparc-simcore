@@ -205,14 +205,21 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     downloadOutput: function(node) {
-      this.self().getOutputFileMetadata(node)
-        .then(fileMetadata => {
-          if ("location_id" in fileMetadata && "file_id" in fileMetadata) {
-            const locationId = fileMetadata["location_id"];
-            const fileId = fileMetadata["file_id"];
-            osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId);
-          }
-        });
+      if (osparc.file.FilePicker.isOutputFromStore(node.getOutputs())) {
+        this.self().getOutputFileMetadata(node)
+          .then(fileMetadata => {
+            if ("location_id" in fileMetadata && "file_id" in fileMetadata) {
+              const locationId = fileMetadata["location_id"];
+              const fileId = fileMetadata["file_id"];
+              osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId);
+            }
+          });
+      } else if (osparc.file.FilePicker.isOutputDownloadLink(node.getOutputs())) {
+        const outFileValue = osparc.file.FilePicker.getOutput(node.getOutputs());
+        if (osparc.utils.Utils.isObject(outFileValue) && "downloadLink" in outFileValue) {
+          osparc.utils.Utils.downloadLink(outFileValue["downloadLink"], "GET");
+        }
+      }
     },
 
     serializeOutput: function(outputs) {
