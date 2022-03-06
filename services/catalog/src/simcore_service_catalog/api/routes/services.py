@@ -6,7 +6,7 @@ import urllib.parse
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from models_library.services import KEY_RE, VERSION_RE, ServiceType
+from models_library.services import KEY_RE, VERSION_RE
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from pydantic import ValidationError, constr
 from pydantic.types import PositiveInt
@@ -102,16 +102,9 @@ async def list_services(
         # only return a stripped down version
         # FIXME: add name, ddescription, type, etc...
         services_overview = [
-            ServiceOut(
+            ServiceOut.no_detail_service(
                 key=key,
                 version=version,
-                name="nodetails",
-                description="nodetails",
-                type=ServiceType.COMPUTATIONAL,
-                authors=[{"name": "nodetails", "email": "nodetails@nodetails.com"}],
-                contact="nodetails@nodetails.com",
-                inputs={},
-                outputs={},
             )
             for key, version in services_in_db
         ]
