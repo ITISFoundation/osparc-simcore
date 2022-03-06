@@ -39,8 +39,8 @@ def _make_list_services_query(
         query = (
             sa.select(
                 [services_meta_data],
-                distinct=[services_meta_data.c.key, services_meta_data.c.version],
             )
+            .distinct(services_meta_data.c.key, services_meta_data.c.version)
             .select_from(services_meta_data.join(services_access_rights))
             .where(
                 and_(
