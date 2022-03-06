@@ -3,6 +3,8 @@
 import asyncio
 import logging
 import urllib.parse
+from functools import lru_cache
+from time import time
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -120,15 +122,24 @@ async def list_services(
     )
 
     # getting services from director
-    get_registry_services_task = director_client.get("/services")
+    # get_registry_services_task = director_client.get("/services")
+
+    def _get_cache_ttl(seconds=5 * 60):
+        return round(time() / seconds)
+
+    @lru_cache(maxsize=2)
+    async def cached_registry_services(_cache_ttl):
+        return await director_client.get("/services")
+
+    get_registry_services_task = cached_registry_services(_get_cache_ttl())
 
     services_owner_emails = {}
     (
-        # services_in_registry,
+        services_in_registry,
         services_access_rights,
         services_owner_emails,
     ) = await asyncio.gather(
-        # get_registry_services_task,
+        get_registry_services_task,
         get_services_access_rights_task,
         get_services_owner_emails_task,
     )
