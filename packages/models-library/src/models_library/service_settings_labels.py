@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
+from typing_extensions import TypedDict
 
 
 class _BaseConfig:
@@ -112,7 +113,13 @@ class PathMappingsLabel(BaseModel):
         }
 
 
-ComposeSpecLabel = Dict[str, Any]
+class _ServiceSpecDictRequired(TypedDict):
+    version: str
+    services: Dict
+
+
+class ServiceSpecDict(_ServiceSpecDictRequired, total=False):
+    networks: Dict
 
 
 class RestartPolicy(str, Enum):
@@ -130,7 +137,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    compose_spec: Optional[Json[ComposeSpecLabel]] = Field(
+    compose_spec: Optional[Json[ServiceSpecDict]] = Field(
         None,
         alias="simcore.service.compose-spec",
         description=(

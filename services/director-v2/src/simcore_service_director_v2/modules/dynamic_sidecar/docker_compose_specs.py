@@ -1,12 +1,12 @@
 import json
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import yaml
 from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.service_settings_labels import ComposeSpecLabel, PathMappingsLabel
+from models_library.service_settings_labels import PathMappingsLabel, ServiceSpecDict
 from models_library.sharing_networks import SharingNetworks
 from settings_library.docker_registry import RegistrySettings
 
@@ -54,7 +54,7 @@ class _environment_section:
 
 
 def _inject_paths_mappings(
-    service_spec: Dict[str, Any], path_mappings: PathMappingsLabel
+    service_spec: ServiceSpecDict, path_mappings: PathMappingsLabel
 ) -> None:
     for service_name in service_spec["services"]:
         service_content = service_spec["services"][service_name]
@@ -84,7 +84,7 @@ def _replace_env_vars_in_compose_spec(
 
 
 def _inject_proxy_network_configuration(
-    service_spec: Dict[str, Any],
+    service_spec: ServiceSpecDict,
     target_container: str,
     dynamic_sidecar_network_name: str,
 ) -> None:
@@ -109,7 +109,7 @@ def _inject_proxy_network_configuration(
 
 
 async def _inject_sharing_networks_configuration(
-    service_spec: Dict[str, Any],
+    service_spec: ServiceSpecDict,
     sharing_networks: SharingNetworks,
     node_uuid: NodeID,
     target_container: str,
@@ -163,7 +163,7 @@ async def assemble_spec(
     service_key: str,
     service_tag: str,
     paths_mapping: PathMappingsLabel,
-    compose_spec: Optional[ComposeSpecLabel],
+    compose_spec: Optional[ServiceSpecDict],
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
     sharing_networks: SharingNetworks,
@@ -185,7 +185,7 @@ async def assemble_spec(
 
     # when no compose yaml file was provided
     if compose_spec is None:
-        service_spec: Dict[str, Any] = {
+        service_spec: ServiceSpecDict = {
             "version": docker_compose_version,
             "services": {
                 CONTAINER_NAME: {

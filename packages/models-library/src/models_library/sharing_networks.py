@@ -2,9 +2,8 @@ from collections import deque
 from typing import Any, Deque, Dict
 from uuid import UUID
 
-from pydantic import BaseModel, Field, constr, validate_arguments
-
 from models_library.projects import ProjectID
+from pydantic import BaseModel, Field, constr, validate_arguments
 
 from .generics import DictModel
 from .projects_nodes_io import NodeID
