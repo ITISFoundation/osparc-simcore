@@ -932,7 +932,6 @@ qx.Class.define("osparc.data.model.Node", {
           loadIframe();
         } else {
           // lazy loading
-          console.debug("lazy load", this.getNodeId());
           loadingPage.addListenerOnce("appear", () => loadIframe(), this);
         }
       }
@@ -1058,7 +1057,6 @@ qx.Class.define("osparc.data.model.Node", {
       const serviceState = data["service_state"];
       const nodeId = data["service_uuid"];
       const status = this.getStatus();
-      console.log(serviceState);
       switch (serviceState) {
         case "idle": {
           status.setInteractive("idle");
@@ -1126,7 +1124,6 @@ qx.Class.define("osparc.data.model.Node", {
     __nodeState: function() {
       // Check if study is still there
       if (this.getStudy() === null || this.__stopRequestingStatus === true) {
-        console.log("stop callign me");
         return;
       }
       // Check if node is still there
