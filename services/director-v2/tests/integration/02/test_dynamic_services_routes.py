@@ -14,7 +14,6 @@ from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 from async_timeout import timeout
 from models_library.services import ServiceKeyVersion
-from models_library.sharing_networks import SharingNetworks
 from pydantic import PositiveInt
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -205,17 +204,6 @@ async def key_version_expected(
         )
 
     return results
-
-
-@pytest.fixture
-def mock_sharing_networks_repository(mocker: MockerFixture) -> None:
-    mocker.patch(
-        (
-            "simcore_service_director_v2.modules.db.repositories."
-            "sharing_networks.SharingNetworksRepository.get_sharing_networks"
-        ),
-        return_value=SharingNetworks.create_empty(uuid4()),
-    )
 
 
 # TESTS

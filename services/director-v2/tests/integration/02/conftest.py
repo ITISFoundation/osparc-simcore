@@ -1,8 +1,12 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+from uuid import uuid4
+
 import aiodocker
 import pytest
+from models_library.sharing_networks import SharingNetworks
+from pytest_mock.plugin import MockerFixture
 
 
 @pytest.fixture
@@ -40,3 +44,14 @@ async def ensure_swarm_and_networks(network_name: str, docker_swarm: None):
         if create_and_remove_network:
             network = await docker_client.networks.get(docker_network.id)
             assert await network.delete() is True
+
+
+@pytest.fixture
+def mock_sharing_networks_repository(mocker: MockerFixture) -> None:
+    mocker.patch(
+        (
+            "simcore_service_director_v2.modules.db.repositories."
+            "sharing_networks.SharingNetworksRepository.get_sharing_networks"
+        ),
+        return_value=SharingNetworks.create_empty(uuid4()),
+    )

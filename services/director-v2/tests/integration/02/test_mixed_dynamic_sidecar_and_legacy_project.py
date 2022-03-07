@@ -28,7 +28,6 @@ from utils import (
     ensure_network_cleanup,
     is_legacy,
     patch_dynamic_service_url,
-    update_sharing_networks_from_project,
 )
 from yarl import URL
 
@@ -213,17 +212,6 @@ def simcore_services_ready_and_change_director_env(
     monkeypatch_module.setenv("DIRECTOR_PORT", "8080")
 
 
-@pytest.fixture
-async def ensure_sharing_networks_in_db(
-    director_v2_client: httpx.AsyncClient, dy_static_file_server_project: ProjectAtDB
-) -> None:
-    await update_sharing_networks_from_project(
-        # pylint: disable=protected-access
-        app=director_v2_client._transport.app,
-        project=dy_static_file_server_project,
-    )
-
-
 # TESTS ----------------------------------------------------------------------------------------
 
 
@@ -234,7 +222,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     simcore_services_ready_and_change_director_env: None,
     director_v2_client: httpx.AsyncClient,
     ensure_services_stopped: None,
-    ensure_sharing_networks_in_db: None,
+    mock_sharing_networks_repository: None,
 ):
     """
     The test will start 3 dynamic services in the same project and check

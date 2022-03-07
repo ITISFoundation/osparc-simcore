@@ -8,19 +8,11 @@ from typing import Any, Dict, Optional, Set
 
 import aiodocker
 import httpx
-from aiopg.sa import Engine
 from async_timeout import timeout
 from fastapi import FastAPI
-from models_library.projects import Node, ProjectAtDB
-from models_library.sharing_networks import (
-    SHARING_NETWORK_PREFIX,
-    ContainerAliases,
-    NetworksWithAliases,
-    SharingNetworks,
-)
+from models_library.projects import Node
 from pydantic import PositiveInt
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
-from simcore_postgres_database.models.sharing_networks import sharing_networks
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
@@ -28,7 +20,6 @@ from simcore_service_director_v2.models.schemas.constants import (
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
 )
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
@@ -445,34 +436,3 @@ async def sleep_for(interval: PositiveInt, reason: str) -> None:
     for i in range(1, interval + 1):
         await asyncio.sleep(1)
         print(f"[{i}/{interval}]Sleeping: {reason}")
-
-
-async def update_sharing_networks_from_project(
-    app: FastAPI, project: ProjectAtDB
-) -> None:
-    # NOTE: director-v2 does not have access to the webserver which creates this
-    # injecting all dynamic-sidecar started services on a default networks
-
-    container_aliases: ContainerAliases = ContainerAliases.parse_obj({})
-
-    for k, (node_uuid, node) in enumerate(project.workbench.items()):
-        if not is_legacy(node):
-            container_aliases[node_uuid] = f"networkable_alias_{k}"
-
-    networks_with_aliases: NetworksWithAliases = NetworksWithAliases.parse_obj({})
-    default_network_name = f"{SHARING_NETWORK_PREFIX}_{project.uuid}_default"
-    networks_with_aliases[default_network_name] = container_aliases
-
-    sharing_networks_to_insert = SharingNetworks(
-        project_uuid=project.uuid, networks_with_aliases=networks_with_aliases
-    )
-
-    engine: Engine = app.state.engine
-
-    async with engine.acquire() as conn:
-        row_data = sharing_networks_to_insert.dict()
-        insert_stmt = pg_insert(sharing_networks).values(**row_data)
-        upsert_snapshot = insert_stmt.on_conflict_do_update(
-            constraint=sharing_networks.primary_key, set_=row_data
-        )
-        await conn.execute(upsert_snapshot)
