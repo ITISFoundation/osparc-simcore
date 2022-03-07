@@ -30,6 +30,10 @@ from ..modules.data_manager import pull_path_if_exists, upload_path_if_exists
 from ..modules.mounted_fs import MountedVolumes, get_mounted_volumes
 from .containers import send_message
 
+# NOTE: importing the `containers_router` router from .containers
+# and generating the openapi spec, will not add the below entrypoints
+# we need to create a new one in order for all the APIs to be
+# detected as before
 containers_router = APIRouter(tags=["containers"])
 
 logger = logging.getLogger(__name__)
