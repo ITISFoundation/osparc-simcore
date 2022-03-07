@@ -1586,6 +1586,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
             const nodeUI = this.__addNode(service, pos);
             const filePicker = new osparc.file.FilePicker(nodeUI.getNode(), "workbench");
             filePicker.uploadPendingFiles(fileList);
+            filePicker.addListener("fileUploaded", () => this.fireDataEvent("nodeSelected", nodeUI.getNodeId()), this);
           }
         } else {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
