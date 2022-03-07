@@ -119,7 +119,7 @@ def patch_list_viewers_info_in_handlers_rest(mocker):
 @pytest.fixture
 def app_cfg(
     default_app_cfg,
-    aiohttp_unused_port,
+    unused_tcp_port_factory,
     redis_service: URL,
     # patch_list_viewers_info_in_handlers_rest,
     inject_tables,
@@ -130,7 +130,7 @@ def app_cfg(
     """
     cfg = deepcopy(default_app_cfg)
 
-    cfg["main"]["port"] = aiohttp_unused_port()
+    cfg["main"]["port"] = unused_tcp_port_factory()
     cfg["main"]["studies_access_enabled"] = True
 
     exclude = {

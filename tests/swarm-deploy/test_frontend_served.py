@@ -27,7 +27,6 @@ def test_product_frontend_app_served(
     traefik_service: URL,
     test_url: str,
     expected_in_content: str,
-    loop,
 ):
     # NOTE: it takes a bit of time until traefik sets up the correct proxy and
     # the webserver takes time to start

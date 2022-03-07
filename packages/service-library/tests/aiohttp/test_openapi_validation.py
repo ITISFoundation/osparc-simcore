@@ -22,7 +22,7 @@ from tutils import Handlers
 
 
 @pytest.fixture
-async def specs(loop, here):
+async def specs(here):
     openapi_path = here / "data" / "oas3" / "enveloped_responses.yaml"
     assert openapi_path.exists()
     specs = await openapi.create_openapi_specs(openapi_path)
@@ -30,7 +30,7 @@ async def specs(loop, here):
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, specs):
+def client(event_loop, aiohttp_client, specs):
     app = web.Application()
 
     # routes
@@ -48,7 +48,7 @@ def client(loop, aiohttp_client, specs):
     app.middlewares.append(validate_middleware_factory(base))
     app.middlewares.append(envelope_middleware_factory(base))
 
-    return loop.run_until_complete(aiohttp_client(app))
+    return event_loop.run_until_complete(aiohttp_client(app))
 
 
 @pytest.mark.parametrize(

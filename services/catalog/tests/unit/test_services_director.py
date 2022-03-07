@@ -4,18 +4,17 @@
 # pylint:disable=protected-access
 
 
-import asyncio
 from typing import Dict, Iterable, Iterator
 
 import pytest
 import respx
 from _pytest.monkeypatch import MonkeyPatch
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from respx.router import MockRouter
 from simcore_service_catalog.api.dependencies.director import get_director_api
 from simcore_service_catalog.core.application import init_app
 from simcore_service_catalog.services.director import DirectorApi
-from fastapi.testclient import TestClient
 
 
 @pytest.fixture
@@ -56,7 +55,6 @@ def mocked_director_service_api(minimal_app: FastAPI) -> MockRouter:
 
 
 async def test_director_client_setup(
-    loop: asyncio.AbstractEventLoop,
     mocked_director_service_api: MockRouter,
     minimal_app: FastAPI,
     client: TestClient,

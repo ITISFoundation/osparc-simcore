@@ -2,6 +2,9 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
+from typing import Awaitable, Callable
+
 import pytest
 from aiohttp.test_utils import TestClient
 from servicelib.aiohttp.application import create_safe_application
@@ -14,13 +17,16 @@ from yarl import URL
 
 
 @pytest.fixture
-def client(loop, aiohttp_client: TestClient):
+def client(
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client: Callable[..., Awaitable[TestClient]],
+):
     app = create_safe_application()
 
     app[APP_OPENAPI_SPECS_KEY] = load_openapi_specs()
     setup_catalog.__wrapped__(app)
 
-    yield loop.run_until_complete(aiohttp_client(app))
+    yield event_loop.run_until_complete(aiohttp_client(app))
 
 
 @pytest.fixture

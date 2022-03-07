@@ -14,7 +14,7 @@ To install in a modules (e.g. web/server):
 ```python
 from pytest_simcore.helpers.utils_assert import foo
 
-pytest_plugins = ["pytest_simcore.repository_paths"]
+pytest_plugins = ["pytest_simcore.repository_paths","pytest_simcore.pytest_global_environs",]
 
 
 def test_something( some_pytest_simcore_fixture, ... )

@@ -9,7 +9,7 @@ from yarl import URL
 
 
 @pytest.fixture
-async def lock_manager(loop, redis_service: URL):
+async def lock_manager(redis_service: URL):
     lm = Aioredlock(
         [
             str(redis_service),
@@ -20,7 +20,6 @@ async def lock_manager(loop, redis_service: URL):
 
     # Clear the connections with Redis:
     await lm.destroy()
-
 
 
 async def test_redlocks_features(lock_manager: Aioredlock):
@@ -69,7 +68,7 @@ async def test_redlocks_features(lock_manager: Aioredlock):
     await lock_manager.destroy()
 
 
-async def test_aioredis(loop, redis_client: Redis):
+async def test_aioredis(redis_client: Redis):
     await redis_client.set("my-key", "value")
     val = await redis_client.get("my-key")
     assert val == "value"

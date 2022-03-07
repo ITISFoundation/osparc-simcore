@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 
-import asyncio
 import json
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Tuple
@@ -24,9 +23,7 @@ from yarl import URL
 
 
 @pytest.fixture
-def user_id(
-    loop: asyncio.events.AbstractEventLoop, postgres_db: sa.engine.Engine
-) -> Iterable[int]:
+def user_id(postgres_db: sa.engine.Engine) -> Iterable[int]:
     # inject user in db
 
     # NOTE: Ideally this (and next fixture) should be done via webserver API but at this point

@@ -12,6 +12,7 @@ from aiopg.sa.result import ResultProxy, RowProxy
 from psycopg2.errors import ForeignKeyViolation  # pylint: disable=no-name-in-module
 from pytest_simcore.helpers.rawdata_fakers import random_project, random_user
 from simcore_postgres_database.webserver_models import projects, users
+from sqlalchemy import func
 
 
 @pytest.fixture
@@ -84,7 +85,7 @@ async def test_insert_user(engine):
 
 async def test_count_users(engine):
     async with engine.acquire() as conn:
-        users_count = await conn.scalar(users.count())
+        users_count = await conn.scalar(sa.select([func.count()]).select_from(users))
         assert users_count == 3
 
         users_count = await conn.scalar(

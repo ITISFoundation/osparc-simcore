@@ -28,6 +28,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_webserver_service",
     "pytest_simcore.tmp_path_extra",
     "pytest_simcore.traefik_service",
+    "pytest_simcore.pytest_global_environs",
 ]
 
 log = logging.getLogger(__name__)

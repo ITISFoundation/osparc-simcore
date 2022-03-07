@@ -16,7 +16,7 @@ install() {
 }
 
 test() {
-  pytest --color=yes -v tests/environment-setup --log-level=DEBUG
+  pytest --color=yes -v tests/environment-setup --log-level=DEBUG --asyncio-mode=auto
 }
 
 clean_up() {

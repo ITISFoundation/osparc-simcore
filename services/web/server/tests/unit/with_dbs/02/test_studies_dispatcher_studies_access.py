@@ -35,7 +35,7 @@ SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
 
 @pytest.fixture
 def app_cfg(
-    default_app_cfg: ConfigDict, aiohttp_unused_port: Callable, redis_service: URL
+    default_app_cfg: ConfigDict, unused_tcp_port_factory: Callable, redis_service: URL
 ):
     """App's configuration used for every test in this module
 
@@ -43,7 +43,7 @@ def app_cfg(
     """
     cfg = deepcopy(default_app_cfg)
 
-    cfg["main"]["port"] = aiohttp_unused_port()
+    cfg["main"]["port"] = unused_tcp_port_factory()
     cfg["main"]["studies_access_enabled"] = True
 
     exclude = {
