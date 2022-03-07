@@ -41,18 +41,6 @@
  * </pre>
  */
 
-const LOG_LEVEL = [
-  {
-    debug: -1
-  }, {
-    info: 0
-  }, {
-    warning: 1
-  }, {
-    error: 2
-  }
-];
-Object.freeze(LOG_LEVEL);
 
 qx.Class.define("osparc.component.widget.logger.LoggerView", {
   extend: qx.ui.core.Widget,
@@ -77,7 +65,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
       apply : "__applyFilters",
       nullable: false,
       check : "Number",
-      init: LOG_LEVEL[0].debug
+      init: 0
     },
 
     currentNodeId: {
@@ -88,18 +76,24 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
   },
 
   statics: {
+    LOG_LEVELS: {
+      debug: -1,
+      info: 0,
+      warning: 1,
+      error: 2
+    },
+
     getLevelColorTag: function(logLevel) {
       const colorManager = qx.theme.manager.Color.getInstance();
-      for (let i=0; i<LOG_LEVEL.length; i++) {
-        const logString = Object.keys(LOG_LEVEL[i])[0];
-        const logNumber = LOG_LEVEL[i][logString];
+      let logColor = null;
+      Object.keys(this.LOG_LEVELS).forEach(logLevelKey => {
+        const logString = logLevelKey;
+        const logNumber = this.LOG_LEVELS[logLevelKey];
         if (logNumber === logLevel) {
-          const logColor = colorManager.resolve("logger-"+logString+"-message");
-          return logColor;
+          logColor = colorManager.resolve("logger-"+logString+"-message");
         }
-      }
-      const logColorDef = colorManager.resolve("logger-info-message");
-      return logColorDef;
+      });
+      return logColor ? logColor : colorManager.resolve("logger-info-message");
     },
 
     getNewColor: function() {
@@ -158,13 +152,12 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
             maxWidth: 80
           });
           let logLevelSet = false;
-          for (let i=0; i<LOG_LEVEL.length; i++) {
-            const level = Object.keys(LOG_LEVEL[i])[0];
-            const logLevel = LOG_LEVEL[i][level];
-            if (level === "debug" && !osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
-              continue;
+          Object.keys(this.self().LOG_LEVELS).forEach(logLevelKey => {
+            const logLevel = this.self().LOG_LEVELS[logLevelKey];
+            if (logLevelKey === "debug" && !osparc.data.Permissions.getInstance().canDo("study.logger.debug.read")) {
+              return;
             }
-            const label = qx.lang.String.firstUp(level);
+            const label = qx.lang.String.firstUp(logLevelKey);
             const listItem = new qx.ui.form.ListItem(label);
             control.add(listItem);
             listItem.logLevel = logLevel;
@@ -172,7 +165,7 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
               this.setLogLevel(logLevel);
               logLevelSet = true;
             }
-          }
+          });
           toolbar.add(control);
           break;
         }
@@ -279,23 +272,23 @@ qx.Class.define("osparc.component.widget.logger.LoggerView", {
     },
 
     debug: function(nodeId, msg = "") {
-      this.__addLogs(nodeId, [msg], LOG_LEVEL.debug);
+      this.__addLogs(nodeId, [msg], this.self().LOG_LEVELS.debug);
     },
 
     info: function(nodeId, msg = "") {
-      this.__addLogs(nodeId, [msg], LOG_LEVEL.info);
+      this.__addLogs(nodeId, [msg], this.self().LOG_LEVELS.info);
     },
 
     infos: function(nodeId, msgs = [""]) {
-      this.__addLogs(nodeId, msgs, LOG_LEVEL.info);
+      this.__addLogs(nodeId, msgs, this.self().LOG_LEVELS.info);
     },
 
     warn: function(nodeId, msg = "") {
-      this.__addLogs(nodeId, [msg], LOG_LEVEL.warning);
+      this.__addLogs(nodeId, [msg], this.self().LOG_LEVELS.warning);
     },
 
     error: function(nodeId, msg = "") {
-      this.__addLogs(nodeId, [msg], LOG_LEVEL.error);
+      this.__addLogs(nodeId, [msg], this.self().LOG_LEVELS.error);
     },
 
     __addLogs: function(nodeId, msgs = [""], logLevel = 0) {
