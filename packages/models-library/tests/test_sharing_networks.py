@@ -1,7 +1,7 @@
 # pylint: disable=redefined-outer-name
 import json
 from typing import Any, Dict
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from models_library.sharing_networks import (
@@ -69,3 +69,10 @@ def test_service_network_validation_fails(network_name: str) -> None:
 
 def test_sharing_networks() -> None:
     assert SharingNetworks.parse_obj(SharingNetworks.Config.schema_extra["example"])
+
+
+def test_class_constructors() -> None:
+    assert SharingNetworks.create_empty(uuid4())
+    assert SharingNetworks.create(
+        uuid4(), SharingNetworks.Config.schema_extra["example"]["networks_with_aliases"]
+    )
