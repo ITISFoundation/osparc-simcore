@@ -47,6 +47,7 @@ async def test_list_services_with_details(
     products_names: List[str],
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
+    benchmark,
 ):
     target_product = products_names[-1]
     # create some fake services
@@ -81,7 +82,11 @@ async def test_list_services_with_details(
             ]
         },
     )
-    response = client.get(f"{url}", headers={"x-simcore-products-name": target_product})
+
+    response = benchmark(
+        client.get, f"{url}", headers={"x-simcore-products-name": target_product}
+    )
+
     assert response.status_code == 200
     data = response.json()
     assert len(data) == round(NUM_SERVICES / 2)
@@ -95,6 +100,7 @@ async def test_list_services_without_details(
     products_names: List[str],
     service_catalog_faker: Callable,
     services_db_tables_injector: Callable,
+    benchmark,
 ):
     target_product = products_names[-1]
     # injects fake data in db
@@ -114,7 +120,9 @@ async def test_list_services_without_details(
     )
 
     url = URL("/v0/services").with_query({"user_id": user_id, "details": "false"})
-    response = client.get(f"{url}", headers={"x-simcore-products-name": target_product})
+    response = benchmark(
+        client.get, f"{url}", headers={"x-simcore-products-name": target_product}
+    )
     assert response.status_code == 200
     data = response.json()
     assert len(data) == NUM_SERVICES
