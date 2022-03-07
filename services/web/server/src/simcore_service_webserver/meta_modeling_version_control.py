@@ -43,32 +43,35 @@ class VersionControlForMetaModeling(VersionControlRepository):
             assert project  # nosec
             return dict(project.items())
 
-    async def get_project(self, project_id: ProjectIDStr) -> ProjectDict:
+    async def get_project(
+        self, project_id: ProjectIDStr, *, include: Optional[List[str]] = None
+    ) -> ProjectDict:
         async with self.engine.acquire() as conn:
             if self.user_id is None:
                 raise UserUndefined()
 
+            if include is None:
+                include = [
+                    "type",
+                    "uuid",
+                    "name",
+                    "description",
+                    "thumbnail",
+                    "prj_owner",
+                    "access_rights",
+                    "workbench",
+                    "ui",
+                    "classifiers",
+                    "dev",
+                    "quality",
+                    "published",
+                    "hidden",
+                ]
+
             project = (
                 await self.ProjectsOrm(conn)
-                .set_filter(uuid=str(project_id), prj_owner=self.user_id)
-                .fetch(
-                    [
-                        "type",
-                        "uuid",
-                        "name",
-                        "description",
-                        "thumbnail",
-                        "prj_owner",
-                        "access_rights",
-                        "workbench",
-                        "ui",
-                        "classifiers",
-                        "dev",
-                        "quality",
-                        "published",
-                        "hidden",
-                    ]
-                )
+                .set_filter(uuid=f"{project_id}", prj_owner=self.user_id)
+                .fetch(include)
             )
             assert project  # nosec
             project_as_dict = dict(project.items())
