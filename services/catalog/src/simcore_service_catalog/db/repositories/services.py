@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 import sqlalchemy as sa
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
@@ -255,7 +255,9 @@ class ServicesRepository(BaseRepository):
         return services_in_db
 
     async def list_services_access_rights(
-        self, key_versions: List[Tuple[str, str]], product_name: Optional[str] = None
+        self,
+        key_versions: Iterable[Tuple[str, str]],
+        product_name: Optional[str] = None,
     ) -> Dict[Tuple[str, str], List[ServiceAccessRightsAtDB]]:
         """Batch version of get_service_access_rights"""
         service_to_access_rights = defaultdict(list)
