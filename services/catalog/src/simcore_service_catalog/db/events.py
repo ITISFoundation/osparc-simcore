@@ -32,7 +32,7 @@ async def connect_to_db(app: FastAPI) -> None:
     )
     logger.debug("Connected to %s", cfg.dsn)
 
-    logger.debug("Checking db migrationn ...")
+    logger.debug("Checking db migration...")
     try:
         await raise_if_migration_not_ready(engine)
     except Exception:
