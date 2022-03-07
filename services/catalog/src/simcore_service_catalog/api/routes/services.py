@@ -137,10 +137,10 @@ async def list_services(
 
     # caching this steps brings down the time to generate it at the expense of being sometimes a bit out of date
     @cached(ttl=DIRECTOR_CACHING_TTL)
-    async def cached_registry_services() -> Deque[Dict[str, Any]]:
+    async def cached_registry_services() -> Deque[Tuple[str, str, Dict[str, Any]]]:
         services_in_registry = await director_client.get("/services")
         filtered_services = deque(
-            s
+            (s["key"], s["version"], s)
             for s in (
                 request.app.state.frontend_services_catalog + services_in_registry
             )
@@ -174,12 +174,12 @@ async def list_services(
             asyncio.get_event_loop().run_in_executor(
                 None,
                 _prepare_service_details,
-                s,
-                services_in_db[s["key"], s["version"]],
-                services_access_rights[s["key"], s["version"]],
-                services_owner_emails.get(services_in_db[s["key"], s["version"]].owner),
+                details,
+                services_in_db[key, version],
+                services_access_rights[key, version],
+                services_owner_emails.get(services_in_db[key, version].owner),
             )
-            for s in registry_filtered_services
+            for key, version, details in registry_filtered_services
         ]
     )
     return [s for s in services_details if s is not None]
