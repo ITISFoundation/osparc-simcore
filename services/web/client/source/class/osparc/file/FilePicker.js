@@ -266,14 +266,16 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __buildLayout: function() {
       this._removeAll();
-      this.__addProgressBar();
       const isWorkbenchContext = this.getPageContext() === "workbench";
       if (isWorkbenchContext && osparc.file.FilePicker.hasOutputAssigned(this.getNode().getOutputs())) {
         this.__buildInfoLayout();
-      } else if (isWorkbenchContext) {
-        this.__buildDropLayout();
       } else {
-        this.__buildTreeLayout();
+        this.__addProgressBar();
+        if (isWorkbenchContext) {
+          this.__buildDropLayout();
+        } else {
+          this.__buildTreeLayout();
+        }
       }
     },
 
@@ -283,11 +285,11 @@ qx.Class.define("osparc.file.FilePicker", {
       nodeStatus.bind("progress", progressBar, "value", {
         converter: val => osparc.data.model.NodeStatus.getValidProgress(val)
       });
-      nodeStatus.bind("progress", progressBar, "visibility", {
-        converter: val => {
-          const validProgress = osparc.data.model.NodeStatus.getValidProgress(val);
-          return (validProgress > 0 && validProgress < 100) ? "visible" : "excluded";
-        }
+      nodeStatus.bind("changeProgress", e => {
+        const validProgress = osparc.data.model.NodeStatus.getValidProgress(e.getData());
+        const uploading = (validProgress > 0 && validProgress < 100);
+        progressBar.setVisiblity(uploading ? "visible" : "excluded");
+        this.setEnabled(!uploading);
       });
       this._add(progressBar);
     },
@@ -327,10 +329,7 @@ qx.Class.define("osparc.file.FilePicker", {
     __buildDropLayout: function() {
       const node = this.getNode();
 
-      const fileDrop = new osparc.file.FileDrop().set({
-        allowGrowY: true,
-        minHeight: 400
-      });
+      const fileDrop = new osparc.file.FileDrop();
       fileDrop.addListener("localFileDropped", e => {
         const files = e.getData()["data"];
         if (this.uploadPendingFiles(files)) {
