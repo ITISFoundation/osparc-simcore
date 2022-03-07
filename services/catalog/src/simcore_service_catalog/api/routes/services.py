@@ -5,13 +5,13 @@ import logging
 import urllib.parse
 from collections import deque
 from functools import lru_cache
-from time import time
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Deque, Dict, List, Optional, Set, Tuple
 
+from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from models_library.services import KEY_RE, VERSION_RE
+from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
-from pydantic import ValidationError, constr
+from pydantic import ValidationError
 from pydantic.types import PositiveInt
 from simcore_service_catalog.services.director import MINUTE
 from starlette.requests import Request
@@ -38,6 +38,8 @@ RESPONSE_MODEL_POLICY = {
     "response_model_exclude_defaults": False,
     "response_model_exclude_none": False,
 }
+
+DIRECTOR_CACHING_TTL = 5 * MINUTE
 
 
 def _prepare_service_details(
@@ -111,37 +113,47 @@ async def list_services(
             product_name=x_simcore_products_name,
         )
     }
-
     # Non-detailed views from the services_repo database
     if not details:
         # only return a stripped down version
         # FIXME: add name, ddescription, type, etc...
+        # NOTE: here validation is not necessary since key,version were already validated
+        # in terms of time, this takes the most
         services_overview = [
-            ServiceOut.no_detail_service(
+            ServiceOut.construct(
                 key=key,
                 version=version,
+                name="nodetails",
+                description="nodetails",
+                type=ServiceType.COMPUTATIONAL,
+                authors=[{"name": "nodetails", "email": "nodetails@nodetails.com"}],
+                contact="nodetails@nodetails.com",
+                inputs={},
+                outputs={},
             )
             for key, version in services_in_db
         ]
         return services_overview
 
-    # getting services from director
-    # get_registry_services_task = director_client.get("/services")
-    DIRECTOR_CACHING_TTL = 5 * MINUTE
-
-    def _get_cache_ttl(seconds):
-        return round(time() / seconds)
-
-    @async_lru_cache(maxsize=1)
-    async def cached_registry_services(_cache_ttl):
-        return await director_client.get("/services")
+    # caching this steps brings down the time to generate it at the expense of being sometimes a bit out of date
+    @cached(ttl=DIRECTOR_CACHING_TTL)
+    async def cached_registry_services() -> Deque[Dict[str, Any]]:
+        services_in_registry = await director_client.get("/services")
+        filtered_services = deque(
+            s
+            for s in (
+                request.app.state.frontend_services_catalog + services_in_registry
+            )
+            if (s.get("key"), s.get("version")) in services_in_db
+        )
+        return filtered_services
 
     (
-        services_in_registry,
+        registry_filtered_services,
         services_access_rights,
         services_owner_emails,
     ) = await asyncio.gather(
-        cached_registry_services(_get_cache_ttl(DIRECTOR_CACHING_TTL)),
+        cached_registry_services(),
         services_repo.list_services_access_rights(
             key_versions=services_in_db,
             product_name=x_simcore_products_name,
@@ -151,37 +163,26 @@ async def list_services(
         ),
     )
 
-    filtered_services = deque(
-        s
-        for s in (request.app.state.frontend_services_catalog + services_in_registry)
-        if (s.get("key"), s.get("version")) in services_in_db
-    )
     # NOTE: for the details of the services:
     # 1. we get all the services from the director-v0 (TODO: move the registry to the catalog)
     # 2. we filter the services using the visible ones from the db
     # 3. then we compose the final service using as a base the registry service, overriding with the same
     #    service from the database, adding also the access rights and the owner as email address instead of gid
-    # NOTE: this final step runs in a process pool so that it runs asynchronously and does not block in any way
-    # with non_blocking_process_pool_executor(max_workers=2) as pool:
-    # _target_services = (
-    #     request.app.state.frontend_services_catalog + services_in_registry
-    # )
-    # services_details = await asyncio.gather(
-    #     *[
-    #         asyncio.get_event_loop().run_in_executor(
-    #             None,
-    #             _prepare_service_details,
-    #             s,
-    #             services_in_db[s["key"], s["version"]],
-    #             services_access_rights[s["key"], s["version"]],
-    #             services_owner_emails.get(services_in_db[s["key"], s["version"]].owner),
-    #         )
-    #         for s in _target_services
-    #         if (s.get("key"), s.get("version")) in services_in_db
-    #     ]
-    # )
-    # return [s for s in services_details if s is not None]
-    return []
+    # NOTE: This step takes the bulk of the time to generate the list
+    services_details = await asyncio.gather(
+        *[
+            asyncio.get_event_loop().run_in_executor(
+                None,
+                _prepare_service_details,
+                s,
+                services_in_db[s["key"], s["version"]],
+                services_access_rights[s["key"], s["version"]],
+                services_owner_emails.get(services_in_db[s["key"], s["version"]].owner),
+            )
+            for s in registry_filtered_services
+        ]
+    )
+    return [s for s in services_details if s is not None]
 
 
 @router.get(
@@ -191,8 +192,8 @@ async def list_services(
 )
 async def get_service(
     user_id: int,
-    service_key: constr(regex=KEY_RE),
-    service_version: constr(regex=VERSION_RE),
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
     director_client: DirectorApi = Depends(get_director_api),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
@@ -272,8 +273,8 @@ async def get_service(
 async def modify_service(
     # pylint: disable=too-many-arguments
     user_id: int,
-    service_key: constr(regex=KEY_RE),
-    service_version: constr(regex=VERSION_RE),
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
     updated_service: ServiceUpdate,
     director_client: DirectorApi = Depends(get_director_api),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
