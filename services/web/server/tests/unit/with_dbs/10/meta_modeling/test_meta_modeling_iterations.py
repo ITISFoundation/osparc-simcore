@@ -22,7 +22,8 @@ from simcore_service_webserver._constants import APP_DB_ENGINE_KEY
 from simcore_service_webserver.director_v2_api import get_project_run_policy
 from simcore_service_webserver.meta_modeling_handlers import (
     Page,
-    ProjectIterationAsItem,
+    ProjectIterationItem,
+    ProjectIterationResultItem,
 )
 from simcore_service_webserver.meta_modeling_projects import (
     meta_project_policy,
@@ -142,7 +143,7 @@ async def test_iterators_workflow(
         f"/v0/projects/{project_uuid}/checkpoint/{head_ref_id}/iterations?offset=0"
     )
     body = await resp.json()
-    first_iterlist = Page[ProjectIterationAsItem].parse_obj(body).data
+    first_iterlist = Page[ProjectIterationItem].parse_obj(body).data
 
     assert len(first_iterlist) == 3
 
@@ -175,6 +176,16 @@ async def test_iterators_workflow(
         assert outputs["fc9208d9-1a0a-430c-9951-9feaf1de3368"]["out_1"] == i
 
     # ----------------------------------------------
+
+    # GET results of all iterations
+    # /projects/{project_uuid}/checkpoint/{ref_id}/iterations/-/results
+    resp = await client.get(
+        f"/v0/projects/{project_uuid}/checkpoint/{head_ref_id}/iterations/-/results"
+    )
+    assert resp.status == HTTPStatus.OK, await resp.text()
+    body = await resp.json()
+
+    results = Page[ProjectIterationResultItem].parse_obj(body).data
 
     # GET project and MODIFY iterator values----------------------------------------------
     #  - Change iterations from 0:4 -> HEAD+1
@@ -232,7 +243,8 @@ async def test_iterators_workflow(
         f"/v0/projects/{project_uuid}/checkpoint/{head_ref_id}/iterations?offset=0"
     )
     body = await resp.json()
-    second_iterlist = Page[ProjectIterationAsItem].parse_obj(body).data
+    assert resp.status == HTTPStatus.OK, f"{body=}"  # nosec
+    second_iterlist = Page[ProjectIterationItem].parse_obj(body).data
 
     assert len(second_iterlist) == 4
     assert len(set(it.workcopy_project_id for it in second_iterlist)) == len(
