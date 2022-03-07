@@ -152,7 +152,7 @@ async def _publish_in_rabbit(
 
 @pytest.fixture
 def client(
-    loop: asyncio.AbstractEventLoop,
+    event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_config: Dict[str, Any],  ## waits until swarm with *_services are up
     rabbit_service: RabbitSettings,  ## waits until rabbit is responsive and set env vars
@@ -181,7 +181,7 @@ def client(
     setup_resource_manager(app)
     # GC not relevant for these test-suite,
 
-    return loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={

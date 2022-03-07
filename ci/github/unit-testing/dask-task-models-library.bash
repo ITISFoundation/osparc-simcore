@@ -23,6 +23,7 @@ codestyle() {
 
 test() {
   pytest \
+    --asyncio-mode=auto \
     --color=yes \
     --cov-append \
     --cov-config=.coveragerc \

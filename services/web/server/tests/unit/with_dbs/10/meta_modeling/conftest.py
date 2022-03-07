@@ -23,7 +23,7 @@ def user_role() -> UserRole:
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg, aiohttp_unused_port, monkeypatch) -> Dict[str, Any]:
+def app_cfg(default_app_cfg, unused_tcp_port_factory, monkeypatch) -> Dict[str, Any]:
     """App's configuration used for every test in this module
 
     NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
@@ -32,7 +32,7 @@ def app_cfg(default_app_cfg, aiohttp_unused_port, monkeypatch) -> Dict[str, Any]
 
     monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "1")
 
-    cfg["main"]["port"] = aiohttp_unused_port()
+    cfg["main"]["port"] = unused_tcp_port_factory()
     cfg["main"]["studies_access_enabled"] = True
 
     exclude = {

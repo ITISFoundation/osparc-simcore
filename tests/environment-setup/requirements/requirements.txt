@@ -60,7 +60,7 @@ pytest==7.0.0
     #   pytest-asyncio
     #   pytest-instafail
     #   pytest-sugar
-pytest-aiohttp==1.0.3
+pytest-aiohttp==1.0.4
     # via -r requirements/requirements.in
 pytest-asyncio==0.18.0
     # via pytest-aiohttp

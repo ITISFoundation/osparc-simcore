@@ -147,14 +147,14 @@ def _default_app_config_for_integration_tests(
 
 @pytest.fixture(scope="function")
 def app_config(
-    _default_app_config_for_integration_tests: ConfigDict, aiohttp_unused_port
+    _default_app_config_for_integration_tests: ConfigDict, unused_tcp_port_factory
 ) -> Dict:
     """
     Swarm with integration stack already started
     This fixture can be safely modified during test since it is renovated on every call
     """
     cfg = deepcopy(_default_app_config_for_integration_tests)
-    cfg["main"]["port"] = aiohttp_unused_port()
+    cfg["main"]["port"] = unused_tcp_port_factory()
 
     return cfg
 

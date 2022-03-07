@@ -1,7 +1,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 # pylint:disable=unused-variable
-import asyncio
 import logging
 from typing import AsyncIterator, Dict, Iterator, List
 
@@ -168,7 +167,6 @@ def postgres_db(
 
 @pytest.fixture(scope="function")
 async def aiopg_engine(
-    loop: asyncio.AbstractEventLoop,
     postgres_db: sa.engine.Engine,
 ) -> AsyncIterator[aiopg.sa.engine.Engine]:
     """An aiopg engine connected to an initialized database"""

@@ -4,7 +4,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Iterator
+from typing import Any, AsyncIterator, Dict
 
 import pytest
 from jsonschema import SchemaError
@@ -17,7 +17,7 @@ from yarl import URL
 
 
 @pytest.fixture
-async def project_specs(loop, project_schema_file: Path) -> Iterator[Dict[str, Any]]:
+async def project_specs(project_schema_file: Path) -> AsyncIterator[Dict[str, Any]]:
     # should not raise any exception
     try:
         specs = await create_jsonschema_specs(project_schema_file, session=None)

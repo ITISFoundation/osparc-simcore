@@ -136,7 +136,7 @@ async def __delete_all_redis_keys__(redis_settings: RedisSettings):
 
 @pytest.fixture
 def client(
-    loop: asyncio.AbstractEventLoop,
+    event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_config: Dict,
     postgres_with_template_db: aiopg.sa.engine.Engine,
@@ -179,7 +179,7 @@ def client(
     assert setup_resource_manager(app)
     setup_garbage_collector(app)
 
-    yield loop.run_until_complete(
+    yield event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},

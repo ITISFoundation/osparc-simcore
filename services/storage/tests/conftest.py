@@ -6,7 +6,6 @@
 # pylint: disable=unused-variable
 
 
-import asyncio
 import datetime
 import os
 import sys
@@ -47,6 +46,7 @@ pytest_plugins = [
     "pytest_simcore.cli_runner",
     "pytest_simcore.repository_paths",
     "tests.fixtures.data_models",
+    "pytest_simcore.pytest_global_environs",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -174,7 +174,7 @@ def postgres_service_url(postgres_service, docker_services, docker_ip) -> str:
 
 
 @pytest.fixture(scope="function")
-async def postgres_engine(loop, postgres_service_url):
+async def postgres_engine(postgres_service_url):
     pg_engine = await create_engine(postgres_service_url)
 
     yield pg_engine
@@ -367,24 +367,24 @@ def dsm_mockup_db(
 
 
 @pytest.fixture(scope="function")
-def moduleless_app(loop, aiohttp_server) -> web.Application:
+def moduleless_app(event_loop, aiohttp_server) -> web.Application:
     app: web.Application = create_safe_application()
     # creates a dummy server
-    server = loop.run_until_complete(aiohttp_server(app))
+    server = event_loop.run_until_complete(aiohttp_server(app))
     # server is destroyed on exit https://docs.aiohttp.org/en/stable/testing.html#pytest_aiohttp.aiohttp_server
     return app
 
 
 @pytest.fixture(scope="function")
 def dsm_fixture(
-    s3_client, postgres_engine, loop, moduleless_app
+    s3_client, postgres_engine, event_loop, moduleless_app
 ) -> Iterable[DataStorageManager]:
 
     with ThreadPoolExecutor(3) as pool:
         dsm_fixture = DataStorageManager(
             s3_client=s3_client,
             engine=postgres_engine,
-            loop=loop,
+            loop=event_loop,
             pool=pool,
             simcore_bucket_name=BUCKET_NAME,
             has_project_db=False,
@@ -400,7 +400,6 @@ def dsm_fixture(
 
 @pytest.fixture(scope="function")
 async def datcore_structured_testbucket(
-    loop: asyncio.AbstractEventLoop,
     mock_files_factory: Callable[[int], List[Path]],
     moduleless_app,
 ):

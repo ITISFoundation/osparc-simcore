@@ -4,7 +4,7 @@
 
 import json
 from random import randint
-from typing import Any, Callable, Dict
+from typing import Any, AsyncIterator, Callable, Dict
 from uuid import uuid4
 
 import pytest
@@ -28,11 +28,10 @@ def node_uuid() -> str:
 
 @pytest.fixture(scope="function")
 async def mock_db_manager(
-    loop,
     monkeypatch,
     project_id: str,
     node_uuid: str,
-) -> Callable:
+) -> AsyncIterator[Callable]:
     def _mock_db_manager(port_cfg: Dict[str, Any]) -> DBManager:
         async def mock_get_ports_configuration_from_node_uuid(*args, **kwargs) -> str:
             return json.dumps(port_cfg)

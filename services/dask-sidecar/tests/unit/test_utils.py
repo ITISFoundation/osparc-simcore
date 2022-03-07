@@ -35,7 +35,7 @@ def mock_aiodocker(mocker: MockerFixture) -> mock.MagicMock:
 
 
 def test_num_available_gpus_returns_0_when_container_not_created(
-    loop: asyncio.events.AbstractEventLoop,
+    event_loop: asyncio.events.AbstractEventLoop,
     mock_service_envs: None,
     mock_aiodocker: mock.MagicMock,
 ):
@@ -47,7 +47,7 @@ def test_num_available_gpus_returns_0_when_container_not_created(
 
 
 def test_num_available_gpus_returns_0_when_container_throws_exception_on_run(
-    loop: asyncio.events.AbstractEventLoop,
+    event_loop: asyncio.events.AbstractEventLoop,
     mock_service_envs: None,
     mock_aiodocker: mock.MagicMock,
 ):
@@ -60,7 +60,7 @@ def test_num_available_gpus_returns_0_when_container_throws_exception_on_run(
 
 
 def test_num_available_gpus_returns_0_when_no_status_code_returned(
-    loop: asyncio.events.AbstractEventLoop,
+    event_loop: asyncio.events.AbstractEventLoop,
     mock_service_envs: None,
     mock_aiodocker: mock.MagicMock,
 ):
@@ -71,7 +71,7 @@ def test_num_available_gpus_returns_0_when_no_status_code_returned(
 
 
 def test_num_available_gpus_returns_0_when_bad_status_code_returned(
-    loop: asyncio.events.AbstractEventLoop,
+    event_loop: asyncio.events.AbstractEventLoop,
     mock_service_envs: None,
     mock_aiodocker: mock.MagicMock,
 ):
@@ -82,7 +82,7 @@ def test_num_available_gpus_returns_0_when_bad_status_code_returned(
 
 
 def test_num_available_gpus_returns_0_when_container_wait_timesout(
-    loop: asyncio.events.AbstractEventLoop,
+    event_loop: asyncio.events.AbstractEventLoop,
     mock_service_envs: None,
     mock_aiodocker: mock.MagicMock,
 ):
@@ -97,7 +97,7 @@ def test_num_available_gpus_returns_0_when_container_wait_timesout(
     [([], 0), (["gpu1"], 1), (["gpu1", "gpu2", "gpu4"], 3)],
 )
 def test_num_available_gpus(
-    loop: asyncio.events.AbstractEventLoop,
+    event_loop: asyncio.events.AbstractEventLoop,
     mock_service_envs: None,
     container_logs: List[str],
     expected_num_gpus: int,
