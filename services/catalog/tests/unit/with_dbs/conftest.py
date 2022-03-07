@@ -16,7 +16,6 @@ from faker import Faker
 from fastapi import FastAPI
 from pydantic import PositiveInt
 from pytest_mock.plugin import MockerFixture
-from respx.router import MockRouter
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_service_catalog.core.application import init_app
@@ -53,8 +52,7 @@ def client(app: FastAPI) -> Iterator[TestClient]:
 
 
 @pytest.fixture()
-def director_mockup(app: FastAPI) -> Iterator[MockRouter]:
-
+def director_mockup(app: FastAPI) -> Iterator:
     with respx.mock(
         base_url=app.state.settings.CATALOG_DIRECTOR.base_url,
         assert_all_called=False,
@@ -64,7 +62,7 @@ def director_mockup(app: FastAPI) -> Iterator[MockRouter]:
         respx_mock.get("/services", name="list_services").respond(
             200, json={"data": []}
         )
-        yield respx_mock
+        yield
 
 
 # DATABASE tables fixtures -----------------------------------
@@ -327,3 +325,18 @@ async def service_catalog_faker(
         return tuple(fakes)
 
     return _fake_factory
+
+
+@pytest.fixture
+def mock_catalog_background_task(mocker: MockerFixture):
+    """patch the setup of the background task so we can call it manually"""
+    mocker.patch(
+        "simcore_service_catalog.core.events.start_registry_sync_task",
+        return_value=None,
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_catalog.core.events.stop_registry_sync_task",
+        return_value=None,
+        autospec=True,
+    )
