@@ -167,7 +167,7 @@ async def _get_networks_with_aliases_for_default_network(
         except ValidationError:
             # TODO: need to inform frontend somehow about this issue!!!
             # maybe a Log message will be fine, when renaming
-            # mauybe we need to refactor the message delivery in the dynamic-sidecar
+            # maybe we need to refactor the message delivery in the dynamic-sidecar
             # and pull it in a shared module for this, for now
             logger.warning(
                 "Service with label '%s' cannot be added to the network %s",

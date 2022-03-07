@@ -117,7 +117,7 @@ async def _inject_sharing_networks_configuration(
 ) -> None:
     networks = service_spec.get("networks", {})
 
-    for network_name, node_aliases in sharing_networks.items():
+    for network_name, node_aliases in sharing_networks.networks_with_aliases.items():
         if node_uuid not in node_aliases:
             # this node is not part of this sharing network skipping
             continue

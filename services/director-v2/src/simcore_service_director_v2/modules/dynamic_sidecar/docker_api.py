@@ -12,8 +12,8 @@ import aiodocker
 from aiodocker.utils import clean_filters
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from servicelib.utils import logged_gather
 from packaging import version
+from servicelib.utils import logged_gather
 
 from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX, UserID

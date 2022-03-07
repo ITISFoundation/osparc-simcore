@@ -291,7 +291,8 @@ class DynamicSidecarsScheduler:
         self, node_id: NodeID, network_id: str, network_alias: DockerNetworkAlias
     ) -> None:
         if node_id not in self._inverse_search_mapping:
-            raise DynamicSidecarNotFoundError(node_id)
+            logger.debug("No dynamic-sidecar running for %s", f"{node_id=}")
+            return
 
         service_name = self._inverse_search_mapping[node_id]
         scheduler_data = self._to_observe[service_name].scheduler_data
@@ -300,9 +301,14 @@ class DynamicSidecarsScheduler:
             self.app
         )
 
-        containers_status = await dynamic_sidecar_client.containers_docker_status(
-            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
-        )
+        try:
+            containers_status = await dynamic_sidecar_client.containers_docker_status(
+                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
+            )
+        except httpx.HTTPError:
+            logger.debug("Could not contact dynamic-sidecar for %s", f"{node_id=}")
+            return
+
         sorted_container_names = sorted(containers_status.keys())
 
         entrypoint_container_name = await dynamic_sidecar_client.get_entrypoint_container_name(
@@ -333,7 +339,8 @@ class DynamicSidecarsScheduler:
 
     async def detach_sharing_network(self, node_id: NodeID, network_id: str) -> None:
         if node_id not in self._inverse_search_mapping:
-            raise DynamicSidecarNotFoundError(node_id)
+            logger.debug("No dynamic-sidecar running for %s", f"{node_id=}")
+            return
 
         service_name = self._inverse_search_mapping[node_id]
         scheduler_data = self._to_observe[service_name].scheduler_data
@@ -347,10 +354,9 @@ class DynamicSidecarsScheduler:
             containers_status = await dynamic_sidecar_client.containers_docker_status(
                 dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
             )
-        except httpx.HTTPError as e:
-            # log for debug purposes but ignore
-            logger.info("Could not contact sidecar %s", f"{e}")
-            containers_status = []
+        except httpx.HTTPError:
+            logger.debug("Could not contact dynamic-sidecar for %s", f"{node_id=}")
+            return
 
         await logged_gather(
             *[

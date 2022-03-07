@@ -22,7 +22,7 @@ async def get_sharing_networks(
 
     async with _get_engine(app).acquire() as connection:
         query = select([sharing_networks]).where(
-            sharing_networks.c.project_uuid == project_id
+            sharing_networks.c.project_uuid == f"{project_id}"
         )
         result = await connection.execute(query)
         sharing_networks_row = await result.first()
@@ -30,19 +30,20 @@ async def get_sharing_networks(
         if sharing_networks_row is None:
             return SharingNetworks.create_empty(project_uuid=project_id)
 
-        return SharingNetworks.parse_obj(sharing_networks)
+        return SharingNetworks.parse_obj(sharing_networks_row)
 
 
 async def update_sharing_networks(
     app: Application, project_id: ProjectID, networks_with_aliases: NetworksWithAliases
 ) -> None:
-    to_insert = SharingNetworks.create(
+    sharing_networks_to_insert = SharingNetworks.create(
         project_uuid=project_id, networks_with_aliases=networks_with_aliases
     )
 
     async with _get_engine(app).acquire() as connection:
-        insert_stmt = pg_insert(sharing_networks).values(**to_insert.dict())
+        row_data = sharing_networks_to_insert.dict()
+        insert_stmt = pg_insert(sharing_networks).values(**row_data)
         upsert_snapshot = insert_stmt.on_conflict_do_update(
-            constraint=sharing_networks.primary_key, set_=to_insert
+            constraint=sharing_networks.primary_key, set_=row_data
         )
         await connection.execute(upsert_snapshot)

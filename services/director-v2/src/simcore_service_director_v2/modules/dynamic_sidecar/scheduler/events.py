@@ -12,6 +12,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
+from models_library.sharing_networks import SharingNetworks
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
@@ -29,6 +30,7 @@ from ....models.schemas.dynamic_services import (
 from ....modules.db.repositories import BaseRepository
 from ....modules.director_v0 import DirectorV0Client
 from ...db.repositories.projects import ProjectsRepository
+from ...db.repositories.sharing_networks import SharingNetworksRepository
 from .._namepsace import get_compose_namespace
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
@@ -321,9 +323,13 @@ class CreateUserServices(DynamicSchedulerEvent):
         # Starts dynamic SIDECAR -------------------------------------
         # creates a docker compose spec given the service key and tag
         # fetching project form DB and fetching user settings
-        projects_repository = _fetch_repo_outside_of_request(app, ProjectsRepository)
-        project: ProjectAtDB = await projects_repository.get_project(
-            project_id=scheduler_data.project_id
+        sharing_networks_repository: SharingNetworksRepository = (
+            _fetch_repo_outside_of_request(app, SharingNetworksRepository)
+        )
+        sharing_networks: SharingNetworks = (
+            await sharing_networks_repository.get_sharing_networks(
+                project_id=scheduler_data.project_id
+            )
         )
 
         compose_spec = await assemble_spec(
@@ -334,7 +340,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             compose_spec=scheduler_data.compose_spec,
             container_http_entry=scheduler_data.container_http_entry,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
-            sharing_networks=project.sharing_networks,
+            sharing_networks=sharing_networks,
             node_uuid=scheduler_data.node_uuid,
             project_id=scheduler_data.project_id,
         )
