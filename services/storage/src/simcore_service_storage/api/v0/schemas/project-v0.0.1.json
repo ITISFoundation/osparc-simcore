@@ -684,11 +684,6 @@
       "type": "object",
       "title": "Quality",
       "description": "Object containing Quality Assessment related data"
-    },
-    "sharingNetworks": {
-      "type": "object",
-      "title": "Sharing Networks",
-      "description": "Networks with attached services by node_id and their container aliases"
     }
   }
 }
