@@ -935,7 +935,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__infoPage.getChildControl("button").show();
         this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
 
-        this.__infoPage.add(fpView);
+        this.__infoPage.add(fpView, {
+          flex: 1
+        });
       } else {
         // empty File Picker
         const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
@@ -944,7 +946,9 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__settingsPage.getChildControl("button").show();
         this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
 
-        this.__settingsPage.add(fpView);
+        this.__settingsPage.add(fpView, {
+          flex: 1
+        });
       }
       [
         "itemReset",
