@@ -266,6 +266,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __buildLayout: function() {
       this._removeAll();
+      this.__addProgressBar();
       const isWorkbenchContext = this.getPageContext() === "workbench";
       if (isWorkbenchContext && osparc.file.FilePicker.hasOutputAssigned(this.getNode().getOutputs())) {
         this.__buildInfoLayout();
@@ -274,6 +275,26 @@ qx.Class.define("osparc.file.FilePicker", {
       } else {
         this.__buildTreeLayout();
       }
+    },
+
+    __addProgressBar: function() {
+      const progressBar = new qx.ui.indicator.ProgressBar();
+      const nodeStatus = this.getNode().getStatus();
+      nodeStatus.bind("progress", progressBar, "value", {
+        converter: val => {
+          const validProgress = osparc.data.model.NodeStatus.getValidProgress(val);
+          console.log("progressBar value", validProgress);
+          return validProgress;
+        }
+      });
+      nodeStatus.bind("progress", progressBar, "visibility", {
+        converter: val => {
+          const validProgress = osparc.data.model.NodeStatus.getValidProgress(val);
+          console.log("progressBar visibility", validProgress);
+          return (validProgress > 0 && validProgress < 100) ? "visible" : "excluded";
+        }
+      });
+      this._add(progressBar);
     },
 
     __buildInfoLayout: function() {
@@ -533,19 +554,13 @@ qx.Class.define("osparc.file.FilePicker", {
       const location = presignedLinkData.locationId;
       const path = presignedLinkData.fileUuid;
       const url = presignedLinkData.presignedLink.link;
-      const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      this._addAt(hBox, 0);
-      const label = new qx.ui.basic.Atom(file.name);
-      const progressBar = new osparc.ui.toolbar.ProgressBar();
-      hBox.add(label);
-      hBox.add(progressBar);
 
       // From https://github.com/minio/cookbook/blob/master/docs/presigned-put-upload-via-browser.md
       const xhr = new XMLHttpRequest();
       xhr.upload.addEventListener("progress", e => {
         if (e.lengthComputable) {
           const percentComplete = e.loaded / e.total * 100;
-          progressBar.setValue(percentComplete);
+          console.log("upload", percentComplete);
           this.getNode().getStatus().setProgress(percentComplete === 100 ? 99 : percentComplete);
         } else {
           console.log("Unable to compute progress information since the total size is unknown");
@@ -554,7 +569,7 @@ qx.Class.define("osparc.file.FilePicker", {
       xhr.onload = () => {
         if (xhr.status == 200) {
           console.log("Uploaded", file.name);
-          hBox.destroy();
+          this.getNode().getStatus().setProgress(100);
           const fileMetadata = {
             location,
             dataset: this.getNode().getStudy().getUuid(),
@@ -570,9 +585,11 @@ qx.Class.define("osparc.file.FilePicker", {
           }
         } else {
           console.log(xhr.response);
+          this.getNode().getStatus().setProgress(0);
         }
       };
       xhr.open("PUT", url, true);
+      this.getNode().getStatus().setProgress(0);
       xhr.send(file);
     }
   }
