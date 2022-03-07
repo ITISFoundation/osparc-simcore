@@ -995,6 +995,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     _loadModel: async function(model) {
       this._clearAll();
+      const oldSelItemId = this.__selectedItemId;
       this.resetSelection();
       this._currentModel = model;
       if (model) {
@@ -1062,6 +1063,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
             });
           });
         }
+      }
+
+      if (oldSelItemId) {
+        this.fireDataEvent("nodeSelected", oldSelItemId);
       }
     },
 
