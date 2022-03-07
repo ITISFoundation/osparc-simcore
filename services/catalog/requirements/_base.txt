@@ -20,6 +20,8 @@ anyio==3.5.0
     #   starlette
 asgiref==3.4.1
     # via uvicorn
+async-lru==1.0.2
+    # via -r requirements/_base.in
 asyncpg==0.25.0
     # via -r requirements/_base.in
 certifi==2020.12.5

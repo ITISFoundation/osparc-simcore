@@ -28,6 +28,7 @@ sqlalchemy[asyncio]
 httpx
 
 # other
+async-lru
 tenacity
 packaging
 pyyaml
