@@ -27,7 +27,6 @@ async def connect_to_db(app: FastAPI) -> None:
         connect_args={
             "server_settings": {"application_name": cfg.POSTGRES_CLIENT_NAME}
         },
-        echo=True,
     )
 
     logger.debug("Connected to %s", engine.url)  # pylint: disable=no-member
