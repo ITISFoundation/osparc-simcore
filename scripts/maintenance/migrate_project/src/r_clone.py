@@ -1,5 +1,6 @@
 from pathlib import Path
 from subprocess import PIPE, Popen  # nosec
+from typing import Optional
 
 DESTINATION = "dst"
 SOURCE = "src"
@@ -29,13 +30,17 @@ def assemble_config_file(
     aws_secret_key: str,
     minio_access_key: str,
     minio_secret_key: str,
-    minio_endpoint: str,
+    minio_endpoint: Optional[str],
 ) -> Path:
     # NOTE: Since rclone requires slightly different configuration based on the
     # S3 provider, below assumptions are made:
     # - source: MINIO
     # - destination: AWS S3
     # The above CONFIG will require changing if this changes
+
+    # minio endpoint must be provided
+    assert minio_endpoint is not None  # nosec
+
     config_content = CONFIG.format(
         aws_access_key=aws_access_key,
         aws_secret_key=aws_secret_key,

@@ -11,12 +11,11 @@ from models import Settings
 from r_clone import assemble_config_file, sync_file
 
 
-def main(config: Path):
+def main(config: Path = typer.Option(..., exists=True)):
     assert config.exists()  # nosec
     settings = Settings.load_from_file(config)
     typer.echo(f"Detected settings:\n{settings.json(indent=2)}\n")
 
-    assert settings.source.s3.endpoint is not None  # nosec
     r_clone_config_path = assemble_config_file(
         # destination is AWS S3
         aws_access_key=settings.destination.s3.access_key,
