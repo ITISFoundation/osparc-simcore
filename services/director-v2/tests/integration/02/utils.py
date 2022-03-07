@@ -8,11 +8,19 @@ from typing import Any, Dict, Optional, Set
 
 import aiodocker
 import httpx
+from aiopg.sa import Engine
 from async_timeout import timeout
 from fastapi import FastAPI
-from models_library.projects import Node
+from models_library.projects import Node, ProjectAtDB
+from models_library.sharing_networks import (
+    SHARING_NETWORK_PREFIX,
+    ContainerAliases,
+    NetworksWithAliases,
+    SharingNetworks,
+)
 from pydantic import PositiveInt
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from simcore_postgres_database.models.sharing_networks import sharing_networks
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
@@ -20,20 +28,10 @@ from simcore_service_director_v2.models.schemas.constants import (
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
 )
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
-from aiopg.sa import Engine
-from fastapi import FastAPI
-from models_library.projects import ProjectAtDB, ProjectID
-from models_library.sharing_networks import (
-    SHARING_NETWORK_PREFIX,
-    ContainerAliases,
-    NetworksWithAliases,
-    SharingNetworks,
-)
-from simcore_postgres_database.models.sharing_networks import sharing_networks
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 SERVICE_WAS_CREATED_BY_DIRECTOR_V2 = 20
 SERVICES_ARE_READY_TIMEOUT = 2 * 60

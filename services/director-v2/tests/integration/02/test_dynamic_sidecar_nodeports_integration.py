@@ -62,6 +62,7 @@ from simcore_service_director_v2.models.schemas.constants import (
 )
 from starlette import status
 from utils import (
+    SEPARATOR,
     assert_all_services_running,
     assert_retrieve_service,
     assert_services_reply_200,
@@ -72,7 +73,6 @@ from utils import (
     is_legacy,
     patch_dynamic_service_url,
     run_command,
-    SEPARATOR,
     sleep_for,
     update_sharing_networks_from_project,
 )

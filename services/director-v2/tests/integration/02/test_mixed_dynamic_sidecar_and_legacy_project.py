@@ -12,7 +12,6 @@ import aiodocker
 import httpx
 import pytest
 import sqlalchemy as sa
-from fastapi import FastAPI
 from asgi_lifespan import LifespanManager
 from models_library.projects import ProjectAtDB
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -29,7 +28,7 @@ from utils import (
     ensure_network_cleanup,
     is_legacy,
     patch_dynamic_service_url,
-    update_sharing_networks_from_project
+    update_sharing_networks_from_project,
 )
 from yarl import URL
 
@@ -216,12 +215,13 @@ def simcore_services_ready_and_change_director_env(
 
 @pytest.fixture
 async def ensure_sharing_networks_in_db(
-    initialized_app: FastAPI, dy_static_file_server_project: ProjectAtDB
+    director_v2_client: httpx.AsyncClient, dy_static_file_server_project: ProjectAtDB
 ) -> None:
     await update_sharing_networks_from_project(
-        app=initialized_app, project=dy_static_file_server_project
+        # pylint: disable=protected-access
+        app=director_v2_client._transport.app,
+        project=dy_static_file_server_project,
     )
-
 
 
 # TESTS ----------------------------------------------------------------------------------------
