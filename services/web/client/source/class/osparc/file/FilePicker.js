@@ -65,7 +65,8 @@ qx.Class.define("osparc.file.FilePicker", {
 
   events: {
     "itemReset": "qx.event.type.Event",
-    "itemSelected": "qx.event.type.Event"
+    "itemSelected": "qx.event.type.Event",
+    "fileUploaded": "qx.event.type.Event"
   },
 
   statics: {
@@ -580,10 +581,7 @@ qx.Class.define("osparc.file.FilePicker", {
           if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
             this.setOutputValueFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
           }
-          this.__buildLayout();
-          if (this.__filesTree) {
-            this.__filesTree.loadFilePath(this.__getOutputFile()["value"]);
-          }
+          this.fireEvent("fileUploaded");
         } else {
           console.log(xhr.response);
           this.getNode().getStatus().setProgress(0);

@@ -952,7 +952,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
       [
         "itemReset",
-        "itemSelected"
+        "itemSelected",
+        "fileUploaded"
       ].forEach(ev => fpView.addListener(ev, () => this.__populateSecondPanel(filePicker)));
     },
 
