@@ -195,7 +195,9 @@ def mock_data_manager(mocker: MockerFixture) -> None:
     )
 
     importlib.reload(
-        importlib.import_module("simcore_service_dynamic_sidecar.api.containers")
+        importlib.import_module(
+            "simcore_service_dynamic_sidecar.api.containers_extension"
+        )
     )
 
 
