@@ -147,13 +147,12 @@ async def products_names(
 
 @pytest.fixture()
 async def user_groups_ids(
-    sqlalchemy_async_engine: AsyncEngine,
+    sqlalchemy_async_engine: AsyncEngine, user_db: Dict[str, Any]
 ) -> AsyncIterator[List[int]]:
     """Inits groups table and returns group identifiers"""
 
     cols = ("gid", "name", "description", "type", "thumbnail", "inclusion_rules")
     data = [
-        (34, "john.smith", "primary group for user", "PRIMARY", None, {}),
         (
             20001,
             "Team Black",
@@ -164,22 +163,18 @@ async def user_groups_ids(
         ),
     ]
     # pylint: disable=no-value-for-parameter
-
     async with sqlalchemy_async_engine.begin() as conn:
         for row in data:
             # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
-            stmt = groups.insert().values(**dict(zip(cols, row)))
-            await conn.execute(stmt)
+            await conn.execute(groups.insert().values(**dict(zip(cols, row))))
 
-    gids = [
-        1,
-    ] + [items[0] for items in data]
+    gids = [1, user_db["primary_gid"]] + [items[0] for items in data]
 
     yield gids
 
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(services_meta_data.delete())
-        await conn.execute(groups.delete().where(groups.c.gid.in_(gids[1:])))
+        await conn.execute(groups.delete().where(groups.c.gid.in_(gids[2:])))
 
 
 @pytest.fixture()
