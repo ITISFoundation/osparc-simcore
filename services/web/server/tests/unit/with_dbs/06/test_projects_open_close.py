@@ -9,7 +9,6 @@ from copy import deepcopy
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
 from unittest import mock
 from unittest.mock import call
-from uuid import UUID
 
 import pytest
 import socketio
@@ -34,7 +33,6 @@ from simcore_service_webserver.projects.projects_handlers import (
 )
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
 from simcore_service_webserver.utils import now_str, to_datetime
-from simcore_service_webserver.sharing_networks import SHARING_NETWORK_PREFIX
 from socketio.exceptions import ConnectionError as SocketConnectionError
 
 API_VERSION = "v0"
@@ -115,7 +113,6 @@ async def _new_project(
             "ui": {},
             "dev": {},
             "quality": {},
-            "sharingNetworks": {f"{SHARING_NETWORK_PREFIX}_{UUID(int=0)}_mocked": {}},
         }
         if project:
             project_data.update(project)
@@ -321,7 +318,6 @@ async def test_share_project(
     catalog_subsystem_mock,
     share_rights: Dict,
     project_db_cleaner,
-    mock_sharing_networks_network_name: None,
 ):
     # Use-case: the user shares some projects with a group
 

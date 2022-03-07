@@ -4,7 +4,6 @@
 # pylint: disable=unused-variable
 
 import asyncio
-from uuid import UUID
 from copy import deepcopy
 from math import ceil
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
@@ -21,7 +20,6 @@ from simcore_service_webserver.db_models import UserRole
 from simcore_service_webserver.projects.projects_handlers import (
     OVERRIDABLE_DOCUMENT_KEYS,
 )
-from simcore_service_webserver.sharing_networks import SHARING_NETWORK_PREFIX
 from simcore_service_webserver.utils import now_str, to_datetime
 from yarl import URL
 
@@ -157,7 +155,6 @@ async def _new_project(
             "ui": {},
             "dev": {},
             "quality": {},
-            "sharingNetworks": {f"{SHARING_NETWORK_PREFIX}_{UUID(int=0)}_mocked": {}},
         }
         if project:
             project_data.update(project)
@@ -266,7 +263,6 @@ async def test_list_projects_with_pagination(
     director_v2_service_mock: aioresponses,
     project_db_cleaner,
     limit: int,
-    mock_sharing_networks_network_name: None,
 ):
 
     NUM_PROJECTS = 90
