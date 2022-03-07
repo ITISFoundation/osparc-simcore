@@ -267,12 +267,12 @@ async def lock_project_and_notify_state_update(
     # If notify_users=True, then project_uuid has to be defined in the database since
     # the notification function the state which is in the database. On the other hand,
     # locking relies on the project entry in redis.
+    #
     # These two references to the project (redis and the db) are not in sync leading to some. An
-    # example is ``stop_servic``
-    # incosistent states that heavily depend on the logic of the function.
+    # example is ``stop_service`` where incosistent states that heavily depend on the logic of the function.
     #
-    # Perhaps locking and notifications should be
-    #
+    # A suggestion would be to split this in two explicit functions where notifications is active or not
+    # but not leave that decision to a variable.
     #
     try:
         async with await lock_project(
