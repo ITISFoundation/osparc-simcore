@@ -151,7 +151,7 @@ async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayS
             ):
                 with attempt:
                     print(
-                        f"cluster {cluster=} has now {len(cluster.scheduler_info.get('workers', []))}"
+                        f"cluster {cluster=} has now {len(cluster.scheduler_info.get('workers', []))} worker(s)"
                     )
                     assert len(cluster.scheduler_info.get("workers", 0)) == 10
 
