@@ -15,7 +15,6 @@ from .projects_nodes import Node
 from .projects_nodes_io import NodeIDStr
 from .projects_state import ProjectState
 from .projects_ui import StudyUI
-from .sharing_networks import SharingNetworks
 
 ProjectID = UUID
 ProjectIDStr = constr(regex=UUID_RE)
@@ -88,14 +87,6 @@ class ProjectAtDB(BaseProjectModel):
         False, description="Defines if a study is available publicly"
     )
 
-    sharing_networks: SharingNetworks = Field(
-        {},
-        description=(
-            "Networks which connect nodes from the project. Each node "
-            "is given a user defined alias by which it is identified on the network."
-        ),
-    )
-
     @validator("project_type", pre=True)
     @classmethod
     def convert_sql_alchemy_enum(cls, v):
@@ -157,15 +148,6 @@ class Project(BaseProjectModel):
 
     # Dev only
     dev: Optional[Dict] = Field(description="object used for development purposes only")
-
-    sharing_networks: SharingNetworks = Field(
-        {},
-        description=(
-            "Networks which connect nodes from the project. Each node "
-            "is given a user defined alias by which it is identified on the network."
-        ),
-        alias="sharingNetworks",
-    )
 
     class Config:
         description = "Document that stores metadata, pipeline and UI setup of a study"

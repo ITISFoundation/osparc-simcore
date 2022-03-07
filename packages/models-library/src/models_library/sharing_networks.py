@@ -2,7 +2,9 @@ from collections import deque
 from typing import Any, Deque, Dict
 from uuid import UUID
 
-from pydantic import constr, validate_arguments
+from pydantic import BaseModel, Field, constr, validate_arguments
+
+from models_library.projects import ProjectID
 
 from .generics import DictModel
 from .projects_nodes_io import NodeID
@@ -54,7 +56,7 @@ class ContainerAliases(BaseModelDict):
     __root__: Dict[NodeID, DockerNetworkAlias]
 
 
-class SharingNetworks(BaseModelDict):
+class NetworksWithAliases(BaseModelDict):
     __root__: Dict[DockerNetworkName, ContainerAliases]
 
     class Config:
@@ -84,4 +86,26 @@ class SharingNetworks(BaseModelDict):
                 {"i_am_ok": {"NOT_A_VALID_UUID": "ok"}},
                 {"i_am_ok": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "1_I_AM_INVALID"}},
             ],
+        }
+
+
+class SharingNetworks(BaseModel):
+    project_uuid: ProjectID = Field(..., description="project reference")
+    networks_with_aliases: NetworksWithAliases = Field(
+        ...,
+        description=(
+            "Networks which connect nodes from the project. Each node "
+            "is given a user defined alias by which it is identified on the network."
+        ),
+    )
+
+    class Config:
+        orm_mode = True
+        schema_extra = {
+            "example": {
+                "project_uuid": "ec5cdfea-f24e-4aa1-83b8-6dccfdc8cf4d",
+                "networks_with_aliases": {
+                    "nSetwork_name12-s": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}
+                },
+            }
         }
