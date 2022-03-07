@@ -12,6 +12,7 @@ from models_library.sharing_networks import (
     ContainerAliases,
     validate_network_alias,
     validate_network_name,
+    SHARING_NETWORK_PREFIX,
 )
 from pydantic import ValidationError
 from servicelib.utils import logged_gather
@@ -20,8 +21,6 @@ from . import director_v2_api
 from .sharing_networks_db import get_sharing_networks, update_sharing_networks
 
 logger = logging.getLogger(__name__)
-
-SHARING_NETWORK_PREFIX = "shr-ntwrk"
 
 _ToRemove = namedtuple("_ToRemove", "project_id, node_id, network_name")
 _ToAdd = namedtuple("_ToAdd", "project_id, node_id, network_name, network_alias")

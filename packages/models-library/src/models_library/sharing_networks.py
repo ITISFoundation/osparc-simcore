@@ -10,6 +10,7 @@ from .projects_nodes_io import NodeID
 
 SERVICE_NETWORK_RE = r"^[a-zA-Z]([a-zA-Z0-9_-]{0,63})$"
 
+SHARING_NETWORK_PREFIX = "shr-ntwrk"
 
 DockerNetworkName = constr(regex=SERVICE_NETWORK_RE)
 DockerNetworkAlias = constr(regex=SERVICE_NETWORK_RE)

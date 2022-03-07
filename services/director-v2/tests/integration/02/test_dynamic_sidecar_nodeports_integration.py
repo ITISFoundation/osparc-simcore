@@ -62,7 +62,6 @@ from simcore_service_director_v2.models.schemas.constants import (
 )
 from starlette import status
 from utils import (
-    SEPARATOR,
     assert_all_services_running,
     assert_retrieve_service,
     assert_services_reply_200,
@@ -73,7 +72,9 @@ from utils import (
     is_legacy,
     patch_dynamic_service_url,
     run_command,
+    SEPARATOR,
     sleep_for,
+    update_sharing_networks_from_project,
 )
 from yarl import URL
 
@@ -338,6 +339,15 @@ async def cleanup_services_and_networks(
 @pytest.fixture
 def temp_dir(tmpdir: LocalPath) -> Path:
     return Path(tmpdir)
+
+
+@pytest.fixture
+async def ensure_sharing_networks_in_db(
+    initialized_app: FastAPI, current_study: ProjectAtDB
+) -> None:
+    await update_sharing_networks_from_project(
+        app=initialized_app, project=current_study
+    )
 
 
 # UTILS
@@ -791,6 +801,7 @@ async def test_nodeports_integration(
     # pylint: disable=too-many-arguments
     minimal_configuration: None,
     cleanup_services_and_networks: None,
+    ensure_sharing_networks_in_db: None,
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,
     db_manager: DBManager,
