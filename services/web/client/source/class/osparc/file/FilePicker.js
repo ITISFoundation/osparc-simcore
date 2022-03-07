@@ -281,16 +281,11 @@ qx.Class.define("osparc.file.FilePicker", {
       const progressBar = new qx.ui.indicator.ProgressBar();
       const nodeStatus = this.getNode().getStatus();
       nodeStatus.bind("progress", progressBar, "value", {
-        converter: val => {
-          const validProgress = osparc.data.model.NodeStatus.getValidProgress(val);
-          console.log("progressBar value", validProgress);
-          return validProgress;
-        }
+        converter: val => osparc.data.model.NodeStatus.getValidProgress(val)
       });
       nodeStatus.bind("progress", progressBar, "visibility", {
         converter: val => {
           const validProgress = osparc.data.model.NodeStatus.getValidProgress(val);
-          console.log("progressBar visibility", validProgress);
           return (validProgress > 0 && validProgress < 100) ? "visible" : "excluded";
         }
       });
@@ -560,7 +555,6 @@ qx.Class.define("osparc.file.FilePicker", {
       xhr.upload.addEventListener("progress", e => {
         if (e.lengthComputable) {
           const percentComplete = e.loaded / e.total * 100;
-          console.log("upload", percentComplete);
           this.getNode().getStatus().setProgress(percentComplete === 100 ? 99 : percentComplete);
         } else {
           console.log("Unable to compute progress information since the total size is unknown");
