@@ -24,6 +24,7 @@ astroid==2.9.3
     # via pylint
 async-timeout==4.0.2
     # via
+    #   -c requirements/_base.txt
     #   aiohttp
     #   aiopg
 attrs==21.4.0
