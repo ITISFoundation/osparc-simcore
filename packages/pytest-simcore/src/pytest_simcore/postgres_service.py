@@ -4,7 +4,6 @@
 import logging
 from typing import AsyncIterator, Dict, Iterator, List
 
-import aiopg.sa
 import pytest
 import sqlalchemy as sa
 import tenacity
@@ -168,7 +167,7 @@ def postgres_db(
 @pytest.fixture(scope="function")
 async def aiopg_engine(
     postgres_db: sa.engine.Engine,
-) -> AsyncIterator[aiopg.sa.engine.Engine]:
+) -> AsyncIterator:
     """An aiopg engine connected to an initialized database"""
     from aiopg.sa import create_engine
 
