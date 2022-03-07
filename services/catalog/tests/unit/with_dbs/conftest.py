@@ -37,6 +37,7 @@ def app(
 ) -> Iterable[FastAPI]:
     monkeypatch.setenv("CATALOG_TRACING", "null")
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
+    monkeypatch.setenv("POSTGRES_CLIENT_NAME", "pytest_client")
     app = init_app()
     yield app
 
