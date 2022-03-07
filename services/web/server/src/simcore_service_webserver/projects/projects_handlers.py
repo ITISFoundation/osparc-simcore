@@ -544,7 +544,7 @@ async def open_project(request: web.Request) -> web.Response:
             raise HTTPLocked(reason="Project is locked, try later")
 
         # user id opened project uuid
-        await projects_api.start_project_interactive_services(request, project, user_id)
+        await projects_api.start_project_dynamic_services(request, project, user_id)
 
         # notify users that project is now opened
         project = await projects_api.add_project_states_for_user(

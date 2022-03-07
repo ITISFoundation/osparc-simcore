@@ -24,10 +24,10 @@ from .projects.projects_api import (
     get_project_for_user,
     get_workbench_node_ids_from_project_uuid,
     is_node_id_present_in_any_project_workbench,
-    remove_project_interactive_services,
+    remove_project_dynamic_services,
 )
 from .projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
-from .projects.projects_exceptions import ProjectNotFoundError
+from .projects.projects_exceptions import ProjectLockError, ProjectNotFoundError
 from .redis import get_redis_lock_manager
 from .resource_manager.registry import RedisResourceRegistry, get_registry
 from .users_api import (
@@ -190,34 +190,48 @@ async def remove_disconnected_user_resources(
                     dead_key,
                 )
 
+                can_remove_all = True
                 if resource_name == "project_id":
                     # inform that the project can be closed on the backend side
                     #
                     try:
-                        await remove_project_interactive_services(
+                        await remove_project_dynamic_services(
                             user_id=int(dead_key["user_id"]),
                             project_uuid=resource_value,
                             app=app,
                             notify_users=True,
                         )
 
-                    except (ProjectNotFoundError, UserNotFoundError) as err:
+                    except (
+                        ProjectNotFoundError,
+                        UserNotFoundError,
+                    ) as err:
                         logger.warning(
-                            (
-                                "Could not remove project interactive services %s "
-                                "project_uuid=%s: %s"
-                            ),
+                            "Could not remove dynamic services for project with %s project_uuid=%s [%s]",
                             f"{user_id=}",
                             resource_value,
                             err,
                         )
+                        can_remove_all = True
 
-                # ONLY GUESTS: if this user was a GUEST also remove it from the database
-                # with the only associated project owned
-                await remove_all_resources_if_guest(
-                    app=app,
-                    user_id=int(dead_key["user_id"]),
-                )
+                    except ProjectLockError as err:
+                        logger.warning(
+                            "Project %s project_uuid=%s is locked [%s]. Skipped removing dynamic services",
+                            f"{user_id=}",
+                            resource_value,
+                            err,
+                        )
+                        # NOTE: 'can_remove_all' is a tmp fix to prevent remove_all_resources_if_guest when the project is locked
+                        # FIXME: otherwise remove_all_resources_if_guest removes both user and project creating orphan services
+                        can_remove_all = False
+
+                if can_remove_all:
+                    # ONLY GUESTS: if this user was a GUEST also remove it from the database
+                    # with the only associated project owned
+                    await remove_all_resources_if_guest(
+                        app=app,
+                        user_id=int(dead_key["user_id"]),
+                    )
 
             # (2) remove resource field in collected keys since (1) is completed
             logger.info(

@@ -1,4 +1,5 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
+import aioredlock
 
 
 class ProjectsException(Exception):
@@ -42,3 +43,6 @@ class NodeNotFoundError(ProjectsException):
         super().__init__(f"Node {node_uuid} not found in project {project_uuid}")
         self.node_uuid = node_uuid
         self.project_uuid = project_uuid
+
+
+ProjectLockError = aioredlock.LockError

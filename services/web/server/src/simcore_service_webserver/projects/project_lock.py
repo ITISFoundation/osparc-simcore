@@ -10,8 +10,8 @@ from ..users_api import UserNameDict
 
 PROJECT_REDIS_LOCK_KEY: str = "project:{}"
 
+
 ProjectLock = aioredlock.Lock
-ProjectLockError = aioredlock.LockError
 
 
 async def lock_project(
