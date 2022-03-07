@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 from typing import Any, Coroutine, Dict, List, Optional, Set
+from uuid import UUID
 
 from aiohttp import web
 from jsonschema import ValidationError
@@ -39,7 +40,7 @@ from .projects_utils import (
     get_project_unavailable_services,
     project_uses_available_services,
 )
-from .. import sharing_networks
+from .. import sharing_networks_core
 
 # When the user requests a project with a repo, the working copy might differ from
 # the repo project. A middleware in the meta module (if active) will resolve
@@ -141,13 +142,10 @@ async def create_projects(
             hidden=hidden,
         )
 
-        # there is no previous project so current_project is set to
-        # contain an empty sharing_networks object
-        current_project = {"sharingNetworks": {}}
-        await sharing_networks.propagate_changes(
+        await sharing_networks_core.update_from_workbench(
             app=request.app,
-            current_project=current_project,
-            new_project_data=new_project,
+            project_id=UUID(new_project["uuid"]),
+            workbench=new_project["workbench"],
         )
 
         # copies the project's DATA IF cloned
@@ -443,10 +441,8 @@ async def replace_project(request: web.Request):
                     reason=f"Project {project_uuid} cannot be modified while pipeline is still running."
                 )
 
-        await sharing_networks.propagate_changes(
-            app=request.app,
-            current_project=current_project,
-            new_project_data=new_project,
+        await sharing_networks_core.update_from_workbench(
+            app=request.app, project_id=project_uuid, workbench=new_project["workbench"]
         )
 
         new_project = await db.replace_user_project(

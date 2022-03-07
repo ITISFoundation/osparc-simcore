@@ -8,7 +8,7 @@ from models_library.projects import ProjectID
 from models_library.sharing_networks import (
     DockerNetworkAlias,
     DockerNetworkName,
-    SharingNetworks,
+    NetworksWithAliases,
     ContainerAliases,
     validate_network_alias,
     validate_network_name,
@@ -17,6 +17,7 @@ from pydantic import ValidationError
 from servicelib.utils import logged_gather
 
 from . import director_v2_api
+from .sharing_networks_db import get_sharing_networks, update_sharing_networks
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +39,8 @@ def _network_alias(label: str) -> DockerNetworkAlias:
 async def _send_network_configuration_to_dynamic_sidecar(
     app: Application,
     project_id: ProjectID,
-    new_sharing_networks: SharingNetworks,  # TODO: rename to new
-    sharing_networks: SharingNetworks,  # TODO. rename to existing
+    new_networks_with_aliases: NetworksWithAliases,
+    existing_networks_with_aliases: NetworksWithAliases,
 ) -> None:
     """
     Propagates the network configuration to the dynamic-sidecars.
@@ -53,8 +54,8 @@ async def _send_network_configuration_to_dynamic_sidecar(
     to_remove_items: Set[_ToRemove] = set()
 
     # if network no longer exist remove it from all nodes
-    for new_network_name, node_ids_and_aliases in new_sharing_networks.items():
-        if new_network_name not in sharing_networks:
+    for new_network_name, node_ids_and_aliases in new_networks_with_aliases.items():
+        if new_network_name not in existing_networks_with_aliases:
             for node_id in node_ids_and_aliases:
                 to_remove_items.add(
                     _ToRemove(
@@ -65,8 +66,10 @@ async def _send_network_configuration_to_dynamic_sidecar(
                 )
     # if node does not exist for the network, remove it
     # if alias is different remove the network
-    for new_network_name, node_ids_and_aliases in new_sharing_networks.items():
-        existing_node_ids_and_aliases = sharing_networks.get(new_network_name, {})
+    for new_network_name, node_ids_and_aliases in new_networks_with_aliases.items():
+        existing_node_ids_and_aliases = existing_networks_with_aliases.get(
+            new_network_name, {}
+        )
         for node_id, alias in node_ids_and_aliases.items():
             # node does not exist
             if node_id not in existing_node_ids_and_aliases:
@@ -78,7 +81,9 @@ async def _send_network_configuration_to_dynamic_sidecar(
                     )
                 )
             else:
-                existing_alias = existing_node_ids_and_aliases[node_id]
+                existing_alias = existing_networks_with_aliases[new_network_name][
+                    node_id
+                ]
                 # alias is different
                 if existing_alias != alias:
                     to_remove_items.add(
@@ -104,8 +109,10 @@ async def _send_network_configuration_to_dynamic_sidecar(
     # ADDING
     to_add_items: Set[_ToAdd] = set()
     # all aliases which are different or missing should be added
-    for new_network_name, node_ids_and_aliases in new_sharing_networks.items():
-        existing_node_ids_and_aliases = sharing_networks.get(new_network_name, {})
+    for new_network_name, node_ids_and_aliases in new_networks_with_aliases.items():
+        existing_node_ids_and_aliases = existing_networks_with_aliases.get(
+            new_network_name, {}
+        )
         for node_id, alias in node_ids_and_aliases.items():
             existing_alias = existing_node_ids_and_aliases.get(node_id)
             if alias != existing_alias:
@@ -132,20 +139,20 @@ async def _send_network_configuration_to_dynamic_sidecar(
     )
 
 
-async def _get_sharing_networks_for_default_network(
-    app: Application, new_project_data: Dict[str, Any]
-) -> Dict[str, Any]:
+async def _get_networks_with_aliases_for_default_network(
+    app: Application, project_id: ProjectID, new_workbench: Dict[str, Any]
+) -> NetworksWithAliases:
     """
     Until a proper UI is in place all container need to
     be on the same network.
     Return an updated version of the sharing_networks
     """
-    new_sharing_networks: SharingNetworks = SharingNetworks.parse_obj({})
+    new_networks_with_aliases: NetworksWithAliases = NetworksWithAliases.parse_obj({})
 
-    default_network = _network_name(UUID(new_project_data["uuid"]), "default")
-    new_sharing_networks[default_network] = ContainerAliases.parse_obj({})
+    default_network = _network_name(project_id, "default")
+    new_networks_with_aliases[default_network] = ContainerAliases.parse_obj({})
 
-    for node_uuid, node_content in new_project_data["workbench"].items():
+    for node_uuid, node_content in new_workbench.items():
         # only add dynamic-sidecar nodes
         if not await director_v2_api.requires_dynamic_sidecar(
             app,
@@ -169,35 +176,36 @@ async def _get_sharing_networks_for_default_network(
             )
             continue
 
-        new_sharing_networks[default_network][UUID(node_uuid)] = network_alias
+        new_networks_with_aliases[default_network][UUID(node_uuid)] = network_alias
 
-    return new_sharing_networks.dict(by_alias=True)
+    return new_networks_with_aliases
 
 
-async def propagate_changes(
-    app: Application, current_project: Dict[str, Any], new_project_data: Dict[str, Any]
+async def update_from_workbench(
+    app: Application, project_id: ProjectID, workbench: Dict[str, Any]
 ) -> None:
     """
-    Automatically updates the networks based on the incoming new sharing_networks.
-    It is assumed that this will be updated by the fronted.
-    NOTE: this needs to be called before saving the `new_project_data` to the database
+    Automatically updates the sharing networks based on the incoming new workbench.
     """
 
-    old_sharing_networks = SharingNetworks.parse_obj(current_project["sharingNetworks"])
+    existing_sharing_networks = await get_sharing_networks(
+        app=app, project_id=project_id
+    )
+    existing_networks_with_aliases = existing_sharing_networks.networks_with_aliases
 
     # NOTE: when UI is in place this is no longer required
     # for now all services are placed on the same default network
-    new_project_data[
-        "sharingNetworks"
-    ] = await _get_sharing_networks_for_default_network(app, new_project_data)
-
-    logger.debug("new_sharing_networks=%s", new_project_data["sharingNetworks"])
+    new_networks_with_aliases = await _get_networks_with_aliases_for_default_network(
+        app=app, project_id=project_id, new_workbench=workbench
+    )
+    logger.debug("%s", f"{existing_networks_with_aliases=}")
+    await update_sharing_networks(
+        app=app, project_id=project_id, networks_with_aliases=new_networks_with_aliases
+    )
 
     await _send_network_configuration_to_dynamic_sidecar(
         app=app,
-        project_id=UUID(new_project_data["uuid"]),
-        new_sharing_networks=SharingNetworks.parse_obj(
-            new_project_data["sharingNetworks"]
-        ),
-        sharing_networks=old_sharing_networks,
+        project_id=project_id,
+        new_networks_with_aliases=new_networks_with_aliases,
+        existing_networks_with_aliases=existing_networks_with_aliases,
     )
