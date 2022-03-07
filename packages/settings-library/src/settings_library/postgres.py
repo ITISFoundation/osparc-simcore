@@ -63,6 +63,11 @@ class PostgresSettings(BaseCustomSettings):
         return dsn
 
     @cached_property
+    def dsn_with_async_sqlalchemy(self) -> str:
+        dsn = self.dsn.replace("postgresql", "postgresql+asyncpg")
+        return dsn
+
+    @cached_property
     def dsn_with_query(self) -> str:
         """Some clients do not support queries in the dsn"""
         dsn = self.dsn

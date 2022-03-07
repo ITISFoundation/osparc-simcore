@@ -19,11 +19,9 @@ logger = logging.getLogger(__name__)
 async def connect_to_db(app: FastAPI) -> None:
     logger.debug("Connecting db ...")
     cfg: PostgresSettings = app.state.settings.CATALOG_POSTGRES
-    logger.debug(cfg.dsn)
-    modified_dsn = cfg.dsn.replace("postgresql", "postgresql+asyncpg")
-    logger.debug(modified_dsn)
+
     engine: AsyncEngine = create_async_engine(
-        modified_dsn,
+        cfg.dsn_with_async_sqlalchemy,
         pool_size=cfg.POSTGRES_MINSIZE,
         max_overflow=cfg.POSTGRES_MAXSIZE - cfg.POSTGRES_MINSIZE,
         connect_args={
@@ -31,7 +29,8 @@ async def connect_to_db(app: FastAPI) -> None:
         },
         echo=True,
     )
-    logger.debug("Connected to %s", cfg.dsn)
+
+    logger.debug("Connected to %s", engine.url)  # pylint: disable=no-member
 
     logger.debug("Checking db migration...")
     try:
@@ -56,4 +55,4 @@ async def close_db_connection(app: FastAPI) -> None:
     if engine := app.state.engine:
         await close_engine(engine)
 
-    logger.debug("Disconnected from %s", engine.url)
+    logger.debug("Disconnected from %s", engine.url)  # pylint: disable=no-member
