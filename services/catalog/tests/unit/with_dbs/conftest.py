@@ -5,6 +5,7 @@
 
 import itertools
 import random
+from random import randint
 from typing import Any, AsyncIterator, Callable, Dict, Iterable, Iterator, List, Tuple
 
 import pytest
@@ -13,9 +14,11 @@ import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
 from faker import Faker
 from fastapi import FastAPI
+from pydantic import PositiveInt
 from pytest_mock.plugin import MockerFixture
 from respx.router import MockRouter
 from simcore_postgres_database.models.products import products
+from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_service_catalog.core.application import init_app
 from simcore_service_catalog.db.tables import (
     groups,
@@ -81,6 +84,37 @@ def director_mockup(app: FastAPI) -> Iterator[MockRouter]:
 #   -> user, user_to_groups
 # - products
 #
+
+
+@pytest.fixture(scope="session")
+def user_id() -> PositiveInt:
+    return randint(1, 10000)
+
+
+@pytest.fixture()
+def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Iterator[Dict]:
+    with postgres_db.connect() as con:
+        # removes all users before continuing
+        con.execute(users.delete())
+        con.execute(
+            users.insert()
+            .values(
+                id=user_id,
+                name="test user",
+                email="test@user.com",
+                password_hash="testhash",
+                status=UserStatus.ACTIVE,
+                role=UserRole.USER,
+            )
+            .returning(sa.literal_column("*"))
+        )
+        # this is needed to get the primary_gid correctly
+        result = con.execute(sa.select([users]).where(users.c.id == user_id))
+        user = result.first()
+
+        yield dict(user)
+
+        con.execute(users.delete().where(users.c.id == user_id))
 
 
 @pytest.fixture()
