@@ -128,11 +128,4 @@ projects = sa.Table(
         default=False,
         doc="If true, the project is by default not listed in the API",
     ),
-    sa.Column(
-        "sharing_networks",
-        JSONB,
-        nullable=False,
-        server_default=sa.text("'{}'::jsonb"),
-        doc="Networks with attached services by node_id and their container aliases",
-    ),
 )
