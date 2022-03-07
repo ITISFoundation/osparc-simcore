@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import urllib.parse
+from collections import deque
 from functools import lru_cache
 from time import time
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -12,6 +13,7 @@ from models_library.services import KEY_RE, VERSION_RE
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from pydantic import ValidationError, constr
 from pydantic.types import PositiveInt
+from simcore_service_catalog.services.director import MINUTE
 from starlette.requests import Request
 
 from ...db.repositories.groups import GroupsRepository
@@ -66,6 +68,18 @@ def _prepare_service_details(
     return validated_service
 
 
+def async_lru_cache(*lru_cache_args, **lru_cache_kwargs):
+    def async_lru_cache_decorator(async_function):
+        @lru_cache(*lru_cache_args, **lru_cache_kwargs)
+        def cached_async_function(*args, **kwargs):
+            coroutine = async_function(*args, **kwargs)
+            return asyncio.ensure_future(coroutine)
+
+        return cached_async_function
+
+    return async_lru_cache_decorator
+
+
 @router.get("", response_model=List[ServiceOut], **RESPONSE_MODEL_POLICY)
 @cancellable_request
 async def list_services(
@@ -111,39 +125,37 @@ async def list_services(
         ]
         return services_overview
 
-    # let's get all the services access rights
-    get_services_access_rights_task = services_repo.list_services_access_rights(
-        key_versions=list(services_in_db.keys()), product_name=x_simcore_products_name
-    )
-
-    # let's get the service owners
-    get_services_owner_emails_task = groups_repository.list_user_emails_from_gids(
-        {s.owner for s in services_in_db.values() if s.owner}
-    )
-
     # getting services from director
     # get_registry_services_task = director_client.get("/services")
+    DIRECTOR_CACHING_TTL = 5 * MINUTE
 
-    def _get_cache_ttl(seconds=5 * 60):
+    def _get_cache_ttl(seconds):
         return round(time() / seconds)
 
-    @lru_cache(maxsize=2)
+    @async_lru_cache(maxsize=1)
     async def cached_registry_services(_cache_ttl):
         return await director_client.get("/services")
 
-    get_registry_services_task = cached_registry_services(_get_cache_ttl())
-
-    services_owner_emails = {}
     (
         services_in_registry,
         services_access_rights,
         services_owner_emails,
     ) = await asyncio.gather(
-        get_registry_services_task,
-        get_services_access_rights_task,
-        get_services_owner_emails_task,
+        cached_registry_services(_get_cache_ttl(DIRECTOR_CACHING_TTL)),
+        services_repo.list_services_access_rights(
+            key_versions=services_in_db,
+            product_name=x_simcore_products_name,
+        ),
+        groups_repository.list_user_emails_from_gids(
+            {s.owner for s in services_in_db.values() if s.owner}
+        ),
     )
 
+    filtered_services = deque(
+        s
+        for s in (request.app.state.frontend_services_catalog + services_in_registry)
+        if (s.get("key"), s.get("version")) in services_in_db
+    )
     # NOTE: for the details of the services:
     # 1. we get all the services from the director-v0 (TODO: move the registry to the catalog)
     # 2. we filter the services using the visible ones from the db
