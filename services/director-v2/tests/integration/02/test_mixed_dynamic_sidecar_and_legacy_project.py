@@ -214,16 +214,6 @@ def simcore_services_ready_and_change_director_env(
 
 # TESTS ----------------------------------------------------------------------------------------
 
-pytestmark = pytest.mark.skip(
-    reason="FIXME: temp disabled due to faulty environ variables"
-)
-
-
-def test_all_stack_services_running(
-    simcore_services_ready_and_change_director_env, dy_static_file_server_project
-):
-    assert True
-
 
 async def test_legacy_and_dynamic_sidecar_run(
     dy_static_file_server_project: ProjectAtDB,
