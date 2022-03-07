@@ -439,26 +439,6 @@ async def retrieve_dynamic_service_inputs(
 
 
 @log_decorator(logger=log)
-async def safe_retrieve_dynamic_service_inputs(
-    app: web.Application, service_uuid: str, port_keys: List[str]
-) -> Optional[DataType]:
-    """Upon failure does not raise, but returns None"""
-    try:
-
-        result = await retrieve_dynamic_service_inputs(app, service_uuid, port_keys)
-        return result
-
-    except DirectorServiceError as exc:
-        log.warning(
-            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s:%s]",
-            service_uuid,
-            port_keys,
-            exc.status,
-            exc.reason,
-        )
-
-
-@log_decorator(logger=log)
 async def restart_dynamic_service(app: web.Application, node_uuid: str) -> None:
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = settings.base_url / f"dynamic_services/{node_uuid}:restart"
