@@ -69,7 +69,6 @@ services:
       - SC_BOOT_MODE=debug-ptvsd
       - WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS=15
       - WEBSERVER_LOGLEVEL=${LOG_LEVEL:-DEBUG}
-      - REST_SWAGGER_API_DOC_ENABLED=1
 
   dask-sidecar:
     volumes:
