@@ -17,6 +17,7 @@ from models_library.projects_nodes import Node, NodeID, OutputID, OutputTypes
 from models_library.services import ServiceDockerData
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import Field
+from pydantic.types import PositiveInt
 
 from .meta_modeling_function_nodes import (
     FUNCTION_SERVICE_TO_CALLABLE,
@@ -124,6 +125,8 @@ def extract_parameters(
 
 # DOMAIN MODEL for project iteration ------------------------------------------------------------
 
+IterationID = PositiveInt
+
 
 class ProjectIteration(BaseModel):
     """
@@ -135,10 +138,16 @@ class ProjectIteration(BaseModel):
 
     # version-control info
     repo_id: Optional[int] = None
-    repo_commit_id: CommitID = Field(...)
+    repo_commit_id: CommitID = Field(
+        ...,
+        description="this id makes it unique but does not guarantees order. See iter_index for that",
+    )
 
     # iteration info
-    iter_index: int = Field(...)
+    iteration_index: IterationID = Field(
+        ...,
+        description="Index that allows iterations to be sortable",
+    )
     total_count: Union[int, Literal["unbound"]] = "unbound"
     parameters_checksum: SHA1Str = Field(...)
 
@@ -159,7 +168,7 @@ class ProjectIteration(BaseModel):
         """Composes unique tag name for this iteration"""
         return compose_iteration_tag_name(
             repo_commit_id=self.repo_commit_id,
-            iter_index=self.iter_index,
+            iteration_index=self.iteration_index,
             total_count=self.total_count,
             parameters_checksum=self.parameters_checksum,
         )
@@ -168,22 +177,20 @@ class ProjectIteration(BaseModel):
 # NOTE: compose_/parse_ functions are basically serialization functions for ProjectIteration
 #       into/from string tags. An alternative approach would be simply using json.dump/load
 #       but we should guarantee backwards compatibilty with old tags
-#
+# TODO: change this by json-serialization
 def compose_iteration_tag_name(
     repo_commit_id: CommitID,
-    iter_index: int,
+    iteration_index: IterationID,
     total_count: Union[int, str],
     parameters_checksum: SHA1Str,
 ) -> str:
     """Composes unique tag name for iter_index-th iteration of repo_commit_id out of total_count"""
-    return (
-        f"iteration:{repo_commit_id}/{iter_index}/{total_count}/{parameters_checksum}"
-    )
+    return f"iteration:{repo_commit_id}/{iteration_index}/{total_count}/{parameters_checksum}"
 
 
 def parse_iteration_tag_name(name: str) -> Dict[str, Any]:
     if m := re.match(
-        r"^iteration:(?P<repo_commit_id>\d+)/(?P<iter_index>\d+)/(?P<total_count>-*\d+)/(?P<parameters_checksum>.*)$",
+        r"^iteration:(?P<repo_commit_id>\d+)/(?P<iteration_index>\d+)/(?P<total_count>-*\d+)/(?P<parameters_checksum>.*)$",
         name,
     ):
         return m.groupdict()
@@ -261,14 +268,16 @@ async def get_or_create_runnable_projects(
     total_count = len(iterations)
     original_name = project["name"]
 
-    for iter_index, (parameters, updated_nodes) in enumerate(iterations):
+    # FIXME: in an optimization, iteration_index should start with LAST iterated index
+    for iteration_index, (parameters, updated_nodes) in enumerate(iterations, start=1):
         log.debug(
-            "Creating snapshot of project %s with parameters=%s",
-            project_uuid,
-            parameters,
+            "Creating snapshot of project %s with parameters=%s [%s]",
+            f"{project_uuid=}",
+            f"{parameters=}",
+            f"{updated_nodes=}",
         )
 
-        project["name"] = f"{original_name}/{iter_index}"
+        project["name"] = f"{original_name}/{iteration_index}"
         project["workbench"].update(
             {
                 # converts model in dict patching first thumbnail
@@ -282,7 +291,7 @@ async def get_or_create_runnable_projects(
         project_iteration = ProjectIteration(
             repo_id=repo_id,
             repo_commit_id=main_commit_id,
-            iter_index=iter_index,
+            iteration_index=iteration_index,
             total_count=total_count,
             parameters_checksum=_compute_params_checksum(parameters),
         )
