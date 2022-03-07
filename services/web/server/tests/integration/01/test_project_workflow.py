@@ -11,7 +11,7 @@
 import asyncio
 from copy import deepcopy
 from typing import Callable, Dict, List, Optional, Union
-from uuid import uuid4, UUID
+from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
@@ -33,7 +33,6 @@ from simcore_service_webserver.resource_manager.plugin import setup_resource_man
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
-from simcore_service_webserver.sharing_networks import SHARING_NETWORK_PREFIX
 from simcore_service_webserver.session import setup_session
 
 API_VERSION = "v0"
@@ -205,7 +204,6 @@ async def test_workflow(
     standard_groups: List[Dict[str, str]],
     storage_subsystem_mock,
     director_v2_service_mock,
-    mock_sharing_networks_network_name: None,
 ):
     # empty list
     projects = await _request_list(client)
@@ -246,10 +244,6 @@ async def test_workflow(
     modified_project["accessRights"].update(
         {str(standard_groups[0]["gid"]): {"read": True, "write": True, "delete": False}}
     )
-
-    modified_project["sharingNetworks"] = {
-        f"{SHARING_NETWORK_PREFIX}_{UUID(int=0)}_mocked": {}
-    }
     # modify
     pid = modified_project["uuid"]
     await _request_update(client, modified_project, pid)
