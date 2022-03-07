@@ -52,7 +52,7 @@ def client(app: FastAPI) -> Iterator[TestClient]:
 
 
 @pytest.fixture()
-def director_mockup(app: FastAPI) -> Iterator:
+def director_mockup(app: FastAPI) -> Iterator[respx.MockRouter]:
     with respx.mock(
         base_url=app.state.settings.CATALOG_DIRECTOR.base_url,
         assert_all_called=False,
@@ -62,7 +62,7 @@ def director_mockup(app: FastAPI) -> Iterator:
         respx_mock.get("/services", name="list_services").respond(
             200, json={"data": []}
         )
-        yield
+        yield respx_mock
 
 
 # DATABASE tables fixtures -----------------------------------
