@@ -285,12 +285,19 @@ qx.Class.define("osparc.file.FilePicker", {
       nodeStatus.bind("progress", progressBar, "value", {
         converter: val => osparc.data.model.NodeStatus.getValidProgress(val)
       });
-      nodeStatus.bind("changeProgress", e => {
-        const validProgress = osparc.data.model.NodeStatus.getValidProgress(e.getData());
+      const progressChanged = () => {
+        const progress = this.getNode().getStatus().getProgress();
+        const validProgress = osparc.data.model.NodeStatus.getValidProgress(progress);
         const uploading = (validProgress > 0 && validProgress < 100);
-        progressBar.setVisiblity(uploading ? "visible" : "excluded");
-        this.setEnabled(!uploading);
-      });
+        progressBar.setVisibility(uploading ? "visible" : "excluded");
+        this._getChildren().forEach(child => {
+          if (child !== progressBar) {
+            child.setEnabled(!uploading);
+          }
+        });
+      };
+      nodeStatus.addListener("changeProgress", () => progressChanged());
+      progressChanged();
       this._add(progressBar);
     },
 
@@ -572,7 +579,7 @@ qx.Class.define("osparc.file.FilePicker", {
           if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
             this.setOutputValueFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
           }
-          this.__reloadFilesTree();
+          this.__buildLayout();
           if (this.__filesTree) {
             this.__filesTree.loadFilePath(this.__getOutputFile()["value"]);
           }
