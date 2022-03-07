@@ -1,4 +1,5 @@
 import logging
+import urllib.parse
 from pathlib import Path
 from typing import Type
 
@@ -68,7 +69,7 @@ async def study_import(
     base_temp_dir = Path(temp_dir)
     upload_file_name = base_temp_dir / "uploaded.zip"
     # upload and verify checksum
-    original_file_name = file_field.filename
+    original_file_name = urllib.parse.unquote(file_field.filename)
 
     async with aiofiles.open(upload_file_name, mode="wb") as file_descriptor:
         while True:

@@ -10,6 +10,7 @@ pytest_plugins = [
     "pytest_simcore.repository_paths",
     "pytest_simcore.schemas",
     "pytest_simcore.pydantic_models",
+    "pytest_simcore.pytest_global_environs",
 ]
 
 

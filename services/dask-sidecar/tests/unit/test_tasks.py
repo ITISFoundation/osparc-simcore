@@ -313,7 +313,7 @@ def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
 
 def test_run_computational_sidecar_real_fct(
     caplog_info_level: LogCaptureFixture,
-    loop: asyncio.AbstractEventLoop,
+    event_loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
     dask_subsystem_mock: Dict[str, MockerFixture],
     ubuntu_task: ServiceExampleParam,
@@ -382,7 +382,7 @@ def test_run_computational_sidecar_real_fct(
 
 
 def test_run_multiple_computational_sidecar_dask(
-    loop: asyncio.AbstractEventLoop,
+    event_loop: asyncio.AbstractEventLoop,
     dask_client: Client,
     ubuntu_task: ServiceExampleParam,
     mocker: MockerFixture,
@@ -471,7 +471,7 @@ def test_run_computational_sidecar_dask(
 
 def test_failing_service_raises_exception(
     caplog_info_level: LogCaptureFixture,
-    loop: asyncio.AbstractEventLoop,
+    event_loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
     dask_subsystem_mock: Dict[str, MockerFixture],
     ubuntu_task_fail: ServiceExampleParam,
@@ -490,7 +490,7 @@ def test_failing_service_raises_exception(
 
 def test_running_service_that_generates_unexpected_data_raises_exception(
     caplog_info_level: LogCaptureFixture,
-    loop: asyncio.AbstractEventLoop,
+    event_loop: asyncio.AbstractEventLoop,
     mock_service_envs: None,
     dask_subsystem_mock: Dict[str, MockerFixture],
     ubuntu_task_unexpected_output: ServiceExampleParam,

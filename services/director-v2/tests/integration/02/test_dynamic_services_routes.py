@@ -93,7 +93,6 @@ def mocked_engine() -> AsyncMock:
 
 @pytest.fixture
 async def test_client(
-    loop: asyncio.AbstractEventLoop,
     minimal_configuration: None,
     mock_env: None,
     network_name: str,

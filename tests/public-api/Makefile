@@ -38,6 +38,7 @@ test-dev: ## runs tests with --keep-docker-up, --pdb and --ff
 	--failed-first \
 	--durations=10 \
 	--cov-report=xml \
+	--asyncio-mode=auto \
 	--pdb \
 	$(CURDIR)
 

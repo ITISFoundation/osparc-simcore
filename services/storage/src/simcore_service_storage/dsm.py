@@ -1103,7 +1103,12 @@ class DataStorageManager:  # pylint: disable=too-many-public-methods
 
             async with self.engine.acquire() as conn, self._create_aiobotocore_client_context() as aioboto_client:
 
-                number_of_rows_in_db = await conn.scalar(file_meta_data.count()) or 0
+                number_of_rows_in_db = (
+                    await conn.scalar(
+                        sa.select([sa.func.count()]).select_from(file_meta_data)
+                    )
+                    or 0
+                )
                 logger.warning(
                     "Total number of entries to check %d",
                     number_of_rows_in_db,

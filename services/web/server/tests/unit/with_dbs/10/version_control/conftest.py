@@ -74,7 +74,7 @@ async def catalog_subsystem_mock(monkeypatch, fake_project) -> None:
 
 @pytest.fixture
 def app_cfg(
-    default_app_cfg, aiohttp_unused_port, catalog_subsystem_mock, monkeypatch
+    default_app_cfg, unused_tcp_port_factory, catalog_subsystem_mock, monkeypatch
 ) -> Dict[str, Any]:
     """App's configuration used for every test in this module
 
@@ -84,7 +84,7 @@ def app_cfg(
 
     monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "1")
 
-    cfg["main"]["port"] = aiohttp_unused_port()
+    cfg["main"]["port"] = unused_tcp_port_factory()
     cfg["main"]["studies_access_enabled"] = True
 
     exclude = {

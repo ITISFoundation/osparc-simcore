@@ -28,7 +28,7 @@ from simcore_service_webserver.db_models import UserRole
 
 @pytest.fixture()
 def client(
-    loop,
+    event_loop,
     app_cfg,
     aiohttp_client,
     postgres_db,
@@ -52,7 +52,7 @@ def client(
     assert setup_catalog(app)
     setup_products(app)
 
-    yield loop.run_until_complete(
+    yield event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": app_cfg["main"]["port"]})
     )
 

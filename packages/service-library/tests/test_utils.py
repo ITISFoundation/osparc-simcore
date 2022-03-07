@@ -52,7 +52,7 @@ def mock_logger(mocker):
     ), "Expected all 3 errors ALWAYS logged as warnings"
 
 
-async def test_logged_gather(loop, coros, mock_logger):
+async def test_logged_gather(event_loop, coros, mock_logger):
 
     with pytest.raises(ValueError) as excinfo:
         await logged_gather(*coros, reraise=True, log=mock_logger)
@@ -63,7 +63,7 @@ async def test_logged_gather(loop, coros, mock_logger):
     # NOTE: only first error in the list is raised, since it is not RuntimeError, that task
     assert isinstance(excinfo.value, ValueError)
 
-    for task in asyncio.all_tasks(loop):
+    for task in asyncio.all_tasks(event_loop):
         if task is not asyncio.current_task():
             # info
             task.print_stack()

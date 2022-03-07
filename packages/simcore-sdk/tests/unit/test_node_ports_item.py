@@ -139,7 +139,6 @@ async def file_link_mock(
     ],
 )
 async def test_valid_type(
-    loop,
     user_id: int,
     project_id: str,
     node_uuid: str,

@@ -25,6 +25,7 @@ test_isolated() {
     --log-date-format="%Y-%m-%d %H:%M:%S" \
     --cov=simcore_service_webserver --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+    --asyncio-mode=auto \
     -v -m "not travis" services/web/server/tests/unit/isolated
 }
 
@@ -34,6 +35,7 @@ test_with_db() {
     --log-date-format="%Y-%m-%d %H:%M:%S" \
     --cov=simcore_service_webserver --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+    --asyncio-mode=auto \
     -v -m "not travis" "services/web/server/tests/unit/with_dbs/$1"
 }
 

@@ -77,7 +77,7 @@ async def _apply_observation_cycle(
         )
 
     try:
-        with timeout(
+        async with timeout(
             dynamic_services_settings.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_MAX_STATUS_API_DURATION
         ):
             await update_dynamic_sidecar_health(app, scheduler_data)

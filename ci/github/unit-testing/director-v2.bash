@@ -17,12 +17,14 @@ test() {
   pytest --numprocesses=auto --cov=simcore_service_director_v2 --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
     -v -m "not travis" services/director-v2/tests/unit --ignore=services/director-v2/tests/unit/with_dbs \
+    --asyncio-mode=auto \
     --ignore=services/director-v2/tests/unit/with_swarm
   # these tests cannot be run in parallel
   pytest --log-format="%(asctime)s %(levelname)s %(message)s" \
     --log-date-format="%Y-%m-%d %H:%M:%S" \
     --cov=simcore_service_director_v2 --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+    --asyncio-mode=auto \
     -v -m "not travis" services/director-v2/tests/unit/with_swarm services/director-v2/tests/unit/with_dbs
 }
 

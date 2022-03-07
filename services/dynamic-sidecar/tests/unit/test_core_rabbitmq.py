@@ -33,6 +33,7 @@ pytest_plugins = [
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.tmp_path_extra",
+    "pytest_simcore.pytest_global_environs",
 ]
 
 pytest_simcore_core_services_selection = ["rabbit"]

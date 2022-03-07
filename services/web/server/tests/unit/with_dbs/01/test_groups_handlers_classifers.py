@@ -12,14 +12,14 @@ from pytest_simcore.helpers.utils_dict import ConfigDict
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg: ConfigDict, aiohttp_unused_port):
+def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory):
     """App's configuration used for every test in this module
 
     NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
     """
     cfg = deepcopy(default_app_cfg)
 
-    cfg["main"]["port"] = aiohttp_unused_port()
+    cfg["main"]["port"] = unused_tcp_port_factory()
     cfg["main"]["studies_access_enabled"] = True
 
     exclude = {

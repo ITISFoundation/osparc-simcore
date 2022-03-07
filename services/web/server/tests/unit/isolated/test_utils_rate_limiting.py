@@ -26,7 +26,7 @@ async def get_ok_handler(_request: web.Request):
     "requests_per_second",
     [0.5 * MAX_REQUEST_RATE, MAX_REQUEST_RATE, 2 * MAX_REQUEST_RATE],
 )
-async def test_global_rate_limit_route(requests_per_second, aiohttp_client, loop):
+async def test_global_rate_limit_route(requests_per_second, aiohttp_client):
     #
     app = web.Application()
     app.router.add_get("/", get_ok_handler)

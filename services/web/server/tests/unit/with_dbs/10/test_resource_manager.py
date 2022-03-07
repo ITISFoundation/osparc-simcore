@@ -84,7 +84,7 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
 
 @pytest.fixture
 def client(
-    loop: asyncio.AbstractEventLoop,
+    event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_cfg: Dict[str, Any],
     postgres_db: sa.engine.Engine,
@@ -129,7 +129,7 @@ def client(
     # garbage_collector_core.collect_garbage
     assert not is_setup_completed("simcore_service_webserver.garbage_collector", app)
 
-    return loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},

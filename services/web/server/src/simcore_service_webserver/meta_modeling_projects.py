@@ -11,7 +11,7 @@ import re
 from typing import List, Tuple
 
 from aiohttp import web
-from aiohttp.web_middlewares import _Handler
+from aiohttp.typedefs import Handler
 from models_library.basic_regex import UUID_RE
 from models_library.projects import ProjectID
 
@@ -41,7 +41,7 @@ def _match_project_id(request: web.Request):
 
 
 @web.middleware
-async def projects_redirection_middleware(request: web.Request, handler: _Handler):
+async def projects_redirection_middleware(request: web.Request, handler: Handler):
     """Intercepts /projects/{project_id}* requests and redirect them to the copy @HEAD
 
     Any given project has a unique identifier 'project_id' but, when activated,

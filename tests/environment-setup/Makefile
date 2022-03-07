@@ -21,4 +21,4 @@ install-dev install-prod install-ci:  ## install requirements in dev/prod/ci mod
 .PHONY: tests
 tests: ## runs all tests
 	# running unit tests
-	@$(VENV_DIR)/bin/pytest -vv -x --ff --pdb $(CURDIR)
+	@$(VENV_DIR)/bin/pytest -vv --asyncio-mode=auto -x --ff --pdb $(CURDIR)

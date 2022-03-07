@@ -13,6 +13,7 @@ from aiodocker.utils import clean_filters
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from servicelib.utils import logged_gather
+from packaging import version
 
 from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX, UserID
@@ -35,12 +36,10 @@ log = logging.getLogger(__name__)
 
 def _monkey_patch_aiodocker() -> None:
     """Raises an error once the library is up to date."""
-    from distutils.version import LooseVersion
-
     from aiodocker import volumes
     from aiodocker.volumes import DockerVolume
 
-    if LooseVersion(aiodocker.__version__) > LooseVersion("0.21.0"):
+    if version.parse(aiodocker.__version__) > version.parse("0.21.0"):
         raise RuntimeError(
             "Please check that PR https://github.com/aio-libs/aiodocker/pull/623 "
             "is not part of the current bump version. "

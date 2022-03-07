@@ -70,7 +70,6 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
 
 @pytest.fixture()
 def minimal_configuration(
-    loop: asyncio.AbstractEventLoop,
     sleeper_service: Dict[str, str],
     jupyter_service: Dict[str, str],
     dask_scheduler_service: None,

@@ -328,7 +328,6 @@ def test_director_openapi_specs(director_openapi_specs):
 
 
 async def test_director_workflow(
-    loop,
     mock_director_service,
     app_mock,
     user_id: int,

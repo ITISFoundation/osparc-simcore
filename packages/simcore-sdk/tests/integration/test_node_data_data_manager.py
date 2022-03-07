@@ -5,7 +5,6 @@
 
 import hashlib
 import os
-from asyncio import BaseEventLoop
 from pathlib import Path
 from typing import Callable, Set, Tuple
 from uuid import uuid4
@@ -131,7 +130,6 @@ def dir_content_multiple_files_path(temp_dir: Path) -> Path:
     ],
 )
 async def test_valid_upload_download(
-    loop: BaseEventLoop,
     filemanager_cfg: None,
     content_path: Path,
     user_id: int,
@@ -171,7 +169,6 @@ async def test_valid_upload_download(
     ],
 )
 async def test_valid_upload_download_saved_to(
-    loop: BaseEventLoop,
     filemanager_cfg: None,
     content_path: Path,
     user_id: int,

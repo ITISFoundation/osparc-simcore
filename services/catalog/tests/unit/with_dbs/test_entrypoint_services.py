@@ -98,7 +98,7 @@ def db_services(
 
 @pytest.fixture()
 async def director_mockup(
-    loop, monkeypatch, registry_services: List[ServiceOut], app: FastAPI
+    monkeypatch, registry_services: List[ServiceOut], app: FastAPI
 ):
     async def return_list_services(user_id: int) -> List[ServiceOut]:
         return registry_services
@@ -133,7 +133,6 @@ async def director_mockup(
 
 @pytest.fixture()
 async def db_mockup(
-    loop,
     monkeypatch,
     app: FastAPI,
     user_groups: List[GroupAtDB],

@@ -9,6 +9,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import sys
 import textwrap
 from copy import deepcopy
@@ -82,15 +83,15 @@ def docker_compose_file(
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg: ConfigDict, aiohttp_unused_port) -> ConfigDict:
+def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory) -> ConfigDict:
     """
     NOTE: SHOULD be overriden in any test module to configure the app accordingly
     """
     cfg = deepcopy(default_app_cfg)
 
     # fills ports on the fly
-    cfg["main"]["port"] = aiohttp_unused_port()
-    cfg["storage"]["port"] = aiohttp_unused_port()
+    cfg["main"]["port"] = unused_tcp_port_factory()
+    cfg["storage"]["port"] = unused_tcp_port_factory()
 
     # this fixture can be safely modified during test since it is renovated on every call
     return cfg
@@ -98,7 +99,7 @@ def app_cfg(default_app_cfg: ConfigDict, aiohttp_unused_port) -> ConfigDict:
 
 @pytest.fixture
 def web_server(
-    loop,
+    event_loop: asyncio.AbstractEventLoop,
     app_cfg: ConfigDict,
     monkeypatch: MonkeyPatch,
     postgres_db,
@@ -119,7 +120,9 @@ def web_server(
 
     disable_static_webserver(app)
 
-    server = loop.run_until_complete(aiohttp_server(app, port=cfg["main"]["port"]))
+    server = event_loop.run_until_complete(
+        aiohttp_server(app, port=cfg["main"]["port"])
+    )
 
     assert isinstance(postgres_db, sa.engine.Engine)
     pg_settings = dict(e.split("=") for e in app[APP_DB_ENGINE_KEY].dsn.split())
@@ -132,9 +135,12 @@ def web_server(
 
 @pytest.fixture
 def client(
-    loop, aiohttp_client, web_server: TestServer, mock_orphaned_services
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client,
+    web_server: TestServer,
+    mock_orphaned_services,
 ) -> TestClient:
-    cli = loop.run_until_complete(aiohttp_client(web_server))
+    cli = event_loop.run_until_complete(aiohttp_client(web_server))
     return cli
 
 
@@ -188,7 +194,7 @@ def computational_system_mock(mocker):
 
 
 @pytest.fixture
-async def storage_subsystem_mock(loop, mocker) -> MockedStorageSubsystem:
+async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
     """
     Patches client calls to storage service
 
@@ -222,7 +228,7 @@ def asyncpg_storage_system_mock(mocker):
 
 
 @pytest.fixture
-async def mocked_director_v2_api(loop, mocker) -> Dict[str, MagicMock]:
+async def mocked_director_v2_api(mocker) -> Dict[str, MagicMock]:
     mock = {}
 
     #
@@ -249,7 +255,7 @@ async def mocked_director_v2_api(loop, mocker) -> Dict[str, MagicMock]:
 
 @pytest.fixture
 def create_dynamic_service_mock(
-    loop, client: TestClient, mocked_director_v2_api: Dict
+    client: TestClient, mocked_director_v2_api: Dict
 ) -> Callable:
     services = []
 
@@ -351,7 +357,7 @@ def redis_service(docker_services, docker_ip) -> URL:
 
 
 @pytest.fixture
-async def redis_client(loop, redis_service: URL):
+async def redis_client(redis_service: URL):
     client = await aioredis.create_redis_pool(str(redis_service), encoding="utf-8")
     yield client
 

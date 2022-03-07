@@ -20,6 +20,7 @@ tests: ## runs unit tests
 	# running unit tests
 	@pytest -vv --color=yes --exitfirst --failed-first --durations=10 \
 	--cov-config=../../.coveragerc --cov=models_library --cov-report=term-missing \
+	--asyncio-mode=auto \
 	--pdb $(CURDIR)/tests
 
 
