@@ -1,6 +1,6 @@
 from typing import Optional
 
-from models_library.services import ServiceDockerData, ServiceMetaData, ServiceType
+from models_library.services import ServiceDockerData, ServiceMetaData
 from models_library.services_access import ServiceAccessRights
 from pydantic import EmailStr, Extra
 from pydantic.main import BaseModel
@@ -64,10 +64,6 @@ class ServiceOut(
 ):  # pylint: disable=too-many-ancestors
     owner: Optional[EmailStr]
 
-    @classmethod
-    def no_detail_service(cls, key, version):
-        return NoDetailService.copy(update={"key": key, "version": version})
-
     class Config:
         extra = Extra.ignore
         schema_extra = {
@@ -109,20 +105,6 @@ class ServiceOut(
             }
         }
 
-
-NoDetailService = ServiceOut.parse_obj(
-    {
-        "key": "simcore/services/dynamic/example",
-        "version": "0.0.0",
-        "name": "nodetails",
-        "description": "nodetails",
-        "type": ServiceType.COMPUTATIONAL,
-        "authors": [{"name": "nodetails", "email": "nodetails@nodetails.com"}],
-        "contact": "nodetails@nodetails.com",
-        "inputs": {},
-        "outputs": {},
-    }
-)
 
 # TODO: prototype for next iteration
 # Items are non-detailed version of resources listed
