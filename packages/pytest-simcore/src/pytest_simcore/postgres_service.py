@@ -184,7 +184,7 @@ async def aiopg_engine(
 async def sqlalchemy_async_engine(
     postgres_db: sa.engine.Engine,
 ) -> AsyncIterator:
-    # NOTE: prevent having to import this if latest sqlalchemy not installed (temp)
+    # NOTE: prevent having to import this if latest sqlalchemy not installed
     from sqlalchemy.ext.asyncio import create_async_engine
 
     engine = create_async_engine(
