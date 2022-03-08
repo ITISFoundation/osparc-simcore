@@ -71,22 +71,6 @@ def test_project_networks() -> None:
     assert ProjectNetworks.parse_obj(ProjectNetworks.Config.schema_extra["example"])
 
 
-def test_class_constructors(uuid: UUID) -> None:
-    assert ProjectNetworks.create_empty(uuid).dict() == {
-        "project_uuid": uuid,
-        "networks_with_aliases": {},
-    }
-
-    network_aliases = NetworksWithAliases.parse_obj(
-        {"ok-netowrk_naeme": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "with_ok_id"}}
-    )
-    expected_dict = {
-        "project_uuid": uuid,
-        "networks_with_aliases": network_aliases,
-    }
-    assert ProjectNetworks.create(uuid, network_aliases) == expected_dict
-
-
 def test_class_constructors_fail() -> None:
     with pytest.raises(ValidationError):
         NetworksWithAliases.parse_obj(

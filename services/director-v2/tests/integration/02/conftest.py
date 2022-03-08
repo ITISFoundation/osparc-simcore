@@ -53,5 +53,7 @@ def mock_project_networks_repository(mocker: MockerFixture) -> None:
             "simcore_service_director_v2.modules.db.repositories."
             "project_networks.ProjectNetworksRepository.get_project_networks"
         ),
-        return_value=ProjectNetworks.create_empty(uuid4()),
+        return_value=ProjectNetworks.parse_obj(
+            dict(project_uuid=uuid4(), networks_with_aliases={})
+        ),
     )

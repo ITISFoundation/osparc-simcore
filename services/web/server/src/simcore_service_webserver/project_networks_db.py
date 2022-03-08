@@ -28,7 +28,9 @@ async def get_project_networks(
         project_networks_row = await result.first()
 
         if project_networks_row is None:
-            return ProjectNetworks.create_empty(project_uuid=project_id)
+            return ProjectNetworks.parse_obj(
+                dict(project_uuid=project_id, networks_with_aliases={})
+            )
 
         return ProjectNetworks.parse_obj(project_networks_row)
 
@@ -36,8 +38,8 @@ async def get_project_networks(
 async def update_project_networks(
     app: Application, project_id: ProjectID, networks_with_aliases: NetworksWithAliases
 ) -> None:
-    project_networks_to_insert = ProjectNetworks.create(
-        project_uuid=project_id, networks_with_aliases=networks_with_aliases
+    project_networks_to_insert = ProjectNetworks.parse_obj(
+        dict(project_uuid=project_id, networks_with_aliases=networks_with_aliases)
     )
 
     async with _get_engine(app).acquire() as connection:

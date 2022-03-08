@@ -54,18 +54,6 @@ class ProjectNetworks(BaseModel):
         ),
     )
 
-    @classmethod
-    def create_empty(cls, project_uuid: ProjectID) -> "ProjectNetworks":
-        return cls.parse_obj(dict(project_uuid=project_uuid, networks_with_aliases={}))
-
-    @classmethod
-    def create(
-        cls, project_uuid: ProjectID, networks_with_aliases: NetworksWithAliases
-    ) -> "ProjectNetworks":
-        return cls.parse_obj(
-            dict(project_uuid=project_uuid, networks_with_aliases=networks_with_aliases)
-        )
-
     class Config:
         orm_mode = True
         schema_extra = {
