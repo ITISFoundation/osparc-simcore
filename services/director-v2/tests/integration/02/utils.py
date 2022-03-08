@@ -73,17 +73,14 @@ async def ensure_network_cleanup(
     for network_name in network_names:
         if project_id in network_name:
             network = await docker_client.networks.get(network_name)
-            try:
-                # if there is an error this cleansup the environament
-                # useful for development, avoids leaving too many
-                # hanging networks
-                delete_result = await network.delete()
-                assert delete_result is True
-            except aiodocker.exceptions.DockerError as e:
-                # if the tests succeeds the network will not exists
-                str_error = str(e)
-                assert "network" in str_error, str_error
-                assert "not found" in str_error, str_error
+            async for attempt in AsyncRetrying(
+                reraise=False,
+                stop=stop_after_attempt(15),
+                wait=wait_fixed(5),
+            ):
+                with attempt:
+                    delete_result = await network.delete()
+                    assert delete_result is True
 
 
 async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
