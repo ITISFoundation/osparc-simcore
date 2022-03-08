@@ -930,32 +930,14 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     },
 
     __populateSecondPanelFilePicker: function(filePicker) {
+      const fpView = new osparc.file.FilePicker(filePicker, "workbench");
       if (osparc.file.FilePicker.hasOutputAssigned(filePicker.getOutputs())) {
         this.__infoPage.getChildControl("button").show();
         this.getChildControl("side-panel-right-tabs").setSelection([this.__infoPage]);
 
-        const view = osparc.file.FilePicker.buildInfoView(filePicker);
-        view.setEnabled(false);
-
-        this.__infoPage.add(view);
-
-        const hbox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
-        const downloadFileBtn = new qx.ui.form.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/14").set({
-          allowGrowX: false
+        this.__infoPage.add(fpView, {
+          flex: 1
         });
-        downloadFileBtn.addListener("execute", () => osparc.file.FilePicker.downloadOutput(filePicker));
-        hbox.add(downloadFileBtn);
-        const resetFileBtn = new qx.ui.form.Button(this.tr("Reset"), "@FontAwesome5Solid/sync-alt/14").set({
-          allowGrowX: false
-        });
-        resetFileBtn.addListener("execute", () => {
-          osparc.file.FilePicker.resetOutputValue(filePicker);
-          filePicker.setLabel("File Picker");
-          this.getStudy().getWorkbench().giveUniqueNameToNode(filePicker, "File Picker");
-          this.__populateSecondPanel(filePicker);
-        }, this);
-        hbox.add(resetFileBtn);
-        this.__infoPage.add(hbox);
       } else {
         // empty File Picker
         const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
@@ -964,36 +946,15 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__settingsPage.getChildControl("button").show();
         this.getChildControl("side-panel-right-tabs").setSelection([this.__settingsPage]);
 
-        const filePickerView = new osparc.file.FilePicker(filePicker);
-        filePickerView.buildLayout();
-
-        const fileDrop = new osparc.file.FileDrop();
-        fileDrop.addListener("localFileDropped", e => {
-          const files = e.getData()["data"];
-          if (filePickerView.uploadPendingFiles(files)) {
-            setTimeout(() => this.__populateSecondPanel(filePicker), 500);
-          }
-          fileDrop.resetDropAction();
-        });
-        fileDrop.addListener("fileLinkDropped", e => {
-          const data = e.getData()["data"];
-          osparc.file.FilePicker.setOutputValueFromStore(filePicker, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
-          this.__populateSecondPanel(filePicker);
-          fileDrop.resetDropAction();
-        });
-
-        this.__settingsPage.add(fileDrop, {
+        this.__settingsPage.add(fpView, {
           flex: 1
         });
-
-        filePickerView.getChildControl("reload-button").exclude();
-        filePickerView.getChildControl("files-tree").exclude();
-        filePickerView.getChildControl("folder-viewer").exclude();
-        filePickerView.getChildControl("selected-file-layout").exclude();
-        filePickerView.getChildControl("select-button").exclude();
-        filePickerView.addListener("itemSelected", () => this.__populateSecondPanel(filePicker));
-        this.__settingsPage.add(filePickerView);
       }
+      [
+        "itemReset",
+        "itemSelected",
+        "fileUploaded"
+      ].forEach(ev => fpView.addListener(ev, () => this.__populateSecondPanel(filePicker)));
     },
 
     __populateSecondPanelParameter: function(parameter) {

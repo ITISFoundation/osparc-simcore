@@ -39,24 +39,34 @@ qx.Class.define("osparc.file.FilePicker", {
   /**
     * @param node {osparc.data.model.Node} Node owning the widget
     */
-  construct: function(node) {
+  construct: function(node, pageContext = "workbench") {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(5));
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     this.set({
-      node
+      node,
+      pageContext
     });
+
+    this.__buildLayout();
   },
 
   properties: {
     node: {
       check: "osparc.data.model.Node"
+    },
+
+    pageContext: {
+      check: ["workbench", "guided", "app"],
+      nullable: false
     }
   },
 
   events: {
-    "itemSelected": "qx.event.type.Event"
+    "itemReset": "qx.event.type.Event",
+    "itemSelected": "qx.event.type.Event",
+    "fileUploaded": "qx.event.type.Event"
   },
 
   statics: {
@@ -182,7 +192,7 @@ qx.Class.define("osparc.file.FilePicker", {
 
       const outFileValue = osparc.file.FilePicker.getOutput(outputs);
       const urlEntry = new qx.ui.form.TextField().set({
-        value: outFileValue
+        value: outFileValue["downloadLink"]
       });
       form.add(urlEntry, "url", null, "url");
 
@@ -195,26 +205,22 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
-    buildInfoView: function(node) {
-      const form = new qx.ui.form.Form();
-      if (osparc.file.FilePicker.isOutputFromStore(node.getOutputs())) {
-        this.self().buildFileFromStoreInfoView(node, form);
-      } else if (osparc.file.FilePicker.isOutputDownloadLink(node.getOutputs())) {
-        this.self().buildDownloadLinkInfoView(node, form);
-      }
-
-      return new qx.ui.form.renderer.Single(form);
-    },
-
     downloadOutput: function(node) {
-      this.self().getOutputFileMetadata(node)
-        .then(fileMetadata => {
-          if ("location_id" in fileMetadata && "file_id" in fileMetadata) {
-            const locationId = fileMetadata["location_id"];
-            const fileId = fileMetadata["file_id"];
-            osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId);
-          }
-        });
+      if (osparc.file.FilePicker.isOutputFromStore(node.getOutputs())) {
+        this.self().getOutputFileMetadata(node)
+          .then(fileMetadata => {
+            if ("location_id" in fileMetadata && "file_id" in fileMetadata) {
+              const locationId = fileMetadata["location_id"];
+              const fileId = fileMetadata["file_id"];
+              osparc.utils.Utils.retrieveURLAndDownload(locationId, fileId);
+            }
+          });
+      } else if (osparc.file.FilePicker.isOutputDownloadLink(node.getOutputs())) {
+        const outFileValue = osparc.file.FilePicker.getOutput(node.getOutputs());
+        if (osparc.utils.Utils.isObject(outFileValue) && "downloadLink" in outFileValue) {
+          osparc.utils.Utils.downloadLink(outFileValue["downloadLink"], "GET");
+        }
+      }
     },
 
     serializeOutput: function(outputs) {
@@ -237,94 +243,10 @@ qx.Class.define("osparc.file.FilePicker", {
   members: {
     __filesTree: null,
     __folderViewer: null,
+    __selectButton: null,
     __selectedFileLayout: null,
     __selectedFileFound: null,
-
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "reload-button":
-          control = new qx.ui.form.Button().set({
-            label: this.tr("Reload"),
-            icon: "@FontAwesome5Solid/sync-alt/16",
-            allowGrowX: false
-          });
-          this._addAt(control, this.self().POS.RELOAD);
-          break;
-        case "tree-folder-layout":
-          control = new qx.ui.splitpane.Pane("horizontal");
-          control.getChildControl("splitter").set({
-            width: 2
-          });
-          this._addAt(control, this.self().POS.FILES_TREE, {
-            flex: 1
-          });
-          break;
-        case "files-tree": {
-          const treeFolderLayout = this.getChildControl("tree-folder-layout");
-          control = new osparc.file.FilesTree().set({
-            backgroundColor: "background-main-3",
-            showLeafs: false,
-            minWidth: 150,
-            width: 250
-          });
-          treeFolderLayout.add(control, 0);
-          break;
-        }
-        case "folder-viewer": {
-          const treeFolderLayout = this.getChildControl("tree-folder-layout");
-          control = new osparc.file.FolderViewer();
-          treeFolderLayout.add(control, 1);
-          break;
-        }
-        case "select-toolbar":
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-          this._addAt(control, this.self().POS.TOOLBAR);
-          break;
-        case "files-add": {
-          control = new osparc.file.FilesAdd().set({
-            node: this.getNode()
-          });
-          const mainButtons = this.getChildControl("select-toolbar");
-          mainButtons.add(control);
-          break;
-        }
-        case "selected-file-layout": {
-          control = new osparc.file.FileLabelWithActions().set({
-            alignY: "middle"
-          });
-          control.getChildControl("delete-button").exclude();
-          const mainButtons = this.getChildControl("select-toolbar");
-          mainButtons.add(control, {
-            flex: 1
-          });
-          break;
-        }
-        case "select-button": {
-          control = new qx.ui.form.Button(this.tr("Select"));
-          const mainButtons = this.getChildControl("select-toolbar");
-          mainButtons.add(control);
-          break;
-        }
-        case "file-download-link": {
-          const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
-            alignY: "middle"
-          }));
-          const label = new qx.ui.basic.Label(this.tr("Or provide a Download Link"));
-          layout.add(label);
-          control = new osparc.file.FileDownloadLink().set({
-            allowGrowY: false
-          });
-          layout.add(control, {
-            flex: 1
-          });
-          this._addAt(layout, this.self().POS.DOWNLOAD_LINK);
-          break;
-        }
-      }
-
-      return control || this.base(arguments, id);
-    },
+    __fileDownloadLink: null,
 
     setOutputValueFromStore: function(store, dataset, path, label) {
       this.self().setOutputValueFromStore(this.getNode(), store, dataset, path, label);
@@ -343,14 +265,148 @@ qx.Class.define("osparc.file.FilePicker", {
       }
     },
 
-    buildLayout: function() {
-      const reloadButton = this.getChildControl("reload-button");
-      reloadButton.addListener("execute", () => {
-        this.__reloadFilesTree();
-      }, this);
+    __buildLayout: function() {
+      this._removeAll();
+      const isWorkbenchContext = this.getPageContext() === "workbench";
+      const hasOutput = osparc.file.FilePicker.hasOutputAssigned(this.getNode().getOutputs());
+      if (isWorkbenchContext && hasOutput) {
+        this.__buildInfoLayout();
+        return;
+      }
+      this.__addProgressBar();
+      if (isWorkbenchContext) {
+        this.__buildDropLayout();
+      } else {
+        this.__buildTreeLayout();
+      }
+    },
 
-      const filesTree = this.__filesTree = this.getChildControl("files-tree");
-      const folderViewer = this.__folderViewer = this.getChildControl("folder-viewer");
+    __addProgressBar: function() {
+      const progressBar = new qx.ui.indicator.ProgressBar();
+      const nodeStatus = this.getNode().getStatus();
+      nodeStatus.bind("progress", progressBar, "value", {
+        converter: val => osparc.data.model.NodeStatus.getValidProgress(val)
+      });
+      const progressChanged = () => {
+        const progress = this.getNode().getStatus().getProgress();
+        const validProgress = osparc.data.model.NodeStatus.getValidProgress(progress);
+        const uploading = (validProgress > 0 && validProgress < 100);
+        progressBar.setVisibility(uploading ? "visible" : "excluded");
+        this._getChildren().forEach(child => {
+          if (child !== progressBar) {
+            child.setEnabled(!uploading);
+          }
+        });
+      };
+      nodeStatus.addListener("changeProgress", () => progressChanged());
+      progressChanged();
+      this._add(progressBar);
+    },
+
+    __buildInfoLayout: function() {
+      const node = this.getNode();
+
+      const form = new qx.ui.form.Form();
+      if (osparc.file.FilePicker.isOutputFromStore(node.getOutputs())) {
+        this.self().buildFileFromStoreInfoView(node, form);
+      } else if (osparc.file.FilePicker.isOutputDownloadLink(node.getOutputs())) {
+        this.self().buildDownloadLinkInfoView(node, form);
+      }
+      const formRend = new qx.ui.form.renderer.Single(form);
+      formRend.setEnabled(false);
+      this._add(formRend);
+
+      const hbox = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const downloadFileBtn = new qx.ui.form.Button(this.tr("Download"), "@FontAwesome5Solid/cloud-download-alt/14").set({
+        allowGrowX: false
+      });
+      downloadFileBtn.addListener("execute", () => osparc.file.FilePicker.downloadOutput(node));
+      hbox.add(downloadFileBtn);
+      const resetFileBtn = new qx.ui.form.Button(this.tr("Reset"), "@FontAwesome5Solid/sync-alt/14").set({
+        allowGrowX: false
+      });
+      resetFileBtn.addListener("execute", () => {
+        osparc.file.FilePicker.resetOutputValue(node);
+        node.setLabel("File Picker");
+        node.getStudy().getWorkbench().giveUniqueNameToNode(node, "File Picker");
+        this.fireEvent("itemReset");
+      }, this);
+      hbox.add(resetFileBtn);
+      this._add(hbox);
+    },
+
+    __buildDropLayout: function() {
+      const node = this.getNode();
+
+      const fileDrop = new osparc.file.FileDrop();
+      fileDrop.addListener("localFileDropped", e => {
+        const files = e.getData()["data"];
+        if (this.uploadPendingFiles(files)) {
+          setTimeout(() => this.fireEvent("itemSelected"), 500);
+        }
+        fileDrop.resetDropAction();
+      });
+      fileDrop.addListener("fileLinkDropped", e => {
+        const data = e.getData()["data"];
+        osparc.file.FilePicker.setOutputValueFromStore(node, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
+        this.fireEvent("itemSelected");
+        fileDrop.resetDropAction();
+      });
+
+      this._add(fileDrop, {
+        flex: 1
+      });
+
+
+      this.__addDownloadLinkSection();
+    },
+
+    __addDownloadLinkSection: function() {
+      const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
+        alignY: "middle"
+      }));
+
+      layout.add(new qx.ui.basic.Label(this.tr("Or provide a Download Link")));
+
+      const fileDownloadLink = this.__fileDownloadLink = new osparc.file.FileDownloadLink().set({
+        allowGrowY: false
+      });
+      fileDownloadLink.addListener("fileLinkAdded", e => {
+        const downloadLink = e.getData();
+        const label = osparc.file.FileDownloadLink.extractLabelFromLink(downloadLink);
+        this.__setOutputValueFromLink(downloadLink, label);
+        this.fireEvent("itemSelected");
+      }, this);
+      layout.add(fileDownloadLink);
+
+      this._add(layout);
+    },
+
+    __buildTreeLayout: function() {
+      const reloadButton = new qx.ui.form.Button().set({
+        label: this.tr("Reload"),
+        icon: "@FontAwesome5Solid/sync-alt/16",
+        allowGrowX: false
+      });
+      this._add(reloadButton);
+      reloadButton.addListener("execute", () => this.__reloadFilesTree(), this);
+
+      const treeFolderLayout = new qx.ui.splitpane.Pane("horizontal");
+      treeFolderLayout.getChildControl("splitter").set({
+        width: 2
+      });
+      const filesTree = this.__filesTree = new osparc.file.FilesTree().set({
+        backgroundColor: "background-main-3",
+        showLeafs: false,
+        minWidth: 150,
+        width: 250
+      });
+      treeFolderLayout.add(filesTree, 0);
+      const folderViewer = this.__folderViewer = new osparc.file.FolderViewer();
+      treeFolderLayout.add(folderViewer, 1);
+      this._add(treeFolderLayout, {
+        flex: 1
+      });
 
       filesTree.addListener("selectionChanged", () => {
         const selectionData = filesTree.getSelectedItem();
@@ -359,9 +415,7 @@ qx.Class.define("osparc.file.FilePicker", {
           folderViewer.setFolder(selectionData);
         }
       }, this);
-      filesTree.addListener("filesAddedToTree", () => {
-        this.__checkSelectedFileIsListed();
-      }, this);
+      filesTree.addListener("filesAddedToTree", () => this.__checkSelectedFileIsListed(), this);
       this.__reloadFilesTree();
 
       folderViewer.addListener("selectionChanged", e => {
@@ -392,30 +446,35 @@ qx.Class.define("osparc.file.FilePicker", {
       }, this);
 
 
-      const filesAdd = this.getChildControl("files-add");
-      filesAdd.addListener("fileAdded", e => {
-        const fileMetadata = e.getData();
-        if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
-          this.setOutputValueFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
-        }
-        this.__reloadFilesTree();
-        filesTree.loadFilePath(this.__getOutputFile()["value"]);
+      const mainButtonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      this._add(mainButtonsLayout);
+
+      const fileUploader = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const input = new qx.html.Input("file", {
+        display: "none"
+      });
+      fileUploader.getContentElement().add(input);
+      const btn = new qx.ui.toolbar.Button(this.tr("Upload"), "@FontAwesome5Solid/cloud-upload-alt/16");
+      btn.addListener("execute", () => input.getDomElement().click());
+      input.addListener("change", () => {
+        input.getDomElement().files.forEach(file => this.__retrieveUrlAndUpload(file));
       }, this);
+      mainButtonsLayout.add(fileUploader);
 
-      this.__selectedFileLayout = this.getChildControl("selected-file-layout");
+      const selectedFileLayout = this.__selectedFileLayout = new osparc.file.FileLabelWithActions().set({
+        alignY: "middle"
+      });
+      selectedFileLayout.getChildControl("delete-button").exclude();
+      mainButtonsLayout.add(selectedFileLayout, {
+        flex: 1
+      });
 
-      const selectBtn = this.getChildControl("select-button");
+      const selectBtn = this.__selectButton = new qx.ui.form.Button(this.tr("Select"));
       selectBtn.setEnabled(false);
-      selectBtn.addListener("execute", () => {
-        this.__itemSelected();
-      }, this);
+      selectBtn.addListener("execute", () => this.__itemSelected(), this);
+      mainButtonsLayout.add(selectBtn);
 
-      const fileDownloadLink = this.getChildControl("file-download-link");
-      fileDownloadLink.addListener("fileLinkAdded", e => {
-        const downloadLink = e.getData();
-        const label = osparc.file.FileDownloadLink.extractLabelFromLink(downloadLink);
-        this.__setOutputValueFromLink(downloadLink, label);
-      }, this);
+      this.__addDownloadLinkSection();
     },
 
     init: function() {
@@ -426,14 +485,16 @@ qx.Class.define("osparc.file.FilePicker", {
 
       if (this.self().isOutputDownloadLink(this.getNode().getOutputs())) {
         const outFile = this.__getOutputFile();
-        this.getChildControl("file-download-link").setValue(outFile.value["downloadLink"]);
+        if (this.__fileDownloadLink) {
+          this.__fileDownloadLink.setValue(outFile.value["downloadLink"]);
+        }
       }
     },
 
     uploadPendingFiles: function(files) {
       if (files.length > 0) {
         if (files.length === 1) {
-          this.getChildControl("files-add").retrieveUrlAndUpload(files[0]);
+          this.__retrieveUrlAndUpload(files[0]);
           return true;
         }
         osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
@@ -443,7 +504,9 @@ qx.Class.define("osparc.file.FilePicker", {
 
     __selectionChanged: function(selectedItem) {
       const isFile = osparc.file.FilesTree.isFile(selectedItem);
-      this.getChildControl("select-button").setEnabled(isFile);
+      if (this.__selectButton) {
+        this.__selectButton.setEnabled(isFile);
+      }
 
       this.__selectedFileLayout.setItemSelected(selectedItem);
     },
@@ -470,6 +533,63 @@ qx.Class.define("osparc.file.FilePicker", {
           this.__filesTree.fireEvent("selectionChanged");
         }
       }
+    },
+
+    // Request to the server an upload URL.
+    __retrieveUrlAndUpload: function(file) {
+      const download = false;
+      const locationId = 0;
+      const studyId = this.getNode().getStudy().getUuid();
+      const nodeId = this.getNode() ? this.getNode().getNodeId() : osparc.utils.Utils.uuidv4();
+      const fileId = file.name;
+      const fileUuid = studyId +"/"+ nodeId +"/"+ fileId;
+      const dataStore = osparc.store.Data.getInstance();
+      dataStore.getPresignedLink(download, locationId, fileUuid)
+        .then(presignedLinkData => {
+          if (presignedLinkData.presignedLink) {
+            this.__uploadFile(file, presignedLinkData);
+          }
+        });
+    },
+
+    // Use XMLHttpRequest to upload the file to S3.
+    __uploadFile: function(file, presignedLinkData) {
+      const location = presignedLinkData.locationId;
+      const path = presignedLinkData.fileUuid;
+      const url = presignedLinkData.presignedLink.link;
+
+      // From https://github.com/minio/cookbook/blob/master/docs/presigned-put-upload-via-browser.md
+      const xhr = new XMLHttpRequest();
+      xhr.upload.addEventListener("progress", e => {
+        if (e.lengthComputable) {
+          const percentComplete = e.loaded / e.total * 100;
+          this.getNode().getStatus().setProgress(percentComplete === 100 ? 99 : percentComplete);
+        } else {
+          console.log("Unable to compute progress information since the total size is unknown");
+        }
+      }, false);
+      xhr.onload = () => {
+        if (xhr.status == 200) {
+          console.log("Uploaded", file.name);
+          this.getNode().getStatus().setProgress(100);
+          const fileMetadata = {
+            location,
+            dataset: this.getNode().getStudy().getUuid(),
+            path: path,
+            name: file.name
+          };
+          if ("location" in fileMetadata && "dataset" in fileMetadata && "path" in fileMetadata && "name" in fileMetadata) {
+            this.setOutputValueFromStore(fileMetadata["location"], fileMetadata["dataset"], fileMetadata["path"], fileMetadata["name"]);
+          }
+          this.fireEvent("fileUploaded");
+        } else {
+          console.log(xhr.response);
+          this.getNode().getStatus().setProgress(0);
+        }
+      };
+      xhr.open("PUT", url, true);
+      this.getNode().getStatus().setProgress(0);
+      xhr.send(file);
     }
   }
 });

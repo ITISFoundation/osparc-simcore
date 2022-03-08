@@ -40,7 +40,8 @@ qx.Class.define("osparc.data.model.NodeStatus", {
       check: "Number",
       nullable: true,
       init: null,
-      event: "changeProgress"
+      event: "changeProgress",
+      transform: "__transformProgress"
     },
 
     running: {
@@ -87,7 +88,25 @@ qx.Class.define("osparc.data.model.NodeStatus", {
     }
   },
 
+  statics: {
+    getValidProgress: function(value) {
+      if (value !== null && !Number.isNaN(value) && value >= 0 && value <= 100) {
+        return Number.parseFloat(value.toFixed(4));
+      }
+      return 0;
+    }
+  },
+
   members: {
+    __transformProgress: function(value) {
+      const oldP = this.getProgress();
+      if (this.getNode().isFilePicker() && oldP === 100 && value !== 0 && value !== 100) {
+        // a NodeUpdated backend message could override the progress with an older value
+        value = 100;
+      }
+      return value;
+    },
+
     hasDependencies: function() {
       const dependencies = this.getDependencies();
       if (dependencies && dependencies.length) {
