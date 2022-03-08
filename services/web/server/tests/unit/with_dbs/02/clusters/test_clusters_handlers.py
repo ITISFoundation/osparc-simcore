@@ -8,7 +8,7 @@
 
 import json
 import random
-from typing import Any, AsyncIterable, Callable, Coroutine, Dict, Iterable
+from typing import Any, AsyncIterable, Callable, Coroutine, Dict, Iterable, Optional
 
 import pytest
 import sqlalchemy as sa
@@ -39,7 +39,7 @@ from simcore_service_webserver.clusters.models import (
     ClusterType,
 )
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.engine.result import ResultProxy
+from sqlalchemy.engine.result import Result
 from sqlalchemy.sql.elements import literal_column
 
 
@@ -105,7 +105,8 @@ def cluster(
     list_of_created_cluster_ids = []
 
     async def creator(
-        gid: GroupID, cluster_access_rights: Dict[GroupID, ClusterAccessRights] = None
+        gid: GroupID,
+        cluster_access_rights: Optional[Dict[GroupID, ClusterAccessRights]] = None,
     ) -> Cluster:
         new_cluster = ClusterCreate(
             **{
@@ -118,14 +119,14 @@ def cluster(
             }
         )
 
-        result = postgres_db.execute(
+        result: Result = postgres_db.execute(
             clusters.insert()
             .values(new_cluster.to_clusters_db(only_update=False))
             .returning(literal_column("*"))
         )
         cluster_in_db = result.first()
         assert cluster_in_db is not None
-        new_cluster_id = cluster_in_db[clusters.c.id]
+        new_cluster_id = cluster_in_db[clusters.c.id.name]
         list_of_created_cluster_ids.append(new_cluster_id)
 
         # when a cluster is created, the DB automatically creates the owner access rights
@@ -268,7 +269,7 @@ async def test_create_cluster(
     assert created_cluster
 
     # check database entry was correctly created
-    result: ResultProxy = postgres_db.execute(
+    result = postgres_db.execute(
         sa.select([clusters]).where(clusters.c.name == cluster_data["name"])
     )
     assert result, "could not find cluster in database"
@@ -611,7 +612,7 @@ async def test_delete_cluster(
     assert data is None
 
     # check it was deleted
-    result: ResultProxy = postgres_db.execute(
+    result = postgres_db.execute(
         sa.select([clusters]).where(clusters.c.id == admin_cluster.id)
     )
     assert result.rowcount == 0

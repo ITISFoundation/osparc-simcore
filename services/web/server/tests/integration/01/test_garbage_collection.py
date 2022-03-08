@@ -44,6 +44,7 @@ from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users import setup_users
+from sqlalchemy import func, select
 
 log = logging.getLogger(__name__)
 
@@ -114,7 +115,7 @@ async def auto_mock_director_v2(
 
 @pytest.fixture
 def client(
-    loop,
+    event_loop,
     aiohttp_client,
     app_config,
     postgres_with_template_db,
@@ -153,7 +154,7 @@ def client(
     assert setup_resource_manager(app)
     setup_garbage_collector(app)
 
-    yield loop.run_until_complete(
+    yield event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},
@@ -279,7 +280,7 @@ async def assert_users_count(
     aiopg_engine: aiopg.sa.Engine, expected_users: int
 ) -> bool:
     async with aiopg_engine.acquire() as conn:
-        users_count = await conn.scalar(users.count())
+        users_count = await conn.scalar(select(func.count()).select_from(users))
         assert users_count == expected_users
         return True
 
@@ -288,7 +289,7 @@ async def assert_projects_count(
     aiopg_engine: aiopg.sa.Engine, expected_projects: int
 ) -> bool:
     async with aiopg_engine.acquire() as conn:
-        projects_count = await conn.scalar(projects.count())
+        projects_count = await conn.scalar(select(func.count()).select_from(projects))
         assert projects_count == expected_projects
         return True
 

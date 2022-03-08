@@ -15,6 +15,7 @@ from typing import Dict, Generic, List, Optional, Set, Tuple, TypeVar, Union
 import sqlalchemy as sa
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
+from sqlalchemy import func
 from sqlalchemy.sql.base import ImmutableColumnCollection
 from sqlalchemy.sql.dml import Insert, Update, UpdateBase
 from sqlalchemy.sql.elements import literal_column
@@ -207,7 +208,11 @@ class BaseOrm(Generic[RowUId]):
         total_count = None
         if offset > 0 or limit:
             # eval total count if pagination options enabled
-            total_count = await self._conn.scalar(query.alias().count())
+            total_count = await self._conn.scalar(
+                query.with_only_columns([func.count()])
+                .select_from(self._table)
+                .order_by(None)
+            )
 
         if offset:
             query = query.offset(offset)

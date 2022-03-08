@@ -12,7 +12,7 @@ qx.Class.define("osparc.ui.window.Window", {
 
     this.set({
       appearance: "service-window",
-      backgroundColor: "material-button-background"
+      backgroundColor: "background-main-2"
     });
 
     this.addListener("appear", () => {

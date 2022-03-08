@@ -58,6 +58,7 @@ qx.Class.define("osparc.component.study.SaveAsTemplate", {
       this._add(publishWithdData);
 
       const shareResourceBtn = new osparc.ui.form.FetchButton().set({
+        appearance: "strong-button",
         label: this.tr("Publish"),
         allowGrowX: false,
         alignX: "right"

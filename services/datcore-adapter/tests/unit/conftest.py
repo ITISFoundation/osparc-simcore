@@ -20,7 +20,11 @@ from simcore_service_datcore_adapter.modules.pennsieve import _create_pennsieve_
 from starlette import status
 from starlette.testclient import TestClient
 
-pytest_plugins = ["pytest_simcore.repository_paths"]
+
+pytest_plugins = [
+    "pytest_simcore.repository_paths",
+    "pytest_simcore.pytest_global_environs",
+]
 
 
 fake = faker.Faker()

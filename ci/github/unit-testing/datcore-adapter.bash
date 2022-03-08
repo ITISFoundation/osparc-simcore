@@ -16,6 +16,7 @@ install() {
 test() {
   pytest --numprocesses=auto --cov=simcore_service_datcore_adapter --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+    --asyncio-mode=auto \
     -v -m "not travis" services/datcore-adapter/tests/unit
 }
 

@@ -19,7 +19,6 @@ from simcore_service_webserver.db_models import UserRole
 
 @pytest.fixture(autouse=True)
 async def auto_mock_director_v2(
-    loop,
     director_v2_service_mock: aioresponses,
 ) -> AsyncIterator[aioresponses]:
     yield director_v2_service_mock

@@ -52,7 +52,7 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "outputPortHighlighted": {
       style: {
-        backgroundColor: "background-main-lighter+"
+        backgroundColor: "background-main-2"
       }
     },
 
@@ -108,11 +108,9 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
-    "link-button": {},
-
     "service-browser": {
       style: {
-        color: "material-button-background"
+        color: "background-main-2"
       }
     },
 
@@ -141,7 +139,8 @@ qx.Theme.define("osparc.theme.Decoration", {
 
     "no-border": {
       style: {
-        width: 0
+        width: 1,
+        color: "transparent"
       }
     },
 
@@ -232,7 +231,23 @@ qx.Theme.define("osparc.theme.Decoration", {
     "tagbutton": {
       include: "material-button",
       style: {
+        backgroundColor: "transparent",
+        shadowColor: "transparent",
         radius: 0
+      }
+    },
+    "bordered-button": {
+      include: "material-button",
+      style: {
+        width: 1,
+        color: "c05"
+      }
+    },
+    "strong-bordered-button": {
+      include: "material-button",
+      style: {
+        width: 1,
+        color: "text"
       }
     }
   }

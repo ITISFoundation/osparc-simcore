@@ -13,4 +13,4 @@ install-dev install-prod: _check_venv_active ## install app in development/produ
 .PHONY: tests
 tests: ## runs unit tests
 	# running unit tests
-	@pytest -vv --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests
+	@pytest -vv --asyncio-mode=auto --exitfirst --failed-first --durations=10 --pdb $(CURDIR)/tests

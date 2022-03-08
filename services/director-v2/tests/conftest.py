@@ -59,6 +59,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_services",
     "pytest_simcore.simcore_storage_service",
     "pytest_simcore.tmp_path_extra",
+    "pytest_simcore.pytest_global_environs",
 ]
 
 logger = logging.getLogger(__name__)
@@ -134,7 +135,7 @@ def mock_env(monkeypatch: MonkeyPatch, dynamic_sidecar_docker_image: str) -> Non
 
 
 @pytest.fixture(scope="function")
-def client(loop, mock_env: None) -> Iterable[TestClient]:
+def client(mock_env: None) -> Iterable[TestClient]:
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
     print("Application settings\n", pformat(settings))

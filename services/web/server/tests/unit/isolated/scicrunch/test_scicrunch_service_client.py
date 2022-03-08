@@ -91,7 +91,7 @@ async def mock_scicrunch_service_resolver(
 
 
 @pytest.fixture
-async def fake_app(mock_env_devel_environment, loop):
+async def fake_app(mock_env_devel_environment):
     # By using .env-devel we ensure all needed variables are at
     # least defined there
     print("app's environment variables", format(mock_env_devel_environment))

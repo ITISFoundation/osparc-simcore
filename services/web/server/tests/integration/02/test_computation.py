@@ -148,7 +148,7 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
 
 @pytest.fixture
 def client(
-    loop: asyncio.AbstractEventLoop,
+    event_loop: asyncio.AbstractEventLoop,
     postgres_session: sa.orm.session.Session,
     rabbit_service: RabbitSettings,
     redis_settings: RedisSettings,
@@ -185,7 +185,7 @@ def client(
     setup_resource_manager(app)
     # no garbage collector
 
-    return loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={

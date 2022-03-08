@@ -9,6 +9,7 @@ pytestmark = pytest.mark.asyncio
 pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.pytest_global_environs",
 ]
 
 
