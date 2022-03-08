@@ -154,7 +154,7 @@ paths:
       tags:
         - project
       summary: Delete given project
-      operationId: delete_project
+      operationId: delete_project_handler
       responses:
         "204":
           description: project has been successfully deleted

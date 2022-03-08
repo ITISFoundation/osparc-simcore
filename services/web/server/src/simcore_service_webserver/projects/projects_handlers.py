@@ -474,7 +474,7 @@ async def replace_project(request: web.Request):
 @routes.delete(f"/{VTAG}/projects/{{project_uuid}}")
 @login_required
 @permission_required("project.delete")
-async def delete_project(request: web.Request):
+async def delete_project_handler(request: web.Request):
     # first check if the project exists
     user_id: int = request[RQT_USERID_KEY]
     try:
