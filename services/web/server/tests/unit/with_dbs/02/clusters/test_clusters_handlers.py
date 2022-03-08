@@ -12,7 +12,6 @@ from typing import Any, AsyncIterable, Callable, Coroutine, Dict, Iterable, Opti
 
 import pytest
 import sqlalchemy as sa
-from _helpers import ExpectedResponse, standard_role_response  # type: ignore
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.clusters import (
@@ -29,6 +28,10 @@ from models_library.clusters import (
 from models_library.users import GroupID
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser
+from pytest_simcore.helpers.utils_webserver_projects import (
+    ExpectedResponse,
+    standard_role_response,
+)
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from simcore_postgres_database.models.users import UserRole

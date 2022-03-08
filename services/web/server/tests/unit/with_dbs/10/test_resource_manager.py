@@ -17,7 +17,6 @@ import pytest
 import socketio
 import socketio.exceptions
 import sqlalchemy as sa
-from _helpers import MockedStorageSubsystem
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from aioredis import Redis
@@ -25,6 +24,7 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.aioresponses_mocker import AioResponsesMock
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_projects import NewProject
+from pytest_simcore.helpers.utils_webserver_projects import MockedStorageSubsystem
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from simcore_service_webserver import garbage_collector_core
@@ -140,7 +140,7 @@ def client(
 @pytest.fixture
 def mock_delete_data_folders_for_project(mocker):
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._core_delete.delete_data_folders_of_project",
         return_value=None,
     )
 

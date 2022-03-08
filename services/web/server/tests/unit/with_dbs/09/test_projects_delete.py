@@ -8,12 +8,16 @@ from typing import Any, Callable, Dict, Type
 from unittest.mock import MagicMock, call
 
 import pytest
-from _helpers import ExpectedResponse, MockedStorageSubsystem, standard_role_response
 from aiohttp import web
 
 # TESTS -----------------------------------------------------------------------------------------
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.utils_assert import assert_status
+from pytest_simcore.helpers.utils_webserver_projects import (
+    ExpectedResponse,
+    MockedStorageSubsystem,
+    standard_role_response,
+)
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db_models import UserRole
 from socketio.exceptions import ConnectionError as SocketConnectionError
