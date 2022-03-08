@@ -121,7 +121,7 @@ def mocks_on_projects_api(mocker, logged_user) -> None:
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api._get_project_lock_state",
+        "simcore_service_webserver.projects._core_states._get_project_lock_state",
         return_value=state,
     )
 

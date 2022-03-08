@@ -185,16 +185,6 @@ def disable_static_webserver(monkeypatch: MonkeyPatch) -> Callable:
 
 
 @pytest.fixture
-def computational_system_mock(mocker):
-    mock_fun = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.update_pipeline_db",
-        autospec=True,
-        return_value="",
-    )
-    return mock_fun
-
-
-@pytest.fixture
 async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
     """
     Patches client calls to storage service
@@ -213,7 +203,7 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
 
     async_mock = mocker.AsyncMock(return_value="")
     mock1 = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.projects_api.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._core_delete.delete_data_folders_of_project",
         autospec=True,
         side_effect=async_mock,
     )
