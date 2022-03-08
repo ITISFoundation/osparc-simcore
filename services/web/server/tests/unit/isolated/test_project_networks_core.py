@@ -46,8 +46,8 @@ class TestCase(BaseModel):
         )
 
 
-def _node_id(number: int) -> UUID:
-    return UUID(int=number)
+def _node_id(number: int) -> str:
+    return f"{UUID(int=number)}"
 
 
 def _node_alias(number: int) -> str:
@@ -69,8 +69,8 @@ def test_case_factory(mock_app: AsyncMock, project_id: ProjectID) -> List[TestCa
             existing={},
             new={
                 _network_name(1): {
-                    f"{_node_id(1)}": _node_alias(1),
-                    f"{_node_id(2)}": _node_alias(2),
+                    _node_id(1): _node_alias(1),
+                    _node_id(2): _node_alias(2),
                 }
             },
             detach=[],
@@ -95,8 +95,8 @@ def test_case_factory(mock_app: AsyncMock, project_id: ProjectID) -> List[TestCa
         TestCase.using(
             existing={
                 _network_name(1): {
-                    f"{_node_id(1)}": _node_alias(1),
-                    f"{_node_id(2)}": _node_alias(2),
+                    _node_id(1): _node_alias(1),
+                    _node_id(2): _node_alias(2),
                 }
             },
             new={
@@ -118,14 +118,14 @@ def test_case_factory(mock_app: AsyncMock, project_id: ProjectID) -> List[TestCa
         TestCase.using(
             existing={
                 _network_name(1): {
-                    f"{_node_id(1)}": _node_alias(1),
-                    f"{_node_id(2)}": _node_alias(2),
+                    _node_id(1): _node_alias(1),
+                    _node_id(2): _node_alias(2),
                 }
             },
             new={
                 _network_name(1): {
-                    f"{_node_id(1)}": _node_alias(1),
-                    f"{_node_id(2)}": _node_alias(3),
+                    _node_id(1): _node_alias(1),
+                    _node_id(2): _node_alias(3),
                 }
             },
             detach=[
@@ -150,14 +150,14 @@ def test_case_factory(mock_app: AsyncMock, project_id: ProjectID) -> List[TestCa
         TestCase.using(
             existing={
                 _network_name(1): {
-                    f"{_node_id(1)}": _node_alias(1),
-                    f"{_node_id(2)}": _node_alias(2),
+                    _node_id(1): _node_alias(1),
+                    _node_id(2): _node_alias(2),
                 }
             },
             new={
                 _network_name(1): {
-                    f"{_node_id(1)}": _node_alias(1),
-                    f"{_node_id(2)}": _node_alias(2),
+                    _node_id(1): _node_alias(1),
+                    _node_id(2): _node_alias(2),
                 }
             },
             detach=[],
