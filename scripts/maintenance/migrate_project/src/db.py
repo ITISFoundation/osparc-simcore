@@ -10,7 +10,7 @@ from simcore_postgres_database.models.projects import projects
 from sqlalchemy import and_, create_engine, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine.base import Connection
-from sqlalchemy.engine.result import ResultProxy
+from sqlalchemy.engine.cursor import ResultProxy
 
 
 @contextmanager
