@@ -4,7 +4,7 @@ import json
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
 from typing_extensions import TypedDict
@@ -119,7 +119,11 @@ class _ServiceSpecDictRequired(TypedDict):
 
 
 class ServiceSpecDict(_ServiceSpecDictRequired, total=False):
-    networks: Dict
+    # NOTE: the idea is to provide type hints
+    # not to enforce the structure
+    # of the spec entry in a docker-compose file
+    # This is still a work in progress
+    networks: Union[Dict, List]
 
 
 class RestartPolicy(str, Enum):
