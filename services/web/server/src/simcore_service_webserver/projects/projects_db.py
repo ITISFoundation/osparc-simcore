@@ -53,6 +53,8 @@ APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
 DB_EXCLUSIVE_COLUMNS = ["type", "id", "published", "hidden"]
 SCHEMA_NON_NULL_KEYS = ["thumbnail"]
 
+# TODO: REFACTOR!!! access rights need to be separated. See how was done in storage!
+
 
 class ProjectAccessRights(Enum):
     OWNER = {"read": True, "write": True, "delete": True}
@@ -761,6 +763,23 @@ class ProjectDBAPI:
                     # pylint: disable=no-value-for-parameter
                     projects.delete().where(projects.c.uuid == project_uuid)
                 )
+
+    async def raise_if_cannot_delete(self, user_id: int, project_uuid: str):
+        """
+        rauses ProjectNotFoundError
+        raises ProjectInvalidRightsError
+        """
+        # TODO: REFACTOR!!! access rights need to be separated. See how was done in storage!
+        async with self.engine.acquire() as conn:
+            async with conn.begin() as _transaction:
+                project = await self._get_project(
+                    conn, user_id, project_uuid, include_templates=True, for_update=True
+                )
+                # if we have delete access we delete the project
+                user_groups: List[RowProxy] = await self.__load_user_groups(
+                    conn, user_id
+                )
+                _check_project_permissions(project, user_id, user_groups, "delete")
 
     async def make_unique_project_uuid(self) -> str:
         """Generates a project identifier still not used in database

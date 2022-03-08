@@ -483,12 +483,20 @@ async def delete_project(request: web.Request):
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
 
     try:
+
+        # exists?
         await _core_get.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True,
         )
+
+        # has access?
+        # TODO: optimize since this also check existence and read access
+        await db.raise_if_cannot_delete(user_id, project_uuid)
+
+        # in use?
         project_users: Set[int] = set()
         with managed_resource(user_id, None, request.app) as rt:
             project_users = {
@@ -497,7 +505,6 @@ async def delete_project(request: web.Request):
                     PROJECT_ID_KEY, project_uuid
                 )
             }
-        # that project is still in use
         if user_id in project_users:
             raise web.HTTPForbidden(
                 reason="Project is still open in another tab/browser. It cannot be deleted until it is closed."
@@ -510,6 +517,7 @@ async def delete_project(request: web.Request):
                 reason=f"Project is open by {other_user_names}. It cannot be deleted until the project is closed."
             )
 
+        # DELETE ---
         # TODO: this is a temp solution that hides this project from the listing until
         #       the delete_project_task completes
         # TODO: see https://github.com/ITISFoundation/osparc-simcore/pull/2522
