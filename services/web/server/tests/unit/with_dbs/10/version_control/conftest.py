@@ -194,10 +194,10 @@ def do_delete_user_project(
     logged_user: UserInfoDict, client: TestClient, mocker
 ) -> Callable[[UUID], Awaitable]:
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api.director_v2_api.delete_pipeline",
+        "simcore_service_webserver.projects._core_delete.delete_pipeline",
     )
     mocker.patch(
-        "simcore_service_webserver.projects.projects_api.delete_data_folders_of_project",
+        "simcore_service_webserver.projects._core_delete.delete_data_folders_of_project",
     )
 
     async def _doit(project_uuid: UUID) -> None:
