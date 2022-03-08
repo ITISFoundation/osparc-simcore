@@ -12,7 +12,11 @@ from simcore_service_director_v2.core.settings import DaskSchedulerSettings
 from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPool
 from starlette import status
 
-from ...core.errors import ClusterAccessForbidden, ClusterNotFoundError
+from ...core.errors import (
+    ClusterAccessForbiddenError,
+    ClusterInvalidOperationError,
+    ClusterNotFoundError,
+)
 from ...models.schemas.clusters import (
     ClusterCreate,
     ClusterOut,
@@ -102,7 +106,7 @@ async def get_cluster(
         return await clusters_repo.get_cluster(user_id, cluster_id)
     except ClusterNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
-    except ClusterAccessForbidden as e:
+    except ClusterAccessForbiddenError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"{e}") from e
 
 
@@ -122,7 +126,28 @@ async def update_cluster(
         return await clusters_repo.update_cluster(user_id, cluster_id, updated_cluster)
     except ClusterNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
-    except ClusterAccessForbidden as e:
+    except ClusterAccessForbiddenError as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"{e}") from e
+    except ClusterInvalidOperationError as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"{e}") from e
+
+
+@router.delete(
+    "/{cluster_id}",
+    summary="Remove a cluster for user",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_cluster(
+    user_id: UserID,
+    cluster_id: ClusterID,
+    clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
+):
+    try:
+        await clusters_repo.delete_cluster(user_id, cluster_id)
+    except ClusterNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+    except ClusterAccessForbiddenError as e:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"{e}") from e
 
 

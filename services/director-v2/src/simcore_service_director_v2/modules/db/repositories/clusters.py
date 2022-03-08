@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, Iterable, List, Optional
 
+import psycopg2
 import sqlalchemy as sa
 from models_library.clusters import (
     CLUSTER_ADMIN_RIGHTS,
@@ -18,7 +19,11 @@ from simcore_postgres_database.models.groups import GroupType, groups, user_to_g
 from simcore_postgres_database.models.users import users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from ....core.errors import ClusterAccessForbidden, ClusterNotFoundError
+from ....core.errors import (
+    ClusterAccessForbiddenError,
+    ClusterInvalidOperationError,
+    ClusterNotFoundError,
+)
 from ....models.schemas.clusters import ClusterCreate, ClusterPatch
 from ....models.schemas.constants import ClusterID
 from ._base import BaseRepository
@@ -96,11 +101,11 @@ async def _compute_user_access_rights(
     user_groups = await result.fetchall()
 
     # get the primary group first, as it has precedence
-    primary_group_row = next(
-        filter(lambda ugrp: ugrp[1] == GroupType.PRIMARY, user_groups)
-    )
-    if primary_grp_rights := cluster.access_rights.get(primary_group_row.gid):
-        return primary_grp_rights
+    if primary_group_row := next(
+        filter(lambda ugrp: ugrp[1] == GroupType.PRIMARY, user_groups), None
+    ):
+        if primary_grp_rights := cluster.access_rights.get(primary_group_row.gid):
+            return primary_grp_rights
 
     solved_rights = CLUSTER_NO_RIGHTS.dict()
     for group_row in filter(lambda ugrp: ugrp[1] != GroupType.PRIMARY, user_groups):
@@ -160,7 +165,7 @@ class ClustersRepository(BaseRepository):
                 f"{access_rights=}",
             )
         if not access_rights.read:
-            raise ClusterAccessForbidden(cluster_id=cluster_id)
+            raise ClusterAccessForbiddenError(cluster_id=cluster_id)
 
         return the_cluster
 
@@ -183,12 +188,12 @@ class ClustersRepository(BaseRepository):
             )
 
             if not this_user_access_rights.write:
-                raise ClusterAccessForbidden(cluster_id=cluster_id)
+                raise ClusterAccessForbiddenError(cluster_id=cluster_id)
 
             if updated_cluster.owner and updated_cluster.owner != the_cluster.owner:
                 # if the user wants to change the owner, we need more rights here
                 if this_user_access_rights != CLUSTER_ADMIN_RIGHTS:
-                    raise ClusterAccessForbidden(cluster_id=cluster_id)
+                    raise ClusterAccessForbiddenError(cluster_id=cluster_id)
 
                 # ensure the new owner has admin rights, too
                 if not updated_cluster.access_rights:
@@ -211,7 +216,7 @@ class ClustersRepository(BaseRepository):
                     )
                     != CLUSTER_ADMIN_RIGHTS
                 ):
-                    raise ClusterAccessForbidden(cluster_id=cluster_id)
+                    raise ClusterAccessForbiddenError(cluster_id=cluster_id)
 
             # if the user is a manager he/she may add/remove users
             if (
@@ -223,20 +228,23 @@ class ClustersRepository(BaseRepository):
                         CLUSTER_USER_RIGHTS,
                         CLUSTER_NO_RIGHTS,
                     ]:
-                        raise ClusterAccessForbidden(cluster_id=cluster_id)
+                        raise ClusterAccessForbiddenError(cluster_id=cluster_id)
             # ok we can update now
-            await conn.execute(
-                sa.update(clusters)
-                .where(clusters.c.id == the_cluster.id)
-                .values(
-                    updated_cluster.dict(
-                        by_alias=True,
-                        exclude_unset=True,
-                        exclude_none=True,
-                        exclude={"access_rights"},
-                    ),
+            try:
+                await conn.execute(
+                    sa.update(clusters)
+                    .where(clusters.c.id == the_cluster.id)
+                    .values(
+                        updated_cluster.dict(
+                            by_alias=True,
+                            exclude_unset=True,
+                            exclude_none=True,
+                            exclude={"access_rights"},
+                        ),
+                    )
                 )
-            )
+            except psycopg2.DatabaseError as e:
+                raise ClusterInvalidOperationError(cluster_id=cluster_id) from e
             # upsert the rights
             if updated_cluster.access_rights:
                 # first check if some rights must be deleted
@@ -273,3 +281,22 @@ class ClustersRepository(BaseRepository):
             the_cluster = clusters_list[0]
 
             return the_cluster
+
+    async def delete_cluster(self, user_id: UserID, cluster_id: ClusterID) -> None:
+        async with self.db_engine.acquire() as conn:
+            clusters_list = await _clusters_from_cluster_ids(conn, {cluster_id})
+            if not clusters_list:
+                raise ClusterNotFoundError(cluster_id=cluster_id)
+            the_cluster = clusters_list[0]
+
+            access_rights = await _compute_user_access_rights(
+                conn, user_id, the_cluster
+            )
+            logger.debug(
+                "found cluster in DB: %s, with computed %s",
+                f"{the_cluster=}",
+                f"{access_rights=}",
+            )
+            if not access_rights.delete:
+                raise ClusterAccessForbiddenError(cluster_id=cluster_id)
+            await conn.execute(sa.delete(clusters).where(clusters.c.id == cluster_id))

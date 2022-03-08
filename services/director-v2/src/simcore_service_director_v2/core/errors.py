@@ -155,11 +155,15 @@ class ConfigurationError(DirectorException):
 
 class ClusterNotFoundError(PydanticErrorMixin, SchedulerError):
     code = "cluster.not_found"
-    msg_template = "The cluster with id '{cluster_id}' was not found"
+    msg_template = "The cluster '{cluster_id}' not found"
 
 
-class ClusterAccessForbidden(PydanticErrorMixin, SchedulerError):
-    msg_template = "Insufficient rights to access cluster with id '{cluster_id}'"
+class ClusterAccessForbiddenError(PydanticErrorMixin, SchedulerError):
+    msg_template = "Insufficient rights to access cluster '{cluster_id}'"
+
+
+class ClusterInvalidOperationError(PydanticErrorMixin, SchedulerError):
+    msg_template = "Invalid operation on cluster '{cluster_id}'"
 
 
 class DaskClientRequestError(PydanticErrorMixin, SchedulerError):
