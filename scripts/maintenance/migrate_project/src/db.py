@@ -26,42 +26,45 @@ def db_connection(db_config: DBConfig) -> Iterator[Connection]:
 def _project_uuid_exists_in_destination(
     connection: Connection, project_id: str
 ) -> bool:
-    statemet = select([projects.c.id]).where(projects.c.uuid == f"{project_id}")
-    exits = len(list(connection.execute(statemet))) > 0
-    return exits
+    query = select([projects.c.id]).where(projects.c.uuid == f"{project_id}")
+    exists = len(list(connection.execute(query))) > 0
+    return exists
 
 
 def _meta_data_exists_in_destination(connection: Connection, file_uuid: str) -> bool:
-    statemet = select([file_meta_data.c.file_uuid]).where(
+    query = select([file_meta_data.c.file_uuid]).where(
         file_meta_data.c.file_uuid == f"{file_uuid}"
     )
-    exits = len(list(connection.execute(statemet))) > 0
-    return exits
+    exists = len(list(connection.execute(query))) > 0
+    return exists
 
 
 def _get_project(connection: Connection, project_uuid: UUID) -> ResultProxy:
-    statemet = select([projects]).where(projects.c.uuid == f"{project_uuid}")
-    return connection.execute(statemet)
+    return connection.execute(
+        select([projects]).where(projects.c.uuid == f"{project_uuid}")
+    )
 
 
 def _get_hidden_project(connection: Connection, prj_owner: int) -> ResultProxy:
-    statemet = select([projects]).where(
-        and_(projects.c.prj_owner == prj_owner, projects.c.hidden == True)
+    return connection.execute(
+        select([projects]).where(
+            and_(projects.c.prj_owner == prj_owner, projects.c.hidden == True)
+        )
     )
-    return connection.execute(statemet)
 
 
 def _get_file_meta_data_without_soft_links(
     connection: Connection, user_id: int, project_id: UUID
 ) -> ResultProxy:
-    statemet = select([file_meta_data]).where(
-        and_(
-            file_meta_data.c.user_id == f"{user_id}",
-            file_meta_data.c.project_id == f"{project_id}",
-            file_meta_data.c.is_soft_link != True,
+    return connection.execute(
+        select([file_meta_data]).where(
+            and_(
+                file_meta_data.c.user_id == f"{user_id}",
+                file_meta_data.c.project_id == f"{project_id}",
+                file_meta_data.c.is_soft_link != True,
+            )
         )
     )
-    return connection.execute(statemet)
 
 
 def _format_message(message: str, color: str, bold: bool = False) -> None:
