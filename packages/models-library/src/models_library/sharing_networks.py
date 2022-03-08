@@ -5,7 +5,7 @@ from uuid import UUID
 from models_library.projects import ProjectID
 from pydantic import BaseModel, Field, constr, validate_arguments
 
-from .generics import DictModel
+from .generics import DictKey, DictModel, DictValue, Generic
 from .projects_nodes_io import NodeID
 
 SERVICE_NETWORK_RE = r"^[a-zA-Z]([a-zA-Z0-9_-]{0,63})$"
@@ -26,7 +26,7 @@ def validate_network_alias(value: DockerNetworkAlias) -> DockerNetworkAlias:
     return value
 
 
-class BaseModelDict(DictModel):
+class BaseModelDict(DictModel, Generic[DictKey, DictValue]):
     @staticmethod
     def _convert_dict_uuid_keys(dict_data: Dict[Any, Any]) -> Dict[Any, Any]:
         to_change: Deque[UUID] = deque()
@@ -52,13 +52,11 @@ class BaseModelDict(DictModel):
         return super().dict(*args, **kwargs)["__root__"]
 
 
-class ContainerAliases(BaseModelDict):
-    __root__: Dict[NodeID, DockerNetworkAlias]
+class ContainerAliases(BaseModelDict[NodeID, DockerNetworkAlias]):
+    ...
 
 
-class NetworksWithAliases(BaseModelDict):
-    __root__: Dict[DockerNetworkName, ContainerAliases]
-
+class NetworksWithAliases(BaseModelDict[DockerNetworkName, ContainerAliases]):
     class Config:
         schema_extra = {
             "examples": [
