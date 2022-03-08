@@ -158,6 +158,10 @@ class ClusterNotFoundError(PydanticErrorMixin, SchedulerError):
     msg_template = "The cluster with id '{cluster_id}' was not found"
 
 
+class ClusterAccessForbidden(PydanticErrorMixin, SchedulerError):
+    msg_template = "Insufficient rights to access cluster with id '{cluster_id}'"
+
+
 class DaskClientRequestError(PydanticErrorMixin, SchedulerError):
     code = "dask_client.request.error"
     msg_template = (

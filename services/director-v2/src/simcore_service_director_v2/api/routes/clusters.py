@@ -12,9 +12,14 @@ from simcore_service_director_v2.core.settings import DaskSchedulerSettings
 from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPool
 from starlette import status
 
-from ...core.errors import ClusterNotFoundError
-from ...models.schemas.clusters import ClusterOut, Scheduler
-from ...models.schemas.constants import UserID
+from ...core.errors import ClusterAccessForbidden, ClusterNotFoundError
+from ...models.schemas.clusters import (
+    ClusterCreate,
+    ClusterOut,
+    ClusterPatch,
+    Scheduler,
+)
+from ...models.schemas.constants import ClusterID, UserID
 from ...modules.db.repositories.clusters import ClustersRepository
 from ..dependencies.dask import get_dask_clients_pool
 from ..dependencies.database import get_repository
@@ -50,7 +55,16 @@ async def _get_cluster_with_id(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
 
 
-@router.get("", summary="Lists clusters owned by user", response_model=List[Cluster])
+@router.post("", summary="Create a new cluster for a user", response_model=Cluster)
+async def create_cluster(
+    user_id: UserID,
+    new_cluster: ClusterCreate,
+    clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
+):
+    return await clusters_repo.create_cluster(user_id, new_cluster)
+
+
+@router.get("", summary="Lists clusters for user", response_model=List[Cluster])
 async def list_clusters(
     user_id: UserID,
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
@@ -61,10 +75,64 @@ async def list_clusters(
 @router.get(
     "/default",
     summary="Returns the cluster details",
-    response_model=ClusterOut,
+    response_model=Cluster,
     status_code=status.HTTP_200_OK,
 )
 async def get_default_cluster(
+    user_id: UserID,
+    settings: DaskSchedulerSettings = Depends(get_scheduler_settings),
+    clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
+):
+    assert settings.DASK_DEFAULT_CLUSTER_ID is not None  # nosec
+    return await clusters_repo.get_cluster(user_id, settings.DASK_DEFAULT_CLUSTER_ID)
+
+
+@router.get(
+    "/{cluster_id}",
+    summary="Get one cluster detail for user",
+    response_model=Cluster,
+    status_code=status.HTTP_200_OK,
+)
+async def get_cluster(
+    user_id: UserID,
+    cluster_id: ClusterID,
+    clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
+):
+    try:
+        return await clusters_repo.get_cluster(user_id, cluster_id)
+    except ClusterNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+    except ClusterAccessForbidden as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"{e}") from e
+
+
+@router.patch(
+    "/{cluster_id}",
+    summary="Get one cluster detail for user",
+    response_model=Cluster,
+    status_code=status.HTTP_200_OK,
+)
+async def update_cluster(
+    user_id: UserID,
+    cluster_id: ClusterID,
+    updated_cluster: ClusterPatch,
+    clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
+):
+    try:
+        return await clusters_repo.update_cluster(user_id, cluster_id, updated_cluster)
+    except ClusterNotFoundError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+    except ClusterAccessForbidden as e:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"{e}") from e
+
+
+@router.get(
+    "/default/details",
+    summary="Returns the cluster details",
+    response_model=ClusterOut,
+    status_code=status.HTTP_200_OK,
+)
+async def get_default_cluster_details(
     settings: DaskSchedulerSettings = Depends(get_scheduler_settings),
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
     dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
@@ -79,12 +147,12 @@ async def get_default_cluster(
 
 
 @router.get(
-    "/{cluster_id}",
+    "/{cluster_id}/details",
     summary="Returns the cluster details",
     response_model=ClusterOut,
     status_code=status.HTTP_200_OK,
 )
-async def get_cluster_with_id(
+async def get_cluster_details(
     cluster_id: NonNegativeInt,
     settings: DaskSchedulerSettings = Depends(get_scheduler_settings),
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
