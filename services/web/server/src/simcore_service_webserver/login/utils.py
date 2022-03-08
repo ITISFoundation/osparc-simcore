@@ -127,8 +127,6 @@ async def send_mail(app: web.Application, msg: MIMEText):
         use_tls=cfg.SMTP_TLS_ENABLED,
     )
     log.debug("Sending email with smtp configuration: %s", pformat(smtp_args))
-    assert cfg.SMTP_PASSWORD  # nosec
-    assert cfg.SMTP_USERNAME  # nosec
     if cfg.SMTP_PORT == 587:
         # NOTE: aiosmtplib does not handle port 587 correctly
         # plaintext first, then use starttls
@@ -138,14 +136,14 @@ async def send_mail(app: web.Application, msg: MIMEText):
         if cfg.SMTP_TLS_ENABLED:
             log.info("Starting TLS ...")
             await smtp.starttls(validate_certs=False)
-        if cfg.SMTP_USERNAME:
+        if cfg.SMTP_USERNAME and cfg.SMTP_PASSWORD:
             log.info("Login email server ...")
             await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD.get_secret_value())
         await smtp.send_message(msg)
         await smtp.quit()
     else:
         async with aiosmtplib.SMTP(**smtp_args) as smtp:
-            if cfg.SMTP_USERNAME:
+            if cfg.SMTP_USERNAME and cfg.SMTP_PASSWORD:
                 log.info("Login email server ...")
                 await smtp.login(
                     cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD.get_secret_value()
