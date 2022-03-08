@@ -2,10 +2,13 @@
 
 """
 
+import asyncio
+import functools
 import logging
 from uuid import UUID
 
 from aiohttp import web
+from servicelib.utils import log_exception_callback
 
 from .. import director_v2_api
 from ..storage_api import delete_data_folders_of_project
@@ -57,3 +60,17 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
 
     # rm project from database
     await db.delete_user_project(user_id, project_uuid)
+
+
+def create_delete_project_task(
+    app: web.Application, project_uuid: str, user_id: int
+) -> asyncio.Task:
+    """helper to create homogenously delete_project tasks"""
+
+    task = asyncio.create_task(
+        delete_project(app, project_uuid, user_id),
+        name=DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id),
+    )
+
+    task.add_done_callback(functools.partial(log_exception_callback, log))
+    return task

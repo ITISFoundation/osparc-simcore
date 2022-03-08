@@ -3,7 +3,6 @@
 """
 
 import asyncio
-import functools
 import json
 import logging
 from typing import Any, Coroutine, Dict, List, Optional, Set
@@ -16,7 +15,7 @@ from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp.web_exceptions_extension import HTTPLocked
 from servicelib.json_serialization import json_dumps
-from servicelib.utils import log_exception_callback, logged_gather
+from servicelib.utils import logged_gather
 from simcore_postgres_database.webserver_models import ProjectType as ProjectTypeDB
 
 from .. import catalog, director_v2_api
@@ -30,15 +29,8 @@ from ..security_api import check_permission
 from ..security_decorators import permission_required
 from ..storage_api import copy_data_folders_from_project
 from ..users_api import get_user_name
-from ._core_delete import DELETE_PROJECT_TASK_NAME, delete_project
-from ._core_get import get_project_for_user, validate_project
-from ._core_notify import (
-    lock_project_and_notify_state_update,
-    notify_project_state_update,
-)
-from ._core_open_close import try_close_project_for_user, try_open_project_for_user
-from ._core_services import start_project_dynamic_services
-from ._core_states import add_project_states_for_user
+from . import _core_get, _core_notify, _core_open_close, _core_services, _core_states
+from ._core_delete import create_delete_project_task
 from .project_models import ProjectDict, ProjectTypeAPI
 from .projects_db import APP_PROJECT_DBAPI, ProjectDBAPI
 from .projects_exceptions import ProjectInvalidRightsError, ProjectNotFoundError
@@ -93,7 +85,7 @@ async def create_projects(
         source_project: Optional[Dict[str, Any]] = None
         if as_template:  # create template from
             await check_permission(request, "project.template.create")
-            source_project = await get_project_for_user(
+            source_project = await _core_get.get_project_for_user(
                 request.app,
                 project_uuid=as_template,
                 user_id=user_id,
@@ -139,7 +131,7 @@ async def create_projects(
                 new_project = predefined
 
         # re-validate data
-        await validate_project(request.app, new_project)
+        await _core_get.validate_project(request.app, new_project)
 
         # update metadata (uuid, timestamps, ownership) and save
         new_project = await db.add_project(
@@ -154,7 +146,7 @@ async def create_projects(
             assert source_project  # nosec
             if as_template:
                 # we need to lock the original study while copying the data
-                async with lock_project_and_notify_state_update(
+                async with _core_notify.lock_project_and_notify_state_update(
                     request.app,
                     source_project["uuid"],
                     ProjectStatus.CLONING,
@@ -177,7 +169,7 @@ async def create_projects(
         )
 
         # Appends state
-        new_project = await add_project_states_for_user(
+        new_project = await _core_states.add_project_states_for_user(
             user_id=user_id,
             project=new_project,
             is_template=as_template is not None,
@@ -194,10 +186,8 @@ async def create_projects(
         log.warning(
             "cancelled creation of project for user '%s', cleaning up", f"{user_id=}"
         )
-        asyncio.create_task(
-            delete_project(request.app, new_project["uuid"], user_id),
-            name=DELETE_PROJECT_TASK_NAME.format(new_project["uuid"], user_id),
-        )
+
+        create_delete_project_task(request.app, new_project["uuid"], user_id)
         raise
     else:
         log.debug("project created successfuly")
@@ -229,7 +219,7 @@ async def list_projects(request: web.Request):
     ):
         await logged_gather(
             *[
-                add_project_states_for_user(
+                _core_states.add_project_states_for_user(
                     user_id=user_id,
                     project=prj,
                     is_template=prj_type == ProjectTypeDB.TEMPLATE,
@@ -287,7 +277,7 @@ async def get_project(request: web.Request):
     )
 
     try:
-        project = await get_project_for_user(
+        project = await _core_get.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
@@ -341,7 +331,7 @@ async def get_active_project(request: web.Request) -> web.Response:
             user_active_projects = await rt.find(PROJECT_ID_KEY)
         if user_active_projects:
 
-            project = await get_project_for_user(
+            project = await _core_get.get_project_for_user(
                 request.app,
                 project_uuid=user_active_projects[0],
                 user_id=user_id,
@@ -405,9 +395,9 @@ async def replace_project(request: web.Request):
     )
 
     try:
-        await validate_project(request.app, new_project)
+        await _core_get.validate_project(request.app, new_project)
 
-        current_project = await get_project_for_user(
+        current_project = await _core_get.get_project_for_user(
             request.app,
             project_uuid=f"{project_uuid}",
             user_id=user_id,
@@ -452,7 +442,7 @@ async def replace_project(request: web.Request):
             request.app, user_id, project_uuid
         )
         # Appends state
-        new_project = await add_project_states_for_user(
+        new_project = await _core_states.add_project_states_for_user(
             user_id=user_id,
             project=new_project,
             is_template=False,
@@ -489,7 +479,7 @@ async def delete_project_handler(request: web.Request):
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
 
     try:
-        await get_project_for_user(
+        await _core_get.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
@@ -521,10 +511,8 @@ async def delete_project_handler(request: web.Request):
         await db.update_hidden_mark(project_id=project_uuid, enabled=True)
 
         # fire+forget: this operation can be heavy, specially with data deletion
-        asyncio.create_task(
-            delete_project(request.app, project_uuid, user_id),
-            name=DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id),
-        ).add_done_callback(functools.partial(log_exception_callback, log))
+        task = create_delete_project_task(request.app, project_uuid, user_id)
+        log.debug("Spawned task %s to delete %s", task.get_name(), f"{project_uuid=}")
 
     except ProjectInvalidRightsError as err:
         raise web.HTTPForbidden(
@@ -550,7 +538,7 @@ async def open_project(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(reason="Invalid request body") from exc
 
     try:
-        project = await get_project_for_user(
+        project = await _core_get.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
@@ -558,7 +546,7 @@ async def open_project(request: web.Request) -> web.Response:
             include_state=True,
         )
 
-        if not await try_open_project_for_user(
+        if not await _core_open_close.try_open_project_for_user(
             user_id,
             project_uuid=project_uuid,
             client_session_id=client_session_id,
@@ -567,17 +555,17 @@ async def open_project(request: web.Request) -> web.Response:
             raise HTTPLocked(reason="Project is locked, try later")
 
         # user id opened project uuid
-        await start_project_dynamic_services(request, project, user_id)
+        await _core_services.start_project_dynamic_services(request, project, user_id)
 
         # notify users that project is now opened
-        project = await add_project_states_for_user(
+        project = await _core_states.add_project_states_for_user(
             user_id=user_id,
             project=project,
             is_template=False,
             app=request.app,
         )
 
-        await notify_project_state_update(request.app, project)
+        await _core_notify.notify_project_state_update(request.app, project)
 
         return web.json_response({"data": project}, dumps=json_dumps)
 
@@ -586,7 +574,7 @@ async def open_project(request: web.Request) -> web.Response:
     except DirectorServiceError as exc:
         # there was an issue while accessing the director-v2/director-v0
         # ensure the project is closed again
-        await try_close_project_for_user(
+        await _core_open_close.try_close_project_for_user(
             user_id=user_id,
             project_uuid=project_uuid,
             client_session_id=client_session_id,
@@ -613,14 +601,14 @@ async def close_project(request: web.Request) -> web.Response:
 
     try:
         # ensure the project exists
-        await get_project_for_user(
+        await _core_get.get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=False,
             include_state=False,
         )
-        await try_close_project_for_user(
+        await _core_open_close.try_close_project_for_user(
             user_id, project_uuid, client_session_id, request.app
         )
         raise web.HTTPNoContent(content_type="application/json")
@@ -640,7 +628,7 @@ async def state_project(request: web.Request) -> web.Response:
     project_uuid = path["project_id"]
 
     # check that project exists and queries state
-    validated_project = await get_project_for_user(
+    validated_project = await _core_get.get_project_for_user(
         request.app,
         project_uuid=project_uuid,
         user_id=user_id,
