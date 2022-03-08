@@ -82,8 +82,8 @@ async def ensure_network_cleanup(
             except aiodocker.exceptions.DockerError as e:
                 # if the tests succeeds the network will not exists
                 str_error = str(e)
-                assert "network" in str_error
-                assert "not found" in str_error
+                assert "network" in str_error, str_error
+                assert "not found" in str_error, str_error
 
 
 async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
