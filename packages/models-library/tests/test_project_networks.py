@@ -1,6 +1,6 @@
 # pylint: disable=redefined-outer-name
 import json
-from typing import Any, Dict
+from typing import Dict
 from uuid import UUID, uuid4
 
 import pytest
@@ -15,34 +15,22 @@ from pydantic import ValidationError
 # UTILS
 
 
-def _keys_as_uuid(data: Dict[str, Any]) -> Dict[UUID, Any]:
-    return {UUID(k): v for k, v in data.items()}
-
-
-def _keys_as_str(data: Dict[str, Any]) -> Dict[str, Any]:
-    return {f"{k}": v for k, v in data.items()}
-
-
 # FIXTURES
 
 
-@pytest.fixture(params=[True, False])
-def cast_to_uuid(request) -> bool:
-    return request.param
+@pytest.fixture
+def uuid() -> UUID:
+    return uuid4()
 
 
 # TESTS
 
 
 @pytest.mark.parametrize("example", NetworksWithAliases.Config.schema_extra["examples"])
-def test_networks_with_aliases(example: Dict, cast_to_uuid: bool) -> None:
-    if cast_to_uuid:
-        example = {k: _keys_as_uuid(v) for k, v in example.items()}
-
-    expected_example = {k: _keys_as_str(v) for k, v in example.items()}
+def test_networks_with_aliases(example: Dict) -> None:
     project_networks = NetworksWithAliases.parse_obj(example)
-    assert project_networks.dict() == expected_example
-    assert project_networks.json() == json.dumps(expected_example)
+    assert project_networks.dict() == example
+    assert project_networks.json() == json.dumps(example)
 
 
 @pytest.mark.parametrize(
@@ -83,8 +71,30 @@ def test_project_networks() -> None:
     assert ProjectNetworks.parse_obj(ProjectNetworks.Config.schema_extra["example"])
 
 
-def test_class_constructors() -> None:
-    assert ProjectNetworks.create_empty(uuid4())
-    assert ProjectNetworks.create(
-        uuid4(), ProjectNetworks.Config.schema_extra["example"]["networks_with_aliases"]
+def test_class_constructors(uuid: UUID) -> None:
+    assert ProjectNetworks.create_empty(uuid).dict() == {
+        "project_uuid": uuid,
+        "networks_with_aliases": {},
+    }
+
+    network_aliases = NetworksWithAliases.parse_obj(
+        {"ok-netowrk_naeme": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "with_ok_id"}}
     )
+    expected_dict = {
+        "project_uuid": uuid,
+        "networks_with_aliases": network_aliases,
+    }
+    assert ProjectNetworks.create(uuid, network_aliases) == expected_dict
+
+
+def test_class_constructors_fail() -> None:
+    with pytest.raises(ValidationError):
+        NetworksWithAliases.parse_obj(
+            {
+                "ok-netowrk_naeme": {
+                    UUID(
+                        "5057e2c1-d392-4d31-b5c8-19f3db780390"
+                    ): "not_allowed with_ uuid"
+                }
+            }
+        )

@@ -1,12 +1,10 @@
-from collections import deque
-from typing import Any, Deque, Dict
-from uuid import UUID
+from typing import Any, Dict
 
 from models_library.projects import ProjectID
 from pydantic import BaseModel, Field, constr, validate_arguments
 
 from .generics import DictKey, DictModel, DictValue, Generic
-from .projects_nodes_io import NodeID
+from .projects_nodes_io import NodeIDStr
 
 SERVICE_NETWORK_RE = r"^[a-zA-Z]([a-zA-Z0-9_-]{0,63})$"
 
@@ -27,32 +25,11 @@ def validate_network_alias(value: DockerNetworkAlias) -> DockerNetworkAlias:
 
 
 class BaseModelDict(DictModel, Generic[DictKey, DictValue]):
-    @staticmethod
-    def _convert_dict_uuid_keys(dict_data: Dict[Any, Any]) -> Dict[Any, Any]:
-        to_change: Deque[UUID] = deque()
-        for key in dict_data.keys():
-            if isinstance(key, UUID):
-                to_change.append(key)
-
-        for key in to_change:
-            dict_data[f"{key}"] = dict_data.pop(key)
-
-        return dict_data
-
-    def _iter(self, *args, **kwargs) -> "TupleGenerator":
-        # ensure dict key conversion works with either
-        # .json() and .dict() methods
-        for tuple_generator in super()._iter(*args, **kwargs):
-            dict_key, value = tuple_generator
-            if isinstance(value, dict):
-                value = self._convert_dict_uuid_keys(value)
-            yield dict_key, value
-
     def dict(self, *args, **kwargs) -> Dict[str, Any]:
         return super().dict(*args, **kwargs)["__root__"]
 
 
-class ContainerAliases(BaseModelDict[NodeID, DockerNetworkAlias]):
+class ContainerAliases(BaseModelDict[NodeIDStr, DockerNetworkAlias]):
     ...
 
 

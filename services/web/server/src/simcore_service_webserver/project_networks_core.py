@@ -1,7 +1,6 @@
 import logging
 from collections import namedtuple
 from typing import Any, Dict, Set
-from uuid import UUID
 
 from aiohttp.web import Application
 from models_library.projects import ProjectID
@@ -175,7 +174,7 @@ async def _get_networks_with_aliases_for_default_network(
             )
             continue
 
-        new_networks_with_aliases[default_network][UUID(node_uuid)] = network_alias
+        new_networks_with_aliases[default_network][f"{node_uuid}"] = network_alias
 
     return new_networks_with_aliases
 
