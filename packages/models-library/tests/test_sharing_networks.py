@@ -46,11 +46,23 @@ def test_networks_with_aliases(example: Dict, cast_to_uuid: bool) -> None:
 
 
 @pytest.mark.parametrize(
-    "example", NetworksWithAliases.Config.schema_extra["invalid_examples"]
+    "invalid_example",
+    [
+        {"1_NO_START_WITH_NUMBER": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
+        {"_NO_UNDERSCORE_START": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
+        {"-NO_DASH_START": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
+        {
+            "MAX_64_CHARS_ALLOWED_DUE_TO_DOCKER_NETWORK_LIMITATIONS___________": {
+                "5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"
+            }
+        },
+        {"i_am_ok": {"NOT_A_VALID_UUID": "ok"}},
+        {"i_am_ok": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "1_I_AM_INVALID"}},
+    ],
 )
-def test_networks_with_aliases_fail(example: Dict) -> None:
+def test_networks_with_aliases_fail(invalid_example: Dict) -> None:
     with pytest.raises(ValidationError):
-        assert NetworksWithAliases.parse_obj(example)
+        assert NetworksWithAliases.parse_obj(invalid_example)
 
 
 @pytest.mark.parametrize("network_name", ["a", "ok", "a_", "A_", "a1", "a-"])

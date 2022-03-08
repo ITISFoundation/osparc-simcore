@@ -63,27 +63,7 @@ class NetworksWithAliases(BaseModelDict[DockerNetworkName, ContainerAliases]):
                 {"nSetwork_name12-s": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
                 {"C": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
                 {"shr-ntwrk_5c743ad2-8fdb-11ec-bb3a-02420a000008_default": {}},
-            ],
-            "invalid_examples": [
-                {
-                    "1_NO_START_WITH_NUMBER": {
-                        "5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"
-                    }
-                },
-                {
-                    "_NO_UNDERSCORE_START": {
-                        "5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"
-                    }
-                },
-                {"-NO_DASH_START": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
-                {
-                    "MAX_64_CHARS_ALLOWED_DUE_TO_DOCKER_NETWORK_LIMITATIONS___________": {
-                        "5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"
-                    }
-                },
-                {"i_am_ok": {"NOT_A_VALID_UUID": "ok"}},
-                {"i_am_ok": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "1_I_AM_INVALID"}},
-            ],
+            ]
         }
 
 
