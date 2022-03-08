@@ -68,17 +68,17 @@ async def ensure_volume_cleanup(
 async def ensure_network_cleanup(
     docker_client: aiodocker.Docker, project_id: str
 ) -> None:
-    network_names = {x["Name"] for x in await docker_client.networks.list()}
-
-    for network_name in network_names:
-        if project_id in network_name:
-            network = await docker_client.networks.get(network_name)
-            async for attempt in AsyncRetrying(
-                reraise=False,
-                stop=stop_after_attempt(15),
-                wait=wait_fixed(5),
-            ):
-                with attempt:
+    async for attempt in AsyncRetrying(
+        reraise=False,
+        stop=stop_after_attempt(20),
+        wait=wait_fixed(5),
+    ):
+        with attempt:
+            for network_name in {
+                x["Name"] for x in await docker_client.networks.list()
+            }:
+                if project_id in network_name:
+                    network = await docker_client.networks.get(network_name)
                     delete_result = await network.delete()
                     assert delete_result is True
 
