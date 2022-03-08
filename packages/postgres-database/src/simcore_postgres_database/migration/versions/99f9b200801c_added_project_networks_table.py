@@ -30,7 +30,7 @@ def upgrade():
         sa.ForeignKeyConstraint(
             ["project_uuid"],
             ["projects.uuid"],
-            name="fk_project_networks_project_uuid",
+            name="fk_project_networks_project_networks_projects",
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),

@@ -12,7 +12,7 @@ project_networks = sa.Table(
         sa.String,
         sa.ForeignKey(
             projects.c.uuid,
-            name="fk_project_networks_project_uuid",
+            name="fk_project_networks_project_networks_projects",
             ondelete="CASCADE",
             onupdate="CASCADE",
         ),
