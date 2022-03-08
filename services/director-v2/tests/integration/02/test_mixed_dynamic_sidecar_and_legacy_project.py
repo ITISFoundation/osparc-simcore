@@ -169,9 +169,7 @@ async def director_v2_client(
     app = init_app(settings)
 
     async with LifespanManager(app):
-        async with httpx.AsyncClient(
-            app=app, base_url="http://testserver/v2"
-        ) as client:
+        async with httpx.AsyncClient(app=app, base_url="http://testserver") as client:
             yield client
 
 
