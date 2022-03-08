@@ -1,4 +1,4 @@
-""" Handlers for CRUD operations on /projects/
+""" Handlers on /projects/{project_uuid}/
 
 """
 

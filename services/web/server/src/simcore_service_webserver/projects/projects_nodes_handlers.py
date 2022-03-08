@@ -13,7 +13,8 @@ from .. import director_v2_api
 from .._meta import api_version_prefix as VTAG
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
-from . import projects_api
+from ._core_get import get_project_for_user
+from ._core_nodes import add_project_node, delete_project_node
 from .projects_exceptions import ProjectNotFoundError
 
 log = logging.getLogger(__name__)
@@ -38,14 +39,14 @@ async def create_node(request: web.Request) -> web.Response:
     try:
         # ensure the project exists
 
-        await projects_api.get_project_for_user(
+        await get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True,
         )
         data = {
-            "node_id": await projects_api.add_project_node(
+            "node_id": await add_project_node(
                 request,
                 project_uuid,
                 user_id,
@@ -77,7 +78,7 @@ async def get_node(request: web.Request) -> web.Response:
     try:
         # ensure the project exists
 
-        await projects_api.get_project_for_user(
+        await get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
@@ -147,16 +148,14 @@ async def delete_node(request: web.Request) -> web.Response:
     try:
         # ensure the project exists
 
-        await projects_api.get_project_for_user(
+        await get_project_for_user(
             request.app,
             project_uuid=project_uuid,
             user_id=user_id,
             include_templates=True,
         )
 
-        await projects_api.delete_project_node(
-            request, project_uuid, user_id, node_uuid
-        )
+        await delete_project_node(request, project_uuid, user_id, node_uuid)
 
         raise web.HTTPNoContent(content_type="application/json")
     except ProjectNotFoundError as exc:
