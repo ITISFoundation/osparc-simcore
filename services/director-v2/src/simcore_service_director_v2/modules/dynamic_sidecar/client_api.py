@@ -50,12 +50,6 @@ def log_httpx_http_error(url: str, method: str, formatted_traceback: str) -> Non
 class DynamicSidecarClient:
     """Will handle connections to the service sidecar"""
 
-    # NOTE: Since this module is accesse concurrently and httpx uses Locks
-    # interally, it is not possible to share a single client instace.
-    # For each request a separate client will be created.
-    # The previous implementation (with a shared client) raised
-    # RuntimeErrors because resources were already locked.
-
     API_VERSION = "v1"
 
     def __init__(self, app: FastAPI):
@@ -96,6 +90,9 @@ class DynamicSidecarClient:
             return response.json()["is_healthy"]
         except httpx.HTTPError:
             return False
+
+    async def close(self) -> None:
+        await self._client.aclose()
 
     @log_decorator(logger=logger)
     async def containers_inspect(self, dynamic_sidecar_endpoint: str) -> Dict[str, Any]:
@@ -286,6 +283,12 @@ class DynamicSidecarClient:
 async def setup_api_client(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client setup")
     app.state.dynamic_sidecar_api_client = DynamicSidecarClient(app)
+
+
+async def close_api_client(app: FastAPI) -> None:
+    logger.debug("dynamic-sidecar api client closing...")
+    if client := app.state.dynamic_sidecar_api_client:
+        await client.close()
 
 
 def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:

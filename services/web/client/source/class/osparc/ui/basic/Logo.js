@@ -32,9 +32,7 @@ qx.Class.define("osparc.ui.basic.Logo", {
     this.__resetSourcePath();
 
     const themeManager = qx.theme.manager.Meta.getInstance();
-    themeManager.addListener("changeTheme", () => {
-      this.__resetSourcePath();
-    }, this);
+    themeManager.addListener("changeTheme", () => this.__resetSourcePath(), this);
   },
 
   members: {

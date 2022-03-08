@@ -81,8 +81,8 @@ def mock_environment(mock_env_devel_environment: Dict[str, str], monkeypatch):
 
 @pytest.fixture
 def client(
-    loop,
-    aiohttp_unused_port,
+    event_loop: asyncio.AbstractEventLoop,
+    unused_tcp_port_factory,
     aiohttp_client,
     api_version_prefix,
     mock_environment: None,
@@ -122,7 +122,7 @@ def client(
         return web.json_response({"data": True, "error": None})
 
     # -----
-    main = {"port": aiohttp_unused_port(), "host": "localhost"}
+    main = {"port": unused_tcp_port_factory(), "host": "localhost"}
     cfg = {
         "main": main,
         "rest": {"enabled": True, "version": api_version_prefix},
@@ -143,7 +143,7 @@ def client(
 
     app.router.add_routes(routes)
 
-    cli = loop.run_until_complete(
+    cli = event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={key: main[key] for key in ("host", "port")})
     )
     return cli

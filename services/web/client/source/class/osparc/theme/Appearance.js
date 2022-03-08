@@ -36,13 +36,13 @@ qx.Theme.define("osparc.theme.Appearance", {
         const style = {
           decorator: "pb-listitem",
           padding: 5,
-          backgroundColor: "background-main-lighter+"
+          backgroundColor: "background-main-2"
         };
         if (states.hovered) {
-          style.backgroundColor = "contrasted-background";
+          style.backgroundColor = "background-main-3";
         }
         if (states.selected || states.checked) {
-          style.backgroundColor = "contrasted-background+";
+          style.backgroundColor = "background-main-4";
         }
         return style;
       }
@@ -56,10 +56,10 @@ qx.Theme.define("osparc.theme.Appearance", {
           backgroundColor: "transparent"
         };
         if (states.hovered) {
-          style.backgroundColor = "background-main-lighter+";
+          style.backgroundColor = "background-main-2";
         }
         if (states.selected || states.checked) {
-          style.backgroundColor = "contrasted-background";
+          style.backgroundColor = "background-main-3";
         }
         return style;
       }
@@ -156,7 +156,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     "service-window/captionbar": {
       include: "window/captionbar",
       style: state => ({
-        backgroundColor: "material-button-background",
+        backgroundColor: "background-main-2",
         decorator: "workbench-small-cap-captionbar"
       })
     },
@@ -170,7 +170,7 @@ qx.Theme.define("osparc.theme.Appearance", {
 
     "dialog-window-content": {
       style: () => ({
-        backgroundColor: "material-button-background"
+        backgroundColor: "background-main-2"
       })
     },
     /*
@@ -274,7 +274,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     */
     sidepanel: {
       style: state => ({
-        backgroundColor: "background-main-lighter"
+        backgroundColor: "background-main-1"
       })
     },
 
@@ -296,7 +296,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     */
     "node-ports": {
       style: state => ({
-        backgroundColor: "background-main-lighter+"
+        backgroundColor: "background-main-2"
       })
     },
 
@@ -320,7 +320,6 @@ qx.Theme.define("osparc.theme.Appearance", {
     "link-button": {
       include: "material-button",
       style: state => ({
-        decorator: "link-button",
         backgroundColor: "transparent",
         textColor: state.hovered ? "text" : "text-darker"
       })
@@ -380,6 +379,93 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
+    "toolbar-xl-button": {
+      include: "toolbar-button",
+      alias: "toolbar-button",
+      style: state => ({
+        allowStretchY: false,
+        allowStretchX: false,
+        minHeight: 50,
+        center: true
+      })
+    },
+
+    "toolbar-xl-button/label": {
+      include: "toolbar-button/label",
+      style: state => ({
+        font: "title-16"
+      })
+    },
+
+    "toolbar-lg-button": {
+      include: "toolbar-button",
+      alias: "toolbar-button",
+      style: state => ({
+        allowStretchY: false,
+        allowStretchX: false,
+        minHeight: 35,
+        center: true
+      })
+    },
+
+    "toolbar-lg-button/label": {
+      include: "toolbar-button/label",
+      style: state => ({
+        font: "text-16"
+      })
+    },
+
+    "toolbar-md-button": {
+      include: "toolbar-button",
+      alias: "toolbar-button",
+      style: state => ({
+        allowStretchY: false,
+        allowStretchX: false,
+        minHeight: 25,
+        center: true
+      })
+    },
+
+    "toolbar-md-button/label": {
+      include: "toolbar-button/label",
+      style: state => ({
+        font: "text-14"
+      })
+    },
+
+    "no-shadow-button": {
+      alias: "atom",
+      style: function(states) {
+        var decorator = "toolbar-button";
+        if (states.hovered || states.pressed || states.checked) {
+          decorator += "-hovered";
+        }
+        return {
+          cursor: states.disabled ? undefined : "pointer",
+          decorator: decorator,
+          textColor: "material-button-text",
+          padding: [3, 5]
+        };
+      }
+    },
+
+    "strong-button": {
+      include: "material-button",
+      style: state => ({
+        decorator: state.hovered ? "strong-bordered-button" : "no-border",
+        backgroundColor: "strong-main"
+      })
+    },
+
+    "danger-button": {
+      include: "material-button",
+      style: state => ({
+        decorator: "bordered-button",
+        backgroundColor: state.hovered ? "danger-red" : null,
+        textColor: state.hovered ? "text" : "danger-red"
+      })
+    },
+
     /*
     ---------------------------------------------------------------------------
       FlashMessage
@@ -388,7 +474,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     "flash": {
       style: state => ({
         padding: 10,
-        backgroundColor: "background-main-lighter+",
+        backgroundColor: "background-main-2",
         decorator: "flash"
       })
     },
@@ -397,13 +483,6 @@ qx.Theme.define("osparc.theme.Appearance", {
         decorator: "flash-badge"
       })
     },
-
-    /*
-    ---------------------------------------------------------------------------
-      IFrame
-    ---------------------------------------------------------------------------
-    */
-    "iframe": {},
 
     /*
     ---------------------------------------------------------------------------
@@ -431,7 +510,7 @@ qx.Theme.define("osparc.theme.Appearance", {
     */
     "hint": {
       style: state => ({
-        backgroundColor: "background-main-lighter+",
+        backgroundColor: "background-main-2",
         decorator: "hint",
         padding: 5
       })
@@ -447,7 +526,7 @@ qx.Theme.define("osparc.theme.Appearance", {
       alias: "atom",
       style: state => ({
         decorator: "chip",
-        backgroundColor: "background-main-lighter",
+        backgroundColor: "background-main-1",
         padding: [3, 5]
       })
     },
@@ -553,6 +632,12 @@ qx.Theme.define("osparc.theme.Appearance", {
       })
     },
 
+    "margined-layout": {
+      style: () => ({
+        margin: [7, 10]
+      })
+    },
+
     /*
     ---------------------------------------------------------------------------
       jsonforms
@@ -563,81 +648,6 @@ qx.Theme.define("osparc.theme.Appearance", {
         padding: 10,
         decorator: "border-editable"
       })
-    },
-
-    /*
-    ---------------------------------------------------------------------------
-      buttons
-    ---------------------------------------------------------------------------
-    */
-    "toolbar-xl-button": {
-      include: "toolbar-button",
-      alias: "toolbar-button",
-      style: state => ({
-        allowStretchY: false,
-        allowStretchX: false,
-        minHeight: 50,
-        center: true
-      })
-    },
-
-    "toolbar-xl-button/label": {
-      include: "toolbar-button/label",
-      style: state => ({
-        font: "title-16"
-      })
-    },
-
-    "toolbar-lg-button": {
-      include: "toolbar-button",
-      alias: "toolbar-button",
-      style: state => ({
-        allowStretchY: false,
-        allowStretchX: false,
-        minHeight: 35,
-        center: true
-      })
-    },
-
-    "toolbar-lg-button/label": {
-      include: "toolbar-button/label",
-      style: state => ({
-        font: "text-16"
-      })
-    },
-
-    "toolbar-md-button": {
-      include: "toolbar-button",
-      alias: "toolbar-button",
-      style: state => ({
-        allowStretchY: false,
-        allowStretchX: false,
-        minHeight: 25,
-        center: true
-      })
-    },
-
-    "toolbar-md-button/label": {
-      include: "toolbar-button/label",
-      style: state => ({
-        font: "text-14"
-      })
-    },
-
-    "no-shadow-button": {
-      alias: "atom",
-      style: function(states) {
-        var decorator = "toolbar-button";
-        if (states.hovered || states.pressed || states.checked) {
-          decorator += "-hovered";
-        }
-        return {
-          cursor: states.disabled ? undefined : "pointer",
-          decorator: decorator,
-          textColor: "material-button-text",
-          padding: [3, 5]
-        };
-      }
     }
   }
 });

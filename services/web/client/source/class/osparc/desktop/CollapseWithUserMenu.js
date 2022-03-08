@@ -50,14 +50,14 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
           control = new qx.ui.toolbar.Separator().set({
             padding: 0,
             margin: 0,
-            backgroundColor: "contrasted-background++"
+            backgroundColor: "background-main-5"
           });
           this._add(control);
           break;
         case "back-to-dashboard-button":
           control = new osparc.ui.form.FetchButton(this.tr("Dashboard"), "@FontAwesome5Solid/arrow-left/16").set({
             font: "text-14",
-            backgroundColor: "contrasted-background+"
+            backgroundColor: "background-main-4"
           });
           osparc.utils.Utils.setIdToWidget(control, "dashboardBtn");
           control.addListener("execute", () => this.fireEvent("backToDashboardPressed"));
@@ -65,14 +65,14 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
           break;
         case "user-menu-button":
           control = new osparc.navigation.UserMenuButton().set({
-            backgroundColor: "contrasted-background+"
+            backgroundColor: "background-main-4"
           });
           osparc.io.WatchDog.getInstance().bind("online", control, "backgroundColor", {
-            converter: on => on ? "contrasted-background+" : "red"
+            converter: on => on ? "background-main-4" : "red"
           });
           control.getChildControl("label").exclude();
           control.getMenu().set({
-            backgroundColor: "contrasted-background+"
+            backgroundColor: "background-main-4"
           });
           control.populateExtendedMenu();
           this._add(control);
@@ -81,7 +81,7 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
           control = new qx.ui.container.Stack();
 
           const collapseNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-up/14").set({
-            backgroundColor: "contrasted-background+"
+            backgroundColor: "background-main-4"
           });
           control.add(collapseNavBarBtn);
           collapseNavBarBtn.addListener("execute", () => {
@@ -90,7 +90,7 @@ qx.Class.define("osparc.desktop.CollapseWithUserMenu", {
           });
 
           const expandNavBarBtn = new qx.ui.form.Button(null, "@FontAwesome5Solid/chevron-down/14").set({
-            backgroundColor: "contrasted-background+"
+            backgroundColor: "background-main-4"
           });
           control.add(expandNavBarBtn);
           expandNavBarBtn.addListener("execute", () => {

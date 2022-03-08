@@ -1,34 +1,35 @@
-qx.Theme.define("osparc.theme.ColorLightBlue", {
-  extend: osparc.theme.osparcblue.Color,
+qx.Theme.define("osparc.theme.zmt.ColorLight", {
   include: osparc.theme.mixin.Color,
-  colors: {
-    "c00": "#FFFFFF", // L=100
-    "c01": "#EFEFEF", // L=94
-    "c02": "#7AE6FF", // L=75
-    "c03": "#60CCFF", // L=69
-    "c04": "#51BDF0", // L=63
-    "c05": "#41ADE0", // L=56
-    "c06": "#808080", // L=50
-    "c07": "#707070", // L=44
-    "c08": "#606060", // L=38
-    "c09": "#505050", // L=31
-    "c10": "#404040", // L=25
-    "c11": "#303030", // L=19
-    "c12": "#202020", // L=13
-    "c13": "#101010", // L=06
-    "c14": "#000000", // L=00
 
+  colors: {
+    "c00": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0),
+    "c01": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 8),
+    "c02": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 15),
+    "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 20),
+    "c04": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 25),
+    "c05": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 30),
+    "c06": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 35),
+    "c07": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 45),
+    "c08": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 55),
+    "c09": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 70),
+    "c10": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 80),
+    "c11": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 85),
+    "c12": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 95),
+    "c13": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 100),
+    "c14": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105),
+
+    "strong-main": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.zmt", 65),
+    "danger-red": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.danger", 40),
     "a-bit-transparent": "rgba(255, 255, 255, 0.4)",
-    "invalid-red": "#a04040",
 
 
     // main
     "background-main": "c01",
-    "background-main-lighter": "c02",
-    "background-main-lighter+": "c03",
-    "contrasted-background": "c04",
-    "contrasted-background+": "c05",
-    "contrasted-background++": "c06",
+    "background-main-1": "c02",
+    "background-main-2": "c03",
+    "background-main-3": "c04",
+    "background-main-4": "c05",
+    "background-main-5": "c06",
 
     // text
     "text": "c11",
@@ -62,8 +63,8 @@ qx.Theme.define("osparc.theme.ColorLightBlue", {
     "material-textfield": "c07",
     "material-textfield-focused": "c11",
     "material-textfield-disabled": "c05",
-    "material-textfield-invalid": "invalid-red",
-    "invalid": "invalid-red",
+    "material-textfield-invalid": "failed-red",
+    "invalid": "failed-red",
 
     // backgrounds
     "background-selected": "c05",
@@ -81,8 +82,8 @@ qx.Theme.define("osparc.theme.ColorLightBlue", {
     "tabview-button-background": "transparent",
 
     // scrollbar
-    "scrollbar-passive": "c02",
-    "scrollbar-active": "c04",
+    "scrollbar-passive": "c05",
+    "scrollbar-active": "c06",
 
     // form
     "button": "c05",
@@ -103,7 +104,7 @@ qx.Theme.define("osparc.theme.ColorLightBlue", {
     // 'border-main' is an alias of 'background-selected' (compatibility reasons)
     "border": "c04",
     "border-focused": "c09",
-    "border-invalid": "invalid-red",
+    "border-invalid": "failed-red",
     "border-disabled": "c01",
 
     // separator
@@ -146,6 +147,8 @@ qx.Theme.define("osparc.theme.ColorLightBlue", {
     "progressive-progressbar-percent-text": "c02",
 
 
+
+    // OSPARC
     "workbench-edge-comp-active": "#888888",
     "workbench-edge-api-active": "#444444",
     "workbench-start-hint": "#AFAFAF",

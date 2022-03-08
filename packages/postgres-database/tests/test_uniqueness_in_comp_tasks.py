@@ -16,7 +16,7 @@ fake_task = fake_task_factory(first_internal_id=1)
 
 
 @pytest.fixture
-async def engine(loop, make_engine):
+async def engine(make_engine):
 
     engine = await make_engine()
     sync_engine = make_engine(is_async=False)

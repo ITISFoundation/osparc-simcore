@@ -15,8 +15,6 @@ from pydantic import ValidationError
 from simcore_service_api_server.models.schemas.files import File
 from simcore_service_api_server.modules.storage import to_file_api_model
 
-pytestmark = pytest.mark.asyncio
-
 FILE_CONTENT = "This is a test"
 
 

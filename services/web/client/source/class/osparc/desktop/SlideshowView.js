@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
     this._setLayout(new qx.ui.layout.VBox());
 
     const slideshowToolbar = this.__slideshowToolbar = new osparc.desktop.SlideshowToolbar().set({
-      backgroundColor: "contrasted-background+"
+      backgroundColor: "background-main-4"
     });
 
     const collapseWithUserMenu = this.__collapseWithUserMenu = new osparc.desktop.CollapseWithUserMenu();
@@ -162,7 +162,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const dependencies = node.getStatus().getDependencies();
       if (dependencies && dependencies.length) {
         const msg = this.tr("Do you want to run the required steps?");
-        const win = new osparc.ui.window.Confirmation(msg);
+        const win = new osparc.ui.window.Confirmation(msg, this.tr("Run"));
         win.center();
         win.open();
         win.addListener("close", () => {
@@ -197,7 +197,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           view.add(renderer);
         } else {
           if (node.isFilePicker()) {
-            view = new osparc.component.node.FilePickerNodeView();
+            view = new osparc.component.node.FilePickerSSView();
             view.getOutputsButton().hide();
           } else {
             view = new osparc.component.node.NodeView();
@@ -230,19 +230,19 @@ qx.Class.define("osparc.desktop.SlideshowView", {
           "border-radius": "12px"
         });
         view.set({
-          backgroundColor: "background-main-lighter+",
+          backgroundColor: "background-main-2",
           maxWidth: node.isDynamic() ? null : 800,
           margin: this.self().CARD_MARGIN
         });
         if (node.isParameter()) {
           view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
           view.set({
-            backgroundColor: "contrasted-background+",
+            backgroundColor: "background-main-4",
             padding: 10
           });
         } else {
           view.getMainView().set({
-            backgroundColor: "contrasted-background+",
+            backgroundColor: "background-main-4",
             padding: 10,
             paddingBottom: 0
           });
@@ -385,7 +385,10 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       const preferencesSettings = osparc.desktop.preferences.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteNode()) {
         const msg = this.tr("Are you sure you want to delete node?");
-        const win = new osparc.ui.window.Confirmation(msg);
+        const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
+        win.getConfirmButton().set({
+          appearance: "danger-button"
+        });
         win.center();
         win.open();
         win.addListener("close", () => {

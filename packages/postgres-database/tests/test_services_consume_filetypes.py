@@ -164,7 +164,7 @@ async def test_contraints(conn):
             ]
         )
         .where(services_consume_filetypes.c.filetype == "DCM")
-        .as_scalar()
+        .scalar_subquery()
     )
     result: ResultProxy = await conn.execute(stmt)
     num_services = await result.scalar()

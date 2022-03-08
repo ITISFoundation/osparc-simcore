@@ -41,7 +41,12 @@ qx.Class.define("osparc.file.FileDownloadLink", {
     const selectButton = this.getChildControl("selectButton");
     selectButton.addListener("execute", () => {
       const downloadLink = downloadLinkField.getValue();
-      this.fireDataEvent("fileLinkAdded", downloadLink);
+      if (osparc.utils.Utils.isValidHttpUrl(downloadLink)) {
+        this.fireDataEvent("fileLinkAdded", downloadLink);
+      } else {
+        downloadLinkField.resetValue();
+        osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Error checking link"), "WARNING");
+      }
     }, this);
   },
 

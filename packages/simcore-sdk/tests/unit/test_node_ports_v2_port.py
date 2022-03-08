@@ -223,7 +223,6 @@ async def mock_upload_file(mocker, e_tag):
 
 @pytest.fixture
 def common_fixtures(
-    loop,
     storage_v0_service_mock,
     mock_download_file,
     mock_upload_file,

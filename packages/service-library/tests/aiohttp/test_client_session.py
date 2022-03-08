@@ -18,7 +18,7 @@ from servicelib.json_serialization import json_dumps
 
 
 @pytest.fixture
-def server(loop, aiohttp_server: Callable) -> Iterator[TestServer]:
+def server(event_loop, aiohttp_server: Callable) -> Iterator[TestServer]:
     async def echo(request):
         got = await request.json()
         return web.json_response(data=got)
@@ -30,7 +30,7 @@ def server(loop, aiohttp_server: Callable) -> Iterator[TestServer]:
 
     assert not app.get(APP_CLIENT_SESSION_KEY)
 
-    test_server = loop.run_until_complete(aiohttp_server(app))
+    test_server = event_loop.run_until_complete(aiohttp_server(app))
 
     assert isinstance(app[APP_CLIENT_SESSION_KEY], ClientSession)
     assert not app[APP_CLIENT_SESSION_KEY].closed

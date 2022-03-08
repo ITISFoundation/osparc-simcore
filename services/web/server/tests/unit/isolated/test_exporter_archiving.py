@@ -3,9 +3,6 @@
 import asyncio
 import hashlib
 import os
-import random
-import secrets
-import string
 import tempfile
 import uuid
 from concurrent.futures import ProcessPoolExecutor
@@ -206,7 +203,7 @@ def test_validate_osparc_file_name_too_many_shasums():
     )
 
 
-async def test_error_during_decompression(loop):
+async def test_error_during_decompression():
     with pytest.raises(ExporterException) as exc_info:
         await unzip_folder(
             Path("/i/do/not/exist"), Path("/tmp/do_i_not_exist_properly_two")
@@ -218,7 +215,7 @@ async def test_error_during_decompression(loop):
     )
 
 
-async def test_archive_already_exists(loop, temp_dir, project_uuid):
+async def test_archive_already_exists(temp_dir, project_uuid):
     tmp_dir_to_compress = temp_dir_with_existing_archive(temp_dir, project_uuid)
     with pytest.raises(ExporterException) as exc_info:
         await zip_folder(
@@ -232,7 +229,7 @@ async def test_archive_already_exists(loop, temp_dir, project_uuid):
     )
 
 
-async def test_unzip_found_too_many_project_targets(loop, temp_dir, project_uuid):
+async def test_unzip_found_too_many_project_targets(temp_dir, project_uuid):
     tmp_dir_to_compress = temp_dir_to_compress_with_too_many_targets(
         temp_dir, project_uuid
     )
@@ -256,7 +253,7 @@ async def test_unzip_found_too_many_project_targets(loop, temp_dir, project_uuid
 
 
 async def test_same_dir_structure_after_compress_decompress(
-    loop, dir_with_random_content: Path, temp_dir2: Path
+    dir_with_random_content: Path, temp_dir2: Path
 ):
     zip_archive = await zip_folder(
         folder_to_zip=dir_with_random_content,

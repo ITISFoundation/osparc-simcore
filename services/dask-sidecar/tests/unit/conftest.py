@@ -27,6 +27,7 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.docker_compose",
     "pytest_simcore.tmp_path_extra",
+    "pytest_simcore.pytest_global_environs",
 ]
 
 

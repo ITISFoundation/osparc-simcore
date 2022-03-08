@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
 
-import asyncio
 from typing import Awaitable, Callable
 
 import aiohttp
@@ -42,7 +41,6 @@ def location_id() -> str:
 
 async def test_get_storage_locations(
     mock_environment: None,
-    loop: asyncio.AbstractEventLoop,
     storage_v0_service_mock: AioResponsesMock,
     user_id: UserID,
 ):
@@ -57,7 +55,6 @@ async def test_get_storage_locations(
 
 async def test_get_download_file_presigned_link(
     mock_environment: None,
-    loop: asyncio.AbstractEventLoop,
     storage_v0_service_mock: AioResponsesMock,
     user_id: UserID,
     file_id: str,
@@ -72,7 +69,6 @@ async def test_get_download_file_presigned_link(
 
 async def test_get_upload_file_presigned_link(
     mock_environment: None,
-    loop: asyncio.AbstractEventLoop,
     storage_v0_service_mock: AioResponsesMock,
     user_id: UserID,
     file_id: str,
@@ -87,7 +83,6 @@ async def test_get_upload_file_presigned_link(
 
 async def test_get_file_metada(
     mock_environment: None,
-    loop: asyncio.AbstractEventLoop,
     storage_v0_service_mock: AioResponsesMock,
     user_id: UserID,
     file_id: str,
@@ -111,7 +106,6 @@ async def test_get_file_metada(
 )
 async def test_invalid_calls(
     mock_environment: None,
-    loop: asyncio.AbstractEventLoop,
     storage_v0_service_mock: AioResponsesMock,
     user_id: UserID,
     file_id: str,

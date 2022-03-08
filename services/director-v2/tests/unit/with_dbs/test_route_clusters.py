@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from asyncio import AbstractEventLoop
 from typing import Callable, Dict, Iterable, List
 
 import httpx
@@ -111,7 +110,7 @@ def cluster(
 
 
 async def test_get_default_cluster_entrypoint(
-    loop: AbstractEventLoop, clusters_config: None, async_client: httpx.AsyncClient
+    clusters_config: None, async_client: httpx.AsyncClient
 ):
     # This test checks that the default cluster is accessible
     # the default cluster is the osparc internal cluster available through a dask-scheduler
@@ -123,9 +122,7 @@ async def test_get_default_cluster_entrypoint(
     assert default_cluster_out == ClusterOut.parse_obj(response.json())
 
 
-async def test_local_dask_gateway_server(
-    loop: AbstractEventLoop, local_dask_gateway_server: DaskGatewayServer
-):
+async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayServer):
     async with Gateway(
         local_dask_gateway_server.address,
         local_dask_gateway_server.proxy_address,
@@ -174,7 +171,6 @@ async def test_local_dask_gateway_server(
 
 
 async def test_get_cluster_entrypoint(
-    loop: AbstractEventLoop,
     clusters_config: None,
     async_client: httpx.AsyncClient,
     local_dask_gateway_server: DaskGatewayServer,
