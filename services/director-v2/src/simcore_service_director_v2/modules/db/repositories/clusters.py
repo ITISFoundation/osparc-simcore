@@ -16,6 +16,7 @@ from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from simcore_postgres_database.models.groups import GroupType, groups, user_to_groups
 from simcore_postgres_database.models.users import users
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from ....core.errors import ClusterAccessForbidden, ClusterNotFoundError
 from ....models.schemas.clusters import ClusterCreate, ClusterPatch
@@ -218,14 +219,57 @@ class ClustersRepository(BaseRepository):
                 and updated_cluster.access_rights
             ):
                 for grp, rights in updated_cluster.access_rights.items():
-                    if (grp == primary_group and rights != CLUSTER_MANAGER_RIGHTS) or (
-                        grp not in [the_cluster.owner, primary_group]
-                        and rights
-                        not in [
-                            CLUSTER_USER_RIGHTS,
-                            CLUSTER_NO_RIGHTS,
-                        ]
-                    ):
-                        raise ClusterAccessForbidden(
-                            cluster_id, msg="Administrator rights required."
+                    if grp not in [the_cluster.owner] and rights not in [
+                        CLUSTER_USER_RIGHTS,
+                        CLUSTER_NO_RIGHTS,
+                    ]:
+                        raise ClusterAccessForbidden(cluster_id=cluster_id)
+            # ok we can update now
+            await conn.execute(
+                sa.update(clusters)
+                .where(clusters.c.id == the_cluster.id)
+                .values(
+                    updated_cluster.dict(
+                        by_alias=True,
+                        exclude_unset=True,
+                        exclude_none=True,
+                        exclude={"access_rights"},
+                    ),
+                )
+            )
+            # upsert the rights
+            if updated_cluster.access_rights:
+                # first check if some rights must be deleted
+                grps_to_remove = {
+                    grp
+                    for grp in the_cluster.access_rights
+                    if grp not in updated_cluster.access_rights
+                }
+                if grps_to_remove:
+                    await conn.execute(
+                        sa.delete(cluster_to_groups).where(
+                            cluster_to_groups.c.gid.in_(grps_to_remove)
                         )
+                    )
+
+                for grp, rights in updated_cluster.access_rights.items():
+                    insert_stmt = pg_insert(cluster_to_groups).values(
+                        **rights.dict(by_alias=True), gid=grp, cluster_id=the_cluster.id
+                    )
+                    on_update_stmt = insert_stmt.on_conflict_do_update(
+                        index_elements=[
+                            cluster_to_groups.c.cluster_id,
+                            cluster_to_groups.c.gid,
+                        ],
+                        set_=rights.dict(by_alias=True),
+                    )
+                    await conn.execute(on_update_stmt)
+
+            clusters_list: List[Cluster] = await _clusters_from_cluster_ids(
+                conn, {cluster_id}
+            )
+            if not clusters_list:
+                raise ClusterNotFoundError(cluster_id=cluster_id)
+            the_cluster = clusters_list[0]
+
+            return the_cluster
