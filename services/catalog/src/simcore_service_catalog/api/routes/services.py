@@ -4,7 +4,6 @@ import asyncio
 import logging
 import urllib.parse
 from collections import deque
-from functools import lru_cache
 from typing import Any, Deque, Dict, List, Optional, Set, Tuple
 
 from aiocache import cached
@@ -68,18 +67,6 @@ def _prepare_service_details(
             exc,
         )
     return validated_service
-
-
-def async_lru_cache(*lru_cache_args, **lru_cache_kwargs):
-    def async_lru_cache_decorator(async_function):
-        @lru_cache(*lru_cache_args, **lru_cache_kwargs)
-        def cached_async_function(*args, **kwargs):
-            coroutine = async_function(*args, **kwargs)
-            return asyncio.ensure_future(coroutine)
-
-        return cached_async_function
-
-    return async_lru_cache_decorator
 
 
 @router.get("", response_model=List[ServiceOut], **RESPONSE_MODEL_POLICY)
