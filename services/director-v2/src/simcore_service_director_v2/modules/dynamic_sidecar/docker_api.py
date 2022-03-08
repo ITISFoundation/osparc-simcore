@@ -478,11 +478,11 @@ async def get_or_create_networks_ids(
     return dict(zip(networks, ids))
 
 
-async def get_sharing_networks_containers(
+async def get_project_networks_containers(
     project_id: ProjectID,
 ) -> Dict[str, int]:
     """
-    Returns all current sharing_networks for the project with
+    Returns all current project_networks for the project with
     the amount of containers attached to them.
     """
     async with docker_client() as client:

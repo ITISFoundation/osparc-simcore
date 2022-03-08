@@ -12,7 +12,7 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
-from models_library.sharing_networks import SharingNetworks
+from models_library.project_networks import ProjectNetworks
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
@@ -30,14 +30,14 @@ from ....models.schemas.dynamic_services import (
 from ....modules.db.repositories import BaseRepository
 from ....modules.director_v0 import DirectorV0Client
 from ...db.repositories.projects import ProjectsRepository
-from ...db.repositories.sharing_networks import SharingNetworksRepository
+from ...db.repositories.project_networks import ProjectNetworksRepository
 from .._namepsace import get_compose_namespace
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (
     create_network,
     create_service_and_get_id,
     get_node_id_from_task_for_service,
-    get_sharing_networks_containers,
+    get_project_networks_containers,
     get_swarm_network,
     is_dynamic_sidecar_missing,
     remove_dynamic_sidecar_network,
@@ -323,11 +323,11 @@ class CreateUserServices(DynamicSchedulerEvent):
         # Starts dynamic SIDECAR -------------------------------------
         # creates a docker compose spec given the service key and tag
         # fetching project form DB and fetching user settings
-        sharing_networks_repository: SharingNetworksRepository = (
-            _fetch_repo_outside_of_request(app, SharingNetworksRepository)
+        project_networks_repository: ProjectNetworksRepository = (
+            _fetch_repo_outside_of_request(app, ProjectNetworksRepository)
         )
-        sharing_networks: SharingNetworks = (
-            await sharing_networks_repository.get_sharing_networks(
+        project_networks: ProjectNetworks = (
+            await project_networks_repository.get_project_networks(
                 project_id=scheduler_data.project_id
             )
         )
@@ -340,7 +340,7 @@ class CreateUserServices(DynamicSchedulerEvent):
             compose_spec=scheduler_data.compose_spec,
             container_http_entry=scheduler_data.container_http_entry,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
-            sharing_networks=sharing_networks,
+            project_networks=project_networks,
             node_uuid=scheduler_data.node_uuid,
             project_id=scheduler_data.project_id,
         )
@@ -554,16 +554,16 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
             scheduler_data.service_name,
         )
 
-        # if a sharing for the current project has no more
+        # if a project network for the current project has no more
         # containers attached to it (because the last service which
         # was using it was removed), also removed the network
-        used_sharing_networks = await get_sharing_networks_containers(
+        used_project_networks = await get_project_networks_containers(
             project_id=scheduler_data.project_id
         )
         await logged_gather(
             *[
                 try_to_remove_network(network_name)
-                for network_name, container_count in used_sharing_networks.items()
+                for network_name, container_count in used_project_networks.items()
                 if container_count == 0
             ]
         )

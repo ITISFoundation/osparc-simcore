@@ -9,11 +9,11 @@ from uuid import UUID, uuid4
 import pytest
 import simcore_service_webserver
 from models_library.projects import ProjectID
-from models_library.sharing_networks import NetworksWithAliases
+from models_library.project_networks import NetworksWithAliases
 from pydantic import BaseModel
 from pytest_mock.plugin import MockerFixture
 from simcore_service_webserver.projects.project_models import ProjectDict
-from simcore_service_webserver.sharing_networks_core import (
+from simcore_service_webserver.project_networks_core import (
     _get_networks_with_aliases_for_default_network,
     _send_network_configuration_to_dynamic_sidecar,
 )

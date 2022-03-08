@@ -220,7 +220,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     simcore_services_ready_and_change_director_env: None,
     director_v2_client: httpx.AsyncClient,
     ensure_services_stopped: None,
-    mock_sharing_networks_repository: None,
+    mock_project_networks_repository: None,
 ):
     """
     The test will start 3 dynamic services in the same project and check

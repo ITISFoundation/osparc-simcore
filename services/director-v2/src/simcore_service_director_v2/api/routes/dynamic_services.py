@@ -10,7 +10,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
-from models_library.sharing_networks import DockerNetworkAlias, DockerNetworkName
+from models_library.project_networks import DockerNetworkAlias, DockerNetworkName
 from pydantic import BaseModel
 from starlette import status
 from starlette.datastructures import URL
@@ -270,7 +270,7 @@ async def attach_network_to_dynamic_sidecar(
     )
     network_id = network_names_to_ids[item.network_name]
 
-    await scheduler.attach_sharing_network(
+    await scheduler.attach_project_network(
         node_id=item.node_id, network_id=network_id, network_alias=item.network_alias
     )
 
@@ -292,7 +292,7 @@ async def detach_network_from_dynamic_sidecar(
         [item.network_name], item.project_id
     )
     network_id = network_names_to_ids[item.network_name]
-    await scheduler.detach_sharing_network(node_id=item.node_id, network_id=network_id)
+    await scheduler.detach_project_network(node_id=item.node_id, network_id=network_id)
 
 
 @router.post(

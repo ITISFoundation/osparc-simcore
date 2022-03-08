@@ -4,15 +4,15 @@ from sqlalchemy.dialects.postgresql import JSONB
 from .base import metadata
 from .projects import projects
 
-sharing_networks = sa.Table(
-    "sharing_networks",
+project_networks = sa.Table(
+    "project_networks",
     metadata,
     sa.Column(
         "project_uuid",
         sa.String,
         sa.ForeignKey(
             projects.c.uuid,
-            name="fk_sharing_networks_project_uuid",
+            name="fk_project_networks_project_uuid",
             ondelete="CASCADE",
             onupdate="CASCADE",
         ),

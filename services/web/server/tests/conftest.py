@@ -16,7 +16,7 @@ from pytest_simcore.helpers.utils_login import AUserDict, LoggedUser
 from servicelib.json_serialization import json_dumps
 from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.sharing_networks_core import SHARING_NETWORK_PREFIX
+from simcore_service_webserver.project_networks_core import PROJECT_NETWORK_PREFIX
 from simcore_service_webserver.projects.project_models import ProjectDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -136,9 +136,9 @@ def monkeypatch_setenv_from_app_config(monkeypatch: MonkeyPatch) -> Callable:
 
 
 @pytest.fixture
-def mock_sharing_networks_network_name(mocker) -> None:
+def mock_project_networks_network_name(mocker) -> None:
     remove_orphaned_services = mocker.patch(
-        "simcore_service_webserver.sharing_networks._network_name",
-        return_value=f"{SHARING_NETWORK_PREFIX}_{UUID(int=0)}_mocked",
+        "simcore_service_webserver.project_networks._network_name",
+        return_value=f"{PROJECT_NETWORK_PREFIX}_{UUID(int=0)}_mocked",
     )
     return remove_orphaned_services

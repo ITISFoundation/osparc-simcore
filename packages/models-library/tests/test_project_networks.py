@@ -4,9 +4,9 @@ from typing import Any, Dict
 from uuid import UUID, uuid4
 
 import pytest
-from models_library.sharing_networks import (
+from models_library.project_networks import (
     NetworksWithAliases,
-    SharingNetworks,
+    ProjectNetworks,
     validate_network_alias,
     validate_network_name,
 )
@@ -40,9 +40,9 @@ def test_networks_with_aliases(example: Dict, cast_to_uuid: bool) -> None:
         example = {k: _keys_as_uuid(v) for k, v in example.items()}
 
     expected_example = {k: _keys_as_str(v) for k, v in example.items()}
-    sharing_networks = NetworksWithAliases.parse_obj(example)
-    assert sharing_networks.dict() == expected_example
-    assert sharing_networks.json() == json.dumps(expected_example)
+    project_networks = NetworksWithAliases.parse_obj(example)
+    assert project_networks.dict() == expected_example
+    assert project_networks.json() == json.dumps(expected_example)
 
 
 @pytest.mark.parametrize(
@@ -66,25 +66,25 @@ def test_networks_with_aliases_fail(invalid_example: Dict) -> None:
 
 
 @pytest.mark.parametrize("network_name", ["a", "ok", "a_", "A_", "a1", "a-"])
-def test_service_network_validation(network_name: str) -> None:
+def test_project_networks_validation(network_name: str) -> None:
     assert validate_network_name(network_name)
     assert validate_network_alias(network_name)
 
 
 @pytest.mark.parametrize("network_name", ["", "1", "-", "_"])
-def test_service_network_validation_fails(network_name: str) -> None:
+def test_project_networks_validation_fails(network_name: str) -> None:
     with pytest.raises(ValidationError):
         assert validate_network_name(network_name)
     with pytest.raises(ValidationError):
         assert validate_network_alias(network_name)
 
 
-def test_sharing_networks() -> None:
-    assert SharingNetworks.parse_obj(SharingNetworks.Config.schema_extra["example"])
+def test_project_networks() -> None:
+    assert ProjectNetworks.parse_obj(ProjectNetworks.Config.schema_extra["example"])
 
 
 def test_class_constructors() -> None:
-    assert SharingNetworks.create_empty(uuid4())
-    assert SharingNetworks.create(
-        uuid4(), SharingNetworks.Config.schema_extra["example"]["networks_with_aliases"]
+    assert ProjectNetworks.create_empty(uuid4())
+    assert ProjectNetworks.create(
+        uuid4(), ProjectNetworks.Config.schema_extra["example"]["networks_with_aliases"]
     )

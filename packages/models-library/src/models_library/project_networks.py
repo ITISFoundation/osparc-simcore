@@ -10,7 +10,7 @@ from .projects_nodes_io import NodeID
 
 SERVICE_NETWORK_RE = r"^[a-zA-Z]([a-zA-Z0-9_-]{0,63})$"
 
-SHARING_NETWORK_PREFIX = "shr-ntwrk"
+PROJECT_NETWORK_PREFIX = "prj-ntwrk"
 
 DockerNetworkName = constr(regex=SERVICE_NETWORK_RE)
 DockerNetworkAlias = constr(regex=SERVICE_NETWORK_RE)
@@ -67,7 +67,7 @@ class NetworksWithAliases(BaseModelDict[DockerNetworkName, ContainerAliases]):
         }
 
 
-class SharingNetworks(BaseModel):
+class ProjectNetworks(BaseModel):
     project_uuid: ProjectID = Field(..., description="project reference")
     networks_with_aliases: NetworksWithAliases = Field(
         ...,
@@ -78,13 +78,13 @@ class SharingNetworks(BaseModel):
     )
 
     @classmethod
-    def create_empty(cls, project_uuid: ProjectID) -> "SharingNetworks":
+    def create_empty(cls, project_uuid: ProjectID) -> "ProjectNetworks":
         return cls.parse_obj(dict(project_uuid=project_uuid, networks_with_aliases={}))
 
     @classmethod
     def create(
         cls, project_uuid: ProjectID, networks_with_aliases: NetworksWithAliases
-    ) -> "SharingNetworks":
+    ) -> "ProjectNetworks":
         return cls.parse_obj(
             dict(project_uuid=project_uuid, networks_with_aliases=networks_with_aliases)
         )

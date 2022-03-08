@@ -14,7 +14,7 @@ from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
-from models_library.sharing_networks import DockerNetworkAlias
+from models_library.project_networks import DockerNetworkAlias
 from servicelib.utils import logged_gather
 
 from ....core.settings import (
@@ -287,7 +287,7 @@ class DynamicSidecarsScheduler:
 
         return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
 
-    async def attach_sharing_network(
+    async def attach_project_network(
         self, node_id: NodeID, network_id: str, network_alias: DockerNetworkAlias
     ) -> None:
         if node_id not in self._inverse_search_mapping:
@@ -337,7 +337,7 @@ class DynamicSidecarsScheduler:
 
         await logged_gather(*tasks)
 
-    async def detach_sharing_network(self, node_id: NodeID, network_id: str) -> None:
+    async def detach_project_network(self, node_id: NodeID, network_id: str) -> None:
         if node_id not in self._inverse_search_mapping:
             logger.debug("No dynamic-sidecar running for %s", f"{node_id=}")
             return

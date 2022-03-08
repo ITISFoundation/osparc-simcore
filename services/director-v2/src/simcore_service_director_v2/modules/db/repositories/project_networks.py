@@ -1,23 +1,23 @@
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectID
-from models_library.sharing_networks import SharingNetworks
+from models_library.project_networks import ProjectNetworks
 
 from ....core.errors import ProjectNotFoundError
-from ..tables import sharing_networks
+from ..tables import project_networks
 from ._base import BaseRepository
 
 
-class SharingNetworksRepository(BaseRepository):
-    async def get_sharing_networks(self, project_id: ProjectID) -> SharingNetworks:
+class ProjectNetworksRepository(BaseRepository):
+    async def get_project_networks(self, project_id: ProjectID) -> ProjectNetworks:
         async with self.db_engine.acquire() as conn:
             row: RowProxy = await (
                 await conn.execute(
-                    sa.select([sharing_networks]).where(
-                        sharing_networks.c.project_uuid == f"{project_id}"
+                    sa.select([project_networks]).where(
+                        project_networks.c.project_uuid == f"{project_id}"
                     )
                 )
             ).first()
         if not row:
             raise ProjectNotFoundError(project_id)
-        return SharingNetworks.from_orm(row)
+        return ProjectNetworks.from_orm(row)

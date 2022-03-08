@@ -7,7 +7,7 @@ from fastapi.applications import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import PathMappingsLabel, ServiceSpecDict
-from models_library.sharing_networks import SharingNetworks
+from models_library.project_networks import ProjectNetworks
 from settings_library.docker_registry import RegistrySettings
 
 from ...modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
@@ -108,18 +108,18 @@ def _inject_proxy_network_configuration(
     target_container_spec["networks"] = container_networks
 
 
-async def _inject_sharing_networks_configuration(
+async def _inject_project_networks_configuration(
     service_spec: ServiceSpecDict,
-    sharing_networks: SharingNetworks,
+    project_networks: ProjectNetworks,
     node_uuid: NodeID,
     target_container: str,
     project_id: ProjectID,
 ) -> None:
     networks = service_spec.get("networks", {})
 
-    for network_name, node_aliases in sharing_networks.networks_with_aliases.items():
+    for network_name, node_aliases in project_networks.networks_with_aliases.items():
         if node_uuid not in node_aliases:
-            # this node is not part of this sharing network skipping
+            # this node is not part of this project network skipping
             continue
 
         # attach network to service spec
@@ -166,7 +166,7 @@ async def assemble_spec(
     compose_spec: Optional[ServiceSpecDict],
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
-    sharing_networks: SharingNetworks,
+    project_networks: ProjectNetworks,
     node_uuid: NodeID,
     project_id: ProjectID,
 ) -> str:
@@ -207,9 +207,9 @@ async def assemble_spec(
         dynamic_sidecar_network_name=dynamic_sidecar_network_name,
     )
 
-    await _inject_sharing_networks_configuration(
+    await _inject_project_networks_configuration(
         service_spec=service_spec,
-        sharing_networks=sharing_networks,
+        project_networks=project_networks,
         node_uuid=node_uuid,
         target_container=container_name,
         project_id=project_id,

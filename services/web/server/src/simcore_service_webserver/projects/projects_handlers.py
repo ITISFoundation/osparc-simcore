@@ -40,7 +40,7 @@ from .projects_utils import (
     get_project_unavailable_services,
     project_uses_available_services,
 )
-from .. import sharing_networks_core
+from .. import project_networks_core
 
 # When the user requests a project with a repo, the working copy might differ from
 # the repo project. A middleware in the meta module (if active) will resolve
@@ -142,7 +142,7 @@ async def create_projects(
             hidden=hidden,
         )
 
-        await sharing_networks_core.update_from_workbench(
+        await project_networks_core.update_from_workbench(
             app=request.app,
             project_id=UUID(new_project["uuid"]),
             workbench=new_project["workbench"],
@@ -441,7 +441,7 @@ async def replace_project(request: web.Request):
                     reason=f"Project {project_uuid} cannot be modified while pipeline is still running."
                 )
 
-        await sharing_networks_core.update_from_workbench(
+        await project_networks_core.update_from_workbench(
             app=request.app, project_id=project_uuid, workbench=new_project["workbench"]
         )
 

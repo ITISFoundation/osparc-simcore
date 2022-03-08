@@ -5,20 +5,20 @@ from uuid import UUID
 
 from aiohttp.web import Application
 from models_library.projects import ProjectID
-from models_library.sharing_networks import (
+from models_library.project_networks import (
     DockerNetworkAlias,
     DockerNetworkName,
     NetworksWithAliases,
     ContainerAliases,
     validate_network_alias,
     validate_network_name,
-    SHARING_NETWORK_PREFIX,
+    PROJECT_NETWORK_PREFIX,
 )
 from pydantic import ValidationError
 from servicelib.utils import logged_gather
 
 from . import director_v2_api
-from .sharing_networks_db import get_sharing_networks, update_sharing_networks
+from .project_networks_db import get_project_networks, update_project_networks
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ _ToAdd = namedtuple("_ToAdd", "project_id, node_id, network_name, network_alias"
 
 
 def _network_name(project_id: ProjectID, user_defined: str) -> DockerNetworkName:
-    network_name = f"{SHARING_NETWORK_PREFIX}_{project_id}_{user_defined}"
+    network_name = f"{PROJECT_NETWORK_PREFIX}_{project_id}_{user_defined}"
     return validate_network_name(network_name)
 
 
@@ -144,7 +144,7 @@ async def _get_networks_with_aliases_for_default_network(
     """
     Until a proper UI is in place all container need to
     be on the same network.
-    Return an updated version of the sharing_networks
+    Return an updated version of the project_networks
     """
     new_networks_with_aliases: NetworksWithAliases = NetworksWithAliases.parse_obj({})
 
@@ -184,13 +184,13 @@ async def update_from_workbench(
     app: Application, project_id: ProjectID, workbench: Dict[str, Any]
 ) -> None:
     """
-    Automatically updates the sharing networks based on the incoming new workbench.
+    Automatically updates the project networks based on the incoming new workbench.
     """
 
-    existing_sharing_networks = await get_sharing_networks(
+    existing_project_networks = await get_project_networks(
         app=app, project_id=project_id
     )
-    existing_networks_with_aliases = existing_sharing_networks.networks_with_aliases
+    existing_networks_with_aliases = existing_project_networks.networks_with_aliases
 
     # NOTE: when UI is in place this is no longer required
     # for now all services are placed on the same default network
@@ -198,7 +198,7 @@ async def update_from_workbench(
         app=app, project_id=project_id, new_workbench=workbench
     )
     logger.debug("%s", f"{existing_networks_with_aliases=}")
-    await update_sharing_networks(
+    await update_project_networks(
         app=app, project_id=project_id, networks_with_aliases=new_networks_with_aliases
     )
 
