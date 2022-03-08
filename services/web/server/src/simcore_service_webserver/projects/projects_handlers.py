@@ -508,7 +508,8 @@ async def delete_project(request: web.Request):
 
         # TODO: this is a temp solution that hides this project from the listing until
         #       the delete_project_task completes
-        await db.update_hidden_mark(project_id=project_uuid, enabled=True)
+        # TODO: see https://github.com/ITISFoundation/osparc-simcore/pull/2522
+        await db.set_hidden_flag(f"{project_uuid}", enabled=True)
 
         # fire+forget: this operation can be heavy, specially with data deletion
         task = create_delete_project_task(request.app, project_uuid, user_id)

@@ -41,8 +41,7 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
 
     # TODO: tmp using invisible as a "deletion mark"
     # Even if any of the steps below fail, the project will remain invisible
-    # raises ProjectNotFoundError,
-    await db.update_hidden_mark(project_id=project_uuid, enabled=True)
+    await db.set_hidden_flag(f"{project_uuid}", enabled=True)
 
     # stops dynamic services
     # raises ProjectNotFoundError, UserNotFoundError, ProjectLockError

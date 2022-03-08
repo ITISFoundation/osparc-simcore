@@ -862,11 +862,14 @@ class ProjectDBAPI:
             )
             return result.rowcount == 1
 
-    async def update_hidden_mark(self, project_id: str, enabled: bool):
-        """
-        raises ProjectNotFoundError
-        """
-        raise NotImplementedError("hidden")
+    async def set_hidden_flag(self, project_uuid: str, enabled: bool):
+        async with self.engine.acquire() as conn:
+            stmt = (
+                projects.update()
+                .values(hidden=enabled)
+                .where(projects.c.uuid == project_uuid)
+            )
+            await conn.execute(stmt)
 
 
 def setup_projects_db(app: web.Application):
