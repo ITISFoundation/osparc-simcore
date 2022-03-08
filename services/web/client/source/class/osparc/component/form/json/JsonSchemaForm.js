@@ -30,14 +30,14 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
           .then(schema => {
             if (this.__validate(schema.$schema, schema)) {
               // If schema is valid
-              this.__schema = schema
+              this.__schema = schema;
               if (data && this.__validate(this.__schema, data)) {
                 // Data is valid
-                this.__data = data
+                this.__data = data;
               }
-              return this.__schema
+              return this.__schema;
             }
-            return null
+            return null;
           })
           .then(this.__render)
           .catch(err => {
@@ -45,7 +45,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
           });
       }
       if (data) {
-        this.setData(data)
+        this.setData(data);
       }
       this.fireEvent("ajvReady");
     }, this);
@@ -148,7 +148,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         // Leaf
         const input = container.addInput(validation, this.__validationManager);
         if (data) {
-          const isNumber = ["number", "integer"].includes(schema.type)
+          const isNumber = ["number", "integer"].includes(schema.type);
           input.setValue(isNumber ? String(data) : data);
         }
         this.__inputItems.push(container);
@@ -187,14 +187,14 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         container.setLayout(new qx.ui.layout.VBox());
       }
       Object.entries(schema.properties).forEach(([key, value], index) => {
-        const allProps = Object.values(schema.properties)
-        const nextProp = index < allProps.length - 1 ? allProps[index+1] : null
+        const allProps = Object.values(schema.properties);
+        const nextProp = index < allProps.length - 1 ? allProps[index+1] : null;
         container.add(this.__expand(key, value, data ? data[key] : data, depth+1, {
           required: schema.required && schema.required.includes(key)
         }), {
-          lineBreak: nextProp && nextProp.type === 'array' || value.type === 'array' ? true : false,
-          stretch: value.type === 'array' ? true : false
-        })
+          lineBreak: nextProp && nextProp.type === "array" || value.type === "array",
+          stretch: value.type === "array"
+        });
       });
       return container;
     },
@@ -228,7 +228,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         }
         const value = input.getValue();
         if (typeof value !== "undefined" && value !== null) {
-          const isNumber = ["number", "integer"].includes(type)
+          const isNumber = ["number", "integer"].includes(type);
           objectPath.set(obj.json, path, isNumber ? Number(input.getValue()) : input.getValue());
         }
       });
@@ -269,26 +269,25 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     setSchema: function(schema) {
       if (this.__validate(schema.$schema, schema)) {
         // If schema is valid
-        this.__schema = schema
+        this.__schema = schema;
         if (this.__data && !this.__validate(this.__schema, this.__data)) {
           // Data is invalid
-          this.__data = null
+          this.__data = null;
         }
+      } else {
+        this.__schema = null;
       }
-      else {
-        this.__schema = null
-      }
-      this.__render(this.__schema)
+      this.__render(this.__schema);
     },
     setData: function(data) {
       if (data && this.__validate(this.__schema, data)) {
         // Data is valid
-        this.__data = data
-        this.__render(this.__schema)
-        return
+        this.__data = data;
+        this.__render(this.__schema);
+        return;
       }
       if (this.__validate(this.__schema, this.__data)) {
-        this.__render(this.__schema)
+        this.__render(this.__schema);
       }
     }
   }

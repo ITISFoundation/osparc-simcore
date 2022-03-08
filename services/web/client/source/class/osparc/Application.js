@@ -239,8 +239,8 @@ qx.Class.define("osparc.Application", {
           }
           break;
         }
-        case 'form-sandbox': {
-          this.__loadView(new osparc.desktop.FormSandboxPage(), {}, false)
+        case "form-sandbox": {
+          this.__loadView(new osparc.desktop.FormSandboxPage(), {}, false);
         }
       }
     },

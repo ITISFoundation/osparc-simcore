@@ -66,7 +66,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
      * Returns the type of this input
      */
     getType: function() {
-      return this.__schema.type
+      return this.__schema.type;
     },
     /**
      * Function that recursively constructs the path of this form item.
