@@ -41,6 +41,8 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
 
     # TODO: tmp using invisible as a "deletion mark"
     # Even if any of the steps below fail, the project will remain invisible
+    # TODO: see https://github.com/ITISFoundation/osparc-simcore/pull/2522
+
     await db.set_hidden_flag(f"{project_uuid}", enabled=True)
 
     # stops dynamic services
@@ -64,7 +66,10 @@ async def delete_project(app: web.Application, project_uuid: str, user_id: int) 
 def create_delete_project_task(
     app: web.Application, project_uuid: str, user_id: int
 ) -> asyncio.Task:
-    """helper to create homogenously delete_project tasks"""
+    """helper to uniformly create 'delete_project' tasks
+
+    These tasks then can be used for
+    """
 
     task = asyncio.create_task(
         delete_project(app, project_uuid, user_id),

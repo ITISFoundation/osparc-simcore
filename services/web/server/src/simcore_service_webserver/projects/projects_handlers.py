@@ -182,11 +182,15 @@ async def create_projects(
         raise web.HTTPNotFound(reason="Project not found") from exc
     except ProjectInvalidRightsError as exc:
         raise web.HTTPUnauthorized from exc
-    except asyncio.CancelledError:
+    except (asyncio.CancelledError, asyncio.TimeoutError):
         log.warning(
             "cancelled creation of project for user '%s', cleaning up", f"{user_id=}"
         )
-
+        # TODO: this is a temp solution that hides this project from the listing until
+        #       the delete_project_task completes
+        # TODO: see https://github.com/ITISFoundation/osparc-simcore/pull/2522
+        await db.set_hidden_flag(new_project["uuid"], enabled=True)
+        # fire+forget: this operation can be heavy, specially with data deletion
         create_delete_project_task(request.app, new_project["uuid"], user_id)
         raise
     else:

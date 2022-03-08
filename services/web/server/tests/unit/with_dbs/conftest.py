@@ -195,19 +195,18 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
     async def _mock_copy_data_from_project(*args):
         return args[2]
 
-    mock = mocker.patch(
-        "simcore_service_webserver.projects.projects_handlers.copy_data_folders_from_project",
-        autospec=True,
-        side_effect=_mock_copy_data_from_project,
+    return MockedStorageSubsystem(
+        copy_data_folders_from_project=mocker.patch(
+            "simcore_service_webserver.projects.projects_handlers.copy_data_folders_from_project",
+            autospec=True,
+            side_effect=_mock_copy_data_from_project,
+        ),
+        delete_project=mocker.patch(
+            "simcore_service_webserver.projects._core_delete.delete_data_folders_of_project",
+            autospec=True,
+            return_value="",
+        ),
     )
-
-    async_mock = mocker.AsyncMock(return_value="")
-    mock1 = mocker.patch(
-        "simcore_service_webserver.projects._core_delete.delete_data_folders_of_project",
-        autospec=True,
-        side_effect=async_mock,
-    )
-    return MockedStorageSubsystem(mock, mock1)
 
 
 @pytest.fixture
