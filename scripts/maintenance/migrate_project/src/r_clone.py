@@ -1,5 +1,6 @@
 from pathlib import Path
-from subprocess import PIPE, Popen  # nosec
+from subprocess import CompletedProcess, run
+
 from typing import Optional
 
 DESTINATION = "dst"
@@ -70,14 +71,19 @@ def sync_file(
     #       's3:production-simcore/38a2e328-4c5c-11ec-854c-02420a0b01d2/04db21ce-3c52-48ca-9a2a-c239a1d84826' \
     #       -P \
     #       --include 'Readout_hummel_data_2022-02-18 03_54_06.807444.zip'
-    r_clone_command = f"rclone --config {config_path} sync '{SOURCE}:{source_path.parent}' '{DESTINATION}:{destination_path.parent}' -P --include '{file_name}'"
+    r_clone_command = [
+        "rclone",
+        "--config",
+        config_path,
+        "sync",
+        f"{SOURCE}:{source_path.parent}",
+        f"{DESTINATION}:{destination_path.parent}",
+        "-P",
+        "--include",
+        f"{file_name}",
+    ]
     print(r_clone_command)
 
-    result = Popen(r_clone_command, stdout=PIPE, stderr=PIPE, shell=True)  # nosec
-    stdout, stderr = result.communicate()
-    decoded_stdout = stdout.decode()
-    if result.returncode != 0:
-        decoded_stderr = stderr.decode()
-        raise Exception(f"Command failed with\n{decoded_stdout}\n{decoded_stderr}")
-
-    print(decoded_stdout)
+    result: CompletedProcess = run(r_clone_command, capture_output=True)
+    print(result.stdout.decode())
+    result.check_returncode()
