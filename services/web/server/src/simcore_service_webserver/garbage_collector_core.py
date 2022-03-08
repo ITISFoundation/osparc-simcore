@@ -531,10 +531,11 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
 
                 await delete_project(app, project_uuid, user_id)
 
-            except ProjectNotFoundError:
+            except (ProjectNotFoundError, UserNotFoundError) as err:
                 logging.warning(
-                    "Project with %s was not found, skipping removal",
+                    "Failed to complete delete_project of %s: %s",
                     f"{project_uuid=}",
+                    err,
                 )
 
         else:

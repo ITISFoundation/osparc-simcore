@@ -862,6 +862,12 @@ class ProjectDBAPI:
             )
             return result.rowcount == 1
 
+    async def update_hidden_mark(self, project_id: str, enabled: bool):
+        """
+        raises ProjectNotFoundError
+        """
+        raise NotImplementedError("hidden")
+
 
 def setup_projects_db(app: web.Application):
     db = ProjectDBAPI(app)

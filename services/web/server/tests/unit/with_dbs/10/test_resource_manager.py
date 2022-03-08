@@ -796,10 +796,12 @@ async def test_regression_removing_unexisting_user(
 ) -> None:
     # regression test for https://github.com/ITISFoundation/osparc-simcore/issues/2504
 
-    spawned_tail_task = await delete_project(
-        app=client.server.app,
-        project_uuid=empty_user_project["uuid"],
-        user_id=logged_user["id"],
+    spawned_tail_task = asyncio.create_task(
+        delete_project(
+            app=client.server.app,
+            project_uuid=empty_user_project["uuid"],
+            user_id=logged_user["id"],
+        )
     )
 
     await spawned_tail_task
