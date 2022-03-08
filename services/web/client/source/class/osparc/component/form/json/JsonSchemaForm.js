@@ -284,11 +284,12 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
       if (data && this.__validate(this.__schema, data)) {
         // Data is valid
         this.__data = data
+        this.__render(this.__schema)
+        return
       }
-      else {
-        this.__data = null
+      if (this.__validate(this.__schema, this.__data)) {
+        this.__render(this.__schema)
       }
-      this.__render(this.__schema)
     }
   }
 });

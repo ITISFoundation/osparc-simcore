@@ -23,6 +23,7 @@ qx.Class.define("osparc.desktop.FormSandboxPage", {
   members: {
     __schema: null,
     __data: null,
+    __jsonData: null,
     __buildLayout: function() {
       this.setPadding(100)
       this.setLayout(new qx.ui.layout.HBox(50))
@@ -41,8 +42,9 @@ qx.Class.define("osparc.desktop.FormSandboxPage", {
     __attachEventHandlers: function() {
       this.__schema.addListener("input", data => {
         try {
-          const jsonData = JSON.parse(data.getData())
-          this.__form.setSchema(jsonData)
+          const jsonSchema = JSON.parse(data.getData())
+          this.__form.setSchema(jsonSchema)
+          this.__form.setData(this.__jsonData)
         }
         catch (e) {
           this.__form.setSchema(null)
@@ -52,6 +54,7 @@ qx.Class.define("osparc.desktop.FormSandboxPage", {
         try {
           const jsonData = JSON.parse(data.getData())
           this.__form.setData(jsonData)
+          this.__jsonData = jsonData
         }
         catch (e) {
           console.error(e)
