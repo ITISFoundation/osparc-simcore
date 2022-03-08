@@ -3,7 +3,6 @@ import logging
 from fastapi import FastAPI
 from servicelib.retry_policies import PostgresRetryPolicyUponInitialization
 from simcore_postgres_database.utils_aiosqlalchemy import (
-    close_engine,
     get_pg_engine_stateinfo,
     raise_if_migration_not_ready,
 )
@@ -36,7 +35,7 @@ async def connect_to_db(app: FastAPI) -> None:
         await raise_if_migration_not_ready(engine)
     except Exception:
         # NOTE: engine must be closed because retry will create a new engine
-        await close_engine(engine)
+        await engine.dispose()
         raise
     logger.debug("Migration up-to-date")
 
@@ -52,6 +51,6 @@ async def close_db_connection(app: FastAPI) -> None:
     logger.debug("Disconnecting db ...")
 
     if engine := app.state.engine:
-        await close_engine(engine)
+        await engine.dispose()
 
     logger.debug("Disconnected from %s", engine.url)  # pylint: disable=no-member

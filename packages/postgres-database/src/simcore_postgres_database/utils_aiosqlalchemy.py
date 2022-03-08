@@ -12,10 +12,6 @@ async def get_pg_engine_stateinfo(engine: AsyncEngine) -> Dict[str, Any]:
     }
 
 
-async def close_engine(engine: AsyncEngine) -> None:
-    await engine.dispose()
-
-
 class DBMigrationError(RuntimeError):
     pass
 
