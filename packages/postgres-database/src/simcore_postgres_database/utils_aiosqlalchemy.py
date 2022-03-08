@@ -20,7 +20,6 @@ async def raise_if_migration_not_ready(engine: AsyncEngine):
     """Ensures db migration is complete
 
     :raises DBMigrationError
-    :raises
     """
     async with engine.connect() as conn:
         version_num = await conn.scalar(
