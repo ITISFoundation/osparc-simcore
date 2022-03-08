@@ -5,6 +5,10 @@
  * Author: Ignacio Pascual (ignapas)
  */
 
+/**
+ * @asset(form/test1.json)
+ */
+
 qx.Class.define("osparc.desktop.FormSandboxPage", {
   extend: qx.ui.container.Composite,
   construct: function() {
