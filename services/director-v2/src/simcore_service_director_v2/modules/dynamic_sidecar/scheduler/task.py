@@ -291,7 +291,7 @@ class DynamicSidecarsScheduler:
         self, node_id: NodeID, network_id: str, network_alias: DockerNetworkAlias
     ) -> None:
         if node_id not in self._inverse_search_mapping:
-            logger.debug("No dynamic-sidecar running for %s", f"{node_id=}")
+            logger.info("No dynamic-sidecar running for %s", f"{node_id=}")
             return
 
         service_name = self._inverse_search_mapping[node_id]
@@ -306,7 +306,7 @@ class DynamicSidecarsScheduler:
                 dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
             )
         except httpx.HTTPError:
-            logger.debug("Could not contact dynamic-sidecar for %s", f"{node_id=}")
+            logger.info("Could not contact dynamic-sidecar for %s", f"{node_id=}")
             return
 
         sorted_container_names = sorted(containers_status.keys())
@@ -339,7 +339,7 @@ class DynamicSidecarsScheduler:
 
     async def detach_project_network(self, node_id: NodeID, network_id: str) -> None:
         if node_id not in self._inverse_search_mapping:
-            logger.debug("No dynamic-sidecar running for %s", f"{node_id=}")
+            logger.info("No dynamic-sidecar running for %s", f"{node_id=}")
             return
 
         service_name = self._inverse_search_mapping[node_id]
@@ -355,7 +355,7 @@ class DynamicSidecarsScheduler:
                 dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
             )
         except httpx.HTTPError:
-            logger.debug("Could not contact dynamic-sidecar for %s", f"{node_id=}")
+            logger.info("Could not contact dynamic-sidecar for %s", f"{node_id=}")
             return
 
         await logged_gather(

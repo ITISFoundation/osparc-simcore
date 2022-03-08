@@ -200,6 +200,14 @@ class DynamicSidecarSettings(BaseCustomSettings):
         ),
     )
 
+    DYNAMIC_SIDECAR_ATTACH_DETACH_NETWORK: PositiveFloat = Field(
+        3.0 * MINS,
+        description=(
+            "when attaching a network to a container or when removing "
+            "it might take some time for the operation to be completed "
+        ),
+    )
+
     TRAEFIK_SIMCORE_ZONE: str = Field(
         ...,
         description="Names the traefik zone for services that must be accessible from platform http entrypoint",
