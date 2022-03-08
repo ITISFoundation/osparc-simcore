@@ -1,11 +1,13 @@
 import logging
-from typing import Dict, List, Optional, Set
+from typing import Dict, Iterable, List, Optional
 
 import sqlalchemy as sa
 from models_library.clusters import Cluster, ClusterAccessRights
+from models_library.users import UserID
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
+from simcore_postgres_database.models.groups import groups, user_to_groups
 
 from ....core.errors import ClusterNotFoundError
 from ._base import BaseRepository
@@ -15,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 async def _clusters_from_cluster_ids(
     conn: sa.engine.Connection,
-    cluster_ids: Set[PositiveInt],
+    cluster_ids: Iterable[PositiveInt],
     offset: int = 0,
     limit: Optional[int] = None,
 ) -> List[Cluster]:
@@ -79,3 +81,22 @@ class ClustersRepository(BaseRepository):
                 raise ClusterNotFoundError(cluster_id=cluster_id)
             logger.debug("found cluster in DB: %s", f"{clusters_list[0]=}")
             return clusters_list[0]
+
+    async def list_clusters(self, user_id: UserID) -> List[Cluster]:
+        async with self.db_engine.acquire() as conn:
+            result = await conn.execute(
+                sa.select([clusters.c.id], distinct=True)
+                .where(
+                    cluster_to_groups.c.gid.in_(
+                        # get the groups of the user
+                        sa.select([groups.c.gid])
+                        .where(user_to_groups.c.uid == user_id)
+                        .order_by(groups.c.gid)
+                        .join(user_to_groups)
+                        .cte()
+                    )
+                )
+                .join(cluster_to_groups)
+            )
+            cluster_ids = await result.fetchall()
+            return await _clusters_from_cluster_ids(conn, {c.id for c in cluster_ids})

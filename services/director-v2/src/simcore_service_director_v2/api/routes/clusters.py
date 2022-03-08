@@ -1,4 +1,5 @@
 import logging
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.clusters import Cluster
@@ -13,6 +14,7 @@ from starlette import status
 
 from ...core.errors import ClusterNotFoundError
 from ...models.schemas.clusters import ClusterOut, Scheduler
+from ...models.schemas.constants import UserID
 from ...modules.db.repositories.clusters import ClustersRepository
 from ..dependencies.dask import get_dask_clients_pool
 from ..dependencies.database import get_repository
@@ -46,6 +48,14 @@ async def _get_cluster_with_id(
         )
     except ClusterNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+
+
+@router.get("", summary="Lists clusters owned by user", response_model=List[Cluster])
+async def list_clusters(
+    user_id: UserID,
+    clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
+):
+    return await clusters_repo.list_clusters(user_id)
 
 
 @router.get(
