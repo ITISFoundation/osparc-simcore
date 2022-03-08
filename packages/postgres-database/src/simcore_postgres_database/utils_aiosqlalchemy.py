@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -6,29 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from .utils_migration import get_current_head
 
 
-async def _get_connections(engine, db_name: str) -> List[Dict]:
-    """Return information about connections"""
-    sql = sa.DDL(
-        f"""
-    SELECT
-        pid,
-        state
-    FROM pg_stat_activity
-    WHERE datname = '{db_name}'
-    AND query NOT LIKE '%%FROM pg_stat_activity%%'
-    """
-    )
-    async with engine.connect() as conn:
-        result = await conn.execute(sql)
-
-        connections = [{"pid": r[0], "state": r[1]} for r in result.fetchall()]
-
-    return connections
-
-
-async def get_pg_engine_stateinfo(engine: AsyncEngine, db_name: str) -> Dict[str, Any]:
+async def get_pg_engine_stateinfo(engine: AsyncEngine) -> Dict[str, Any]:
     return {
-        "pgserver stats": f"{await _get_connections(engine, db_name)}",
         "current pool connections": f"{engine.pool.checkedin()=},{engine.pool.checkedout()=}",
     }
 

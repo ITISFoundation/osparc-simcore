@@ -44,7 +44,7 @@ async def connect_to_db(app: FastAPI) -> None:
 
     logger.debug(
         "Setup engine: %s",
-        await get_pg_engine_stateinfo(engine, cfg.POSTGRES_DB),
+        await get_pg_engine_stateinfo(engine),
     )
 
 
