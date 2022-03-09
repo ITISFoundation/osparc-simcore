@@ -129,6 +129,15 @@ qx.Class.define("osparc.wrapper.Svg", {
       }
     },
 
+    getRectAttributes: function(rect) {
+      return {
+        x: rect.node.attributes.x.value,
+        y: rect.node.attributes.y.value,
+        width: rect.node.attributes.width.value,
+        height: rect.node.attributes.height.value
+      };
+    },
+
     drawAnnotationRect: function(draw, width, height, x, y) {
       const rect = draw.rect(width, height)
         .fill("none")

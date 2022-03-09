@@ -1214,7 +1214,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
       if (this.__annotatingRect) {
         const rectAnnotation = this.__rectAnnotationRepr.clone();
-        console.log("save", rectAnnotation);
+        const rectAttr = osparc.wrapper.Svg.getRectAttributes(rectAnnotation);
+        console.log("save", rectAnnotation, rectAttr);
         rectAnnotation.id = osparc.utils.Utils.uuidv4();
         rectAnnotation.node.addEventListener("click", ev => {
           console.log(rectAnnotation, "clicked");
@@ -1226,7 +1227,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }, this);
         this.__annotations.push(rectAnnotation);
         this.__rectAnnotationRepr = null;
-        console.log("save", rectAnnotation);
       }
 
       if (this.__panning) {
