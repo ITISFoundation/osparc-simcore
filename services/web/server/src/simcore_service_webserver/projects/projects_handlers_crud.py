@@ -198,7 +198,9 @@ async def create_projects(
         # TODO: see https://github.com/ITISFoundation/osparc-simcore/pull/2522
         await db.set_hidden_flag(new_project["uuid"], enabled=True)
         # fire+forget: this operation can be heavy, specially with data deletion
-        create_delete_project_task(request.app, new_project["uuid"], user_id)
+        create_delete_project_task(
+            request.app, new_project["uuid"], user_id, logger=log
+        )
         raise
     else:
         log.debug("project created successfuly")
@@ -498,7 +500,9 @@ async def delete_project(request: web.Request):
         await db.set_hidden_flag(f"{project_uuid}", enabled=True)
 
         # fire+forget: this operation can be heavy, specially with data deletion
-        task = create_delete_project_task(request.app, project_uuid, user_id)
+        task = create_delete_project_task(
+            request.app, project_uuid, user_id, logger=log
+        )
         log.debug("Spawned task %s to delete %s", task.get_name(), f"{project_uuid=}")
 
     except ProjectInvalidRightsError as err:

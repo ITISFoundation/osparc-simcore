@@ -4,7 +4,7 @@
 
 import logging
 from contextlib import suppress
-from typing import Dict, Optional
+from typing import Dict
 
 from aiohttp import web
 from models_library.projects_state import ProjectStatus
@@ -15,7 +15,6 @@ from .. import director_v2_api
 from ..users_api import UserRole, get_user_name, get_user_role
 from ._core_nodes import is_node_dynamic
 from ._core_notify import lock_project_and_notify_state_update
-from .projects_exceptions import ProjectLockError
 from .projects_utils import extract_dns_without_default_port
 
 log = logging.getLogger(__name__)
@@ -73,7 +72,7 @@ async def start_project_dynamic_services(
 
 
 async def remove_project_dynamic_services(
-    user_id: Optional[int],  # Not guaranteed to exist
+    user_id: int,
     project_uuid: str,
     app: web.Application,
     notify_users: bool = True,
@@ -81,6 +80,7 @@ async def remove_project_dynamic_services(
     """
     raises ProjectNotFoundError
     raises UserNotFoundError
+    raises ProjectLockError: project is locked and therefore services cannot be stopped
     """
 
     log.debug(
@@ -90,32 +90,31 @@ async def remove_project_dynamic_services(
         f"{notify_users=}",
     )
 
-    # can raise User
+    # can raise UserNotFoundError
     user_name_data = await get_user_name(app, user_id)
     user_role: UserRole = await get_user_role(app, user_id)
 
-    with suppress(ProjectLockError):
-        #
-        # - during the closing process, which might take awhile,
-        #    the project is locked so no one opens it at the same time
-        # - Users also might get notified
-        # - If project is already locked, just ignore
-        # -
-        async with lock_project_and_notify_state_update(
-            app,
-            project_uuid,
-            ProjectStatus.CLOSING,
-            user_id,  # required
-            user_name_data,
-            notify_users=notify_users,
-        ):
-            with suppress(director_v2_api.DirectorServiceError):
-                # FIXME:
-                # Here director exceptions are suppressed.
-                # In case the service is not found to preserve old behavior
-                await director_v2_api.stop_dynamic_services_in_project(
-                    app=app,
-                    user_id=user_id,
-                    project_id=project_uuid,
-                    save_state=user_role > UserRole.GUEST,
-                )
+    #
+    # - during the closing process, which might take awhile,
+    #   the project is locked so no one opens it at the same time
+    # - Users also might get notified
+    # - If project is already locked, just ignore
+    #
+    async with lock_project_and_notify_state_update(
+        app,
+        project_uuid,
+        ProjectStatus.CLOSING,
+        user_id,  # required
+        user_name_data,
+        notify_users=notify_users,
+    ):
+        with suppress(director_v2_api.DirectorServiceError):
+            # FIXME:
+            # Here director exceptions are suppressed.
+            # In case the service is not found to preserve old behavior
+            await director_v2_api.stop_dynamic_services_in_project(
+                app=app,
+                user_id=user_id,
+                project_id=project_uuid,
+                save_state=user_role > UserRole.GUEST,
+            )

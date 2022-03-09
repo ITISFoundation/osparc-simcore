@@ -27,7 +27,11 @@ from .projects.projects_api import (
     remove_project_dynamic_services,
 )
 from .projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
-from .projects.projects_exceptions import ProjectLockError, ProjectNotFoundError
+from .projects.projects_exceptions import (
+    ProjectDeleteError,
+    ProjectLockError,
+    ProjectNotFoundError,
+)
 from .redis import get_redis_lock_manager
 from .resource_manager.registry import RedisResourceRegistry, get_registry
 from .users_api import (
@@ -531,9 +535,9 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
 
                 await delete_project(app, project_uuid, user_id)
 
-            except (ProjectNotFoundError, UserNotFoundError) as err:
+            except ProjectDeleteError as err:
                 logging.warning(
-                    "Failed to complete delete_project of %s: %s",
+                    "Failed to complete project deletion of %s: %s",
                     f"{project_uuid=}",
                     err,
                 )
