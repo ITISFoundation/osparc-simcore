@@ -195,7 +195,6 @@ async def remove_disconnected_user_resources(
                     dead_key,
                 )
 
-                can_remove_all = True
                 if resource_name == "project_id":
                     # inform that the project can be closed on the backend side
                     #
@@ -210,6 +209,7 @@ async def remove_disconnected_user_resources(
                     except (
                         ProjectNotFoundError,
                         UserNotFoundError,
+                        ProjectLockError,
                     ) as err:
                         logger.warning(
                             "Could not remove dynamic services for project with %s project_uuid=%s [%s]",
@@ -217,26 +217,13 @@ async def remove_disconnected_user_resources(
                             resource_value,
                             err,
                         )
-                        can_remove_all = True
 
-                    except ProjectLockError as err:
-                        logger.warning(
-                            "Project %s project_uuid=%s is locked [%s]. Skipped removing dynamic services",
-                            f"{user_id=}",
-                            resource_value,
-                            err,
-                        )
-                        # NOTE: 'can_remove_all' is a tmp fix to prevent remove_all_resources_if_guest when the project is locked
-                        # FIXME: otherwise remove_all_resources_if_guest removes both user and project creating orphan services
-                        can_remove_all = False
-
-                if can_remove_all:
-                    # ONLY GUESTS: if this user was a GUEST also remove it from the database
-                    # with the only associated project owned
-                    await remove_all_resources_if_guest(
-                        app=app,
-                        user_id=int(dead_key["user_id"]),
-                    )
+                # ENFORCE REMOVAL if GUEST: if this user was a GUEST also remove it from the database
+                # with the only associated project owned
+                await remove_all_resources_if_guest(
+                    app=app,
+                    user_id=int(dead_key["user_id"]),
+                )
 
             # (2) remove resource field in collected keys since (1) is completed
             logger.info(
