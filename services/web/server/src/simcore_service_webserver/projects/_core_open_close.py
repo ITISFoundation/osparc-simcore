@@ -119,6 +119,7 @@ async def try_close_project_for_user(
     log.debug("remaining user_to_session_ids: %s", user_to_session_ids)
     if not user_to_session_ids:
         # NOTE: depending on the garbage collector speed, it might already be removing it
+        # TODO: analyze what to do with errors in this f&f task
         fire_and_forget_task(
             remove_project_dynamic_services(user_id, project_uuid, app)
         )
