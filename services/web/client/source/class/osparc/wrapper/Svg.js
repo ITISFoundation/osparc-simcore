@@ -129,12 +129,15 @@ qx.Class.define("osparc.wrapper.Svg", {
       }
     },
 
-    drawRect: function(draw, width, height, x, y) {
+    drawAnnotationRect: function(draw, width, height, x, y) {
       const rect = draw.rect(width, height)
         .fill("none")
         .stroke({
           width: 2,
           color: "yellow"
+        })
+        .style({
+          cursor: "pointer"
         })
         .move(x, y);
       rect.back();

@@ -125,8 +125,8 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
       return osparc.wrapper.Svg.drawCurve(this.__canvas, controls, dashed);
     },
 
-    drawRect: function(width, height, x = 0, y = 0) {
-      return osparc.wrapper.Svg.drawRect(this.__canvas, width, height, x, y);
+    drawAnnotationRect: function(width, height, x = 0, y = 0) {
+      return osparc.wrapper.Svg.drawAnnotationRect(this.__canvas, width, height, x, y);
     },
 
     drawDashedRect: function(width, height, x = 0, y = 0) {

@@ -1604,7 +1604,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const width = Math.abs(initPos.x - currentPos.x);
       const height = Math.abs(initPos.y - currentPos.y);
       if ([null, undefined].includes(this.__rectAnnotationRepr)) {
-        this.__rectAnnotationRepr = this.__svgLayer.drawRect(width, height, x, y);
+        const rectAnnotationRepr = this.__rectAnnotationRepr = this.__svgLayer.drawAnnotationRect(width, height, x, y);
+        rectAnnotationRepr.id = osparc.utils.Utils.uuidv4();
+        rectAnnotationRepr.addEventListener("click", ev => {
+          // this is needed to get out of the context of svg
+          this.__selectedItemChanged(rectAnnotationRepr.id);
+          ev.stopPropagation();
+        }, this);
       } else {
         osparc.component.workbench.SvgWidget.updateRect(this.__rectAnnotationRepr, width, height, x, y);
       }
