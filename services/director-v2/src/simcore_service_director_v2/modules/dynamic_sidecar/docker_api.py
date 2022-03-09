@@ -467,16 +467,11 @@ async def get_or_create_networks_ids(
                         "Network %s might already exist, skipping creation", network
                     )
 
-        ids = await logged_gather(
+        networks_ids = await logged_gather(
             *[_get_id_from_name(client, network) for network in networks]
         )
 
-        if len(ids) != len(networks):
-            raise DynamicSidecarError(
-                f"Could create or find one or more networks {ids=} {networks=}"
-            )
-
-    return dict(zip(networks, ids))
+    return dict(zip(networks, networks_ids))
 
 
 async def get_project_networks_containers(

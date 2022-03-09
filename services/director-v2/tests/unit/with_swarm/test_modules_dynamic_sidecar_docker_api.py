@@ -249,6 +249,19 @@ async def project_id_labeled_network(
     await network.delete()
 
 
+@pytest.fixture
+async def test_networks(
+    async_docker_client: aiodocker.docker.Docker, docker_swarm: None
+) -> AsyncIterator[List[str]]:
+    network_names = [f"test_network_name__{k}" for k in range(5)]
+
+    yield network_names
+
+    for network_name in network_names:
+        docker_network = await async_docker_client.networks.get(network_name)
+        assert await docker_network.delete() is True
+
+
 # UTILS
 
 
@@ -605,3 +618,12 @@ async def test_get_project_networks_containers(
     filtered_network = filtered_networks[0]
 
     assert project_id_labeled_network == filtered_network["Id"]
+
+
+async def test_get_or_create_networks_ids(
+    test_networks: List[str], project_id: ProjectID
+):
+    network_ids = await docker_api.get_or_create_networks_ids(
+        networks=test_networks + test_networks, project_id=project_id
+    )
+    assert set(test_networks) == set(network_ids.keys())
