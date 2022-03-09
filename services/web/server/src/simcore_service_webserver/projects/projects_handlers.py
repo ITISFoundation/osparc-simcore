@@ -1,5 +1,11 @@
 """ Handlers for on /projects colletions
-SEE https://google.aip.dev/121
+
+
+Imports in standard methods (projects_handlers_crud) and
+extends with
+    - custom methods (https://google.aip.dev/121)
+    - singleton resources (https://google.aip.dev/156)
+    - ...
 """
 
 import json
@@ -21,6 +27,10 @@ from .projects_handlers_crud import routes
 
 log = logging.getLogger(__name__)
 
+#
+# Singleton resources https://google.aip.dev/156
+#
+
 
 @routes.get(f"/{VTAG}/projects/active")
 @login_required
@@ -40,7 +50,6 @@ async def get_active_project(request: web.Request) -> web.Response:
             # get user's projects
             user_active_projects = await rt.find(PROJECT_ID_KEY)
         if user_active_projects:
-
             project = await _core_get.get_project_for_user(
                 request.app,
                 project_uuid=user_active_projects[0],
@@ -52,7 +61,7 @@ async def get_active_project(request: web.Request) -> web.Response:
         return web.json_response({"data": project}, dumps=json_dumps)
 
     except ProjectNotFoundError as exc:
-        raise web.HTTPNotFound(reason="Project not found") from exc
+        raise web.HTTPNotFound(reason="No active project found") from exc
 
 
 #

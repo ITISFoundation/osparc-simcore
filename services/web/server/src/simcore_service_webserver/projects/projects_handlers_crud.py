@@ -1,10 +1,14 @@
-""" Handlers for standard operations on /projects colletions
+""" Handlers for STANDARD methods on /projects colletions
 
-SEE https://google.aip.dev/131
-SEE https://google.aip.dev/132
-SEE https://google.aip.dev/133
-SEE https://google.aip.dev/134
-SEE https://google.aip.dev/135
+
+Standard methods are
+- Get https://google.aip.dev/131
+- List https://google.aip.dev/132
+- Create https://google.aip.dev/133
+- Update https://google.aip.dev/134
+- Delete https://google.aip.dev/135
+
+and the acronym CRUD states for Create+Read(Get&List)+Update+Delete
 
 """
 
