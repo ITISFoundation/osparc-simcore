@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 
 async def validate_project(app: web.Application, project: ProjectDict):
     """
-    raises jsonschema.ValidationError
+    raises ProjectValidationError
     """
     project_schema = app[APP_JSONSCHEMA_SPECS_KEY]["projects"]
     await asyncio.get_event_loop().run_in_executor(
@@ -37,8 +37,6 @@ async def get_project_for_user(
     """Returns a VALID project accessible to user
 
     :raises ProjectNotFoundError: if no match found
-    :return: schema-compliant project data
-    :rtype: Dict
     """
     db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
     assert db  # nosec

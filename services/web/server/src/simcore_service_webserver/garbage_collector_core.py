@@ -31,6 +31,7 @@ from .projects.projects_exceptions import (
     ProjectDeleteError,
     ProjectLockError,
     ProjectNotFoundError,
+    ProjectValidationError,
 )
 from .redis import get_redis_lock_manager
 from .resource_manager.registry import RedisResourceRegistry, get_registry
@@ -506,11 +507,12 @@ async def remove_all_projects_for_user(app: web.Application, user_id: int) -> No
                 user_id=user_id,
                 include_templates=True,
             )
-        except web.HTTPNotFound:
+        except (ProjectNotFoundError, UserNotFoundError, ProjectValidationError) as err:
             logger.warning(
-                "Could not find project %s for user with %s to be removed. Skipping.",
+                "Skipping removal of %s for user %s due to %s.",
                 f"{project_uuid=}",
                 f"{user_id=}",
+                f"{err}",
             )
             continue
 

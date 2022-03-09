@@ -1,5 +1,6 @@
 """Defines the different exceptions that may arise in the projects subpackage"""
 import aioredlock
+from jsonschema import ValidationError as JsonSchemaDataValidationError
 
 
 class ProjectsException(Exception):
@@ -40,6 +41,10 @@ class ProjectDeleteError(ProjectsException):
     def __init__(self, project_uuid, reason="Unknown"):
         super().__init__(f"Failed to complete deletion of {project_uuid=}: {reason}")
         self.project_uuid = project_uuid
+
+
+# TODO: use double inheritance and implement classmethod to build from base instances or compose!
+ProjectValidationError = JsonSchemaDataValidationError
 
 
 class NodeNotFoundError(ProjectsException):
