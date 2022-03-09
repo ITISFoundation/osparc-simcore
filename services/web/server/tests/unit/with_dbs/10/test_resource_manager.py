@@ -1,7 +1,6 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import asyncio
 import json
@@ -9,7 +8,7 @@ import logging
 from asyncio import Future
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict
+from typing import Any, AsyncIterable, Callable, Dict
 from unittest import mock
 from unittest.mock import call
 
@@ -35,6 +34,7 @@ from simcore_service_webserver.director.plugin import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
 from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.projects.plugin import setup_projects
+from simcore_service_webserver.projects.project_models import ProjectDict
 from simcore_service_webserver.projects.projects_api import (
     delete_project,
     remove_project_dynamic_services,
@@ -158,7 +158,7 @@ async def empty_user_project(
     empty_project,
     logged_user,
     tests_data_dir: Path,
-) -> Dict[str, Any]:
+) -> AsyncIterable[ProjectDict]:
     project = empty_project()
     async with NewProject(
         project, client.app, user_id=logged_user["id"], tests_data_dir=tests_data_dir
@@ -174,7 +174,7 @@ async def empty_user_project2(
     empty_project,
     logged_user,
     tests_data_dir: Path,
-) -> Dict[str, Any]:
+) -> AsyncIterable[ProjectDict]:
     project = empty_project()
     async with NewProject(
         project, client.app, user_id=logged_user["id"], tests_data_dir=tests_data_dir
@@ -331,7 +331,8 @@ async def test_websocket_disconnected_after_logout(
     expected,
     mocker: MockerFixture,
 ):
-    app = client.server.app
+    assert client.app
+    app = client.app
     socket_registry = get_registry(app)
 
     # connect first socket
@@ -398,6 +399,7 @@ async def test_interactive_services_removed_after_logout(
     director_v2_service_responses_mock: AioResponsesMock,
     expected_save_state: bool,
 ):
+    assert client.app
     # login - logged_user fixture
     # create empty study - empty_user_project fixture
     # create dynamic service - create_dynamic_service_mock fixture
@@ -434,7 +436,7 @@ async def test_interactive_services_removed_after_logout(
             mocked_director_v2_api[
                 "director_v2_core.stop_dynamic_service"
             ].assert_awaited_with(
-                app=client.server.app,
+                app=client.app,
                 service_uuid=service["service_uuid"],
                 save_state=expected_save_state,
             )
