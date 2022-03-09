@@ -112,6 +112,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
       });
 
       const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add")).set({
+        appearance: "strong-button",
         allowGrowY: false,
         enabled: false
       });
@@ -139,7 +140,7 @@ qx.Class.define("osparc.component.permissions.Permissions", {
         spacing: 3,
         width: 150,
         padding: 0,
-        backgroundColor: "material-button-background"
+        backgroundColor: "background-main-2"
       });
 
       const collaboratorsModel = this.__collaboratorsModel = new qx.data.Array();

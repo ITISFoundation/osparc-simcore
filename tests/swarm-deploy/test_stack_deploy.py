@@ -177,7 +177,6 @@ def docker_stack_core_and_ops(
 
 
 async def test_core_services_running(
-    loop,
     docker_stack_core_and_ops: None,
     core_stack_namespace: str,
     docker_async_client: aiodocker.Docker,

@@ -57,15 +57,11 @@ qx.Class.define("osparc.component.form.tag.TagManager", {
     __selectedTags: null,
 
     __renderLayout: function() {
-      const filterBar = new qx.ui.toolbar.ToolBar();
       const filter = new osparc.component.filter.TextFilter("name", "studyBrowserTagManager").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
       });
-      filterBar.add(filter, {
-        width: "100%"
-      });
-      this.add(filterBar);
+      this.add(filter);
 
       const buttonContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox());
       this.add(buttonContainer, {

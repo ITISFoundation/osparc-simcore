@@ -111,6 +111,7 @@ _run-test-dev: _check_venv_active
 		--exitfirst \
 		--failed-first \
 		--pdb \
+		--asyncio-mode=auto \
 		$(TEST_TARGET)
 
 
@@ -124,6 +125,7 @@ _run-test-ci: _check_venv_active
 		--cov-report=xml \
 		--cov=$(APP_PACKAGE_NAME) \
 		--durations=10 \
+		--asyncio-mode=auto \
 		-m "not travis" \
 		$(TEST_TARGET)
 

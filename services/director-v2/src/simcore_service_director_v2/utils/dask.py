@@ -1,7 +1,6 @@
 import asyncio
 import collections
 import logging
-import traceback
 from typing import (
     Any,
     Awaitable,
@@ -13,18 +12,15 @@ from typing import (
     Optional,
     Tuple,
     Union,
-    cast,
+    get_args,
 )
 from uuid import uuid4
 
 import distributed
 from aiopg.sa.engine import Engine
-from dask_task_models_library.container_tasks.events import (
-    DaskTaskEvents,
-    TaskStateEvent,
-)
 from dask_task_models_library.container_tasks.io import (
     FileUrl,
+    PortValue,
     TaskInputData,
     TaskOutputData,
     TaskOutputDataSchema,
@@ -32,11 +28,12 @@ from dask_task_models_library.container_tasks.io import (
 from fastapi import FastAPI
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
-from models_library.projects_state import RunningState
 from pydantic import AnyUrl
 from servicelib.json_serialization import json_dumps
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_ports_v2 import links, port_utils
+from simcore_sdk.node_ports_v2.links import ItemValue as _NPItemValue
+from simcore_sdk.node_ports_v2.port import Port
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -131,12 +128,19 @@ async def parse_output_data(
         await (await ports.outputs)[port_key].set_value(value_to_transfer)
 
 
+_PVType = Optional[_NPItemValue]
+assert len(get_args(_PVType)) == len(  # nosec
+    get_args(PortValue)
+), "Types returned by port.get_value() -> _PVType MUST map one-to-one to PortValue. See compute_input_data"
+
+
 async def compute_input_data(
     app: FastAPI,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
 ) -> TaskInputData:
+    """Retrieves values registered to the inputs of project_id/node_id"""
     ports = await _create_node_ports(
         db_engine=app.state.engine,
         user_id=user_id,
@@ -144,17 +148,21 @@ async def compute_input_data(
         node_id=node_id,
     )
     input_data = {}
+
+    port: Port
     for port in (await ports.inputs).values():
-        value_link = await port.get_value()
-        if isinstance(value_link, AnyUrl):
+        value: _PVType = await port.get_value()
+
+        # Mapping _PVType -> PortValue
+        if isinstance(value, AnyUrl):
             input_data[port.key] = FileUrl(
-                url=value_link,
+                url=value,
                 file_mapping=(
                     next(iter(port.file_to_key_map)) if port.file_to_key_map else None
                 ),
             )
         else:
-            input_data[port.key] = value_link
+            input_data[port.key] = value
     return TaskInputData.parse_obj(input_data)
 
 
@@ -213,68 +221,6 @@ async def compute_service_log_file_upload_link(
     return value_link
 
 
-UserCompleteCB = Callable[[TaskStateEvent], Awaitable[None]]
-
-_DASK_FUTURE_TIMEOUT_S: Final[int] = 5
-
-
-def done_dask_callback(
-    dask_future: distributed.Future,
-    task_to_future_map: Dict[str, distributed.Future],
-    user_callback: UserCompleteCB,
-    main_loop: asyncio.AbstractEventLoop,
-):
-    # NOTE: BEWARE we are called in a separate thread!!
-    job_id = dask_future.key
-    event_data: Optional[TaskStateEvent] = None
-    logger.debug("task '%s' completed with status %s", job_id, dask_future.status)
-    try:
-        if dask_future.status == "error":
-            task_exception = dask_future.exception(timeout=_DASK_FUTURE_TIMEOUT_S)
-            task_traceback = dask_future.traceback(timeout=_DASK_FUTURE_TIMEOUT_S)
-            event_data = TaskStateEvent(
-                job_id=job_id,
-                state=RunningState.FAILED,
-                msg=json_dumps(
-                    traceback.format_exception(
-                        type(task_exception), value=task_exception, tb=task_traceback
-                    )
-                ),
-            )
-        elif dask_future.cancelled():
-            event_data = TaskStateEvent(job_id=job_id, state=RunningState.ABORTED)
-        else:
-            task_result = cast(
-                TaskOutputData, dask_future.result(timeout=_DASK_FUTURE_TIMEOUT_S)
-            )
-            assert task_result  # no sec
-            event_data = TaskStateEvent(
-                job_id=job_id,
-                state=RunningState.SUCCESS,
-                msg=task_result.json(),
-            )
-    except distributed.TimeoutError:
-        event_data = TaskStateEvent(
-            job_id=job_id,
-            state=RunningState.FAILED,
-            msg=f"Timeout error getting results of '{job_id}'",
-        )
-        logger.error(
-            "fetching result of '%s' timed-out, please check",
-            job_id,
-            exc_info=True,
-        )
-    finally:
-        # remove the future from the dict to remove any handle to the future, so the worker can free the memory
-        task_to_future_map.pop(job_id)
-        logger.debug("dispatching callback to finish task '%s'", job_id)
-        assert event_data  # nosec
-        try:
-            asyncio.run_coroutine_threadsafe(user_callback(event_data), main_loop)
-        except Exception:  # pylint: disable=broad-except
-            logger.exception("Unexpected issue while transmitting state to main thread")
-
-
 async def clean_task_output_and_log_files_if_invalid(
     db_engine: Engine, user_id: UserID, project_id: ProjectID, node_id: NodeID
 ) -> None:
@@ -307,41 +253,35 @@ async def clean_task_output_and_log_files_if_invalid(
 
 
 async def dask_sub_consumer(
-    task_event: DaskTaskEvents,
+    dask_sub: distributed.Sub,
     handler: Callable[[str], Awaitable[None]],
-    dask_client: distributed.Client,
 ):
-    dask_sub = distributed.Sub(task_event.topic_name(), client=dask_client)
     async for dask_event in dask_sub:
         logger.debug(
             "received dask event '%s' of topic %s",
             dask_event,
-            task_event.topic_name(),
+            dask_sub.name,
         )
         await handler(dask_event)
+        await asyncio.sleep(0.010)
 
 
 async def dask_sub_consumer_task(
-    task_event: DaskTaskEvents,
+    dask_sub: distributed.Sub,
     handler: Callable[[str], Awaitable[None]],
-    dask_client: distributed.Client,
 ):
     while True:
         try:
-            logger.info(
-                "starting dask consumer task for topic '%s'", task_event.topic_name()
-            )
-            await dask_sub_consumer(task_event, handler, dask_client)
+            logger.info("starting dask consumer task for topic '%s'", dask_sub.name)
+            await dask_sub_consumer(dask_sub, handler)
         except asyncio.CancelledError:
-            logger.info(
-                "stopped dask consumer task for topic '%s'", task_event.topic_name()
-            )
+            logger.info("stopped dask consumer task for topic '%s'", dask_sub.name)
             raise
         except Exception:  # pylint: disable=broad-except
             _REST_TIMEOUT_S: Final[int] = 1
             logger.exception(
                 "unknown exception in dask consumer task for topic '%s', restarting task in %s sec...",
-                task_event.topic_name(),
+                dask_sub.name,
                 _REST_TIMEOUT_S,
             )
             await asyncio.sleep(_REST_TIMEOUT_S)
@@ -351,7 +291,9 @@ def from_node_reqs_to_dask_resources(
     node_reqs: NodeRequirements,
 ) -> Dict[str, Union[int, float]]:
     """Dask resources are set such as {"CPU": X.X, "GPU": Y.Y, "RAM": INT}"""
-    dask_resources = node_reqs.dict(exclude_unset=True, by_alias=True)
+    dask_resources = node_reqs.dict(
+        exclude_unset=True, by_alias=True, exclude_none=True
+    )
     logger.debug("transformed to dask resources: %s", dask_resources)
     return dask_resources
 
@@ -359,6 +301,7 @@ def from_node_reqs_to_dask_resources(
 def check_scheduler_is_still_the_same(
     original_scheduler_id: str, client: distributed.Client
 ):
+    logger.debug("current %s", f"{client.scheduler_info()=}")
     current_scheduler_id = client.scheduler_info()["id"]
     if current_scheduler_id != original_scheduler_id:
         logger.error("The computational backend changed!")
@@ -402,8 +345,13 @@ def check_if_cluster_is_able_to_run_pipeline(
         def gen_check(
             task_resources: Dict[str, Any], worker_resources: Dict[str, Any]
         ) -> Iterable[bool]:
-            for r in task_resources:
-                yield worker_resources.get(r, 0) >= task_resources[r]
+            for name, required_value in task_resources.items():
+                if required_value is None:
+                    yield True
+                elif worker_has := worker_resources.get(name):
+                    yield worker_has >= required_value
+                else:
+                    yield False
 
         return all(gen_check(task_resources, worker_resources))
 

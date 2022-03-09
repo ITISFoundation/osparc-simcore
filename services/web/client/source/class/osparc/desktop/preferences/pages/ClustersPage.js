@@ -49,7 +49,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     __membersArrayModel: null,
 
     __getCreateClusterSection: function() {
-      const createClusterBtn = new qx.ui.form.Button(this.tr("Create New Cluster")).set({
+      const createClusterBtn = new qx.ui.form.Button().set({
+        appearance: "strong-button",
+        label: this.tr("New Cluster"),
+        icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false
       });
       createClusterBtn.addListener("execute", function() {
@@ -78,7 +81,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         spacing: 3,
         height: 150,
         width: 150,
-        backgroundColor: "material-button-background"
+        backgroundColor: "background-main-2"
       });
       clustersList.addListener("changeSelection", e => {
         this.__clusterSelected(e.getData());
@@ -143,6 +146,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       });
 
       const addCollaboratorBtn = new qx.ui.form.Button(this.tr("Add")).set({
+        appearance: "strong-button",
         allowGrowY: false,
         enabled: false
       });
@@ -164,7 +168,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         decorator: "no-border",
         spacing: 3,
         width: 150,
-        backgroundColor: "material-button-background"
+        backgroundColor: "background-main-2"
       });
 
       const membersArrayModel = this.__membersArrayModel = new qx.data.Array();
@@ -322,7 +326,10 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
 
       const name = cluster.getName();
       const msg = this.tr("Are you sure you want to delete ") + name + "?";
-      const win = new osparc.ui.window.Confirmation(msg);
+      const win = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
+      win.getConfirmButton().set({
+        appearance: "danger-button"
+      });
       win.center();
       win.open();
       win.addListener("close", () => {

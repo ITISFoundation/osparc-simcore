@@ -37,11 +37,11 @@ from models_library.projects import Node, ProjectAtDB, ProjectID, Workbench
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
-from models_library.settings.rabbit import RabbitConfig
-from models_library.settings.redis import RedisConfig
 from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_docker import get_ip
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
@@ -117,14 +117,13 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def minimal_configuration(  # pylint:disable=too-many-arguments
-    loop: asyncio.AbstractEventLoop,
     sleeper_service: Dict,
     dy_static_file_server_dynamic_sidecar_service: Dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
-    redis_service: RedisConfig,
+    redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
-    rabbit_service: RabbitConfig,
+    rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     storage_service: URL,
     dask_scheduler_service: None,
@@ -269,7 +268,7 @@ def mock_env(
     monkeypatch: MonkeyPatch,
     network_name: str,
     dev_features_enabled: str,
-    rabbit_service: RabbitConfig,
+    rabbit_service: RabbitSettings,
 ) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -295,8 +294,8 @@ def mock_env(
     # patch host for dynamic-sidecar, not reachable via localhost
     # the dynamic-sidecar (running inside a container) will use
     # this address to reach the rabbit service
-    monkeypatch.setenv("RABBIT_HOST", f"{get_ip()}")
-    monkeypatch.setenv("POSTGRES_HOST", f"{get_ip()}")
+    monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
+    monkeypatch.setenv("POSTGRES_HOST", f"{get_localhost_ip()}")
     monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
     monkeypatch.setenv("DIRECTOR_V2_DEV_FEATURES_ENABLED", dev_features_enabled)
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
@@ -903,6 +902,10 @@ async def test_nodeports_integration(
         service_uuid=services_node_uuids.dy,
         dynamic_services_urls=dynamic_services_urls,
     )
+
+    # NOTE: Waits a bit for the DB to write the changes in
+    # comp_task for the upstream service.
+    await asyncio.sleep(2)
 
     await _assert_retrieve_completed(
         director_v2_client=async_client,

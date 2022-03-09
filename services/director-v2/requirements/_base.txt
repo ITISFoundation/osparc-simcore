@@ -19,7 +19,7 @@ aiofiles==0.5.0
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
-aiohttp==3.7.4.post0
+aiohttp==3.8.1
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
@@ -33,16 +33,17 @@ aiohttp==3.7.4.post0
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   -c requirements/./constraints.txt
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   aiodocker
     #   dask-gateway
-aiopg==1.2.1
+aiopg==1.3.3
     # via
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
 aiormq==3.3.1
     # via aio-pika
+aiosignal==1.2.0
+    # via aiohttp
 alembic==1.7.5
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
@@ -53,7 +54,7 @@ anyio==3.2.1
     #   starlette
 asgiref==3.4.1
     # via uvicorn
-async-timeout==3.0.1
+async-timeout==4.0.2
     # via
     #   aiohttp
     #   aiopg
@@ -63,18 +64,21 @@ attrs==20.3.0
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
     #   aiohttp
+    #   jsonschema
+blosc==1.10.6
+    # via -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
 certifi==2021.5.30
     # via
     #   httpcore
     #   httpx
     #   requests
 chardet==4.0.0
+    # via requests
+charset-normalizer==2.0.10
     # via
     #   aiohttp
-    #   requests
-charset-normalizer==2.0.10
-    # via httpx
-click==7.1.2
+    #   httpx
+click==8.0.3
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
@@ -85,7 +89,7 @@ cloudpickle==2.0.0
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
     #   distributed
-dask==2021.12.0
+dask==2022.2.0
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
@@ -95,7 +99,7 @@ dask-gateway==0.9.0
     # via -r requirements/_base.in
 decorator==4.4.2
     # via networkx
-distributed==2021.12.0
+distributed==2022.2.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
@@ -113,10 +117,16 @@ fastapi==0.71.0
     #   fastapi-contrib
 fastapi-contrib==0.2.11
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+frozenlist==1.3.0
+    # via
+    #   aiohttp
+    #   aiosignal
 fsspec==2022.1.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
+greenlet==1.1.2
+    # via sqlalchemy
 h11==0.12.0
     # via
     #   httpcore
@@ -139,9 +149,7 @@ idna==2.10
     #   -r requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
-    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
-    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/_base.in
     #   anyio
     #   email-validator
     #   requests
@@ -185,10 +193,18 @@ jinja2==2.11.3
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
     #   fastapi
+jsonschema==3.2.0
+    # via
+    #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
+    #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/./constraints.txt
+    #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 locket==0.2.1
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   partd
+lz4==4.0.0
+    # via -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
 mako==1.1.5
     # via alembic
 markupsafe==2.0.1
@@ -219,6 +235,7 @@ packaging==20.4
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   dask
+    #   distributed
 pamqp==2.3.0
     # via aiormq
 partd==1.2.0
@@ -267,6 +284,8 @@ pyparsing==2.4.7
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   packaging
+pyrsistent==0.18.1
+    # via jsonschema
 python-dotenv==0.18.0
     # via
     #   pydantic
@@ -305,6 +324,7 @@ rfc3986==1.4.0
 six==1.15.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
+    #   jsonschema
     #   packaging
     #   python-multipart
     #   tenacity
@@ -318,7 +338,7 @@ sortedcontainers==2.4.0
     # via
     #   -r requirements/../../../services/dask-sidecar/requirements/_dask-distributed.txt
     #   distributed
-sqlalchemy==1.3.24
+sqlalchemy==1.4.31
     # via
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/dask-task-models-library/requirements/../../../requirements/constraints.txt
@@ -373,7 +393,6 @@ typing-extensions==3.10.0.2 ; python_version < "3.9"
     # via
     #   -r requirements/../../../packages/dask-task-models-library/requirements/_base.in
     #   aiodocker
-    #   aiohttp
     #   pydantic
 ujson==4.0.2
     # via fastapi

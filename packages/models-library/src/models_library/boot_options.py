@@ -1,10 +1,9 @@
 from typing import Dict
 
-from pydantic import BaseModel, constr, validator
+from pydantic import BaseModel, validator
 from typing_extensions import TypedDict
 
-ENV_VAR_KEY_RE = r"[a-zA-Z][a-azA-Z0-9_]*"
-EnvVarKey = constr(regex=ENV_VAR_KEY_RE)
+from .basic_types import EnvVarKey
 
 
 class BootChoice(TypedDict):

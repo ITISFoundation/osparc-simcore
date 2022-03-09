@@ -12,8 +12,9 @@
 --requirement _tools.txt
 
 # installs this repo's packages
---editable ../../packages/postgres-database/
---editable ../../packages/simcore-sdk/
---editable ../../packages/service-library/
 --editable ../../packages/models-library/
+--editable ../../packages/postgres-database/
 --editable ../../packages/pytest-simcore/
+--editable ../../packages/service-library/
+--editable ../../packages/settings-library/
+--editable ../../packages/simcore-sdk/

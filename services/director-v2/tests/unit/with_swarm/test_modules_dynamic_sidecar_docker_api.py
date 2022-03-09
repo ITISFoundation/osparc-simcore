@@ -34,7 +34,6 @@ MAX_INT64 = 9223372036854775807
 
 @pytest.fixture
 async def async_docker_client(
-    loop: asyncio.AbstractEventLoop,
     docker_swarm: None,
 ) -> AsyncIterator[aiodocker.docker.Docker]:
     async with aiodocker.Docker() as client:
@@ -318,9 +317,9 @@ async def test_get_swarm_network_missing_network(
 ) -> None:
     with pytest.raises(DynamicSidecarError) as excinfo:
         await docker_api.get_swarm_network(dynamic_sidecar_settings)
-    assert (
-        str(excinfo.value)
-        == "Swarm network name is not configured, found following networks: []"
+    assert str(excinfo.value) == (
+        "Swarm network name (searching for '*test_network_name*') is not configured."
+        "Found following networks: []"
     )
 
 

@@ -1,11 +1,13 @@
 import logging
 import os
+from functools import partial
 from pprint import pformat
-from typing import Callable, Optional, Type
+from typing import Any, Callable, Dict, Optional, Type
 
 import typer
-from pydantic import ValidationError
+from pydantic import BaseModel, SecretStr, ValidationError
 from pydantic.env_settings import BaseSettings
+from pydantic.json import custom_pydantic_encoder
 
 from ._constants import HEADER_STR
 from .base import BaseCustomSettings
@@ -19,11 +21,20 @@ def print_as_envfile(
     show_secrets: bool,
     **pydantic_export_options,
 ):
+    exclude_unset = pydantic_export_options.get("exclude_unset", False)
+
     for field in settings_obj.__fields__.values():
+        auto_default_from_env = field.field_info.extra.get(
+            "auto_default_from_env", False
+        )
 
         value = getattr(settings_obj, field.name)
-        if show_secrets and hasattr(value, "get_secret_value"):
-            value = value.get_secret_value()
+
+        if exclude_unset and field.name not in settings_obj.__fields_set__:
+            if not auto_default_from_env:
+                continue
+            if value is None:
+                continue
 
         if isinstance(value, BaseSettings):
             if compact:
@@ -32,9 +43,15 @@ def print_as_envfile(
                 if verbose:
                     typer.echo(f"\n# --- {field.name} --- ")
                 print_as_envfile(
-                    value, compact=False, verbose=verbose, show_secrets=show_secrets
+                    value,
+                    compact=False,
+                    verbose=verbose,
+                    show_secrets=show_secrets,
+                    **pydantic_export_options,
                 )
                 continue
+        elif show_secrets and hasattr(value, "get_secret_value"):
+            value = value.get_secret_value()
 
         if verbose:
             field_info = field.field_info
@@ -48,6 +65,18 @@ def print_as_json(settings_obj, *, compact=False, **pydantic_export_options):
     typer.echo(
         settings_obj.json(indent=None if compact else 2, **pydantic_export_options)
     )
+
+
+def create_json_encoder_wo_secrets(model_cls: Type[BaseModel]):
+    current_encoders = getattr(model_cls.Config, "json_encoders", {})
+    encoder = partial(
+        custom_pydantic_encoder,
+        {
+            SecretStr: lambda v: v.get_secret_value(),
+            **current_encoders,
+        },
+    )
+    return encoder
 
 
 def create_settings_command(
@@ -74,13 +103,13 @@ def create_settings_command(
         ),
     ):
         """Resolves settings and prints envfile"""
-        pydantic_export_options = {"exclude_unset": exclude_unset}
 
         if as_json_schema:
             typer.echo(settings_cls.schema_json(indent=0 if compact else 2))
             return
 
         try:
+
             settings_obj = settings_cls.create_from_envs()
 
         except ValidationError as err:
@@ -109,6 +138,13 @@ def create_settings_command(
                 exc_info=False,
             )
             raise
+
+        pydantic_export_options: Dict[str, Any] = {"exclude_unset": exclude_unset}
+        if show_secrets:
+            # NOTE: this option is for json-only
+            pydantic_export_options["encoder"] = create_json_encoder_wo_secrets(
+                settings_cls
+            )
 
         if as_json:
             print_as_json(settings_obj, compact=compact, **pydantic_export_options)

@@ -8,7 +8,6 @@ import asyncio
 import datetime
 import json
 import re
-import sys
 from copy import deepcopy
 from itertools import combinations
 from random import randint
@@ -37,7 +36,7 @@ from simcore_service_webserver.projects.projects_db import (
 )
 from simcore_service_webserver.users_exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
-from sqlalchemy.engine.result import RowProxy
+from sqlalchemy.engine.result import Row
 
 
 def test_convert_to_db_names(fake_project: Dict[str, Any]):
@@ -289,7 +288,7 @@ def _assert_added_project(
 def _assert_project_db_row(
     postgres_db: sa.engine.Engine, project: Dict[str, Any], **kwargs
 ):
-    row: Optional[RowProxy] = postgres_db.execute(
+    row: Optional[Row] = postgres_db.execute(
         f"SELECT * FROM projects WHERE \"uuid\"='{project['uuid']}'"
     ).fetchone()
 

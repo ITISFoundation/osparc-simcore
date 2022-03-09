@@ -27,7 +27,13 @@ from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.webserver_models import ProjectType, projects
-from sqlalchemy import desc, literal_column
+
+# TODO: test all function return schema-compatible data
+# TODO: is user_id str or int?
+# TODO: systemaic user_id, project
+# TODO: rename add_projects by create_projects
+# FIXME: not clear when data is schema-compliant and db-compliant
+from sqlalchemy import desc, func, literal_column
 from sqlalchemy.sql import and_, select
 
 from ..db_models import GroupType, groups, study_tags, user_to_groups, users
@@ -175,13 +181,6 @@ def _find_changed_dict_keys(
     return changed_keys
 
 
-# TODO: test all function return schema-compatible data
-# TODO: is user_id str or int?
-# TODO: systemaic user_id, project
-# TODO: rename add_projects by create_projects
-# FIXME: not clear when data is schema-compliant and db-compliant
-
-
 def _assemble_array_groups(user_groups: List[RowProxy]) -> str:
     return (
         "array[]::text[]"
@@ -207,6 +206,7 @@ class ProjectDBAPI:
         # lazy evaluation
         if self._engine is None:
             self._init_engine()
+        assert self._engine  # nosec
         return self._engine
 
     async def add_projects(self, projects_list: List[Dict], user_id: int) -> List[str]:
@@ -347,16 +347,20 @@ class ProjectDBAPI:
                         else sa.text("")
                     )
                     & (
-                        sa.text(
+                        (projects.c.prj_owner == user_id)
+                        | sa.text(
                             f"jsonb_exists_any(projects.access_rights, {_assemble_array_groups(user_groups)})"
                         )
-                        | (projects.c.prj_owner == user_id)
                     )
                 )
                 .order_by(desc(projects.c.last_change_date), projects.c.id)
             )
 
-            total_number_of_projects = await conn.scalar(query.alias().count())
+            total_number_of_projects = await conn.scalar(
+                query.with_only_columns([func.count()])
+                .select_from(projects)
+                .order_by(None)
+            )
 
             prjs, prj_types = await self.__load_projects(
                 conn,

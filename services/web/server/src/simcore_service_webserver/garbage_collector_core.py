@@ -16,6 +16,7 @@ from simcore_postgres_database.errors import DatabaseError
 from . import director_v2_api, users_exceptions
 from .db_models import GroupType
 from .director.director_exceptions import DirectorException, ServiceNotFoundError
+from .garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from .groups_api import get_group_from_gid
 from .projects.projects_api import (
     delete_project,
@@ -27,7 +28,6 @@ from .projects.projects_api import (
 from .projects.projects_db import APP_PROJECT_DBAPI, ProjectAccessRights
 from .projects.projects_exceptions import ProjectNotFoundError
 from .redis import get_redis_lock_manager
-from .resource_manager.config import GUEST_USER_RC_LOCK_FORMAT
 from .resource_manager.registry import RedisResourceRegistry, get_registry
 from .users_api import (
     delete_user,
@@ -349,10 +349,15 @@ async def _remove_single_orphaned_service(
             # let's be conservative here.
             # 1. opened project disappeared from redis?
             # 2. something bad happened when closing a project?
-            user_id = int(interactive_service.get("user_id", 0))
+            user_id = int(interactive_service.get("user_id", -1))
+            is_invalid_user_id = user_id <= 0
+            save_state = True
 
-            save_state = not await is_user_guest(app, user_id) if user_id else True
+            if is_invalid_user_id or await is_user_guest(app, user_id):
+                save_state = False
+
             await director_v2_api.stop_service(app, service_uuid, save_state)
+
         except (ServiceNotFoundError, DirectorException) as err:
             logger.warning("Error while stopping service: %s", err)
 

@@ -13,6 +13,7 @@ install() {
 
 test() {
     pytest \
+      --asyncio-mode=auto \
       --color=yes \
       --durations=10 \
       --cov=simcore_postgres_database \

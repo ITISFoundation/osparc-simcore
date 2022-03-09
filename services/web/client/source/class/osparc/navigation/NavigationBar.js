@@ -57,7 +57,7 @@ qx.Class.define("osparc.navigation.NavigationBar", {
       paddingRight: 10,
       height: this.self().HEIGHT,
       maxHeight: this.self().HEIGHT,
-      backgroundColor: "background-main-lighter"
+      backgroundColor: "background-main-1"
     });
   },
 

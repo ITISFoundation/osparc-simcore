@@ -11,7 +11,7 @@ from servicelib.json_serialization import json_dumps
 from servicelib.utils import fire_and_forget_task, logged_gather
 
 from ..resource_manager.websocket_manager import managed_resource
-from .config import AsyncServer, get_socket_server
+from .server import AsyncServer, get_socket_server
 
 log = logging.getLogger(__name__)
 

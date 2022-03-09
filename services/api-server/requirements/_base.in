@@ -15,22 +15,14 @@
 --requirement ../../../packages/service-library/requirements/_base.in
 --requirement ../../../packages/service-library/requirements/_fastapi.in
 
-
-# fastapi and extensions
-fastapi[all]
-
-# data models
-pydantic[dotenv]
-
-# database
+aiofiles
 aiopg[sa]
-
-# web client
-httpx
-
-#
-importlib_resources
-attrs
-tenacity
 cryptography
+fastapi[all]
+httpx
+orjson
 packaging
+pydantic[dotenv]
+pyyaml
+tenacity
+typer

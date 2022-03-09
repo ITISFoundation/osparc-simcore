@@ -52,7 +52,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Page_IterationAsItem_"
+                $ref: "#/components/schemas/Page_IterationItem_"
         "404":
           description:
             This project has no iterations.Only meta-project have iterations
@@ -63,6 +63,141 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HTTPValidationError"
+
+  /projects/{project_uuid}/checkpoint/{ref_id}/iterations/{iter_id}:
+    get:
+      tags:
+        - meta-projects
+      summary: Get Project Iterations
+      description: Get current project's iterations
+      operationId: "simcore_service_webserver.meta_modeling_handlers._get_meta_project_iterations_handler"
+      parameters:
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+        - required: true
+          schema:
+            title: Ref Id
+            anyOf:
+              - type: integer
+              - type: string
+          name: ref_id
+          in: path
+        - required: true
+          name: iter_id
+          schema:
+            type: integer
+          in: path
+      responses:
+        "200":
+          description: Successful Response
+
+  /projects/{project_uuid}/checkpoint/{ref_id}/iterations/-/results:
+    get:
+      tags:
+        - meta-projects
+      summary: List Project Iterations Results
+      description: Lists current project's iterations results table
+      operationId: "simcore_service_webserver.meta_modeling_handlers._list_meta_project_iterations_results_handler"
+      parameters:
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+        - required: true
+          schema:
+            title: Ref Id
+            anyOf:
+              - type: integer
+              - type: string
+          name: ref_id
+          in: path
+        - description: index to the first item to return (pagination)
+          required: false
+          schema:
+            title: Offset
+            exclusiveMinimum: false
+            type: integer
+            description: index to the first item to return (pagination)
+            default: 0
+            minimum: 0
+          name: offset
+          in: query
+        - description: maximum number of items to return (pagination)
+          required: false
+          schema:
+            title: Limit
+            maximum: 50.0
+            minimum: 1.0
+            type: integer
+            description: maximum number of items to return (pagination)
+            default: 20
+          name: limit
+          in: query
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page_IterationResultItem_"
+        "404":
+          description:
+            This project has no iterations.Only meta-project have iterations
+            and they must be explicitly created.
+        "422":
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HTTPValidationError"
+
+  /projects/{project_uuid}/checkpoint/{ref_id}/iterations/{iter_id}/results:
+    get:
+      tags:
+        - meta-projects
+      summary: Get Project Iteration Results
+      description: Get current project's iterations
+      operationId: "simcore_service_webserver.meta_modeling_handlers._get_meta_project_iteration_results_handler"
+      parameters:
+        - description: Project unique identifier
+          required: true
+          schema:
+            title: Project Uuid
+            type: string
+            description: Project unique identifier
+            format: uuid
+          name: project_uuid
+          in: path
+        - required: true
+          schema:
+            title: Ref Id
+            anyOf:
+              - type: integer
+              - type: string
+          name: ref_id
+          in: path
+        - required: true
+          schema:
+            type: integer
+          name: iter_id
+          in: path
+
+      responses:
+        "200":
+          description: Successful Response
+
 components:
   schemas:
     HTTPValidationError:
@@ -74,8 +209,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ValidationError"
-    IterationAsItem:
-      title: IterationAsItem
+    IterationItem:
+      title: IterationItem
       required:
         - name
         - parent
@@ -177,8 +312,8 @@ components:
           title: Count
           minimum: 0.0
           type: integer
-    Page_IterationAsItem_:
-      title: Page[IterationAsItem]
+    Page_IterationItem_:
+      title: Page[IterationItem]
       required:
         - _meta
         - _links
@@ -193,7 +328,7 @@ components:
           title: Data
           type: array
           items:
-            $ref: "#/components/schemas/IterationAsItem"
+            $ref: "#/components/schemas/IterationItem"
     ParentMetaProjectRef:
       title: ParentMetaProjectRef
       required:
@@ -227,3 +362,21 @@ components:
         type:
           title: Error Type
           type: string
+    Page_IterationResultItem_:
+      title: Page[IterationResultItem]
+      required:
+        - _meta
+        - _links
+        - data
+      type: object
+      properties:
+        _meta:
+          $ref: "#/components/schemas/PageMetaInfoLimitOffset"
+        _links:
+          $ref: "#/components/schemas/PageLinks"
+        data:
+          title: Data
+          type: array
+          items:
+            $ref: "#/components/schemas/IterationItem"
+            # NOTE: intentionally wrong. Will be deprecated

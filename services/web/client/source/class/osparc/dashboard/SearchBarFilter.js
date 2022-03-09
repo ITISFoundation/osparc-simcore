@@ -24,7 +24,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
     this._setLayout(new qx.ui.layout.HBox(5));
 
     this.set({
-      backgroundColor: "background-main-lighter+",
+      backgroundColor: "background-main-2",
       paddingLeft: 6,
       height: 36
     });
@@ -59,7 +59,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
           break;
         case "text-field":
           control = new qx.ui.form.TextField().set({
-            backgroundColor: "background-main-lighter+",
+            backgroundColor: "background-main-2",
             font: "text-16",
             placeholder: this.tr("search"),
             alignY: "bottom",

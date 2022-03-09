@@ -52,7 +52,6 @@ from ..storage_api import (
     delete_data_folders_of_project_node,
 )
 from ..users_api import get_user_name, is_user_guest
-from .config import CONFIG_SECTION_NAME
 from .project_lock import (
     ProjectLockError,
     UserNameDict,
@@ -72,7 +71,7 @@ def _is_node_dynamic(node_key: str) -> bool:
 
 
 async def validate_project(app: web.Application, project: Dict):
-    project_schema = app[APP_JSONSCHEMA_SPECS_KEY][CONFIG_SECTION_NAME]
+    project_schema = app[APP_JSONSCHEMA_SPECS_KEY]["projects"]
     await asyncio.get_event_loop().run_in_executor(
         None, validate_instance, project, project_schema
     )

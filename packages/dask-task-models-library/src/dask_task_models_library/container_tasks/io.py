@@ -1,7 +1,7 @@
 import json
 from contextlib import suppress
 from pathlib import Path
-from typing import Any, Dict, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union, cast
 
 from models_library.generics import DictModel
 from models_library.services import PROPERTY_KEY_RE
@@ -16,6 +16,8 @@ from pydantic import (
     StrictStr,
 )
 from pydantic.types import constr
+
+TaskCancelEventName = "cancel_event_{}"
 
 
 class PortSchema(BaseModel):
@@ -75,7 +77,16 @@ class FileUrl(BaseModel):
 
 
 PortKey = constr(regex=PROPERTY_KEY_RE)
-PortValue = Union[StrictBool, StrictInt, StrictFloat, StrictStr, FileUrl, None]
+PortValue = Union[
+    StrictBool,
+    StrictInt,
+    StrictFloat,
+    StrictStr,
+    FileUrl,
+    List[Any],
+    Dict[str, Any],
+    None,
+]
 
 
 class TaskInputData(DictModel[PortKey, PortValue]):

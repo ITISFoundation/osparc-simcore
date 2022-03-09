@@ -143,8 +143,8 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     drawFilledRect: function(draw, width, height, x, y) {
-      const fillColor = qx.theme.manager.Color.getInstance().resolve("background-main-lighter");
-      const edgeColor = qx.theme.manager.Color.getInstance().resolve("background-main-lighter+");
+      const fillColor = qx.theme.manager.Color.getInstance().resolve("background-main-1");
+      const edgeColor = qx.theme.manager.Color.getInstance().resolve("background-main-2");
       const rect = draw.rect(width, height)
         .fill(fillColor)
         .stroke({

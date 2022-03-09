@@ -18,13 +18,17 @@ from simcore_service_webserver.application import (
     setup_security,
     setup_session,
 )
-from simcore_service_webserver.catalog_client import KCATALOG_ORIGIN
+from simcore_service_webserver.application_settings import setup_settings
+from simcore_service_webserver.catalog_settings import (
+    CatalogSettings,
+    get_plugin_settings,
+)
 from simcore_service_webserver.db_models import UserRole
 
 
 @pytest.fixture()
 def client(
-    loop,
+    event_loop,
     app_cfg,
     aiohttp_client,
     postgres_db,
@@ -37,6 +41,7 @@ def client(
 
     monkeypatch_setenv_from_app_config(app_cfg)
     app = create_safe_application(app_cfg)
+    assert setup_settings(app)
 
     # patch all
     setup_db(app)
@@ -47,16 +52,15 @@ def client(
     assert setup_catalog(app)
     setup_products(app)
 
-    yield loop.run_until_complete(
+    yield event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": app_cfg["main"]["port"]})
     )
 
 
 @pytest.fixture
 def mock_catalog_service_api_responses(client, aioresponses_mocker):
-    origin = client.app[KCATALOG_ORIGIN]
-
-    url_pattern = re.compile(f"^{origin}+/.*$")
+    settings: CatalogSettings = get_plugin_settings(client.app)
+    url_pattern = re.compile(f"^{settings.base_url}+/.*$")
 
     aioresponses_mocker.get(url_pattern, payload={"data": {}})
     aioresponses_mocker.post(url_pattern, payload={"data": {}})

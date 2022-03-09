@@ -12,16 +12,20 @@ Every folder contains a python package with the following properties:
   # creates and activates venv
   make .venv
   source .venv/bin/activate
-
   cd packages/my-package
-
-  # for development
-  pip install -r requirements/dev.txt
-
-  # for CI, we freeze dependencies and install tests
-  pip install -r requirements/base.txt
-  pip install .[test]
 ```
+then for development
+```cmd
+  pip install -r requirements/dev.txt
+  pytest tests
+```
+or simply (does a bit more than above)
+```
+make install-dev
+make tests
+```
+
+
 
 - it can be a package with or without with *entrypoints*.
   - a **library** has no entrypoints
@@ -37,11 +41,3 @@ Every folder contains a python package with the following properties:
     # or as a lib
     >> import mylib
   ```
-
-
-## TODO
-
-  - [ ] cookiecutters to assist creation of modules w/ or w/o entrypoints
-
-
-[simcore]:https://github.com/pcrespov/osparc-simcore

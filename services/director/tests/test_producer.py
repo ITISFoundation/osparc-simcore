@@ -104,7 +104,7 @@ async def run_services(
             await producer.get_service_details(aiohttp_mock_app, service_uuid)
 
 
-async def test_find_service_tag(loop):
+async def test_find_service_tag():
     my_service_key = "myservice-key"
     list_of_images = {
         my_service_key: [

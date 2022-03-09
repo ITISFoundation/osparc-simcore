@@ -15,7 +15,7 @@ API_VERSION = "v0"
 
 # TODO: create a fake storage service here
 @pytest.fixture()
-def storage_server(loop, aiohttp_server, app_cfg):
+def storage_server(event_loop, aiohttp_server, app_cfg):
     cfg = app_cfg["storage"]
     app = create_safe_application(cfg)
 
@@ -140,7 +140,7 @@ def storage_server(loop, aiohttp_server, app_cfg):
 
     assert cfg["host"] == "localhost"
 
-    server = loop.run_until_complete(aiohttp_server(app, port=cfg["port"]))
+    server = event_loop.run_until_complete(aiohttp_server(app, port=cfg["port"]))
     return server
 
 

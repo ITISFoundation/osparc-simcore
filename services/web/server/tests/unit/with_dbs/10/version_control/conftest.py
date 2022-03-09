@@ -4,6 +4,7 @@
 
 import logging
 from copy import deepcopy
+from pathlib import Path
 from typing import Any, AsyncIterator, Awaitable, Callable, Dict
 from uuid import UUID
 
@@ -73,7 +74,7 @@ async def catalog_subsystem_mock(monkeypatch, fake_project) -> None:
 
 @pytest.fixture
 def app_cfg(
-    default_app_cfg, aiohttp_unused_port, catalog_subsystem_mock, monkeypatch
+    default_app_cfg, unused_tcp_port_factory, catalog_subsystem_mock, monkeypatch
 ) -> Dict[str, Any]:
     """App's configuration used for every test in this module
 
@@ -83,7 +84,7 @@ def app_cfg(
 
     monkeypatch.setenv("WEBSERVER_DEV_FEATURES_ENABLED", "1")
 
-    cfg["main"]["port"] = aiohttp_unused_port()
+    cfg["main"]["port"] = unused_tcp_port_factory()
     cfg["main"]["studies_access_enabled"] = True
 
     exclude = {
@@ -99,7 +100,6 @@ def app_cfg(
         "smtp",
         "socketio",
         "storage",
-        "studies_access",
         "studies_dispatcher",
         "tags",
         "tracing",
@@ -143,11 +143,13 @@ def project_uuid(user_project: ProjectDict) -> ProjectID:
 
 @pytest.fixture
 async def user_project(
-    client: TestClient, fake_project: ProjectDict, user_id
+    client: TestClient, fake_project: ProjectDict, user_id: int, tests_data_dir: Path
 ) -> AsyncIterator[ProjectDict]:
     # pylint: disable=no-value-for-parameter
 
-    async with NewProject(fake_project, client.app, user_id=user_id) as project:
+    async with NewProject(
+        fake_project, client.app, user_id=user_id, tests_data_dir=tests_data_dir
+    ) as project:
 
         yield project
 

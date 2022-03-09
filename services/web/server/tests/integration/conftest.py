@@ -12,24 +12,22 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import json
 import logging
 import sys
 from copy import deepcopy
 from pathlib import Path
-from pprint import pprint
+from string import Template
 from typing import AsyncIterable, Dict, List
 from unittest import mock
 
 import pytest
-import trafaret_config
 import yaml
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers import FIXTURE_CONFIG_CORE_SERVICES_SELECTION
+from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_docker import get_service_published_port
-from pytest_simcore.helpers.utils_login import NewUser
-from simcore_service_webserver._resources import resources as app_resources
-from simcore_service_webserver.application__schema import app_schema
-from simcore_service_webserver.cli import create_environ
+from pytest_simcore.helpers.utils_login import AUserDict, NewUser
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
@@ -94,63 +92,69 @@ def webserver_environ(
         environ[host_key] = "127.0.0.1"
         environ[port_key] = published_port
 
-    pprint(environ)  # NOTE: displayed only if error
+    print("webserver_environ:", json.dumps(environ, indent=1, sort_keys=True))
     return environ
 
 
+@pytest.fixture(scope="session")
+def default_app_config_integration_file(tests_data_dir: Path) -> Path:
+    cfg_path = tests_data_dir / "default_app_config-integration.yaml"
+    assert cfg_path.exists()
+    return cfg_path
+
+
 @pytest.fixture(scope="module")
-def _webserver_dev_config(
-    webserver_environ: Dict, docker_stack: Dict, temp_folder: Path
-) -> Dict:
+def _default_app_config_for_integration_tests(
+    default_app_config_integration_file: Path,
+    webserver_environ: Dict,
+    osparc_simcore_root_dir: Path,
+) -> ConfigDict:
     """
     Swarm with integration stack already started
 
     Configuration for a webserver provided it runs in host
 
-    NOTE: Prefer using 'app_config' below instead of this as a function-scoped fixture
+    NOTE: DO NOT USE directly, use instead function-scoped fixture 'app_config'
     """
-    config_file_path = temp_folder / "webserver_dev_config.yaml"
+    test_environ = {}
+    test_environ.update(webserver_environ)
+
+    # DEFAULTS if not defined in environ
+    # NOTE: unfortunately, trafaret does not allow defining default directly in the config.yamla
+    # as docker-compose does: i.e. x = ${VARIABLE:default}.
+    #
+    # Instead, the variable has to be defined here ------------
+    test_environ["SMTP_USERNAME"] = "None"
+    test_environ["SMTP_PASSWORD"] = "None"
+    test_environ["SMTP_TLS_ENABLED"] = "0"
+    test_environ["WEBSERVER_LOGLEVEL"] = "WARNING"
+    test_environ["OSPARC_SIMCORE_REPO_ROOTDIR"] = f"{osparc_simcore_root_dir}"
 
     # recreate config-file
-    with app_resources.stream("config/server-docker-dev.yaml") as f:
-        cfg = yaml.safe_load(f)
-        # test webserver works in host
-        cfg["main"]["host"] = "127.0.0.1"
+    config_template = Template(default_app_config_integration_file.read_text())
+    config_text = config_template.substitute(**test_environ)
+    cfg: ConfigDict = yaml.safe_load(config_text)
 
-    with config_file_path.open("wt") as f:
-        yaml.dump(cfg, f, default_flow_style=False)
+    # NOTE:  test webserver works in host
+    cfg["main"]["host"] = "127.0.0.1"
 
-    # Emulates cli
-    config_environ = {}
-    config_environ.update(webserver_environ)
-    config_environ.update(
-        create_environ(skip_host_environ=True)
-    )  # TODO: can be done monkeypathcing os.environ and calling create_environ as well
-
-    # validates
-    cfg_dict = trafaret_config.read_and_validate(
-        config_file_path, app_schema, vars=config_environ
+    print(
+        "_default_app_config_for_integration_tests:",
+        json.dumps(cfg, indent=1, sort_keys=True),
     )
-
-    # WARNING: changes to this fixture during testing propagates to other tests. Use cfg = deepcopy(cfg_dict)
-    # FIXME:  freeze read/only json obj
-    yield cfg_dict
-
-    # clean up
-    # to debug configuration uncomment next line
-    config_file_path.unlink()
-
-    return cfg_dict
+    return cfg
 
 
 @pytest.fixture(scope="function")
-def app_config(_webserver_dev_config: Dict, aiohttp_unused_port) -> Dict:
+def app_config(
+    _default_app_config_for_integration_tests: ConfigDict, unused_tcp_port_factory
+) -> Dict:
     """
     Swarm with integration stack already started
     This fixture can be safely modified during test since it is renovated on every call
     """
-    cfg = deepcopy(_webserver_dev_config)
-    cfg["main"]["port"] = aiohttp_unused_port()
+    cfg = deepcopy(_default_app_config_for_integration_tests)
+    cfg["main"]["port"] = unused_tcp_port_factory()
 
     return cfg
 
@@ -165,14 +169,14 @@ def mock_orphaned_services(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-async def primary_group(client, logged_user) -> Dict[str, str]:
+async def primary_group(client, logged_user: AUserDict) -> Dict[str, str]:
     primary_group, _, _ = await list_user_groups(client.app, logged_user["id"])
     return primary_group
 
 
 @pytest.fixture
 async def standard_groups(
-    client, logged_user: Dict
+    client, logged_user: AUserDict
 ) -> AsyncIterable[List[Dict[str, str]]]:
     # create a separate admin account to create some standard groups for the logged user
     sparc_group = {

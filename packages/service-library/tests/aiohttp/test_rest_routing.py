@@ -14,7 +14,7 @@ from tutils import Handlers
 
 
 @pytest.fixture
-async def specs(loop, here):
+async def specs(here):
     openapi_path = here / "data" / "oas3" / "enveloped_responses.yaml"
     assert openapi_path.exists()
     specs = await openapi.create_openapi_specs(openapi_path)

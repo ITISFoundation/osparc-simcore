@@ -5,24 +5,21 @@
 from copy import deepcopy
 
 import pytest
-from aiohttp import web
-from pytest_simcore.helpers.utils_projects import create_project
-from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import application
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_db):
+def client(event_loop, aiohttp_client, app_cfg, postgres_db):
 
     # config app
     cfg = deepcopy(app_cfg)
     port = cfg["main"]["port"]
     cfg["projects"]["enabled"] = True
 
-    app = application.create_application(cfg)
+    app = application.create_application()
 
     # server and client
-    return loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
     )
 

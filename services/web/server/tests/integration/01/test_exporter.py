@@ -37,10 +37,10 @@ import aioredis
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp.test_utils import TestClient
-from models_library.settings.redis import RedisConfig
 from pytest_simcore.docker_registry import _pull_push_service
 from pytest_simcore.helpers.utils_login import log_client_in
 from servicelib.aiohttp.application import create_safe_application
+from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.services import (
     services_access_rights,
     services_meta_data,
@@ -68,12 +68,10 @@ from simcore_service_webserver.db_models import projects
 from simcore_service_webserver.exporter.async_hashing import Algorithm, checksum
 from simcore_service_webserver.exporter.file_downloader import ParallelDownloader
 from simcore_service_webserver.exporter.settings import (
-    get_settings as get_exporter_settings,
+    get_plugin_settings as get_exporter_settings,
 )
 from simcore_service_webserver.garbage_collector import setup_garbage_collector
-from simcore_service_webserver.scicrunch.submodule_setup import (
-    setup_scicrunch_submodule,
-)
+from simcore_service_webserver.scicrunch.plugin import setup_scicrunch
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.storage_handlers import get_file_download_url
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -126,8 +124,8 @@ def __drop_and_recreate_postgres__(
 
 
 @pytest.fixture(autouse=True)
-async def __delete_all_redis_keys__(redis_service: RedisConfig):
-    client = await aioredis.create_redis_pool(redis_service.dsn, encoding="utf-8")
+async def __delete_all_redis_keys__(redis_settings: RedisSettings):
+    client = await aioredis.create_redis_pool(redis_settings.dsn, encoding="utf-8")
     await client.flushall()
     client.close()
     await client.wait_closed()
@@ -138,7 +136,7 @@ async def __delete_all_redis_keys__(redis_service: RedisConfig):
 
 @pytest.fixture
 def client(
-    loop: asyncio.AbstractEventLoop,
+    event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_config: Dict,
     postgres_with_template_db: aiopg.sa.engine.Engine,
@@ -160,7 +158,7 @@ def client(
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules
-    setup_settings(app)
+    assert setup_settings(app)
     assert get_exporter_settings(app) is not None, "Should capture defaults"
 
     setup_db(app)
@@ -177,11 +175,11 @@ def client(
     setup_storage(app)
     setup_products(app)
     setup_catalog(app)
-    setup_scicrunch_submodule(app)
+    setup_scicrunch(app)
     assert setup_resource_manager(app)
     setup_garbage_collector(app)
 
-    yield loop.run_until_complete(
+    yield event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},

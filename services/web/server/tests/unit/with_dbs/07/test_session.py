@@ -17,7 +17,7 @@ from simcore_service_webserver.session_settings import SessionSettings
 
 @pytest.fixture
 def client(
-    loop,
+    event_loop,
     aiohttp_client,
     app_cfg,
     monkeypatch,
@@ -34,11 +34,11 @@ def client(
         return web.json_response(dict(session))
 
     monkeypatch_setenv_from_app_config(app_cfg)
-    app = create_application(app_cfg)
+    app = create_application()
 
     app.add_routes(extra_test_routes)
 
-    return loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={
@@ -54,7 +54,7 @@ async def test_identity_is_email(client):
     login_url = client.app.router["auth_login"].url_for()
     logout_url = client.app.router["auth_logout"].url_for()
     session_url = "/session"
-    async with NewUser() as user:
+    async with NewUser(app=client.app) as user:
         resp = await client.get(session_url)
         session = await resp.json()
         assert session.get("AIOHTTP_SECURITY") == None

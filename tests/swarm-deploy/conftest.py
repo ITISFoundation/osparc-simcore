@@ -21,12 +21,14 @@ pytest_plugins = [
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
     "pytest_simcore.minio_service",
+    "pytest_simcore.monkeypatch_extra",
     "pytest_simcore.postgres_service",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_webserver_service",
     "pytest_simcore.tmp_path_extra",
     "pytest_simcore.traefik_service",
+    "pytest_simcore.pytest_global_environs",
 ]
 
 log = logging.getLogger(__name__)

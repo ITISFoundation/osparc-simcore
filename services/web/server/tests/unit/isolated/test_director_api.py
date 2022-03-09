@@ -14,19 +14,17 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple
 
 import pytest
-import simcore_service_webserver.director.config as director_config
 import yaml
-from aiohttp import web
 from aioresponses.core import CallbackResult, aioresponses
-from servicelib.aiohttp.client_session import get_client_session
+from servicelib.aiohttp.application import create_safe_application
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.director.director_api import (
     get_running_interactive_services,
     get_service_by_key_version,
     start_service,
     stop_services,
 )
-from simcore_service_webserver.director.module_setup import setup_director
-from simcore_service_webserver.director.settings import DirectorSettings
+from simcore_service_webserver.director.plugin import setup_director
 from yarl import URL
 
 
@@ -298,28 +296,11 @@ def mock_director_service(
 
 
 @pytest.fixture
-def app_mock():
-    # we only need the app as a container of the aiohttp client session and the director entrypoint
-
-    app = web.Application()
-
-    # mocks client session (normally included as upon startup)
-    single_client_in_app = get_client_session(app)
-    assert single_client_in_app
-    assert single_client_in_app is get_client_session(app)
-
-    # mocks loading config
-    settings = DirectorSettings()
-
-    app[director_config.APP_CONFIG_KEY] = {
-        director_config.CONFIG_SECTION_NAME: {
-            "host": settings.DIRECTOR_HOST,
-            "port": settings.DIRECTOR_PORT,
-            "version": settings.DIRECTOR_VTAG,
-            "enabled": True,
-        }
-    }
-    assert setup_director(app, disable_routes=True)
+def app_mock(mock_env_devel_environment):
+    cfg = {"director": {"enabled": True}}
+    app = create_safe_application(cfg)
+    setup_settings(app)
+    assert setup_director(app)
 
     return app
 
@@ -347,7 +328,6 @@ def test_director_openapi_specs(director_openapi_specs):
 
 
 async def test_director_workflow(
-    loop,
     mock_director_service,
     app_mock,
     user_id: int,

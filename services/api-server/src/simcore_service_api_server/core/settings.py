@@ -8,6 +8,7 @@ from settings_library.base import BaseCustomSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
+from settings_library.utils_session import MixinSessionSettings
 
 # SERVICES CLIENTS --------------------------------------------
 
@@ -23,17 +24,28 @@ class _UrlMixin:
         )
 
 
-class WebServerSettings(BaseCustomSettings, _UrlMixin):
+class WebServerSettings(BaseCustomSettings, _UrlMixin, MixinSessionSettings):
     WEBSERVER_HOST: str = "webserver"
     WEBSERVER_PORT: int = 8080
     WEBSERVER_VTAG: str = "v0"
 
-    WEBSERVER_SESSION_SECRET_KEY: SecretStr
+    WEBSERVER_SESSION_SECRET_KEY: SecretStr = Field(
+        ...,
+        description="Secret key to encrypt cookies. "
+        'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
+        min_length=44,
+        env=["SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"],
+    )
     WEBSERVER_SESSION_NAME: str = "osparc.WEBAPI_SESSION"
 
     @cached_property
     def base_url(self) -> str:
         return self._build_url("WEBSERVER")
+
+    @validator("WEBSERVER_SESSION_SECRET_KEY")
+    @classmethod
+    def check_valid_fernet_key(cls, v):
+        return cls.do_check_valid_fernet_key(v)
 
 
 # TODO: dynamically create types with minimal options?

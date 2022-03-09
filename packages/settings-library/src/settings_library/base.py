@@ -4,7 +4,6 @@ from typing import Sequence, get_args
 from pydantic import BaseConfig, BaseSettings, Extra, ValidationError, validator
 from pydantic.error_wrappers import ErrorList, ErrorWrapper
 from pydantic.fields import ModelField, Undefined
-from pydantic.types import SecretStr
 
 
 class DefaultFromEnvFactoryError(ValidationError):
@@ -65,7 +64,6 @@ class BaseCustomSettings(BaseSettings):
         allow_mutation = False
         frozen = True
         validate_all = True
-        json_encoders = {SecretStr: lambda v: v.get_secret_value()}
         keep_untouched = (cached_property,)
 
         @classmethod

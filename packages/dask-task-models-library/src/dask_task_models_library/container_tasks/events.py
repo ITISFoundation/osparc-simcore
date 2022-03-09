@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Union
+from typing import Optional, Type, Union
 
 from distributed.worker import get_worker
 from models_library.projects_state import RunningState
@@ -17,21 +17,6 @@ class BaseTaskEvent(BaseModel, ABC):
 
     class Config:
         extra = Extra.forbid
-
-
-class TaskCancelEvent(BaseTaskEvent):
-    @staticmethod
-    def topic_name() -> str:
-        return "task_cancel"
-
-    class Config(BaseTaskEvent.Config):
-        schema_extra = {
-            "examples": [
-                {
-                    "job_id": "simcore/services/comp/sleeper:1.1.0:projectid_ec7e595a-63ee-46a1-a04a-901b11b649f8:nodeid_39467d89-b659-4914-9359-c40b1b6d1d6d:uuid_5ee5c655-450d-4711-a3ec-32ffe16bc580",
-                }
-            ]
-        }
 
 
 class TaskStateEvent(BaseTaskEvent):
@@ -111,4 +96,4 @@ class TaskLogEvent(BaseTaskEvent):
         }
 
 
-DaskTaskEvents = Union[TaskLogEvent, TaskProgressEvent, TaskStateEvent]
+DaskTaskEvents = Type[Union[TaskLogEvent, TaskProgressEvent, TaskStateEvent]]

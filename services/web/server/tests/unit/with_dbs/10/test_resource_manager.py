@@ -8,6 +8,7 @@ import json
 import logging
 from asyncio import Future
 from copy import deepcopy
+from pathlib import Path
 from typing import Any, Callable, Dict
 from unittest import mock
 from unittest.mock import call
@@ -28,19 +29,18 @@ from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.application_setup import is_setup_completed
 from simcore_service_webserver import garbage_collector_core
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.director.module_setup import setup_director
+from simcore_service_webserver.director.plugin import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.login.module_setup import setup_login
-from simcore_service_webserver.projects.module_setup import setup_projects
+from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.projects.plugin import setup_projects
 from simcore_service_webserver.projects.projects_api import (
     delete_project,
     remove_project_interactive_services,
 )
 from simcore_service_webserver.projects.projects_exceptions import ProjectNotFoundError
-from simcore_service_webserver.resource_manager.module_setup import (
-    setup_resource_manager,
-)
+from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import (
     RedisResourceRegistry,
     get_registry,
@@ -50,12 +50,12 @@ from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
 from simcore_service_webserver.socketio.events import SOCKET_IO_PROJECT_UPDATED_EVENT
-from simcore_service_webserver.socketio.module_setup import setup_socketio
+from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users import setup_users
 from simcore_service_webserver.users_api import delete_user
 from simcore_service_webserver.users_exceptions import UserNotFoundError
 from tenacity._asyncio import AsyncRetrying
-from tenacity.stop import stop_after_delay
+from tenacity.stop import stop_after_attempt, stop_after_delay
 from tenacity.wait import wait_fixed
 from yarl import URL
 
@@ -84,7 +84,7 @@ async def close_project(client, project_uuid: str, client_session_id: str) -> No
 
 @pytest.fixture
 def client(
-    loop: asyncio.AbstractEventLoop,
+    event_loop: asyncio.AbstractEventLoop,
     aiohttp_client: Callable,
     app_cfg: Dict[str, Any],
     postgres_db: sa.engine.Engine,
@@ -108,6 +108,9 @@ def client(
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules
+
+    assert setup_settings(app)
+
     setup_db(app)
     setup_session(app)
     setup_security(app)
@@ -126,7 +129,7 @@ def client(
     # garbage_collector_core.collect_garbage
     assert not is_setup_completed("simcore_service_webserver.garbage_collector", app)
 
-    return loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},
@@ -150,18 +153,32 @@ def socket_registry(client: TestClient) -> RedisResourceRegistry:
 
 
 @pytest.fixture
-async def empty_user_project(client, empty_project, logged_user) -> Dict[str, Any]:
+async def empty_user_project(
+    client,
+    empty_project,
+    logged_user,
+    tests_data_dir: Path,
+) -> Dict[str, Any]:
     project = empty_project()
-    async with NewProject(project, client.app, user_id=logged_user["id"]) as project:
+    async with NewProject(
+        project, client.app, user_id=logged_user["id"], tests_data_dir=tests_data_dir
+    ) as project:
         print("-----> added project", project["name"])
         yield project
         print("<----- removed project", project["name"])
 
 
 @pytest.fixture
-async def empty_user_project2(client, empty_project, logged_user) -> Dict[str, Any]:
+async def empty_user_project2(
+    client,
+    empty_project,
+    logged_user,
+    tests_data_dir: Path,
+) -> Dict[str, Any]:
     project = empty_project()
-    async with NewProject(project, client.app, user_id=logged_user["id"]) as project:
+    async with NewProject(
+        project, client.app, user_id=logged_user["id"], tests_data_dir=tests_data_dir
+    ) as project:
         print("-----> added project", project["name"])
         yield project
         print("<----- removed project", project["name"])
@@ -411,9 +428,14 @@ async def test_interactive_services_removed_after_logout(
 
     # assert dynamic service is removed *this is done in a fire/forget way so give a bit of leeway
     async for attempt in AsyncRetrying(
-        reraise=True, stop=stop_after_delay(10), wait=wait_fixed(1)
+        reraise=True, stop=stop_after_attempt(10), wait=wait_fixed(1)
     ):
         with attempt:
+            logger.warning(
+                "Waiting for stop to have been called service_uuid=%s, save_state=%s",
+                service["service_uuid"],
+                expected_save_state,
+            )
             mocked_director_v2_api["director_v2_core.stop_service"].assert_awaited_with(
                 app=client.server.app,
                 service_uuid=service["service_uuid"],

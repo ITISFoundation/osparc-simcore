@@ -47,7 +47,7 @@ from ..dependencies.director_v0 import get_director_v0_client
 from ..dependencies.scheduler import get_scheduler
 
 router = APIRouter()
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 PIPELINE_ABORT_TIMEOUT_S = 10
 
@@ -75,8 +75,8 @@ async def create_computation(
 ) -> ComputationTaskGet:
     log.debug(
         "User %s is creating a new computation from project %s",
-        job.user_id,
-        job.project_id,
+        f"{job.user_id=}",
+        f"{job.project_id=}",
     )
     try:
         # get the project
@@ -92,13 +92,13 @@ async def create_computation(
         if is_pipeline_running(pipeline_state):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Projet {job.project_id} already started, current state is {pipeline_state}",
+                detail=f"Project {job.project_id} already started, current state is {pipeline_state}",
             )
 
         # create the complete DAG graph
         complete_dag = create_complete_dag(project.workbench)
         # find the minimal viable graph to be run
-        minimal_computational_dag = (
+        minimal_computational_dag: nx.DiGraph = (
             await create_minimal_computational_graph_based_on_selection(
                 complete_dag=complete_dag,
                 selected_nodes=job.subgraph or [],
@@ -108,15 +108,16 @@ async def create_computation(
 
         # ok so put the tasks in the db
         await computation_pipelines.upsert_pipeline(
-            job.user_id,
             project.uuid,
             minimal_computational_dag,
-            job.start_pipeline or False,
+            publish=job.start_pipeline or False,
         )
         inserted_comp_tasks = await computation_tasks.upsert_tasks_from_project(
             project,
             director_client,
-            list(minimal_computational_dag.nodes()) if job.start_pipeline else [],
+            published_nodes=list(minimal_computational_dag.nodes())
+            if job.start_pipeline
+            else [],
         )
 
         if job.start_pipeline:

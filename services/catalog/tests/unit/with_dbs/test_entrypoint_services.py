@@ -1,9 +1,9 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=protected-access
-# pylint:disable=not-an-iterable
-# pylint:disable=no-value-for-parameter
+# pylint: disable=no-value-for-parameter
+# pylint: disable=not-an-iterable
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 import asyncio
 from datetime import datetime
@@ -13,11 +13,8 @@ from typing import List, Optional
 import pytest
 import simcore_service_catalog.api.dependencies.director
 from fastapi import FastAPI
-from models_library.services import (
-    ServiceAccessRightsAtDB,
-    ServiceDockerData,
-    ServiceType,
-)
+from models_library.services import ServiceDockerData, ServiceType
+from models_library.services_db import ServiceAccessRightsAtDB
 from pydantic.types import PositiveInt
 from respx.router import MockRouter
 from simcore_service_catalog.api.routes import services
@@ -101,7 +98,7 @@ def db_services(
 
 @pytest.fixture()
 async def director_mockup(
-    loop, monkeypatch, registry_services: List[ServiceOut], app: FastAPI
+    monkeypatch, registry_services: List[ServiceOut], app: FastAPI
 ):
     async def return_list_services(user_id: int) -> List[ServiceOut]:
         return registry_services
@@ -136,7 +133,6 @@ async def director_mockup(
 
 @pytest.fixture()
 async def db_mockup(
-    loop,
     monkeypatch,
     app: FastAPI,
     user_groups: List[GroupAtDB],

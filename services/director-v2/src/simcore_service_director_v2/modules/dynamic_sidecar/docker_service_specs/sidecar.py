@@ -5,8 +5,8 @@ from models_library.service_settings_labels import SimcoreServiceSettingsLabel
 from servicelib.json_serialization import json_dumps
 
 from ....core.settings import AppSettings, DynamicSidecarSettings
-from ....models.schemas.constants import DYNAMIC_SIDECAR_SERVICE_PREFIX
 from ....models.schemas.dynamic_services import SchedulerData, ServiceType
+from .._namepsace import get_compose_namespace
 from ..volumes_resolver import DynamicSidecarVolumesPathsResolver
 from .settings import inject_settings_to_create_service_params
 
@@ -75,10 +75,7 @@ def get_dynamic_sidecar_spec(
     of the dynamic service. The director-v2 directly coordinates with
     the dynamic-sidecar for this purpose.
     """
-    # To avoid collisions for started docker resources a unique identifier is computed:
-    # - avoids container level collisions on same node
-    # - avoids volume level collisions on same node
-    compose_namespace = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{scheduler_data.node_uuid}"
+    compose_namespace = get_compose_namespace(scheduler_data.node_uuid)
 
     mounts = [
         # docker socket needed to use the docker api

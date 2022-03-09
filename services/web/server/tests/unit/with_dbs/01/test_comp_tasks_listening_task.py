@@ -17,7 +17,7 @@ from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from simcore_postgres_database.models.comp_pipeline import StateType
 from simcore_postgres_database.models.comp_tasks import NodeClass, comp_tasks
 from simcore_service_webserver.computation_comp_tasks_listening_task import (
-    setup_comp_tasks_listening_task,
+    create_comp_tasks_listening_task,
 )
 from sqlalchemy.sql.elements import literal_column
 from tenacity._asyncio import AsyncRetrying
@@ -52,9 +52,9 @@ async def mock_project_subsystem(
 
 @pytest.fixture
 async def comp_task_listening_task(
-    loop, mock_project_subsystem: Dict, client: TestClient
+    mock_project_subsystem: Dict, client: TestClient
 ) -> AsyncIterator:
-    async for _comp_task in setup_comp_tasks_listening_task(client.app):
+    async for _comp_task in create_comp_tasks_listening_task(client.app):
         # first call creates the task, second call cleans it
         yield
 

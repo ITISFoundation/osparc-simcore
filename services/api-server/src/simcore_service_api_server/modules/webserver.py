@@ -3,10 +3,10 @@ import json
 import logging
 from collections import deque
 from contextlib import suppress
+from dataclasses import dataclass
 from typing import Deque, Dict, List, Optional
 from uuid import UUID
 
-import attr
 from cryptography import fernet
 from fastapi import FastAPI, HTTPException
 from httpx import AsyncClient, Response, codes
@@ -21,7 +21,7 @@ from ..utils.client_base import BaseServiceClientApi, setup_client_instance
 logger = logging.getLogger(__name__)
 
 
-@attr.s(auto_attribs=True)
+@dataclass
 class AuthSession:
     """
     - wrapper around thin-client to simplify webserver's API
@@ -35,7 +35,7 @@ class AuthSession:
 
     client: AsyncClient  # Its lifetime is attached to app
     vtag: str
-    session_cookies: Dict = None
+    session_cookies: Optional[Dict] = None
 
     @classmethod
     def create(cls, app: FastAPI, session_cookies: Dict):
@@ -186,7 +186,7 @@ def setup(app: FastAPI, settings: Optional[WebServerSettings] = None) -> None:
 
     def on_startup() -> None:
         # normalize & encrypt
-        secret_key = _get_secret_key(settings)
+        secret_key = settings.WEBSERVER_SESSION_SECRET_KEY.get_secret_value()
         app.state.webserver_fernet = fernet.Fernet(secret_key)
 
         # init client

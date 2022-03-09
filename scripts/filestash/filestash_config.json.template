@@ -1,0 +1,90 @@
+{
+  "general": {
+      "name": null,
+      "port": null,
+      "host": null,
+      "secret_key": "$REPLACE_SECRET_KEY",
+      "force_ssl": null,
+      "editor": null,
+      "fork_button": null,
+      "logout": null,
+      "display_hidden": null,
+      "refresh_after_upload": null,
+      "auto_connect": null,
+      "upload_button": null,
+      "upload_pool_size": null,
+      "filepage_default_view": "list",
+      "filepage_default_sort": "date",
+      "cookie_timeout": null,
+      "custom_css": null
+  },
+  "features": {
+      "share": {
+          "enable": null,
+          "default_access": null,
+          "redirect": null
+      },
+      "protection": {
+          "zip_timeout": null,
+          "enable": null,
+          "disable_svg": null
+      },
+      "office": {
+          "enable": null,
+          "onlyoffice_server": null
+      },
+      "server": {
+          "console_enable": null,
+          "tor_enable": null,
+          "tor_url": null
+      },
+      "syncthing": {
+          "enable": null,
+          "server_url": null
+      },
+      "image": {
+          "enable_image": null,
+          "thumbnail_size": null,
+          "thumbnail_quality": null,
+          "thumbnail_caching": null,
+          "image_quality": null,
+          "image_caching": null
+      },
+      "search": {
+          "explore_timeout": null
+      },
+      "video": {
+          "blacklist_format": null,
+          "enable_transcoder": null
+      }
+  },
+  "log": {
+      "enable": null,
+      "level": null,
+      "telemetry": null
+  },
+  "email": {
+      "server": null,
+      "port": null,
+      "username": null,
+      "password": null,
+      "from": null
+  },
+  "auth": {
+      "admin": "$$2a$$10$$viR16hXd35bAaEJFEgpd9OqIzNBb/VoIsgQ8P3SjKxolpEQEHltrW"
+  },
+  "constant": {
+      "user": "filestash",
+      "emacs": true,
+      "pdftotext": true
+  },
+  "connections": [
+      {
+          "label": "S3",
+          "type": "s3",
+          "advanced": true,
+          "path": "$S3_BUCKET_NAME",
+          "endpoint": "$S3_ENDPOINT"
+      }
+  ]
+}

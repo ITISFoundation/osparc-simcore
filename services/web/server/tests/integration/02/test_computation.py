@@ -16,12 +16,12 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from models_library.projects_state import RunningState
-from models_library.settings.rabbit import RabbitConfig
-from models_library.settings.redis import RedisConfig
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.json_serialization import json_dumps
+from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.webserver_models import (
     NodeClass,
@@ -30,21 +30,20 @@ from simcore_postgres_database.webserver_models import (
     comp_tasks,
 )
 from simcore_service_webserver._meta import API_VTAG
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.computation import setup_computation
 from simcore_service_webserver.computation_utils import DB_TO_RUNNING_STATE
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.diagnostics import setup_diagnostics
 from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.login.module_setup import setup_login
-from simcore_service_webserver.projects.module_setup import setup_projects
-from simcore_service_webserver.resource_manager.module_setup import (
-    setup_resource_manager,
-)
+from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.projects.plugin import setup_projects
+from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio.module_setup import setup_socketio
+from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users import setup_users
 from tenacity._asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
@@ -149,10 +148,10 @@ def standard_role_response() -> Tuple[str, List[Tuple[UserRole, ExpectedResponse
 
 @pytest.fixture
 def client(
-    loop: asyncio.AbstractEventLoop,
+    event_loop: asyncio.AbstractEventLoop,
     postgres_session: sa.orm.session.Session,
-    rabbit_service: RabbitConfig,
-    redis_service: RedisConfig,
+    rabbit_service: RabbitSettings,
+    redis_settings: RedisSettings,
     simcore_services_ready: None,
     aiohttp_client: Callable,
     app_config: Dict[str, Any],  ## waits until swarm with *_services are up
@@ -171,6 +170,7 @@ def client(
     monkeypatch_setenv_from_app_config(cfg)
     app = create_safe_application(app_config)
 
+    assert setup_settings(app)
     setup_db(app)
     setup_session(app)
     setup_security(app)
@@ -185,7 +185,7 @@ def client(
     setup_resource_manager(app)
     # no garbage collector
 
-    return loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={

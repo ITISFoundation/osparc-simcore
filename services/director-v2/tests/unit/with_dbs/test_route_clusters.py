@@ -2,7 +2,6 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-from asyncio import AbstractEventLoop
 from typing import Callable, Dict, Iterable, List
 
 import httpx
@@ -13,7 +12,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from dask_gateway import Gateway, auth
 from distributed.deploy.spec import SpecCluster
 from models_library.clusters import Cluster, SimpleAuthentication
-from models_library.settings.rabbit import RabbitConfig
+from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from simcore_service_director_v2.models.schemas.clusters import ClusterOut
@@ -31,7 +30,7 @@ def clusters_config(
     mock_env: None,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
-    rabbit_service: RabbitConfig,
+    rabbit_service: RabbitSettings,
     monkeypatch: MonkeyPatch,
     dask_spec_local_cluster: SpecCluster,
 ):
@@ -111,7 +110,7 @@ def cluster(
 
 
 async def test_get_default_cluster_entrypoint(
-    loop: AbstractEventLoop, clusters_config: None, async_client: httpx.AsyncClient
+    clusters_config: None, async_client: httpx.AsyncClient
 ):
     # This test checks that the default cluster is accessible
     # the default cluster is the osparc internal cluster available through a dask-scheduler
@@ -123,9 +122,7 @@ async def test_get_default_cluster_entrypoint(
     assert default_cluster_out == ClusterOut.parse_obj(response.json())
 
 
-async def test_local_dask_gateway_server(
-    loop: AbstractEventLoop, local_dask_gateway_server: DaskGatewayServer
-):
+async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayServer):
     async with Gateway(
         local_dask_gateway_server.address,
         local_dask_gateway_server.proxy_address,
@@ -174,7 +171,6 @@ async def test_local_dask_gateway_server(
 
 
 async def test_get_cluster_entrypoint(
-    loop: AbstractEventLoop,
     clusters_config: None,
     async_client: httpx.AsyncClient,
     local_dask_gateway_server: DaskGatewayServer,

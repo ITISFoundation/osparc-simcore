@@ -12,10 +12,10 @@ import pytest
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 from async_timeout import timeout
-from models_library.settings.rabbit import RabbitConfig
 from pydantic import PositiveInt
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_docker import get_ip
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
 from utils import ensure_network_cleanup, patch_dynamic_service_url
@@ -36,7 +36,7 @@ pytest_simcore_core_services_selection = [
 def minimal_configuration(
     dy_static_file_server_dynamic_sidecar_service: Dict,
     simcore_services_ready: None,
-    rabbit_service: RabbitConfig,
+    rabbit_service: RabbitSettings,
 ):
     pass
 
@@ -91,7 +91,6 @@ def mocked_engine() -> AsyncMock:
 
 @pytest.fixture
 async def test_client(
-    loop: asyncio.AbstractEventLoop,
     minimal_configuration: None,
     mock_env: None,
     network_name: str,
@@ -116,7 +115,7 @@ async def test_client(
     # patch host for dynamic-sidecar, not reachable via localhost
     # the dynamic-sidecar (running inside a container) will use
     # this address to reach the rabbit service
-    monkeypatch.setenv("RABBIT_HOST", f"{get_ip()}")
+    monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
 
     settings = AppSettings.create_from_envs()
 

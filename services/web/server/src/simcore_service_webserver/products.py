@@ -10,24 +10,24 @@ from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setu
 from ._constants import (
     APP_DB_ENGINE_KEY,
     APP_PRODUCTS_KEY,
+    APP_SETTINGS_KEY,
     RQ_PRODUCT_FRONTEND_KEY,
     RQ_PRODUCT_KEY,
     X_PRODUCT_NAME_HEADER,
 )
 from ._meta import API_VTAG
 from .db_models import products
-from .statics import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
+from .statics_constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
 
 log = logging.getLogger(__name__)
 
 
 class Product(BaseModel):
-    # pylint:disable=no-self-use
-    # pylint:disable=no-self-argument
     name: str
     host_regex: Pattern
 
     @validator("name", pre=True, always=True)
+    @classmethod
     def validate_name(cls, v):
         if v not in FRONTEND_APPS_AVAILABLE:
             raise ValueError(
@@ -100,9 +100,15 @@ async def discover_product_middleware(request, handler):
 
 
 @app_module_setup(
-    __name__, ModuleCategory.ADDON, depends=["simcore_service_webserver.db"], logger=log
+    __name__,
+    ModuleCategory.ADDON,
+    depends=["simcore_service_webserver.db"],
+    settings_name="WEBSERVER_PRODUCTS",
+    logger=log,
 )
 def setup_products(app: web.Application):
+
+    assert app[APP_SETTINGS_KEY].WEBSERVER_PRODUCTS is True  # nosec
 
     app.middlewares.append(discover_product_middleware)
     app.on_startup.append(load_products_from_db)

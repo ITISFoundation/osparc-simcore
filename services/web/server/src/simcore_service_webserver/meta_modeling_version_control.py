@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from aiopg.sa.result import RowProxy
 from models_library.projects import ProjectIDStr
+from models_library.utils.fastapi_encoders import jsonable_encoder
 
 from .projects.project_models import ProjectDict
 from .version_control_changes import (
@@ -42,32 +43,35 @@ class VersionControlForMetaModeling(VersionControlRepository):
             assert project  # nosec
             return dict(project.items())
 
-    async def get_project(self, project_id: ProjectIDStr) -> ProjectDict:
+    async def get_project(
+        self, project_id: ProjectIDStr, *, include: Optional[List[str]] = None
+    ) -> ProjectDict:
         async with self.engine.acquire() as conn:
             if self.user_id is None:
                 raise UserUndefined()
 
+            if include is None:
+                include = [
+                    "type",
+                    "uuid",
+                    "name",
+                    "description",
+                    "thumbnail",
+                    "prj_owner",
+                    "access_rights",
+                    "workbench",
+                    "ui",
+                    "classifiers",
+                    "dev",
+                    "quality",
+                    "published",
+                    "hidden",
+                ]
+
             project = (
                 await self.ProjectsOrm(conn)
-                .set_filter(uuid=str(project_id), prj_owner=self.user_id)
-                .fetch(
-                    [
-                        "type",
-                        "uuid",
-                        "name",
-                        "description",
-                        "thumbnail",
-                        "prj_owner",
-                        "access_rights",
-                        "workbench",
-                        "ui",
-                        "classifiers",
-                        "dev",
-                        "quality",
-                        "published",
-                        "hidden",
-                    ]
-                )
+                .set_filter(uuid=f"{project_id}", prj_owner=self.user_id)
+                .fetch(include)
             )
             assert project  # nosec
             project_as_dict = dict(project.items())
@@ -91,6 +95,11 @@ class VersionControlForMetaModeling(VersionControlRepository):
     ) -> CommitID:
         """Creates a new branch with an explicit working copy 'project' on 'start_commit_id'"""
         IS_INTERNAL_OPERATION = True
+
+        # NOTE: this avoid having non-compatible types embedded in the dict that
+        # make operations with the db to fail
+        # SEE https://fastapi.tiangolo.com/tutorial/encoder/
+        project = jsonable_encoder(project, sqlalchemy_safe=True)
 
         async with self.engine.acquire() as conn:
             # existance check prevents errors later

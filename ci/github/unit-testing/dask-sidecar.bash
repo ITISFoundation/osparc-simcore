@@ -18,6 +18,7 @@ test() {
     --log-date-format="%Y-%m-%d %H:%M:%S" \
     --cov=simcore_service_dask_sidecar --durations=10 --cov-append \
     --color=yes --cov-report=term-missing --cov-report=xml --cov-config=.coveragerc \
+    --asyncio-mode=auto \
     -v services/dask-sidecar/tests/unit
 }
 

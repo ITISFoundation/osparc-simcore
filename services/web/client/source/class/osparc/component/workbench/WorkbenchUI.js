@@ -995,7 +995,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     _loadModel: async function(model) {
       this._clearAll();
-      this.resetSelection();
       this._currentModel = model;
       if (model) {
         const isContainer = model.isContainer();
@@ -1584,9 +1583,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           if (fileList.length) {
             const service = qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker());
             const nodeUI = this.__addNode(service, pos);
-            const filePicker = new osparc.file.FilePicker(nodeUI.getNode());
-            filePicker.buildLayout();
+            const filePicker = new osparc.file.FilePicker(nodeUI.getNode(), "workbench");
             filePicker.uploadPendingFiles(fileList);
+            filePicker.addListener("fileUploaded", () => this.fireDataEvent("nodeSelected", nodeUI.getNodeId()), this);
           }
         } else {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
@@ -1603,8 +1602,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const service = qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker());
         const nodeUI = this.__addNode(service, pos);
         const node = nodeUI.getNode();
-        const filePicker = new osparc.file.FilePicker(node);
-        filePicker.buildLayout();
+        // const filePicker = new osparc.file.FilePicker(node, "workbench");
+        // filePicker.buildLayout();
         osparc.file.FilePicker.setOutputValueFromStore(node, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
         this.__isDraggingLink = null;
       }

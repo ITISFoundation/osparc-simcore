@@ -8,17 +8,18 @@ from copy import deepcopy
 import pytest
 from aiohttp import web_exceptions
 from aioresponses.core import aioresponses
+from pytest_simcore.helpers.utils_dict import ConfigDict
 
 
 @pytest.fixture
-def app_cfg(default_app_cfg, aiohttp_unused_port):
+def app_cfg(default_app_cfg: ConfigDict, unused_tcp_port_factory):
     """App's configuration used for every test in this module
 
     NOTE: Overrides services/web/server/tests/unit/with_dbs/conftest.py::app_cfg to influence app setup
     """
     cfg = deepcopy(default_app_cfg)
 
-    cfg["main"]["port"] = aiohttp_unused_port()
+    cfg["main"]["port"] = unused_tcp_port_factory()
     cfg["main"]["studies_access_enabled"] = True
 
     exclude = {
@@ -32,7 +33,6 @@ def app_cfg(default_app_cfg, aiohttp_unused_port):
         "publications",
         "catalog",
         "computation",
-        "studies_access",
         "products",
         "socketio",
         "resource_manager",

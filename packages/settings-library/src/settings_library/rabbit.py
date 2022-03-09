@@ -1,8 +1,8 @@
 from functools import cached_property
-from typing_extensions import TypedDict
 
 from pydantic.networks import AnyUrl
 from pydantic.types import SecretStr
+from typing_extensions import TypedDict
 
 from .base import BaseCustomSettings
 from .basic_types import PortInt

@@ -2,10 +2,10 @@ import json
 import os
 import random
 from pathlib import Path
-from typing import Any, Dict
 
 import pytest
 from faker import Faker
+from pytest_simcore.helpers.utils_dict import ConfigDict
 
 
 @pytest.fixture
@@ -62,8 +62,10 @@ def dir_with_random_content(tmpdir, faker: Faker) -> Path:
 
 
 @pytest.fixture
-def fake_project_data(fake_data_dir: Path) -> Dict[str, Any]:
-    # NOTE: avoids 'scope=session' because tests can
-    # change the fixture data.
-    with (fake_data_dir / "fake-project.json").open() as fp:
-        return json.load(fp)
+def app_config_for_production_legacy(test_data_dir: Path) -> ConfigDict:
+    app_config = json.loads(
+        (test_data_dir / "server_docker_prod_app_config-unit.json").read_text()
+    )
+
+    print("app config (legacy) used in production:\n", json.dumps(app_config, indent=1))
+    return app_config

@@ -7,6 +7,8 @@ from typing import List, Optional
 from aiohttp import web
 from servicelib.aiohttp.incidents import LimitedOrderedStack, SlowCallback
 
+from .diagnostics_settings import get_plugin_settings
+
 log = logging.getLogger(__name__)
 
 # APP KEYS ---
@@ -22,7 +24,7 @@ kSTART_SENSING_DELAY_SECS = f"{__name__}.start_sensing_delay"
 
 
 class HealthError(Exception):
-    """ Service is set as unhealty """
+    """Service is set as unhealty"""
 
 
 class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
@@ -63,14 +65,15 @@ def is_sensing_enabled(app: web.Application):
     time since the app started
     """
     global logged_once  # pylint: disable=global-statement
+    settings = get_plugin_settings(app)
 
     time_elapsed_since_setup = time.time() - app[kPLUGIN_START_TIME]
-    enabled = time_elapsed_since_setup > app[kSTART_SENSING_DELAY_SECS]
+    enabled = time_elapsed_since_setup > settings.DIAGNOSTICS_START_SENSING_DELAY
     if enabled and not logged_once:
         log.debug(
             "Diagnostics starts sensing after waiting %3.2f secs [> %3.2f secs] since submodule init",
             time_elapsed_since_setup,
-            app[kSTART_SENSING_DELAY_SECS],
+            settings.DIAGNOSTICS_START_SENSING_DELAY,
         )
         logged_once = True
     return enabled
@@ -83,6 +86,8 @@ def assert_healthy_app(app: web.Application) -> None:
 
     raises DiagnosticError if any incient detected
     """
+    settings = get_plugin_settings(app)
+
     # CRITERIA 1:
     incidents: Optional[IncidentsRegistry] = app.get(kINCIDENTS_REGISTRY)
     if incidents:
@@ -92,7 +97,7 @@ def assert_healthy_app(app: web.Application) -> None:
             # before sensing is enabled
             incidents.clear()
 
-        max_delay_allowed: float = app[kMAX_TASK_DELAY]
+        max_delay_allowed: float = settings.DIAGNOSTICS_MAX_TASK_DELAY
         max_delay: float = incidents.max_delay()
 
         log.debug(
@@ -112,7 +117,7 @@ def assert_healthy_app(app: web.Application) -> None:
     probe: Optional[DelayWindowProbe] = app.get(kLATENCY_PROBE)
     if probe:
         latency = probe.value()
-        max_latency_allowed = app.get(kMAX_AVG_RESP_LATENCY, 4)
+        max_latency_allowed = settings.DIAGNOSTICS_MAX_AVG_LATENCY
 
         log.debug(
             "Mean slow latency of last requests is %s secs [max allowed %s secs]",
