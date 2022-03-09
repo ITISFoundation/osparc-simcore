@@ -31,7 +31,7 @@ from settings_library.email import SMTPSettings
         },
     ],
 )
-def test_smtp_configuration_ok(cfg: Dict[str, Any]) -> None:
+def test_smtp_configuration_ok(cfg: Dict[str, Any]):
     assert SMTPSettings.parse_obj(cfg)
 
 
@@ -55,6 +55,6 @@ def test_smtp_configuration_ok(cfg: Dict[str, Any]) -> None:
         },
     ],
 )
-def test_smtp_configuration_fails(cfg: Dict[str, Any]) -> None:
+def test_smtp_configuration_fails(cfg: Dict[str, Any]):
     with pytest.raises(ValidationError):
         assert SMTPSettings.parse_obj(cfg)
