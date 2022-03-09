@@ -197,7 +197,7 @@ async def storage_subsystem_mock(mocker) -> MockedStorageSubsystem:
 
     return MockedStorageSubsystem(
         copy_data_folders_from_project=mocker.patch(
-            "simcore_service_webserver.projects.projects_handlers.copy_data_folders_from_project",
+            "simcore_service_webserver.projects.projects_handlers_crud.copy_data_folders_from_project",
             autospec=True,
             side_effect=_mock_copy_data_from_project,
         ),
@@ -235,8 +235,8 @@ async def mocked_director_v2_api(mocker) -> Dict[str, MagicMock]:
         for mod_name in (
             "director_v2_api",
             "director_v2_core",
-            "projects._core_nodes.director_v2_api",
-            "garbage_collector_core.director_v2_api",
+            # "projects._core_nodes.director_v2_api",
+            # "garbage_collector_core.director_v2_api",
         ):
             name = f"{mod_name}.{func_name}"
             mock[name] = mocker.patch(
