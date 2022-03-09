@@ -133,7 +133,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       const rect = draw.rect(width, height)
         .fill("none")
         .stroke({
-          width: 1,
+          width: 2,
           color: "yellow"
         })
         .move(x, y);

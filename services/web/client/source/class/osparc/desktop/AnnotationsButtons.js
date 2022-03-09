@@ -47,6 +47,7 @@ qx.Class.define("osparc.desktop.AnnotationsButtons", {
 
       const rectButton = this.__rectButton = new qx.ui.toolbar.RadioButton().set({
         value: false,
+        label: this.tr("Rect"),
         icon: "@FontAwesome5Solid/paw/14",
         toolTipText: this.tr("Draw Rectangle")
       });

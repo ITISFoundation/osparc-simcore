@@ -45,6 +45,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     this.__nodesUI = [];
     this.__edgesUI = [];
     this.__selectedNodeUIs = [];
+    this.__annotations = [];
 
     this._setLayout(new qx.ui.layout.HBox());
 
@@ -1212,8 +1213,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__annotationRectInitPos = null;
       }
       if (this.__annotatingRect) {
-        console.log("save", this.__annotatingRect);
-        this.__annotatingRect = null;
+        console.log("save", this.__rectAnnotationRepr);
+        this.__annotations.push(this.__rectAnnotationRepr.clone());
+        this.__rectAnnotationRepr = null;
       }
 
       if (this.__panning) {
