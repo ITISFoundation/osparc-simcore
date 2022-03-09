@@ -1,7 +1,7 @@
 from typing import Any, Dict
-from pydantic import ValidationError
 
 import pytest
+from pydantic import ValidationError
 from settings_library.email import SMTPSettings
 
 
@@ -52,6 +52,13 @@ def test_smtp_configuration_ok(cfg: Dict[str, Any]):
             "SMTP_PORT": 113,
             "SMTP_TLS_ENABLED": True,
             "SMTP_USERNAME": "test",
+        },
+        {
+            "SMTP_HOST": "test",
+            "SMTP_PORT": 113,
+            "SMTP_USERNAME": "",
+            "SMTP_PASSWORD": "test",
+            "SMTP_TLS_ENABLED": True,
         },
     ],
 )
