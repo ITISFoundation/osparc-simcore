@@ -12,6 +12,7 @@
 import asyncio
 import sys
 import textwrap
+from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
 from typing import AsyncIterator, Callable, Dict, Iterator, List
@@ -251,20 +252,27 @@ async def mocked_director_v2_api(mocker) -> Dict[str, MagicMock]:
 def create_dynamic_service_mock(
     client: TestClient, mocked_director_v2_api: Dict
 ) -> Callable:
-    services = []
+    """overrides director_v2_api.get_dynamic_services and returns created services"""
 
-    async def create(user_id, project_id) -> Dict:
+    returned_dynamic_services = defaultdict(list)
+
+    async def _get(app, user_id, project_id):
+        assert app
+        return returned_dynamic_services[(user_id, project_id)]
+
+    async def _create(user_id, project_id) -> Dict:
         SERVICE_UUID = str(uuid4())
         SERVICE_KEY = "simcore/services/dynamic/3d-viewer"
         SERVICE_VERSION = "1.4.2"
+
+        # TODO: not sure what is url and create_node_data for??
         url = client.app.router["create_node"].url_for(project_id=project_id)
         create_node_data = {
             "service_key": SERVICE_KEY,
             "service_version": SERVICE_VERSION,
             "service_uuid": SERVICE_UUID,
         }
-
-        running_service_dict = {
+        running_service = {
             "published_port": "23423",
             "service_uuid": SERVICE_UUID,
             "service_key": SERVICE_KEY,
@@ -274,17 +282,17 @@ def create_dynamic_service_mock(
             "service_state": "some_service_state",
         }
 
-        services.append(running_service_dict)
-        # reset the future or an invalidStateError will appear as set_result sets the future to done
-        mocked_director_v2_api[
-            "director_v2_api.get_dynamic_services"
-        ].return_value = services
-        mocked_director_v2_api[
-            "director_v2_core.get_dynamic_services"
-        ].return_value = services
-        return running_service_dict
+        returned_dynamic_services[(user_id, project_id)].append(running_service)
 
-    return create
+        # reset the future or an invalidStateError will appear as set_result sets the future to done
+        for mod_name in ("director_v2_api", "director_v2_core"):
+            mocked_director_v2_api[
+                f"{mod_name}.get_dynamic_services"
+            ].side_effect = _get
+
+        return running_service
+
+    return _create
 
 
 # POSTGRES CORE SERVICE ---------------------------------------------------
