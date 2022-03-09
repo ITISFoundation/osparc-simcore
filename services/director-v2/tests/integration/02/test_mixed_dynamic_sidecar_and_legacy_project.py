@@ -6,13 +6,13 @@ import asyncio
 import logging
 import os
 from typing import AsyncIterable, Callable, Dict
-from uuid import uuid4
 
 import aiodocker
 import httpx
 import pytest
 import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
+from faker import Faker
 from models_library.projects import ProjectAtDB
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -70,23 +70,19 @@ def minimal_configuration(
     )
 
 
-def _str_uuid() -> str:
-    return str(uuid4())
+@pytest.fixture
+def uuid_legacy(faker: Faker) -> str:
+    return faker.uuid4()
 
 
 @pytest.fixture
-def uuid_legacy() -> str:
-    return _str_uuid()
+def uuid_dynamic_sidecar(faker: Faker) -> str:
+    return faker.uuid4()
 
 
 @pytest.fixture
-def uuid_dynamic_sidecar() -> str:
-    return _str_uuid()
-
-
-@pytest.fixture
-def uuid_dynamic_sidecar_compose() -> str:
-    return _str_uuid()
+def uuid_dynamic_sidecar_compose(faker: Faker) -> str:
+    return faker.uuid4()
 
 
 @pytest.fixture
