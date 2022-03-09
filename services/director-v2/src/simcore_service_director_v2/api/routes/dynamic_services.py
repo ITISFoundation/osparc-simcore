@@ -6,11 +6,11 @@ from uuid import UUID
 import httpx
 from fastapi import APIRouter, Depends, Header, Request, Response
 from fastapi.responses import RedirectResponse
+from models_library.project_networks import DockerNetworkAlias, DockerNetworkName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
-from models_library.project_networks import DockerNetworkAlias, DockerNetworkName
 from pydantic import BaseModel
 from starlette import status
 from starlette.datastructures import URL

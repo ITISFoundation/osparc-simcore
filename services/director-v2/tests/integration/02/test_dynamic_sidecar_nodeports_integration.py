@@ -34,16 +34,16 @@ from _pytest.monkeypatch import MonkeyPatch
 from aiodocker.containers import DockerContainer
 from aiopg.sa import Engine
 from fastapi import FastAPI
-from models_library.projects import Node, ProjectAtDB, ProjectID, Workbench
-from models_library.projects_nodes_io import NodeID
-from models_library.projects_pipeline import PipelineDetails
-from models_library.projects_state import RunningState
 from models_library.project_networks import (
     PROJECT_NETWORK_PREFIX,
     ContainerAliases,
     NetworksWithAliases,
     ProjectNetworks,
 )
+from models_library.projects import Node, ProjectAtDB, ProjectID, Workbench
+from models_library.projects_nodes_io import NodeID
+from models_library.projects_pipeline import PipelineDetails
+from models_library.projects_state import RunningState
 from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip

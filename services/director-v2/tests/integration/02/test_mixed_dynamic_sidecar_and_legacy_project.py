@@ -14,6 +14,7 @@ import pytest
 import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from models_library.projects import ProjectAtDB
+from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -152,11 +153,7 @@ async def director_v2_client(
 
     monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "false")
-    monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
-    monkeypatch.setenv("POSTGRES_USER", "mocked_user")
-    monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
-    monkeypatch.setenv("POSTGRES_DB", "mocked_db")
-    monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
+    monkeypatch.setenv("POSTGRES_HOST", f"{get_localhost_ip()}")
     monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
 
     # patch host for dynamic-sidecar, not reachable via localhost
@@ -201,13 +198,16 @@ async def ensure_services_stopped(
         await ensure_network_cleanup(docker_client, project_id)
 
 
-@pytest.fixture(scope="module")
-def simcore_services_ready_and_change_director_env(
-    simcore_services_ready: None, monkeypatch_module
-):
-    # FIXME: PC: this is trial fix for a nasty bug with environs in simcore_services_ready!!!!
-    monkeypatch_module.setenv("DIRECTOR_HOST", "director")
-    monkeypatch_module.setenv("DIRECTOR_PORT", "8080")
+@pytest.fixture
+def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
+    for method_name, return_value in [
+        ("service_restore_state", None),
+        ("service_pull_output_ports", 42),
+    ]:
+        mocker.patch(
+            f"simcore_service_director_v2.modules.dynamic_sidecar.client_api.DynamicSidecarClient.{method_name}",
+            return_value=return_value,
+        )
 
 
 # TESTS ----------------------------------------------------------------------------------------
@@ -217,10 +217,10 @@ async def test_legacy_and_dynamic_sidecar_run(
     dy_static_file_server_project: ProjectAtDB,
     user_db: Dict,
     services_endpoint: Dict[str, URL],
-    simcore_services_ready_and_change_director_env: None,
     director_v2_client: httpx.AsyncClient,
     ensure_services_stopped: None,
     mock_project_networks_repository: None,
+    mock_dynamic_sidecar_client: None,
 ):
     """
     The test will start 3 dynamic services in the same project and check

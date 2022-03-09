@@ -4,10 +4,10 @@ from typing import Dict, List, Optional, Union
 
 import yaml
 from fastapi.applications import FastAPI
+from models_library.project_networks import ProjectNetworks
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import PathMappingsLabel, ServiceSpecDict
-from models_library.project_networks import ProjectNetworks
 from settings_library.docker_registry import RegistrySettings
 
 from ...modules.dynamic_sidecar.docker_api import get_or_create_networks_ids

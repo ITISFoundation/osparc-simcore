@@ -5,6 +5,7 @@ from typing import Any, Deque, Dict, List, Optional, Set, Type
 
 import httpx
 from fastapi import FastAPI
+from models_library.project_networks import ProjectNetworks
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import Node
 from models_library.service_settings_labels import (
@@ -12,7 +13,6 @@ from models_library.service_settings_labels import (
     SimcoreServiceSettingsLabel,
 )
 from models_library.services import ServiceKeyVersion
-from models_library.project_networks import ProjectNetworks
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
 from tenacity._asyncio import AsyncRetrying
@@ -29,8 +29,8 @@ from ....models.schemas.dynamic_services import (
 )
 from ....modules.db.repositories import BaseRepository
 from ....modules.director_v0 import DirectorV0Client
-from ...db.repositories.projects import ProjectsRepository
 from ...db.repositories.project_networks import ProjectNetworksRepository
+from ...db.repositories.projects import ProjectsRepository
 from .._namepsace import get_compose_namespace
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
 from ..docker_api import (

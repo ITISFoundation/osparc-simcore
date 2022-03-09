@@ -12,9 +12,9 @@ from uuid import UUID
 import httpx
 from async_timeout import timeout
 from fastapi import FastAPI
+from models_library.project_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
-from models_library.project_networks import DockerNetworkAlias
 from servicelib.utils import logged_gather
 
 from ....core.settings import (
