@@ -232,14 +232,18 @@ async def mocked_director_v2_api(mocker) -> Dict[str, MagicMock]:
         "start_dynamic_service",
         "stop_dynamic_service",
     ):
-        for mod_name in ("director_v2_api", "director_v2_core"):
+        for mod_name in (
+            "director_v2_api",
+            "director_v2_core",
+            "projects._core_nodes.director_v2_api",
+            "garbage_collector_core.director_v2_api",
+        ):
             name = f"{mod_name}.{func_name}"
             mock[name] = mocker.patch(
                 f"simcore_service_webserver.{name}",
                 autospec=True,  # errors if functions renamed or moved to another module while refactoring
                 return_value={},
             )
-
     return mock
 
 
