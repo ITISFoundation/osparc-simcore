@@ -587,43 +587,46 @@ async def test_interactive_services_removed_per_project(
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expected_save_state: bool,
 ):
-    # create server with delay set to DELAY
-    # login - logged_user fixture
-    # create empty study1 in project1 - empty_user_project fixture
-    # create empty study2 in project2- empty_user_project2 fixture
-    # service1 in project1 = await create_dynamic_service_mock(logged_user["id"], empty_user_project["uuid"])
-    # service2 in project2 = await create_dynamic_service_mock(logged_user["id"], empty_user_project["uuid"])
-    # service3 in project2 = await create_dynamic_service_mock(logged_user["id"], empty_user_project["uuid"])
-    service1 = await create_dynamic_service_mock(
+    # logged_user fixture and two projects:
+    # service1 in project1
+    service_1 = await create_dynamic_service_mock(
         logged_user["id"], empty_user_project["uuid"]
     )
-    service2 = await create_dynamic_service_mock(
+    # service2 and service3 in project2
+    service_2 = await create_dynamic_service_mock(
         logged_user["id"], empty_user_project2["uuid"]
     )
-    service3 = await create_dynamic_service_mock(
+    service_3 = await create_dynamic_service_mock(
         logged_user["id"], empty_user_project2["uuid"]
     )
-    # create websocket1 from tab1
+
+    # create websocket1 to emulate tab1 with project1 open session
     client_session_id1 = client_session_id_factory()
     sio1 = await socketio_client_factory(client_session_id1)
     await open_project(client, empty_user_project["uuid"], client_session_id1)
-    # create websocket2 from tab2
+
+    # create websocket2 to emulate tab2 with project2 open session
     client_session_id2 = client_session_id_factory()
     sio2 = await socketio_client_factory(client_session_id2)
     await open_project(client, empty_user_project2["uuid"], client_session_id2)
-    # disconnect websocket1
+
+    # -----
+    # (1) disconnect websocket1 (seesion w/ project1)
     await sio1.disconnect()
     assert not sio1.sid
+
     # assert dynamic service is still around
     mocked_director_v2_api["director_v2_api.stop_dynamic_service"].assert_not_called()
-    # wait the defined delay
+
+    # wait the defined delay so the TLL expires (not updated by socket) and then run GC
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector_core.collect_garbage(client.app)
+
     # assert dynamic service 1 is removed
     calls = [
         call(
             app=client.server.app,
-            service_uuid=service1["service_uuid"],
+            service_uuid=service_1["service_uuid"],
             save_state=expected_save_state,
         )
     ]
@@ -632,24 +635,28 @@ async def test_interactive_services_removed_per_project(
     )
     mocked_director_v2_api["director_v2_core.stop_dynamic_service"].reset_mock()
 
-    # disconnect websocket2
+    # ----
+    # (2) disconnect websocket2 (session w/ project2)
     await sio2.disconnect()
     assert not sio2.sid
+
     # assert dynamic services are still around
     mocked_director_v2_api["director_v2_core.stop_dynamic_service"].assert_not_called()
-    # wait the defined delay
+
+    # wait the defined delay so the TLL expires (not updated by socket) and then run GC
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await garbage_collector_core.collect_garbage(client.app)
+
     # assert dynamic service 2,3 is removed
     calls = [
         call(
             app=client.server.app,
-            service_uuid=service2["service_uuid"],
+            service_uuid=service_2["service_uuid"],
             save_state=expected_save_state,
         ),
         call(
             app=client.server.app,
-            service_uuid=service3["service_uuid"],
+            service_uuid=service_3["service_uuid"],
             save_state=expected_save_state,
         ),
     ]
