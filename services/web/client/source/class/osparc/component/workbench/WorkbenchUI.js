@@ -1213,9 +1213,20 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__annotationRectInitPos = null;
       }
       if (this.__annotatingRect) {
-        console.log("save", this.__rectAnnotationRepr);
-        this.__annotations.push(this.__rectAnnotationRepr.clone());
+        const rectAnnotation = this.__rectAnnotationRepr.clone();
+        console.log("save", rectAnnotation);
+        rectAnnotation.id = osparc.utils.Utils.uuidv4();
+        rectAnnotation.node.addEventListener("click", ev => {
+          console.log(rectAnnotation, "clicked");
+          /*
+          // this is needed to get out of the context of svg
+          this.__selectedItemChanged(rectAnnotation.id);
+          */
+          ev.stopPropagation();
+        }, this);
+        this.__annotations.push(rectAnnotation);
         this.__rectAnnotationRepr = null;
+        console.log("save", rectAnnotation);
       }
 
       if (this.__panning) {
@@ -1604,13 +1615,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const width = Math.abs(initPos.x - currentPos.x);
       const height = Math.abs(initPos.y - currentPos.y);
       if ([null, undefined].includes(this.__rectAnnotationRepr)) {
-        const rectAnnotationRepr = this.__rectAnnotationRepr = this.__svgLayer.drawAnnotationRect(width, height, x, y);
-        rectAnnotationRepr.id = osparc.utils.Utils.uuidv4();
-        rectAnnotationRepr.addEventListener("click", ev => {
-          // this is needed to get out of the context of svg
-          this.__selectedItemChanged(rectAnnotationRepr.id);
-          ev.stopPropagation();
-        }, this);
+        this.__rectAnnotationRepr = this.__svgLayer.drawAnnotationRect(width, height, x, y);
       } else {
         osparc.component.workbench.SvgWidget.updateRect(this.__rectAnnotationRepr, width, height, x, y);
       }
