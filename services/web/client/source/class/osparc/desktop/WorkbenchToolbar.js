@@ -30,8 +30,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
     "stopPipeline": "qx.event.type.Event",
     "startRect": "qx.event.type.Event",
     "stopRect": "qx.event.type.Event",
-    "startText": "qx.event.type.Event",
-    "stopText": "qx.event.type.Event",
     "zoomIn": "qx.event.type.Event",
     "zoomOut": "qx.event.type.Event",
     "zoomReset": "qx.event.type.Event"
@@ -75,9 +73,7 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
           control = new osparc.desktop.AnnotationsButtons();
           [
             "startRect",
-            "stopRect",
-            "startText",
-            "stopText"
+            "stopRect"
           ].forEach(signalName => {
             control.addListener(signalName, () => {
               this.fireEvent(signalName);

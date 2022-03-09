@@ -35,9 +35,7 @@ qx.Class.define("osparc.desktop.AnnotationsButtons", {
 
   events: {
     "startRect": "qx.event.type.Event",
-    "stopRect": "qx.event.type.Event",
-    "startText": "qx.event.type.Event",
-    "stopText": "qx.event.type.Event"
+    "stopRect": "qx.event.type.Event"
   },
 
   members: {
@@ -55,15 +53,7 @@ qx.Class.define("osparc.desktop.AnnotationsButtons", {
       rectButton.addListener("changeValue", e => this.fireEvent(e.getData() ? "startRect" : "stopRect"), this);
       buttons.add(rectButton);
 
-      const textButton = this.__textButton = new qx.ui.toolbar.RadioButton().set({
-        value: false,
-        icon: "@FontAwesome5Solid/paw/14",
-        toolTipText: this.tr("Insert Text")
-      });
-      textButton.addListener("changeValue", e => this.fireEvent(e.getData() ? "startText" : "stopText"), this);
-      buttons.add(textButton);
-
-      const radioGroup = new qx.ui.form.RadioGroup(rectButton, textButton);
+      const radioGroup = new qx.ui.form.RadioGroup(rectButton);
       radioGroup.setAllowEmptySelection(true);
 
       this._add(buttons);

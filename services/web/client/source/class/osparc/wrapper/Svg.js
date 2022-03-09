@@ -129,6 +129,18 @@ qx.Class.define("osparc.wrapper.Svg", {
       }
     },
 
+    drawRect: function(draw, width, height, x, y) {
+      const rect = draw.rect(width, height)
+        .fill("none")
+        .stroke({
+          width: 1,
+          color: "yellow"
+        })
+        .move(x, y);
+      rect.back();
+      return rect;
+    },
+
     drawDashedRect: function(draw, width, height, x, y) {
       const edgeColor = qx.theme.manager.Color.getInstance().getTheme().colors["workbench-edge-comp-active"];
       const rect = draw.rect(width, height)

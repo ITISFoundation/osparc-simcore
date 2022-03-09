@@ -133,6 +133,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __panning: null,
     __isDraggingFile: null,
     __isDraggingLink: null,
+    __annotatingRect: null,
+    __annotationRectInitPos: null,
+    __annotations: null,
 
     __applyStudy: function(study) {
       study.getWorkbench().addListener("reloadModel", () => {
@@ -1168,13 +1171,19 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __mouseDownOnSVG: function(e) {
       if (e.isLeftPressed()) {
-        this.__rectInitPos = this.__pointerEventToWorkbenchPos(e);
+        if (this.__annotatingRect) {
+          this.__annotationRectInitPos = this.__pointerEventToWorkbenchPos(e);
+        } else {
+          this.__rectInitPos = this.__pointerEventToWorkbenchPos(e);
+        }
       }
     },
 
     __mouseMove: function(e) {
       if (this.__isDraggingLink) {
         this.__draggingLink(e, true);
+      } else if (this.__tempEdgeRepr === null && this.__annotatingRect && this.__annotationRectInitPos && e.isLeftPressed()) {
+        this.__drawingAnnotationRect(e);
       } else if (this.__tempEdgeRepr === null && this.__rectInitPos && e.isLeftPressed()) {
         this.__drawingRect(e);
       } else if (this.__panning && e.isMiddlePressed()) {
@@ -1197,6 +1206,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__rectRepr) {
         osparc.component.workbench.SvgWidget.removeRect(this.__rectRepr);
         this.__rectRepr = null;
+      }
+
+      if (this.__annotationRectInitPos) {
+        this.__annotationRectInitPos = null;
+      }
+      if (this.__annotatingRect) {
+        console.log("save", this.__annotatingRect);
+        this.__annotatingRect = null;
       }
 
       if (this.__panning) {
@@ -1338,6 +1355,14 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           height: scaledScreenHeight
         });
       }
+    },
+
+    startAnnotationsRect: function(start) {
+      this.__annotatingRect = start;
+    },
+
+    startAnnotationsText: function(start) {
+      this.__annotatingText = start;
     },
 
     __openNodeRenamer: function(nodeId) {
@@ -1566,6 +1591,21 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }
       });
       this.__setSelectedNodes(nodeUIs);
+    },
+
+    __drawingAnnotationRect: function(e) {
+      // draw rect
+      const initPos = this.__annotationRectInitPos;
+      const currentPos = this.__pointerEventToWorkbenchPos(e);
+      const x = Math.min(initPos.x, currentPos.x);
+      const y = Math.min(initPos.y, currentPos.y);
+      const width = Math.abs(initPos.x - currentPos.x);
+      const height = Math.abs(initPos.y - currentPos.y);
+      if ([null, undefined].includes(this.__rectAnnotationRepr)) {
+        this.__rectAnnotationRepr = this.__svgLayer.drawRect(width, height, x, y);
+      } else {
+        osparc.component.workbench.SvgWidget.updateRect(this.__rectAnnotationRepr, width, height, x, y);
+      }
     },
 
     __dropFile: function(e) {
