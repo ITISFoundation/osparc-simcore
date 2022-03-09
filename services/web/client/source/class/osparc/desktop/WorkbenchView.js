@@ -68,8 +68,8 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     "backToDashboardPressed": "qx.event.type.Event",
     "slidesEdit": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
-    "ospaintStart": "qx.event.type.Event",
-    "ospaintEdit": "qx.event.type.Event",
+    "ospaintEditStop": "qx.event.type.Event",
+    "ospaintEditStart": "qx.event.type.Event",
     "ospaintShow": "qx.event.type.Event",
     "ospaintHide": "qx.event.type.Event",
     "takeSnapshot": "qx.event.type.Event",
@@ -667,6 +667,10 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return this.__workbenchPanel.getToolbar().getStartStopButtons();
     },
 
+    __getAnnotationsToolbar: function() {
+      return this.__workbenchPanel.getToolbar().getAnnotationsToolbar();
+    },
+
     getSelectedNodes: function() {
       return this.__workbenchUI.getSelectedNodes();
     },
@@ -875,7 +879,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __getOspaintSection: function() {
       const ospaintSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      ospaintSection.add(new qx.ui.basic.Label(this.tr("osPaint")).set({
+      ospaintSection.add(new qx.ui.basic.Label(this.tr("oSPaint")).set({
         font: "title-14"
       }));
 
@@ -892,7 +896,17 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       editOspaintBtn.bind("value", editOspaintBtn, "icon", {
         converter: val => val ? "@FontAwesome5Solid/check/14" : "@FontAwesome5Solid/edit/14"
       });
-      editOspaintBtn.addListener("changeValue", e => this.fireEvent(e.getData() ? "ospaintStart" : "ospaintStop"), this);
+      editOspaintBtn.addListener("changeValue", e => {
+        if (e.getData()) {
+          this.fireEvent("ospaintEditStart");
+          this.getStartStopButtons().exclude();
+          this.__getAnnotationsToolbar().show();
+        } else {
+          this.fireEvent("ospaintEditStop");
+          this.getStartStopButtons().show();
+          this.__getAnnotationsToolbar().exclude();
+        }
+      }, this);
       ospaintButtons.add(editOspaintBtn);
 
       const startOspaintBtn = new qx.ui.form.ToggleButton().set({
