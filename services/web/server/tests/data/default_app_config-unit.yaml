@@ -87,7 +87,7 @@ smtp:
   host: mail.foo.com
   port: 25
   tls: false
-  username: None,
+  username: None
   password: None
 socketio:
   enabled: true
