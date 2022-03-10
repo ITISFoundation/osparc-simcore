@@ -111,7 +111,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
   members: {
     _currentModel: null,
-    __unlinkButton: null,
+    __deleteItemButton: null,
     __nodesUI: null,
     __edgesUI: null,
     __selectedNodeUIs: null,
@@ -197,7 +197,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __addExtras: function() {
       this.__addStartHint();
-      this.__addUnlinkButton();
+      this.__addDeleteItemButton();
     },
 
     __addOutputNodesLayout: function() {
@@ -214,21 +214,21 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__workbenchLayout.add(this.__startHint);
     },
 
-    __addUnlinkButton: function() {
-      const unlinkButton = this.__unlinkButton = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/unlink/18",
+    __addDeleteItemButton: function() {
+      const deleteItemButton = this.__deleteItemButton = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/trash/18",
         width: BUTTON_SIZE,
         height: BUTTON_SIZE,
         visibility: "excluded"
       });
-      unlinkButton.addListener("execute", () => {
+      deleteItemButton.addListener("execute", () => {
         if (this.__isSelectedItemAnEdge()) {
           this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
           this.__selectedItemChanged(null);
         }
       }, this);
 
-      this.__workbenchLayer.add(unlinkButton, {
+      this.__workbenchLayer.add(deleteItemButton, {
         bottom: 10,
         right: 10
       });
@@ -494,7 +494,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (!edge) {
         return null;
       }
-      if (this.__edgeRepresetationExists(edge)) {
+      if (this.__edgeRepresentationExists(edge)) {
         return null;
       }
 
@@ -545,7 +545,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return null;
     },
 
-    __edgeRepresetationExists: function(edge) {
+    __edgeRepresentationExists: function(edge) {
       for (let i=0; i<this.__edgesUI.length; i++) {
         const edgeUI = this.__edgesUI[i];
         if (edgeUI.getEdge().getEdgeId() === edge.getEdgeId()) {
@@ -1068,7 +1068,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const dev = model.getStudy().getDev();
         if ("annotations" in dev) {
           const annotations = dev["annotations"];
-          Object.keys(annotations).forEach(annotationId => this.__addAnnotation(annotations[annotationId], annotationId));
+          Object.entries(annotations).forEach(([annotationId, annotation]) => this.__addAnnotation(annotation, annotationId));
         }
       }
     },
@@ -1080,23 +1080,38 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           const edge = this.__getEdgeUI(oldId);
           edge.setSelected(false);
         }
+        if (this.__isSelectedItemAnAnnotation()) {
+          const annotation = this.__getAnnotation(oldId);
+          annotation.setSelected(false);
+        }
       }
 
       this.__selectedItemId = newID;
       if (this.__isSelectedItemAnEdge()) {
         const edge = this.__getEdgeUI(newID);
         edge.setSelected(true);
+      } else if (this.__isSelectedItemAnAnnotation()) {
+        const annotation = this.__getAnnotation(newID);
+        annotation.setSelected(true);
       } else {
         this.fireDataEvent("changeSelectedNode", newID);
       }
 
-      if (this.__unlinkButton) {
-        this.__unlinkButton.setVisibility(this.__isSelectedItemAnEdge() ? "visible" : "excluded");
+      if (this.__deleteItemButton) {
+        this.__deleteItemButton.setVisibility(this.__isSelectedItemAnEdge() || this.__isSelectedItemAnEdge() ? "visible" : "excluded");
       }
     },
 
     __isSelectedItemAnEdge: function() {
       return Boolean(this.__selectedItemId && this.__getEdgeUI(this.__selectedItemId));
+    },
+
+    __isSelectedItemAnAnnotation: function() {
+      return Object.keys(this.__annotations).includes(this.__selectedItemId);
+    },
+
+    __getAnnotation: function() {
+      return this.__isSelectedItemAnAnnotation() ? this.__annotations[this.__selectedItemId] : null;
     },
 
     __scaleCoordinates: function(x, y) {
@@ -1624,24 +1639,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __addAnnotation: function(data, id) {
-      if (id === undefined) {
-        id = osparc.utils.Utils.uuidv4();
-      }
-      this.getStudy().addAnnotation(data, id);
-      let annotation = null;
-      switch (data.type) {
-        case "rect": {
-          const rectAttr = data.attributes;
-          annotation = this.__svgLayer.drawAnnotationRect(rectAttr.width, rectAttr.height, rectAttr.x, rectAttr.y);
-          break;
-        }
-      }
-      annotation.node.addEventListener("click", ev => {
-        console.log(annotation, "clicked");
-        /*
+      const annotation = new osparc.component.workbench.Annotation(this.__svgLayer, data, id);
+      this.getStudy().addAnnotation(annotation);
+      annotation.getRepresentation().node.addEventListener("click", ev => {
         // this is needed to get out of the context of svg
         this.__selectedItemChanged(annotation.id);
-        */
         ev.stopPropagation();
       }, this);
       this.__annotations[id] = annotation;

@@ -475,11 +475,11 @@ qx.Class.define("osparc.data.model.Study", {
       return !this.getUi().getSlideshow().isEmpty();
     },
 
-    addAnnotation: function(annotationAttributes, id) {
+    addAnnotation: function(annotation) {
       if (!("annotations" in this.getDev())) {
         this.getDev()["annotations"] = {};
       }
-      this.getDev()["annotations"][id] = annotationAttributes;
+      this.getDev()["annotations"][annotation.getId()] = annotation.serialize();
     },
 
     serialize: function(clean = true) {
