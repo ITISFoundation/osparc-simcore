@@ -1455,30 +1455,35 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       this.addListener("keypress", keyEvent => {
         const selectedNodeIDs = this.getSelectedNodeIDs();
-        if (selectedNodeIDs.length === 1) {
-          switch (keyEvent.getKeyIdentifier()) {
-            case "F2":
+        switch (keyEvent.getKeyIdentifier()) {
+          case "F2":
+            if (selectedNodeIDs.length === 1) {
               this.__openNodeRenamer(selectedNodeIDs[0]);
-              break;
-            case "I":
+            }
+            break;
+          case "I":
+            if (selectedNodeIDs.length === 1) {
               this.__openNodeInfo(selectedNodeIDs[0]);
-              break;
-            case "Delete":
+            }
+            break;
+          case "Delete":
+            if (selectedNodeIDs.length === 1) {
               this.fireDataEvent("removeNode", selectedNodeIDs[0]);
-              break;
-            case "Escape":
-              this.resetSelection();
-              break;
-          }
-        } else if (keyEvent.getKeyIdentifier() === "Delete" && this.__isSelectedItemAnEdge()) {
-          this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
-          this.__selectedItemChanged(null);
-        } else if (keyEvent.getKeyIdentifier() === "Delete") {
-          this.fireDataEvent("removeNodes", selectedNodeIDs);
-        } else if (keyEvent.getKeyIdentifier() === "Escape") {
-          this.resetSelection();
-          this.__removeTempEdge();
-          this.__removePointerMoveListener();
+            } else if (this.__isSelectedItemAnEdge()) {
+              this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
+              this.__selectedItemChanged(null);
+            } else if (this.__isSelectedItemAnAnnotation()) {
+              this.__removeAnnotation(this.__selectedItemId);
+              this.__selectedItemChanged(null);
+            } else {
+              this.fireDataEvent("removeNodes", selectedNodeIDs);
+            }
+            break;
+          case "Escape":
+            this.resetSelection();
+            this.__removeTempEdge();
+            this.__removePointerMoveListener();
+            break;
         }
       }, this);
 
