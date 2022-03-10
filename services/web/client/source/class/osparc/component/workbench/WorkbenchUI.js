@@ -45,7 +45,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     this.__nodesUI = [];
     this.__edgesUI = [];
     this.__selectedNodeUIs = [];
-    this.__annotations = [];
+    this.__annotations = {};
 
     this._setLayout(new qx.ui.layout.HBox());
 
@@ -139,9 +139,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __annotations: null,
 
     __applyStudy: function(study) {
-      study.getWorkbench().addListener("reloadModel", () => {
-        this.__reloadCurrentModel();
-      }, this);
+      study.getWorkbench().addListener("reloadModel", () => this.__reloadCurrentModel(), this);
     },
 
     _addItemsToLayout: function() {
@@ -1065,6 +1063,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
             });
           });
         }
+
+        // create annotations
+        const dev = model.getStudy().getDev();
+        if ("annotations" in dev) {
+          const annotations = dev["annotations"];
+          Object.keys(annotations).forEach(annotationId => this.__addAnnotation(annotations[annotationId], annotationId));
+        }
       }
     },
 
@@ -1213,20 +1218,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__annotationRectInitPos = null;
       }
       if (this.__annotatingRect) {
-        const rectAnnotation = this.__rectAnnotationRepr.clone();
-        const rectAttr = osparc.wrapper.Svg.getRectAttributes(rectAnnotation);
-        console.log("save", rectAnnotation, rectAttr);
-        rectAnnotation.id = osparc.utils.Utils.uuidv4();
-        rectAnnotation.node.addEventListener("click", ev => {
-          console.log(rectAnnotation, "clicked");
-          /*
-          // this is needed to get out of the context of svg
-          this.__selectedItemChanged(rectAnnotation.id);
-          */
-          ev.stopPropagation();
-        }, this);
-        this.__annotations.push(rectAnnotation);
+        this.__consolidateRectAnnotation(this.__rectAnnotationRepr);
         this.__rectAnnotationRepr = null;
+        this.__annotatingRect = false;
       }
 
       if (this.__panning) {
@@ -1619,6 +1613,38 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       } else {
         osparc.component.workbench.SvgWidget.updateRect(this.__rectAnnotationRepr, width, height, x, y);
       }
+    },
+
+    __consolidateRectAnnotation: function(annotation) {
+      const serializeData = {
+        type: "rect",
+        attributes: osparc.wrapper.Svg.getRectAttributes(annotation)
+      };
+      this.__addAnnotation(serializeData);
+    },
+
+    __addAnnotation: function(data, id) {
+      if (id === undefined) {
+        id = osparc.utils.Utils.uuidv4();
+      }
+      this.getStudy().addAnnotation(data, id);
+      let annotation = null;
+      switch (data.type) {
+        case "rect": {
+          const rectAttr = data.attributes;
+          annotation = this.__svgLayer.drawAnnotationRect(rectAttr.width, rectAttr.height, rectAttr.x, rectAttr.y);
+          break;
+        }
+      }
+      annotation.node.addEventListener("click", ev => {
+        console.log(annotation, "clicked");
+        /*
+        // this is needed to get out of the context of svg
+        this.__selectedItemChanged(annotation.id);
+        */
+        ev.stopPropagation();
+      }, this);
+      this.__annotations[id] = annotation;
     },
 
     __dropFile: function(e) {

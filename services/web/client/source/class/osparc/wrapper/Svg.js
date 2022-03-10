@@ -143,7 +143,7 @@ qx.Class.define("osparc.wrapper.Svg", {
         .fill("none")
         .stroke({
           width: 2,
-          color: "yellow"
+          color: "#007fd4" // Visual Studio blue
         })
         .style({
           cursor: "pointer"
