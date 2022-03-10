@@ -4,7 +4,6 @@
 
 from typing import Callable, List
 
-from aiopg.sa.engine import Engine
 from fastapi import FastAPI
 from models_library.services import ServiceDockerData
 from models_library.services_db import ServiceAccessRightsAtDB
@@ -15,6 +14,7 @@ from simcore_service_catalog.services.access_rights import (
     evaluate_default_policy,
     reduce_access_rights,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -80,7 +80,7 @@ def test_reduce_access_rights():
 
 
 async def test_auto_upgrade_policy(
-    aiopg_engine: Engine,
+    sqlalchemy_async_engine: AsyncEngine,
     user_groups_ids: List[int],
     products_names: List[str],
     services_db_tables_injector: Callable,
@@ -145,7 +145,7 @@ async def test_auto_upgrade_policy(
     # ------------
 
     app = FastAPI()
-    app.state.engine = aiopg_engine
+    app.state.engine = sqlalchemy_async_engine
     app.state.settings = mocker.Mock()
     app.state.settings.CATALOG_ACCESS_RIGHTS_DEFAULT_PRODUCT_NAME = target_product
 

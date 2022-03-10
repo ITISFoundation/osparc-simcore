@@ -33,7 +33,12 @@ class PostgresSettings(BaseCustomSettings):
     POSTGRES_CLIENT_NAME: Optional[str] = Field(
         None,
         description="Name of the application connecting the postgres database, will default to use the host hostname (hostname on linux)",
-        env=["HOST", "HOSTNAME", "POSTGRES_CLIENT_NAME"],
+        env=[
+            "POSTGRES_CLIENT_NAME",
+            # This is useful when running inside a docker container, then the hostname is set each client gets a different name
+            "HOST",
+            "HOSTNAME",
+        ],
     )
 
     @validator("POSTGRES_MAXSIZE")
@@ -55,6 +60,11 @@ class PostgresSettings(BaseCustomSettings):
             port=f"{self.POSTGRES_PORT}",
             path=f"/{self.POSTGRES_DB}",
         )
+        return dsn
+
+    @cached_property
+    def dsn_with_async_sqlalchemy(self) -> str:
+        dsn = self.dsn.replace("postgresql", "postgresql+asyncpg")
         return dsn
 
     @cached_property

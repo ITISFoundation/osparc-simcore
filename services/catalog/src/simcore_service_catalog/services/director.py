@@ -48,8 +48,8 @@ async def setup_director(app: FastAPI) -> None:
 
 
 async def close_director(app: FastAPI) -> None:
-    if director_api := app.state.director_api:
-        await director_api.delete()
+    if director_client := app.state.director_api:
+        await director_client.delete()
 
     logger.debug("Director client closed successfully")
 
