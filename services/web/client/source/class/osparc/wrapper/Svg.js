@@ -138,12 +138,12 @@ qx.Class.define("osparc.wrapper.Svg", {
       };
     },
 
-    drawAnnotationRect: function(draw, width, height, x, y) {
+    drawAnnotationRect: function(draw, width, height, x, y, color) {
       const rect = draw.rect(width, height)
         .fill("none")
         .stroke({
           width: 2,
-          color: "#007fd4" // Visual Studio blue
+          color
         })
         .style({
           cursor: "pointer"
@@ -204,6 +204,12 @@ qx.Class.define("osparc.wrapper.Svg", {
 
     updateRectPos: function(rect, x, y) {
       rect.move(x, y);
+    },
+
+    updateRectColor: function(rect, color) {
+      rect.stroke({
+        color: color
+      });
     },
 
     removeRect: function(rect) {

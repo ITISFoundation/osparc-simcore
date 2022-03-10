@@ -20,7 +20,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
 
   /**
     * @param svgLayer {Object} SVG canvas
-    * @param data {Object} data containing type, attributes and (optional) id
+    * @param data {Object} data containing type, color, attributes and (optional) id
     * @param id {String} data
     */
   construct: function(svgLayer, data, id) {
@@ -36,6 +36,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
     this.set({
       id,
       type: data.type,
+      color: data.color,
       attributes: data.attributes
     });
   },
@@ -49,6 +50,12 @@ qx.Class.define("osparc.component.workbench.Annotation", {
     type: {
       check: ["rect", "text"],
       nullable: false
+    },
+
+    color: {
+      check: "Color",
+      event: "changeColor",
+      init: "#007fd4"
     },
 
     attributes: {
@@ -73,7 +80,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
       let representation = null;
       switch (this.getType()) {
         case "rect":
-          representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y);
+          representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
           break;
       }
       if (representation) {
@@ -81,10 +88,18 @@ qx.Class.define("osparc.component.workbench.Annotation", {
       }
     },
 
+    setSelected: function(selected) {
+      const representation = this.getrepresetnation();
+      if (representation) {
+        osparc.wrapper.Svg.updateRectColor(representation, selected ? "yellow" : this.getColor());
+      }
+    },
+
     serialize: function() {
       return {
         type: this.getType(),
-        attributes: this.getAttributes()
+        attributes: this.getAttributes(),
+        color: this.getColor()
       };
     }
   }
