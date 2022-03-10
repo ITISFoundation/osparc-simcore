@@ -4,6 +4,7 @@ from typing import Coroutine, List, Optional, Union, cast
 from uuid import UUID
 
 import httpx
+from async_timeout import timeout
 from fastapi import APIRouter, Depends, Header, Request
 from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
@@ -169,6 +170,7 @@ async def get_dynamic_sidecar_status(
     summary="stops previously spawned dynamic-sidecar",
 )
 async def stop_dynamic_service(
+    request: Request,
     node_uuid: NodeID,
     can_save: Optional[bool] = True,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
@@ -185,6 +187,20 @@ async def stop_dynamic_service(
         )
 
         return RedirectResponse(str(redirection_url))
+
+    # Serice was marked for removal, the scheduler will
+    # take care of stopping cleaning up all allocated resources:
+    # services, containsers, volumes and networks.
+    # Once the service is no longer being tracked this can return
+    dynamic_sidecar_settings: DynamicSidecarSettings = (
+        request.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+    )
+    _STOPPED_CHECK_INTERVAL = 1.0
+    async with timeout(
+        dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP
+    ):
+        while scheduler.is_service_tracked(node_uuid):
+            await asyncio.sleep(_STOPPED_CHECK_INTERVAL)
 
     return NoContentResponse()
 
