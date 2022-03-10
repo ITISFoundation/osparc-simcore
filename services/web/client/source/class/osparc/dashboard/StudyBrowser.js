@@ -761,7 +761,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       operationPromise
         .then(() => {
-          this.__deleteSecondaryStudies(studyData);
           this.__removeFromStudyList(studyData.uuid, false);
         })
         .catch(err => {
@@ -775,15 +774,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       studiesData.forEach(studyData => {
         this.__deleteStudy(studyData);
       });
-    },
-
-    __deleteSecondaryStudies: function(studyData) {
-      if ("dev" in studyData && "sweeper" in studyData["dev"] && "secondaryStudyIds" in studyData["dev"]["sweeper"]) {
-        const secondaryStudyIds = studyData["dev"]["sweeper"]["secondaryStudyIds"];
-        secondaryStudyIds.forEach(secondaryStudyId => {
-          osparc.store.Store.getInstance().deleteStudy(secondaryStudyId);
-        });
-      }
     },
 
     __createConfirmWindow: function(isMulti) {
