@@ -1,26 +1,15 @@
-""" rest subsystem's configuration
-
-    - config-file schema
-    - settings
-"""
-from typing import Dict, Optional
-
 from aiohttp import web
-from models_library.basic_types import VersionTag
-from pydantic import BaseSettings, Field
+from settings_library.base import BaseCustomSettings
 
-from ._meta import API_VTAG
-from .rest_config import get_rest_config
+from ._constants import APP_SETTINGS_KEY
 
 
-class RestApiSettings(BaseSettings):
-    enabled: Optional[bool] = True
-    vtag: VersionTag = Field(
-        API_VTAG, alias="version", description="web-server API's version tag"
-    )
+class RestSettings(BaseCustomSettings):
+    REST_SWAGGER_API_DOC_ENABLED: bool = False
 
 
-def assert_valid_config(app: web.Application) -> Dict:
-    cfg = get_rest_config(app)
-    _settings = RestApiSettings(**cfg)
-    return cfg
+def get_plugin_settings(app: web.Application) -> RestSettings:
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_REST
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, RestSettings)  # nosec
+    return settings

@@ -11,6 +11,7 @@
 import json
 import os
 import shutil
+import subprocess
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -19,15 +20,20 @@ from typing import Any, Dict, Iterator, List
 import pytest
 import yaml
 from _pytest.config import ExitCode
-from dotenv import dotenv_values
+from _pytest.monkeypatch import MonkeyPatch
+from dotenv import dotenv_values, set_key
 
 from .helpers import (
     FIXTURE_CONFIG_CORE_SERVICES_SELECTION,
     FIXTURE_CONFIG_OPS_SERVICES_SELECTION,
 )
 from .helpers.constants import HEADER_STR
-from .helpers.utils_docker import get_ip, run_docker_compose_config, save_docker_infos
-from .helpers.utils_environs import EnvVarsDict
+from .helpers.typing_env import EnvVarsDict
+from .helpers.utils_docker import (
+    get_localhost_ip,
+    run_docker_compose_config,
+    save_docker_infos,
+)
 
 
 @pytest.fixture(scope="session")
@@ -47,7 +53,7 @@ def testing_environ_vars(env_devel_file: Path) -> EnvVarsDict:
     env_devel["LOG_LEVEL"] = "DEBUG"
 
     env_devel["REGISTRY_SSL"] = "False"
-    env_devel["REGISTRY_URL"] = "{}:5000".format(get_ip())
+    env_devel["REGISTRY_URL"] = "{}:5000".format(get_localhost_ip())
     env_devel["REGISTRY_PATH"] = "127.0.0.1:5000"
     env_devel["REGISTRY_USER"] = "simcore"
     env_devel["REGISTRY_PW"] = ""
@@ -155,8 +161,45 @@ def simcore_docker_compose(
 
 
 @pytest.fixture(scope="module")
+def inject_filestash_config_path(
+    osparc_simcore_scripts_dir: Path,
+    monkeypatch_module: MonkeyPatch,
+    env_file_for_testing: Path,
+) -> None:
+    create_filestash_config_py = (
+        osparc_simcore_scripts_dir / "filestash" / "create_config.py"
+    )
+
+    # ensures .env at git_root_dir, which will be used as current directory
+    assert env_file_for_testing.exists()
+    env_values = dotenv_values(env_file_for_testing)
+
+    process = subprocess.run(
+        ["python3", f"{create_filestash_config_py}"],
+        shell=False,
+        check=True,
+        stdout=subprocess.PIPE,
+        env=env_values,
+    )
+    filestash_config_json_path = Path(process.stdout.decode("utf-8").strip())
+    assert filestash_config_json_path.exists()
+
+    set_key(
+        env_file_for_testing,
+        "TMP_PATH_TO_FILESTASH_CONFIG",
+        f"{filestash_config_json_path}",
+    )
+    monkeypatch_module.setenv(
+        "TMP_PATH_TO_FILESTASH_CONFIG", f"{filestash_config_json_path}"
+    )
+
+
+@pytest.fixture(scope="module")
 def ops_docker_compose(
-    osparc_simcore_root_dir: Path, env_file_for_testing: Path, temp_folder: Path
+    osparc_simcore_root_dir: Path,
+    env_file_for_testing: Path,
+    temp_folder: Path,
+    inject_filestash_config_path: None,
 ) -> Dict[str, Any]:
     """Filters only services in docker-compose-ops.yml and returns yaml data
 
@@ -262,7 +305,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: ExitCode) -> None:
 def _minio_fix(service_environs: Dict) -> Dict:
     """this hack ensures that S3 is accessed from the host at all time, thus pre-signed links work."""
     if "S3_ENDPOINT" in service_environs:
-        service_environs["S3_ENDPOINT"] = f"{get_ip()}:9001"
+        service_environs["S3_ENDPOINT"] = f"{get_localhost_ip()}:9001"
     return service_environs
 
 

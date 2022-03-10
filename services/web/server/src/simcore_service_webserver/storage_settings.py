@@ -1,41 +1,26 @@
-""" storage subsystem's configuration
-
-    - config-file schema
-    - settings
-"""
-from typing import Dict, Optional, Tuple
+from functools import cached_property
 
 from aiohttp import web
 from models_library.basic_types import PortInt, VersionTag
-from pydantic import AnyHttpUrl, BaseSettings, Field, validator
+from settings_library.base import BaseCustomSettings
+from settings_library.utils_service import DEFAULT_AIOHTTP_PORT, MixinServiceSettings
+from yarl import URL
 
-from .storage_config import get_storage_config
-
-
-class StorageSettings(BaseSettings):
-    enabled: Optional[bool] = True
-    host: str = "storage"
-    port: PortInt = 11111
-    vtag: VersionTag = Field(
-        "v0", alias="version", description="Storage service API's version tag"
-    )
-
-    url: Optional[AnyHttpUrl] = None
-
-    @validator("url", pre=True)
-    @classmethod
-    def autofill_dsn(cls, v, values):
-        if v is None:
-            return AnyHttpUrl.build(
-                scheme="http",
-                host=values["host"],
-                port=f"{values['port']}",
-                path=f"/{values['vtag']}",
-            )
-        return v
+from ._constants import APP_SETTINGS_KEY
 
 
-def assert_valid_config(app: web.Application) -> Tuple[Dict, StorageSettings]:
-    cfg = get_storage_config(app)
-    settings = StorageSettings(**cfg)
-    return cfg, settings
+class StorageSettings(BaseCustomSettings, MixinServiceSettings):
+    STORAGE_HOST: str = "storage"
+    STORAGE_PORT: PortInt = DEFAULT_AIOHTTP_PORT
+    STORAGE_VTAG: VersionTag = "v0"
+
+    @cached_property
+    def base_url(self) -> URL:
+        return URL(self._build_api_base_url(prefix="STORAGE"))
+
+
+def get_plugin_settings(app: web.Application) -> StorageSettings:
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_STORAGE
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, StorageSettings)  # nosec
+    return settings

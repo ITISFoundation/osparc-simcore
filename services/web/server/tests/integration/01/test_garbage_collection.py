@@ -6,40 +6,45 @@ import asyncio
 import logging
 import re
 from copy import deepcopy
-from typing import Callable, Dict, List
+from pathlib import Path
+from typing import Any, AsyncIterable, Callable, Dict, List, Optional
 from uuid import uuid4
 
 import aiopg
+import aiopg.sa
 import aioredis
 import pytest
+from aiohttp.test_utils import TestClient
 from aioresponses import aioresponses
 from models_library.projects_state import RunningState
-from models_library.settings.redis import RedisConfig
-from pytest_simcore.helpers.utils_login import log_client_in
+from pytest_simcore.helpers.utils_login import AUserDict, log_client_in
 from pytest_simcore.helpers.utils_projects import create_project, empty_project_data
 from servicelib.aiohttp.application import create_safe_application
+from settings_library.redis import RedisSettings
+from simcore_service_webserver import garbage_collector_core
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
 from simcore_service_webserver.db_models import projects, users
-from simcore_service_webserver.director.module_setup import setup_director
+from simcore_service_webserver.director.plugin import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
+from simcore_service_webserver.garbage_collector import setup_garbage_collector
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
     create_user_group,
     list_user_groups,
 )
-from simcore_service_webserver.login.module_setup import setup_login
-from simcore_service_webserver.projects.module_setup import setup_projects
-from simcore_service_webserver.resource_manager import garbage_collector
-from simcore_service_webserver.resource_manager.module_setup import (
-    setup_resource_manager,
-)
+from simcore_service_webserver.login.plugin import setup_login
+from simcore_service_webserver.projects.plugin import setup_projects
+from simcore_service_webserver.projects.project_models import ProjectDict
+from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.resource_manager.registry import get_registry
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio.module_setup import setup_socketio
+from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.users import setup_users
+from sqlalchemy import func, select
 
 log = logging.getLogger(__name__)
 
@@ -65,8 +70,8 @@ def __drop_and_recreate_postgres__(database_from_template_before_each_function) 
 
 
 @pytest.fixture(autouse=True)
-async def __delete_all_redis_keys__(redis_service: RedisConfig):
-    client = await aioredis.create_redis_pool(redis_service.dsn, encoding="utf-8")
+async def __delete_all_redis_keys__(redis_settings: RedisSettings):
+    client = await aioredis.create_redis_pool(redis_settings.dsn, encoding="utf-8")
     await client.flushall()
     client.close()
     await client.wait_closed()
@@ -76,7 +81,7 @@ async def __delete_all_redis_keys__(redis_service: RedisConfig):
 
 
 @pytest.fixture
-async def director_v2_service_mock() -> aioresponses:
+async def director_v2_service_mock() -> AsyncIterable[aioresponses]:
     """uses aioresponses to mock all calls of an aiohttpclient
     WARNING: any request done through the client will go through aioresponses. It is
     unfortunate but that means any valid request (like calling the test server) prefix must be set as passthrough.
@@ -110,25 +115,32 @@ async def auto_mock_director_v2(
 
 @pytest.fixture
 def client(
-    loop, aiohttp_client, app_config, postgres_with_template_db, mock_orphaned_services
+    event_loop,
+    aiohttp_client,
+    app_config,
+    postgres_with_template_db,
+    mock_orphaned_services,
+    monkeypatch_setenv_from_app_config: Callable,
 ):
     cfg = deepcopy(app_config)
 
     assert cfg["rest"]["version"] == API_VERSION
     assert cfg["rest"]["enabled"]
+
     cfg["projects"]["enabled"] = True
     cfg["director"]["enabled"] = True
-    cfg["resource_manager"][
-        "garbage_collection_interval_seconds"
-    ] = GARBAGE_COLLECTOR_INTERVAL  # increase speed of garbage collection
-    cfg["resource_manager"][
-        "resource_deletion_timeout_seconds"
-    ] = SERVICE_DELETION_DELAY  # reduce deletion delay
+    cfg["resource_manager"].update(
+        {
+            "garbage_collection_interval_seconds": GARBAGE_COLLECTOR_INTERVAL,  # increase speed of garbage collection
+            "resource_deletion_timeout_seconds": SERVICE_DELETION_DELAY,  # reduce deletion delay
+        }
+    )
 
-    # fake config
+    monkeypatch_setenv_from_app_config(cfg)
     app = create_safe_application(cfg)
 
     # activates only security+restAPI sub-modules
+    assert setup_settings(app)
     setup_db(app)
     setup_session(app)
     setup_security(app)
@@ -140,8 +152,9 @@ def client(
     setup_director(app)
     setup_director_v2(app)
     assert setup_resource_manager(app)
+    setup_garbage_collector(app)
 
-    yield loop.run_until_complete(
+    yield event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={"port": cfg["main"]["port"], "host": cfg["main"]["host"]},
@@ -152,38 +165,59 @@ def client(
 ################ utils
 
 
-async def login_user(client):
+async def login_user(client: TestClient):
     """returns a logged in regular user"""
     return await log_client_in(client=client, user_data={"role": UserRole.USER.name})
 
 
-async def login_guest_user(client):
+async def login_guest_user(client: TestClient):
     """returns a logged in Guest user"""
     return await log_client_in(client=client, user_data={"role": UserRole.GUEST.name})
 
 
-async def new_project(client, user, access_rights=None):
+async def new_project(
+    client: TestClient,
+    user: AUserDict,
+    tests_data_dir: Path,
+    access_rights: Optional[Dict[str, Any]] = None,
+):
     """returns a project for the given user"""
     project_data = empty_project_data()
     if access_rights is not None:
         project_data["accessRights"] = access_rights
-    return await create_project(client.app, project_data, user["id"])
+
+    return await create_project(
+        client.app,
+        project_data,
+        user["id"],
+        default_project_json=tests_data_dir / "fake-template-projects.isan.2dplot.json",
+    )
 
 
-async def get_template_project(client, user, project_data: Dict, access_rights=None):
+async def get_template_project(
+    client: TestClient,
+    user: AUserDict,
+    project_data: ProjectDict,
+    access_rights=None,
+):
     """returns a tempalte shared with all"""
     _, _, all_group = await list_user_groups(client.app, user["id"])
 
     # the information comes from a file, randomize it
-    project_data["name"] = "Fake template" + str(uuid4())
-    project_data["uuid"] = str(uuid4())
+    project_data["name"] = f"Fake template {uuid4()}"
+    project_data["uuid"] = f"{uuid4()}"
     project_data["accessRights"] = {
         str(all_group["gid"]): {"read": True, "write": False, "delete": False}
     }
     if access_rights is not None:
         project_data["accessRights"].update(access_rights)
 
-    return await create_project(client.app, project_data, user["id"])
+    return await create_project(
+        client.app,
+        project_data,
+        user["id"],
+        default_project_json=None,
+    )
 
 
 async def get_group(client, user):
@@ -217,7 +251,7 @@ async def change_user_role(
 async def connect_to_socketio(client, user, socketio_client_factory: Callable):
     """Connect a user to a socket.io"""
     socket_registry = get_registry(client.server.app)
-    cur_client_session_id = str(uuid4())
+    cur_client_session_id = f"{uuid4()}"
     sio = await socketio_client_factory(cur_client_session_id, client)
     resource_key = {
         "user_id": str(user["id"]),
@@ -246,7 +280,7 @@ async def assert_users_count(
     aiopg_engine: aiopg.sa.Engine, expected_users: int
 ) -> bool:
     async with aiopg_engine.acquire() as conn:
-        users_count = await conn.scalar(users.count())
+        users_count = await conn.scalar(select(func.count()).select_from(users))
         assert users_count == expected_users
         return True
 
@@ -255,7 +289,7 @@ async def assert_projects_count(
     aiopg_engine: aiopg.sa.Engine, expected_projects: int
 ) -> bool:
     async with aiopg_engine.acquire() as conn:
-        projects_count = await conn.scalar(projects.count())
+        projects_count = await conn.scalar(select(func.count()).select_from(projects))
         assert projects_count == expected_projects
         return True
 
@@ -351,7 +385,7 @@ async def assert_one_owner_for_project(
 def mock_garbage_collector_task(mocker):
     """patch the setup of the garbage collector so we can call it manually"""
     mocker.patch(
-        "simcore_service_webserver.resource_manager.module_setup.setup_garbage_collector",
+        "simcore_service_webserver.garbage_collector.setup_garbage_collector",
         return_value="",
     )
 
@@ -362,16 +396,19 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
     socketio_client_factory: Callable,
     aiopg_engine,
     redis_client,
+    tests_data_dir: Path,
 ):
     """while a GUEST user is connected GC will not remove none of its projects nor the user itself"""
     logged_guest_user = await login_guest_user(client)
-    empty_guest_user_project = await new_project(client, logged_guest_user)
+    empty_guest_user_project = await new_project(
+        client, logged_guest_user, tests_data_dir
+    )
     assert await assert_users_count(aiopg_engine, 1) is True
     assert await assert_projects_count(aiopg_engine, 1) is True
 
     await connect_to_socketio(client, logged_guest_user, socketio_client_factory)
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector.collect_garbage(app=client.app)
+    await garbage_collector_core.collect_garbage(app=client.app)
 
     assert await assert_user_in_database(aiopg_engine, logged_guest_user) is True
     assert (
@@ -386,10 +423,13 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     socketio_client_factory: Callable,
     aiopg_engine,
     redis_client,
+    tests_data_dir: Path,
 ):
     """After a GUEST users with one opened project closes browser tab regularly (GC cleans everything)"""
     logged_guest_user = await login_guest_user(client)
-    empty_guest_user_project = await new_project(client, logged_guest_user)
+    empty_guest_user_project = await new_project(
+        client, logged_guest_user, tests_data_dir
+    )
     assert await assert_users_count(aiopg_engine, 1) is True
     assert await assert_projects_count(aiopg_engine, 1) is True
 
@@ -397,7 +437,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
         client, logged_guest_user, socketio_client_factory
     )
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector.collect_garbage(app=client.app)
+    await garbage_collector_core.collect_garbage(app=client.app)
 
     # check user and project are still in the DB
     assert await assert_user_in_database(aiopg_engine, logged_guest_user) is True
@@ -407,7 +447,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 
     await disconnect_user_from_socketio(client, sio_connection_data)
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
-    await garbage_collector.collect_garbage(app=client.app)
+    await garbage_collector_core.collect_garbage(app=client.app)
 
     # check user and project are no longer in the DB
     async with aiopg_engine.acquire() as conn:
@@ -426,13 +466,15 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     socketio_client_factory: Callable,
     aiopg_engine,
     fake_project: Dict,
+    tests_data_dir: Path,
 ):
     """after a USER disconnects the GC will remove none of its projects or templates nor the user itself"""
     number_of_projects = 5
     number_of_templates = 5
     logged_user = await login_user(client)
     user_projects = [
-        await new_project(client, logged_user) for _ in range(number_of_projects)
+        await new_project(client, logged_user, tests_data_dir)
+        for _ in range(number_of_projects)
     ]
     user_template_projects = [
         await get_template_project(client, logged_user, fake_project)
@@ -466,7 +508,10 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
 
 
 async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owner_removal(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready,
+    client,
+    aiopg_engine,
+    tests_data_dir: Path,
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -487,6 +532,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
     )
 
@@ -505,7 +551,7 @@ async def test_t4_project_shared_with_group_transferred_to_user_in_group_on_owne
 
 
 async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -523,6 +569,7 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={
             str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
             str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
@@ -544,7 +591,7 @@ async def test_t5_project_shared_with_other_users_transferred_to_one_of_them(
 
 
 async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on_owner_removal(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -567,6 +614,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
     )
 
@@ -611,7 +659,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
 
 
 async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_last_and_all_is_removed(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
 ):
     """
     USER "u1" creates a GROUP "g1" and invites USERS "u2" and "u3";
@@ -636,6 +684,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
     )
 
@@ -691,7 +740,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
 
 
 async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_until_one_user_remains(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -711,6 +760,7 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={
             str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
             str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
@@ -760,7 +810,7 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
 
 
 async def test_t9_project_shared_with_other_users_transferred_between_them_and_then_removed(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -782,6 +832,7 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={
             str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
             str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
@@ -842,7 +893,7 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
 
 
 async def test_t10_owner_and_all_shared_users_marked_as_guests(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
 ):
     """
     USER "u1" creates a project and shares it with "u2" and "u3";
@@ -860,6 +911,7 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={
             str(q_u2.primary_gid): {"read": True, "write": True, "delete": False},
             str(q_u3.primary_gid): {"read": True, "write": True, "delete": False},
@@ -882,7 +934,7 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
 
 
 async def test_t11_owner_and_all_users_in_group_marked_as_guests(
-    simcore_services_ready, client, aiopg_engine
+    simcore_services_ready, client, aiopg_engine, tests_data_dir: Path
 ):
     """
     USER "u1" creates a group and invites "u2" and "u3";
@@ -903,6 +955,7 @@ async def test_t11_owner_and_all_users_in_group_marked_as_guests(
     project = await new_project(
         client,
         u1,
+        tests_data_dir,
         access_rights={str(g1["gid"]): {"read": True, "write": True, "delete": False}},
     )
 

@@ -6,7 +6,7 @@
 import random
 from copy import deepcopy
 from itertools import repeat
-from typing import Dict, List, Type
+from typing import Callable, Dict, List, Type
 from unittest.mock import MagicMock
 
 import faker
@@ -21,9 +21,10 @@ from pytest_simcore.helpers.utils_tokens import (
     get_token_from_db,
 )
 from servicelib.aiohttp.application import create_safe_application
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import APP_DB_ENGINE_KEY, setup_db
 from simcore_service_webserver.groups import setup_groups
-from simcore_service_webserver.login.module_setup import setup_login
+from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.security_roles import UserRole
@@ -34,15 +35,24 @@ API_VERSION = "v0"
 
 
 @pytest.fixture
-def client(loop, aiohttp_client, app_cfg, postgres_db):
+def client(
+    event_loop,
+    aiohttp_client,
+    app_cfg,
+    postgres_db,
+    monkeypatch_setenv_from_app_config: Callable,
+):
     cfg = deepcopy(app_cfg)
 
     port = cfg["main"]["port"]
 
     assert cfg["rest"]["version"] == API_VERSION
 
+    monkeypatch_setenv_from_app_config(cfg)
+
     # fake config
     app = create_safe_application(cfg)
+    assert setup_settings(app)
 
     setup_db(app)
     setup_session(app)
@@ -52,7 +62,7 @@ def client(loop, aiohttp_client, app_cfg, postgres_db):
     setup_users(app)
     setup_groups(app)
 
-    client = loop.run_until_complete(
+    client = event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
     )
     return client

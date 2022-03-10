@@ -19,7 +19,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -28,7 +28,7 @@ jobs:
     env:
       TO_TAG_PREFIX: staging-github
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: set target variable

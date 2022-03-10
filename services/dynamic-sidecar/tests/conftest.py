@@ -30,6 +30,7 @@ from simcore_service_dynamic_sidecar.modules import mounted_fs
 
 pytest_plugins = [
     "pytest_simcore.monkeypatch_extra",
+    "pytest_simcore.pytest_global_environs",
 ]
 
 
@@ -81,7 +82,7 @@ def mock_environment(
     state_exclude_dirs: List[Path],
 ) -> None:
     monkeypatch_module.setenv("SC_BOOT_MODE", "production")
-    monkeypatch_module.setenv("DYNAMIC_SIDECAR_compose_namespace", compose_namespace)
+    monkeypatch_module.setenv("DYNAMIC_SIDECAR_COMPOSE_NAMESPACE", compose_namespace)
     monkeypatch_module.setenv("REGISTRY_AUTH", "false")
     monkeypatch_module.setenv("REGISTRY_USER", "test")
     monkeypatch_module.setenv("REGISTRY_PW", "test")

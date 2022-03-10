@@ -8,14 +8,14 @@ from typing import Optional
 from pydantic.types import SecretStr
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
-from settings_library.utils_service import DEFAULT_AIOHTTP_PORT, MixinServiceSettings
+from settings_library.utils_service import MixinServiceSettings, URLPart
 
 
 def test_mixing_service_settings_usage(monkeypatch):
     # this test provides an example of usage
     class MySettings(BaseCustomSettings, MixinServiceSettings):
         MY_HOST: str = "example.com"
-        MY_PORT: PortInt = DEFAULT_AIOHTTP_PORT
+        MY_PORT: PortInt = 8000
         MY_VTAG: Optional[VersionTag] = None
 
         # optional
@@ -30,8 +30,18 @@ def test_mixing_service_settings_usage(monkeypatch):
         def origin_url(self) -> str:
             return self._build_origin_url(prefix="MY")
 
+        @cached_property
+        def base_url(self) -> str:
+            return self._compose_url(
+                prefix="MY",
+                user=URLPart.OPTIONAL,
+                password=URLPart.OPTIONAL,
+                port=URLPart.REQUIRED,
+            )
+
     settings = MySettings.create_from_envs()
     assert settings.api_base_url == "http://example.com:8000"
+    assert settings.base_url == "http://example.com:8000"
     assert settings.origin_url == "http://example.com"
 
     # -----------
@@ -39,6 +49,7 @@ def test_mixing_service_settings_usage(monkeypatch):
 
     settings = MySettings.create_from_envs()
     assert settings.api_base_url == "http://example.com:8000/v9"
+    assert settings.base_url == "http://example.com:8000"
     assert settings.origin_url == "http://example.com"
 
     # -----------
@@ -47,4 +58,5 @@ def test_mixing_service_settings_usage(monkeypatch):
 
     settings = MySettings.create_from_envs()
     assert settings.api_base_url == "http://me:secret@example.com:8000/v9"
+    assert settings.base_url == "http://me:secret@example.com:8000"
     assert settings.origin_url == "http://example.com"

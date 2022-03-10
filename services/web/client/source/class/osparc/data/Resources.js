@@ -662,9 +662,9 @@ qx.Class.define("osparc.data.Resources", {
      * @param {String} endpoint Name of the endpoint. Several endpoints can be defined for each resource.
      * @param {Object} params Object containing the parameters for the url and for the body of the request, under the properties 'url' and 'data', respectively.
      * @param {String} deleteId When deleting, id of the element that needs to be deleted from the cache.
-     * @param {Boolean} resolveWResponse If true, the promise will be resolved with the whole response instead of response.data.
+     * @param {Object} options Collections of options
      */
-    fetch: function(resource, endpoint, params = {}, deleteId, resolveWResponse = false) {
+    fetch: function(resource, endpoint, params = {}, deleteId, options = {}) {
       return new Promise((resolve, reject) => {
         if (this.self().resources[resource] == null) {
           reject(Error(`Error while fetching ${resource}: the resource is not defined`));
@@ -702,7 +702,7 @@ qx.Class.define("osparc.data.Resources", {
             }
           }
           res.dispose();
-          resolveWResponse ? resolve(response) : resolve(data);
+          "resolveWResponse" in options && options.resolveWResponse ? resolve(response) : resolve(data);
         }, this);
 
         res.addListenerOnce(endpoint + "Error", e => {
@@ -731,6 +731,86 @@ qx.Class.define("osparc.data.Resources", {
         });
 
         res[endpoint](params.url || null, params.data || null);
+      });
+    },
+
+    getAllPages: function(resource, params) {
+      return new Promise((resolve, reject) => {
+        let resources = [];
+        let offset = 0;
+        Object.assign(params.url, {
+          "offset": offset,
+          "limit": 50
+        });
+        const endpoint = "getPage";
+        const options = {
+          resolveWResponse: true
+        };
+        this.fetch(resource, endpoint, params, null, options)
+          .then(resp => {
+            const data = resp["data"];
+            const meta = resp["_meta"];
+            resources = [...resources, ...data];
+            const allRequests = [];
+            for (let i=offset+meta.limit; i<meta.total; i+=meta.limit) {
+              params.url.offset = i;
+              allRequests.push(this.fetch(resource, endpoint, params));
+            }
+            Promise.all(allRequests)
+              .then(resps => {
+                resps.forEach(respData => resources = [...resources, ...respData]);
+                resolve(resources);
+              })
+              .catch(err => {
+                console.error(err);
+                reject(err);
+              });
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+        /*
+        let offset = 0;
+        const limit = 2;
+        const endpoint = "getPage";
+        const options = {
+          resolveWResponse: true
+        };
+        let resources = [];
+        const requestMoreResources = off => {
+          Object.assign(params.url, {
+            "offset": off,
+            "limit": limit
+          });
+          return this.fetch(resource, endpoint, params, null, options)
+            .then(resp => {
+              console.log("resp", resp);
+              resources = [...resources, ...resp.data];
+              const meta = resp["_meta"];
+              const requestMore = (meta.offset + meta.count) < meta.total;
+              if (requestMore) {
+                requestMoreResources(off+limit);
+              } else {
+                resolve(resources);
+              }
+            })
+            .catch(err => {
+              console.error(err);
+              reject(err);
+            });
+        };
+        requestMoreResources(offset)
+          .then(resourcesResp => {
+            console.log(resourcesResp);
+            resources.push(...resourcesResp);
+            resolve(resources);
+          })
+          .catch(err => {
+            console.error(err);
+            reject(err);
+          });
+        */
       });
     },
 
@@ -826,8 +906,8 @@ qx.Class.define("osparc.data.Resources", {
 
   statics: {
     API: "/v0",
-    fetch: function(resource, endpoint, params, deleteId, resolveWResponse) {
-      return this.getInstance().fetch(resource, endpoint, params, deleteId, resolveWResponse);
+    fetch: function(resource, endpoint, params, deleteId, options = {}) {
+      return this.getInstance().fetch(resource, endpoint, params, deleteId, options);
     },
     getOne: function(resource, params, id, useCache) {
       return this.getInstance().getOne(resource, params, id, useCache);

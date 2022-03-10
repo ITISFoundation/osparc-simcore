@@ -13,7 +13,7 @@
 # testing
 asgi_lifespan
 pytest
-pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-aiohttp
 pytest-cov
 pytest-mock
 pytest-runner
@@ -22,6 +22,7 @@ pytest-xdist
 pytest-icdiff
 async-asgi-testclient
 minio
+aioboto3
 
 # fixtures
 Faker

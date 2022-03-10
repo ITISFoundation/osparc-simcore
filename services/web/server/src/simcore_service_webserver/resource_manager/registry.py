@@ -19,8 +19,8 @@ from typing import Dict, List, Tuple
 import aioredis
 from aiohttp import web
 
-from .config import APP_CLIENT_SOCKET_REGISTRY_KEY
-from .redis import get_redis_client
+from ..redis import get_redis_client
+from ._constants import APP_CLIENT_SOCKET_REGISTRY_KEY
 
 log = logging.getLogger(__name__)
 
@@ -59,7 +59,8 @@ class RedisResourceRegistry:
 
     @property
     def client(self) -> aioredis.Redis:
-        return get_redis_client(self.app)
+        client = get_redis_client(self.app)
+        return client
 
     async def set_resource(
         self, key: Dict[str, str], resource: Tuple[str, str]

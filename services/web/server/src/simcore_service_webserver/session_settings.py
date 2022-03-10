@@ -1,22 +1,31 @@
-""" session subsystem's configuration
+from aiohttp import web
+from pydantic.class_validators import validator
+from pydantic.fields import Field
+from pydantic.types import SecretStr
+from settings_library.base import BaseCustomSettings
+from settings_library.utils_session import MixinSessionSettings
 
-    - config-file schema
-    - settings
-"""
-from typing import Dict
-
-from aiohttp.web import Application
-from pydantic import BaseSettings, constr
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
-
-from .session_config import CONFIG_SECTION_NAME
+from ._constants import APP_SETTINGS_KEY
 
 
-class SessionSettings(BaseSettings):
-    secret_key: constr(strip_whitespace=True, min_length=32)
+class SessionSettings(BaseCustomSettings, MixinSessionSettings):
+
+    SESSION_SECRET_KEY: SecretStr = Field(
+        ...,
+        description="Secret key to encrypt cookies. "
+        'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
+        min_length=44,
+        env=["SESSION_SECRET_KEY", "WEBSERVER_SESSION_SECRET_KEY"],
+    )
+
+    @validator("SESSION_SECRET_KEY")
+    @classmethod
+    def check_valid_fernet_key(cls, v):
+        return cls.do_check_valid_fernet_key(v)
 
 
-def assert_valid_config(app: Application) -> Dict:
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    _settings = SessionSettings(**cfg)
-    return cfg
+def get_plugin_settings(app: web.Application) -> SessionSettings:
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_SESSION
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, SessionSettings)  # nosec
+    return settings

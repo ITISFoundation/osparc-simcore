@@ -6,13 +6,8 @@ import urllib.parse
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from models_library.services import (
-    KEY_RE,
-    VERSION_RE,
-    ServiceAccessRightsAtDB,
-    ServiceMetaDataAtDB,
-    ServiceType,
-)
+from models_library.services import KEY_RE, VERSION_RE, ServiceType
+from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from pydantic import ValidationError, constr
 from pydantic.types import PositiveInt
 from starlette.requests import Request
@@ -20,7 +15,7 @@ from starlette.requests import Request
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
 from ...models.schemas.services import ServiceOut, ServiceUpdate
-from ...services.frontend_services import get_frontend_service, is_frontend_service
+from ...services.function_services import get_function_service, is_function_service
 from ...utils.pools import non_blocking_process_pool_executor
 from ...utils.requests_decorators import cancellable_request
 from ..dependencies.database import get_repository
@@ -189,8 +184,8 @@ async def get_service(
     x_simcore_products_name: str = Header(None),
 ):
     # check the service exists (raise HTTP_404_NOT_FOUND)
-    if is_frontend_service(service_key):
-        frontend_service: Dict[str, Any] = get_frontend_service(
+    if is_function_service(service_key):
+        frontend_service: Dict[str, Any] = get_function_service(
             key=service_key, version=service_version
         )
         _service_data = frontend_service
@@ -270,7 +265,7 @@ async def modify_service(
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
     x_simcore_products_name: str = Header(None),
 ):
-    if is_frontend_service(service_key):
+    if is_function_service(service_key):
         # NOTE: this is a temporary decision after discussing with OM
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

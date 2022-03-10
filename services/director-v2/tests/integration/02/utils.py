@@ -2,8 +2,9 @@
 
 import asyncio
 import json
+import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set
 
 import aiodocker
 import httpx
@@ -11,7 +12,7 @@ from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects import Node
 from pydantic import PositiveInt
-from pytest_simcore.helpers.utils_docker import get_ip
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
@@ -28,8 +29,40 @@ SERVICES_ARE_READY_TIMEOUT = 2 * 60
 SEPARATOR = "=" * 50
 
 
+class _VolumeNotExpectedError(Exception):
+    def __init__(self, volume_name: str) -> None:
+        super().__init__(f"Volume {volume_name} should have been removed")
+
+
+log = logging.getLogger(__name__)
+
+
 def is_legacy(node_data: Node) -> bool:
     return node_data.label == "LEGACY"
+
+
+async def ensure_volume_cleanup(
+    docker_client: aiodocker.Docker, node_uuid: str
+) -> None:
+    async def _get_volume_names() -> Set[str]:
+        volumes_list = await docker_client.volumes.list()
+        volume_names: Set[str] = {x["Name"] for x in volumes_list["Volumes"]}
+        return volume_names
+
+    for volume_name in await _get_volume_names():
+        if volume_name.startswith(f"dy-sidecar_{node_uuid}"):
+            # docker volume results to be in use and it takes a bit to remove
+            # it once done with it
+            async for attempt in AsyncRetrying(
+                reraise=False,
+                stop=stop_after_attempt(15),
+                wait=wait_fixed(5),
+            ):
+                with attempt:
+                    # if volume is still found raise an exception
+                    # by the time this finishes all volumes should have been removed
+                    if volume_name in await _get_volume_names():
+                        raise _VolumeNotExpectedError(volume_name)
 
 
 async def ensure_network_cleanup(
@@ -58,7 +91,7 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
     Normally director-v2 talks via docker-netwoks with the dynamic-sidecar.
     Since the director-v2 was started outside docker and is not
     running in a container, the service port needs to be exposed and the
-    url needs to be changed to get_ip()
+    url needs to be changed to get_localhost_ip()
 
     returns: the local endpoint
     """
@@ -86,11 +119,11 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
     async with scheduler._lock:  # pylint: disable=protected-access
         for entry in scheduler._to_observe.values():  # pylint: disable=protected-access
             if entry.scheduler_data.service_name == service_name:
-                entry.scheduler_data.dynamic_sidecar.hostname = f"{get_ip()}"
+                entry.scheduler_data.dynamic_sidecar.hostname = f"{get_localhost_ip()}"
                 entry.scheduler_data.dynamic_sidecar.port = port
 
                 endpoint = entry.scheduler_data.dynamic_sidecar.endpoint
-                assert endpoint == f"http://{get_ip()}:{port}"
+                assert endpoint == f"http://{get_localhost_ip()}:{port}"
                 break
 
     assert endpoint is not None
@@ -102,7 +135,7 @@ async def _get_proxy_port(node_uuid: str) -> PositiveInt:
     Normally director-v2 talks via docker-netwoks with the started proxy.
     Since the director-v2 was started outside docker and is not
     running in a container, the service port needs to be exposed and the
-    url needs to be changed to get_ip()
+    url needs to be changed to get_localhost_ip()
 
     returns: the local endpoint
     """
@@ -286,7 +319,7 @@ async def _inspect_service_and_print_logs(
         print(f"{formatted_logs}\n{SEPARATOR} - {tag}")
 
 
-def _run_command(command: str) -> str:
+def run_command(command: str) -> str:
     # using asyncio.create_subprocess_shell is slower
     # and sometimes ir randomly hangs forever
 
@@ -306,11 +339,11 @@ async def _port_forward_legacy_service(  # pylint: disable=redefined-outer-name
 
     # Legacy services are started --endpoint-mode dnsrr, it needs to
     # be changed to vip otherwise the port forward will not work
-    result = _run_command(f"docker service update {service_name} --endpoint-mode=vip")
+    result = run_command(f"docker service update {service_name} --endpoint-mode=vip")
     assert "verify: Service converged" in result
 
     # Finally forward the port on a random assigned port.
-    result = _run_command(
+    result = run_command(
         f"docker service update {service_name} --publish-add :{internal_port}"
     )
     assert "verify: Service converged" in result
@@ -329,9 +362,9 @@ async def assert_service_is_available(  # pylint: disable=redefined-outer-name
     exposed_port: PositiveInt, is_legacy: bool, service_uuid: str
 ) -> None:
     service_address = (
-        f"http://{get_ip()}:{exposed_port}/x/{service_uuid}"
+        f"http://{get_localhost_ip()}:{exposed_port}/x/{service_uuid}"
         if is_legacy
-        else f"http://{get_ip()}:{exposed_port}"
+        else f"http://{get_localhost_ip()}:{exposed_port}"
     )
     print(f"checking service @ {service_address}")
 
@@ -396,3 +429,10 @@ async def assert_services_reply_200(
                 service_name=service_data["service_host"],
                 is_legacy=is_legacy(node_data),
             )
+
+
+async def sleep_for(interval: PositiveInt, reason: str) -> None:
+    assert interval > 0
+    for i in range(1, interval + 1):
+        await asyncio.sleep(1)
+        print(f"[{i}/{interval}]Sleeping: {reason}")

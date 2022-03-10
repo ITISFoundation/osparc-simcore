@@ -2,6 +2,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=no-name-in-module
 
+import asyncio
 import json
 
 import jsonschema
@@ -26,7 +27,13 @@ def spec_dict(openapi_path):
 
 
 @pytest.fixture
-def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
+def client(
+    event_loop: asyncio.AbstractEventLoop,
+    unused_tcp_port_factory,
+    aiohttp_client,
+    api_version_prefix,
+    mock_env_devel_environment,
+):
     app = create_safe_application()
 
     MAX_DELAY_SECS_ALLOWED = 1  # secs
@@ -37,7 +44,7 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
         time.sleep(MAX_DELAY_SECS_ALLOWED * 1.1)
         raise web.HTTPOk()
 
-    server_kwargs = {"port": aiohttp_unused_port(), "host": "localhost"}
+    server_kwargs = {"port": unused_tcp_port_factory(), "host": "localhost"}
     # fake config
     app[APP_CONFIG_KEY] = {
         "main": server_kwargs,
@@ -51,7 +58,9 @@ def client(loop, aiohttp_unused_port, aiohttp_client, api_version_prefix):
 
     app.router.add_get("/slow", slow_handler)
 
-    cli = loop.run_until_complete(aiohttp_client(app, server_kwargs=server_kwargs))
+    cli = event_loop.run_until_complete(
+        aiohttp_client(app, server_kwargs=server_kwargs)
+    )
     return cli
 
 

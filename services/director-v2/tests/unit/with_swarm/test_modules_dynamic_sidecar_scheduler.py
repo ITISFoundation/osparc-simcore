@@ -30,6 +30,7 @@ from simcore_service_director_v2.models.schemas.dynamic_services import (
 from simcore_service_director_v2.modules.director_v0 import DirectorV0Client
 from simcore_service_director_v2.modules.dynamic_sidecar import module_setup
 from simcore_service_director_v2.modules.dynamic_sidecar.client_api import (
+    close_api_client,
     get_url,
     setup_api_client,
 )
@@ -121,7 +122,7 @@ async def _assert_get_dynamic_services_mocked(
 @pytest.fixture
 def mocked_director_v0(
     dynamic_sidecar_settings: AppSettings, scheduler_data: SchedulerData
-) -> MockRouter:
+) -> Iterator[MockRouter]:
     endpoint = dynamic_sidecar_settings.DIRECTOR_V0.endpoint
 
     with respx.mock as mock:
@@ -195,6 +196,7 @@ def dynamic_sidecar_settings(
         "DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS",
         str(TEST_SCHEDULER_INTERVAL_SECONDS),
     )
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
 
     app_settings = AppSettings.create_from_envs()
     return app_settings
@@ -210,20 +212,22 @@ async def mocked_app(
     app.state.settings = dynamic_sidecar_settings
     log.info("AppSettings=%s", dynamic_sidecar_settings)
     try:
-        DirectorV0Client.create(
-            app,
-            client=httpx.AsyncClient(
-                base_url=f"{dynamic_sidecar_settings.DIRECTOR_V0.endpoint}",
-                timeout=dynamic_sidecar_settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
-            ),
-        )
-        await setup_api_client(app)
-        await setup_scheduler(app)
+        async with httpx.AsyncClient(
+            base_url=f"{dynamic_sidecar_settings.DIRECTOR_V0.endpoint}",
+            timeout=dynamic_sidecar_settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
+        ) as httpx_client:
+            DirectorV0Client.create(
+                app,
+                client=httpx_client,
+            )
+            await setup_api_client(app)
+            await setup_scheduler(app)
 
-        yield app
+            yield app
 
     finally:
         await shutdown_scheduler(app)
+        await close_api_client(app)
 
 
 @pytest.fixture
@@ -274,7 +278,6 @@ def mock_max_status_api_duration(monkeypatch: MonkeyPatch) -> Iterator[None]:
 
 
 async def test_scheduler_add_remove(
-    loop: asyncio.AbstractEventLoop,
     ensure_scheduler_runs_once: Callable,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
@@ -292,7 +295,6 @@ async def test_scheduler_add_remove(
 
 
 async def test_scheduler_removes_partially_started_services(
-    loop: asyncio.AbstractEventLoop,
     ensure_scheduler_runs_once: Callable,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
@@ -307,7 +309,6 @@ async def test_scheduler_removes_partially_started_services(
 
 
 async def test_scheduler_is_failing(
-    loop: asyncio.AbstractEventLoop,
     ensure_scheduler_runs_once: Callable,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
@@ -322,7 +323,6 @@ async def test_scheduler_is_failing(
 
 
 async def test_scheduler_health_timing_out(
-    loop: asyncio.AbstractEventLoop,
     ensure_scheduler_runs_once: Callable,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
@@ -339,7 +339,6 @@ async def test_scheduler_health_timing_out(
 
 
 async def test_adding_service_two_times(
-    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     docker_swarm: None,
@@ -350,7 +349,6 @@ async def test_adding_service_two_times(
 
 
 async def test_collition_at_global_level(
-    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     docker_swarm: None,
@@ -364,7 +362,6 @@ async def test_collition_at_global_level(
 
 
 async def test_no_service_name(
-    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     docker_swarm: None,
@@ -377,7 +374,6 @@ async def test_no_service_name(
 
 
 async def test_remove_missing_no_error(
-    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     docker_swarm: None,
@@ -389,7 +385,6 @@ async def test_remove_missing_no_error(
 
 
 async def test_get_stack_status(
-    loop: asyncio.AbstractEventLoop,
     ensure_scheduler_runs_once: Callable,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
@@ -410,7 +405,6 @@ async def test_get_stack_status(
 
 
 async def test_get_stack_status_missing(
-    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     docker_swarm: None,
@@ -422,7 +416,6 @@ async def test_get_stack_status_missing(
 
 
 async def test_get_stack_status_failing_sidecar(
-    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     docker_swarm: None,
@@ -443,7 +436,6 @@ async def test_get_stack_status_failing_sidecar(
 
 
 async def test_get_stack_status_report_missing_statuses(
-    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mock_service_running: AsyncMock,
@@ -465,7 +457,6 @@ async def test_get_stack_status_report_missing_statuses(
 
 
 async def test_get_stack_status_containers_are_starting(
-    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mock_service_running: AsyncMock,
@@ -487,7 +478,6 @@ async def test_get_stack_status_containers_are_starting(
 
 
 async def test_get_stack_status_ok(
-    loop: asyncio.AbstractEventLoop,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mock_service_running: AsyncMock,
@@ -511,7 +501,6 @@ async def test_get_stack_status_ok(
 
 
 def test_module_setup(
-    loop: asyncio.AbstractEventLoop,
     dynamic_sidecar_settings: AppSettings,
     docker_swarm: None,
 ) -> None:

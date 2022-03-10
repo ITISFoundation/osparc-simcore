@@ -1,6 +1,5 @@
 import json
 import logging
-import traceback
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -9,9 +8,9 @@ from starlette import status
 
 from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.dynamic_services import SchedulerData
+from ...utils.logging_utils import log_decorator
 from .errors import (
-    DynamicSchedulerException,
-    DynamicSidecarNetworkError,
+    DynamicSidecarUnexpectedResponseStatus,
     EntrypointContainerNotFoundError,
 )
 
@@ -50,12 +49,6 @@ def log_httpx_http_error(url: str, method: str, formatted_traceback: str) -> Non
 
 class DynamicSidecarClient:
     """Will handle connections to the service sidecar"""
-
-    # NOTE: Since this module is accesse concurrently and httpx uses Locks
-    # interally, it is not possible to share a single client instace.
-    # For each request a separate client will be created.
-    # The previous implementation (with a shared client) raised
-    # RuntimeErrors because resources were already locked.
 
     API_VERSION = "v1"
 
@@ -98,156 +91,157 @@ class DynamicSidecarClient:
         except httpx.HTTPError:
             return False
 
+    async def close(self) -> None:
+        await self._client.aclose()
+
+    @log_decorator(logger=logger)
     async def containers_inspect(self, dynamic_sidecar_endpoint: str) -> Dict[str, Any]:
         """
         returns dict containing docker inspect result form
         all dynamic-sidecar started containers
         """
         url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers")
-        try:
-            response = await self._client.get(url=url)
-            if response.status_code != status.HTTP_200_OK:
-                message = (
-                    f"error during request status={response.status_code}, "
-                    f"body={response.text}"
-                )
-                logging.warning(message)
-                raise DynamicSidecarNetworkError(message)
 
-            return response.json()
-        except httpx.HTTPError:
-            log_httpx_http_error(url, "GET", traceback.format_exc())
-            raise
+        response = await self._client.get(url=url)
+        if response.status_code != status.HTTP_200_OK:
+            raise DynamicSidecarUnexpectedResponseStatus(response)
 
+        return response.json()
+
+    @log_decorator(logger=logger)
     async def containers_docker_status(
         self, dynamic_sidecar_endpoint: str
     ) -> Dict[str, Dict[str, str]]:
         url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers")
-        try:
-            response = await self._client.get(url=url, params=dict(only_status=True))
-            if response.status_code != status.HTTP_200_OK:
-                logging.warning(
-                    "error during request status=%s, body=%s",
-                    response.status_code,
-                    response.text,
-                )
-                return {}
 
-            return response.json()
-        except httpx.HTTPError:
-            log_httpx_http_error(url, "GET", traceback.format_exc())
-            raise
+        response = await self._client.get(url=url, params=dict(only_status=True))
+        if response.status_code != status.HTTP_200_OK:
+            logging.warning(
+                "Unexpected response: status=%s, body=%s",
+                response.status_code,
+                response.text,
+            )
+            return {}
 
+        return response.json()
+
+    @log_decorator(logger=logger)
     async def start_service_creation(
         self, dynamic_sidecar_endpoint: str, compose_spec: str
     ) -> None:
         """returns: True if the compose up was submitted correctly"""
         url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers")
-        try:
-            response = await self._client.post(url, data=compose_spec)
-            if response.status_code != status.HTTP_202_ACCEPTED:
-                message = (
-                    "ERROR during service creation request: "
-                    f"status={response.status_code}, body={response.text}"
-                )
-                logging.warning(message)
-                raise DynamicSchedulerException(message)
 
-            # request was ok
-            logger.info("Spec submit result %s", response.text)
-        except httpx.HTTPError as e:
-            log_httpx_http_error(url, "POST", traceback.format_exc())
-            raise e
+        response = await self._client.post(url, data=compose_spec)
+        if response.status_code != status.HTTP_202_ACCEPTED:
+            raise DynamicSidecarUnexpectedResponseStatus(response, "service creation")
 
+        # request was ok
+        logger.info("Spec submit result %s", response.text)
+
+    @log_decorator(logger=logger)
     async def begin_service_destruction(self, dynamic_sidecar_endpoint: str) -> None:
         """runs docker compose down on the started spec"""
         url = get_url(dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers:down")
-        try:
-            response = await self._client.post(url)
-            if response.status_code != status.HTTP_200_OK:
-                message = (
-                    f"ERROR during service destruction request: "
-                    f"status={response.status_code}, body={response.text}"
-                )
-                logging.warning(message)
-                raise DynamicSchedulerException(message)
 
-            logger.info("Compose down result %s", response.text)
-        except httpx.HTTPError as e:
-            log_httpx_http_error(url, "POST", traceback.format_exc())
-            raise e
+        response = await self._client.post(url)
+        if response.status_code != status.HTTP_200_OK:
+            raise DynamicSidecarUnexpectedResponseStatus(
+                response, "service destruction"
+            )
 
+        logger.info("Compose down result %s", response.text)
+
+    @log_decorator(logger=logger)
     async def service_save_state(self, dynamic_sidecar_endpoint: str) -> None:
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers/state:save")
-        try:
-            response = await self._client.post(url, timeout=self._save_restore_timeout)
-            if response.status_code != status.HTTP_204_NO_CONTENT:
-                message = (
-                    f"ERROR while saving service state: "
-                    f"status={response.status_code}, body={response.text}"
-                )
-                logging.warning(message)
-                raise DynamicSchedulerException(message)
-        except httpx.HTTPError as e:
-            log_httpx_http_error(url, "POST", traceback.format_exc())
-            raise e
 
+        response = await self._client.post(url, timeout=self._save_restore_timeout)
+        if response.status_code != status.HTTP_204_NO_CONTENT:
+            raise DynamicSidecarUnexpectedResponseStatus(response, "state saving")
+
+    @log_decorator(logger=logger)
     async def service_restore_state(self, dynamic_sidecar_endpoint: str) -> None:
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers/state:restore")
-        try:
-            response = await self._client.post(url, timeout=self._save_restore_timeout)
-            if response.status_code != status.HTTP_204_NO_CONTENT:
-                message = (
-                    f"ERROR while restoring service state: "
-                    f"status={response.status_code}, body={response.text}"
-                )
-                logging.warning(message)
-                raise DynamicSchedulerException(message)
-        except httpx.HTTPError:
-            log_httpx_http_error(url, "POST", traceback.format_exc())
-            raise
 
+        response = await self._client.post(url, timeout=self._save_restore_timeout)
+        if response.status_code != status.HTTP_204_NO_CONTENT:
+            raise DynamicSidecarUnexpectedResponseStatus(response, "state restore")
+
+    @log_decorator(logger=logger)
     async def service_pull_input_ports(
         self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
     ) -> int:
         port_keys = [] if port_keys is None else port_keys
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/inputs:pull")
-        try:
-            response = await self._client.post(
-                url, json=port_keys, timeout=self._save_restore_timeout
-            )
-            if response.status_code != status.HTTP_200_OK:
-                message = (
-                    f"ERROR while restoring service state: "
-                    f"status={response.status_code}, body={response.text}"
-                )
-                logging.warning(message)
-                raise DynamicSchedulerException(message)
-            return int(response.text)
-        except httpx.HTTPError as e:
-            log_httpx_http_error(url, "POST", traceback.format_exc())
-            raise e
 
+        response = await self._client.post(
+            url, json=port_keys, timeout=self._save_restore_timeout
+        )
+        if response.status_code != status.HTTP_200_OK:
+            raise DynamicSidecarUnexpectedResponseStatus(response, "pull input ports")
+        return int(response.text)
+
+    @log_decorator(logger=logger)
+    async def service_disable_dir_watcher(self, dynamic_sidecar_endpoint: str) -> None:
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/directory-watcher")
+
+        response = await self._client.patch(url, json=dict(is_enabled=False))
+        if response.status_code != status.HTTP_204_NO_CONTENT:
+            raise DynamicSidecarUnexpectedResponseStatus(
+                response, "disable dir watcher"
+            )
+
+    @log_decorator(logger=logger)
+    async def service_enable_dir_watcher(self, dynamic_sidecar_endpoint: str) -> None:
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/directory-watcher")
+
+        response = await self._client.patch(url, json=dict(is_enabled=True))
+        if response.status_code != status.HTTP_204_NO_CONTENT:
+            raise DynamicSidecarUnexpectedResponseStatus(response, "enable dir watcher")
+
+    @log_decorator(logger=logger)
+    async def service_outputs_create_dirs(
+        self, dynamic_sidecar_endpoint: str, outputs_labels: Dict[str, Any]
+    ) -> None:
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/outputs/dirs")
+
+        response = await self._client.post(
+            url, json=dict(outputs_labels=outputs_labels)
+        )
+        if response.status_code != status.HTTP_204_NO_CONTENT:
+            raise DynamicSidecarUnexpectedResponseStatus(
+                response, "output dir creation"
+            )
+
+    @log_decorator(logger=logger)
+    async def service_pull_output_ports(
+        self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
+    ) -> int:
+        port_keys = [] if port_keys is None else port_keys
+        url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/outputs:pull")
+
+        response = await self._client.post(
+            url, json=port_keys, timeout=self._save_restore_timeout
+        )
+        if response.status_code != status.HTTP_200_OK:
+            raise DynamicSidecarUnexpectedResponseStatus(response, "output ports pull")
+        return int(response.text)
+
+    @log_decorator(logger=logger)
     async def service_push_output_ports(
         self, dynamic_sidecar_endpoint: str, port_keys: Optional[List[str]] = None
     ) -> None:
         port_keys = [] if port_keys is None else port_keys
         url = get_url(dynamic_sidecar_endpoint, "/v1/containers/ports/outputs:push")
-        try:
-            response = await self._client.post(
-                url, json=port_keys, timeout=self._save_restore_timeout
-            )
-            if response.status_code != status.HTTP_204_NO_CONTENT:
-                message = (
-                    f"ERROR while restoring service state: "
-                    f"status={response.status_code}, body={response.text}"
-                )
-                logging.warning(message)
-                raise DynamicSchedulerException(message)
-        except httpx.HTTPError as e:
-            log_httpx_http_error(url, "POST", traceback.format_exc())
-            raise e
 
+        response = await self._client.post(
+            url, json=port_keys, timeout=self._save_restore_timeout
+        )
+        if response.status_code != status.HTTP_204_NO_CONTENT:
+            raise DynamicSidecarUnexpectedResponseStatus(response, "output ports push")
+
+    @log_decorator(logger=logger)
     async def get_entrypoint_container_name(
         self, dynamic_sidecar_endpoint: str, dynamic_sidecar_network_name: str
     ) -> str:
@@ -261,17 +255,15 @@ class DynamicSidecarClient:
             dynamic_sidecar_endpoint,
             f"/{self.API_VERSION}/containers/name?filters={filters}",
         )
-        try:
-            response = await self._client.get(url=url)
-            if response.status_code == status.HTTP_404_NOT_FOUND:
-                raise EntrypointContainerNotFoundError()
-            response.raise_for_status()
 
-            return response.json()
-        except httpx.HTTPError:
-            log_httpx_http_error(url, "GET", traceback.format_exc())
-            raise
+        response = await self._client.get(url=url)
+        if response.status_code == status.HTTP_404_NOT_FOUND:
+            raise EntrypointContainerNotFoundError()
+        response.raise_for_status()
 
+        return response.json()
+
+    @log_decorator(logger=logger)
     async def restart_containers(self, dynamic_sidecar_endpoint: str) -> None:
         """
         runs docker-compose stop and docker-compose start in succession
@@ -280,25 +272,23 @@ class DynamicSidecarClient:
         url = get_url(
             dynamic_sidecar_endpoint, f"/{self.API_VERSION}/containers:restart"
         )
-        try:
-            response = await self._client.post(
-                url=url, timeout=self._restart_containers_timeout
-            )
-            if response.status_code != status.HTTP_204_NO_CONTENT:
-                message = (
-                    f"ERROR during service restart request: "
-                    f"status={response.status_code}, body={response.text}"
-                )
-                logging.warning(message)
-                raise DynamicSchedulerException(message)
-        except httpx.HTTPError:
-            log_httpx_http_error(url, "POST", traceback.format_exc())
-            raise
+
+        response = await self._client.post(
+            url=url, timeout=self._restart_containers_timeout
+        )
+        if response.status_code != status.HTTP_204_NO_CONTENT:
+            raise DynamicSidecarUnexpectedResponseStatus(response, "containers restart")
 
 
 async def setup_api_client(app: FastAPI) -> None:
     logger.debug("dynamic-sidecar api client setup")
     app.state.dynamic_sidecar_api_client = DynamicSidecarClient(app)
+
+
+async def close_api_client(app: FastAPI) -> None:
+    logger.debug("dynamic-sidecar api client closing...")
+    if client := app.state.dynamic_sidecar_api_client:
+        await client.close()
 
 
 def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
@@ -308,7 +298,6 @@ def get_dynamic_sidecar_client(app: FastAPI) -> DynamicSidecarClient:
 async def update_dynamic_sidecar_health(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
-
     api_client = get_dynamic_sidecar_client(app)
     service_endpoint = scheduler_data.dynamic_sidecar.endpoint
 

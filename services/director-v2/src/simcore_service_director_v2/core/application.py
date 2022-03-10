@@ -26,6 +26,7 @@ from ..modules import (
     remote_debug,
 )
 from ..utils.logging_utils import config_all_loggers
+from .errors import PipelineNotFoundError, ProjectNotFoundError
 from .events import on_shutdown, on_startup
 from .settings import AppSettings, BootModeEnum
 
@@ -52,7 +53,6 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     )
     override_fastapi_openapi_method(app)
 
-    logger.debug(settings)
     app.state.settings = settings
 
     if settings.SC_BOOT_MODE == BootModeEnum.DEBUG:
@@ -86,8 +86,23 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     # setup app --
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
+
     app.add_exception_handler(HTTPException, http_error_handler)
     app.add_exception_handler(RequestValidationError, http422_error_handler)
+    # director-v2 core.errors mappend into HTTP errors
+    app.add_exception_handler(
+        ProjectNotFoundError,
+        make_http_error_handler_for_exception(
+            status.HTTP_404_NOT_FOUND, ProjectNotFoundError
+        ),
+    )
+    app.add_exception_handler(
+        PipelineNotFoundError,
+        make_http_error_handler_for_exception(
+            status.HTTP_404_NOT_FOUND, PipelineNotFoundError
+        ),
+    )
+
     # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
     app.add_exception_handler(
         NotImplementedError,

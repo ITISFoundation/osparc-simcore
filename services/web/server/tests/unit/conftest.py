@@ -15,7 +15,9 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Iterable
 
 import pytest
+import yaml
 from openapi_core.schema.specs.models import Spec as OpenApiSpecs
+from pytest_simcore.helpers.utils_dict import ConfigDict
 from pytest_simcore.helpers.utils_projects import empty_project_data
 from simcore_service_webserver._resources import resources
 from simcore_service_webserver.rest_utils import (
@@ -24,6 +26,7 @@ from simcore_service_webserver.rest_utils import (
 )
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+
 
 log = logging.getLogger(__name__)
 
@@ -38,6 +41,21 @@ def here() -> Path:
 @pytest.fixture(scope="session")
 def api_version_prefix() -> str:
     return "v0"
+
+
+@pytest.fixture(scope="session")
+def default_app_config_unit_file(tests_data_dir: Path) -> Path:
+    cfg_path = tests_data_dir / "default_app_config-unit.yaml"
+    assert cfg_path.exists()
+    return cfg_path
+
+
+@pytest.fixture(scope="session")
+def default_app_cfg(default_app_config_unit_file: Path) -> ConfigDict:
+    # NOTE: ONLY used at the session scopes
+    # TODO: create instead a loader function and return a Callable
+    config: Dict = yaml.safe_load(default_app_config_unit_file.read_text())
+    return config
 
 
 @pytest.fixture
@@ -72,7 +90,7 @@ def test_tags_data(fake_data_dir: Path) -> Iterable[Dict[str, Any]]:
 @pytest.fixture
 def mock_orphaned_services(mocker):
     remove_orphaned_services = mocker.patch(
-        "simcore_service_webserver.resource_manager.garbage_collector.remove_orphaned_services",
+        "simcore_service_webserver.garbage_collector_core.remove_orphaned_services",
         return_value="",
     )
     return remove_orphaned_services
@@ -82,7 +100,7 @@ def mock_orphaned_services(mocker):
 def disable_gc_manual_guest_users(mocker):
     """Disable to avoid an almost instant cleanup of GUEST users with their projects"""
     mocker.patch(
-        "simcore_service_webserver.resource_manager.garbage_collector.remove_users_manually_marked_as_guests",
+        "simcore_service_webserver.garbage_collector_core.remove_users_manually_marked_as_guests",
         return_value=None,
     )
 

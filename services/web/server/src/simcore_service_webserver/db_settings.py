@@ -1,31 +1,11 @@
-""" db subsystem's configuration
-
-    - config-file schema
-    - settings
-"""
-from typing import Dict, Optional
-
 from aiohttp.web import Application
-from models_library.settings.postgres import PostgresSettings
-from pydantic import BaseSettings
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from settings_library.postgres import PostgresSettings
 
-from .db_config import CONFIG_SECTION_NAME
+from ._constants import APP_SETTINGS_KEY
 
 
-class PgSettings(PostgresSettings):
-    endpoint: Optional[str] = None  # TODO: PC remove or deprecate that one
-
-    class Config:
-        fields = {"db": "database"}
-
-
-class DatabaseSettings(BaseSettings):
-    enabled: bool = True
-    postgres: PgSettings
-
-
-def assert_valid_config(app: Application) -> Dict:
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    _settings = DatabaseSettings(**cfg)
-    return cfg
+def get_plugin_settings(app: Application) -> PostgresSettings:
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_DB
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, PostgresSettings)  # nosec
+    return settings

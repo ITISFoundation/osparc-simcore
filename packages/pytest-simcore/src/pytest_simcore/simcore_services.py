@@ -19,8 +19,8 @@ from tenacity.wait import wait_random
 from yarl import URL
 
 from .helpers.constants import MINUTE
-from .helpers.utils_docker import get_ip, get_service_published_port
-from .helpers.utils_environs import EnvVarsDict
+from .helpers.typing_env import EnvVarsDict
+from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 
 log = logging.getLogger(__name__)
 
@@ -125,7 +125,7 @@ def services_endpoint(
                 DASK_SCHEDULER_SERVICE_PORT,
             ]
             endpoint = URL(
-                f"http://{get_ip()}:{get_service_published_port(full_service_name, target_ports)}"
+                f"http://{get_localhost_ip()}:{get_service_published_port(full_service_name, target_ports)}"
             )
             services_endpoint[service] = endpoint
         else:

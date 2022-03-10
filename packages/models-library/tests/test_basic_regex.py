@@ -1,3 +1,5 @@
+import keyword
+
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
@@ -7,8 +9,13 @@ from datetime import datetime
 from typing import Optional, Sequence
 
 import pytest
-from models_library.basic_regex import DATE_RE, UUID_RE, VERSION_RE
-from pkg_resources import parse_version
+from models_library.basic_regex import (
+    DATE_RE,
+    PUBLIC_VARIABLE_NAME_RE,
+    UUID_RE,
+    VERSION_RE,
+)
+from packaging.version import Version
 
 INVALID = object()
 VALID = object()
@@ -97,6 +104,46 @@ def test_DATE_RE(date_str, expected):
 
 def test_pep404_compare_versions():
     # A reminder from https://setuptools.readthedocs.io/en/latest/userguide/distribution.html#specifying-your-project-s-version
-    assert parse_version("1.9.a.dev") == parse_version("1.9a0dev")
-    assert parse_version("2.1-rc2") < parse_version("2.1")
-    assert parse_version("0.6a9dev-r41475") < parse_version("0.6a9")
+    assert Version("1.9.a.dev") == Version("1.9a0dev")
+    assert Version("2.1-rc2") < Version("2.1")
+    assert Version("0.6a9dev") < Version("0.6a9")
+
+
+@pytest.mark.parametrize(
+    "string_under_test,expected_match",
+    [
+        ("a", True),
+        ("x1", True),
+        ("a_very_long_variable_22", True),
+        ("a-string-with-minus", False),
+        ("str w/ spaces", False),
+        ("a./b.c", False),
+        (".foo", False),
+        ("1", False),
+        ("1xxx", False),
+        ("1-number-should-fail", False),
+        ("-dash-should-fail", False),
+        ("", False),
+        # keywords
+        ("def", False),
+        ("for", False),
+        ("in", False),
+        # private/protected
+        ("_", False),
+        ("_protected", False),
+    ],
+)
+def test_variable_names_regex(string_under_test, expected_match):
+    variable_re = re.compile(PUBLIC_VARIABLE_NAME_RE)
+
+    # NOTE: for keywords it is more difficult ot catch them in a regix.
+    # Instead is better to add a validator( ... pre=True) in the field
+    # that does the following check and invalidates them:
+    # SEE https://docs.python.org/3/library/stdtypes.html?highlight=isidentifier#str.isidentifier
+    if keyword.iskeyword(string_under_test):
+        string_under_test = f"_{string_under_test}"
+
+    if expected_match:
+        assert variable_re.match(string_under_test)
+    else:
+        assert not variable_re.match(string_under_test)

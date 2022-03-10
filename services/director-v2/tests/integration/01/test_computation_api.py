@@ -22,10 +22,10 @@ from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
-from models_library.settings.rabbit import RabbitConfig
-from models_library.settings.redis import RedisConfig
 from pydantic.types import PositiveInt
 from pytest_mock.plugin import MockerFixture
+from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from shared_comp_utils import (
     COMPUTATION_URL,
     assert_and_wait_for_pipeline_status,
@@ -33,7 +33,7 @@ from shared_comp_utils import (
     create_pipeline,
 )
 from simcore_sdk.node_ports_common import config as node_ports_config
-from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
+from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskGet
 from starlette import status
 from starlette.testclient import TestClient
 from yarl import URL
@@ -65,19 +65,19 @@ def mock_env(monkeypatch: MonkeyPatch) -> None:
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_swarm_network_name")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_mocked_stack_name")
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_mocked_simcore_zone")
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
 
 
 @pytest.fixture()
 def minimal_configuration(
-    loop: asyncio.AbstractEventLoop,
     sleeper_service: Dict[str, str],
     jupyter_service: Dict[str, str],
     dask_scheduler_service: None,
     dask_sidecar_service: None,
-    redis_service: RedisConfig,
+    redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
-    rabbit_service: RabbitConfig,
+    rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     storage_service: URL,
     mocker: MockerFixture,
@@ -392,7 +392,7 @@ async def test_run_partial_computation(
             if index in params.subgraph_elements
         ],
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
     # check the contents is correctb
     await assert_computation_task_out_obj(
         async_client,
@@ -454,7 +454,7 @@ async def test_run_partial_computation(
         ],
         force_restart=True,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
 
     await assert_computation_task_out_obj(
         async_client,
@@ -489,7 +489,7 @@ async def test_run_computation(
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
 
     # check the contents is correct: a pipeline that just started gets PUBLISHED
     await assert_computation_task_out_obj(
@@ -552,7 +552,7 @@ async def test_run_computation(
         expected_response_status_code=status.HTTP_201_CREATED,
         force_restart=True,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
     # check the contents is correct
     await assert_computation_task_out_obj(
         async_client,
@@ -599,7 +599,7 @@ async def test_abort_computation(
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
@@ -639,7 +639,7 @@ async def test_abort_computation(
     assert (
         response.status_code == status.HTTP_202_ACCEPTED
     ), f"response code is {response.status_code}, error: {response.text}"
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
     assert (
         str(task_out.url)
         == f"{async_client.base_url}/v2/computations/{sleepers_project.uuid}"
@@ -677,7 +677,7 @@ async def test_update_and_delete_computation(
         start_pipeline=False,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
@@ -696,7 +696,7 @@ async def test_update_and_delete_computation(
         start_pipeline=False,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
@@ -715,7 +715,7 @@ async def test_update_and_delete_computation(
         start_pipeline=False,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
 
     # check the contents is correctb
     await assert_computation_task_out_obj(
@@ -734,7 +734,7 @@ async def test_update_and_delete_computation(
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
     # check the contents is correctb
     await assert_computation_task_out_obj(
         async_client,

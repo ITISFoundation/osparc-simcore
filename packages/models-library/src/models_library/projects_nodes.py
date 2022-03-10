@@ -3,13 +3,14 @@
 """
 
 from copy import deepcopy
-from typing import Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 from pydantic import (
     BaseModel,
     Extra,
     Field,
     HttpUrl,
+    Json,
     StrictBool,
     StrictFloat,
     StrictInt,
@@ -18,6 +19,7 @@ from pydantic import (
 )
 
 from .basic_regex import VERSION_RE
+from .basic_types import EnvVarKey
 from .projects_access import AccessEnum
 from .projects_nodes_io import (
     DatCoreFileLink,
@@ -31,24 +33,27 @@ from .projects_state import RunningState
 from .services import PROPERTY_KEY_RE, SERVICE_KEY_RE
 
 # NOTE: WARNING the order here matters
+
 InputTypes = Union[
     StrictBool,
     StrictInt,
     StrictFloat,
+    Json,  # FIXME: remove if OM sends object/array. create project does NOT use pydantic
     str,
     PortLink,
-    SimCoreFileLink,
-    DatCoreFileLink,
+    Union[SimCoreFileLink, DatCoreFileLink],  # *FileLink to service
     DownloadLink,
+    Union[List[Any], Dict[str, Any]],  # arrays | object
 ]
 OutputTypes = Union[
     StrictBool,
     StrictInt,
     StrictFloat,
+    Json,  # FIXME: remove if OM sends object/array
     str,
-    SimCoreFileLink,
-    DatCoreFileLink,
+    Union[SimCoreFileLink, DatCoreFileLink],  # *FileLink to service
     DownloadLink,
+    Union[List[Any], Dict[str, Any]],  # arrays | object
 ]
 
 InputID = OutputID = constr(regex=PROPERTY_KEY_RE)
@@ -166,6 +171,16 @@ class Node(BaseModel):
 
     state: Optional[NodeState] = Field(
         default_factory=NodeState, description="The node's state object"
+    )
+
+    boot_options: Optional[Dict[EnvVarKey, str]] = Field(
+        None,
+        alias="bootOptions",
+        description=(
+            "Some services provide alternative parameters to be injected at boot time. "
+            "The user selection should be stored here, and it will overwrite the "
+            "services's defaults."
+        ),
     )
 
     @validator("thumbnail", pre=True)

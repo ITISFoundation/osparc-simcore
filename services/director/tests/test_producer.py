@@ -1,12 +1,14 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
+# pylint:disable=protected-access
 # pylint:disable=redefined-outer-name
 # pylint:disable=too-many-arguments
-# pylint:disable=protected-access
+# pylint:disable=unused-argument
+# pylint:disable=unused-variable
 
 import asyncio
 import time
 import uuid
+from dataclasses import dataclass
+from typing import Callable
 
 import docker
 import pytest
@@ -22,10 +24,10 @@ async def run_services(
     docker_swarm,
     user_id,
     project_id,
-):
+) -> Callable:
     started_services = []
 
-    async def push_start_services(number_comp, number_dyn, dependant=False):
+    async def push_start_services(number_comp: int, number_dyn: int, dependant=False):
         pushed_services = await push_services(
             number_comp, number_dyn, inter_dependent_services=dependant
         )
@@ -77,7 +79,7 @@ async def run_services(
             start_time = time.perf_counter()
             max_time = 2 * 60
             while node_details["service_state"] != "running":
-                asyncio.sleep(2)
+                await asyncio.sleep(2)
                 if (time.perf_counter() - start_time) > max_time:
                     assert True, "waiting too long to start service"
                 node_details = await producer.get_service_details(
@@ -94,12 +96,15 @@ async def run_services(
     # teardown stop the services
     for service in started_services:
         service_uuid = service["service_uuid"]
-        await producer.stop_service(aiohttp_mock_app, service_uuid, True)
+        # NOTE: Fake services are not even web-services therefore we cannot
+        # even emulate a legacy dy-service that does not implement a save-state feature
+        # so here we must make save_state=False
+        await producer.stop_service(aiohttp_mock_app, service_uuid, save_state=False)
         with pytest.raises(exceptions.ServiceUUIDNotFoundError):
             await producer.get_service_details(aiohttp_mock_app, service_uuid)
 
 
-async def test_find_service_tag(loop):
+async def test_find_service_tag():
     my_service_key = "myservice-key"
     list_of_images = {
         my_service_key: [
@@ -253,4 +258,77 @@ async def test_dependent_services_have_common_network(run_services):
         assert (
             list_of_services[0].attrs["Spec"]["Networks"][0]["Target"]
             == list_of_services[1].attrs["Spec"]["Networks"][0]["Target"]
+        )
+
+
+@dataclass
+class FakeDockerService:
+    service_str: str
+    expected_key: str
+    expected_tag: str
+
+
+@pytest.mark.parametrize(
+    "fake_service",
+    [
+        FakeDockerService(
+            "/simcore/services/dynamic/some/sub/folder/my_service-key:123.456.3214",
+            "simcore/services/dynamic/some/sub/folder/my_service-key",
+            "123.456.3214",
+        ),
+        FakeDockerService(
+            "/simcore/services/dynamic/some/sub/folder/my_service-key:123.456.3214@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f",
+            "simcore/services/dynamic/some/sub/folder/my_service-key",
+            "123.456.3214",
+        ),
+    ],
+)
+async def test_get_service_key_version_from_docker_service(
+    fake_service: FakeDockerService,
+):
+    docker_service_partial_inspect = {
+        "Spec": {
+            "TaskTemplate": {
+                "ContainerSpec": {
+                    "Image": f"{config.REGISTRY_PATH}{fake_service.service_str}"
+                }
+            }
+        }
+    }
+    (
+        service_key,
+        service_tag,
+    ) = await producer._get_service_key_version_from_docker_service(
+        docker_service_partial_inspect
+    )
+    assert service_key == fake_service.expected_key
+    assert service_tag == fake_service.expected_tag
+
+
+@pytest.mark.parametrize(
+    "fake_service_str",
+    [
+        "postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f",
+        "/simcore/postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f",
+        "itisfoundation/postgres:10.11@sha256:2aef165ab4f30fbb109e88959271d8b57489790ea13a77d27c02d8adb8feb20f",
+        "/simcore/services/stuff/postgres:10.11",
+        "/simcore/services/dynamic/postgres:10.11",
+        "/simcore/services/dynamic/postgres:10",
+    ],
+)
+async def test_get_service_key_version_from_docker_service_except_invalid_keys(
+    fake_service_str: str,
+):
+    docker_service_partial_inspect = {
+        "Spec": {
+            "TaskTemplate": {
+                "ContainerSpec": {
+                    "Image": f"{config.REGISTRY_PATH if fake_service_str.startswith('/') else ''}{fake_service_str}"
+                }
+            }
+        }
+    }
+    with pytest.raises(exceptions.DirectorException):
+        await producer._get_service_key_version_from_docker_service(
+            docker_service_partial_inspect
         )

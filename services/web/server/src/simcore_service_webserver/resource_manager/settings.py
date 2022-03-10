@@ -1,41 +1,24 @@
-""" resource manager subsystem's configuration
-
-    - config-file schema
-    - settings
-"""
-from typing import Dict, Optional
-
-from aiohttp.web import Application
-from models_library.settings.redis import RedisConfig
-from pydantic import BaseSettings, Field, PositiveInt
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
-
-from .config import CONFIG_SECTION_NAME
+from aiohttp import web
+from pydantic import Field, PositiveInt
+from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
+from settings_library.base import BaseCustomSettings
 
 
-class RedisSection(RedisConfig):
-    enabled: bool = True
+class ResourceManagerSettings(BaseCustomSettings):
 
-
-class ResourceManagerSettings(BaseSettings):
-    enabled: bool = True
-
-    resource_deletion_timeout_seconds: Optional[PositiveInt] = Field(
+    RESOURCE_MANAGER_RESOURCE_TTL_S: PositiveInt = Field(
         900,
         description="Expiration time (or Time to live (TTL) in redis jargon) for a registered resource",
+        # legacy!
+        env=[
+            "RESOURCE_MANAGER_RESOURCE_TTL_S",
+            "WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS",  # legacy
+        ],
     )
-    garbage_collection_interval_seconds: Optional[PositiveInt] = Field(
-        30, description="Waiting time between consecutive runs of the garbage-colector"
-    )
-
-    redis: RedisSection
-
-    class Config:
-        case_sensitive = False
-        env_prefix = "WEBSERVER_"
 
 
-def assert_valid_config(app: Application) -> Dict:
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    _settings = ResourceManagerSettings(**cfg)
-    return cfg
+def get_plugin_settings(app: web.Application) -> ResourceManagerSettings:
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_RESOURCE_MANAGER
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, ResourceManagerSettings)  # nosec
+    return settings

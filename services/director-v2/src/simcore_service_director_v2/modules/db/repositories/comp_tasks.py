@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
-from models_library.frontend_services_catalog import iter_service_docker_data
+from models_library.function_services_catalog import iter_service_docker_data
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID
@@ -18,7 +18,6 @@ from ....models.domains.comp_tasks import CompTaskAtDB, Image, NodeSchema
 from ....models.schemas.services import ServiceExtras
 from ....utils.computations import to_node_class
 from ....utils.db import RUNNING_STATE_TO_DB
-from ....utils.logging_utils import log_decorator
 from ...director_v0 import DirectorV0Client
 from ..tables import NodeClass, StateType, comp_tasks
 from ._base import BaseRepository
@@ -39,9 +38,6 @@ _FRONTEND_SERVICES_CATALOG: Dict[str, ServiceDockerData] = {
     for meta in iter_service_docker_data()
     if any(name in meta.key for name in ["file-picker", "parameter", "data-iterator"])
 }
-assert (  # nosec
-    len(_FRONTEND_SERVICES_CATALOG) == 5
-), "If this fails, review filter above and update"  # nosec
 
 
 async def _generate_tasks_list_from_project(
@@ -105,7 +101,6 @@ async def _generate_tasks_list_from_project(
 
 
 class CompTasksRepository(BaseRepository):
-    @log_decorator(logger=logger)
     async def get_all_tasks(
         self,
         project_id: ProjectID,
@@ -122,7 +117,6 @@ class CompTasksRepository(BaseRepository):
 
         return tasks
 
-    @log_decorator(logger=logger)
     async def get_comp_tasks(
         self,
         project_id: ProjectID,
@@ -140,7 +134,6 @@ class CompTasksRepository(BaseRepository):
         logger.debug("found the tasks: %s", f"{tasks=}")
         return tasks
 
-    @log_decorator(logger=logger)
     async def upsert_tasks_from_project(
         self,
         project: ProjectAtDB,
@@ -202,7 +195,6 @@ class CompTasksRepository(BaseRepository):
             )
             return inserted_comp_tasks_db
 
-    @log_decorator(logger=logger)
     async def mark_project_published_tasks_as_aborted(
         self, project_id: ProjectID
     ) -> None:
@@ -219,7 +211,6 @@ class CompTasksRepository(BaseRepository):
             )
         logger.debug("marked project %s published tasks as aborted", f"{project_id=}")
 
-    @log_decorator(logger=logger)
     async def set_project_task_job_id(
         self, project_id: ProjectID, task: NodeID, job_id: str
     ) -> None:
@@ -239,7 +230,6 @@ class CompTasksRepository(BaseRepository):
             f"{job_id=}",
         )
 
-    @log_decorator(logger=logger)
     async def set_project_tasks_state(
         self, project_id: ProjectID, tasks: List[NodeID], state: RunningState
     ) -> None:
@@ -259,7 +249,6 @@ class CompTasksRepository(BaseRepository):
             f"{state=}",
         )
 
-    @log_decorator(logger=logger)
     async def delete_tasks_from_project(self, project: ProjectAtDB) -> None:
         async with self.db_engine.acquire() as conn:
             await conn.execute(

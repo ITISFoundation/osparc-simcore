@@ -24,6 +24,7 @@ import sqlalchemy.engine as sa_engine
 import yaml
 from aiopg.sa.result import RowProxy
 from asgi_lifespan import LifespanManager
+from cryptography.fernet import Fernet
 from dotenv import dotenv_values
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -40,6 +41,7 @@ pytestmark = pytest.mark.asyncio
 pytest_plugins = [
     "pytest_simcore.repository_paths",
     "pytest_simcore.pydantic_models",
+    "pytest_simcore.pytest_global_environs",
 ]
 
 
@@ -115,7 +117,7 @@ class RWApiKeysRepository(BaseRepository):
 def environment() -> Dict:
     env = {
         "WEBSERVER_HOST": "webserver",
-        "WEBSERVER_SESSION_SECRET_KEY": "REPLACE ME with a key of at least length 32.",
+        "WEBSERVER_SESSION_SECRET_KEY": Fernet.generate_key().decode("utf-8"),
         "POSTGRES_HOST": "127.0.0.1",
         "POSTGRES_USER": "test",
         "POSTGRES_PASSWORD": "test",
@@ -319,7 +321,7 @@ def sync_client(app: FastAPI) -> TestClient:
 
 
 @pytest.fixture
-async def test_user_id(loop, initialized_app) -> int:
+async def test_user_id(initialized_app) -> int:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
     async with initialized_app.state.engine.acquire() as conn:
         user_id = await RWUsersRepository(conn).create(
@@ -331,7 +333,7 @@ async def test_user_id(loop, initialized_app) -> int:
 
 
 @pytest.fixture
-async def test_api_key(loop, initialized_app, test_user_id) -> ApiKeyInDB:
+async def test_api_key(initialized_app, test_user_id) -> ApiKeyInDB:
     # WARNING: created but not deleted upon tear-down, i.e. this is for one use!
     async with initialized_app.state.engine.acquire() as conn:
         apikey = await RWApiKeysRepository(conn).create(

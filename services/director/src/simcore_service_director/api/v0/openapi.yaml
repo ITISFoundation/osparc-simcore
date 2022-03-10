@@ -271,7 +271,7 @@ paths:
                                     - Age in seconds since 1970
                                 type:
                                   type: string
-                                  pattern: '^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
+                                  pattern: '^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
                                   description: data type expected on this input glob matching for data type is allowed
                                   example:
                                     - number
@@ -285,6 +285,10 @@ paths:
                                     - 'data:text/plain'
                                     - 'data:application/hdf5'
                                     - 'data:application/edu.ucdavis@ceclancy.xyz'
+                                contentSchema:
+                                  title: Content Schema
+                                  description: jsonschema of the content at this input/output. Required when type='ref_contentSchema'
+                                  type: object
                                 fileToKeyMap:
                                   description: Place the data associated with the named keys in files
                                   type: object
@@ -375,9 +379,11 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
-                                  description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
-                                  deprecated: true
                                   type: number
+                                  description: use this to numerically sort the properties for display
+                                  example:
+                                    - 1
+                                    - -0.2
                                 label:
                                   type: string
                                   description: short name for the property
@@ -390,7 +396,7 @@ paths:
                                     - Age in seconds since 1970
                                 type:
                                   type: string
-                                  pattern: '^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$'
+                                  pattern: '^(number|integer|boolean|string|ref_contentSchema|data:[^/\s,]+/[^/\s,]+)$'
                                   description: data type expected on this output
                                   example:
                                     - number
@@ -401,6 +407,10 @@ paths:
                                     - 'data:application/vnd.ms-excel '
                                     - 'data:text/plain'
                                     - 'data:application/hdf5'
+                                contentSchema:
+                                  title: Content Schema
+                                  description: jsonschema of this input/output. Required when type='ref_contentSchema'
+                                  type: object
                                 fileToKeyMap:
                                   description: Place the data stored in the named files and store it in the locations pointed to by the respective output key.
                                   type: object
@@ -415,6 +425,46 @@ paths:
                                   title: Unit
                                   description: 'Units of the output value, if a physical quantity'
                                   type: string
+                          additionalProperties: true
+                        boot-options:
+                          title: Boot Options
+                          description: Service defined boot options. These get injected in the service as env variables.
+                          type: object
+                          x-patternProperties:
+                            '^[_a-zA-Z0-9]+$':
+                              title: BootOptionMode
+                              type: object
+                              properties:
+                                label:
+                                  title: Label
+                                  type: string
+                                description:
+                                  title: Description
+                                  type: string
+                                default:
+                                  title: Default
+                                  type: string
+                                items:
+                                  title: Items
+                                  type: object
+                                  additionalProperties:
+                                    title: BootOptionItem
+                                    type: object
+                                    properties:
+                                      label:
+                                        title: Label
+                                        type: string
+                                      description:
+                                        title: Description
+                                        type: string
+                                    required:
+                                      - label
+                                      - description
+                              required:
+                                - label
+                                - description
+                                - default
+                                - items
                           additionalProperties: true
                   error:
                     nullable: true
@@ -660,7 +710,7 @@ paths:
                                     - Age in seconds since 1970
                                 type:
                                   type: string
-                                  pattern: '^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
+                                  pattern: '^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
                                   description: data type expected on this input glob matching for data type is allowed
                                   example:
                                     - number
@@ -674,6 +724,10 @@ paths:
                                     - 'data:text/plain'
                                     - 'data:application/hdf5'
                                     - 'data:application/edu.ucdavis@ceclancy.xyz'
+                                contentSchema:
+                                  title: Content Schema
+                                  description: jsonschema of the content at this input/output. Required when type='ref_contentSchema'
+                                  type: object
                                 fileToKeyMap:
                                   description: Place the data associated with the named keys in files
                                   type: object
@@ -764,9 +818,11 @@ paths:
                                 - type
                               properties:
                                 displayOrder:
-                                  description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
-                                  deprecated: true
                                   type: number
+                                  description: use this to numerically sort the properties for display
+                                  example:
+                                    - 1
+                                    - -0.2
                                 label:
                                   type: string
                                   description: short name for the property
@@ -779,7 +835,7 @@ paths:
                                     - Age in seconds since 1970
                                 type:
                                   type: string
-                                  pattern: '^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$'
+                                  pattern: '^(number|integer|boolean|string|ref_contentSchema|data:[^/\s,]+/[^/\s,]+)$'
                                   description: data type expected on this output
                                   example:
                                     - number
@@ -790,6 +846,10 @@ paths:
                                     - 'data:application/vnd.ms-excel '
                                     - 'data:text/plain'
                                     - 'data:application/hdf5'
+                                contentSchema:
+                                  title: Content Schema
+                                  description: jsonschema of this input/output. Required when type='ref_contentSchema'
+                                  type: object
                                 fileToKeyMap:
                                   description: Place the data stored in the named files and store it in the locations pointed to by the respective output key.
                                   type: object
@@ -804,6 +864,46 @@ paths:
                                   title: Unit
                                   description: 'Units of the output value, if a physical quantity'
                                   type: string
+                          additionalProperties: true
+                        boot-options:
+                          title: Boot Options
+                          description: Service defined boot options. These get injected in the service as env variables.
+                          type: object
+                          x-patternProperties:
+                            '^[_a-zA-Z0-9]+$':
+                              title: BootOptionMode
+                              type: object
+                              properties:
+                                label:
+                                  title: Label
+                                  type: string
+                                description:
+                                  title: Description
+                                  type: string
+                                default:
+                                  title: Default
+                                  type: string
+                                items:
+                                  title: Items
+                                  type: object
+                                  additionalProperties:
+                                    title: BootOptionItem
+                                    type: object
+                                    properties:
+                                      label:
+                                        title: Label
+                                        type: string
+                                      description:
+                                        title: Description
+                                        type: string
+                                    required:
+                                      - label
+                                      - description
+                              required:
+                                - label
+                                - description
+                                - default
+                                - items
                           additionalProperties: true
                   error:
                     nullable: true
@@ -2456,7 +2556,7 @@ components:
                           - Age in seconds since 1970
                       type:
                         type: string
-                        pattern: '^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
+                        pattern: '^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$'
                         description: data type expected on this input glob matching for data type is allowed
                         example:
                           - number
@@ -2470,6 +2570,10 @@ components:
                           - 'data:text/plain'
                           - 'data:application/hdf5'
                           - 'data:application/edu.ucdavis@ceclancy.xyz'
+                      contentSchema:
+                        title: Content Schema
+                        description: jsonschema of the content at this input/output. Required when type='ref_contentSchema'
+                        type: object
                       fileToKeyMap:
                         description: Place the data associated with the named keys in files
                         type: object
@@ -2560,9 +2664,11 @@ components:
                       - type
                     properties:
                       displayOrder:
-                        description: 'DEPRECATED: new display order is taken from the item position. This property will be removed.'
-                        deprecated: true
                         type: number
+                        description: use this to numerically sort the properties for display
+                        example:
+                          - 1
+                          - -0.2
                       label:
                         type: string
                         description: short name for the property
@@ -2575,7 +2681,7 @@ components:
                           - Age in seconds since 1970
                       type:
                         type: string
-                        pattern: '^(number|integer|boolean|string|data:[^/\s,]+/[^/\s,]+)$'
+                        pattern: '^(number|integer|boolean|string|ref_contentSchema|data:[^/\s,]+/[^/\s,]+)$'
                         description: data type expected on this output
                         example:
                           - number
@@ -2586,6 +2692,10 @@ components:
                           - 'data:application/vnd.ms-excel '
                           - 'data:text/plain'
                           - 'data:application/hdf5'
+                      contentSchema:
+                        title: Content Schema
+                        description: jsonschema of this input/output. Required when type='ref_contentSchema'
+                        type: object
                       fileToKeyMap:
                         description: Place the data stored in the named files and store it in the locations pointed to by the respective output key.
                         type: object
@@ -2600,6 +2710,46 @@ components:
                         title: Unit
                         description: 'Units of the output value, if a physical quantity'
                         type: string
+                additionalProperties: true
+              boot-options:
+                title: Boot Options
+                description: Service defined boot options. These get injected in the service as env variables.
+                type: object
+                x-patternProperties:
+                  '^[_a-zA-Z0-9]+$':
+                    title: BootOptionMode
+                    type: object
+                    properties:
+                      label:
+                        title: Label
+                        type: string
+                      description:
+                        title: Description
+                        type: string
+                      default:
+                        title: Default
+                        type: string
+                      items:
+                        title: Items
+                        type: object
+                        additionalProperties:
+                          title: BootOptionItem
+                          type: object
+                          properties:
+                            label:
+                              title: Label
+                              type: string
+                            description:
+                              title: Description
+                              type: string
+                          required:
+                            - label
+                            - description
+                    required:
+                      - label
+                      - description
+                      - default
+                      - items
                 additionalProperties: true
         error:
           nullable: true

@@ -74,7 +74,7 @@ async def _apply_observation_cycle(
         )
 
     try:
-        with timeout(
+        async with timeout(
             dynamic_services_settings.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_MAX_STATUS_API_DURATION
         ):
             await update_dynamic_sidecar_health(app, scheduler_data)
@@ -143,9 +143,7 @@ class DynamicSidecarsScheduler:
                 scheduler_data=scheduler_data,
             )
 
-            await self._enqueue_observation_from_service_name(
-                scheduler_data.service_name
-            )
+            self._enqueue_observation_from_service_name(scheduler_data.service_name)
             logger.debug("Added service '%s' to observe", scheduler_data.service_name)
 
     async def mark_service_for_removal(
@@ -165,7 +163,7 @@ class DynamicSidecarsScheduler:
                 can_save
             )
 
-        await self._enqueue_observation_from_service_name(service_name)
+        self._enqueue_observation_from_service_name(service_name)
         logger.debug("Service '%s' marked for removal from scheduler", service_name)
 
     async def finish_service_removal(self, node_uuid: NodeID) -> None:
@@ -302,8 +300,8 @@ class DynamicSidecarsScheduler:
             scheduler_data.dynamic_sidecar.endpoint
         )
 
-    async def _enqueue_observation_from_service_name(self, service_name: str) -> None:
-        await self._trigger_observation_queue.put(service_name)
+    def _enqueue_observation_from_service_name(self, service_name: str) -> None:
+        self._trigger_observation_queue.put_nowait(service_name)
 
     async def _run_trigger_observation_queue_task(self) -> None:
         """generates events at regular time interval"""
@@ -342,6 +340,8 @@ class DynamicSidecarsScheduler:
             resource_marked_as_locked = (
                 await lock_with_scheduler_data.resource_lock.mark_as_locked_if_unlocked()
             )
+            # below is True if it could lock the resource,
+            # if the resource was already locked is False
             if resource_marked_as_locked:
                 # fire and forget about the task
                 asyncio.create_task(
@@ -363,7 +363,7 @@ class DynamicSidecarsScheduler:
                 # prevent access to self._to_observe
                 async with self._lock:
                     for service_name in self._to_observe:
-                        await self._enqueue_observation_from_service_name(service_name)
+                        self._enqueue_observation_from_service_name(service_name)
 
                 await sleep(settings.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL_SECONDS)
             except asyncio.CancelledError:  # pragma: no cover

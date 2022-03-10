@@ -17,11 +17,15 @@ load_dotenv()  # take environment variables from .env
 class WebApiUser(FastHttpUser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.user_id = "my_user_id"
 
     @task()
     def get_services(self):
         self.client.get(
-            f"/v0/services",
+            f"v0/services?user_id={self.user_id}",
+            headers={
+                "x-simcore-products-name": "osparc",
+            },
         )
 
     def on_start(self):

@@ -4,6 +4,7 @@
 # pylint: disable=unused-variable
 
 from copy import deepcopy
+from pathlib import Path
 from typing import Any, AsyncIterable, Callable, Dict, List, Optional, Type, Union
 
 import pytest
@@ -22,19 +23,19 @@ from pytest_simcore.helpers.utils_projects import NewProject, delete_all_project
 from servicelib import async_utils
 from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver import catalog
+from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.db import setup_db
-from simcore_service_webserver.director.module_setup import setup_director
+from simcore_service_webserver.director.plugin import setup_director
 from simcore_service_webserver.director_v2 import setup_director_v2
-from simcore_service_webserver.login.module_setup import setup_login
+from simcore_service_webserver.garbage_collector import setup_garbage_collector
+from simcore_service_webserver.login.plugin import setup_login
 from simcore_service_webserver.products import setup_products
-from simcore_service_webserver.projects.module_setup import setup_projects
-from simcore_service_webserver.resource_manager.module_setup import (
-    setup_resource_manager,
-)
+from simcore_service_webserver.projects.plugin import setup_projects
+from simcore_service_webserver.resource_manager.plugin import setup_resource_manager
 from simcore_service_webserver.rest import setup_rest
 from simcore_service_webserver.security import setup_security
 from simcore_service_webserver.session import setup_session
-from simcore_service_webserver.socketio.module_setup import setup_socketio
+from simcore_service_webserver.socketio.plugin import setup_socketio
 from simcore_service_webserver.tags import setup_tags
 
 DEFAULT_GARBAGE_COLLECTOR_INTERVAL_SECONDS: int = 3
@@ -43,13 +44,14 @@ DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
 
 @pytest.fixture
 def client(
-    loop,
+    event_loop,
     aiohttp_client,
     app_cfg,
     postgres_db,
     mocked_director_v2_api,
     mock_orphaned_services,
     redis_client,
+    monkeypatch_setenv_from_app_config: Callable,
 ):
 
     # config app
@@ -63,15 +65,20 @@ def client(
     cfg["resource_manager"][
         "resource_deletion_timeout_seconds"
     ] = DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS  # reduce deletion delay
+
+    monkeypatch_setenv_from_app_config(cfg)
     app = create_safe_application(cfg)
 
     # setup app
+
+    assert setup_settings(app)
     setup_db(app)
     setup_session(app)
     setup_security(app)
     setup_rest(app)
     setup_login(app)  # needed for login_utils fixtures
     setup_resource_manager(app)
+    setup_garbage_collector(app)
     setup_socketio(app)
     setup_director(app)
     setup_director_v2(app)
@@ -80,7 +87,7 @@ def client(
     setup_products(app)
 
     # server and client
-    yield loop.run_until_complete(
+    yield event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
     )
 
@@ -120,9 +127,17 @@ def mocks_on_projects_api(mocker, logged_user) -> None:
 
 
 @pytest.fixture
-async def user_project(client, fake_project, logged_user):
+async def user_project(
+    client,
+    fake_project,
+    logged_user,
+    tests_data_dir: Path,
+):
     async with NewProject(
-        fake_project, client.app, user_id=logged_user["id"]
+        fake_project,
+        client.app,
+        user_id=logged_user["id"],
+        tests_data_dir=tests_data_dir,
     ) as project:
         print("-----> added project", project["name"])
         yield project
@@ -130,7 +145,13 @@ async def user_project(client, fake_project, logged_user):
 
 
 @pytest.fixture
-async def shared_project(client, fake_project, logged_user, all_group):
+async def shared_project(
+    client,
+    fake_project,
+    logged_user,
+    all_group,
+    tests_data_dir: Path,
+):
     fake_project.update(
         {
             "accessRights": {
@@ -142,6 +163,7 @@ async def shared_project(client, fake_project, logged_user, all_group):
         fake_project,
         client.app,
         user_id=logged_user["id"],
+        tests_data_dir=tests_data_dir,
     ) as project:
         print("-----> added project", project["name"])
         yield project
@@ -150,7 +172,11 @@ async def shared_project(client, fake_project, logged_user, all_group):
 
 @pytest.fixture
 async def template_project(
-    client, fake_project, logged_user, all_group: Dict[str, str]
+    client,
+    fake_project,
+    logged_user,
+    all_group: Dict[str, str],
+    tests_data_dir: Path,
 ) -> AsyncIterable[Dict[str, Any]]:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
@@ -160,7 +186,11 @@ async def template_project(
     }
 
     async with NewProject(
-        project_data, client.app, user_id=None, clear_all=True
+        project_data,
+        client.app,
+        user_id=None,
+        clear_all=True,
+        tests_data_dir=tests_data_dir,
     ) as template_project:
         print("-----> added template project", template_project["name"])
         yield template_project

@@ -4,9 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_tools.txt --strip-extras requirements/_tools.in
 #
-backports.entry-points-selectable==1.1.1
-    # via virtualenv
-black==21.12b0
+black==22.1.0
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
@@ -14,28 +12,28 @@ cfgv==3.3.1
     # via pre-commit
 change-case==0.5.2
     # via -r requirements/_tools.in
-click==7.1.2
+click==8.0.4
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
     #   pip-tools
-distlib==0.3.3
+distlib==0.3.4
     # via virtualenv
-filelock==3.4.0
+filelock==3.6.0
     # via virtualenv
-identify==2.4.0
+identify==2.4.11
     # via pre-commit
 isort==5.10.1
     # via
     #   -c requirements/_test.txt
     #   -r requirements/../../../requirements/devenv.txt
-jinja2==2.11.3
+jinja2==3.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_tools.in
-markupsafe==2.0.1
+markupsafe==2.1.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
@@ -48,14 +46,14 @@ pathspec==0.9.0
     # via black
 pep517==0.12.0
     # via pip-tools
-pip-tools==6.4.0
+pip-tools==6.5.1
     # via -r requirements/../../../requirements/devenv.txt
-platformdirs==2.4.0
+platformdirs==2.5.1
     # via
     #   -c requirements/_test.txt
     #   black
     #   virtualenv
-pre-commit==2.15.0
+pre-commit==2.17.0
     # via -r requirements/../../../requirements/devenv.txt
 ptvsd==4.3.2
     # via -r requirements/_tools.in
@@ -75,21 +73,22 @@ toml==0.10.2
     # via
     #   -c requirements/_test.txt
     #   pre-commit
-tomli==1.2.2
+tomli==1.2.3
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_test.txt
     #   black
     #   pep517
-typing-extensions==3.10.0.2
+typing-extensions==4.1.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-virtualenv==20.10.0
+virtualenv==20.13.2
     # via pre-commit
 watchdog==2.1.6
     # via -r requirements/_tools.in
-wheel==0.37.0
+wheel==0.37.1
     # via pip-tools
 
 # The following packages are considered to be unsafe in a requirements file:

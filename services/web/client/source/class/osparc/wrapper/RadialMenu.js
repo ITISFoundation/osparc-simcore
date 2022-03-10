@@ -85,8 +85,8 @@ qx.Class.define("osparc.wrapper.RadialMenu", {
       return {
         fontSize: 16,
         textColor: qx.theme.manager.Color.getInstance().resolve("text"),
-        backgroundColor: qx.theme.manager.Color.getInstance().resolve("background-main-lighter+"),
-        hoverBackgroundColor: qx.theme.manager.Color.getInstance().resolve("contrasted-background+"),
+        backgroundColor: qx.theme.manager.Color.getInstance().resolve("background-main-2"),
+        hoverBackgroundColor: qx.theme.manager.Color.getInstance().resolve("background-main-4"),
         borderColor: "transparent",
         innerCircle: 20,
         outerCircle: 60,

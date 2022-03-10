@@ -19,3 +19,9 @@ DATE_RE = r"\d{4}-(12|11|10|0?[1-9])-(31|30|[0-2]?\d)T(2[0-3]|1\d|0?[0-9])(:(\d|
 
 
 VERSION_RE = r"^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$"
+
+
+# Regex to detect whether a string can be used as a variable identifier (see tests)
+#  - cannot start with spaces, _ (we only want public) or numbers
+# https://docs.python.org/3/reference/lexical_analysis.html#identifiers
+PUBLIC_VARIABLE_NAME_RE = r"^[^_\W0-9]\w*$"

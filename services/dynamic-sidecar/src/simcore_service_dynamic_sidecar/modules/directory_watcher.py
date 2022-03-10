@@ -38,9 +38,9 @@ class AsyncLockedFloat:
             return self._value
 
 
-def async_run_once_after_event_chain(
+def async_run_once_after_event_chain(  # type:ignore
     detection_interval: float,
-) -> Callable[[Any], Optional[Any]]:
+):
     """
     The function's call is delayed by a period equal to the
     `detection_interval` and multiple calls during this
@@ -50,13 +50,11 @@ def async_run_once_after_event_chain(
     returns: decorator to be applied to async functions
     """
 
-    def internal(
-        decorated_function: Callable[[Any], Optional[Any]]
-    ) -> Callable[[Any], Optional[Any]]:
+    def internal(decorated_function: Callable[..., Awaitable[Any]]):  # type:ignore
         last = AsyncLockedFloat(initial_value=None)
 
         @wraps(decorated_function)
-        async def wrapper(*args: Any, **kwargs: Any) -> Optional[Any]:
+        async def wrapper(*args: Any, **kwargs: Any):  # type:ignore
             # skipping  the first time the event chain starts
             if await last.get_value() is None:
                 await last.set_value(time.time())
@@ -68,7 +66,7 @@ def async_run_once_after_event_chain(
             await asyncio.sleep(detection_interval)
 
             if last_read == await last.get_value():
-                return await decorated_function(*args, **kwargs)  # type: ignore
+                return await decorated_function(*args, **kwargs)
 
             return None
 
@@ -86,8 +84,8 @@ async def _push_directory_after_event_chain(directory_path: Path) -> None:
     await _push_directory(directory_path)
 
 
-def async_push_directory(loop: AbstractEventLoop, directory_path: Path) -> None:
-    loop.create_task(
+def async_push_directory(event_loop: AbstractEventLoop, directory_path: Path) -> None:
+    event_loop.create_task(
         _push_directory_after_event_chain(directory_path), name=TASK_NAME_FOR_CLEANUP
     )
 

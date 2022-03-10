@@ -4,8 +4,8 @@ from pathlib import Path
 from aiohttp.web import Application
 from parfive.downloader import Downloader
 
-from .config import get_settings
 from .exceptions import ExporterException
+from .settings import get_plugin_settings
 from .utils import makedirs
 
 log = logging.getLogger(__name__)
@@ -27,10 +27,14 @@ class ParallelDownloader:
 
     async def download_files(self, app: Application) -> None:
         """starts the download and waits for all files to finish"""
-        exporter_settings = get_settings(app)
+        exporter_settings = get_plugin_settings(app)
+        assert (  # nosec
+            exporter_settings is not None
+        ), "this call was not expected with a disabled plugin"  # nosec
+
         results = await self.downloader.run_download(
             timeouts={
-                "total": exporter_settings.downloader_max_timeout_seconds,
+                "total": exporter_settings.EXPORTER_DOWNLOADER_MAX_TIMEOUT_SECONDS,
                 "sock_read": 90,  # default as in parfive code
             }
         )

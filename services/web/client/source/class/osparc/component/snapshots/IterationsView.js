@@ -20,12 +20,10 @@
   */
 
 qx.Class.define("osparc.component.snapshots.IterationsView", {
-  extend: qx.ui.core.Widget,
+  extend: qx.ui.splitpane.Pane,
 
   construct: function(study) {
-    this.base(arguments);
-
-    this._setLayout(new qx.ui.layout.VBox(10));
+    this.base(arguments, "horizontal");
 
     this.__study = study;
     this.__iterations = [];
@@ -43,6 +41,8 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     __loadingTable: null,
     __iterationsTable: null,
     __iterationPreview: null,
+    __tagIterationBtn: null,
+    __deleteIterationBtn: null,
     __openIterationBtn: null,
     __selectedIterationId: null,
     // throttling
@@ -50,30 +50,20 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
     __lastFunc: null,
 
     __buildLayout: function() {
-      const iterationsSection = this.__iterationsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      this._add(iterationsSection, {
-        flex: 1
-      });
+      const iterationsSection = this.__iterationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
+      this.add(iterationsSection, 1);
+
       this.__buildIterations();
-      this.__buildIterationsPreview();
+      this.__buildSnapshotButtons();
 
-      const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      this._add(buttonsSection);
-
-      const openIterationBtn = this.__openIterationBtn = this.__createOpenIterationBtn();
-      openIterationBtn.setEnabled(false);
-      openIterationBtn.addListener("execute", () => {
-        if (this.__selectedIterationId) {
-          this.fireDataEvent("openIteration", this.__selectedIterationId);
-        }
-      });
-      buttonsSection.add(openIterationBtn);
+      const iterationsPreview = this.__iterationPreview = new osparc.component.workbench.WorkbenchUIPreview();
+      this.add(iterationsPreview, 1);
     },
 
     __buildIterations: function() {
       const loadingTable = this.__loadingTable = new osparc.component.snapshots.Loading(this.tr("iterations"));
       this.__iterationsSection.addAt(loadingTable, 0, {
-        width: "50%"
+        flex: 1
       });
 
       this.__study.getIterations()
@@ -96,6 +86,35 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
               });
           }
         });
+    },
+
+    __buildSnapshotButtons: function() {
+      const buttonsSection = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      this._add(buttonsSection);
+
+      const tagIterationBtn = this.__tagIterationBtn = this.__createTagIterationBtn();
+      tagIterationBtn.setEnabled(false);
+      tagIterationBtn.addListener("execute", () => {
+        if (this.__selectedIterationId) {
+          this.__tagIteration(this.__selectedIterationId);
+        }
+      });
+      buttonsSection.add(tagIterationBtn);
+
+      const deleteIterationBtn = this.__deleteIterationBtn = this.__createDeleteIterationBtn();
+      deleteIterationBtn.setEnabled(false);
+      buttonsSection.add(deleteIterationBtn);
+
+      const openIterationBtn = this.__openIterationBtn = this.__createOpenIterationBtn();
+      openIterationBtn.setEnabled(false);
+      openIterationBtn.addListener("execute", () => {
+        if (this.__selectedIterationId) {
+          this.fireDataEvent("openIteration", this.__selectedIterationId);
+        }
+      });
+      buttonsSection.add(openIterationBtn);
+
+      this.__iterationsSection.addAt(buttonsSection, 1);
     },
 
     __listenToNodeUpdates: function() {
@@ -175,20 +194,11 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
       iterationsTable.addListener("cellTap", e => {
         const selectedRow = e.getRow();
         const iterationId = iterationsTable.getRowData(selectedRow)["uuid"];
-        this.__iterationSelected(iterationId, {
-          flex: 1
-        });
+        this.__iterationSelected(iterationId);
       });
 
       this.__iterationsSection.addAt(iterationsTable, 0, {
-        width: "50%"
-      });
-    },
-
-    __buildIterationsPreview: function() {
-      const iterationsPreview = this.__iterationPreview = new osparc.component.workbench.WorkbenchUIPreview();
-      this.__iterationsSection.addAt(iterationsPreview, 1, {
-        width: "50%"
+        flex: 1
       });
     },
 
@@ -220,11 +230,63 @@ qx.Class.define("osparc.component.snapshots.IterationsView", {
         });
     },
 
+    __createTagIterationBtn: function() {
+      const tagIterationBtn = new qx.ui.form.Button(this.tr("Edit Tag")).set({
+        allowGrowX: false,
+        alignX: "left"
+      });
+      return tagIterationBtn;
+    },
+
+    __createDeleteIterationBtn: function() {
+      const deleteIterationBtn = new qx.ui.form.Button(this.tr("Delete")).set({
+        appearance: "danger-button",
+        allowGrowX: false,
+        alignX: "left"
+      });
+      return deleteIterationBtn;
+    },
+
     __createOpenIterationBtn: function() {
-      const openIterationBtn = new qx.ui.form.Button(this.tr("Open Iteration")).set({
-        allowGrowX: false
+      const openIterationBtn = new qx.ui.form.Button(this.tr("Open")).set({
+        allowGrowX: false,
+        alignX: "right"
       });
       return openIterationBtn;
+    },
+
+    __tagIteration: function(iterationId) {
+      const selectedSnapshot = this.__iterations.find(iteration => iteration["uuid"] === iterationId);
+      if (selectedSnapshot) {
+        const editSnapshotView = new osparc.component.snapshots.EditSnapshotView();
+        const tagCtrl = editSnapshotView.getChildControl("tags");
+        tagCtrl.setValue(selectedSnapshot["tags"][0]);
+        const msgCtrl = editSnapshotView.getChildControl("message");
+        msgCtrl.setValue(selectedSnapshot["message"]);
+        const title = this.tr("Edit Iteration");
+        const win = osparc.ui.window.Window.popUpInWindow(editSnapshotView, title, 400, 180);
+        editSnapshotView.addListener("takeSnapshot", () => {
+          const params = {
+            url: {
+              "studyId": this.__study.getUuid(),
+              "snapshotId": iterationId
+            },
+            data: {
+              "tag": editSnapshotView.getTag(),
+              "message": editSnapshotView.getMessage()
+            }
+          };
+          osparc.data.Resources.fetch("snapshots", "updateSnapshot", params)
+            .then(() => {
+              this.__rebuildSnapshots();
+            })
+            .catch(err => osparc.component.message.FlashMessenger.getInstance().logAs(err.message, "ERROR"));
+          win.close();
+        }, this);
+        editSnapshotView.addListener("cancel", () => {
+          win.close();
+        }, this);
+      }
     },
 
     __iterationSelected: function(iterationId) {

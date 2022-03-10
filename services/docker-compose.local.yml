@@ -58,14 +58,22 @@ services:
   webserver:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
+      - REST_SWAGGER_API_DOC_ENABLED=1
     ports:
       - "8080"
       - "3001:3000"
+    deploy:
+      labels:
+        - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.sticky.cookie.secure=false
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.service=${SWARM_STACK_NAME}_webserver
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.entrypoints=http
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.rule=hostregexp(`{host:.+}`) && PathPrefix(`/dev/`)
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.priority=3
+        - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker, ${SWARM_STACK_NAME}_webserver_retry
 
   dask-sidecar:
     environment:
       - SC_BOOT_MODE=${SC_BOOT_MODE:-default}
-
 
   dask-scheduler:
     environment:

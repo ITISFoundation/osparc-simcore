@@ -1,6 +1,7 @@
 import logging
 
 from aiohttp import web
+from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.rest_routing import (
     iter_path_operations,
@@ -11,34 +12,30 @@ from . import director_v2_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY
 from .director_v2_abc import set_project_run_policy
 from .director_v2_core import DefaultProjectRunPolicy, DirectorV2ApiClient, set_client
-from .director_v2_settings import CONFIG_SECTION_NAME, create_settings
+from .rest import setup_rest
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
-    config_section=CONFIG_SECTION_NAME,
-    depends=["simcore_service_webserver.rest"],
+    settings_name="WEBSERVER_DIRECTOR_V2",
     logger=log,
 )
 def setup_director_v2(app: web.Application):
-    # create settings and injects in app
-    create_settings(app)
+    assert app[APP_SETTINGS_KEY].WEBSERVER_DIRECTOR_V2  # nosec
 
-    set_project_run_policy(app, DefaultProjectRunPolicy())
+    # dependencies
+    setup_rest(app)
 
+    # lcietn
     set_client(app, DirectorV2ApiClient(app))
 
-    if not APP_OPENAPI_SPECS_KEY in app:
-        log.warning(
-            "rest submodule not initialised? computation routes will not be defined!"
-        )
-        return
+    # routes
+    set_project_run_policy(app, DefaultProjectRunPolicy())
 
     specs = app[APP_OPENAPI_SPECS_KEY]
-    # bind routes with handlers
     routes = map_handlers_with_operations(
         {
             "start_pipeline": director_v2_handlers.start_pipeline,

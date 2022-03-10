@@ -14,20 +14,26 @@ from tenacity.after import after_log
 from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
+COLOR_ENCODING_RE = re.compile(r"\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]")
+MAX_PATH_CHAR_LEN_ALLOWED = 260
+kFILENAME_TOO_LONG = 36
+_NORMPATH_COUNT = 0
+
+
 log = logging.getLogger(__name__)
 
 
-def get_ip() -> str:
+def get_localhost_ip(default="127.0.0.1") -> str:
+    """Return the IP address for localhost"""
+    local_ip = default
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         # doesn't even have to be reachable
         s.connect(("10.255.255.255", 1))
-        IP = s.getsockname()[0]
-    except Exception:  # pylint: disable=broad-except
-        IP = "127.0.0.1"
+        local_ip = s.getsockname()[0]
     finally:
         s.close()
-    return IP
+    return local_ip
 
 
 @retry(
@@ -170,7 +176,27 @@ def run_docker_compose_config(
     return compose_file
 
 
-COLOR_ENCODING_RE = re.compile(r"\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]")
+def shorten_path(filename: str) -> Path:
+    # These paths are composed using test name hierarchies
+    # when the test is parametrized, it uses the str of the
+    # object as id which could result in path that goes over
+    # allowed limit (260 characters).
+    # This helper function tries to normalize the path
+    # Another possibility would be that the path has some
+    # problematic characters but so far we did not find any case ...
+    global _NORMPATH_COUNT  # pylint: disable=global-statement
+
+    if len(filename) > MAX_PATH_CHAR_LEN_ALLOWED:
+        _NORMPATH_COUNT += 1
+        path = Path(filename)
+        if path.is_dir():
+            limit = MAX_PATH_CHAR_LEN_ALLOWED - 60
+            filename = filename[:limit] + f"{_NORMPATH_COUNT}"
+        elif path.is_file():
+            limit = MAX_PATH_CHAR_LEN_ALLOWED - 10
+            filename = filename[:limit] + f"{_NORMPATH_COUNT}{path.suffix}"
+
+    return Path(filename)
 
 
 def save_docker_infos(destination_path: Path):
@@ -180,21 +206,42 @@ def save_docker_infos(destination_path: Path):
     all_containers = client.containers.list(all=True)
 
     if all_containers:
-        destination_path.mkdir(parents=True, exist_ok=True)
+        try:
+            destination_path.mkdir(parents=True, exist_ok=True)
+
+        except OSError as err:
+            if err.errno == kFILENAME_TOO_LONG:
+                destination_path = shorten_path(err.filename)
+                destination_path.mkdir(parents=True, exist_ok=True)
 
         for container in all_containers:
 
             try:
                 # logs w/o coloring characters
                 logs: str = container.logs(timestamps=True, tail=1000).decode()
-                (destination_path / f"{container.name}.log").write_text(
-                    COLOR_ENCODING_RE.sub("", logs)
-                )
+
+                try:
+                    (destination_path / f"{container.name}.log").write_text(
+                        COLOR_ENCODING_RE.sub("", logs)
+                    )
+
+                except OSError as err:
+                    if err.errno == kFILENAME_TOO_LONG:
+                        shorten_path(err.filename).write_text(
+                            COLOR_ENCODING_RE.sub("", logs)
+                        )
 
                 # inspect attrs
-                (destination_path / f"{container.name}.json").write_text(
-                    json.dumps(container.attrs, indent=2)
-                )
+                try:
+                    (destination_path / f"{container.name}.json").write_text(
+                        json.dumps(container.attrs, indent=2)
+                    )
+                except OSError as err:
+                    if err.errno == kFILENAME_TOO_LONG:
+                        shorten_path(err.filename).write_text(
+                            json.dumps(container.attrs, indent=2)
+                        )
+
             except Exception as err:  # pylint: disable=broad-except
                 print(f"Unexpected failure while dumping {container}." f"Details {err}")
 

@@ -290,7 +290,7 @@ qx.Class.define("osparc.data.model.Study", {
             "studyId": this.getUuid()
           }
         };
-        osparc.data.Resources.get("snapshots", params)
+        osparc.data.Resources.getInstance().getAllPages("snapshots", params)
           .then(snapshots => {
             resolve(snapshots);
           })
@@ -315,18 +315,6 @@ qx.Class.define("osparc.data.model.Study", {
           .catch(err => {
             console.error(err);
             reject(err);
-          });
-      });
-    },
-
-    hasSnapshots: function() {
-      return new Promise(resolve => {
-        this.getSnapshots()
-          .then(snapshots => {
-            resolve(Boolean(snapshots.length));
-          })
-          .catch(() => {
-            resolve(false);
           });
       });
     },
@@ -402,6 +390,16 @@ qx.Class.define("osparc.data.model.Study", {
       return null;
     },
 
+    isPipelineRunning: function() {
+      const pipelineState = this.getPipelineState();
+      return [
+        "PUBLISHED",
+        "PENDING",
+        "STARTED",
+        "RETRY"
+      ].includes(pipelineState);
+    },
+
     isLocked: function() {
       if (this.getState() && "locked" in this.getState()) {
         return this.getState()["locked"]["value"];
@@ -437,10 +435,18 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     stopStudy: function() {
-      this.removeIFrames();
+      this.__stopRequestingStatus();
+      this.__removeIFrames();
     },
 
-    removeIFrames: function() {
+    __stopRequestingStatus: function() {
+      const nodes = this.getWorkbench().getNodes(true);
+      for (const node of Object.values(nodes)) {
+        node.stopRequestingStatus();
+      }
+    },
+
+    __removeIFrames: function() {
       const nodes = this.getWorkbench().getNodes(true);
       for (const node of Object.values(nodes)) {
         node.removeIFrame();
@@ -508,6 +514,9 @@ qx.Class.define("osparc.data.model.Study", {
     },
 
     __updateModel: function(data) {
+      if ("dev" in data) {
+        delete data["dev"];
+      }
       Object.keys(data).forEach(key => {
         if (this.self().IgnoreModelizationProps.includes(key)) {
           delete data[key];

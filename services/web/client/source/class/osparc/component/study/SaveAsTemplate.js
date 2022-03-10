@@ -48,10 +48,6 @@ qx.Class.define("osparc.component.study.SaveAsTemplate", {
 
     __buildLayout: function() {
       const shareWith = this.__shareWith = new osparc.component.permissions.ShareWith();
-      shareWith.getChildControl("legend").set({
-        label: this.tr("Make Template accessible to"),
-        font: "title-14"
-      });
       this._add(shareWith, {
         flex: 1
       });
@@ -62,6 +58,7 @@ qx.Class.define("osparc.component.study.SaveAsTemplate", {
       this._add(publishWithdData);
 
       const shareResourceBtn = new osparc.ui.form.FetchButton().set({
+        appearance: "strong-button",
         label: this.tr("Publish"),
         allowGrowX: false,
         alignX: "right"

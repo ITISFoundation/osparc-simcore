@@ -16,7 +16,7 @@ aiofiles==0.8.0
     #   -c requirements/../../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
-aiohttp==3.7.4.post0
+aiohttp==3.8.1
     # via
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -40,7 +40,7 @@ aiohttp-session==2.9.0
     # via -r requirements/_base.in
 aiohttp-swagger==1.0.15
     # via -r requirements/_base.in
-aiopg==1.2.1
+aiopg==1.3.3
     # via
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
     #   -r requirements/_base.in
@@ -58,13 +58,15 @@ aioredlock==0.7.1
     # via -r requirements/_base.in
 aiormq==3.3.1
     # via aio-pika
+aiosignal==1.2.0
+    # via aiohttp
 aiosmtplib==1.1.6
     # via -r requirements/_base.in
 aiozipkin==1.1.1
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
 alembic==1.7.5
     # via -r requirements/../../../../packages/postgres-database/requirements/_base.in
-async-timeout==3.0.1
+async-timeout==4.0.2
     # via
     #   aiohttp
     #   aiopg
@@ -84,7 +86,7 @@ cffi==1.14.5
     # via cryptography
 change-case==0.5.2
     # via -r requirements/_base.in
-chardet==4.0.0
+charset-normalizer==2.0.12
     # via aiohttp
 click==8.0.3
     # via typer
@@ -106,6 +108,12 @@ et-xmlfile==1.1.0
     # via openpyxl
 expiringdict==1.2.1
     # via -r requirements/_base.in
+frozenlist==1.3.0
+    # via
+    #   aiohttp
+    #   aiosignal
+greenlet==1.1.2
+    # via sqlalchemy
 gunicorn==20.1.0
     # via -r requirements/_base.in
 hiredis==2.0.0
@@ -115,7 +123,6 @@ idna==2.10
     #   -c requirements/../../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../../packages/models-library/requirements/_base.in
-    #   -r requirements/../../../../packages/postgres-database/requirements/_base.in
     #   email-validator
     #   yarl
 importlib-metadata==4.10.0
@@ -198,7 +205,7 @@ psycopg2-binary==2.9.1
     #   sqlalchemy
 pycparser==2.20
     # via cffi
-pydantic==1.8.2
+pydantic==1.9.0
     # via
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -240,7 +247,6 @@ pyyaml==5.4.1
     #   -r requirements/../../../../packages/service-library/requirements/_base.in
     #   aiohttp-swagger
     #   openapi-spec-validator
-    #   trafaret-config
 semantic-version==2.8.5
     # via -r requirements/_base.in
 setproctitle==1.2.2
@@ -254,7 +260,7 @@ six==1.16.0
     #   openapi-spec-validator
     #   python-engineio
     #   python-socketio
-sqlalchemy==1.3.24
+sqlalchemy==1.4.31
     # via
     #   -c requirements/../../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -274,17 +280,10 @@ tenacity==8.0.1
     #   -r requirements/_base.in
 tqdm==4.61.1
     # via parfive
-trafaret==2.1.0
-    # via
-    #   -r requirements/_base.in
-    #   trafaret-config
-trafaret-config==2.0.2
-    # via -r requirements/_base.in
 typer==0.4.0
     # via -r requirements/../../../../packages/settings-library/requirements/_base.in
 typing-extensions==3.10.0.2
     # via
-    #   aiohttp
     #   aiohttp-jinja2
     #   pydantic
 ujson==4.0.2

@@ -101,7 +101,7 @@ class InvalidPipelineError(SchedulerError):
 
 
 class TaskSchedulingError(SchedulerError):
-    """A task cannot be scheduler"""
+    """A task cannot be scheduled"""
 
     def __init__(self, node_id: NodeID, msg: Optional[str] = None):
         super().__init__(msg=msg)
@@ -122,11 +122,26 @@ class InsuficientComputationalResourcesError(TaskSchedulingError):
         super().__init__(node_id, msg=msg)
 
 
-class ComputationalBackendNotConnectedError(SchedulerError):
-    """The dask client is not connected to the dask-scheduler"""
+class ComputationalSchedulerChangedError(PydanticErrorMixin, SchedulerError):
+    code = "computational_backend.scheduler_changed"
+    msg_template = "The dask scheduler ID changed from '{original_scheduler_id}' to '{current_scheduler_id}'"
 
-    def __init__(self, msg: Optional[str] = None):
-        super().__init__(msg=msg)
+
+class ComputationalBackendNotConnectedError(PydanticErrorMixin, SchedulerError):
+    code = "computational_backend.not_connected"
+    msg_template = "The dask computational backend is not connected"
+
+
+class ComputationalBackendTaskNotFoundError(PydanticErrorMixin, SchedulerError):
+    code = "computational_backend.task_not_found"
+    msg_template = (
+        "The dask computational backend does not know about the task '{job_id}'"
+    )
+
+
+class ComputationalBackendTaskResultsNotReadyError(PydanticErrorMixin, SchedulerError):
+    code = "computational_backend.task_result_not_ready"
+    msg_template = "The task result is not ready yet for job '{job_id}'"
 
 
 class ConfigurationError(DirectorException):

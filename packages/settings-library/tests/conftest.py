@@ -2,19 +2,15 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-import
 
-import os
 import sys
-import textwrap
-from collections import deque
-from contextlib import contextmanager
 from pathlib import Path
-from typing import Callable, ContextManager, Deque, Dict, Generator, Tuple, Type, Union
+from typing import Optional, Type
 
 import pytest
 import settings_library
-from _pytest.monkeypatch import MonkeyPatch
 from dotenv import dotenv_values
-from pydantic import Field
+from pydantic.fields import Field
+from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt
 from settings_library.postgres import PostgresSettings
@@ -23,6 +19,7 @@ pytest_plugins = [
     "pytest_simcore.cli_runner",
     "pytest_simcore.repository_paths",
     "pytest_simcore.pydantic_models",
+    "pytest_simcore.pytest_global_environs",
 ]
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
@@ -44,8 +41,8 @@ def project_slug_dir() -> Path:
 
 
 @pytest.fixture(scope="session")
-def mocks_folder(project_tests_dir: Path) -> Path:
-    dir_path = project_tests_dir / "mocks"
+def project_tests_data_folder(project_tests_dir: Path) -> Path:
+    dir_path = project_tests_dir / "data"
     assert dir_path.exists()
     return dir_path
 
@@ -58,10 +55,12 @@ def env_file():
 
 @pytest.fixture
 def mock_environment(
-    mocks_folder: Path, monkeypatch, env_file: str
-) -> Dict[str, Union[str, None]]:
-    env_file_path = mocks_folder / env_file
+    project_tests_data_folder: Path, monkeypatch, env_file: str
+) -> EnvVarsDict:
+    """mocks environment provided in the env_file"""
+    env_file_path = project_tests_data_folder / env_file
     assert env_file_path.exists()
+
     envs = dotenv_values(str(env_file_path))
 
     for name, value in envs.items():
@@ -71,82 +70,39 @@ def mock_environment(
 
 
 @pytest.fixture
-def settings_cls() -> Type[BaseCustomSettings]:
+def fake_settings_class() -> Type[BaseCustomSettings]:
     """Creates a fake Settings class
 
-    NOTE: Add mock_environment fixture before instanciating this class
+    NOTE: How to use this fixture? BaseCustomSettings captures env vars, therefore
+          make sure the environment is well defined(e.g. add always some monkeypatch based
+          fixture as 'mock_environment') before this fixture.
     """
+    # Some conventions:
+    # NOTE: all int defaults are 42, i.e. the "Answer to the Ultimate Question of Life, the Universe, and Everything"
+    # NOTE: suffixes are used to distinguis different options on the same field (e.g. _OPTIONAL, etc)
 
-    class MyModuleSettings(BaseCustomSettings):
-        """Settings for Module 1"""
+    class _ModuleSettings(BaseCustomSettings):
+        """Settings for a Module"""
 
-        MYMODULE_VALUE: int = Field(..., description="Some value for module 1")
+        MODULE_VALUE: int
+        MODULE_VALUE_DEFAULT: int = 42
 
-    class AnotherModuleSettings(BaseCustomSettings):
-        """Settings for Module 2"""
+    class _ApplicationSettings(BaseCustomSettings):
+        """The main app settings"""
 
-        MYMODULE2_SOME_OTHER_VALUE: int
-
-    class Settings(BaseCustomSettings):
-        """The App Settings"""
-
+        # Some flat field config
         APP_HOST: str
-        APP_PORT: PortInt = 3
+        APP_PORT: PortInt = 42
 
-        APP_POSTGRES: PostgresSettings
-        APP_MODULE_1: MyModuleSettings = Field(..., description="Some Module Example")
-        APP_MODULE_2: AnotherModuleSettings
+        # NOTE: by convention, an addon is disabled when APP_ADDON=None, so we make this
+        # entry nullable as well
+        APP_OPTIONAL_ADDON: Optional[_ModuleSettings] = Field(
+            auto_default_from_env=True
+        )
 
-    return Settings
+        # NOTE: example of a group that cannot be disabled (not nullable)
+        APP_REQUIRED_PLUGIN: Optional[PostgresSettings] = Field(
+            auto_default_from_env=True
+        )
 
-
-@pytest.fixture
-def mocked_settings_cls_env() -> str:
-    # reflects all expected env vars inside the above defined
-    # settings_cls fixture
-    return """
-        APP_HOST=localhost
-        APP_PORT=80
-        POSTGRES_HOST=localhost
-        POSTGRES_PORT=5432
-        POSTGRES_USER=foo
-        POSTGRES_PASSWORD=**********
-        POSTGRES_DB=foodb
-        POSTGRES_MINSIZE=1
-        POSTGRES_MAXSIZE=50
-        POSTGRES_CLIENT_NAME=None
-        MYMODULE_VALUE=10
-        MYMODULE2_SOME_OTHER_VALUE=33
-    """
-
-
-@pytest.fixture
-def mocked_environment(
-    monkeypatch: MonkeyPatch,
-) -> Callable[[str], ContextManager[None]]:
-    @contextmanager
-    def ctx_mngr(env_formatted_string: str) -> Generator[None, None, None]:
-        SAMPLE_ENV = textwrap.dedent(env_formatted_string).strip()
-        env_vars: Deque[Tuple[str, str]] = deque()
-        for line in SAMPLE_ENV.split("\n"):
-            key, value = line.split("=")
-            env_vars.append((key, value))
-
-        # ensure env_vars are not already defined
-        for key, value in env_vars:
-            assert os.environ.get(key, None) is None
-
-        with monkeypatch.context() as m:
-            for key, value in env_vars:
-                m.setenv(key, value)
-
-            for key, value in env_vars:
-                assert os.environ[key] == value
-
-            yield
-
-        # ensure env_vars are not longer present
-        for key, value in env_vars:
-            assert os.environ.get(key, None) is None
-
-    yield ctx_mngr
+    return _ApplicationSettings

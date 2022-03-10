@@ -3,16 +3,15 @@ from collections import defaultdict
 
 import aiohttp
 import aiohttp.web
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
 
 from ..login.decorators import login_required
-from .config import CONFIG_SECTION_NAME
+from .settings import get_plugin_settings
 
 
-async def query_prometheus(session, url, query):
+async def query_prometheus(session: aiohttp.ClientSession, url: URL, query: str):
     async with session.get(url.with_query(query=query)) as resp:
         result = await resp.json()
         return result
@@ -45,13 +44,9 @@ async def get_status(request: aiohttp.web.Request):
     session = get_client_session(request.app)
     user_id = request.get(RQT_USERID_KEY, -1)
 
-    config = request.app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    url = URL.build(
-        scheme="http",
-        host=config["prometheus_host"],
-        port=config["prometheus_port"],
-        path=f"/api/{config['prometheus_api_version']}/query",
-    )
+    prometheus_settings = get_plugin_settings(request.app)
+    url = URL(prometheus_settings.base_url)
+
     results = await asyncio.gather(
         get_cpu_usage(session, url, user_id),
         get_memory_usage(session, url, user_id),

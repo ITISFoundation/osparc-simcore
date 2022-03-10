@@ -1,7 +1,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
-from asyncio import AbstractEventLoop
 from pathlib import Path
 
 import pytest
@@ -41,9 +40,7 @@ def a_file(tmp_path, faker: Faker) -> Path:
     return file_path
 
 
-async def test_remove_directory(
-    loop: AbstractEventLoop, some_dir: Path, only_children: bool
-) -> None:
+async def test_remove_directory(some_dir: Path, only_children: bool) -> None:
     assert some_dir.exists() is True
     await remove_directory(
         path=some_dir, only_children=only_children, ignore_errors=True
@@ -54,9 +51,7 @@ async def test_remove_directory(
 @pytest.mark.skip(
     "Not worth fixing until pytest fixes this issue https://github.com/pytest-dev/pytest/issues/6809"
 )
-async def test_remove_fail_fails(
-    loop: AbstractEventLoop, a_file: Path, only_children: bool
-) -> None:
+async def test_remove_fail_fails(a_file: Path, only_children: bool) -> None:
     assert a_file.exists() is True
 
     with pytest.raises(NotADirectoryError) as excinfo:
@@ -65,9 +60,7 @@ async def test_remove_fail_fails(
     assert excinfo.value.args[0] == f"Provided path={a_file} must be a directory"
 
 
-async def test_remove_not_existing_directory(
-    loop: AbstractEventLoop, faker: Faker, only_children: bool
-) -> None:
+async def test_remove_not_existing_directory(faker: Faker, only_children: bool) -> None:
     missing_path = Path(faker.file_path())
     assert missing_path.exists() is False
     await remove_directory(
@@ -79,7 +72,7 @@ async def test_remove_not_existing_directory(
     "Not worth fixing until pytest fixes this issue https://github.com/pytest-dev/pytest/issues/6809"
 )
 async def test_remove_not_existing_directory_rasing_error(
-    loop: AbstractEventLoop, faker: Faker, only_children: bool
+    faker: Faker, only_children: bool
 ) -> None:
     missing_path = Path(faker.file_path())
     assert missing_path.exists() is False

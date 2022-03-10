@@ -3,28 +3,46 @@
     - config-file schema
     - settings
 """
-from typing import Dict
+from functools import cached_property
 
 from aiohttp import web
 from models_library.basic_types import PortInt, VersionTag
-from pydantic import BaseSettings, Field
+from settings_library.base import BaseCustomSettings
+from settings_library.utils_service import (
+    DEFAULT_FASTAPI_PORT,
+    MixinServiceSettings,
+    URLPart,
+)
 
-from .catalog_config import get_config
-
-
-class CatalogSettings(BaseSettings):
-    enabled: bool = True
-    host: str = "catalog"
-    port: PortInt = 8000
-    vtag: VersionTag = Field(
-        "v0", alias="version", description="Catalog service API's version tag"
-    )
-
-    class Config:
-        prefix = "CATALOG_"
+from ._constants import APP_SETTINGS_KEY
 
 
-def assert_valid_config(app: web.Application) -> Dict:
-    cfg = get_config(app)
-    _settings = CatalogSettings(**cfg)
-    return cfg
+class CatalogSettings(BaseCustomSettings, MixinServiceSettings):
+    CATALOG_HOST: str = "catalog"
+    CATALOG_PORT: PortInt = DEFAULT_FASTAPI_PORT
+    CATALOG_VTAG: VersionTag = "v0"
+
+    @cached_property
+    def api_base_url(self) -> str:
+        # http://catalog:8000/v0
+        return self._compose_url(
+            prefix="CATALOG",
+            port=URLPart.REQUIRED,
+            vtag=URLPart.REQUIRED,
+        )
+
+    @cached_property
+    def base_url(self) -> str:
+        # http://catalog:8000
+        return self._compose_url(
+            prefix="CATALOG",
+            port=URLPart.REQUIRED,
+            vtag=URLPart.EXCLUDE,
+        )
+
+
+def get_plugin_settings(app: web.Application) -> CatalogSettings:
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_CATALOG
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, CatalogSettings)  # nosec
+    return settings

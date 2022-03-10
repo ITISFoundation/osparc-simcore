@@ -12,7 +12,7 @@ from minio import Minio
 from servicelib.minio_utils import MinioRetryPolicyUponInitialization
 from yarl import URL
 
-from .helpers.utils_docker import get_ip, get_service_published_port
+from .helpers.utils_docker import get_localhost_ip, get_service_published_port
 
 
 @pytest.fixture(scope="module")
@@ -21,7 +21,9 @@ def storage_endpoint(docker_stack: Dict, testing_environ_vars: Dict) -> Iterable
     assert f"{prefix}_storage" in docker_stack["services"]
 
     default_port = testing_environ_vars["STORAGE_ENDPOINT"].split(":")[1]
-    endpoint = f"{get_ip()}:{get_service_published_port('storage', default_port)}"
+    endpoint = (
+        f"{get_localhost_ip()}:{get_service_published_port('storage', default_port)}"
+    )
 
     # nodeports takes its configuration from env variables
     old_environ = deepcopy(os.environ)

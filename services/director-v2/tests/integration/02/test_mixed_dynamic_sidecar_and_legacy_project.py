@@ -14,9 +14,9 @@ import pytest
 import sqlalchemy as sa
 from asgi_lifespan import LifespanManager
 from models_library.projects import ProjectAtDB
-from models_library.settings.rabbit import RabbitConfig
-from models_library.settings.redis import RedisConfig
-from pytest_simcore.helpers.utils_docker import get_ip
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
@@ -56,10 +56,10 @@ def minimal_configuration(
     dy_static_file_server_service: Dict,
     dy_static_file_server_dynamic_sidecar_service: Dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
-    redis_service: RedisConfig,
+    redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
-    rabbit_service: RabbitConfig,
+    rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     storage_service: URL,
     ensure_swarm_and_networks: None,
@@ -157,10 +157,12 @@ async def director_v2_client(
     monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
     monkeypatch.setenv("POSTGRES_DB", "mocked_db")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "false")
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+
     # patch host for dynamic-sidecar, not reachable via localhost
     # the dynamic-sidecar (running inside a container) will use
     # this address to reach the rabbit service
-    monkeypatch.setenv("RABBIT_HOST", f"{get_ip()}")
+    monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
 
     settings = AppSettings.create_from_envs()
 

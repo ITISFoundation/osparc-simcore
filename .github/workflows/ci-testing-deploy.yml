@@ -41,7 +41,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -49,7 +49,7 @@ jobs:
       fail-fast: false
     name: "[build] docker images"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         if: github.event_name == 'push'
         id: buildx
@@ -82,14 +82,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -99,7 +99,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -126,14 +126,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -143,7 +143,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -183,14 +183,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -200,7 +200,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -246,14 +246,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -263,7 +263,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -308,14 +308,14 @@ jobs:
         # KEEP 3.6 Development of this service is frozen
         python: [3.6]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -325,7 +325,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -365,14 +365,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -382,7 +382,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -426,14 +426,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -443,7 +443,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -485,14 +485,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -502,7 +502,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -542,14 +542,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -559,7 +559,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -601,14 +601,14 @@ jobs:
       matrix:
         node: [14]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -639,14 +639,14 @@ jobs:
       matrix:
         python: [3.8, 3.9]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -656,7 +656,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -683,14 +683,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -700,7 +700,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -741,14 +741,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -758,7 +758,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -798,14 +798,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -815,7 +815,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -855,14 +855,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -872,7 +872,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -912,14 +912,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -929,7 +929,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -969,14 +969,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -986,7 +986,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1026,14 +1026,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1043,7 +1043,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1083,14 +1083,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1100,7 +1100,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1140,14 +1140,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1157,7 +1157,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1197,14 +1197,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1214,7 +1214,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1254,14 +1254,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1271,7 +1271,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1311,14 +1311,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1328,7 +1328,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1368,14 +1368,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1385,7 +1385,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1425,14 +1425,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1442,7 +1442,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1482,14 +1482,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1499,7 +1499,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1539,14 +1539,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1556,7 +1556,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1596,14 +1596,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1613,7 +1613,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1653,14 +1653,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1670,7 +1670,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1711,7 +1711,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1724,7 +1724,7 @@ jobs:
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1734,7 +1734,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1784,7 +1784,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1797,7 +1797,7 @@ jobs:
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1807,7 +1807,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1857,7 +1857,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1870,7 +1870,7 @@ jobs:
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1880,7 +1880,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -1930,7 +1930,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -1943,7 +1943,7 @@ jobs:
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -1953,8 +1953,10 @@ jobs:
 
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
+      - name: setup rclone docker volume plugin
+        run: sudo ./ci/github/helpers/install_rclone.bash
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -2004,7 +2006,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -2017,7 +2019,7 @@ jobs:
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -2027,7 +2029,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -2077,7 +2079,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -2090,7 +2092,7 @@ jobs:
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -2100,7 +2102,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -2118,6 +2120,12 @@ jobs:
         run: ./ci/github/system-testing/public-api.bash install
       - name: test
         run: ./ci/github/system-testing/public-api.bash test
+      - name: upload failed tests logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ github.job }}_docker_logs
+          path: ./test_failures
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/public-api.bash clean_up
@@ -2131,7 +2139,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -2144,7 +2152,7 @@ jobs:
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -2154,7 +2162,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -2177,7 +2185,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ github.job }}_docker_logs
-          path: ./tests/swarm-deploy/test_failures
+          path: ./test_failures
       - name: cleanup
         if: always()
         run: ./ci/github/system-testing/swarm-deploy.bash clean_up
@@ -2192,7 +2200,7 @@ jobs:
         python: [3.8]
         node: [14]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -2205,7 +2213,7 @@ jobs:
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -2215,7 +2223,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - uses: actions/setup-node@v2.5.1
@@ -2277,7 +2285,7 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
@@ -2290,7 +2298,7 @@ jobs:
         run: |
           export TMP_DOCKER_REGISTRY=${GITHUB_REPOSITORY%/*}
           echo "DOCKER_REGISTRY=${TMP_DOCKER_REGISTRY,,}" >> $GITHUB_ENV
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
@@ -2300,7 +2308,7 @@ jobs:
       - name: setup docker-compose
         run: sudo ./ci/github/helpers/setup_docker_compose.bash ${{ matrix.docker_compose }} ${{ matrix.docker_compose_sha }}
       - name: setup python environment
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python }}
       - name: show system version
@@ -2358,7 +2366,7 @@ jobs:
     name: coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/download-artifact@v2
         name: download all artifacts
         with:
@@ -2424,14 +2432,14 @@ jobs:
       matrix:
         python: [3.8]
         os: [ubuntu-20.04]
-        docker_buildx: [v0.5.1]
+        docker_buildx: [v0.7.1]
         docker_compose: [1.29.1]
         include:
           - docker_compose: 1.29.1
             docker_compose_sha: 8097769d32e34314125847333593c8edb0dfc4a5b350e4839bef8c2fe8d09de7
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: setup docker buildx
         id: buildx
         uses: docker/setup-buildx-action@v1

@@ -164,6 +164,12 @@ qx.Class.define("osparc.utils.Services", {
       return null;
     },
 
+    isOwner: function(serviceData) {
+      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
+      orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
+      return osparc.component.permissions.Service.canAnyGroupWrite(serviceData["access_rights"], orgIDs);
+    },
+
     getOwnedServices: function(services, key) {
       const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
       orgIDs.push(osparc.auth.Data.getInstance().getGroupId());

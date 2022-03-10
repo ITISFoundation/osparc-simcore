@@ -1,28 +1,11 @@
-""" email's subsystem's configuration
+from aiohttp import web
+from settings_library.email import SMTPSettings
 
-    - config-file schema
-    - settings
-"""
-from typing import Dict, Optional
-
-from aiohttp.web import Application
-from models_library.basic_types import PortInt
-from pydantic import BaseSettings
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
-
-from .email_config import CONFIG_SECTION_NAME
+from ._constants import APP_SETTINGS_KEY
 
 
-class EmailSettings(BaseSettings):
-    sender: str = "OSPARC support <support@osparc.io>"
-    host: str
-    port: PortInt
-    tls: bool = False
-    username: Optional[str] = None
-    password: Optional[str] = None
-
-
-def assert_valid_config(app: Application) -> Dict:
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    _settings = EmailSettings(**cfg)
-    return cfg
+def get_plugin_settings(app: web.Application) -> SMTPSettings:
+    settings = app[APP_SETTINGS_KEY].WEBSERVER_EMAIL
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, SMTPSettings)  # nosec
+    return settings

@@ -12,7 +12,7 @@ bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.3.1
     # via pre-commit
-click==7.1.2
+click==8.0.3
     # via
     #   -c requirements/_base.txt
     #   black
@@ -62,6 +62,7 @@ toml==0.10.2
     #   pre-commit
 tomli==1.2.2
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_test.txt
     #   black
     #   pep517

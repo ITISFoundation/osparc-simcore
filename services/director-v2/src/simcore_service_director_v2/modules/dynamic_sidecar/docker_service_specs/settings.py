@@ -3,6 +3,7 @@ import logging
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, cast
 
+from models_library.boot_options import BootOption, EnvVarKey
 from models_library.service_settings_labels import (
     ComposeSpecLabel,
     SimcoreServiceLabels,
@@ -12,6 +13,7 @@ from models_library.service_settings_labels import (
 from models_library.services import ServiceKeyVersion
 
 from ....api.dependencies.director_v0 import DirectorV0Client
+from .._constants import CONTAINER_NAME
 from ..errors import DynamicSidecarError
 
 # Notes on below env var names:
@@ -25,6 +27,8 @@ MATCH_SERVICE_VERSION = "${SERVICE_VERSION}"
 MATCH_SIMCORE_REGISTRY = "${SIMCORE_REGISTRY}"
 MATCH_IMAGE_START = f"{MATCH_SIMCORE_REGISTRY}/"
 MATCH_IMAGE_END = f":{MATCH_SERVICE_VERSION}"
+
+BOOT_OPTION_PREFIX = "DY_BOOT_OPTION"
 
 log = logging.getLogger(__name__)
 
@@ -170,17 +174,23 @@ async def _extract_osparc_involved_service_labels(
 
     # initialize with existing labels
     # stores labels mapped by image_name service:tag
+    _default_key = _assemble_key(service_key=service_key, service_tag=service_tag)
     docker_image_name_by_services: Dict[str, SimcoreServiceLabels] = {
-        _assemble_key(service_key=service_key, service_tag=service_tag): service_labels
+        _default_key: service_labels
     }
+    # maps form image_name to compose_spec key
+    reverse_mapping: Dict[str, str] = {_default_key: CONTAINER_NAME}
+
+    def remap_to_compose_spec_key() -> Dict[str, str]:
+        # remaps from image_name as key to compose_spec key
+        return {reverse_mapping[k]: v for k, v in docker_image_name_by_services.items()}
+
     compose_spec: Optional[ComposeSpecLabel] = cast(
         ComposeSpecLabel, service_labels.compose_spec
     )
     if compose_spec is None:
-        return docker_image_name_by_services
 
-    # maps form image_name to compose_spec key
-    reverse_mapping: Dict[str, str] = {}
+        return remap_to_compose_spec_key()
 
     compose_spec_services = compose_spec.get("services", {})
     image = None
@@ -227,11 +237,7 @@ async def _extract_osparc_involved_service_labels(
         log.error(message)
         raise DynamicSidecarError(message)
 
-    # remaps from image_name as key to compose_spec key
-    compose_spec_mapped_labels = {
-        reverse_mapping[k]: v for k, v in docker_image_name_by_services.items()
-    }
-    return compose_spec_mapped_labels
+    return remap_to_compose_spec_key()
 
 
 def _add_compose_destination_container_to_settings_entries(
@@ -339,8 +345,47 @@ def _patch_target_service_into_env_vars(
     return settings
 
 
+def _get_boot_options(
+    service_labels: SimcoreServiceLabels,
+) -> Optional[Dict[EnvVarKey, BootOption]]:
+    as_dict = service_labels.dict()
+    boot_options_encoded = as_dict.get("io.simcore.boot-options", None)
+    if boot_options_encoded is None:
+        return None
+
+    boot_options = json.loads(boot_options_encoded)["boot-options"]
+    log.debug("got boot_options=%s", boot_options)
+    return {k: BootOption.parse_obj(v) for k, v in boot_options.items()}
+
+
+def _assemble_env_vars_for_boot_options(
+    boot_options: Dict[EnvVarKey, BootOption],
+    service_user_selection_boot_options: Dict[EnvVarKey, str],
+) -> SimcoreServiceSettingsLabel:
+
+    env_vars: Deque[str] = deque()
+    for env_var_key, boot_option in boot_options.items():
+        # fetch value selected by the user or use default if not present
+        value = service_user_selection_boot_options.get(
+            env_var_key, boot_option.default
+        )
+        env_var_name = f"{BOOT_OPTION_PREFIX}_{env_var_key}".upper()
+        env_vars.append(f"{env_var_name}={value}")
+
+    return SimcoreServiceSettingsLabel(
+        __root__=[
+            SimcoreServiceSettingLabelEntry(
+                name="env", type="string", value=list(env_vars)
+            )
+        ]
+    )
+
+
 async def merge_settings_before_use(
-    director_v0_client: DirectorV0Client, service_key: str, service_tag: str
+    director_v0_client: DirectorV0Client,
+    service_key: str,
+    service_tag: str,
+    service_user_selection_boot_options: Dict[EnvVarKey, str],
 ) -> SimcoreServiceSettingsLabel:
 
     simcore_service_labels: SimcoreServiceLabels = (
@@ -378,6 +423,21 @@ async def merge_settings_before_use(
                 settings=service_settings, destination_container=compose_spec_key
             )
         )
+
+        # inject boot options as env vars
+        labels_boot_options = _get_boot_options(service_labels)
+        if labels_boot_options:
+            # create a new setting from SimcoreServiceSettingsLabel as env var to pass to target container
+            boot_options_settings_env_vars = _assemble_env_vars_for_boot_options(
+                labels_boot_options, service_user_selection_boot_options
+            )
+            settings.extend(
+                # inject compose spec key, used to target container specific services
+                _add_compose_destination_container_to_settings_entries(
+                    settings=boot_options_settings_env_vars,
+                    destination_container=compose_spec_key,
+                )
+            )
 
     settings = _merge_resources_in_settings(settings)
     settings = _patch_target_service_into_env_vars(settings)

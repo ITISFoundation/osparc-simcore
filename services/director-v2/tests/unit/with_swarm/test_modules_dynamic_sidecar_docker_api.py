@@ -34,7 +34,6 @@ MAX_INT64 = 9223372036854775807
 
 @pytest.fixture
 async def async_docker_client(
-    loop: asyncio.AbstractEventLoop,
     docker_swarm: None,
 ) -> AsyncIterator[aiodocker.docker.Docker]:
     async with aiodocker.Docker() as client:
@@ -50,6 +49,7 @@ def dynamic_sidecar_settings(
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
     return DynamicSidecarSettings.create_from_envs()
 
 
@@ -285,6 +285,7 @@ def test_valid_network_names(
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", simcore_services_network_name)
     monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
     monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
     dynamic_sidecar_settings = DynamicSidecarSettings.create_from_envs()
     assert dynamic_sidecar_settings
 
@@ -316,9 +317,9 @@ async def test_get_swarm_network_missing_network(
 ) -> None:
     with pytest.raises(DynamicSidecarError) as excinfo:
         await docker_api.get_swarm_network(dynamic_sidecar_settings)
-    assert (
-        str(excinfo.value)
-        == "Swarm network name is not configured, found following networks: []"
+    assert str(excinfo.value) == (
+        "Swarm network name (searching for '*test_network_name*') is not configured."
+        "Found following networks: []"
     )
 
 

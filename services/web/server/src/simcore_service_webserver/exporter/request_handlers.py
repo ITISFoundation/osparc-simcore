@@ -4,17 +4,17 @@ from tempfile import TemporaryDirectory
 from aiohttp import web
 from aiohttp.web_request import FileField
 from models_library.projects_state import ProjectStatus
-from simcore_service_webserver.projects.project_lock import lock_project
-from simcore_service_webserver.users_api import get_user_name
 
 from .._constants import RQ_PRODUCT_KEY
 from ..login.decorators import RQT_USERID_KEY, login_required
+from ..projects.project_lock import lock_project
 from ..projects.projects_api import retrieve_and_notify_project_locked_state
 from ..security_decorators import permission_required
-from .config import get_settings
+from ..users_api import get_user_name
 from .exceptions import ExporterException
 from .export_import import study_duplicate, study_export, study_import
 from .formatters import FormatterV1
+from .settings import get_plugin_settings
 from .utils import CleanupFileResponse, get_empty_tmp_dir, remove_dir
 
 ONE_GB: int = 1024 * 1024 * 1024
@@ -87,8 +87,12 @@ async def export_project(request: web.Request):
 async def import_project(request: web.Request):
     # bumping this requests's max size
     # pylint: disable=protected-access
-    exporter_settings = get_settings(request.app)
-    request._client_max_size = exporter_settings.max_upload_file_size * ONE_GB
+    exporter_settings = get_plugin_settings(request.app)
+    assert (  # nosec
+        exporter_settings is not None
+    ), "this call was not expected with a disabled plugin"  # nosec
+
+    request._client_max_size = exporter_settings.EXPORTER_MAX_UPLOAD_FILE_SIZE * ONE_GB
 
     post_contents = await request.post()
     log.info("POST body %s", post_contents)

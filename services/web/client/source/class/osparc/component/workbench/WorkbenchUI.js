@@ -942,12 +942,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__desktop.getChildren().includes(nodeUI)) {
         this.__desktop.remove(nodeUI);
       }
-      if ("shadows" in nodeUI) {
-        nodeUI.shadows.forEach(shadow => {
-          osparc.component.workbench.SvgWidget.removeNodeUI(shadow);
-        });
-        delete nodeUI["shadows"];
-      }
+      nodeUI.removeShadows();
       let index = this.__nodesUI.indexOf(nodeUI);
       if (index > -1) {
         this.__nodesUI.splice(index, 1);
@@ -1000,7 +995,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     _loadModel: async function(model) {
       this._clearAll();
-      this.resetSelection();
       this._currentModel = model;
       if (model) {
         const isContainer = model.isContainer();
@@ -1027,12 +1021,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }
 
         let tries = 0;
-        const maxTries = 20;
+        const maxTries = 40;
         const sleepFor = 100;
         const allNodesVisible = nodeUIss => nodeUIss.every(nodeUI => nodeUI.getCurrentBounds() !== null);
-        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
         while (!allNodesVisible(nodeUIs) && tries < maxTries) {
-          await sleep(100);
+          await osparc.utils.Utils.sleep(sleepFor);
           tries++;
         }
         console.log("nodes visible", nodeUIs.length, tries*sleepFor);
@@ -1405,10 +1398,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         };
         this.addListenerOnce("dragover", startDragging, this);
 
-        this.addListener("mousewheel", this.__mouseWheel, this);
         this.addListener("mousedown", this.__mouseDown, this);
         this.addListener("mousemove", this.__mouseMove, this);
         this.addListener("mouseup", this.__mouseUp, this);
+        this._listenToMouseWheel();
       });
 
       this.addListener("keypress", keyEvent => {
@@ -1445,6 +1438,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__workbenchLayout.addListener("resize", () => this.__updateHint(), this);
 
       this.__svgLayer.addListener("mousedown", this.__mouseDownOnSVG, this);
+    },
+
+    _listenToMouseWheel: function() {
+      this.addListener("mousewheel", this.__mouseWheel, this);
     },
 
     __allowDragFile: function(e) {
@@ -1586,9 +1583,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           if (fileList.length) {
             const service = qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker());
             const nodeUI = this.__addNode(service, pos);
-            const filePicker = new osparc.file.FilePicker(nodeUI.getNode());
-            filePicker.buildLayout();
+            const filePicker = new osparc.file.FilePicker(nodeUI.getNode(), "workbench");
             filePicker.uploadPendingFiles(fileList);
+            filePicker.addListener("fileUploaded", () => this.fireDataEvent("nodeSelected", nodeUI.getNodeId()), this);
           }
         } else {
           osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Only one file is accepted"), "ERROR");
@@ -1605,8 +1602,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const service = qx.data.marshal.Json.createModel(osparc.utils.Services.getFilePicker());
         const nodeUI = this.__addNode(service, pos);
         const node = nodeUI.getNode();
-        const filePicker = new osparc.file.FilePicker(node);
-        filePicker.buildLayout();
+        // const filePicker = new osparc.file.FilePicker(node, "workbench");
+        // filePicker.buildLayout();
         osparc.file.FilePicker.setOutputValueFromStore(node, data.getLocation(), data.getDatasetId(), data.getFileId(), data.getLabel());
         this.__isDraggingLink = null;
       }

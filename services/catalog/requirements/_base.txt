@@ -12,8 +12,7 @@ aiofiles==0.5.0
     # via
     #   -c requirements/../../../packages/service-library/requirements/./_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-    #   fastapi
-aiopg==1.2.1
+aiopg==1.3.3
     # via -r requirements/_base.in
 alembic==1.7.4
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
@@ -21,7 +20,9 @@ anyio==3.5.0
     # via
     #   httpcore
     #   starlette
-async-timeout==3.0.1
+asgiref==3.4.1
+    # via uvicorn
+async-timeout==4.0.2
     # via aiopg
 certifi==2020.12.5
     # via
@@ -32,7 +33,7 @@ chardet==3.0.4
     # via requests
 charset-normalizer==2.0.10
     # via httpx
-click==7.1.2
+click==8.0.3
     # via
     #   typer
     #   uvicorn
@@ -49,13 +50,15 @@ fastapi==0.71.0
     #   fastapi-contrib
 fastapi-contrib==0.2.11
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+greenlet==1.1.2
+    # via sqlalchemy
 h11==0.12.0
     # via
     #   httpcore
     #   uvicorn
 httpcore==0.14.4
     # via httpx
-httptools==0.1.1
+httptools==0.2.0
     # via uvicorn
 httpx==0.21.3
     # via -r requirements/_base.in
@@ -64,7 +67,6 @@ idna==2.10
     #   -c requirements/../../../packages/service-library/requirements/././constraints.txt
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../packages/models-library/requirements/_base.in
-    #   -r requirements/../../../packages/postgres-database/requirements/_base.in
     #   anyio
     #   email-validator
     #   requests
@@ -114,7 +116,7 @@ psycopg2-binary==2.8.6
     # via
     #   aiopg
     #   sqlalchemy
-pydantic==1.8.2
+pydantic==1.9.0
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -169,7 +171,7 @@ sniffio==1.2.0
     #   anyio
     #   httpcore
     #   httpx
-sqlalchemy==1.3.23
+sqlalchemy==1.4.31
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
@@ -210,20 +212,13 @@ urllib3==1.26.7
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-uvicorn==0.13.4
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/./../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   fastapi
+uvicorn==0.15.0
+    # via fastapi
 uvloop==0.14.0
     # via uvicorn
 watchgod==0.6
     # via uvicorn
-websockets==8.1
+websockets==10.1
     # via uvicorn
 yarl==1.6.3
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in

@@ -8,7 +8,7 @@ from models_library.services import SERVICE_KEY_RE
 from ..models.domains.comp_tasks import CompTaskAtDB
 from ..modules.db.tables import NodeClass
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 _COMPLETED_STATES = (RunningState.ABORTED, RunningState.FAILED, RunningState.SUCCESS)
 _RUNNING_STATES = (RunningState.STARTED, RunningState.RETRY)
@@ -88,13 +88,8 @@ def to_node_class(service_key: str) -> NodeClass:
 
 
 def is_pipeline_running(pipeline_state: RunningState) -> bool:
-    return pipeline_state in [
-        RunningState.PUBLISHED,
-        RunningState.PENDING,
-        RunningState.STARTED,
-        RunningState.RETRY,
-    ]
+    return pipeline_state.is_running()
 
 
 def is_pipeline_stopped(pipeline_state: RunningState) -> bool:
-    return not is_pipeline_running(pipeline_state)
+    return not pipeline_state.is_running()

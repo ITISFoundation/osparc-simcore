@@ -19,7 +19,7 @@ from yarl import URL
     [
         ("http://127.0.0.1:9081/", "osparc/boot.js"),
         ("http://127.0.0.1:9081/s4l/index.html", "Sim4Life"),
-        ("http://127.0.0.1:9081/tis/index.html", "TI Treatment Planning"),
+        ("http://127.0.0.1:9081/tis/index.html", "TI Planning"),
     ],
 )
 def test_product_frontend_app_served(
@@ -27,7 +27,6 @@ def test_product_frontend_app_served(
     traefik_service: URL,
     test_url: str,
     expected_in_content: str,
-    loop,
 ):
     # NOTE: it takes a bit of time until traefik sets up the correct proxy and
     # the webserver takes time to start

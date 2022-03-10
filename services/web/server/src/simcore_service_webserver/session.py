@@ -25,9 +25,9 @@ from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from cryptography import fernet
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from .session_settings import assert_valid_config
+from .session_settings import SessionSettings, get_plugin_settings
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def generate_key():
@@ -37,28 +37,19 @@ def generate_key():
     return secret_key
 
 
-@app_module_setup(__name__, ModuleCategory.ADDON, logger=logger)
+@app_module_setup(
+    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_SESSION", logger=logger
+)
 def setup_session(app: web.Application):
     """
     Inits and registers a session middleware in aiohttp.web.Application
     """
-    # ----------------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    cfg = assert_valid_config(app)
-    # ---------------------------------------------
-
-    # secret key needed by EncryptedCookieStorage: is *bytes* key with length of *32*
-    secret_key_bytes = cfg["secret_key"].encode("utf-8")
-    if len(secret_key_bytes) == 0:
-        raise ValueError("Empty %s.secret_key in config. Expected at least length 32")
-
-    while len(secret_key_bytes) < 32:
-        secret_key_bytes += secret_key_bytes
+    settings: SessionSettings = get_plugin_settings(app)
 
     # EncryptedCookieStorage urlsafe_b64decode inside if passes bytes
     storage = EncryptedCookieStorage(
-        secret_key=secret_key_bytes[:32], cookie_name="osparc.WEBAPI_SESSION"
+        secret_key=settings.SESSION_SECRET_KEY.get_secret_value(),
+        cookie_name="osparc.WEBAPI_SESSION",
     )
 
     aiohttp_session.setup(app, storage)

@@ -21,8 +21,9 @@ qx.Class.define("osparc.servicecard.Large", {
 
   /**
     * @param serviceData {Object} Serialized Service Object
+    * @param openOptions {Boolean} open edit options in new window or fire event
     */
-  construct: function(serviceData) {
+  construct: function(serviceData, openOptions = true) {
     this.base(arguments);
 
     this.set({
@@ -33,6 +34,10 @@ qx.Class.define("osparc.servicecard.Large", {
 
     this.setService(serviceData);
 
+    if (openOptions !== undefined) {
+      this.setOpenOptions(openOptions);
+    }
+
     this.addListenerOnce("appear", () => {
       this.__rebuildLayout();
     }, this);
@@ -42,6 +47,9 @@ qx.Class.define("osparc.servicecard.Large", {
   },
 
   events: {
+    "openAccessRights": "qx.event.type.Event",
+    "openClassifiers": "qx.event.type.Event",
+    "openQuality": "qx.event.type.Event",
     "updateService": "qx.event.type.Data"
   },
 
@@ -51,6 +59,12 @@ qx.Class.define("osparc.servicecard.Large", {
       init: null,
       nullable: false,
       apply: "__rebuildLayout"
+    },
+
+    openOptions: {
+      check: "Boolean",
+      init: true,
+      nullable: false
     }
   },
 
@@ -63,9 +77,7 @@ qx.Class.define("osparc.servicecard.Large", {
 
   members: {
     __isOwner: function() {
-      const orgIDs = osparc.auth.Data.getInstance().getOrgIds();
-      orgIDs.push(osparc.auth.Data.getInstance().getGroupId());
-      return osparc.component.permissions.Service.canAnyGroupWrite(this.getService()["access_rights"], orgIDs);
+      return osparc.utils.Services.isOwner(this.getService());
     },
 
     __rebuildLayout: function() {
@@ -86,6 +98,9 @@ qx.Class.define("osparc.servicecard.Large", {
       thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
       const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
       const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
+      thumbnailLayout.getLayout().set({
+        alignX: "center"
+      });
 
       const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
         alignX: "center"
@@ -97,8 +112,9 @@ qx.Class.define("osparc.servicecard.Large", {
       this._add(hBox);
 
       const description = this.__createDescription();
-      const descriptionLayout = this.__createViewWithEdit(description, this.__openDescriptionEditor);
-      this._add(descriptionLayout);
+      const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
+      description.addAt(editInTitle, 0);
+      this._add(description);
 
       const rawMetadata = this.__createRawMetadata();
       const more = new osparc.desktop.PanelView(this.tr("raw metadata"), rawMetadata).set({
@@ -115,14 +131,10 @@ qx.Class.define("osparc.servicecard.Large", {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignY: "middle"
       }));
-      layout.add(view, {
-        flex: 1
-      });
+      layout.add(view);
       if (this.__isOwner()) {
         const editBtn = osparc.utils.Utils.getEditButton();
-        editBtn.addListener("execute", () => {
-          cb.call(this);
-        }, this);
+        editBtn.addListener("execute", () => cb.call(this), this);
         layout.add(editBtn);
       }
 
@@ -154,7 +166,7 @@ qx.Class.define("osparc.servicecard.Large", {
         view: this.__createAccessRights(),
         action: {
           button: osparc.utils.Utils.getViewButton(),
-          callback: this.__openAccessRights,
+          callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
           ctx: this
         }
       }];
@@ -165,7 +177,7 @@ qx.Class.define("osparc.servicecard.Large", {
           view: this.__createClassifiers(),
           action: {
             button: osparc.utils.Utils.getViewButton(),
-            callback: this.__openClassifiers,
+            callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
             ctx: this
           }
         });
@@ -177,7 +189,7 @@ qx.Class.define("osparc.servicecard.Large", {
           view: this.__createQuality(),
           action: {
             button: osparc.utils.Utils.getViewButton(),
-            callback: this.__openQuality,
+            callback: this.isOpenOptions() ? this.__openQuality : "openQuality",
             ctx: this
           }
         });
@@ -305,21 +317,16 @@ qx.Class.define("osparc.servicecard.Large", {
 
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
-      const thubmnailEditor = new osparc.component.widget.Renamer(this.getService()["thumbnail"], null, title);
-      thubmnailEditor.addListener("labelChanged", e => {
-        thubmnailEditor.close();
-        const dirty = e.getData()["newLabel"];
-        const clean = osparc.wrapper.DOMPurify.getInstance().sanitize(dirty);
-        if ((dirty && dirty !== clean) || (clean !== "" && !osparc.utils.Utils.isValidHttpUrl(clean))) {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Error checking thumbnail link"), "WARNING");
-        } else {
-          this.__updateService({
-            "thumbnail": clean
-          });
-        }
+      const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(this.getStudy().getThumbnail());
+      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, 300, 120);
+      thumbnailEditor.addListener("updateThumbnail", e => {
+        win.close();
+        const validUrl = e.getData();
+        this.__updateService({
+          "thumbnail": validUrl
+        });
       }, this);
-      thubmnailEditor.center();
-      thubmnailEditor.open();
+      thumbnailEditor.addListener("cancel", () => win.close());
     },
 
     __openDescriptionEditor: function() {

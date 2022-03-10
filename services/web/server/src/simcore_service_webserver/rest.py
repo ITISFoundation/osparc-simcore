@@ -18,10 +18,9 @@ from servicelib.aiohttp.rest_middlewares import (
 )
 
 from . import rest_routes
-from ._constants import APP_OPENAPI_SPECS_KEY
-from ._meta import api_version_prefix
-from .diagnostics_settings import get_diagnostics_config
-from .rest_settings import assert_valid_config
+from ._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
+from ._meta import API_VTAG, api_version_prefix
+from .rest_settings import RestSettings, get_plugin_settings
 from .rest_utils import get_openapi_specs_path, load_openapi_specs
 
 log = logging.getLogger(__name__)
@@ -31,17 +30,13 @@ log = logging.getLogger(__name__)
     __name__,
     ModuleCategory.ADDON,
     depends=["simcore_service_webserver.security"],
+    settings_name="WEBSERVER_REST",
     logger=log,
 )
-def setup_rest(app: web.Application, *, swagger_doc_enabled: bool = True):
-    # ----------------------------------------------
-    # TODO: temporary, just to check compatibility between
-    # trafaret and pydantic schemas
-    cfg = assert_valid_config(app)
-    # ---------------------------------------------
+def setup_rest(app: web.Application):
+    settings: RestSettings = get_plugin_settings(app)
 
-    api_version_dir = cfg["version"]
-    spec_path = get_openapi_specs_path(api_version_dir)
+    spec_path = get_openapi_specs_path(api_version_dir=API_VTAG)
 
     # validated openapi specs
     app[APP_OPENAPI_SPECS_KEY] = specs = load_openapi_specs(spec_path)
@@ -66,7 +61,7 @@ def setup_rest(app: web.Application, *, swagger_doc_enabled: bool = True):
 
     # middlewares
     # NOTE: using safe get here since some tests use incomplete configs
-    is_diagnostics_enabled = get_diagnostics_config(app).get("enabled", False)
+    is_diagnostics_enabled = app[APP_SETTINGS_KEY].WEBSERVER_DIAGNOSTICS
     app.middlewares.extend(
         [
             error_middleware_factory(
@@ -82,7 +77,7 @@ def setup_rest(app: web.Application, *, swagger_doc_enabled: bool = True):
     #  - NOTE: avoid /api/* since traeffik uses for it's own API
     #
     log.debug("OAS loaded from %s ", spec_path)
-    if swagger_doc_enabled:
+    if settings.REST_SWAGGER_API_DOC_ENABLED:
         setup_swagger(
             app,
             swagger_url="/dev/doc",

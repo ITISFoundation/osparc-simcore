@@ -30,10 +30,12 @@ from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB
 from simcore_service_director_v2.models.schemas.constants import UserID
+from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.utils.dask import (
     _LOGS_FILE_NAME,
     clean_task_output_and_log_files_if_invalid,
     compute_input_data,
+    from_node_reqs_to_dask_resources,
     generate_dask_job_id,
     parse_dask_job_id,
     parse_output_data,
@@ -222,6 +224,7 @@ def app_with_db(
     postgres_host_config: Dict[str, str],
 ):
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
 
 
 async def test_compute_input_data(
@@ -333,3 +336,19 @@ async def test_clean_task_output_and_log_files_if_invalid(
         mocked_node_ports_filemanager_fcts["delete_file"].assert_has_calls(
             expected_calls
         )
+
+
+@pytest.mark.parametrize(
+    "req_example", NodeRequirements.Config.schema_extra["examples"]
+)
+def test_node_requirements_correctly_convert_to_dask_resources(
+    req_example: Dict[str, Any]
+):
+    node_reqs = NodeRequirements(**req_example)
+    assert node_reqs
+    dask_resources = from_node_reqs_to_dask_resources(node_reqs)
+    # all the dask resources shall be of type: RESOURCE_NAME: VALUE
+    for resource_key, resource_value in dask_resources.items():
+        assert isinstance(resource_key, str)
+        assert isinstance(resource_value, (int, float, str, bool))
+        assert resource_value is not None

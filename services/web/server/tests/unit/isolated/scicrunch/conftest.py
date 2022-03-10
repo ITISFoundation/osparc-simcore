@@ -4,9 +4,9 @@
 
 
 import pytest
-from simcore_service_webserver.scicrunch.submodule_setup import SciCrunchSettings
+from simcore_service_webserver.scicrunch.settings import SciCrunchSettings
 
 
 @pytest.fixture
-async def settings(loop) -> SciCrunchSettings:
+async def settings() -> SciCrunchSettings:
     return SciCrunchSettings(SCICRUNCH_API_KEY="fake-secret-key")

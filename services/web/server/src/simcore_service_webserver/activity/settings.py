@@ -1,29 +1,13 @@
-""" Activity manager configuration
-    - config-file schema
-    - prometheus endpoint information
-"""
-from typing import Dict
+from typing import Optional
 
-from aiohttp.web import Application
-from models_library.basic_types import PortInt, VersionTag
-from pydantic import BaseSettings
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
+from aiohttp import web
+from settings_library.prometheus import PrometheusSettings
 
-from .config import CONFIG_SECTION_NAME
+from .._constants import APP_SETTINGS_KEY
 
 
-class ActivitySettings(BaseSettings):
-    enabled: bool = True
-    prometheus_host: str = "prometheus"
-    prometheus_port: PortInt = 9090
-    prometheus_api_version: VersionTag = "v1"
-
-    class Config:
-        case_sensitive = False
-        env_prefix = "WEBSERVER_"
-
-
-def assert_valid_config(app: Application) -> Dict:
-    cfg = app[APP_CONFIG_KEY][CONFIG_SECTION_NAME]
-    _settings = ActivitySettings(**cfg)
-    return cfg
+def get_plugin_settings(app: web.Application) -> PrometheusSettings:
+    settings: Optional[PrometheusSettings] = app[APP_SETTINGS_KEY].WEBSERVER_ACTIVITY
+    assert settings, "setup_settings not called?"  # nosec
+    assert isinstance(settings, PrometheusSettings)  # nosec
+    return settings

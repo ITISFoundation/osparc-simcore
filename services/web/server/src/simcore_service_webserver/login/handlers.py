@@ -2,17 +2,14 @@ import logging
 from typing import Dict
 
 from aiohttp import web
-from yarl import URL
-
 from servicelib import observer
 from servicelib.aiohttp.rest_utils import extract_and_validate
-from simcore_service_webserver.utils_rate_limiting import global_rate_limit_route
+from yarl import URL
 
 from ..db_models import ConfirmationAction, UserRole, UserStatus
 from ..groups_api import auto_add_user_to_groups
 from ..security_api import check_password, encrypt_password, forget, remember
-from .cfg import APP_LOGIN_CONFIG, cfg, get_storage
-from .config import get_login_config
+from ..utils_rate_limiting import global_rate_limit_route
 from .confirmation import (
     is_confirmation_allowed,
     make_confirmation_link,
@@ -20,32 +17,31 @@ from .confirmation import (
 )
 from .decorators import RQT_USERID_KEY, login_required
 from .registration import check_invitation, check_registration
-from .utils import (
-    common_themed,
-    flash_response,
-    get_client_ip,
-    render_and_send_mail,
-    themed,
+from .settings import (
+    LoginOptions,
+    LoginSettings,
+    get_plugin_options,
+    get_plugin_settings,
 )
-
-# FIXME: do not use cfg singleton. use instead cfg = request.app[APP_LOGIN_CONFIG]
+from .storage import AsyncpgStorage, get_plugin_storage
+from .utils import flash_response, get_client_ip, render_and_send_mail, themed
 
 log = logging.getLogger(__name__)
 
 
-def to_names(enum_cls, names):
-    """ ensures names are in enum be retrieving each of them """
+def _to_names(enum_cls, names):
+    """ensures names are in enum be retrieving each of them"""
     # FIXME: with asyncpg need to user NAMES
     return [getattr(enum_cls, att).name for att in names.split()]
 
 
-CONFIRMATION_PENDING, ACTIVE, BANNED = to_names(
+CONFIRMATION_PENDING, ACTIVE, BANNED = _to_names(
     UserStatus, "CONFIRMATION_PENDING ACTIVE BANNED"
 )
 
-ANONYMOUS, GUEST, USER, TESTER = to_names(UserRole, "ANONYMOUS GUEST USER TESTER")
+ANONYMOUS, GUEST, USER, TESTER = _to_names(UserRole, "ANONYMOUS GUEST USER TESTER")
 
-REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = to_names(
+REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = _to_names(
     ConfirmationAction, "REGISTRATION RESET_PASSWORD CHANGE_EMAIL"
 )
 
@@ -53,9 +49,9 @@ REGISTRATION, RESET_PASSWORD, CHANGE_EMAIL = to_names(
 async def register(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
-    # see https://aiohttp.readthedocs.io/en/stable/web_advanced.html#data-sharing-aka-no-singletons-please
-    app_cfg = get_login_config(request.app)  # TODO: replace cfg by app_cfg
-    db = get_storage(request.app)
+    settings: LoginSettings = get_plugin_settings(request.app)
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
 
     email = body.email
     username = email.split("@")[
@@ -64,20 +60,22 @@ async def register(request: web.Request):
     password = body.password
     confirm = body.confirm if hasattr(body, "confirm") else None
 
-    if app_cfg.get("registration_invitation_required"):
+    if settings.LOGIN_REGISTRATION_INVITATION_REQUIRED:
         invitation = body.invitation if hasattr(body, "invitation") else None
-        await check_invitation(invitation, db)
+        await check_invitation(invitation, db, cfg)
 
-    await check_registration(email, password, confirm, db)
+    await check_registration(email, password, confirm, db, cfg)
 
     user: Dict = await db.create_user(
         {
             "name": username,
             "email": email,
             "password_hash": encrypt_password(password),
-            "status": CONFIRMATION_PENDING
-            if bool(cfg.REGISTRATION_CONFIRMATION_REQUIRED)
-            else ACTIVE,
+            "status": (
+                CONFIRMATION_PENDING
+                if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED
+                else ACTIVE
+            ),
             "role": USER,
             "created_ip": get_client_ip(request),  # FIXME: does not get right IP!
         }
@@ -85,7 +83,7 @@ async def register(request: web.Request):
 
     await auto_add_user_to_groups(request.app, user["id"])
 
-    if not bool(cfg.REGISTRATION_CONFIRMATION_REQUIRED):
+    if not settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
         # user is logged in
         identity = body.email
         response = flash_response(cfg.MSG_LOGGED_IN, "INFO")
@@ -93,16 +91,13 @@ async def register(request: web.Request):
         return response
 
     confirmation_ = await db.create_confirmation(user, REGISTRATION)
-    link = await make_confirmation_link(request, confirmation_)
+    link = make_confirmation_link(request, confirmation_)
     try:
         await render_and_send_mail(
             request,
             email,
-            themed("registration_email.html"),
-            {
-                "auth": {
-                    "cfg": cfg,
-                },
+            themed(cfg.THEME, "registration_email.html"),
+            context={
                 "host": request.host,
                 "link": link,
                 "name": email.split("@")[0],
@@ -125,7 +120,9 @@ async def register(request: web.Request):
 async def login(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
-    db = get_storage(request.app)
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
+
     email = body.email
     password = body.password
 
@@ -163,6 +160,8 @@ async def login(request: web.Request):
 
 @login_required
 async def logout(request: web.Request) -> web.Response:
+    cfg: LoginOptions = get_plugin_options(request.app)
+
     response = flash_response(cfg.MSG_LOGGED_OUT, "INFO")
     user_id = request.get(RQT_USERID_KEY, -1)
     client_session_id = None
@@ -190,7 +189,9 @@ async def reset_password(request: web.Request):
     """
     _, _, body = await extract_and_validate(request)
 
-    db = get_storage(request.app)
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
+
     email = body.email
 
     user = await db.get_user({"email": email})
@@ -213,7 +214,7 @@ async def reset_password(request: web.Request):
         assert user["status"] == ACTIVE  # nosec
         assert user["email"] == email  # nosec
 
-        if not await is_confirmation_allowed(user, action=RESET_PASSWORD):
+        if not await is_confirmation_allowed(cfg, db, user, action=RESET_PASSWORD):
             raise web.HTTPUnauthorized(
                 reason=cfg.MSG_OFTEN_RESET_PASSWORD, content_type="application/json"
             )  # 401
@@ -223,11 +224,8 @@ async def reset_password(request: web.Request):
             await render_and_send_mail(
                 request,
                 email,
-                common_themed("reset_password_email_failed.html"),
-                {
-                    "auth": {
-                        "cfg": cfg,
-                    },
+                themed(cfg.COMMON_THEME, "reset_password_email_failed.html"),
+                context={
                     "host": request.host,
                     "reason": err.reason,
                 },
@@ -237,17 +235,14 @@ async def reset_password(request: web.Request):
             raise web.HTTPServiceUnavailable(reason=cfg.MSG_CANT_SEND_MAIL) from err
     else:
         confirmation = await db.create_confirmation(user, action=RESET_PASSWORD)
-        link = await make_confirmation_link(request, confirmation)
+        link = make_confirmation_link(request, confirmation)
         try:
             # primary reset email with a URL and the normal instructions.
             await render_and_send_mail(
                 request,
                 email,
-                common_themed("reset_password_email.html"),
-                {
-                    "auth": {
-                        "cfg": cfg,
-                    },
+                themed(cfg.COMMON_THEME, "reset_password_email.html"),
+                context={
                     "host": request.host,
                     "link": link,
                 },
@@ -265,7 +260,9 @@ async def reset_password(request: web.Request):
 async def change_email(request: web.Request):
     _, _, body = await extract_and_validate(request)
 
-    db = get_storage(request.app)
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
+
     email = body.email
 
     user = await db.get_user({"id": request[RQT_USERID_KEY]})
@@ -285,16 +282,13 @@ async def change_email(request: web.Request):
 
     # create new confirmation to ensure email is actually valid
     confirmation = await db.create_confirmation(user, CHANGE_EMAIL, email)
-    link = await make_confirmation_link(request, confirmation)
+    link = make_confirmation_link(request, confirmation)
     try:
         await render_and_send_mail(
             request,
             email,
-            common_themed("change_email_email.html"),
-            {
-                "auth": {
-                    "cfg": cfg,
-                },
+            themed(cfg.COMMON_THEME, "change_email_email.html"),
+            context={
                 "host": request.host,
                 "link": link,
             },
@@ -310,7 +304,9 @@ async def change_email(request: web.Request):
 
 @login_required
 async def change_password(request: web.Request):
-    db = get_storage(request.app)
+
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
 
     user = await db.get_user({"id": request[RQT_USERID_KEY]})
     assert user  # nosec
@@ -354,14 +350,16 @@ async def email_confirmation(request: web.Request):
     """
     params, _, _ = await extract_and_validate(request)
 
-    db = get_storage(request.app)
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
+
     code = params["code"]
 
-    confirmation = await validate_confirmation_code(code, db)
+    confirmation = await validate_confirmation_code(code, db, cfg)
 
     if confirmation:
         action = confirmation["action"]
-        redirect_url = URL(request.app[APP_LOGIN_CONFIG]["LOGIN_REDIRECT"])
+        redirect_url = URL(cfg.LOGIN_REDIRECT)
 
         if action == REGISTRATION:
             user = await db.get_user({"id": confirmation["user_id"]})
@@ -387,7 +385,9 @@ async def email_confirmation(request: web.Request):
 async def reset_password_allowed(request: web.Request):
     """Changes password using a token code without being logged in"""
     params, _, body = await extract_and_validate(request)
-    db = get_storage(request.app)
+
+    db: AsyncpgStorage = get_plugin_storage(request.app)
+    cfg: LoginOptions = get_plugin_options(request.app)
 
     code = params["code"]
     password = body.password
@@ -398,7 +398,7 @@ async def reset_password_allowed(request: web.Request):
             reason=cfg.MSG_PASSWORD_MISMATCH, content_type="application/json"
         )  # 409
 
-    confirmation = await validate_confirmation_code(code, db)
+    confirmation = await validate_confirmation_code(code, db, cfg)
 
     if confirmation:
         user = await db.get_user({"id": confirmation["user_id"]})

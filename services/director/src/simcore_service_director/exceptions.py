@@ -65,6 +65,12 @@ class ServiceUUIDInUseError(DirectorException):
         self.service_uuid = service_uuid
 
 
+class ServiceStateSaveError(DirectorException):
+    def __init__(self, service_uuid: str, reason: str):
+        super().__init__(f"Failed to save state of service {service_uuid}: {reason}")
+        self.service_uuid = service_uuid
+
+
 class RegistryConnectionError(DirectorException):
     """Error while connecting to the docker regitry"""
 

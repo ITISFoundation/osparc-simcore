@@ -6,12 +6,16 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Dict
+from typing import AsyncIterator, Callable, Dict
 
 import pytest
 import simcore_service_webserver
+from _pytest.monkeypatch import MonkeyPatch
 from pytest_simcore.helpers.utils_login import AUserDict, LoggedUser
+from servicelib.json_serialization import json_dumps
+from simcore_service_webserver.application_settings_utils import convert_to_environ_vars
 from simcore_service_webserver.db_models import UserRole
+from simcore_service_webserver.projects.project_models import ProjectDict
 
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
@@ -25,6 +29,7 @@ logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
 
 # imports the fixtures for the integration tests
 pytest_plugins = [
+    "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
@@ -40,6 +45,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_services",
     "pytest_simcore.tmp_path_extra",
     "pytest_simcore.websocket_client",
+    "pytest_simcore.pytest_global_environs",
 ]
 
 
@@ -80,14 +86,15 @@ def fake_data_dir(tests_data_dir: Path) -> Path:
 
 
 @pytest.fixture
-def fake_project(tests_data_dir: Path) -> Dict:
+def fake_project(tests_data_dir: Path) -> ProjectDict:
+    # TODO: rename as fake_project_data since it does not produce a BaseModel but its **data
     fpath = tests_data_dir / "fake-project.json"
     assert fpath.exists()
     return json.loads(fpath.read_text())
 
 
 @pytest.fixture()
-async def logged_user(client, user_role: UserRole) -> AUserDict:
+async def logged_user(client, user_role: UserRole) -> AsyncIterator[AUserDict]:
     """adds a user in db and logs in with client
 
     NOTE: `user_role` fixture is defined as a parametrization below!!!
@@ -100,3 +107,27 @@ async def logged_user(client, user_role: UserRole) -> AUserDict:
         print("-----> logged in user", user["name"], user_role)
         yield user
         print("<----- logged out user", user["name"], user_role)
+
+
+@pytest.fixture
+def monkeypatch_setenv_from_app_config(monkeypatch: MonkeyPatch) -> Callable:
+    # TODO: Change signature to be analogous to
+    # packages/pytest-simcore/src/pytest_simcore/helpers/utils_envs.py
+    # That solution is more flexible e.g. for context manager with monkeypatch
+    def _patch(app_config: Dict) -> Dict[str, str]:
+        assert isinstance(app_config, dict)
+
+        print("  - app_config=\n", json_dumps(app_config, indent=1, sort_keys=True))
+        envs = convert_to_environ_vars(app_config)
+
+        print(
+            "  - convert_to_environ_vars(app_cfg)=\n",
+            json_dumps(envs, indent=1, sort_keys=True),
+        )
+
+        for env_key, env_value in envs.items():
+            monkeypatch.setenv(env_key, f"{env_value}")
+
+        return envs
+
+    return _patch

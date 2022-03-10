@@ -16,10 +16,11 @@ def create_valid_port_config(conf_type: str, **kwargs) -> Dict[str, Any]:
 
 
 def create_valid_port_mapping(
-    mapping_class: Type[Union[InputsList, OutputsList]],
+    mapping_class: Union[Type[InputsList], Type[OutputsList]],
     suffix: str,
     file_to_key: Optional[str] = None,
-) -> Type[Union[InputsList, OutputsList]]:
+) -> Union[InputsList, OutputsList]:
+
     port_cfgs: Dict[str, Any] = {}
     for t, v in {
         "integer": 43,

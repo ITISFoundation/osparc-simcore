@@ -21,7 +21,7 @@ DIFFERENT_CONTEXTS_COUNT = 10
 
 
 @pytest.fixture
-async def ensure_run_in_sequence_context_is_empty(loop) -> AsyncIterable[None]:
+async def ensure_run_in_sequence_context_is_empty() -> AsyncIterable[None]:
     yield
     # NOTE
     # required when shutting down the application or ending tests

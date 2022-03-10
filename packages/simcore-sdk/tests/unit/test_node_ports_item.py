@@ -1,7 +1,7 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=no-member
+# pylint: disable=no-member
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 from pathlib import Path
 from typing import Callable
@@ -139,7 +139,6 @@ async def file_link_mock(
     ],
 )
 async def test_valid_type(
-    loop,
     user_id: int,
     project_id: str,
     node_uuid: str,

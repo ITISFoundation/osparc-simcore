@@ -24,6 +24,7 @@ from typing import (
 )
 from uuid import uuid4
 
+import aioboto3
 import aiodocker
 import aiopg.sa
 import httpx
@@ -32,14 +33,15 @@ import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
 from aiodocker.containers import DockerContainer
 from fastapi import FastAPI
-from models_library.projects import Node, ProjectAtDB, Workbench
+from models_library.projects import Node, ProjectAtDB, ProjectID, Workbench
+from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
-from models_library.settings.rabbit import RabbitConfig
-from models_library.settings.redis import RedisConfig
 from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture
-from pytest_simcore.helpers.utils_docker import get_ip
+from pytest_simcore.helpers.utils_docker import get_localhost_ip
+from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from shared_comp_utils import (
     assert_and_wait_for_pipeline_status,
     assert_computation_task_out_obj,
@@ -53,7 +55,8 @@ from simcore_sdk.node_data import data_manager
 # FIXTURES
 from simcore_sdk.node_ports_common import config as node_ports_config
 from simcore_sdk.node_ports_v2 import DBManager, Nodeports, Port
-from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskOut
+from simcore_service_director_v2.core.settings import AppSettings, RCloneSettings
+from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskGet
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
@@ -66,8 +69,11 @@ from utils import (
     assert_start_service,
     assert_stop_service,
     ensure_network_cleanup,
+    ensure_volume_cleanup,
     is_legacy,
     patch_dynamic_service_url,
+    run_command,
+    sleep_for,
 )
 from yarl import URL
 
@@ -92,10 +98,18 @@ pytest_simcore_ops_services_selection = [
 ServicesNodeUUIDs = namedtuple("ServicesNodeUUIDs", "sleeper, dy, dy_compose_spec")
 InputsOutputs = namedtuple("InputsOutputs", "inputs, outputs")
 
-DY_SERVICES_STATE_PATH: Path = Path("/dy-volumes/workdir/generated-data")
+DY_VOLUMES: str = "/dy-volumes/"
+DY_SERVICES_STATE_PATH: Path = Path(DY_VOLUMES) / "workdir/generated-data"
+DY_SERVICES_R_CLONE_DIR_NAME: str = (
+    # pylint: disable=bad-str-strip-call
+    str(DY_SERVICES_STATE_PATH)
+    .strip(DY_VOLUMES)
+    .replace("/", "_")
+)
 TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED = 60
 TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED = 60
 POSSIBLE_ISSUE_WORKAROUND = 10
+WAIT_FOR_R_CLONE_VOLUME_TO_SYNC_DATA = 30
 
 
 logger = logging.getLogger(__name__)
@@ -103,14 +117,13 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def minimal_configuration(  # pylint:disable=too-many-arguments
-    loop: asyncio.AbstractEventLoop,
     sleeper_service: Dict,
     dy_static_file_server_dynamic_sidecar_service: Dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
-    redis_service: RedisConfig,
+    redis_service: RedisSettings,
     postgres_db: sa.engine.Engine,
     postgres_host_config: Dict[str, str],
-    rabbit_service: RabbitConfig,
+    rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     storage_service: URL,
     dask_scheduler_service: None,
@@ -211,8 +224,23 @@ def services_node_uuids(
 
 
 @pytest.fixture
-def current_study(project: Callable, fake_dy_workbench: Dict[str, Any]) -> ProjectAtDB:
-    return project(workbench=fake_dy_workbench)
+async def current_study(
+    project: Callable,
+    fake_dy_workbench: Dict[str, Any],
+    async_client: httpx.AsyncClient,
+) -> ProjectAtDB:
+    project_at_db = project(workbench=fake_dy_workbench)
+
+    # create entries in comp_task table in order to pull output ports
+    await create_pipeline(
+        async_client,
+        project=project_at_db,
+        user_id=project_at_db.prj_owner,
+        start_pipeline=False,
+        expected_response_status_code=status.HTTP_201_CREATED,
+    )
+
+    return project_at_db
 
 
 @pytest.fixture
@@ -230,9 +258,17 @@ async def db_manager(aiopg_engine: aiopg.sa.engine.Engine) -> DBManager:
     return DBManager(aiopg_engine)
 
 
+@pytest.fixture(scope="session", params=["true", "false"])
+def dev_features_enabled(request) -> str:
+    return request.param
+
+
 @pytest.fixture(scope="function")
 def mock_env(
-    monkeypatch: MonkeyPatch, network_name: str, rabbit_service: RabbitConfig
+    monkeypatch: MonkeyPatch,
+    network_name: str,
+    dev_features_enabled: str,
+    rabbit_service: RabbitSettings,
 ) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -258,8 +294,11 @@ def mock_env(
     # patch host for dynamic-sidecar, not reachable via localhost
     # the dynamic-sidecar (running inside a container) will use
     # this address to reach the rabbit service
-    monkeypatch.setenv("RABBIT_HOST", f"{get_ip()}")
-    monkeypatch.setenv("POSTGRES_HOST", f"{get_ip()}")
+    monkeypatch.setenv("RABBIT_HOST", f"{get_localhost_ip()}")
+    monkeypatch.setenv("POSTGRES_HOST", f"{get_localhost_ip()}")
+    monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
+    monkeypatch.setenv("DIRECTOR_V2_DEV_FEATURES_ENABLED", dev_features_enabled)
+    monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
 
 
 @pytest.fixture
@@ -289,6 +328,11 @@ async def cleanup_services_and_networks(
         # sleep enough to ensure the observation cycle properly stopped the service
         await asyncio.sleep(2 * scheduler_interval)
         await ensure_network_cleanup(docker_client, project_id)
+
+        # remove pending volumes for service
+        # NOTE: might require to sleep a bit before doing it
+        for node_uuid in workbench_dynamic_services:
+            await ensure_volume_cleanup(docker_client, node_uuid)
 
 
 @pytest.fixture
@@ -453,9 +497,7 @@ async def _fetch_data_from_container(
     target_path = temp_dir / f"container_{dir_tag}_{uuid4()}"
     target_path.mkdir(parents=True, exist_ok=True)
 
-    _assert_command_successful(
-        f"docker cp {container_id}:/{DY_SERVICES_STATE_PATH}/. {target_path}"
-    )
+    run_command(f"docker cp {container_id}:{DY_SERVICES_STATE_PATH}/. {target_path}")
 
     return target_path
 
@@ -487,9 +529,36 @@ async def _fetch_data_via_data_manager(
     return save_to
 
 
+async def _fetch_data_via_aioboto(
+    r_clone_settings: RCloneSettings,
+    dir_tag: str,
+    temp_dir: Path,
+    node_id: NodeID,
+    project_id: ProjectID,
+) -> Path:
+    save_to = temp_dir / f"aioboto_{dir_tag}_{uuid4()}"
+    save_to.mkdir(parents=True, exist_ok=True)
+
+    session = aioboto3.Session(
+        aws_access_key_id=r_clone_settings.S3_ACCESS_KEY,
+        aws_secret_access_key=r_clone_settings.S3_SECRET_KEY,
+    )
+    async with session.resource("s3", endpoint_url=r_clone_settings.endpoint) as s3:
+        bucket = await s3.Bucket(r_clone_settings.S3_BUCKET_NAME)
+        async for s3_object in bucket.objects.all():
+            key_path = f"{project_id}/{node_id}/{DY_SERVICES_R_CLONE_DIR_NAME}/"
+            if s3_object.key.startswith(key_path):
+                file_object = await s3_object.get()
+                file_path = save_to / s3_object.key.replace(key_path, "")
+                print(f"Saving file to {file_path}")
+                file_content = await file_object["Body"].read()
+                file_path.write_bytes(file_content)
+
+    return save_to
+
+
 async def _wait_for_dynamic_services_to_be_running(
     director_v2_client: httpx.AsyncClient,
-    director_v0_url: URL,
     user_id: int,
     workbench_dynamic_services: Dict[str, Node],
     current_study: ProjectAtDB,
@@ -654,7 +723,6 @@ async def _print_all_docker_volumes() -> None:
 
 async def _assert_retrieve_completed(
     director_v2_client: httpx.AsyncClient,
-    director_v0_url: URL,
     service_uuid: str,
     dynamic_services_urls: Dict[str, str],
 ) -> None:
@@ -752,12 +820,16 @@ async def test_nodeports_integration(
     2. run the computational pipeline & trigger port retrievals
     3. check that the outputs of the `sleeper` are the same as the
         outputs of the `dy-static-file-server-dynamic-sidecar-compose-spec``
-    4. fetch the "state" via `docker ` for both dynamic services
+    4. fetch the "state" via `docker/aioboto` for both dynamic services
     5. start the dynamic-services and fetch the "state" via
-        `storage-data_manager API` for both dynamic services
+        `storage-data_manager API/aioboto` for both dynamic services
     6. start the dynamic-services again, fetch the "state" via
-        `docker` for both dynamic services
+        `docker/aioboto` for both dynamic services
     7. finally check that all states for both dynamic services match
+
+    NOTE: when the services are started using S3 as a backend
+    for saving the state, the state files are recovered via
+    `aioboto` instead of `docker` or `storage-data_manager API`.
     """
 
     # STEP 1
@@ -766,7 +838,6 @@ async def test_nodeports_integration(
         str, str
     ] = await _wait_for_dynamic_services_to_be_running(
         director_v2_client=async_client,
-        director_v0_url=services_endpoint["director"],
         user_id=user_db["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
@@ -781,7 +852,7 @@ async def test_nodeports_integration(
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
-    task_out = ComputationTaskOut.parse_obj(response.json())
+    task_out = ComputationTaskGet.parse_obj(response.json())
 
     # check the contents is correct: a pipeline that just started gets PUBLISHED
     await assert_computation_task_out_obj(
@@ -828,14 +899,16 @@ async def test_nodeports_integration(
 
     await _assert_retrieve_completed(
         director_v2_client=async_client,
-        director_v0_url=services_endpoint["director"],
         service_uuid=services_node_uuids.dy,
         dynamic_services_urls=dynamic_services_urls,
     )
 
+    # NOTE: Waits a bit for the DB to write the changes in
+    # comp_task for the upstream service.
+    await asyncio.sleep(2)
+
     await _assert_retrieve_completed(
         director_v2_client=async_client,
-        director_v0_url=services_endpoint["director"],
         service_uuid=services_node_uuids.dy_compose_spec,
         dynamic_services_urls=dynamic_services_urls,
     )
@@ -857,13 +930,45 @@ async def test_nodeports_integration(
 
     # STEP 4
 
-    dy_path_container_before = await _fetch_data_from_container(
-        dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=temp_dir
+    # pylint: disable=protected-access
+    app_settings: AppSettings = async_client._transport.app.state.settings
+    r_clone_settings: RCloneSettings = (
+        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
     )
-    dy_compose_spec_path_container_before = await _fetch_data_from_container(
-        dir_tag="dy_compose_spec",
-        service_uuid=services_node_uuids.dy_compose_spec,
-        temp_dir=temp_dir,
+
+    if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+        await sleep_for(
+            WAIT_FOR_R_CLONE_VOLUME_TO_SYNC_DATA,
+            "Waiting for rclone to sync data from the docker volume",
+        )
+
+    dy_path_volume_before = (
+        await _fetch_data_via_aioboto(
+            r_clone_settings=r_clone_settings,
+            dir_tag="dy",
+            temp_dir=temp_dir,
+            node_id=services_node_uuids.dy,
+            project_id=current_study.uuid,
+        )
+        if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+        else await _fetch_data_from_container(
+            dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=temp_dir
+        )
+    )
+    dy_compose_spec_path_volume_before = (
+        await _fetch_data_via_aioboto(
+            r_clone_settings=r_clone_settings,
+            dir_tag="dy_compose_spec",
+            temp_dir=temp_dir,
+            node_id=services_node_uuids.dy_compose_spec,
+            project_id=current_study.uuid,
+        )
+        if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+        else await _fetch_data_from_container(
+            dir_tag="dy_compose_spec",
+            service_uuid=services_node_uuids.dy_compose_spec,
+            temp_dir=temp_dir,
+        )
     )
 
     # STEP 5
@@ -881,51 +986,96 @@ async def test_nodeports_integration(
 
     await _wait_for_dy_services_to_fully_stop(async_client)
 
-    dy_path_data_manager_before = await _fetch_data_via_data_manager(
-        dir_tag="dy",
-        user_id=user_db["id"],
-        project_id=str(current_study.uuid),
-        service_uuid=services_node_uuids.dy,
-        temp_dir=temp_dir,
+    if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED:
+        await sleep_for(
+            WAIT_FOR_R_CLONE_VOLUME_TO_SYNC_DATA,
+            "Waiting for rclone to sync data from the docker volume",
+        )
+
+    dy_path_data_manager_before = (
+        await _fetch_data_via_aioboto(
+            r_clone_settings=r_clone_settings,
+            dir_tag="dy",
+            temp_dir=temp_dir,
+            node_id=services_node_uuids.dy,
+            project_id=current_study.uuid,
+        )
+        if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+        else await _fetch_data_via_data_manager(
+            dir_tag="dy",
+            user_id=user_db["id"],
+            project_id=str(current_study.uuid),
+            service_uuid=services_node_uuids.dy,
+            temp_dir=temp_dir,
+        )
     )
 
-    dy_compose_spec_path_data_manager_before = await _fetch_data_via_data_manager(
-        dir_tag="dy_compose_spec",
-        user_id=user_db["id"],
-        project_id=str(current_study.uuid),
-        service_uuid=services_node_uuids.dy_compose_spec,
-        temp_dir=temp_dir,
+    dy_compose_spec_path_data_manager_before = (
+        await _fetch_data_via_aioboto(
+            r_clone_settings=r_clone_settings,
+            dir_tag="dy_compose_spec",
+            temp_dir=temp_dir,
+            node_id=services_node_uuids.dy_compose_spec,
+            project_id=current_study.uuid,
+        )
+        if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+        else await _fetch_data_via_data_manager(
+            dir_tag="dy_compose_spec",
+            user_id=user_db["id"],
+            project_id=str(current_study.uuid),
+            service_uuid=services_node_uuids.dy_compose_spec,
+            temp_dir=temp_dir,
+        )
     )
 
     # STEP 6
 
     await _wait_for_dynamic_services_to_be_running(
         director_v2_client=async_client,
-        director_v0_url=services_endpoint["director"],
         user_id=user_db["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
     )
 
-    dy_path_container_after = await _fetch_data_from_container(
-        dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=temp_dir
+    dy_path_volume_after = (
+        await _fetch_data_via_aioboto(
+            r_clone_settings=r_clone_settings,
+            dir_tag="dy",
+            temp_dir=temp_dir,
+            node_id=services_node_uuids.dy,
+            project_id=current_study.uuid,
+        )
+        if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+        else await _fetch_data_from_container(
+            dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=temp_dir
+        )
     )
-    dy_compose_spec_path_container_after = await _fetch_data_from_container(
-        dir_tag="dy_compose_spec",
-        service_uuid=services_node_uuids.dy_compose_spec,
-        temp_dir=temp_dir,
+    dy_compose_spec_path_volume_after = (
+        await _fetch_data_via_aioboto(
+            r_clone_settings=r_clone_settings,
+            dir_tag="dy_compose_spec",
+            temp_dir=temp_dir,
+            node_id=services_node_uuids.dy_compose_spec,
+            project_id=current_study.uuid,
+        )
+        if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
+        else await _fetch_data_from_container(
+            dir_tag="dy_compose_spec",
+            service_uuid=services_node_uuids.dy_compose_spec,
+            temp_dir=temp_dir,
+        )
     )
 
     # STEP 7
 
     _assert_same_set(
-        _get_file_hashes_in_path(dy_path_container_before),
+        _get_file_hashes_in_path(dy_path_volume_before),
         _get_file_hashes_in_path(dy_path_data_manager_before),
-        _get_file_hashes_in_path(dy_path_container_after),
+        _get_file_hashes_in_path(dy_path_volume_after),
     )
 
     _assert_same_set(
-        _get_file_hashes_in_path(dy_compose_spec_path_container_before),
+        _get_file_hashes_in_path(dy_compose_spec_path_volume_before),
         _get_file_hashes_in_path(dy_compose_spec_path_data_manager_before),
-        _get_file_hashes_in_path(dy_compose_spec_path_container_after),
+        _get_file_hashes_in_path(dy_compose_spec_path_volume_after),
     )

@@ -7,7 +7,7 @@ from email.mime.text import MIMEText
 from logging import getLogger
 from os.path import join
 from pprint import pformat
-from typing import List, Mapping, Optional, Tuple
+from typing import Any, List, Mapping, Optional, Tuple
 
 import aiosmtplib
 import attr
@@ -19,7 +19,7 @@ from servicelib.aiohttp.rest_models import LogMessageType
 from servicelib.json_serialization import json_dumps
 
 from .._resources import resources
-from .cfg import cfg  # TODO: remove this singleton!!!
+from .settings import LoginOptions, get_plugin_options
 
 log = getLogger(__name__)
 
@@ -49,21 +49,25 @@ def get_client_ip(request: web.Request) -> str:
     return ips.split(",")[0]
 
 
-async def compose_mail(recipient: str, subject: str, body: str) -> None:
+async def compose_mail(
+    app: web.Application, recipient: str, subject: str, body: str
+) -> None:
     msg = MIMEText(body, "html")
     msg["Subject"] = subject
-    msg["From"] = cfg.SMTP_SENDER
     msg["To"] = recipient
 
-    await send_mail(msg)
+    await send_mail(app, msg)
 
 
 async def compose_multipart_mail(
-    recipient: str, subject: str, body: str, attachments: List[Tuple[str, bytearray]]
+    app: web.Application,
+    recipient: str,
+    subject: str,
+    body: str,
+    attachments: List[Tuple[str, bytearray]],
 ) -> None:
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"] = cfg.SMTP_SENDER
     msg["To"] = recipient
 
     part1 = MIMEText(body, "html")
@@ -79,30 +83,29 @@ async def compose_multipart_mail(
         encoders.encode_base64(part)
         msg.attach(part)
 
-    await send_mail(msg)
+    await send_mail(app, msg)
 
 
 async def render_and_send_mail(
     request: web.Request,
     to: str,
     template: str,
-    context: Mapping,
+    context: Mapping[str, Any],
     attachments: Optional[List[Tuple[str, bytearray]]] = None,
 ):
-    page = render_string(str(template), request, context)
+    page = render_string(f"{template}", request, context)
     subject, body = page.split("\n", 1)
+
     if attachments:
-        await compose_multipart_mail(to, subject.strip(), body, attachments)
+        await compose_multipart_mail(
+            request.app, to, subject.strip(), body, attachments
+        )
     else:
-        await compose_mail(to, subject.strip(), body)
+        await compose_mail(request.app, to, subject.strip(), body)
 
 
-def themed(template):
-    return resources.get_path(join(cfg.THEME, template))
-
-
-def common_themed(template):
-    return resources.get_path(join(cfg.COMMON_THEME, template))
+def themed(dirname, template):
+    return resources.get_path(join(dirname, template))
 
 
 def flash_response(msg: str, level: str = "INFO") -> web.Response:
@@ -113,12 +116,15 @@ def flash_response(msg: str, level: str = "INFO") -> web.Response:
     return response
 
 
-async def send_mail(msg):
+async def send_mail(app: web.Application, msg: MIMEText):
+    cfg: LoginOptions = get_plugin_options(app)
+
+    msg["From"] = cfg.SMTP_SENDER
     smtp_args = dict(
-        loop=cfg.APP.loop,
+        loop=app.loop,
         hostname=cfg.SMTP_HOST,
         port=cfg.SMTP_PORT,
-        use_tls=bool(cfg.SMTP_TLS_ENABLED),
+        use_tls=cfg.SMTP_TLS_ENABLED,
     )
     log.debug("Sending email with smtp configuration: %s", pformat(smtp_args))
     if cfg.SMTP_PORT == 587:
@@ -130,14 +136,16 @@ async def send_mail(msg):
         if cfg.SMTP_TLS_ENABLED:
             log.info("Starting TLS ...")
             await smtp.starttls(validate_certs=False)
-        if cfg.SMTP_USERNAME:
+        if cfg.SMTP_USERNAME and cfg.SMTP_PASSWORD:
             log.info("Login email server ...")
-            await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD)
+            await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD.get_secret_value())
         await smtp.send_message(msg)
         await smtp.quit()
     else:
         async with aiosmtplib.SMTP(**smtp_args) as smtp:
-            if cfg.SMTP_USERNAME:
+            if cfg.SMTP_USERNAME and cfg.SMTP_PASSWORD:
                 log.info("Login email server ...")
-                await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD)
+                await smtp.login(
+                    cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD.get_secret_value()
+                )
             await smtp.send_message(msg)

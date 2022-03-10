@@ -36,17 +36,18 @@ sqlalchemy<2.0
 # FIXME: minio 7.1.0 does not delete objects. SEE
 minio==7.0.4
 
-# FIXME: auto-reload does not work
-uvicorn<0.14.0
-
 #
 # Compatibility/coordination
 #
 
 
-
 # Keeps all docker compose to the same version. TODO: remove when all synced
 docker-compose==1.29.1
+
+
+# tomli<2.0.0,>=0.2.6 (from black==21.12b0->-r requirements/../../../requirements/devenv.txt (line 19))
+tomli<2.0.0
+
 
 # constraint since https://github.com/MagicStack/uvloop/releases/tag/v0.15.0: drops support for 3.5/3.6  Feb.2021
 uvloop<0.15.0 ; python_version < '3.7'

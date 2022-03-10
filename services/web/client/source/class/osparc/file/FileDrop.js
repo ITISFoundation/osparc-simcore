@@ -74,7 +74,7 @@ qx.Class.define("osparc.file.FileDrop", {
       return {
         "border-width": "3px",
         "border-radius": "20px",
-        "border-color": qx.theme.manager.Color.getInstance().resolve("contrasted-background+"),
+        "border-color": qx.theme.manager.Color.getInstance().resolve("background-main-4"),
         "border-style": "dotted"
       };
     },

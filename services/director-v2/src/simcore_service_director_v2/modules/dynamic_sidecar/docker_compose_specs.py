@@ -7,9 +7,8 @@ from fastapi.applications import FastAPI
 from models_library.service_settings_labels import ComposeSpecLabel, PathMappingsLabel
 from settings_library.docker_registry import RegistrySettings
 
+from ._constants import CONTAINER_NAME
 from .docker_service_specs import MATCH_SERVICE_VERSION, MATCH_SIMCORE_REGISTRY
-
-CONTAINER_NAME = "container"
 
 
 def _inject_proxy_network_configuration(

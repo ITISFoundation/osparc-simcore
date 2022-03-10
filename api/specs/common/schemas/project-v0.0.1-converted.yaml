@@ -182,6 +182,8 @@ properties:
                         format: uri
                       label:
                         type: string
+                  - type: array
+                    items: {}
           inputAccess:
             description: map with key - access level pairs
             type: object
@@ -246,6 +248,8 @@ properties:
                         format: uri
                       label:
                         type: string
+                  - type: array
+                    items: {}
           outputNode:
             type: boolean
             deprecated: true
@@ -322,6 +326,16 @@ properties:
                   - ABORTED
                 type: string
             additionalProperties: false
+          bootOptions:
+            title: Boot Options
+            description: >-
+              Some services provide alternative parameters to be injected at
+              boot time. The user selection should be stored here, and it will
+              overwrite the services's defaults.
+            type: object
+            patternProperties:
+              '[a-zA-Z][a-azA-Z0-9_]*':
+                type: string
     additionalProperties: true
   ui:
     type: object
