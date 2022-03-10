@@ -3,8 +3,8 @@ import logging
 from typing import Coroutine, List, Optional, Union, cast
 from uuid import UUID
 
+import async_timeout
 import httpx
-from async_timeout import timeout
 from fastapi import APIRouter, Depends, Header, Request
 from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
@@ -196,7 +196,7 @@ async def stop_dynamic_service(
         request.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
     )
     _STOPPED_CHECK_INTERVAL = 1.0
-    async with timeout(
+    async with async_timeout.timeout(
         dynamic_sidecar_settings.DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP
     ):
         while scheduler.is_service_tracked(node_uuid):
