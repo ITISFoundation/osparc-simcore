@@ -482,6 +482,12 @@ qx.Class.define("osparc.data.model.Study", {
       this.getDev()["annotations"][annotation.getId()] = annotation.serialize();
     },
 
+    removeAnnotation: function(annotationId) {
+      if (("annotations" in this.getDev()) && annotationId in this.getDev()["annotations"]) {
+        delete this.getDev()["annotations"][annotationId];
+      }
+    },
+
     serialize: function(clean = true) {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();

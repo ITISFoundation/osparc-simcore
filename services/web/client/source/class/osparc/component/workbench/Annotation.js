@@ -36,9 +36,13 @@ qx.Class.define("osparc.component.workbench.Annotation", {
     this.set({
       id,
       type: data.type,
-      color: data.color,
+      color: "color" in data ? data.color : this.getColor(),
       attributes: data.attributes
     });
+  },
+
+  statics: {
+    DEFAULT_COLOR: "#007fd4" // Visual Studio blue
   },
 
   properties: {
@@ -89,7 +93,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
     },
 
     setSelected: function(selected) {
-      const representation = this.getrepresetnation();
+      const representation = this.getRepresentation();
       if (representation) {
         osparc.wrapper.Svg.updateRectColor(representation, selected ? "yellow" : this.getColor());
       }

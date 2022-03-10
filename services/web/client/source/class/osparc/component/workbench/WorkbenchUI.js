@@ -225,6 +225,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         if (this.__isSelectedItemAnEdge()) {
           this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
           this.__selectedItemChanged(null);
+        } else if (this.__isSelectedItemAnAnnotation()) {
+          this.__removeAnnotation(this.__selectedItemId);
+          this.__selectedItemChanged(null);
         }
       }, this);
 
@@ -1079,8 +1082,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         if (this.__isSelectedItemAnEdge()) {
           const edge = this.__getEdgeUI(oldId);
           edge.setSelected(false);
-        }
-        if (this.__isSelectedItemAnAnnotation()) {
+        } else if (this.__isSelectedItemAnAnnotation()) {
           const annotation = this.__getAnnotation(oldId);
           annotation.setSelected(false);
         }
@@ -1098,7 +1100,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
 
       if (this.__deleteItemButton) {
-        this.__deleteItemButton.setVisibility(this.__isSelectedItemAnEdge() || this.__isSelectedItemAnEdge() ? "visible" : "excluded");
+        this.__deleteItemButton.setVisibility(this.__isSelectedItemAnEdge() || this.__isSelectedItemAnAnnotation() ? "visible" : "excluded");
       }
     },
 
@@ -1624,7 +1626,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const width = Math.abs(initPos.x - currentPos.x);
       const height = Math.abs(initPos.y - currentPos.y);
       if ([null, undefined].includes(this.__rectAnnotationRepr)) {
-        this.__rectAnnotationRepr = this.__svgLayer.drawAnnotationRect(width, height, x, y);
+        this.__rectAnnotationRepr = this.__svgLayer.drawAnnotationRect(width, height, x, y, osparc.component.workbench.Annotation.DEFAULT_COLOR);
       } else {
         osparc.component.workbench.SvgWidget.updateRect(this.__rectAnnotationRepr, width, height, x, y);
       }
@@ -1640,13 +1642,24 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __addAnnotation: function(data, id) {
       const annotation = new osparc.component.workbench.Annotation(this.__svgLayer, data, id);
-      this.getStudy().addAnnotation(annotation);
       annotation.getRepresentation().node.addEventListener("click", ev => {
         // this is needed to get out of the context of svg
-        this.__selectedItemChanged(annotation.id);
+        this.__selectedItemChanged(annotation.getId());
         ev.stopPropagation();
       }, this);
-      this.__annotations[id] = annotation;
+      this.__annotations[annotation.getId()] = annotation;
+      this.getStudy().addAnnotation(annotation);
+    },
+
+    __removeAnnotation: function(id) {
+      if (id in this.__annotations) {
+        const annotation = this.__annotations[id];
+        if (annotation.getRepresentation()) {
+          osparc.component.workbench.SvgWidget.removeRect(annotation.getRepresentation());
+        }
+        delete this.__annotations[id];
+        this.getStudy().removeAnnotation(id);
+      }
     },
 
     __dropFile: function(e) {
