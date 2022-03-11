@@ -5,7 +5,7 @@ from uuid import UUID
 
 import async_timeout
 import httpx
-from fastapi import APIRouter, Depends, Header, Request
+from fastapi import APIRouter, Depends, Header
 from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
