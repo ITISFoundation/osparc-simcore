@@ -3,15 +3,12 @@
 # pylint:disable=redefined-outer-name
 
 import random
-from typing import Any, AsyncIterator, Callable, Dict, Iterator, List
+from typing import Any, Callable, Dict, Iterator, List
 
 import httpx
 import pytest
 import sqlalchemy as sa
-from _dask_helpers import DaskGatewayServer
 from _pytest.monkeypatch import MonkeyPatch
-from dask_gateway import Gateway, GatewayCluster, auth
-from distributed import Client as DaskClient
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from httpx import URL
@@ -22,9 +19,6 @@ from models_library.clusters import (
     CLUSTER_USER_RIGHTS,
     Cluster,
     ClusterAccessRights,
-    ExternalClusterAuthentication,
-    JupyterHubTokenAuthentication,
-    KerberosAuthentication,
     SimpleAuthentication,
 )
 from pydantic import parse_obj_as
@@ -56,37 +50,24 @@ def clusters_config(
 
 
 @pytest.fixture
-async def dask_gateway(
-    local_dask_gateway_server: DaskGatewayServer,
-) -> Gateway:
-    async with Gateway(
-        local_dask_gateway_server.address,
-        local_dask_gateway_server.proxy_address,
-        asynchronous=True,
-        auth=auth.BasicAuth("pytest_user", local_dask_gateway_server.password),
-    ) as gateway:
-        print(f"--> {gateway=} created")
-        cluster_options = await gateway.cluster_options()
-        gateway_versions = await gateway.get_versions()
-        clusters_list = await gateway.list_clusters()
-        print(f"--> {gateway_versions=}, {cluster_options=}, {clusters_list=}")
-        for option in cluster_options.items():
-            print(f"--> {option=}")
-        return gateway
+def cluster_simple_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
+    def creator() -> Dict[str, Any]:
+        simple_auth = {
+            "type": "simple",
+            "username": faker.user_name(),
+            "password": faker.password(),
+        }
+        assert SimpleAuthentication.parse_obj(simple_auth)
+        return simple_auth
+
+    return creator
 
 
 @pytest.fixture
-async def dask_gateway_cluster(dask_gateway: Gateway) -> AsyncIterator[GatewayCluster]:
-    async with dask_gateway.new_cluster() as cluster:
-        yield cluster
-
-
-@pytest.fixture
-async def dask_gateway_cluster_client(
-    dask_gateway_cluster: GatewayCluster,
-) -> AsyncIterator[DaskClient]:
-    async with dask_gateway_cluster.get_client() as client:
-        yield client
+def clusters_cleaner(postgres_db: sa.engine.Engine) -> Iterator:
+    yield
+    with postgres_db.connect() as conn:
+        conn.execute(sa.delete(clusters))
 
 
 async def test_list_clusters(
@@ -232,61 +213,6 @@ async def test_get_default_cluster(
     assert returned_cluster.name == "Default cluster"
     assert 1 in returned_cluster.access_rights  # everyone group is always 1
     assert returned_cluster.access_rights[1] == CLUSTER_USER_RIGHTS
-
-
-@pytest.fixture
-def cluster_simple_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
-    def creator() -> Dict[str, Any]:
-        simple_auth = {
-            "type": "simple",
-            "username": faker.user_name(),
-            "password": faker.password(),
-        }
-        assert SimpleAuthentication.parse_obj(simple_auth)
-        return simple_auth
-
-    return creator
-
-
-@pytest.fixture
-def cluster_kerberos_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
-    def creator() -> Dict[str, Any]:
-        kerberos_auth = {"type": "kerberos"}
-        assert KerberosAuthentication.parse_obj(kerberos_auth)
-        return kerberos_auth
-
-    return creator
-
-
-@pytest.fixture
-def cluster_jupyterhub_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
-    def creator() -> Dict[str, Any]:
-        jupyterhub_auth = {"type": "jupyterhub", "api_token": faker.pystr()}
-        assert JupyterHubTokenAuthentication.parse_obj(jupyterhub_auth)
-        return jupyterhub_auth
-
-    return creator
-
-
-@pytest.fixture(params=list(ExternalClusterAuthentication.__args__))  # type: ignore
-def cluster_authentication(
-    cluster_simple_authentication,
-    cluster_kerberos_authentication,
-    cluster_jupyterhub_authentication,
-    request,
-) -> Callable[[], Dict[str, Any]]:
-    return {
-        SimpleAuthentication: cluster_simple_authentication,
-        KerberosAuthentication: cluster_kerberos_authentication,
-        JupyterHubTokenAuthentication: cluster_jupyterhub_authentication,
-    }[request.param]
-
-
-@pytest.fixture
-def clusters_cleaner(postgres_db: sa.engine.Engine) -> Iterator:
-    yield
-    with postgres_db.connect() as conn:
-        conn.execute(sa.delete(clusters))
 
 
 async def test_create_cluster(
