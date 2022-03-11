@@ -79,7 +79,7 @@ async def list_clusters(
 
 @router.get(
     "/default",
-    summary="Returns the cluster details",
+    summary="Returns the default cluster",
     response_model=ClusterOut,
     status_code=status.HTTP_200_OK,
 )
@@ -94,7 +94,7 @@ async def get_default_cluster(
 
 @router.get(
     "/{cluster_id}",
-    summary="Get one cluster detail for user",
+    summary="Get one cluster for user",
     response_model=ClusterOut,
     status_code=status.HTTP_200_OK,
 )
@@ -113,7 +113,7 @@ async def get_cluster(
 
 @router.patch(
     "/{cluster_id}",
-    summary="Get one cluster detail for user",
+    summary="Modify a cluster for user",
     response_model=ClusterOut,
     status_code=status.HTTP_200_OK,
 )
