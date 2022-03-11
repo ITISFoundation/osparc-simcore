@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-aio_pika==6.8.0
+aio-pika==6.8.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -129,6 +129,8 @@ execnet==1.9.0
     # via pytest-xdist
 faker==9.8.3
     # via -r requirements/_test.in
+flaky==3.7.0
+    # via -r requirements/_test.in
 frozenlist==1.3.0
     # via
     #   -c requirements/_base.txt
@@ -235,8 +237,6 @@ psycopg2-binary==2.9.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-ptvsd==4.3.2
-    # via -r requirements/_test.in
 py==1.11.0
     # via
     #   pytest

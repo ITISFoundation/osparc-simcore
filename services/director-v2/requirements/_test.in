@@ -11,33 +11,36 @@
 
 
 # testing
-asgi_lifespan
+flaky
 pytest
 pytest-aiohttp
 pytest-cov
+pytest-docker
+pytest-icdiff
 pytest-mock
 pytest-runner
-pytest-docker
 pytest-xdist
-pytest-icdiff
-async-asgi-testclient
-minio
-aioboto3
 
 # fixtures
+asgi_lifespan
 Faker
 
+# helpers
+aioboto3
+async-asgi-testclient
+minio
+
+
 # migration due to pytest_simcore.postgres_service2
-alembic
 aio_pika
 aioredis
+alembic
 bokeh
 dask-gateway-server[local]
 docker
 respx
 
 # tools
-pylint
-coveralls
 codecov
-ptvsd
+coveralls
+pylint
