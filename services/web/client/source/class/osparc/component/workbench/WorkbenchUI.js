@@ -46,6 +46,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     this.__edgesUI = [];
     this.__selectedNodeUIs = [];
     this.__annotations = {};
+    this.__selectedAnnotations = [];
 
     this._setLayout(new qx.ui.layout.HBox());
 
@@ -138,6 +139,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __annotatingRect: null,
     __annotatingText: null,
     __annotationInitPos: null,
+    __selectedAnnotations: null,
     __annotationEditor: null,
 
     __applyStudy: function(study) {
@@ -455,7 +457,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     getSelectedNodeIDs: function() {
       const selectedNodeIDs = [];
-      this.__selectedNodeUIs.forEach(nodeUI => {
+      this.getSelectedNodes().forEach(nodeUI => {
         selectedNodeIDs.push(nodeUI.getNodeId());
       });
       return selectedNodeIDs;
@@ -467,7 +469,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __setSelectedNodes: function(selectedNodeUIs) {
-      this.__selectedNodeUIs.forEach(node => {
+      this.getSelectedNodes().forEach(node => {
         if (!selectedNodeUIs.includes(node)) {
           node.removeState("selected");
         }
@@ -477,15 +479,25 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       qx.event.message.Bus.dispatchByName("changeWorkbenchSelection", selectedNodeUIs.map(selected => selected.getNode()));
     },
 
+    __setSelectedAnnotations: function(selectedAnnotations) {
+      this.__selectedAnnotations.forEach(annotation => {
+        if (!selectedAnnotations.includes(annotation)) {
+          annotation.setSelected(false);
+        }
+      });
+      selectedAnnotations.forEach(selectedAnnotation => selectedAnnotation.setSelected(true));
+      this.__selectedAnnotations = selectedAnnotations;
+    },
+
     activeNodeChanged: function(activeNodeUI, isControlPressed = false) {
       if (isControlPressed) {
-        const index = this.__selectedNodeUIs.indexOf(activeNodeUI);
+        const index = this.getSelectedNodes().indexOf(activeNodeUI);
         if (index > -1) {
           activeNodeUI.removeState("selected");
-          this.__selectedNodeUIs.splice(index, 1);
+          this.getSelectedNodes().splice(index, 1);
         } else {
           activeNodeUI.addState("selected");
-          this.__selectedNodeUIs.push(activeNodeUI);
+          this.getSelectedNodes().push(activeNodeUI);
           this.__selectedItemChanged(activeNodeUI.getNodeId());
         }
       } else {
@@ -1644,6 +1656,22 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }
       });
       this.__setSelectedNodes(nodeUIs);
+
+      // select annotations
+      const annotations = [];
+      Object.keys(this.__annotations).forEach(annotationId => {
+        const annotation = this.__annotations[annotationId];
+        const attrs = annotation.getAttributes();
+        const annotationPosX = attrs.x + attrs.width/2;
+        const annotationPosY = attrs.y + attrs.height/2;
+        if (annotationPosX > x &&
+          annotationPosX < x+width &&
+          annotationPosY > y &&
+          annotationPosY < y+height) {
+          annotations.push(annotation);
+        }
+      });
+      this.__setSelectedAnnotations(annotations);
     },
 
     __drawingAnnotation: function(e) {
