@@ -109,13 +109,13 @@ async def test_list_clusters(
     assert returned_clusters_list == []
 
     # let's create some clusters
-    for n in range(1000):
+    for n in range(111):
         cluster(user_1, name=f"pytest cluster{n:04}")
 
     response = await async_client.get(list_clusters_url)
     assert response.status_code == status.HTTP_200_OK
     returned_clusters_list = parse_obj_as(List[ClusterOut], response.json())
-    assert len(returned_clusters_list) == 1000
+    assert len(returned_clusters_list) == 111
 
     # now create a second user and check the clusters are not seen by it
     user_2 = user_db()
@@ -172,7 +172,7 @@ async def test_get_cluster(
     assert response.status_code == status.HTTP_404_NOT_FOUND
     # let's create some clusters
     a_bunch_of_clusters = [
-        cluster(user_1, name=f"pytest cluster{n:04}") for n in range(1000)
+        cluster(user_1, name=f"pytest cluster{n:04}") for n in range(111)
     ]
     the_cluster = random.choice(a_bunch_of_clusters)
 
@@ -352,7 +352,7 @@ async def test_update_own_cluster(
     assert response.status_code == status.HTTP_404_NOT_FOUND
     # let's create some clusters
     a_bunch_of_clusters = [
-        cluster(user_1, name=f"pytest cluster{n:04}") for n in range(1000)
+        cluster(user_1, name=f"pytest cluster{n:04}") for n in range(111)
     ]
     the_cluster = random.choice(a_bunch_of_clusters)
     # get the original one
@@ -544,6 +544,97 @@ async def test_update_another_cluster(
             if can_administer
             else status.HTTP_403_FORBIDDEN
         ), f"received {response.text}"
+
+
+async def test_delete_cluster(
+    clusters_config: None,
+    user_db: Callable[..., Dict],
+    cluster: Callable[..., Cluster],
+    cluster_simple_authentication: Callable,
+    async_client: httpx.AsyncClient,
+    faker: Faker,
+):
+    user_1 = user_db()
+    # let's create some clusters
+    a_bunch_of_clusters = [
+        cluster(
+            user_1,
+            name=f"pytest cluster{n:04}",
+            access_rights={
+                user_1["primary_gid"]: CLUSTER_ADMIN_RIGHTS,
+            },
+        )
+        for n in range(111)
+    ]
+    the_cluster = random.choice(a_bunch_of_clusters)
+    # let's delete that cluster
+    response = await async_client.delete(
+        f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}"
+    )
+    assert (
+        response.status_code == status.HTTP_204_NO_CONTENT
+    ), f"received {response.text}"
+    # now check it is gone
+    response = await async_client.get(
+        f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}"
+    )
+    assert (
+        response.status_code == status.HTTP_404_NOT_FOUND
+    ), f"received {response.text}"
+
+
+@pytest.mark.parametrize(
+    "cluster_sharing_rights, can_administer",
+    [
+        pytest.param(CLUSTER_ADMIN_RIGHTS, True, id="SHARE_WITH_ADMIN_RIGHTS"),
+        pytest.param(CLUSTER_MANAGER_RIGHTS, False, id="SHARE_WITH_MANAGER_RIGHTS"),
+        pytest.param(CLUSTER_USER_RIGHTS, False, id="SHARE_WITH_USER_RIGHTS"),
+        pytest.param(CLUSTER_NO_RIGHTS, False, id="DENY_RIGHTS"),
+    ],
+)
+async def test_delete_another_cluster(
+    clusters_config: None,
+    user_db: Callable[..., Dict],
+    cluster: Callable[..., Cluster],
+    cluster_simple_authentication: Callable,
+    async_client: httpx.AsyncClient,
+    faker: Faker,
+    cluster_sharing_rights: ClusterAccessRights,
+    can_administer: bool,
+):
+    user_1 = user_db()
+    user_2 = user_db()
+    # let's create some clusters
+    a_bunch_of_clusters = [
+        cluster(
+            user_1,
+            name=f"pytest cluster{n:04}",
+            access_rights={
+                user_1["primary_gid"]: CLUSTER_ADMIN_RIGHTS,
+                user_2["primary_gid"]: cluster_sharing_rights,
+            },
+        )
+        for n in range(111)
+    ]
+    the_cluster = random.choice(a_bunch_of_clusters)
+    # let's delete that cluster as user_2
+    response = await async_client.delete(
+        f"/v2/clusters/{the_cluster.id}?user_id={user_2['id']}"
+    )
+    assert (
+        response.status_code == status.HTTP_204_NO_CONTENT
+        if can_administer
+        else status.HTTP_403_FORBIDDEN
+    ), f"received {response.text}"
+    # now check it is gone or still around
+    response = await async_client.get(
+        f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}"
+    )
+    assert (
+        response.status_code == status.HTTP_404_NOT_FOUND
+        if can_administer
+        else status.HTTP_200_OK
+    ), f"received {response.text}"
 
 
 async def test_get_default_cluster_entrypoint(
