@@ -3,6 +3,7 @@ from typing import Dict, Iterable, List, Optional
 
 import psycopg2
 import sqlalchemy as sa
+from aiopg.sa import connection
 from models_library.clusters import (
     CLUSTER_ADMIN_RIGHTS,
     CLUSTER_MANAGER_RIGHTS,
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 async def _clusters_from_cluster_ids(
-    conn: sa.engine.Connection,
+    conn: connection.SAConnection,
     cluster_ids: Iterable[PositiveInt],
     offset: int = 0,
     limit: Optional[int] = None,
@@ -90,7 +91,7 @@ async def _clusters_from_cluster_ids(
 
 
 async def _compute_user_access_rights(
-    conn: sa.engine.Connection, user_id: UserID, cluster: Cluster
+    conn: connection.SAConnection, user_id: UserID, cluster: Cluster
 ) -> ClusterAccessRights:
     result = await conn.execute(
         sa.select([user_to_groups.c.gid, groups.c.type])
@@ -127,6 +128,7 @@ class ClustersRepository(BaseRepository):
                     clusters, values=new_cluster.to_clusters_db(only_update=False)
                 ).returning(clusters.c.id)
             )
+        assert new_cluster_id  # nosec
         return await self.get_cluster(user_id, new_cluster_id)
 
     async def list_clusters(self, user_id: UserID) -> List[Cluster]:
@@ -139,8 +141,7 @@ class ClustersRepository(BaseRepository):
                         sa.select([groups.c.gid])
                         .where((user_to_groups.c.uid == user_id))
                         .order_by(groups.c.gid)
-                        .join(user_to_groups)
-                        .cte()
+                        .select_from(groups.join(user_to_groups))
                     )
                     & cluster_to_groups.c.read
                 )
