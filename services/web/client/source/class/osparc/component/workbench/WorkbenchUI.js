@@ -1669,7 +1669,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (type === "rect") {
         this.__addAnnotation(serializeData);
       } else if (type === "text") {
-        const title = this.tr("Edit Title");
+        const title = this.tr("Add Text");
         const titleEditor = new osparc.component.widget.Renamer(null, null, title);
         titleEditor.addListener("labelChanged", e => {
           titleEditor.close();

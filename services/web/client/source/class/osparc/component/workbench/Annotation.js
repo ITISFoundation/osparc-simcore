@@ -107,14 +107,28 @@ qx.Class.define("osparc.component.workbench.Annotation", {
     __applyColor: function(color) {
       const representation = this.getRepresentation();
       if (representation) {
-        osparc.wrapper.Svg.updateRectColor(representation, color);
+        switch (this.getType()) {
+          case "rect":
+            osparc.wrapper.Svg.updateRectColor(representation, color);
+            break;
+          case "text":
+            osparc.wrapper.Svg.updateTextColor(representation, color);
+            break;
+        }
       }
     },
 
     setSelected: function(selected) {
       const representation = this.getRepresentation();
       if (representation) {
-        osparc.wrapper.Svg.updateRectColor(representation, selected ? "yellow" : this.getColor());
+        switch (this.getType()) {
+          case "rect":
+            osparc.wrapper.Svg.updateRectColor(representation, selected ? "yellow" : this.getColor());
+            break;
+          case "text":
+            osparc.wrapper.Svg.updateTextColor(representation, selected ? "yellow" : this.getColor());
+            break;
+        }
       }
     },
 

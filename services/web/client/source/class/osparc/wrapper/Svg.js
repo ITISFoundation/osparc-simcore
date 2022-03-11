@@ -142,7 +142,8 @@ qx.Class.define("osparc.wrapper.Svg", {
       const text = draw.text(label)
         .font({
           fill: color,
-          family: "Roboto"
+          family: "Roboto",
+          size: "12px"
         })
         .style({
           cursor: "pointer"
@@ -223,6 +224,12 @@ qx.Class.define("osparc.wrapper.Svg", {
     updateRectColor: function(rect, color) {
       rect.stroke({
         color: color
+      });
+    },
+
+    updateTextColor: function(text, color) {
+      text.font({
+        fill: color
       });
     },
 
