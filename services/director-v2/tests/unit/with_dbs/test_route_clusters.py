@@ -14,7 +14,14 @@ from dask_gateway import Gateway, GatewayCluster, auth
 from distributed import Client as DaskClient
 from distributed.deploy.spec import SpecCluster
 from httpx import URL
-from models_library.clusters import CLUSTER_USER_RIGHTS, Cluster, SimpleAuthentication
+from models_library.clusters import (
+    CLUSTER_ADMIN_RIGHTS,
+    CLUSTER_MANAGER_RIGHTS,
+    CLUSTER_NO_RIGHTS,
+    CLUSTER_USER_RIGHTS,
+    Cluster,
+    SimpleAuthentication,
+)
 from pydantic import NonNegativeInt, parse_obj_as
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.models.schemas.clusters import (
@@ -107,17 +114,39 @@ async def test_list_clusters(
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == []
 
-    # a cluster owned by user_1 usable by everyone shall be visible to user_2
-    cluster(
-        user_1,
-        name="cluster usable by everyone",
-        access_rights={"1": CLUSTER_USER_RIGHTS},
-    )
+    # let's create a few more clusters owned by user_1 with specific rights
+    for rights, name in [
+        (CLUSTER_NO_RIGHTS, "no rights"),
+        (CLUSTER_USER_RIGHTS, "user rights"),
+        (CLUSTER_MANAGER_RIGHTS, "manager rights"),
+        (CLUSTER_ADMIN_RIGHTS, "admin rights"),
+    ]:
+        cluster(
+            user_1,  # cluster is owned by user_1
+            name=f"cluster with {name}",
+            access_rights={
+                user_1["primary_gid"]: CLUSTER_ADMIN_RIGHTS,
+                user_2["primary_gid"]: rights,
+            },
+        )
+
     response = await async_client.get(f"/v2/clusters?user_id={user_2['id']}")
     assert response.status_code == status.HTTP_200_OK
     user_2_clusters = parse_obj_as(List[ClusterOut], response.json())
-    assert len(user_2_clusters) == 1
-    assert user_2_clusters[0].name == "cluster usable by everyone"
+    # we should find 3 clusters
+    assert len(user_2_clusters) == 3
+    for name in [
+        "cluster with user rights",
+        "cluster with manager rights",
+        "cluster with admin rights",
+    ]:
+        clusters = list(
+            filter(
+                lambda cluster, name=name: cluster.name == name,
+                user_2_clusters,
+            ),
+        )
+        assert len(clusters) == 1, f"missing cluster with {name=}"
 
 
 async def test_get_default_cluster_entrypoint(

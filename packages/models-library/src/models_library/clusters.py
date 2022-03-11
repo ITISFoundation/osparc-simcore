@@ -176,5 +176,7 @@ class Cluster(BaseCluster):
             v[owner_gid] = CLUSTER_ADMIN_RIGHTS
         # check owner has full access
         if v[owner_gid] != CLUSTER_ADMIN_RIGHTS:
-            raise ValueError("the cluster owner access rights are incorrectly set")
+            raise ValueError(
+                f"the cluster owner access rights are incorrectly set: {v[owner_gid]}"
+            )
         return v
