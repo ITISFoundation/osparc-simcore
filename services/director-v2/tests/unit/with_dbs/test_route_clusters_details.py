@@ -15,6 +15,7 @@ from distributed import Client as DaskClient
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from models_library.clusters import Cluster, SimpleAuthentication
+from models_library.users import UserID
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.models.schemas.clusters import ClusterDetailsOut
 from simcore_service_director_v2.models.schemas.constants import ClusterID
@@ -140,23 +141,33 @@ async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayS
                     assert len(cluster.scheduler_info.get("workers", 0)) == 0
 
 
-async def test_get_default_cluster_entrypoint(
-    clusters_config: None, async_client: httpx.AsyncClient
+async def test_get_default_cluster_details(
+    clusters_config: None,
+    user_db: Callable,
+    async_client: httpx.AsyncClient,
 ):
+    user_1 = user_db()
+
     # This test checks that the default cluster is accessible
     # the default cluster is the osparc internal cluster available through a dask-scheduler
-    response = await async_client.get("/v2/clusters/default/details")
+    response = await async_client.get(
+        f"/v2/clusters/default/details?user_id={user_1['id']}"
+    )
     assert response.status_code == status.HTTP_200_OK
     default_cluster_out = ClusterDetailsOut.parse_obj(response.json())
-    response = await async_client.get(f"/v2/clusters/{0}")
+    response = await async_client.get(
+        f"/v2/clusters/{0}/details?user_id={user_1['id']}"
+    )
     assert response.status_code == status.HTTP_200_OK
     assert default_cluster_out == ClusterDetailsOut.parse_obj(response.json())
 
 
-async def _get_cluster_out(
-    async_client: httpx.AsyncClient, cluster_id: ClusterID
+async def _get_cluster_details(
+    async_client: httpx.AsyncClient, user_id: UserID, cluster_id: ClusterID
 ) -> ClusterDetailsOut:
-    response = await async_client.get(f"/v2/clusters/{cluster_id}/details")
+    response = await async_client.get(
+        f"/v2/clusters/{cluster_id}/details?user_id={user_id}"
+    )
     assert response.status_code == status.HTTP_200_OK
     print(f"<-- received cluster details response {response=}")
     cluster_out = ClusterDetailsOut.parse_obj(response.json())
@@ -166,23 +177,28 @@ async def _get_cluster_out(
     return cluster_out
 
 
-async def test_get_cluster_entrypoint(
+async def test_get_cluster_details(
     clusters_config: None,
+    user_db: Callable[..., Dict[str, Any]],
     async_client: httpx.AsyncClient,
     local_dask_gateway_server: DaskGatewayServer,
     cluster: Callable[..., Cluster],
     dask_gateway_cluster: GatewayCluster,
     dask_gateway_cluster_client: DaskClient,
 ):
+    user_1 = user_db()
     # define the cluster in the DB
     some_cluster = cluster(
+        user_1,
         endpoint=local_dask_gateway_server.address,
         authentication=SimpleAuthentication(
             username="pytest_user", password=local_dask_gateway_server.password
         ).dict(by_alias=True),
     )
     # in its present state, the cluster should have no workers
-    cluster_out = await _get_cluster_out(async_client, some_cluster.id)
+    cluster_out = await _get_cluster_details(
+        async_client, user_1["id"], some_cluster.id
+    )
     assert not cluster_out.scheduler.workers, "the cluster should not have any worker!"
 
     # now let's scale the cluster
@@ -192,7 +208,9 @@ async def test_get_cluster_entrypoint(
         reraise=True, stop=stop_after_delay(60), wait=wait_fixed(1)
     ):
         with attempt:
-            cluster_out = await _get_cluster_out(async_client, some_cluster.id)
+            cluster_out = await _get_cluster_details(
+                async_client, user_1["id"], some_cluster.id
+            )
             assert cluster_out.scheduler.workers, "the cluster has no workers!"
             assert (
                 len(cluster_out.scheduler.workers) == _NUM_WORKERS
@@ -217,7 +235,9 @@ async def test_get_cluster_entrypoint(
         reraise=True, stop=stop_after_delay(10), wait=wait_fixed(1)
     ):
         with attempt:
-            cluster_out = await _get_cluster_out(async_client, some_cluster.id)
+            cluster_out = await _get_cluster_details(
+                async_client, user_1["id"], some_cluster.id
+            )
             assert (
                 next(iter(cluster_out.scheduler.workers.values())).metrics.executing
                 == 1
@@ -234,7 +254,9 @@ async def test_get_cluster_entrypoint(
         reraise=True, stop=stop_after_delay(20), wait=wait_fixed(1)
     ):
         with attempt:
-            cluster_out = await _get_cluster_out(async_client, some_cluster.id)
+            cluster_out = await _get_cluster_details(
+                async_client, user_1["id"], some_cluster.id
+            )
             assert (
                 next(iter(cluster_out.scheduler.workers.values())).metrics.executing
                 == 0
@@ -251,7 +273,9 @@ async def test_get_cluster_entrypoint(
             )
 
     # since the task is completed the worker should have stopped executing
-    cluster_out = await _get_cluster_out(async_client, some_cluster.id)
+    cluster_out = await _get_cluster_details(
+        async_client, user_1["id"], some_cluster.id
+    )
     worker_data = next(iter(cluster_out.scheduler.workers.values()))
     assert worker_data.metrics.executing == 0
     # in dask, the task remains in memory until the result is deleted
