@@ -339,12 +339,12 @@ qx.Class.define("osparc.wrapper.Svg", {
 
         // initialize the script loading
         const svgPath = "svg/svg.js";
+        // const svgDraggablePath = "svg/svg.draggable.js";
         const svgPathPath = "svg/svg.path.js";
-        const svgDraggablePath = "svg/svg.draggable.js";
         const dynLoader = new qx.util.DynamicScriptLoader([
           svgPath,
-          svgPathPath,
-          svgDraggablePath
+          // svgDraggablePath,
+          svgPathPath
         ]);
 
         dynLoader.addListenerOnce("ready", () => {
