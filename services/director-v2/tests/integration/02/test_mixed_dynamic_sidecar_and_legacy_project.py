@@ -227,7 +227,7 @@ def test_all_stack_services_running(
 
 async def test_legacy_and_dynamic_sidecar_run(
     dy_static_file_server_project: ProjectAtDB,
-    user_db: Dict,
+    user_db: Callable,
     services_endpoint: Dict[str, URL],
     simcore_services_ready_and_change_director_env: None,
     director_v2_client: httpx.AsyncClient,
@@ -244,13 +244,13 @@ async def test_legacy_and_dynamic_sidecar_run(
     """
     # FIXME: ANE can you instead parametrize this test?
     # why do we need to run all these services at the same time? it would be simpler one by one
-
+    user = user_db()
     await asyncio.gather(
         *(
             assert_start_service(
                 director_v2_client=director_v2_client,
                 # context
-                user_id=user_db["id"],
+                user_id=user["id"],
                 project_id=str(dy_static_file_server_project.uuid),
                 # service
                 service_key=node.key,

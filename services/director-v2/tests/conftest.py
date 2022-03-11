@@ -10,7 +10,6 @@ from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 from pprint import pformat
-from random import randint
 from typing import Any, AsyncIterable, Callable, Dict, Iterable, Iterator, List
 from uuid import uuid4
 
@@ -21,11 +20,16 @@ import simcore_service_director_v2
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
 from asgi_lifespan import LifespanManager
+from faker import Faker
 from fastapi import FastAPI
+from models_library.clusters import Cluster
 from models_library.projects import Node, ProjectAtDB, Workbench
+from models_library.projects_access import GroupID
 from models_library.projects_nodes_io import NodeID
 from pydantic.main import BaseModel
 from pydantic.types import PositiveInt
+from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
+from simcore_postgres_database.models.clusters import clusters
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import comp_tasks
@@ -36,6 +40,7 @@ from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB, Image
+from simcore_service_director_v2.models.schemas.constants import UserID
 from simcore_service_director_v2.utils.computations import to_node_class
 from simcore_service_director_v2.utils.dask import generate_dask_job_id
 from sqlalchemy import literal_column
@@ -247,44 +252,45 @@ def fake_workbench_complete_adjacency(
     return json.loads(fake_workbench_complete_adjacency_file.read_text())
 
 
-@pytest.fixture(scope="session")
-def user_id() -> PositiveInt:
-    return randint(1, 10000)
+@pytest.fixture()
+def user_db(
+    postgres_db: sa.engine.Engine, faker: Faker
+) -> Iterator[Callable[..., Dict]]:
+    created_user_ids = []
 
+    def creator(**user_kwargs) -> Dict[str, Any]:
+        with postgres_db.connect() as con:
+            # removes all users before continuing
+            user_config = {
+                "id": len(created_user_ids) + 1,
+                "name": faker.name(),
+                "email": faker.email(),
+                "password_hash": faker.password(),
+                "status": UserStatus.ACTIVE,
+                "role": UserRole.USER,
+            }
+            user_config.update(user_kwargs)
 
-@pytest.fixture(scope="module")
-def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Iterator[Dict]:
-    with postgres_db.connect() as con:
-        # removes all users before continuing
-        con.execute(users.delete())
-        con.execute(
-            users.insert()
-            .values(
-                id=user_id,
-                name="test user",
-                email="test@user.com",
-                password_hash="testhash",
-                status=UserStatus.ACTIVE,
-                role=UserRole.USER,
+            con.execute(
+                users.insert().values(user_config).returning(literal_column("*"))
             )
-            .returning(literal_column("*"))
-        )
-        # this is needed to get the primary_gid correctly
-        result = con.execute(select([users]).where(users.c.id == user_id))
-        user = result.first()
+            # this is needed to get the primary_gid correctly
+            result = con.execute(select([users]).where(users.c.id == user_config["id"]))
+            user = result.first()
+            created_user_ids.append(user["id"])
+        return dict(user)
 
-        yield dict(user)
+    yield creator
 
-        con.execute(users.delete().where(users.c.id == user_id))
+    with postgres_db.connect() as con:
+        con.execute(users.delete().where(users.c.id.in_(created_user_ids)))
 
 
 @pytest.fixture
-def project(
-    postgres_db: sa.engine.Engine, user_db: Dict
-) -> Iterable[Callable[..., ProjectAtDB]]:
+def project(postgres_db: sa.engine.Engine) -> Iterable[Callable[..., ProjectAtDB]]:
     created_project_ids: List[str] = []
 
-    def creator(**overrides) -> ProjectAtDB:
+    def creator(user_id: UserID, **overrides) -> ProjectAtDB:
         project_uuid = uuid4()
         print(f"Created new project with uuid={project_uuid}")
         project_config = {
@@ -292,7 +298,7 @@ def project(
             "name": "my test project",
             "type": ProjectType.STANDARD.name,
             "description": "my test description",
-            "prj_owner": user_db["id"],
+            "prj_owner": user_id,
             "access_rights": {"1": {"read": True, "write": True, "delete": True}},
             "thumbnail": "",
             "workbench": {},
@@ -415,15 +421,15 @@ def tasks(
 
 
 @pytest.fixture
-def runs(
-    postgres_db: sa.engine.Engine, user_db: Dict
-) -> Iterable[Callable[..., CompRunsAtDB]]:
+def runs(postgres_db: sa.engine.Engine) -> Iterable[Callable[..., CompRunsAtDB]]:
     created_run_ids: List[int] = []
 
-    def creator(project: ProjectAtDB, **run_kwargs) -> CompRunsAtDB:
+    def creator(
+        user: Dict[str, Any], project: ProjectAtDB, **run_kwargs
+    ) -> CompRunsAtDB:
         run_config = {
             "project_uuid": f"{project.uuid}",
-            "user_id": f"{user_db['id']}",
+            "user_id": f"{user['id']}",
             "iteration": 1,
             "result": StateType.NOT_STARTED,
         }
@@ -441,3 +447,72 @@ def runs(
     # cleanup
     with postgres_db.connect() as conn:
         conn.execute(comp_runs.delete().where(comp_runs.c.run_id.in_(created_run_ids)))
+
+
+@pytest.fixture
+def cluster(
+    postgres_db: sa.engine.Engine,
+) -> Iterable[Callable[..., Cluster]]:
+    created_cluster_ids: List[str] = []
+
+    def creator(owner_gid: GroupID, **overrides) -> Cluster:
+        cluster_config = Cluster.Config.schema_extra["examples"][0]
+        cluster_config["owner"] = owner_gid
+        cluster_config.update(**overrides)
+        new_cluster = Cluster.parse_obj(cluster_config)
+        assert new_cluster
+
+        with postgres_db.connect() as conn:
+            created_cluster_id = conn.scalar(
+                # pylint: disable=no-value-for-parameter
+                clusters.insert()
+                .values(new_cluster.to_clusters_db(only_update=False))
+                .returning(clusters.c.id)
+            )
+            created_cluster_ids.append(created_cluster_id)
+            result = conn.execute(
+                sa.select(
+                    [
+                        clusters,
+                        cluster_to_groups.c.gid,
+                        cluster_to_groups.c.read,
+                        cluster_to_groups.c.write,
+                        cluster_to_groups.c.delete,
+                    ]
+                )
+                .select_from(
+                    clusters.join(
+                        cluster_to_groups,
+                        clusters.c.id == cluster_to_groups.c.cluster_id,
+                    )
+                )
+                .where(clusters.c.id == created_cluster_id)
+            )
+
+            row = result.fetchone()
+            assert row
+            return Cluster.construct(
+                id=row[clusters.c.id],
+                name=row[clusters.c.name],
+                description=row[clusters.c.description],
+                type=row[clusters.c.type],
+                owner=row[clusters.c.owner],
+                endpoint=row[clusters.c.endpoint],
+                authentication=row[clusters.c.authentication],
+                access_rights={
+                    row[clusters.c.owner]: {
+                        "read": row[cluster_to_groups.c.read],
+                        "write": row[cluster_to_groups.c.write],
+                        "delete": row[cluster_to_groups.c.delete],
+                    }
+                },
+            )
+
+    yield creator
+
+    # cleanup
+    with postgres_db.connect() as conn:
+        conn.execute(
+            # pylint: disable=no-value-for-parameter
+            clusters.delete().where(clusters.c.id.in_(created_cluster_ids))
+        )

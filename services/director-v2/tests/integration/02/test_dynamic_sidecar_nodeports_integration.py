@@ -794,7 +794,7 @@ async def test_nodeports_integration(
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,
     db_manager: DBManager,
-    user_db: Dict,
+    user_db: Callable,
     current_study: ProjectAtDB,
     services_endpoint: Dict[str, URL],
     workbench_dynamic_services: Dict[str, Node],
@@ -831,14 +831,14 @@ async def test_nodeports_integration(
     for saving the state, the state files are recovered via
     `aioboto` instead of `docker` or `storage-data_manager API`.
     """
-
+    user = user_db()
     # STEP 1
 
     dynamic_services_urls: Dict[
         str, str
     ] = await _wait_for_dynamic_services_to_be_running(
         director_v2_client=async_client,
-        user_id=user_db["id"],
+        user_id=user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
     )
@@ -848,7 +848,7 @@ async def test_nodeports_integration(
     response = await create_pipeline(
         async_client,
         project=current_study,
-        user_id=user_db["id"],
+        user_id=user["id"],
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
@@ -867,14 +867,14 @@ async def test_nodeports_integration(
     await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
-        user_db["id"],
+        user["id"],
         current_study.uuid,
         wait_for_states=[RunningState.STARTED],
     )
 
     # wait for the computation to finish (either by failing, success or abort)
     task_out = await assert_and_wait_for_pipeline_status(
-        async_client, task_out.url, user_db["id"], current_study.uuid
+        async_client, task_out.url, user["id"], current_study.uuid
     )
 
     await assert_computation_task_out_obj(
@@ -924,7 +924,7 @@ async def test_nodeports_integration(
     )
 
     mapped_nodeports_values = await _get_mapped_nodeports_values(
-        user_db["id"], str(current_study.uuid), current_study.workbench, db_manager
+        user["id"], str(current_study.uuid), current_study.workbench, db_manager
     )
     await _assert_port_values(mapped_nodeports_values, services_node_uuids)
 
@@ -1003,7 +1003,7 @@ async def test_nodeports_integration(
         if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
         else await _fetch_data_via_data_manager(
             dir_tag="dy",
-            user_id=user_db["id"],
+            user_id=user["id"],
             project_id=str(current_study.uuid),
             service_uuid=services_node_uuids.dy,
             temp_dir=temp_dir,
@@ -1021,7 +1021,7 @@ async def test_nodeports_integration(
         if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
         else await _fetch_data_via_data_manager(
             dir_tag="dy_compose_spec",
-            user_id=user_db["id"],
+            user_id=user["id"],
             project_id=str(current_study.uuid),
             service_uuid=services_node_uuids.dy_compose_spec,
             temp_dir=temp_dir,
@@ -1032,7 +1032,7 @@ async def test_nodeports_integration(
 
     await _wait_for_dynamic_services_to_be_running(
         director_v2_client=async_client,
-        user_id=user_db["id"],
+        user_id=user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
     )

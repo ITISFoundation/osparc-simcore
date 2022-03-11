@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import json
-from typing import AsyncIterator, Callable, Dict, Iterable, List
+from typing import AsyncIterator, Callable, Dict, List
 
 import httpx
 import pytest
@@ -13,12 +13,14 @@ from _pytest.monkeypatch import MonkeyPatch
 from dask_gateway import Gateway, GatewayCluster, auth
 from distributed import Client as DaskClient
 from distributed.deploy.spec import SpecCluster
+from httpx import URL
 from models_library.clusters import Cluster, SimpleAuthentication
-from pydantic import NonNegativeInt
+from pydantic import NonNegativeInt, parse_obj_as
 from settings_library.rabbit import RabbitSettings
-from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
-from simcore_postgres_database.models.clusters import clusters
-from simcore_service_director_v2.models.schemas.clusters import ClusterDetailsOut
+from simcore_service_director_v2.models.schemas.clusters import (
+    ClusterDetailsOut,
+    ClusterOut,
+)
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
@@ -43,73 +45,61 @@ def clusters_config(
 
 
 @pytest.fixture
-def cluster(
-    user_db: Dict,
-    postgres_db: sa.engine.Engine,
-) -> Iterable[Callable[..., Cluster]]:
-    created_cluster_ids: List[str] = []
+async def dask_gateway(
+    local_dask_gateway_server: DaskGatewayServer,
+) -> Gateway:
+    async with Gateway(
+        local_dask_gateway_server.address,
+        local_dask_gateway_server.proxy_address,
+        asynchronous=True,
+        auth=auth.BasicAuth("pytest_user", local_dask_gateway_server.password),
+    ) as gateway:
+        print(f"--> {gateway=} created")
+        cluster_options = await gateway.cluster_options()
+        gateway_versions = await gateway.get_versions()
+        clusters_list = await gateway.list_clusters()
+        print(f"--> {gateway_versions=}, {cluster_options=}, {clusters_list=}")
+        for option in cluster_options.items():
+            print(f"--> {option=}")
+        return gateway
 
-    def creator(**overrides) -> Cluster:
-        cluster_config = Cluster.Config.schema_extra["examples"][0]
-        cluster_config["owner"] = user_db["primary_gid"]
-        cluster_config.update(**overrides)
-        new_cluster = Cluster.parse_obj(cluster_config)
-        assert new_cluster
 
-        with postgres_db.connect() as conn:
-            created_cluser_id = conn.scalar(
-                # pylint: disable=no-value-for-parameter
-                clusters.insert()
-                .values(new_cluster.to_clusters_db(only_update=False))
-                .returning(clusters.c.id)
-            )
-            created_cluster_ids.append(created_cluser_id)
-            result = conn.execute(
-                sa.select(
-                    [
-                        clusters,
-                        cluster_to_groups.c.gid,
-                        cluster_to_groups.c.read,
-                        cluster_to_groups.c.write,
-                        cluster_to_groups.c.delete,
-                    ]
-                )
-                .select_from(
-                    clusters.join(
-                        cluster_to_groups,
-                        clusters.c.id == cluster_to_groups.c.cluster_id,
-                    )
-                )
-                .where(clusters.c.id == created_cluser_id)
-            )
+@pytest.fixture
+async def dask_gateway_cluster(dask_gateway: Gateway) -> AsyncIterator[GatewayCluster]:
+    async with dask_gateway.new_cluster() as cluster:
+        yield cluster
 
-            row = result.fetchone()
-            assert row
-            return Cluster.construct(
-                id=row[clusters.c.id],
-                name=row[clusters.c.name],
-                description=row[clusters.c.description],
-                type=row[clusters.c.type],
-                owner=row[clusters.c.owner],
-                endpoint=row[clusters.c.endpoint],
-                authentication=row[clusters.c.authentication],
-                access_rights={
-                    row[clusters.c.owner]: {
-                        "read": row[cluster_to_groups.c.read],
-                        "write": row[cluster_to_groups.c.write],
-                        "delete": row[cluster_to_groups.c.delete],
-                    }
-                },
-            )
 
-    yield creator
+@pytest.fixture
+async def dask_gateway_cluster_client(
+    dask_gateway_cluster: GatewayCluster,
+) -> AsyncIterator[DaskClient]:
+    async with dask_gateway_cluster.get_client() as client:
+        yield client
 
-    # cleanup
-    with postgres_db.connect() as conn:
-        conn.execute(
-            # pylint: disable=no-value-for-parameter
-            clusters.delete().where(clusters.c.id.in_(created_cluster_ids))
-        )
+
+async def test_list_clusters(
+    clusters_config: None,
+    user_db: Callable[..., Dict],
+    cluster: Callable[..., Cluster],
+    async_client: httpx.AsyncClient,
+):
+    user_1 = user_db()
+    list_clusters_url = URL(f"/v2/clusters?user_id={user_1['id']}")
+    # there is no cluster at the moment, the list is empty
+    response = await async_client.get(list_clusters_url)
+    assert response.status_code == status.HTTP_200_OK
+    returned_clusters_list = parse_obj_as(List[ClusterOut], response.json())
+    assert returned_clusters_list == []
+
+    # let's create some clusters
+    for n in range(1000):
+        cluster(user_1["id"], name=f"pytest cluster{n:04}")
+
+    response = await async_client.get(list_clusters_url)
+    assert response.status_code == status.HTTP_200_OK
+    returned_clusters_list = parse_obj_as(List[ClusterOut], response.json())
+    assert len(returned_clusters_list) == 1000
 
 
 async def test_get_default_cluster_entrypoint(
@@ -171,40 +161,6 @@ async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayS
                         f"cluster {cluster=} has now {len(cluster.scheduler_info.get('workers', []))}"
                     )
                     assert len(cluster.scheduler_info.get("workers", 0)) == 0
-
-
-@pytest.fixture
-async def dask_gateway(
-    local_dask_gateway_server: DaskGatewayServer,
-) -> Gateway:
-    async with Gateway(
-        local_dask_gateway_server.address,
-        local_dask_gateway_server.proxy_address,
-        asynchronous=True,
-        auth=auth.BasicAuth("pytest_user", local_dask_gateway_server.password),
-    ) as gateway:
-        print(f"--> {gateway=} created")
-        cluster_options = await gateway.cluster_options()
-        gateway_versions = await gateway.get_versions()
-        clusters_list = await gateway.list_clusters()
-        print(f"--> {gateway_versions=}, {cluster_options=}, {clusters_list=}")
-        for option in cluster_options.items():
-            print(f"--> {option=}")
-        return gateway
-
-
-@pytest.fixture
-async def dask_gateway_cluster(dask_gateway: Gateway) -> AsyncIterator[GatewayCluster]:
-    async with dask_gateway.new_cluster() as cluster:
-        yield cluster
-
-
-@pytest.fixture
-async def dask_gateway_cluster_client(
-    dask_gateway_cluster: GatewayCluster,
-) -> AsyncIterator[DaskClient]:
-    async with dask_gateway_cluster.get_client() as client:
-        yield client
 
 
 async def _get_cluster_out(
