@@ -887,6 +887,13 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       addRectBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsRect(), this);
       annotationsButtons.add(addRectBtn);
 
+      const addTextBtn = new qx.ui.form.Button().set({
+        label: this.tr("Add Text"),
+        height: buttonsHeight
+      });
+      addTextBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsText(), this);
+      annotationsButtons.add(addTextBtn);
+
       return annotationsSection;
     },
 

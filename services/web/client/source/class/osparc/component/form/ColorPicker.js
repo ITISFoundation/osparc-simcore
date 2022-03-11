@@ -27,8 +27,6 @@ qx.Class.define("osparc.component.form.ColorPicker", {
   },
 
   members: {
-    __validationManager: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
