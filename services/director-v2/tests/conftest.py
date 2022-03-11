@@ -24,10 +24,8 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.clusters import Cluster
 from models_library.projects import Node, ProjectAtDB, Workbench
-from models_library.projects_access import GroupID
 from models_library.projects_nodes_io import NodeID
 from pydantic.main import BaseModel
-from pydantic.types import PositiveInt
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
@@ -40,10 +38,10 @@ from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB, Image
-from simcore_service_director_v2.models.schemas.constants import UserID
 from simcore_service_director_v2.utils.computations import to_node_class
 from simcore_service_director_v2.utils.dask import generate_dask_job_id
 from sqlalchemy import literal_column
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql.expression import select
 from starlette.testclient import TestClient
 
@@ -287,18 +285,20 @@ def user_db(
 
 
 @pytest.fixture
-def project(postgres_db: sa.engine.Engine) -> Iterable[Callable[..., ProjectAtDB]]:
+def project(
+    postgres_db: sa.engine.Engine, faker: Faker
+) -> Iterable[Callable[..., ProjectAtDB]]:
     created_project_ids: List[str] = []
 
-    def creator(user_id: UserID, **overrides) -> ProjectAtDB:
+    def creator(user: Dict[str, Any], **overrides) -> ProjectAtDB:
         project_uuid = uuid4()
         print(f"Created new project with uuid={project_uuid}")
         project_config = {
             "uuid": f"{project_uuid}",
-            "name": "my test project",
+            "name": faker.name(),
             "type": ProjectType.STANDARD.name,
-            "description": "my test description",
-            "prj_owner": user_id,
+            "description": faker.text(),
+            "prj_owner": user["user_id"],
             "access_rights": {"1": {"read": True, "write": True, "delete": True}},
             "thumbnail": "",
             "workbench": {},
@@ -357,12 +357,12 @@ def pipeline(
 
 
 @pytest.fixture
-def tasks(
-    postgres_db: sa.engine.Engine, user_id: PositiveInt
-) -> Iterable[Callable[..., List[CompTaskAtDB]]]:
+def tasks(postgres_db: sa.engine.Engine) -> Iterable[Callable[..., List[CompTaskAtDB]]]:
     created_task_ids: List[int] = []
 
-    def creator(project: ProjectAtDB, **overrides_kwargs) -> List[CompTaskAtDB]:
+    def creator(
+        user: Dict[str, Any], project: ProjectAtDB, **overrides_kwargs
+    ) -> List[CompTaskAtDB]:
         created_tasks: List[CompTaskAtDB] = []
         for internal_id, (node_id, node_data) in enumerate(project.workbench.items()):
             task_config = {
@@ -394,7 +394,7 @@ def tasks(
                 "job_id": generate_dask_job_id(
                     service_key=node_data.key,
                     service_version=node_data.version,
-                    user_id=user_id,
+                    user_id=user["id"],
                     project_id=project.uuid,
                     node_id=NodeID(node_id),
                 ),
@@ -455,57 +455,58 @@ def cluster(
 ) -> Iterable[Callable[..., Cluster]]:
     created_cluster_ids: List[str] = []
 
-    def creator(owner_gid: GroupID, **overrides) -> Cluster:
+    def creator(user: Dict[str, Any], **cluster_kwargs) -> Cluster:
         cluster_config = Cluster.Config.schema_extra["examples"][0]
-        cluster_config["owner"] = owner_gid
-        cluster_config.update(**overrides)
+        cluster_config["owner"] = user["primary_gid"]
+        cluster_config.update(**cluster_kwargs)
         new_cluster = Cluster.parse_obj(cluster_config)
         assert new_cluster
 
         with postgres_db.connect() as conn:
-            created_cluster_id = conn.scalar(
-                # pylint: disable=no-value-for-parameter
-                clusters.insert()
+            # insert basic cluster
+            created_cluster = conn.execute(
+                sa.insert(clusters)
                 .values(new_cluster.to_clusters_db(only_update=False))
-                .returning(clusters.c.id)
-            )
-            created_cluster_ids.append(created_cluster_id)
-            result = conn.execute(
+                .returning(literal_column("*"))
+            ).one()
+            created_cluster_ids.append(created_cluster.id)
+            if "access_rights" in cluster_kwargs:
+                for gid, rights in cluster_kwargs["access_rights"].items():
+                    conn.execute(
+                        pg_insert(cluster_to_groups)
+                        .values(cluster_id=created_cluster.id, gid=gid, **rights.dict())
+                        .on_conflict_do_update(
+                            index_elements=["gid", "cluster_id"], set_=rights.dict()
+                        )
+                    )
+            access_rights_in_db = {}
+            for row in conn.execute(
                 sa.select(
                     [
-                        clusters,
                         cluster_to_groups.c.gid,
                         cluster_to_groups.c.read,
                         cluster_to_groups.c.write,
                         cluster_to_groups.c.delete,
                     ]
                 )
-                .select_from(
-                    clusters.join(
-                        cluster_to_groups,
-                        clusters.c.id == cluster_to_groups.c.cluster_id,
-                    )
-                )
-                .where(clusters.c.id == created_cluster_id)
-            )
+                .select_from(clusters.join(cluster_to_groups))
+                .where(clusters.c.id == created_cluster.id)
+            ):
+                access_rights_in_db[row.gid] = {
+                    "read": row[cluster_to_groups.c.read],
+                    "write": row[cluster_to_groups.c.write],
+                    "delete": row[cluster_to_groups.c.delete],
+                }
 
-            row = result.fetchone()
-            assert row
             return Cluster.construct(
-                id=row[clusters.c.id],
-                name=row[clusters.c.name],
-                description=row[clusters.c.description],
-                type=row[clusters.c.type],
-                owner=row[clusters.c.owner],
-                endpoint=row[clusters.c.endpoint],
-                authentication=row[clusters.c.authentication],
-                access_rights={
-                    row[clusters.c.owner]: {
-                        "read": row[cluster_to_groups.c.read],
-                        "write": row[cluster_to_groups.c.write],
-                        "delete": row[cluster_to_groups.c.delete],
-                    }
-                },
+                id=created_cluster.id,
+                name=created_cluster.name,
+                description=created_cluster.description,
+                type=created_cluster.type,
+                owner=created_cluster.owner,
+                endpoint=created_cluster.endpoint,
+                authentication=created_cluster.authentication,
+                access_rights=access_rights_in_db,
             )
 
     yield creator

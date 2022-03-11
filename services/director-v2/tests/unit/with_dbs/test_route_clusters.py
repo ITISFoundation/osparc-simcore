@@ -14,7 +14,7 @@ from dask_gateway import Gateway, GatewayCluster, auth
 from distributed import Client as DaskClient
 from distributed.deploy.spec import SpecCluster
 from httpx import URL
-from models_library.clusters import Cluster, SimpleAuthentication
+from models_library.clusters import CLUSTER_USER_RIGHTS, Cluster, SimpleAuthentication
 from pydantic import NonNegativeInt, parse_obj_as
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.models.schemas.clusters import (
@@ -94,12 +94,30 @@ async def test_list_clusters(
 
     # let's create some clusters
     for n in range(1000):
-        cluster(user_1["id"], name=f"pytest cluster{n:04}")
+        cluster(user_1, name=f"pytest cluster{n:04}")
 
     response = await async_client.get(list_clusters_url)
     assert response.status_code == status.HTTP_200_OK
     returned_clusters_list = parse_obj_as(List[ClusterOut], response.json())
     assert len(returned_clusters_list) == 1000
+
+    # now create a second user and check the clusters are not seen by it
+    user_2 = user_db()
+    response = await async_client.get(f"/v2/clusters?user_id={user_2['id']}")
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == []
+
+    # a cluster owned by user_1 usable by everyone shall be visible to user_2
+    cluster(
+        user_1,
+        name="cluster usable by everyone",
+        access_rights={"1": CLUSTER_USER_RIGHTS},
+    )
+    response = await async_client.get(f"/v2/clusters?user_id={user_2['id']}")
+    assert response.status_code == status.HTTP_200_OK
+    user_2_clusters = parse_obj_as(List[ClusterOut], response.json())
+    assert len(user_2_clusters) == 1
+    assert user_2_clusters[0].name == "cluster usable by everyone"
 
 
 async def test_get_default_cluster_entrypoint(
