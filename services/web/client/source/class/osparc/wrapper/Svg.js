@@ -319,6 +319,13 @@ qx.Class.define("osparc.wrapper.Svg", {
         })
         .move(0, 0);
       return polygon;
+    },
+
+    makeDraggable: function(item, draggable = true) {
+      item.style({
+        cursor: "move"
+      });
+      item.draggable(draggable);
     }
   },
 
@@ -333,9 +340,11 @@ qx.Class.define("osparc.wrapper.Svg", {
         // initialize the script loading
         const svgPath = "svg/svg.js";
         const svgPathPath = "svg/svg.path.js";
+        const svgDraggablePath = "svg/svg.draggable.js";
         const dynLoader = new qx.util.DynamicScriptLoader([
           svgPath,
-          svgPathPath
+          svgPathPath,
+          svgDraggablePath
         ]);
 
         dynLoader.addListenerOnce("ready", () => {

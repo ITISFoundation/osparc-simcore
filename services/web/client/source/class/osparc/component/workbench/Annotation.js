@@ -96,6 +96,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
           break;
       }
       if (representation) {
+        osparc.wrapper.Svg.makeDraggable(representation);
         representation.node.addEventListener("click", e => {
           this.fireEvent("annotationClicked");
           e.stopPropagation();
