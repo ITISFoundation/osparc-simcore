@@ -227,6 +227,10 @@ qx.Class.define("osparc.wrapper.Svg", {
       });
     },
 
+    updateText: function(text, label) {
+      text.text(label);
+    },
+
     updateTextColor: function(text, color) {
       text.font({
         fill: color

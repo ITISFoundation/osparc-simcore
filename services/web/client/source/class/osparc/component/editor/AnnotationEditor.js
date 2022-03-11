@@ -46,18 +46,32 @@ qx.Class.define("osparc.component.editor.AnnotationEditor", {
     __applyAnnotation: function(annotation) {
       this._removeAll();
 
+      let row = 0;
       this._add(new qx.ui.basic.Label(this.tr("Color")), {
-        row: 0,
+        row,
         column: 0
       });
-
-      const colorPicker = this.__colorPicker = new osparc.component.form.ColorPicker();
+      const colorPicker = new osparc.component.form.ColorPicker();
       annotation.bind("color", colorPicker, "color");
       colorPicker.bind("color", annotation, "color");
       this._add(colorPicker, {
-        row: 0,
+        row,
         column: 1
       });
+      row++;
+
+      if (annotation.getType() === "text") {
+        this._add(new qx.ui.basic.Label(this.tr("Text")), {
+          row,
+          column: 0
+        });
+        const textField = new qx.ui.form.TextField(annotation.getAttributes().text);
+        textField.addListener("changeValue", e => annotation.setText(e.getData()));
+        this._add(textField, {
+          row,
+          column: 1
+        });
+      }
     }
   }
 });

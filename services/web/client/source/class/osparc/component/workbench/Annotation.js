@@ -118,6 +118,14 @@ qx.Class.define("osparc.component.workbench.Annotation", {
       }
     },
 
+    setText: function(newText) {
+      this.getAttributes().text = newText;
+      const representation = this.getRepresentation();
+      if (representation) {
+        osparc.wrapper.Svg.updateText(representation, newText);
+      }
+    },
+
     setSelected: function(selected) {
       const representation = this.getRepresentation();
       if (representation) {
