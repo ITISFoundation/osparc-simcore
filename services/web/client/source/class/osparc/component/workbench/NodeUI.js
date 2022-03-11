@@ -337,7 +337,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     removeShadows: function() {
       if (this.__svgWorkbenchCanvas && "shadows" in this) {
         this.shadows.forEach(shadow => {
-          osparc.component.workbench.SvgWidget.removeNodeUI(shadow);
+          osparc.wrapper.Svg.removeNodeUI(shadow);
         });
         delete this["shadows"];
       }

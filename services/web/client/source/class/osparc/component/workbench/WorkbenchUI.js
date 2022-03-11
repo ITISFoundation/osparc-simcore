@@ -539,7 +539,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
         edge.addListener("changePortConnected", e => {
           const portConnected = e.getData();
-          osparc.component.workbench.SvgWidget.updateCurveDashes(edgeRepresentation, !portConnected);
+          osparc.wrapper.Svg.updateCurveDashes(edgeRepresentation, !portConnected);
         }, this);
 
         const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
@@ -777,7 +777,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const pos = nodeUI.getNode().getPosition();
         const nShadows = nodeUI.shadows.length;
         for (let i=0; i<nShadows; i++) {
-          osparc.component.workbench.SvgWidget.updateNodeUI(nodeUI.shadows[i], pos.x + (nShadows-i)*shadowDiffX, pos.y + (nShadows-i)*shadowDiffY);
+          osparc.wrapper.Svg.updateNodeUI(nodeUI.shadows[i], pos.x + (nShadows-i)*shadowDiffX, pos.y + (nShadows-i)*shadowDiffY);
         }
       }
     },
@@ -885,13 +885,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (!this.__tempEdgeIsInput) {
         const modified = nodeUI.getNode().getStatus().getModified();
         const colorHex = osparc.component.workbench.EdgeUI.getEdgeColor(modified);
-        osparc.component.workbench.SvgWidget.updateCurveColor(this.__tempEdgeRepr, colorHex);
+        osparc.wrapper.Svg.updateCurveColor(this.__tempEdgeRepr, colorHex);
       }
     },
 
     __removeTempEdge: function() {
       if (this.__tempEdgeRepr !== null) {
-        osparc.component.workbench.SvgWidget.removeCurve(this.__tempEdgeRepr);
+        osparc.wrapper.Svg.removeCurve(this.__tempEdgeRepr);
       }
 
       const nodeUI = this.getNodeUI(this.__tempEdgeNodeId);
@@ -977,7 +977,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __clearEdge: function(edge) {
       if (edge) {
-        osparc.component.workbench.SvgWidget.removeCurve(edge.getRepresentation());
+        osparc.wrapper.Svg.removeCurve(edge.getRepresentation());
         const index = this.__edgesUI.indexOf(edge);
         if (index > -1) {
           this.__edgesUI.splice(index, 1);
