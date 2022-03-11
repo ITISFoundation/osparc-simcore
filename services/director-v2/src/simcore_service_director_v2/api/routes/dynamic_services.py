@@ -170,11 +170,13 @@ async def get_dynamic_sidecar_status(
     summary="stops previously spawned dynamic-sidecar",
 )
 async def stop_dynamic_service(
-    request: Request,
     node_uuid: NodeID,
     can_save: Optional[bool] = True,
     director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
+    dynamic_services_settings: DynamicServicesSettings = Depends(
+        get_dynamic_services_settings
+    ),
 ) -> Union[NoContentResponse, RedirectResponse]:
     try:
         await scheduler.mark_service_for_removal(node_uuid, can_save)
@@ -193,7 +195,7 @@ async def stop_dynamic_service(
     # services, containsers, volumes and networks.
     # Once the service is no longer being tracked this can return
     dynamic_sidecar_settings: DynamicSidecarSettings = (
-        request.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+        dynamic_services_settings.DYNAMIC_SIDECAR
     )
     _STOPPED_CHECK_INTERVAL = 1.0
     async with async_timeout.timeout(
@@ -213,10 +215,14 @@ async def stop_dynamic_service(
 )
 @log_decorator(logger=logger)
 async def service_retrieve_data_on_ports(
-    request: Request,
     node_uuid: NodeID,
     retrieve_settings: RetrieveDataIn,
     scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
+    dynamic_services_settings: DynamicServicesSettings = Depends(
+        get_dynamic_services_settings
+    ),
+    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
+    services_client: ServicesClient = Depends(get_services_client),
 ) -> RetrieveDataOutEnveloped:
     try:
         return await scheduler.retrieve_service_inputs(
@@ -227,12 +233,11 @@ async def service_retrieve_data_on_ports(
         # makes request to director-v0 and sends back reply
 
         service_base_url: URL = await get_service_base_url(
-            node_uuid, get_director_v0_client(request)
+            node_uuid, director_v0_client
         )
-        services_client: ServicesClient = get_services_client(request)
 
         dynamic_sidecar_settings: DynamicSidecarSettings = (
-            request.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
+            dynamic_services_settings.DYNAMIC_SIDECAR
         )
         timeout = httpx.Timeout(
             dynamic_sidecar_settings.DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT,
