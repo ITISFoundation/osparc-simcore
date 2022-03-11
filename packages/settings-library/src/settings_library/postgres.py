@@ -64,7 +64,14 @@ class PostgresSettings(BaseCustomSettings):
 
     @cached_property
     def dsn_with_async_sqlalchemy(self) -> str:
-        dsn = self.dsn.replace("postgresql", "postgresql+asyncpg")
+        dsn: str = PostgresDsn.build(
+            scheme="postgresql+asyncpg",
+            user=self.POSTGRES_USER,
+            password=self.POSTGRES_PASSWORD.get_secret_value(),
+            host=self.POSTGRES_HOST,
+            port=f"{self.POSTGRES_PORT}",
+            path=f"/{self.POSTGRES_DB}",
+        )
         return dsn
 
     @cached_property
