@@ -794,7 +794,7 @@ class ProjectDBAPI:
 
     @staticmethod
     async def _get_user_primary_group_gid(conn: SAConnection, user_id: int) -> int:
-        primary_gid: int = await conn.scalar(
+        primary_gid: Optional[int] = await conn.scalar(
             sa.select([users.c.primary_gid]).where(users.c.id == str(user_id))
         )
         if not primary_gid:
@@ -809,7 +809,7 @@ class ProjectDBAPI:
         return [row.tag_id async for row in conn.execute(query)]
 
     async def get_all_node_ids_from_workbenches(
-        self, project_uuid: str = None
+        self, project_uuid: Optional[str] = None
     ) -> Set[str]:
         """Returns a set containing all the workbench node_ids from all projects
 
@@ -817,6 +817,15 @@ class ProjectDBAPI:
         """
 
         if project_uuid is None:
+            # this can return a tremendous amount of node IDs !!!!
+            # TODO: this should be the fix!
+            # SELECT *
+            # FROM "projects"
+            # WHERE workbench ->> '0b6b8423-c9e9-4d4c-9c59-a5eef6508ba5' IS NOT NULL
+            # or
+            # SELECT *
+            # FROM "projects"
+            # WHERE CAST("workbench" AS text) LIKE '%0b6b8423-c9e9-4d4c-9c59-a5eef6508ba5%'
             query = "SELECT json_object_keys(projects.workbench) FROM projects"
         else:
             query = f"SELECT json_object_keys(projects.workbench) FROM projects WHERE projects.uuid = '{project_uuid}'"
