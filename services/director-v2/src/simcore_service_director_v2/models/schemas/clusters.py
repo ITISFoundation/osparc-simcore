@@ -45,7 +45,11 @@ class Scheduler(BaseModel):
     workers: WorkersDict
 
 
-class ClusterOut(BaseModel):
+class ClusterOut(Cluster):
+    ...
+
+
+class ClusterDetailsOut(BaseModel):
     scheduler: Scheduler
     cluster: Cluster
     dashboard_link: Optional[AnyUrl] = None
