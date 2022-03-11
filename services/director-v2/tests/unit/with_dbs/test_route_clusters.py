@@ -156,6 +156,87 @@ async def test_list_clusters(
         assert len(clusters) == 1, f"missing cluster with {name=}"
 
 
+async def test_get_cluster(
+    clusters_config: None,
+    user_db: Callable[..., Dict],
+    cluster: Callable[..., Cluster],
+    async_client: httpx.AsyncClient,
+):
+    user_1 = user_db()
+    # try to get one that does not exist
+    response = await async_client.get(
+        f"/v2/clusters/15615165165165?user_id={user_1['id']}"
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    # let's create some clusters
+    a_bunch_of_clusters = [
+        cluster(user_1, name=f"pytest cluster{n:04}") for n in range(1000)
+    ]
+    the_cluster = random.choice(a_bunch_of_clusters)
+
+    # there is no cluster at the moment, the list is empty
+    response = await async_client.get(
+        f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}"
+    )
+    assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
+    returned_cluster = parse_obj_as(ClusterOut, response.json())
+    assert returned_cluster
+    assert the_cluster.dict() == returned_cluster.dict()
+
+    user_2 = user_db()
+    # getting the same cluster for user 2 shall return 403
+    response = await async_client.get(
+        f"/v2/clusters/{the_cluster.id}?user_id={user_2['id']}"
+    )
+    assert (
+        response.status_code == status.HTTP_403_FORBIDDEN
+    ), f"received {response.text}"
+    # let's create a few cluster for user 2 and share some with user 1
+    for rights, user_1_expected_access in [
+        (CLUSTER_NO_RIGHTS, False),
+        (CLUSTER_USER_RIGHTS, True),
+        (CLUSTER_MANAGER_RIGHTS, True),
+        (CLUSTER_ADMIN_RIGHTS, True),
+    ]:
+        a_cluster = cluster(
+            user_2,  # cluster is owned by user_2
+            access_rights={
+                user_2["primary_gid"]: CLUSTER_ADMIN_RIGHTS,
+                user_1["primary_gid"]: rights,
+            },
+        )
+        # now let's check that user_1 can access only the correct ones
+        response = await async_client.get(
+            f"/v2/clusters/{a_cluster.id}?user_id={user_1['id']}"
+        )
+        assert (
+            response.status_code == status.HTTP_200_OK
+            if user_1_expected_access
+            else status.HTTP_403_FORBIDDEN
+        ), f"received {response.text}"
+
+
+@pytest.mark.xfail(reason="This needs another iteration and will be tackled next")
+async def test_get_default_cluster(
+    clusters_config: None,
+    user_db: Callable[..., Dict],
+    cluster: Callable[..., Cluster],
+    async_client: httpx.AsyncClient,
+):
+    user_1 = user_db()
+    # NOTE: we should not need the user id for default right?
+    # NOTE: it should be accessible to everyone to run, and only a handful of elected
+    # people shall be able to administer it
+    get_cluster_url = URL("/v2/clusters/default")
+    response = await async_client.get(get_cluster_url)
+    assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
+    returned_cluster = parse_obj_as(ClusterOut, response.json())
+    assert returned_cluster
+    assert returned_cluster.name == "Default cluster"
+    assert 1 in returned_cluster.access_rights  # everyone group is always 1
+    assert returned_cluster.access_rights[1] == CLUSTER_USER_RIGHTS
+
+
 @pytest.fixture
 def cluster_simple_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
     def creator() -> Dict[str, Any]:
