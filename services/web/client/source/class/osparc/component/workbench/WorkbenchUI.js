@@ -228,8 +228,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
           this.__selectedItemChanged(null);
         } else if (this.__isSelectedItemAnAnnotation()) {
-          this.__removeAnnotation(this.__selectedItemId);
+          const id = this.__selectedItemId;
           this.__selectedItemChanged(null);
+          this.__removeAnnotation(id);
         }
       }, this);
 
@@ -1253,6 +1254,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
       if (this.__annotatingRect) {
         this.__consolidateRectAnnotation(this.__rectAnnotationRepr);
+        osparc.wrapper.Svg.removeRect(this.__rectAnnotationRepr);
         this.__rectAnnotationRepr = null;
         this.__annotatingRect = false;
       }
@@ -1486,8 +1488,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
               this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
               this.__selectedItemChanged(null);
             } else if (this.__isSelectedItemAnAnnotation()) {
-              this.__removeAnnotation(this.__selectedItemId);
+              const id = this.__selectedItemId;
               this.__selectedItemChanged(null);
+              this.__removeAnnotation(id);
             } else {
               this.fireDataEvent("removeNodes", selectedNodeIDs);
             }
@@ -1660,11 +1663,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __addAnnotation: function(data, id) {
       const annotation = new osparc.component.workbench.Annotation(this.__svgLayer, data, id);
-      annotation.getRepresentation().node.addEventListener("click", ev => {
-        // this is needed to get out of the context of svg
-        this.__selectedItemChanged(annotation.getId());
-        ev.stopPropagation();
-      }, this);
+      annotation.addListener("annotationClicked", () => this.__selectedItemChanged(annotation.getId()), this);
       this.__annotations[annotation.getId()] = annotation;
       this.getStudy().addAnnotation(annotation);
     },

@@ -74,6 +74,10 @@ qx.Class.define("osparc.component.workbench.Annotation", {
     }
   },
 
+  events: {
+    "annotationClicked": "qx.event.type.Event"
+  },
+
   members: {
     __svgLayer: null,
 
@@ -86,6 +90,10 @@ qx.Class.define("osparc.component.workbench.Annotation", {
       switch (this.getType()) {
         case "rect":
           representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
+          representation.node.addEventListener("click", e => {
+            this.fireEvent("annotationClicked");
+            e.stopPropagation();
+          }, this);
           break;
       }
       if (representation) {

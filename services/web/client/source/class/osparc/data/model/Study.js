@@ -510,7 +510,9 @@ qx.Class.define("osparc.data.model.Study", {
             if (annotationsIds.length) {
               jsonObject[key] = {};
               jsonObject[key]["annotations"] = {};
-              annotationsIds.forEach(annotationId => jsonObject[key]["annotations"][annotationId] = annotations[annotationId].serialize());
+              annotationsIds.forEach(annotationId => {
+                jsonObject[key]["annotations"][annotationId] = annotations[annotationId].serialize();
+              });
             }
           }
           return;
