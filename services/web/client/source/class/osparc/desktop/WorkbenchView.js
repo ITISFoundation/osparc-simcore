@@ -881,14 +881,16 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
       const buttonsHeight = 28;
       const addRectBtn = new qx.ui.form.Button().set({
-        label: this.tr("Add Rect"),
+        label: this.tr("Rect"),
+        icon: "@FontAwesome5Solid/plus/14",
         height: buttonsHeight
       });
       addRectBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsRect(), this);
       annotationsButtons.add(addRectBtn);
 
       const addTextBtn = new qx.ui.form.Button().set({
-        label: this.tr("Add Text"),
+        label: this.tr("Text"),
+        icon: "@FontAwesome5Solid/plus/14",
         height: buttonsHeight
       });
       addTextBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsText(), this);
