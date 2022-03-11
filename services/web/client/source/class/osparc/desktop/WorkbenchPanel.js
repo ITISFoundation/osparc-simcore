@@ -39,9 +39,6 @@ qx.Class.define("osparc.desktop.WorkbenchPanel", {
       flex: 1
     });
 
-    toolbar.addListener("startRect", () => workbenchUI.startAnnotationsRect(true), this);
-    toolbar.addListener("stopRect", () => workbenchUI.startAnnotationsRect(false), this);
-
     toolbar.addListener("zoomIn", () => workbenchUI.zoom(true), this);
     toolbar.addListener("zoomOut", () => workbenchUI.zoom(false), this);
     toolbar.addListener("zoomReset", () => workbenchUI.setScale(1), this);

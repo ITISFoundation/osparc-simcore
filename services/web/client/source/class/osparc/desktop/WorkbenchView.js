@@ -68,10 +68,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     "backToDashboardPressed": "qx.event.type.Event",
     "slidesEdit": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
-    "ospaintEditStop": "qx.event.type.Event",
-    "ospaintEditStart": "qx.event.type.Event",
-    "ospaintShow": "qx.event.type.Event",
-    "ospaintHide": "qx.event.type.Event",
+    "annotationRectStart": "qx.event.type.Event",
     "takeSnapshot": "qx.event.type.Event",
     "showSnapshots": "qx.event.type.Event",
     "createIterations": "qx.event.type.Event",
@@ -667,10 +664,6 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       return this.__workbenchPanel.getToolbar().getStartStopButtons();
     },
 
-    __getAnnotationsToolbar: function() {
-      return this.__workbenchPanel.getToolbar().getAnnotationsToolbar();
-    },
-
     getSelectedNodes: function() {
       return this.__workbenchUI.getSelectedNodes();
     },
@@ -817,7 +810,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__studyOptionsPage.add(this.__getSlideshowSection());
 
       if (osparc.data.Permissions.getInstance().isTester()) {
-        this.__studyOptionsPage.add(this.__getOspaintSection());
+        this.__studyOptionsPage.add(this.__getAnnotationsSection());
       }
 
       osparc.utils.DisabledPlugins.isVersionControlDisabled()
@@ -877,53 +870,24 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }
     },
 
-    __getOspaintSection: function() {
-      const ospaintSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      ospaintSection.add(new qx.ui.basic.Label(this.tr("oSPaint")).set({
+    __getAnnotationsSection: function() {
+      const annotationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      annotationsSection.add(new qx.ui.basic.Label(this.tr("oSPaint")).set({
         font: "title-14"
       }));
 
-      const ospaintButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
-      ospaintSection.add(ospaintButtons);
+      const annotationsButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      annotationsSection.add(annotationsButtons);
 
       const buttonsHeight = 28;
-      const editOspaintBtn = new qx.ui.form.ToggleButton().set({
+      const addRectBtn = new qx.ui.form.Button().set({
+        label: this.tr("Add Rect"),
         height: buttonsHeight
       });
-      editOspaintBtn.bind("value", editOspaintBtn, "label", {
-        converter: val => val ? this.tr("Done") : this.tr("Edit")
-      });
-      editOspaintBtn.bind("value", editOspaintBtn, "icon", {
-        converter: val => val ? "@FontAwesome5Solid/check/14" : "@FontAwesome5Solid/edit/14"
-      });
-      editOspaintBtn.addListener("changeValue", e => {
-        if (e.getData()) {
-          this.fireEvent("ospaintEditStart");
-          this.getStartStopButtons().exclude();
-          this.__getAnnotationsToolbar().show();
-        } else {
-          this.fireEvent("ospaintEditStop");
-          this.getStartStopButtons().show();
-          this.__getAnnotationsToolbar().exclude();
-        }
-      }, this);
-      ospaintButtons.add(editOspaintBtn);
+      addRectBtn.addListener("execute", () => this.fireEvent("annotationRectStart"), this);
+      annotationsButtons.add(addRectBtn);
 
-      const startOspaintBtn = new qx.ui.form.ToggleButton().set({
-        height: buttonsHeight
-      });
-      startOspaintBtn.bind("value", startOspaintBtn, "label", {
-        converter: val => val ? this.tr("Hide") : this.tr("Show")
-      });
-      startOspaintBtn.bind("value", startOspaintBtn, "icon", {
-        converter: val => val ? "@FontAwesome5Solid/eye-slash/14" : "@FontAwesome5Solid/eye/14"
-      });
-      startOspaintBtn.addListener("changeValue", e => this.fireEvent(e.getData() ? "ospaintShow" : "ospaintHide"), this);
-      ospaintButtons.add(startOspaintBtn);
-
-      this.__evalSlidesButtons();
-
-      return ospaintSection;
+      return annotationsSection;
     },
 
     __getSnapshotsSection: function() {

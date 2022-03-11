@@ -28,8 +28,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
     "startPipeline": "qx.event.type.Event",
     "startPartialPipeline": "qx.event.type.Event",
     "stopPipeline": "qx.event.type.Event",
-    "startRect": "qx.event.type.Event",
-    "stopRect": "qx.event.type.Event",
     "zoomIn": "qx.event.type.Event",
     "zoomOut": "qx.event.type.Event",
     "zoomReset": "qx.event.type.Event"
@@ -38,7 +36,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
   members: {
     __navNodes: null,
     __startStopBtns: null,
-    __annotationsBtns: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -61,19 +58,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
             "startPipeline",
             "startPartialPipeline",
             "stopPipeline"
-          ].forEach(signalName => {
-            control.addListener(signalName, () => {
-              this.fireEvent(signalName);
-            }, this);
-          });
-          this._add(control);
-          break;
-        }
-        case "annotations-btns": {
-          control = new osparc.desktop.AnnotationsButtons();
-          [
-            "startRect",
-            "stopRect"
           ].forEach(signalName => {
             control.addListener(signalName, () => {
               this.fireEvent(signalName);
@@ -107,9 +91,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
       const startStopBtns = this.__startStopBtns = this.getChildControl("start-stop-btns");
       startStopBtns.exclude();
 
-      const annotationsBtns = this.__annotationsBtns = this.getChildControl("annotations-btns");
-      annotationsBtns.exclude();
-
       this._add(new qx.ui.core.Spacer(), {
         flex: 1
       });
@@ -137,10 +118,6 @@ qx.Class.define("osparc.desktop.WorkbenchToolbar", {
 
     getStartStopButtons: function() {
       return this.__startStopBtns;
-    },
-
-    getAnnotationsToolbar: function() {
-      return this.__annotationsBtns;
     },
 
     __attachEventHandlers: function() {
