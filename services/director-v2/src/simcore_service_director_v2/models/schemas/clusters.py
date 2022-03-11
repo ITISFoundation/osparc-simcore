@@ -58,6 +58,9 @@ class ClusterDetailsOut(BaseModel):
 class ClusterCreate(BaseCluster):
     owner: Optional[GroupID]
     authentication: ExternalClusterAuthentication
+    access_rights: Dict[GroupID, ClusterAccessRights] = Field(
+        alias="accessRights", default_factory=dict
+    )
 
     @validator("thumbnail", always=True, pre=True)
     @classmethod
@@ -95,7 +98,7 @@ class ClusterCreate(BaseCluster):
                         "username": "someuser",
                         "password": "somepassword",
                     },
-                    "access_rights": {
+                    "accessRights": {
                         154: CLUSTER_ADMIN_RIGHTS,
                         12: CLUSTER_MANAGER_RIGHTS,
                         7899: CLUSTER_USER_RIGHTS,
@@ -116,3 +119,22 @@ class ClusterPatch(BaseCluster):
     access_rights: Optional[Dict[GroupID, ClusterAccessRights]] = Field(
         alias="accessRights"
     )
+
+    class Config(BaseCluster.Config):
+        schema_extra = {
+            "examples": [
+                {
+                    "name": "Changing the name of my cluster",
+                },
+                {
+                    "description": "adding a better description",
+                },
+                {
+                    "accessRights": {
+                        154: CLUSTER_ADMIN_RIGHTS,
+                        12: CLUSTER_MANAGER_RIGHTS,
+                        7899: CLUSTER_USER_RIGHTS,
+                    },
+                },
+            ]
+        }

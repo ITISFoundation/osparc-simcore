@@ -3,12 +3,15 @@ from typing import Any, Dict, Type
 
 import pytest
 from pydantic import BaseModel
-from simcore_service_webserver.clusters.models import ClusterCreate
+from simcore_service_director_v2.models.schemas.clusters import (
+    ClusterCreate,
+    ClusterPatch,
+)
 
 
 @pytest.mark.parametrize(
     "model_cls",
-    [(ClusterCreate)],
+    [ClusterCreate, ClusterPatch],
 )
 def test_clusters_model_examples(
     model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
@@ -21,7 +24,9 @@ def test_clusters_model_examples(
 
 @pytest.mark.parametrize(
     "model_cls",
-    [(ClusterCreate)],
+    [
+        ClusterCreate,
+    ],
 )
 def test_cluster_creation_brings_default_thumbail(
     model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
