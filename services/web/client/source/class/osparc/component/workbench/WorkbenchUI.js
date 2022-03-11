@@ -129,14 +129,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __selectedItemId: null,
     __startHint: null,
     __dropMe: null,
-    __rectInitPos: null,
-    __rectRepr: null,
+    __selectionRectInitPos: null,
+    __selectionRectRepr: null,
     __panning: null,
     __isDraggingFile: null,
     __isDraggingLink: null,
     __annotatingRect: null,
     __annotationRectInitPos: null,
     __annotations: null,
+    __annotationEditor: null,
 
     __applyStudy: function(study) {
       study.getWorkbench().addListener("reloadModel", () => this.__reloadCurrentModel(), this);
@@ -198,6 +199,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __addExtras: function() {
       this.__addStartHint();
       this.__addDeleteItemButton();
+      this.__annotationEditorView();
     },
 
     __addOutputNodesLayout: function() {
@@ -233,6 +235,18 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       this.__workbenchLayer.add(deleteItemButton, {
         bottom: 10,
+        right: 10
+      });
+    },
+
+    __annotationEditorView: function() {
+      const annotationEditor = this.__annotationEditor = new osparc.component.editor.AnnotationEditor().set({
+        backgroundColor: "background-main-2",
+        visibility: "excluded"
+      });
+
+      this.__workbenchLayer.add(annotationEditor, {
+        top: 10,
         right: 10
       });
     },
@@ -1085,6 +1099,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         } else if (this.__isSelectedItemAnAnnotation()) {
           const annotation = this.__getAnnotation(oldId);
           annotation.setSelected(false);
+          this.__annotationEditor.exclude();
         }
       }
 
@@ -1095,6 +1110,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       } else if (this.__isSelectedItemAnAnnotation()) {
         const annotation = this.__getAnnotation(newID);
         annotation.setSelected(true);
+        this.__annotationEditor.setAnnotation(annotation);
+        this.__annotationEditor.show();
       } else {
         this.fireDataEvent("changeSelectedNode", newID);
       }
@@ -1197,7 +1214,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         if (this.__annotatingRect) {
           this.__annotationRectInitPos = this.__pointerEventToWorkbenchPos(e);
         } else {
-          this.__rectInitPos = this.__pointerEventToWorkbenchPos(e);
+          this.__selectionRectInitPos = this.__pointerEventToWorkbenchPos(e);
         }
       }
     },
@@ -1207,8 +1224,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__draggingLink(e, true);
       } else if (this.__tempEdgeRepr === null && this.__annotatingRect && this.__annotationRectInitPos && e.isLeftPressed()) {
         this.__drawingAnnotationRect(e);
-      } else if (this.__tempEdgeRepr === null && this.__rectInitPos && e.isLeftPressed()) {
-        this.__drawingRect(e);
+      } else if (this.__tempEdgeRepr === null && this.__selectionRectInitPos && e.isLeftPressed()) {
+        this.__drawingSelectionRect(e);
       } else if (this.__panning && e.isMiddlePressed()) {
         const oldPos = this.__pointerPos;
         const newPos = this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
@@ -1223,12 +1240,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __mouseUp: function(e) {
-      if (this.__rectInitPos) {
-        this.__rectInitPos = null;
+      if (this.__selectionRectInitPos) {
+        this.__selectionRectInitPos = null;
       }
-      if (this.__rectRepr) {
-        osparc.component.workbench.SvgWidget.removeRect(this.__rectRepr);
-        this.__rectRepr = null;
+      if (this.__selectionRectRepr) {
+        osparc.component.workbench.SvgWidget.removeRect(this.__selectionRectRepr);
+        this.__selectionRectRepr = null;
       }
 
       if (this.__annotationRectInitPos) {
@@ -1589,18 +1606,18 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    __drawingRect: function(e) {
+    __drawingSelectionRect: function(e) {
       // draw rect
-      const initPos = this.__rectInitPos;
+      const initPos = this.__selectionRectInitPos;
       const currentPos = this.__pointerEventToWorkbenchPos(e);
       const x = Math.min(initPos.x, currentPos.x);
       const y = Math.min(initPos.y, currentPos.y);
       const width = Math.abs(initPos.x - currentPos.x);
       const height = Math.abs(initPos.y - currentPos.y);
-      if (this.__rectRepr === null) {
-        this.__rectRepr = this.__svgLayer.drawFilledRect(width, height, x, y);
+      if (this.__selectionRectRepr === null) {
+        this.__selectionRectRepr = this.__svgLayer.drawFilledRect(width, height, x, y);
       } else {
-        osparc.component.workbench.SvgWidget.updateRect(this.__rectRepr, width, height, x, y);
+        osparc.component.workbench.SvgWidget.updateRect(this.__selectionRectRepr, width, height, x, y);
       }
 
       // select nodes
