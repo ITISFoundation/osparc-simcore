@@ -4,7 +4,6 @@
 import logging
 from typing import AsyncIterator, Dict, Iterator, List
 
-import aiopg.sa
 import pytest
 import sqlalchemy as sa
 import tenacity
@@ -168,7 +167,7 @@ def postgres_db(
 @pytest.fixture(scope="function")
 async def aiopg_engine(
     postgres_db: sa.engine.Engine,
-) -> AsyncIterator[aiopg.sa.engine.Engine]:
+) -> AsyncIterator:
     """An aiopg engine connected to an initialized database"""
     from aiopg.sa import create_engine
 
@@ -179,6 +178,22 @@ async def aiopg_engine(
     if engine:
         engine.close()
         await engine.wait_closed()
+
+
+@pytest.fixture(scope="function")
+async def sqlalchemy_async_engine(
+    postgres_db: sa.engine.Engine,
+) -> AsyncIterator:
+    # NOTE: prevent having to import this if latest sqlalchemy not installed
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    engine = create_async_engine(
+        f"{postgres_db.url}".replace("postgresql", "postgresql+asyncpg")
+    )
+    assert engine
+    yield engine
+
+    await engine.dispose()
 
 
 @pytest.fixture(scope="function")
@@ -195,7 +210,7 @@ def postgres_host_config(postgres_dsn: Dict[str, str], monkeypatch) -> Dict[str,
 
 
 @pytest.fixture(scope="module")
-def postgres_session(postgres_db: sa.engine.Engine) -> sa.orm.session.Session:
+def postgres_session(postgres_db: sa.engine.Engine) -> Iterator[sa.orm.session.Session]:
     from sqlalchemy.orm.session import Session
 
     Session_cls = sessionmaker(postgres_db)

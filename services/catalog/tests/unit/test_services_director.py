@@ -4,7 +4,7 @@
 # pylint:disable=protected-access
 
 
-from typing import Dict, Iterable, Iterator
+from typing import Dict, Iterator
 
 import pytest
 import respx
@@ -32,7 +32,7 @@ def minimal_app(
 
 
 @pytest.fixture()
-def client(minimal_app: FastAPI) -> Iterable[TestClient]:
+def client(minimal_app: FastAPI) -> Iterator[TestClient]:
     # NOTE: this way we ensure the events are run in the application
     # since it starts the app on a test server
     with TestClient(minimal_app) as client:
@@ -40,7 +40,7 @@ def client(minimal_app: FastAPI) -> Iterable[TestClient]:
 
 
 @pytest.fixture
-def mocked_director_service_api(minimal_app: FastAPI) -> MockRouter:
+def mocked_director_service_api(minimal_app: FastAPI) -> Iterator[MockRouter]:
     with respx.mock(
         base_url=minimal_app.state.settings.CATALOG_DIRECTOR.base_url,
         assert_all_called=False,

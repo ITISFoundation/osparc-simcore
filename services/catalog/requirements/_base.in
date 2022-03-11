@@ -21,12 +21,14 @@ fastapi[all]
 pydantic[dotenv]
 
 # database
-aiopg[sa]
+asyncpg
+sqlalchemy[asyncio]
 
 # web client
 httpx
 
 # other
+aiocache[redis,msgpack]
 tenacity
 packaging
 pyyaml
