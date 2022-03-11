@@ -60,7 +60,12 @@ async def _get_cluster_details_with_id(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
 
 
-@router.post("", summary="Create a new cluster for a user", response_model=ClusterOut)
+@router.post(
+    "",
+    summary="Create a new cluster for a user",
+    response_model=ClusterOut,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_cluster(
     user_id: UserID,
     new_cluster: ClusterCreate,

@@ -3,7 +3,8 @@
 # pylint:disable=redefined-outer-name
 
 import json
-from typing import AsyncIterator, Callable, Dict, List
+import random
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, List
 
 import httpx
 import pytest
@@ -13,6 +14,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from dask_gateway import Gateway, GatewayCluster, auth
 from distributed import Client as DaskClient
 from distributed.deploy.spec import SpecCluster
+from faker import Faker
 from httpx import URL
 from models_library.clusters import (
     CLUSTER_ADMIN_RIGHTS,
@@ -20,11 +22,16 @@ from models_library.clusters import (
     CLUSTER_NO_RIGHTS,
     CLUSTER_USER_RIGHTS,
     Cluster,
+    ExternalClusterAuthentication,
+    JupyterHubTokenAuthentication,
+    KerberosAuthentication,
     SimpleAuthentication,
 )
 from pydantic import NonNegativeInt, parse_obj_as
 from settings_library.rabbit import RabbitSettings
+from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_service_director_v2.models.schemas.clusters import (
+    ClusterCreate,
     ClusterDetailsOut,
     ClusterOut,
 )
@@ -147,6 +154,101 @@ async def test_list_clusters(
             ),
         )
         assert len(clusters) == 1, f"missing cluster with {name=}"
+
+
+@pytest.fixture
+def cluster_simple_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
+    def creator() -> Dict[str, Any]:
+        simple_auth = {
+            "type": "simple",
+            "username": faker.user_name(),
+            "password": faker.password(),
+        }
+        assert SimpleAuthentication.parse_obj(simple_auth)
+        return simple_auth
+
+    return creator
+
+
+@pytest.fixture
+def cluster_kerberos_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
+    def creator() -> Dict[str, Any]:
+        kerberos_auth = {"type": "kerberos"}
+        assert KerberosAuthentication.parse_obj(kerberos_auth)
+        return kerberos_auth
+
+    return creator
+
+
+@pytest.fixture
+def cluster_jupyterhub_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
+    def creator() -> Dict[str, Any]:
+        jupyterhub_auth = {"type": "jupyterhub", "api_token": faker.pystr()}
+        assert JupyterHubTokenAuthentication.parse_obj(jupyterhub_auth)
+        return jupyterhub_auth
+
+    return creator
+
+
+@pytest.fixture(params=list(ExternalClusterAuthentication.__args__))  # type: ignore
+def cluster_authentication(
+    cluster_simple_authentication,
+    cluster_kerberos_authentication,
+    cluster_jupyterhub_authentication,
+    request,
+) -> Callable[[], Dict[str, Any]]:
+    return {
+        SimpleAuthentication: cluster_simple_authentication,
+        KerberosAuthentication: cluster_kerberos_authentication,
+        JupyterHubTokenAuthentication: cluster_jupyterhub_authentication,
+    }[request.param]
+
+
+@pytest.fixture
+def clusters_cleaner(postgres_db: sa.engine.Engine) -> Iterator:
+    yield
+    with postgres_db.connect() as conn:
+        conn.execute(sa.delete(clusters))
+
+
+async def test_create_cluster(
+    clusters_config: None,
+    user_db: Callable[..., Dict],
+    cluster_authentication: Callable,
+    async_client: httpx.AsyncClient,
+    faker: Faker,
+    postgres_db: sa.engine.Engine,
+    clusters_cleaner,
+):
+    user_1 = user_db()
+    create_cluster_url = URL(f"/v2/clusters?user_id={user_1['id']}")
+    cluster_data = ClusterCreate(
+        endpoint=faker.uri(),
+        authentication=cluster_authentication(),
+        name=faker.name(),
+        type=random.choice(list(ClusterType)),
+    )
+    response = await async_client.post(
+        create_cluster_url, json=cluster_data.dict(by_alias=True, exclude_unset=True)
+    )
+    assert response.status_code == status.HTTP_201_CREATED, f"received: {response.text}"
+    created_cluster = parse_obj_as(ClusterOut, response.json())
+    assert created_cluster
+
+    for k in created_cluster.dict(exclude={"id", "owner", "access_rights"}).keys():
+        assert getattr(created_cluster, k) == getattr(cluster_data, k)
+
+    assert created_cluster.id is not None
+    assert created_cluster.owner == user_1["primary_gid"]
+    assert created_cluster.access_rights == {
+        user_1["primary_gid"]: CLUSTER_ADMIN_RIGHTS
+    }
+
+    # let's check that DB is correctly setup, there is one entry
+    with postgres_db.connect() as conn:
+        cluster_entry = conn.execute(
+            sa.select([clusters]).where(clusters.c.name == cluster_data.name)
+        ).one()
 
 
 async def test_get_default_cluster_entrypoint(
