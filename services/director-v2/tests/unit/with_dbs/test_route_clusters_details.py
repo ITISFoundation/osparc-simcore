@@ -3,8 +3,7 @@
 # pylint:disable=redefined-outer-name
 
 import json
-import random
-from typing import Any, AsyncIterator, Callable, Dict, List
+from typing import Any, AsyncIterator, Callable, Dict
 
 import httpx
 import pytest
@@ -15,25 +14,10 @@ from dask_gateway import Gateway, GatewayCluster, auth
 from distributed import Client as DaskClient
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
-from httpx import URL
-from models_library.clusters import (
-    CLUSTER_ADMIN_RIGHTS,
-    CLUSTER_MANAGER_RIGHTS,
-    CLUSTER_NO_RIGHTS,
-    CLUSTER_USER_RIGHTS,
-    Cluster,
-    ExternalClusterAuthentication,
-    JupyterHubTokenAuthentication,
-    KerberosAuthentication,
-    SimpleAuthentication,
-)
-from pydantic import NonNegativeInt, parse_obj_as
+from models_library.clusters import Cluster, SimpleAuthentication
 from settings_library.rabbit import RabbitSettings
-from simcore_postgres_database.models.clusters import clusters
-from simcore_service_director_v2.models.schemas.clusters import (
-    ClusterDetailsOut,
-    ClusterOut,
-)
+from simcore_service_director_v2.models.schemas.clusters import ClusterDetailsOut
+from simcore_service_director_v2.models.schemas.constants import ClusterID
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
@@ -91,151 +75,6 @@ async def dask_gateway_cluster_client(
         yield client
 
 
-async def test_list_clusters(
-    clusters_config: None,
-    user_db: Callable[..., Dict],
-    cluster: Callable[..., Cluster],
-    async_client: httpx.AsyncClient,
-):
-    user_1 = user_db()
-    list_clusters_url = URL(f"/v2/clusters?user_id={user_1['id']}")
-    # there is no cluster at the moment, the list is empty
-    response = await async_client.get(list_clusters_url)
-    assert response.status_code == status.HTTP_200_OK
-    returned_clusters_list = parse_obj_as(List[ClusterOut], response.json())
-    assert returned_clusters_list == []
-
-    # let's create some clusters
-    for n in range(111):
-        cluster(user_1, name=f"pytest cluster{n:04}")
-
-    response = await async_client.get(list_clusters_url)
-    assert response.status_code == status.HTTP_200_OK
-    returned_clusters_list = parse_obj_as(List[ClusterOut], response.json())
-    assert len(returned_clusters_list) == 111
-
-    # now create a second user and check the clusters are not seen by it
-    user_2 = user_db()
-    response = await async_client.get(f"/v2/clusters?user_id={user_2['id']}")
-    assert response.status_code == status.HTTP_200_OK
-    assert response.json() == []
-
-    # let's create a few more clusters owned by user_1 with specific rights
-    for rights, name in [
-        (CLUSTER_NO_RIGHTS, "no rights"),
-        (CLUSTER_USER_RIGHTS, "user rights"),
-        (CLUSTER_MANAGER_RIGHTS, "manager rights"),
-        (CLUSTER_ADMIN_RIGHTS, "admin rights"),
-    ]:
-        cluster(
-            user_1,  # cluster is owned by user_1
-            name=f"cluster with {name}",
-            access_rights={
-                user_1["primary_gid"]: CLUSTER_ADMIN_RIGHTS,
-                user_2["primary_gid"]: rights,
-            },
-        )
-
-    response = await async_client.get(f"/v2/clusters?user_id={user_2['id']}")
-    assert response.status_code == status.HTTP_200_OK
-    user_2_clusters = parse_obj_as(List[ClusterOut], response.json())
-    # we should find 3 clusters
-    assert len(user_2_clusters) == 3
-    for name in [
-        "cluster with user rights",
-        "cluster with manager rights",
-        "cluster with admin rights",
-    ]:
-        clusters = list(
-            filter(
-                lambda cluster, name=name: cluster.name == name,
-                user_2_clusters,
-            ),
-        )
-        assert len(clusters) == 1, f"missing cluster with {name=}"
-
-
-async def test_get_cluster(
-    clusters_config: None,
-    user_db: Callable[..., Dict],
-    cluster: Callable[..., Cluster],
-    async_client: httpx.AsyncClient,
-):
-    user_1 = user_db()
-    # try to get one that does not exist
-    response = await async_client.get(
-        f"/v2/clusters/15615165165165?user_id={user_1['id']}"
-    )
-    assert response.status_code == status.HTTP_404_NOT_FOUND
-    # let's create some clusters
-    a_bunch_of_clusters = [
-        cluster(user_1, name=f"pytest cluster{n:04}") for n in range(111)
-    ]
-    the_cluster = random.choice(a_bunch_of_clusters)
-
-    # there is no cluster at the moment, the list is empty
-    response = await async_client.get(
-        f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}"
-    )
-    assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
-    returned_cluster = parse_obj_as(ClusterOut, response.json())
-    assert returned_cluster
-    assert the_cluster.dict() == returned_cluster.dict()
-
-    user_2 = user_db()
-    # getting the same cluster for user 2 shall return 403
-    response = await async_client.get(
-        f"/v2/clusters/{the_cluster.id}?user_id={user_2['id']}"
-    )
-    assert (
-        response.status_code == status.HTTP_403_FORBIDDEN
-    ), f"received {response.text}"
-    # let's create a few cluster for user 2 and share some with user 1
-    for rights, user_1_expected_access in [
-        (CLUSTER_NO_RIGHTS, False),
-        (CLUSTER_USER_RIGHTS, True),
-        (CLUSTER_MANAGER_RIGHTS, True),
-        (CLUSTER_ADMIN_RIGHTS, True),
-    ]:
-        a_cluster = cluster(
-            user_2,  # cluster is owned by user_2
-            access_rights={
-                user_2["primary_gid"]: CLUSTER_ADMIN_RIGHTS,
-                user_1["primary_gid"]: rights,
-            },
-        )
-        # now let's check that user_1 can access only the correct ones
-        response = await async_client.get(
-            f"/v2/clusters/{a_cluster.id}?user_id={user_1['id']}"
-        )
-        assert (
-            response.status_code == status.HTTP_200_OK
-            if user_1_expected_access
-            else status.HTTP_403_FORBIDDEN
-        ), f"received {response.text}"
-
-
-@pytest.mark.xfail(reason="This needs another iteration and will be tackled next")
-async def test_get_default_cluster(
-    clusters_config: None,
-    user_db: Callable[..., Dict],
-    cluster: Callable[..., Cluster],
-    async_client: httpx.AsyncClient,
-):
-    user_1 = user_db()
-    # NOTE: we should not need the user id for default right?
-    # NOTE: it should be accessible to everyone to run, and only a handful of elected
-    # people shall be able to administer it
-    get_cluster_url = URL("/v2/clusters/default")
-    response = await async_client.get(get_cluster_url)
-    assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
-    returned_cluster = parse_obj_as(ClusterOut, response.json())
-    assert returned_cluster
-    assert returned_cluster.name == "Default cluster"
-    assert 1 in returned_cluster.access_rights  # everyone group is always 1
-    assert returned_cluster.access_rights[1] == CLUSTER_USER_RIGHTS
-
-
 @pytest.fixture
 def cluster_simple_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
     def creator() -> Dict[str, Any]:
@@ -250,53 +89,9 @@ def cluster_simple_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
     return creator
 
 
-@pytest.fixture
-def cluster_kerberos_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
-    def creator() -> Dict[str, Any]:
-        kerberos_auth = {"type": "kerberos"}
-        assert KerberosAuthentication.parse_obj(kerberos_auth)
-        return kerberos_auth
-
-    return creator
-
-
-@pytest.fixture
-def cluster_jupyterhub_authentication(faker: Faker) -> Callable[[], Dict[str, Any]]:
-    def creator() -> Dict[str, Any]:
-        jupyterhub_auth = {"type": "jupyterhub", "api_token": faker.pystr()}
-        assert JupyterHubTokenAuthentication.parse_obj(jupyterhub_auth)
-        return jupyterhub_auth
-
-    return creator
-
-
-@pytest.fixture(params=list(ExternalClusterAuthentication.__args__))  # type: ignore
-def cluster_authentication(
-    cluster_simple_authentication,
-    cluster_kerberos_authentication,
-    cluster_jupyterhub_authentication,
-    request,
-) -> Callable[[], Dict[str, Any]]:
-    return {
-        SimpleAuthentication: cluster_simple_authentication,
-        KerberosAuthentication: cluster_kerberos_authentication,
-        JupyterHubTokenAuthentication: cluster_jupyterhub_authentication,
-    }[request.param]
-
-
-async def test_get_default_cluster_entrypoint(
-    clusters_config: None, async_client: httpx.AsyncClient
-):
-    # This test checks that the default cluster is accessible
-    # the default cluster is the osparc internal cluster available through a dask-scheduler
-    response = await async_client.get("/v2/clusters/default")
-    assert response.status_code == status.HTTP_200_OK
-    default_cluster_out = ClusterDetailsOut.parse_obj(response.json())
-    response = await async_client.get(f"/v2/clusters/{0}")
-    assert response.status_code == status.HTTP_200_OK
-    assert default_cluster_out == ClusterDetailsOut.parse_obj(response.json())
-
-
+@pytest.mark.skip(
+    reason="test for helping developers understand how to use dask gateways"
+)
 async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayServer):
     async with Gateway(
         local_dask_gateway_server.address,
@@ -345,10 +140,23 @@ async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayS
                     assert len(cluster.scheduler_info.get("workers", 0)) == 0
 
 
+async def test_get_default_cluster_entrypoint(
+    clusters_config: None, async_client: httpx.AsyncClient
+):
+    # This test checks that the default cluster is accessible
+    # the default cluster is the osparc internal cluster available through a dask-scheduler
+    response = await async_client.get("/v2/clusters/default/details")
+    assert response.status_code == status.HTTP_200_OK
+    default_cluster_out = ClusterDetailsOut.parse_obj(response.json())
+    response = await async_client.get(f"/v2/clusters/{0}")
+    assert response.status_code == status.HTTP_200_OK
+    assert default_cluster_out == ClusterDetailsOut.parse_obj(response.json())
+
+
 async def _get_cluster_out(
-    async_client: httpx.AsyncClient, cluster_id: NonNegativeInt
+    async_client: httpx.AsyncClient, cluster_id: ClusterID
 ) -> ClusterDetailsOut:
-    response = await async_client.get(f"/v2/clusters/{cluster_id}")
+    response = await async_client.get(f"/v2/clusters/{cluster_id}/details")
     assert response.status_code == status.HTTP_200_OK
     print(f"<-- received cluster details response {response=}")
     cluster_out = ClusterDetailsOut.parse_obj(response.json())
