@@ -884,7 +884,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         label: this.tr("Add Rect"),
         height: buttonsHeight
       });
-      addRectBtn.addListener("execute", () => this.fireEvent("annotationRectStart"), this);
+      addRectBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsRect(), this);
       annotationsButtons.add(addRectBtn);
 
       return annotationsSection;

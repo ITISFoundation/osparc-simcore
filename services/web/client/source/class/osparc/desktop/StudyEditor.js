@@ -33,7 +33,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       "slidesEdit",
       "slidesAppStart"
     ].forEach(singalName => workbenchView.addListener(singalName, () => this.fireEvent(singalName)));
-    workbenchView.addListener("annotationRectStart", () => this.__annotationRectStart(), this);
     workbenchView.addListener("takeSnapshot", () => this.__takeSnapshot(), this);
     workbenchView.addListener("showSnapshots", () => this.__showSnapshots(), this);
     workbenchView.addListener("createIterations", () => this.__createIterations(), this);
@@ -457,10 +456,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           this.__slideshowView.startSlides(newCtxt);
           break;
       }
-    },
-
-    __annotationRectStart: function() {
-      console.log("ez dakit");
     },
 
     __takeSnapshot: function() {

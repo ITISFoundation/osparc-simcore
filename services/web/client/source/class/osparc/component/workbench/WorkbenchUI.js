@@ -1402,10 +1402,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__annotatingRect = start;
     },
 
-    startAnnotationsText: function(start) {
-      this.__annotatingText = start;
-    },
-
     __openNodeRenamer: function(nodeId) {
       const node = this.getStudy().getWorkbench().getNode(nodeId);
       const treeItemRenamer = new osparc.component.widget.Renamer(node.getLabel());
