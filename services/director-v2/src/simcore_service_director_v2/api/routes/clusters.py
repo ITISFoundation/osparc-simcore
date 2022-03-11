@@ -94,6 +94,10 @@ async def get_default_cluster(
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
 ):
     assert settings.DASK_DEFAULT_CLUSTER_ID is not None  # nosec
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="dev in progress"
+    )
+
     return await clusters_repo.get_cluster(user_id, settings.DASK_DEFAULT_CLUSTER_ID)
 
 

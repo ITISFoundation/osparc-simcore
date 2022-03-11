@@ -206,30 +206,30 @@ class ClustersRepository(BaseRepository):
                         updated_cluster.owner
                     ] = CLUSTER_ADMIN_RIGHTS
 
-            if (
-                updated_cluster.access_rights
-                and updated_cluster.access_rights != the_cluster.access_rights
-            ):
+            # resolve access rights changes
+            resolved_access_rights = the_cluster.access_rights
+            if updated_cluster.access_rights:
+                # if the user is a manager he/she may ONLY add/remove users
+                if this_user_access_rights == CLUSTER_MANAGER_RIGHTS:
+                    for grp, rights in updated_cluster.access_rights.items():
+                        if grp in [the_cluster.owner] or rights not in [
+                            CLUSTER_USER_RIGHTS,
+                            CLUSTER_NO_RIGHTS,
+                        ]:
+                            # a manager cannot change the owner abilities or create
+                            # managers/admins
+                            raise ClusterAccessForbiddenError(cluster_id=cluster_id)
+
+                resolved_access_rights.update(updated_cluster.access_rights)
                 # ensure the user is not trying to mess around owner admin rights
                 if (
-                    updated_cluster.access_rights.setdefault(
+                    resolved_access_rights.setdefault(
                         the_cluster.owner, CLUSTER_ADMIN_RIGHTS
                     )
                     != CLUSTER_ADMIN_RIGHTS
                 ):
                     raise ClusterAccessForbiddenError(cluster_id=cluster_id)
 
-            # if the user is a manager he/she may add/remove users
-            if (
-                this_user_access_rights == CLUSTER_MANAGER_RIGHTS
-                and updated_cluster.access_rights
-            ):
-                for grp, rights in updated_cluster.access_rights.items():
-                    if grp not in [the_cluster.owner] and rights not in [
-                        CLUSTER_USER_RIGHTS,
-                        CLUSTER_NO_RIGHTS,
-                    ]:
-                        raise ClusterAccessForbiddenError(cluster_id=cluster_id)
             # ok we can update now
             try:
                 await conn.execute(
@@ -248,20 +248,7 @@ class ClustersRepository(BaseRepository):
                 raise ClusterInvalidOperationError(cluster_id=cluster_id) from e
             # upsert the rights
             if updated_cluster.access_rights:
-                # first check if some rights must be deleted
-                grps_to_remove = {
-                    grp
-                    for grp in the_cluster.access_rights
-                    if grp not in updated_cluster.access_rights
-                }
-                if grps_to_remove:
-                    await conn.execute(
-                        sa.delete(cluster_to_groups).where(
-                            cluster_to_groups.c.gid.in_(grps_to_remove)
-                        )
-                    )
-
-                for grp, rights in updated_cluster.access_rights.items():
+                for grp, rights in resolved_access_rights.items():
                     insert_stmt = pg_insert(cluster_to_groups).values(
                         **rights.dict(by_alias=True), gid=grp, cluster_id=the_cluster.id
                     )

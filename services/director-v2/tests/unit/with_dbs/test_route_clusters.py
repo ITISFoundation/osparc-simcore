@@ -22,6 +22,7 @@ from models_library.clusters import (
     CLUSTER_NO_RIGHTS,
     CLUSTER_USER_RIGHTS,
     Cluster,
+    ClusterAccessRights,
     ExternalClusterAuthentication,
     JupyterHubTokenAuthentication,
     KerberosAuthentication,
@@ -34,6 +35,7 @@ from simcore_service_director_v2.models.schemas.clusters import (
     ClusterCreate,
     ClusterDetailsOut,
     ClusterOut,
+    ClusterPatch,
 )
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
@@ -295,7 +297,7 @@ def clusters_cleaner(postgres_db: sa.engine.Engine) -> Iterator:
 async def test_create_cluster(
     clusters_config: None,
     user_db: Callable[..., Dict],
-    cluster_authentication: Callable,
+    cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
     faker: Faker,
     postgres_db: sa.engine.Engine,
@@ -305,7 +307,7 @@ async def test_create_cluster(
     create_cluster_url = URL(f"/v2/clusters?user_id={user_1['id']}")
     cluster_data = ClusterCreate(
         endpoint=faker.uri(),
-        authentication=cluster_authentication(),
+        authentication=cluster_simple_authentication(),
         name=faker.name(),
         type=random.choice(list(ClusterType)),
     )
@@ -330,6 +332,218 @@ async def test_create_cluster(
         cluster_entry = conn.execute(
             sa.select([clusters]).where(clusters.c.name == cluster_data.name)
         ).one()
+
+
+async def test_update_own_cluster(
+    clusters_config: None,
+    user_db: Callable[..., Dict],
+    cluster: Callable[..., Cluster],
+    cluster_simple_authentication: Callable,
+    async_client: httpx.AsyncClient,
+    faker: Faker,
+):
+    _PATCH_EXPORT = {"by_alias": True, "exclude_unset": True, "exclude_none": True}
+    user_1 = user_db()
+    # try to modify one that does not exist
+    response = await async_client.patch(
+        f"/v2/clusters/15615165165165?user_id={user_1['id']}",
+        json=ClusterPatch().dict(**_PATCH_EXPORT),
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    # let's create some clusters
+    a_bunch_of_clusters = [
+        cluster(user_1, name=f"pytest cluster{n:04}") for n in range(1000)
+    ]
+    the_cluster = random.choice(a_bunch_of_clusters)
+    # get the original one
+    response = await async_client.get(
+        f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}"
+    )
+    assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
+    original_cluster = parse_obj_as(ClusterOut, response.json())
+
+    # now we modify nothing
+    response = await async_client.patch(
+        f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}",
+        json=ClusterPatch().dict(**_PATCH_EXPORT),
+    )
+    assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
+    returned_cluster = parse_obj_as(ClusterOut, response.json())
+    assert returned_cluster.dict() == original_cluster.dict()
+
+    # modify some simple things
+    expected_modified_cluster = original_cluster.copy()
+    for cluster_patch in [
+        ClusterPatch(name=faker.name()),
+        ClusterPatch(description=faker.text()),
+        ClusterPatch(type=ClusterType.ON_PREMISE),
+        ClusterPatch(thumbnail=faker.uri()),
+        ClusterPatch(endpoint=faker.uri()),
+        ClusterPatch(authentication=cluster_simple_authentication()),
+    ]:
+        jsonable_cluster_patch = cluster_patch.dict(**_PATCH_EXPORT)
+        print(f"--> patching cluster with {jsonable_cluster_patch}")
+        response = await async_client.patch(
+            f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}",
+            json=jsonable_cluster_patch,
+        )
+        assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
+        returned_cluster = parse_obj_as(ClusterOut, response.json())
+        expected_modified_cluster = expected_modified_cluster.copy(
+            update=cluster_patch.dict(**_PATCH_EXPORT)
+        )
+        assert returned_cluster.dict() == expected_modified_cluster.dict()
+
+    # we can change the access rights, the owner rights are always kept
+    user_2 = user_db()
+
+    for rights in [
+        CLUSTER_ADMIN_RIGHTS,
+        CLUSTER_MANAGER_RIGHTS,
+        CLUSTER_USER_RIGHTS,
+        CLUSTER_NO_RIGHTS,
+    ]:
+        cluster_patch = ClusterPatch(accessRights={user_2["primary_gid"]: rights})
+        response = await async_client.patch(
+            f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}",
+            json=cluster_patch.dict(**_PATCH_EXPORT),
+        )
+        assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
+        returned_cluster = Cluster.parse_obj(response.json())
+
+        expected_modified_cluster.access_rights[user_2["primary_gid"]] = rights
+        assert returned_cluster.dict() == expected_modified_cluster.dict()
+    # we can change the owner since we are admin
+    cluster_patch = ClusterPatch(owner=user_2["primary_gid"])
+    response = await async_client.patch(
+        f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}",
+        json=cluster_patch.dict(**_PATCH_EXPORT),
+    )
+    assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
+    returned_cluster = Cluster.parse_obj(response.json())
+    expected_modified_cluster.owner = user_2["primary_gid"]
+    expected_modified_cluster.access_rights[
+        user_2["primary_gid"]
+    ] = CLUSTER_ADMIN_RIGHTS
+    assert returned_cluster.dict() == expected_modified_cluster.dict()
+
+    # we should not be able to reduce the rights of the new owner
+    cluster_patch = ClusterPatch(
+        accessRights={user_2["primary_gid"]: CLUSTER_NO_RIGHTS}
+    )
+    response = await async_client.patch(
+        f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}",
+        json=cluster_patch.dict(**_PATCH_EXPORT),
+    )
+    assert (
+        response.status_code == status.HTTP_403_FORBIDDEN
+    ), f"received {response.text}"
+
+
+@pytest.mark.parametrize(
+    "cluster_sharing_rights, can_use, can_manage, can_administer",
+    [
+        pytest.param(
+            CLUSTER_ADMIN_RIGHTS, True, True, True, id="SHARE_WITH_ADMIN_RIGHTS"
+        ),
+        pytest.param(
+            CLUSTER_MANAGER_RIGHTS, True, True, False, id="SHARE_WITH_MANAGER_RIGHTS"
+        ),
+        pytest.param(
+            CLUSTER_USER_RIGHTS, True, False, False, id="SHARE_WITH_USER_RIGHTS"
+        ),
+        pytest.param(CLUSTER_NO_RIGHTS, False, False, False, id="DENY_RIGHTS"),
+    ],
+)
+async def test_update_another_cluster(
+    clusters_config: None,
+    user_db: Callable[..., Dict],
+    cluster: Callable[..., Cluster],
+    cluster_simple_authentication: Callable,
+    async_client: httpx.AsyncClient,
+    faker: Faker,
+    cluster_sharing_rights: ClusterAccessRights,
+    can_use: bool,
+    can_manage: bool,
+    can_administer: bool,
+):
+    """user_1 is the owner and administrator, he/she gives some rights to user 2"""
+
+    _PATCH_EXPORT = {"by_alias": True, "exclude_unset": True, "exclude_none": True}
+    user_1 = user_db()
+    user_2 = user_db()
+    # let's create some clusters
+    a_bunch_of_clusters = [
+        cluster(
+            user_1,
+            name=f"pytest cluster{n:04}",
+            access_rights={
+                user_1["primary_gid"]: CLUSTER_ADMIN_RIGHTS,
+                user_2["primary_gid"]: cluster_sharing_rights,
+            },
+        )
+        for n in range(111)
+    ]
+    the_cluster = random.choice(a_bunch_of_clusters)
+    # get the original one
+    response = await async_client.get(
+        f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}"
+    )
+    assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
+    original_cluster = parse_obj_as(ClusterOut, response.json())
+
+    # let's try to modify stuff as we are user 2
+    for cluster_patch in [
+        ClusterPatch(name=faker.name()),
+        ClusterPatch(description=faker.text()),
+        ClusterPatch(type=ClusterType.ON_PREMISE),
+        ClusterPatch(thumbnail=faker.uri()),
+        ClusterPatch(endpoint=faker.uri()),
+        ClusterPatch(authentication=cluster_simple_authentication()),
+    ]:
+        response = await async_client.patch(
+            f"/v2/clusters/{the_cluster.id}?user_id={user_2['id']}",
+            json=cluster_patch.dict(**_PATCH_EXPORT),
+        )
+        assert (
+            response.status_code == status.HTTP_200_OK
+            if can_manage
+            else status.HTTP_403_FORBIDDEN
+        ), f"received {response.text}"
+
+    # let's try to add/remove someone (reserved to managers)
+    user_3 = user_db()
+    for rights in [
+        CLUSTER_USER_RIGHTS,  # add user
+        CLUSTER_NO_RIGHTS,  # remove user
+    ]:
+        # try to add user 3
+        cluster_patch = ClusterPatch(accessRights={user_3["primary_gid"]: rights})
+        response = await async_client.patch(
+            f"/v2/clusters/{the_cluster.id}?user_id={user_2['id']}",
+            json=cluster_patch.dict(**_PATCH_EXPORT),
+        )
+        assert (
+            response.status_code == status.HTTP_200_OK
+            if can_manage
+            else status.HTTP_403_FORBIDDEN
+        ), f"received {response.text} while {'adding' if rights == CLUSTER_USER_RIGHTS else 'removing'} user"
+
+    # modify rights to admin/manager (reserved to administrators)
+    for rights in [
+        CLUSTER_ADMIN_RIGHTS,
+        CLUSTER_MANAGER_RIGHTS,
+    ]:
+        cluster_patch = ClusterPatch(accessRights={user_3["primary_gid"]: rights})
+        response = await async_client.patch(
+            f"/v2/clusters/{the_cluster.id}?user_id={user_2['id']}",
+            json=cluster_patch.dict(**_PATCH_EXPORT),
+        )
+        assert (
+            response.status_code == status.HTTP_200_OK
+            if can_administer
+            else status.HTTP_403_FORBIDDEN
+        ), f"received {response.text}"
 
 
 async def test_get_default_cluster_entrypoint(
