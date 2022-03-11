@@ -194,6 +194,49 @@ async def test_get_cluster(
         ), f"received {response.text}"
 
 
+@pytest.mark.parametrize(
+    "cluster_sharing_rights, can_use",
+    [
+        pytest.param(CLUSTER_ADMIN_RIGHTS, True, id="SHARE_WITH_ADMIN_RIGHTS"),
+        pytest.param(CLUSTER_MANAGER_RIGHTS, True, id="SHARE_WITH_MANAGER_RIGHTS"),
+        pytest.param(CLUSTER_USER_RIGHTS, True, id="SHARE_WITH_USER_RIGHTS"),
+        pytest.param(CLUSTER_NO_RIGHTS, False, id="DENY_RIGHTS"),
+    ],
+)
+async def test_get_another_cluster(
+    clusters_config: None,
+    user_db: Callable[..., Dict],
+    cluster: Callable[..., Cluster],
+    async_client: httpx.AsyncClient,
+    cluster_sharing_rights: ClusterAccessRights,
+    can_use: bool,
+):
+    user_1 = user_db()
+    user_2 = user_db()
+    # let's create some clusters
+    a_bunch_of_clusters = [
+        cluster(
+            user_1,
+            name=f"pytest cluster{n:04}",
+            access_rights={
+                user_1["primary_gid"]: CLUSTER_ADMIN_RIGHTS,
+                user_2["primary_gid"]: cluster_sharing_rights,
+            },
+        )
+        for n in range(111)
+    ]
+    the_cluster = random.choice(a_bunch_of_clusters)
+    # try to get the cluster as user 2
+    response = await async_client.get(
+        f"/v2/clusters/{the_cluster.id}?user_id={user_2['id']}"
+    )
+    assert (
+        response.status_code == status.HTTP_200_OK
+        if can_use
+        else status.HTTP_403_FORBIDDEN
+    ), f"received {response.text}"
+
+
 @pytest.mark.xfail(reason="This needs another iteration and will be tackled next")
 async def test_get_default_cluster(
     clusters_config: None,
