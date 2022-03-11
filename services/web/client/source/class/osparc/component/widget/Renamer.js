@@ -72,6 +72,7 @@ qx.Class.define("osparc.component.widget.Renamer", {
 
       // Create a text field in which to edit the data
       const labelEditor = new qx.ui.form.TextField(oldLabel).set({
+        placeholder: this.tr("Type text"),
         allowGrowX: true,
         minWidth: labelWidth
       });

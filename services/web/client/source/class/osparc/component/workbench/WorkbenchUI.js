@@ -134,9 +134,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __panning: null,
     __isDraggingFile: null,
     __isDraggingLink: null,
-    __annotatingRect: null,
-    __annotationRectInitPos: null,
     __annotations: null,
+    __annotatingRect: null,
+    __annotatingText: null,
+    __annotationInitPos: null,
     __annotationEditor: null,
 
     __applyStudy: function(study) {
@@ -1212,8 +1213,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __mouseDownOnSVG: function(e) {
       if (e.isLeftPressed()) {
-        if (this.__annotatingRect) {
-          this.__annotationRectInitPos = this.__pointerEventToWorkbenchPos(e);
+        if (this.__annotatingRect || this.__annotatingText) {
+          this.__annotationInitPos = this.__pointerEventToWorkbenchPos(e);
         } else {
           this.__selectionRectInitPos = this.__pointerEventToWorkbenchPos(e);
         }
@@ -1223,8 +1224,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __mouseMove: function(e) {
       if (this.__isDraggingLink) {
         this.__draggingLink(e, true);
-      } else if (this.__tempEdgeRepr === null && this.__annotatingRect && this.__annotationRectInitPos && e.isLeftPressed()) {
-        this.__drawingAnnotationRect(e);
+      } else if (this.__tempEdgeRepr === null && (this.__annotatingRect || this.__annotatingText) && this.__annotationInitPos && e.isLeftPressed()) {
+        this.__drawingAnnotation(e);
       } else if (this.__tempEdgeRepr === null && this.__selectionRectInitPos && e.isLeftPressed()) {
         this.__drawingSelectionRect(e);
       } else if (this.__panning && e.isMiddlePressed()) {
@@ -1249,14 +1250,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__selectionRectRepr = null;
       }
 
-      if (this.__annotationRectInitPos) {
-        this.__annotationRectInitPos = null;
+      if (this.__annotationInitPos) {
+        this.__annotationInitPos = null;
       }
-      if (this.__annotatingRect) {
-        this.__consolidateRectAnnotation(this.__rectAnnotationRepr);
+      if (this.__annotatingRect || this.__annotatingText) {
+        this.__consolidateAnnotation(this.__rectAnnotationRepr, this.__annotatingRect ? "rect" : "text");
         osparc.wrapper.Svg.removeRect(this.__rectAnnotationRepr);
         this.__rectAnnotationRepr = null;
         this.__annotatingRect = false;
+        this.__annotatingText = false;
       }
 
       if (this.__panning) {
@@ -1402,6 +1404,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     startAnnotationsRect: function() {
       this.__annotatingRect = true;
+      this.__annotatingText = false;
+    },
+
+    startAnnotationsText: function() {
+      this.__annotatingText = true;
+      this.__annotatingRect = false;
     },
 
     __openNodeRenamer: function(nodeId) {
@@ -1638,9 +1646,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__setSelectedNodes(nodeUIs);
     },
 
-    __drawingAnnotationRect: function(e) {
+    __drawingAnnotation: function(e) {
       // draw rect
-      const initPos = this.__annotationRectInitPos;
+      const initPos = this.__annotationInitPos;
       const currentPos = this.__pointerEventToWorkbenchPos(e);
       const x = Math.min(initPos.x, currentPos.x);
       const y = Math.min(initPos.y, currentPos.y);
@@ -1653,12 +1661,24 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    __consolidateRectAnnotation: function(annotation) {
+    __consolidateAnnotation: function(annotation, type) {
       const serializeData = {
-        type: "rect",
+        type,
         attributes: osparc.wrapper.Svg.getRectAttributes(annotation)
       };
-      this.__addAnnotation(serializeData);
+      if (type === "rect") {
+        this.__addAnnotation(serializeData);
+      } else if (type === "text") {
+        const title = this.tr("Edit Title");
+        const titleEditor = new osparc.component.widget.Renamer(null, null, title);
+        titleEditor.addListener("labelChanged", e => {
+          titleEditor.close();
+          serializeData.attributes.text = e.getData()["newLabel"];
+          this.__addAnnotation(serializeData);
+        }, this);
+        titleEditor.center();
+        titleEditor.open();
+      }
     },
 
     __addAnnotation: function(data, id) {

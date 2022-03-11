@@ -138,6 +138,20 @@ qx.Class.define("osparc.wrapper.Svg", {
       };
     },
 
+    drawAnnotationText: function(draw, width, height, x, y, label, color) {
+      const text = draw.text(label)
+        .font({
+          fill: color,
+          family: "Roboto"
+        })
+        .style({
+          cursor: "pointer"
+        })
+        .move(x, y);
+      text.back();
+      return text;
+    },
+
     drawAnnotationRect: function(draw, width, height, x, y, color) {
       const rect = draw.rect(width, height)
         .fill("none")
