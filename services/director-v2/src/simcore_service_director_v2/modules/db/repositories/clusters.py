@@ -170,7 +170,7 @@ class ClustersRepository(BaseRepository):
 
         return the_cluster
 
-    async def update_cluster(
+    async def update_cluster(  # pylint: disable=too-many-branches
         self, user_id: UserID, cluster_id: ClusterID, updated_cluster: ClusterPatch
     ) -> Cluster:
         async with self.db_engine.acquire() as conn:

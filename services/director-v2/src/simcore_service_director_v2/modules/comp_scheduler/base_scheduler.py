@@ -222,7 +222,11 @@ class BaseCompScheduler(ABC):
         return tasks
 
     async def _update_states_from_comp_backend(
-        self, cluster_id: ClusterID, project_id: ProjectID, pipeline_dag: nx.DiGraph
+        self,
+        user_id: UserID,
+        cluster_id: ClusterID,
+        project_id: ProjectID,
+        pipeline_dag: nx.DiGraph,
     ):
         pipeline_tasks: Dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(
             project_id, pipeline_dag
@@ -239,7 +243,7 @@ class BaseCompScheduler(ABC):
             )
             # ensure these tasks still exist in the backend, if not we abort these
             tasks_backend_status = await self._get_tasks_status(
-                cluster_id, tasks_supposedly_processing
+                user_id, cluster_id, tasks_supposedly_processing
             )
             logger.debug("Computational states: %s", f"{tasks_backend_status=}")
             for task, backend_state in zip(
@@ -259,7 +263,7 @@ class BaseCompScheduler(ABC):
                 elif backend_state in COMPLETED_STATES:
                     tasks_completed.append(task)
         if tasks_completed:
-            await self._process_completed_tasks(cluster_id, tasks_completed)
+            await self._process_completed_tasks(user_id, cluster_id, tasks_completed)
 
     @abstractmethod
     async def _start_tasks(
@@ -273,19 +277,19 @@ class BaseCompScheduler(ABC):
 
     @abstractmethod
     async def _get_tasks_status(
-        self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
+        self, user_id: UserID, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
     ) -> List[RunningState]:
         ...
 
     @abstractmethod
     async def _stop_tasks(
-        self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
+        self, user_id: UserID, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
     ) -> None:
         ...
 
     @abstractmethod
     async def _process_completed_tasks(
-        self, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
+        self, user_id: UserID, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
     ) -> None:
         ...
 
@@ -307,7 +311,9 @@ class BaseCompScheduler(ABC):
         try:
             dag: nx.DiGraph = await self._get_pipeline_dag(project_id)
             # 1. Update our list of tasks with data from backend (state, results)
-            await self._update_states_from_comp_backend(cluster_id, project_id, dag)
+            await self._update_states_from_comp_backend(
+                user_id, cluster_id, project_id, dag
+            )
             # 2. Any task following a FAILED task shall be ABORTED
             comp_tasks = await self._set_states_following_failed_to_aborted(
                 project_id, dag
