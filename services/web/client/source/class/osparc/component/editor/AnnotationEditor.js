@@ -26,6 +26,10 @@ qx.Class.define("osparc.component.editor.AnnotationEditor", {
     layout.setColumnAlign(1, "left", "middle");
     this._setLayout(layout);
 
+    this.set({
+      padding: 10
+    });
+
     if (annotation) {
       this.setAnnotation(annotation);
     }
@@ -40,6 +44,8 @@ qx.Class.define("osparc.component.editor.AnnotationEditor", {
 
   members: {
     __applyAnnotation: function(annotation) {
+      this._removeAll();
+
       this._add(new qx.ui.basic.Label(this.tr("Color")), {
         row: 0,
         column: 0

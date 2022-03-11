@@ -233,7 +233,7 @@ qx.Class.define("osparc.file.FileDrop", {
         dropMe.rect.stroke({
           width: 1
         });
-        osparc.component.workbench.SvgWidget.updateRectPos(dropMe.rect, posX - boxWidth, posY - boxHeight);
+        osparc.wrapper.Svg.updateRectPos(dropMe.rect, posX - boxWidth, posY - boxHeight);
       }
     },
 

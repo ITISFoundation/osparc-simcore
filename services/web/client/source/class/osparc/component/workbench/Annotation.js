@@ -59,7 +59,8 @@ qx.Class.define("osparc.component.workbench.Annotation", {
     color: {
       check: "Color",
       event: "changeColor",
-      init: "#007fd4"
+      init: "#007fd4",
+      apply: "__applyColor"
     },
 
     attributes: {
@@ -89,6 +90,13 @@ qx.Class.define("osparc.component.workbench.Annotation", {
       }
       if (representation) {
         this.setRepresentation(representation);
+      }
+    },
+
+    __applyColor: function(color) {
+      const representation = this.getRepresentation();
+      if (representation) {
+        osparc.wrapper.Svg.updateRectColor(representation, color);
       }
     },
 

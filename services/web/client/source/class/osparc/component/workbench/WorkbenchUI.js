@@ -1244,7 +1244,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__selectionRectInitPos = null;
       }
       if (this.__selectionRectRepr) {
-        osparc.component.workbench.SvgWidget.removeRect(this.__selectionRectRepr);
+        osparc.wrapper.Svg.removeRect(this.__selectionRectRepr);
         this.__selectionRectRepr = null;
       }
 
@@ -1398,8 +1398,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
-    startAnnotationsRect: function(start) {
-      this.__annotatingRect = start;
+    startAnnotationsRect: function() {
+      this.__annotatingRect = true;
     },
 
     __openNodeRenamer: function(nodeId) {
@@ -1595,7 +1595,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           top: posY - parseInt(dropMeBounds.height/2)- parseInt(boxHeight/2)
         });
         if ("rect" in dropMe) {
-          osparc.component.workbench.SvgWidget.updateRectPos(dropMe.rect, posX - boxWidth, posY - boxHeight);
+          osparc.wrapper.Svg.updateRectPos(dropMe.rect, posX - boxWidth, posY - boxHeight);
         }
       } else {
         this.__removeDropHint();
@@ -1613,7 +1613,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__selectionRectRepr === null) {
         this.__selectionRectRepr = this.__svgLayer.drawFilledRect(width, height, x, y);
       } else {
-        osparc.component.workbench.SvgWidget.updateRect(this.__selectionRectRepr, width, height, x, y);
+        osparc.wrapper.Svg.updateRect(this.__selectionRectRepr, width, height, x, y);
       }
 
       // select nodes
@@ -1646,7 +1646,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if ([null, undefined].includes(this.__rectAnnotationRepr)) {
         this.__rectAnnotationRepr = this.__svgLayer.drawAnnotationRect(width, height, x, y, osparc.component.workbench.Annotation.DEFAULT_COLOR);
       } else {
-        osparc.component.workbench.SvgWidget.updateRect(this.__rectAnnotationRepr, width, height, x, y);
+        osparc.wrapper.Svg.updateRect(this.__rectAnnotationRepr, width, height, x, y);
       }
     },
 
@@ -1673,7 +1673,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (id in this.__annotations) {
         const annotation = this.__annotations[id];
         if (annotation.getRepresentation()) {
-          osparc.component.workbench.SvgWidget.removeRect(annotation.getRepresentation());
+          osparc.wrapper.Svg.removeRect(annotation.getRepresentation());
         }
         delete this.__annotations[id];
         this.getStudy().removeAnnotation(id);
@@ -1742,7 +1742,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __removeDropHint: function() {
       this.__dropMe.setVisibility("excluded");
-      osparc.component.workbench.SvgWidget.removeRect(this.__dropMe.rect);
+      osparc.wrapper.Svg.removeRect(this.__dropMe.rect);
       this.__dropMe = null;
     }
   }
