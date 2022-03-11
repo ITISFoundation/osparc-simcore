@@ -18,7 +18,7 @@ from pydantic import NonNegativeInt
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
-from simcore_service_director_v2.models.schemas.clusters import ClusterOut
+from simcore_service_director_v2.models.schemas.clusters import ClusterDetailsOut
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay
@@ -119,10 +119,10 @@ async def test_get_default_cluster_entrypoint(
     # the default cluster is the osparc internal cluster available through a dask-scheduler
     response = await async_client.get("/v2/clusters/default")
     assert response.status_code == status.HTTP_200_OK
-    default_cluster_out = ClusterOut.parse_obj(response.json())
+    default_cluster_out = ClusterDetailsOut.parse_obj(response.json())
     response = await async_client.get(f"/v2/clusters/{0}")
     assert response.status_code == status.HTTP_200_OK
-    assert default_cluster_out == ClusterOut.parse_obj(response.json())
+    assert default_cluster_out == ClusterDetailsOut.parse_obj(response.json())
 
 
 async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayServer):
@@ -209,11 +209,11 @@ async def dask_gateway_cluster_client(
 
 async def _get_cluster_out(
     async_client: httpx.AsyncClient, cluster_id: NonNegativeInt
-) -> ClusterOut:
+) -> ClusterDetailsOut:
     response = await async_client.get(f"/v2/clusters/{cluster_id}")
     assert response.status_code == status.HTTP_200_OK
     print(f"<-- received cluster details response {response=}")
-    cluster_out = ClusterOut.parse_obj(response.json())
+    cluster_out = ClusterDetailsOut.parse_obj(response.json())
     assert cluster_out
     print(f"<-- received cluster details {cluster_out=}")
     assert cluster_out.scheduler, "the cluster's scheduler is not started!"
