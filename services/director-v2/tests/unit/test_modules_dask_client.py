@@ -641,6 +641,7 @@ async def test_abort_computation_tasks(
     )
 
 
+@pytest.mark.flaky
 async def test_failed_task_returns_exceptions(
     dask_client: DaskClient,
     user_id: UserID,
