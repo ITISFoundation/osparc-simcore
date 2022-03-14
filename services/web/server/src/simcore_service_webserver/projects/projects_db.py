@@ -808,35 +808,49 @@ class ProjectDBAPI:
         )
         return [row.tag_id async for row in conn.execute(query)]
 
-    async def get_all_node_ids_from_workbenches(
-        self, project_uuid: Optional[str] = None
-    ) -> Set[str]:
-        """Returns a set containing all the workbench node_ids from all projects
-
-        If a project_uuid is passed, only that project's workbench nodes will be included
-        """
-
-        if project_uuid is None:
-            # this can return a tremendous amount of node IDs !!!!
-            # TODO: this should be the fix!
-            # SELECT *
-            # FROM "projects"
-            # WHERE workbench ->> '0b6b8423-c9e9-4d4c-9c59-a5eef6508ba5' IS NOT NULL
-            # or
-            # SELECT *
-            # FROM "projects"
-            # WHERE CAST("workbench" AS text) LIKE '%0b6b8423-c9e9-4d4c-9c59-a5eef6508ba5%'
-            query = "SELECT json_object_keys(projects.workbench) FROM projects"
-        else:
-            query = f"SELECT json_object_keys(projects.workbench) FROM projects WHERE projects.uuid = '{project_uuid}'"
-
+    async def node_id_exists(self, node_id: str) -> bool:
+        """Returns True if the node id exists in any of the available projects"""
         async with self.engine.acquire() as conn:
-            result = set()
-            query_result = await conn.execute(query)
-            async for row in query_result:
-                result.update(set(row.values()))
+            return bool(
+                await conn.scalar(
+                    sa.select([func.count()])
+                    .select_from(projects)
+                    .where(
+                        projects.c.workbench.op("->>")(
+                            "0b6b8423-c9e9-4d4c-9c59-a5eef6508ba5"
+                        )
+                        != None
+                    )
+                )
+                > 0
+            )
 
-            return result
+    async def get_all_node_ids_from_workbenches(self, project_uuid: str) -> Set[str]:
+        """Returns a set containing all the workbench node_ids from project with project_uuid"""
+
+        # if project_uuid is None:
+        #     # this can return a tremendous amount of node IDs !!!!
+        #     # TODO: this should be the fix!
+        #     # SELECT *
+        #     # FROM "projects"
+        #     # WHERE workbench ->> '0b6b8423-c9e9-4d4c-9c59-a5eef6508ba5' IS NOT NULL
+        #     # or
+        #     # SELECT *
+        #     # FROM "projects"
+        #     # WHERE CAST("workbench" AS text) LIKE '%0b6b8423-c9e9-4d4c-9c59-a5eef6508ba5%'
+        #     query = "SELECT json_object_keys(projects.workbench) FROM projects"
+        # else:
+        #     query = f"SELECT json_object_keys(projects.workbench) FROM projects WHERE projects.uuid = '{project_uuid}'"
+
+        result = set()
+        async with self.engine.acquire() as conn:
+            async for row in conn.execute(
+                sa.select([func.json_object_keys(projects.c.worbench)]).where(
+                    projects.c.uuid == project_uuid
+                )
+            ):
+                result.update(set(row.values()))
+        return result
 
     async def list_all_projects_by_uuid_for_user(self, user_id: int) -> List[str]:
         result = deque()
