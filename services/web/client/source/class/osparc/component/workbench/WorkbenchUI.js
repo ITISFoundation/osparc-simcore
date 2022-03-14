@@ -129,6 +129,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __pointerPos: null,
     __selectedItemId: null,
     __startHint: null,
+    __toolHint: null,
     __dropMe: null,
     __selectionRectInitPos: null,
     __selectionRectRepr: null,
@@ -201,6 +202,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __addExtras: function() {
       this.__addStartHint();
+      this.__addToolHint();
       this.__addDeleteItemButton();
       this.__annotationEditorView();
     },
@@ -217,6 +219,21 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         visibility: "excluded"
       });
       this.__workbenchLayout.add(this.__startHint);
+    },
+
+    __addToolHint: function() {
+      const toolHint = this.__toolHint = new qx.ui.basic.Label().set({
+        font: "workbench-start-hint",
+        textColor: "workbench-start-hint",
+        visibility: "excluded"
+      });
+      toolHint.bind("value", toolHint, "visibility", {
+        converter: val => val ? "visible" : "excluded"
+      });
+      this.__workbenchLayout.add(this.__toolHint, {
+        bottom: 20,
+        left: 20
+      });
     },
 
     __addDeleteItemButton: function() {
@@ -1311,6 +1328,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.__rectAnnotationRepr = null;
         this.__annotatingRect = false;
         this.__annotatingText = false;
+        this.__toolHint.setValue(null);
       }
 
       if (this.__panning) {
@@ -1457,11 +1475,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     startAnnotationsRect: function() {
       this.__annotatingRect = true;
       this.__annotatingText = false;
+      this.__toolHint.setValue(this.tr("Draw a rectangle"));
     },
 
     startAnnotationsText: function() {
       this.__annotatingText = true;
       this.__annotatingRect = false;
+      this.__toolHint.setValue(this.tr("Draw a rectangle first"));
     },
 
     __openNodeRenamer: function(nodeId) {
