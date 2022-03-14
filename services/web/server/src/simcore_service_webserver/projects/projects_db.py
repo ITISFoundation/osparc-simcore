@@ -811,22 +811,16 @@ class ProjectDBAPI:
     async def node_id_exists(self, node_id: str) -> bool:
         """Returns True if the node id exists in any of the available projects"""
         async with self.engine.acquire() as conn:
-            return bool(
-                await conn.scalar(
-                    sa.select([func.count()])
-                    .select_from(projects)
-                    .where(
-                        projects.c.workbench.op("->>")(
-                            "0b6b8423-c9e9-4d4c-9c59-a5eef6508ba5"
-                        )
-                        != None
-                    )
-                )
-                > 0
+            num_entries = await conn.scalar(
+                sa.select([func.count()])
+                .select_from(projects)
+                .where(projects.c.workbench.op("->>")(f"{node_id}") != None)
             )
+        assert num_entries is not None  # nosec
+        return bool(num_entries > 0)
 
-    async def get_all_node_ids_from_workbenches(self, project_uuid: str) -> Set[str]:
-        """Returns a set containing all the workbench node_ids from project with project_uuid"""
+    async def get_node_ids_from_project(self, project_uuid: str) -> Set[str]:
+        """Returns a set containing all the node_ids from project with project_uuid"""
 
         # if project_uuid is None:
         #     # this can return a tremendous amount of node IDs !!!!
@@ -846,7 +840,7 @@ class ProjectDBAPI:
         async with self.engine.acquire() as conn:
             async for row in conn.execute(
                 sa.select([func.json_object_keys(projects.c.worbench)]).where(
-                    projects.c.uuid == project_uuid
+                    projects.c.uuid == f"{project_uuid}"
                 )
             ):
                 result.update(set(row.values()))

@@ -11,6 +11,7 @@ import re
 from copy import deepcopy
 from itertools import combinations
 from random import randint
+from secrets import choice
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 from uuid import UUID, uuid5
 
@@ -663,3 +664,53 @@ async def test_patch_user_project_workbench_concurrently(
         creation_date=to_datetime(new_project["creationDate"]),
         last_change_date=latest_change_date,
     )
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_node_id_exists(
+    logged_user: Dict[str, Any],
+    db_api: ProjectDBAPI,
+    fake_project: Dict[str, Any],
+    benchmark,
+    aio_benchmark,
+):
+    # create 1000 projects with 1-1000 nodes each
+    _NUMBER_OF_PROJECTS = 1245
+
+    BASE_UUID = UUID("ccc0839f-93b8-4387-ab16-197281060927")
+    all_created_projects = {}
+    for p in range(_NUMBER_OF_PROJECTS):
+        project_uuid = uuid5(BASE_UUID, f"project_{p}")
+        all_created_projects[project_uuid] = []
+        workbench = {}
+        for n in range(randint(23, 1434)):
+            node_uuid = uuid5(project_uuid, f"node_{n}")
+            all_created_projects[project_uuid].append(node_uuid)
+            workbench[f"{node_uuid}"] = {
+                "key": "simcore/services/comp/sleepers",
+                "version": "1.43.5",
+                "label": f"I am node {n}",
+            }
+        new_project = deepcopy(fake_project)
+        new_project.update(uuid=project_uuid, name=f"project {p}", workbench=workbench)
+        # add the project
+        added_project = await db_api.add_project(
+            prj=new_project, user_id=logged_user["id"]
+        )
+
+    # create a node uuid that does not exist from an existing project
+    existing_project_id = choice(list(all_created_projects.keys()))
+    not_existing_node_id_in_existing_project = uuid5(
+        existing_project_id, "node_invalid_node"
+    )
+
+    node_id_exists = await db_api.node_id_exists(
+        f"{not_existing_node_id_in_existing_project}"
+    )
+    assert node_id_exists == False
+    existing_node_id = choice(all_created_projects[existing_project_id])
+    node_id_exists = await aio_benchmark(db_api.node_id_exists, existing_node_id)
+    assert node_id_exists == True
