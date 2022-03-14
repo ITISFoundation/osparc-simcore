@@ -135,7 +135,7 @@ META = ServiceDockerData.parse_obj(
                     "title": "Mass",
                     "description": "Mass in kg",
                     "minimum": 0,
-                    "x_unit": "gg",
+                    "x_unit": "kg",
                     "type": "number",
                 }
             ),
