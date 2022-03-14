@@ -1,10 +1,11 @@
+import fnmatch
 import os
 import re
 import subprocess
 from collections import Counter, defaultdict
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Dict, List, Literal, NamedTuple
+from typing import Dict, List, Literal, NamedTuple, Optional, Set
 
 from packaging.version import Version
 
@@ -13,8 +14,10 @@ from packaging.version import Version
 def printing_table(columns: List[str]):
     print("|" + "|".join(columns) + "|")
     print("|" + "|".join(["-" * len(c) for c in columns]) + "|")
+
     yield
-    print("|" + "|".join(["-" * len(c) for c in columns]) + "|")
+
+    # print("|" + "|".join(["-" * len(c) for c in columns]) + "|")
 
 
 BEFORE_PATTERN = re.compile(r"^-([\w-]+)==([0-9\.post]+)")
@@ -77,7 +80,7 @@ def main_changes_stats():
 
             print(
                 "|",
-                f"{i:2d}",
+                f"{i:3d}",
                 "|",
                 f"{name:25s}",
                 "|",
@@ -114,9 +117,14 @@ class ReqFile(NamedTuple):
     dependencies: Dict[str, Version]
 
 
-def parse_dependencies(repodir: Path) -> List[ReqFile]:
+def parse_dependencies(
+    repodir: Path, *, exclude: Optional[Set] = None
+) -> List[ReqFile]:
     reqs = []
+    exclude = exclude or set()
     for reqfile in repodir.rglob("**/requirements/_*.txt"):
+        if any(fnmatch.fnmatch(reqfile, x) for x in exclude):
+            continue
         try:
             t = {"_base.txt": "base", "_test.txt": "test", "_tools.txt": "tool"}[
                 reqfile.name
@@ -137,9 +145,9 @@ def parse_dependencies(repodir: Path) -> List[ReqFile]:
     return reqs
 
 
-def main_dep_stats():
+def main_dep_stats(exclude: Optional[Set] = None):
     repodir = Path(os.environ.get("REPODIR", "."))
-    reqs = parse_dependencies(repodir)
+    reqs = parse_dependencies(repodir, exclude=exclude)
 
     # format
     print("Overview of libraries used repo-wide")
@@ -166,7 +174,7 @@ def main_dep_stats():
 
             print(
                 "|",
-                f"{i:2d}",
+                f"{i:3d}",
                 "|",
                 f"{name:25s}",
                 "|",
@@ -180,5 +188,5 @@ def main_dep_stats():
 
 
 if __name__ == "__main__":
-    main_changes_stats()
-    main_dep_stats()
+    # main_changes_stats()
+    main_dep_stats(exclude={"*/director/*"})
