@@ -1025,12 +1025,17 @@ async def _save_service_state(service_host_name: str, session: aiohttp.ClientSes
             response.raise_for_status()
 
         except ClientResponseError as err:
-            if err.status in (HTTPStatus.METHOD_NOT_ALLOWED, HTTPStatus.NOT_FOUND):
+            if err.status in (
+                HTTPStatus.METHOD_NOT_ALLOWED,
+                HTTPStatus.NOT_FOUND,
+                HTTPStatus.NOT_IMPLEMENTED,
+            ):
                 # NOTE: Legacy Override. Some old services do not have a state entrypoint defined
                 # therefore we assume there is nothing to be saved and do not raise exception
                 # Responses found so far:
-                #   METHOD NOT ALLOWED https://httpstatuses.com/405
-                #   NOT FOUND https://httpstatuses.com/404
+                #   METHOD NOT ALLOWED https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/405
+                #   NOT FOUND          https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404
+                #   NOT IMPLEMENTED    https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/501
                 #
                 log.warning(
                     "Service '%s' does not seem to implement save state functionality: %s. Skipping save",
@@ -1038,7 +1043,7 @@ async def _save_service_state(service_host_name: str, session: aiohttp.ClientSes
                     err,
                 )
             else:
-                # re-reaise
+                # upss ... could service had troubles saving, reraise
                 raise
         else:
             log.info(
@@ -1090,7 +1095,7 @@ async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -
             else "",
         )
 
-        # If state save is enforced, it will fail if not completed
+        # If state save is enforced
         if save_state:
             log.debug("saving state of service %s...", service_host_name)
             try:
@@ -1101,13 +1106,15 @@ async def stop_service(app: web.Application, node_uuid: str, save_state: bool) -
                 raise ServiceStateSaveError(
                     node_uuid,
                     reason=f"service {service_host_name} rejected to save state, "
-                    f"responded {err.message} (status {err.status})",
+                    f"responded {err.message} (status {err.status})."
+                    "Aborting stop service to prevent data loss.",
                 ) from err
 
             except ClientError as err:
-                raise ServiceStateSaveError(
-                    node_uuid, reason=f"service {service_host_name} unreachable [{err}]"
-                ) from err
+                log.warning(
+                    "Could not save state because {service_host_name} is unreachable [{err}]."
+                    "Resuming stop_service."
+                )
 
         # remove the services
         try:
