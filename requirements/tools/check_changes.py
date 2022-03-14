@@ -59,7 +59,7 @@ def main_changes_stats():
     before, after, counts = parse_changes(filepath)
 
     # format
-    print("Stats")
+    print("Overview of changes in dependencies")
     print("- #packages before:", len(before))
     print("- #packages after :", len(after))
     print()
@@ -142,7 +142,7 @@ def main_dep_stats():
     reqs = parse_dependencies(repodir)
 
     # format
-    print("Stats")
+    print("Overview of libraries used repo-wide")
     print("- #reqs files parsed:", len(reqs))
     print()
 
