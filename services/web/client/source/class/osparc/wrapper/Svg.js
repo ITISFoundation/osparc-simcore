@@ -223,7 +223,7 @@ qx.Class.define("osparc.wrapper.Svg", {
       item.move(x, y);
     },
 
-    updateRectColor: function(rect, color) {
+    updateItemColor: function(rect, color) {
       rect.stroke({
         color: color
       });
@@ -286,12 +286,6 @@ qx.Class.define("osparc.wrapper.Svg", {
           width: 1
         });
       return polyline;
-    },
-
-    updateStrokeColor: function(polyline, color) {
-      polyline.stroke({
-        color: color
-      });
     },
 
     removeNodeUI: function(nodeUI) {

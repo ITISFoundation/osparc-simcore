@@ -116,7 +116,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
       if (representation) {
         switch (this.getType()) {
           case "rect":
-            osparc.wrapper.Svg.updateRectColor(representation, color);
+            osparc.wrapper.Svg.updateItemColor(representation, color);
             break;
           case "text":
             osparc.wrapper.Svg.updateTextColor(representation, color);
@@ -158,7 +158,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
       if (representation) {
         switch (this.getType()) {
           case "rect":
-            osparc.wrapper.Svg.updateRectColor(representation, selected ? "yellow" : this.getColor());
+            osparc.wrapper.Svg.updateItemColor(representation, selected ? "yellow" : this.getColor());
             break;
           case "text":
             osparc.wrapper.Svg.updateTextColor(representation, selected ? "yellow" : this.getColor());
