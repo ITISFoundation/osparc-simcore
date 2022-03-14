@@ -130,6 +130,9 @@ def _default_app_config_for_integration_tests(
     test_environ["WEBSERVER_LOGLEVEL"] = "WARNING"
     test_environ["OSPARC_SIMCORE_REPO_ROOTDIR"] = f"{osparc_simcore_root_dir}"
 
+    # NOTE: removed from webserver_environ after split with GC
+    test_environ["WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS"] = "30"
+
     # recreate config-file
     config_template = Template(default_app_config_integration_file.read_text())
     config_text = config_template.substitute(**test_environ)
