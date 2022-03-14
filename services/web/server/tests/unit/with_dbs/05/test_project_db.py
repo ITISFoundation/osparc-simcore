@@ -11,7 +11,7 @@ import re
 from copy import deepcopy
 from itertools import combinations
 from random import randint
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple
 from uuid import UUID, uuid5
 
 import pytest
@@ -32,7 +32,6 @@ from simcore_service_webserver.projects.projects_db import (
     _convert_to_schema_names,
     _create_project_access_rights,
     _find_changed_dict_keys,
-    setup_projects_db,
 )
 from simcore_service_webserver.users_exceptions import UserNotFoundError
 from simcore_service_webserver.utils import to_datetime
@@ -233,26 +232,20 @@ def test_check_project_permissions(
     _check_project_permissions(project, user_id, user_groups, wanted_permissions)
 
 
-def _create_project_db(client: TestClient) -> ProjectDBAPI:
-    setup_projects_db(client.app)
-
-    assert APP_PROJECT_DBAPI in client.app
+async def test_setup_projects_db(client: TestClient):
+    assert client.app
     db_api = client.app[APP_PROJECT_DBAPI]
     assert db_api
     assert isinstance(db_api, ProjectDBAPI)
 
     assert db_api._app == client.app
-    assert db_api._engine
-    return db_api
-
-
-async def test_setup_projects_db(client: TestClient):
-    _create_project_db(client)
+    assert db_api.engine
 
 
 @pytest.fixture()
-def db_api(client: TestClient, postgres_db: sa.engine.Engine) -> ProjectDBAPI:
-    db_api = _create_project_db(client)
+def db_api(client: TestClient, postgres_db: sa.engine.Engine) -> Iterator[ProjectDBAPI]:
+    assert client.app
+    db_api = client.app[APP_PROJECT_DBAPI]
 
     yield db_api
 
