@@ -494,7 +494,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
       annotation.addListener("annotationStoppedMoving", () => this.__itemStoppedMoving(), this);
 
-      annotation.addListener("annotationClicked", () => this.__selectedItemChanged(annotation.getId()), this);
+      annotation.addListener("annotationClicked", e => this.__annotationClicked(annotation, e.getData()), this);
     },
 
     getCurrentModel: function() {
@@ -542,6 +542,25 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
       selectedAnnotations.forEach(selectedAnnotation => selectedAnnotation.setSelected(true));
       this.__selectedAnnotations = selectedAnnotations;
+    },
+
+    __annotationClicked: function(annotation, isControlPressed = false) {
+      if (isControlPressed) {
+        const index = this.getSelectedAnnotations().indexOf(annotation);
+        if (index > -1) {
+          annotation.setSelected(false);
+          this.getSelectedAnnotations().splice(index, 1);
+        } else {
+          annotation.setSelected(true);
+          this.getSelectedAnnotations().push(annotation);
+          if (this.__selectedItemId === null) {
+            this.__selectedItemChanged(annotation.getId());
+          }
+        }
+      } else {
+        this.__setSelectedAnnotations([annotation]);
+        this.__selectedItemChanged(annotation.getId());
+      }
     },
 
     activeNodeChanged: function(activeNodeUI, isControlPressed = false) {

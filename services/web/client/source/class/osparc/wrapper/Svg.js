@@ -135,12 +135,12 @@ qx.Class.define("osparc.wrapper.Svg", {
       return {
         x: rect.node.attributes.x.value,
         y: rect.node.attributes.y.value,
-        width: rect.node.attributes.width.value,
-        height: rect.node.attributes.height.value
+        width: rect.node.attributes.width ? rect.node.attributes.width.value : null,
+        height: rect.node.attributes.height ? rect.node.attributes.height.value : null
       };
     },
 
-    drawAnnotationText: function(draw, width, height, x, y, label, color) {
+    drawAnnotationText: function(draw, x, y, label, color) {
       const text = draw.text(label)
         .font({
           fill: color,

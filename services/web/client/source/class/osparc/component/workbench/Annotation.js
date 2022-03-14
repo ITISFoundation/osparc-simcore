@@ -75,7 +75,7 @@ qx.Class.define("osparc.component.workbench.Annotation", {
   },
 
   events: {
-    "annotationClicked": "qx.event.type.Event",
+    "annotationClicked": "qx.event.type.Data",
     "annotationStartedMoving": "qx.event.type.Event",
     "annotationMoving": "qx.event.type.Event",
     "annotationStoppedMoving": "qx.event.type.Event"
@@ -95,13 +95,13 @@ qx.Class.define("osparc.component.workbench.Annotation", {
           representation = this.__svgLayer.drawAnnotationRect(attrs.width, attrs.height, attrs.x, attrs.y, this.getColor());
           break;
         case "text":
-          representation = this.__svgLayer.drawAnnotationText(attrs.width, attrs.height, attrs.x, attrs.y, attrs.text, this.getColor());
+          representation = this.__svgLayer.drawAnnotationText(attrs.x, attrs.y, attrs.text, this.getColor());
           break;
       }
       if (representation) {
         osparc.wrapper.Svg.makeDraggable(representation);
         representation.node.addEventListener("click", e => {
-          this.fireEvent("annotationClicked");
+          this.fireDataEvent("annotationClicked", e.ctrlKey);
           e.stopPropagation();
         }, this);
         representation.on("dragstart", () => this.fireEvent("annotationStartedMoving"));
