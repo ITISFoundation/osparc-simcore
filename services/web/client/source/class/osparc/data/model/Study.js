@@ -475,19 +475,6 @@ qx.Class.define("osparc.data.model.Study", {
       return !this.getUi().getSlideshow().isEmpty();
     },
 
-    addAnnotation: function(annotation) {
-      if (!("annotations" in this.getDev())) {
-        this.getDev()["annotations"] = {};
-      }
-      this.getDev()["annotations"][annotation.getId()] = annotation;
-    },
-
-    removeAnnotation: function(annotationId) {
-      if (("annotations" in this.getDev()) && annotationId in this.getDev()["annotations"]) {
-        delete this.getDev()["annotations"][annotationId];
-      }
-    },
-
     serialize: function(clean = true) {
       let jsonObject = {};
       const propertyKeys = this.self().getProperties();
@@ -501,20 +488,6 @@ qx.Class.define("osparc.data.model.Study", {
         }
         if (key === "ui") {
           jsonObject[key] = this.getUi().serialize();
-          return;
-        }
-        if (key === "dev") {
-          if ("annotations" in this.getDev()) {
-            const annotations = this.getDev()["annotations"];
-            const annotationsIds = Object.keys(annotations);
-            if (annotationsIds.length) {
-              jsonObject[key] = {};
-              jsonObject[key]["annotations"] = {};
-              annotationsIds.forEach(annotationId => {
-                jsonObject[key]["annotations"][annotationId] = annotations[annotationId].serialize();
-              });
-            }
-          }
           return;
         }
         const value = this.get(key);

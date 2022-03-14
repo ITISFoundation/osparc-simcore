@@ -1756,7 +1756,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       const annotation = new osparc.component.workbench.Annotation(this.__svgLayer, data, id);
       this.__addAnnotationListeners(annotation);
       this.__annotations[annotation.getId()] = annotation;
-      this.getStudy().addAnnotation(annotation);
+      this.getStudy().getUi().addAnnotation(annotation);
     },
 
     __removeAnnotation: function(id) {
@@ -1766,7 +1766,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           osparc.wrapper.Svg.removeRect(annotation.getRepresentation());
         }
         delete this.__annotations[id];
-        this.getStudy().removeAnnotation(id);
+        this.getStudy().getUi().removeAnnotation(id);
       }
     },
 

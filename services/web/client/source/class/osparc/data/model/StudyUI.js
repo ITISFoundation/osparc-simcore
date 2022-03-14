@@ -62,6 +62,12 @@ qx.Class.define("osparc.data.model.StudyUI", {
       nullable: true,
       event: "changeMode",
       apply: "__applyMode"
+    },
+
+    annotations: {
+      check: "Object",
+      init: {},
+      nullable: true
     }
   },
 
@@ -72,6 +78,16 @@ qx.Class.define("osparc.data.model.StudyUI", {
       }
     },
 
+    addAnnotation: function(annotation) {
+      this.getAnnotations()[annotation.getId()] = annotation;
+    },
+
+    removeAnnotation: function(annotationId) {
+      if (annotationId in this.getAnnotations()) {
+        delete this.getAnnotations()[annotationId];
+      }
+    },
+
     serialize: function() {
       const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
       let jsonObject = {};
@@ -79,6 +95,13 @@ qx.Class.define("osparc.data.model.StudyUI", {
       jsonObject["slideshow"] = this.getSlideshow().serialize();
       jsonObject["currentNodeId"] = this.getCurrentNodeId() || "";
       jsonObject["mode"] = this.getMode();
+      const annotations = this.getAnnotations();
+      if (Object.keys(annotations).length) {
+        jsonObject["annotations"] = {};
+        Object.keys(annotations).forEach(annotationId => {
+          jsonObject["annotations"][annotationId] = annotations[annotationId].serialize();
+        });
+      }
       return jsonObject;
     }
   }
