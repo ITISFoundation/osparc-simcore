@@ -179,8 +179,9 @@ class BaseServiceIOModel(BaseModel):
     )
 
     # TODO: use discriminators
+    # TODO: deprecate
     unit: Optional[str] = Field(
-        None, description="Units, when it refers to a physical quantity", deprecate=True
+        None, description="Units, when it refers to a physical quantity"
     )
 
     class Config:
