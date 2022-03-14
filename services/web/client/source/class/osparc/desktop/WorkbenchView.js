@@ -872,7 +872,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
 
     __getAnnotationsSection: function() {
       const annotationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
-      annotationsSection.add(new qx.ui.basic.Label(this.tr("oSPaint")).set({
+      annotationsSection.add(new qx.ui.basic.Label(this.tr("Annotations")).set({
         font: "title-14"
       }));
 

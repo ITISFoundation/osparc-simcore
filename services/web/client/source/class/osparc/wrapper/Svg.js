@@ -132,11 +132,12 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     getRectAttributes: function(rect) {
+      const attrs = rect.node.attributes;
       return {
-        x: rect.node.attributes.x.value,
-        y: rect.node.attributes.y.value,
-        width: rect.node.attributes.width ? rect.node.attributes.width.value : null,
-        height: rect.node.attributes.height ? rect.node.attributes.height.value : null
+        x: attrs.x.value,
+        y: attrs.y.value,
+        width: attrs.width ? attrs.width.value : null,
+        height: attrs.height ? attrs.height.value : null
       };
     },
 
@@ -223,10 +224,14 @@ qx.Class.define("osparc.wrapper.Svg", {
       item.move(x, y);
     },
 
-    updateItemColor: function(rect, color) {
-      rect.stroke({
+    updateItemColor: function(item, color) {
+      item.stroke({
         color: color
       });
+    },
+
+    removeItem: function(item) {
+      item.remove();
     },
 
     updateText: function(text, label) {
@@ -238,11 +243,6 @@ qx.Class.define("osparc.wrapper.Svg", {
         fill: color
       });
     },
-
-    removeRect: function(rect) {
-      rect.remove();
-    },
-
     updateCurveDashes: function(curve, dashed) {
       curve.attr({
         "stroke-dasharray": dashed ? 5 : 0
@@ -286,10 +286,6 @@ qx.Class.define("osparc.wrapper.Svg", {
           width: 1
         });
       return polyline;
-    },
-
-    removeNodeUI: function(nodeUI) {
-      nodeUI.remove();
     },
 
     drawLine: function(draw, controls) {
