@@ -19,7 +19,9 @@
 /* eslint new-cap: [2, {capIsNewExceptions: ["SVG", "M", "C"]}] */
 
 /**
- * @asset(svg/svg.*js)
+ * @asset(svg/svg.js)
+ * @asset(svg/svg.path.js)
+ * @asset(svg/svg.draggable.js)
  * @ignore(SVG)
  */
 
@@ -339,11 +341,11 @@ qx.Class.define("osparc.wrapper.Svg", {
 
         // initialize the script loading
         const svgPath = "svg/svg.js";
-        // const svgDraggablePath = "svg/svg.draggable.js";
+        const svgDraggablePath = "svg/svg.draggable.js";
         const svgPathPath = "svg/svg.path.js";
         const dynLoader = new qx.util.DynamicScriptLoader([
           svgPath,
-          // svgDraggablePath,
+          svgDraggablePath,
           svgPathPath
         ]);
 
