@@ -24,10 +24,22 @@ class Slideshow(BaseModel):
         extra = Extra.forbid
 
 
+class Annotation(BaseModel):
+    type: str = Field(..., description="Annotation type", examples=["rect", "text"])
+    color: str = Field(
+        ..., description="Annotation's color", examples=["#FF0000", "#0000FF"]
+    )
+    attributes: Dict = Field(..., description="svg attributes")
+
+    class Config:
+        extra = Extra.forbid
+
+
 class StudyUI(BaseModel):
     workbench: Optional[Dict[NodeIDStr, WorkbenchUI]] = Field(None)
     slideshow: Optional[Dict[NodeIDStr, Slideshow]]
     current_node_id: Optional[NodeID] = Field(alias="currentNodeId")
+    annotations: Optional[Dict[NodeIDStr, Annotation]]
 
     class Config:
         extra = Extra.allow

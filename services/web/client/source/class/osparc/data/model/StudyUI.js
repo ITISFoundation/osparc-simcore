@@ -34,6 +34,10 @@ qx.Class.define("osparc.data.model.StudyUI", {
       currentNodeId: studyDataUI && studyDataUI.currentNodeId ? studyDataUI.currentNodeId : this.initCurrentNodeId(),
       mode: studyDataUI && studyDataUI.mode ? studyDataUI.mode : this.initMode()
     });
+
+    if ("annotations" in studyDataUI) {
+      this.__annotationsInitData = studyDataUI["annotations"];
+    }
   },
 
   properties: {
@@ -72,10 +76,20 @@ qx.Class.define("osparc.data.model.StudyUI", {
   },
 
   members: {
+    __annotationsInitData: null,
+
     __applyMode: function(mode) {
       if (mode === "guided") {
         this.setMode("app");
       }
+    },
+
+    getAnnotationsInitData: function() {
+      return this.__annotationsInitData;
+    },
+
+    nullAnnotationsInitData: function() {
+      this.__annotationsInitData = null;
     },
 
     addAnnotation: function(annotation) {

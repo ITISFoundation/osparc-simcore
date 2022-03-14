@@ -1139,10 +1139,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }
 
         // create annotations
-        const dev = model.getStudy().getDev();
-        if ("annotations" in dev) {
-          const annotations = dev["annotations"];
-          Object.entries(annotations).forEach(([annotationId, annotation]) => this.__addAnnotation(annotation, annotationId));
+        const studyUI = model.getStudy().getUi();
+        const initData = studyUI.getAnnotationsInitData();
+        const annotations = initData ? initData : studyUI.getAnnotations();
+        Object.entries(annotations).forEach(([annotationId, annotation]) => this.__addAnnotation(annotation, annotationId));
+        if (initData) {
+          studyUI.nullAnnotationsInitData();
         }
       }
     },
