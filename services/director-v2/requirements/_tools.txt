@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_tools.txt --strip-extras requirements/_tools.in
 #
-backports.entry-points-selectable==1.1.1
+backports-entry-points-selectable==1.1.1
     # via virtualenv
 black==21.12b0
     # via -r requirements/../../../requirements/devenv.txt
