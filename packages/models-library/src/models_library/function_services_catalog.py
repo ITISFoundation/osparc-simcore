@@ -9,7 +9,7 @@
 import logging
 from typing import Iterator
 
-from .functions_catalog import (
+from .function_service import (
     demo_units,
     file_picker,
     iter_range,
@@ -18,7 +18,7 @@ from .functions_catalog import (
     parameters,
     probes,
 )
-from .functions_catalog.constants import FUNCTION_SERVICE_KEY_PREFIX
+from .function_service.constants import FUNCTION_SERVICE_KEY_PREFIX
 from .services import ServiceDockerData
 
 logger = logging.getLogger(__name__)

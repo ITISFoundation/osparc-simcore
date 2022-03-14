@@ -118,7 +118,7 @@ META = ServiceDockerData.parse_obj(
                 {
                     "title": "Current",
                     "description": "Current in milliAmpere",
-                    "x_unit": ",A",
+                    "x_unit": "mA",
                     "type": "number",
                 }
             ),
