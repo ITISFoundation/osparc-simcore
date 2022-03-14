@@ -508,6 +508,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     resetSelection: function() {
       this.__setSelectedNodes([]);
+      this.__setSelectedAnnotations([]);
       this.__selectedItemChanged(null);
     },
 
