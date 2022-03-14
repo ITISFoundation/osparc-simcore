@@ -75,7 +75,10 @@ qx.Class.define("osparc.component.workbench.Annotation", {
   },
 
   events: {
-    "annotationClicked": "qx.event.type.Event"
+    "annotationClicked": "qx.event.type.Event",
+    "annotationStartedMoving": "qx.event.type.Event",
+    "annotationMoving": "qx.event.type.Event",
+    "annotationStoppedMoving": "qx.event.type.Event"
   },
 
   members: {
@@ -101,6 +104,9 @@ qx.Class.define("osparc.component.workbench.Annotation", {
           this.fireEvent("annotationClicked");
           e.stopPropagation();
         }, this);
+        representation.on("dragstart", () => this.fireEvent("annotationStartedMoving"));
+        representation.on("dragmove", () => this.fireEvent("annotationMoving"));
+        representation.on("dragend", () => this.fireEvent("annotationStoppedMoving"));
         this.setRepresentation(representation);
       }
     },
@@ -116,6 +122,26 @@ qx.Class.define("osparc.component.workbench.Annotation", {
             osparc.wrapper.Svg.updateTextColor(representation, color);
             break;
         }
+      }
+    },
+
+    getPosition: function() {
+      const attrs = this.getAttributes();
+      if (attrs) {
+        return {
+          x: parseInt(attrs.x),
+          y: parseInt(attrs.y)
+        };
+      }
+      return null;
+    },
+
+    setPosition: function(x, y) {
+      const representation = this.getRepresentation();
+      if (representation) {
+        x = parseInt(x) < 0 ? 0 : parseInt(x);
+        y = parseInt(y) < 0 ? 0 : parseInt(y);
+        osparc.wrapper.Svg.updateItemPos(representation, x, y);
       }
     },
 

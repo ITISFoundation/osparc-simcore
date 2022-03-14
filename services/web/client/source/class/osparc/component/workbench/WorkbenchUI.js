@@ -396,6 +396,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.getSelectedNodes().forEach(selectedNodeUI => {
           selectedNodeUI.initPos = selectedNodeUI.getNode().getPosition();
         });
+        this.getSelectedAnnotations().forEach(selectedAnnotation => {
+          selectedAnnotation.initPos = selectedAnnotation.getPosition();
+        });
       }, this);
 
       nodeUI.addListener("nodeMoving", () => {
@@ -414,6 +417,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
               this.__updateNodeUIPos(selectedNodeUI);
             }
           });
+          this.getSelectedAnnotations().forEach(selectedAnnotation => {
+            const newPos = {
+              x: selectedAnnotation.initPos.x + xDiff,
+              y: selectedAnnotation.initPos.y + yDiff
+            };
+            selectedAnnotation.setPosition(newPos.x, newPos.y);
+          });
         }
       }, this);
 
@@ -421,7 +431,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         this.getSelectedNodes().forEach(selectedNodeUI => {
           delete selectedNodeUI["initPos"];
         });
-
+        this.getSelectedAnnotations().forEach(selectedAnnotation => {
+          delete selectedAnnotation["initPos"];
+        });
         this.__updateWorkbenchBounds();
 
         // After moving a nodeUI, a new element with z-index 100000+ appears on the DOM tree and prevents from clicking
@@ -447,12 +459,75 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
     },
 
+    __addAnnotationListeners: function(annotation) {
+      annotation.addListener("annotationStartedMoving", () => {
+        this.getSelectedNodes().forEach(selectedNodeUI => {
+          selectedNodeUI.initPos = selectedNodeUI.getNode().getPosition();
+        });
+        this.getSelectedAnnotations().forEach(selectedAnnotation => {
+          selectedAnnotation.initPos = selectedAnnotation.getPosition();
+        });
+      }, this);
+
+      annotation.addListener("annotationMoving", () => {
+        if ("initPos" in annotation) {
+          const xDiff = annotation.getPosition().x - annotation.initPos.x;
+          const yDiff = annotation.getPosition().y - annotation.initPos.y;
+          this.getSelectedNodes().forEach(selectedNodeUI => {
+            const selectedNode = selectedNodeUI.getNode();
+            selectedNode.setPosition({
+              x: selectedNodeUI.initPos.x + xDiff,
+              y: selectedNodeUI.initPos.y + yDiff
+            });
+            selectedNodeUI.moveTo(selectedNode.getPosition().x, selectedNode.getPosition().y);
+            this.__updateNodeUIPos(selectedNodeUI);
+          });
+          this.getSelectedAnnotations().forEach(selectedAnnotation => {
+            if (annotation.getId() !== selectedAnnotation.getId()) {
+              const newPos = {
+                x: selectedAnnotation.initPos.x + xDiff,
+                y: selectedAnnotation.initPos.y + yDiff
+              };
+              selectedAnnotation.setPosition(newPos.x, newPos.y);
+            }
+          });
+        }
+      }, this);
+
+      annotation.addListener("annotationStoppedMoving", () => {
+        this.getSelectedNodes().forEach(selectedNodeUI => {
+          delete selectedNodeUI["initPos"];
+        });
+        this.getSelectedAnnotations().forEach(selectedAnnotation => {
+          delete selectedAnnotation["initPos"];
+        });
+        this.__updateWorkbenchBounds();
+
+        // After moving a nodeUI, a new element with z-index 100000+ appears on the DOM tree and prevents from clicking
+        // elsewhere. Here we go through every the children of the WorkbenchUI and remove the undesired element
+        const allChildren = Array.from(this.getContentElement().getDomElement().getElementsByTagName("*"));
+        const nodesAndSuspicious = allChildren.filter(child => parseInt(child.style.zIndex) >= 100000);
+        nodesAndSuspicious.forEach(child => {
+          if (child.className !== "qx-window-small-cap") {
+            console.warn("moving undesired element to background");
+            child.style.zIndex = "1";
+          }
+        });
+      }, this);
+
+      annotation.addListener("annotationClicked", () => this.__selectedItemChanged(annotation.getId()), this);
+    },
+
     getCurrentModel: function() {
       return this._currentModel;
     },
 
     getSelectedNodes: function() {
       return this.__selectedNodeUIs;
+    },
+
+    getSelectedAnnotations: function() {
+      return this.__selectedAnnotations;
     },
 
     getSelectedNodeIDs: function() {
@@ -480,7 +555,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __setSelectedAnnotations: function(selectedAnnotations) {
-      this.__selectedAnnotations.forEach(annotation => {
+      this.getSelectedAnnotations().forEach(annotation => {
         if (!selectedAnnotations.includes(annotation)) {
           annotation.setSelected(false);
         }
@@ -791,7 +866,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const pos = nodeUI.getNode().getPosition();
         const nShadows = nodeUI.shadows.length;
         for (let i=0; i<nShadows; i++) {
-          osparc.wrapper.Svg.updateNodeUI(nodeUI.shadows[i], pos.x + (nShadows-i)*shadowDiffX, pos.y + (nShadows-i)*shadowDiffY);
+          osparc.wrapper.Svg.updateItemPos(nodeUI.shadows[i], pos.x + (nShadows-i)*shadowDiffX, pos.y + (nShadows-i)*shadowDiffY);
         }
       }
     },
@@ -1123,7 +1198,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         edge.setSelected(true);
       } else if (this.__isSelectedItemAnAnnotation()) {
         const annotation = this.__getAnnotation(newID);
-        annotation.setSelected(true);
+        this.__setSelectedAnnotations([annotation]);
         this.__annotationEditor.setAnnotation(annotation);
         this.__annotationEditor.show();
       } else {
@@ -1618,7 +1693,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           top: posY - parseInt(dropMeBounds.height/2)- parseInt(boxHeight/2)
         });
         if ("rect" in dropMe) {
-          osparc.wrapper.Svg.updateRectPos(dropMe.rect, posX - boxWidth, posY - boxHeight);
+          osparc.wrapper.Svg.updateItemPos(dropMe.rect, posX - boxWidth, posY - boxHeight);
         }
       } else {
         this.__removeDropHint();
@@ -1662,8 +1737,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       Object.keys(this.__annotations).forEach(annotationId => {
         const annotation = this.__annotations[annotationId];
         const attrs = annotation.getAttributes();
-        const annotationPosX = attrs.x + attrs.width/2;
-        const annotationPosY = attrs.y + attrs.height/2;
+        const annotationPosX = parseInt(attrs.x) + parseInt(attrs.width/2);
+        const annotationPosY = parseInt(attrs.y) + parseInt(attrs.height/2);
         if (annotationPosX > x &&
           annotationPosX < x+width &&
           annotationPosY > y &&
@@ -1711,7 +1786,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __addAnnotation: function(data, id) {
       const annotation = new osparc.component.workbench.Annotation(this.__svgLayer, data, id);
-      annotation.addListener("annotationClicked", () => this.__selectedItemChanged(annotation.getId()), this);
+      this.__addAnnotationListeners(annotation);
       this.__annotations[annotation.getId()] = annotation;
       this.getStudy().addAnnotation(annotation);
     },
