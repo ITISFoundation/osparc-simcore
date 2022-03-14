@@ -5,6 +5,7 @@
 
 # files and folders recursively
 .codeclimate.yml                          @sanderegg, @pcrespov
+.env-*                                    @pcrespov
 .travis.yml                               @sanderegg
 Makefile                                  @pcrespov, @sanderegg
 
