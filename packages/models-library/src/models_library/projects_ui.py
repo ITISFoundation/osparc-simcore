@@ -4,7 +4,8 @@
 
 from typing import Dict, Optional
 
-from pydantic import BaseModel, Color, Extra, Field, Literal
+from pydantic import BaseModel, Extra, Field, Literal
+from pydantic.color import Color
 
 from .projects_nodes_io import NodeID, NodeIDStr
 from .projects_nodes_ui import Position
