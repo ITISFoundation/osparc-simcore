@@ -17,7 +17,7 @@ META = ServiceDockerData.parse_obj(
     {
         "integration-version": LATEST_INTEGRATION_VERSION,
         "key": f"{FUNCTION_SERVICE_KEY_PREFIX}/data-iterator/demo-units",
-        "version": "1.0.0",
+        "version": "0.1.0",
         "type": ServiceType.BACKEND,
         "name": "Demo Units",
         "description": "Demo that takes base units as inputs and transform them in the outputs",
@@ -169,4 +169,6 @@ META = ServiceDockerData.parse_obj(
     },
 )
 
+
+# TODO: register ONLY when dev-feature is enabled
 REGISTRY = register(META)
