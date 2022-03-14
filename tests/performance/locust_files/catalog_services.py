@@ -3,7 +3,7 @@
 #
 
 import logging
-import os
+from time import time
 
 import faker
 from dotenv import load_dotenv
@@ -23,30 +23,38 @@ class WebApiUser(FastHttpUser):
 
         self.email = fake.email()
 
-    # @task
-    # def health_check(self):
-    #     self.client.get("/v0/health")
+    @task()
+    def get_services_with_details(self):
+        start = time()
+        with self.client.get(
+            "/v0/services?user_id=1&details=true",
+            headers={
+                "x-simcore-products-name": "osparc",
+            },
+            catch_response=True,
+        ) as response:
+            response.raise_for_status()
+            num_services = len(response.json())
+            print(f"got {num_services} WITH DETAILS in {time() - start}s")
+            response.success()
 
-    @task(weight=5)
-    def get_services(self):
-        self.client.get(
-            f"/v0/catalog/services",
-        )
+    @task()
+    def get_services_without_details(self):
+        start = time()
+        with self.client.get(
+            "/v0/services?user_id=1&details=false",
+            headers={
+                "x-simcore-products-name": "osparc",
+            },
+            catch_response=True,
+        ) as response:
+            response.raise_for_status()
+            num_services = len(response.json())
+            print(f"got {num_services} in {time() - start}s")
+            response.success()
 
     def on_start(self):
         print("Created User ", self.email)
-        self.client.post(
-            "/v0/auth/register",
-            json={
-                "email": self.email,
-                "password": "my secret",
-                "confirm": "my secret",
-            },
-        )
-        self.client.post(
-            "/v0/auth/login", json={"email": self.email, "password": "my secret"}
-        )
 
     def on_stop(self):
-        self.client.post("/v0/auth/logout")
         print("Stopping", self.email)
