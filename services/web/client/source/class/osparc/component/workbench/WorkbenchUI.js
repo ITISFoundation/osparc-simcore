@@ -1088,12 +1088,16 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         if (annotation.getRepresentation()) {
           osparc.wrapper.Svg.removeItem(annotation.getRepresentation());
         }
+        if (annotation.getId() in this.__annotations) {
+          delete this.__annotations[annotation.getId()];
+        }
       }
     },
 
     __clearAllAnnotations: function() {
-      while (this.__annotations.length > 0) {
-        this.__clearAnnotation(this.__annotations[this.__annotations.length - 1]);
+      while (Object.keys(this.__annotations).length > 0) {
+        const keys = Object.keys(this.__annotations);
+        this.__clearAnnotation(this.__annotations[keys[keys.length - 1]]);
       }
     },
 
@@ -1820,7 +1824,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (id in this.__annotations) {
         const annotation = this.__annotations[id];
         this.__clearAnnotation(annotation);
-        delete this.__annotations[id];
         this.getStudy().getUi().removeAnnotation(id);
       }
     },
