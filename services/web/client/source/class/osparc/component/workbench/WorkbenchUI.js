@@ -391,62 +391,73 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__updateHint();
     },
 
+    __itemStartedMoving: function() {
+      this.getSelectedNodes().forEach(selectedNodeUI => {
+        selectedNodeUI.initPos = selectedNodeUI.getNode().getPosition();
+      });
+      this.getSelectedAnnotations().forEach(selectedAnnotation => {
+        selectedAnnotation.initPos = selectedAnnotation.getPosition();
+      });
+    },
+
+    __itemMoving: function(itemId, xDiff, yDiff) {
+      this.getSelectedNodes().forEach(selectedNodeUI => {
+        if (itemId !== selectedNodeUI.getNodeId()) {
+          const selectedNode = selectedNodeUI.getNode();
+          selectedNode.setPosition({
+            x: selectedNodeUI.initPos.x + xDiff,
+            y: selectedNodeUI.initPos.y + yDiff
+          });
+          selectedNodeUI.moveTo(selectedNode.getPosition().x, selectedNode.getPosition().y);
+          this.__updateNodeUIPos(selectedNodeUI);
+        }
+      });
+
+      this.getSelectedAnnotations().forEach(selectedAnnotation => {
+        if (itemId !== selectedAnnotation.getId()) {
+          const newPos = {
+            x: selectedAnnotation.initPos.x + xDiff,
+            y: selectedAnnotation.initPos.y + yDiff
+          };
+          selectedAnnotation.setPosition(newPos.x, newPos.y);
+        }
+      });
+    },
+
+    __itemStoppedMoving: function() {
+      this.getSelectedNodes().forEach(selectedNodeUI => {
+        delete selectedNodeUI["initPos"];
+      });
+      this.getSelectedAnnotations().forEach(selectedAnnotation => {
+        delete selectedAnnotation["initPos"];
+      });
+      this.__updateWorkbenchBounds();
+
+      // After moving a nodeUI, a new element with z-index 100000+ appears on the DOM tree and prevents from clicking
+      // elsewhere. Here we go through every the children of the WorkbenchUI and remove the undesired element
+      const allChildren = Array.from(this.getContentElement().getDomElement().getElementsByTagName("*"));
+      const nodesAndSuspicious = allChildren.filter(child => parseInt(child.style.zIndex) >= 100000);
+      nodesAndSuspicious.forEach(child => {
+        if (child.className !== "qx-window-small-cap") {
+          console.warn("moving undesired element to background");
+          child.style.zIndex = "1";
+        }
+      });
+    },
+
     __addNodeListeners: function(nodeUI) {
-      nodeUI.addListener("nodeStartedMoving", () => {
-        this.getSelectedNodes().forEach(selectedNodeUI => {
-          selectedNodeUI.initPos = selectedNodeUI.getNode().getPosition();
-        });
-        this.getSelectedAnnotations().forEach(selectedAnnotation => {
-          selectedAnnotation.initPos = selectedAnnotation.getPosition();
-        });
-      }, this);
+      nodeUI.addListener("nodeStartedMoving", () => this.__itemStartedMoving(), this);
 
       nodeUI.addListener("nodeMoving", () => {
         this.__updateNodeUIPos(nodeUI);
         if ("initPos" in nodeUI) {
           const xDiff = nodeUI.getNode().getPosition().x - nodeUI.initPos.x;
           const yDiff = nodeUI.getNode().getPosition().y - nodeUI.initPos.y;
-          this.getSelectedNodes().forEach(selectedNodeUI => {
-            if (nodeUI.getNodeId() !== selectedNodeUI.getNodeId()) {
-              const selectedNode = selectedNodeUI.getNode();
-              selectedNode.setPosition({
-                x: selectedNodeUI.initPos.x + xDiff,
-                y: selectedNodeUI.initPos.y + yDiff
-              });
-              selectedNodeUI.moveTo(selectedNode.getPosition().x, selectedNode.getPosition().y);
-              this.__updateNodeUIPos(selectedNodeUI);
-            }
-          });
-          this.getSelectedAnnotations().forEach(selectedAnnotation => {
-            const newPos = {
-              x: selectedAnnotation.initPos.x + xDiff,
-              y: selectedAnnotation.initPos.y + yDiff
-            };
-            selectedAnnotation.setPosition(newPos.x, newPos.y);
-          });
+          this.__itemMoving(nodeUI.getNodeId(), xDiff, yDiff);
         }
       }, this);
 
-      nodeUI.addListener("nodeStoppedMoving", () => {
-        this.getSelectedNodes().forEach(selectedNodeUI => {
-          delete selectedNodeUI["initPos"];
-        });
-        this.getSelectedAnnotations().forEach(selectedAnnotation => {
-          delete selectedAnnotation["initPos"];
-        });
-        this.__updateWorkbenchBounds();
-
-        // After moving a nodeUI, a new element with z-index 100000+ appears on the DOM tree and prevents from clicking
-        // elsewhere. Here we go through every the children of the WorkbenchUI and remove the undesired element
-        const allChildren = Array.from(this.getContentElement().getDomElement().getElementsByTagName("*"));
-        const nodesAndSuspicious = allChildren.filter(child => parseInt(child.style.zIndex) >= 100000);
-        nodesAndSuspicious.forEach(child => {
-          if (child.className !== "qx-window-small-cap") {
-            console.warn("moving undesired element to background");
-            child.style.zIndex = "1";
-          }
-        });
-      }, this);
+      nodeUI.addListener("nodeStoppedMoving", () => this.__itemStoppedMoving(), this);
 
       nodeUI.addListener("tap", e => {
         this.activeNodeChanged(nodeUI, e.isCtrlPressed());
@@ -460,60 +471,17 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __addAnnotationListeners: function(annotation) {
-      annotation.addListener("annotationStartedMoving", () => {
-        this.getSelectedNodes().forEach(selectedNodeUI => {
-          selectedNodeUI.initPos = selectedNodeUI.getNode().getPosition();
-        });
-        this.getSelectedAnnotations().forEach(selectedAnnotation => {
-          selectedAnnotation.initPos = selectedAnnotation.getPosition();
-        });
-      }, this);
+      annotation.addListener("annotationStartedMoving", () => this.__itemStartedMoving(), this);
 
       annotation.addListener("annotationMoving", () => {
         if ("initPos" in annotation) {
           const xDiff = annotation.getPosition().x - annotation.initPos.x;
           const yDiff = annotation.getPosition().y - annotation.initPos.y;
-          this.getSelectedNodes().forEach(selectedNodeUI => {
-            const selectedNode = selectedNodeUI.getNode();
-            selectedNode.setPosition({
-              x: selectedNodeUI.initPos.x + xDiff,
-              y: selectedNodeUI.initPos.y + yDiff
-            });
-            selectedNodeUI.moveTo(selectedNode.getPosition().x, selectedNode.getPosition().y);
-            this.__updateNodeUIPos(selectedNodeUI);
-          });
-          this.getSelectedAnnotations().forEach(selectedAnnotation => {
-            if (annotation.getId() !== selectedAnnotation.getId()) {
-              const newPos = {
-                x: selectedAnnotation.initPos.x + xDiff,
-                y: selectedAnnotation.initPos.y + yDiff
-              };
-              selectedAnnotation.setPosition(newPos.x, newPos.y);
-            }
-          });
+          this.__itemMoving(annotation.getId(), xDiff, yDiff);
         }
       }, this);
 
-      annotation.addListener("annotationStoppedMoving", () => {
-        this.getSelectedNodes().forEach(selectedNodeUI => {
-          delete selectedNodeUI["initPos"];
-        });
-        this.getSelectedAnnotations().forEach(selectedAnnotation => {
-          delete selectedAnnotation["initPos"];
-        });
-        this.__updateWorkbenchBounds();
-
-        // After moving a nodeUI, a new element with z-index 100000+ appears on the DOM tree and prevents from clicking
-        // elsewhere. Here we go through every the children of the WorkbenchUI and remove the undesired element
-        const allChildren = Array.from(this.getContentElement().getDomElement().getElementsByTagName("*"));
-        const nodesAndSuspicious = allChildren.filter(child => parseInt(child.style.zIndex) >= 100000);
-        nodesAndSuspicious.forEach(child => {
-          if (child.className !== "qx-window-small-cap") {
-            console.warn("moving undesired element to background");
-            child.style.zIndex = "1";
-          }
-        });
-      }, this);
+      annotation.addListener("annotationStoppedMoving", () => this.__itemStoppedMoving(), this);
 
       annotation.addListener("annotationClicked", () => this.__selectedItemChanged(annotation.getId()), this);
     },
