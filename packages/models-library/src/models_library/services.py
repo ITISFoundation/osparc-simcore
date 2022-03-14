@@ -180,7 +180,7 @@ class BaseServiceIOModel(BaseModel):
 
     # TODO: use discriminators
     unit: Optional[str] = Field(
-        None, description="Units, when it refers to a physical quantity"
+        None, description="Units, when it refers to a physical quantity", deprecate=True
     )
 
     class Config:

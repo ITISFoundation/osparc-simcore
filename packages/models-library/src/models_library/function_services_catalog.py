@@ -10,6 +10,7 @@ import logging
 from typing import Iterator
 
 from .functions_catalog import (
+    demo_units,
     file_picker,
     iter_range,
     iter_sensitivity,
@@ -46,7 +47,13 @@ def create_registry(*namespaces):
 
 
 _CATALOG_REGISTRY = create_registry(
-    file_picker, iter_range, iter_sensitivity, nodes_group, parameters, probes
+    demo_units,
+    file_picker,
+    iter_range,
+    iter_sensitivity,
+    nodes_group,
+    parameters,
+    probes,
 )
 
 
