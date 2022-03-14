@@ -249,12 +249,26 @@ services:
       - ../.env
       - ../.env-webserver-garbage-collector
 
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python3",
+          "/home/scu/services/web/server/docker/healthcheck.py",
+          "http://localhost:8080/v0/"
+        ]
+      interval: 30s
+      timeout: 120s
+      retries: 3
+      start_period: 30s
+
     deploy:
       placement:
         constraints:
           - node.platform.os == linux
       labels:
         - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
+        - traefik.enable=false
     networks:
       - default
       - interactive_services_subnet
