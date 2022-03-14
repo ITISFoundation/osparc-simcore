@@ -142,6 +142,8 @@ qx.Class.define("osparc.component.workbench.Annotation", {
         x = parseInt(x) < 0 ? 0 : parseInt(x);
         y = parseInt(y) < 0 ? 0 : parseInt(y);
         osparc.wrapper.Svg.updateItemPos(representation, x, y);
+        this.getAttributes().x = x;
+        this.getAttributes().y = y;
       }
     },
 
