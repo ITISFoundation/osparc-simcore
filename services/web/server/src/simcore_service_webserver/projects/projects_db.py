@@ -225,7 +225,7 @@ class ProjectDBAPI:
     async def add_project(
         self,
         prj: Dict[str, Any],
-        user_id: int,
+        user_id: Optional[int],
         *,
         force_project_uuid: bool = False,
         force_as_template: bool = False,
