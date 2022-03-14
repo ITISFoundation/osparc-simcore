@@ -6,7 +6,20 @@ set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 install() {
-  bash ci/helpers/ensure_python_pip.bash
+  # Replaces 'bash ci/helpers/ensure_python_pip.bash'
+
+  echo "INFO:" "$(python --version)" "@" "$(command -v python)"
+
+  # installs pip if not in place
+  python -m ensurepip
+
+  echo "INFO:" "$(pip --version)" "@" "$(command -v pip)"
+
+  # NOTE: pip<22.0 for python 3.6
+  pip3 install --upgrade \
+    pip~=21.0 \
+    wheel \
+    setuptools
   pushd services/director
   pip3 install -r requirements/ci.txt
   popd
