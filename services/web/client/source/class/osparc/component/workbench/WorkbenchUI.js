@@ -414,13 +414,11 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       });
 
       this.getSelectedAnnotations().forEach(selectedAnnotation => {
-        if (itemId !== selectedAnnotation.getId()) {
-          const newPos = {
-            x: selectedAnnotation.initPos.x + xDiff,
-            y: selectedAnnotation.initPos.y + yDiff
-          };
-          selectedAnnotation.setPosition(newPos.x, newPos.y);
-        }
+        const newPos = {
+          x: selectedAnnotation.initPos.x + xDiff,
+          y: selectedAnnotation.initPos.y + yDiff
+        };
+        selectedAnnotation.setPosition(newPos.x, newPos.y);
       });
     },
 
@@ -447,7 +445,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __addNodeListeners: function(nodeUI) {
       nodeUI.addListener("nodeStartedMoving", () => this.__itemStartedMoving(), this);
-
       nodeUI.addListener("nodeMoving", () => {
         this.__updateNodeUIPos(nodeUI);
         if ("initPos" in nodeUI) {
@@ -456,7 +453,6 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           this.__itemMoving(nodeUI.getNodeId(), xDiff, yDiff);
         }
       }, this);
-
       nodeUI.addListener("nodeStoppedMoving", () => this.__itemStoppedMoving(), this);
 
       nodeUI.addListener("tap", e => {
@@ -472,15 +468,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __addAnnotationListeners: function(annotation) {
       annotation.addListener("annotationStartedMoving", () => this.__itemStartedMoving(), this);
-
       annotation.addListener("annotationMoving", () => {
         if ("initPos" in annotation) {
-          const xDiff = annotation.getPosition().x - annotation.initPos.x;
-          const yDiff = annotation.getPosition().y - annotation.initPos.y;
+          const xDiff = annotation.getRepresenationPosition().x - annotation.initPos.x;
+          const yDiff = annotation.getRepresenationPosition().y - annotation.initPos.y;
           this.__itemMoving(annotation.getId(), xDiff, yDiff);
         }
       }, this);
-
       annotation.addListener("annotationStoppedMoving", () => this.__itemStoppedMoving(), this);
 
       annotation.addListener("annotationClicked", () => this.__selectedItemChanged(annotation.getId()), this);
@@ -1550,16 +1544,18 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           case "Delete":
             if (selectedNodeIDs.length === 1) {
               this.fireDataEvent("removeNode", selectedNodeIDs[0]);
+            } else if (selectedNodeIDs.length) {
+              this.fireDataEvent("removeNodes", selectedNodeIDs);
             } else if (this.__isSelectedItemAnEdge()) {
               this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
               this.__selectedItemChanged(null);
-            } else if (this.__isSelectedItemAnAnnotation()) {
+            }
+            if (this.__isSelectedItemAnAnnotation()) {
               const id = this.__selectedItemId;
               this.__selectedItemChanged(null);
               this.__removeAnnotation(id);
-            } else {
-              this.fireDataEvent("removeNodes", selectedNodeIDs);
             }
+            this.getSelectedAnnotations().forEach(annotation => this.__removeAnnotation(annotation.getId()));
             break;
           case "Escape":
             this.resetSelection();
