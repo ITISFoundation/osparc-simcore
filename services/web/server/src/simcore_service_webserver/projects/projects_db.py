@@ -821,29 +821,14 @@ class ProjectDBAPI:
 
     async def get_node_ids_from_project(self, project_uuid: str) -> Set[str]:
         """Returns a set containing all the node_ids from project with project_uuid"""
-
-        # if project_uuid is None:
-        #     # this can return a tremendous amount of node IDs !!!!
-        #     # TODO: this should be the fix!
-        #     # SELECT *
-        #     # FROM "projects"
-        #     # WHERE workbench ->> '0b6b8423-c9e9-4d4c-9c59-a5eef6508ba5' IS NOT NULL
-        #     # or
-        #     # SELECT *
-        #     # FROM "projects"
-        #     # WHERE CAST("workbench" AS text) LIKE '%0b6b8423-c9e9-4d4c-9c59-a5eef6508ba5%'
-        #     query = "SELECT json_object_keys(projects.workbench) FROM projects"
-        # else:
-        #     query = f"SELECT json_object_keys(projects.workbench) FROM projects WHERE projects.uuid = '{project_uuid}'"
-
         result = set()
         async with self.engine.acquire() as conn:
             async for row in conn.execute(
-                sa.select([func.json_object_keys(projects.c.worbench)]).where(
-                    projects.c.uuid == f"{project_uuid}"
+                sa.DDL(
+                    f"SELECT json_object_keys(projects.workbench) FROM projects WHERE projects.uuid = '{project_uuid}'"
                 )
             ):
-                result.update(set(row.values()))
+                result.update(row.as_tuple())  # type: ignore
         return result
 
     async def list_all_projects_by_uuid_for_user(self, user_id: int) -> List[str]:

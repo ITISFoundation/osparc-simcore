@@ -12,12 +12,14 @@ from copy import deepcopy
 from itertools import combinations
 from random import randint
 from secrets import choice
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Set, Tuple
 from uuid import UUID, uuid5
 
 import pytest
 import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from psycopg2.errors import UniqueViolation
 from simcore_postgres_database.models.groups import GroupType
 from simcore_service_webserver.db_models import UserRole
@@ -666,23 +668,19 @@ async def test_patch_user_project_workbench_concurrently(
     )
 
 
-@pytest.mark.parametrize(
-    "user_role",
-    [UserRole.USER],
-)
-async def test_node_id_exists(
+@pytest.fixture()
+async def load_of_projects(
     logged_user: Dict[str, Any],
-    db_api: ProjectDBAPI,
     fake_project: Dict[str, Any],
-    benchmark,
-    aio_benchmark,
-):
-    # create 1000 projects with 1-1000 nodes each
-    _NUMBER_OF_PROJECTS = 1245
+    db_api: ProjectDBAPI,
+) -> AsyncIterator[Dict[ProjectID, List[NodeID]]]:
+    # create >1000 projects with 1-1000 nodes each
+    NUMBER_OF_PROJECTS = 1245
 
     BASE_UUID = UUID("ccc0839f-93b8-4387-ab16-197281060927")
     all_created_projects = {}
-    for p in range(_NUMBER_OF_PROJECTS):
+    project_creation_tasks = []
+    for p in range(NUMBER_OF_PROJECTS):
         project_uuid = uuid5(BASE_UUID, f"project_{p}")
         all_created_projects[project_uuid] = []
         workbench = {}
@@ -697,12 +695,33 @@ async def test_node_id_exists(
         new_project = deepcopy(fake_project)
         new_project.update(uuid=project_uuid, name=f"project {p}", workbench=workbench)
         # add the project
-        added_project = await db_api.add_project(
-            prj=new_project, user_id=logged_user["id"]
+        project_creation_tasks.append(
+            db_api.add_project(prj=new_project, user_id=logged_user["id"])
         )
+    await asyncio.gather(*project_creation_tasks)
+    print(f"---> created {len(all_created_projects)} projects in the database")
+    yield all_created_projects
+    print(f"<--- removed {len(all_created_projects)} projects in the database")
+
+    # cleanup
+    await asyncio.gather(
+        *[
+            db_api.delete_user_project(logged_user["id"], f"{p_uuid}")
+            for p_uuid in all_created_projects
+        ]
+    )
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_node_id_exists(
+    db_api: ProjectDBAPI, load_of_projects: Dict[ProjectID, List[NodeID]]
+):
 
     # create a node uuid that does not exist from an existing project
-    existing_project_id = choice(list(all_created_projects.keys()))
+    existing_project_id = choice(list(load_of_projects.keys()))
     not_existing_node_id_in_existing_project = uuid5(
         existing_project_id, "node_invalid_node"
     )
@@ -711,6 +730,20 @@ async def test_node_id_exists(
         f"{not_existing_node_id_in_existing_project}"
     )
     assert node_id_exists == False
-    existing_node_id = choice(all_created_projects[existing_project_id])
-    node_id_exists = await aio_benchmark(db_api.node_id_exists, existing_node_id)
+    existing_node_id = choice(load_of_projects[existing_project_id])
+    node_id_exists = await db_api.node_id_exists(f"{existing_node_id}")
     assert node_id_exists == True
+
+
+@pytest.mark.parametrize(
+    "user_role",
+    [UserRole.USER],
+)
+async def test_get_node_ids_from_project(
+    db_api: ProjectDBAPI, load_of_projects: Dict[ProjectID, List[NodeID]]
+):
+    for project_id in load_of_projects:
+        node_ids_inside_project: Set[str] = await db_api.get_node_ids_from_project(
+            f"{project_id}"
+        )
+        assert node_ids_inside_project == {f"{n}" for n in load_of_projects[project_id]}
