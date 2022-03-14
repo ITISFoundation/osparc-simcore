@@ -824,9 +824,9 @@ class ProjectDBAPI:
         result = set()
         async with self.engine.acquire() as conn:
             async for row in conn.execute(
-                sa.DDL(
-                    f"SELECT json_object_keys(projects.workbench) FROM projects WHERE projects.uuid = '{project_uuid}'"
-                )
+                sa.select([sa.func.json_object_keys(projects.c.workbench)])
+                .select_from(projects)
+                .where(projects.c.uuid == f"{project_uuid}")
             ):
                 result.update(row.as_tuple())  # type: ignore
         return result
