@@ -669,12 +669,12 @@ async def test_patch_user_project_workbench_concurrently(
 
 
 @pytest.fixture()
-async def load_of_projects(
+async def lots_of_projects_and_nodes(
     logged_user: Dict[str, Any],
     fake_project: Dict[str, Any],
     db_api: ProjectDBAPI,
 ) -> AsyncIterator[Dict[ProjectID, List[NodeID]]]:
-    # create >1000 projects with 1-1000 nodes each
+    """Will create >1000 projects with each between 200-1434 nodes"""
     NUMBER_OF_PROJECTS = 1245
 
     BASE_UUID = UUID("ccc0839f-93b8-4387-ab16-197281060927")
@@ -684,7 +684,7 @@ async def load_of_projects(
         project_uuid = uuid5(BASE_UUID, f"project_{p}")
         all_created_projects[project_uuid] = []
         workbench = {}
-        for n in range(randint(23, 1434)):
+        for n in range(randint(200, 1434)):
             node_uuid = uuid5(project_uuid, f"node_{n}")
             all_created_projects[project_uuid].append(node_uuid)
             workbench[f"{node_uuid}"] = {
@@ -717,11 +717,11 @@ async def load_of_projects(
     [UserRole.USER],
 )
 async def test_node_id_exists(
-    db_api: ProjectDBAPI, load_of_projects: Dict[ProjectID, List[NodeID]]
+    db_api: ProjectDBAPI, lots_of_projects_and_nodes: Dict[ProjectID, List[NodeID]]
 ):
 
     # create a node uuid that does not exist from an existing project
-    existing_project_id = choice(list(load_of_projects.keys()))
+    existing_project_id = choice(list(lots_of_projects_and_nodes.keys()))
     not_existing_node_id_in_existing_project = uuid5(
         existing_project_id, "node_invalid_node"
     )
@@ -730,7 +730,7 @@ async def test_node_id_exists(
         f"{not_existing_node_id_in_existing_project}"
     )
     assert node_id_exists == False
-    existing_node_id = choice(load_of_projects[existing_project_id])
+    existing_node_id = choice(lots_of_projects_and_nodes[existing_project_id])
     node_id_exists = await db_api.node_id_exists(f"{existing_node_id}")
     assert node_id_exists == True
 
@@ -740,10 +740,12 @@ async def test_node_id_exists(
     [UserRole.USER],
 )
 async def test_get_node_ids_from_project(
-    db_api: ProjectDBAPI, load_of_projects: Dict[ProjectID, List[NodeID]]
+    db_api: ProjectDBAPI, lots_of_projects_and_nodes: Dict[ProjectID, List[NodeID]]
 ):
-    for project_id in load_of_projects:
+    for project_id in lots_of_projects_and_nodes:
         node_ids_inside_project: Set[str] = await db_api.get_node_ids_from_project(
             f"{project_id}"
         )
-        assert node_ids_inside_project == {f"{n}" for n in load_of_projects[project_id]}
+        assert node_ids_inside_project == {
+            f"{n}" for n in lots_of_projects_and_nodes[project_id]
+        }
