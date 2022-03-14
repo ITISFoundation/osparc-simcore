@@ -4,7 +4,7 @@
 
 from typing import Dict, Optional
 
-from pydantic import BaseModel, Color, Extra, Field
+from pydantic import BaseModel, Color, Extra, Field, Literal
 
 from .projects_nodes_io import NodeID, NodeIDStr
 from .projects_nodes_ui import Position
@@ -25,8 +25,8 @@ class Slideshow(BaseModel):
 
 
 class Annotation(BaseModel):
-    type: str = Field(..., examples=["rect", "text"])
-    color: Color = Field(..., examples=["#FF0000", "#0000FF"])
+    type: Literal["rect", "text"] = Field(...)
+    color: Color = Field(...)
     attributes: Dict = Field(..., description="svg attributes")
 
     class Config:
