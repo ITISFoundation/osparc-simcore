@@ -194,7 +194,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Information");
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
-      const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.servicecard.Large(resourceData, false) : new osparc.studycard.Large(resourceData, false);
+      const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.servicecard.Large(resourceData, null, false) : new osparc.studycard.Large(resourceData, false);
       infoCard.addListener("openAccessRights", () => this.openAccessRights());
       infoCard.addListener("openClassifiers", () => this.openClassfiers());
       infoCard.addListener("openQuality", () => this.openQuality());
