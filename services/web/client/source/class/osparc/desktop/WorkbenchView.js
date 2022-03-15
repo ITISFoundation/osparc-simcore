@@ -68,6 +68,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
     "backToDashboardPressed": "qx.event.type.Event",
     "slidesEdit": "qx.event.type.Event",
     "slidesAppStart": "qx.event.type.Event",
+    "annotationRectStart": "qx.event.type.Event",
     "takeSnapshot": "qx.event.type.Event",
     "showSnapshots": "qx.event.type.Event",
     "createIterations": "qx.event.type.Event",
@@ -805,7 +806,12 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       this.__studyOptionsPage.add(new osparc.studycard.Medium(study), {
         flex: 1
       });
+
       this.__studyOptionsPage.add(this.__getSlideshowSection());
+
+      if (osparc.data.Permissions.getInstance().isTester()) {
+        this.__studyOptionsPage.add(this.__getAnnotationsSection());
+      }
 
       osparc.utils.DisabledPlugins.isVersionControlDisabled()
         .then(isDisabled => {
@@ -862,6 +868,35 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
         this.__editSlidesButton.setEnabled(areSlidesEnabled && isOwner);
         this.__startAppButton.setEnabled(study.hasSlideshow() || study.getWorkbench().isPipelineLinear());
       }
+    },
+
+    __getAnnotationsSection: function() {
+      const annotationsSection = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      annotationsSection.add(new qx.ui.basic.Label(this.tr("Annotations")).set({
+        font: "title-14"
+      }));
+
+      const annotationsButtons = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      annotationsSection.add(annotationsButtons);
+
+      const buttonsHeight = 28;
+      const addRectBtn = new qx.ui.form.Button().set({
+        label: this.tr("Rect"),
+        icon: "@FontAwesome5Solid/plus/14",
+        height: buttonsHeight
+      });
+      addRectBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsRect(), this);
+      annotationsButtons.add(addRectBtn);
+
+      const addTextBtn = new qx.ui.form.Button().set({
+        label: this.tr("Text"),
+        icon: "@FontAwesome5Solid/plus/14",
+        height: buttonsHeight
+      });
+      addTextBtn.addListener("execute", () => this.__workbenchUI.startAnnotationsText(), this);
+      annotationsButtons.add(addTextBtn);
+
+      return annotationsSection;
     },
 
     __getSnapshotsSection: function() {

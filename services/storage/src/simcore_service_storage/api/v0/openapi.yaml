@@ -1191,6 +1191,33 @@ components:
             currentNodeId:
               type: string
               format: uuid
+            annotations:
+              type: object
+              x-patternProperties:
+                '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
+                  type: object
+                  additionalProperties: false
+                  required:
+                    - type
+                    - color
+                    - attributes
+                  properties:
+                    type:
+                      type: string
+                      description: Annotation type
+                      example:
+                        - rect
+                        - text
+                    color:
+                      type: string
+                      description: Annotation's color
+                      example:
+                        - '#FF0000'
+                        - '#0000FF'
+                    attributes:
+                      type: object
+                      description: svg attributes
+              additionalProperties: true
         tags:
           type: array
           items:

@@ -86,13 +86,13 @@ qx.Class.define("osparc.component.workbench.EdgeUI", {
           .getModified();
         colorHex = this.self().getEdgeColor(modified);
       }
-      osparc.component.workbench.SvgWidget.updateCurveColor(this.getRepresentation(), colorHex);
+      osparc.wrapper.Svg.updateCurveColor(this.getRepresentation(), colorHex);
     },
 
     setSelected: function(selected) {
       if (selected) {
         const selectedColor = qx.theme.manager.Color.getInstance().resolve("workbench-edge-selected");
-        osparc.component.workbench.SvgWidget.updateCurveColor(this.getRepresentation(), selectedColor);
+        osparc.wrapper.Svg.updateCurveColor(this.getRepresentation(), selectedColor);
       } else {
         this.__updateEdgeColor();
       }

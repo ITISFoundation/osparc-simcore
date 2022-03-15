@@ -37,12 +37,21 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
 
     this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
-    const store = osparc.store.Store.getInstance();
-    store.getServicesDAGs()
-      .then(services => {
-        this.__services = services;
-        this._populateLayout();
-      });
+    const servicesInStudy = osparc.utils.Study.extractServices(this.__studyData["workbench"]);
+    if (servicesInStudy.length) {
+      const store = osparc.store.Store.getInstance();
+      store.getServicesOnly()
+        .then(services => {
+          this.__services = services;
+          this._populateLayout();
+        });
+    } else {
+      this.__populateEmptyLayout();
+    }
+  },
+
+  events: {
+    "updateService": "qx.event.type.Data"
   },
 
   statics: {
@@ -72,6 +81,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       osparc.data.Resources.fetch("studies", "put", params)
         .then(updatedData => {
           this.__studyData = osparc.data.model.Study.deepCloneStudyObject(updatedData);
+          this.fireDataEvent("updateService", updatedData);
           this._populateLayout();
         })
         .catch(err => {
@@ -86,19 +96,19 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         });
     },
 
-    _populateLayout: function() {
+    __populateEmptyLayout: function() {
       this._removeAll();
 
-      const workbench = this.__studyData["workbench"];
-      if (Object.values(workbench).length === 0) {
-        this._add(new qx.ui.basic.Label(this.tr("The Study is empty")).set({
-          font: "text-14"
-        }), {
-          row: 0,
-          column: this.self().gridPos.label
-        });
-        return;
-      }
+      this._add(new qx.ui.basic.Label(this.tr("The Study is empty")).set({
+        font: "text-14"
+      }), {
+        row: 0,
+        column: this.self().gridPos.label
+      });
+    },
+
+    _populateLayout: function() {
+      this._removeAll();
 
       this._populateHeader();
       this._populateRows();
@@ -128,7 +138,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
         infoButton.addListener("execute", () => {
           const metadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
-          const serviceDetails = new osparc.servicecard.Large(metadata);
+          const serviceDetails = new osparc.servicecard.Large(metadata, nodeId);
           const title = this.tr("Service information");
           const width = 600;
           const height = 700;
