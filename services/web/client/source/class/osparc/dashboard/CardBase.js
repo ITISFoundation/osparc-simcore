@@ -329,17 +329,18 @@ qx.Class.define("osparc.dashboard.CardBase", {
       if (workbench === null) {
         return;
       }
-      let isUpdatable = osparc.utils.Study.isWorkbenchUpdatable(workbench);
-      isUpdatable = true;
-      if (isUpdatable) {
-        const updateStudy = this.getChildControl("update-study");
-        updateStudy.show();
-        updateStudy.addListener("tap", e => {
-          e.stopPropagation();
-          this.__openUpdateServices();
-        }, this);
-        updateStudy.addListener("pointerdown", e => e.stopPropagation());
-      }
+      osparc.utils.Study.isWorkbenchUpdatable(workbench)
+        .then(updatable => {
+          if (updatable) {
+            const updateStudy = this.getChildControl("update-study");
+            updateStudy.show();
+            updateStudy.addListener("tap", e => {
+              e.stopPropagation();
+              this.__openUpdateServices();
+            }, this);
+            updateStudy.addListener("pointerdown", e => e.stopPropagation());
+          }
+        });
     },
 
     _applyState: function(state) {

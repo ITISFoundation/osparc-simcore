@@ -23,8 +23,7 @@ qx.Class.define("osparc.utils.Study", {
   type: "static",
 
   statics: {
-    extractServices: function(studyData) {
-      const workbench = studyData["workbench"];
+    extractServices: function(workbench) {
       const services = [];
       Object.values(workbench).forEach(srv => {
         services.push({
@@ -33,6 +32,28 @@ qx.Class.define("osparc.utils.Study", {
         });
       });
       return services;
+    },
+
+    isWorkbenchUpdatable: async function(workbench) {
+      return new Promise(resolve => {
+        const store = osparc.store.Store.getInstance();
+        store.getServicesOnly()
+          .then(allServices => {
+            const services = new Set(this.extractServices(workbench));
+            const filtered = [];
+            services.forEach(srv => {
+              const idx = filtered.findIndex(flt => flt.key === srv.key && flt.version === srv.version);
+              if (idx === -1) {
+                filtered.push(srv);
+              }
+            });
+            const updatable = filtered.some(srv => {
+              const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(allServices, srv["key"], srv["version"]);
+              return latestCompatibleMetadata && srv["version"] !== latestCompatibleMetadata["version"];
+            });
+            resolve(updatable);
+          });
+      });
     },
 
     getInaccessibleServicesMsg: function(inaccessibleServices) {
