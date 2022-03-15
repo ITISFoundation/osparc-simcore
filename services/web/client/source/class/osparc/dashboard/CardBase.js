@@ -306,19 +306,6 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    __applyWorkbench: function(workbench) {
-      if (workbench === null) {
-        return;
-      }
-      const updateStudy = this.getChildControl("update-study");
-      updateStudy.show();
-      updateStudy.addListener("tap", e => {
-        e.stopPropagation();
-        console.log("open update study");
-      }, this);
-      updateStudy.addListener("pointerdown", e => e.stopPropagation());
-    },
-
     __applyUiMode: function(uiMode) {
       let source = null;
       let toolTipText = null;
@@ -335,6 +322,23 @@ qx.Class.define("osparc.dashboard.CardBase", {
           source,
           toolTipText
         });
+      }
+    },
+
+    __applyWorkbench: function(workbench) {
+      if (workbench === null) {
+        return;
+      }
+      let isUpdatable = osparc.utils.Study.isWorkbenchUpdatable(workbench);
+      isUpdatable = true;
+      if (isUpdatable) {
+        const updateStudy = this.getChildControl("update-study");
+        updateStudy.show();
+        updateStudy.addListener("tap", e => {
+          e.stopPropagation();
+          this.__openUpdateServices();
+        }, this);
+        updateStudy.addListener("pointerdown", e => e.stopPropagation());
       }
     },
 
@@ -367,6 +371,11 @@ qx.Class.define("osparc.dashboard.CardBase", {
 
     __openQualityEditor: function() {
       const resourceData = this.getResourceData();
+      const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
+      const title = this.tr("More options");
+      const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 725);
+      moreOpts.openQuality();
+      /*
       const qualityEditor = osparc.studycard.Utils.openQuality(resourceData);
       qualityEditor.addListener("updateQuality", e => {
         const updatedResourceData = e.getData();
@@ -378,6 +387,15 @@ qx.Class.define("osparc.dashboard.CardBase", {
           this.fireDataEvent("updateQualityService", updatedResourceData);
         }
       });
+      */
+    },
+
+    __openUpdateServices: function() {
+      const resourceData = this.getResourceData();
+      const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
+      const title = this.tr("More options");
+      const win = osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 725);
+      moreOpts.openUpdateServices();
     },
 
     /**
