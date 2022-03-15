@@ -342,6 +342,14 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Update Services");
       const icon = "@MaterialIcons/update";
       const servicesUpdate = new osparc.component.metadata.ServicesInStudyUpdate(resourceData);
+      servicesUpdate.addListener("updateService", e => {
+        const updatedData = e.getData();
+        if (osparc.utils.Resources.isStudy(resourceData)) {
+          this.fireDataEvent("updateStudy", updatedData);
+        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+          this.fireDataEvent("updateTemplate", updatedData);
+        }
+      });
       const page = this.__servicesUpdatePage = this.__createPage(title, servicesUpdate, icon, id);
       return page;
     },

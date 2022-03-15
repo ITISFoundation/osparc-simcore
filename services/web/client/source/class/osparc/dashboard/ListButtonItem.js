@@ -30,12 +30,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     this.addListener("changeValue", this.__itemSelected, this);
   },
 
-  events: {
-    "updateQualityStudy": "qx.event.type.Data",
-    "updateQualityTemplate": "qx.event.type.Data",
-    "updateQualityService": "qx.event.type.Data"
-  },
-
   statics: {
     MENU_BTN_WIDTH: 25
   },
@@ -111,7 +105,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           control = new qx.ui.basic.Image().set({
             minWidth: 20,
             alignY: "middle",
-            source: "@MaterialIcons/update/20",
+            source: "@MaterialIcons/update/18",
             toolTipText: this.tr("Update available"),
             visibility: "excluded"
           });

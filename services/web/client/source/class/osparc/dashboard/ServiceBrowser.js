@@ -145,8 +145,9 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       servicesList.forEach(service => {
         service["resourceType"] = "service";
         const serviceItem = this.__createServiceItem(service, this._resourcesContainer.getMode());
-        serviceItem.addListener("updateQualityService", e => {
+        serviceItem.addListener("updateService", e => {
           const updatedServiceData = e.getData();
+          updatedServiceData["resourceType"] = "service";
           this._resetServiceItem(updatedServiceData);
         }, this);
         this._resourcesContainer.add(serviceItem);

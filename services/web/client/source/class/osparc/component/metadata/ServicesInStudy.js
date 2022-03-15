@@ -50,6 +50,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     }
   },
 
+  events: {
+    "updateService": "qx.event.type.Data"
+  },
+
   statics: {
     gridPos: {
       infoButton: 0,
@@ -77,6 +81,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       osparc.data.Resources.fetch("studies", "put", params)
         .then(updatedData => {
           this.__studyData = osparc.data.model.Study.deepCloneStudyObject(updatedData);
+          this.fireDataEvent("updateService", updatedData);
           this._populateLayout();
         })
         .catch(err => {

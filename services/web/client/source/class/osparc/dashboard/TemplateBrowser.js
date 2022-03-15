@@ -112,7 +112,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       tempStudyList.forEach(tempStudy => {
         tempStudy["resourceType"] = "template";
         const templateItem = this.__createTemplateItem(tempStudy, this._resourcesContainer.getMode());
-        templateItem.addListener("updateQualityTemplate", e => {
+        templateItem.addListener("updateTemplate", e => {
           const updatedTemplateData = e.getData();
           updatedTemplateData["resourceType"] = "template";
           this._resetTemplateItem(updatedTemplateData);

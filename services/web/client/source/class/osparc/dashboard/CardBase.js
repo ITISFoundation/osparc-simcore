@@ -35,6 +35,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
     ].forEach(e => this.addListener(e, this._onPointerOut, this));
   },
 
+  events: {
+    "updateStudy": "qx.event.type.Data",
+    "updateTemplate": "qx.event.type.Data",
+    "updateService": "qx.event.type.Data"
+  },
+
   statics: {
     SHARED_USER: "@FontAwesome5Solid/user/14",
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
@@ -375,11 +381,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
       const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
       const title = this.tr("More options");
       osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 725);
-      moreOpts.addListener("updateStudy", e => {
-      });
-      moreOpts.addListener("updateTemplate", e => {
-      });
-      moreOpts.addListener("updateService", e => {
+      [
+        "updateStudy",
+        "updateTemplate",
+        "updateService"
+      ].forEach(ev => {
+        moreOpts.addListener(ev, e => this.fireDataEvent(ev, e.getData()));
       });
       return moreOpts;
     },

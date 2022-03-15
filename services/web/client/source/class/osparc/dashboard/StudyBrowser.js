@@ -451,7 +451,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__itemClicked(item, e.getNativeEvent().shiftKey);
         }
       }, this);
-      item.addListener("updateQualityStudy", e => {
+      item.addListener("updateStudy", e => {
         const updatedStudyData = e.getData();
         updatedStudyData["resourceType"] = "study";
         this._resetStudyItem(updatedStudyData);
