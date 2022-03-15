@@ -7,7 +7,6 @@
 # pylint:disable=no-name-in-module
 
 
-import uuid
 from random import choice
 from typing import Any, Dict
 from unittest import mock
@@ -75,14 +74,19 @@ def service_version() -> str:
     return "1234.32432.2344"
 
 
-@pytest.fixture()
-def project_id() -> ProjectID:
-    return uuid.uuid4()
+@pytest.fixture
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
 
 
-@pytest.fixture()
-def node_id() -> NodeID:
-    return uuid.uuid4()
+@pytest.fixture
+def project_id(faker: Faker) -> ProjectID:
+    return ProjectID(faker.uuid4())
+
+
+@pytest.fixture
+def node_uuid(faker: Faker) -> NodeID:
+    return NodeID(faker.uuid4())
 
 
 def test_dask_job_id_serialization(

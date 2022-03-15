@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 import aiodocker
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
+from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
@@ -167,18 +168,18 @@ async def cleanup_test_dynamic_sidecar_service(
 
 
 @pytest.fixture
-def node_uuid() -> NodeID:
-    return uuid4()
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
 
 
 @pytest.fixture
-def user_id() -> UserID:
-    return 123
+def node_uuid(faker: Faker) -> NodeID:
+    return NodeID(faker.uuid4())
 
 
 @pytest.fixture
-def project_id() -> ProjectID:
-    return uuid4()
+def project_id(faker: Faker) -> ProjectID:
+    return ProjectID(faker.uuid4())
 
 
 @pytest.fixture

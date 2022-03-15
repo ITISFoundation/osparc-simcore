@@ -703,7 +703,7 @@ async def test_failed_task_returns_exceptions(
 
     await dask_client.release_task_result(job_id)
     await _assert_wait_for_task_status(
-        job_id, dask_client, expected_status=RunningState.UNKNOWN, timeout=60
+        job_id, dask_client, expected_status=RunningState.UNKNOWN, timeout=120
     )
 
 
