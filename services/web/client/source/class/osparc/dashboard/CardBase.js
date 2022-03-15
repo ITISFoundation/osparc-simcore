@@ -142,13 +142,19 @@ qx.Class.define("osparc.dashboard.CardBase", {
     quality: {
       check: "Object",
       nullable: true,
-      apply: "_applyQuality"
+      apply: "__applyQuality"
+    },
+
+    workbench: {
+      check: "Object",
+      nullable: true,
+      apply: "__applyWorkbench"
     },
 
     uiMode: {
       check: ["workbench", "guided", "app"],
       nullable: true,
-      apply: "_applyUiMode"
+      apply: "__applyUiMode"
     },
 
     state: {
@@ -204,18 +210,21 @@ qx.Class.define("osparc.dashboard.CardBase", {
       let uuid = null;
       let owner = "";
       let accessRights = {};
+      let workbench = null;
       switch (studyData["resourceType"]) {
         case "study":
           uuid = studyData.uuid ? studyData.uuid : uuid;
           owner = studyData.prjOwner ? studyData.prjOwner : owner;
           accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
           defaultThumbnail = this.self().STUDY_ICON;
+          workbench = studyData.workbench ? studyData.workbench : workbench;
           break;
         case "template":
           uuid = studyData.uuid ? studyData.uuid : uuid;
           owner = studyData.prjOwner ? studyData.prjOwner : owner;
           accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
           defaultThumbnail = this.self().TEMPLATE_ICON;
+          workbench = studyData.workbench ? studyData.workbench : workbench;
           break;
         case "service":
           uuid = studyData.key ? studyData.key : uuid;
@@ -243,7 +252,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
         state: studyData.state ? studyData.state : {},
         classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
         quality: studyData.quality ? studyData.quality : null,
-        uiMode: studyData.ui && studyData.ui.mode ? studyData.ui.mode : null
+        uiMode: studyData.ui && studyData.ui.mode ? studyData.ui.mode : null,
+        workbench
       });
     },
 
@@ -279,7 +289,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       throw new Error("Abstract method called!");
     },
 
-    _applyQuality: function(quality) {
+    __applyQuality: function(quality) {
       if (osparc.component.metadata.Quality.isEnabled(quality)) {
         const tsrRating = this.getChildControl("tsr-rating");
         tsrRating.set({
@@ -296,7 +306,20 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    _applyUiMode: function(uiMode) {
+    __applyWorkbench: function(workbench) {
+      if (workbench === null) {
+        return;
+      }
+      const updateStudy = this.getChildControl("update-study");
+      updateStudy.show();
+      updateStudy.addListener("tap", e => {
+        e.stopPropagation();
+        console.log("open update study");
+      }, this);
+      updateStudy.addListener("pointerdown", e => e.stopPropagation());
+    },
+
+    __applyUiMode: function(uiMode) {
       let source = null;
       let toolTipText = null;
       switch (uiMode) {
