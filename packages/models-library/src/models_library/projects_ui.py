@@ -49,10 +49,10 @@ class Annotation(BaseModel):
 
 
 class StudyUI(BaseModel):
-    workbench: Optional[Dict[NodeIDStr, WorkbenchUI]] = Field(None)
-    slideshow: Optional[Dict[NodeIDStr, Slideshow]]
-    current_node_id: Optional[NodeID] = Field(alias="currentNodeId")
-    annotations: Optional[Dict[NodeIDStr, Annotation]]
+    workbench: Optional[Dict[NodeIDStr, WorkbenchUI]] = None
+    slideshow: Optional[Dict[NodeIDStr, Slideshow]] = None
+    current_node_id: Optional[NodeID] = Field(None, alias="currentNodeId")
+    annotations: Optional[Dict[NodeIDStr, Annotation]] = None
 
     class Config:
         extra = Extra.allow
