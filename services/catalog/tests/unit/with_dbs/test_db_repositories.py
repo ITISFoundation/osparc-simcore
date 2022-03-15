@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Callable, List
 
 import pytest
-from models_library.services import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
+from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from packaging import version
 from simcore_service_catalog.db.repositories.services import ServicesRepository
 from simcore_service_catalog.utils.versioning import is_patch_release
@@ -20,8 +20,8 @@ pytest_simcore_ops_services_selection = [
 
 
 @pytest.fixture
-def services_repo(aiopg_engine):
-    repo = ServicesRepository(aiopg_engine)
+def services_repo(sqlalchemy_async_engine):
+    repo = ServicesRepository(sqlalchemy_async_engine)
     return repo
 
 

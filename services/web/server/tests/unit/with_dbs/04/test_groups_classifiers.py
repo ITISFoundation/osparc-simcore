@@ -26,7 +26,7 @@ def inject_tables(postgres_db: sa.engine.Engine):
 
 
 @pytest.fixture
-async def app(loop, postgres_dsn: Dict, inject_tables):
+async def app(postgres_dsn: Dict, inject_tables):
 
     dsn = DataSourceName(
         user=postgres_dsn["user"],

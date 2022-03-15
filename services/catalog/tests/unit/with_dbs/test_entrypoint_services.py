@@ -1,29 +1,19 @@
-# pylint:disable=unused-variable
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=protected-access
-# pylint:disable=not-an-iterable
-# pylint:disable=no-value-for-parameter
+# pylint: disable=no-value-for-parameter
+# pylint: disable=not-an-iterable
+# pylint: disable=protected-access
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
-import asyncio
-from datetime import datetime
-from random import randint
-from typing import List, Optional
+import re
+from typing import Callable, List
 
+import httpx
 import pytest
-import simcore_service_catalog.api.dependencies.director
+import respx
 from fastapi import FastAPI
-from models_library.services import (
-    ServiceAccessRightsAtDB,
-    ServiceDockerData,
-    ServiceType,
-)
-from pydantic.types import PositiveInt
+from models_library.services import ServiceDockerData
 from respx.router import MockRouter
-from simcore_service_catalog.api.routes import services
-from simcore_service_catalog.db.repositories.groups import GroupsRepository
-from simcore_service_catalog.models.domain.group import GroupAtDB, GroupType
-from simcore_service_catalog.models.schemas.services import ServiceOut
 from starlette.testclient import TestClient
 from yarl import URL
 
@@ -35,147 +25,214 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-@pytest.fixture(scope="session")
-def user_id() -> int:
-    return randint(1, 10000)
+@pytest.fixture
+def mock_director_services(
+    director_mockup: respx.MockRouter, app: FastAPI
+) -> MockRouter:
+    mock_route = director_mockup.get(
+        f"{app.state.settings.CATALOG_DIRECTOR.base_url}/services",
+        name="list_services",
+    ).respond(200, json={"data": ["blahblah"]})
+    response = httpx.get(f"{app.state.settings.CATALOG_DIRECTOR.base_url}/services")
+    assert mock_route.called
+    assert response.json() == {"data": ["blahblah"]}
+    return director_mockup
 
 
-@pytest.fixture(scope="session")
-def user_groups(user_id: int) -> List[GroupAtDB]:
-    return [
-        GroupAtDB(
-            gid=user_id,
-            name="my primary group",
-            description="it is primary",
-            type=GroupType.PRIMARY,
-        ),
-        GroupAtDB(
-            gid=randint(10001, 15000),
-            name="all group",
-            description="it is everyone",
-            type=GroupType.EVERYONE,
-        ),
-        GroupAtDB(
-            gid=randint(15001, 20000),
-            name="standard group",
-            description="it is standard",
-            type=GroupType.STANDARD,
-        ),
-    ]
-
-
-@pytest.fixture(scope="session")
-def registry_services() -> List[ServiceDockerData]:
-    NUMBER_OF_SERVICES = 5
-    return [
-        ServiceDockerData(
-            key="simcore/services/comp/my_comp_service",
-            version=f"{v}.{randint(0,20)}.{randint(0,20)}",
-            type=ServiceType.COMPUTATIONAL,
-            name=f"my service {v}",
-            description="a sleeping service version {v}",
-            authors=[{"name": "me", "email": "me@myself.com"}],
-            contact="me.myself@you.com",
-            inputs=[],
-            outputs=[],
-        )
-        for v in range(NUMBER_OF_SERVICES)
-    ]
-
-
-@pytest.fixture(scope="session")
-def db_services(
-    registry_services: List[ServiceOut], user_groups: List[GroupAtDB]
-) -> List[ServiceAccessRightsAtDB]:
-    return [
-        ServiceAccessRightsAtDB(
-            key=s.key,
-            version=s.version,
-            gid=user_groups[0].gid,
-            execute_access=True,
-            product_name="osparc",
-        )
-        for s in registry_services
-    ]
-
-
-@pytest.fixture()
-async def director_mockup(
-    loop, monkeypatch, registry_services: List[ServiceOut], app: FastAPI
-):
-    async def return_list_services(user_id: int) -> List[ServiceOut]:
-        return registry_services
-
-    monkeypatch.setattr(services, "list_services", return_list_services)
-
-    class FakeDirector:
-        @staticmethod
-        async def get(url: str):
-            if url == "/services":
-                return [s.dict(by_alias=True) for s in registry_services]
-            if "/service_extras/" in url:
-                return {
-                    "build_date": f"{datetime.utcnow().isoformat(timespec='seconds')}Z"
-                }
-
-    def fake_director_api(*args, **kwargs):
-        return FakeDirector()
-
-    monkeypatch.setattr(
-        simcore_service_catalog.api.dependencies.director,
-        "get_director_api",
-        fake_director_api,
-    )
-
-    # Check mock
-    from simcore_service_catalog.api.dependencies.director import get_director_api
-
-    assert isinstance(get_director_api(), FakeDirector)
-    yield
-
-
-@pytest.fixture()
-async def db_mockup(
-    loop,
-    monkeypatch,
-    app: FastAPI,
-    user_groups: List[GroupAtDB],
-    db_services: List[ServiceAccessRightsAtDB],
-):
-    async def return_list_user_groups(self, user_id: int) -> List[GroupAtDB]:
-        return user_groups
-
-    async def return_gid_from_email(*args, **kwargs) -> Optional[PositiveInt]:
-        return user_groups[0].gid
-
-    monkeypatch.setattr(GroupsRepository, "list_user_groups", return_list_user_groups)
-    monkeypatch.setattr(
-        GroupsRepository, "get_user_gid_from_email", return_gid_from_email
-    )
-
-
-async def test_director_mockup(
+async def test_list_services_with_details(
+    mock_catalog_background_task,
     director_mockup: MockRouter,
-    app: FastAPI,
-    registry_services: List[ServiceOut],
-    user_id: int,
-):
-    assert await services.list_services(user_id) == registry_services
-
-
-@pytest.mark.skip(
-    reason="Not ready, depency injection does not work, using monkeypatch. still issue with setting up database"
-)
-async def test_list_services(
-    director_mockup: MockRouter,
-    db_mockup: None,
-    app: FastAPI,
     client: TestClient,
     user_id: int,
+    products_names: List[str],
+    service_catalog_faker: Callable,
+    services_db_tables_injector: Callable,
+    benchmark,
 ):
-    await asyncio.sleep(10)
+    target_product = products_names[-1]
+    # create some fake services
+    NUM_SERVICES = 1000
+    fake_services = [
+        service_catalog_faker(
+            "simcore/services/dynamic/jupyterlab",
+            f"1.0.{s}",
+            team_access=None,
+            everyone_access=None,
+            product=target_product,
+        )
+        for s in range(NUM_SERVICES)
+    ]
+    # injects fake data in db
+    await services_db_tables_injector(fake_services)
 
-    url = URL("/v0/services").with_query(user_id=user_id)
-    response = client.get(str(url))
+    url = URL("/v0/services").with_query({"user_id": user_id, "details": "true"})
+
+    # now fake the director such that it returns half the services
+    fake_registry_service_data = ServiceDockerData.Config.schema_extra["examples"][0]
+
+    director_mockup.get("/services", name="list_services").respond(
+        200,
+        json={
+            "data": [
+                {
+                    **fake_registry_service_data,
+                    **{"key": s[0]["key"], "version": s[0]["version"]},
+                }
+                for s in fake_services[::2]
+            ]
+        },
+    )
+
+    response = benchmark(
+        client.get, f"{url}", headers={"x-simcore-products-name": target_product}
+    )
+
     assert response.status_code == 200
     data = response.json()
+    assert len(data) == round(NUM_SERVICES / 2)
+
+
+async def test_list_services_without_details(
+    mock_catalog_background_task,
+    director_mockup: MockRouter,
+    client: TestClient,
+    user_id: int,
+    products_names: List[str],
+    service_catalog_faker: Callable,
+    services_db_tables_injector: Callable,
+    benchmark,
+):
+    target_product = products_names[-1]
+    # injects fake data in db
+    NUM_SERVICES = 1000
+    SERVICE_KEY = "simcore/services/dynamic/jupyterlab"
+    await services_db_tables_injector(
+        [
+            service_catalog_faker(
+                SERVICE_KEY,
+                f"1.0.{s}",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+            for s in range(NUM_SERVICES)
+        ]
+    )
+
+    url = URL("/v0/services").with_query({"user_id": user_id, "details": "false"})
+    response = benchmark(
+        client.get, f"{url}", headers={"x-simcore-products-name": target_product}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == NUM_SERVICES
+    for service in data:
+        assert service["key"] == SERVICE_KEY
+        assert re.match("1.0.[0-9]+", service["version"]) is not None
+        assert service["name"] == "nodetails"
+        assert service["description"] == "nodetails"
+        assert service["contact"] == "nodetails@nodetails.com"
+
+
+async def test_list_services_without_details_with_wrong_user_id_returns_403(
+    mock_catalog_background_task,
+    director_mockup: MockRouter,
+    client: TestClient,
+    user_id: int,
+    products_names: List[str],
+    service_catalog_faker: Callable,
+    services_db_tables_injector: Callable,
+):
+    target_product = products_names[-1]
+    # injects fake data in db
+    NUM_SERVICES = 1
+    await services_db_tables_injector(
+        [
+            service_catalog_faker(
+                "simcore/services/dynamic/jupyterlab",
+                f"1.0.{s}",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+            for s in range(NUM_SERVICES)
+        ]
+    )
+
+    url = URL("/v0/services").with_query({"user_id": user_id + 1, "details": "false"})
+    response = client.get(f"{url}", headers={"x-simcore-products-name": target_product})
+    assert response.status_code == 403
+
+
+async def test_list_services_without_details_with_another_product_returns_other_services(
+    mock_catalog_background_task,
+    director_mockup: MockRouter,
+    client: TestClient,
+    user_id: int,
+    products_names: List[str],
+    service_catalog_faker: Callable,
+    services_db_tables_injector: Callable,
+):
+    target_product = products_names[-1]
+    assert (
+        len(products_names) > 1
+    ), "please adjust the fixture to have the right number of products"
+    # injects fake data in db
+    NUM_SERVICES = 15
+    await services_db_tables_injector(
+        [
+            service_catalog_faker(
+                "simcore/services/dynamic/jupyterlab",
+                f"1.0.{s}",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+            for s in range(NUM_SERVICES)
+        ]
+    )
+
+    url = URL("/v0/services").with_query({"user_id": user_id, "details": "false"})
+    response = client.get(
+        f"{url}", headers={"x-simcore-products-name": products_names[0]}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 0
+
+
+async def test_list_services_without_details_with_wrong_product_returns_0_service(
+    mock_catalog_background_task,
+    director_mockup: MockRouter,
+    client: TestClient,
+    user_id: int,
+    products_names: List[str],
+    service_catalog_faker: Callable,
+    services_db_tables_injector: Callable,
+):
+    target_product = products_names[-1]
+    assert (
+        len(products_names) > 1
+    ), "please adjust the fixture to have the right number of products"
+    # injects fake data in db
+    NUM_SERVICES = 1
+    await services_db_tables_injector(
+        [
+            service_catalog_faker(
+                "simcore/services/dynamic/jupyterlab",
+                f"1.0.{s}",
+                team_access=None,
+                everyone_access=None,
+                product=target_product,
+            )
+            for s in range(NUM_SERVICES)
+        ]
+    )
+
+    url = URL("/v0/services").with_query({"user_id": user_id, "details": "false"})
+    response = client.get(
+        f"{url}", headers={"x-simcore-products-name": "no valid product"}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 0

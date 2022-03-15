@@ -17,7 +17,7 @@ from simcore_service_webserver.session_settings import SessionSettings
 
 @pytest.fixture
 def client(
-    loop,
+    event_loop,
     aiohttp_client,
     app_cfg,
     monkeypatch,
@@ -38,7 +38,7 @@ def client(
 
     app.add_routes(extra_test_routes)
 
-    return loop.run_until_complete(
+    return event_loop.run_until_complete(
         aiohttp_client(
             app,
             server_kwargs={

@@ -102,40 +102,46 @@ qx.Class.define("osparc.studycard.Large", {
       let thumbnailWidth = widgetWidth - 2*this.self().PADDING;
       const maxThumbnailHeight = extraInfo.length*20;
       const slim = widgetWidth < this.self().EXTRA_INFO_WIDTH + this.self().THUMBNAIL_MIN_WIDTH + 2*this.self().PADDING - 20;
+      let hBox = null;
       if (slim) {
         this._add(extraInfoLayout);
-        thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
-        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
-        this._add(thumbnailLayout);
       } else {
-        const hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
+        hBox = new qx.ui.container.Composite(new qx.ui.layout.HBox(3).set({
           alignX: "center"
         }));
         hBox.add(extraInfoLayout);
         thumbnailWidth -= this.self().EXTRA_INFO_WIDTH;
-        thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
-        const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
-        const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
+      }
+      thumbnailWidth = Math.min(thumbnailWidth - 20, this.self().THUMBNAIL_MAX_WIDTH);
+      const thumbnail = this.__createThumbnail(thumbnailWidth, maxThumbnailHeight);
+      const thumbnailLayout = this.__createViewWithEdit(thumbnail, this.__openThumbnailEditor);
+      thumbnailLayout.getLayout().set({
+        alignX: "center"
+      });
+      if (slim) {
+        this._add(thumbnailLayout);
+      } else {
         hBox.add(thumbnailLayout, {
           flex: 1
         });
         this._add(hBox);
       }
 
-      if (this.getStudy().getDescription() || this.__isOwner()) {
-        const description = this.__createDescription();
-        const descriptionLayout = this.__createViewWithEdit(description, this.__openDescriptionEditor);
-        this._add(descriptionLayout);
-      }
-
       if (this.getStudy().getTags().length || this.__isOwner()) {
         const tags = this.__createTags();
-        const tagsLayout = this.__createViewWithEdit(tags, this.__openTagsEditor);
+        const editInTitle = this.__createViewWithEdit(tags.getChildren()[0], this.__openTagsEditor);
+        tags.addAt(editInTitle, 0);
         if (this.__isOwner()) {
-          osparc.utils.Utils.setIdToWidget(tagsLayout.getChildren()[1], "editStudyEditTagsBtn");
+          osparc.utils.Utils.setIdToWidget(editInTitle.getChildren()[1], "editStudyEditTagsBtn");
         }
-        this._add(tagsLayout);
+        this._add(tags);
+      }
+
+      if (this.getStudy().getDescription() || this.__isOwner()) {
+        const description = this.__createDescription();
+        const editInTitle = this.__createViewWithEdit(description.getChildren()[0], this.__openDescriptionEditor);
+        description.addAt(editInTitle, 0);
+        this._add(description);
       }
     },
 
@@ -143,14 +149,10 @@ qx.Class.define("osparc.studycard.Large", {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
         alignY: "middle"
       }));
-      layout.add(view, {
-        flex: 1
-      });
+      layout.add(view);
       if (this.__isOwner()) {
         const editBtn = osparc.utils.Utils.getEditButton();
-        editBtn.addListener("execute", () => {
-          cb.call(this);
-        }, this);
+        editBtn.addListener("execute", () => cb.call(this), this);
         layout.add(editBtn);
       }
 
@@ -178,14 +180,6 @@ qx.Class.define("osparc.studycard.Large", {
           callback: this.isOpenOptions() ? this.__openAccessRights : "openAccessRights",
           ctx: this
         }
-      }, {
-        label: this.tr("Classifiers"),
-        view: this.__createClassifiers(),
-        action: (this.getStudy().getClassifiers().length || this.__isOwner()) ? {
-          button: osparc.utils.Utils.getViewButton(),
-          callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
-          ctx: this
-        } : null
       }];
 
       if (this.getStudy().getQuality() && osparc.component.metadata.Quality.isEnabled(this.getStudy().getQuality())) {
@@ -199,6 +193,16 @@ qx.Class.define("osparc.studycard.Large", {
           }
         });
       }
+
+      extraInfo.push({
+        label: this.tr("Classifiers"),
+        view: this.__createClassifiers(),
+        action: (this.getStudy().getClassifiers().length || this.__isOwner()) ? {
+          button: osparc.utils.Utils.getViewButton(),
+          callback: this.isOpenOptions() ? this.__openClassifiers : "openClassifiers",
+          ctx: this
+        } : null
+      });
 
       if (osparc.data.Permissions.getInstance().isTester()) {
         extraInfo.unshift({
@@ -261,13 +265,13 @@ qx.Class.define("osparc.studycard.Large", {
       return osparc.studycard.Utils.createThumbnail(this.getStudy(), maxWidth, maxHeight);
     },
 
+    __createTags: function() {
+      return osparc.studycard.Utils.createTags(this.getStudy());
+    },
+
     __createDescription: function() {
       const maxHeight = 400;
       return osparc.studycard.Utils.createDescription(this.getStudy(), maxHeight);
-    },
-
-    __createTags: function() {
-      return osparc.studycard.Utils.createTags(this.getStudy());
     },
 
     __openTitleEditor: function() {
@@ -338,21 +342,27 @@ qx.Class.define("osparc.studycard.Large", {
 
     __openThumbnailEditor: function() {
       const title = this.tr("Edit Thumbnail");
-      const thubmnailEditor = new osparc.component.widget.Renamer(this.getStudy().getThumbnail(), null, title);
-      thubmnailEditor.addListener("labelChanged", e => {
-        thubmnailEditor.close();
-        const dirty = e.getData()["newLabel"];
-        const clean = osparc.wrapper.DOMPurify.getInstance().sanitize(dirty);
-        if ((dirty && dirty !== clean) || (clean !== "" && !osparc.utils.Utils.isValidHttpUrl(clean))) {
-          osparc.component.message.FlashMessenger.getInstance().logAs(this.tr("Error checking thumbnail link"), "WARNING");
-        } else {
-          this.__updateStudy({
-            "thumbnail": clean
-          });
+      const oldThumbnail = this.getStudy().getThumbnail();
+      let suggestions = new Set([]);
+      const wb = this.getStudy().getWorkbench();
+      const nodes = wb.getWorkbenchInitData() ? wb.getWorkbenchInitData() : wb.getNodes();
+      Object.values(nodes).forEach(node => {
+        const srvMetadata = osparc.utils.Services.getMetaData(node["key"], node["version"]);
+        if (srvMetadata && srvMetadata["thumbnail"] && !osparc.data.model.Node.isFrontend(node)) {
+          suggestions.add(srvMetadata["thumbnail"]);
         }
+      });
+      suggestions = Array.from(suggestions);
+      const thumbnailEditor = new osparc.component.editor.ThumbnailEditor(oldThumbnail, suggestions);
+      const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, suggestions.length ? 280 : 110);
+      thumbnailEditor.addListener("updateThumbnail", e => {
+        win.close();
+        const validUrl = e.getData();
+        this.__updateStudy({
+          "thumbnail": validUrl
+        });
       }, this);
-      thubmnailEditor.center();
-      thubmnailEditor.open();
+      thumbnailEditor.addListener("cancel", () => win.close());
     },
 
     __openDescriptionEditor: function() {

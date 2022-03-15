@@ -34,7 +34,7 @@ qx.Class.define("osparc.desktop.preferences.pages.BasePage", {
     // spacer
     this.add(new qx.ui.core.Spacer(null, 10)); // TODO add decorator?
     this.set({
-      backgroundColor: "material-button-background",
+      backgroundColor: "background-main-2",
       paddingLeft: 10
     });
   },

@@ -7,11 +7,12 @@ from datetime import datetime
 from typing import Callable, Dict, List, Optional, Tuple, Union
 from urllib.parse import quote_plus
 
-from aiopg.sa.engine import Engine
 from fastapi import FastAPI
-from models_library.services import ServiceAccessRightsAtDB, ServiceDockerData
+from models_library.services import ServiceDockerData
+from models_library.services_db import ServiceAccessRightsAtDB
 from packaging.version import Version
 from pydantic.types import PositiveInt
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
@@ -53,7 +54,7 @@ async def evaluate_default_policy(
         2. Services published after 19.08.2020 will be visible ONLY to his/her owner
         3. Front-end services are have execute-access to everyone
     """
-    db_engine: Engine = app.state.engine
+    db_engine: AsyncEngine = app.state.engine
 
     groups_repo = GroupsRepository(db_engine)
     owner_gid = None

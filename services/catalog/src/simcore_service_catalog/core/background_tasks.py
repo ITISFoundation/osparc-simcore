@@ -15,22 +15,19 @@ from contextlib import suppress
 from pprint import pformat
 from typing import Dict, Set, Tuple
 
-from aiopg.sa import Engine
 from fastapi import FastAPI
-from models_library.services import (
-    ServiceAccessRightsAtDB,
-    ServiceDockerData,
-    ServiceMetaDataAtDB,
-)
+from models_library.services import ServiceDockerData
+from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
 from packaging.version import Version
 from pydantic import ValidationError
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..api.dependencies.director import get_director_api
 from ..db.repositories.groups import GroupsRepository
 from ..db.repositories.projects import ProjectsRepository
 from ..db.repositories.services import ServicesRepository
 from ..services import access_rights
-from ..services.frontend_services import iter_service_docker_data
+from ..services.function_services import iter_service_docker_data
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +63,7 @@ async def _list_registry_services(
 
 
 async def _list_db_services(
-    db_engine: Engine,
+    db_engine: AsyncEngine,
 ) -> Set[Tuple[ServiceKey, ServiceVersion]]:
     services_repo = ServicesRepository(db_engine=db_engine)
     return {
@@ -141,7 +138,7 @@ async def _ensure_registry_insync_with_db(app: FastAPI) -> None:
 
 
 async def _ensure_published_templates_accessible(
-    db_engine: Engine, default_product_name: str
+    db_engine: AsyncEngine, default_product_name: str
 ) -> None:
     # Rationale: if a project template was published, its services must be available to everyone.
     # a published template has a column Published that is set to True
@@ -183,7 +180,7 @@ async def _ensure_published_templates_accessible(
 
 async def sync_registry_task(app: FastAPI) -> None:
     default_product: str = app.state.settings.CATALOG_ACCESS_RIGHTS_DEFAULT_PRODUCT_NAME
-    engine: Engine = app.state.engine
+    engine: AsyncEngine = app.state.engine
 
     while app.state.registry_syncer_running:
         try:

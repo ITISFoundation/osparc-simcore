@@ -40,7 +40,7 @@ API_VERSION = "v0"
 
 @pytest.fixture
 def client(
-    loop,
+    event_loop,
     aiohttp_client,
     app_cfg,
     postgres_db,
@@ -66,7 +66,7 @@ def client(
     setup_users(app)
     setup_groups(app)
 
-    client = loop.run_until_complete(
+    client = event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
     )
     return client

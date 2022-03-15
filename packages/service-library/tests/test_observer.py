@@ -6,7 +6,7 @@
 from servicelib.observer import emit, observe
 
 
-async def test_observer(loop, mocker):
+async def test_observer(mocker):
     # register a couroutine as callback function
     cb_function = mocker.AsyncMock(return_value=None)
 

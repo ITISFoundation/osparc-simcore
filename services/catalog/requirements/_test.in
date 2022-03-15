@@ -14,7 +14,8 @@ jsonschema
 
 # testing
 pytest
-pytest-aiohttp  # incompatible with pytest-asyncio. See https://github.com/pytest-dev/pytest-asyncio/issues/76
+pytest-aiohttp
+pytest-benchmark
 pytest-cov
 pytest-mock
 pytest-runner

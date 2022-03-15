@@ -21,6 +21,7 @@ pytest_plugins = [
     "pytest_simcore.schemas",
     "pytest_simcore.service_environs",
     "pytest_simcore.tmp_path_extra",
+    "pytest_simcore.pytest_global_environs",
 ]
 
 

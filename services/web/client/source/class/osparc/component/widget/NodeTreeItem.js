@@ -134,6 +134,7 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
         }
         case "options-delete-button": {
           control = new qx.ui.menu.Button().set({
+            appearance: "danger-button",
             label: this.tr("Delete"),
             icon: "@FontAwesome5Solid/trash/10"
           });
@@ -226,15 +227,11 @@ qx.Class.define("osparc.component.widget.NodeTreeItem", {
     },
 
     __setHoveredStyle: function() {
-      this.getContentElement().setStyles({
-        "border": "1px solid " + qx.theme.manager.Color.getInstance().resolve("background-selected")
-      });
+      osparc.utils.Utils.addBorder(this, 1, qx.theme.manager.Color.getInstance().resolve("background-selected"));
     },
 
     __setNotHoveredStyle: function() {
-      this.getContentElement().setStyles({
-        "border": "1px solid transparent"
-      });
+      osparc.utils.Utils.removeBorder(this);
     }
   }
 });

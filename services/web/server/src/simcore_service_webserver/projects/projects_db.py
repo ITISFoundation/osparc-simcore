@@ -27,7 +27,13 @@ from pydantic.types import PositiveInt
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.json_serialization import json_dumps
 from simcore_postgres_database.webserver_models import ProjectType, projects
-from sqlalchemy import desc, literal_column
+
+# TODO: test all function return schema-compatible data
+# TODO: is user_id str or int?
+# TODO: systemaic user_id, project
+# TODO: rename add_projects by create_projects
+# FIXME: not clear when data is schema-compliant and db-compliant
+from sqlalchemy import desc, func, literal_column
 from sqlalchemy.sql import and_, select
 
 from ..db_models import GroupType, groups, study_tags, user_to_groups, users
@@ -175,13 +181,6 @@ def _find_changed_dict_keys(
     return changed_keys
 
 
-# TODO: test all function return schema-compatible data
-# TODO: is user_id str or int?
-# TODO: systemaic user_id, project
-# TODO: rename add_projects by create_projects
-# FIXME: not clear when data is schema-compliant and db-compliant
-
-
 def _assemble_array_groups(user_groups: List[RowProxy]) -> str:
     return (
         "array[]::text[]"
@@ -207,6 +206,7 @@ class ProjectDBAPI:
         # lazy evaluation
         if self._engine is None:
             self._init_engine()
+        assert self._engine  # nosec
         return self._engine
 
     async def add_projects(self, projects_list: List[Dict], user_id: int) -> List[str]:
@@ -225,7 +225,7 @@ class ProjectDBAPI:
     async def add_project(
         self,
         prj: Dict[str, Any],
-        user_id: int,
+        user_id: Optional[int],
         *,
         force_project_uuid: bool = False,
         force_as_template: bool = False,
@@ -347,16 +347,20 @@ class ProjectDBAPI:
                         else sa.text("")
                     )
                     & (
-                        sa.text(
+                        (projects.c.prj_owner == user_id)
+                        | sa.text(
                             f"jsonb_exists_any(projects.access_rights, {_assemble_array_groups(user_groups)})"
                         )
-                        | (projects.c.prj_owner == user_id)
                     )
                 )
                 .order_by(desc(projects.c.last_change_date), projects.c.id)
             )
 
-            total_number_of_projects = await conn.scalar(query.alias().count())
+            total_number_of_projects = await conn.scalar(
+                query.with_only_columns([func.count()])
+                .select_from(projects)
+                .order_by(None)
+            )
 
             prjs, prj_types = await self.__load_projects(
                 conn,
@@ -790,7 +794,7 @@ class ProjectDBAPI:
 
     @staticmethod
     async def _get_user_primary_group_gid(conn: SAConnection, user_id: int) -> int:
-        primary_gid: int = await conn.scalar(
+        primary_gid: Optional[int] = await conn.scalar(
             sa.select([users.c.primary_gid]).where(users.c.id == str(user_id))
         )
         if not primary_gid:
@@ -804,26 +808,28 @@ class ProjectDBAPI:
         )
         return [row.tag_id async for row in conn.execute(query)]
 
-    async def get_all_node_ids_from_workbenches(
-        self, project_uuid: str = None
-    ) -> Set[str]:
-        """Returns a set containing all the workbench node_ids from all projects
-
-        If a project_uuid is passed, only that project's workbench nodes will be included
-        """
-
-        if project_uuid is None:
-            query = "SELECT json_object_keys(projects.workbench) FROM projects"
-        else:
-            query = f"SELECT json_object_keys(projects.workbench) FROM projects WHERE projects.uuid = '{project_uuid}'"
-
+    async def node_id_exists(self, node_id: str) -> bool:
+        """Returns True if the node id exists in any of the available projects"""
         async with self.engine.acquire() as conn:
-            result = set()
-            query_result = await conn.execute(query)
-            async for row in query_result:
-                result.update(set(row.values()))
+            num_entries = await conn.scalar(
+                sa.select([func.count()])
+                .select_from(projects)
+                .where(projects.c.workbench.op("->>")(f"{node_id}") != None)
+            )
+        assert num_entries is not None  # nosec
+        return bool(num_entries > 0)
 
-            return result
+    async def get_node_ids_from_project(self, project_uuid: str) -> Set[str]:
+        """Returns a set containing all the node_ids from project with project_uuid"""
+        result = set()
+        async with self.engine.acquire() as conn:
+            async for row in conn.execute(
+                sa.select([sa.func.json_object_keys(projects.c.workbench)])
+                .select_from(projects)
+                .where(projects.c.uuid == f"{project_uuid}")
+            ):
+                result.update(row.as_tuple())  # type: ignore
+        return result
 
     async def list_all_projects_by_uuid_for_user(self, user_id: int) -> List[str]:
         result = deque()

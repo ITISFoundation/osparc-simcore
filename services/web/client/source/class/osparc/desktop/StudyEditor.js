@@ -330,7 +330,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         } else if (e.getTarget().getStatus() == "422") {
           this.__getStudyLogger().info(null, "The pipeline is up-to-date");
           const msg = this.tr("The pipeline is up-to-date. Do you want to re-run it?");
-          const win = new osparc.ui.window.Confirmation(msg);
+          const win = new osparc.ui.window.Confirmation(msg, this.tr("Run"));
           win.center();
           win.open();
           win.addListener("close", () => {
@@ -557,7 +557,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         if (deltaKeys.length > 0) {
           if (this.__updatingStudy > 0) {
             // throttle update
-            console.log("throttle update");
             this.__updateThrottled = true;
           } else {
             this.updateStudyDocument(false);
@@ -603,7 +602,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         .finally(() => {
           this.__updatingStudy--;
           if (this.__updateThrottled && this.__updatingStudy === 0) {
-            console.log("throttle update done");
             this.__updateThrottled = false;
             this.updateStudyDocument(false);
           }

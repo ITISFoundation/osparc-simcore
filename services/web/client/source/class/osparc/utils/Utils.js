@@ -201,33 +201,32 @@ qx.Class.define("osparc.utils.Utils", {
 
     getLogoPath: function() {
       let logoPath = null;
+      const colorManager = qx.theme.manager.Color.getInstance();
+      const textColor = colorManager.resolve("text");
+      const lightLogo = this.getColorLuminance(textColor) > 0.4;
       const product = qx.core.Environment.get("product.name");
       switch (product) {
         case "s4l":
           logoPath = "osparc/s4l_logo.png";
           break;
-        case "tis":
-          logoPath = "osparc/ti-tp.svg";
+        case "tis": {
+          logoPath = lightLogo ? "osparc/tip-white.svg" : "osparc/tip-black.svg";
           break;
+        }
         default: {
-          const colorManager = qx.theme.manager.Color.getInstance();
-          const textColor = colorManager.resolve("text");
-          const luminance = this.getColorLuminance(textColor);
-          logoPath = (luminance > 0.3) ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
+          logoPath = lightLogo ? "osparc/osparc-white.svg" : "osparc/osparc-black.svg";
           break;
         }
       }
       return logoPath;
     },
 
-    addBorder: function(widget, width = 1, where = "right") {
-      const colorManager = qx.theme.manager.Color.getInstance();
-      const binaryColor = osparc.utils.Utils.getRoundedBinaryColor(colorManager.resolve("background-main"));
-      widget.getContentElement().setStyle("border-"+where, width+"px solid " + binaryColor);
-      colorManager.addListener("changeTheme", () => {
-        const newBinaryColor = osparc.utils.Utils.getRoundedBinaryColor(colorManager.resolve("background-main"));
-        widget.getContentElement().setStyle("border-"+where, width+"px solid " + newBinaryColor);
-      }, this);
+    addBorder: function(widget, width = 1, color = "transparent") {
+      widget.getContentElement().setStyle("border", width+"px solid " + color);
+    },
+
+    removeBorder: function(widget) {
+      widget.getContentElement().setStyle("border", "0px solid");
     },
 
     __setStyleToIFrame: function(domEl) {
@@ -276,19 +275,19 @@ qx.Class.define("osparc.utils.Utils", {
       return color;
     },
 
-    getColorLuminance: function(hexColor) {
-      const rgb = qx.util.ColorUtil.hexStringToRgb(hexColor);
+    getColorLuminance: function(color) {
+      const rgb = qx.util.ColorUtil.isRgbString(color) || qx.util.ColorUtil.isRgbaString(color) ? qx.util.ColorUtil.stringToRgb(color) : qx.util.ColorUtil.hexStringToRgb(color);
       const luminance = 0.2126*(rgb[0]/255) + 0.7152*(rgb[1]/255) + 0.0722*(rgb[2]/255);
       return luminance;
     },
 
-    getContrastedTextColor: function(hexColor) {
-      const L = this.getColorLuminance(hexColor);
+    getContrastedTextColor: function(color) {
+      const L = this.getColorLuminance(color);
       return L > 0.35 ? "contrasted-text-dark" : "contrasted-text-light";
     },
 
-    getRoundedBinaryColor: function(hexColor) {
-      const L = this.getColorLuminance(hexColor);
+    getRoundedBinaryColor: function(color) {
+      const L = this.getColorLuminance(color);
       return L > 0.35 ? "#FFF" : "#000";
     },
 

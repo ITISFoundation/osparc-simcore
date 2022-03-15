@@ -14,7 +14,7 @@ from .rabbitmq import setup_rabbitmq
 from .remote_debug import setup as remote_debug_setup
 from .settings import DynamicSidecarSettings
 from .shared_handlers import on_shutdown_handler
-from .utils import login_registry
+from .utils import login_registry, volumes_fix_permissions
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +80,8 @@ def assemble_application() -> FastAPI:
     def create_start_app_handler() -> Callable[[], Coroutine[Any, Any, None]]:
         async def on_startup() -> None:
             await login_registry(application.state.settings.REGISTRY_SETTINGS)
+            await volumes_fix_permissions()
+
             print(WELCOME_MSG, flush=True)
 
         return on_startup

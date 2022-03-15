@@ -25,23 +25,29 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
     ]);
     ajvLoader.addListener("ready", e => {
       this.__ajv = new Ajv();
-      osparc.utils.Utils.fetchJSON(schemaUrl)
-        .then(schema => {
-          if (this.__validate(schema.$schema, schema)) {
-            // If schema is valid
-            if (data && this.__validate(schema, data)) {
-              // Validate data if present
-              this.__data = data;
+      if (schemaUrl) {
+        osparc.utils.Utils.fetchJSON(schemaUrl)
+          .then(schema => {
+            if (this.__validate(schema.$schema, schema)) {
+              // If schema is valid
+              this.__schema = schema;
+              if (data && this.__validate(this.__schema, data)) {
+                // Data is valid
+                this.__data = data;
+              }
+              return this.__schema;
             }
-            return schema;
-          }
-          return null;
-        })
-        .then(this.__render)
-        .catch(err => {
-          console.error(err);
-          this.__render(null);
-        });
+            return null;
+          })
+          .then(this.__render)
+          .catch(err => {
+            console.error(err);
+          });
+      }
+      if (data) {
+        this.setData(data);
+      }
+      this.fireEvent("ajvReady");
     }, this);
     ajvLoader.addListener("failed", console.error, this);
     this.__render = this.__render.bind(this);
@@ -49,6 +55,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
   },
   events: {
     "ready": "qx.event.type.Event",
+    "ajvReady": "qx.event.type.Event",
     "submit": "qx.event.type.Data"
   },
   members: {
@@ -72,7 +79,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         this.__submitBtn = new osparc.ui.form.FetchButton(this.tr("Submit"));
         this.__submitBtn.addListener("execute", () => {
           if (this.__isValidData()) {
-            const formData = this.toObject();
+            const formData = this.toObject(schema);
             if (this.__validate(schema, formData.json)) {
               this.fireDataEvent("submit", formData);
             }
@@ -131,7 +138,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         // Arrays allow to create new items with a button
         const arrayContainer = this.__expandArray(schema, data, depth);
         container.add(arrayContainer);
-        const addButton = new qx.ui.form.Button(`Add ${objectPath.get(schema, "items.title", key)}`, "@FontAwesome5Solid/plus-circle/14");
+        const addButton = new qx.ui.form.Button(`Add ${objectPath.get(schema, "items.title", schema.title || key)}`, "@FontAwesome5Solid/plus-circle/14");
         addButton.addListener("execute", () => {
           // key = -1 for an array item. we let JsonSchemaFormArray manage the array keys
           arrayContainer.add(this.__expand(-1, schema.items, null, depth+1));
@@ -141,7 +148,8 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         // Leaf
         const input = container.addInput(validation, this.__validationManager);
         if (data) {
-          input.setValue(data);
+          const isNumber = ["number", "integer"].includes(schema.type);
+          input.setValue(isNumber ? String(data) : data);
         }
         this.__inputItems.push(container);
       }
@@ -178,17 +186,24 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
       } else {
         container.setLayout(new qx.ui.layout.VBox());
       }
-      Object.entries(schema.properties).forEach(([key, value]) => container.add(this.__expand(key, value, data ? data[key] : data, depth+1, {
-        required: schema.required && schema.required.includes(key)
-      })));
+      Object.entries(schema.properties).forEach(([key, value], index) => {
+        const allProps = Object.values(schema.properties);
+        const nextProp = index < allProps.length - 1 ? allProps[index+1] : null;
+        container.add(this.__expand(key, value, data ? data[key] : data, depth+1, {
+          required: schema.required && schema.required.includes(key)
+        }), {
+          lineBreak: nextProp && nextProp.type === "array" || value.type === "array",
+          stretch: value.type === "array"
+        });
+      });
       return container;
     },
     /**
      * Uses objectPath library to construct a JS object with the values from the inputs.
      */
-    toObject: function() {
+    toObject: function(schema) {
       const obj = {
-        json: {}
+        json: schema.type === "array" ? [] : {}
       };
       const inputMap = {};
       // Retrieve paths
@@ -204,6 +219,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
       // Construct object
       Object.entries(inputMap).forEach(([path, item]) => {
         const input = item.getInput();
+        const type = item.getType();
         if (input instanceof osparc.ui.form.FileInput) {
           obj.files = obj.files || [];
           if (input.getFile()) {
@@ -212,7 +228,8 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         }
         const value = input.getValue();
         if (typeof value !== "undefined" && value !== null) {
-          objectPath.set(obj.json, path, input.getValue());
+          const isNumber = ["number", "integer"].includes(type);
+          objectPath.set(obj.json, path, isNumber ? Number(input.getValue()) : input.getValue());
         }
       });
       return obj;
@@ -248,6 +265,30 @@ qx.Class.define("osparc.component.form.json.JsonSchemaForm", {
         }
       });
       return this.__validationManager.validate();
+    },
+    setSchema: function(schema) {
+      if (this.__validate(schema.$schema, schema)) {
+        // If schema is valid
+        this.__schema = schema;
+        if (this.__data && !this.__validate(this.__schema, this.__data)) {
+          // Data is invalid
+          this.__data = null;
+        }
+      } else {
+        this.__schema = null;
+      }
+      this.__render(this.__schema);
+    },
+    setData: function(data) {
+      if (data && this.__validate(this.__schema, data)) {
+        // Data is valid
+        this.__data = data;
+        this.__render(this.__schema);
+        return;
+      }
+      if (this.__validate(this.__schema, this.__data)) {
+        this.__render(this.__schema);
+      }
     }
   }
 });

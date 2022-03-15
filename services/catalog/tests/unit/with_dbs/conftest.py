@@ -3,21 +3,21 @@
 # pylint:disable=redefined-outer-name
 
 
-import asyncio
 import itertools
 import random
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Tuple
+from random import randint
+from typing import Any, AsyncIterator, Callable, Dict, Iterable, Iterator, List, Tuple
 
 import pytest
 import respx
 import sqlalchemy as sa
 from _pytest.monkeypatch import MonkeyPatch
-from aiopg.sa.engine import Engine
 from faker import Faker
 from fastapi import FastAPI
+from pydantic import PositiveInt
 from pytest_mock.plugin import MockerFixture
-from respx.router import MockRouter
 from simcore_postgres_database.models.products import products
+from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_service_catalog.core.application import init_app
 from simcore_service_catalog.db.tables import (
     groups,
@@ -25,6 +25,7 @@ from simcore_service_catalog.db.tables import (
     services_meta_data,
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.testclient import TestClient
 
 
@@ -38,20 +39,20 @@ def app(
 ) -> Iterable[FastAPI]:
     monkeypatch.setenv("CATALOG_TRACING", "null")
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
+    monkeypatch.setenv("POSTGRES_CLIENT_NAME", "pytest_client")
     app = init_app()
     yield app
 
 
 @pytest.fixture
-def client(loop: asyncio.AbstractEventLoop, app: FastAPI) -> Iterable[TestClient]:
+def client(app: FastAPI) -> Iterator[TestClient]:
     with TestClient(app) as cli:
         # Note: this way we ensure the events are run in the application
         yield cli
 
 
 @pytest.fixture()
-def director_mockup(app: FastAPI) -> MockRouter:
-
+def director_mockup(app: FastAPI) -> Iterator[respx.MockRouter]:
     with respx.mock(
         base_url=app.state.settings.CATALOG_DIRECTOR.base_url,
         assert_all_called=False,
@@ -83,8 +84,41 @@ def director_mockup(app: FastAPI) -> MockRouter:
 #
 
 
+@pytest.fixture(scope="session")
+def user_id() -> PositiveInt:
+    return randint(1, 10000)
+
+
 @pytest.fixture()
-async def products_names(aiopg_engine: Engine) -> Iterator[List[str]]:
+def user_db(postgres_db: sa.engine.Engine, user_id: PositiveInt) -> Iterator[Dict]:
+    with postgres_db.connect() as con:
+        # removes all users before continuing
+        con.execute(users.delete())
+        con.execute(
+            users.insert()
+            .values(
+                id=user_id,
+                name="test user",
+                email="test@user.com",
+                password_hash="testhash",
+                status=UserStatus.ACTIVE,
+                role=UserRole.USER,
+            )
+            .returning(sa.literal_column("*"))
+        )
+        # this is needed to get the primary_gid correctly
+        result = con.execute(sa.select([users]).where(users.c.id == user_id))
+        user = result.first()
+
+        yield dict(user)
+
+        con.execute(users.delete().where(users.c.id == user_id))
+
+
+@pytest.fixture()
+async def products_names(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[List[str]]:
     """Inits products db table and returns product names"""
     data = [
         # already upon creation: ("osparc", r"([\.-]{0,1}osparc[\.-])"),
@@ -94,7 +128,7 @@ async def products_names(aiopg_engine: Engine) -> Iterator[List[str]]:
 
     # pylint: disable=no-value-for-parameter
 
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
         for name, regex in data:
             stmt = products.insert().values(name=name, host_regex=regex)
@@ -105,17 +139,18 @@ async def products_names(aiopg_engine: Engine) -> Iterator[List[str]]:
     ] + [items[0] for items in data]
     yield names
 
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(products.delete())
 
 
 @pytest.fixture()
-async def user_groups_ids(aiopg_engine: Engine) -> Iterator[List[int]]:
+async def user_groups_ids(
+    sqlalchemy_async_engine: AsyncEngine, user_db: Dict[str, Any]
+) -> AsyncIterator[List[int]]:
     """Inits groups table and returns group identifiers"""
 
     cols = ("gid", "name", "description", "type", "thumbnail", "inclusion_rules")
     data = [
-        (34, "john.smith", "primary group for user", "PRIMARY", None, {}),
         (
             20001,
             "Team Black",
@@ -126,26 +161,24 @@ async def user_groups_ids(aiopg_engine: Engine) -> Iterator[List[int]]:
         ),
     ]
     # pylint: disable=no-value-for-parameter
-
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         for row in data:
             # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
-            stmt = groups.insert().values(**dict(zip(cols, row)))
-            await conn.execute(stmt)
+            await conn.execute(groups.insert().values(**dict(zip(cols, row))))
 
-    gids = [
-        1,
-    ] + [items[0] for items in data]
+    gids = [1, user_db["primary_gid"]] + [items[0] for items in data]
 
     yield gids
 
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(services_meta_data.delete())
-        await conn.execute(groups.delete().where(groups.c.gid.in_(gids[1:])))
+        await conn.execute(groups.delete().where(groups.c.gid.in_(gids[2:])))
 
 
 @pytest.fixture()
-async def services_db_tables_injector(aiopg_engine: Engine) -> Callable:
+async def services_db_tables_injector(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable]:
     """Returns a helper function to init
     services_meta_data and services_access_rights tables
 
@@ -176,7 +209,7 @@ async def services_db_tables_injector(aiopg_engine: Engine) -> Callable:
     async def inject_in_db(fake_catalog: List[Tuple]):
         # [(service, ar1, ...), (service2, ar1, ...) ]
 
-        async with aiopg_engine.acquire() as conn:
+        async with sqlalchemy_async_engine.begin() as conn:
             # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
             for service in [items[0] for items in fake_catalog]:
                 insert_meta = pg_insert(services_meta_data).values(**service)
@@ -195,7 +228,7 @@ async def services_db_tables_injector(aiopg_engine: Engine) -> Callable:
 
     yield inject_in_db
 
-    async with aiopg_engine.acquire() as conn:
+    async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(services_access_rights.delete())
         await conn.execute(services_meta_data.delete())
 
@@ -292,3 +325,18 @@ async def service_catalog_faker(
         return tuple(fakes)
 
     return _fake_factory
+
+
+@pytest.fixture
+def mock_catalog_background_task(mocker: MockerFixture):
+    """patch the setup of the background task so we can call it manually"""
+    mocker.patch(
+        "simcore_service_catalog.core.events.start_registry_sync_task",
+        return_value=None,
+        autospec=True,
+    )
+    mocker.patch(
+        "simcore_service_catalog.core.events.stop_registry_sync_task",
+        return_value=None,
+        autospec=True,
+    )

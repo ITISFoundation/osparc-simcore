@@ -269,7 +269,11 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
 
     __createConfirmWindow: function(isMulti) {
       const msg = isMulti ? this.tr("Are you sure you want to delete the studies?") : this.tr("Are you sure you want to delete the study?");
-      return new osparc.ui.window.Confirmation(msg);
+      const confWin = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
+      confWin.getChildControl("confirm-button").set({
+        appearance: "danger-button"
+      });
+      return confWin;
     }
   }
 });

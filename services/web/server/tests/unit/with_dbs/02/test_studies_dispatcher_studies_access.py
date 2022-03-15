@@ -10,6 +10,7 @@ import asyncio
 import logging
 import re
 from copy import deepcopy
+from pathlib import Path
 from pprint import pprint
 from typing import AsyncIterator, Callable, Dict
 
@@ -34,7 +35,7 @@ SHARED_STUDY_UUID = "e2e38eee-c569-4e55-b104-70d159e49c87"
 
 @pytest.fixture
 def app_cfg(
-    default_app_cfg: ConfigDict, aiohttp_unused_port: Callable, redis_service: URL
+    default_app_cfg: ConfigDict, unused_tcp_port_factory: Callable, redis_service: URL
 ):
     """App's configuration used for every test in this module
 
@@ -42,7 +43,7 @@ def app_cfg(
     """
     cfg = deepcopy(default_app_cfg)
 
-    cfg["main"]["port"] = aiohttp_unused_port()
+    cfg["main"]["port"] = unused_tcp_port_factory()
     cfg["main"]["studies_access_enabled"] = True
 
     exclude = {
@@ -87,27 +88,35 @@ def app_cfg(
 
 
 @pytest.fixture
-async def published_project(client, fake_project) -> Dict:
+async def published_project(client, fake_project, tests_data_dir: Path) -> Dict:
     project_data = deepcopy(fake_project)
     project_data["name"] = "Published project"
     project_data["uuid"] = SHARED_STUDY_UUID
     project_data["published"] = True
 
     async with NewProject(
-        project_data, client.app, user_id=None, clear_all=True
+        project_data,
+        client.app,
+        user_id=None,
+        clear_all=True,
+        tests_data_dir=tests_data_dir,
     ) as template_project:
         yield template_project
 
 
 @pytest.fixture
-async def unpublished_project(client, fake_project):
+async def unpublished_project(client, fake_project, tests_data_dir: Path):
     project_data = deepcopy(fake_project)
     project_data["name"] = "Template Unpublished project"
     project_data["uuid"] = "b134a337-a74f-40ff-a127-b36a1ccbede6"
     project_data["published"] = False
 
     async with NewProject(
-        project_data, client.app, user_id=None, clear_all=True
+        project_data,
+        client.app,
+        user_id=None,
+        clear_all=True,
+        tests_data_dir=tests_data_dir,
     ) as template_project:
         yield template_project
 

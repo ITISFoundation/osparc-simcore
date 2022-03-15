@@ -18,10 +18,12 @@ from pydantic import (
     constr,
     validator,
 )
-from pydantic.types import PositiveInt
 
 from .basic_regex import VERSION_RE
 from .boot_options import BootOption, BootOptions
+from .services_ui import Widget
+
+# CONSTANTS -------------------------------------------
 
 # NOTE: needs to end with / !!
 SERVICE_KEY_RE = r"^(simcore)/(services)/(comp|dynamic|frontend)(/[\w/-]+)+$"
@@ -37,14 +39,17 @@ KEY_RE = SERVICE_KEY_RE  # TODO: deprecate this global constant by SERVICE_KEY_R
 SERVICE_NETWORK_RE = r"^([a-zA-Z0-9_-]+)$"
 
 
-PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
-PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"
+PROPERTY_TYPE_RE = r"^(number|integer|boolean|string|ref_contentSchema|data:([^/\s,]+/[^/\s,]+|\[[^/\s,]+/[^/\s,]+(,[^/\s]+/[^/,\s]+)*\]))$"
+PROPERTY_KEY_RE = r"^[-_a-zA-Z0-9]+$"  # TODO: PC->* it would be advisable to have this "variable friendly" (see VARIABLE_NAME_RE)
 
 FILENAME_RE = r".+"
 
+LATEST_INTEGRATION_VERSION = "1.0.0"
+
+# CONSTRAINT TYPES -------------------------------------------
+
 PropertyName = constr(regex=PROPERTY_KEY_RE)
 FileName = constr(regex=FILENAME_RE)
-GroupId = PositiveInt
 
 ServiceKey = constr(regex=KEY_RE)
 ServiceVersion = constr(regex=VERSION_RE)
@@ -54,8 +59,24 @@ class ServiceType(str, Enum):
     COMPUTATIONAL = "computational"
     DYNAMIC = "dynamic"
     FRONTEND = "frontend"
+    BACKEND = "backend"
 
 
+# TODO: create a flags enum that accounts for every column
+#
+# | service name    | defininition | implementation | runs                    | ``ServiceType``               |                 |
+# | --------------- | ------------ | -------------- | ----------------------- | ----------------------------- | --------------- |
+# | ``file-picker`` | BE           | FE             | FE                      | ``ServiceType.FRONTEND``      | function        |
+# | ``isolve``      | DI-labels    | DI             | Dask-BE (own container) | ``ServiceType.COMPUTATIONAL`` | container       |
+# | ``jupyter-*``   | DI-labels    | DI             | DySC-BE (own container) | ``ServiceType.DYNAMIC``       | container       |
+# | ``iterator-*``  | BE           | BE             | BE    (webserver)       | ``ServiceType.BACKEND``       | function        |
+# | ``pyfun-*``     | BE           | BE             | Dask-BE  (dask-sidecar) | ``ServiceType.COMPUTATIONAL`` | function        |
+#
+#
+# where FE (front-end), DI (docker image), Dask/DySC (dask/dynamic sidecar), BE (backend).
+
+
+# MODELS -------------------------------------------
 class Badge(BaseModel):
     name: str = Field(
         ...,
@@ -100,48 +121,9 @@ class Author(BaseModel):
         extra = Extra.forbid
 
 
-class WidgetType(str, Enum):
-    TextArea = "TextArea"
-    SelectBox = "SelectBox"
-
-
-class TextArea(BaseModel):
-    min_height: PositiveInt = Field(
-        ..., alias="minHeight", description="minimum Height of the textarea"
-    )
-
-    class Config:
-        extra = Extra.forbid
-
-
-class Structure(BaseModel):
-    key: Union[str, bool, float]
-    label: str
-
-    class Config:
-        extra = Extra.forbid
-
-
-class SelectBox(BaseModel):
-    structure: List[Structure] = Field(..., min_items=1)
-
-    class Config:
-        extra = Extra.forbid
-
-
-class Widget(BaseModel):
-    widget_type: WidgetType = Field(
-        ..., alias="type", description="type of the property"
-    )
-    details: Union[TextArea, SelectBox]
-
-    class Config:
-        extra = Extra.forbid
-
-
-class ServiceProperty(BaseModel):
+class BaseServiceIOModel(BaseModel):
     """
-    Metadata on a service input or output port
+    Base class for service input/outputs
     """
 
     ## management
@@ -182,6 +164,12 @@ class ServiceProperty(BaseModel):
         regex=PROPERTY_TYPE_RE,
     )
 
+    content_schema: Optional[Dict[str, Any]] = Field(
+        None,
+        description="jsonschema of this input/output. Required when type='ref_contentSchema'",
+        alias="contentSchema",
+    )
+
     # value
     file_to_key_map: Optional[Dict[FileName, PropertyName]] = Field(
         None,
@@ -191,6 +179,7 @@ class ServiceProperty(BaseModel):
     )
 
     # TODO: use discriminators
+    # TODO: deprecate
     unit: Optional[str] = Field(
         None, description="Units, when it refers to a physical quantity"
     )
@@ -199,12 +188,35 @@ class ServiceProperty(BaseModel):
         extra = Extra.forbid
         # TODO: all alias with camecase
 
+    @validator("content_schema")
+    @classmethod
+    def check_type_is_set_to_schema(cls, v, values):
+        # TODO: content_schema should be a valid json-schema
+        #
+        if v is not None and (ptype := values["property_type"]) != "ref_contentSchema":
+            raise ValueError(
+                "content_schema is defined but set the wrong type."
+                f"Expected type=ref_contentSchema but got ={ptype}."
+            )
 
-class ServiceInput(ServiceProperty):
+        # TODO:  Check is a valid jsonschema? Use $ref to or active validation as in
+        # import jsonschema
+        # try:
+        #   jsonschema.validate({}, v)
+        # except SchemaError as err:
+        #   raise ValueError()
+        # except jsonschema.ValidationError as err:
+        #
+
+        return v
+
+
+class ServiceInput(BaseServiceIOModel):
     """
     Metadata on a service input port
     """
 
+    # NOTE: should deprecate since schema include defaults as well
     default_value: Optional[Union[StrictBool, StrictInt, StrictFloat, str]] = Field(
         None, alias="defaultValue", examples=["Dog", True]
     )
@@ -214,7 +226,7 @@ class ServiceInput(ServiceProperty):
         description="custom widget to use instead of the default one determined from the data-type",
     )
 
-    class Config(ServiceProperty.Config):
+    class Config(BaseServiceIOModel.Config):
         schema_extra = {
             "examples": [
                 # file-wo-widget:
@@ -243,18 +255,43 @@ class ServiceInput(ServiceProperty):
                     "unit": "second",
                     "widget": {"type": "TextArea", "details": {"minHeight": 3}},
                 },
+                {
+                    "label": "array_numbers",
+                    "description": "Some array of numbers",
+                    "type": "ref_contentSchema",
+                    "contentSchema": {
+                        "title": "list[number]",
+                        "type": "array",
+                        "items": {"type": "number"},
+                    },
+                },
+                {
+                    "label": "my_object",
+                    "description": "Some object",
+                    "type": "ref_contentSchema",
+                    "contentSchema": {
+                        "title": "an object named A",
+                        "type": "object",
+                        "properties": {
+                            "i": {"title": "Int", "type": "integer", "default": 3},
+                            "b": {"title": "Bool", "type": "boolean"},
+                            "s": {"title": "Str", "type": "string"},
+                        },
+                        "required": ["b", "s"],
+                    },
+                },
             ],
         }
 
 
-class ServiceOutput(ServiceProperty):
+class ServiceOutput(BaseServiceIOModel):
     widget: Optional[Widget] = Field(
         None,
         description="custom widget to use instead of the default one determined from the data-type",
         deprecated=True,
     )
 
-    class Config(ServiceProperty.Config):
+    class Config(BaseServiceIOModel.Config):
         schema_extra = {
             "examples": [
                 {
@@ -306,7 +343,7 @@ class ServiceKeyVersion(BaseModel):
     )
 
 
-class ServiceCommonData(BaseModel):
+class _BaseServiceCommonDataModel(BaseModel):
     name: str = Field(
         ...,
         description="short, human readable name for the node",
@@ -340,9 +377,11 @@ ServiceInputs = Dict[PropertyName, ServiceInput]
 ServiceOutputs = Dict[PropertyName, ServiceOutput]
 
 
-class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
+class ServiceDockerData(ServiceKeyVersion, _BaseServiceCommonDataModel):
     """
     Static metadata for a service injected in the image labels
+
+    This is one to one with node-meta-v0.0.1.json
     """
 
     integration_version: Optional[str] = Field(
@@ -477,25 +516,8 @@ class ServiceDockerData(ServiceKeyVersion, ServiceCommonData):
         }
 
 
-# Service access rights models
-class ServiceGroupAccessRights(BaseModel):
-    execute_access: bool = Field(
-        False,
-        description="defines whether the group can execute the service",
-    )
-    write_access: bool = Field(
-        False, description="defines whether the group can modify the service"
-    )
-
-
-class ServiceAccessRights(BaseModel):
-    access_rights: Optional[Dict[GroupId, ServiceGroupAccessRights]] = Field(
-        None, description="service access rights per group id"
-    )
-
-
-class ServiceMetaData(ServiceCommonData):
-    # Overrides all fields of ServiceCommonData:
+class ServiceMetaData(_BaseServiceCommonDataModel):
+    # Overrides all fields of _BaseServiceCommonDataModel:
     #    - for a partial update all members must be Optional
     #  FIXME: if API entry needs a schema to allow partial updates (e.g. patch/put),
     #        it should be implemented with a different model e.g. ServiceMetaDataUpdate
@@ -534,71 +556,5 @@ class ServiceMetaData(ServiceCommonData):
                         for n in range(1, 11)
                     },
                 },
-            }
-        }
-
-
-# -------------------------------------------------------------------
-# Databases models
-#  - table services_meta_data
-#  - table services_access_rights
-
-
-class ServiceMetaDataAtDB(ServiceKeyVersion, ServiceMetaData):
-    # for a partial update all members must be Optional
-    classifiers: Optional[List[str]] = Field([])
-    owner: Optional[PositiveInt]
-
-    class Config:
-        orm_mode = True
-        schema_extra = {
-            "example": {
-                "key": "simcore/services/dynamic/sim4life",
-                "version": "1.0.9",
-                "owner": 8,
-                "name": "sim4life",
-                "description": "s4l web",
-                "thumbnail": "http://thumbnailit.org/image",
-                "created": "2021-01-18 12:46:57.7315",
-                "modified": "2021-01-19 12:45:00",
-                "quality": {
-                    "enabled": True,
-                    "tsr_target": {
-                        f"r{n:02d}": {"level": 4, "references": ""}
-                        for n in range(1, 11)
-                    },
-                    "annotations": {
-                        "vandv": "",
-                        "limitations": "",
-                        "certificationLink": "",
-                        "certificationStatus": "Uncertified",
-                    },
-                    "tsr_current": {
-                        f"r{n:02d}": {"level": 0, "references": ""}
-                        for n in range(1, 11)
-                    },
-                },
-            }
-        }
-
-
-class ServiceAccessRightsAtDB(ServiceKeyVersion, ServiceGroupAccessRights):
-    gid: PositiveInt = Field(..., description="defines the group id", example=1)
-    product_name: str = Field(
-        ..., description="defines the product name", example="osparc"
-    )
-
-    class Config:
-        orm_mode = True
-        schema_extra = {
-            "example": {
-                "key": "simcore/services/dynamic/sim4life",
-                "version": "1.0.9",
-                "gid": 8,
-                "execute_access": True,
-                "write_access": True,
-                "product_name": "osparc",
-                "created": "2021-01-18 12:46:57.7315",
-                "modified": "2021-01-19 12:45:00",
             }
         }

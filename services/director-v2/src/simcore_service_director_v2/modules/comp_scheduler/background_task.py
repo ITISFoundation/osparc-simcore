@@ -55,10 +55,11 @@ def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
 
 def on_app_shutdown(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
     async def stop_scheduler() -> None:
+        logger.info("Computational services Scheduler stopping...")
         task = app.state.scheduler_task
         with suppress(CancelledError):
-            task.cancel()
             app.state.comp_scheduler_running = False
+            task.cancel()
             await task
         app.state.scheduler = None
         app.state.scheduler_task = None

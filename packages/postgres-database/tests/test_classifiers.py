@@ -12,10 +12,9 @@ import pytest
 import sqlalchemy as sa
 from aiopg.sa.engine import Engine
 from pytest_simcore.helpers.rawdata_fakers import random_group
-from simcore_postgres_database.models import *  # pylint: disable=wildcard-import, unused-wildcard-import
 from simcore_postgres_database.models.classifiers import group_classifiers
 from simcore_postgres_database.models.groups import groups
-from sqlalchemy import literal_column
+from sqlalchemy import func, literal_column
 
 
 @pytest.fixture
@@ -57,6 +56,7 @@ async def test_operations_on_group_classifiers(
         result = await conn.execute(stmt)
         row = await result.first()
 
+        assert row
         assert row[group_classifiers.c.gid] == gid
         assert row[group_classifiers.c.bundle] == classifiers_bundle
 
@@ -77,12 +77,16 @@ async def test_operations_on_group_classifiers(
         # deleting a group deletes the classifier
         await conn.execute(groups.delete().where(groups.c.gid == gid))
 
-        # FIXME: count returns 1 but the db is empty!??
-        groups_count = 0  # await conn.scalar(groups.count())
-        classifiers_count = await conn.scalar(group_classifiers.count())
+        groups_count = await conn.scalar(sa.select(func.count(groups.c.gid)))
+        classifiers_count = await conn.scalar(
+            sa.select([func.count()]).select_from(group_classifiers)
+        )
 
-        assert groups_count == 0
+        assert (
+            groups_count == 1
+        ), "There should be only the Everyone group in the database!"
         assert classifiers_count <= groups_count
+        assert classifiers_count == 0
 
         # no bundle
         bundle = await conn.scalar(

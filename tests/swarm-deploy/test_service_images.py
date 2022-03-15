@@ -18,7 +18,6 @@ import pytest
     ],
 )
 async def test_python_package_installation(
-    loop,
     package_name: str,
     services: Set[str],
     simcore_docker_compose: Dict,

@@ -117,7 +117,6 @@ logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def minimal_configuration(  # pylint:disable=too-many-arguments
-    loop: asyncio.AbstractEventLoop,
     sleeper_service: Dict,
     dy_static_file_server_dynamic_sidecar_service: Dict,
     dy_static_file_server_dynamic_sidecar_compose_spec_service: Dict,
@@ -903,6 +902,10 @@ async def test_nodeports_integration(
         service_uuid=services_node_uuids.dy,
         dynamic_services_urls=dynamic_services_urls,
     )
+
+    # NOTE: Waits a bit for the DB to write the changes in
+    # comp_task for the upstream service.
+    await asyncio.sleep(2)
 
     await _assert_retrieve_completed(
         director_v2_client=async_client,

@@ -139,9 +139,11 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
             logger.info("retrieved outputs data:\n%s", output_data.json(indent=1))
             return output_data
 
-        except ValidationError as exc:
+        except (ValueError, ValidationError) as exc:
             raise ServiceBadFormattedOutputError(
-                self.service_key, self.service_version
+                service_key=self.service_key,
+                service_version=self.service_version,
+                exc=exc,
             ) from exc
 
     async def _publish_sidecar_log(self, log: str) -> None:
@@ -225,11 +227,13 @@ class ComputationalSidecar:  # pylint: disable=too-many-instance-attributes
                         )
 
                         raise ServiceRunError(
-                            self.service_key,
-                            self.service_version,
-                            container.id,
-                            container_data["State"]["ExitCode"],
-                            await container.log(stdout=True, stderr=True, tail=20),
+                            service_key=self.service_key,
+                            service_version=self.service_version,
+                            container_id=container.id,
+                            exit_code=container_data["State"]["ExitCode"],
+                            service_logs=await container.log(
+                                stdout=True, stderr=True, tail=20
+                            ),
                         )
                     await self._publish_sidecar_log("Container ran successfully.")
 

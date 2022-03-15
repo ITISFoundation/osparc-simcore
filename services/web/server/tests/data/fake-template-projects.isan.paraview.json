@@ -1,0 +1,74 @@
+{
+  "uuid": "de2578c5-431e-4d5e-b80e-401c8066781f",
+  "name": "ISAN: 3D Paraview",
+  "description": "3D Paraview viewer with two inputs",
+  "thumbnail": "",
+  "prjOwner": "maiz",
+  "creationDate": "2019-05-24T10:36:57.813Z",
+  "lastChangeDate": " 2019-05-24T10:38:12.888Z",
+  "tags": [],
+  "accessRights": {},
+  "workbench": {
+    "de2578c5-431e-403e-865a-8c5ca30671c6": {
+      "key": "simcore/services/frontend/file-picker",
+      "version": "1.0.0",
+      "label": "File Picker 1",
+      "inputs": {},
+      "inputNodes": [],
+      "outputs": {
+        "outFile": {
+          "store": 1,
+          "path": "Shared Data/HField_Big.vtk"
+        }
+      },
+      "progress": 100,
+      "position": {
+        "x": 100,
+        "y": 100
+      }
+    },
+    "de2578c5-431e-421f-be24-d44d112cc5c1": {
+      "key": "simcore/services/frontend/file-picker",
+      "version": "1.0.0",
+      "label": "File Picker 2",
+      "inputs": {},
+      "inputNodes": [],
+      "outputs": {
+        "outFile": {
+          "store": 1,
+          "path": "Shared Data/bunny.vtk"
+        }
+      },
+      "progress": 100,
+      "position": {
+        "x": 100,
+        "y": 250
+      }
+    },
+    "de2578c5-431e-4ecd-9636-62e619a9ca69": {
+      "key": "simcore/services/dynamic/3d-viewer",
+      "version": "2.10.0",
+      "label": "3D ParaViewer",
+      "inputs": {
+        "A": {
+          "nodeUuid": "de2578c5-431e-403e-865a-8c5ca30671c6",
+          "output": "outFile"
+        },
+        "B": {
+          "nodeUuid": "de2578c5-431e-421f-be24-d44d112cc5c1",
+          "output": "outFile"
+        }
+      },
+      "inputNodes": [
+        "de2578c5-431e-403e-865a-8c5ca30671c6",
+        "de2578c5-431e-421f-be24-d44d112cc5c1"
+      ],
+      "outputs": {},
+      "progress": 0,
+      "position": {
+        "x": 400,
+        "y": 175
+      }
+    }
+  }
+}

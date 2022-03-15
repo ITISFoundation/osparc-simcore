@@ -28,7 +28,7 @@ install-%: _check_venv_active ## install app in development/production or CI mod
 .PHONY: test-dev
 test-dev: ## runs unit tests in w/o extras
 	# running test-dev
-	@pytest -vv --exitfirst --failed-first --durations=10 \
+	@pytest -vv --asyncio-mode=auto --exitfirst --failed-first --durations=10 \
 	--pdb \
 	--ignore=tests/aiohttp --ignore=tests/fastapi \
 	$(CURDIR)/tests
@@ -36,7 +36,7 @@ test-dev: ## runs unit tests in w/o extras
 .PHONY: test-dev[aiohttp]
 test-dev[aiohttp]: ## runs unit common tests and aiohttp extras
 	# running test-dev[aiohttp]
-	@pytest -vv --exitfirst --failed-first --durations=10 \
+	@pytest -vv --asyncio-mode=auto --exitfirst --failed-first --durations=10 \
 	--pdb \
 	--ignore=tests/fastapi \
 	$(CURDIR)/tests
@@ -44,7 +44,7 @@ test-dev[aiohttp]: ## runs unit common tests and aiohttp extras
 .PHONY: test-dev[fastapi]
 test-dev[fastapi]: ## runs unit common tests and fastapi extras
 	# running test-dev[aiohttp]
-	@pytest -vv --exitfirst --failed-first --durations=10 \
+	@pytest -vv --asyncio-mode=auto --exitfirst --failed-first --durations=10 \
 	--pdb \
 	--ignore=tests/aiohttp \
 	$(CURDIR)/tests
@@ -52,6 +52,6 @@ test-dev[fastapi]: ## runs unit common tests and fastapi extras
 .PHONY: test-dev[fastapi]
 test-dev[all]: ## runs unit tests  w/ all extras
 	# running test-dev
-	@pytest -vv --exitfirst --failed-first --durations=10 \
+	@pytest -vv --asyncio-mode=auto --exitfirst --failed-first --durations=10 \
 	--pdb \
 	$(CURDIR)/tests

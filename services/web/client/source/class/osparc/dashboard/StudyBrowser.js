@@ -393,9 +393,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createDeleteButton: function() {
-      const deleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14").set({
-        visibility: "excluded"
-      });
+      const deleteButton = new qx.ui.form.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/14");
       osparc.utils.Utils.setIdToWidget(deleteButton, "deleteStudiesBtn");
       deleteButton.addListener("execute", () => {
         const selection = this._resourcesContainer.getSelection();
@@ -417,13 +415,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createSelectButton: function() {
-      const selectButton = new qx.ui.form.ToggleButton(this.tr("Select"), "@FontAwesome5Solid/check/12").set({
-        marginRight: 5
+      const selectButton = new qx.ui.form.ToggleButton().set({
+        marginRight: 8
       });
-      selectButton.addListener("changeValue", e => {
-        const val = e.getData();
-        this.setMultiSelection(val);
+      selectButton.bind("value", this, "multiSelection");
+      selectButton.bind("value", selectButton, "label", {
+        converter: val => val ? this.tr("Cancel Selection") : this.tr("Select Studies")
       });
+      this.bind("multiSelection", selectButton, "value");
       return selectButton;
     },
 
@@ -484,6 +483,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const commandEsc = new qx.ui.command.Command("Esc");
       commandEsc.addListener("execute", e => {
         this.resetSelection();
+        this.setMultiSelection(false);
       });
       osparc.store.Store.getInstance().addListener("changeTags", () => {
         this.invalidateStudies();
@@ -1047,8 +1047,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __createConfirmWindow: function(isMulti) {
       const msg = isMulti ? this.tr("Are you sure you want to delete the studies?") : this.tr("Are you sure you want to delete the study?");
-      const confirmationWin = new osparc.ui.window.Confirmation(msg);
+      const confirmationWin = new osparc.ui.window.Confirmation(msg, this.tr("Delete"));
       const confirmButton = confirmationWin.getConfirmButton();
+      confirmButton.set({
+        appearance: "danger-button"
+      });
       osparc.utils.Utils.setIdToWidget(confirmButton, "confirmDeleteStudyBtn");
       return confirmationWin;
     }

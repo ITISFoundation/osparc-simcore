@@ -91,7 +91,7 @@ def test_yarl_url_compose_changed_with_latest_release():
 
 
 @pytest.mark.skip(reason="DEV-demo")
-async def test_compute_sha1_on_small_dataset(fake_project_data: Dict):
+async def test_compute_sha1_on_small_dataset(fake_project: Dict):
     # Based on GitHK review https://github.com/ITISFoundation/osparc-simcore/pull/2556:
     #   From what I know, these having function tend to be a bit CPU intensive, based on the size of the dataset.
     #   Could we maybe have an async version of this function here, run it on an executor?
@@ -108,7 +108,7 @@ async def test_compute_sha1_on_small_dataset(fake_project_data: Dict):
     # dataset is N copies of a project dataset (typical dataset 'unit' in this module)
     N = 10_000
     data = [
-        fake_project_data,
+        fake_project,
     ] * N
 
     print("-" * 100)
