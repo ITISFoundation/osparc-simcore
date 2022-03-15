@@ -92,8 +92,9 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         }
 
         const currentVersionLabel = new qx.ui.basic.Label(node["version"]).set({
-          font: "title-14",
-          backgroundColor: qx.theme.manager.Color.getInstance().resolve(updatable ? "warning-yellow" : "ready-green")
+          font: "text-14",
+          textColor: updatable ? "text-darker" : "text",
+          backgroundColor: updatable ? "warning-yellow" : null
         });
         this._add(currentVersionLabel, {
           row: i,
@@ -118,6 +119,9 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
             label: updatable ? this.tr("Update") : this.tr("Up-to-date"),
             enabled: updatable
           });
+          if (updatable) {
+            updateButton.setAppearance("strong-button");
+          }
           updateButton.addListener("execute", () => this.__updateService(nodeId, latestCompatibleMetadata["version"], updateButton), this);
           this._add(updateButton, {
             row: i,
@@ -131,6 +135,9 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
       const updateAllButton = this.__updateAllButton;
       updateAllButton.addListener("execute", () => this.__updateAllServices(updatableServices, updateAllButton), this);
       updateAllButton.setEnabled(Boolean(updatableServices.length));
+      if (updatableServices.length) {
+        updateAllButton.setAppearance("strong-button");
+      }
     }
   }
 });

@@ -36,6 +36,19 @@ qx.Class.define("osparc.servicecard.Utils", {
     /**
       * @param serviceData {Object} Serialized Service Object
       */
+    createInstaceUuid: function(instaceUuid) {
+      const label = new qx.ui.basic.Label().set({
+        maxWidth: 220
+      });
+      label.set({
+        value: instaceUuid
+      });
+      return label;
+    },
+
+    /**
+      * @param serviceData {Object} Serialized Service Object
+      */
     createKey: function(serviceData) {
       const key = new qx.ui.basic.Label().set({
         maxWidth: 220
