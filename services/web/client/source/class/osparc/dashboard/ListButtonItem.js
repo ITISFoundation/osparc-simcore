@@ -107,7 +107,7 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           });
           this._addAt(control, osparc.dashboard.ListButtonBase.POS.UI_MODE);
           break;
-        case "update-study": {
+        case "update-study":
           control = new qx.ui.basic.Image().set({
             minWidth: 20,
             alignY: "middle",
@@ -117,7 +117,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           });
           this._addAt(control, osparc.dashboard.ListButtonBase.POS.UPDATE_STUDY);
           break;
-        }
         case "menu-selection-stack":
           control = new qx.ui.container.Stack().set({
             minWidth: this.self().MENU_BTN_WIDTH,
