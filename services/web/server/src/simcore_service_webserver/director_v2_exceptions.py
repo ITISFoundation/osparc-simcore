@@ -1,28 +1,21 @@
-"""Defines the different exceptions that may arise in the clusters subpackage"""
+"""Defines the different exceptions that may arise in the director-v2 subpackage"""
 
-from typing import Optional
-
-
-class ClustersException(Exception):
-    """Basic exception for errors raised in clusters"""
-
-    def __init__(self, msg: Optional[str] = None):
-        super().__init__(msg or "Unexpected error occured in clusters subpackage")
+from pydantic.errors import PydanticErrorMixin
 
 
-class ClusterNotFoundError(ClustersException):
-    """Cluster was not found in DB"""
+class DirectorServiceError(PydanticErrorMixin, RuntimeError):
+    """Basic exception for errors raised by director-v2"""
 
-    def __init__(self, cluster_id: int):
-        super().__init__(f"Cluster with id {cluster_id} not found")
-        self.cluster_id = cluster_id
+    msg_template = "Unexpected error: director-v2 returned {status!r}, reason {reason!r} after calling {url!r}"
 
 
-class ClusterAccessForbidden(ClustersException):
+class ClusterNotFoundError(DirectorServiceError):
+    """Cluster was not found in director-v2"""
+
+    msg_template = "Cluster {cluster_id!r} not found"
+
+
+class ClusterAccessForbidden(DirectorServiceError):
     """Cluster access is forbidden"""
 
-    def __init__(self, cluster_id: int, msg: Optional[str] = None):
-        super().__init__(
-            f"Insufficient rights to access cluster with id {cluster_id}{f': {msg}' if msg else ''}"
-        )
-        self.cluster_id = cluster_id
+    msg_template = "Cluster {cluster_id!r} access forbidden!"

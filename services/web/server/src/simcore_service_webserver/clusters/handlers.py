@@ -8,6 +8,7 @@ from servicelib.json_serialization import json_dumps
 
 from .. import director_v2_api
 from .._meta import api_version_prefix
+from ..director_v2_exceptions import ClusterAccessForbidden, ClusterNotFoundError
 from ..director_v2_models import ClusterCreate, ClusterPatch
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
@@ -68,10 +69,15 @@ async def list_clusters_handler(request: web.Request) -> web.Response:
 async def get_cluster_handler(request: web.Request) -> web.Response:
     path, _, _ = await extract_and_validate(request)
     user_id: UserID = request[RQT_USERID_KEY]
-    cluster = await director_v2_api.get_cluster(
-        request.app, user_id, cluster_id=path["cluster_id"]
-    )
-    return web.json_response(data={"data": cluster}, dumps=json_dumps)
+    try:
+        cluster = await director_v2_api.get_cluster(
+            request.app, user_id, cluster_id=path["cluster_id"]
+        )
+        return web.json_response(data={"data": cluster}, dumps=json_dumps)
+    except ClusterNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"{exc}") from exc
+    except ClusterAccessForbidden as exc:
+        raise web.HTTPForbidden(reason=f"{exc}") from exc
 
 
 @routes.patch(
@@ -86,13 +92,17 @@ async def update_cluster_handler(request: web.Request) -> web.Response:
     try:
         cluster_update = ClusterPatch.parse_obj(body)
         updated_cluster = await director_v2_api.update_cluster(
-            request.app, user_id, path[" cluster_id"], cluster_update
+            request.app, user_id, path["cluster_id"], cluster_update
         )
         return web.json_response(data={"data": updated_cluster}, dumps=json_dumps)
     except ValidationError as exc:
         raise web.HTTPUnprocessableEntity(
             reason=f"Invalid cluster definition: {exc} "
         ) from exc
+    except ClusterNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"{exc}") from exc
+    except ClusterAccessForbidden as exc:
+        raise web.HTTPForbidden(reason=f"{exc}") from exc
 
 
 @routes.delete(
@@ -103,4 +113,10 @@ async def update_cluster_handler(request: web.Request) -> web.Response:
 async def delete_cluster_handler(request: web.Request) -> web.Response:
     path, _, _ = await extract_and_validate(request)
     user_id: UserID = request[RQT_USERID_KEY]
-    await director_v2_api.delete_cluster(request.app, user_id, path["cluster_id"])
+    try:
+        await director_v2_api.delete_cluster(request.app, user_id, path["cluster_id"])
+        return web.json_response(status=web.HTTPNoContent.status_code)
+    except ClusterNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"{exc}") from exc
+    except ClusterAccessForbidden as exc:
+        raise web.HTTPForbidden(reason=f"{exc}") from exc

@@ -32,7 +32,7 @@ from pytest_simcore.helpers.utils_login import NewUser
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
 from simcore_postgres_database.models.clusters import clusters
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.clusters.models import (
+from simcore_service_webserver.clusters.director_v2_models import (
     ClusterAccessRights,
     ClusterCreate,
     ClusterPatch,

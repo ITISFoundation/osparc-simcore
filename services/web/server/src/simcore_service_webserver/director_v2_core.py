@@ -19,6 +19,11 @@ from tenacity.wait import wait_random
 from yarl import URL
 
 from .director_v2_abc import AbstractProjectRunPolicy
+from .director_v2_exceptions import (
+    ClusterAccessForbidden,
+    ClusterNotFoundError,
+    DirectorServiceError,
+)
 from .director_v2_models import ClusterCreate, ClusterPatch
 from .director_v2_settings import (
     DirectorV2Settings,
@@ -42,18 +47,6 @@ DEFAULT_RETRY_POLICY = dict(
 
 DataType = Dict[str, Any]
 DataBody = Union[DataType, List[DataType], None]
-
-# base/ERRORS ------------------------------------------------
-
-
-class DirectorServiceError(Exception):
-    """Basic exception for errors raised by director"""
-
-    def __init__(self, status: int, reason: str):
-        self.status = status
-        self.reason = reason
-        super().__init__(f"forwarded call failed with status {status}, reason {reason}")
-
 
 # base/HELPERS ------------------------------------------------
 
@@ -99,9 +92,13 @@ async def _request_director_v2(
     expected_status: Type[web.HTTPSuccessful] = web.HTTPOk,
     headers: Optional[Dict[str, str]] = None,
     data: Optional[Any] = None,
+    on_error: Optional[
+        Dict[int, Tuple[Type[DirectorServiceError], Dict[str, Any]]]
+    ] = None,
     **kwargs,
 ) -> DataBody:
-
+    if not on_error:
+        on_error = {}
     try:
         async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
             with attempt:
@@ -114,6 +111,7 @@ async def _request_director_v2(
                         if response.content_type == "application/json"
                         else await response.text()
                     )
+
                     # NOTE:
                     # - `sometimes director-v0` (via redirects) replies
                     #   in plain text and this is considered an error
@@ -121,24 +119,33 @@ async def _request_director_v2(
                     if response.status != expected_status.status_code or isinstance(
                         payload, str
                     ):
-                        raise DirectorServiceError(response.status, reason=f"{payload}")
+                        if response.status in on_error:
+                            exc, exc_ctx = on_error[response.status]
+                            raise exc(**exc_ctx)
+                        raise DirectorServiceError(
+                            status=response.status, reason=f"{payload}", url=url
+                        )
                     return payload
 
     # TODO: enrich with https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
     except asyncio.TimeoutError as err:
         raise DirectorServiceError(
-            web.HTTPServiceUnavailable.status_code,
+            status=web.HTTPServiceUnavailable.status_code,
             reason=f"request to director-v2 timed-out: {err}",
+            url=url,
         ) from err
 
     except aiohttp.ClientError as err:
         raise DirectorServiceError(
-            web.HTTPServiceUnavailable.status_code,
+            status=web.HTTPServiceUnavailable.status_code,
             reason=f"request to director-v2 service unexpected error {err}",
+            url=url,
         ) from err
     log.error("Unexpected result calling %s, %s", f"{url=}", f"{method=}")
     raise DirectorServiceError(
-        web.HTTPClientError.status_code, reason="Unexpected client error"
+        status=web.HTTPClientError.status_code,
+        reason="Unexpected client error",
+        url=url,
     )
 
 
@@ -256,6 +263,7 @@ async def get_computation_task(
         return task_out
     except DirectorServiceError as exc:
         if exc.status == web.HTTPNotFound.status_code:
+            exc.args
             # the pipeline might not exist and that is ok
             return
         log.warning(
@@ -495,7 +503,7 @@ async def create_cluster(
     app: web.Application, user_id: UserID, new_cluster: ClusterCreate
 ) -> DataType:
     settings: DirectorV2Settings = get_plugin_settings(app)
-    url = (settings.base_url / f"clusters").update_query(user_id=user_id)
+    url = (settings.base_url / "clusters").update_query(user_id=user_id)
     cluster = await _request_director_v2(
         app,
         "POST",
@@ -522,7 +530,22 @@ async def get_cluster(
 ) -> DataType:
     settings: DirectorV2Settings = get_plugin_settings(app)
     url = (settings.base_url / f"clusters/{cluster_id}").update_query(user_id=user_id)
-    cluster = await _request_director_v2(app, "GET", url, expected_status=web.HTTPOk)
+    cluster = await _request_director_v2(
+        app,
+        "GET",
+        url,
+        expected_status=web.HTTPOk,
+        on_error={
+            web.HTTPNotFound.status_code: (
+                ClusterNotFoundError,
+                {"cluster_id": cluster_id},
+            ),
+            web.HTTPForbidden.status_code: (
+                ClusterAccessForbidden,
+                {"cluster_id": cluster_id},
+            ),
+        },
+    )
 
     assert isinstance(cluster, dict)  # nosec
     return cluster
@@ -542,6 +565,16 @@ async def update_cluster(
         url,
         expected_status=web.HTTPOk,
         data=cluster_patch.dict(by_alias=True, exclude_unset=True),
+        on_error={
+            web.HTTPNotFound.status_code: (
+                ClusterNotFoundError,
+                {"cluster_id": cluster_id},
+            ),
+            web.HTTPForbidden.status_code: (
+                ClusterAccessForbidden,
+                {"cluster_id": cluster_id},
+            ),
+        },
     )
 
     assert isinstance(cluster, dict)  # nosec
@@ -553,4 +586,19 @@ async def delete_cluster(
 ) -> None:
     settings: DirectorV2Settings = get_plugin_settings(app)
     url = (settings.base_url / f"clusters/{cluster_id}").update_query(user_id=user_id)
-    await _request_director_v2(app, "DELETE", url, expected_status=web.HTTPNoContent)
+    await _request_director_v2(
+        app,
+        "DELETE",
+        url,
+        expected_status=web.HTTPNoContent,
+        on_error={
+            web.HTTPNotFound.status_code: (
+                ClusterNotFoundError,
+                {"cluster_id": cluster_id},
+            ),
+            web.HTTPForbidden.status_code: (
+                ClusterAccessForbidden,
+                {"cluster_id": cluster_id},
+            ),
+        },
+    )

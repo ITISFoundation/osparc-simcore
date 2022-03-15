@@ -29,4 +29,6 @@ __all__: Tuple[str, ...] = (
     "get_cluster",
     "update_cluster",
     "delete_cluster",
+    "ClusterAccessForbidden",
+    "ClusterNotFoundError",
 )
