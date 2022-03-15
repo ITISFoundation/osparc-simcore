@@ -10,7 +10,7 @@
     "jest": "^24.9.0",
     "jest-puppeteer": "^4.4.0",
     "log-timestamp": "^0.3.0",
-    "log4js": "^6.3.0",
+    "log4js": "^6.4.0",
     "node-fetch": "^2.6.1",
     "puppeteer": "^2.1.1"
   },
