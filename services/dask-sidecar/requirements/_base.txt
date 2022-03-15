@@ -134,7 +134,7 @@ jupyter-core==4.7.1
     #   nbformat
 jupyter-server==1.8.0
     # via jupyter-server-proxy
-jupyter-server-proxy==3.0.2
+jupyter-server-proxy==3.2.1
     # via -r requirements/_base.in
 jupyterlab-pygments==0.1.2
     # via nbconvert
