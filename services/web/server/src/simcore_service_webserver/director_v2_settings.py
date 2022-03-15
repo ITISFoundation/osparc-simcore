@@ -3,7 +3,7 @@
 
 from functools import cached_property
 
-from aiohttp import ClientSession, web
+from aiohttp import ClientSession, ClientTimeout, web
 from models_library.basic_types import PortInt, VersionTag
 from pydantic import Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_CLIENT_SESSION_KEY
@@ -47,6 +47,40 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
             "webserver_director_stop_service_timeout",
         ],
     )
+
+    DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT: PositiveInt = Field(
+        1 * _MINUTE,
+        description="timeout of containers restart",
+        envs=[
+            "DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT",
+            # TODO: below this line are deprecated. rm when deveops give OK
+            "SERVICES_COMMON_RESTART_CONTAINERS_TIMEOUT",
+            "SERVICES_COMMON_restart_containers_timeout",
+        ],
+    )
+
+    DIRECTOR_V2_STORAGE_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT: PositiveInt = Field(
+        _HOUR,
+        description=(
+            "When dynamic services upload and download data from storage, "
+            "sometimes very big payloads are involved. In order to handle "
+            "such payloads it is required to have long timeouts which "
+            "allow the service to finish the operation."
+        ),
+        envs=[
+            "DIRECTOR_V2_DYNAMIC_SERVICE_DATA_UPLOAD_DOWNLOAD_TIMEOUT",
+            # TODO: below this line are deprecated. rm when deveops give OK
+            "SERVICES_COMMON_STORAGE_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT",
+            "SERVICES_COMMON_storage_service_upload_download_timeout",
+        ],
+    )
+
+    def get_service_retrieve_timeout(self) -> ClientTimeout:
+        return ClientTimeout(
+            total=self.DIRECTOR_V2_STORAGE_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT,
+            connect=None,
+            sock_connect=5,
+        )
 
 
 def get_plugin_settings(app: web.Application) -> DirectorV2Settings:
