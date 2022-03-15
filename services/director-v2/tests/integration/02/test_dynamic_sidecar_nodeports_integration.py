@@ -794,7 +794,7 @@ async def test_nodeports_integration(
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,
     db_manager: DBManager,
-    user_db: Callable,
+    registered_user: Callable,
     current_study: ProjectAtDB,
     services_endpoint: Dict[str, URL],
     workbench_dynamic_services: Dict[str, Node],
@@ -831,7 +831,7 @@ async def test_nodeports_integration(
     for saving the state, the state files are recovered via
     `aioboto` instead of `docker` or `storage-data_manager API`.
     """
-    user = user_db()
+    user = registered_user()
     # STEP 1
 
     dynamic_services_urls: Dict[
