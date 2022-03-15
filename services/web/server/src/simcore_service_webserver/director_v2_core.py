@@ -5,6 +5,7 @@ from uuid import UUID
 
 import aiohttp
 from aiohttp import ClientTimeout, web
+from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
 from models_library.users import UserID
@@ -18,6 +19,7 @@ from tenacity.wait import wait_random
 from yarl import URL
 
 from .director_v2_abc import AbstractProjectRunPolicy
+from .director_v2_models import ClusterCreate, ClusterPatch
 from .director_v2_settings import (
     DirectorV2Settings,
     get_client_session,
@@ -486,5 +488,69 @@ async def restart(app: web.Application, node_uuid: str) -> None:
     )
 
 
+# ----------- clusters ----------------------------------------------------------
+
+
+async def create_cluster(
+    app: web.Application, user_id: UserID, new_cluster: ClusterCreate
+) -> DataType:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    url = (settings.base_url / f"clusters").update_query(user_id=user_id)
+    cluster = await _request_director_v2(
+        app,
+        "POST",
+        url,
+        expected_status=web.HTTPCreated,
+        data=new_cluster.dict(by_alias=True, exclude_unset=True),
+    )
+
+    assert isinstance(cluster, dict)  # nosec
+    return cluster
+
+
 async def list_clusters(app: web.Application, user_id: UserID) -> List[DataType]:
-    ...
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    url = (settings.base_url / "clusters").update_query(user_id=user_id)
+    clusters = await _request_director_v2(app, "GET", url, expected_status=web.HTTPOk)
+
+    assert isinstance(clusters, list)  # nosec
+    return clusters
+
+
+async def get_cluster(
+    app: web.Application, user_id: UserID, cluster_id: ClusterID
+) -> DataType:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    url = (settings.base_url / f"clusters/{cluster_id}").update_query(user_id=user_id)
+    cluster = await _request_director_v2(app, "GET", url, expected_status=web.HTTPOk)
+
+    assert isinstance(cluster, dict)  # nosec
+    return cluster
+
+
+async def update_cluster(
+    app: web.Application,
+    user_id: UserID,
+    cluster_id: ClusterID,
+    cluster_patch: ClusterPatch,
+) -> DataType:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    url = (settings.base_url / f"clusters/{cluster_id}").update_query(user_id=user_id)
+    cluster = await _request_director_v2(
+        app,
+        "PATCH",
+        url,
+        expected_status=web.HTTPOk,
+        data=cluster_patch.dict(by_alias=True, exclude_unset=True),
+    )
+
+    assert isinstance(cluster, dict)  # nosec
+    return cluster
+
+
+async def delete_cluster(
+    app: web.Application, user_id: UserID, cluster_id: ClusterID
+) -> None:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    url = (settings.base_url / f"clusters/{cluster_id}").update_query(user_id=user_id)
+    await _request_director_v2(app, "DELETE", url, expected_status=web.HTTPNoContent)
