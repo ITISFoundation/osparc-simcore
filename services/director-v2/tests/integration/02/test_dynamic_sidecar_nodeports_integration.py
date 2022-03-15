@@ -266,7 +266,9 @@ async def db_manager(aiopg_engine: aiopg.sa.engine.Engine) -> DBManager:
     return DBManager(aiopg_engine)
 
 
-@pytest.fixture(scope="session", params=["true", "false"])
+# FIXME: ANE you can change this to something that runs everywhere. Thanks.
+# @pytest.fixture(scope="session", params=["true", "false"])
+@pytest.fixture(scope="session", params=["false"])
 def dev_features_enabled(request) -> str:
     return request.param
 
