@@ -6,7 +6,7 @@
 
 import logging
 from collections import deque
-from typing import Any, Dict, List, Tuple, TypedDict
+from typing import Any, Dict, List, Optional, Tuple, TypedDict
 
 import sqlalchemy as sa
 from aiohttp import web
@@ -125,6 +125,20 @@ async def is_user_guest(app: web.Application, user_id: int) -> bool:
             return False
 
 
+async def get_user_role(app: web.Application, user_id: int) -> UserRole:
+    """
+    :raises UserNotFoundError:
+    """
+    engine: Engine = app[APP_DB_ENGINE_KEY]
+    async with engine.acquire() as conn:
+        user_role: Optional[RowProxy] = await conn.scalar(
+            sa.select([users.c.role]).where(users.c.id == int(user_id))
+        )
+        if user_role is None:
+            raise UserNotFoundError(uid=user_id)
+        return UserRole(user_role)
+
+
 async def get_guest_user_ids_and_names(app: web.Application) -> List[Tuple[int, str]]:
     engine: Engine = app[APP_DB_ENGINE_KEY]
     result = deque()
@@ -163,6 +177,9 @@ class UserNameDict(TypedDict):
 
 
 async def get_user_name(app: web.Application, user_id: int) -> UserNameDict:
+    """
+    :raises UserNotFoundError:
+    """
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         user_name = await conn.scalar(
@@ -175,6 +192,9 @@ async def get_user_name(app: web.Application, user_id: int) -> UserNameDict:
 
 
 async def get_user(app: web.Application, user_id: int) -> Dict:
+    """
+    :raises UserNotFoundError:
+    """
     engine = app[APP_DB_ENGINE_KEY]
     async with engine.acquire() as conn:
         result = await conn.execute(sa.select([users]).where(users.c.id == user_id))

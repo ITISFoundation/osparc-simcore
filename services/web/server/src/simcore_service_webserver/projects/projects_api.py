@@ -50,7 +50,8 @@ from ..storage_api import (
     delete_data_folders_of_project,
     delete_data_folders_of_project_node,
 )
-from ..users_api import get_user_name, is_user_guest
+from ..users_api import UserRole, get_user_name, get_user_role
+from ..users_exceptions import UserNotFoundError
 from .project_lock import (
     ProjectLockError,
     UserNameDict,
@@ -291,12 +292,27 @@ async def remove_project_interactive_services(
         user_id,
     )
     try:
+        user_name_data: UserNameDict = user_name or await get_user_name(app, user_id)
+
+        # TODO: logic around save_state is not ideal, but it remains with the same logic
+        # as before until it is properly refactored
+        user_role: Optional[UserRole]
+        try:
+            user_role = await get_user_role(app, user_id)
+        except UserNotFoundError:
+            user_role = None
+
+        save_state: bool = True
+        if user_role is None or user_role <= UserRole.GUEST:
+            save_state = False
+        # -------------------
+
         async with lock_with_notification(
             app,
             project_uuid,
             ProjectStatus.CLOSING,
             user_id,
-            user_name or await get_user_name(app, user_id),
+            user_name_data,
             notify_users=notify_users,
         ):
             # save the state if the user is not a guest. if we do not know we save in any case.
@@ -306,9 +322,7 @@ async def remove_project_interactive_services(
                     app=app,
                     user_id=user_id,
                     project_id=project_uuid,
-                    save_state=not await is_user_guest(app, user_id)
-                    if user_id
-                    else True,
+                    save_state=save_state,
                 )
     except ProjectLockError:
         pass
