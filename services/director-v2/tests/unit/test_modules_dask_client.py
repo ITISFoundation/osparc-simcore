@@ -100,6 +100,11 @@ async def _assert_wait_for_task_status(
 
 
 @pytest.fixture
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
+
+
+@pytest.fixture
 def minimal_dask_config(
     mock_env: None,
     project_env_devel_environment: Dict[str, Any],
