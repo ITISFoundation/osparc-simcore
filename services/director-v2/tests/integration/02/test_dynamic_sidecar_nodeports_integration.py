@@ -225,20 +225,25 @@ def services_node_uuids(
 
 
 @pytest.fixture
+def current_user(registered_user: Callable) -> Dict[str, Any]:
+    return registered_user()
+
+
+@pytest.fixture
 async def current_study(
-    registered_user: Callable,
+    current_user: Dict[str, Any],
     project: Callable,
     fake_dy_workbench: Dict[str, Any],
     async_client: httpx.AsyncClient,
 ) -> ProjectAtDB:
-    user = registered_user()
-    project_at_db = project(user, workbench=fake_dy_workbench)
+
+    project_at_db = project(current_user, workbench=fake_dy_workbench)
 
     # create entries in comp_task table in order to pull output ports
     await create_pipeline(
         async_client,
         project=project_at_db,
-        user_id=project_at_db.prj_owner,
+        user_id=current_user["id"],
         start_pipeline=False,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
@@ -797,6 +802,7 @@ async def test_nodeports_integration(
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,
     db_manager: DBManager,
+    current_user: Dict[str, Any],
     current_study: ProjectAtDB,
     services_endpoint: Dict[str, URL],
     workbench_dynamic_services: Dict[str, Node],
@@ -833,14 +839,12 @@ async def test_nodeports_integration(
     for saving the state, the state files are recovered via
     `aioboto` instead of `docker` or `storage-data_manager API`.
     """
-    assert current_study.prj_owner
     # STEP 1
-
     dynamic_services_urls: Dict[
         str, str
     ] = await _start_and_wait_for_dynamic_services_ready(
         director_v2_client=async_client,
-        user_id=current_study.prj_owner,
+        user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
     )
@@ -850,7 +854,7 @@ async def test_nodeports_integration(
     response = await create_pipeline(
         async_client,
         project=current_study,
-        user_id=current_study.prj_owner,
+        user_id=current_user["id"],
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
@@ -869,14 +873,14 @@ async def test_nodeports_integration(
     await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
-        current_study.prj_owner,
+        current_user["id"],
         current_study.uuid,
         wait_for_states=[RunningState.STARTED],
     )
 
     # wait for the computation to finish (either by failing, success or abort)
     task_out = await assert_and_wait_for_pipeline_status(
-        async_client, task_out.url, current_study.prj_owner, current_study.uuid
+        async_client, task_out.url, current_user["id"], current_study.uuid
     )
 
     await assert_computation_task_out_obj(
@@ -926,7 +930,7 @@ async def test_nodeports_integration(
     )
 
     mapped_nodeports_values = await _get_mapped_nodeports_values(
-        current_study.prj_owner,
+        current_user["id"],
         str(current_study.uuid),
         current_study.workbench,
         db_manager,
@@ -1008,7 +1012,7 @@ async def test_nodeports_integration(
         if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
         else await _fetch_data_via_data_manager(
             dir_tag="dy",
-            user_id=current_study.prj_owner,
+            user_id=current_user["id"],
             project_id=str(current_study.uuid),
             service_uuid=services_node_uuids.dy,
             temp_dir=temp_dir,
@@ -1026,7 +1030,7 @@ async def test_nodeports_integration(
         if app_settings.DIRECTOR_V2_DEV_FEATURES_ENABLED
         else await _fetch_data_via_data_manager(
             dir_tag="dy_compose_spec",
-            user_id=current_study.prj_owner,
+            user_id=current_user["id"],
             project_id=str(current_study.uuid),
             service_uuid=services_node_uuids.dy_compose_spec,
             temp_dir=temp_dir,
@@ -1037,7 +1041,7 @@ async def test_nodeports_integration(
 
     await _start_and_wait_for_dynamic_services_ready(
         director_v2_client=async_client,
-        user_id=current_study.prj_owner,
+        user_id=current_user["id"],
         workbench_dynamic_services=workbench_dynamic_services,
         current_study=current_study,
     )
