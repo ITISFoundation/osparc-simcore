@@ -426,6 +426,10 @@ qx.Class.define("osparc.component.form.Auto", {
     },
 
     __getField: function(s, key) {
+      if (s.type === "ref_contentSchema") {
+        Object.assign(s, s.contentSchema);
+      }
+
       if (s.defaultValue) {
         if (!s.set) {
           s.set = {};
@@ -523,6 +527,9 @@ qx.Class.define("osparc.component.form.Auto", {
       control.type = s.type;
       control.widgetType = s.widget.type;
       control.unitShort = s.unitShort;
+      if ("x_unit" in s) {
+        control.unitShort = s.x_unit;
+      }
       control.unitLong = s.unitLong;
 
       return control;
