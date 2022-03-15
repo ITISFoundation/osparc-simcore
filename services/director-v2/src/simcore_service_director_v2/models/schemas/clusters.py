@@ -46,7 +46,12 @@ class Scheduler(BaseModel):
 
 
 class ClusterOut(Cluster):
-    ...
+    access_rights: Dict[GroupID, ClusterAccessRights] = Field(
+        alias="accessRights", default_factory=dict
+    )
+
+    class Config(Cluster.Config):
+        allow_population_by_field_name = True
 
 
 class ClusterDetailsOut(BaseModel):
