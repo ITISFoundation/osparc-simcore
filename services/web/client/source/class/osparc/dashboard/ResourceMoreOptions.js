@@ -341,8 +341,8 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       const title = this.tr("Update Services");
       const icon = "@MaterialIcons/update";
-      const servicesUpdate = this.__servicesUpdatePage = new osparc.component.metadata.ServicesInStudyUpdate(resourceData);
-      const page = this.__createPage(title, servicesUpdate, icon, id);
+      const servicesUpdate = new osparc.component.metadata.ServicesInStudyUpdate(resourceData);
+      const page = this.__servicesUpdatePage = this.__createPage(title, servicesUpdate, icon, id);
       return page;
     },
 
