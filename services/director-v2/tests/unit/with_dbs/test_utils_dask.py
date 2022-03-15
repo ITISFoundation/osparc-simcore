@@ -85,7 +85,7 @@ def project_id(faker: Faker) -> ProjectID:
 
 
 @pytest.fixture
-def node_uuid(faker: Faker) -> NodeID:
+def node_id(faker: Faker) -> NodeID:
     return NodeID(faker.uuid4())
 
 
