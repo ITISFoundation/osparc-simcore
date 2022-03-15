@@ -23,6 +23,18 @@ qx.Class.define("osparc.utils.Study", {
   type: "static",
 
   statics: {
+    extractServices: function(studyData) {
+      const workbench = studyData["workbench"];
+      const services = [];
+      Object.values(workbench).forEach(srv => {
+        services.push({
+          key: srv.key,
+          version: srv.version
+        });
+      });
+      return services;
+    },
+
     getInaccessibleServicesMsg: function(inaccessibleServices) {
       let msg = qx.locale.Manager.tr("Service(s) not accessible:<br>");
       inaccessibleServices.forEach(unaccessibleService => {
@@ -34,7 +46,7 @@ qx.Class.define("osparc.utils.Study", {
     createStudyFromService: function(key, version) {
       return new Promise((resolve, reject) => {
         const store = osparc.store.Store.getInstance();
-        store.getServicesDAGs()
+        store.getServicesOnly()
           .then(services => {
             if (key in services) {
               const service = version ? osparc.utils.Services.getFromObject(services, key, version) : osparc.utils.Services.getLatest(services, key);

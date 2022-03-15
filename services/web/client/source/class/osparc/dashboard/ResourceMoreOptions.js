@@ -63,7 +63,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       // populate it with owned versions
       const store = osparc.store.Store.getInstance();
-      store.getServicesDAGs(false)
+      store.getServicesOnly(false)
         .then(services => {
           const versions = osparc.utils.Services.getVersions(services, this.__resourceData["key"]);
           const selectBox = this.__serviceVersionSelector;
@@ -82,7 +82,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         if (selection && selection.length) {
           const serviceVersion = selection[0].getLabel();
           if (serviceVersion !== this.__resourceData["version"]) {
-            store.getServicesDAGs(false)
+            store.getServicesOnly(false)
               .then(services => {
                 const serviceData = osparc.utils.Services.getFromObject(services, this.__resourceData["key"], serviceVersion);
                 console.log(serviceData);

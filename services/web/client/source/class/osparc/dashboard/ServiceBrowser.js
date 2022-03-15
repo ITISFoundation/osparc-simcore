@@ -44,7 +44,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
      */
     __reloadServices: function() {
       const store = osparc.store.Store.getInstance();
-      store.getServicesDAGs()
+      store.getServicesOnly()
         .then(services => {
           this.__servicesAll = services;
           const servicesList = [];
@@ -65,7 +65,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this.__servicesLatestList = [];
       const preResourcePromises = [];
       const store = osparc.store.Store.getInstance();
-      preResourcePromises.push(store.getServicesDAGs());
+      preResourcePromises.push(store.getServicesOnly());
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         preResourcePromises.push(osparc.data.Resources.get("tags"));
       }
