@@ -45,6 +45,8 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     this.__nodesUI = [];
     this.__edgesUI = [];
     this.__selectedNodeUIs = [];
+    this.__annotations = {};
+    this.__selectedAnnotations = [];
 
     this._setLayout(new qx.ui.layout.HBox());
 
@@ -110,7 +112,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
   members: {
     _currentModel: null,
-    __unlinkButton: null,
+    __deleteItemButton: null,
     __nodesUI: null,
     __edgesUI: null,
     __selectedNodeUIs: null,
@@ -127,17 +129,22 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     __pointerPos: null,
     __selectedItemId: null,
     __startHint: null,
+    __toolHint: null,
     __dropMe: null,
-    __rectInitPos: null,
-    __rectRepr: null,
+    __selectionRectInitPos: null,
+    __selectionRectRepr: null,
     __panning: null,
     __isDraggingFile: null,
     __isDraggingLink: null,
+    __annotations: null,
+    __annotatingRect: null,
+    __annotatingText: null,
+    __annotationInitPos: null,
+    __selectedAnnotations: null,
+    __annotationEditor: null,
 
     __applyStudy: function(study) {
-      study.getWorkbench().addListener("reloadModel", () => {
-        this.__reloadCurrentModel();
-      }, this);
+      study.getWorkbench().addListener("reloadModel", () => this.__reloadCurrentModel(), this);
     },
 
     _addItemsToLayout: function() {
@@ -195,7 +202,9 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __addExtras: function() {
       this.__addStartHint();
-      this.__addUnlinkButton();
+      this.__addToolHint();
+      this.__addDeleteItemButton();
+      this.__annotationEditorView();
     },
 
     __addOutputNodesLayout: function() {
@@ -212,22 +221,53 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__workbenchLayout.add(this.__startHint);
     },
 
-    __addUnlinkButton: function() {
-      const unlinkButton = this.__unlinkButton = new qx.ui.form.Button().set({
-        icon: "@FontAwesome5Solid/unlink/18",
+    __addToolHint: function() {
+      const toolHint = this.__toolHint = new qx.ui.basic.Label().set({
+        font: "workbench-start-hint",
+        textColor: "workbench-start-hint",
+        visibility: "excluded"
+      });
+      toolHint.bind("value", toolHint, "visibility", {
+        converter: val => val ? "visible" : "excluded"
+      });
+      this.__workbenchLayout.add(this.__toolHint, {
+        bottom: 20,
+        left: 20
+      });
+    },
+
+    __addDeleteItemButton: function() {
+      const deleteItemButton = this.__deleteItemButton = new qx.ui.form.Button().set({
+        icon: "@FontAwesome5Solid/trash/18",
         width: BUTTON_SIZE,
         height: BUTTON_SIZE,
         visibility: "excluded"
       });
-      unlinkButton.addListener("execute", () => {
+      deleteItemButton.addListener("execute", () => {
         if (this.__isSelectedItemAnEdge()) {
           this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
           this.__selectedItemChanged(null);
+        } else if (this.__isSelectedItemAnAnnotation()) {
+          const id = this.__selectedItemId;
+          this.__selectedItemChanged(null);
+          this.__removeAnnotation(id);
         }
       }, this);
 
-      this.__workbenchLayer.add(unlinkButton, {
+      this.__workbenchLayer.add(deleteItemButton, {
         bottom: 10,
+        right: 10
+      });
+    },
+
+    __annotationEditorView: function() {
+      const annotationEditor = this.__annotationEditor = new osparc.component.editor.AnnotationEditor().set({
+        backgroundColor: "background-main-2",
+        visibility: "excluded"
+      });
+
+      this.__workbenchLayer.add(annotationEditor, {
+        top: 10,
         right: 10
       });
     },
@@ -368,50 +408,69 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       this.__updateHint();
     },
 
-    __addNodeListeners: function(nodeUI) {
-      nodeUI.addListener("nodeStartedMoving", () => {
-        this.getSelectedNodes().forEach(selectedNodeUI => {
-          selectedNodeUI.initPos = selectedNodeUI.getNode().getPosition();
-        });
-      }, this);
+    __itemStartedMoving: function() {
+      this.getSelectedNodes().forEach(selectedNodeUI => {
+        selectedNodeUI.initPos = selectedNodeUI.getNode().getPosition();
+      });
+      this.getSelectedAnnotations().forEach(selectedAnnotation => {
+        selectedAnnotation.initPos = selectedAnnotation.getPosition();
+      });
+    },
 
+    __itemMoving: function(itemId, xDiff, yDiff) {
+      this.getSelectedNodes().forEach(selectedNodeUI => {
+        if (itemId !== selectedNodeUI.getNodeId()) {
+          const selectedNode = selectedNodeUI.getNode();
+          selectedNode.setPosition({
+            x: selectedNodeUI.initPos.x + xDiff,
+            y: selectedNodeUI.initPos.y + yDiff
+          });
+          selectedNodeUI.moveTo(selectedNode.getPosition().x, selectedNode.getPosition().y);
+          this.__updateNodeUIPos(selectedNodeUI);
+        }
+      });
+
+      this.getSelectedAnnotations().forEach(selectedAnnotation => {
+        const newPos = {
+          x: selectedAnnotation.initPos.x + xDiff,
+          y: selectedAnnotation.initPos.y + yDiff
+        };
+        selectedAnnotation.setPosition(newPos.x, newPos.y);
+      });
+    },
+
+    __itemStoppedMoving: function() {
+      this.getSelectedNodes().forEach(selectedNodeUI => {
+        delete selectedNodeUI["initPos"];
+      });
+      this.getSelectedAnnotations().forEach(selectedAnnotation => {
+        delete selectedAnnotation["initPos"];
+      });
+      this.__updateWorkbenchBounds();
+
+      // After moving a nodeUI, a new element with z-index 100000+ appears on the DOM tree and prevents from clicking
+      // elsewhere. Here we go through every the children of the WorkbenchUI and remove the undesired element
+      const allChildren = Array.from(this.getContentElement().getDomElement().getElementsByTagName("*"));
+      const nodesAndSuspicious = allChildren.filter(child => parseInt(child.style.zIndex) >= 100000);
+      nodesAndSuspicious.forEach(child => {
+        if (child.className !== "qx-window-small-cap") {
+          console.warn("moving undesired element to background");
+          child.style.zIndex = "1";
+        }
+      });
+    },
+
+    __addNodeListeners: function(nodeUI) {
+      nodeUI.addListener("nodeStartedMoving", () => this.__itemStartedMoving(), this);
       nodeUI.addListener("nodeMoving", () => {
         this.__updateNodeUIPos(nodeUI);
         if ("initPos" in nodeUI) {
           const xDiff = nodeUI.getNode().getPosition().x - nodeUI.initPos.x;
           const yDiff = nodeUI.getNode().getPosition().y - nodeUI.initPos.y;
-          this.getSelectedNodes().forEach(selectedNodeUI => {
-            if (nodeUI.getNodeId() !== selectedNodeUI.getNodeId()) {
-              const selectedNode = selectedNodeUI.getNode();
-              selectedNode.setPosition({
-                x: selectedNodeUI.initPos.x + xDiff,
-                y: selectedNodeUI.initPos.y + yDiff
-              });
-              selectedNodeUI.moveTo(selectedNode.getPosition().x, selectedNode.getPosition().y);
-              this.__updateNodeUIPos(selectedNodeUI);
-            }
-          });
+          this.__itemMoving(nodeUI.getNodeId(), xDiff, yDiff);
         }
       }, this);
-
-      nodeUI.addListener("nodeStoppedMoving", () => {
-        this.getSelectedNodes().forEach(selectedNodeUI => {
-          delete selectedNodeUI["initPos"];
-        });
-
-        this.__updateWorkbenchBounds();
-
-        // After moving a nodeUI, a new element with z-index 100000+ appears on the DOM tree and prevents from clicking
-        // elsewhere. Here we go through every the children of the WorkbenchUI and remove the undesired element
-        const allChildren = Array.from(this.getContentElement().getDomElement().getElementsByTagName("*"));
-        const nodesAndSuspicious = allChildren.filter(child => parseInt(child.style.zIndex) >= 100000);
-        nodesAndSuspicious.forEach(child => {
-          if (child.className !== "qx-window-small-cap") {
-            console.warn("moving undesired element to background");
-            child.style.zIndex = "1";
-          }
-        });
-      }, this);
+      nodeUI.addListener("nodeStoppedMoving", () => this.__itemStoppedMoving(), this);
 
       nodeUI.addListener("tap", e => {
         this.activeNodeChanged(nodeUI, e.isCtrlPressed());
@@ -424,6 +483,24 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }, this);
     },
 
+    __addAnnotationListeners: function(annotation) {
+      annotation.addListener("annotationStartedMoving", () => {
+        this.__annotationClicked(annotation);
+        this.__itemStartedMoving();
+      }, this);
+      annotation.addListener("annotationMoving", () => {
+        if ("initPos" in annotation) {
+          const reprPos = annotation.getRepresenationPosition();
+          const xDiff = reprPos.x - annotation.initPos.x;
+          const yDiff = reprPos.y - annotation.initPos.y;
+          this.__itemMoving(annotation.getId(), xDiff, yDiff);
+        }
+      }, this);
+      annotation.addListener("annotationStoppedMoving", () => this.__itemStoppedMoving(), this);
+
+      annotation.addListener("annotationClicked", e => this.__annotationClicked(annotation, e.getData()), this);
+    },
+
     getCurrentModel: function() {
       return this._currentModel;
     },
@@ -432,9 +509,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return this.__selectedNodeUIs;
     },
 
+    getSelectedAnnotations: function() {
+      return this.__selectedAnnotations;
+    },
+
     getSelectedNodeIDs: function() {
       const selectedNodeIDs = [];
-      this.__selectedNodeUIs.forEach(nodeUI => {
+      this.getSelectedNodes().forEach(nodeUI => {
         selectedNodeIDs.push(nodeUI.getNodeId());
       });
       return selectedNodeIDs;
@@ -442,11 +523,12 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     resetSelection: function() {
       this.__setSelectedNodes([]);
+      this.__setSelectedAnnotations([]);
       this.__selectedItemChanged(null);
     },
 
     __setSelectedNodes: function(selectedNodeUIs) {
-      this.__selectedNodeUIs.forEach(node => {
+      this.getSelectedNodes().forEach(node => {
         if (!selectedNodeUIs.includes(node)) {
           node.removeState("selected");
         }
@@ -456,15 +538,44 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       qx.event.message.Bus.dispatchByName("changeWorkbenchSelection", selectedNodeUIs.map(selected => selected.getNode()));
     },
 
+    __setSelectedAnnotations: function(selectedAnnotations) {
+      this.getSelectedAnnotations().forEach(annotation => {
+        if (!selectedAnnotations.includes(annotation)) {
+          annotation.setSelected(false);
+        }
+      });
+      selectedAnnotations.forEach(selectedAnnotation => selectedAnnotation.setSelected(true));
+      this.__selectedAnnotations = selectedAnnotations;
+    },
+
+    __annotationClicked: function(annotation, isControlPressed = false) {
+      if (isControlPressed) {
+        const index = this.getSelectedAnnotations().indexOf(annotation);
+        if (index > -1) {
+          annotation.setSelected(false);
+          this.getSelectedAnnotations().splice(index, 1);
+        } else {
+          annotation.setSelected(true);
+          this.getSelectedAnnotations().push(annotation);
+          if (this.__selectedItemId === null) {
+            this.__selectedItemChanged(annotation.getId());
+          }
+        }
+      } else {
+        this.__setSelectedAnnotations([annotation]);
+        this.__selectedItemChanged(annotation.getId());
+      }
+    },
+
     activeNodeChanged: function(activeNodeUI, isControlPressed = false) {
       if (isControlPressed) {
-        const index = this.__selectedNodeUIs.indexOf(activeNodeUI);
+        const index = this.getSelectedNodes().indexOf(activeNodeUI);
         if (index > -1) {
           activeNodeUI.removeState("selected");
-          this.__selectedNodeUIs.splice(index, 1);
+          this.getSelectedNodes().splice(index, 1);
         } else {
           activeNodeUI.addState("selected");
-          this.__selectedNodeUIs.push(activeNodeUI);
+          this.getSelectedNodes().push(activeNodeUI);
           this.__selectedItemChanged(activeNodeUI.getNodeId());
         }
       } else {
@@ -492,7 +603,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (!edge) {
         return null;
       }
-      if (this.__edgeRepresetationExists(edge)) {
+      if (this.__edgeRepresentationExists(edge)) {
         return null;
       }
 
@@ -520,7 +631,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
         edge.addListener("changePortConnected", e => {
           const portConnected = e.getData();
-          osparc.component.workbench.SvgWidget.updateCurveDashes(edgeRepresentation, !portConnected);
+          osparc.wrapper.Svg.updateCurveDashes(edgeRepresentation, !portConnected);
         }, this);
 
         const edgeUI = new osparc.component.workbench.EdgeUI(edge, edgeRepresentation);
@@ -543,7 +654,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       return null;
     },
 
-    __edgeRepresetationExists: function(edge) {
+    __edgeRepresentationExists: function(edge) {
       for (let i=0; i<this.__edgesUI.length; i++) {
         const edgeUI = this.__edgesUI[i];
         if (edgeUI.getEdge().getEdgeId() === edge.getEdgeId()) {
@@ -758,7 +869,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         const pos = nodeUI.getNode().getPosition();
         const nShadows = nodeUI.shadows.length;
         for (let i=0; i<nShadows; i++) {
-          osparc.component.workbench.SvgWidget.updateNodeUI(nodeUI.shadows[i], pos.x + (nShadows-i)*shadowDiffX, pos.y + (nShadows-i)*shadowDiffY);
+          osparc.wrapper.Svg.updateItemPos(nodeUI.shadows[i], pos.x + (nShadows-i)*shadowDiffX, pos.y + (nShadows-i)*shadowDiffY);
         }
       }
     },
@@ -866,13 +977,13 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (!this.__tempEdgeIsInput) {
         const modified = nodeUI.getNode().getStatus().getModified();
         const colorHex = osparc.component.workbench.EdgeUI.getEdgeColor(modified);
-        osparc.component.workbench.SvgWidget.updateCurveColor(this.__tempEdgeRepr, colorHex);
+        osparc.wrapper.Svg.updateCurveColor(this.__tempEdgeRepr, colorHex);
       }
     },
 
     __removeTempEdge: function() {
       if (this.__tempEdgeRepr !== null) {
-        osparc.component.workbench.SvgWidget.removeCurve(this.__tempEdgeRepr);
+        osparc.wrapper.Svg.removeCurve(this.__tempEdgeRepr);
       }
 
       const nodeUI = this.getNodeUI(this.__tempEdgeNodeId);
@@ -958,7 +1069,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __clearEdge: function(edge) {
       if (edge) {
-        osparc.component.workbench.SvgWidget.removeCurve(edge.getRepresentation());
+        osparc.wrapper.Svg.removeCurve(edge.getRepresentation());
         const index = this.__edgesUI.indexOf(edge);
         if (index > -1) {
           this.__edgesUI.splice(index, 1);
@@ -972,9 +1083,28 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
+    __clearAnnotation: function(annotation) {
+      if (annotation) {
+        if (annotation.getRepresentation()) {
+          osparc.wrapper.Svg.removeItem(annotation.getRepresentation());
+        }
+        if (annotation.getId() in this.__annotations) {
+          delete this.__annotations[annotation.getId()];
+        }
+      }
+    },
+
+    __clearAllAnnotations: function() {
+      while (Object.keys(this.__annotations).length > 0) {
+        const keys = Object.keys(this.__annotations);
+        this.__clearAnnotation(this.__annotations[keys[keys.length - 1]]);
+      }
+    },
+
     _clearAll: function() {
       this.__clearAllNodes();
       this.__clearAllEdges();
+      this.__clearAllAnnotations();
     },
 
     loadModel: function(model) {
@@ -1061,6 +1191,15 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
             });
           });
         }
+
+        // create annotations
+        const studyUI = model.getStudy().getUi();
+        const initData = studyUI.getAnnotationsInitData();
+        const annotations = initData ? initData : studyUI.getAnnotations();
+        Object.entries(annotations).forEach(([annotationId, annotation]) => this.__addAnnotation(annotation, annotationId));
+        if (initData) {
+          studyUI.nullAnnotationsInitData();
+        }
       }
     },
 
@@ -1070,6 +1209,10 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         if (this.__isSelectedItemAnEdge()) {
           const edge = this.__getEdgeUI(oldId);
           edge.setSelected(false);
+        } else if (this.__isSelectedItemAnAnnotation()) {
+          const annotation = this.__getAnnotation(oldId);
+          annotation.setSelected(false);
+          this.__annotationEditor.exclude();
         }
       }
 
@@ -1077,17 +1220,30 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       if (this.__isSelectedItemAnEdge()) {
         const edge = this.__getEdgeUI(newID);
         edge.setSelected(true);
+      } else if (this.__isSelectedItemAnAnnotation()) {
+        const annotation = this.__getAnnotation(newID);
+        this.__setSelectedAnnotations([annotation]);
+        this.__annotationEditor.setAnnotation(annotation);
+        this.__annotationEditor.show();
       } else {
         this.fireDataEvent("changeSelectedNode", newID);
       }
 
-      if (this.__unlinkButton) {
-        this.__unlinkButton.setVisibility(this.__isSelectedItemAnEdge() ? "visible" : "excluded");
+      if (this.__deleteItemButton) {
+        this.__deleteItemButton.setVisibility(this.__isSelectedItemAnEdge() || this.__isSelectedItemAnAnnotation() ? "visible" : "excluded");
       }
     },
 
     __isSelectedItemAnEdge: function() {
       return Boolean(this.__selectedItemId && this.__getEdgeUI(this.__selectedItemId));
+    },
+
+    __isSelectedItemAnAnnotation: function() {
+      return Object.keys(this.__annotations).includes(this.__selectedItemId);
+    },
+
+    __getAnnotation: function() {
+      return this.__isSelectedItemAnAnnotation() ? this.__annotations[this.__selectedItemId] : null;
     },
 
     __scaleCoordinates: function(x, y) {
@@ -1168,15 +1324,21 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __mouseDownOnSVG: function(e) {
       if (e.isLeftPressed()) {
-        this.__rectInitPos = this.__pointerEventToWorkbenchPos(e);
+        if (this.__annotatingRect || this.__annotatingText) {
+          this.__annotationInitPos = this.__pointerEventToWorkbenchPos(e);
+        } else {
+          this.__selectionRectInitPos = this.__pointerEventToWorkbenchPos(e);
+        }
       }
     },
 
     __mouseMove: function(e) {
       if (this.__isDraggingLink) {
         this.__draggingLink(e, true);
-      } else if (this.__tempEdgeRepr === null && this.__rectInitPos && e.isLeftPressed()) {
-        this.__drawingRect(e);
+      } else if (this.__tempEdgeRepr === null && (this.__annotatingRect || this.__annotatingText) && this.__annotationInitPos && e.isLeftPressed()) {
+        this.__drawingAnnotation(e);
+      } else if (this.__tempEdgeRepr === null && this.__selectionRectInitPos && e.isLeftPressed()) {
+        this.__drawingSelectionRect(e);
       } else if (this.__panning && e.isMiddlePressed()) {
         const oldPos = this.__pointerPos;
         const newPos = this.__pointerPos = this.__pointerEventToWorkbenchPos(e);
@@ -1191,12 +1353,24 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
     },
 
     __mouseUp: function(e) {
-      if (this.__rectInitPos) {
-        this.__rectInitPos = null;
+      if (this.__selectionRectInitPos) {
+        this.__selectionRectInitPos = null;
       }
-      if (this.__rectRepr) {
-        osparc.component.workbench.SvgWidget.removeRect(this.__rectRepr);
-        this.__rectRepr = null;
+      if (this.__selectionRectRepr) {
+        osparc.wrapper.Svg.removeItem(this.__selectionRectRepr);
+        this.__selectionRectRepr = null;
+      }
+
+      if (this.__annotationInitPos) {
+        this.__annotationInitPos = null;
+      }
+      if (this.__annotatingRect || this.__annotatingText) {
+        this.__consolidateAnnotation(this.__rectAnnotationRepr, this.__annotatingRect ? "rect" : "text");
+        osparc.wrapper.Svg.removeItem(this.__rectAnnotationRepr);
+        this.__rectAnnotationRepr = null;
+        this.__annotatingRect = false;
+        this.__annotatingText = false;
+        this.__toolHint.setValue(null);
       }
 
       if (this.__panning) {
@@ -1340,6 +1514,18 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
       }
     },
 
+    startAnnotationsRect: function() {
+      this.__annotatingRect = true;
+      this.__annotatingText = false;
+      this.__toolHint.setValue(this.tr("Draw a rectangle"));
+    },
+
+    startAnnotationsText: function() {
+      this.__annotatingText = true;
+      this.__annotatingRect = false;
+      this.__toolHint.setValue(this.tr("Draw a rectangle first"));
+    },
+
     __openNodeRenamer: function(nodeId) {
       const node = this.getStudy().getWorkbench().getNode(nodeId);
       const treeItemRenamer = new osparc.component.widget.Renamer(node.getLabel());
@@ -1406,30 +1592,38 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
       this.addListener("keypress", keyEvent => {
         const selectedNodeIDs = this.getSelectedNodeIDs();
-        if (selectedNodeIDs.length === 1) {
-          switch (keyEvent.getKeyIdentifier()) {
-            case "F2":
+        switch (keyEvent.getKeyIdentifier()) {
+          case "F2":
+            if (selectedNodeIDs.length === 1) {
               this.__openNodeRenamer(selectedNodeIDs[0]);
-              break;
-            case "I":
+            }
+            break;
+          case "I":
+            if (selectedNodeIDs.length === 1) {
               this.__openNodeInfo(selectedNodeIDs[0]);
-              break;
-            case "Delete":
+            }
+            break;
+          case "Delete":
+            if (selectedNodeIDs.length === 1) {
               this.fireDataEvent("removeNode", selectedNodeIDs[0]);
-              break;
-            case "Escape":
-              this.resetSelection();
-              break;
-          }
-        } else if (keyEvent.getKeyIdentifier() === "Delete" && this.__isSelectedItemAnEdge()) {
-          this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
-          this.__selectedItemChanged(null);
-        } else if (keyEvent.getKeyIdentifier() === "Delete") {
-          this.fireDataEvent("removeNodes", selectedNodeIDs);
-        } else if (keyEvent.getKeyIdentifier() === "Escape") {
-          this.resetSelection();
-          this.__removeTempEdge();
-          this.__removePointerMoveListener();
+            } else if (selectedNodeIDs.length) {
+              this.fireDataEvent("removeNodes", selectedNodeIDs);
+            } else if (this.__isSelectedItemAnEdge()) {
+              this.__removeEdge(this.__getEdgeUI(this.__selectedItemId));
+              this.__selectedItemChanged(null);
+            }
+            if (this.__isSelectedItemAnAnnotation()) {
+              const id = this.__selectedItemId;
+              this.__selectedItemChanged(null);
+              this.__removeAnnotation(id);
+            }
+            this.getSelectedAnnotations().forEach(annotation => this.__removeAnnotation(annotation.getId()));
+            break;
+          case "Escape":
+            this.resetSelection();
+            this.__removeTempEdge();
+            this.__removePointerMoveListener();
+            break;
         }
       }, this);
 
@@ -1528,25 +1722,25 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
           top: posY - parseInt(dropMeBounds.height/2)- parseInt(boxHeight/2)
         });
         if ("rect" in dropMe) {
-          osparc.component.workbench.SvgWidget.updateRectPos(dropMe.rect, posX - boxWidth, posY - boxHeight);
+          osparc.wrapper.Svg.updateItemPos(dropMe.rect, posX - boxWidth, posY - boxHeight);
         }
       } else {
         this.__removeDropHint();
       }
     },
 
-    __drawingRect: function(e) {
+    __drawingSelectionRect: function(e) {
       // draw rect
-      const initPos = this.__rectInitPos;
+      const initPos = this.__selectionRectInitPos;
       const currentPos = this.__pointerEventToWorkbenchPos(e);
       const x = Math.min(initPos.x, currentPos.x);
       const y = Math.min(initPos.y, currentPos.y);
       const width = Math.abs(initPos.x - currentPos.x);
       const height = Math.abs(initPos.y - currentPos.y);
-      if (this.__rectRepr === null) {
-        this.__rectRepr = this.__svgLayer.drawFilledRect(width, height, x, y);
+      if (this.__selectionRectRepr === null) {
+        this.__selectionRectRepr = this.__svgLayer.drawFilledRect(width, height, x, y);
       } else {
-        osparc.component.workbench.SvgWidget.updateRect(this.__rectRepr, width, height, x, y);
+        osparc.wrapper.Svg.updateRect(this.__selectionRectRepr, width, height, x, y);
       }
 
       // select nodes
@@ -1566,6 +1760,72 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
         }
       });
       this.__setSelectedNodes(nodeUIs);
+
+      // select annotations
+      const annotations = [];
+      Object.keys(this.__annotations).forEach(annotationId => {
+        const annotation = this.__annotations[annotationId];
+        const attrs = annotation.getAttributes();
+        const annotationPosX = parseInt(attrs.x) + parseInt(attrs.width/2);
+        const annotationPosY = parseInt(attrs.y) + parseInt(attrs.height/2);
+        if (annotationPosX > x &&
+          annotationPosX < x+width &&
+          annotationPosY > y &&
+          annotationPosY < y+height) {
+          annotations.push(annotation);
+        }
+      });
+      this.__setSelectedAnnotations(annotations);
+    },
+
+    __drawingAnnotation: function(e) {
+      // draw rect
+      const initPos = this.__annotationInitPos;
+      const currentPos = this.__pointerEventToWorkbenchPos(e);
+      const x = Math.min(initPos.x, currentPos.x);
+      const y = Math.min(initPos.y, currentPos.y);
+      const width = Math.abs(initPos.x - currentPos.x);
+      const height = Math.abs(initPos.y - currentPos.y);
+      if ([null, undefined].includes(this.__rectAnnotationRepr)) {
+        this.__rectAnnotationRepr = this.__svgLayer.drawAnnotationRect(width, height, x, y, osparc.component.workbench.Annotation.DEFAULT_COLOR);
+      } else {
+        osparc.wrapper.Svg.updateRect(this.__rectAnnotationRepr, width, height, x, y);
+      }
+    },
+
+    __consolidateAnnotation: function(annotation, type) {
+      const serializeData = {
+        type,
+        attributes: osparc.wrapper.Svg.getRectAttributes(annotation)
+      };
+      if (type === "rect") {
+        this.__addAnnotation(serializeData);
+      } else if (type === "text") {
+        const title = this.tr("Add Text");
+        const titleEditor = new osparc.component.widget.Renamer(null, null, title);
+        titleEditor.addListener("labelChanged", e => {
+          titleEditor.close();
+          serializeData.attributes.text = e.getData()["newLabel"];
+          this.__addAnnotation(serializeData);
+        }, this);
+        titleEditor.center();
+        titleEditor.open();
+      }
+    },
+
+    __addAnnotation: function(data, id) {
+      const annotation = new osparc.component.workbench.Annotation(this.__svgLayer, data, id);
+      this.__addAnnotationListeners(annotation);
+      this.__annotations[annotation.getId()] = annotation;
+      this.getStudy().getUi().addAnnotation(annotation);
+    },
+
+    __removeAnnotation: function(id) {
+      if (id in this.__annotations) {
+        const annotation = this.__annotations[id];
+        this.__clearAnnotation(annotation);
+        this.getStudy().getUi().removeAnnotation(id);
+      }
     },
 
     __dropFile: function(e) {
@@ -1630,7 +1890,7 @@ qx.Class.define("osparc.component.workbench.WorkbenchUI", {
 
     __removeDropHint: function() {
       this.__dropMe.setVisibility("excluded");
-      osparc.component.workbench.SvgWidget.removeRect(this.__dropMe.rect);
+      osparc.wrapper.Svg.removeItem(this.__dropMe.rect);
       this.__dropMe = null;
     }
   }
