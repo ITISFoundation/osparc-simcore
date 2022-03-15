@@ -173,13 +173,13 @@ def user_id(faker: Faker) -> UserID:
 
 
 @pytest.fixture
-def node_uuid(faker: Faker) -> NodeID:
-    return NodeID(faker.uuid4())
+def project_id(faker: Faker) -> ProjectID:
+    return ProjectID(faker.uuid4())
 
 
 @pytest.fixture
-def project_id(faker: Faker) -> ProjectID:
-    return ProjectID(faker.uuid4())
+def node_uuid(faker: Faker) -> NodeID:
+    return NodeID(faker.uuid4())
 
 
 @pytest.fixture
