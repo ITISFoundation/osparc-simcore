@@ -60,7 +60,7 @@ msgpack==1.0.2
     # via
     #   -c requirements/./_base.txt
     #   distributed
-numpy==1.20.3
+numpy==1.22.3
     # via
     #   -c requirements/./_base.txt
     #   bokeh
