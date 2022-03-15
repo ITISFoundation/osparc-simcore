@@ -266,9 +266,6 @@ services:
       placement:
         constraints:
           - node.platform.os == linux
-      labels:
-        - io.simcore.zone=${TRAEFIK_SIMCORE_ZONE}
-        - traefik.enable=false
     networks:
       - default
       - interactive_services_subnet
