@@ -44,7 +44,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
      */
     __reloadServices: function() {
       const store = osparc.store.Store.getInstance();
-      store.getServicesDAGs()
+      store.getServicesOnly()
         .then(services => {
           this.__servicesAll = services;
           const servicesList = [];
@@ -65,7 +65,7 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       this.__servicesLatestList = [];
       const preResourcePromises = [];
       const store = osparc.store.Store.getInstance();
-      preResourcePromises.push(store.getServicesDAGs());
+      preResourcePromises.push(store.getServicesOnly());
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         preResourcePromises.push(osparc.data.Resources.get("tags"));
       }
@@ -145,8 +145,9 @@ qx.Class.define("osparc.dashboard.ServiceBrowser", {
       servicesList.forEach(service => {
         service["resourceType"] = "service";
         const serviceItem = this.__createServiceItem(service, this._resourcesContainer.getMode());
-        serviceItem.addListener("updateQualityService", e => {
+        serviceItem.addListener("updateService", e => {
           const updatedServiceData = e.getData();
+          updatedServiceData["resourceType"] = "service";
           this._resetServiceItem(updatedServiceData);
         }, this);
         this._resourcesContainer.add(serviceItem);

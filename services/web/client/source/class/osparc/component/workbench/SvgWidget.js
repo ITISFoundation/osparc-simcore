@@ -82,38 +82,6 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
     updateCurve: function(curve, x1, y1, x2, y2) {
       const controls = osparc.component.workbench.SvgWidget.getCurveControls(x1, y1, x2, y2);
       osparc.wrapper.Svg.updateCurve(curve, controls);
-    },
-
-    removeCurve: function(curve) {
-      osparc.wrapper.Svg.removeCurve(curve);
-    },
-
-    updateRect: function(rect, w, h, x, y) {
-      osparc.wrapper.Svg.updateRect(rect, w, h, x, y);
-    },
-
-    updateRectPos: function(rect, x, y) {
-      osparc.wrapper.Svg.updateRectPos(rect, x, y);
-    },
-
-    removeRect: function(rect) {
-      osparc.wrapper.Svg.removeRect(rect);
-    },
-
-    updateCurveDashes: function(curve, dashed = false) {
-      osparc.wrapper.Svg.updateCurveDashes(curve, dashed);
-    },
-
-    updateCurveColor: function(curve, color) {
-      osparc.wrapper.Svg.updateCurveColor(curve, color);
-    },
-
-    updateNodeUI: function(nodeUI, x, y) {
-      osparc.wrapper.Svg.updateNodeUI(nodeUI, x, y);
-    },
-
-    removeNodeUI: function(nodeUI) {
-      osparc.wrapper.Svg.removeNodeUI(nodeUI);
     }
   },
 
@@ -123,6 +91,14 @@ qx.Class.define("osparc.component.workbench.SvgWidget", {
     drawCurve: function(x1, y1, x2, y2, dashed = false) {
       const controls = this.self().getCurveControls(x1, y1, x2, y2);
       return osparc.wrapper.Svg.drawCurve(this.__canvas, controls, dashed);
+    },
+
+    drawAnnotationText: function(x, y, label, color) {
+      return osparc.wrapper.Svg.drawAnnotationText(this.__canvas, x, y, label, color);
+    },
+
+    drawAnnotationRect: function(width, height, x, y, color) {
+      return osparc.wrapper.Svg.drawAnnotationRect(this.__canvas, width, height, x, y, color);
     },
 
     drawDashedRect: function(width, height, x = 0, y = 0) {
