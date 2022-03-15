@@ -183,7 +183,7 @@ pandocfilters==1.4.3
     # via nbconvert
 partd==1.2.0
     # via dask
-pillow==8.2.0
+pillow==9.0.1
     # via bokeh
 prometheus-client==0.11.0
     # via jupyter-server
