@@ -192,6 +192,9 @@ async def is_healthy(app: web.Application) -> bool:
         return False
 
 
+# ----------- computations ----------------------------------------------------------
+
+
 @log_decorator(logger=log)
 async def create_or_update_pipeline(
     app: web.Application, user_id: PositiveInt, project_id: UUID
@@ -273,6 +276,9 @@ async def delete_pipeline(
     )
 
 
+# ----------- services ----------------------------------------------------------
+
+
 @log_decorator(logger=log)
 async def start_service(
     app: web.Application,
@@ -343,6 +349,19 @@ async def get_services(
 
 
 @log_decorator(logger=log)
+async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    backend_url = settings.base_url / f"dynamic_services/{node_uuid}"
+
+    service_state = await _request_director_v2(
+        app, "GET", backend_url, expected_status=web.HTTPOk
+    )
+
+    assert isinstance(service_state, dict)  # nosec
+    return service_state
+
+
+@log_decorator(logger=log)
 async def stop_service(
     app: web.Application, service_uuid: str, save_state: bool = True
 ) -> None:
@@ -364,32 +383,13 @@ async def stop_service(
 
 
 @log_decorator(logger=log)
-async def list_running_dynamic_services(
-    app: web.Application, user_id: PositiveInt, project_id: ProjectID
-) -> List[DataType]:
-    """
-    Retruns the running dynamic services from director-v0 and director-v2
-    """
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    url = settings.base_url / "dynamic_services"
-    backend_url = url.with_query(user_id=str(user_id), project_id=str(project_id))
-
-    services = await _request_director_v2(
-        app, "GET", backend_url, expected_status=web.HTTPOk
-    )
-
-    assert isinstance(services, list)  # nosec
-    return services
-
-
-@log_decorator(logger=log)
 async def stop_services(
     app: web.Application,
     user_id: Optional[PositiveInt] = None,
     project_id: Optional[str] = None,
     save_state: bool = True,
 ) -> None:
-    """Stops ALL dynamic services within the project in parallel"""
+    """Stops all services of either project_id or user_id in concurrently"""
     running_dynamic_services = await get_services(
         app, user_id=user_id, project_id=project_id
     )
@@ -404,16 +404,25 @@ async def stop_services(
 
 
 @log_decorator(logger=log)
-async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
+async def request_retrieve_dyn_service(
+    app: web.Application, service_uuid: str, port_keys: List[str]
+) -> None:
     settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / f"dynamic_services/{node_uuid}"
+    backend_url = settings.base_url / f"dynamic_services/{service_uuid}:retrieve"
+    body = {"port_keys": port_keys}
 
-    service_state = await _request_director_v2(
-        app, "GET", backend_url, expected_status=web.HTTPOk
-    )
-
-    assert isinstance(service_state, dict)  # nosec
-    return service_state
+    try:
+        await _request_director_v2(
+            app, "POST", backend_url, data=body, timeout=SERVICE_RETRIEVE_HTTP_TIMEOUT
+        )
+    except DirectorServiceError as exc:
+        log.warning(
+            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s:%s]",
+            service_uuid,
+            port_keys,
+            exc.status,
+            exc.reason,
+        )
 
 
 @log_decorator(logger=log)
@@ -474,3 +483,7 @@ async def restart(app: web.Application, node_uuid: str) -> None:
         expected_status=web.HTTPOk,
         timeout=settings.DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT,
     )
+
+
+async def list_clusters(app: web.Application, user_id: UserID) -> List[DataType]:
+    ...
