@@ -225,7 +225,7 @@ pamqp==2.3.0
     #   aiormq
 paramiko==2.8.0
     # via docker
-pillow==8.4.0
+pillow==9.0.1
     # via bokeh
 platformdirs==2.4.0
     # via pylint

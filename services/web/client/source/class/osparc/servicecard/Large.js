@@ -21,9 +21,10 @@ qx.Class.define("osparc.servicecard.Large", {
 
   /**
     * @param serviceData {Object} Serialized Service Object
+    * @param instanceUuid {String} uuid of the service instance
     * @param openOptions {Boolean} open edit options in new window or fire event
     */
-  construct: function(serviceData, openOptions = true) {
+  construct: function(serviceData, instanceUuid = null, openOptions = true) {
     this.base(arguments);
 
     this.set({
@@ -33,6 +34,10 @@ qx.Class.define("osparc.servicecard.Large", {
     this._setLayout(new qx.ui.layout.VBox(8));
 
     this.setService(serviceData);
+
+    if (instanceUuid) {
+      this.setInstanceUuid(instanceUuid);
+    }
 
     if (openOptions !== undefined) {
       this.setOpenOptions(openOptions);
@@ -59,6 +64,12 @@ qx.Class.define("osparc.servicecard.Large", {
       init: null,
       nullable: false,
       apply: "__rebuildLayout"
+    },
+
+    instanceUuid: {
+      check: "String",
+      init: null,
+      nullable: true
     },
 
     openOptions: {
@@ -205,6 +216,18 @@ qx.Class.define("osparc.servicecard.Large", {
             ctx: this
           }
         });
+
+        if (this.getInstanceUuid()) {
+          extraInfo.unshift({
+            label: this.tr("UUID"),
+            view: this.__createInstaceUuid(),
+            action: {
+              button: osparc.utils.Utils.getCopyButton(),
+              callback: this.__copyUuidToClipboard,
+              ctx: this
+            }
+          });
+        }
       }
 
       return extraInfo;
@@ -216,6 +239,10 @@ qx.Class.define("osparc.servicecard.Large", {
       });
 
       return moreInfo;
+    },
+
+    __createInstaceUuid: function() {
+      return osparc.servicecard.Utils.createInstaceUuid(this.getInstanceUuid());
     },
 
     __createKey: function() {
@@ -273,6 +300,10 @@ qx.Class.define("osparc.servicecard.Large", {
       }, this);
       titleEditor.center();
       titleEditor.open();
+    },
+
+    __copyUuidToClipboard: function() {
+      osparc.utils.Utils.copyTextToClipboard(this.getInstanceUuid());
     },
 
     __copyKeyToClipboard: function() {

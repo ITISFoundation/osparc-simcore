@@ -104,7 +104,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const preResourcePromises = [];
       const store = osparc.store.Store.getInstance();
       preResourcePromises.push(store.getVisibleMembers());
-      preResourcePromises.push(store.getServicesDAGs());
+      preResourcePromises.push(store.getServicesOnly());
       preResourcePromises.push(osparc.data.Resources.get("folders"));
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         preResourcePromises.push(osparc.data.Resources.get("tags"));
@@ -617,6 +617,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
+    __createStudyItem: function(studyData) {
+      const item = this._createResourceItem(studyData);
+      item.addListener("tap", e => {
+        if (!item.isLocked()) {
+          this.__itemClicked(item, e.getNativeEvent().shiftKey);
+        }
+      }, this);
+      item.addListener("updateStudy", e => {
+        const updatedStudyData = e.getData();
+        updatedStudyData["resourceType"] = "study";
+        this._resetStudyItem(updatedStudyData);
+      }, this);
+      return item;
+    },
+
     _getResourceItemMenu: function(studyData, item) {
       const menu = new qx.ui.menu.Menu().set({
         position: "bottom-right"
@@ -1020,7 +1035,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
       operationPromise
         .then(() => {
-          this.__deleteSecondaryStudies(studyData);
           this.__removeFromStudyList(studyData.uuid, false);
         })
         .catch(err => {
@@ -1034,15 +1048,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       studiesData.forEach(studyData => {
         this.__deleteStudy(studyData);
       });
-    },
-
-    __deleteSecondaryStudies: function(studyData) {
-      if ("dev" in studyData && "sweeper" in studyData["dev"] && "secondaryStudyIds" in studyData["dev"]["sweeper"]) {
-        const secondaryStudyIds = studyData["dev"]["sweeper"]["secondaryStudyIds"];
-        secondaryStudyIds.forEach(secondaryStudyId => {
-          osparc.store.Store.getInstance().deleteStudy(secondaryStudyId);
-        });
-      }
     },
 
     __createConfirmWindow: function(isMulti) {

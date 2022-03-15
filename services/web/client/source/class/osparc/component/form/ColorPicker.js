@@ -14,7 +14,6 @@ qx.Class.define("osparc.component.form.ColorPicker", {
 
     this._setLayout(new qx.ui.layout.HBox());
 
-    this.__validationManager = new qx.ui.form.validation.Manager();
     this._add(this.getChildControl("color-button"));
     this._add(this.getChildControl("color-input"));
   },
@@ -28,16 +27,16 @@ qx.Class.define("osparc.component.form.ColorPicker", {
   },
 
   members: {
-    __validationManager: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "color-button":
           control = new qx.ui.form.Button(null, "@FontAwesome5Solid/sync-alt/12");
-          control.addListener("execute", () => {
-            this.getChildControl("color-input").setValue(osparc.utils.Utils.getRandomColor());
-          }, this);
+          control.addListener("execute", () => this.setColor(osparc.utils.Utils.getRandomColor()), this);
+          this.bind("color", control, "backgroundColor");
+          this.bind("color", control, "textColor", {
+            converter: value => osparc.utils.Utils.getContrastedTextColor(qx.theme.manager.Color.getInstance().resolve(value))
+          });
           break;
         case "color-input":
           control = new qx.ui.form.TextField().set({
@@ -45,11 +44,12 @@ qx.Class.define("osparc.component.form.ColorPicker", {
             required: true
           });
           this.bind("color", control, "value");
-          control.bind("value", this.getChildControl("color-button"), "backgroundColor");
-          control.bind("value", this.getChildControl("color-button"), "textColor", {
-            converter: value => osparc.utils.Utils.getContrastedTextColor(qx.theme.manager.Color.getInstance().resolve(value))
+          control.addListener("changeValue", e => {
+            const newColor = e.getData();
+            if (osparc.utils.Validators.hexColor(newColor, control)) {
+              this.setColor(newColor);
+            }
           });
-          this.__validationManager.add(control, osparc.utils.Validators.hexColor);
           break;
       }
       return control || this.base(arguments, id);

@@ -35,6 +35,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
     ].forEach(e => this.addListener(e, this._onPointerOut, this));
   },
 
+  events: {
+    "updateStudy": "qx.event.type.Data",
+    "updateTemplate": "qx.event.type.Data",
+    "updateService": "qx.event.type.Data"
+  },
+
   statics: {
     SHARED_USER: "@FontAwesome5Solid/user/14",
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
@@ -150,13 +156,19 @@ qx.Class.define("osparc.dashboard.CardBase", {
     quality: {
       check: "Object",
       nullable: true,
-      apply: "_applyQuality"
+      apply: "__applyQuality"
+    },
+
+    workbench: {
+      check: "Object",
+      nullable: true,
+      apply: "__applyWorkbench"
     },
 
     uiMode: {
       check: ["workbench", "guided", "app"],
       nullable: true,
-      apply: "_applyUiMode"
+      apply: "__applyUiMode"
     },
 
     state: {
@@ -212,18 +224,21 @@ qx.Class.define("osparc.dashboard.CardBase", {
       let uuid = null;
       let owner = "";
       let accessRights = {};
+      let workbench = null;
       switch (studyData["resourceType"]) {
         case "study":
           uuid = studyData.uuid ? studyData.uuid : uuid;
           owner = studyData.prjOwner ? studyData.prjOwner : owner;
           accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
           defaultThumbnail = this.self().STUDY_ICON;
+          workbench = studyData.workbench ? studyData.workbench : workbench;
           break;
         case "template":
           uuid = studyData.uuid ? studyData.uuid : uuid;
           owner = studyData.prjOwner ? studyData.prjOwner : owner;
           accessRights = studyData.accessRights ? studyData.accessRights : accessRights;
           defaultThumbnail = this.self().TEMPLATE_ICON;
+          workbench = studyData.workbench ? studyData.workbench : workbench;
           break;
         case "service":
           uuid = studyData.key ? studyData.key : uuid;
@@ -251,7 +266,8 @@ qx.Class.define("osparc.dashboard.CardBase", {
         state: studyData.state ? studyData.state : {},
         classifiers: studyData.classifiers && studyData.classifiers ? studyData.classifiers : [],
         quality: studyData.quality ? studyData.quality : null,
-        uiMode: studyData.ui && studyData.ui.mode ? studyData.ui.mode : null
+        uiMode: studyData.ui && studyData.ui.mode ? studyData.ui.mode : null,
+        workbench
       });
     },
 
@@ -287,7 +303,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       throw new Error("Abstract method called!");
     },
 
-    _applyQuality: function(quality) {
+    __applyQuality: function(quality) {
       if (osparc.component.metadata.Quality.isEnabled(quality)) {
         const tsrRating = this.getChildControl("tsr-rating");
         tsrRating.set({
@@ -304,7 +320,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    _applyUiMode: function(uiMode) {
+    __applyUiMode: function(uiMode) {
       let source = null;
       let toolTipText = null;
       switch (uiMode) {
@@ -321,6 +337,24 @@ qx.Class.define("osparc.dashboard.CardBase", {
           toolTipText
         });
       }
+    },
+
+    __applyWorkbench: function(workbench) {
+      if (workbench === null) {
+        return;
+      }
+      const updateStudy = this.getChildControl("update-study");
+      osparc.utils.Study.isWorkbenchUpdatable(workbench)
+        .then(updatable => {
+          if (updatable) {
+            updateStudy.show();
+            updateStudy.addListener("tap", e => {
+              e.stopPropagation();
+              this.__openUpdateServices();
+            }, this);
+            updateStudy.addListener("pointerdown", e => e.stopPropagation());
+          }
+        });
     },
 
     _applyState: function(state) {
@@ -350,19 +384,34 @@ qx.Class.define("osparc.dashboard.CardBase", {
       }
     },
 
-    __openQualityEditor: function() {
+    __openMoreOptions: function() {
       const resourceData = this.getResourceData();
-      const qualityEditor = osparc.studycard.Utils.openQuality(resourceData);
-      qualityEditor.addListener("updateQuality", e => {
-        const updatedResourceData = e.getData();
-        if (osparc.utils.Resources.isStudy(resourceData)) {
-          this.fireDataEvent("updateQualityStudy", updatedResourceData);
-        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-          this.fireDataEvent("updateQualityTemplate", updatedResourceData);
-        } else if (osparc.utils.Resources.isService(resourceData)) {
-          this.fireDataEvent("updateQualityService", updatedResourceData);
-        }
+      const moreOpts = new osparc.dashboard.ResourceMoreOptions(resourceData);
+      const title = this.tr("More options");
+      osparc.ui.window.Window.popUpInWindow(moreOpts, title, 750, 725);
+      [
+        "updateStudy",
+        "updateTemplate",
+        "updateService"
+      ].forEach(ev => {
+        moreOpts.addListener(ev, e => this.fireDataEvent(ev, e.getData()));
       });
+      return moreOpts;
+    },
+
+    _openAccessRights: function() {
+      const moreOpts = this.__openMoreOptions();
+      moreOpts.openAccessRights();
+    },
+
+    __openQualityEditor: function() {
+      const moreOpts = this.__openMoreOptions();
+      moreOpts.openQuality();
+    },
+
+    __openUpdateServices: function() {
+      const moreOpts = this.__openMoreOptions();
+      moreOpts.openUpdateServices();
     },
 
     /**

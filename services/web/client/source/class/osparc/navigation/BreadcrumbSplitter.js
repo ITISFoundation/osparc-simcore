@@ -274,10 +274,10 @@ qx.Class.define("osparc.navigation.BreadcrumbSplitter", {
           stroke = osparc.wrapper.Svg.drawLine(this.__canvas, lineControls);
         }
         const color = qx.theme.manager.Color.getInstance().resolve("text");
-        osparc.wrapper.Svg.updateStrokeColor(stroke, color);
+        osparc.wrapper.Svg.updateItemColor(stroke, color);
         rightWidget.addListener("changeDecorator", e => {
           const newColor = qx.theme.manager.Color.getInstance().resolve("text");
-          osparc.wrapper.Svg.updateStrokeColor(stroke, newColor);
+          osparc.wrapper.Svg.updateItemColor(stroke, newColor);
         }, this);
       }
     }
