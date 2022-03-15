@@ -22,7 +22,6 @@ from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
-from pydantic.types import PositiveInt
 from pytest_mock.plugin import MockerFixture
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -168,14 +167,15 @@ def test_invalid_computation(
 async def test_start_empty_computation_is_refused(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
-    user_id: PositiveInt,
+    registered_user: Callable,
     project: Callable,
 ):
-    empty_project = project()
+    user = registered_user()
+    empty_project = project(user)
     await create_pipeline(
         async_client,
         project=empty_project,
-        user_id=user_id,
+        user_id=user["id"],
         start_pipeline=True,
         expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
@@ -341,13 +341,16 @@ class PartialComputationParams:
 async def test_run_partial_computation(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
-    user_id: PositiveInt,
+    registered_user: Callable,
     project: Callable,
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
     params: PartialComputationParams,
 ):
-    sleepers_project: ProjectAtDB = project(workbench=fake_workbench_without_outputs)
+    user = registered_user()
+    sleepers_project: ProjectAtDB = project(
+        user, workbench=fake_workbench_without_outputs
+    )
 
     def _convert_to_pipeline_details(
         project: ProjectAtDB,
@@ -383,7 +386,7 @@ async def test_run_partial_computation(
     response = await create_pipeline(
         async_client,
         project=sleepers_project,
-        user_id=user_id,
+        user_id=user["id"],
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
         subgraph=[
@@ -404,7 +407,7 @@ async def test_run_partial_computation(
 
     # now wait for the computation to finish
     task_out = await assert_and_wait_for_pipeline_status(
-        async_client, task_out.url, user_id, sleepers_project.uuid
+        async_client, task_out.url, user["id"], sleepers_project.uuid
     )
     expected_pipeline_details_after_run = _convert_to_pipeline_details(
         sleepers_project, params.exp_pipeline_adj_list, params.exp_node_states_after_run
@@ -424,7 +427,7 @@ async def test_run_partial_computation(
     response = await create_pipeline(
         async_client,
         project=sleepers_project,
-        user_id=user_id,
+        user_id=user["id"],
         start_pipeline=True,
         expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         subgraph=[
@@ -444,7 +447,7 @@ async def test_run_partial_computation(
     response = await create_pipeline(
         async_client,
         project=sleepers_project,
-        user_id=user_id,
+        user_id=user["id"],
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
         subgraph=[
@@ -466,26 +469,27 @@ async def test_run_partial_computation(
 
     # now wait for the computation to finish
     task_out = await assert_and_wait_for_pipeline_status(
-        async_client, task_out.url, user_id, sleepers_project.uuid
+        async_client, task_out.url, user["id"], sleepers_project.uuid
     )
 
 
 async def test_run_computation(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
-    user_id: PositiveInt,
+    registered_user: Callable,
     project: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_computational_pipeline_details: PipelineDetails,
     fake_workbench_computational_pipeline_details_completed: PipelineDetails,
 ):
-    sleepers_project = project(workbench=fake_workbench_without_outputs)
+    user = registered_user()
+    sleepers_project = project(user, workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
     response = await create_pipeline(
         async_client,
         project=sleepers_project,
-        user_id=user_id,
+        user_id=user["id"],
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
@@ -504,14 +508,14 @@ async def test_run_computation(
     await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
-        user_id,
+        user["id"],
         sleepers_project.uuid,
         wait_for_states=[RunningState.STARTED],
     )
 
     # wait for the computation to finish (either by failing, success or abort)
     task_out = await assert_and_wait_for_pipeline_status(
-        async_client, task_out.url, user_id, sleepers_project.uuid
+        async_client, task_out.url, user["id"], sleepers_project.uuid
     )
 
     await assert_computation_task_out_obj(
@@ -528,7 +532,7 @@ async def test_run_computation(
     response = await create_pipeline(
         async_client,
         project=sleepers_project,
-        user_id=user_id,
+        user_id=user["id"],
         start_pipeline=True,
         expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
@@ -547,7 +551,7 @@ async def test_run_computation(
     response = await create_pipeline(
         async_client,
         project=sleepers_project,
-        user_id=user_id,
+        user_id=user["id"],
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
         force_restart=True,
@@ -564,7 +568,7 @@ async def test_run_computation(
 
     # wait for the computation to finish
     task_out = await assert_and_wait_for_pipeline_status(
-        async_client, task_out.url, user_id, sleepers_project.uuid
+        async_client, task_out.url, user["id"], sleepers_project.uuid
     )
     await assert_computation_task_out_obj(
         async_client,
@@ -575,27 +579,27 @@ async def test_run_computation(
     )
 
 
-@pytest.mark.skip(reason="FIXME: still not bullet proof")
 async def test_abort_computation(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
-    user_id: PositiveInt,
+    registered_user: Callable,
     project: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
     fake_workbench_computational_pipeline_details: PipelineDetails,
 ):
+    user = registered_user()
     # we need long running tasks to ensure cancellation is done properly
     for node in fake_workbench_without_outputs.values():
         if "sleeper" in node["key"]:
             node["inputs"].setdefault("in_2", 120)
             if not isinstance(node["inputs"]["in_2"], dict):
                 node["inputs"]["in_2"] = 120
-    sleepers_project = project(workbench=fake_workbench_without_outputs)
+    sleepers_project = project(user, workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
     response = await create_pipeline(
         async_client,
         project=sleepers_project,
-        user_id=user_id,
+        user_id=user["id"],
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
@@ -614,7 +618,7 @@ async def test_abort_computation(
     task_out = await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
-        user_id,
+        user["id"],
         sleepers_project.uuid,
         wait_for_states=[RunningState.STARTED],
     )
@@ -634,7 +638,7 @@ async def test_abort_computation(
 
     # now abort the pipeline
     response = await async_client.post(
-        f"{task_out.stop_url}", json={"user_id": user_id}
+        f"{task_out.stop_url}", json={"user_id": user["id"]}
     )
     assert (
         response.status_code == status.HTTP_202_ACCEPTED
@@ -650,7 +654,7 @@ async def test_abort_computation(
     task_out = await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
-        user_id,
+        user["id"],
         sleepers_project.uuid,
         wait_for_states=[RunningState.ABORTED],
     )
@@ -662,18 +666,19 @@ async def test_abort_computation(
 async def test_update_and_delete_computation(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
-    user_id: PositiveInt,
+    registered_user: Callable,
     project: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
     fake_workbench_computational_pipeline_details_not_started: PipelineDetails,
     fake_workbench_computational_pipeline_details: PipelineDetails,
 ):
-    sleepers_project = project(workbench=fake_workbench_without_outputs)
+    user = registered_user()
+    sleepers_project = project(user, workbench=fake_workbench_without_outputs)
     # send a valid project with sleepers
     response = await create_pipeline(
         async_client,
         project=sleepers_project,
-        user_id=user_id,
+        user_id=user["id"],
         start_pipeline=False,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
@@ -692,7 +697,7 @@ async def test_update_and_delete_computation(
     response = await create_pipeline(
         async_client,
         project=sleepers_project,
-        user_id=user_id,
+        user_id=user["id"],
         start_pipeline=False,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
@@ -711,7 +716,7 @@ async def test_update_and_delete_computation(
     response = await create_pipeline(
         async_client,
         project=sleepers_project,
-        user_id=user_id,
+        user_id=user["id"],
         start_pipeline=False,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
@@ -730,7 +735,7 @@ async def test_update_and_delete_computation(
     response = await create_pipeline(
         async_client,
         project=sleepers_project,
-        user_id=user_id,
+        user_id=user["id"],
         start_pipeline=True,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
@@ -748,7 +753,7 @@ async def test_update_and_delete_computation(
     task_out = await assert_and_wait_for_pipeline_status(
         async_client,
         task_out.url,
-        user_id,
+        user["id"],
         sleepers_project.uuid,
         wait_for_states=[RunningState.STARTED],
     )
@@ -760,14 +765,14 @@ async def test_update_and_delete_computation(
     response = await create_pipeline(
         async_client,
         project=sleepers_project,
-        user_id=user_id,
+        user_id=user["id"],
         start_pipeline=False,
         expected_response_status_code=status.HTTP_403_FORBIDDEN,
     )
 
     # try to delete the pipeline, is expected to be forbidden if force parameter is false (default)
     response = await async_client.request(
-        "DELETE", task_out.url, json={"user_id": user_id}
+        "DELETE", task_out.url, json={"user_id": user["id"]}
     )
     assert (
         response.status_code == status.HTTP_403_FORBIDDEN
@@ -775,7 +780,7 @@ async def test_update_and_delete_computation(
 
     # try again with force=True this should abort and delete the pipeline
     response = await async_client.request(
-        "DELETE", task_out.url, json={"user_id": user_id, "force": True}
+        "DELETE", task_out.url, json={"user_id": user["id"], "force": True}
     )
     assert (
         response.status_code == status.HTTP_204_NO_CONTENT
@@ -785,26 +790,28 @@ async def test_update_and_delete_computation(
 async def test_pipeline_with_no_computational_services_still_create_correct_comp_tasks_in_db(
     minimal_configuration: None,
     async_client: httpx.AsyncClient,
-    user_id: PositiveInt,
+    registered_user: Callable,
     project: Callable,
     jupyter_service: Dict[str, Any],
 ):
+    user = registered_user()
     # create a workbench with just a dynamic service
     project_with_dynamic_node = project(
+        user,
         workbench={
             "39e92f80-9286-5612-85d1-639fa47ec57d": {
                 "key": jupyter_service["image"]["name"],
                 "version": jupyter_service["image"]["tag"],
                 "label": "my sole dynamic service",
             }
-        }
+        },
     )
 
     # this pipeline is not runnable as there are no computational services
     response = await create_pipeline(
         async_client,
         project=project_with_dynamic_node,
-        user_id=user_id,
+        user_id=user["id"],
         start_pipeline=True,
         expected_response_status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
     )
@@ -813,7 +820,7 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
     response = await create_pipeline(
         async_client,
         project=project_with_dynamic_node,
-        user_id=user_id,
+        user_id=user["id"],
         start_pipeline=False,
         expected_response_status_code=status.HTTP_201_CREATED,
     )
@@ -825,12 +832,14 @@ async def test_pipeline_with_no_computational_services_still_create_correct_comp
 def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
     minimal_configuration: None,
     client: TestClient,
-    user_id: PositiveInt,
+    registered_user: Callable,
     project: Callable,
     jupyter_service: Dict[str, Any],
 ):
+    user = registered_user()
     # create a workbench with just 2 dynamic service in a cycle
     project_with_dynamic_node = project(
+        user,
         workbench={
             "39e92f80-9286-5612-85d1-639fa47ec57d": {
                 "key": jupyter_service["image"]["name"],
@@ -856,14 +865,14 @@ def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
                 },
                 "inputNodes": ["39e92f80-9286-5612-85d1-639fa47ec57d"],
             },
-        }
+        },
     )
 
     # this pipeline is not runnable as there are no computational services
     response = client.post(
         COMPUTATION_URL,
         json={
-            "user_id": user_id,
+            "user_id": user["id"],
             "project_id": str(project_with_dynamic_node.uuid),
             "start_pipeline": True,
         },
@@ -876,7 +885,7 @@ def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
     response = client.post(
         COMPUTATION_URL,
         json={
-            "user_id": user_id,
+            "user_id": user["id"],
             "project_id": str(project_with_dynamic_node.uuid),
             "start_pipeline": False,
         },
@@ -889,13 +898,15 @@ def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
 def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
     minimal_configuration: None,
     client: TestClient,
-    user_id: PositiveInt,
+    registered_user: Callable,
     project: Callable,
     sleeper_service: Dict[str, Any],
     jupyter_service: Dict[str, Any],
 ):
+    user = registered_user()
     # create a workbench with just 2 dynamic service in a cycle
     project_with_cycly_and_comp_service = project(
+        user,
         workbench={
             "39e92f80-9286-5612-85d1-639fa47ec57d": {
                 "key": jupyter_service["image"]["name"],
@@ -933,14 +944,14 @@ def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
                 },
                 "inputNodes": ["09b92a4b-8bf4-49ad-82d3-1855c5a4957a"],
             },
-        }
+        },
     )
 
     # this pipeline is not runnable as there are no computational services and it contains a cycle
     response = client.post(
         COMPUTATION_URL,
         json={
-            "user_id": user_id,
+            "user_id": user["id"],
             "project_id": str(project_with_cycly_and_comp_service.uuid),
             "start_pipeline": True,
         },
@@ -953,7 +964,7 @@ def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
     response = client.post(
         COMPUTATION_URL,
         json={
-            "user_id": user_id,
+            "user_id": user["id"],
             "project_id": str(project_with_cycly_and_comp_service.uuid),
             "start_pipeline": False,
         },
@@ -966,21 +977,22 @@ def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
 async def test_burst_create_computations(
     minimal_configuration: None,
     async_client: AsyncClient,
-    user_id: PositiveInt,
+    registered_user: Callable,
     project: Callable,
     fake_workbench_without_outputs: Dict[str, Any],
     update_project_workbench_with_comp_tasks: Callable,
     fake_workbench_computational_pipeline_details: PipelineDetails,
     fake_workbench_computational_pipeline_details_completed: PipelineDetails,
 ):
-    sleepers_project = project(workbench=fake_workbench_without_outputs)
-    sleepers_project2 = project(workbench=fake_workbench_without_outputs)
+    user = registered_user()
+    sleepers_project = project(user, workbench=fake_workbench_without_outputs)
+    sleepers_project2 = project(user, workbench=fake_workbench_without_outputs)
 
     async def create_pipeline(project: ProjectAtDB, start_pipeline: bool):
         return await async_client.post(
             COMPUTATION_URL,
             json={
-                "user_id": user_id,
+                "user_id": user["id"],
                 "project_id": str(project.uuid),
                 "start_pipeline": start_pipeline,
             },
