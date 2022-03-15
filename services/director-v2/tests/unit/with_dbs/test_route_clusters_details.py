@@ -143,10 +143,10 @@ async def test_local_dask_gateway_server(local_dask_gateway_server: DaskGatewayS
 
 async def test_get_default_cluster_details(
     clusters_config: None,
-    user_db: Callable,
+    registered_user: Callable,
     async_client: httpx.AsyncClient,
 ):
-    user_1 = user_db()
+    user_1 = registered_user()
 
     # This test checks that the default cluster is accessible
     # the default cluster is the osparc internal cluster available through a dask-scheduler
@@ -179,14 +179,14 @@ async def _get_cluster_details(
 
 async def test_get_cluster_details(
     clusters_config: None,
-    user_db: Callable[..., Dict[str, Any]],
+    registered_user: Callable[..., Dict[str, Any]],
     async_client: httpx.AsyncClient,
     local_dask_gateway_server: DaskGatewayServer,
     cluster: Callable[..., Cluster],
     dask_gateway_cluster: GatewayCluster,
     dask_gateway_cluster_client: DaskClient,
 ):
-    user_1 = user_db()
+    user_1 = registered_user()
     # define the cluster in the DB
     some_cluster = cluster(
         user_1,

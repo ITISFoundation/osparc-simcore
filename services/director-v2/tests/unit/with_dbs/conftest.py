@@ -34,7 +34,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
 @pytest.fixture()
-def user_db(
+def registered_user(
     postgres_db: sa.engine.Engine, faker: Faker
 ) -> Iterator[Callable[..., Dict]]:
     created_user_ids = []
@@ -83,7 +83,7 @@ def project(
             "name": faker.name(),
             "type": ProjectType.STANDARD.name,
             "description": faker.text(),
-            "prj_owner": user["user_id"],
+            "prj_owner": user["id"],
             "access_rights": {"1": {"read": True, "write": True, "delete": True}},
             "thumbnail": "",
             "workbench": {},
@@ -308,13 +308,15 @@ def cluster(
 
 @pytest.fixture
 def published_project(
+    registered_user: Callable[..., Dict[str, Any]],
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., List[CompTaskAtDB]],
     fake_workbench_without_outputs: Dict[str, Any],
     fake_workbench_adjacency: Dict[str, Any],
 ) -> PublishedProject:
-    created_project = project(workbench=fake_workbench_without_outputs)
+    user = registered_user()
+    created_project = project(user, workbench=fake_workbench_without_outputs)
     return PublishedProject(
         project=created_project,
         pipeline=pipeline(
@@ -327,6 +329,7 @@ def published_project(
 
 @pytest.fixture
 def running_project(
+    registered_user: Callable[..., Dict[str, Any]],
     project: Callable[..., ProjectAtDB],
     pipeline: Callable[..., CompPipelineAtDB],
     tasks: Callable[..., List[CompTaskAtDB]],
@@ -334,7 +337,8 @@ def running_project(
     fake_workbench_without_outputs: Dict[str, Any],
     fake_workbench_adjacency: Dict[str, Any],
 ) -> RunningProject:
-    created_project = project(workbench=fake_workbench_without_outputs)
+    user = registered_user()
+    created_project = project(user, workbench=fake_workbench_without_outputs)
     return RunningProject(
         project=created_project,
         pipeline=pipeline(

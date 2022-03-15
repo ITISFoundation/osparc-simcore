@@ -72,11 +72,11 @@ def clusters_cleaner(postgres_db: sa.engine.Engine) -> Iterator:
 
 async def test_list_clusters(
     clusters_config: None,
-    user_db: Callable[..., Dict],
+    registered_user: Callable[..., Dict],
     cluster: Callable[..., Cluster],
     async_client: httpx.AsyncClient,
 ):
-    user_1 = user_db()
+    user_1 = registered_user()
     list_clusters_url = URL(f"/v2/clusters?user_id={user_1['id']}")
     # there is no cluster at the moment, the list is empty
     response = await async_client.get(list_clusters_url)
@@ -94,7 +94,7 @@ async def test_list_clusters(
     assert len(returned_clusters_list) == 111
 
     # now create a second user and check the clusters are not seen by it
-    user_2 = user_db()
+    user_2 = registered_user()
     response = await async_client.get(f"/v2/clusters?user_id={user_2['id']}")
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == []
@@ -136,11 +136,11 @@ async def test_list_clusters(
 
 async def test_get_cluster(
     clusters_config: None,
-    user_db: Callable[..., Dict],
+    registered_user: Callable[..., Dict],
     cluster: Callable[..., Cluster],
     async_client: httpx.AsyncClient,
 ):
-    user_1 = user_db()
+    user_1 = registered_user()
     # try to get one that does not exist
     response = await async_client.get(
         f"/v2/clusters/15615165165165?user_id={user_1['id']}"
@@ -161,7 +161,7 @@ async def test_get_cluster(
     assert returned_cluster
     assert the_cluster.dict() == returned_cluster.dict()
 
-    user_2 = user_db()
+    user_2 = registered_user()
     # getting the same cluster for user 2 shall return 403
     response = await async_client.get(
         f"/v2/clusters/{the_cluster.id}?user_id={user_2['id']}"
@@ -205,14 +205,14 @@ async def test_get_cluster(
 )
 async def test_get_another_cluster(
     clusters_config: None,
-    user_db: Callable[..., Dict],
+    registered_user: Callable[..., Dict],
     cluster: Callable[..., Cluster],
     async_client: httpx.AsyncClient,
     cluster_sharing_rights: ClusterAccessRights,
     can_use: bool,
 ):
-    user_1 = user_db()
-    user_2 = user_db()
+    user_1 = registered_user()
+    user_2 = registered_user()
     # let's create some clusters
     a_bunch_of_clusters = [
         cluster(
@@ -240,11 +240,11 @@ async def test_get_another_cluster(
 @pytest.mark.xfail(reason="This needs another iteration and will be tackled next")
 async def test_get_default_cluster(
     clusters_config: None,
-    user_db: Callable[..., Dict],
+    registered_user: Callable[..., Dict],
     cluster: Callable[..., Cluster],
     async_client: httpx.AsyncClient,
 ):
-    user_1 = user_db()
+    user_1 = registered_user()
     # NOTE: we should not need the user id for default right?
     # NOTE: it should be accessible to everyone to run, and only a handful of elected
     # people shall be able to administer it
@@ -260,14 +260,14 @@ async def test_get_default_cluster(
 
 async def test_create_cluster(
     clusters_config: None,
-    user_db: Callable[..., Dict],
+    registered_user: Callable[..., Dict],
     cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
     faker: Faker,
     postgres_db: sa.engine.Engine,
     clusters_cleaner,
 ):
-    user_1 = user_db()
+    user_1 = registered_user()
     create_cluster_url = URL(f"/v2/clusters?user_id={user_1['id']}")
     cluster_data = ClusterCreate(
         endpoint=faker.uri(),
@@ -300,14 +300,14 @@ async def test_create_cluster(
 
 async def test_update_own_cluster(
     clusters_config: None,
-    user_db: Callable[..., Dict],
+    registered_user: Callable[..., Dict],
     cluster: Callable[..., Cluster],
     cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
     faker: Faker,
 ):
     _PATCH_EXPORT = {"by_alias": True, "exclude_unset": True, "exclude_none": True}
-    user_1 = user_db()
+    user_1 = registered_user()
     # try to modify one that does not exist
     response = await async_client.patch(
         f"/v2/clusters/15615165165165?user_id={user_1['id']}",
@@ -359,7 +359,7 @@ async def test_update_own_cluster(
         assert returned_cluster.dict() == expected_modified_cluster.dict()
 
     # we can change the access rights, the owner rights are always kept
-    user_2 = user_db()
+    user_2 = registered_user()
 
     for rights in [
         CLUSTER_ADMIN_RIGHTS,
@@ -421,7 +421,7 @@ async def test_update_own_cluster(
 )
 async def test_update_another_cluster(
     clusters_config: None,
-    user_db: Callable[..., Dict],
+    registered_user: Callable[..., Dict],
     cluster: Callable[..., Cluster],
     cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
@@ -434,8 +434,8 @@ async def test_update_another_cluster(
     """user_1 is the owner and administrator, he/she gives some rights to user 2"""
 
     _PATCH_EXPORT = {"by_alias": True, "exclude_unset": True, "exclude_none": True}
-    user_1 = user_db()
-    user_2 = user_db()
+    user_1 = registered_user()
+    user_2 = registered_user()
     # let's create some clusters
     a_bunch_of_clusters = [
         cluster(
@@ -476,7 +476,7 @@ async def test_update_another_cluster(
         ), f"received {response.text}"
 
     # let's try to add/remove someone (reserved to managers)
-    user_3 = user_db()
+    user_3 = registered_user()
     for rights in [
         CLUSTER_USER_RIGHTS,  # add user
         CLUSTER_NO_RIGHTS,  # remove user
@@ -512,13 +512,13 @@ async def test_update_another_cluster(
 
 async def test_delete_cluster(
     clusters_config: None,
-    user_db: Callable[..., Dict],
+    registered_user: Callable[..., Dict],
     cluster: Callable[..., Cluster],
     cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
     faker: Faker,
 ):
-    user_1 = user_db()
+    user_1 = registered_user()
     # let's create some clusters
     a_bunch_of_clusters = [
         cluster(
@@ -558,7 +558,7 @@ async def test_delete_cluster(
 )
 async def test_delete_another_cluster(
     clusters_config: None,
-    user_db: Callable[..., Dict],
+    registered_user: Callable[..., Dict],
     cluster: Callable[..., Cluster],
     cluster_simple_authentication: Callable,
     async_client: httpx.AsyncClient,
@@ -566,8 +566,8 @@ async def test_delete_another_cluster(
     cluster_sharing_rights: ClusterAccessRights,
     can_administer: bool,
 ):
-    user_1 = user_db()
-    user_2 = user_db()
+    user_1 = registered_user()
+    user_2 = registered_user()
     # let's create some clusters
     a_bunch_of_clusters = [
         cluster(
