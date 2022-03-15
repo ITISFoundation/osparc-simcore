@@ -50,6 +50,23 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __permissionsPage: null,
     __classifiersPage: null,
     __qualityPage: null,
+    __servicesUpdatePage: null,
+
+    openAccessRights: function() {
+      this.setSelection([this.__permissionsPage]);
+    },
+
+    openClassifiers: function() {
+      this.setSelection([this.__classifiersPage]);
+    },
+
+    openQuality: function() {
+      this.setSelection([this.__qualityPage]);
+    },
+
+    openUpdateServices: function() {
+      this.setSelection([this.__servicesUpdatePage]);
+    },
 
     __createServiceVersionSelector: function() {
       const hBox = this.__serviceVersionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
@@ -178,9 +195,9 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
       const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.servicecard.Large(resourceData, false) : new osparc.studycard.Large(resourceData, false);
-      infoCard.addListener("openAccessRights", () => this.setSelection([this.__permissionsPage]));
-      infoCard.addListener("openClassifiers", () => this.setSelection([this.__classifiersPage]));
-      infoCard.addListener("openQuality", () => this.setSelection([this.__qualityPage]));
+      infoCard.addListener("openAccessRights", () => this.openAccessRights());
+      infoCard.addListener("openClassifiers", () => this.openClassfiers());
+      infoCard.addListener("openQuality", () => this.openQuality());
       infoCard.addListener("updateStudy", e => {
         const updatedData = e.getData();
         if (osparc.utils.Resources.isStudy(resourceData)) {
@@ -324,7 +341,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       const title = this.tr("Update Services");
       const icon = "@MaterialIcons/update";
-      const servicesUpdate = new osparc.component.metadata.ServicesInStudyUpdate(resourceData);
+      const servicesUpdate = this.__servicesUpdatePage = new osparc.component.metadata.ServicesInStudyUpdate(resourceData);
       const page = this.__createPage(title, servicesUpdate, icon, id);
       return page;
     },
