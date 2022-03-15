@@ -323,7 +323,7 @@ def published_project(
             project_id=f"{created_project.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         ),
-        tasks=tasks(project=created_project, state=StateType.PUBLISHED),
+        tasks=tasks(user=user, project=created_project, state=StateType.PUBLISHED),
     )
 
 
@@ -345,6 +345,6 @@ def running_project(
             project_id=f"{created_project.uuid}",
             dag_adjacency_list=fake_workbench_adjacency,
         ),
-        tasks=tasks(project=created_project, state=StateType.RUNNING),
-        runs=runs(project=created_project, result=StateType.RUNNING),
+        tasks=tasks(user=user, project=created_project, state=StateType.RUNNING),
+        runs=runs(user=user, project=created_project, result=StateType.RUNNING),
     )

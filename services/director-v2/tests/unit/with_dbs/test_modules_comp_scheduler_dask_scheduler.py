@@ -283,7 +283,7 @@ async def test_proper_pipeline_is_scheduled(
 ):
     # This calls adds starts the scheduling of a pipeline
     await scheduler.run_new_pipeline(
-        user_id=published_project.project.owner,
+        user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
     )
@@ -292,14 +292,14 @@ async def test_proper_pipeline_is_scheduled(
         scheduler.wake_up_event.is_set() == True
     ), "the scheduler was NOT woken up on the scheduled pipeline!"
     for (u_id, p_id, it), params in scheduler.scheduled_pipelines.items():
-        assert u_id == published_project.project.owner
+        assert u_id == published_project.project.prj_owner
         assert p_id == published_project.project.uuid
         assert it > 0
         assert params.mark_for_cancellation == False
     # check the database is correctly updated, the run is published
     await assert_comp_run_state(
         aiopg_engine,
-        published_project.project.owner,
+        published_project.project.prj_owner,
         published_project.project.uuid,
         exp_state=RunningState.PUBLISHED,
     )
@@ -331,7 +331,7 @@ async def test_proper_pipeline_is_scheduled(
     mocked_dask_client.send_computation_tasks.assert_has_calls(
         calls=[
             mock.call(
-                published_project.project.owner,
+                published_project.project.prj_owner,
                 project_id=published_project.project.uuid,
                 cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
                 tasks={f"{p.node_id}": p.image},
@@ -348,7 +348,7 @@ async def test_proper_pipeline_is_scheduled(
     # let the scheduler kick in, it should switch to the run state to PENDING state, to reflect the tasks states
     await assert_comp_run_state(
         aiopg_engine,
-        published_project.project.owner,
+        published_project.project.prj_owner,
         published_project.project.uuid,
         exp_state=RunningState.PENDING,
     )
@@ -372,7 +372,7 @@ async def test_proper_pipeline_is_scheduled(
     await manually_run_comp_scheduler(scheduler)
     await assert_comp_run_state(
         aiopg_engine,
-        published_project.project.owner,
+        published_project.project.prj_owner,
         published_project.project.uuid,
         RunningState.STARTED,
     )
@@ -394,7 +394,7 @@ async def test_proper_pipeline_is_scheduled(
     await manually_run_comp_scheduler(scheduler)
     await assert_comp_run_state(
         aiopg_engine,
-        published_project.project.owner,
+        published_project.project.prj_owner,
         published_project.project.uuid,
         RunningState.STARTED,
     )
@@ -412,7 +412,7 @@ async def test_proper_pipeline_is_scheduled(
         exp_state=RunningState.PENDING,
     )
     mocked_dask_client.send_computation_tasks.assert_called_once_with(
-        user_id=published_project.project.owner,
+        user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
         tasks={
@@ -432,7 +432,7 @@ async def test_proper_pipeline_is_scheduled(
     await manually_run_comp_scheduler(scheduler)
     await assert_comp_run_state(
         aiopg_engine,
-        published_project.project.owner,
+        published_project.project.prj_owner,
         published_project.project.uuid,
         RunningState.STARTED,
     )
@@ -454,7 +454,7 @@ async def test_proper_pipeline_is_scheduled(
     await manually_run_comp_scheduler(scheduler)
     await assert_comp_run_state(
         aiopg_engine,
-        published_project.project.owner,
+        published_project.project.prj_owner,
         published_project.project.uuid,
         RunningState.STARTED,
     )
@@ -477,7 +477,7 @@ async def test_proper_pipeline_is_scheduled(
     await manually_run_comp_scheduler(scheduler)
     await assert_comp_run_state(
         aiopg_engine,
-        published_project.project.owner,
+        published_project.project.prj_owner,
         published_project.project.uuid,
         RunningState.FAILED,
     )
@@ -520,7 +520,7 @@ async def test_handling_of_disconnected_dask_scheduler(
 
     # running the pipeline will now raise and the tasks are set back to PUBLISHED
     await scheduler.run_new_pipeline(
-        user_id=published_project.project.owner,
+        user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
         cluster_id=minimal_app.state.settings.DASK_SCHEDULER.DASK_DEFAULT_CLUSTER_ID,
     )
@@ -529,7 +529,7 @@ async def test_handling_of_disconnected_dask_scheduler(
     # the tasks shall all still be in PUBLISHED state now
     await assert_comp_run_state(
         aiopg_engine,
-        published_project.project.owner,
+        published_project.project.prj_owner,
         published_project.project.uuid,
         RunningState.PUBLISHED,
     )
@@ -542,7 +542,7 @@ async def test_handling_of_disconnected_dask_scheduler(
     # on the next iteration of the pipeline it will try to re-connect
     # now try to abort the tasks since we are wondering what is happening, this should auto-trigger the scheduler
     await scheduler.stop_pipeline(
-        user_id=published_project.project.owner,
+        user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
     )
     # we ensure the scheduler was run
@@ -563,7 +563,7 @@ async def test_handling_of_disconnected_dask_scheduler(
     # now the run should be ABORTED
     await assert_comp_run_state(
         aiopg_engine,
-        published_project.project.owner,
+        published_project.project.prj_owner,
         published_project.project.uuid,
         RunningState.ABORTED,
     )
@@ -680,7 +680,7 @@ async def test_handling_scheduling_after_reboot(
             [
                 mock.call(
                     mock.ANY,
-                    running_project.project.owner,
+                    running_project.project.prj_owner,
                     running_project.project.uuid,
                     t.node_id,
                 )
@@ -710,7 +710,7 @@ async def test_handling_scheduling_after_reboot(
     )
     await assert_comp_run_state(
         aiopg_engine,
-        running_project.project.owner,
+        running_project.project.prj_owner,
         running_project.project.uuid,
         exp_state=reboot_state.expected_run_state,
     )
