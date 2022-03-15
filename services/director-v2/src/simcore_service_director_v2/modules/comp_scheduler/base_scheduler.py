@@ -320,7 +320,9 @@ class BaseCompScheduler(ABC):
             )
             # 3. do we want to stop the pipeline now?
             if marked_for_stopping:
-                await self._schedule_tasks_to_stop(project_id, cluster_id, comp_tasks)
+                await self._schedule_tasks_to_stop(
+                    user_id, project_id, cluster_id, comp_tasks
+                )
             else:
                 # let's get the tasks to schedule then
                 await self._schedule_tasks_to_start(
@@ -361,6 +363,7 @@ class BaseCompScheduler(ABC):
 
     async def _schedule_tasks_to_stop(
         self,
+        user_id: UserID,
         project_id: ProjectID,
         cluster_id: ClusterID,
         comp_tasks: Dict[str, CompTaskAtDB],
@@ -377,7 +380,7 @@ class BaseCompScheduler(ABC):
             if t.state
             in [RunningState.STARTED, RunningState.RETRY, RunningState.PENDING]
         ]
-        await self._stop_tasks(cluster_id, tasks_to_stop)
+        await self._stop_tasks(user_id, cluster_id, tasks_to_stop)
 
     async def _schedule_tasks_to_start(
         self,
