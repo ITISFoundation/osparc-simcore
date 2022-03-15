@@ -26,7 +26,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this.__templates = [];
       const preResourcePromises = [];
       const store = osparc.store.Store.getInstance();
-      preResourcePromises.push(store.getServicesDAGs());
+      preResourcePromises.push(store.getServicesOnly());
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         preResourcePromises.push(osparc.data.Resources.get("tags"));
       }
@@ -112,7 +112,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       tempStudyList.forEach(tempStudy => {
         tempStudy["resourceType"] = "template";
         const templateItem = this.__createTemplateItem(tempStudy, this._resourcesContainer.getMode());
-        templateItem.addListener("updateQualityTemplate", e => {
+        templateItem.addListener("updateTemplate", e => {
           const updatedTemplateData = e.getData();
           updatedTemplateData["resourceType"] = "template";
           this._resetTemplateItem(updatedTemplateData);

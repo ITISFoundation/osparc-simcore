@@ -86,7 +86,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const preResourcePromises = [];
       const store = osparc.store.Store.getInstance();
       preResourcePromises.push(store.getVisibleMembers());
-      preResourcePromises.push(store.getServicesDAGs());
+      preResourcePromises.push(store.getServicesOnly());
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         preResourcePromises.push(osparc.data.Resources.get("tags"));
       }
@@ -451,7 +451,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this.__itemClicked(item, e.getNativeEvent().shiftKey);
         }
       }, this);
-      item.addListener("updateQualityStudy", e => {
+      item.addListener("updateStudy", e => {
         const updatedStudyData = e.getData();
         updatedStudyData["resourceType"] = "study";
         this._resetStudyItem(updatedStudyData);

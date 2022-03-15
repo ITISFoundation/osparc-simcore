@@ -33,12 +33,6 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     this.addListener("changeValue", this.__itemSelected, this);
   },
 
-  events: {
-    "updateQualityStudy": "qx.event.type.Data",
-    "updateQualityTemplate": "qx.event.type.Data",
-    "updateQualityService": "qx.event.type.Data"
-  },
-
   statics: {
     MENU_BTN_WIDTH: 25
   },
@@ -48,12 +42,12 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "tsr-mode-layout":
+        case "tsr-mode-update-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
           this._mainLayout.addAt(control, osparc.dashboard.GridButtonBase.POS.TSR_MODE);
           break;
         case "tsr-rating": {
-          const tsrModeLayout = this.getChildControl("tsr-mode-layout");
+          const layout = this.getChildControl("tsr-mode-update-layout");
           const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2)).set({
             toolTipText: this.tr("Ten Simple Rules")
           });
@@ -61,15 +55,25 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
           tsrLayout.add(tsrLabel);
           control = new osparc.ui.basic.StarsRating();
           tsrLayout.add(control);
-          tsrModeLayout.add(tsrLayout, {
+          layout.add(tsrLayout, {
             flex: 1
           });
           break;
         }
         case "ui-mode": {
-          const tsrModeLayout = this.getChildControl("tsr-mode-layout");
+          const layout = this.getChildControl("tsr-mode-update-layout");
           control = new qx.ui.basic.Image();
-          tsrModeLayout.add(control);
+          layout.add(control);
+          break;
+        }
+        case "update-study": {
+          const layout = this.getChildControl("tsr-mode-update-layout");
+          control = new qx.ui.basic.Image().set({
+            source: "@MaterialIcons/update/18",
+            toolTipText: this.tr("Update available"),
+            visibility: "excluded"
+          });
+          layout.add(control);
           break;
         }
         case "tags":
@@ -193,6 +197,11 @@ qx.Class.define("osparc.dashboard.GridButtonItem", {
     _applyAccessRights: function(value, old) {
       if (value && Object.keys(value).length) {
         const sharedIcon = this.getChildControl("subtitle-icon");
+        sharedIcon.addListener("tap", e => {
+          e.stopPropagation();
+          this._openAccessRights();
+        }, this);
+        sharedIcon.addListener("pointerdown", e => e.stopPropagation());
 
         const store = osparc.store.Store.getInstance();
         Promise.all([
