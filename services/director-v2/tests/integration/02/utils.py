@@ -11,6 +11,7 @@ import httpx
 from async_timeout import timeout
 from fastapi import FastAPI
 from models_library.projects import Node
+from models_library.users import UserID
 from pydantic import PositiveInt
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from simcore_service_director_v2.models.schemas.constants import (
@@ -163,7 +164,7 @@ async def _get_proxy_port(node_uuid: str) -> PositiveInt:
 
 async def assert_start_service(
     director_v2_client: httpx.AsyncClient,
-    user_id: int,
+    user_id: UserID,
     project_id: str,
     service_key: str,
     service_version: str,

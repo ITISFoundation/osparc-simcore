@@ -37,6 +37,7 @@ from models_library.projects import Node, ProjectAtDB, ProjectID, Workbench
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
+from models_library.users import UserID
 from py._path.local import LocalPath
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
@@ -344,7 +345,7 @@ def temp_dir(tmpdir: LocalPath) -> Path:
 
 
 async def _get_mapped_nodeports_values(
-    user_id: int, project_id: str, workbench: Workbench, db_manager: DBManager
+    user_id: UserID, project_id: str, workbench: Workbench, db_manager: DBManager
 ) -> Dict[str, InputsOutputs]:
     result: Dict[str, InputsOutputs] = {}
 
@@ -503,7 +504,7 @@ async def _fetch_data_from_container(
 
 
 async def _fetch_data_via_data_manager(
-    dir_tag: str, user_id: int, project_id: str, service_uuid: str, temp_dir: Path
+    dir_tag: str, user_id: UserID, project_id: str, service_uuid: str, temp_dir: Path
 ) -> Path:
     save_to = temp_dir / f"data-manager_{dir_tag}_{uuid4()}"
     save_to.mkdir(parents=True, exist_ok=True)
@@ -559,7 +560,7 @@ async def _fetch_data_via_aioboto(
 
 async def _wait_for_dynamic_services_to_be_running(
     director_v2_client: httpx.AsyncClient,
-    user_id: int,
+    user_id: UserID,
     workbench_dynamic_services: Dict[str, Node],
     current_study: ProjectAtDB,
 ) -> Dict[str, str]:

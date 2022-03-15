@@ -5,19 +5,21 @@ import asyncio
 import logging
 from typing import Any, AsyncIterable, AsyncIterator, Dict
 from unittest.mock import AsyncMock, Mock
-from uuid import uuid4
 
 import aiodocker
 import pytest
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 from async_timeout import timeout
-from pydantic import PositiveInt
+from faker import Faker
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
+from simcore_service_director_v2.models.schemas.constants import UserID
 from utils import ensure_network_cleanup, patch_dynamic_service_url
 
 SERVICE_IS_READY_TIMEOUT = 2 * 60
@@ -42,20 +44,31 @@ def minimal_configuration(
 
 
 @pytest.fixture
-def node_uuid() -> str:
-    return str(uuid4())
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
+
+
+@pytest.fixture
+def project_id(faker: Faker) -> ProjectID:
+    return ProjectID(faker.uuid4())
+
+
+@pytest.fixture
+def node_uuid(faker: Faker) -> NodeID:
+    return NodeID(faker.uuid4())
 
 
 @pytest.fixture
 def start_request_data(
-    node_uuid: str,
-    user_id: PositiveInt,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     dy_static_file_server_dynamic_sidecar_service: Dict,
     ensure_swarm_and_networks: None,
 ) -> Dict[str, Any]:
     return dict(
         user_id=user_id,
-        project_id=str(uuid4()),
+        project_id=project_id,
         service_uuid=node_uuid,
         service_key=dy_static_file_server_dynamic_sidecar_service["image"]["name"],
         service_version=dy_static_file_server_dynamic_sidecar_service["image"]["tag"],
