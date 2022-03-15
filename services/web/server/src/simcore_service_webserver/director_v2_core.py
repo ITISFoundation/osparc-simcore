@@ -403,6 +403,7 @@ async def stop_services(
     await logged_gather(*services_to_stop)
 
 
+# FIXME: ANE please unduplicate the 2 following calls
 @log_decorator(logger=log)
 async def request_retrieve_dyn_service(
     app: web.Application, service_uuid: str, port_keys: List[str]
