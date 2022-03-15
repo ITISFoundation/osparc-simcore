@@ -5,15 +5,16 @@ from typing import List, Optional, Set
 
 import sqlalchemy as sa
 from aiopg.sa.result import RowProxy
+from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
+from models_library.users import UserID
 from pydantic import PositiveInt
 from sqlalchemy.sql import or_
 from sqlalchemy.sql.elements import literal_column
 from sqlalchemy.sql.expression import desc
 
 from ....models.domains.comp_runs import CompRunsAtDB
-from ....models.schemas.constants import ClusterID, UserID
 from ....utils.db import RUNNING_STATE_TO_DB
 from ..tables import comp_runs
 from ._base import BaseRepository

@@ -34,10 +34,11 @@ from distributed import Event, Scheduler
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi.applications import FastAPI
-from models_library.clusters import NoAuthentication, SimpleAuthentication
+from models_library.clusters import ClusterID, NoAuthentication, SimpleAuthentication
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
@@ -49,7 +50,6 @@ from simcore_service_director_v2.core.errors import (
     MissingComputationalResourcesError,
 )
 from simcore_service_director_v2.models.domains.comp_tasks import Image
-from simcore_service_director_v2.models.schemas.constants import ClusterID, UserID
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.modules.dask_client import DaskClient, TaskHandlers
 from tenacity._asyncio import AsyncRetrying

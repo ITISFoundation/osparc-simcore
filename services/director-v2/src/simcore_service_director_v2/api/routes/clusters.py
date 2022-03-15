@@ -2,7 +2,8 @@ import logging
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
-from models_library.clusters import Cluster
+from models_library.clusters import Cluster, ClusterID
+from models_library.users import UserID
 from pydantic import AnyUrl, parse_obj_as
 from simcore_service_director_v2.api.dependencies.scheduler import (
     get_scheduler_settings,
@@ -22,7 +23,6 @@ from ...models.schemas.clusters import (
     ClusterPatch,
     Scheduler,
 )
-from ...models.schemas.constants import ClusterID, UserID
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.db.repositories.clusters import ClustersRepository
 from ..dependencies.dask import get_dask_clients_pool

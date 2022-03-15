@@ -11,11 +11,11 @@ from _pytest.monkeypatch import MonkeyPatch
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from simcore_service_director_v2.core.settings import DynamicSidecarSettings
 from simcore_service_director_v2.models.schemas.constants import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
-    UserID,
 )
 from simcore_service_director_v2.models.schemas.dynamic_services import (
     ServiceLabelsStoredData,

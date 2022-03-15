@@ -11,7 +11,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import TaskOutputData
-from models_library.clusters import Cluster
+from models_library.clusters import Cluster, ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -20,11 +20,11 @@ from models_library.rabbitmq_messages import (
     LoggerRabbitMessage,
     ProgressRabbitMessage,
 )
+from models_library.users import UserID
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
 from ...core.settings import DaskSchedulerSettings
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
-from ...models.schemas.constants import ClusterID, UserID
 from ...modules.dask_client import DaskClient, TaskHandlers
 from ...modules.dask_clients_pool import DaskClientsPool
 from ...modules.db.repositories.clusters import ClustersRepository

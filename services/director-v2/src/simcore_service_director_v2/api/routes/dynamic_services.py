@@ -11,6 +11,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
+from models_library.users import UserID
 from starlette import status
 from starlette.datastructures import URL
 
@@ -21,7 +22,6 @@ from ...models.domains.dynamic_services import (
     RetrieveDataIn,
     RetrieveDataOutEnveloped,
 )
-from ...models.schemas.constants import UserID
 from ...models.schemas.dynamic_services import SchedulerData
 from ...modules.dynamic_sidecar.docker_api import (
     is_dynamic_service_running,

@@ -115,8 +115,11 @@ class BaseCluster(BaseModel):
         return db_model
 
 
+ClusterID = NonNegativeInt
+
+
 class Cluster(BaseCluster):
-    id: NonNegativeInt = Field(..., description="The cluster ID")
+    id: ClusterID = Field(..., description="The cluster ID")
 
     class Config(BaseCluster.Config):
         schema_extra = {

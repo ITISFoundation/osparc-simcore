@@ -14,11 +14,10 @@ from dask_gateway import Gateway, GatewayCluster, auth
 from distributed import Client as DaskClient
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
-from models_library.clusters import Cluster, SimpleAuthentication
+from models_library.clusters import Cluster, ClusterID, SimpleAuthentication
 from models_library.users import UserID
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.models.schemas.clusters import ClusterDetailsOut
-from simcore_service_director_v2.models.schemas.constants import ClusterID
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
 from tenacity.stop import stop_after_delay

@@ -6,6 +6,7 @@ from typing import Any, List
 import networkx as nx
 from fastapi import APIRouter, Depends, HTTPException
 from models_library.projects import ProjectAtDB, ProjectID
+from models_library.users import UserID
 from servicelib.async_utils import run_sequentially_in_context
 from starlette import status
 from starlette.requests import Request
@@ -24,7 +25,6 @@ from ...models.schemas.comp_tasks import (
     ComputationTaskGet,
     ComputationTaskStop,
 )
-from ...models.schemas.constants import UserID
 from ...modules.comp_scheduler.base_scheduler import BaseCompScheduler
 from ...modules.db.repositories.comp_pipelines import CompPipelinesRepository
 from ...modules.db.repositories.comp_tasks import CompTasksRepository

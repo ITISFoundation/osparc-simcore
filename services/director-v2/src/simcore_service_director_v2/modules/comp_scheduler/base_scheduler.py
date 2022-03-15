@@ -19,9 +19,11 @@ from typing import Dict, List, Optional, Set, Tuple, cast
 
 import networkx as nx
 from aiopg.sa.engine import Engine
+from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
+from models_library.users import UserID
 from pydantic import PositiveInt
 
 from ...core.errors import (
@@ -36,7 +38,6 @@ from ...core.errors import (
 from ...models.domains.comp_pipelines import CompPipelineAtDB
 from ...models.domains.comp_runs import CompRunsAtDB
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
-from ...models.schemas.constants import ClusterID, UserID
 from ...utils.computations import get_pipeline_state_from_task_states
 from ...utils.scheduler import COMPLETED_STATES, Iteration, get_repository
 from ..db.repositories.comp_pipelines import CompPipelinesRepository

@@ -13,6 +13,7 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
+from models_library.clusters import ClusterID
 from models_library.services import SERVICE_NETWORK_RE
 from pydantic import AnyHttpUrl, Field, PositiveFloat, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
@@ -25,7 +26,7 @@ from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 from ..meta import API_VTAG
-from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE, ClusterID
+from ..models.schemas.constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
 
 MINS = 60
 API_ROOT: str = "api"

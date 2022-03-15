@@ -11,6 +11,7 @@ from models_library.clusters import (
     CLUSTER_USER_RIGHTS,
     Cluster,
     ClusterAccessRights,
+    ClusterID,
 )
 from models_library.users import UserID
 from pydantic.types import PositiveInt
@@ -26,7 +27,6 @@ from ....core.errors import (
     ClusterNotFoundError,
 )
 from ....models.schemas.clusters import ClusterCreate, ClusterPatch
-from ....models.schemas.constants import ClusterID
 from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
