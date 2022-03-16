@@ -373,7 +373,7 @@ async def test_update_own_cluster(
             json=cluster_patch.dict(**_PATCH_EXPORT),
         )
         assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
-        returned_cluster = Cluster.parse_obj(response.json())
+        returned_cluster = ClusterOut.parse_obj(response.json())
 
         expected_modified_cluster.access_rights[user_2["primary_gid"]] = rights
         assert returned_cluster.dict() == expected_modified_cluster.dict()
@@ -384,7 +384,7 @@ async def test_update_own_cluster(
         json=cluster_patch.dict(**_PATCH_EXPORT),
     )
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
-    returned_cluster = Cluster.parse_obj(response.json())
+    returned_cluster = ClusterOut.parse_obj(response.json())
     expected_modified_cluster.owner = user_2["primary_gid"]
     expected_modified_cluster.access_rights[
         user_2["primary_gid"]
