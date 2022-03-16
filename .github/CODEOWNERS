@@ -29,7 +29,7 @@ Makefile                                  @pcrespov @sanderegg
 /services/migration/                      @pcrespov
 /services/storage/                        @mguidon @pcrespov
 /services/static-webserver                @GitHK
-/services/web/client/                     @odeimaiz @ignapas
+/services/web/client/                     @odeimaiz
 /services/web/server/                     @pcrespov @sanderegg @GitHK
 /tests/environment-setup/                 @pcrespov
 /tests/performance/                       @pcrespov
