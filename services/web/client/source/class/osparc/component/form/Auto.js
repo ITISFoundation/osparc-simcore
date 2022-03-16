@@ -527,10 +527,11 @@ qx.Class.define("osparc.component.form.Auto", {
       control.type = s.type;
       control.widgetType = s.widget.type;
       control.unitShort = s.unitShort;
+      control.unitLong = s.unitLong;
       if ("x_unit" in s) {
         control.unitShort = s.x_unit;
+        control.unitLong = osparc.utils.Units.getFavAlias(s.x_unit);
       }
-      control.unitLong = s.unitLong;
 
       return control;
     }

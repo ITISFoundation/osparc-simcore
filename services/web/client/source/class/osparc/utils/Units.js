@@ -23,7 +23,7 @@ qx.Class.define("osparc.utils.Units", {
   type: "static",
 
   statics: {
-    BASE_UNITS: [{
+    BASE_UNITS: {
       meter: {
         quantity: "length",
         alias: ["meter", "m", "metre"],
@@ -69,6 +69,18 @@ qx.Class.define("osparc.utils.Units", {
         alias: ["degree", "deg"],
         favAlias: "degree"
       }
-    }]
+    },
+
+    getFavAlias: function(alias) {
+      let favAlias = alias;
+      const baseUnits = Object.values(osparc.utils.Units.BASE_UNITS);
+      for (const baseUnit of baseUnits) {
+        if (baseUnit.alias.includes(alias)) {
+          favAlias = baseUnit.favAlias;
+          break;
+        }
+      }
+      return favAlias;
+    }
   }
 });
