@@ -13,10 +13,10 @@ repos:
       - id: check-merge-conflict
   # NOTE: Keep order as pycln (remove unused imports), then isort (sort them) and black (final formatting)
   - repo: https://github.com/hadialqattan/pycln
-    rev: v1.1.0
+    rev: v1.2.4
     hooks:
       - id: pycln
-        args: [--all]
+        args: [--all, --expand-stars]
   - repo: https://github.com/PyCQA/isort
     rev: 5.6.4
     hooks:
