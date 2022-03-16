@@ -138,6 +138,11 @@ class Node(BaseModel):
     inputs: Optional[Inputs] = Field(
         default_factory=dict, description="values of input properties"
     )
+    inputs_units: Optional[Dict[NodeID, str]] = Field(
+        None,
+        description="values of input unit",
+        alias="inputsUnits",
+    )
     input_access: Optional[Dict[InputID, AccessEnum]] = Field(
         None, description="map with key - access level pairs", alias="inputAccess"
     )
