@@ -14,12 +14,12 @@ from async_timeout import timeout
 from faker import Faker
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.settings import AppSettings
-from simcore_service_director_v2.models.schemas.constants import UserID
 from utils import ensure_network_cleanup, patch_dynamic_service_url
 
 SERVICE_IS_READY_TIMEOUT = 2 * 60
@@ -215,6 +215,7 @@ async def test_start_status_stop(
     await patch_dynamic_service_url(app=test_client.application, node_uuid=node_uuid)
 
     # awaiting for service to be running
+    data = {}
     async with timeout(SERVICE_IS_READY_TIMEOUT):
         status_is_not_running = True
         while status_is_not_running:
@@ -230,7 +231,7 @@ async def test_start_status_stop(
 
             # give the service some time to keep up
             await asyncio.sleep(5)
-
+    assert "service_state" in data
     assert data["service_state"] == "running"
 
     # finally stopping the service
