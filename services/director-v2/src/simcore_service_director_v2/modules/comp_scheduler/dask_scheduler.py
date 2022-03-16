@@ -121,12 +121,15 @@ class DaskScheduler(BaseCompScheduler):
     async def _process_completed_tasks(
         self, user_id: UserID, cluster_id: ClusterID, tasks: List[CompTaskAtDB]
     ) -> None:
+        """Gets, processes and releases all tasks results in block"""
         try:
+            # GET all tasks results
             async with _cluster_dask_client(user_id, cluster_id, self) as client:
                 tasks_results = await asyncio.gather(
                     *[client.get_task_result(t.job_id or "undefined") for t in tasks],
                     return_exceptions=True,
                 )
+            # PROCESS all tasks results
             await asyncio.gather(
                 *[
                     self._process_task_result(task, result)
@@ -134,6 +137,7 @@ class DaskScheduler(BaseCompScheduler):
                 ]
             )
         finally:
+            # RELEASE all tasks results
             async with _cluster_dask_client(user_id, cluster_id, self) as client:
                 await asyncio.gather(
                     *[client.release_task_result(t.job_id) for t in tasks if t.job_id]
@@ -142,6 +146,12 @@ class DaskScheduler(BaseCompScheduler):
     async def _process_task_result(
         self, task: CompTaskAtDB, result: Union[Exception, TaskOutputData]
     ) -> None:
+        """Processes the result (i.e. error or output) of a completed task by:
+        - determine status task (i.e. succeeded, aborted, failed...)
+        - cleanup invalid outputs and logs
+        - publish rabbit message of completed task with results
+        - update task in comp_tasks
+        """
         logger.debug("received %s result: %s", f"{task=}", f"{result=}")
         task_final_state = RunningState.FAILED
 

@@ -227,6 +227,10 @@ class BaseCompScheduler(ABC):
         project_id: ProjectID,
         pipeline_dag: nx.DiGraph,
     ):
+        """Gets tasks from comp_tasks db table,
+        checks with dask backend the tasks that **are completed**
+        and calls to process them (_process_completed_tasks)
+        """
         pipeline_tasks: Dict[str, CompTaskAtDB] = await self._get_pipeline_tasks(
             project_id, pipeline_dag
         )
@@ -390,6 +394,7 @@ class BaseCompScheduler(ABC):
         dag: nx.DiGraph,
     ):
         # filter out the successfully completed tasks
+        # FIXME: this is dangerouns because it modifies dag and can be used outside!
         dag.remove_nodes_from(
             {
                 node_id
@@ -431,7 +436,13 @@ class BaseCompScheduler(ABC):
             ],
             return_exceptions=True,
         )
-        # let's parse the results
+        #
+        # Handles ERRORED results by updating comp_task table state
+        #
+        # TODO: should distinguish between errors due to the framework (e.g. memory resources,
+        # scheduler/worker down, etc) and those in the task's kernel (e.g. an error in the solver run due to a bad input or
+        # a divergent simulaton result, a bad import in a python script etc)
+        #
         for r, t in zip(results, tasks_ready_to_start):
             if isinstance(
                 r,

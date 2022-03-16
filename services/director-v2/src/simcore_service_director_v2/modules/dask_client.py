@@ -181,8 +181,10 @@ class DaskClient:
         callback: UserCallbackInSepThread,
         remote_fct: Optional[RemoteFct] = None,
     ) -> List[Tuple[NodeID, str]]:
-        """actually sends the function remote_fct to be remotely executed. if None is kept then the default
-        function that runs container will be started."""
+        """
+        Sends the function remote_fct to be remotely executed. if None is kept then the default
+        function that runs container will be started.
+        """
 
         def _comp_sidecar_fct(
             docker_auth: DockerBasicAuth,
@@ -209,6 +211,8 @@ class DaskClient:
 
         if remote_fct is None:
             remote_fct = _comp_sidecar_fct
+
+        # TODO: Q? What is the advantage of a list of tasks instead of a single task here??
         list_of_node_id_to_job_id: List[Tuple[NodeID, str]] = []
         for node_id, node_image in tasks.items():
             job_id = generate_dask_job_id(
