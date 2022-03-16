@@ -129,7 +129,7 @@ def get_dynamic_sidecar_spec(
                 )
             )
 
-    endpint_spec = {}
+    endpoint_spec = {}
 
     if dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV is not None:
         dynamic_sidecar_path = dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV
@@ -163,7 +163,7 @@ def get_dynamic_sidecar_spec(
             )
     # expose this service on an empty port
     if dynamic_sidecar_settings.DYNAMIC_SIDECAR_EXPOSE_PORT:
-        endpint_spec["Ports"] = [
+        endpoint_spec["Ports"] = [
             {
                 "Protocol": "tcp",
                 "TargetPort": dynamic_sidecar_settings.DYNAMIC_SIDECAR_PORT,
@@ -171,7 +171,7 @@ def get_dynamic_sidecar_spec(
         ]
 
     create_service_params = {
-        "endpoint_spec": endpint_spec,
+        "endpoint_spec": endpoint_spec,
         "labels": {
             # TODO: let's use a pydantic model with descriptions
             "io.simcore.zone": scheduler_data.simcore_traefik_zone,
