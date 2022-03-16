@@ -15,7 +15,7 @@ _DEFAULT_TIMEOUT_S: int = 5
 
 async def scheduler_task(app: FastAPI) -> None:
     scheduler = app.state.scheduler
-    while app.state.comp_scheduler_running:
+    while app.state.is_comp_scheduler_running:
         try:
             logger.debug("Computational scheduler task running...")
             await scheduler.schedule_all_pipelines()
@@ -27,7 +27,7 @@ async def scheduler_task(app: FastAPI) -> None:
             logger.info("Computational scheduler task cancelled")
             raise
         except Exception:  # pylint: disable=broad-except
-            if not app.state.comp_scheduler_running:
+            if not app.state.is_comp_scheduler_running:
                 logger.warning("Forced to stop computational scheduler")
                 break
             logger.exception(
@@ -43,7 +43,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
         # task cancelation is ignored and the exceptions enter in a loop
         # that never stops the background task. This flag is an additional
         # mechanism to enforce stopping the background task
-        app.state.comp_scheduler_running = True
+        app.state.is_comp_scheduler_running = True
         app.state.scheduler = await _factory.create_from_db(app)
         app.state.scheduler_task = asyncio.create_task(
             scheduler_task(app), name="computational services scheduler"
@@ -58,7 +58,7 @@ def on_app_shutdown(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
         logger.info("Computational services Scheduler stopping...")
         task = app.state.scheduler_task
         with suppress(CancelledError):
-            app.state.comp_scheduler_running = False
+            app.state.is_comp_scheduler_running = False
             task.cancel()
             await task
         app.state.scheduler = None
