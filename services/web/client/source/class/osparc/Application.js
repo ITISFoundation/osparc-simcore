@@ -239,6 +239,9 @@ qx.Class.define("osparc.Application", {
           }
           break;
         }
+        case "form-sandbox": {
+          this.__loadView(new osparc.desktop.FormSandboxPage(), {}, false);
+        }
       }
     },
 
@@ -351,7 +354,7 @@ qx.Class.define("osparc.Application", {
       this.__loadView(new osparc.viewer.MainPage(studyId, viewerNodeId));
     },
 
-    __loadView: function(view, opts) {
+    __loadView: function(view, opts, clearUrl=true) {
       const options = {
         top: 0,
         bottom: 0,
@@ -384,7 +387,9 @@ qx.Class.define("osparc.Application", {
       }
 
       // Clear URL
-      window.history.replaceState(null, "", "/");
+      if (clearUrl) {
+        window.history.replaceState(null, "", "/");
+      }
     },
 
     /**

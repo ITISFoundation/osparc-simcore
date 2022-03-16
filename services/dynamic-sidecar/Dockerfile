@@ -66,7 +66,7 @@ RUN python -m venv ${VIRTUAL_ENV}
 RUN mkdir -p ${DY_VOLUMES}
 
 RUN pip install --upgrade --no-cache-dir \
-  pip~=21.3  \
+  pip~=22.0  \
   wheel \
   setuptools
 
@@ -120,7 +120,7 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DY_VOLUMES} ${DY_VOLUMES}
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
-# disabled healthcheck as director-v2 is already taking care of it 
+# disabled healthcheck as director-v2 is already taking care of it
 # in oder to have similar performance a more aggressive healethcek
 # would be required.
 # removing the healthchek would not cause any issues at this point

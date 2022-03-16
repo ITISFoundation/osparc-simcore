@@ -8,7 +8,7 @@
 /**
  * A generic form item to be used inside JsonSchemaForm.
  * It generates an appropriate header than can dynamically change for array items (if the user deletes one element).
- * Manages this dynamic keys to update the header and generate consistent output data object.
+ * Manages this dynamic keys to update the header and generate a consistent output data object.
  */
 qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
   extend: qx.ui.container.Composite,
@@ -63,6 +63,12 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
       return this.__input;
     },
     /**
+     * Returns the type of this input
+     */
+    getType: function() {
+      return this.__schema.type;
+    },
+    /**
      * Function that recursively constructs the path of this form item.
      */
     getPath: function() {
@@ -83,7 +89,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
       return "orphan.osparc.form";
     },
     /**
-     * Function that returns an appropriate widget fot the given type.
+     * Function that returns an appropriate widget for the given type.
      *
      * @param {String} type Type of the input that will be used to determine the render behavior
      */
@@ -111,7 +117,7 @@ qx.Class.define("osparc.component.form.json.JsonSchemaFormItem", {
           // falls through
         default:
           input = new qx.ui.form.TextField().set({
-            required: validation && validation.required
+            required: Boolean(validation && validation.required)
           });
           if (this.__schema.pattern) {
             validationManager.add(input, osparc.utils.Validators.regExp(RegExp(this.__schema.pattern)));
