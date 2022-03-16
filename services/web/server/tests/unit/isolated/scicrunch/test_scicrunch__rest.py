@@ -19,6 +19,10 @@ from typing import Any, Dict, List, Optional
 
 import pytest
 from aiohttp import ClientResponseError, ClientSession, web
+from pytest_simcore.helpers.utils_scrunch_citations import (
+    NOT_TOOL_CITATIONS,
+    TOOL_CITATIONS,
+)
 from simcore_service_webserver.scicrunch._rest import (
     ListOfResourceHits,
     ResourceView,
@@ -30,8 +34,6 @@ from simcore_service_webserver.scicrunch.settings import (
     SCICRUNCH_DEFAULT_URL,
     SciCrunchSettings,
 )
-
-from ._citations import NOT_TOOL_CITATIONS, TOOL_CITATIONS
 
 SCICRUNCH_API_KEY = os.environ.get("SCICRUNCH_API_KEY")
 

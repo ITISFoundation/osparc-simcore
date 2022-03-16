@@ -29,7 +29,7 @@ def setup_director_v2(app: web.Application):
     # dependencies
     setup_rest(app)
 
-    # lcietn
+    # client
     set_client(app, DirectorV2ApiClient(app))
 
     # routes
