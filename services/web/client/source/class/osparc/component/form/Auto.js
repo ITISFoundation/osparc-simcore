@@ -537,8 +537,6 @@ qx.Class.define("osparc.component.form.Auto", {
           control.unitPrefix = null;
           control.unit = unitSplit[0];
         }
-        control.unitShort = osparc.utils.Units.getShortLabel(control.unit, control.unitPrefix);
-        control.unitLong = osparc.utils.Units.getLongLabel(control.unit, control.unitPrefix);
       }
 
       return control;

@@ -114,7 +114,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
           column: this.self().GRID_POS.CTRL_FIELD
         });
 
-        const unit = this.__createUnit(item.unitShort, item.unitLong);
+        const unit = this.__createUnit(item);
         this._add(unit, {
           row: this._row,
           column: this.self().GRID_POS.UNIT
@@ -193,19 +193,40 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return infoWHint;
     },
 
-    __createUnit: function(unitShort, unitLong) {
+    __createUnit: function(item) {
+      let {
+        unit,
+        unitPrefix,
+        unitShort,
+        unitLong
+      } = item;
+      if (unit) {
+        unitShort = osparc.utils.Units.getShortLabel(unit, unitPrefix);
+        unitLong = osparc.utils.Units.getLongLabel(unit, unitPrefix);
+      }
       const unitLabel = this.__unitLabel = new qx.ui.basic.Label().set({
         alignY: "bottom",
-        paddingBottom: 1,
-        value: unitShort || null,
-        toolTipText: unitLong || null,
-        visibility: unitShort ? "visible" : "excluded"
+        paddingBottom: 1
       });
-      unitLabel.addListener("pointerover", () => unitLabel.setCursor("pointer"), this);
-      unitLabel.addListener("pointerout", () => unitLabel.resetCursor(), this);
-      unitLabel.addListener("tap", () => {
-        console.log("tap", unitLabel);
-      }, this);
+      const renderUnit = (unitS, unitL) => {
+        unitLabel.set({
+          value: unitS || null,
+          toolTipText: unitL || null,
+          visibility: unitShort ? "visible" : "excluded"
+        });
+      };
+      renderUnit(unitShort, unitLong);
+      if (unit) {
+        unitLabel.addListener("pointerover", () => unitLabel.setCursor("pointer"), this);
+        unitLabel.addListener("pointerout", () => unitLabel.resetCursor(), this);
+        unitLabel.addListener("tap", () => {
+          const nextPrefix = osparc.utils.Units.getNextPrefix(item.unitPrefix);
+          item.unitPrefix = nextPrefix.long;
+          unitShort = osparc.utils.Units.getShortLabel(unit, item.unitPrefix);
+          unitLong = osparc.utils.Units.getLongLabel(unit, item.unitPrefix);
+          renderUnit(unitShort, unitLong);
+        }, this);
+      }
       return unitLabel;
     },
 

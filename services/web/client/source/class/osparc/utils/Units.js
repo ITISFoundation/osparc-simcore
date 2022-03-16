@@ -81,48 +81,63 @@ qx.Class.define("osparc.utils.Units", {
     },
 
     PREFIXES: {
-      "micro": "µ",
-      "milli": "m",
-      "null": null,
-      "kilo": "k",
-      "mega": "M"
-    },
-
-    __getBaseUnit: function(alias) {
-      const baseUnits = Object.values(osparc.utils.Units.BASE_UNITS);
-      for (const baseUnit of baseUnits) {
-        if (baseUnit.alias.includes(alias)) {
-          return baseUnit;
-        }
+      micro: {
+        short: "µ",
+        long: "micro"
+      },
+      milli: {
+        short: "m",
+        long: "milli"
+      },
+      "no-prefix": {
+        short: "",
+        long: ""
+      },
+      kilo: {
+        short: "k",
+        long: "kilo"
+      },
+      mega: {
+        short: "M",
+        long: "mega"
       }
-      return null;
     },
 
-    getShortLabel: function(alias, prefix) {
-      const baseUnit = this.__getBaseUnit(alias);
-      let shortLabel = baseUnit ? baseUnit.short : alias;
+    __getBaseUnit: function(unitKey) {
+      return unitKey in osparc.utils.Units.BASE_UNITS ? osparc.utils.Units.BASE_UNITS[unitKey] : null;
+    },
+
+    getShortLabel: function(unit, prefix) {
+      const baseUnit = this.__getBaseUnit(unit);
+      let shortLabel = baseUnit ? baseUnit.short : unit;
       if (prefix && prefix in osparc.utils.Units.PREFIXES) {
-        shortLabel = osparc.utils.Units.PREFIXES[prefix] + shortLabel;
+        shortLabel = osparc.utils.Units.PREFIXES[prefix].short + shortLabel;
       }
       return shortLabel;
     },
 
-    getLongLabel: function(alias, prefix) {
-      const baseUnit = this.__getBaseUnit(alias);
-      let longLabel = baseUnit ? baseUnit.long : alias;
-      if (prefix) {
-        longLabel = prefix + longLabel;
+    getLongLabel: function(unit, prefix) {
+      const baseUnit = this.__getBaseUnit(unit);
+      let longLabel = baseUnit ? baseUnit.long : unit;
+      if (prefix && prefix in osparc.utils.Units.PREFIXES) {
+        longLabel = osparc.utils.Units.PREFIXES[prefix].long + longLabel;
       }
       return longLabel;
     },
 
-    getPrefixShort: function(alias) {
-      const baseUnit = this.__getBaseUnit(alias);
-      return "prefixes" in baseUnit ? baseUnit["prefixes"] : [];
-    },
-
-    getPrefixLong: function() {
-
+    getNextPrefix: function(prefix) {
+      if ([null, undefined, ""].includes(prefix)) {
+        prefix = "no-prefix";
+      }
+      const keys = Object.keys(osparc.utils.Units.PREFIXES);
+      const idx = keys.indexOf(prefix);
+      if (idx === -1) {
+        return null;
+      }
+      if (idx === keys.length-1) {
+        return osparc.utils.Units.PREFIXES[keys[0]];
+      }
+      return osparc.utils.Units.PREFIXES[keys[idx+1]];
     }
   }
 });
