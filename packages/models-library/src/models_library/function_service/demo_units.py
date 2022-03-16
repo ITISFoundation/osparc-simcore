@@ -31,7 +31,7 @@ META = ServiceDockerData.parse_obj(
                     "description": "Distance base unit",
                     "minimum": 0,
                     "maximum": 10,
-                    "x_unit": "m",
+                    "x_unit": "meter",
                     "type": "number",
                 }
             ),
@@ -40,7 +40,7 @@ META = ServiceDockerData.parse_obj(
                     "title": "Time",
                     "description": "Positive time base unit",
                     "minimum": 0,
-                    "x_unit": "s",
+                    "x_unit": "micro-second",
                     "type": "number",
                 }
             ),
@@ -48,7 +48,7 @@ META = ServiceDockerData.parse_obj(
                 {
                     "title": "Current",
                     "description": "Current base unit",
-                    "x_unit": "A",
+                    "x_unit": "ampere",
                     "type": "number",
                 }
             ),
@@ -56,7 +56,7 @@ META = ServiceDockerData.parse_obj(
                 {
                     "title": "Luminosity",
                     "description": "Luminosity base unit",
-                    "x_unit": "cd",
+                    "x_unit": "candela",
                     "type": "number",
                 }
             ),
@@ -65,7 +65,7 @@ META = ServiceDockerData.parse_obj(
                     "title": "Mass",
                     "description": "Positive mass base unit",
                     "minimum": 0,
-                    "x_unit": "g",
+                    "x_unit": "micro-gram",
                     "type": "number",
                 }
             ),
@@ -74,7 +74,7 @@ META = ServiceDockerData.parse_obj(
                     "title": "Substance",
                     "description": "Substance base unit",
                     "minimum": 0,
-                    "x_unit": "mol",
+                    "x_unit": "milli-mole",
                     "type": "number",
                 }
             ),
@@ -83,7 +83,7 @@ META = ServiceDockerData.parse_obj(
                     "title": "Temperature",
                     "description": "Temperature in Kelvin",
                     "minimum": 0,
-                    "x_unit": "K",
+                    "x_unit": "kelvin",
                     "type": "number",
                 }
             ),
@@ -91,7 +91,7 @@ META = ServiceDockerData.parse_obj(
                 {
                     "title": "Angle",
                     "description": "Angle in degrees",
-                    "x_unit": "deg",
+                    "x_unit": "degree",
                     "type": "number",
                 }
             ),
@@ -101,7 +101,7 @@ META = ServiceDockerData.parse_obj(
                 {
                     "title": "Distance",
                     "description": "Distance converted to millimeter",
-                    "x_unit": "mm",
+                    "x_unit": "milli-meter",
                     "type": "number",
                 }
             ),
@@ -110,7 +110,7 @@ META = ServiceDockerData.parse_obj(
                     "title": "Time",
                     "description": "Time in minutes",
                     "minimum": 0,
-                    "x_unit": "min",
+                    "x_unit": "minute",
                     "type": "number",
                 }
             ),
@@ -118,7 +118,7 @@ META = ServiceDockerData.parse_obj(
                 {
                     "title": "Current",
                     "description": "Current in milliAmpere",
-                    "x_unit": "mA",
+                    "x_unit": "milli-ampere",
                     "type": "number",
                 }
             ),
@@ -126,7 +126,7 @@ META = ServiceDockerData.parse_obj(
                 {
                     "title": "Luminosity",
                     "description": "Luminosity with the same units",
-                    "x_unit": "cd",
+                    "x_unit": "candela",
                     "type": "number",
                 }
             ),
@@ -135,7 +135,7 @@ META = ServiceDockerData.parse_obj(
                     "title": "Mass",
                     "description": "Mass in kg",
                     "minimum": 0,
-                    "x_unit": "kg",
+                    "x_unit": "kilo-gram",
                     "type": "number",
                 }
             ),
@@ -144,7 +144,7 @@ META = ServiceDockerData.parse_obj(
                     "title": "Substance",
                     "description": "Substance with no change in units",
                     "minimum": 0,
-                    "x_unit": "mol",
+                    "x_unit": "mole",
                     "type": "number",
                 }
             ),
@@ -153,7 +153,7 @@ META = ServiceDockerData.parse_obj(
                     "title": "Temperature",
                     "description": "Temperature converted to celcius",
                     "minimum": 0,
-                    "x_unit": "°C",
+                    "x_unit": "degree_Celsius",
                     "type": "number",
                 }
             ),
@@ -161,7 +161,7 @@ META = ServiceDockerData.parse_obj(
                 {
                     "title": "Angle",
                     "description": "Angle converted to radians",
-                    "x_unit": "rad",
+                    "x_unit": "radian",
                     "type": "number",
                 }
             ),
