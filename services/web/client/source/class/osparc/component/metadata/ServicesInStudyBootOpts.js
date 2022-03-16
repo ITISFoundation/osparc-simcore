@@ -16,8 +16,9 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
   },
 
   statics: {
-    gridPosBoot: {
-      bootMode: 3
+    GRID_POS: {
+      ...osparc.component.metadata.ServicesInStudy.GRID_POS,
+      BOOT_MODE: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length
     }
   },
 
@@ -41,7 +42,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
         toolTipText: this.tr("Select boot type")
       }), {
         row: 0,
-        column: this.self().gridPosBoot.bootMode
+        column: this.self().GRID_POS.BOOT_MODE
       });
     },
 
@@ -89,7 +90,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyBootOpts", {
           }, this);
           this._add(bootModeSB, {
             row: i,
-            column: this.self().gridPosBoot.bootMode
+            column: this.self().GRID_POS.BOOT_MODE
           });
         }
       }

@@ -28,10 +28,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     this.base(arguments);
 
     const grid = new qx.ui.layout.Grid(20, 5);
-    grid.setColumnMinWidth(this.self().gridPos.label, 100);
-    grid.setColumnMaxWidth(this.self().gridPos.label, 200);
-    grid.setColumnFlex(this.self().gridPos.label, 1);
-    grid.setColumnAlign(this.self().gridPos.label, "left", "middle");
+    grid.setColumnMinWidth(this.self().GRID_POS.LABEL, 100);
+    grid.setColumnMaxWidth(this.self().GRID_POS.LABEL, 200);
+    grid.setColumnFlex(this.self().GRID_POS.LABEL, 1);
+    grid.setColumnAlign(this.self().GRID_POS.LABEL, "left", "middle");
     grid.setColumnAlign(this.self().gridPos.name, "left", "middle");
     this._setLayout(grid);
 
@@ -103,7 +103,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         font: "text-14"
       }), {
         row: 0,
-        column: this.self().gridPos.label
+        column: this.self().GRID_POS.LABEL
       });
     },
 
@@ -119,7 +119,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         font: "title-14"
       }), {
         row: 0,
-        column: this.self().gridPos.label
+        column: this.self().GRID_POS.LABEL
       });
       this._add(new qx.ui.basic.Label(this.tr("Name")).set({
         font: "title-14"
@@ -147,7 +147,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         }, this);
         this._add(infoButton, {
           row: i,
-          column: this.self().gridPos.infoButton
+          column: this.self().GRID_POS.INFOButton
         });
 
         const labelLabel = new qx.ui.basic.Label(node["label"]).set({
@@ -155,7 +155,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         });
         this._add(labelLabel, {
           row: i,
-          column: this.self().gridPos.label
+          column: this.self().GRID_POS.LABEL
         });
 
         const nodeMetaData = osparc.utils.Services.getFromObject(this._services, node["key"], node["version"]);

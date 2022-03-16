@@ -39,12 +39,12 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     this.base(arguments, form);
 
     const fl = this._getLayout();
-    fl.setColumnFlex(this.self().gridPos.label, 0);
-    fl.setColumnAlign(this.self().gridPos.label, "left", "top");
-    fl.setColumnFlex(this.self().gridPos.info, 0);
-    fl.setColumnAlign(this.self().gridPos.info, "left", "middle");
-    fl.setColumnFlex(this.self().gridPos.ctrlField, 1);
-    fl.setColumnMinWidth(this.self().gridPos.ctrlField, 50);
+    fl.setColumnFlex(this.self().GRID_POS.LABEL, 0);
+    fl.setColumnAlign(this.self().GRID_POS.LABEL, "left", "top");
+    fl.setColumnFlex(this.self().GRID_POS.INFO, 0);
+    fl.setColumnAlign(this.self().GRID_POS.INFO, "left", "middle");
+    fl.setColumnFlex(this.self().GRID_POS.CTRL_FIELD, 1);
+    fl.setColumnMinWidth(this.self().GRID_POS.CTRL_FIELD, 50);
   },
 
   properties: {
@@ -55,18 +55,18 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
   },
 
   statics: {
-    gridPos: {
-      label: 0,
-      info: 1,
-      ctrlField: 2,
-      unit: 3,
-      fieldLinkUnlink: 4
+    GRID_POS: {
+      LABEL: 0,
+      INFO: 1,
+      CTRL_FIELD: 2,
+      UNIT: 3,
+      FIELD_LINK_UNLINK: 4
     },
 
     getDisableables: function() {
       return [
-        this.gridPos.label,
-        this.gridPos.ctrlField
+        this.GRID_POS.LABEL,
+        this.GRID_POS.CTRL_FIELD
       ];
     }
   },
@@ -85,7 +85,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         this._add(
           this._createHeader(title), {
             row: this._row,
-            column: this.self().gridPos.label,
+            column: this.self().GRID_POS.LABEL,
             colSpan: Object.keys(this.self().gridPos).length
           }
         );
@@ -100,24 +100,24 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         label.setBuddy(item);
         this._add(label, {
           row: this._row,
-          column: this.self().gridPos.label
+          column: this.self().GRID_POS.LABEL
         });
 
         const info = this._createInfoWHint(item.description);
         this._add(info, {
           row: this._row,
-          column: this.self().gridPos.info
+          column: this.self().GRID_POS.INFO
         });
 
         this._add(item, {
           row: this._row,
-          column: this.self().gridPos.ctrlField
+          column: this.self().GRID_POS.CTRL_FIELD
         });
 
-        const unit = this._createUnit(item.unitShort, item.unitLong);
+        const unit = this.__createUnit(item.unitShort, item.unitLong);
         this._add(unit, {
           row: this._row,
-          column: this.self().gridPos.unit
+          column: this.self().GRID_POS.UNIT
         });
 
         this._connectVisibility(item, label);
@@ -163,7 +163,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       for (let i=0; i<children.length; i++) {
         const child = children[i];
         const layoutProps = child.getLayoutProperties();
-        if (layoutProps.column === this.self().gridPos.label && child.getBuddy().isVisible()) {
+        if (layoutProps.column === this.self().GRID_POS.LABEL && child.getBuddy().isVisible()) {
           return true;
         }
       }
@@ -193,7 +193,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return infoWHint;
     },
 
-    _createUnit: function(unitShort, unitLong) {
+    __createUnit: function(unitShort, unitLong) {
       const unitLabel = this.__unitLabel = new qx.ui.basic.Label().set({
         alignY: "bottom",
         paddingBottom: 1,
@@ -201,6 +201,11 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         toolTipText: unitLong || null,
         visibility: unitShort ? "visible" : "excluded"
       });
+      unitLabel.addListener("pointerover", () => unitLabel.setCursor("pointer"), this);
+      unitLabel.addListener("pointerout", () => unitLabel.resetCursor(), this);
+      unitLabel.addListener("tap", () => {
+        console.log("tap", unitLabel);
+      }, this);
       return unitLabel;
     },
 
@@ -210,7 +215,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       for (let i=0; i<children.length; i++) {
         const child = children[i];
         const layoutProps = child.getLayoutProperties();
-        if (layoutProps.column === this.self().gridPos.label &&
+        if (layoutProps.column === this.self().GRID_POS.LABEL &&
           child.getBuddy().key === portId) {
           row = layoutProps.row;
           break;
@@ -233,11 +238,11 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     },
 
     _getLabelFieldChild: function(portId) {
-      return this._getLayoutChild(portId, this.self().gridPos.label);
+      return this._getLayoutChild(portId, this.self().GRID_POS.LABEL);
     },
 
     _getCtrlFieldChild: function(portId) {
-      return this._getLayoutChild(portId, this.self().gridPos.ctrlField);
+      return this._getLayoutChild(portId, this.self().GRID_POS.CTRL_FIELD);
     }
   }
 });

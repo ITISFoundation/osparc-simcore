@@ -15,15 +15,16 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
     this.base(arguments, studyData);
 
     const grid = this._getLayout();
-    grid.setColumnAlign(this.self().gridPosUpd.currentVersion, "center", "middle");
-    grid.setColumnAlign(this.self().gridPosUpd.latestVersion, "center", "middle");
+    grid.setColumnAlign(this.self().GRID_POS.CURRENT_VERSION, "center", "middle");
+    grid.setColumnAlign(this.self().GRID_POS.LATEST_VERSION, "center", "middle");
   },
 
   statics: {
-    gridPosUpd: {
-      currentVersion: 3,
-      latestVersion: 4,
-      updateButton: 5
+    GRID_POS: {
+      ...osparc.component.metadata.ServicesInStudy.GRID_POS,
+      CURRENT_VERSION: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length,
+      LATEST_VERSION: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length+1,
+      UPDATE_BUTTON: Object.keys(osparc.component.metadata.ServicesInStudy.GRID_POS).length+2
     }
   },
 
@@ -59,20 +60,20 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         font: "title-14"
       }), {
         row: 0,
-        column: this.self().gridPosUpd.currentVersion
+        column: this.self().GRID_POS.CURRENT_VERSION
       });
       this._add(new qx.ui.basic.Label(this.tr("Latest")).set({
         font: "title-14",
         toolTipText: this.tr("Latest compatible patch")
       }), {
         row: 0,
-        column: this.self().gridPosUpd.latestVersion
+        column: this.self().GRID_POS.LATEST_VERSION
       });
 
       const updateAllButton = this.__updateAllButton = new osparc.ui.form.FetchButton(this.tr("Update all"), "@MaterialIcons/update/14");
       this._add(updateAllButton, {
         row: 0,
-        column: this.self().gridPosUpd.updateButton
+        column: this.self().GRID_POS.UPDATE_BUTTON
       });
     },
 
@@ -103,7 +104,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         });
         this._add(currentVersionLabel, {
           row: i,
-          column: this.self().gridPosUpd.currentVersion
+          column: this.self().GRID_POS.CURRENT_VERSION
         });
 
         const latestVersionLabel = new qx.ui.basic.Label(latestCompatibleMetadata["version"]).set({
@@ -111,7 +112,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
         });
         this._add(latestVersionLabel, {
           row: i,
-          column: this.self().gridPosUpd.latestVersion
+          column: this.self().GRID_POS.LATEST_VERSION
         });
 
         const myGroupId = osparc.auth.Data.getInstance().getGroupId();
@@ -130,7 +131,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudyUpdate", {
           updateButton.addListener("execute", () => this.__updateService(nodeId, latestCompatibleMetadata["version"], updateButton), this);
           this._add(updateButton, {
             row: i,
-            column: this.self().gridPosUpd.updateButton
+            column: this.self().GRID_POS.UPDATE_BUTTON
           });
         }
       }
