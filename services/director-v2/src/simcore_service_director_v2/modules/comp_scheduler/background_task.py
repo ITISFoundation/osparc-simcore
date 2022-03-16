@@ -6,7 +6,7 @@ from typing import Any, Callable, Coroutine
 
 from fastapi import FastAPI
 
-from . import factory
+from . import _factory
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Coroutine[Any, Any, None]]:
         # that never stops the background task. This flag is an additional
         # mechanism to enforce stopping the background task
         app.state.comp_scheduler_running = True
-        app.state.scheduler = await factory.create_from_db(app)
+        app.state.scheduler = await _factory.create_from_db(app)
         app.state.scheduler_task = asyncio.create_task(
             scheduler_task(app), name="computational services scheduler"
         )

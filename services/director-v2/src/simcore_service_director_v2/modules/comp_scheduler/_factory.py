@@ -7,9 +7,9 @@ from simcore_service_director_v2.modules.dask_clients_pool import DaskClientsPoo
 
 from ...core.errors import ConfigurationError
 from ...models.domains.comp_runs import CompRunsAtDB
-from ...modules.rabbitmq import RabbitMQClient
 from ...utils.scheduler import SCHEDULED_STATES, get_repository
 from ..db.repositories.comp_runs import CompRunsRepository
+from ..rabbitmq import RabbitMQClient
 from .base_scheduler import BaseCompScheduler, ScheduledPipelineParams
 from .dask_scheduler import DaskScheduler
 
