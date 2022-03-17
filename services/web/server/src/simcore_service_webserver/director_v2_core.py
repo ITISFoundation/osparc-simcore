@@ -9,7 +9,6 @@ from aiohttp import ClientTimeout, web
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_pipeline import ComputationTask
-from models_library.settings.services_common import ServicesCommonSettings
 from models_library.project_networks import DockerNetworkAlias, DockerNetworkName
 from models_library.users import UserID
 from pydantic.types import PositiveInt
