@@ -42,6 +42,7 @@ def mocked_director_v2_api(mocker: MockerFixture):
     mocked_director_v2_api.get_cluster.return_value = Cluster.parse_obj(
         random.choice(Cluster.Config.schema_extra["examples"])
     )
+    mocked_director_v2_api.get_cluster_details.return_value = {}
     mocked_director_v2_api.update_cluster.return_value = Cluster.parse_obj(
         random.choice(Cluster.Config.schema_extra["examples"])
     )
@@ -55,37 +56,18 @@ def mocked_director_v2_with_error(
     mocked_director_v2_api = mocker.patch(
         "simcore_service_webserver.clusters.handlers.director_v2_api", autospec=True
     )
-
-    mocked_director_v2_api.create_cluster.side_effect = director_v2_error(
+    error = director_v2_error(
         status=web.HTTPServiceUnavailable.status_code,
         reason="no director-v2",
         url=faker.uri(),
         cluster_id=faker.pyint(min_value=1),
     )
-    mocked_director_v2_api.list_clusters.side_effect = director_v2_error(
-        status=web.HTTPServiceUnavailable.status_code,
-        reason="no director-v2",
-        url=faker.uri(),
-        cluster_id=faker.pyint(min_value=1),
-    )
-    mocked_director_v2_api.get_cluster.side_effect = director_v2_error(
-        status=web.HTTPServiceUnavailable.status_code,
-        reason="no director-v2",
-        url=faker.uri(),
-        cluster_id=faker.pyint(min_value=1),
-    )
-    mocked_director_v2_api.update_cluster.side_effect = director_v2_error(
-        status=web.HTTPServiceUnavailable.status_code,
-        reason="no director-v2",
-        url=faker.uri(),
-        cluster_id=faker.pyint(min_value=1),
-    )
-    mocked_director_v2_api.delete_cluster.side_effect = director_v2_error(
-        status=web.HTTPServiceUnavailable.status_code,
-        reason="no director-v2",
-        url=faker.uri(),
-        cluster_id=faker.pyint(min_value=1),
-    )
+    mocked_director_v2_api.create_cluster.side_effect = error
+    mocked_director_v2_api.list_clusters.side_effect = error
+    mocked_director_v2_api.get_cluster.side_effect = error
+    mocked_director_v2_api.get_cluster_details.side_effect = error
+    mocked_director_v2_api.update_cluster.side_effect = error
+    mocked_director_v2_api.delete_cluster.side_effect = error
 
 
 @pytest.fixture()
@@ -303,6 +285,31 @@ async def test_get_cluster_with_error(
     # check empty clusters
     assert client.app
     url = client.app.router["get_cluster_handler"].url_for(cluster_id=f"{25}")
+    rsp = await client.get(f"{url}")
+    data, error = await assert_status(rsp, expected_http_error)
+    assert not data
+    assert error
+
+
+@pytest.mark.parametrize("user_role", [UserRole.TESTER], ids=str)
+@pytest.mark.parametrize(
+    "director_v2_error, expected_http_error",
+    [
+        (DirectorServiceError, web.HTTPServiceUnavailable),
+        (ClusterNotFoundError, web.HTTPNotFound),
+        (ClusterAccessForbidden, web.HTTPForbidden),
+    ],
+)
+async def test_get_cluster_details_with_error(
+    enable_dev_features: None,
+    mocked_director_v2_with_error,
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    expected_http_error: Type[web.HTTPException],
+):
+    # check not found
+    assert client.app
+    url = client.app.router["get_cluster_details_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.get(f"{url}")
     data, error = await assert_status(rsp, expected_http_error)
     assert not data
