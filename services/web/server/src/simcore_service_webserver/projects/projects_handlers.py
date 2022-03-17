@@ -143,9 +143,7 @@ async def create_projects(
         )
 
         await project_networks_core.update_from_workbench(
-            app=request.app,
-            project_id=UUID(new_project["uuid"]),
-            workbench=new_project["workbench"],
+            request.app, UUID(new_project["uuid"]), new_project["workbench"]
         )
 
         # copies the project's DATA IF cloned
@@ -442,7 +440,7 @@ async def replace_project(request: web.Request):
                 )
 
         await project_networks_core.update_from_workbench(
-            app=request.app, project_id=project_uuid, workbench=new_project["workbench"]
+            request.app, project_uuid, new_project["workbench"]
         )
 
         new_project = await db.replace_user_project(
