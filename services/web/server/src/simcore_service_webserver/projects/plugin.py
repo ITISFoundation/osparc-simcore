@@ -3,12 +3,10 @@
     A project is a document defining a osparc study
     It contains metadata about the study (e.g. name, description, owner, etc) and a workbench section that describes the study pipeline
 """
-import json
 import logging
 from pprint import pformat
 
 from aiohttp import web
-from servicelib.aiohttp.application_keys import APP_JSONSCHEMA_SPECS_KEY
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.rest_routing import (
     get_handlers_from_namespace,
@@ -17,8 +15,8 @@ from servicelib.aiohttp.rest_routing import (
 )
 
 from .._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
-from .._resources import resources
 from . import projects_handlers, projects_nodes_handlers, projects_tags_handlers
+from .project_models import setup_projects_model_schema
 from .projects_access import setup_projects_access
 from .projects_db import setup_projects_db
 
@@ -87,13 +85,5 @@ def setup_projects(app: web.Application) -> bool:
     # app.router.add_routes( _create_routes("node", specs, nodes_handlers) )
 
     # json-schemas for projects datasets
-    # FIXME: schemas are hard-coded to api/V0!!!
-    with resources.stream("api/v0/schemas/project-v0.0.1.json") as fh:
-        project_schema = json.load(fh)
-
-    if APP_JSONSCHEMA_SPECS_KEY in app:
-        app[APP_JSONSCHEMA_SPECS_KEY]["projects"] = project_schema
-    else:
-        app[APP_JSONSCHEMA_SPECS_KEY] = {"projects": project_schema}
-
+    setup_projects_model_schema(app)
     return True
