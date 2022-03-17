@@ -137,6 +137,7 @@ qx.Class.define("osparc.component.form.Auto", {
      * @return {let} all data from the form
      */
     getData: function() {
+      console.log("getData");
       return this.__getData(this.__model);
     },
 
@@ -147,32 +148,8 @@ qx.Class.define("osparc.component.form.Auto", {
      * @param relax {let} ignore non existing keys
      */
     setData: function(data, relax) {
+      console.log("setData", data, relax);
       this.__setData(this.__model, data, relax);
-    },
-
-
-    /**
-     * set the data in a selectbox
-     *
-     * @param box {let} selectbox name
-     * @param data {let} configuration of the box
-     */
-    setSelectBoxData: function(box, data) {
-      let model;
-      this.__settingData = true;
-
-      if (data.length == 0) {
-        model = qx.data.marshal.Json.createModel([{
-          label: "",
-          key: null
-        }]);
-      } else {
-        model = qx.data.marshal.Json.createModel(data);
-      }
-
-      this.__boxCtrl[box].setModel(model);
-      this.__boxCtrl[box].getTarget().resetSelection();
-      this.__settingData = false;
     },
 
 
@@ -221,6 +198,31 @@ qx.Class.define("osparc.component.form.Auto", {
       }
 
       return data;
+    },
+
+
+    /**
+     * set the data in a selectbox
+     *
+     * @param box {let} selectbox name
+     * @param data {let} configuration of the box
+     */
+    setSelectBoxData: function(box, data) {
+      let model;
+      this.__settingData = true;
+
+      if (data.length == 0) {
+        model = qx.data.marshal.Json.createModel([{
+          label: "",
+          key: null
+        }]);
+      } else {
+        model = qx.data.marshal.Json.createModel(data);
+      }
+
+      this.__boxCtrl[box].setModel(model);
+      this.__boxCtrl[box].getTarget().resetSelection();
+      this.__settingData = false;
     },
 
     __setupDateField: function(s) {
