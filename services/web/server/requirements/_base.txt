@@ -73,7 +73,6 @@ attrs==20.3.0
     #   -c requirements/../../../../packages/service-library/requirements/./constraints.txt
     #   -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
     #   aiohttp
-    #   aioredlock
     #   jsonschema
     #   openapi-core
 cffi==1.15.0
