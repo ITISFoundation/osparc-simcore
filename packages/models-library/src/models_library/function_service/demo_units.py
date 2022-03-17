@@ -95,6 +95,14 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
+            "velocity": build_input(
+                {
+                    "title": "Velo-city",
+                    "description": "Velocity in meters per second",
+                    "x_unit": "meter_per_second",
+                    "type": "number",
+                }
+            ),
         },
         "outputs": {
             "length": build_input(
@@ -162,6 +170,14 @@ META = ServiceDockerData.parse_obj(
                     "title": "Angle",
                     "description": "Angle converted to radians",
                     "x_unit": "radian",
+                    "type": "number",
+                }
+            ),
+            "velocity": build_input(
+                {
+                    "title": "Velo-city",
+                    "description": "Velocity in kilometers per hour",
+                    "x_unit": "kilometer_per_hour",
                     "type": "number",
                 }
             ),

@@ -234,7 +234,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       if (unit) {
         const labels = osparc.utils.Units.getLabels(unit, unitPrefix);
         unitShort = labels.unitShort;
-        unitLong = labels.unitShort;
+        unitLong = labels.unitLong;
       }
       const unitLabel = new qx.ui.basic.Label().set({
         alignY: "bottom",

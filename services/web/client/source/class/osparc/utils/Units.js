@@ -66,23 +66,36 @@ qx.Class.define("osparc.utils.Units", {
         short: "K",
         long: "kelvin"
       },
-      "degree_Celsius": {
-        quantity: "temperature",
-        alias: ["degree_Celsius", "°C"],
-        short: "°C",
-        long: "Degree Celsius"
-      },
       radian: {
         quantity: "radian",
         alias: ["radian", "rad"],
         short: "rad",
         long: "radian"
       },
+      // ---- MORE UNITS ----
       degree: {
         quantity: "angle",
         alias: ["degree", "deg"],
         short: "deg",
         long: "degree"
+      },
+      "degree_Celsius": {
+        quantity: "temperature",
+        alias: ["degree_Celsius", "°C"],
+        short: "°C",
+        long: "Degree Celsius"
+      },
+      "meter_per_second": {
+        quantity: "meter_per_second",
+        alias: ["meter_per_second", "m/s"],
+        short: "m/s",
+        long: "meters per second"
+      },
+      "kilometer_per_hour": {
+        quantity: "kilometer_per_hour",
+        alias: ["kilometer_per_hour", "km/h"],
+        short: "km/h",
+        long: "kilometer per hour"
       }
     },
 
