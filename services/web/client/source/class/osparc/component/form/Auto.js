@@ -298,7 +298,7 @@ qx.Class.define("osparc.component.form.Auto", {
       this.__formCtrl.addBindingOptions(key,
         { // model2target
           converter: function(data) {
-            if (qx.lang.Type.isNumber(data)) {
+            if (qx.lang.Type.isNumber(data) && !isNaN(parseFloat(data))) {
               return String(data);
             }
             return null;
