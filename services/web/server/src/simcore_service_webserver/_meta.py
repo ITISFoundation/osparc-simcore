@@ -26,3 +26,14 @@ WELCOME_MSG = r"""
 """.format(
     f"v{__version__}"
 )
+
+# SEE: https://patorjk.com/software/taag/#p=display&f=Fire%20Font-s&t=GC
+WELCOME_GC_MSG = r"""
+    (        (
+    )\ )     )\
+   (()/(   (((_)
+    /(_))_ )\___
+   (_)) __((/ __|
+     | (_ || (__
+      \___| \___|
+"""

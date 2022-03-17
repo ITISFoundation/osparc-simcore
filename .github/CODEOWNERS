@@ -5,6 +5,7 @@
 
 # files and folders recursively
 .codeclimate.yml                          @sanderegg @pcrespov
+.env-*                                    @pcrespov
 .travis.yml                               @sanderegg
 Makefile                                  @pcrespov @sanderegg
 
@@ -27,8 +28,8 @@ Makefile                                  @pcrespov @sanderegg
 /services/director*/                      @sanderegg @pcrespov
 /services/dynamic-sidecar/                @GitHK
 /services/migration/                      @pcrespov
-/services/storage/                        @mguidon @pcrespov
 /services/static-webserver                @GitHK
+/services/storage/                        @mguidon @pcrespov
 /services/web/client/                     @odeimaiz
 /services/web/server/                     @pcrespov @sanderegg @GitHK
 /tests/environment-setup/                 @pcrespov

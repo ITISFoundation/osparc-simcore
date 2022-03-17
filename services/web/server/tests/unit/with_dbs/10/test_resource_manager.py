@@ -391,7 +391,7 @@ async def test_websocket_disconnected_after_logout(
         (UserRole.TESTER, True),
     ],
 )
-@pytest.mark.flaky  # TODO: remove this flaky mark
+@pytest.mark.flaky(max_runs=3)  # TODO: remove this flaky mark
 async def test_interactive_services_removed_after_logout(
     client: TestClient,
     logged_user: Dict[str, Any],
