@@ -83,23 +83,28 @@ qx.Class.define("osparc.utils.Units", {
     PREFIXES: {
       micro: {
         short: "µ",
-        long: "micro"
+        long: "micro",
+        multiplier: 1e-6
       },
       milli: {
         short: "m",
-        long: "milli"
+        long: "milli",
+        multiplier: 1e-3
       },
       "no-prefix": {
         short: "",
-        long: ""
+        long: "",
+        multiplier: 1e0
       },
       kilo: {
         short: "k",
-        long: "kilo"
+        long: "kilo",
+        multiplier: 1e3
       },
       mega: {
         short: "M",
-        long: "mega"
+        long: "mega",
+        multiplier: 1e6
       }
     },
 
@@ -138,6 +143,16 @@ qx.Class.define("osparc.utils.Units", {
         return osparc.utils.Units.PREFIXES[keys[0]];
       }
       return osparc.utils.Units.PREFIXES[keys[idx+1]];
+    },
+
+    getPrefixMultiplier: function(prefix) {
+      if ([null, undefined, ""].includes(prefix)) {
+        prefix = "no-prefix";
+      }
+      if (prefix in osparc.utils.Units.PREFIXES) {
+        return osparc.utils.Units.PREFIXES[prefix].multiplier;
+      }
+      return 1;
     }
   }
 });

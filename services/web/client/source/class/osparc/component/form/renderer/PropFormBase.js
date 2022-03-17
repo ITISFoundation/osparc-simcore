@@ -221,6 +221,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         unitLabel.addListener("pointerout", () => unitLabel.resetCursor(), this);
         unitLabel.addListener("tap", () => {
           const nextPrefix = osparc.utils.Units.getNextPrefix(item.unitPrefix);
+          this._switchPrefix(item, item.unitPrefix, nextPrefix.long);
           item.unitPrefix = nextPrefix.long;
           unitShort = osparc.utils.Units.getShortLabel(unit, item.unitPrefix);
           unitLong = osparc.utils.Units.getLongLabel(unit, item.unitPrefix);
@@ -228,6 +229,13 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         }, this);
       }
       return unitLabel;
+    },
+
+    _switchPrefix: function(item, oldPrefix, newPrefix) {
+      const oldMulitplier = osparc.utils.Units.getPrefixMultiplier(oldPrefix);
+      const newMulitplier = osparc.utils.Units.getPrefixMultiplier(newPrefix);
+      const multiplier = oldMulitplier/newMulitplier;
+      item.setValue(String(item.getValue()*multiplier));
     },
 
     _getLayoutChild: function(portId, column) {
