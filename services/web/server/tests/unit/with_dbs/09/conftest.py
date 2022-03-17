@@ -237,7 +237,7 @@ async def catalog_subsystem_mock(
     return creator
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 async def director_v2_automock(
     director_v2_service_mock: aioresponses,
 ) -> aioresponses:
