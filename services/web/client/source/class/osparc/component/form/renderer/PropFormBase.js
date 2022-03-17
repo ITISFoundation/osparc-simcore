@@ -158,6 +158,22 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return filteredData;
     },
 
+    getUnits: function() {
+      const units = {};
+      const ctrls = this._form.getControls();
+      for (const portId in ctrls) {
+        units[portId] = "";
+        let ctrl = this._form.getControl(portId);
+        if (ctrl.unitPrefix) {
+          units[portId] += ctrl.unitPrefix + "-";
+        }
+        if (ctrl.unit) {
+          units[portId] += ctrl.unit;
+        }
+      }
+      return units;
+    },
+
     hasVisibleInputs: function() {
       const children = this._getChildren();
       for (let i=0; i<children.length; i++) {

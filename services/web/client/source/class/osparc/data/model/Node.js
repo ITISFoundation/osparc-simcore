@@ -316,7 +316,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     __getInputUnits: function() {
       if (this.isPropertyInitialized("propsForm") && this.getPropsForm()) {
-        return this.getPropsForm().getValues();
+        return this.getPropsForm().getUnits();
       }
       return {};
     },
