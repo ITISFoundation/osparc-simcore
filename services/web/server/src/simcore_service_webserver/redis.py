@@ -48,7 +48,13 @@ async def setup_redis_client(app: web.Application):
             reraise=True,
         ):
             with attempt:
-                client = await aioredis.create_redis_pool(address, encoding="utf-8")
+                client = aioredis.from_url(
+                    redis_settings.dsn, encoding="utf-8", decode_responses=True
+                )
+                if not await client.ping():
+                    raise ConnectionError(
+                        f"Connection to {redis_settings.dsn!r} failed"
+                    )
                 log.info(
                     "Connection to %s succeeded with %s [%s]",
                     f"redis at {address=}",
@@ -89,10 +95,8 @@ async def setup_redis_client(app: web.Application):
         log.critical("Invalid redis lock manager in app")
 
     # close clients
-    client.close()
-    await client.wait_closed()
-    client_lock_db.close()
-    await client_lock_db.wait_closed()
+    await client.disconnect()
+    await client_lock_db.disconnect()
     # delete lock manager
     await lock_manager.destroy()
 

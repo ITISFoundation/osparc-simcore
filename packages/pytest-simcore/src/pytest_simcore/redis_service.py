@@ -58,13 +58,14 @@ async def redis_client(
     redis_settings: RedisSettings,
 ) -> AsyncIterator[aioredis.Redis]:
     """Creates a redis client to communicate with a redis service ready"""
-    client = await aioredis.create_redis_pool(redis_settings.dsn, encoding="utf-8")
+    client = aioredis.from_url(
+        redis_settings.dsn, encoding="utf-8", decode_responses=True
+    )
 
     yield client
 
     await client.flushall()
-    client.close()
-    await client.wait_closed()
+    await client.disconnect()
 
 
 # HELPERS --
@@ -77,6 +78,12 @@ async def redis_client(
     reraise=True,
 )
 async def wait_till_redis_responsive(redis_url: Union[URL, str]) -> None:
-    client = await aioredis.create_redis_pool(str(redis_url), encoding="utf-8")
-    client.close()
-    await client.wait_closed()
+    try:
+        client = aioredis.from_url(
+            f"{redis_url}", encoding="utf-8", decode_responses=True
+        )
+
+        if not await client.ping():
+            raise ConnectionError(f"{redis_url=} not available")
+    finally:
+        await client.disconnect()

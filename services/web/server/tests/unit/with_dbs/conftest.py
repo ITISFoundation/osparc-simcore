@@ -355,12 +355,13 @@ def redis_service(docker_services, docker_ip) -> URL:
 
 @pytest.fixture
 async def redis_client(redis_service: URL):
-    client = await aioredis.create_redis_pool(str(redis_service), encoding="utf-8")
+    client = aioredis.from_url(
+        f"{redis_service}", encoding="utf-8", decode_responses=True
+    )
     yield client
 
     await client.flushall()
-    client.close()
-    await client.wait_closed()
+    await client.disconnect()
 
 
 def _is_redis_responsive(host: str, port: int) -> bool:
