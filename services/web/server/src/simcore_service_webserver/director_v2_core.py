@@ -530,6 +530,34 @@ async def get_cluster(
     return cluster
 
 
+async def get_cluster_details(
+    app: web.Application, user_id: UserID, cluster_id: ClusterID
+) -> DataType:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    url = (settings.base_url / f"clusters/{cluster_id}/details").update_query(
+        user_id=int(user_id)
+    )
+    cluster = await _request_director_v2(
+        app,
+        "GET",
+        url,
+        expected_status=web.HTTPOk,
+        on_error={
+            web.HTTPNotFound.status_code: (
+                ClusterNotFoundError,
+                {"cluster_id": cluster_id},
+            ),
+            web.HTTPForbidden.status_code: (
+                ClusterAccessForbidden,
+                {"cluster_id": cluster_id},
+            ),
+        },
+    )
+
+    assert isinstance(cluster, dict)  # nosec
+    return cluster
+
+
 async def update_cluster(
     app: web.Application,
     user_id: UserID,

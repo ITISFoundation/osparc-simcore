@@ -168,6 +168,15 @@ async def test_get_cluster(
     assert cluster["id"] == cluster_id
 
 
+async def test_get_cluster_details(
+    mocked_director_v2, client, user_id: UserID, cluster_id: ClusterID
+):
+    cluster_details = await director_v2_api.get_cluster_details(
+        client.app, user_id=user_id, cluster_id=cluster_id
+    )
+    assert isinstance(cluster_details, dict)
+
+
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
 @given(cluster_patch=st.from_type(ClusterPatch))
 async def test_update_cluster(

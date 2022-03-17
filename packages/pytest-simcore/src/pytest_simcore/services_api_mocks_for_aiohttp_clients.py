@@ -171,6 +171,15 @@ def get_cluster_cb(url, **kwargs) -> CallbackResult:
     )
 
 
+def get_cluster_details_cb(url, **kwargs) -> CallbackResult:
+    assert url.query.get("user_id")
+    cluster_id = url.path.split("/")[-1]
+    return CallbackResult(
+        status=200,
+        payload={"scheduler": {}, "cluster": {}, "dashboard_link": "some_faked_link"},
+    )
+
+
 def patch_cluster_cb(url, **kwargs) -> CallbackResult:
     assert url.query.get("user_id")
     cluster_id = url.path.split("/")[-1]
@@ -250,6 +259,15 @@ async def director_v2_service_mock(
             r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters(/[0-9]+)\?(\w+(?:=\w+)?\&?){1,}$"
         ),
         callback=get_cluster_cb,
+        status=web.HTTPCreated.status_code,
+        repeat=True,
+    )
+
+    aioresponses_mocker.get(
+        re.compile(
+            r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters/[0-9]+/details\?(\w+(?:=\w+)?\&?){1,}$"
+        ),
+        callback=get_cluster_details_cb,
         status=web.HTTPCreated.status_code,
         repeat=True,
     )

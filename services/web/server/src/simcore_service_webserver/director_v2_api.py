@@ -3,6 +3,7 @@
 PLEASE avoid importing from any other module to access this plugin's functionality
 """
 
+
 from typing import Tuple
 
 from .director_v2_abc import (
@@ -28,6 +29,7 @@ from .director_v2_core import (
     create_cluster,
     list_clusters,
     get_cluster,
+    get_cluster_details,
     update_cluster,
     delete_cluster,
     ClusterAccessForbidden,
@@ -56,8 +58,10 @@ __all__: Tuple[str, ...] = (
     "create_cluster",
     "list_clusters",
     "get_cluster",
+    "get_cluster_details",
     "update_cluster",
     "delete_cluster",
     "ClusterAccessForbidden",
     "ClusterNotFoundError",
 )
+# nopycln: file
