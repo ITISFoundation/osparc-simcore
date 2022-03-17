@@ -47,7 +47,7 @@ paths:
     get:
       tags:
         - cluster
-      summary: Gets one cluster details
+      summary: Gets one cluster
       operationId: get_cluster_handler
       responses:
         "200":
@@ -89,6 +89,28 @@ paths:
           description: cluster has been successfully deleted
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
+
+/clusters/{cluster_id}/details:
+  parameters:
+    - name: cluster_id
+      in: path
+      required: true
+      schema:
+        type: string
+  get:
+    tags:
+      - cluster
+    summary: Gets one cluster details
+    operationId: get_cluster_handler
+    responses:
+      "200":
+        description: got cluster
+        content:
+          application/json:
+            schema:
+              $ref: "./components/schemas/cluster.yaml#/ClusterDetailsEnveloped"
+      default:
+        $ref: "#/components/responses/DefaultErrorResponse"
 
 components:
   responses:

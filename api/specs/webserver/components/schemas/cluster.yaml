@@ -153,6 +153,31 @@ Cluster:
           write: true
           delete: true
 
+ClusterDetails:
+  type: object
+  properties:
+    scheduler:
+      type: object
+      description: contains information about the cluster scheduler
+    cluster:
+      type: object
+      description: contains information about the cluster workers
+    dashboardLink:
+      type: str
+      format: uri
+      description: contains the link to the cluster dashboard
+
+ClusterDetailsEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: "#/ClusterDetails"
+    error:
+      nullable: true
+      default: null
+
 ClusterEnveloped:
   type: object
   required:

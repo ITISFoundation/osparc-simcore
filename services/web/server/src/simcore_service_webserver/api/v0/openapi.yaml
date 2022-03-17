@@ -4761,7 +4761,7 @@ paths:
     get:
       tags:
         - cluster
-      summary: Gets one cluster details
+      summary: Gets one cluster
       operationId: get_cluster_handler
       responses:
         '200':
