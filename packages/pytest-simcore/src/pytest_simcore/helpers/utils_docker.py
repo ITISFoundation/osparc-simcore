@@ -199,11 +199,24 @@ def shorten_path(filename: str) -> Path:
     return Path(filename)
 
 
+# actions/upload-artifact@v2:
+#    Invalid characters for artifact paths include:
+#      Double quote ", Colon :, Less than <, Greater than >, Vertical bar |, Asterisk *,
+#      Question mark ?, Carriage return \r, Line feed \n
+BANNED_CHARS_FOR_ARTIFACTS = re.compile(r'["\:><|\*\?]')
+
+
+def safe_artifact_name(name: str) -> str:
+    return BANNED_CHARS_FOR_ARTIFACTS.sub("_", name)
+
+
 def save_docker_infos(destination_path: Path):
     client = docker.from_env()
 
     # Includes stop containers, which might be e.g. failing tasks
     all_containers = client.containers.list(all=True)
+
+    destination_path = Path(safe_artifact_name(f"{destination_path}"))
 
     if all_containers:
         try:
@@ -217,11 +230,13 @@ def save_docker_infos(destination_path: Path):
         for container in all_containers:
 
             try:
+                container_name = safe_artifact_name(container.name)
+
                 # logs w/o coloring characters
                 logs: str = container.logs(timestamps=True, tail=1000).decode()
 
                 try:
-                    (destination_path / f"{container.name}.log").write_text(
+                    (destination_path / f"{container_name}.log").write_text(
                         COLOR_ENCODING_RE.sub("", logs)
                     )
 
@@ -233,7 +248,7 @@ def save_docker_infos(destination_path: Path):
 
                 # inspect attrs
                 try:
-                    (destination_path / f"{container.name}.json").write_text(
+                    (destination_path / f"{container_name}.json").write_text(
                         json.dumps(container.attrs, indent=2)
                     )
                 except OSError as err:

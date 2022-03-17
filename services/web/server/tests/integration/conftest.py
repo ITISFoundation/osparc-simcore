@@ -130,6 +130,13 @@ def _default_app_config_for_integration_tests(
     test_environ["WEBSERVER_LOGLEVEL"] = "WARNING"
     test_environ["OSPARC_SIMCORE_REPO_ROOTDIR"] = f"{osparc_simcore_root_dir}"
 
+    # NOTE: previously in .env but removed from that file env since the webserver
+    # can be configured as GC service as well. In integration tests, we are
+    # for the moment using web-server as an all-in-one service.
+    # TODO: create integration tests using different configs
+    # SEE https://github.com/ITISFoundation/osparc-simcore/issues/2896
+    test_environ["WEBSERVER_GARBAGE_COLLECTION_INTERVAL_SECONDS"] = "30"
+
     # recreate config-file
     config_template = Template(default_app_config_integration_file.read_text())
     config_text = config_template.substitute(**test_environ)
