@@ -58,6 +58,8 @@ async def _setup_login_options(app: web.Application):
 
     app[APP_LOGIN_OPTIONS_KEY] = LoginOptions(**cfg)
 
+    yield
+
 
 @app_module_setup(
     "simcore_service_webserver.login",
@@ -80,5 +82,5 @@ def setup_login(app: web.Application):
 
     # signals
     app.cleanup_ctx.append(setup_login_storage)
-    app.on_startup.append(_setup_login_options)
+    app.cleanup_ctx.append(_setup_login_options)
     return True
