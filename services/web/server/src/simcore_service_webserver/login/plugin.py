@@ -23,25 +23,20 @@ log = logging.getLogger(__name__)
 MAX_TIME_TO_CLOSE_POOL_SECS = 5
 
 
-async def _setup_login_storage_and_options(app: web.Application):
-    db_settings: PostgresSettings = get_db_plugin_settings(app)
-    email_settings: SMTPSettings = get_email_plugin_settings(app)
+async def setup_login_storage(app: web.Application):
+    # TODO: ensure pool only init once!
+    if app.get(APP_LOGIN_STORAGE_KEY) is None:
+        return
 
-    # storage
+    settings: PostgresSettings = get_db_plugin_settings(app)
+
     pool: asyncpg.pool.Pool = await asyncpg.create_pool(
-        dsn=db_settings.dsn_with_query,
-        min_size=db_settings.POSTGRES_MINSIZE,
-        max_size=db_settings.POSTGRES_MAXSIZE,
+        dsn=settings.dsn_with_query,
+        min_size=settings.POSTGRES_MINSIZE,
+        max_size=settings.POSTGRES_MAXSIZE,
         loop=asyncio.get_event_loop(),
     )
     app[APP_LOGIN_STORAGE_KEY] = storage = AsyncpgStorage(pool)
-
-    # options
-    cfg = email_settings.dict(exclude_unset=True)
-    if INDEX_RESOURCE_NAME in app.router:
-        cfg["LOGIN_REDIRECT"] = f"{app.router[INDEX_RESOURCE_NAME].url_for()}"
-
-    app[APP_LOGIN_OPTIONS_KEY] = LoginOptions(**cfg)
 
     yield  # ----------------
 
@@ -52,6 +47,16 @@ async def _setup_login_storage_and_options(app: web.Application):
         await asyncio.wait_for(pool.close(), timeout=MAX_TIME_TO_CLOSE_POOL_SECS)
     except asyncio.TimeoutError:
         log.exception("Failed to close login storage loop")
+
+
+async def _setup_login_options(app: web.Application):
+    settings: SMTPSettings = get_email_plugin_settings(app)
+
+    cfg = settings.dict(exclude_unset=True)
+    if INDEX_RESOURCE_NAME in app.router:
+        cfg["LOGIN_REDIRECT"] = f"{app.router[INDEX_RESOURCE_NAME].url_for()}"
+
+    app[APP_LOGIN_OPTIONS_KEY] = LoginOptions(**cfg)
 
 
 @app_module_setup(
@@ -74,5 +79,6 @@ def setup_login(app: web.Application):
     app.router.add_routes(routes)
 
     # signals
-    app.cleanup_ctx.append(_setup_login_storage_and_options)
+    app.cleanup_ctx.append(setup_login_storage)
+    app.on_startup.append(_setup_login_options)
     return True
