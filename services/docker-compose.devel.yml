@@ -60,15 +60,20 @@ services:
 
   webserver:
     volumes:
-      &webserver-volumes
+      &webserver-volumes-dev
       - ./web/server:/devel/services/web/server
       - ./web/client/source-output:/devel/services/web/client
       - ../packages:/devel/packages
     environment:
-      &webserver-environment
-      - SC_BOOT_MODE=debug-ptvsd
-      - WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS=15
-      - WEBSERVER_LOGLEVEL=${LOG_LEVEL:-DEBUG}
+      &webserver-environment-dev
+      SC_BOOT_MODE: debug-ptvsd
+      WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-DEBUG}
+
+  webserver-garbage-collector:
+    volumes: *webserver-volumes-dev
+    environment:
+      <<: *webserver-environment-dev
+      WEBSERVER_RESOURCES_DELETION_TIMEOUT_SECONDS: 15
 
   dask-sidecar:
     volumes:
