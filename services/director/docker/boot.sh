@@ -18,7 +18,10 @@ if [ "${SC_BUILD_TARGET}" = "development" ]; then
   python --version | sed 's/^/    /'
   command -v python | sed 's/^/    /'
   cd services/director || exit 1
-  pip install --no-cache-dir -r requirements/dev.txt
+  # speedup for legacy service with all essential depnendcy pinned
+  # in this case `--no-deps` does the trick, for details see link
+  # https://stackoverflow.com/a/65793484/2855718
+  pip install --no-cache-dir --no-deps -r requirements/dev.txt
   cd - || exit 1
   echo "$INFO" "PIP :"
   pip list | sed 's/^/    /'
