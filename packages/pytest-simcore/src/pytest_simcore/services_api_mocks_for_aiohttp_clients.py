@@ -2,8 +2,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from ast import Call
 import json
+import random
 import re
 from pathlib import Path
 from typing import Any, Dict, List
@@ -130,9 +130,6 @@ def get_computation_cb(url, **kwargs) -> CallbackResult:
             },
         },
     )
-
-
-import random
 
 
 def create_cluster_cb(url, **kwargs) -> CallbackResult:
