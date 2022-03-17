@@ -112,18 +112,18 @@ qx.Class.define("osparc.utils.Units", {
       return unitKey in osparc.utils.Units.BASE_UNITS ? osparc.utils.Units.BASE_UNITS[unitKey] : null;
     },
 
-    getShortLabel: function(unit, prefix) {
-      const baseUnit = this.__getBaseUnit(unit);
-      let shortLabel = baseUnit ? baseUnit.short : unit;
+    getShortLabel: function(xUnit, prefix) {
+      const baseUnit = this.__getBaseUnit(xUnit);
+      let shortLabel = baseUnit ? baseUnit.short : xUnit;
       if (prefix && prefix in osparc.utils.Units.PREFIXES) {
         shortLabel = osparc.utils.Units.PREFIXES[prefix].short + shortLabel;
       }
       return shortLabel;
     },
 
-    getLongLabel: function(unit, prefix) {
-      const baseUnit = this.__getBaseUnit(unit);
-      let longLabel = baseUnit ? baseUnit.long : unit;
+    getLongLabel: function(xUnit, prefix) {
+      const baseUnit = this.__getBaseUnit(xUnit);
+      let longLabel = baseUnit ? baseUnit.long : xUnit;
       if (prefix && prefix in osparc.utils.Units.PREFIXES) {
         longLabel = osparc.utils.Units.PREFIXES[prefix].long + longLabel;
       }
@@ -153,6 +153,34 @@ qx.Class.define("osparc.utils.Units", {
         return osparc.utils.Units.PREFIXES[prefix].multiplier;
       }
       return 1;
+    },
+
+    composeXUnit: function(unit, unitPrefix) {
+      if (unit === undefined) {
+        return null;
+      }
+      let xUnit = "";
+      if (unitPrefix) {
+        xUnit += unitPrefix + "-";
+      }
+      xUnit += unit;
+      return xUnit;
+    },
+
+    decomposeXUnit: function(xUnit) {
+      const unitSplit = xUnit.split("-");
+      let unitPrefix = null;
+      let unit = null;
+      if (unitSplit.length === 2) {
+        unitPrefix = unitSplit[0];
+        unit = unitSplit[1];
+      } else {
+        unit = unitSplit[0];
+      }
+      return {
+        unitPrefix,
+        unit
+      };
     }
   }
 });

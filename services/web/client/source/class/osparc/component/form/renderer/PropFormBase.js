@@ -158,20 +158,27 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return filteredData;
     },
 
-    getUnits: function() {
-      const units = {};
+    getChangedUnits: function() {
+      const xUnits = {};
       const ctrls = this._form.getControls();
       for (const portId in ctrls) {
-        units[portId] = "";
         let ctrl = this._form.getControl(portId);
-        if (ctrl.unitPrefix) {
-          units[portId] += ctrl.unitPrefix + "-";
+        xUnits[portId] = osparc.utils.Units.composeXUnit(ctrl.unit, ctrl.unitPrefix);
+      }
+      const nodeMD = this.getNode().getMetaData();
+      const changedXUnits = {};
+      for (const portId in xUnits) {
+        if (xUnits[portId] === null) {
+          break;
         }
-        if (ctrl.unit) {
-          units[portId] += ctrl.unit;
+        if (!("x_unit" in nodeMD.inputs[portId])) {
+          break;
+        }
+        if (xUnits[portId] !== nodeMD.inputs[portId].x_unit) {
+          changedXUnits[portId] = xUnits[portId];
         }
       }
-      return units;
+      return changedXUnits;
     },
 
     hasVisibleInputs: function() {

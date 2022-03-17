@@ -531,14 +531,12 @@ qx.Class.define("osparc.component.form.Auto", {
       control.unitShort = s.unitShort;
       control.unitLong = s.unitLong;
       if ("x_unit" in s) {
-        const unitSplit = s.x_unit.split("-");
-        if (unitSplit.length === 2) {
-          control.unitPrefix = unitSplit[0];
-          control.unit = unitSplit[1];
-        } else {
-          control.unitPrefix = null;
-          control.unit = unitSplit[0];
-        }
+        const {
+          unitPrefix,
+          unit
+        } = osparc.utils.Units.decomposeXUnit(s.x_unit);
+        control.unitPrefix = unitPrefix;
+        control.unit = unit;
       }
 
       return control;
