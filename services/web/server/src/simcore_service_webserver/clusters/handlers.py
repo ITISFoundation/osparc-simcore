@@ -92,6 +92,28 @@ async def get_cluster_handler(request: web.Request) -> web.Response:
         raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
 
 
+@routes.get(
+    f"/{api_version_prefix}/clusters/{{cluster_id}}/details",
+    name="get_cluster_details_handler",
+)
+@login_required
+@permission_required("clusters.read")
+async def get_cluster_details_handler(request: web.Request) -> web.Response:
+    path, _, _ = await extract_and_validate(request)
+    user_id: UserID = request[RQT_USERID_KEY]
+    try:
+        cluster_details = await director_v2_api.get_cluster_details(
+            request.app, user_id, cluster_id=path["cluster_id"]
+        )
+        return web.json_response(data={"data": cluster_details}, dumps=json_dumps)
+    except ClusterNotFoundError as exc:
+        raise web.HTTPNotFound(reason=f"{exc}") from exc
+    except ClusterAccessForbidden as exc:
+        raise web.HTTPForbidden(reason=f"{exc}") from exc
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
+
+
 @routes.patch(
     f"/{api_version_prefix}/clusters/{{cluster_id}}", name="update_cluster_handler"
 )

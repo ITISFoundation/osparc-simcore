@@ -171,6 +171,24 @@ async def test_get_cluster(
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_get_cluster_details(
+    enable_dev_features: None,
+    mocked_director_v2_api,
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    user_role: UserRole,
+    expected: ExpectedResponse,
+):
+    # check not found
+    assert client.app
+    url = client.app.router["get_cluster_details_handler"].url_for(cluster_id=f"{25}")
+    rsp = await client.get(f"{url}")
+    data, error = await assert_status(rsp, expected.ok)
+    if not error:
+        assert isinstance(data, dict)
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
 @hypothesis.given(cluster_patch=st.from_type(ClusterPatch))
 @hypothesis.settings(
     # hypothesis does not play well with fixtures, hence the warning

@@ -57,7 +57,7 @@ class ClusterOut(Cluster):
 class ClusterDetailsOut(BaseModel):
     scheduler: Scheduler
     cluster: Cluster
-    dashboard_link: Optional[AnyUrl] = None
+    dashboard_link: AnyUrl
 
 
 class ClusterCreate(BaseCluster):
