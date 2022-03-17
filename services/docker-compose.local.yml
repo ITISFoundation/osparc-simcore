@@ -71,7 +71,7 @@ services:
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.priority=3
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver_local.middlewares=${SWARM_STACK_NAME}_gzip@docker, ${SWARM_STACK_NAME_NO_HYPHEN}_sslheader@docker, ${SWARM_STACK_NAME}_webserver_retry
 
-  webserver-garbage-collector:
+  wb-garbage-collector:
     environment:
       SC_BOOT_MODE: ${SC_BOOT_MODE:-default}
       WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-INFO}
