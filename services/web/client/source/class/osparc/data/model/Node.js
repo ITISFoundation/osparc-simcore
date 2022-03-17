@@ -448,8 +448,9 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     populateInputOutputData: function(nodeData) {
-      this.setInputData(nodeData.inputs);
-      this.setInputDataAccess(nodeData.inputAccess);
+      this.__setInputData(nodeData.inputs);
+      this.__setInputUnits(nodeData.inputsUnits);
+      this.__setInputDataAccess(nodeData.inputAccess);
       this.setOutputData(nodeData.outputs);
       this.addInputNodes(nodeData.inputNodes);
       this.addOutputNodes(nodeData.outputNodes);
@@ -642,7 +643,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    setInputData: function(inputs) {
+    __setInputData: function(inputs) {
       if (this.__settingsForm && inputs) {
         const inputData = {};
         const inputLinks = {};
@@ -659,7 +660,13 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    setInputDataAccess: function(inputAccess) {
+    __setInputUnits: function(inputsUnits) {
+      if (this.__settingsForm && inputsUnits) {
+        console.log("__setInputUnits", inputsUnits);
+      }
+    },
+
+    __setInputDataAccess: function(inputAccess) {
       if (inputAccess) {
         this.setInputAccess(inputAccess);
         this.getPropsForm().setAccessLevel(inputAccess);
@@ -1276,7 +1283,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.populateWithMetadata();
         this.populateNodeData();
         this.setLabel(label);
-        this.setInputData({
+        this.__setInputData({
           "linspace_start": value,
           "linspace_stop": value,
           "linspace_step": 1

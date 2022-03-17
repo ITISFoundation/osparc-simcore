@@ -109,14 +109,14 @@ qx.Class.define("osparc.utils.Units", {
     },
 
     __getBaseUnit: function(unitKey) {
-      return unitKey in osparc.utils.Units.BASE_UNITS ? osparc.utils.Units.BASE_UNITS[unitKey] : null;
+      return unitKey in this.BASE_UNITS ? this.BASE_UNITS[unitKey] : null;
     },
 
     getShortLabel: function(xUnit, prefix) {
       const baseUnit = this.__getBaseUnit(xUnit);
       let shortLabel = baseUnit ? baseUnit.short : xUnit;
-      if (prefix && prefix in osparc.utils.Units.PREFIXES) {
-        shortLabel = osparc.utils.Units.PREFIXES[prefix].short + shortLabel;
+      if (prefix && prefix in this.PREFIXES) {
+        shortLabel = this.PREFIXES[prefix].short + shortLabel;
       }
       return shortLabel;
     },
@@ -124,8 +124,8 @@ qx.Class.define("osparc.utils.Units", {
     getLongLabel: function(xUnit, prefix) {
       const baseUnit = this.__getBaseUnit(xUnit);
       let longLabel = baseUnit ? baseUnit.long : xUnit;
-      if (prefix && prefix in osparc.utils.Units.PREFIXES) {
-        longLabel = osparc.utils.Units.PREFIXES[prefix].long + longLabel;
+      if (prefix && prefix in this.PREFIXES) {
+        longLabel = this.PREFIXES[prefix].long + longLabel;
       }
       return longLabel;
     },
@@ -134,23 +134,23 @@ qx.Class.define("osparc.utils.Units", {
       if ([null, undefined, ""].includes(prefix)) {
         prefix = "no-prefix";
       }
-      const keys = Object.keys(osparc.utils.Units.PREFIXES);
+      const keys = Object.keys(this.PREFIXES);
       const idx = keys.indexOf(prefix);
       if (idx === -1) {
         return null;
       }
       if (idx === keys.length-1) {
-        return osparc.utils.Units.PREFIXES[keys[0]];
+        return this.PREFIXES[keys[0]];
       }
-      return osparc.utils.Units.PREFIXES[keys[idx+1]];
+      return this.PREFIXES[keys[idx+1]];
     },
 
     getPrefixMultiplier: function(prefix) {
       if ([null, undefined, ""].includes(prefix)) {
         prefix = "no-prefix";
       }
-      if (prefix in osparc.utils.Units.PREFIXES) {
-        return osparc.utils.Units.PREFIXES[prefix].multiplier;
+      if (prefix in this.PREFIXES) {
+        return this.PREFIXES[prefix].multiplier;
       }
       return 1;
     },
