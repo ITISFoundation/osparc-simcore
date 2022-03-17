@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 
-import typing
 from typing import AsyncIterator, Dict
 
 import pytest
@@ -11,20 +10,12 @@ from _helpers import ExpectedResponse, standard_role_response
 from aiohttp import web
 from aioresponses import aioresponses
 from faker import Faker
-from hypothesis import HealthCheck, given, provisional, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from pydantic import (
-    AnyUrl,
-    BaseModel,
-    EmailStr,
-    HttpUrl,
-    PaymentCardNumber,
-    PositiveFloat,
-)
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver import director_v2_api
 from simcore_service_webserver.db_models import UserRole
@@ -148,18 +139,13 @@ async def test_delete_pipeline(
     await director_v2_api.delete_pipeline(client.app, user_id, project_id)
 
 
-# FIXME: For now it seems the pydantic hypothesis plugin does not provide strategies for these types.
-# therefore we currently provide it
-st.register_type_strategy(AnyUrl, provisional.urls())
-st.register_type_strategy(HttpUrl, provisional.urls())
-
-
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
-@given(st.builds(ClusterCreate))
-async def test_create_cluster(mocked_director_v2, client, user_id: UserID, instance):
-    new_cluster = instance
+@given(cluster_create=st.builds(ClusterCreate))
+async def test_create_cluster(
+    mocked_director_v2, client, user_id: UserID, cluster_create
+):
     created_cluster = await director_v2_api.create_cluster(
-        client.app, user_id=user_id, new_cluster=new_cluster
+        client.app, user_id=user_id, new_cluster=cluster_create
     )
     assert created_cluster is not None
     assert isinstance(created_cluster, dict)

@@ -27,9 +27,10 @@ async def create_cluster_handler(request: web.Request) -> web.Response:
     user_id: UserID = request[RQT_USERID_KEY]
     body = await request.json()
     assert body  # no sec
+
     try:
         new_cluster = ClusterCreate(
-            name=body.get("name"),
+            name=body.get("name", ""),
             description=body.get("description"),
             type=body.get("type"),
             endpoint=body.get("endpoint"),

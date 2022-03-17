@@ -17,6 +17,9 @@ from simcore_postgres_database.models.clusters import ClusterType
 class ClusterCreate(BaseCluster):
     owner: Optional[GroupID]
     authentication: ExternalClusterAuthentication
+    access_rights: Dict[GroupID, ClusterAccessRights] = Field(
+        alias="accessRights", default_factory=dict
+    )
 
     @validator("thumbnail", always=True, pre=True)
     @classmethod
