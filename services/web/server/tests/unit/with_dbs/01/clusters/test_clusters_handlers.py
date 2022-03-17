@@ -7,11 +7,12 @@
 
 
 import random
-from typing import Any, Dict
+from typing import Any, Dict, Type
 
 import hypothesis
 import pytest
 from _helpers import ExpectedResponse, standard_role_response  # nopycln: import
+from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from hypothesis import strategies as st
@@ -20,6 +21,11 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.director_v2_exceptions import (
+    ClusterAccessForbidden,
+    ClusterNotFoundError,
+    DirectorServiceError,
+)
 from simcore_service_webserver.director_v2_models import ClusterCreate, ClusterPatch
 
 
@@ -40,6 +46,46 @@ def mocked_director_v2_api(mocker: MockerFixture):
         random.choice(Cluster.Config.schema_extra["examples"])
     )
     mocked_director_v2_api.delete_cluster.return_value = None
+
+
+@pytest.fixture
+def mocked_director_v2_with_error(
+    mocker: MockerFixture, faker: Faker, director_v2_error: Type[DirectorServiceError]
+):
+    mocked_director_v2_api = mocker.patch(
+        "simcore_service_webserver.clusters.handlers.director_v2_api", autospec=True
+    )
+
+    mocked_director_v2_api.create_cluster.side_effect = director_v2_error(
+        status=web.HTTPServiceUnavailable.status_code,
+        reason="no director-v2",
+        url=faker.uri(),
+        cluster_id=faker.pyint(min_value=1),
+    )
+    mocked_director_v2_api.list_clusters.side_effect = director_v2_error(
+        status=web.HTTPServiceUnavailable.status_code,
+        reason="no director-v2",
+        url=faker.uri(),
+        cluster_id=faker.pyint(min_value=1),
+    )
+    mocked_director_v2_api.get_cluster.side_effect = director_v2_error(
+        status=web.HTTPServiceUnavailable.status_code,
+        reason="no director-v2",
+        url=faker.uri(),
+        cluster_id=faker.pyint(min_value=1),
+    )
+    mocked_director_v2_api.update_cluster.side_effect = director_v2_error(
+        status=web.HTTPServiceUnavailable.status_code,
+        reason="no director-v2",
+        url=faker.uri(),
+        cluster_id=faker.pyint(min_value=1),
+    )
+    mocked_director_v2_api.delete_cluster.side_effect = director_v2_error(
+        status=web.HTTPServiceUnavailable.status_code,
+        reason="no director-v2",
+        url=faker.uri(),
+        cluster_id=faker.pyint(min_value=1),
+    )
 
 
 @pytest.fixture()
@@ -166,3 +212,132 @@ async def test_delete_cluster(
     data, error = await assert_status(rsp, expected.no_content)
     if not error:
         assert data is None
+
+
+@pytest.mark.parametrize("user_role", [UserRole.TESTER], ids=str)
+@pytest.mark.parametrize(
+    "director_v2_error, expected_http_error",
+    [
+        (DirectorServiceError, web.HTTPServiceUnavailable),
+    ],
+)
+async def test_create_cluster_with_error(
+    enable_dev_features: None,
+    mocked_director_v2_with_error,
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    faker: Faker,
+    cluster_create: ClusterCreate,
+    expected_http_error: Type[web.HTTPException],
+):
+    cluster_create.access_rights[logged_user["id"]] = CLUSTER_ADMIN_RIGHTS
+    print(f"--> creating {cluster_create=!r}")
+    # check we can create a cluster
+    assert client.app
+    url = client.app.router["create_cluster_handler"].url_for()
+    rsp = await client.post(
+        f"{url}", json=cluster_create.dict(by_alias=True, exclude_unset=True)
+    )
+    data, error = await assert_status(rsp, expected_http_error)
+    assert not data
+    assert error
+
+
+@pytest.mark.parametrize("user_role", [UserRole.TESTER], ids=str)
+@pytest.mark.parametrize(
+    "director_v2_error, expected_http_error",
+    [
+        (DirectorServiceError, web.HTTPServiceUnavailable),
+    ],
+)
+async def test_list_clusters_with_error(
+    enable_dev_features: None,
+    mocked_director_v2_with_error,
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    expected_http_error: Type[web.HTTPException],
+):
+    # check empty clusters
+    assert client.app
+    url = client.app.router["list_clusters_handler"].url_for()
+    rsp = await client.get(f"{url}")
+    data, error = await assert_status(rsp, expected_http_error)
+    assert not data
+    assert error
+
+
+@pytest.mark.parametrize("user_role", [UserRole.TESTER], ids=str)
+@pytest.mark.parametrize(
+    "director_v2_error, expected_http_error",
+    [
+        (DirectorServiceError, web.HTTPServiceUnavailable),
+        (ClusterNotFoundError, web.HTTPNotFound),
+        (ClusterAccessForbidden, web.HTTPForbidden),
+    ],
+)
+async def test_get_cluster_with_error(
+    enable_dev_features: None,
+    mocked_director_v2_with_error,
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    expected_http_error: Type[web.HTTPException],
+):
+    # check empty clusters
+    assert client.app
+    url = client.app.router["get_cluster_handler"].url_for(cluster_id=f"{25}")
+    rsp = await client.get(f"{url}")
+    data, error = await assert_status(rsp, expected_http_error)
+    assert not data
+    assert error
+
+
+@pytest.mark.parametrize("user_role", [UserRole.TESTER], ids=str)
+@pytest.mark.parametrize(
+    "director_v2_error, expected_http_error",
+    [
+        (DirectorServiceError, web.HTTPServiceUnavailable),
+        (ClusterNotFoundError, web.HTTPNotFound),
+        (ClusterAccessForbidden, web.HTTPForbidden),
+    ],
+)
+async def test_update_cluster_with_error(
+    enable_dev_features: None,
+    mocked_director_v2_with_error,
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    expected_http_error: Type[web.HTTPException],
+):
+    _PATCH_EXPORT = {"by_alias": True, "exclude_unset": True, "exclude_none": True}
+    assert client.app
+    url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{25}")
+    rsp = await client.patch(
+        f"{url}",
+        json=ClusterPatch().dict(**_PATCH_EXPORT),
+    )
+    data, error = await assert_status(rsp, expected_http_error)
+    assert not data
+    assert error
+
+
+@pytest.mark.parametrize("user_role", [UserRole.TESTER], ids=str)
+@pytest.mark.parametrize(
+    "director_v2_error, expected_http_error",
+    [
+        (DirectorServiceError, web.HTTPServiceUnavailable),
+        (ClusterNotFoundError, web.HTTPNotFound),
+        (ClusterAccessForbidden, web.HTTPForbidden),
+    ],
+)
+async def test_delete_cluster_with_error(
+    enable_dev_features: None,
+    mocked_director_v2_with_error,
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    expected_http_error: Type[web.HTTPException],
+):
+    assert client.app
+    url = client.app.router["delete_cluster_handler"].url_for(cluster_id=f"{25}")
+    rsp = await client.delete(f"{url}")
+    data, error = await assert_status(rsp, expected_http_error)
+    assert not data
+    assert error

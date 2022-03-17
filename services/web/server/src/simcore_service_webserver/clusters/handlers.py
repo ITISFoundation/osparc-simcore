@@ -8,7 +8,11 @@ from servicelib.json_serialization import json_dumps
 
 from .. import director_v2_api
 from .._meta import api_version_prefix
-from ..director_v2_exceptions import ClusterAccessForbidden, ClusterNotFoundError
+from ..director_v2_exceptions import (
+    ClusterAccessForbidden,
+    ClusterNotFoundError,
+    DirectorServiceError,
+)
 from ..director_v2_models import ClusterCreate, ClusterPatch
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
@@ -50,6 +54,8 @@ async def create_cluster_handler(request: web.Request) -> web.Response:
         raise web.HTTPUnprocessableEntity(
             reason=f"Invalid cluster definition: {exc} "
         ) from exc
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
 
 
 @routes.get(f"/{api_version_prefix}/clusters", name="list_clusters_handler")
@@ -58,8 +64,11 @@ async def create_cluster_handler(request: web.Request) -> web.Response:
 async def list_clusters_handler(request: web.Request) -> web.Response:
     await extract_and_validate(request)
     user_id: UserID = request[RQT_USERID_KEY]
-    data = await director_v2_api.list_clusters(request.app, user_id)
-    return web.json_response(data={"data": data}, dumps=json_dumps)
+    try:
+        data = await director_v2_api.list_clusters(request.app, user_id)
+        return web.json_response(data={"data": data}, dumps=json_dumps)
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
 
 
 @routes.get(
@@ -79,6 +88,8 @@ async def get_cluster_handler(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason=f"{exc}") from exc
     except ClusterAccessForbidden as exc:
         raise web.HTTPForbidden(reason=f"{exc}") from exc
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
 
 
 @routes.patch(
@@ -104,6 +115,8 @@ async def update_cluster_handler(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason=f"{exc}") from exc
     except ClusterAccessForbidden as exc:
         raise web.HTTPForbidden(reason=f"{exc}") from exc
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
 
 
 @routes.delete(
@@ -121,3 +134,5 @@ async def delete_cluster_handler(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason=f"{exc}") from exc
     except ClusterAccessForbidden as exc:
         raise web.HTTPForbidden(reason=f"{exc}") from exc
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
