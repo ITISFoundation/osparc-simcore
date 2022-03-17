@@ -414,27 +414,6 @@ async def stop_services(
 
 # FIXME: ANE please unduplicate the 2 following calls
 @log_decorator(logger=log)
-async def request_retrieve_dyn_service(
-    app: web.Application, service_uuid: str, port_keys: List[str]
-) -> None:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / f"dynamic_services/{service_uuid}:retrieve"
-    body = {"port_keys": port_keys}
-
-    try:
-        await _request_director_v2(
-            app, "POST", backend_url, data=body, timeout=SERVICE_RETRIEVE_HTTP_TIMEOUT
-        )
-    except DirectorServiceError as exc:
-        log.warning(
-            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: %s",
-            f"{service_uuid!r}",
-            f"{port_keys!r}",
-            f"{exc!r}",
-        )
-
-
-@log_decorator(logger=log)
 async def retrieve(
     app: web.Application, service_uuid: str, port_keys: List[str]
 ) -> DataType:
