@@ -232,8 +232,9 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         unitLong
       } = item;
       if (unit) {
-        unitShort = osparc.utils.Units.getShortLabel(unit, unitPrefix);
-        unitLong = osparc.utils.Units.getLongLabel(unit, unitPrefix);
+        const labels = osparc.utils.Units.getLabels(unit, unitPrefix);
+        unitShort = labels.unitShort;
+        unitLong = labels.unitShort;
       }
       const unitLabel = new qx.ui.basic.Label().set({
         alignY: "bottom",
@@ -263,8 +264,10 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     },
 
     __rerenderUnit: function(item) {
-      const unitShort = osparc.utils.Units.getShortLabel(item.unit, item.unitPrefix);
-      const unitLong = osparc.utils.Units.getLongLabel(item.unit, item.unitPrefix);
+      const {
+        unitShort,
+        unitLong
+      } = osparc.utils.Units.getLabels(item.unit, item.unitPrefix);
       const unitLabel = this._geUnitFieldChild(item.key);
       unitLabel.child.set({
         value: unitShort || null,

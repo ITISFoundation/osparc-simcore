@@ -66,6 +66,12 @@ qx.Class.define("osparc.utils.Units", {
         short: "K",
         long: "kelvin"
       },
+      "degree_Celsius": {
+        quantity: "temperature",
+        alias: ["degree_Celsius", "°C"],
+        short: "°C",
+        long: "Degree Celsius"
+      },
       radian: {
         quantity: "radian",
         alias: ["radian", "rad"],
@@ -112,16 +118,23 @@ qx.Class.define("osparc.utils.Units", {
       return unitKey in this.BASE_UNITS ? this.BASE_UNITS[unitKey] : null;
     },
 
-    getShortLabel: function(xUnit, prefix) {
-      const baseUnit = this.__getBaseUnit(xUnit);
-      let shortLabel = baseUnit ? baseUnit.short : xUnit;
+    getLabels: function(unit, prefix) {
+      return {
+        unitShort: this.__getShortLabel(unit, prefix),
+        unitLong: this.__getLongLabel(unit, prefix)
+      };
+    },
+
+    __getShortLabel: function(unit, prefix) {
+      const baseUnit = this.__getBaseUnit(unit);
+      let shortLabel = baseUnit ? baseUnit.short : unit;
       if (prefix && prefix in this.PREFIXES) {
         shortLabel = this.PREFIXES[prefix].short + shortLabel;
       }
       return shortLabel;
     },
 
-    getLongLabel: function(xUnit, prefix) {
+    __getLongLabel: function(xUnit, prefix) {
       const baseUnit = this.__getBaseUnit(xUnit);
       let longLabel = baseUnit ? baseUnit.long : xUnit;
       if (prefix && prefix in this.PREFIXES) {
