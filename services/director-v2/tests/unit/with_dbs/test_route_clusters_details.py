@@ -250,11 +250,14 @@ async def test_get_cluster_details(
     assert await result == True
     # wait for the computation to effectively stop
     async for attempt in AsyncRetrying(
-        reraise=True, stop=stop_after_delay(20), wait=wait_fixed(1)
+        reraise=True, stop=stop_after_delay(30), wait=wait_fixed(1)
     ):
         with attempt:
             cluster_out = await _get_cluster_details(
                 async_client, user_1["id"], some_cluster.id
+            )
+            print(
+                f"!!> cluster metrics: {next(iter(cluster_out.scheduler.workers.values())).metrics=}"
             )
             assert (
                 next(iter(cluster_out.scheduler.workers.values())).metrics.executing
@@ -266,10 +269,7 @@ async def test_get_cluster_details(
             ), "worker did not keep the result in memory"
             assert (
                 next(iter(cluster_out.scheduler.workers.values())).metrics.cpu == 0
-            ), "worker did not keep the result in memory"
-            print(
-                f"!!> cluster metrics: {next(iter(cluster_out.scheduler.workers.values())).metrics=}"
-            )
+            ), "worker did not update the cpu metrics"
 
     # since the task is completed the worker should have stopped executing
     cluster_out = await _get_cluster_details(
