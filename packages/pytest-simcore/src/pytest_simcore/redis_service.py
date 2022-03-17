@@ -65,7 +65,6 @@ async def redis_client(
     yield client
 
     await client.flushall()
-    await client.disconnect()
 
 
 # HELPERS --
@@ -78,12 +77,7 @@ async def redis_client(
     reraise=True,
 )
 async def wait_till_redis_responsive(redis_url: Union[URL, str]) -> None:
-    try:
-        client = aioredis.from_url(
-            f"{redis_url}", encoding="utf-8", decode_responses=True
-        )
+    client = aioredis.from_url(f"{redis_url}", encoding="utf-8", decode_responses=True)
 
-        if not await client.ping():
-            raise ConnectionError(f"{redis_url=} not available")
-    finally:
-        await client.disconnect()
+    if not await client.ping():
+        raise ConnectionError(f"{redis_url=} not available")

@@ -361,7 +361,6 @@ async def redis_client(redis_service: URL):
     yield client
 
     await client.flushall()
-    await client.disconnect()
 
 
 def _is_redis_responsive(host: str, port: int) -> bool:

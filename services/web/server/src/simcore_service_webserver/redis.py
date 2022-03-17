@@ -94,9 +94,6 @@ async def setup_redis_client(app: web.Application):
     if lock_manager is not app[APP_CLIENT_REDIS_LOCK_MANAGER_KEY]:
         log.critical("Invalid redis lock manager in app")
 
-    # close clients
-    await client.disconnect()
-    await client_lock_db.disconnect()
     # delete lock manager
     await lock_manager.destroy()
 

@@ -73,9 +73,8 @@ def __drop_and_recreate_postgres__(database_from_template_before_each_function) 
 async def __delete_all_redis_keys__(redis_settings: RedisSettings):
     client = aioredis.from_url(
         redis_settings.dsn, encoding="utf-8", decode_responses=True
-    )    
+    )
     await client.flushall()
-    await client.disconnect()
 
     yield
     # do nothing on teadown
