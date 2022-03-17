@@ -25,9 +25,6 @@ MAX_TIME_TO_CLOSE_POOL_SECS = 5
 
 async def setup_login_storage(app: web.Application):
     # TODO: ensure pool only init once!
-    if app.get(APP_LOGIN_STORAGE_KEY) is None:
-        return
-
     settings: PostgresSettings = get_db_plugin_settings(app)
 
     pool: asyncpg.pool.Pool = await asyncpg.create_pool(
@@ -49,7 +46,7 @@ async def setup_login_storage(app: web.Application):
         log.exception("Failed to close login storage loop")
 
 
-async def _setup_login_options(app: web.Application):
+def _setup_login_options(app: web.Application):
     settings: SMTPSettings = get_email_plugin_settings(app)
 
     cfg = settings.dict(exclude_unset=True)
@@ -57,8 +54,6 @@ async def _setup_login_options(app: web.Application):
         cfg["LOGIN_REDIRECT"] = f"{app.router[INDEX_RESOURCE_NAME].url_for()}"
 
     app[APP_LOGIN_OPTIONS_KEY] = LoginOptions(**cfg)
-
-    yield
 
 
 @app_module_setup(
@@ -80,7 +75,8 @@ def setup_login(app: web.Application):
     routes = create_routes(specs)
     app.router.add_routes(routes)
 
+    _setup_login_options(app)
+
     # signals
     app.cleanup_ctx.append(setup_login_storage)
-    app.cleanup_ctx.append(_setup_login_options)
     return True
