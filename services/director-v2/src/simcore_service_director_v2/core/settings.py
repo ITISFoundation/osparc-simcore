@@ -199,6 +199,14 @@ class DynamicSidecarSettings(BaseCustomSettings):
             "operation finish."
         ),
     )
+    DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP: PositiveFloat = Field(
+        60.0 * MINS,
+        description=(
+            "When stopping a service, depending on the amount of data to store, "
+            "the operation might be very long. Also all relative created resources: "
+            "services, containsers, volumes and networks need to be removed. "
+        ),
+    )
 
     DYNAMIC_SIDECAR_ATTACH_DETACH_NETWORK: PositiveFloat = Field(
         3.0 * MINS,

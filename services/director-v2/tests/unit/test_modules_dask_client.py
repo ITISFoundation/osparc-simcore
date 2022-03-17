@@ -95,7 +95,7 @@ async def _assert_wait_for_task_status(
             )
             current_task_status = await dask_client.get_task_status(job_id)
             assert isinstance(current_task_status, RunningState)
-            print(f"{current_task_status=} vs {expected_status}")
+            print(f"{current_task_status=} vs {expected_status=}")
             assert current_task_status == expected_status
 
 
@@ -637,10 +637,11 @@ async def test_abort_computation_tasks(
     # after releasing the results, the task shall be UNKNOWN
     await dask_client.release_task_result(job_id)
     await _assert_wait_for_task_status(
-        job_id, dask_client, RunningState.UNKNOWN, timeout=60
+        job_id, dask_client, RunningState.UNKNOWN, timeout=120
     )
 
 
+@pytest.mark.flaky
 async def test_failed_task_returns_exceptions(
     dask_client: DaskClient,
     user_id: UserID,

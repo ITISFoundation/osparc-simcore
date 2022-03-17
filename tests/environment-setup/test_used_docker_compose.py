@@ -8,7 +8,7 @@ import subprocess
 import sys
 from itertools import chain
 from pathlib import Path
-from typing import List, Set, Tuple
+from typing import Iterable, List, Set, Tuple
 
 import pytest
 import yaml
@@ -34,7 +34,7 @@ def docker_compose_in_requirement_files(
 def docker_compose_in_ci_scripts(osparc_simcore_root_dir: Path) -> Tuple[Path, str]:
     ci_workflows_path = osparc_simcore_root_dir / ".github/workflows"
     versions_in_workflow_files: Set[str] = set()
-    for workflow_file in ci_workflows_path.rglob("*.yml"):
+    for workflow_file in ci_workflows_path.rglob("ci-*.yml"):
         versions_in_file: Set[str] = {
             found.group(1)
             for found in re.finditer(
@@ -48,7 +48,7 @@ def docker_compose_in_ci_scripts(osparc_simcore_root_dir: Path) -> Tuple[Path, s
         versions_in_workflow_files.update(versions_in_file)
     assert (
         len(versions_in_workflow_files) == 1
-    ), f"found different docker_compose versions in workflow files: {versions_in_workflow_files}, please check {list(ci_workflows_path.rglob('*.yml'))}!"
+    ), f"found different docker_compose versions in workflow files: {versions_in_workflow_files}, please check {list(ci_workflows_path.rglob('ci-*.yml'))}!"
     return (ci_workflows_path, versions_in_workflow_files.pop())
 
 
@@ -78,7 +78,7 @@ def test_all_docker_compose_have_same_version(
 
 
 @pytest.fixture
-def ensure_env_file(env_devel_file: Path) -> Path:
+def ensure_env_file(env_devel_file: Path) -> Iterable[Path]:
     env_path = env_devel_file.parent / ".env"
     delete = False
     if not env_path.exists():
@@ -146,7 +146,9 @@ def test_installed_docker_compose(docker_compose_in_ci_scripts):
         encoding="utf8",
         check=True,
     )
-    installed_version = re.search(r"\d+\.\d+\.\d+", p.stdout).group()
+    found = re.search(r"\d+\.\d+\.\d+", p.stdout)
+    assert found
+    installed_version = found.group()
     assert (
         ci_version == installed_version
     ), f"Use {setup_ci_path} to install version {ci_version} of docker-compose in your system {which}"

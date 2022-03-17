@@ -33,9 +33,7 @@ log = logging.getLogger(__name__)
 _APP_DIRECTOR_V2_CLIENT_KEY = f"{__name__}.DirectorV2ApiClient"
 
 SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)  # type:ignore
-SERVICE_RETRIEVE_HTTP_TIMEOUT = ClientTimeout(
-    total=60 * 60, connect=None, sock_connect=5  # type:ignore
-)
+
 DEFAULT_RETRY_POLICY = dict(
     wait=wait_random(0, 1),
     stop=stop_after_attempt(2),
@@ -278,28 +276,6 @@ async def delete_pipeline(
 
 
 @log_decorator(logger=log)
-async def request_retrieve_dyn_service(
-    app: web.Application, service_uuid: str, port_keys: List[str]
-) -> None:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / f"dynamic_services/{service_uuid}:retrieve"
-    body = {"port_keys": port_keys}
-
-    try:
-        await _request_director_v2(
-            app, "POST", backend_url, data=body, timeout=SERVICE_RETRIEVE_HTTP_TIMEOUT
-        )
-    except DirectorServiceError as exc:
-        log.warning(
-            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s:%s]",
-            service_uuid,
-            port_keys,
-            exc.status,
-            exc.reason,
-        )
-
-
-@log_decorator(logger=log)
 async def start_service(
     app: web.Application,
     user_id: PositiveInt,
@@ -370,21 +346,22 @@ async def get_services(
 
 @log_decorator(logger=log)
 async def stop_service(
-    app: web.Application, service_uuid: str, save_state: Optional[bool] = True
+    app: web.Application, service_uuid: str, save_state: bool = True
 ) -> None:
     # stopping a service can take a lot of time
     # bumping the stop command timeout to 1 hour
     # this will allow to sava bigger datasets from the services
-    # TODO: PC -> ANE: all settings MUST be in app[APP_SETTINGS_KEY]
-
-    timeout = ServicesCommonSettings().webserver_director_stop_service_timeout
-
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = (settings.base_url / f"dynamic_services/{service_uuid}").update_query(
         save_state="true" if save_state else "false",
     )
+
     await _request_director_v2(
-        app, "DELETE", backend_url, expected_status=web.HTTPNoContent, timeout=timeout
+        app,
+        "DELETE",
+        backend_url,
+        expected_status=web.HTTPNoContent,
+        timeout=settings.DIRECTOR_V2_STOP_SERVICE_TIMEOUT,
     )
 
 
@@ -412,9 +389,9 @@ async def stop_services(
     app: web.Application,
     user_id: Optional[PositiveInt] = None,
     project_id: Optional[str] = None,
-    save_state: Optional[bool] = True,
+    save_state: bool = True,
 ) -> None:
-    """Stops all services in parallel"""
+    """Stops ALL dynamic services within the project in parallel"""
     running_dynamic_services = await get_services(
         app, user_id=user_id, project_id=project_id
     )
@@ -443,37 +420,52 @@ async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
 
 @log_decorator(logger=log)
 async def retrieve(
-    app: web.Application, node_uuid: str, port_keys: List[str]
-) -> DataBody:
-    # when triggering retrieve endpoint
-    # this will allow to sava bigger datasets from the services
-    # TODO: PC -> ANE: all settings MUST be in app[APP_SETTINGS_KEY]
-    timeout = ServicesCommonSettings().storage_service_upload_download_timeout
-
+    app: web.Application, service_uuid: str, port_keys: List[str]
+) -> DataType:
+    """Pulls data from connections to the dynamic service inputs"""
     settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / "dynamic_services" / f"{node_uuid}:retrieve"
-    body = dict(port_keys=port_keys)
+    backend_url = settings.base_url / f"dynamic_services/{service_uuid}:retrieve"
 
-    retry_result = await _request_director_v2(
+    result = await _request_director_v2(
         app,
         "POST",
         backend_url,
-        expected_status=web.HTTPOk,
-        data=body,
-        timeout=timeout,
+        data={"port_keys": port_keys},
+        timeout=settings.get_service_retrieve_timeout(),
     )
+    assert isinstance(result, dict)  # nosec
+    return result
 
-    assert isinstance(retry_result, dict)  # nosec
-    return retry_result
+
+@log_decorator(logger=log)
+async def request_retrieve_dyn_service(
+    app: web.Application, service_uuid: str, port_keys: List[str]
+) -> None:
+    # TODO: notice that this function is identical to retrieve except that it does NOT reaise
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    backend_url = settings.base_url / f"dynamic_services/{service_uuid}:retrieve"
+    body = {"port_keys": port_keys}
+
+    try:
+        await _request_director_v2(
+            app,
+            "POST",
+            backend_url,
+            data=body,
+            timeout=settings.get_service_retrieve_timeout(),
+        )
+    except DirectorServiceError as exc:
+        log.warning(
+            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s:%s]",
+            service_uuid,
+            port_keys,
+            exc.status,
+            exc.reason,
+        )
 
 
 @log_decorator(logger=log)
 async def restart(app: web.Application, node_uuid: str) -> None:
-    # when triggering retrieve endpoint
-    # this will allow to sava bigger datasets from the services
-    # TODO: PC -> ANE: all settings MUST be in app[APP_SETTINGS_KEY]
-    timeout = ServicesCommonSettings().restart_containers_timeout
-
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = settings.base_url / f"dynamic_services/{node_uuid}:restart"
 
@@ -482,7 +474,7 @@ async def restart(app: web.Application, node_uuid: str) -> None:
         "POST",
         backend_url,
         expected_status=web.HTTPOk,
-        timeout=timeout,
+        timeout=settings.DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT,
     )
 
 
@@ -510,9 +502,6 @@ async def attach_network_to_dynamic_sidecar(
     network_name: DockerNetworkName,
     network_alias: DockerNetworkAlias,
 ) -> None:
-    # TODO: refactor when merging https://github.com/ITISFoundation/osparc-simcore/pull/2867
-    timeout = ServicesCommonSettings().network_attach_detach_timeout
-
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = URL(settings.base_url) / "dynamic_services/networks:attach"
     body = dict(
@@ -527,7 +516,7 @@ async def attach_network_to_dynamic_sidecar(
         backend_url,
         expected_status=web.HTTPNoContent,
         data=body,
-        timeout=timeout,
+        timeout=settings.DIRECTOR_V2_NETWORK_ATTACH_DETACH_TIMEOUT,
     )
 
 
@@ -538,9 +527,6 @@ async def detach_network_from_dynamic_sidecar(
     node_id: NodeID,
     network_name: DockerNetworkName,
 ) -> None:
-    # TODO: refactor when merging https://github.com/ITISFoundation/osparc-simcore/pull/2867
-    timeout = ServicesCommonSettings().network_attach_detach_timeout
-
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = URL(settings.base_url) / "dynamic_services/networks:detach"
     body = dict(
@@ -552,5 +538,5 @@ async def detach_network_from_dynamic_sidecar(
         backend_url,
         expected_status=web.HTTPNoContent,
         data=body,
-        timeout=timeout,
+        timeout=settings.DIRECTOR_V2_NETWORK_ATTACH_DETACH_TIMEOUT,
     )

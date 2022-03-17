@@ -3,20 +3,22 @@
 import asyncio
 import logging
 import urllib.parse
-from typing import Any, Dict, List, Optional, Set, Tuple
+from collections import deque
+from typing import Any, Deque, Dict, List, Optional, Set, Tuple
 
+from aiocache import cached
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from models_library.services import KEY_RE, VERSION_RE, ServiceType
+from models_library.services import ServiceKey, ServiceType, ServiceVersion
 from models_library.services_db import ServiceAccessRightsAtDB, ServiceMetaDataAtDB
-from pydantic import ValidationError, constr
+from pydantic import ValidationError
 from pydantic.types import PositiveInt
+from simcore_service_catalog.services.director import MINUTE
 from starlette.requests import Request
 
 from ...db.repositories.groups import GroupsRepository
 from ...db.repositories.services import ServicesRepository
 from ...models.schemas.services import ServiceOut, ServiceUpdate
 from ...services.function_services import get_function_service, is_function_service
-from ...utils.pools import non_blocking_process_pool_executor
 from ...utils.requests_decorators import cancellable_request
 from ..dependencies.database import get_repository
 from ..dependencies.director import DirectorApi, get_director_api
@@ -35,6 +37,9 @@ RESPONSE_MODEL_POLICY = {
     "response_model_exclude_defaults": False,
     "response_model_exclude_none": False,
 }
+
+DIRECTOR_CACHING_TTL = 5 * MINUTE
+LIST_SERVICES_CACHING_TTL = 30
 
 
 def _prepare_service_details(
@@ -65,8 +70,19 @@ def _prepare_service_details(
     return validated_service
 
 
+def _build_cache_key(fct, *_, **kwargs):
+    return f"{fct.__name__}_{kwargs['user_id']}_{kwargs['x_simcore_products_name']}_{kwargs['details']}"
+
+
+# NOTE: this call is pretty expensive and can be called several times
+# (when e2e runs or by the webserver when listing projects) therefore
+# a cache is setup here
 @router.get("", response_model=List[ServiceOut], **RESPONSE_MODEL_POLICY)
 @cancellable_request
+@cached(
+    ttl=LIST_SERVICES_CACHING_TTL,
+    key_builder=_build_cache_key,
+)
 async def list_services(
     request: Request,  # pylint:disable=unused-argument
     user_id: PositiveInt,
@@ -96,13 +112,14 @@ async def list_services(
             product_name=x_simcore_products_name,
         )
     }
-
     # Non-detailed views from the services_repo database
     if not details:
         # only return a stripped down version
         # FIXME: add name, ddescription, type, etc...
+        # NOTE: here validation is not necessary since key,version were already validated
+        # in terms of time, this takes the most
         services_overview = [
-            ServiceOut(
+            ServiceOut.construct(
                 key=key,
                 version=version,
                 name="nodetails",
@@ -117,27 +134,32 @@ async def list_services(
         ]
         return services_overview
 
-    # let's get all the services access rights
-    get_services_access_rights_task = services_repo.list_services_access_rights(
-        key_versions=list(services_in_db.keys()), product_name=x_simcore_products_name
-    )
-
-    # let's get the service owners
-    get_services_owner_emails_task = groups_repository.list_user_emails_from_gids(
-        {s.owner for s in services_in_db.values() if s.owner}
-    )
-
-    # getting services from director
-    get_registry_services_task = director_client.get("/services")
+    # caching this steps brings down the time to generate it at the expense of being sometimes a bit out of date
+    @cached(ttl=DIRECTOR_CACHING_TTL)
+    async def cached_registry_services() -> Deque[Tuple[str, str, Dict[str, Any]]]:
+        services_in_registry = await director_client.get("/services")
+        filtered_services = deque(
+            (s["key"], s["version"], s)
+            for s in (
+                request.app.state.frontend_services_catalog + services_in_registry
+            )
+            if (s.get("key"), s.get("version")) in services_in_db
+        )
+        return filtered_services
 
     (
-        services_in_registry,
+        registry_filtered_services,
         services_access_rights,
         services_owner_emails,
     ) = await asyncio.gather(
-        get_registry_services_task,
-        get_services_access_rights_task,
-        get_services_owner_emails_task,
+        cached_registry_services(),
+        services_repo.list_services_access_rights(
+            key_versions=services_in_db,
+            product_name=x_simcore_products_name,
+        ),
+        groups_repository.list_user_emails_from_gids(
+            {s.owner for s in services_in_db.values() if s.owner}
+        ),
     )
 
     # NOTE: for the details of the services:
@@ -145,28 +167,21 @@ async def list_services(
     # 2. we filter the services using the visible ones from the db
     # 3. then we compose the final service using as a base the registry service, overriding with the same
     #    service from the database, adding also the access rights and the owner as email address instead of gid
-    # NOTE: this final step runs in a process pool so that it runs asynchronously and does not block in any way
-    with non_blocking_process_pool_executor(max_workers=2) as pool:
-        _target_services = (
-            request.app.state.frontend_services_catalog + services_in_registry
-        )
-        services_details = await asyncio.gather(
-            *[
-                asyncio.get_event_loop().run_in_executor(
-                    pool,
-                    _prepare_service_details,
-                    s,
-                    services_in_db[s["key"], s["version"]],
-                    services_access_rights[s["key"], s["version"]],
-                    services_owner_emails.get(
-                        services_in_db[s["key"], s["version"]].owner
-                    ),
-                )
-                for s in _target_services
-                if (s.get("key"), s.get("version")) in services_in_db
-            ]
-        )
-        return [s for s in services_details if s is not None]
+    # NOTE: This step takes the bulk of the time to generate the list
+    services_details = await asyncio.gather(
+        *[
+            asyncio.get_event_loop().run_in_executor(
+                None,
+                _prepare_service_details,
+                details,
+                services_in_db[key, version],
+                services_access_rights[key, version],
+                services_owner_emails.get(services_in_db[key, version].owner),
+            )
+            for key, version, details in registry_filtered_services
+        ]
+    )
+    return [s for s in services_details if s is not None]
 
 
 @router.get(
@@ -176,8 +191,8 @@ async def list_services(
 )
 async def get_service(
     user_id: int,
-    service_key: constr(regex=KEY_RE),
-    service_version: constr(regex=VERSION_RE),
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
     director_client: DirectorApi = Depends(get_director_api),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),
     services_repo: ServicesRepository = Depends(get_repository(ServicesRepository)),
@@ -257,8 +272,8 @@ async def get_service(
 async def modify_service(
     # pylint: disable=too-many-arguments
     user_id: int,
-    service_key: constr(regex=KEY_RE),
-    service_version: constr(regex=VERSION_RE),
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
     updated_service: ServiceUpdate,
     director_client: DirectorApi = Depends(get_director_api),
     groups_repository: GroupsRepository = Depends(get_repository(GroupsRepository)),

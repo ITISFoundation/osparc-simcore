@@ -159,6 +159,11 @@ class CreateSidecars(DynamicSchedulerEvent):
         swarm_network_name: str = swarm_network["Name"]
 
         # start dynamic-sidecar and run the proxy on the same node
+
+        # WARNING: do NOT log, this structure has secrets in the open
+        # If you want to log, please use an obfuscator
+        dynamic_sidecar_create_service_params: Dict[str, Any]
+
         dynamic_sidecar_create_service_params = get_dynamic_sidecar_spec(
             scheduler_data=scheduler_data,
             dynamic_sidecar_settings=dynamic_sidecar_settings,
@@ -166,10 +171,6 @@ class CreateSidecars(DynamicSchedulerEvent):
             swarm_network_id=swarm_network_id,
             settings=settings,
             app_settings=app.state.settings,
-        )
-        logger.debug(
-            "dynamic-sidecar create_service_params %s",
-            json_dumps(dynamic_sidecar_create_service_params),
         )
 
         dynamic_sidecar_id = await create_service_and_get_id(
