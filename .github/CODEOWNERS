@@ -5,7 +5,7 @@
 
 # files and folders recursively
 .codeclimate.yml                          @sanderegg @pcrespov
-.env-*                                    @pcrespov @Surfict @mrnicegyu11
+.env-*                                    @pcrespov @ITISFoundation/ops-team
 .travis.yml                               @sanderegg
 Makefile                                  @pcrespov @sanderegg
 
@@ -26,7 +26,7 @@ Makefile                                  @pcrespov @sanderegg
 /services/api-server/                     @pcrespov
 /services/catalog/                        @pcrespov @sanderegg
 /services/director*/                      @sanderegg @pcrespov
-/services/docker-compose*.yml             @sanderegg @Surfict @mrnicegyu11
+/services/docker-compose*.yml             @sanderegg @ITISFoundation/ops-team
 /services/dynamic-sidecar/                @GitHK
 /services/migration/                      @pcrespov
 /services/static-webserver                @GitHK
