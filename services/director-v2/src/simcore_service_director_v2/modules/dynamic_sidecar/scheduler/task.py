@@ -427,6 +427,9 @@ class DynamicSidecarsScheduler:
             self._trigger_observation_queue_task = None
             self._trigger_observation_queue = Queue()
 
+    def is_service_tracked(self, node_uuid: NodeID) -> bool:
+        return node_uuid in self._inverse_search_mapping
+
 
 async def setup_scheduler(app: FastAPI):
     dynamic_sidecars_scheduler = DynamicSidecarsScheduler(app)
