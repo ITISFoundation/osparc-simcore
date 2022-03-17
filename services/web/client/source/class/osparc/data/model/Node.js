@@ -662,7 +662,7 @@ qx.Class.define("osparc.data.model.Node", {
 
     __setInputUnits: function(inputsUnits) {
       if (this.__settingsForm && inputsUnits) {
-        console.log("__setInputUnits", inputsUnits);
+        this.getPropsForm().setInputsUnits(inputsUnits);
       }
     },
 

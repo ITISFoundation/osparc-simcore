@@ -32,7 +32,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     grid.setColumnMaxWidth(this.self().GRID_POS.LABEL, 200);
     grid.setColumnFlex(this.self().GRID_POS.LABEL, 1);
     grid.setColumnAlign(this.self().GRID_POS.LABEL, "left", "middle");
-    grid.setColumnAlign(this.self().gridPos.name, "left", "middle");
+    grid.setColumnAlign(this.self().GRID_POS.NAME, "left", "middle");
     this._setLayout(grid);
 
     this._studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
@@ -55,10 +55,10 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
   },
 
   statics: {
-    gridPos: {
-      infoButton: 0,
-      label: 1,
-      name: 2
+    GRID_POS: {
+      INFO_BUTTON: 0,
+      LABEL: 1,
+      NAME: 2
     }
   },
 
@@ -125,7 +125,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         font: "title-14"
       }), {
         row: 0,
-        column: this.self().gridPos.name
+        column: this.self().GRID_POS.NAME
       });
     },
 
@@ -147,7 +147,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         }, this);
         this._add(infoButton, {
           row: i,
-          column: this.self().GRID_POS.INFOButton
+          column: this.self().GRID_POS.INFO_BUTTON
         });
 
         const labelLabel = new qx.ui.basic.Label(node["label"]).set({
@@ -169,7 +169,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         });
         this._add(nameLabel, {
           row: i,
-          column: this.self().gridPos.name
+          column: this.self().GRID_POS.NAME
         });
       }
     }

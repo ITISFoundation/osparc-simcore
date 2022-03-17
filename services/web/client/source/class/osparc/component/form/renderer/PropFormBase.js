@@ -181,6 +181,14 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       return changedXUnits;
     },
 
+    setInputsUnits: function(inputsUnits) {
+      console.log("setInputsUnits", this, inputsUnits);
+      Object.keys(inputsUnits).forEach(portId => {
+        const item = this._form.getControl(portId);
+        this.__switchPrefix(item, item.unitPrefix, osparc.utils.Units.decomposeXUnit(inputsUnits[portId]).unitPrefix);
+      });
+    },
+
     hasVisibleInputs: function() {
       const children = this._getChildren();
       for (let i=0; i<children.length; i++) {
@@ -227,38 +235,42 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         unitShort = osparc.utils.Units.getShortLabel(unit, unitPrefix);
         unitLong = osparc.utils.Units.getLongLabel(unit, unitPrefix);
       }
-      const unitLabel = this.__unitLabel = new qx.ui.basic.Label().set({
+      const unitLabel = new qx.ui.basic.Label().set({
         alignY: "bottom",
-        paddingBottom: 1
+        paddingBottom: 1,
+        value: unitShort || null,
+        toolTipText: unitLong || null,
+        visibility: unitShort ? "visible" : "excluded"
       });
-      const renderUnit = (unitS, unitL) => {
-        unitLabel.set({
-          value: unitS || null,
-          toolTipText: unitL || null,
-          visibility: unitShort ? "visible" : "excluded"
-        });
-      };
-      renderUnit(unitShort, unitLong);
       if (unit) {
         unitLabel.addListener("pointerover", () => unitLabel.setCursor("pointer"), this);
         unitLabel.addListener("pointerout", () => unitLabel.resetCursor(), this);
         unitLabel.addListener("tap", () => {
           const nextPrefix = osparc.utils.Units.getNextPrefix(item.unitPrefix);
-          this._switchPrefix(item, item.unitPrefix, nextPrefix.long);
-          item.unitPrefix = nextPrefix.long;
-          unitShort = osparc.utils.Units.getShortLabel(unit, item.unitPrefix);
-          unitLong = osparc.utils.Units.getLongLabel(unit, item.unitPrefix);
-          renderUnit(unitShort, unitLong);
+          this.__switchPrefix(item, item.unitPrefix, nextPrefix.long);
         }, this);
       }
       return unitLabel;
     },
 
-    _switchPrefix: function(item, oldPrefix, newPrefix) {
+    __switchPrefix: function(item, oldPrefix, newPrefix) {
       const oldMulitplier = osparc.utils.Units.getPrefixMultiplier(oldPrefix);
       const newMulitplier = osparc.utils.Units.getPrefixMultiplier(newPrefix);
       const multiplier = oldMulitplier/newMulitplier;
+      item.unitPrefix = newPrefix;
       item.setValue(String(item.getValue()*multiplier));
+      this.__rerenderUnit(item);
+    },
+
+    __rerenderUnit: function(item) {
+      const unitShort = osparc.utils.Units.getShortLabel(item.unit, item.unitPrefix);
+      const unitLong = osparc.utils.Units.getLongLabel(item.unit, item.unitPrefix);
+      const unitLabel = this._geUnitFieldChild(item.key);
+      unitLabel.child.set({
+        value: unitShort || null,
+        toolTipText: unitLong || null,
+        visibility: unitShort ? "visible" : "excluded"
+      });
     },
 
     _getLayoutChild: function(portId, column) {
@@ -295,6 +307,10 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
 
     _getCtrlFieldChild: function(portId) {
       return this._getLayoutChild(portId, this.self().GRID_POS.CTRL_FIELD);
+    },
+
+    _geUnitFieldChild: function(portId) {
+      return this._getLayoutChild(portId, this.self().GRID_POS.UNIT);
     }
   }
 });
