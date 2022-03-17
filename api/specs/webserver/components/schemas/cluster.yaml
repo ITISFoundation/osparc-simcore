@@ -163,9 +163,16 @@ ClusterDetails:
       type: object
       description: contains information about the cluster workers
     dashboardLink:
-      type: str
-      format: uri
+      type: string
+      minLength: 1
+      maxLength: 65536
       description: contains the link to the cluster dashboard
+      # format: uri
+
+  required:
+    - scheduler
+    - cluster
+    - dashboardLink
 
 ClusterDetailsEnveloped:
   type: object

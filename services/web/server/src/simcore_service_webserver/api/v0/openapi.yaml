@@ -1235,16 +1235,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Returns presigned link
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  link:
-                    type: string
-                example:
-                  link: example_link
+          $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7BfileId%7D/put/responses/200'
     put:
       summary: Returns upload link or performs copy operation to datcore
       tags:
@@ -1273,7 +1264,16 @@ paths:
             type: string
       responses:
         '200':
-          $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7BfileId%7D/get/responses/200'
+          description: Returns presigned link
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  link:
+                    type: string
+                example:
+                  link: example_link
     delete:
       summary: Deletes File
       tags:
@@ -4852,6 +4852,51 @@ paths:
       responses:
         '204':
           description: cluster has been successfully deleted
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/clusters/{cluster_id}/details':
+    parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - cluster
+      summary: Gets one cluster details
+      operationId: get_cluster_details_handler
+      responses:
+        '200':
+          description: got cluster
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      scheduler:
+                        type: object
+                        description: contains information about the cluster scheduler
+                      cluster:
+                        type: object
+                        description: contains information about the cluster workers
+                      dashboardLink:
+                        type: string
+                        minLength: 1
+                        maxLength: 65536
+                        description: contains the link to the cluster dashboard
+                    required:
+                      - scheduler
+                      - cluster
+                      - dashboardLink
+                  error:
+                    nullable: true
+                    default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /viewers:
