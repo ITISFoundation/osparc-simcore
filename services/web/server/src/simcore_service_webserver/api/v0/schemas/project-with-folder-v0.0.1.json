@@ -1,0 +1,13 @@
+{
+  "allOf": [{ "$ref": "./project-v0.0.1.json" }],
+  "properties": {
+    "folder": {
+      "description": "Folder ID that contains the project",
+      "anyOf": [{
+        "type": "null"
+      }, {
+        "type": "integer"
+      }]
+    }
+  }
+}

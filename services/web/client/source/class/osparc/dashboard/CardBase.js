@@ -46,6 +46,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     SHARED_ORGS: "@FontAwesome5Solid/users/14",
     SHARED_ALL: "@FontAwesome5Solid/globe/14",
     NEW_ICON: "@FontAwesome5Solid/plus/",
+    FOLDER_ICON: "@FontAwesome5Solid/folder/",
     LOADING_ICON: "@FontAwesome5Solid/circle-notch/",
     STUDY_ICON: "@FontAwesome5Solid/file-alt/",
     TEMPLATE_ICON: "@FontAwesome5Solid/copy/",
@@ -144,6 +145,13 @@ qx.Class.define("osparc.dashboard.CardBase", {
       check: "Array",
       apply: "_applyTags"
     },
+
+    folderId: {
+      check: "Number",
+      init: null,
+      nullable: true
+    },
+
 
     quality: {
       check: "Object",
@@ -441,7 +449,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     },
 
     _filterTags: function(tags) {
-      const checks = this.getTags().map(tag => tag.name);
+      const checks = this.getTags().map(tag => tag.id);
       return this.self().filterTags(checks, tags);
     },
 
@@ -450,19 +458,26 @@ qx.Class.define("osparc.dashboard.CardBase", {
       return this.self().filterClassifiers(checks, classifiers);
     },
 
+    _filterFolder: function(folderId) {
+      return this.getFolderId() !== folderId;
+    },
+
     _shouldApplyFilter: function(data) {
       let filterId = "searchBarFilter";
       if (this.isPropertyInitialized("resourceType")) {
         filterId += "-" + this.getResourceType();
       }
       data = filterId in data ? data[filterId] : data;
-      if (this._filterText(data.text)) {
+      if ("text" in data && this._filterText(data.text)) {
         return true;
       }
-      if (this._filterTags(data.tags)) {
+      if ("tags" in data && this._filterTags(data.tags)) {
         return true;
       }
-      if (this._filterClassifiers(data.classifiers)) {
+      if ("classifiers" in data && this._filterClassifiers(data.classifiers)) {
+        return true;
+      }
+      if ("folder" in data && this._filterFolder(data.folder)) {
         return true;
       }
       return false;
@@ -481,6 +496,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         return true;
       }
       if (data.classifiers && data.classifiers.length) {
+        return true;
+      }
+      if ("folder" in data) {
         return true;
       }
       return false;

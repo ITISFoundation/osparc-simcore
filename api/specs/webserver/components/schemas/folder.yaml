@@ -1,0 +1,54 @@
+Folder:
+  type: object
+  required:
+    - name
+    - color
+  properties:
+    id:
+      type: integer
+    name:
+      type: string
+    description:
+      type: string
+    color:
+      type: string
+      pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+    created:
+      type: string
+      description: folder creation date
+      format: date-time
+      example: '2018-07-01T11:13:43Z'
+    modified:
+      type: string
+      description: last change date
+      format: date-time
+      example: '2018-07-01T11:13:43Z'
+
+FolderListEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      type: object
+      required:
+        - folders
+      properties:
+        folders:
+          type: array
+          items:
+            $ref: '#/Folder'
+    error:
+      nullable: true
+      default: null
+
+FolderEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: '#/Folder'
+    error:
+      nullable: true
+      default: null

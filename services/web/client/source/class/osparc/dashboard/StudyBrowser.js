@@ -39,6 +39,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     "updateTemplates": "qx.event.type.Event"
   },
 
+  statics: {
+    isFolderButtonItem: function(card) {
+      return (card instanceof osparc.dashboard.GridButtonFolder || card instanceof osparc.dashboard.ListButtonFolder);
+    }
+  },
+
   properties: {
     multiSelection: {
       check: "Boolean",
@@ -50,8 +56,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
   },
 
   members: {
-    __studies: null,
     __newStudyBtn: null,
+    __folders: null,
+    __studies: null,
 
     reloadStudy: function(studyId) {
       const params = {
@@ -68,30 +75,43 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     reloadResources: function() {
       if (osparc.data.Permissions.getInstance().canDo("studies.user.read")) {
-        this._requestResources(false);
+        osparc.data.Resources.get("folders")
+          .then(folders => {
+            this.__folders = folders;
+            this._requestResources(false);
+          }, this);
       } else {
-        this._resetStudiesList([]);
+        this.__resetStudiesList([]);
       }
     },
 
     invalidateStudies: function() {
       osparc.store.Store.getInstance().invalidate("studies");
-      this._resetStudiesList([]);
+      this.__resetStudiesList([]);
       this._resourcesContainer.nextRequest = null;
+    },
+
+    revalidateStudy: function(studyId) {
+      osparc.store.Store.getInstance().remove("studies", "uuid", studyId);
+      this.__removeFromStudyList(studyId);
+      this.reloadStudy(studyId);
     },
 
     // overridden
     initResources: function() {
       this.__studies = [];
+      this.__folders = [];
       const preResourcePromises = [];
       const store = osparc.store.Store.getInstance();
       preResourcePromises.push(store.getVisibleMembers());
       preResourcePromises.push(store.getServicesOnly());
+      preResourcePromises.push(osparc.data.Resources.get("folders"));
       if (osparc.data.Permissions.getInstance().canDo("study.tag")) {
         preResourcePromises.push(osparc.data.Resources.get("tags"));
       }
       Promise.all(preResourcePromises)
-        .then(() => {
+        .then(values => {
+          this.__folders = values[2];
           this.getChildControl("resources-layout");
           this.__reloadResources();
           this.__attachEventHandlers();
@@ -128,14 +148,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
-    __createNewStudyButton: function(mode = "grid") {
-      const newStudyBtn = this.__newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew() : new osparc.dashboard.ListButtonNew();
-      newStudyBtn.subscribeToFilterGroup("searchBarFilter");
-      osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
-      newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
-      return newStudyBtn;
-    },
-
     _createLayout: function() {
       const studiesLayout = this._createResourcesLayout("study");
 
@@ -146,6 +158,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(isDisabled => {
           importStudyButton.setVisibility(isDisabled ? "excluded" : "visible");
         });
+
+      if (osparc.data.Permissions.getInstance().canDo("user.folder")) {
+        const newFolderButton = this.__createNewFolderButton();
+        this._secondaryBar.add(newFolderButton);
+        this._searchBarFilter.bind("currentFolder", newFolderButton, "visibility", {
+          converter: currentFolder => currentFolder === null ? "visible" : "excluded"
+        });
+      }
 
       this._secondaryBar.add(new qx.ui.core.Spacer(), {
         flex: 1
@@ -181,14 +201,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
 
       this._resourcesContainer.addListener("changeMode", () => {
-        this._resetStudiesList();
+        this.__resetStudiesList();
 
         const studyItems = this._resourcesContainer.getChildren();
         studyItems.forEach((studyItem, i) => {
           if (!osparc.dashboard.ResourceBrowserBase.isCardButtonItem(studyItem)) {
             if (studyItem === this.__newStudyBtn) {
               this._resourcesContainer.remove(studyItem);
-              const newBtn = this.__createNewStudyButton(this._resourcesContainer.getMode());
+              const newBtn = this.__createNewStudyButton();
               this._resourcesContainer.addAt(newBtn, i);
               if (this._resourcesContainer.getMode() === "list") {
                 const width = this._resourcesContainer.getBounds().width - 15;
@@ -212,6 +232,130 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }, this);
 
       return studiesLayout;
+    },
+
+    __createNewStudyButton: function() {
+      const mode = this._resourcesContainer.getMode();
+      const newStudyBtn = this.__newStudyBtn = (mode === "grid") ? new osparc.dashboard.GridButtonNew() : new osparc.dashboard.ListButtonNew();
+      newStudyBtn.subscribeToFilterGroup("searchBarFilter");
+      osparc.utils.Utils.setIdToWidget(newStudyBtn, "newStudyBtn");
+      newStudyBtn.addListener("execute", () => this.__createStudyBtnClkd());
+      return newStudyBtn;
+    },
+
+    __createFolderItem: function(folderId) {
+      const mode = this._resourcesContainer.getMode();
+      const folderBtn = (mode === "grid") ? new osparc.dashboard.GridButtonFolder() : new osparc.dashboard.ListButtonFolder();
+      folderBtn.setId(folderId);
+      folderBtn.subscribeToFilterGroup("searchBarFilter");
+
+      if (osparc.data.Permissions.getInstance().canDo("user.folder")) {
+        const menu = this.__getFolderItemMenu(folderId, folderBtn);
+        const menuButton = folderBtn.getChildControl("menu-button");
+        menuButton.setMenu(menu);
+      }
+
+      folderBtn.addListener("tap", () => {
+        this.resetSelection();
+        this._searchBarFilter.addChip("folder", folderId);
+      }, this);
+      this.bind("multiSelection", folderBtn, "enabled", {
+        converter: val => !val
+      });
+
+      return folderBtn;
+    },
+
+    __getFolderItemMenu: function(folderId) {
+      const menu = new qx.ui.menu.Menu().set({
+        position: "bottom-right"
+      });
+
+      const editButton = new qx.ui.menu.Button(this.tr("Edit"));
+      editButton.addListener("execute", () => this.__editFolder(folderId), this);
+      menu.add(editButton);
+
+      menu.addSeparator();
+
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"));
+      deleteButton.addListener("execute", () => {
+        const msg = this.tr("Are you sure you want to delete the folder?<br>The studies will not be removed.");
+        const confirmationWin = new osparc.ui.window.Confirmation(msg);
+        confirmationWin.center();
+        confirmationWin.open();
+        confirmationWin.addListener("close", () => {
+          if (confirmationWin.getConfirmed()) {
+            this.__deleteFolder(folderId);
+          }
+        });
+      }, this);
+      menu.add(deleteButton);
+
+      return menu;
+    },
+
+    __editFolder: function(folderId) {
+      const folderEditor = new osparc.component.editor.FolderEditor(false).set({
+        id: folderId
+      });
+      const title = this.tr("Edit Folder");
+      const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 330, 235);
+      folderEditor.addListener("updateFolder", () => {
+        const name = folderEditor.getChildControl("title").getValue().trim();
+        const description = folderEditor.getChildControl("description").getValue().trim();
+        const color = folderEditor.getChildControl("color-picker").getChildControl("color-input").getValue();
+        const params = {
+          url: {
+            folderId
+          },
+          data: {
+            name,
+            description,
+            color
+          }
+        };
+        osparc.data.Resources.fetch("folders", "put", params)
+          .then(() => {
+            win.close();
+            osparc.store.Store.getInstance().invalidate("folders");
+            this.invalidateStudies();
+            this.reloadResources();
+          }, this)
+          .catch(console.error)
+          .finally(folderEditor.getChildControl("save").setFetching(false));
+      }, this);
+      folderEditor.addListener("cancel", () => win.close());
+    },
+
+    __deleteFolder: function(folderId) {
+      // should the backend delete all the studies in the folder??
+      const params = {
+        url: {
+          folderId
+        }
+      };
+      osparc.data.Resources.fetch("folders", "delete", params)
+        .then(() => {
+          osparc.store.Store.getInstance().invalidate("folders");
+          this.invalidateStudies();
+          this.reloadResources();
+        }, this)
+        .catch(console.error);
+    },
+
+    __createStudyItem: function(studyData) {
+      const item = this._createResourceItem(studyData);
+      item.addListener("tap", e => {
+        if (!item.isLocked()) {
+          this.__itemClicked(item, e.getNativeEvent().shiftKey);
+        }
+      }, this);
+      item.addListener("updateQualityStudy", e => {
+        const updatedStudyData = e.getData();
+        updatedStudyData["resourceType"] = "study";
+        this._resetStudyItem(updatedStudyData);
+      }, this);
+      return item;
     },
 
     __createImportButton: function() {
@@ -238,6 +382,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }, this);
       }, this);
       return importButton;
+    },
+
+    __createNewFolderButton: function() {
+      const newFolderButton = new osparc.ui.form.FetchButton(null, "@MaterialIcons/create_new_folder/18").set({
+        toolTipText: this.tr("Create new Folder")
+      });
+      newFolderButton.addListener("execute", () => this.__createNewFolder(newFolderButton), this);
+      return newFolderButton;
     },
 
     __createDeleteButton: function() {
@@ -366,6 +518,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(studyData => {
           this._hideLoadingPage();
           this._startStudy(studyData);
+          const currentFolder = this._searchBarFilter.getCurrentFolder();
+          if (currentFolder) {
+            this.__moveStudyToFolder(studyData.uuid, currentFolder);
+          }
         })
         .catch(err => {
           console.error(err);
@@ -392,10 +548,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       } else {
         studies[index] = studyData;
       }
-      this._resetStudiesList(studies);
+      this.__resetStudiesList(studies);
     },
 
-    _resetStudiesList: function(studiesList) {
+    __resetStudiesList: function(studiesList) {
       if (studiesList === undefined) {
         studiesList = this.__studies;
       }
@@ -405,32 +561,49 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         if (osparc.dashboard.ResourceBrowserBase.isCardButtonItem(studyItem)) {
           this._resourcesContainer.remove(studyItem);
         }
+        if (this.self().isFolderButtonItem(studyItem)) {
+          this._resourcesContainer.remove(studyItem);
+        }
       }
       this._addResourcesToList(studiesList);
     },
 
     _addResourcesToList: function(studiesList) {
       osparc.dashboard.ResourceBrowserBase.sortStudyList(studiesList);
-      const studyList = this._resourcesContainer.getChildren();
+      const cardsList = this._resourcesContainer.getChildren();
+      const folders = osparc.store.Store.getInstance().getFolders();
+      if (folders) {
+        folders.sort(osparc.dashboard.ResourceBrowserBase.sortByProperty("modified"));
+        folders.forEach(folder => {
+          const folderId = folder.id;
+          const idx = cardsList.findIndex(card => this.self().isFolderButtonItem(card) && card.getId() === folderId);
+          if (idx !== -1) {
+            return;
+          }
+          const folderItem = this.__createFolderItem(folderId);
+          this._resourcesContainer.add(folderItem);
+        });
+      }
+
       studiesList.forEach(study => {
         if (this.__studies.indexOf(study) === -1) {
           this.__studies.push(study);
         }
 
         study["resourceType"] = "study";
-        const idx = studyList.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === study["uuid"]);
+        const idx = cardsList.findIndex(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card) && card.getUuid() === study["uuid"]);
         if (idx !== -1) {
           return;
         }
         const studyItem = this.__createStudyItem(study);
         this._resourcesContainer.add(studyItem);
       });
-      osparc.dashboard.ResourceBrowserBase.sortStudyList(studyList.filter(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)));
-      const idx = studyList.findIndex(card => (card instanceof osparc.dashboard.GridButtonLoadMore) || (card instanceof osparc.dashboard.ListButtonLoadMore));
+      osparc.dashboard.ResourceBrowserBase.sortStudyList(cardsList.filter(card => osparc.dashboard.ResourceBrowserBase.isCardButtonItem(card)));
+      const idx = cardsList.findIndex(card => (card instanceof osparc.dashboard.GridButtonLoadMore) || (card instanceof osparc.dashboard.ListButtonLoadMore));
       if (idx !== -1) {
-        studyList.push(studyList.splice(idx, 1)[0]);
+        cardsList.push(cardsList.splice(idx, 1)[0]);
       }
-      osparc.component.filter.UIFilterController.dispatch("searchBarFilter");
+      this._searchBarFilter.filter();
     },
 
     __removeFromStudyList: function(studyId) {
@@ -467,6 +640,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const renameStudyButton = this.__getRenameStudyMenuButton(studyData);
       menu.add(renameStudyButton);
 
+      const moveToButton = this.__getMoveToMenuButton(studyData);
+      if (moveToButton) {
+        menu.add(moveToButton);
+      }
+
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
@@ -500,6 +678,61 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         renamer.open();
       }, this);
       return renameButton;
+    },
+
+    __getMoveToMenuButton: function(studyData) {
+      const folders = osparc.store.Store.getInstance().getFolders();
+      if (osparc.data.Permissions.getInstance().canDo("study.folder") && folders.length) {
+        const moveToButton = new qx.ui.menu.Button(this.tr("Move to"));
+        const foldersMenu = new qx.ui.menu.Menu();
+        if (studyData.folder) {
+          const folderButton = new qx.ui.menu.Button(this.tr("Root"), "@FontAwesome5Solid/folder/12");
+          foldersMenu.add(folderButton);
+          folderButton.addListener("execute", () => {
+            const params = {
+              url: {
+                studyId: studyData.uuid,
+                folderId: studyData.folder
+              }
+            };
+            osparc.data.Resources.fetch("studies", "removeFolder", params)
+              .then(() => {
+                this.revalidateStudy(studyData.uuid);
+              }, this)
+              .catch(console.error);
+          }, this);
+        } else {
+          const newFolderButton = new qx.ui.menu.Button(this.tr("Create new Folder"), "@FontAwesome5Solid/plus/12");
+          foldersMenu.add(newFolderButton);
+          newFolderButton.addListener("execute", () => this.__createNewFolder(null, studyData.uuid), this);
+        }
+        folders.forEach(folder => {
+          if ("folder" in studyData && studyData["folder"] === folder.id) {
+            return;
+          }
+          const folderButton = new qx.ui.menu.Button(folder.name, "@FontAwesome5Solid/folder/12");
+          folderButton.getChildControl("icon").setTextColor(folder.color);
+          folderButton.addListener("execute", () => this.__moveStudyToFolder(studyData.uuid, folder.id), this);
+          foldersMenu.add(folderButton);
+        });
+        moveToButton.setMenu(foldersMenu);
+        return moveToButton;
+      }
+      return null;
+    },
+
+    __moveStudyToFolder: function(studyId, folderId) {
+      const params = {
+        url: {
+          studyId,
+          folderId
+        }
+      };
+      osparc.data.Resources.fetch("studies", "setFolder", params)
+        .then(() => {
+          this.revalidateStudy(studyId);
+        }, this)
+        .catch(console.error);
     },
 
     __updateStudy: function(studyData) {
@@ -737,6 +970,47 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       req.open("POST", "/v0/projects:import", true);
       req.send(body);
+    },
+
+    __createNewFolder: function(btn, andAssingStudy = null) {
+      const folderEditor = new osparc.component.editor.FolderEditor();
+      const title = this.tr("New Folder");
+      const win = osparc.ui.window.Window.popUpInWindow(folderEditor, title, 330, 235);
+      folderEditor.addListener("createFolder", () => {
+        if (btn) {
+          btn.setFetching(true);
+        }
+        const name = folderEditor.getChildControl("title").getValue().trim();
+        const description = folderEditor.getChildControl("description").getValue().trim();
+        const color = folderEditor.getChildControl("color-picker").getChildControl("color-input").getValue();
+        const params = {};
+        params["data"] = {
+          name,
+          description,
+          color
+        };
+        osparc.data.Resources.fetch("folders", "post", params)
+          .then(newFolder => {
+            win.close();
+            if (andAssingStudy) {
+              this.__moveStudyToFolder(andAssingStudy, newFolder.id);
+            } else {
+              osparc.store.Store.getInstance().invalidate("folders");
+              this.invalidateStudies();
+              this.reloadResources();
+            }
+          }, this)
+          .catch(err => {
+            console.error(err);
+            folderEditor.getChildControl("create").setFetching(false);
+          })
+          .finally(() => {
+            if (btn) {
+              btn.setFetching(false);
+            }
+          });
+      }, this);
+      folderEditor.addListener("cancel", () => win.close());
     },
 
     __deleteStudy: function(studyData) {

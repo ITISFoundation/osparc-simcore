@@ -18,9 +18,15 @@ from servicelib.aiohttp.rest_routing import (
 
 from .._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from .._resources import resources
-from . import projects_handlers, projects_nodes_handlers, projects_tags_handlers
+from . import (
+    projects_folder_handlers,
+    projects_handlers,
+    projects_nodes_handlers,
+    projects_tags_handlers,
+)
 from .projects_access import setup_projects_access
 from .projects_db import setup_projects_db
+from .projects_folder_db import setup_projects_folder_db
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +79,8 @@ def setup_projects(app: web.Application) -> bool:
     # database API
     setup_projects_db(app)
 
+    setup_projects_folder_db(app)
+
     app.router.add_routes(
         _create_routes(
             "project",
@@ -80,6 +88,7 @@ def setup_projects(app: web.Application) -> bool:
             projects_handlers,
             projects_nodes_handlers,
             projects_tags_handlers,
+            projects_folder_handlers,
         )
     )
 

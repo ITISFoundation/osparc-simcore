@@ -1,0 +1,28 @@
+components:
+  schemas:
+    ProjectWithFolder:
+      $ref: "./project-with-folder-v0.0.1-converted.yaml"
+
+    ProjectWithFolderEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/ProjectWithFolder"
+        error:
+          nullable: true
+          default: null
+
+    ProjectWithFolderArrayEnveloped:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProjectWithFolder"
+        error:
+          nullable: true
+          default: null

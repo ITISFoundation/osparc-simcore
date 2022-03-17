@@ -39,6 +39,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
   statics: {
     ITEM_WIDTH: 600,
     ITEM_HEIGHT: 40,
+    MENU_BTN_WIDTH: 25,
     SPACING: 5,
     POS: {
       THUMBNAIL: 0,
@@ -84,10 +85,53 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
             alignY: "middle",
             allowGrowX: true
           });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.DESCRIPTION, {
+          this._addAt(control, this.self().POS.DESCRIPTION, {
             flex: 1
           });
           break;
+        case "last-change": {
+          control = new qx.ui.basic.Label().set({
+            anonymous: true,
+            font: "text-13",
+            allowGrowY: false,
+            minWidth: 120,
+            alignY: "middle"
+          });
+          this._addAt(control, this.self().POS.LAST_CHANGE);
+          break;
+        }
+        case "menu-selection-stack":
+          control = new qx.ui.container.Stack().set({
+            minWidth: this.self().MENU_BTN_WIDTH,
+            minHeight: this.self().MENU_BTN_WIDTH,
+            alignY: "middle"
+          });
+          this._addAt(control, this.self().POS.OPTIONS);
+          break;
+        case "menu-button": {
+          const menuSelectionStack = this.getChildControl("menu-selection-stack");
+          control = new qx.ui.form.MenuButton().set({
+            width: this.self().MENU_BTN_WIDTH,
+            height: this.self().MENU_BTN_WIDTH,
+            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            focusable: false
+          });
+          osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
+          menuSelectionStack.addAt(control, 0);
+          break;
+        }
+        case "tick-unselected": {
+          const menuSelectionStack = this.getChildControl("menu-selection-stack");
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/circle/16");
+          menuSelectionStack.addAt(control, 1);
+          break;
+        }
+        case "tick-selected": {
+          const menuSelectionStack = this.getChildControl("menu-selection-stack");
+          control = new qx.ui.basic.Image("@FontAwesome5Solid/check-circle/16");
+          menuSelectionStack.addAt(control, 2);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },

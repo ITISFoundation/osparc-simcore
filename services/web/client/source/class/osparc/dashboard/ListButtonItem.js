@@ -69,17 +69,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           this._addAt(control, osparc.dashboard.ListButtonBase.POS.SHARED);
           break;
         }
-        case "last-change": {
-          control = new qx.ui.basic.Label().set({
-            anonymous: true,
-            font: "text-13",
-            allowGrowY: false,
-            minWidth: 120,
-            alignY: "middle"
-          });
-          this._addAt(control, osparc.dashboard.ListButtonBase.POS.LAST_CHANGE);
-          break;
-        }
         case "tsr-rating": {
           const tsrLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(2).set({
             alignY: "middle"

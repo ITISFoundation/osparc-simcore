@@ -19,6 +19,7 @@ from .director.plugin import setup_director
 from .director_v2 import setup_director_v2
 from .email import setup_email
 from .exporter.plugin import setup_exporter
+from .folders import setup_folders
 from .garbage_collector import setup_garbage_collector
 from .groups import setup_groups
 from .login.plugin import setup_login
@@ -101,7 +102,7 @@ def create_application() -> web.Application:
     # tagging
     setup_scicrunch(app)
     setup_tags(app)
-
+    setup_folders(app)
     setup_publications(app)
     setup_products(app)
     setup_studies_dispatcher(app)

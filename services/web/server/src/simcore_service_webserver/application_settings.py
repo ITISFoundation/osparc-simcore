@@ -174,6 +174,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     WEBSERVER_REMOTE_DEBUG: bool = True
     WEBSERVER_SOCKETIO: bool = True
     WEBSERVER_TAGS: bool = True
+    WEBSERVER_FOLDERS: bool = True
     WEBSERVER_USERS: bool = True
     WEBSERVER_VERSION_CONTROL: bool = True
 

@@ -51,6 +51,8 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
   statics: {
     ITEM_WIDTH: 190,
     ITEM_HEIGHT: 220,
+    MENU_BTN_WIDTH: 25,
+    ICON_SIZE: 50,
     PADDING: 10,
     V_SPACING: 6,
     SPACING: 15,
@@ -111,6 +113,23 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           });
           break;
         }
+        case "menu-button": {
+          this.getChildControl("title").set({
+            maxWidth: this.self().ITEM_WIDTH - 2*this.self().PADDING - this.self().MENU_BTN_WIDTH
+          });
+          control = new qx.ui.form.MenuButton().set({
+            width: this.self().MENU_BTN_WIDTH,
+            height: this.self().MENU_BTN_WIDTH,
+            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            focusable: false
+          });
+          osparc.utils.Utils.setIdToWidget(control, "studyItemMenuButton");
+          this._add(control, {
+            top: -2,
+            right: -2
+          });
+          break;
+        }
         case "icon": {
           const maxWidth = this.self().ITEM_WIDTH - 2*this.self().PADDING;
           control = new osparc.ui.basic.Thumbnail(null, maxWidth, 124);
@@ -129,7 +148,7 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
     // overridden
     _applyIcon: function(value, old) {
       if (value.includes("@FontAwesome5Solid/")) {
-        value += "50";
+        value += this.self().ICON_SIZE;
       }
       const image = this.getChildControl("icon").getChildControl("image");
       image.set({

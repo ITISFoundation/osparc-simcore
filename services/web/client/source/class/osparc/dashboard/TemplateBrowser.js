@@ -44,7 +44,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       if (osparc.data.Permissions.getInstance().canDo("studies.templates.read")) {
         this._requestResources(true);
       } else {
-        this._resetTemplatesList([]);
+        this.__resetTemplatesList([]);
       }
     },
 
@@ -57,7 +57,7 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       this._resourcesContainer.add(loadingTemplatesBtn);
 
       this._resourcesContainer.addListener("changeVisibility", () => this._moreResourcesRequired());
-      this._resourcesContainer.addListener("changeMode", () => this._resetTemplatesList());
+      this._resourcesContainer.addListener("changeMode", () => this.__resetTemplatesList());
 
       return templatesLayout;
     },
@@ -88,10 +88,10 @@ qx.Class.define("osparc.dashboard.TemplateBrowser", {
       } else {
         templatesList[index] = templateData;
       }
-      this._resetTemplatesList(templatesList);
+      this.__resetTemplatesList(templatesList);
     },
 
-    _resetTemplatesList: function(tempStudyList) {
+    __resetTemplatesList: function(tempStudyList) {
       if (tempStudyList === undefined) {
         tempStudyList = this.__templates;
       }

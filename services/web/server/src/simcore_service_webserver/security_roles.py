@@ -64,6 +64,7 @@ ROLES_PERMISSIONS = {
             "project.template.create",
             "project.classifier.*",  # "study.classifier"
             "project.tag.*",  # "study.tag"
+            "project.folder.*",  # "study.folder"
             "user.profile.update",  # "user.user.update",
             # "user.role.update"
             "user.apikey.*",  # "user.apikey.create",
@@ -71,7 +72,8 @@ ROLES_PERMISSIONS = {
             "user.tokens.*",  # "user.token.create",
             # "user.token.delete"
             "groups.*",
-            "tag.crud.*"  # "user.tag"
+            "tag.crud.*",  # "user.tag"
+            "folder.crud.*"  # "user.folder"
             # NOTE: All services* are not necessary since it only requires login
             # and there is no distinction among logged in users.
             # TODO: kept temporarily as a way to denote resources

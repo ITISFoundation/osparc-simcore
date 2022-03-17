@@ -46,24 +46,25 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
   },
 
   statics: {
-    sortStudyList: function(studyList) {
-      const sortByProperty = function(prop) {
-        return function(a, b) {
-          if (prop === "lastChangeDate") {
-            return new Date(b[prop]) - new Date(a[prop]);
-          }
-          if (typeof a[prop] == "number") {
-            return a[prop] - b[prop];
-          }
-          if (a[prop] < b[prop]) {
-            return -1;
-          } else if (a[prop] > b[prop]) {
-            return 1;
-          }
-          return 0;
-        };
+    sortByProperty: function(prop) {
+      return function(a, b) {
+        if (["lastChangeDate", "modified"].includes(prop)) {
+          return new Date(b[prop]) - new Date(a[prop]);
+        }
+        if (typeof a[prop] == "number") {
+          return a[prop] - b[prop];
+        }
+        if (a[prop] < b[prop]) {
+          return -1;
+        } else if (a[prop] > b[prop]) {
+          return 1;
+        }
+        return 0;
       };
-      studyList.sort(sortByProperty("lastChangeDate"));
+    },
+
+    sortStudyList: function(studyList) {
+      studyList.sort(this.sortByProperty("lastChangeDate"));
     },
 
     isCardButtonItem: function(card) {
@@ -76,6 +77,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
 
   members: {
     _topBar: null,
+    _searchBarFilter: null,
     _secondaryBar: null,
     _resourcesContainer: null,
     _viewGridBtn: null,
@@ -140,7 +142,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         alignY: "middle"
       });
 
-      const searchBarFilter = new osparc.dashboard.SearchBarFilter(resourceType);
+      const searchBarFilter = this._searchBarFilter = new osparc.dashboard.SearchBarFilter(resourceType);
       const textField = searchBarFilter.getChildControl("text-field");
       osparc.utils.Utils.setIdToWidget(textField, resourceType ? "searchBarFilter-textField-"+resourceType : "searchBarFilter-textField");
       topBar.add(searchBarFilter, {
@@ -271,7 +273,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       const item = this._resourcesContainer.getMode() === "grid" ? new osparc.dashboard.GridButtonItem() : new osparc.dashboard.ListButtonItem();
       item.set({
         resourceData,
-        tags
+        tags,
+        folderId: resourceData.folder ? resourceData.folder : null
       });
 
       const menu = this._getResourceItemMenu(resourceData, item);
@@ -294,14 +297,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     },
 
     _resetServiceItem: function(serviceData) {
-      throw new Error("Abstract method called!");
-    },
-
-    _resetStudiesList: function() {
-      throw new Error("Abstract method called!");
-    },
-
-    _resetTemplatesList: function() {
       throw new Error("Abstract method called!");
     },
 
