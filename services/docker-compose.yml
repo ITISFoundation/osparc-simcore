@@ -238,7 +238,7 @@ services:
       - default
       - interactive_services_subnet
 
-  webserver-garbage-collector:
+  wb-garbage-collector:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
@@ -247,7 +247,7 @@ services:
       WEBSERVER_GARBAGE_COLLECTOR: '{"GARBAGE_COLLECTOR_INTERVAL_S": 30}'
     env_file:
       - ../.env
-      - ../.env-webserver-garbage-collector
+      - ../.env-wb-garbage-collector
 
     healthcheck:
       test:
