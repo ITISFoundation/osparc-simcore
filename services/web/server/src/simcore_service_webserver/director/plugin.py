@@ -4,6 +4,7 @@
 """
 
 import logging
+import warnings
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
@@ -21,5 +22,8 @@ logger = logging.getLogger(__name__)
     logger=logger,
 )
 def setup_director(app: web.Application):
+    warnings.warn(
+        f"{__name__} plugin is deprecated, use director-v2 plugin instead",
+        DeprecationWarning,
+    )
     get_plugin_settings(app)
-    # TODO: init some client

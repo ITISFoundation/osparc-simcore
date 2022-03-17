@@ -11,6 +11,9 @@ Consider prefix your PR message with an emoticon
   ⚗️ experimental
   ⬆️ upgrades dependencies
   📝 documentation
+  🗑️ deprecated
+  ⚰️ remove dead code
+  🔥 remove code or files
 or from https://gitmoji.dev/
 
 and append (⚠️ devops) if changes in devops configuration required before deploying
@@ -25,16 +28,15 @@ and append (⚠️ devops) if changes in devops configuration required before de
 
 <!-- Enumerate REVIEWERS other issues
 
-e.g.
-
+- ITISFoundation/osparc-issues#428
 - #26 : node_ports should have retry policies when upload/download fails  (FIXED)
-- ITISFoundation/osparc-issues#304: (Part 2) Prep2Go: creating features to support complex S4L scripts (IMPLEMENTED)
 
 -->
 
 
 ## How to test
 
+- Covered by CI
 <!-- Give REVIEWERS some hits or code snippets on how could this be tested -->
 
 
