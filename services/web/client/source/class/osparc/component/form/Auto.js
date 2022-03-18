@@ -447,6 +447,7 @@ qx.Class.define("osparc.component.form.Auto", {
             number: "Number",
             boolean: "CheckBox",
             data: "FileButton",
+            array: "ArrayTextField",
             "ref_contentSchema": "ContentSchema"
           }[type]
         };
@@ -498,8 +499,8 @@ qx.Class.define("osparc.component.form.Auto", {
           control = new qx.ui.form.TextField();
           setup = this.__setupFileButton;
           break;
-        case "ContentSchema":
-          control = new osparc.ui.form.ContentSchemaField();
+        case "ArrayTextField":
+          control = new osparc.ui.form.ContentSchemaArray();
           setup = this.__setupContentSchema;
           break;
         default:

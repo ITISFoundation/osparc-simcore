@@ -155,21 +155,22 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
           description: port.description,
           portKey: portKey,
           nodeKey: node.getKey(),
-          open: false
+          open: false,
+          type: port.type,
+          unitShort: port.unitShort || null,
+          unitLong: port.unitLong || null
         };
         if (port.type === "ref_contentSchema") {
           portData.type = port.contentSchema.type;
-          const {
-            unitPrefix,
-            unit
-          } = osparc.utils.Units.decomposeXUnit(port.contentSchema["x_unit"]);
-          const labels = osparc.utils.Units.getLabels(unit, unitPrefix);
-          portData.unitShort = labels.unitShort;
-          portData.unitLong = labels.unitLong;
-        } else {
-          portData.type = port.type;
-          portData.unitShort = port.unitShort || null;
-          portData.unitLong = port.unitLong || null;
+          if ("x_unit" in port.contentSchema) {
+            const {
+              unitPrefix,
+              unit
+            } = osparc.utils.Units.decomposeXUnit(port.contentSchema["x_unit"]);
+            const labels = osparc.utils.Units.getLabels(unit, unitPrefix);
+            portData.unitShort = labels.unitShort;
+            portData.unitLong = labels.unitLong;
+          }
         }
         portData.icon = osparc.data.Converters.fromTypeToIcon(port.type);
         portData.value = port.value == null ? "-" : port.value;
