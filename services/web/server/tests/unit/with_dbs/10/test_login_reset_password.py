@@ -2,9 +2,11 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
+
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient
+from aiohttp.test_utils import TestClient, TestServer
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
@@ -14,6 +16,17 @@ from simcore_service_webserver.login.utils import get_random_string
 from yarl import URL
 
 EMAIL, PASSWORD = "tester@test.com", "password"
+
+
+@pytest.fixture
+def client(
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client,
+    web_server: TestServer,
+    mock_orphaned_services,
+) -> TestClient:
+    cli = event_loop.run_until_complete(aiohttp_client(web_server))
+    return cli
 
 
 @pytest.fixture
