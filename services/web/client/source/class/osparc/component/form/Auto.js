@@ -315,11 +315,10 @@ qx.Class.define("osparc.component.form.Auto", {
       if (!s.set) {
         s.set = {};
       }
-      if (s.defaultValue) {
-        s.set.value = parseInt(String(s.defaultValue));
-      } else {
-        s.set.value = 0;
-      }
+      s.set.maximum = s.maximum ? parseInt(s.maximum) : 10000;
+      s.set.minimum = s.minimum ? parseInt(s.minimum) : -10000;
+      s.set.value = s.minimum ? parseInt(String(s.defaultValue)) : 0;
+
       this.__formCtrl.addBindingOptions(key,
         { // model2target
           converter: function(data) {
@@ -469,10 +468,6 @@ qx.Class.define("osparc.component.form.Auto", {
           break;
         case "Spinner":
           control = new qx.ui.form.Spinner();
-          control.set({
-            maximum: 10000,
-            minimum: -10000
-          });
           setup = this.__setupSpinner;
           break;
         case "Password":
@@ -512,12 +507,6 @@ qx.Class.define("osparc.component.form.Auto", {
       if (s.set) {
         if (s.set.filter) {
           s.set.filter = RegExp(s.filter);
-        }
-        if (s.set.placeholder) {
-          s.set.placeholder = this["tr"](s.set.placeholder);
-        }
-        if (s.set.label) {
-          s.set.label = this["tr"](s.set.label);
         }
         control.set(s.set);
       }
