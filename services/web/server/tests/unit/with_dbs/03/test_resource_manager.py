@@ -362,7 +362,7 @@ async def test_websocket_disconnected_after_logout(
     r = await client.post(
         f"{logout_url}", json={"client_session_id": cur_client_session_id2}
     )
-    assert r.url_obj.path == logout_url.path
+    assert r.url.path == logout_url.path
     await assert_status(r, expected)
 
     # the socket2 should be gone
@@ -391,7 +391,7 @@ async def test_websocket_disconnected_after_logout(
         (UserRole.TESTER, True),
     ],
 )
-@pytest.mark.flaky  # TODO: remove this flaky mark
+@pytest.mark.flaky(max_runs=3)  # TODO: remove this flaky mark
 async def test_interactive_services_removed_after_logout(
     client: TestClient,
     logged_user: Dict[str, Any],
@@ -420,7 +420,7 @@ async def test_interactive_services_removed_after_logout(
     r = await client.post(
         f"{logout_url}", json={"client_session_id": client_session_id1}
     )
-    assert r.url_obj.path == logout_url.path
+    assert r.url.path == logout_url.path
     await assert_status(r, web.HTTPOk)
 
     # check result perfomed by background task
@@ -743,7 +743,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     # logout
     logout_url = client.app.router["auth_logout"].url_for()
     r = await client.post(logout_url, json={"client_session_id": client_session_id1})
-    assert r.url_obj.path == logout_url.path
+    assert r.url.path == logout_url.path
     await assert_status(r, web.HTTPOk)
 
     # ensure sufficient time is wasted here

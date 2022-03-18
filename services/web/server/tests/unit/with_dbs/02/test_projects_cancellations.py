@@ -85,7 +85,7 @@ async def test_creating_new_project_from_template_and_disconnecting_does_not_cre
     # NOTE: after coming back here timing-out, the code shall still run
     # in the server which is why we need to retry here
     async for attempt in AsyncRetrying(
-        reraise=True, stop=stop_after_delay(10), wait=wait_fixed(1)
+        reraise=True, stop=stop_after_delay(20), wait=wait_fixed(1)
     ):
         with attempt:
             slow_storage_subsystem_mock.delete_project.assert_called_once()

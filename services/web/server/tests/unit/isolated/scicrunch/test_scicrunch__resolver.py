@@ -6,16 +6,16 @@
 import pytest
 from aiohttp import ClientSession
 from aiohttp.client import ClientTimeout
-from simcore_service_webserver.scicrunch._resolver import ResolvedItem, resolve_rrid
-from simcore_service_webserver.scicrunch.settings import SciCrunchSettings
 
 # FIXME: PC check the CELL_LINE_CITATIONS test please
-from ._citations import (  # CELL_LINE_CITATIONS,
+from pytest_simcore.helpers.utils_scrunch_citations import (  # CELL_LINE_CITATIONS,
     ANTIBODY_CITATIONS,
     ORGANISM_CITATIONS,
     PLAMID_CITATIONS,
     TOOL_CITATIONS,
 )
+from simcore_service_webserver.scicrunch._resolver import ResolvedItem, resolve_rrid
+from simcore_service_webserver.scicrunch.settings import SciCrunchSettings
 
 
 @pytest.mark.parametrize(

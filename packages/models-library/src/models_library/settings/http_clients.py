@@ -1,6 +1,12 @@
+import warnings
 from typing import Optional
 
 from pydantic import BaseSettings, Field
+
+warnings.warn(
+    f"{__name__} is deprecated, use instead settings_library.http_client_request",
+    DeprecationWarning,
+)
 
 
 class ClientRequestSettings(BaseSettings):
