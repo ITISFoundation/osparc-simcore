@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager, suppress
-from typing import Optional, Union, final
+from typing import Optional, Union
 
 import aioredis.lock
 import aioredis.exceptions
