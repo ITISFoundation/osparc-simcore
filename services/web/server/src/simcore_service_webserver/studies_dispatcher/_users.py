@@ -11,14 +11,14 @@ import logging
 from typing import Dict, Optional
 
 from aiohttp import web
-from aioredlock import Aioredlock
+import aioredis
 from pydantic import BaseModel
 
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
 from ..login.handlers import ACTIVE, GUEST
 from ..login.storage import AsyncpgStorage, get_plugin_storage
 from ..login.utils import get_client_ip, get_random_string
-from ..redis import get_redis_lock_manager
+from ..redis import get_redis_lock_manager_client
 from ..security_api import authorized_userid, encrypt_password, is_anonymous, remember
 from ..users_api import get_user
 from ..users_exceptions import UserNotFoundError
@@ -50,7 +50,7 @@ async def _get_authorized_user(request: web.Request) -> Optional[Dict]:
 
 async def _create_temporary_user(request: web.Request):
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    lock_manager: Aioredlock = get_redis_lock_manager(request.app)
+    lock_manager: aioredis.Redis = get_redis_lock_manager_client(request.app)
 
     # TODO: avatar is an icon of the hero!
     random_user_name = get_random_string(min_len=5)
@@ -82,9 +82,9 @@ async def _create_temporary_user(request: web.Request):
     #
 
     # (1) read details above
-    async with await lock_manager.lock(
+    async with lock_manager.lock(
         GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_user_name),
-        lock_timeout=MAX_DELAY_TO_CREATE_USER,
+        timeout=MAX_DELAY_TO_CREATE_USER,
     ):
         # NOTE: usr Dict is incomplete, e.g. does not contain primary_gid
         usr = await db.create_user(
@@ -102,8 +102,8 @@ async def _create_temporary_user(request: web.Request):
         # (2) read details above
         await lock_manager.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
-            lock_timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
-        )
+            timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
+        ).acquire()
 
     return user
 

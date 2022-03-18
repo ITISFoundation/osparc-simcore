@@ -241,7 +241,7 @@ async def lock_with_notification(
     notify_users: bool = True,
 ):
     try:
-        async with await lock_project(
+        async with lock_project(
             app,
             project_uuid,
             status,

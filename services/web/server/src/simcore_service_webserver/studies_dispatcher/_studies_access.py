@@ -17,11 +17,11 @@ from uuid import UUID, uuid5
 
 from aiohttp import web
 from aiohttp_session import get_session
-from aioredlock import Aioredlock
+import aioredis
 
 from .._constants import INDEX_RESOURCE_NAME
 from ..garbage_collector_settings import GUEST_USER_RC_LOCK_FORMAT
-from ..redis import get_redis_lock_manager
+from ..redis import get_redis_lock_manager_client
 from ..security_api import is_anonymous, remember
 from ..storage_api import copy_data_folders_from_project
 from ..utils import compose_error_msg
@@ -65,7 +65,7 @@ async def create_temporary_user(request: web.Request):
     from ..security_api import encrypt_password
 
     db: AsyncpgStorage = get_plugin_storage(request.app)
-    lock_manager: Aioredlock = get_redis_lock_manager(request.app)
+    lock_manager: aioredis.Redis = get_redis_lock_manager_client(request.app)
 
     # TODO: avatar is an icon of the hero!
     random_uname = get_random_string(min_len=5)
@@ -97,9 +97,9 @@ async def create_temporary_user(request: web.Request):
     #
 
     # (1) read details above
-    async with await lock_manager.lock(
+    async with lock_manager.lock(
         GUEST_USER_RC_LOCK_FORMAT.format(user_id=random_uname),
-        lock_timeout=MAX_DELAY_TO_CREATE_USER,
+        timeout=MAX_DELAY_TO_CREATE_USER,
     ):
         user = await db.create_user(
             {
@@ -115,8 +115,8 @@ async def create_temporary_user(request: web.Request):
         # (2) read details above
         await lock_manager.lock(
             GUEST_USER_RC_LOCK_FORMAT.format(user_id=user["id"]),
-            lock_timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
-        )
+            timeout=MAX_DELAY_TO_GUEST_FIRST_CONNECTION,
+        ).acquire(blocking=False)
 
     return user
 

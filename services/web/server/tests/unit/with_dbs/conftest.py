@@ -34,6 +34,7 @@ from pytest_simcore.helpers.utils_login import NewUser
 from servicelib.aiohttp.application_keys import APP_DB_ENGINE_KEY
 from servicelib.common_aiopg_utils import DSN
 from simcore_service_webserver._constants import INDEX_RESOURCE_NAME
+
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.groups_api import (
     add_user_in_group,
