@@ -5,7 +5,7 @@ from .constants import FUNCTION_SERVICE_KEY_PREFIX
 
 def build_input(schema):
     return {
-        "label": schema["title"],
+        "label": schema["label"],
         "description": schema["description"],
         "type": "ref_contentSchema",
         "contentSchema": schema,
@@ -27,7 +27,7 @@ META = ServiceDockerData.parse_obj(
         "inputs": {
             "length": build_input(
                 {
-                    "title": "Distance",
+                    "label": "Distance",
                     "description": "Distance base unit",
                     "minimum": 0,
                     "maximum": 10,
@@ -37,7 +37,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "time": build_input(
                 {
-                    "title": "Time",
+                    "label": "Time",
                     "description": "Positive time base unit",
                     "minimum": 0,
                     "x_unit": "micro-second",
@@ -46,7 +46,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "current": build_input(
                 {
-                    "title": "Current",
+                    "label": "Current",
                     "description": "Current base unit",
                     "x_unit": "ampere",
                     "type": "number",
@@ -54,7 +54,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "luminosity": build_input(
                 {
-                    "title": "Luminosity",
+                    "label": "Luminosity",
                     "description": "Luminosity base unit",
                     "x_unit": "candela",
                     "type": "number",
@@ -62,7 +62,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "mass": build_input(
                 {
-                    "title": "Mass",
+                    "label": "Mass",
                     "description": "Positive mass base unit",
                     "minimum": 0,
                     "x_unit": "micro-gram",
@@ -71,7 +71,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "substance": build_input(
                 {
-                    "title": "Substance",
+                    "label": "Substance",
                     "description": "Substance base unit",
                     "minimum": 0,
                     "x_unit": "milli-mole",
@@ -80,7 +80,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "temperature": build_input(
                 {
-                    "title": "Temperature",
+                    "label": "Temperature",
                     "description": "Temperature in Kelvin",
                     "minimum": 0,
                     "x_unit": "kelvin",
@@ -89,7 +89,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "angle": build_input(
                 {
-                    "title": "Angle",
+                    "label": "Angle",
                     "description": "Angle in degrees",
                     "x_unit": "degree",
                     "type": "number",
@@ -97,7 +97,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "velocity": build_input(
                 {
-                    "title": "Velo-city",
+                    "label": "Velo-city",
                     "description": "Velocity in meters per second",
                     "x_unit": "meter_per_second",
                     "type": "number",
@@ -107,7 +107,7 @@ META = ServiceDockerData.parse_obj(
         "outputs": {
             "length": build_input(
                 {
-                    "title": "Distance",
+                    "label": "Distance",
                     "description": "Distance converted to millimeter",
                     "x_unit": "milli-meter",
                     "type": "number",
@@ -115,7 +115,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "time": build_input(
                 {
-                    "title": "Time",
+                    "label": "Time",
                     "description": "Time in minutes",
                     "minimum": 0,
                     "x_unit": "minute",
@@ -124,7 +124,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "current": build_input(
                 {
-                    "title": "Current",
+                    "label": "Current",
                     "description": "Current in milliAmpere",
                     "x_unit": "milli-ampere",
                     "type": "number",
@@ -132,7 +132,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "luminosity": build_input(
                 {
-                    "title": "Luminosity",
+                    "label": "Luminosity",
                     "description": "Luminosity with the same units",
                     "x_unit": "candela",
                     "type": "number",
@@ -140,7 +140,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "mass": build_input(
                 {
-                    "title": "Mass",
+                    "label": "Mass",
                     "description": "Mass in kg",
                     "minimum": 0,
                     "x_unit": "kilo-gram",
@@ -149,7 +149,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "substance": build_input(
                 {
-                    "title": "Substance",
+                    "label": "Substance",
                     "description": "Substance with no change in units",
                     "minimum": 0,
                     "x_unit": "mole",
@@ -158,7 +158,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "temperature": build_input(
                 {
-                    "title": "Temperature",
+                    "label": "Temperature",
                     "description": "Temperature converted to celcius",
                     "minimum": 0,
                     "x_unit": "degree_Celsius",
@@ -167,7 +167,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "angle": build_input(
                 {
-                    "title": "Angle",
+                    "label": "Angle",
                     "description": "Angle converted to radians",
                     "x_unit": "radian",
                     "type": "number",
@@ -175,7 +175,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "velocity": build_input(
                 {
-                    "title": "Velo-city",
+                    "label": "Velo-city",
                     "description": "Velocity in kilometers per hour",
                     "x_unit": "kilometer_per_hour",
                     "type": "number",
