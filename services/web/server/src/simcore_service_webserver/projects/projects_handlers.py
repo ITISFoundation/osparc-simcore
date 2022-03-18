@@ -118,7 +118,7 @@ async def create_projects(
             # FIXME: parameterized inputs should get defaults provided by service
 
         # overrides with body
-        if request.has_body:
+        if request.can_read_body:
             predefined = await request.json()
             if new_project:
                 for key in OVERRIDABLE_DOCUMENT_KEYS:

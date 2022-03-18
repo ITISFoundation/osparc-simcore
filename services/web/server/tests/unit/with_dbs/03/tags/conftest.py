@@ -36,7 +36,7 @@ DEFAULT_GARBAGE_COLLECTOR_DELETION_TIMEOUT_SECONDS: int = 3
 
 @pytest.fixture
 def client(
-    loop,
+    event_loop,
     aiohttp_client,
     app_cfg,
     postgres_db,
@@ -78,7 +78,7 @@ def client(
     setup_products(app)
 
     # server and client
-    yield loop.run_until_complete(
+    yield event_loop.run_until_complete(
         aiohttp_client(app, server_kwargs={"port": port, "host": "localhost"})
     )
 
@@ -196,7 +196,7 @@ async def catalog_subsystem_mock(
     return creator
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 async def director_v2_automock(
     director_v2_service_mock: aioresponses,
 ) -> aioresponses:
