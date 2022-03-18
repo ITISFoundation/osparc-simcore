@@ -133,7 +133,7 @@ jobs:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
-  unit-test-webserver-09:
+  unit-test-webserver-02:
     timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 09"
     runs-on: ${{ matrix.os }}
@@ -190,7 +190,7 @@ jobs:
           name: codeclimate-${{ github.job }}-coverage
           path: codeclimate.${{ github.job }}_coverage.json
 
-  unit-test-webserver-10:
+  unit-test-webserver-03:
     timeout-minutes: 14 # if this timeout gets too small, then split the tests
     name: "[unit] webserver 10"
     runs-on: ${{ matrix.os }}
@@ -1893,8 +1893,8 @@ jobs:
         unit-test-simcore-sdk,
         unit-test-storage,
         unit-test-webserver-01,
-        unit-test-webserver-09,
-        unit-test-webserver-10,
+        unit-test-webserver-02,
+        unit-test-webserver-03,
         integration-test-webserver-01,
         integration-test-webserver-02,
         integration-test-director-v2-01,
@@ -1947,8 +1947,8 @@ jobs:
         unit-test-simcore-sdk,
         unit-test-storage,
         unit-test-webserver-01,
-        unit-test-webserver-09,
-        unit-test-webserver-10,
+        unit-test-webserver-02,
+        unit-test-webserver-03,
         integration-test-director-v2-01,
         integration-test-director-v2-02,
         integration-test-simcore-sdk,
