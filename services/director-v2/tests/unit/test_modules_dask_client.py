@@ -566,6 +566,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     assert distributed.Future(job_id).done()
 
 
+@pytest.mark.flaky
 async def test_abort_computation_tasks(
     dask_client: DaskClient,
     user_id: UserID,
