@@ -157,7 +157,6 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       }
       // convert values to service specified units
       const changedXUnits = this.getChangedXUnits();
-      console.log(changedXUnits);
       Object.keys(changedXUnits).forEach(portId => {
         const ctrl = this._form.getControl(portId);
         const nodeMD = this.getNode().getMetaData();
