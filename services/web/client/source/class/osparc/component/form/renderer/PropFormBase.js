@@ -155,14 +155,25 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
           filteredData[key] = data[key];
         }
       }
+      // convert values to service specified units
+      const changedXUnits = this.getChangedXUnits();
+      console.log(changedXUnits);
+      Object.keys(changedXUnits).forEach(portId => {
+        const ctrl = this._form.getControl(portId);
+        const nodeMD = this.getNode().getMetaData();
+        const {
+          unitPrefix
+        } = osparc.utils.Units.decomposeXUnit(nodeMD.inputs[portId]["x_unit"]);
+        filteredData[portId] = osparc.utils.Units.convertValue(filteredData[portId], ctrl.unitPrefix, unitPrefix);
+      });
       return filteredData;
     },
 
-    getChangedUnits: function() {
+    getChangedXUnits: function() {
       const xUnits = {};
       const ctrls = this._form.getControls();
       for (const portId in ctrls) {
-        let ctrl = this._form.getControl(portId);
+        const ctrl = this._form.getControl(portId);
         xUnits[portId] = osparc.utils.Units.composeXUnit(ctrl.unit, ctrl.unitPrefix);
       }
       const nodeMD = this.getNode().getMetaData();

@@ -191,7 +191,8 @@ qx.Class.define("osparc.utils.Units", {
     convertValue: function(val, oldPrefix, newPrefix) {
       const multiplier = this.getMultiplier(oldPrefix, newPrefix);
       const newValue = val*multiplier;
-      return newValue;
+      // strip extra zeros
+      return parseFloat((newValue).toFixed(15));
     },
 
     composeXUnit: function(unit, unitPrefix) {
