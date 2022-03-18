@@ -135,7 +135,7 @@ jobs:
 
   unit-test-webserver-02:
     timeout-minutes: 14 # if this timeout gets too small, then split the tests
-    name: "[unit] webserver 09"
+    name: "[unit] webserver 02"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -192,7 +192,7 @@ jobs:
 
   unit-test-webserver-03:
     timeout-minutes: 14 # if this timeout gets too small, then split the tests
-    name: "[unit] webserver 10"
+    name: "[unit] webserver 03"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
