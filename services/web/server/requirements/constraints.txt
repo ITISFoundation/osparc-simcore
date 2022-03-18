@@ -10,3 +10,5 @@
 #
 # SEE https://github.com/joerick/pyinstrument#v400release
 pyinstrument<4
+# compatiblity between redis/astroid
+wrapt<1.14

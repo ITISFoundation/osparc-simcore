@@ -278,6 +278,10 @@ ujson==5.1.0
     # via aiohttp-swagger
 werkzeug==2.0.3
     # via -r requirements/../../../../packages/service-library/requirements/_aiohttp.in
+wrapt==1.13.3
+    # via
+    #   -c requirements/./constraints.txt
+    #   deprecated
 yarl==1.5.1
     # via
     #   -r requirements/../../../../packages/postgres-database/requirements/_base.in
