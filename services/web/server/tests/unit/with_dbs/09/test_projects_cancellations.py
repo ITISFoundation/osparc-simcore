@@ -50,9 +50,6 @@ def standard_user_role_response() -> Tuple[
     )
 
 
-@pytest.mark.skip(
-    reason="Test fixed in PR#2897 [https://github.com/ITISFoundation/osparc-simcore/pull/2897]"
-)
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_creating_new_project_from_template_and_disconnecting_does_not_create_project(
     client: TestClient,
@@ -94,9 +91,6 @@ async def test_creating_new_project_from_template_and_disconnecting_does_not_cre
             slow_storage_subsystem_mock.delete_project.assert_called_once()
 
 
-@pytest.mark.skip(
-    reason="Test fixed in PR#2897 [https://github.com/ITISFoundation/osparc-simcore/pull/2897]"
-)
 @pytest.mark.parametrize(*standard_user_role_response())
 async def test_creating_new_project_as_template_and_disconnecting_does_not_create_project(
     client: TestClient,
