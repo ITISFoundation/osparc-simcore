@@ -181,10 +181,15 @@ qx.Class.define("osparc.utils.Units", {
       return 1;
     },
 
-    convertValue: function(val, oldPrefix, newPrefix) {
+    getMultiplier: function(oldPrefix, newPrefix) {
       const oldMulitplier = this.__getPrefixMultiplier(oldPrefix);
       const newMulitplier = this.__getPrefixMultiplier(newPrefix);
       const multiplier = oldMulitplier/newMulitplier;
+      return multiplier;
+    },
+
+    convertValue: function(val, oldPrefix, newPrefix) {
+      const multiplier = this.getMultiplier(oldPrefix, newPrefix);
       const newValue = val*multiplier;
       return newValue;
     },

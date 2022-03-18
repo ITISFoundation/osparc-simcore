@@ -182,7 +182,6 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     },
 
     setInputsUnits: function(inputsUnits) {
-      console.log("setInputsUnits", this, inputsUnits);
       Object.keys(inputsUnits).forEach(portId => {
         const item = this._form.getControl(portId);
         this.__switchPrefix(item, item.unitPrefix, osparc.utils.Units.decomposeXUnit(inputsUnits[portId]).unitPrefix);
