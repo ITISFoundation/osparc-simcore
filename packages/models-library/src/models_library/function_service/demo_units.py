@@ -38,7 +38,7 @@ META = ServiceDockerData.parse_obj(
             "time": build_input(
                 {
                     "label": "Time",
-                    "description": "Positive time base unit",
+                    "description": "Positive time in microseconds",
                     "minimum": 0,
                     "x_unit": "micro-second",
                     "type": "number",
@@ -63,7 +63,7 @@ META = ServiceDockerData.parse_obj(
             "mass": build_input(
                 {
                     "label": "Mass",
-                    "description": "Positive mass base unit",
+                    "description": "Positive mass in micrograms",
                     "minimum": 0,
                     "x_unit": "micro-gram",
                     "type": "number",
@@ -72,7 +72,7 @@ META = ServiceDockerData.parse_obj(
             "substance": build_input(
                 {
                     "label": "Substance",
-                    "description": "Substance base unit",
+                    "description": "Substance base in millimoles",
                     "minimum": 0,
                     "x_unit": "milli-mole",
                     "type": "number",
