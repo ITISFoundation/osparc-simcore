@@ -69,7 +69,7 @@ services:
       SC_BOOT_MODE: debug-ptvsd
       WEBSERVER_LOGLEVEL: ${LOG_LEVEL:-DEBUG}
 
-  webserver-garbage-collector:
+  wb-garbage-collector:
     volumes: *webserver-volumes-dev
     environment:
       <<: *webserver-environment-dev
