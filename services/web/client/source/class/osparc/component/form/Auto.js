@@ -535,6 +535,17 @@ qx.Class.define("osparc.component.form.Auto", {
         control.unit = unit;
       }
 
+      const manager = new qx.ui.form.validation.Manager();
+      manager.add(control, (value, item) => {
+        console.log("manager", value, item.key, s);
+        let valid = false;
+        if (!valid) {
+          item.setInvalidMessage(this.tr("Number must be in range"));
+        }
+        return valid;
+      });
+      control.addListener("changeValue", () => manager.validate());
+
       return control;
     }
   }

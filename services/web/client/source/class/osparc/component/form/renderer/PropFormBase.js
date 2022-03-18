@@ -255,11 +255,9 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
     },
 
     __switchPrefix: function(item, oldPrefix, newPrefix) {
-      const oldMulitplier = osparc.utils.Units.getPrefixMultiplier(oldPrefix);
-      const newMulitplier = osparc.utils.Units.getPrefixMultiplier(newPrefix);
-      const multiplier = oldMulitplier/newMulitplier;
+      const newValue = osparc.utils.Units.convertValue(item.getValue(), oldPrefix, newPrefix);
       item.unitPrefix = newPrefix;
-      item.setValue(String(item.getValue()*multiplier));
+      item.setValue(String(newValue));
       this.__rerenderUnit(item);
     },
 

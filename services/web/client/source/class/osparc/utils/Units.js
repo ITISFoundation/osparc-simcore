@@ -171,7 +171,7 @@ qx.Class.define("osparc.utils.Units", {
       return this.PREFIXES[keys[idx+1]];
     },
 
-    getPrefixMultiplier: function(prefix) {
+    __getPrefixMultiplier: function(prefix) {
       if ([null, undefined, ""].includes(prefix)) {
         prefix = "no-prefix";
       }
@@ -179,6 +179,14 @@ qx.Class.define("osparc.utils.Units", {
         return this.PREFIXES[prefix].multiplier;
       }
       return 1;
+    },
+
+    convertValue: function(val, oldPrefix, newPrefix) {
+      const oldMulitplier = this.__getPrefixMultiplier(oldPrefix);
+      const newMulitplier = this.__getPrefixMultiplier(newPrefix);
+      const multiplier = oldMulitplier/newMulitplier;
+      const newValue = val*multiplier;
+      return newValue;
     },
 
     composeXUnit: function(unit, unitPrefix) {
