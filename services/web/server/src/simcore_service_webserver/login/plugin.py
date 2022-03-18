@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 MAX_TIME_TO_CLOSE_POOL_SECS = 5
 
 
-async def setup_login_storage(app: web.Application):
+async def _setup_login_storage_ctx(app: web.Application):
     # TODO: ensure pool only init once!
     settings: PostgresSettings = get_db_plugin_settings(app)
 
@@ -44,6 +44,11 @@ async def setup_login_storage(app: web.Application):
         await asyncio.wait_for(pool.close(), timeout=MAX_TIME_TO_CLOSE_POOL_SECS)
     except asyncio.TimeoutError:
         log.exception("Failed to close login storage loop")
+
+
+def setup_login_storage(app: web.Application):
+    if app.get(APP_LOGIN_STORAGE_KEY) is None:
+        app.cleanup_ctx.append(_setup_login_storage_ctx)
 
 
 def _setup_login_options(app: web.Application):
@@ -76,7 +81,5 @@ def setup_login(app: web.Application):
     app.router.add_routes(routes)
 
     _setup_login_options(app)
-
-    # signals
-    app.cleanup_ctx.append(setup_login_storage)
+    setup_login_storage(app)
     return True
