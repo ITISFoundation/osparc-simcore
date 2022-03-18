@@ -494,48 +494,12 @@ async def requires_dynamic_sidecar(
 
 
 @log_decorator(logger=log)
-async def attach_network_to_dynamic_sidecar(
-    app: web.Application,
-    project_id: ProjectID,
-    node_id: NodeID,
-    network_name: DockerNetworkName,
-    network_alias: DockerNetworkAlias,
+async def project_networks_update(
+    app: web.Application, project_id: ProjectID
 ) -> None:
     settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = URL(settings.base_url) / "dynamic_services/networks:attach"
-    body = dict(
-        project_id=f"{project_id}",
-        node_id=f"{node_id}",
-        network_name=network_name,
-        network_alias=network_alias,
-    )
+    backend_url = URL(settings.base_url) / "dynamic_services/project-networks:update"
+    body = dict(project_id=f"{project_id}")
     await _request_director_v2(
-        app,
-        "POST",
-        backend_url,
-        expected_status=web.HTTPNoContent,
-        data=body,
-        timeout=settings.DIRECTOR_V2_NETWORK_ATTACH_DETACH_TIMEOUT,
-    )
-
-
-@log_decorator(logger=log)
-async def detach_network_from_dynamic_sidecar(
-    app: web.Application,
-    project_id: ProjectID,
-    node_id: NodeID,
-    network_name: DockerNetworkName,
-) -> None:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = URL(settings.base_url) / "dynamic_services/networks:detach"
-    body = dict(
-        project_id=f"{project_id}", node_id=f"{node_id}", network_name=network_name
-    )
-    await _request_director_v2(
-        app,
-        "POST",
-        backend_url,
-        expected_status=web.HTTPNoContent,
-        data=body,
-        timeout=settings.DIRECTOR_V2_NETWORK_ATTACH_DETACH_TIMEOUT,
+        app, "POST", backend_url, expected_status=web.HTTPNoContent, data=body
     )

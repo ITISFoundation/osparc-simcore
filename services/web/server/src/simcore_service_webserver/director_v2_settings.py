@@ -67,10 +67,6 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
         ],
     )
 
-    DIRECTOR_V2_NETWORK_ATTACH_DETACH_TIMEOUT: PositiveInt = Field(
-        1 * _MINUTE, description="timeout to attach/detach a network"
-    )
-
     DIRECTOR_V2_STORAGE_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT: PositiveInt = Field(
         _HOUR,
         description=(

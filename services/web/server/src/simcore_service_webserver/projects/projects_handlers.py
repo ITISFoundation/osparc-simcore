@@ -40,7 +40,6 @@ from .projects_utils import (
     get_project_unavailable_services,
     project_uses_available_services,
 )
-from .. import project_networks_core
 
 # When the user requests a project with a repo, the working copy might differ from
 # the repo project. A middleware in the meta module (if active) will resolve
@@ -142,8 +141,8 @@ async def create_projects(
             hidden=hidden,
         )
 
-        await project_networks_core.update_from_workbench(
-            request.app, UUID(new_project["uuid"]), new_project["workbench"]
+        await director_v2_api.project_networks_update(
+            request.app, UUID(new_project["uuid"])
         )
 
         # copies the project's DATA IF cloned
@@ -439,9 +438,7 @@ async def replace_project(request: web.Request):
                     reason=f"Project {project_uuid} cannot be modified while pipeline is still running."
                 )
 
-        await project_networks_core.update_from_workbench(
-            request.app, project_uuid, new_project["workbench"]
-        )
+        await director_v2_api.project_networks_update(request.app, project_uuid)
 
         new_project = await db.replace_user_project(
             new_project, user_id, f"{project_uuid}", include_templates=True
