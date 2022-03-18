@@ -121,7 +121,6 @@ async def send_mail(app: web.Application, msg: MIMEText):
 
     msg["From"] = cfg.SMTP_SENDER
     smtp_args = dict(
-        loop=app.loop,
         hostname=cfg.SMTP_HOST,
         port=cfg.SMTP_PORT,
         use_tls=cfg.SMTP_TLS_ENABLED,
