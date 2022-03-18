@@ -87,6 +87,12 @@ qx.Class.define("osparc.component.form.Auto", {
     "changeData": "qx.event.type.Data"
   },
 
+  statics: {
+    hasValidationProp: function(s) {
+      return Object.keys(s).some(r => ["minimum", "maximum"].includes(r));
+    }
+  },
+
   members: {
     __boxCtrl: null,
     __ctrlMap: null,
@@ -525,16 +531,23 @@ qx.Class.define("osparc.component.form.Auto", {
         control.unit = unit;
       }
 
-      const manager = new qx.ui.form.validation.Manager();
-      manager.add(control, (value, item) => {
-        console.log("manager", value, item.key, s);
-        let valid = false;
-        if (!valid) {
-          item.setInvalidMessage(this.tr("Number must be in range"));
-        }
-        return valid;
-      });
-      control.addListener("changeValue", () => manager.validate());
+      if (this.self().hasValidationProp(s)) {
+        const manager = new qx.ui.form.validation.Manager();
+        manager.add(control, (value, item) => {
+          let valid = true;
+          if (valid && "minimum" in s) {
+            valid = value >= s.minimum;
+          }
+          if (valid && "maximum" in s) {
+            valid = value <= s.maximum;
+          }
+          if (!valid) {
+            item.setInvalidMessage(this.tr("Out of range"));
+          }
+          return valid;
+        });
+        control.addListener("changeValue", () => manager.validate());
+      }
 
       return control;
     }
