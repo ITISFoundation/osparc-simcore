@@ -141,10 +141,6 @@ async def create_projects(
             hidden=hidden,
         )
 
-        await director_v2_api.project_networks_update(
-            request.app, UUID(new_project["uuid"])
-        )
-
         # copies the project's DATA IF cloned
         if clone_data_coro:
             assert source_project  # nosec
@@ -166,6 +162,10 @@ async def create_projects(
                 await db.update_project_without_checking_permissions(
                     new_project, new_project["uuid"], hidden=False
                 )
+
+        await director_v2_api.project_networks_update(
+            request.app, UUID(new_project["uuid"])
+        )
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
         await director_v2_api.create_or_update_pipeline(
@@ -438,11 +438,10 @@ async def replace_project(request: web.Request):
                     reason=f"Project {project_uuid} cannot be modified while pipeline is still running."
                 )
 
-        await director_v2_api.project_networks_update(request.app, project_uuid)
-
         new_project = await db.replace_user_project(
             new_project, user_id, f"{project_uuid}", include_templates=True
         )
+        await director_v2_api.project_networks_update(request.app, project_uuid)
         await director_v2_api.create_or_update_pipeline(
             request.app, user_id, project_uuid
         )

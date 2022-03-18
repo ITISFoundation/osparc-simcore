@@ -1,18 +1,11 @@
 # pylint: disable=unused-argument
-import urllib.parse
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Path, Query, Response
-from models_library.service_settings_labels import SimcoreServiceLabels
-from models_library.services import KEY_RE, VERSION_RE, ServiceKeyVersion, ServiceType
-from pydantic import constr
+from models_library.services import KEY_RE, VERSION_RE, ServiceType
 
 from ...models.schemas.services import ServiceExtrasEnveloped, ServicesArrayEnveloped
-from ..dependencies.director_v0 import (
-    DirectorV0Client,
-    forward_to_director_v0,
-    get_director_v0_client,
-)
+from ..dependencies.director_v0 import forward_to_director_v0
 
 router = APIRouter()
 
@@ -70,29 +63,3 @@ async def get_service_versioned(
     forward_request: Response = Depends(forward_to_director_v0),
 ):
     return forward_request
-
-
-@router.post(
-    "/{service_key:path}/{service_version}/dynamic-sidecar:require",
-    summary="returns True if service must be ran via dynamic-sidecar",
-)
-async def requires_dynamic_sidecar(
-    service_key: str = constr(regex=KEY_RE, strip_whitespace=True),
-    service_version: str = ServiceKeyVersionPath,
-    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
-) -> bool:
-    decoded_service_key = urllib.parse.unquote_plus(service_key)
-
-    # check the type of service, if not dynamic do
-    # not fetch the labels
-    # (simcore)/(services)/(comp|dynamic|frontend)
-    service_type = decoded_service_key.split("/")[2]
-    if service_type != "dynamic":
-        return False
-
-    simcore_service_labels: SimcoreServiceLabels = (
-        await director_v0_client.get_service_labels(
-            service=ServiceKeyVersion(key=decoded_service_key, version=service_version)
-        )
-    )
-    return simcore_service_labels.needs_dynamic_sidecar

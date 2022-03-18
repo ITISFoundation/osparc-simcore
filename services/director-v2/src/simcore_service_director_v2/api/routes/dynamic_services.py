@@ -1,11 +1,11 @@
 import asyncio
 import logging
-from typing import Coroutine, Dict, List, Optional, Union, cast
+from typing import Coroutine, List, Optional, Union, cast
 from uuid import UUID
 
 import async_timeout
 import httpx
-from fastapi import APIRouter, Depends, Header, Response
+from fastapi import APIRouter, Depends, Header
 from fastapi.responses import RedirectResponse
 from models_library.project_networks import DockerNetworkAlias, DockerNetworkName
 from models_library.projects import ProjectID
@@ -13,9 +13,14 @@ from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from pydantic import BaseModel
+from simcore_service_director_v2.modules.rabbitmq import (
+    RabbitMQClient,
+    get_rabbitmq_client,
+)
 from starlette import status
 from starlette.datastructures import URL
 
+from ...api.dependencies.database import get_repository
 from ...core.settings import DynamicServicesSettings, DynamicSidecarSettings
 from ...models.domains.dynamic_services import (
     DynamicServiceCreate,
@@ -25,8 +30,10 @@ from ...models.domains.dynamic_services import (
 )
 from ...models.schemas.constants import UserID
 from ...models.schemas.dynamic_services import SchedulerData
+from ...modules import project_networks
+from ...modules.db.repositories.project_networks import ProjectNetworksRepository
+from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.dynamic_sidecar.docker_api import (
-    get_or_create_networks_ids,
     is_dynamic_service_running,
     list_dynamic_sidecar_services,
 )
@@ -47,17 +54,8 @@ from ..dependencies.dynamic_services import (
 )
 
 
-class AttachNetworkToDynamicSidecarItem(BaseModel):
+class ProjectNetworksUpdateItem(BaseModel):
     project_id: ProjectID
-    node_id: NodeID
-    network_name: DockerNetworkName
-    network_alias: DockerNetworkAlias
-
-
-class DetachNetworkFromDynamicSidecarItem(BaseModel):
-    project_id: ProjectID
-    node_id: NodeID
-    network_name: DockerNetworkName
 
 
 router = APIRouter()
@@ -274,49 +272,6 @@ async def service_retrieve_data_on_ports(
 
 
 @router.post(
-    "/networks:attach",
-    summary=(
-        "Attach a single network to the dynamic-sidecar "
-        "spawned service, if network is not already attached"
-    ),
-    response_class=Response,
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def attach_network_to_dynamic_sidecar(
-    item: AttachNetworkToDynamicSidecarItem,
-    scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
-) -> None:
-    network_names_to_ids: Dict[str, str] = await get_or_create_networks_ids(
-        [item.network_name], item.project_id
-    )
-    network_id = network_names_to_ids[item.network_name]
-
-    await scheduler.attach_project_network(
-        node_id=item.node_id, network_id=network_id, network_alias=item.network_alias
-    )
-
-
-@router.post(
-    "/networks:detach",
-    summary=(
-        "Detach a single network from the dynamic-sidecar "
-        "spawned service, if network is not already detached"
-    ),
-    response_class=Response,
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def detach_network_from_dynamic_sidecar(
-    item: DetachNetworkFromDynamicSidecarItem,
-    scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
-) -> None:
-    network_names_to_ids: Dict[str, str] = await get_or_create_networks_ids(
-        [item.network_name], item.project_id
-    )
-    network_id = network_names_to_ids[item.network_name]
-    await scheduler.detach_project_network(node_id=item.node_id, network_id=network_id)
-
-
-@router.post(
     "/{node_uuid}:restart",
     summary="Calls the dynamic service's restart containers endpoint",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -331,3 +286,37 @@ async def service_restart_containers(
         raise LegacyServiceIsNotSupportedError() from error
 
     return NoContentResponse()
+
+
+@router.post(
+    "/project-networks:update",
+    summary=(
+        "After a change to the workbench the `project networks` need to be updated, "
+        "this will trigger attaching and detaching of networks to ensure services "
+        "are correctly conencted between each other. For now all services are placed "
+        "on the same default network."
+    ),
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+@log_decorator(logger=logger)
+async def update_project_networks(
+    item: ProjectNetworksUpdateItem,
+    project_networks_repository: ProjectNetworksRepository = Depends(
+        get_repository(ProjectNetworksRepository)
+    ),
+    projects_repository: ProjectsRepository = Depends(
+        get_repository(ProjectsRepository)
+    ),
+    scheduler: DynamicSidecarsScheduler = Depends(get_scheduler),
+    director_v0_client: DirectorV0Client = Depends(get_director_v0_client),
+    rabbitmq_client: RabbitMQClient = Depends(get_rabbitmq_client),
+) -> None:
+
+    await project_networks.update_from_workbench(
+        project_networks_repository=project_networks_repository,
+        projects_repository=projects_repository,
+        scheduler=scheduler,
+        director_v0_client=director_v0_client,
+        rabbitmq_client=rabbitmq_client,
+        project_id=item.project_id,
+    )
