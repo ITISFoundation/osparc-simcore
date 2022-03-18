@@ -5,7 +5,17 @@
 
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, AsyncIterable, Callable, Dict, List, Optional, Type, Union
+from typing import (
+    Any,
+    AsyncIterable,
+    AsyncIterator,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    Union,
+)
 
 import pytest
 from aiohttp import web
@@ -237,10 +247,10 @@ async def catalog_subsystem_mock(
     return creator
 
 
-@pytest.fixture()
-async def director_v2_automock(
+@pytest.fixture(autouse=True)
+async def mocked_director_v2(
     director_v2_service_mock: aioresponses,
-) -> aioresponses:
+) -> AsyncIterator[aioresponses]:
     yield director_v2_service_mock
 
 
