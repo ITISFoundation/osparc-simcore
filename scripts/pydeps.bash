@@ -17,7 +17,7 @@ Build()
     --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
     --build-arg HOME_DIR="/home/$USER" \
     --tag "$IMAGE_NAME" \
-    "$SCRIPT_DIR/pydeps"
+    "$SCRIPT_DIR/pydeps-docker"
 }
 
 
@@ -46,3 +46,4 @@ Run()
 
 Build
 Run "$@"
+echo "DONE"
