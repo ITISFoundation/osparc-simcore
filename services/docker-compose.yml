@@ -256,6 +256,7 @@ services:
           "python3",
           "/home/scu/services/web/server/docker/healthcheck.py",
           "http://localhost:8080/v0/"
+          # NOTE: this healthcheck is at the root while the webserver's healthcheck is in /health
         ]
       interval: 30s
       timeout: 120s
