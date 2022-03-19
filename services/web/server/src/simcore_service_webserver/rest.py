@@ -61,11 +61,12 @@ def setup_rest(app: web.Application):
     # basic routes
     app.add_routes(rest_handlers.routes)
     if not is_diagnostics_enabled:
-        # NOTE: healthcheck is in diagnistics, if not active we will replace it
+        # NOTE: the healthcheck route is normally in diagnostics, but
+        # if disabled, this plugin adds a simple version of it
         app.add_routes(
             [
                 web.get(
-                    path=f"{api_version_prefix}/health",
+                    path=f"/{api_version_prefix}/health",
                     handler=rest_handlers.check_running,
                     name="check_health",
                 )
