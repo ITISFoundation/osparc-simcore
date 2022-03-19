@@ -12,7 +12,6 @@ import yaml
 from aiohttp import web
 from pytest_simcore.helpers.utils_assert import assert_status
 from servicelib.aiohttp.application import create_safe_application
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY
 from simcore_service_webserver._resources import resources
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.rest import setup_rest
@@ -45,11 +44,6 @@ def client(
         raise web.HTTPOk()
 
     server_kwargs = {"port": unused_tcp_port_factory(), "host": "localhost"}
-    # fake config
-    app[APP_CONFIG_KEY] = {
-        "main": server_kwargs,
-        "rest": {"enabled": True, "version": api_version_prefix},
-    }
 
     # activates only security+restAPI sub-modules
     setup_settings(app)
@@ -68,24 +62,12 @@ async def test_frontend_config(client, api_version_prefix):
     url = client.app.router["get_config"].url_for()
     assert str(url) == f"/{api_version_prefix}/config"
 
-    # default
     response = await client.get(f"/{api_version_prefix}/config")
 
     data, _ = await assert_status(response, web.HTTPOk)
     assert not data["invitation_required"]
 
-    # w/ invitation explicitly
-    for enabled in (True, False):
-        client.app[APP_CONFIG_KEY]["login"] = {
-            "registration_invitation_required": enabled
-        }
-        response = await client.get(f"/{api_version_prefix}/config")
 
-        data, _ = await assert_status(response, web.HTTPOk)
-        assert data["invitation_required"] is enabled
-
-
-# FIXME: hard-coded v0
 @pytest.mark.parametrize("resource_name", resources.listdir("api/v0/schemas"))
 def test_validate_component_schema(resource_name, api_version_prefix):
     try:

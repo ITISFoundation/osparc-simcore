@@ -258,17 +258,20 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
                 "invitation_required"
             ] = self.WEBSERVER_LOGIN.LOGIN_REGISTRATION_INVITATION_REQUIRED
 
-        return self.dict(
-            include={
-                "APP_NAME",
-                "API_VERSION",
-                "SC_VCS_URL",
-                "SC_VCS_REF",
-                "SC_BUILD_DATE",
-            },
-            exclude_none=True,
-            by_alias=True,
+        data.update(
+            self.dict(
+                include={
+                    "APP_NAME",
+                    "API_VERSION",
+                    "SC_VCS_URL",
+                    "SC_VCS_REF",
+                    "SC_BUILD_DATE",
+                },
+                exclude_none=True,
+                by_alias=True,
+            )
         )
+        return data
 
     def to_client_statics(self) -> Dict[str, Any]:
         data = self.dict(
