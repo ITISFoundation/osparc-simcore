@@ -64,45 +64,6 @@ def client(
     return cli
 
 
-FAKE = {
-    "path_value": "one",
-    "query_value": "two",
-    "body_value": {"a": "foo", "b": "45"},
-}
-
-
-async def test_check_action(client, api_version_prefix):
-    QUERY = "value"
-    ACTION = "echo"
-
-    resp = await client.post(
-        f"/{api_version_prefix}/check/{ACTION}?data={QUERY}", json=FAKE
-    )
-    payload = await resp.json()
-    data, error = tuple(payload.get(k) for k in ("data", "error"))
-
-    assert resp.status == 200, str(payload)
-    assert data
-    assert not error
-
-    # TODO: validate response against specs
-
-    assert data["path_value"] == ACTION
-    assert data["query_value"] == QUERY
-    assert data["body_value"] == FAKE
-
-
-async def test_check_fail(client, api_version_prefix):
-    url = (
-        client.app.router["check_action"].url_for(action="fail").with_query(data="foo")
-    )
-    assert str(url) == f"/{api_version_prefix}/check/fail?data=foo"
-    resp = await client.post(url, json=FAKE)
-
-    _, error = await assert_status(resp, web.HTTPInternalServerError)
-    assert "some randome failure" in str(error)
-
-
 async def test_frontend_config(client, api_version_prefix):
     url = client.app.router["get_config"].url_for()
     assert str(url) == f"/{api_version_prefix}/config"

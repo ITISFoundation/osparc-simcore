@@ -251,6 +251,13 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     def public_dict(self) -> Dict[str, Any]:
         """Data publicaly available"""
+
+        data = {"invitation_required": False}
+        if self.WEBSERVER_LOGIN:
+            data[
+                "invitation_required"
+            ] = self.WEBSERVER_LOGIN.LOGIN_REGISTRATION_INVITATION_REQUIRED
+
         return self.dict(
             include={
                 "APP_NAME",
