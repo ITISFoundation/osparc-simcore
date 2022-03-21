@@ -28,7 +28,6 @@ from simcore_service_director_v2.modules.rabbitmq import RabbitMQClient
 from ..api.dependencies.director_v0 import DirectorV0Client
 from ..modules.db.repositories.project_networks import ProjectNetworksRepository
 from ..modules.db.repositories.projects import ProjectsRepository
-from ..modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ..modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 
 logger = logging.getLogger(__name__)
@@ -48,32 +47,21 @@ def _network_alias(label: str) -> DockerNetworkAlias:
 
 async def _attach_network_to_dynamic_sidecar(
     scheduler: DynamicSidecarsScheduler,
-    project_id: ProjectID,
     node_id: NodeID,
     network_name: str,
     network_alias: str,
 ) -> None:
-    network_names_to_ids: Dict[str, str] = await get_or_create_networks_ids(
-        [network_name], project_id
-    )
-    network_id = network_names_to_ids[network_name]
-
     await scheduler.attach_project_network(
-        node_id=node_id, network_id=network_id, network_alias=network_alias
+        node_id=node_id, project_network=network_name, network_alias=network_alias
     )
 
 
 async def _detach_network_from_dynamic_sidecar(
-    scheduler: DynamicSidecarsScheduler,
-    project_id: ProjectID,
-    node_id: NodeID,
-    network_name: str,
+    scheduler: DynamicSidecarsScheduler, node_id: NodeID, network_name: str
 ) -> None:
-    network_names_to_ids: Dict[str, str] = await get_or_create_networks_ids(
-        [network_name], project_id
+    await scheduler.detach_project_network(
+        node_id=node_id, project_network=network_name
     )
-    network_id = network_names_to_ids[network_name]
-    await scheduler.detach_project_network(node_id=node_id, network_id=network_id)
 
 
 async def _requires_dynamic_sidecar(
@@ -160,7 +148,6 @@ async def _send_network_configuration_to_dynamic_sidecar(
         *[
             _detach_network_from_dynamic_sidecar(
                 scheduler=scheduler,
-                project_id=to_remove.project_id,
                 node_id=UUID(to_remove.node_id),
                 network_name=to_remove.network_name,
             )
@@ -191,7 +178,6 @@ async def _send_network_configuration_to_dynamic_sidecar(
         *[
             _attach_network_to_dynamic_sidecar(
                 scheduler=scheduler,
-                project_id=to_add.project_id,
                 node_id=UUID(to_add.node_id),
                 network_name=to_add.network_name,
                 network_alias=to_add.network_alias,

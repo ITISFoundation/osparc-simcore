@@ -3,7 +3,6 @@ import contextlib
 import logging
 import traceback
 from asyncio import Lock, Queue, Task, sleep
-from collections import deque
 from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Deque, Dict, List, Optional
@@ -15,7 +14,6 @@ from fastapi import FastAPI
 from models_library.project_networks import DockerNetworkAlias
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import RestartPolicy
-from servicelib.utils import logged_gather
 
 from ....core.settings import (
     DynamicServicesSchedulerSettings,
@@ -288,7 +286,7 @@ class DynamicSidecarsScheduler:
         return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
 
     async def attach_project_network(
-        self, node_id: NodeID, network_id: str, network_alias: DockerNetworkAlias
+        self, node_id: NodeID, project_network: str, network_alias: DockerNetworkAlias
     ) -> None:
         if node_id not in self._inverse_search_mapping:
             return
@@ -300,42 +298,17 @@ class DynamicSidecarsScheduler:
             self.app
         )
 
-        try:
-            containers_status = await dynamic_sidecar_client.containers_docker_status(
-                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
-            )
-        except httpx.HTTPError:
-            return
-
-        sorted_container_names = sorted(containers_status.keys())
-
-        entrypoint_container_name = await dynamic_sidecar_client.get_entrypoint_container_name(
+        await dynamic_sidecar_client.attach_service_containers_to_project_network(
             dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+            project_network=project_network,
+            project_id=scheduler_data.project_id,
+            network_alias=network_alias,
         )
 
-        tasks = deque()
-
-        for k, container_name in enumerate(sorted_container_names):
-            # by default we attach `alias-0`, `alias-1`, etc...
-            # to all containers
-            aliases = [f"{network_alias}-{k}"]
-            if container_name == entrypoint_container_name:
-                # by definition the entrypoint container will be exposed as the `alias`
-                aliases.append(network_alias)
-
-            tasks.append(
-                dynamic_sidecar_client.attach_container_to_network(
-                    dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
-                    container_id=container_name,
-                    network_id=network_id,
-                    network_aliases=aliases,
-                )
-            )
-
-        await logged_gather(*tasks)
-
-    async def detach_project_network(self, node_id: NodeID, network_id: str) -> None:
+    async def detach_project_network(
+        self, node_id: NodeID, project_network: str
+    ) -> None:
         if node_id not in self._inverse_search_mapping:
             return
 
@@ -346,23 +319,10 @@ class DynamicSidecarsScheduler:
             self.app
         )
 
-        # the network needs to be detached from all started containers
-        try:
-            containers_status = await dynamic_sidecar_client.containers_docker_status(
-                dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint
-            )
-        except httpx.HTTPError:
-            return
-
-        await logged_gather(
-            *[
-                dynamic_sidecar_client.detach_container_from_network(
-                    dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
-                    container_id=container_name,
-                    network_id=network_id,
-                )
-                for container_name in containers_status
-            ]
+        await dynamic_sidecar_client.detach_service_containers_from_project_network(
+            dynamic_sidecar_endpoint=scheduler_data.dynamic_sidecar.endpoint,
+            project_network=project_network,
+            project_id=scheduler_data.project_id,
         )
 
     async def restart_containers(self, node_uuid: NodeID) -> None:

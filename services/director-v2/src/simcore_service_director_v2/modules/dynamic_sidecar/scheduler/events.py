@@ -15,6 +15,9 @@ from models_library.service_settings_labels import (
 from models_library.services import ServiceKeyVersion
 from servicelib.json_serialization import json_dumps
 from servicelib.utils import logged_gather
+from simcore_service_director_v2.models.schemas.dynamic_services.scheduler import (
+    DockerStatus,
+)
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -87,6 +90,12 @@ def parse_containers_inspect(
         container_inspect_data = containers_inspect[container_id]
         results.append(DockerContainerInspect.from_container(container_inspect_data))
     return list(results)
+
+
+def _all_containers_running(containers_inspect: List[DockerContainerInspect]) -> bool:
+    return len(containers_inspect) > 0 and all(
+        (x.status == DockerStatus.RUNNING for x in containers_inspect)
+    )
 
 
 class CreateSidecars(DynamicSchedulerEvent):
@@ -324,14 +333,6 @@ class CreateUserServices(DynamicSchedulerEvent):
         # Starts dynamic SIDECAR -------------------------------------
         # creates a docker compose spec given the service key and tag
         # fetching project form DB and fetching user settings
-        project_networks_repository: ProjectNetworksRepository = (
-            _fetch_repo_outside_of_request(app, ProjectNetworksRepository)
-        )
-        project_networks: ProjectNetworks = (
-            await project_networks_repository.get_project_networks(
-                project_id=scheduler_data.project_id
-            )
-        )
 
         compose_spec = await assemble_spec(
             app=app,
@@ -341,9 +342,6 @@ class CreateUserServices(DynamicSchedulerEvent):
             compose_spec=scheduler_data.compose_spec,
             container_http_entry=scheduler_data.container_http_entry,
             dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
-            project_networks=project_networks,
-            node_uuid=scheduler_data.node_uuid,
-            project_id=scheduler_data.project_id,
         )
 
         await dynamic_sidecar_client.start_service_creation(
@@ -425,6 +423,56 @@ class CreateUserServices(DynamicSchedulerEvent):
         scheduler_data.dynamic_sidecar.were_services_created = True
 
         scheduler_data.dynamic_sidecar.was_compose_spec_submitted = True
+
+
+class AttachProjectNetworks(DynamicSchedulerEvent):
+    """
+    Triggers after CreateUserServices and when all started containers are running.
+
+    Will attach all started containers to the project network based on what
+    is saved in the project_network db entry.
+    """
+
+    @classmethod
+    async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        return (
+            scheduler_data.dynamic_sidecar.were_services_created
+            and scheduler_data.dynamic_sidecar.project_network_attached == False
+            and _all_containers_running(
+                scheduler_data.dynamic_sidecar.containers_inspect
+            )
+        )
+
+    @classmethod
+    async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        logger.debug("Attaching project networks for %s", scheduler_data.service_name)
+
+        dynamic_sidecar_client = get_dynamic_sidecar_client(app)
+        dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
+
+        project_networks_repository: ProjectNetworksRepository = (
+            _fetch_repo_outside_of_request(app, ProjectNetworksRepository)
+        )
+
+        project_networks: ProjectNetworks = (
+            await project_networks_repository.get_project_networks(
+                project_id=scheduler_data.project_id
+            )
+        )
+        for (
+            network_name,
+            container_aliases,
+        ) in project_networks.networks_with_aliases.items():
+            for network_alias in container_aliases.values():
+                await dynamic_sidecar_client.attach_service_containers_to_project_network(
+                    dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+                    dynamic_sidecar_network_name=scheduler_data.dynamic_sidecar_network_name,
+                    project_network=network_name,
+                    project_id=scheduler_data.project_id,
+                    network_alias=network_alias,
+                )
+
+        scheduler_data.dynamic_sidecar.project_network_attached = True
 
 
 class RemoveUserCreatedServices(DynamicSchedulerEvent):
@@ -583,5 +631,6 @@ REGISTERED_EVENTS: List[Type[DynamicSchedulerEvent]] = [
     GetStatus,
     PrepareServicesEnvironment,
     CreateUserServices,
+    AttachProjectNetworks,
     RemoveUserCreatedServices,
 ]

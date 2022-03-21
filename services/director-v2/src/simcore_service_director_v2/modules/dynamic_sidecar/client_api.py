@@ -1,13 +1,18 @@
 import json
 import logging
+from collections import deque
 from typing import Any, Dict, List, Optional
 
 import httpx
 from fastapi import FastAPI
+from models_library.project_networks import DockerNetworkAlias
+from models_library.projects import ProjectID
+from servicelib.utils import logged_gather
 from starlette import status
 
 from ...core.settings import DynamicSidecarSettings
 from ...models.schemas.dynamic_services import SchedulerData
+from ...modules.dynamic_sidecar.docker_api import get_or_create_networks_ids
 from ...utils.logging_utils import log_decorator
 from .errors import (
     DynamicSidecarUnexpectedResponseStatus,
@@ -282,7 +287,7 @@ class DynamicSidecarClient:
         if response.status_code != status.HTTP_204_NO_CONTENT:
             raise DynamicSidecarUnexpectedResponseStatus(response, "containers restart")
 
-    async def attach_container_to_network(
+    async def _attach_container_to_network(
         self,
         dynamic_sidecar_endpoint: str,
         container_id: str,
@@ -302,7 +307,7 @@ class DynamicSidecarClient:
                 response, "attach containers to network"
             )
 
-    async def detach_container_from_network(
+    async def _detach_container_from_network(
         self, dynamic_sidecar_endpoint: str, container_id: str, network_id: str
     ) -> None:
         """detaches a container from a network if not already detached"""
@@ -317,6 +322,82 @@ class DynamicSidecarClient:
             raise DynamicSidecarUnexpectedResponseStatus(
                 response, "detach containers from network"
             )
+
+    async def attach_service_containers_to_project_network(
+        self,
+        dynamic_sidecar_endpoint: str,
+        dynamic_sidecar_network_name: str,
+        project_network: str,
+        project_id: ProjectID,
+        network_alias: DockerNetworkAlias,
+    ) -> None:
+        """All containers spawned by the dynamic-sidecar need to be attached to the project network"""
+        try:
+            containers_status = await self.containers_docker_status(
+                dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
+            )
+        except httpx.HTTPError:
+            return
+
+        sorted_container_names = sorted(containers_status.keys())
+
+        entrypoint_container_name = await self.get_entrypoint_container_name(
+            dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+            dynamic_sidecar_network_name=dynamic_sidecar_network_name,
+        )
+
+        network_names_to_ids: Dict[str, str] = await get_or_create_networks_ids(
+            [project_network], project_id
+        )
+        network_id = network_names_to_ids[project_network]
+
+        tasks = deque()
+
+        for k, container_name in enumerate(sorted_container_names):
+            # by default we attach `alias-0`, `alias-1`, etc...
+            # to all containers
+            aliases = [f"{network_alias}-{k}"]
+            if container_name == entrypoint_container_name:
+                # by definition the entrypoint container will be exposed as the `alias`
+                aliases.append(network_alias)
+
+            tasks.append(
+                self._attach_container_to_network(
+                    dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+                    container_id=container_name,
+                    network_id=network_id,
+                    network_aliases=aliases,
+                )
+            )
+
+        await logged_gather(*tasks)
+
+    async def detach_service_containers_from_project_network(
+        self, dynamic_sidecar_endpoint: str, project_network: str, project_id: ProjectID
+    ) -> None:
+        # the network needs to be detached from all started containers
+        try:
+            containers_status = await self.containers_docker_status(
+                dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
+            )
+        except httpx.HTTPError:
+            return
+
+        network_names_to_ids: Dict[str, str] = await get_or_create_networks_ids(
+            [project_network], project_id
+        )
+        network_id = network_names_to_ids[project_network]
+
+        await logged_gather(
+            *[
+                self._detach_container_from_network(
+                    dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
+                    container_id=container_name,
+                    network_id=network_id,
+                )
+                for container_name in containers_status
+            ]
+        )
 
 
 async def setup_api_client(app: FastAPI) -> None:
