@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Union
 
 import yaml
 from fastapi.applications import FastAPI
-from models_library.service_settings_labels import PathMappingsLabel, ServiceSpecDict
+from models_library.service_settings_labels import PathMappingsLabel, ComposeSpecLabel
 from settings_library.docker_registry import RegistrySettings
 
 from ._constants import CONTAINER_NAME
@@ -50,7 +50,7 @@ class _environment_section:
 
 
 def _inject_paths_mappings(
-    service_spec: ServiceSpecDict, path_mappings: PathMappingsLabel
+    service_spec: ComposeSpecLabel, path_mappings: PathMappingsLabel
 ) -> None:
     for service_name in service_spec["services"]:
         service_content = service_spec["services"][service_name]
@@ -80,7 +80,7 @@ def _replace_env_vars_in_compose_spec(
 
 
 def _inject_proxy_network_configuration(
-    service_spec: ServiceSpecDict,
+    service_spec: ComposeSpecLabel,
     target_container: str,
     dynamic_sidecar_network_name: str,
 ) -> None:
@@ -109,7 +109,7 @@ async def assemble_spec(
     service_key: str,
     service_tag: str,
     paths_mapping: PathMappingsLabel,
-    compose_spec: Optional[ServiceSpecDict],
+    compose_spec: Optional[ComposeSpecLabel],
     container_http_entry: Optional[str],
     dynamic_sidecar_network_name: str,
 ) -> str:
@@ -128,7 +128,7 @@ async def assemble_spec(
 
     # when no compose yaml file was provided
     if compose_spec is None:
-        service_spec: ServiceSpecDict = {
+        service_spec: ComposeSpecLabel = {
             "version": docker_compose_version,
             "services": {
                 CONTAINER_NAME: {

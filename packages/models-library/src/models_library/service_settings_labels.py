@@ -113,17 +113,7 @@ class PathMappingsLabel(BaseModel):
         }
 
 
-class _ServiceSpecDictRequired(TypedDict):
-    version: str
-    services: Dict
-
-
-class ServiceSpecDict(_ServiceSpecDictRequired, total=False):
-    # NOTE: the idea is to provide type hints
-    # not to enforce the structure
-    # of the spec entry in a docker-compose file
-    # This is still a work in progress
-    networks: Union[Dict, List]
+ComposeSpecLabel = Dict[str, Any]
 
 
 class RestartPolicy(str, Enum):
@@ -141,7 +131,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         ),
     )
 
-    compose_spec: Optional[Json[ServiceSpecDict]] = Field(
+    compose_spec: Optional[Json[ComposeSpecLabel]] = Field(
         None,
         alias="simcore.service.compose-spec",
         description=(
