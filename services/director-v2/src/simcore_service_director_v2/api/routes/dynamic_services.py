@@ -11,7 +11,6 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
-from pydantic import BaseModel
 from simcore_service_director_v2.modules.rabbitmq import (
     RabbitMQClient,
     get_rabbitmq_client,
