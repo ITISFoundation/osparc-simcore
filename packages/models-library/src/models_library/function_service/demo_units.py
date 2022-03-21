@@ -5,7 +5,7 @@ from .constants import FUNCTION_SERVICE_KEY_PREFIX
 
 def build_input(schema):
     return {
-        "title": schema["label"],
+        "label": schema["title"],
         "description": schema["description"],
         "type": "ref_contentSchema",
         "contentSchema": schema,
