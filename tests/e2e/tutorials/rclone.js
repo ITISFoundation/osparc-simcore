@@ -45,7 +45,7 @@ async function runTutorial() {
 
       console.log('Checking the number of files sitting next to the notebook');
       const fileBrowserSelector = "#filebrowser > div.lm-Widget.p-Widget.jp-DirListing.jp-FileBrowser-listing.jp-mod-selected > ul";
-      const nFiles = utils.getNChildren(jLabIframe, fileBrowserSelector);
+      const nFiles = await utils.getNChildren(jLabIframe, fileBrowserSelector);
       console.log("nFiles", nFiles);
     }
   }
