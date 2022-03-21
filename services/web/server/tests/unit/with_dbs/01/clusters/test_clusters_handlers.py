@@ -31,6 +31,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.director_v2_exceptions import (
     ClusterAccessForbidden,
     ClusterNotFoundError,
+    ClusterPingError,
     DirectorServiceError,
 )
 from simcore_service_webserver.director_v2_models import (
@@ -73,6 +74,7 @@ def mocked_director_v2_with_error(
         reason="no director-v2",
         url=faker.uri(),
         cluster_id=faker.pyint(min_value=1),
+        endpoint=faker.uri(),
     )
     mocked_director_v2_api.create_cluster.side_effect = error
     mocked_director_v2_api.list_clusters.side_effect = error
@@ -80,6 +82,7 @@ def mocked_director_v2_with_error(
     mocked_director_v2_api.get_cluster_details.side_effect = error
     mocked_director_v2_api.update_cluster.side_effect = error
     mocked_director_v2_api.delete_cluster.side_effect = error
+    mocked_director_v2_api.ping_cluster.side_effect = error
 
 
 @pytest.fixture()
@@ -401,6 +404,36 @@ async def test_delete_cluster_with_error(
     assert client.app
     url = client.app.router["delete_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.delete(f"{url}")
+    data, error = await assert_status(rsp, expected_http_error)
+    assert not data
+    assert error
+
+
+@pytest.mark.parametrize("user_role", [UserRole.TESTER], ids=str)
+@pytest.mark.parametrize(
+    "director_v2_error, expected_http_error",
+    [
+        (DirectorServiceError, web.HTTPServiceUnavailable),
+        (ClusterPingError, web.HTTPUnprocessableEntity),
+    ],
+)
+async def test_ping_cluster_with_error(
+    enable_dev_features: None,
+    mocked_director_v2_with_error,
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    faker: Faker,
+    expected_http_error,
+):
+    cluster_ping = ClusterPing(
+        endpoint=faker.uri(),
+        authentication=SimpleAuthentication(
+            username=faker.user_name(), password=faker.password()
+        ),
+    )
+    assert client.app
+    url = client.app.router["ping_cluster_handler"].url_for()
+    rsp = await client.post(f"{url}", json=json.loads(cluster_ping.json(by_alias=True)))
     data, error = await assert_status(rsp, expected_http_error)
     assert not data
     assert error
