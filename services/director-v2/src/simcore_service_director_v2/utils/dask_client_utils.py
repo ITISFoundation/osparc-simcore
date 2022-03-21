@@ -77,7 +77,7 @@ class DaskSubSystem:
 
 async def _connect_to_dask_scheduler(endpoint: AnyUrl) -> DaskSubSystem:
     try:
-        client = await distributed.Client(
+        client = await distributed.Client(  # type: ignore
             f"{endpoint}",
             asynchronous=True,
             name=f"director-v2_{socket.gethostname()}_{os.getpid()}",
@@ -119,7 +119,7 @@ async def _connect_with_gateway_and_create_cluster(
         logger.info("Cluster dashboard available: %s", cluster.dashboard_link)
         # NOTE: we scale to 1 worker as they are global
         await cluster.adapt(active=True)
-        client = await cluster.get_client()
+        client = await cluster.get_client()  # type: ignore
         assert client  # nosec
         return DaskSubSystem(
             client=client,
