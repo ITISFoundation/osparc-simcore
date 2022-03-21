@@ -53,7 +53,7 @@ class VFSCacheMode(str, Enum):
     OFF = "off"
     MINIMAL = "minimal"
     WRITES = "writes"
-    FILL = "full"
+    FULL = "full"
 
 
 class RCloneSettings(S3Settings):
