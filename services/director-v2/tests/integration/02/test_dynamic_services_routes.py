@@ -255,16 +255,3 @@ async def test_start_status_stop(
     )
     assert response.status_code == 204, response.text
     assert response.text == ""
-
-
-async def test_services_dynamic_sidecar_require(
-    test_client: TestClient, key_version_expected: List[Tuple[ServiceKeyVersion, bool]]
-) -> None:
-    for service_key_version, expected in key_version_expected:
-        quoted_key = urllib.parse.quote_plus(service_key_version.key)
-        version = service_key_version.version
-        response: Response = await test_client.post(
-            f"/v0/services/{quoted_key}/{version}/dynamic-sidecar:require"
-        )
-        assert response.status_code == 200, response.text
-        assert response.json() == expected

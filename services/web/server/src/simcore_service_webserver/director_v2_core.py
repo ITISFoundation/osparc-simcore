@@ -478,25 +478,7 @@ async def restart(app: web.Application, node_uuid: str) -> None:
 
 
 @log_decorator(logger=log)
-async def requires_dynamic_sidecar(
-    app: web.Application, service_key: str, service_version: str
-) -> bool:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    quoted_key = urllib.parse.quote_plus(service_key)
-    backend_url = (
-        URL(settings.base_url_no_vtag)
-        / f"v0/services/{quoted_key}/{service_version}/dynamic-sidecar:require"
-    )
-
-    return await _request_director_v2(
-        app, "POST", backend_url, expected_status=web.HTTPOk
-    )
-
-
-@log_decorator(logger=log)
-async def project_networks_update(
-    app: web.Application, project_id: ProjectID
-) -> None:
+async def project_networks_update(app: web.Application, project_id: ProjectID) -> None:
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = URL(settings.base_url) / "dynamic_services/project-networks:update"
     body = dict(project_id=f"{project_id}")
