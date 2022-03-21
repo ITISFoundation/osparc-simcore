@@ -6,9 +6,9 @@ const utils = require('../utils/utils');
 const responses = require('../utils/responsesQueue');
 
 class TutorialBase {
-  constructor(url, templateName, user, pass, newUser, enableDemoMode = false) {
+  constructor(url, resourceName, user, pass, newUser, enableDemoMode = false) {
     this.__demo = enableDemoMode;
-    this.__templateName = templateName;
+    this.__resourceName = resourceName;
 
     this.__url = url;
     this.__user = user;
@@ -118,7 +118,7 @@ class TutorialBase {
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(this.__templateName, "could not be started", err);
+      console.error(this.__resourceName, "could not be started", err);
       throw (err);
     }
     return resp;
@@ -197,8 +197,28 @@ class TutorialBase {
       resp = await this.__responsesQueue.waitUntilResponse("open");
     }
     catch (err) {
-      console.error(this.__templateName, "could not be started", err);
+      console.error(this.__resourceName, "could not be started", err);
     }
+    return resp;
+  }
+
+  async openStudy(waitFor = 1000) {
+    await this.takeScreenshot("dashboardOpenFirstStudy_before");
+    this.__responsesQueue.addResponseListener("open");
+    let resp = null;
+    try {
+      const studyFound = await auto.dashboardOpenFirstStudy(this.__page, this.__resourceName);
+      assert(studyFound, "Expected study, got nothing.")
+      resp = await this.__responsesQueue.waitUntilResponse("open");
+      const studyId = resp["data"]["uuid"];
+      console.log("Study ID:", studyId);
+    }
+    catch (err) {
+      console.error(`"${this.__resourceName}" study could not be started:\n`, err);
+      throw (err);
+    }
+    await this.waitFor(waitFor);
+    await this.takeScreenshot("dashboardOpenFirstStudy_after");
     return resp;
   }
 
@@ -208,7 +228,7 @@ class TutorialBase {
     this.__responsesQueue.addResponseListener("open");
     let resp = null;
     try {
-      const templateFound = await auto.dashboardOpenFirstTemplate(this.__page, this.__templateName);
+      const templateFound = await auto.dashboardOpenFirstTemplate(this.__page, this.__resourceName);
       assert(templateFound, "Expected template, got nothing. TIP: did you inject templates in database??")
       await this.__responsesQueue.waitUntilResponse("projects?from_template=");
       resp = await this.__responsesQueue.waitUntilResponse("open");
@@ -216,7 +236,7 @@ class TutorialBase {
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(`"${this.__templateName}" template could not be started:\n`, err);
+      console.error(`"${this.__resourceName}" template could not be started:\n`, err);
       throw (err);
     }
     await this.waitFor(waitFor);
@@ -229,14 +249,14 @@ class TutorialBase {
     this.__responsesQueue.addResponseListener("open");
     let resp = null;
     try {
-      const serviceFound = await auto.dashboardOpenService(this.__page, this.__templateName);
+      const serviceFound = await auto.dashboardOpenService(this.__page, this.__resourceName);
       assert(serviceFound, "Expected service, got nothing. TIP: is it available??");
       resp = await this.__responsesQueue.waitUntilResponse("open");
       const studyId = resp["data"]["uuid"];
       console.log("Study ID:", studyId);
     }
     catch (err) {
-      console.error(`"${this.__templateName}" service could not be started:\n`, err);
+      console.error(`"${this.__resourceName}" service could not be started:\n`, err);
       throw (err);
     }
     await this.waitFor(waitFor);
@@ -413,7 +433,7 @@ class TutorialBase {
       const nTries = 3;
       let i
       for (i = 0; i < nTries; i++) {
-        const cardUnlocked = await auto.deleteFirstStudy(this.__page, this.__templateName);
+        const cardUnlocked = await auto.deleteFirstStudy(this.__page, this.__resourceName);
         if (cardUnlocked) {
           break;
         }
@@ -471,7 +491,7 @@ class TutorialBase {
       console.log("Backend Snapshot: ", snapshotUrl)
     }
 
-    let title = this.__templateName;
+    let title = this.__resourceName;
     if (screenshotTitle) {
       title += '_' + screenshotTitle;
     }

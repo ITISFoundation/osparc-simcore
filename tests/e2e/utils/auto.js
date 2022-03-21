@@ -104,6 +104,17 @@ async function toDashboard(page) {
   await utils.waitAndClick(page, '[osparc-test-id="confirmDashboardBtn"]');
 }
 
+async function __waitForSomeStudies(page, timeout = 10000) {
+  await page.waitForSelector('[osparc-test-id="studiesList"]');
+  let loadingStudiesCardVisible = true;
+
+  const start = new Date().getTime();
+  while(loadingStudiesCardVisible && ((new Date().getTime()) - start < timeout)) {
+    const childrenIDs = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="studiesList"]');
+    loadingStudiesCardVisible = childrenIDs.some(childrenID => childrenID.includes("studiesLoading"));
+  }
+}
+
 async function __waitForAllTemplates(page) {
   await page.waitForSelector('[osparc-test-id="templatesList"]');
   let loadingTemplatesCardVisible = true;
@@ -111,6 +122,36 @@ async function __waitForAllTemplates(page) {
     const childrenIDs = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="templatesList"]');
     loadingTemplatesCardVisible = childrenIDs.some(childrenID => childrenID.includes("templatesLoading"));
   }
+}
+
+async function dashboardOpenFirstStudy(page, studyName) {
+  await utils.sleep(5000);
+
+  // Returns true if study is found
+  console.log("Opening Study");
+
+  await utils.takeScreenshot(page, "click on studies tab");
+  await __dashboardStudiesBrowser(page);
+  await utils.takeScreenshot(page, "clicked on studies tab");
+
+  if (studyName) {
+    await utils.takeScreenshot(page, "type filter text");
+    await __filterStudiesByText(page, studyName);
+    await utils.takeScreenshot(page, "typed filter text");
+  }
+
+  await __waitForSomeStudies(page);
+
+  await page.waitForSelector('[osparc-test-id="studiesList"]');
+  const children = await utils.getVisibleChildrenIDs(page, '[osparc-test-id="studiesList"]');
+
+  if (children.length > 1) {
+    const firstChildId = '[osparc-test-id="' + children[1] + '"]';
+    await utils.waitAndClick(page, firstChildId);
+    return true;
+  }
+  console.log("Study not found");
+  return false;
 }
 
 async function dashboardOpenFirstTemplate(page, templateName) {
@@ -368,6 +409,7 @@ module.exports = {
   dashboardAbout,
   dashboardPreferences,
   dashboardNewStudy,
+  dashboardOpenFirstStudy,
   dashboardOpenFirstTemplate,
   dashboardOpenService,
   showLogger,
