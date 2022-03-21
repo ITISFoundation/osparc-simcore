@@ -38,7 +38,7 @@ class DaskClientsPool:
             id=settings.DASK_DEFAULT_CLUSTER_ID,
             name="Default internal cluster",
             type=ClusterType.ON_PREMISE,
-            endpoint=f"tcp://{settings.DASK_SCHEDULER_HOST}:{settings.DASK_SCHEDULER_PORT}",
+            endpoint=settings.DIRECTOR_V2_DEFAULT_SCHEDULER_URL,
             authentication=NoAuthentication(),
             owner=1,  # FIXME: that is usually the everyone's group... but we do not know nor care about it in director-v2...
         )  # type: ignore

@@ -6,6 +6,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Dict, Optional, Set
 
+
 from models_library.basic_types import (
     BootModeEnum,
     BuildTargetEnum,
@@ -15,7 +16,15 @@ from models_library.basic_types import (
 )
 from models_library.clusters import ClusterID
 from models_library.services import SERVICE_NETWORK_RE
-from pydantic import AnyHttpUrl, Field, PositiveFloat, PositiveInt, validator
+from pydantic import (
+    AnyHttpUrl,
+    AnyUrl,
+    Field,
+    PositiveFloat,
+    PositiveInt,
+    SecretStr,
+    validator,
+)
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
@@ -282,8 +291,21 @@ class DaskComputationalBackendSettings(BaseCustomSettings):
     DASK_SCHEDULER_HOST: str = Field(
         "dask-scheduler",
         description="Address of the scheduler to register (only if started as worker )",
+        deprecated=True,
     )
-    DASK_SCHEDULER_PORT: PortInt = 8786
+    DASK_SCHEDULER_PORT: PortInt = Field(8786, deprecated=True)
+    DIRECTOR_V2_DEFAULT_SCHEDULER_URL: AnyUrl = Field(
+        "tcp://dask-scheduler:8786",
+        description="The scheduler used as default for all computations",
+    )
+    DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME: Optional[str] = Field(
+        None,
+        description="If the default scheduler is a osparc-dask-gateway, then a username/password is compulsory",
+    )
+    DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD: Optional[SecretStr] = Field(
+        None,
+        description="If the default scheduler is a osparc-dask-gateway, then a username/password is compulsory",
+    )
 
     DASK_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
         0, description="This defines the default cluster id when none is defined"

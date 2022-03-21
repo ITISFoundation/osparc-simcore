@@ -152,8 +152,9 @@ async def dask_spec_local_cluster(
         workers=workers, scheduler=scheduler, asynchronous=True, name="pytest_cluster"
     ) as cluster:
         scheduler_address = URL(cluster.scheduler_address)
-        monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
-        monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
+        monkeypatch.setenv(
+            "DIRECTOR_V2_DEFAULT_SCHEDULER_URL", f"{scheduler_address}" or "invalid"
+        )
         yield cluster
     # force yielding to the event loop so that it properly closes the cluster
     await asyncio.sleep(0)

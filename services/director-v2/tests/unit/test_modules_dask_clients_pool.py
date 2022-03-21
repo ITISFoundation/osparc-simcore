@@ -173,9 +173,10 @@ def test_default_cluster(minimal_dask_config: None, client: TestClient):
     dask_scheduler_settings = client.app.state.settings.DASK_SCHEDULER
     default_cluster = DaskClientsPool.default_cluster(dask_scheduler_settings)
     assert default_cluster
-    assert default_cluster.endpoint == parse_obj_as(
-        AnyUrl,
-        f"tcp://{dask_scheduler_settings.DASK_SCHEDULER_HOST}:{dask_scheduler_settings.DASK_SCHEDULER_PORT}",
+    assert (
+        default_cluster.endpoint
+        == dask_scheduler_settings.DIRECTOR_V2_DEFAULT_SCHEDULER_URL
     )
+
     assert default_cluster.id == dask_scheduler_settings.DASK_DEFAULT_CLUSTER_ID
     assert default_cluster.authentication == NoAuthentication()
