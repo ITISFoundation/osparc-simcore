@@ -11,9 +11,10 @@ from .._meta import api_version_prefix
 from ..director_v2_exceptions import (
     ClusterAccessForbidden,
     ClusterNotFoundError,
+    ClusterPingError,
     DirectorServiceError,
 )
-from ..director_v2_models import ClusterCreate, ClusterPatch
+from ..director_v2_models import ClusterCreate, ClusterPatch, ClusterPing
 from ..login.decorators import RQT_USERID_KEY, login_required
 from ..security_decorators import permission_required
 
@@ -156,5 +157,29 @@ async def delete_cluster_handler(request: web.Request) -> web.Response:
         raise web.HTTPNotFound(reason=f"{exc}") from exc
     except ClusterAccessForbidden as exc:
         raise web.HTTPForbidden(reason=f"{exc}") from exc
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
+
+
+@routes.post(f"/{api_version_prefix}/clusters:ping", name="ping_cluster_handler")
+@login_required
+@permission_required("clusters.read")
+async def ping_cluster_handler(request: web.Request) -> web.Response:
+    await extract_and_validate(request)
+    body = await request.json()
+    try:
+        await director_v2_api.ping_cluster(
+            request.app,
+            ClusterPing(
+                endpoint=body.get("endpoint"), authentication=body.get("authentication")
+            ),
+        )
+        return web.json_response(status=web.HTTPNoContent.status_code)
+    except ValidationError as exc:
+        raise web.HTTPUnprocessableEntity(
+            reason=f"Invalid cluster definition: {exc} "
+        ) from exc
+    except ClusterPingError as exc:
+        raise web.HTTPUnprocessableEntity(reason=f"{exc}") from exc
     except DirectorServiceError as exc:
         raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc

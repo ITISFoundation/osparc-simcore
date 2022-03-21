@@ -22,9 +22,10 @@ from .director_v2_abc import AbstractProjectRunPolicy
 from .director_v2_exceptions import (
     ClusterAccessForbidden,
     ClusterNotFoundError,
+    ClusterPingError,
     DirectorServiceError,
 )
-from .director_v2_models import ClusterCreate, ClusterPatch
+from .director_v2_models import ClusterCreate, ClusterPatch, ClusterPing
 from .director_v2_settings import (
     DirectorV2Settings,
     get_client_session,
@@ -121,7 +122,9 @@ async def _request_director_v2(
                     ):
                         if response.status in on_error:
                             exc, exc_ctx = on_error[response.status]
-                            raise exc(**exc_ctx)
+                            raise exc(
+                                **exc_ctx, status=response.status, reason=f"{payload}"
+                            )
                         raise DirectorServiceError(
                             status=response.status, reason=f"{payload}", url=url
                         )
@@ -611,5 +614,23 @@ async def delete_cluster(
                 ClusterAccessForbidden,
                 {"cluster_id": cluster_id},
             ),
+        },
+    )
+
+
+async def ping_cluster(app: web.Application, cluster_ping: ClusterPing) -> None:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    url = settings.base_url / "clusters:ping"
+    await _request_director_v2(
+        app,
+        "POST",
+        url,
+        expected_status=web.HTTPNoContent,
+        data=cluster_ping.dict(by_alias=True, exclude_unset=True),
+        on_error={
+            web.HTTPUnprocessableEntity.status_code: (
+                ClusterPingError,
+                {"endpoint": f"{cluster_ping.endpoint}"},
+            )
         },
     )

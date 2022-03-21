@@ -25,3 +25,9 @@ class ClusterAccessForbidden(DirectorServiceError):
     """Cluster access is forbidden"""
 
     msg_template = "Cluster {cluster_id!r} access forbidden!"
+
+
+class ClusterPingError(DirectorServiceError):
+    """Cluster ping failed"""
+
+    msg_template = "Connection to cluster in {endpoint!r} failed, received {reason!r}"
