@@ -76,7 +76,7 @@ def is_sensing_enabled(app: web.Application):
     return enabled
 
 
-def assert_healthy_app(app: web.Application) -> None:
+async def assert_healthy_app(app: web.Application) -> None:
     """Diagnostics function that determins whether
     current application is healthy based on incidents
     occured up to now

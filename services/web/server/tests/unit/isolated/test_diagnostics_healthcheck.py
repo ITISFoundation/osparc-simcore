@@ -186,14 +186,14 @@ async def test_diagnose_on_unexpected_error(client):
     resp = await client.get("/error")
     assert resp.status == web.HTTPInternalServerError.status_code
 
-    assert_healthy_app(client.app)
+    await assert_healthy_app(client.app)
 
 
 async def test_diagnose_on_failure(client):
     resp = await client.get("/fail")
     assert resp.status == web.HTTPServiceUnavailable.status_code
 
-    assert_healthy_app(client.app)
+    await assert_healthy_app(client.app)
 
 
 async def test_diagnose_on_response_delays(client):
@@ -216,7 +216,7 @@ async def test_diagnose_on_response_delays(client):
 
     # diagnostics
     with pytest.raises(HealthCheckFailed):
-        assert_healthy_app(client.app)
+        await assert_healthy_app(client.app)
 
 
 def test_read_prometheus_counter():

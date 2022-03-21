@@ -24,6 +24,7 @@ From https://docs.docker.com/engine/reference/builder/#healthcheck
 
 
 import asyncio
+import inspect
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Optional
 
 from aiohttp import web
@@ -66,10 +67,18 @@ class HeathCheck:
     async def run(
         self, app: web.Application, *, timeout: Optional[float] = None
     ) -> Dict[str, Any]:
-        """Runs healtcheck with a timeout [secs]"""
+        """Runs all registered checks to determine the service health.
+
+        timeout in secs
+        can raise HealthCheckFailed
+        """
 
         # Ensures no more signals append after first run
         self._on_healthcheck.freeze()
+
+        assert all(  # nosec
+            inspect.iscoroutinefunction(fun) for fun in self._on_healthcheck
+        ), "All appends to on_healthcheck must be coroutines"
 
         try:
             heath_report: Dict[str, Any] = self.get_app_info(app)
