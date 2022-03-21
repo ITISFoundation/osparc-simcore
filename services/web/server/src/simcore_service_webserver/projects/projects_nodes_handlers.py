@@ -107,7 +107,6 @@ async def post_retrieve(request: web.Request) -> web.Response:
         node_uuid = request.match_info["node_id"]
         data = await request.json()
         port_keys = data.get("port_keys", [])
-
     except KeyError as err:
         raise web.HTTPBadRequest(reason=f"Invalid request parameter {err}") from err
 
