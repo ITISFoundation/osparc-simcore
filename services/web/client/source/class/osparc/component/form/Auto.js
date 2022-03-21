@@ -431,6 +431,7 @@ qx.Class.define("osparc.component.form.Auto", {
     __getField: function(s, key) {
       if (s.type === "ref_contentSchema") {
         Object.assign(s, s.contentSchema);
+        s.label = s.title;
       }
 
       if (s.defaultValue) {
