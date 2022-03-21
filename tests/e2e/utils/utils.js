@@ -511,7 +511,7 @@ async function clickLoggerTitle(page) {
   await this.waitAndClick(page, '[osparc-test-id="loggerTabButton"]')
 }
 
-async function runAllCellsInJupyterLab(jLabIframe, notebookName) {
+async function runAllCellsInJupyterLab(page, jLabIframe, notebookName) {
   console.log("Run All Cells in JupyterLab");
 
   // inside the iFrame, open the first notebook
@@ -523,11 +523,11 @@ async function runAllCellsInJupyterLab(jLabIframe, notebookName) {
   await this.sleep(5000);
   // click Run Menu
   const mainRunMenuBtnSelector = '#jp-MainMenu > ul > li:nth-child(4)';
-  await this.waitAndClick(jLabIframe, mainRunMenuBtnSelector)
+  await this.waitAndClick(page, jLabIframe, mainRunMenuBtnSelector)
 
   // click Run All Cells
   const mainRunAllBtnSelector = '  body > div.lm-Widget.p-Widget.lm-Menu.p-Menu.lm-MenuBar-menu.p-MenuBar-menu > ul > li:nth-child(17)';
-  await this.waitAndClick(jLabIframe, mainRunAllBtnSelector)
+  await this.waitAndClick(page, jLabIframe, mainRunAllBtnSelector)
 
   console.log('Waiting for jupyter lab results...');
   const labCompletedInputSelector = 'div.lm-Widget.p-Widget.jp-MainAreaWidget.jp-NotebookPanel.jp-Document.jp-Activity > div:nth-child(2) > div:nth-child(3) > div.lm-Widget.p-Widget.lm-Panel.p-Panel.jp-Cell-inputWrapper > div.lm-Widget.p-Widget.jp-InputArea.jp-Cell-inputArea > div.lm-Widget.p-Widget.jp-InputPrompt.jp-InputArea-prompt';
@@ -535,7 +535,7 @@ async function runAllCellsInJupyterLab(jLabIframe, notebookName) {
   const jLabElement = await jLabIframe.$(labCompletedInputSelector);
   const jLabVvalue = await jLabIframe.evaluate(el => el.textContent, jLabElement);
   console.log('Checking results for the jupyter lab cell:', jLabVvalue);
-  await this.takeScreenshot("pressRunJLab");
+  await this.takeScreenshot(page, "pressRunJLab");
 }
 
 
