@@ -1,5 +1,9 @@
 """
-    Models used as I/O of Nodes
+    Link models used at i/o port nodes:
+        - Link to files:
+            - Generic: DownloadLink
+            - At Custom Service: SimCoreFileLink, DatCoreFileLink
+        - Link to another port: PortLink
 """
 
 from pathlib import Path
@@ -26,30 +30,46 @@ class PortLink(BaseModel):
     node_uuid: NodeID = Field(
         ...,
         description="The node to get the port output from",
-        example=["da5068e0-8a8d-4fb9-9516-56e5ddaef15b"],
         alias="nodeUuid",
     )
     output: str = Field(
         ...,
         description="The port key in the node given by nodeUuid",
         regex=PROPERTY_KEY_RE,
-        example=["out_2"],
     )
 
     class Config:
         extra = Extra.forbid
+        schema_extra = {
+            "examples": [
+                # minimal
+                {
+                    "node_uuid": "da5068e0-8a8d-4fb9-9516-56e5ddaef15b",
+                    "output": "out_2",
+                }
+            ],
+        }
 
 
 class DownloadLink(BaseModel):
     """I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"""
 
     download_link: AnyUrl = Field(..., alias="downloadLink")
-    label: Optional[str]
+    label: Optional[str] = None
 
     class Config:
         extra = Extra.forbid
+        schema_extra = {
+            "examples": [
+                # minimal
+                {
+                    "download_link": "https://fakeimg.pl/250x100/",
+                }
+            ],
+        }
 
 
+## CUSTOM STORAGE SERVICES -----------
 class BaseFileLink(BaseModel):
     """Base class for I/O port types with links to storage services"""
 
@@ -59,23 +79,17 @@ class BaseFileLink(BaseModel):
     store: Union[str, int] = Field(
         ...,
         description="The store identifier: '0' or 0 for simcore S3, '1' or 1 for datcore",
-        examples=["0", 1],
     )
 
     path: str = Field(
         ...,
         regex=r"^.+$",
         description="The path to the file in the storage provider domain",
-        examples=[
-            "N:package:b05739ef-260c-4038-b47d-0240d04b0599",
-            "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt",
-        ],
     )
 
     label: Optional[str] = Field(
         None,
         description="The real file name",
-        examples=["MyFile.txt"],
     )
 
     e_tag: Optional[str] = Field(
@@ -134,13 +148,11 @@ class DatCoreFileLink(BaseFileLink):
     label: str = Field(
         ...,
         description="The real file name",
-        examples=["MyFile.txt"],
     )
 
     dataset: str = Field(
         ...,
         description="Unique identifier to access the dataset on datcore (REQUIRED for datcore)",
-        example=["N:dataset:f9f5ac51-33ea-4861-8e08-5b4faf655041"],
     )
 
     @validator("store", always=True)
@@ -163,3 +175,7 @@ class DatCoreFileLink(BaseFileLink):
                 "label": "initial_WTstates",
             },
         }
+
+
+# Bundles all model links to a file vs PortLink
+LinkToFileTypes = Union[SimCoreFileLink, DatCoreFileLink, DownloadLink]
