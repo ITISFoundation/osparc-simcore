@@ -6,6 +6,7 @@
 # pylint:disable=too-many-statements
 
 
+import json
 import random
 from typing import Any, Dict, Type
 
@@ -16,7 +17,13 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from hypothesis import strategies as st
-from models_library.clusters import CLUSTER_ADMIN_RIGHTS, Cluster, SimpleAuthentication
+from models_library.clusters import (
+    CLUSTER_ADMIN_RIGHTS,
+    Cluster,
+    KerberosAuthentication,
+    SimpleAuthentication,
+)
+from pydantic import AnyHttpUrl
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.clusters import ClusterType
@@ -26,7 +33,11 @@ from simcore_service_webserver.director_v2_exceptions import (
     ClusterNotFoundError,
     DirectorServiceError,
 )
-from simcore_service_webserver.director_v2_models import ClusterCreate, ClusterPatch
+from simcore_service_webserver.director_v2_models import (
+    ClusterCreate,
+    ClusterPatch,
+    ClusterPing,
+)
 
 
 @pytest.fixture
@@ -47,6 +58,7 @@ def mocked_director_v2_api(mocker: MockerFixture):
         random.choice(Cluster.Config.schema_extra["examples"])
     )
     mocked_director_v2_api.delete_cluster.return_value = None
+    mocked_director_v2_api.ping_cluster.return_value = None
 
 
 @pytest.fixture
@@ -101,7 +113,8 @@ async def test_create_cluster(
     assert client.app
     url = client.app.router["create_cluster_handler"].url_for()
     rsp = await client.post(
-        f"{url}", json=cluster_create.dict(by_alias=True, exclude_unset=True)
+        f"{url}",
+        json=json.loads(cluster_create.json(by_alias=True, exclude_unset=True)),
     )
     data, error = await assert_status(
         rsp,
@@ -191,7 +204,7 @@ async def test_update_cluster(
     url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.patch(
         f"{url}",
-        json=cluster_patch.dict(**_PATCH_EXPORT),
+        json=json.loads(cluster_patch.json(**_PATCH_EXPORT)),
     )
     data, error = await assert_status(rsp, expected.ok)
     if not error:
@@ -209,6 +222,30 @@ async def test_delete_cluster(
     assert client.app
     url = client.app.router["delete_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.delete(f"{url}")
+    data, error = await assert_status(rsp, expected.no_content)
+    if not error:
+        assert data is None
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+@hypothesis.given(cluster_ping=st.from_type(ClusterPing))
+@hypothesis.settings(
+    # hypothesis does not play well with fixtures, hence the warning
+    # it will create several tests but not replay the fixtures
+    suppress_health_check=[hypothesis.HealthCheck.function_scoped_fixture]
+)
+async def test_ping_cluster(
+    enable_dev_features: None,
+    mocked_director_v2_api,
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    expected: ExpectedResponse,
+    cluster_ping: ClusterPing,
+):
+    print(f"--> pinging {cluster_ping=!r}")
+    assert client.app
+    url = client.app.router["ping_cluster_handler"].url_for()
+    rsp = await client.post(f"{url}", json=json.loads(cluster_ping.json(by_alias=True)))
     data, error = await assert_status(rsp, expected.no_content)
     if not error:
         assert data is None
@@ -236,7 +273,8 @@ async def test_create_cluster_with_error(
     assert client.app
     url = client.app.router["create_cluster_handler"].url_for()
     rsp = await client.post(
-        f"{url}", json=cluster_create.dict(by_alias=True, exclude_unset=True)
+        f"{url}",
+        json=json.loads(cluster_create.json(by_alias=True, exclude_unset=True)),
     )
     data, error = await assert_status(rsp, expected_http_error)
     assert not data
@@ -337,7 +375,7 @@ async def test_update_cluster_with_error(
     url = client.app.router["update_cluster_handler"].url_for(cluster_id=f"{25}")
     rsp = await client.patch(
         f"{url}",
-        json=ClusterPatch().dict(**_PATCH_EXPORT),
+        json=json.loads(ClusterPatch().json(**_PATCH_EXPORT)),
     )
     data, error = await assert_status(rsp, expected_http_error)
     assert not data

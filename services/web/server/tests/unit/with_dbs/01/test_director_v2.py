@@ -19,7 +19,11 @@ from models_library.users import UserID
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_service_webserver import director_v2_api
 from simcore_service_webserver.db_models import UserRole
-from simcore_service_webserver.director_v2_models import ClusterCreate, ClusterPatch
+from simcore_service_webserver.director_v2_models import (
+    ClusterCreate,
+    ClusterPatch,
+    ClusterPing,
+)
 
 
 @pytest.fixture()
@@ -196,3 +200,9 @@ async def test_delete_cluster(
     await director_v2_api.delete_cluster(
         client.app, user_id=user_id, cluster_id=cluster_id
     )
+
+
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+@given(cluster_ping=st.builds(ClusterPing))
+async def test_ping_cluster(mocked_director_v2, client, cluster_ping: ClusterPing):
+    await director_v2_api.ping_cluster(client.app, cluster_ping=cluster_ping)
