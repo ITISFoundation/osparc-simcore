@@ -14,6 +14,31 @@ EnvKeyEqValueList = List[str]
 EnvVarsMap = Dict[str, Optional[str]]
 
 
+def _inject_proxy_network_configuration(
+    service_spec: ComposeSpecLabel,
+    target_container: str,
+    dynamic_sidecar_network_name: str,
+) -> None:
+    """
+    Injects network configuration to allow the service
+    to be accessible on `uuid.services.SERVICE_DNS`
+    """
+
+    # add external network to existing networks defined in the container
+    networks = service_spec.get("networks", {})
+    networks[dynamic_sidecar_network_name] = {
+        "external": {"name": dynamic_sidecar_network_name},
+        "driver": "overlay",
+    }
+    service_spec["networks"] = networks
+
+    # attach overlay network to container
+    target_container_spec = service_spec["services"][target_container]
+    container_networks = target_container_spec.get("networks", [])
+    container_networks.append(dynamic_sidecar_network_name)
+    target_container_spec["networks"] = container_networks
+
+
 class _environment_section:
     """the 'environment' field in a docker-compose can be either a dict (EnvVarsMap)
     or a list of "key=value" (EnvKeyEqValueList)
@@ -77,31 +102,6 @@ def _replace_env_vars_in_compose_spec(
         MATCH_SERVICE_VERSION, service_tag
     )
     return stringified_service_spec
-
-
-def _inject_proxy_network_configuration(
-    service_spec: ComposeSpecLabel,
-    target_container: str,
-    dynamic_sidecar_network_name: str,
-) -> None:
-    """
-    Injects network configuration to allow the service
-    to be accessible on `uuid.services.SERVICE_DNS`
-    """
-
-    # add external network to existing networks defined in the container
-    networks = service_spec.get("networks", {})
-    networks[dynamic_sidecar_network_name] = {
-        "external": {"name": dynamic_sidecar_network_name},
-        "driver": "overlay",
-    }
-    service_spec["networks"] = networks
-
-    # attach overlay network to container
-    target_container_spec = service_spec["services"][target_container]
-    container_networks = target_container_spec.get("networks", [])
-    container_networks.append(dynamic_sidecar_network_name)
-    target_container_spec["networks"] = container_networks
 
 
 async def assemble_spec(
