@@ -5,12 +5,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from models_library.clusters import Cluster, ClusterID
 from models_library.users import UserID
 from pydantic import AnyUrl, parse_obj_as
-from simcore_postgres_database.models.clusters import ClusterType
 from simcore_service_director_v2.api.dependencies.scheduler import (
     get_scheduler_settings,
 )
 from simcore_service_director_v2.utils.dask_client_utils import (
-    create_internal_client_based_on_auth,
     test_gateway_endpoint,
 )
 from starlette import status
@@ -19,9 +17,7 @@ from ...core.errors import (
     ClusterAccessForbiddenError,
     ClusterInvalidOperationError,
     ClusterNotFoundError,
-    DaskClusterError,
     ConfigurationError,
-    DaskGatewayServerError,
 )
 from ...core.settings import DaskSchedulerSettings
 from ...models.schemas.clusters import (
