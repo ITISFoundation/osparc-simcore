@@ -3,7 +3,6 @@
 
 import asyncio
 import logging
-import urllib.parse
 from typing import Any, AsyncIterable, AsyncIterator, Callable, Dict, List, Tuple
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
