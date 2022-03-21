@@ -36,10 +36,10 @@ class DaskClientsPool:
     def default_cluster(settings: DaskComputationalBackendSettings):
         return Cluster(
             id=settings.DASK_DEFAULT_CLUSTER_ID,
-            name="Default internal cluster",
+            name="Default cluster",
             type=ClusterType.ON_PREMISE,
             endpoint=settings.DIRECTOR_V2_DEFAULT_SCHEDULER_URL,
-            authentication=NoAuthentication(),
+            authentication=settings.default_scheduler_authentication,
             owner=1,  # FIXME: that is usually the everyone's group... but we do not know nor care about it in director-v2...
         )  # type: ignore
 

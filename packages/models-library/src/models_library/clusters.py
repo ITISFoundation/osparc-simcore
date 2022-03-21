@@ -1,6 +1,6 @@
 from typing import Any, Dict, Literal, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, validator
+from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, SecretStr, validator
 from pydantic.types import NonNegativeInt
 from simcore_postgres_database.models.clusters import ClusterType
 
@@ -32,7 +32,7 @@ class BaseAuthentication(BaseModel):
 class SimpleAuthentication(BaseAuthentication):
     type: Literal["simple"] = "simple"
     username: str
-    password: str
+    password: SecretStr
 
     class Config(BaseAuthentication.Config):
         schema_extra = {

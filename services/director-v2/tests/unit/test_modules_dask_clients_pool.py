@@ -17,8 +17,6 @@ from models_library.clusters import (
     NoAuthentication,
     SimpleAuthentication,
 )
-from pydantic.networks import AnyUrl
-from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_service_director_v2.core.application import init_app
@@ -169,7 +167,41 @@ async def test_acquiring_wrong_cluster_raises_exception(
             ...
 
 
-def test_default_cluster(minimal_dask_config: None, client: TestClient):
+@pytest.fixture()
+def default_scheduler_as_dask_scheduler(monkeypatch: MonkeyPatch, faker: Faker):
+    def creator():
+        monkeypatch.setenv("DIRECTOR_V2_DEFAULT_SCHEDULER_URL", faker.uri())
+        monkeypatch.setenv("DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME", "null")
+        monkeypatch.setenv("DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD", "null")
+
+    return creator
+
+
+@pytest.fixture()
+def default_scheduler_as_dask_gateway(monkeypatch: MonkeyPatch, faker: Faker):
+    def creator():
+        monkeypatch.setenv("DIRECTOR_V2_DEFAULT_SCHEDULER_URL", faker.uri())
+        monkeypatch.setenv("DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME", faker.user_name())
+        monkeypatch.setenv("DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD", faker.password())
+
+    return creator
+
+
+@pytest.fixture(
+    params=["default_scheduler_as_dask_scheduler", "default_scheduler_as_dask_gateway"]
+)
+def default_scheduler(
+    default_scheduler_as_dask_scheduler, default_scheduler_as_dask_gateway, request
+):
+    {
+        "default_scheduler_as_dask_scheduler": default_scheduler_as_dask_scheduler,
+        "default_scheduler_as_dask_gateway": default_scheduler_as_dask_gateway,
+    }[request.param]()
+
+
+def test_default_cluster(
+    minimal_dask_config: None, default_scheduler, client: TestClient
+):
     dask_scheduler_settings = client.app.state.settings.DASK_SCHEDULER
     default_cluster = DaskClientsPool.default_cluster(dask_scheduler_settings)
     assert default_cluster
@@ -179,4 +211,11 @@ def test_default_cluster(minimal_dask_config: None, client: TestClient):
     )
 
     assert default_cluster.id == dask_scheduler_settings.DASK_DEFAULT_CLUSTER_ID
-    assert default_cluster.authentication == NoAuthentication()
+    if dask_scheduler_settings.DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME:
+        assert (
+            dask_scheduler_settings.DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD is not None
+        )
+        assert isinstance(default_cluster.authentication, SimpleAuthentication)
+    else:
+        assert dask_scheduler_settings.DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD is None
+        assert default_cluster.authentication == NoAuthentication()
