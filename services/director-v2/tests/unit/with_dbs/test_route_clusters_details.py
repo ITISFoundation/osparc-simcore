@@ -250,7 +250,7 @@ async def test_get_cluster_details(
     assert await result == True
     # wait for the computation to effectively stop
     async for attempt in AsyncRetrying(
-        reraise=True, stop=stop_after_delay(30), wait=wait_fixed(1)
+        reraise=True, stop=stop_after_delay(60), wait=wait_fixed(1)
     ):
         with attempt:
             cluster_out = await _get_cluster_details(
