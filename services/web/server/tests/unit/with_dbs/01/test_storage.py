@@ -20,7 +20,7 @@ def storage_server(event_loop, aiohttp_server, app_cfg):
     app = create_safe_application(cfg)
 
     async def _get_locs(request: web.Request):
-        assert not request.has_body
+        assert not request.can_read_body
 
         query = request.query
         assert query
@@ -36,7 +36,7 @@ def storage_server(event_loop, aiohttp_server, app_cfg):
         )
 
     async def _post_sync_meta_data(request: web.Request):
-        assert not request.has_body
+        assert not request.can_read_body
 
         query = request.query
         assert query
@@ -50,7 +50,7 @@ def storage_server(event_loop, aiohttp_server, app_cfg):
         )
 
     async def _get_filemeta(request: web.Request):
-        assert not request.has_body
+        assert not request.can_read_body
 
         query = request.query
         assert query
@@ -67,7 +67,7 @@ def storage_server(event_loop, aiohttp_server, app_cfg):
         )
 
     async def _get_filtered_list(request: web.Request):
-        assert not request.has_body
+        assert not request.can_read_body
 
         query = request.query
         assert query
@@ -84,7 +84,7 @@ def storage_server(event_loop, aiohttp_server, app_cfg):
         )
 
     async def _get_datasets(request: web.Request):
-        assert not request.has_body
+        assert not request.can_read_body
 
         query = request.query
         assert query
@@ -101,7 +101,7 @@ def storage_server(event_loop, aiohttp_server, app_cfg):
         )
 
     async def _get_datasets_meta(request: web.Request):
-        assert not request.has_body
+        assert not request.can_read_body
 
         query = request.query
         assert query

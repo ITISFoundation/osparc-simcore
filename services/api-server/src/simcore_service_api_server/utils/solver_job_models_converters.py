@@ -158,6 +158,7 @@ def create_new_project_for_job(
             },
             slideshow={},
             currentNodeId=solver_id,
+            annotations={},
         ),
         # FIXME: these should be unnecessary
         prjOwner="api-placeholder@osparc.io",

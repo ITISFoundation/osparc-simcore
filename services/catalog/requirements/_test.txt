@@ -166,6 +166,8 @@ ptvsd==4.3.2
     # via -r requirements/_test.in
 py==1.11.0
     # via pytest
+py-cpuinfo==8.0.0
+    # via pytest-benchmark
 pycparser==2.21
     # via cffi
 pylint==2.12.2
@@ -183,6 +185,7 @@ pytest==6.2.5
     #   -r requirements/_test.in
     #   pytest-aiohttp
     #   pytest-asyncio
+    #   pytest-benchmark
     #   pytest-cov
     #   pytest-docker
     #   pytest-mock
@@ -190,6 +193,8 @@ pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
 pytest-asyncio==0.18.1
     # via pytest-aiohttp
+pytest-benchmark==3.4.1
+    # via -r requirements/_test.in
 pytest-cov==3.0.0
     # via -r requirements/_test.in
 pytest-docker==0.10.3

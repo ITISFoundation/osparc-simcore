@@ -168,7 +168,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
       const metaData = node.getMetaData();
       this._createPorts(true, Boolean((metaData && metaData.inputs && Object.keys(metaData.inputs).length) || this.getNode().isContainer()));
       this._createPorts(false, Boolean((metaData && metaData.outputs && Object.keys(metaData.outputs).length) || this.getNode().isContainer()));
-      if (node.isComputational()) {
+      if (node.isComputational() || node.isFilePicker()) {
         node.getStatus().bind("progress", this.getChildControl("progress"), "value", {
           converter: val => val === null ? 0 : val
         });
@@ -337,7 +337,7 @@ qx.Class.define("osparc.component.workbench.NodeUI", {
     removeShadows: function() {
       if (this.__svgWorkbenchCanvas && "shadows" in this) {
         this.shadows.forEach(shadow => {
-          osparc.component.workbench.SvgWidget.removeNodeUI(shadow);
+          osparc.wrapper.Svg.removeItem(shadow);
         });
         delete this["shadows"];
       }

@@ -3,14 +3,14 @@
 
 """
 import logging
+from typing import Tuple
 
 from aiohttp import web
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from socketio import AsyncServer
 
 from .._constants import APP_SETTINGS_KEY
 from . import handlers, handlers_utils
-from .server import APP_CLIENT_SOCKET_SERVER_KEY
+from .server import setup_socketio_server
 
 log = logging.getLogger(__name__)
 
@@ -24,11 +24,8 @@ log = logging.getLogger(__name__)
 def setup_socketio(app: web.Application):
     assert app[APP_SETTINGS_KEY].WEBSERVER_SOCKETIO  # nosec
 
-    # SEE https://github.com/miguelgrinberg/python-socketio/blob/v4.6.1/docs/server.rst#aiohttp
-    # TODO: ujson to speed up?
-    # TODO: client_manager= to socketio.AsyncRedisManager/AsyncAioPikaManager for horizontal scaling (shared sessions)
-    sio = AsyncServer(async_mode="aiohttp", logger=log, engineio_logger=False)
-    sio.attach(app)
-
-    app[APP_CLIENT_SOCKET_SERVER_KEY] = sio
+    setup_socketio_server(app)
     handlers_utils.register_handlers(app, handlers)
+
+
+__all__: Tuple[str, ...] = ("setup_socketio", "setup_socketio_server")

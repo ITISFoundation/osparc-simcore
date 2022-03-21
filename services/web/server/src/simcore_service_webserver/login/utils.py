@@ -121,7 +121,6 @@ async def send_mail(app: web.Application, msg: MIMEText):
 
     msg["From"] = cfg.SMTP_SENDER
     smtp_args = dict(
-        loop=app.loop,
         hostname=cfg.SMTP_HOST,
         port=cfg.SMTP_PORT,
         use_tls=cfg.SMTP_TLS_ENABLED,
@@ -136,14 +135,16 @@ async def send_mail(app: web.Application, msg: MIMEText):
         if cfg.SMTP_TLS_ENABLED:
             log.info("Starting TLS ...")
             await smtp.starttls(validate_certs=False)
-        if cfg.SMTP_USERNAME:
+        if cfg.SMTP_USERNAME and cfg.SMTP_PASSWORD:
             log.info("Login email server ...")
-            await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD)
+            await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD.get_secret_value())
         await smtp.send_message(msg)
         await smtp.quit()
     else:
         async with aiosmtplib.SMTP(**smtp_args) as smtp:
-            if cfg.SMTP_USERNAME:
+            if cfg.SMTP_USERNAME and cfg.SMTP_PASSWORD:
                 log.info("Login email server ...")
-                await smtp.login(cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD)
+                await smtp.login(
+                    cfg.SMTP_USERNAME, cfg.SMTP_PASSWORD.get_secret_value()
+                )
             await smtp.send_message(msg)

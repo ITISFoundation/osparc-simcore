@@ -23,6 +23,39 @@ qx.Class.define("osparc.utils.Study", {
   type: "static",
 
   statics: {
+    extractServices: function(workbench) {
+      const services = [];
+      Object.values(workbench).forEach(srv => {
+        services.push({
+          key: srv.key,
+          version: srv.version
+        });
+      });
+      return services;
+    },
+
+    isWorkbenchUpdatable: async function(workbench) {
+      return new Promise(resolve => {
+        const store = osparc.store.Store.getInstance();
+        store.getServicesOnly()
+          .then(allServices => {
+            const services = new Set(this.extractServices(workbench));
+            const filtered = [];
+            services.forEach(srv => {
+              const idx = filtered.findIndex(flt => flt.key === srv.key && flt.version === srv.version);
+              if (idx === -1) {
+                filtered.push(srv);
+              }
+            });
+            const updatable = filtered.some(srv => {
+              const latestCompatibleMetadata = osparc.utils.Services.getLatestCompatible(allServices, srv["key"], srv["version"]);
+              return latestCompatibleMetadata && srv["version"] !== latestCompatibleMetadata["version"];
+            });
+            resolve(updatable);
+          });
+      });
+    },
+
     getInaccessibleServicesMsg: function(inaccessibleServices) {
       let msg = qx.locale.Manager.tr("Service(s) not accessible:<br>");
       inaccessibleServices.forEach(unaccessibleService => {
@@ -34,7 +67,7 @@ qx.Class.define("osparc.utils.Study", {
     createStudyFromService: function(key, version) {
       return new Promise((resolve, reject) => {
         const store = osparc.store.Store.getInstance();
-        store.getServicesDAGs()
+        store.getServicesOnly()
           .then(services => {
             if (key in services) {
               const service = version ? osparc.utils.Services.getFromObject(services, key, version) : osparc.utils.Services.getLatest(services, key);

@@ -11,13 +11,14 @@ try:
 except json.decoder.JSONDecodeError:
     AUTHORS = {}
 
-DEFAULT = {
+_DEFAULT = {
     "name": "Unknown",
     "email": "unknown@osparc.io",
     "affiliation": "unknown",
 }
-EN = Author.parse_obj(AUTHORS.get("EN", DEFAULT))
-OM = Author.parse_obj(AUTHORS.get("OM", DEFAULT))
+EN = Author.parse_obj(AUTHORS.get("EN", _DEFAULT))
+OM = Author.parse_obj(AUTHORS.get("OM", _DEFAULT))
+PC = Author.parse_obj(AUTHORS.get("PC", _DEFAULT))
 
 
 _NodeKeyVersionPair = Tuple[str, str]

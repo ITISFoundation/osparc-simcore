@@ -34,6 +34,10 @@ qx.Class.define("osparc.data.model.StudyUI", {
       currentNodeId: studyDataUI && studyDataUI.currentNodeId ? studyDataUI.currentNodeId : this.initCurrentNodeId(),
       mode: studyDataUI && studyDataUI.mode ? studyDataUI.mode : this.initMode()
     });
+
+    if ("annotations" in studyDataUI) {
+      this.__annotationsInitData = studyDataUI["annotations"];
+    }
   },
 
   properties: {
@@ -62,13 +66,39 @@ qx.Class.define("osparc.data.model.StudyUI", {
       nullable: true,
       event: "changeMode",
       apply: "__applyMode"
+    },
+
+    annotations: {
+      check: "Object",
+      init: {},
+      nullable: true
     }
   },
 
   members: {
+    __annotationsInitData: null,
+
     __applyMode: function(mode) {
       if (mode === "guided") {
         this.setMode("app");
+      }
+    },
+
+    getAnnotationsInitData: function() {
+      return this.__annotationsInitData;
+    },
+
+    nullAnnotationsInitData: function() {
+      this.__annotationsInitData = null;
+    },
+
+    addAnnotation: function(annotation) {
+      this.getAnnotations()[annotation.getId()] = annotation;
+    },
+
+    removeAnnotation: function(annotationId) {
+      if (annotationId in this.getAnnotations()) {
+        delete this.getAnnotations()[annotationId];
       }
     },
 
@@ -79,6 +109,13 @@ qx.Class.define("osparc.data.model.StudyUI", {
       jsonObject["slideshow"] = this.getSlideshow().serialize();
       jsonObject["currentNodeId"] = this.getCurrentNodeId() || "";
       jsonObject["mode"] = this.getMode();
+      const annotations = this.getAnnotations();
+      if (Object.keys(annotations).length) {
+        jsonObject["annotations"] = {};
+        Object.keys(annotations).forEach(annotationId => {
+          jsonObject["annotations"][annotationId] = annotations[annotationId].serialize();
+        });
+      }
       return jsonObject;
     }
   }

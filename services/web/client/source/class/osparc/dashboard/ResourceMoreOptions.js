@@ -50,6 +50,23 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
     __permissionsPage: null,
     __classifiersPage: null,
     __qualityPage: null,
+    __servicesUpdatePage: null,
+
+    openAccessRights: function() {
+      this.setSelection([this.__permissionsPage]);
+    },
+
+    openClassifiers: function() {
+      this.setSelection([this.__classifiersPage]);
+    },
+
+    openQuality: function() {
+      this.setSelection([this.__qualityPage]);
+    },
+
+    openUpdateServices: function() {
+      this.setSelection([this.__servicesUpdatePage]);
+    },
 
     __createServiceVersionSelector: function() {
       const hBox = this.__serviceVersionLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
@@ -63,7 +80,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
 
       // populate it with owned versions
       const store = osparc.store.Store.getInstance();
-      store.getServicesDAGs(false)
+      store.getServicesOnly(false)
         .then(services => {
           const versions = osparc.utils.Services.getVersions(services, this.__resourceData["key"]);
           const selectBox = this.__serviceVersionSelector;
@@ -82,7 +99,7 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
         if (selection && selection.length) {
           const serviceVersion = selection[0].getLabel();
           if (serviceVersion !== this.__resourceData["version"]) {
-            store.getServicesDAGs(false)
+            store.getServicesOnly(false)
               .then(services => {
                 const serviceData = osparc.utils.Services.getFromObject(services, this.__resourceData["key"], serviceVersion);
                 console.log(serviceData);
@@ -177,10 +194,10 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Information");
       const icon = "@FontAwesome5Solid/info";
       const resourceData = this.__resourceData;
-      const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.servicecard.Large(resourceData, false) : new osparc.studycard.Large(resourceData, false);
-      infoCard.addListener("openAccessRights", () => this.setSelection([this.__permissionsPage]));
-      infoCard.addListener("openClassifiers", () => this.setSelection([this.__classifiersPage]));
-      infoCard.addListener("openQuality", () => this.setSelection([this.__qualityPage]));
+      const infoCard = osparc.utils.Resources.isService(resourceData) ? new osparc.servicecard.Large(resourceData, null, false) : new osparc.studycard.Large(resourceData, false);
+      infoCard.addListener("openAccessRights", () => this.openAccessRights());
+      infoCard.addListener("openClassifiers", () => this.openClassfiers());
+      infoCard.addListener("openQuality", () => this.openQuality());
       infoCard.addListener("updateStudy", e => {
         const updatedData = e.getData();
         if (osparc.utils.Resources.isStudy(resourceData)) {
@@ -325,7 +342,15 @@ qx.Class.define("osparc.dashboard.ResourceMoreOptions", {
       const title = this.tr("Update Services");
       const icon = "@MaterialIcons/update";
       const servicesUpdate = new osparc.component.metadata.ServicesInStudyUpdate(resourceData);
-      const page = this.__createPage(title, servicesUpdate, icon, id);
+      servicesUpdate.addListener("updateService", e => {
+        const updatedData = e.getData();
+        if (osparc.utils.Resources.isStudy(resourceData)) {
+          this.fireDataEvent("updateStudy", updatedData);
+        } else if (osparc.utils.Resources.isTemplate(resourceData)) {
+          this.fireDataEvent("updateTemplate", updatedData);
+        }
+      });
+      const page = this.__servicesUpdatePage = this.__createPage(title, servicesUpdate, icon, id);
       return page;
     },
 
