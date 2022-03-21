@@ -4,10 +4,9 @@ import json
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Extra, Field, Json, PrivateAttr, validator
-from typing_extensions import TypedDict
 
 
 class _BaseConfig:
