@@ -515,9 +515,9 @@ async function runAllCellsInJupyterLab(jLabIframe, notebookName) {
   console.log("Run All Cells in JupyterLab");
 
   // inside the iFrame, open the first notebook
-  const input2outputFileSelector = '[title~="'+notebookName+'"]';
-  await jLabIframe.waitForSelector(input2outputFileSelector);
-  await jLabIframe.click(input2outputFileSelector, {
+  const notebookFileSelector = '[title~="'+notebookName+'"]';
+  await jLabIframe.waitForSelector(notebookFileSelector);
+  await jLabIframe.click(notebookFileSelector, {
     clickCount: 2
   });
   await this.sleep(5000);
