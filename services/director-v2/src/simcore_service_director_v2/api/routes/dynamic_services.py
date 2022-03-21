@@ -53,10 +53,6 @@ from ..dependencies.dynamic_services import (
 )
 
 
-class ProjectNetworksUpdateItem(BaseModel):
-    project_id: ProjectID
-
-
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -288,7 +284,7 @@ async def service_restart_containers(
 
 
 @router.post(
-    "/project-networks:update",
+    "/{project_id}/project-networks:update",
     summary=(
         "After a change to the workbench the `project networks` need to be updated, "
         "this will trigger attaching and detaching of networks to ensure services "
@@ -299,7 +295,7 @@ async def service_restart_containers(
 )
 @log_decorator(logger=logger)
 async def update_project_networks(
-    item: ProjectNetworksUpdateItem,
+    project_id: ProjectID,
     project_networks_repository: ProjectNetworksRepository = Depends(
         get_repository(ProjectNetworksRepository)
     ),
@@ -317,5 +313,5 @@ async def update_project_networks(
         scheduler=scheduler,
         director_v0_client=director_v0_client,
         rabbitmq_client=rabbitmq_client,
-        project_id=item.project_id,
+        project_id=project_id,
     )

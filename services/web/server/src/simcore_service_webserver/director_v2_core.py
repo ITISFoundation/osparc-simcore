@@ -477,8 +477,10 @@ async def restart(app: web.Application, node_uuid: str) -> None:
 @log_decorator(logger=log)
 async def project_networks_update(app: web.Application, project_id: ProjectID) -> None:
     settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = URL(settings.base_url) / "dynamic_services/project-networks:update"
-    body = dict(project_id=f"{project_id}")
+    backend_url = (
+        URL(settings.base_url)
+        / f"dynamic_services/{project_id}/project-networks:update"
+    )
     await _request_director_v2(
-        app, "POST", backend_url, expected_status=web.HTTPNoContent, data=body
+        app, "POST", backend_url, expected_status=web.HTTPNoContent
     )
