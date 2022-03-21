@@ -23,7 +23,7 @@ from models_library.rabbitmq_messages import (
 from models_library.users import UserID
 from simcore_postgres_database.models.comp_tasks import NodeClass
 
-from ...core.settings import DaskSchedulerSettings
+from ...core.settings import DaskComputationalBackendSettings
 from ...models.domains.comp_tasks import CompTaskAtDB, Image
 from ...modules.dask_client import DaskClient, TaskHandlers
 from ...modules.dask_clients_pool import DaskClientsPool
@@ -57,7 +57,7 @@ async def _cluster_dask_client(
 
 @dataclass
 class DaskScheduler(BaseCompScheduler):
-    settings: DaskSchedulerSettings
+    settings: DaskComputationalBackendSettings
     dask_clients_pool: DaskClientsPool
     rabbitmq_client: RabbitMQClient
 
