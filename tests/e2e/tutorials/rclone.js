@@ -17,12 +17,9 @@ const studyName = "rclone e2e";
 
 async function runTutorial() {
   const tutorial = new tutorialBase.TutorialBase(url, studyName, user, pass, newUser, enableDemoMode);
-  let studyId
   try {
     await tutorial.start();
     const studyData = await tutorial.openStudy(1000);
-    studyId = studyData["data"]["uuid"];
-
     const workbenchData = utils.extractWorkbenchData(studyData["data"]);
 
     const nServices = 10;
@@ -39,7 +36,6 @@ async function runTutorial() {
   }
   finally {
     await tutorial.toDashboard()
-    await tutorial.removeStudy(studyId);
     await tutorial.logOut();
     await tutorial.close();
   }
