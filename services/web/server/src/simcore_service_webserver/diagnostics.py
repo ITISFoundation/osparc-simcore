@@ -7,9 +7,15 @@ from servicelib.aiohttp import monitor_slow_callbacks
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from . import diagnostics_handlers
-from .diagnostics_core import IncidentsRegistry, kINCIDENTS_REGISTRY, kPLUGIN_START_TIME
+from .diagnostics_healthcheck import (
+    IncidentsRegistry,
+    assert_healthy_app,
+    kINCIDENTS_REGISTRY,
+    kPLUGIN_START_TIME,
+)
 from .diagnostics_monitoring import setup_monitoring
 from .diagnostics_settings import DiagnosticsSettings, get_plugin_settings
+from .rest import HeathCheck
 
 log = logging.getLogger(__name__)
 
@@ -36,6 +42,10 @@ def setup_diagnostics(
 
     # adds middleware and /metrics
     setup_monitoring(app)
+
+    # injects healthcheck
+    healthcheck: HeathCheck = app[HeathCheck.__name__]
+    healthcheck.on_healthcheck.append(assert_healthy_app)
 
     # adds other diagnostic routes: healthcheck, etc
     app.router.add_routes(diagnostics_handlers.routes)

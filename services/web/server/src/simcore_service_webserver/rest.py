@@ -20,10 +20,15 @@ from servicelib.aiohttp.rest_middlewares import (
 from . import rest_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from ._meta import API_VTAG, api_version_prefix
+from .rest_healthcheck import HeathCheck
 from .rest_settings import RestSettings, get_plugin_settings
 from .rest_utils import get_openapi_specs_path, load_openapi_specs
 
 log = logging.getLogger(__name__)
+
+
+async def _log_check(app: web.Application):
+    log.debug("health check")
 
 
 @app_module_setup(
@@ -58,20 +63,12 @@ def setup_rest(app: web.Application):
             f"__version__.api_version_prefix {api_version_prefix} does not fit openapi.yml version {specs.info.version}"
         )
 
+    healthcheck = HeathCheck()
+    healthcheck.on_healthcheck.append(_log_check)
+    app[HeathCheck.__name__] = healthcheck
+
     # basic routes
     app.add_routes(rest_handlers.routes)
-    if not is_diagnostics_enabled:
-        # NOTE: the healthcheck route is normally in diagnostics, but
-        # if disabled, this plugin adds a simple version of it
-        app.add_routes(
-            [
-                web.get(
-                    path=f"/{api_version_prefix}/health",
-                    handler=rest_handlers.check_running,
-                    name="check_health",
-                )
-            ]
-        )
 
     # middlewares
     # NOTE: using safe get here since some tests use incomplete configs

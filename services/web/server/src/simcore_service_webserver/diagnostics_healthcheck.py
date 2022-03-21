@@ -8,6 +8,7 @@ from aiohttp import web
 from servicelib.aiohttp.incidents import LimitedOrderedStack, SlowCallback
 
 from .diagnostics_settings import get_plugin_settings
+from .rest_healthcheck import HeathCheckError
 
 log = logging.getLogger(__name__)
 
@@ -21,10 +22,6 @@ kLATENCY_PROBE = f"{__name__}.latency_probe"
 kPLUGIN_START_TIME = f"{__name__}.plugin_start_time"
 
 kSTART_SENSING_DELAY_SECS = f"{__name__}.start_sensing_delay"
-
-
-class HealthError(Exception):
-    """Service is set as unhealty"""
 
 
 class IncidentsRegistry(LimitedOrderedStack[SlowCallback]):
@@ -111,7 +108,7 @@ def assert_healthy_app(app: web.Application) -> None:
                 max_delay,
                 max_delay_allowed,
             )
-            raise HealthError(msg)
+            raise HeathCheckError(msg)
 
     # CRITERIA 2: Mean latency of the last N request slower than 1 sec
     probe: Optional[DelayWindowProbe] = app.get(kLATENCY_PROBE)
@@ -126,6 +123,6 @@ def assert_healthy_app(app: web.Application) -> None:
         )
 
         if max_latency_allowed < latency:
-            raise HealthError(
+            raise HeathCheckError(
                 f"Last requests average latency is {latency} secs and surpasses {max_latency_allowed} secs"
             )

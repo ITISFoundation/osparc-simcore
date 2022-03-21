@@ -9,10 +9,22 @@ from servicelib.aiohttp.rest_utils import extract_and_validate
 
 from ._meta import __version__, api_version_prefix
 from .application_settings import APP_SETTINGS_KEY
+from .rest_healthcheck import HeathCheck
 
 log = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
+
+
+@routes.get(f"/{api_version_prefix}/health", name="check_health")
+async def check_health(request: web.Request):
+
+    healthcheck: HeathCheck = request.app[HeathCheck.__name__]
+
+    # TODO: The timeout should be adjusted to the healthcheck setup in the
+    #    Dockerfile. Notice that those values as passed via env vars
+    health_report = await healthcheck.run(request.app, timeout=None)
+    return web.json_response(data={"data": health_report})
 
 
 @routes.get(f"/{api_version_prefix}/", name="check_running")
@@ -23,13 +35,13 @@ async def check_running(_request: web.Request):
     # - Do not do add any expensive computatio here
     # - Healthcheck has been moved to diagnostics module
     #
-    data = {
+    health_report = {
         "name": __name__.split(".")[0],
         "version": f"{__version__}",
         "status": "SERVICE_RUNNING",
         "api_version": f"{__version__}",
     }
-    return web.json_response(data={"data": data})
+    return web.json_response(data={"data": health_report})
 
 
 @routes.get(f"/{api_version_prefix}/config", name="get_config")
