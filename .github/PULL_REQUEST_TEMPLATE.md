@@ -1,22 +1,24 @@
 <!-- Common title prefixes/annotations:
+PREFIX:
 
-WIP: work in progress
+  WIP: work in progress
+  🐛    Fix a bug.
+  ✨    Introduce new features.
+  ♻️     Refactor code.
+  🚑️    Critical hotfix.
+  ⚗️     Perform experiments.
+  ⬆️    Upgrade dependencies.
+  📝    Add or update documentation.
+  🗑️    Deprecate code that needs to be cleaned up.
+  ⚰️     Remove dead code.
+  🔥    Remove code or files.
+  🔨    Add or update development scripts.
 
-Consider prefix your PR message with an emoticon
-  🐛 bugfix
-  ✨ new feature
-  ♻️ refactoring
-  💄 updates UI or 🚸 UX/usability
-  🚑️ hotfix
-  ⚗️ experimental
-  ⬆️ upgrades dependencies
-  📝 documentation
-  🗑️ deprecated
-  ⚰️ remove dead code
-  🔥 remove code or files
-or from https://gitmoji.dev/
+or from https://gitmoji.dev/ and https://github.com/carloscuesta/gitmoji/blob/master/src/data/gitmojis.json
 
-and append (⚠️ devops) if changes in devops configuration required before deploying
+SUFFIX:
+ (⚠️ devops)  changes in devops configuration required before deploying
+
 -->
 
 ## What do these changes do?
@@ -36,7 +38,6 @@ and append (⚠️ devops) if changes in devops configuration required before de
 
 ## How to test
 
-- Covered by CI
 <!-- Give REVIEWERS some hits or code snippets on how could this be tested -->
 
 
