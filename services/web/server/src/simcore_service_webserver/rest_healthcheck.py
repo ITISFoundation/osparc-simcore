@@ -36,11 +36,12 @@ class HeathCheck:
         self, app: web.Application, *, timeout: Optional[float] = None
     ) -> Dict[str, Any]:
         """Runs healtcheck with a timeout [secs]"""
-        # ensures no more signals append after first run
+
+        # Ensures no more signals append after first run
         self._on_healthcheck.freeze()
 
         try:
-            heath_report = self.get_app_info(app)
+            heath_report: Dict[str, Any] = self.get_app_info(app)
 
             # TODO: every signal could return some info on the health on each part
             # that is appended on heath_report

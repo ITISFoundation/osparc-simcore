@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 
 
 async def _log_check(app: web.Application):
-    log.debug("health check")
+    log.debug("health check %s", f"{app}")
 
 
 @app_module_setup(
@@ -63,6 +63,7 @@ def setup_rest(app: web.Application):
             f"__version__.api_version_prefix {api_version_prefix} does not fit openapi.yml version {specs.info.version}"
         )
 
+    # defines healthcheck mechanism
     healthcheck = HeathCheck()
     healthcheck.on_healthcheck.append(_log_check)
     app[HeathCheck.__name__] = healthcheck
