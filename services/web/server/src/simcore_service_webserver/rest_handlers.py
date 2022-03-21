@@ -32,10 +32,6 @@ async def check_health(request: web.Request):
         log.warning("%s", err)
         raise web.HTTPServiceUnavailable(reason="unhealthy")
 
-    except Exception as err:
-        log.exception(err)
-        raise web.HTTPServiceUnavailable(reason="unhealthy")
-
     return web.json_response(data={"data": health_report})
 
 
