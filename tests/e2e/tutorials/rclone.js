@@ -1,4 +1,4 @@
-// node sleepers.js [url] [user] [password] [--demo]
+// node rclone.js [url] [user] [password] [--demo]
 
 const utils = require('../utils/utils');
 const tutorialBase = require('./tutorialBase');
