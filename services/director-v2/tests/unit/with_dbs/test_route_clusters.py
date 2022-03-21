@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, Iterator, List
 import httpx
 import pytest
 import sqlalchemy as sa
+from _dask_helpers import DaskGatewayServer
 from _pytest.monkeypatch import MonkeyPatch
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
@@ -19,15 +20,17 @@ from models_library.clusters import (
     CLUSTER_USER_RIGHTS,
     Cluster,
     ClusterAccessRights,
+    ClusterAuthentication,
     SimpleAuthentication,
 )
-from pydantic import parse_obj_as
+from pydantic import AnyHttpUrl, parse_obj_as
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_service_director_v2.models.schemas.clusters import (
     ClusterCreate,
     ClusterOut,
     ClusterPatch,
+    ClusterPingIn,
 )
 from starlette import status
 
@@ -599,3 +602,46 @@ async def test_delete_another_cluster(
         if can_administer
         else status.HTTP_200_OK
     ), f"received {response.text}"
+
+
+async def test_ping_invalid_cluster_raises_422(
+    clusters_config: None,
+    async_client: httpx.AsyncClient,
+    faker: Faker,
+    cluster_simple_authentication: Callable[[], Dict[str, Any]],
+):
+    # calling with wrong data raises
+    response = await async_client.post("/v2/clusters:ping", json={})
+    with pytest.raises(httpx.HTTPStatusError):
+        response.raise_for_status()
+
+    # calling with correct data but non existing cluster also raises
+    some_fake_cluster = ClusterPingIn(
+        endpoint=faker.uri(),
+        authentication=parse_obj_as(
+            ClusterAuthentication, cluster_simple_authentication()
+        ),
+    )
+    response = await async_client.post(
+        "/v2/clusters:ping", json=some_fake_cluster.dict(by_alias=True)
+    )
+    with pytest.raises(httpx.HTTPStatusError):
+        response.raise_for_status()
+
+
+async def test_ping_cluster(
+    clusters_config: None,
+    async_client: httpx.AsyncClient,
+    local_dask_gateway_server: DaskGatewayServer,
+):
+    valid_cluster = ClusterPingIn(
+        endpoint=parse_obj_as(AnyHttpUrl, local_dask_gateway_server.address),
+        authentication=SimpleAuthentication(
+            username="pytest_user", password=local_dask_gateway_server.password
+        ),
+    )
+    response = await async_client.post(
+        "/v2/clusters:ping", json=valid_cluster.dict(by_alias=True)
+    )
+    response.raise_for_status()
+    assert response.status_code == status.HTTP_204_NO_CONTENT
