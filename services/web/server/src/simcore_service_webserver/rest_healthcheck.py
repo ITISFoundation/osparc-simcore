@@ -24,14 +24,18 @@ From https://docs.docker.com/engine/reference/builder/#healthcheck
 
 
 import asyncio
-from typing import Any, Awaitable, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Optional
 
 from aiohttp import web
 from aiosignal import Signal
 
 from ._constants import APP_SETTINGS_KEY
 
-_HeathCheckSignal = Signal[Callable[[web.Application], Awaitable[None]]]
+if TYPE_CHECKING:  # pragma: no cover
+    _HeathCheckSignal = Signal[Callable[[web.Application], Awaitable[None]]]
+
+else:
+    _HeathCheckSignal = Signal
 
 
 class HealthCheckFailed(RuntimeError):
@@ -54,7 +58,7 @@ class HeathCheck:
         """Minimal (header) health report is information about the app"""
         settings = app[APP_SETTINGS_KEY]
         return {
-            "name": settings.API_NAME,
+            "name": settings.APP_NAME,
             "version": settings.API_VERSION,
             "api_version": settings.API_VERSION,
         }
@@ -74,7 +78,7 @@ class HeathCheck:
             # that is appended on heath_report
             await asyncio.wait_for(self._on_healthcheck.send(app), timeout=timeout)
 
+            return heath_report
+
         except asyncio.TimeoutError as err:
             raise HealthCheckFailed(reason="Service is slowing down") from err
-
-        return heath_report

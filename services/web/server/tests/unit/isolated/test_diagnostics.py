@@ -6,12 +6,11 @@ from typing import Dict
 from unittest.mock import Mock
 
 import pytest
-from servicelib.aiohttp.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.aiohttp.application_setup import APP_SETUP_COMPLETED_KEY
 from simcore_service_webserver import diagnostics_handlers
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.diagnostics import setup_diagnostics
-from simcore_service_webserver.rest import api_version_prefix
+from simcore_service_webserver.rest import api_version_prefix, setup_rest
 
 
 class MockApp(dict):
@@ -32,14 +31,16 @@ class MockApp(dict):
     def assert_none_overriden(self):
         assert not self._overriden
 
+    def add_routes(self, *args, **kwargs):
+        self.router.add_routes(*args, **kwargs)
+
 
 @pytest.fixture
 def app_mock(openapi_specs):
     app = MockApp()
 
-    # some inits to emulate simcore_service_webserver.rest setup
-    app[APP_SETUP_COMPLETED_KEY] = ["simcore_service_webserver.rest"]
-    app[APP_OPENAPI_SPECS_KEY] = openapi_specs
+    # emulates security is initialized
+    app[APP_SETUP_COMPLETED_KEY] = ["simcore_service_webserver.security"]
 
     return app
 
@@ -47,8 +48,8 @@ def app_mock(openapi_specs):
 def test_unique_application_keys(
     app_mock, openapi_specs, mock_env_devel_environment: Dict[str, str]
 ):
-    # this module has A LOT of constants and it is easy to override them
     setup_settings(app_mock)
+    setup_rest(app_mock)
     setup_diagnostics(app_mock)
 
     for key, value in app_mock.items():
@@ -56,6 +57,7 @@ def test_unique_application_keys(
 
     assert any(key for key in app_mock if "diagnostics" in key)
 
+    # this module has A LOT of constants and it is easy to override them
     app_mock.assert_none_overriden()
 
 
