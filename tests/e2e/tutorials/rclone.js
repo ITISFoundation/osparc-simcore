@@ -29,6 +29,28 @@ async function runTutorial() {
     }
     await tutorial.waitForServices(workbenchData["studyId"], nodeIds, startTimeout);
     await tutorial.waitFor(2000);
+
+    for (let i=0; i<nServices; i++) {
+      await tutorial.openNode(i);
+
+      const iframeHandles = await tutorial.getIframe();
+      const iframes = [];
+      for (let i = 0; i < iframeHandles.length; i++) {
+        const frame = await iframeHandles[i].contentFrame();
+        iframes.push(frame);
+      }
+      console.log(iframes);
+      const jLabIframe = iframes.find(iframe => iframe._url.endsWith("lab?"));
+      utils.runAllCellsInJupyterLab(jLabIframe, "input2output.ipynb");
+
+      await tutorial.waitFor(60000, 'wait sufficiently before getting the results');
+
+      console.log('Checking the number of files sitting next to the notebook');
+      const dirList = document.querySelector("#filebrowser > div.lm-Widget.p-Widget.jp-DirListing.jp-FileBrowser-listing.jp-mod-selected > ul")
+      if (dirList.length < 5) {
+        throw("Expected files not found");
+      }
+    }
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
