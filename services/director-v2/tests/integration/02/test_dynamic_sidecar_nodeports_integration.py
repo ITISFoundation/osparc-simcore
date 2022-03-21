@@ -267,8 +267,15 @@ async def db_manager(aiopg_engine: aiopg.sa.engine.Engine) -> DBManager:
     return DBManager(aiopg_engine)
 
 
-@pytest.fixture(scope="session", params=["true", "false"])
+def _is_docker_r_clone_plugin_installed() -> bool:
+    is_plugin_installed = "rclone:" in run_command("docker plugin ls")
+    return is_plugin_installed
+
+
+@pytest.fixture(scope="session", params={"true", "false"})
 def dev_features_enabled(request) -> str:
+    if request.param == "true" and not _is_docker_r_clone_plugin_installed():
+        pytest.skip("Required docker plugin `rclone` not installed.")
     return request.param
 
 
