@@ -57,7 +57,6 @@ class ClusterOut(Cluster):
 
 class ClusterDetailsOut(BaseModel):
     scheduler: Scheduler
-    cluster: Cluster
     dashboard_link: AnyUrl
 
 

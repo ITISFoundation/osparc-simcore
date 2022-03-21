@@ -57,13 +57,10 @@ async def _get_cluster_details_with_id(
             scheduler_info = client.dask_subsystem.client.scheduler_info()
             scheduler_status = client.dask_subsystem.client.status
             dashboard_link = client.dask_subsystem.client.dashboard_link
-
+        assert dashboard_link  # nosec
         return ClusterDetailsOut(
-            cluster=cluster,
             scheduler=Scheduler(status=scheduler_status, **scheduler_info),
-            dashboard_link=parse_obj_as(AnyUrl, dashboard_link)
-            if dashboard_link
-            else None,
+            dashboard_link=parse_obj_as(AnyUrl, dashboard_link),
         )
     except ClusterNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
