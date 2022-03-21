@@ -8,7 +8,10 @@ from unittest.mock import AsyncMock, call
 from uuid import UUID, uuid4
 
 import pytest
+
+from models_library.projects import Workbench
 from models_library.project_networks import NetworksWithAliases
+from models_library.projects_nodes import Node
 from models_library.projects import ProjectID
 from pydantic import BaseModel, PositiveInt
 from pytest_mock.plugin import MockerFixture
@@ -78,15 +81,13 @@ def test_case_factory(
             attach=[
                 call(
                     scheduler=mock_scheduler,
-                    project_id=project_id,
-                    node_id=_node_id(2),
+                    node_id=UUID(_node_id(2)),
                     network_name=_network_name(1),
                     network_alias=_node_alias(2),
                 ),
                 call(
                     scheduler=mock_scheduler,
-                    project_id=project_id,
-                    node_id=_node_id(1),
+                    node_id=UUID(_node_id(1)),
                     network_name=_network_name(1),
                     network_alias=_node_alias(1),
                 ),
@@ -108,8 +109,7 @@ def test_case_factory(
             detach=[
                 call(
                     scheduler=mock_scheduler,
-                    project_id=project_id,
-                    node_id=_node_id(2),
+                    node_id=UUID(_node_id(2)),
                     network_name=_network_name(1),
                 ),
             ],
@@ -132,16 +132,14 @@ def test_case_factory(
             detach=[
                 call(
                     scheduler=mock_scheduler,
-                    project_id=project_id,
-                    node_id=_node_id(2),
+                    node_id=UUID(_node_id(2)),
                     network_name=_network_name(1),
                 ),
             ],
             attach=[
                 call(
                     scheduler=mock_scheduler,
-                    project_id=project_id,
-                    node_id=_node_id(2),
+                    node_id=UUID(_node_id(2)),
                     network_name=_network_name(1),
                     network_alias=_node_alias(3),
                 ),
@@ -188,15 +186,19 @@ def project_id() -> ProjectID:
 
 
 @pytest.fixture
-def dy_workbench_with_networkable_labels(mocks_dir: Path) -> Dict[str, Any]:
+def dy_workbench_with_networkable_labels(mocks_dir: Path) -> Workbench:
     dy_workbench_template = mocks_dir / "fake_dy_workbench_template.json"
     assert dy_workbench_template.exists()
 
     dy_workbench = json.loads(dy_workbench_template.read_text())
 
-    for node_data in dy_workbench.values():
+    parsed_workbench: Workbench = {}
+
+    for node_uuid, node_data in dy_workbench.items():
         node_data["label"] = f"label_{uuid4()}"
-    return dy_workbench
+        parsed_workbench[node_uuid] = Node.parse_obj(node_data)
+
+    return parsed_workbench
 
 
 @pytest.fixture
@@ -227,8 +229,6 @@ def mock_docker_calls(mocker: MockerFixture) -> Iterable[Dict[str, AsyncMock]]:
             requires_dynamic_sidecar_mock,
         ),
     }
-
-    # reload(simcore_service_webserver.director_v2_api)
 
     yield mocked_items
 

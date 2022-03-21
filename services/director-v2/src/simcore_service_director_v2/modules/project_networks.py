@@ -1,7 +1,7 @@
 import logging
 import urllib.parse
 from collections import namedtuple
-from typing import Any, Dict, Set
+from typing import Set
 from uuid import UUID
 
 from models_library.project_networks import (
@@ -14,7 +14,7 @@ from models_library.project_networks import (
     validate_network_alias,
     validate_network_name,
 )
-from models_library.projects import ProjectAtDB, ProjectID
+from models_library.projects import ProjectAtDB, ProjectID, Workbench
 from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.service_settings_labels import SimcoreServiceLabels
@@ -190,7 +190,7 @@ async def _send_network_configuration_to_dynamic_sidecar(
 async def _get_networks_with_aliases_for_default_network(
     project_id: ProjectID,
     user_id: UserID,
-    new_workbench: Dict[str, Any],
+    new_workbench: Workbench,
     director_v0_client: DirectorV0Client,
     rabbitmq_client: RabbitMQClient,
 ) -> NetworksWithAliases:
