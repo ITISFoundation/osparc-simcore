@@ -84,29 +84,8 @@ async function runTutorial() {
       iframes2.push(frame);
     }
     const jLabIframe = iframes2.find(iframe => iframe._url.endsWith("lab?"));
+    utils.runAllCellsInJupyterLab(jLabIframe, "input2output.ipynb");
 
-    // inside the iFrame, open the first notebook
-    const input2outputFileSelector = '[title~="input2output.ipynb"]';
-    await jLabIframe.waitForSelector(input2outputFileSelector);
-    await jLabIframe.click(input2outputFileSelector, {
-      clickCount: 2
-    });
-    await tutorial.waitFor(5000);
-    // click Run Menu
-    const mainRunMenuBtnSelector = '#jp-MainMenu > ul > li:nth-child(4)';
-    await utils.waitAndClick(jLabIframe, mainRunMenuBtnSelector)
-
-    // click Run All Cells
-    const mainRunAllBtnSelector = '  body > div.lm-Widget.p-Widget.lm-Menu.p-Menu.lm-MenuBar-menu.p-MenuBar-menu > ul > li:nth-child(17)';
-    await utils.waitAndClick(jLabIframe, mainRunAllBtnSelector)
-
-    console.log('Waiting for jupyter lab results...');
-    const labCompletedInputSelector = 'div.lm-Widget.p-Widget.jp-MainAreaWidget.jp-NotebookPanel.jp-Document.jp-Activity > div:nth-child(2) > div:nth-child(3) > div.lm-Widget.p-Widget.lm-Panel.p-Panel.jp-Cell-inputWrapper > div.lm-Widget.p-Widget.jp-InputArea.jp-Cell-inputArea > div.lm-Widget.p-Widget.jp-InputPrompt.jp-InputArea-prompt';
-    await jLabIframe.waitForFunction('document.querySelector("' + labCompletedInputSelector + '").innerText.match(/\[[0-9]+\]/)');
-    const jLabElement = await jLabIframe.$(labCompletedInputSelector);
-    const jLabVvalue = await jLabIframe.evaluate(el => el.textContent, jLabElement);
-    console.log('Checking results for the jupyter lab cell:', jLabVvalue);
-    await tutorial.takeScreenshot("pressRunJLab");
     await tutorial.waitFor(15000, 'wait sufficiently before getting the results');
 
     console.log('Checking results for the jupyter lab:');
