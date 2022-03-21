@@ -311,6 +311,22 @@ class DaskComputationalBackendSettings(BaseCustomSettings):
         0, description="This defines the default cluster id when none is defined"
     )
 
+    @validator(
+        "DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME",
+        "DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD",
+    )
+    @classmethod
+    def check_gateway_credentials_valid(cls, v, values):
+
+        if v is not None and (
+            values.get("DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME") is None
+            or values.get("DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD")
+        ):
+            raise ValueError(
+                "DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME and DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD must both contain a value or none at all"
+            )
+        return v
+
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
