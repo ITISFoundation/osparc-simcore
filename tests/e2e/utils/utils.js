@@ -538,6 +538,14 @@ async function runAllCellsInJupyterLab(page, jLabIframe, notebookName) {
   await this.takeScreenshot(page, "pressRunJLab");
 }
 
+async function getNChildren(page, selector) {
+  const cardLabel = await page.evaluate((selector) => {
+    const el = document.querySelector(selector);
+    return el.children.length;
+  }, selector);
+  return cardLabel;
+}
+
 
 module.exports = {
   makeRequest,
@@ -573,4 +581,5 @@ module.exports = {
   isElementVisible,
   clickLoggerTitle,
   runAllCellsInJupyterLab,
+  getNChildren,
 }

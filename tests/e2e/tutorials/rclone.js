@@ -42,19 +42,11 @@ async function runTutorial() {
       console.log(iframes);
       const jLabIframe = iframes.find(iframe => iframe._url.endsWith("lab?"));
       utils.runAllCellsInJupyterLab(tutorial.getPage(), jLabIframe, "input2output.ipynb");
-    }
 
-    await tutorial.waitFor(60000, 'wait sufficiently before getting the results');
-
-    for (let i=0; i<nServices; i++) {
-      await tutorial.openNode(i);
       console.log('Checking the number of files sitting next to the notebook');
-      /*
-      const dirList = document.querySelector("#filebrowser > div.lm-Widget.p-Widget.jp-DirListing.jp-FileBrowser-listing.jp-mod-selected > ul")
-      if (dirList.length < 5) {
-        throw("Expected files not found");
-      }
-      */
+      const fileBrowserSelector = "#filebrowser > div.lm-Widget.p-Widget.jp-DirListing.jp-FileBrowser-listing.jp-mod-selected > ul";
+      const nFiles = utils.getNChildren(jLabIframe, fileBrowserSelector);
+      console.log("nFiles", nFiles);
     }
   }
   catch(err) {
