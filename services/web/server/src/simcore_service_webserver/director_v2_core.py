@@ -49,8 +49,6 @@ DEFAULT_RETRY_POLICY = dict(
 DataType = Dict[str, Any]
 DataBody = Union[DataType, List[DataType], None]
 
-# base/HELPERS ------------------------------------------------
-
 
 class DirectorV2ApiClient:
     def __init__(self, app: web.Application) -> None:
@@ -152,7 +150,6 @@ async def _request_director_v2(
     )
 
 
-# POLICY ------------------------------------------------
 class DefaultProjectRunPolicy(AbstractProjectRunPolicy):
     # pylint: disable=unused-argument
 
@@ -183,9 +180,6 @@ class DefaultProjectRunPolicy(AbstractProjectRunPolicy):
         )
 
 
-# calls to director-v2 API ------------------------------------------------
-
-
 async def is_healthy(app: web.Application) -> bool:
     try:
         session = get_client_session(app)
@@ -202,9 +196,6 @@ async def is_healthy(app: web.Application) -> bool:
         # SEE https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
         log.warning("Director is NOT healthy: %s", err)
         return False
-
-
-# ----------- computations ----------------------------------------------------------
 
 
 @log_decorator(logger=log)
@@ -288,9 +279,6 @@ async def delete_pipeline(
     )
 
 
-# ----------- services ----------------------------------------------------------
-
-
 @log_decorator(logger=log)
 async def start_service(
     app: web.Application,
@@ -322,12 +310,10 @@ async def start_service(
     }
 
     settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / "dynamic_services"
-
     started_service = await _request_director_v2(
         app,
         "POST",
-        backend_url,
+        url=settings.base_url / "dynamic_services",
         data=data,
         headers=headers,
         expected_status=web.HTTPCreated,
@@ -381,14 +367,12 @@ async def stop_service(
     # bumping the stop command timeout to 1 hour
     # this will allow to sava bigger datasets from the services
     settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = (settings.base_url / f"dynamic_services/{service_uuid}").update_query(
-        save_state="true" if save_state else "false",
-    )
-
     await _request_director_v2(
         app,
         "DELETE",
-        backend_url,
+        url=(settings.base_url / f"dynamic_services/{service_uuid}").update_query(
+            save_state="true" if save_state else "false",
+        ),
         expected_status=web.HTTPNoContent,
         timeout=settings.DIRECTOR_V2_STOP_SERVICE_TIMEOUT,
     )
@@ -422,12 +406,10 @@ async def retrieve(
 ) -> DataType:
     """Pulls data from connections to the dynamic service inputs"""
     settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / f"dynamic_services/{service_uuid}:retrieve"
-
     result = await _request_director_v2(
         app,
         "POST",
-        backend_url,
+        url=settings.base_url / f"dynamic_services/{service_uuid}:retrieve",
         data={"port_keys": port_keys},
         timeout=settings.get_service_retrieve_timeout(),
     )
@@ -441,14 +423,13 @@ async def request_retrieve_dyn_service(
 ) -> None:
     # TODO: notice that this function is identical to retrieve except that it does NOT reaise
     settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / f"dynamic_services/{service_uuid}:retrieve"
     body = {"port_keys": port_keys}
 
     try:
         await _request_director_v2(
             app,
             "POST",
-            backend_url,
+            url=settings.base_url / f"dynamic_services/{service_uuid}:retrieve",
             data=body,
             timeout=settings.get_service_retrieve_timeout(),
         )
@@ -465,29 +446,23 @@ async def request_retrieve_dyn_service(
 @log_decorator(logger=log)
 async def restart(app: web.Application, node_uuid: str) -> None:
     settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / f"dynamic_services/{node_uuid}:restart"
-
     await _request_director_v2(
         app,
         "POST",
-        backend_url,
+        url=settings.base_url / f"dynamic_services/{node_uuid}:restart",
         expected_status=web.HTTPOk,
         timeout=settings.DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT,
     )
-
-
-# ----------- clusters ----------------------------------------------------------
 
 
 async def create_cluster(
     app: web.Application, user_id: UserID, new_cluster: ClusterCreate
 ) -> DataType:
     settings: DirectorV2Settings = get_plugin_settings(app)
-    url = (settings.base_url / "clusters").update_query(user_id=int(user_id))
     cluster = await _request_director_v2(
         app,
         "POST",
-        url,
+        url=(settings.base_url / "clusters").update_query(user_id=int(user_id)),
         expected_status=web.HTTPCreated,
         data=new_cluster.dict(by_alias=True, exclude_unset=True),
     )
@@ -498,8 +473,12 @@ async def create_cluster(
 
 async def list_clusters(app: web.Application, user_id: UserID) -> List[DataType]:
     settings: DirectorV2Settings = get_plugin_settings(app)
-    url = (settings.base_url / "clusters").update_query(user_id=int(user_id))
-    clusters = await _request_director_v2(app, "GET", url, expected_status=web.HTTPOk)
+    clusters = await _request_director_v2(
+        app,
+        "GET",
+        url=(settings.base_url / "clusters").update_query(user_id=int(user_id)),
+        expected_status=web.HTTPOk,
+    )
 
     assert isinstance(clusters, list)  # nosec
     return clusters
@@ -509,13 +488,12 @@ async def get_cluster(
     app: web.Application, user_id: UserID, cluster_id: ClusterID
 ) -> DataType:
     settings: DirectorV2Settings = get_plugin_settings(app)
-    url = (settings.base_url / f"clusters/{cluster_id}").update_query(
-        user_id=int(user_id)
-    )
     cluster = await _request_director_v2(
         app,
         "GET",
-        url,
+        url=(settings.base_url / f"clusters/{cluster_id}").update_query(
+            user_id=int(user_id)
+        ),
         expected_status=web.HTTPOk,
         on_error={
             web.HTTPNotFound.status_code: (
@@ -537,13 +515,13 @@ async def get_cluster_details(
     app: web.Application, user_id: UserID, cluster_id: ClusterID
 ) -> DataType:
     settings: DirectorV2Settings = get_plugin_settings(app)
-    url = (settings.base_url / f"clusters/{cluster_id}/details").update_query(
-        user_id=int(user_id)
-    )
+
     cluster = await _request_director_v2(
         app,
         "GET",
-        url,
+        url=(settings.base_url / f"clusters/{cluster_id}/details").update_query(
+            user_id=int(user_id)
+        ),
         expected_status=web.HTTPOk,
         on_error={
             web.HTTPNotFound.status_code: (
@@ -568,13 +546,12 @@ async def update_cluster(
     cluster_patch: ClusterPatch,
 ) -> DataType:
     settings: DirectorV2Settings = get_plugin_settings(app)
-    url = (settings.base_url / f"clusters/{cluster_id}").update_query(
-        user_id=int(user_id)
-    )
     cluster = await _request_director_v2(
         app,
         "PATCH",
-        url,
+        url=(settings.base_url / f"clusters/{cluster_id}").update_query(
+            user_id=int(user_id)
+        ),
         expected_status=web.HTTPOk,
         data=cluster_patch.dict(by_alias=True, exclude_unset=True),
         on_error={
@@ -597,13 +574,12 @@ async def delete_cluster(
     app: web.Application, user_id: UserID, cluster_id: ClusterID
 ) -> None:
     settings: DirectorV2Settings = get_plugin_settings(app)
-    url = (settings.base_url / f"clusters/{cluster_id}").update_query(
-        user_id=int(user_id)
-    )
     await _request_director_v2(
         app,
         "DELETE",
-        url,
+        url=(settings.base_url / f"clusters/{cluster_id}").update_query(
+            user_id=int(user_id)
+        ),
         expected_status=web.HTTPNoContent,
         on_error={
             web.HTTPNotFound.status_code: (
@@ -620,11 +596,10 @@ async def delete_cluster(
 
 async def ping_cluster(app: web.Application, cluster_ping: ClusterPing) -> None:
     settings: DirectorV2Settings = get_plugin_settings(app)
-    url = settings.base_url / "clusters:ping"
     await _request_director_v2(
         app,
         "POST",
-        url,
+        url=settings.base_url / "clusters:ping",
         expected_status=web.HTTPNoContent,
         data=cluster_ping.dict(by_alias=True, exclude_unset=True),
         on_error={
