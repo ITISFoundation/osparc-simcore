@@ -9,10 +9,11 @@ from models_library.clusters import (
     ClusterAccessRights,
     ClusterType,
     ExternalClusterAuthentication,
+    ClusterAuthentication,
 )
 from models_library.generics import DictModel
 from models_library.users import GroupID
-from pydantic import BaseModel, Field, HttpUrl, validator
+from pydantic import AnyHttpUrl, BaseModel, Field, HttpUrl, validator
 from pydantic.networks import AnyUrl
 from pydantic.types import ByteSize, PositiveFloat
 
@@ -143,3 +144,10 @@ class ClusterPatch(BaseCluster):
                 },
             ]
         }
+
+
+class ClusterPingIn(BaseModel):
+    endpoint: AnyHttpUrl
+    authentication: ClusterAuthentication = Field(
+        ..., description="Dask gateway authentication"
+    )

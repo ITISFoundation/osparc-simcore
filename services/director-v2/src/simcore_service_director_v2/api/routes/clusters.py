@@ -5,8 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from models_library.clusters import Cluster, ClusterID
 from models_library.users import UserID
 from pydantic import AnyUrl, parse_obj_as
+from simcore_postgres_database.models.clusters import ClusterType
 from simcore_service_director_v2.api.dependencies.scheduler import (
     get_scheduler_settings,
+)
+from simcore_service_director_v2.utils.dask_client_utils import (
+    create_internal_client_based_on_auth,
+    test_gateway_endpoint,
 )
 from starlette import status
 
@@ -14,6 +19,9 @@ from ...core.errors import (
     ClusterAccessForbiddenError,
     ClusterInvalidOperationError,
     ClusterNotFoundError,
+    DaskClusterError,
+    ConfigurationError,
+    DaskGatewayServerError,
 )
 from ...core.settings import DaskSchedulerSettings
 from ...models.schemas.clusters import (
@@ -21,6 +29,7 @@ from ...models.schemas.clusters import (
     ClusterDetailsOut,
     ClusterOut,
     ClusterPatch,
+    ClusterPingIn,
     Scheduler,
 )
 from ...modules.dask_clients_pool import DaskClientsPool
@@ -199,3 +208,23 @@ async def get_cluster_details(
         clusters_repo=clusters_repo,
         dask_clients_pool=dask_clients_pool,
     )
+
+
+@router.post(
+    ":ping",
+    summary="Test cluster connection",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def test_cluster_connection(
+    cluster_auth: ClusterPingIn,
+):
+    try:
+        return await test_gateway_endpoint(
+            endpoint=cluster_auth.endpoint, authentication=cluster_auth.authentication
+        )
+
+    except (ConfigurationError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"{e}"
+        ) from e
