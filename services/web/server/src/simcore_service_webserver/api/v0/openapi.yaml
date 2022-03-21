@@ -1235,7 +1235,16 @@ paths:
             type: string
       responses:
         '200':
-          $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7BfileId%7D/put/responses/200'
+          description: Returns presigned link
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  link:
+                    type: string
+                example:
+                  link: example_link
     put:
       summary: Returns upload link or performs copy operation to datcore
       tags:
@@ -1264,16 +1273,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Returns presigned link
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  link:
-                    type: string
-                example:
-                  link: example_link
+          $ref: '#/paths/~1storage~1locations~1%7Blocation_id%7D~1files~1%7BfileId%7D/get/responses/200'
     delete:
       summary: Deletes File
       tags:
@@ -4571,6 +4571,39 @@ paths:
                 $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
           description: Validation Error
       summary: Get Compatible Outputs Given Target Input
+  '/clusters:ping':
+    post:
+      summary: test connectivity with cluster
+      operationId: ping_cluster_handler
+      tags:
+        - cluster
+      requestBody:
+        required: true
+        description: the cluster endpoint/authentication to test
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                endpoint:
+                  type: string
+                  minLength: 1
+                  maxLength: 65536
+                authentication:
+                  description: Dask gateway authentication
+                  anyOf:
+                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/0'
+                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/1'
+                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/2'
+              required:
+                - endpoint
+                - authentication
+              additionalProperties: false
+      responses:
+        '204':
+          description: connectivity is OK
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
   /clusters:
     get:
       summary: List my clusters

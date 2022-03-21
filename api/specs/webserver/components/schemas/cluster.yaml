@@ -1,3 +1,25 @@
+ClusterPing:
+  type: object
+  properties:
+    endpoint:
+      type: string
+      minLength: 1
+      maxLength: 65536
+      # format: uri
+    authentication:
+      description: Dask gateway authentication
+      anyOf:
+        [
+          $ref: "#/SimpleAuthentication",
+          $ref: "#/KerberosAuthentication",
+          $ref: "#/JupyterHubTokenAuthentication",
+        ]
+
+  required:
+    - endpoint
+    - authentication
+  additionalProperties: false
+
 ClusterCreate:
   type: object
   properties:

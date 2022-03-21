@@ -287,6 +287,8 @@ paths:
     $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs_match"
 
   # CLUSTER -------------------------------------------------------------------------
+  /clusters:ping:
+    $ref: "./openapi-clusters.yaml#/paths/director_v2_clusters_ping"
   /clusters:
     $ref: "./openapi-clusters.yaml#/paths/~1clusters"
   /clusters/{cluster_id}:
