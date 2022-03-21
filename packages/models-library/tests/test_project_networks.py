@@ -29,7 +29,7 @@ def uuid() -> UUID:
 @pytest.mark.parametrize("example", NetworksWithAliases.Config.schema_extra["examples"])
 def test_networks_with_aliases(example: Dict) -> None:
     project_networks = NetworksWithAliases.parse_obj(example)
-    assert project_networks.dict() == example
+    assert json.loads(project_networks.json()) == example
     assert project_networks.json() == json.dumps(example)
 
 

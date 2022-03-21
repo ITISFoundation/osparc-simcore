@@ -1,9 +1,7 @@
-from typing import Any, Dict
-
 from models_library.projects import ProjectID
 from pydantic import BaseModel, Field, constr, validate_arguments
 
-from .generics import DictKey, DictModel, DictValue, Generic
+from .generics import DictModel
 from .projects_nodes_io import NodeIDStr
 
 SERVICE_NETWORK_RE = r"^[a-zA-Z]([a-zA-Z0-9_-]{0,63})$"
@@ -24,16 +22,11 @@ def validate_network_alias(value: DockerNetworkAlias) -> DockerNetworkAlias:
     return value
 
 
-class BaseModelDict(DictModel, Generic[DictKey, DictValue]):
-    def dict(self, *args, **kwargs) -> Dict[str, Any]:
-        return super().dict(*args, **kwargs)["__root__"]
-
-
-class ContainerAliases(BaseModelDict[NodeIDStr, DockerNetworkAlias]):
+class ContainerAliases(DictModel[NodeIDStr, DockerNetworkAlias]):
     ...
 
 
-class NetworksWithAliases(BaseModelDict[DockerNetworkName, ContainerAliases]):
+class NetworksWithAliases(DictModel[DockerNetworkName, ContainerAliases]):
     class Config:
         schema_extra = {
             "examples": [
