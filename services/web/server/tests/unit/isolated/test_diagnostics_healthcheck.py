@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -17,7 +18,7 @@ from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.diagnostics import setup_diagnostics
 from simcore_service_webserver.diagnostics_healthcheck import (
-    HeathCheckError,
+    HealthCheckFailed,
     assert_healthy_app,
     kLATENCY_PROBE,
 )
@@ -214,7 +215,7 @@ async def test_diagnose_on_response_delays(client):
     assert latency_observed > tmax
 
     # diagnostics
-    with pytest.raises(HeathCheckError):
+    with pytest.raises(HealthCheckFailed):
         assert_healthy_app(client.app)
 
 

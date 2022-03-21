@@ -1,6 +1,6 @@
-# pylint:disable=unused-argument
-# pylint:disable=redefined-outer-name
-# pylint:disable=no-name-in-module
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
 
 from typing import Dict
 from unittest.mock import Mock

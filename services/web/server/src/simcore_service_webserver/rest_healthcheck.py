@@ -1,3 +1,28 @@
+""" Service healthcheck
+
+From https://docs.docker.com/engine/reference/builder/#healthcheck
+
+    --interval=DURATION (default: 30s)
+    --timeout=DURATION (default: 30s)
+    --start-period=DURATION (default: 0s)
+    --retries=N (default: 3)
+
+    The health check will first run *interval* seconds after the container is started, and
+    then again *interval* seconds after each previous check completes.
+
+    If a single run of the check takes longer than *timeout* seconds then the check is considered to have failed (SEE HealthCheckFailed).
+
+    It takes *retries* consecutive failures of the health check for the container to be considered **unhealthy**.
+
+    *start period* provides initialization time for containers that need time to bootstrap. Probe failure during
+    that period will not be counted towards the maximum number of retries.
+
+    However, if a health check succeeds during the *start period*, the container is considered started and all consecutive
+    failures will be counted towards the maximum number of retries.
+
+"""
+
+
 import asyncio
 from typing import Any, Awaitable, Callable, Dict, Optional
 
@@ -9,8 +34,11 @@ from ._constants import APP_SETTINGS_KEY
 _HeathCheckSignal = Signal[Callable[[web.Application], Awaitable[None]]]
 
 
-class HeathCheckError(web.HTTPServiceUnavailable):
-    """Service is set as unhealty"""
+class HealthCheckFailed(RuntimeError):
+    """Failed a health check
+
+    NOTE: not the same as unhealthy. Check module's doc
+    """
 
 
 class HeathCheck:
@@ -23,9 +51,8 @@ class HeathCheck:
 
     @staticmethod
     def get_app_info(app: web.Application):
-        # TODO: could get some info from app.settings
+        """Minimal (header) health report is information about the app"""
         settings = app[APP_SETTINGS_KEY]
-
         return {
             "name": settings.API_NAME,
             "version": settings.API_VERSION,
@@ -48,6 +75,6 @@ class HeathCheck:
             await asyncio.wait_for(self._on_healthcheck.send(app), timeout=timeout)
 
         except asyncio.TimeoutError as err:
-            raise HeathCheckError(reason="Service is slowing down") from err
+            raise HealthCheckFailed(reason="Service is slowing down") from err
 
         return heath_report

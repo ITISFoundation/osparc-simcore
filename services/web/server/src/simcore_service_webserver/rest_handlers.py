@@ -9,7 +9,7 @@ from servicelib.aiohttp.rest_utils import extract_and_validate
 
 from ._meta import __version__, api_version_prefix
 from .application_settings import APP_SETTINGS_KEY
-from .rest_healthcheck import HeathCheck
+from .rest_healthcheck import HealthCheckFailed, HeathCheck
 
 log = logging.getLogger(__name__)
 
@@ -21,9 +21,17 @@ async def check_health(request: web.Request):
 
     healthcheck: HeathCheck = request.app[HeathCheck.__name__]
 
-    # TODO: The timeout should be adjusted to the healthcheck setup in the
-    #    Dockerfile. Notice that those values as passed via env vars
-    health_report = await healthcheck.run(request.app, timeout=None)
+    if timeout := request.app[APP_SETTINGS_KEY].SC_HEALTHCHECK_TIMEOUT:
+        # Let's cancel check if goes 10% over healtcheck timeout
+        timeout *= 1.1
+        log.debug("Healthcheck %s", f"{timeout=}")
+
+    try:
+        health_report = await healthcheck.run(request.app, timeout=timeout)
+    except HealthCheckFailed as err:
+        log.warning("%s", err)
+        raise web.HTTPServiceUnavailable(reason="unhealthy")
+
     return web.json_response(data={"data": health_report})
 
 
