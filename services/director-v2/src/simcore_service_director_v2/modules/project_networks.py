@@ -161,7 +161,7 @@ async def _send_network_configuration_to_dynamic_sidecar(
             _detach_network_from_dynamic_sidecar(
                 scheduler=scheduler,
                 project_id=to_remove.project_id,
-                node_id=to_remove.node_id,
+                node_id=UUID(to_remove.node_id),
                 network_name=to_remove.network_name,
             )
             for to_remove in to_remove_items
@@ -192,7 +192,7 @@ async def _send_network_configuration_to_dynamic_sidecar(
             _attach_network_to_dynamic_sidecar(
                 scheduler=scheduler,
                 project_id=to_add.project_id,
-                node_id=to_add.node_id,
+                node_id=UUID(to_add.node_id),
                 network_name=to_add.network_name,
                 network_alias=to_add.network_alias,
             )
