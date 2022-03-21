@@ -31,7 +31,7 @@ async def create_cluster_handler(request: web.Request) -> web.Response:
     await extract_and_validate(request)
     user_id: UserID = request[RQT_USERID_KEY]
     body = await request.json()
-    assert body  # no sec
+    assert body  # nosec
 
     try:
         new_cluster = ClusterCreate(
