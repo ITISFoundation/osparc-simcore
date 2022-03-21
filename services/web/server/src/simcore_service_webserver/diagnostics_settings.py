@@ -1,10 +1,9 @@
 # pylint: disable=no-self-use
 # pylint: disable=no-self-argument
-from typing import Dict
 
 from aiohttp.web import Application
 from pydantic import Field, NonNegativeFloat, PositiveFloat, validator
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
+from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
 
 
@@ -48,7 +47,3 @@ def get_plugin_settings(app: Application) -> DiagnosticsSettings:
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, DiagnosticsSettings)  # nosec
     return settings
-
-
-def get_diagnostics_config(app: Application) -> Dict:
-    return app[APP_CONFIG_KEY].get("diagnostics", {})

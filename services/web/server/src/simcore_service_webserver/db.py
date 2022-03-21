@@ -23,9 +23,6 @@ from tenacity import retry
 
 from .db_settings import PostgresSettings, get_plugin_settings
 
-THIS_MODULE_NAME = __name__.split(".")[-1]
-THIS_SERVICE_NAME = "postgres"
-
 log = logging.getLogger(__name__)
 
 
