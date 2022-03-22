@@ -32,13 +32,12 @@ def state_paths() -> List[Path]:
 
 
 @pytest.fixture
-def expect(node_uuid: str) -> Callable[[str, str], Dict[str, Any]]:
+def expect() -> Callable[[str, str], Dict[str, Any]]:
     def _callable(source: str, target: str) -> Dict[str, Any]:
         return {
-            "Source": source,
             "Target": target,
             "Type": "volume",
-            "VolumeOptions": {"Labels": {"uuid": node_uuid}},
+            "VolumeOptions": {"Labels": {"source": source}},
         }
 
     return _callable
@@ -57,7 +56,7 @@ def test_expected_paths(
 
     inputs_path = Path(fake.file_path(depth=3)).parent
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
-        compose_namespace, inputs_path, node_uuid
+        compose_namespace, inputs_path
     ) == expect(
         source=f"{compose_namespace}{f'{inputs_path}'.replace('/', '_')}",
         target=str(Path("/dy-volumes") / inputs_path.relative_to("/")),
@@ -65,7 +64,7 @@ def test_expected_paths(
 
     outputs_path = Path(fake.file_path(depth=3)).parent
     assert DynamicSidecarVolumesPathsResolver.mount_entry(
-        compose_namespace, outputs_path, node_uuid
+        compose_namespace, outputs_path
     ) == expect(
         source=f"{compose_namespace}{f'{outputs_path}'.replace('/', '_')}",
         target=str(Path("/dy-volumes") / outputs_path.relative_to("/")),
@@ -74,7 +73,7 @@ def test_expected_paths(
     for path in state_paths:
         name_from_path = f"{path}".replace(os.sep, "_")
         assert DynamicSidecarVolumesPathsResolver.mount_entry(
-            compose_namespace, path, node_uuid
+            compose_namespace, path
         ) == expect(
             source=f"{compose_namespace}{name_from_path}",
             target=str(Path("/dy-volumes/") / path.relative_to("/")),

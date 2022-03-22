@@ -84,9 +84,7 @@ class DynamicSidecarVolumesPathsResolver:
         return f"{compose_namespace}{cls._volume_name(path)}"
 
     @classmethod
-    def mount_entry(
-        cls, compose_namespace: str, path: Path, node_uuid: NodeID
-    ) -> Dict[str, Any]:
+    def mount_entry(cls, compose_namespace: str, path: Path) -> Dict[str, Any]:
         """
         mounts local directories form the host where the service
         dynamic-sidecar) is running.
