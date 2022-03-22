@@ -24,10 +24,7 @@ qx.Class.define("osparc.component.cluster.Clusters", {
     this._setLayout(new qx.ui.layout.VBox(10));
 
     const grid = new qx.ui.layout.Grid(10, 6);
-    Object.values(this.self().GridPos).forEach(gridPos => {
-      grid.setColumnAlign(gridPos, "left", "middle");
-    });
-    grid.setColumnFlex(this.self().GridPos.reference, 1);
+    grid.setColumnFlex(1, 1);
     const clusterGrid = this.__clustersGrid = new qx.ui.container.Composite(grid);
     this._add(clusterGrid);
 
