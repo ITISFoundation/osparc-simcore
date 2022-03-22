@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from . import catalog_client
 from ._constants import RQ_PRODUCT_KEY
 from ._meta import api_version_prefix
+from .catalog_handlers_utils import can_connect
 from .catalog_models import (
     ServiceInputApiOut,
     ServiceInputKey,
@@ -278,50 +279,6 @@ async def get_compatible_outputs_given_target_input_handler(request: Request):
 ###############
 # IMPLEMENTATION
 #
-
-
-def can_connect(
-    from_output: ServiceOutput, to_input: ServiceInput, *, strict: bool = False
-) -> bool:
-    # FIXME: can_connect is a very very draft version
-
-    # compatible units
-    ok = from_output.unit == to_input.unit
-    if ok:
-        # compatible types
-        # FIXME: see mimetypes examples in property_type
-        #
-        #   "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
-        #   "description": "data type expected on this input glob matching for data type is allowed",
-        #   "examples": [
-        #     "number",
-        #     "boolean",
-        #     "data:*/*",
-        #     "data:text/*",
-        #     "data:[image/jpeg,image/png]",
-        #     "data:application/json",
-        #     "data:application/json;schema=https://my-schema/not/really/schema.json",
-        #     "data:application/vnd.ms-excel",
-        #     "data:text/plain",
-        #     "data:application/hdf5",
-        #     "data:application/edu.ucdavis@ceclancy.xyz"
-        #
-        ok = from_output.property_type == to_input.property_type
-        if not ok:
-            ok = (
-                # data:  -> data:*/*
-                to_input.property_type == "data:*/*"
-                and from_output.property_type.startswith("data:")
-            )
-
-            if not strict:
-                # NOTE: by default, this is allowed in the UI but not in a more strict plausibility check
-                # data:*/*  -> data:
-                ok |= (
-                    from_output.property_type == "data:*/*"
-                    and to_input.property_type.startswith("data:")
-                )
-    return ok
 
 
 async def list_services(ctx: _RequestContext):
