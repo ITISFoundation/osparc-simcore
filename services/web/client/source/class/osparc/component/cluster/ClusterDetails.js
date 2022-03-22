@@ -18,7 +18,7 @@
 qx.Class.define("osparc.component.cluster.ClusterDetails", {
   extend: qx.ui.core.Widget,
 
-  construct: function(clusterId, clusterDetails) {
+  construct: function(clusterId) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(5));
@@ -31,10 +31,23 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
     const workersGrid = this.__workersGrid = new qx.ui.container.Composite(grid);
     this._add(workersGrid);
 
-    console.log(clusterId, clusterDetails);
     this.__clusterId = clusterId;
-    this.__populateClusterDetails(clusterId, clusterDetails);
-    this.__populateWorkers(clusterDetails);
+    const params = {
+      url: {
+        "cid": clusterId
+      }
+    };
+    // Poll every 5 seconds
+    const interval = 5000;
+    const timer = this.__timer = new qx.event.Timer(interval);
+    timer.addListener("interval", () => {
+      osparc.data.Resources.fetch("clusters", "details", params)
+        .then(clusterDetails => {
+          this.__populateClusterDetails(clusterId, clusterDetails);
+          this.__populateWorkers(clusterDetails);
+        });
+    }, this);
+    timer.start();
   },
 
   statics: {
@@ -64,11 +77,13 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
 
   members: {
     __clusterId: null,
+    __timer: null,
     __clusterDetailsLayout: null,
     __workersGrid: null,
 
     __populateClusterDetails: function(clusterId, clusterDetails) {
       const clusterDetailsLayout = this.__clusterDetailsLayout;
+      clusterDetailsLayout.removeAll();
 
       const clusterIdLabel = new qx.ui.basic.Label("C-" + clusterId);
       clusterDetailsLayout.add(clusterIdLabel);
@@ -81,12 +96,14 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
     },
 
     __populateWorkers: function(clusterDetails) {
+      this.__workersGrid.removeAll();
       this.__populateWorkersHeader();
       this.__populateWorkersDetails(clusterDetails);
     },
 
     __populateWorkersHeader: function() {
       const workersGrid = this.__workersGrid;
+
       const row = 0;
       const workerIdLabel = new qx.ui.basic.Label("Cluster ID");
       workersGrid.add(workerIdLabel, {
@@ -127,12 +144,13 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
 
     __populateWorkersDetails: function(clusterDetails) {
       const workersGrid = this.__workersGrid;
+
       let row = 1;
       Object.keys(clusterDetails.scheduler.workers).forEach((workerUrl, idx) => {
         const worker = clusterDetails.scheduler.workers[workerUrl];
         row++;
 
-        const workerIdLabel = new qx.ui.basic.Label("_W-" + idx);
+        const workerIdLabel = new qx.ui.basic.Label("W-" + idx);
         workersGrid.add(workerIdLabel, {
           row,
           column: this.self().GRID_POS.ID

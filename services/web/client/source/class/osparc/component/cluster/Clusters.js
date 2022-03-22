@@ -39,21 +39,13 @@ qx.Class.define("osparc.component.cluster.Clusters", {
             });
           }
           clusters.forEach(cluster => {
-            const params = {
-              url: {
-                "cid": cluster.id
-              }
-            };
-            osparc.data.Resources.fetch("clusters", "details", params)
-              .then(clusterDetails => {
-                this.__populateClusterDetails(cluster.id, clusterDetails);
-              });
+            this.__populateClusterDetails(cluster.id);
           });
         });
     },
 
-    __populateClusterDetails: function(clusterId, clusterDetails) {
-      const clusterDetailsView = new osparc.component.cluster.ClusterDetails(clusterId, clusterDetails);
+    __populateClusterDetails: function(clusterId) {
+      const clusterDetailsView = new osparc.component.cluster.ClusterDetails(clusterId);
       this._add(clusterDetailsView);
     }
   }
