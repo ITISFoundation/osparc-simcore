@@ -175,7 +175,7 @@ class ClustersRepository(BaseRepository):
     ) -> Cluster:
         async with self.db_engine.acquire() as conn:
             clusters_list = await _clusters_from_cluster_ids(conn, {cluster_id})
-            if not clusters_list:
+            if len(clusters_list) != 1:
                 raise ClusterNotFoundError(cluster_id=cluster_id)
             the_cluster = clusters_list[0]
 
