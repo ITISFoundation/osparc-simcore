@@ -2,6 +2,7 @@
 
 """
 import logging
+from pprint import pformat
 from typing import Any, Dict
 
 from aiohttp import web
@@ -114,6 +115,8 @@ def create_application() -> web.Application:
             print("with", WELCOME_GC_MSG, flush=True)
 
     app.on_startup.append(welcome_banner)
+
+    log.debug("Routes in app: \n %s", pformat(app.router.named_resources()))
 
     return app
 

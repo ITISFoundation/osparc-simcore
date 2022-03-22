@@ -251,17 +251,27 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     def public_dict(self) -> Dict[str, Any]:
         """Data publicaly available"""
-        return self.dict(
-            include={
-                "APP_NAME",
-                "API_VERSION",
-                "SC_VCS_URL",
-                "SC_VCS_REF",
-                "SC_BUILD_DATE",
-            },
-            exclude_none=True,
-            by_alias=True,
+
+        data = {"invitation_required": False}
+        if self.WEBSERVER_LOGIN:
+            data[
+                "invitation_required"
+            ] = self.WEBSERVER_LOGIN.LOGIN_REGISTRATION_INVITATION_REQUIRED
+
+        data.update(
+            self.dict(
+                include={
+                    "APP_NAME",
+                    "API_VERSION",
+                    "SC_VCS_URL",
+                    "SC_VCS_REF",
+                    "SC_BUILD_DATE",
+                },
+                exclude_none=True,
+                by_alias=True,
+            )
         )
+        return data
 
     def to_client_statics(self) -> Dict[str, Any]:
         data = self.dict(
