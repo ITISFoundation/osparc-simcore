@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
+import asyncio
 import random
 from typing import AsyncIterable, AsyncIterator
 
@@ -154,6 +155,8 @@ async def dask_spec_local_cluster(
         monkeypatch.setenv("DASK_SCHEDULER_HOST", scheduler_address.host or "invalid")
         monkeypatch.setenv("DASK_SCHEDULER_PORT", f"{scheduler_address.port}")
         yield cluster
+    # force yielding to the event loop so that it properly closes the cluster
+    await asyncio.sleep(0)
 
 
 @pytest.fixture
