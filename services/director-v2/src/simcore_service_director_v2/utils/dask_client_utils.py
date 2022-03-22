@@ -188,7 +188,9 @@ async def test_gateway_endpoint(
             # this does not yet create any connection to the underlying gateway.
             # since using a fct from dask gateway is going to timeout after a long time
             # we bypass the pinging by calling in ourselves with a short timeout
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(
+                transport=httpx.AsyncHTTPTransport(retries=2)
+            ) as client:
                 # try to get something the api shall return fast
                 response = await client.get(
                     f"{endpoint}/api/version", timeout=_PING_TIMEOUT_S
