@@ -41,8 +41,7 @@ class WorkersDict(DictModel[AnyUrl, Worker]):
 
 
 class Scheduler(BaseModel):
-    status: str
-    type: str
+    status: str = Field(..., description="The running status of the scheduler")
     workers: WorkersDict
 
 
@@ -56,8 +55,13 @@ class ClusterGet(Cluster):
 
 
 class ClusterDetailsGet(BaseModel):
-    scheduler: Scheduler
-    dashboard_link: AnyUrl
+    scheduler: Scheduler = Field(
+        ...,
+        description="This contains dask scheduler information given by the underlying dask library",
+    )
+    dashboard_link: AnyUrl = Field(
+        ..., description="Link to this scheduler's dashboard"
+    )
 
 
 class ClusterCreate(BaseCluster):
