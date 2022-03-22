@@ -1807,6 +1807,17 @@ paths:
                                       type: string
                                 - type: array
                                   items: {}
+                        inputsUnits:
+                          type: object
+                          description: values of input unit
+                          patternProperties:
+                            '^[-_a-zA-Z0-9]+$':
+                              type: string
+                              example:
+                                - kilo-meter
+                                - milli-second
+                                - micro-gram
+                                - kelvin
                         inputAccess:
                           description: map with key - access level pairs
                           type: object
@@ -4560,6 +4571,39 @@ paths:
                 $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
           description: Validation Error
       summary: Get Compatible Outputs Given Target Input
+  '/clusters:ping':
+    post:
+      summary: test connectivity with cluster
+      operationId: ping_cluster_handler
+      tags:
+        - cluster
+      requestBody:
+        required: true
+        description: the cluster endpoint/authentication to test
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                endpoint:
+                  type: string
+                  minLength: 1
+                  maxLength: 65536
+                authentication:
+                  description: Dask gateway authentication
+                  anyOf:
+                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/0'
+                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/1'
+                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/2'
+              required:
+                - endpoint
+                - authentication
+              additionalProperties: false
+      responses:
+        '204':
+          description: connectivity is OK
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
   /clusters:
     get:
       summary: List my clusters
@@ -4750,7 +4794,7 @@ paths:
     get:
       tags:
         - cluster
-      summary: Gets one cluster details
+      summary: Gets one cluster
       operationId: get_cluster_handler
       responses:
         '200':
@@ -4841,6 +4885,51 @@ paths:
       responses:
         '204':
           description: cluster has been successfully deleted
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/clusters/{cluster_id}/details':
+    parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - cluster
+      summary: Gets one cluster details
+      operationId: get_cluster_details_handler
+      responses:
+        '200':
+          description: got cluster
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      scheduler:
+                        type: object
+                        description: contains information about the cluster scheduler
+                      cluster:
+                        type: object
+                        description: contains information about the cluster workers
+                      dashboardLink:
+                        type: string
+                        minLength: 1
+                        maxLength: 65536
+                        description: contains the link to the cluster dashboard
+                    required:
+                      - scheduler
+                      - cluster
+                      - dashboardLink
+                  error:
+                    nullable: true
+                    default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /viewers:

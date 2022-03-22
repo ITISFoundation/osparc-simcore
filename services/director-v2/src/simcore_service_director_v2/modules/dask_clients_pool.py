@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import AsyncIterator, Dict, Optional
 
 from fastapi import FastAPI
-from models_library.clusters import Cluster, NoAuthentication
+from models_library.clusters import Cluster, ClusterID, NoAuthentication
 from simcore_postgres_database.models.clusters import ClusterType
 
 from ..core.errors import (
@@ -15,7 +15,6 @@ from ..core.errors import (
     DaskClientAcquisisitonError,
 )
 from ..core.settings import DaskSchedulerSettings
-from ..models.schemas.constants import ClusterID
 from .dask_client import DaskClient, TaskHandlers
 
 logger = logging.getLogger(__name__)

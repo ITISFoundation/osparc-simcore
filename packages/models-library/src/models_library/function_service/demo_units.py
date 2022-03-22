@@ -4,9 +4,11 @@ from .constants import FUNCTION_SERVICE_KEY_PREFIX
 
 
 def build_input(schema):
+    description = schema.pop("description", schema["title"])
+    
     return {
         "label": schema["title"],
-        "description": schema["description"],
+        "description": description,
         "type": "ref_contentSchema",
         "contentSchema": schema,
     }
@@ -28,70 +30,71 @@ META = ServiceDockerData.parse_obj(
             "length": build_input(
                 {
                     "title": "Distance",
-                    "description": "Distance base unit",
                     "minimum": 0,
                     "maximum": 10,
-                    "x_unit": "m",
+                    "x_unit": "meter",
                     "type": "number",
                 }
             ),
             "time": build_input(
                 {
                     "title": "Time",
-                    "description": "Positive time base unit",
+                    "description": "Positive time",
                     "minimum": 0,
-                    "x_unit": "s",
+                    "x_unit": "micro-second",
                     "type": "number",
                 }
             ),
             "current": build_input(
                 {
                     "title": "Current",
-                    "description": "Current base unit",
-                    "x_unit": "A",
+                    "x_unit": "ampere",
                     "type": "number",
                 }
             ),
             "luminosity": build_input(
                 {
                     "title": "Luminosity",
-                    "description": "Luminosity base unit",
-                    "x_unit": "cd",
+                    "x_unit": "candela",
                     "type": "number",
                 }
             ),
             "mass": build_input(
                 {
                     "title": "Mass",
-                    "description": "Positive mass base unit",
+                    "description": "Positive mass",
                     "minimum": 0,
-                    "x_unit": "g",
+                    "x_unit": "micro-gram",
                     "type": "number",
                 }
             ),
             "substance": build_input(
                 {
                     "title": "Substance",
-                    "description": "Substance base unit",
                     "minimum": 0,
-                    "x_unit": "mol",
+                    "x_unit": "milli-mole",
                     "type": "number",
                 }
             ),
             "temperature": build_input(
                 {
                     "title": "Temperature",
-                    "description": "Temperature in Kelvin",
                     "minimum": 0,
-                    "x_unit": "K",
+                    "x_unit": "kelvin",
                     "type": "number",
                 }
             ),
             "angle": build_input(
                 {
                     "title": "Angle",
-                    "description": "Angle in degrees",
-                    "x_unit": "deg",
+                    "x_unit": "degree",
+                    "type": "number",
+                }
+            ),
+            "velocity": build_input(
+                {
+                    "title": "Velo-city",
+                    "x_unit": "meter_per_second",
                     "type": "number",
                 }
             ),
@@ -100,68 +103,68 @@ META = ServiceDockerData.parse_obj(
             "length": build_input(
                 {
                     "title": "Distance",
-                    "description": "Distance converted to millimeter",
-                    "x_unit": "mm",
+                    "description": "Distance value converted",
+                    "x_unit": "milli-meter",
                     "type": "number",
                 }
             ),
             "time": build_input(
                 {
                     "title": "Time",
-                    "description": "Time in minutes",
                     "minimum": 0,
-                    "x_unit": "min",
+                    "x_unit": "minute",
                     "type": "number",
                 }
             ),
             "current": build_input(
                 {
                     "title": "Current",
-                    "description": "Current in milliAmpere",
-                    "x_unit": "mA",
+                    "x_unit": "milli-ampere",
                     "type": "number",
                 }
             ),
             "luminosity": build_input(
                 {
                     "title": "Luminosity",
-                    "description": "Luminosity with the same units",
-                    "x_unit": "cd",
+                    "x_unit": "candela",
                     "type": "number",
                 }
             ),
             "mass": build_input(
                 {
                     "title": "Mass",
-                    "description": "Mass in kg",
                     "minimum": 0,
-                    "x_unit": "kg",
+                    "x_unit": "kilo-gram",
                     "type": "number",
                 }
             ),
             "substance": build_input(
                 {
                     "title": "Substance",
-                    "description": "Substance with no change in units",
                     "minimum": 0,
-                    "x_unit": "mol",
+                    "x_unit": "mole",
                     "type": "number",
                 }
             ),
             "temperature": build_input(
                 {
                     "title": "Temperature",
-                    "description": "Temperature converted to celcius",
                     "minimum": 0,
-                    "x_unit": "°C",
+                    "x_unit": "degree_Celsius",
                     "type": "number",
                 }
             ),
             "angle": build_input(
                 {
                     "title": "Angle",
-                    "description": "Angle converted to radians",
-                    "x_unit": "rad",
+                    "x_unit": "radian",
+                    "type": "number",
+                }
+            ),
+            "velocity": build_input(
+                {
+                    "title": "Velo-city",
+                    "x_unit": "kilometer_per_hour",
                     "type": "number",
                 }
             ),

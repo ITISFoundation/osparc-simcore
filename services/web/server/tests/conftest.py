@@ -46,6 +46,7 @@ pytest_plugins = [
     "pytest_simcore.tmp_path_extra",
     "pytest_simcore.websocket_client",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.hypothesis_type_strategies",
 ]
 
 

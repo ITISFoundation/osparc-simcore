@@ -199,7 +199,7 @@ qx.Class.define("osparc.wrapper.Svg", {
     },
 
     drawNodeUI: function(draw, width, height, radius, x, y) {
-      const nodeUIColor = qx.theme.manager.Color.getInstance().getTheme().colors["window-border"];
+      const nodeUIColor = qx.theme.manager.Color.getInstance().resolve("background-main-3");
       const rect = draw.rect(width, height)
         .fill(nodeUIColor)
         .stroke({

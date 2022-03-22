@@ -5,14 +5,16 @@ import asyncio
 import logging
 from typing import Any, AsyncIterable, AsyncIterator, Dict
 from unittest.mock import AsyncMock, Mock
-from uuid import uuid4
 
 import aiodocker
 import pytest
 from async_asgi_testclient import TestClient
 from async_asgi_testclient.response import Response
 from async_timeout import timeout
-from pydantic import PositiveInt
+from faker import Faker
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.utils_docker import get_localhost_ip
 from settings_library.rabbit import RabbitSettings
@@ -42,20 +44,31 @@ def minimal_configuration(
 
 
 @pytest.fixture
-def node_uuid() -> str:
-    return str(uuid4())
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
+
+
+@pytest.fixture
+def project_id(faker: Faker) -> str:
+    return f"{faker.uuid4()}"
+
+
+@pytest.fixture
+def node_uuid(faker: Faker) -> str:
+    return f"{faker.uuid4()}"
 
 
 @pytest.fixture
 def start_request_data(
-    node_uuid: str,
-    user_id: PositiveInt,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_uuid: NodeID,
     dy_static_file_server_dynamic_sidecar_service: Dict,
     ensure_swarm_and_networks: None,
 ) -> Dict[str, Any]:
     return dict(
         user_id=user_id,
-        project_id=str(uuid4()),
+        project_id=project_id,
         service_uuid=node_uuid,
         service_key=dy_static_file_server_dynamic_sidecar_service["image"]["name"],
         service_version=dy_static_file_server_dynamic_sidecar_service["image"]["tag"],
@@ -202,6 +215,7 @@ async def test_start_status_stop(
     await patch_dynamic_service_url(app=test_client.application, node_uuid=node_uuid)
 
     # awaiting for service to be running
+    data = {}
     async with timeout(SERVICE_IS_READY_TIMEOUT):
         status_is_not_running = True
         while status_is_not_running:
@@ -217,7 +231,7 @@ async def test_start_status_stop(
 
             # give the service some time to keep up
             await asyncio.sleep(5)
-
+    assert "service_state" in data
     assert data["service_state"] == "running"
 
     # finally stopping the service

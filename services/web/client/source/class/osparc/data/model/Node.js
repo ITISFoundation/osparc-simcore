@@ -51,7 +51,6 @@ qx.Class.define("osparc.data.model.Node", {
 
     this.__metaData = {};
     this.__innerNodes = {};
-    this.__inputsDefault = {};
     this.setOutputs({});
 
     this.__inputNodes = [];
@@ -252,8 +251,6 @@ qx.Class.define("osparc.data.model.Node", {
     __inputNodes: null,
     __exposedNodes: null,
     __settingsForm: null,
-    __inputsDefault: null,
-    __inputsDefaultWidget: null,
     __outputWidget: null,
     __posX: null,
     __posY: null,
@@ -317,8 +314,11 @@ qx.Class.define("osparc.data.model.Node", {
       return {};
     },
 
-    getInputsDefault: function() {
-      return this.__inputsDefault;
+    __getInputUnits: function() {
+      if (this.isPropertyInitialized("propsForm") && this.getPropsForm()) {
+        return this.getPropsForm().getChangedXUnits();
+      }
+      return {};
     },
 
     getInput: function(inputId) {
@@ -405,9 +405,6 @@ qx.Class.define("osparc.data.model.Node", {
         if (metaData.name) {
           this.setLabel(metaData.name);
         }
-        if (metaData.inputsDefault) {
-          this.__addInputsDefault(metaData.inputsDefault);
-        }
         if (metaData.inputs) {
           this.__addInputs(metaData.inputs);
         }
@@ -430,9 +427,6 @@ qx.Class.define("osparc.data.model.Node", {
         }
       }
 
-      if (this.__inputsDefaultWidget) {
-        this.__inputsDefaultWidget.populatePortsData();
-      }
       if (this.__outputWidget) {
         this.__outputWidget.populatePortsData();
       }
@@ -454,8 +448,9 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     populateInputOutputData: function(nodeData) {
-      this.setInputData(nodeData.inputs);
-      this.setInputDataAccess(nodeData.inputAccess);
+      this.__setInputData(nodeData.inputs);
+      this.__setInputUnits(nodeData.inputsUnits);
+      this.__setInputDataAccess(nodeData.inputAccess);
       this.setOutputData(nodeData.outputs);
       this.addInputNodes(nodeData.inputNodes);
       this.addOutputNodes(nodeData.outputNodes);
@@ -526,15 +521,6 @@ qx.Class.define("osparc.data.model.Node", {
       };
       this.getStudy().addListener("changeState", () => checkIsPipelineRunning(), this);
       checkIsPipelineRunning();
-    },
-
-    getInputsDefaultWidget: function() {
-      return this.__inputsDefaultWidget;
-    },
-
-    __addInputsDefaultWidgets: function() {
-      const isInputModel = false;
-      this.__inputsDefaultWidget = new osparc.component.widget.NodePorts(this, isInputModel);
     },
 
     /**
@@ -644,12 +630,6 @@ qx.Class.define("osparc.data.model.Node", {
       this.__outputWidget = new osparc.component.widget.NodePorts(this, isInputModel);
     },
 
-    __addInputsDefault: function(inputsDefault) {
-      this.__inputsDefault = inputsDefault;
-
-      this.__addInputsDefaultWidgets();
-    },
-
     __addInputs: function(inputs) {
       this.setInputs(inputs);
 
@@ -663,7 +643,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    setInputData: function(inputs) {
+    __setInputData: function(inputs) {
       if (this.__settingsForm && inputs) {
         const inputData = {};
         const inputLinks = {};
@@ -680,7 +660,13 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    setInputDataAccess: function(inputAccess) {
+    __setInputUnits: function(inputsUnits) {
+      if (this.__settingsForm && inputsUnits) {
+        this.getPropsForm().setInputsUnits(inputsUnits);
+      }
+    },
+
+    __setInputDataAccess: function(inputAccess) {
       if (inputAccess) {
         this.setInputAccess(inputAccess);
         this.getPropsForm().setAccessLevel(inputAccess);
@@ -1297,7 +1283,7 @@ qx.Class.define("osparc.data.model.Node", {
         this.populateWithMetadata();
         this.populateNodeData();
         this.setLabel(label);
-        this.setInputData({
+        this.__setInputData({
           "linspace_start": value,
           "linspace_stop": value,
           "linspace_step": 1
@@ -1313,6 +1299,7 @@ qx.Class.define("osparc.data.model.Node", {
         version: this.getVersion(),
         label: this.getLabel(),
         inputs: this.__getInputData(),
+        inputsUnits: this.__getInputUnits(),
         inputAccess: this.getInputAccess(),
         inputNodes: this.getInputNodes(),
         parent: this.getParentNodeId(),

@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Iterator
 
 import pytest
 import sqlalchemy as sa
@@ -7,7 +7,9 @@ from simcore_postgres_database.models.projects import projects
 
 
 @pytest.fixture
-def update_project_workbench_with_comp_tasks(postgres_db: sa.engine.Engine) -> Callable:
+def update_project_workbench_with_comp_tasks(
+    postgres_db: sa.engine.Engine,
+) -> Iterator[Callable]:
     def updator(project_uuid: str):
         with postgres_db.connect() as con:
             result = con.execute(
