@@ -137,7 +137,7 @@ async def ensure_external_volumes(
     async with docker_client() as client:
         volumes = await asyncio.gather(
             *[
-                client.volumes.create({"Name": volume_name})
+                client.volumes.create({"Labels": {"source": volume_name}})
                 for volume_name in volume_names
             ]
         )

@@ -108,7 +108,7 @@ async def test_expected_paths_and_volumes(
         == f"{mounted_volumes.volume_name_outputs}:{mounted_volumes.outputs_path}"
     )
 
-    assert set(mounted_volumes.get_state_paths_docker_volumes()) == {
+    assert {x async for x in mounted_volumes.get_state_paths_docker_volumes()} == {
         f"{volume_state_path}:{state_path}"
         for volume_state_path, state_path in zip(
             mounted_volumes.volume_name_state_paths(), state_paths_dirs
