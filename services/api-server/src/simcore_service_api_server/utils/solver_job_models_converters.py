@@ -139,6 +139,7 @@ def create_new_project_for_job(
         version=solver.version,
         label=solver.title,
         inputs=solver_inputs,
+        inputsUnits={},
     )
 
     # Ensembles project model so it can be used as input for create_project

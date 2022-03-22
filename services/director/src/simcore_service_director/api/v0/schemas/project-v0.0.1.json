@@ -252,6 +252,21 @@
                 }
               }
             },
+            "inputsUnits": {
+              "type": "object",
+              "description": "values of input unit",
+              "patternProperties": {
+                "^[-_a-zA-Z0-9]+$": {
+                  "type": "string",
+                  "examples": [
+                    "kilo-meter",
+                    "milli-second",
+                    "micro-gram",
+                    "kelvin"
+                  ]
+                }
+              }
+            },
             "inputAccess": {
               "description": "map with key - access level pairs",
               "type": "object",

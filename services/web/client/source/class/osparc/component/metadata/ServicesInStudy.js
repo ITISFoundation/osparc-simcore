@@ -28,21 +28,21 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
     this.base(arguments);
 
     const grid = new qx.ui.layout.Grid(20, 5);
-    grid.setColumnMinWidth(this.self().gridPos.label, 100);
-    grid.setColumnMaxWidth(this.self().gridPos.label, 200);
-    grid.setColumnFlex(this.self().gridPos.label, 1);
-    grid.setColumnAlign(this.self().gridPos.label, "left", "middle");
-    grid.setColumnAlign(this.self().gridPos.name, "left", "middle");
+    grid.setColumnMinWidth(this.self().GRID_POS.LABEL, 100);
+    grid.setColumnMaxWidth(this.self().GRID_POS.LABEL, 200);
+    grid.setColumnFlex(this.self().GRID_POS.LABEL, 1);
+    grid.setColumnAlign(this.self().GRID_POS.LABEL, "left", "middle");
+    grid.setColumnAlign(this.self().GRID_POS.NAME, "left", "middle");
     this._setLayout(grid);
 
-    this.__studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
+    this._studyData = osparc.data.model.Study.deepCloneStudyObject(studyData);
 
-    const servicesInStudy = osparc.utils.Study.extractServices(this.__studyData["workbench"]);
+    const servicesInStudy = osparc.utils.Study.extractServices(this._studyData["workbench"]);
     if (servicesInStudy.length) {
       const store = osparc.store.Store.getInstance();
       store.getServicesOnly()
         .then(services => {
-          this.__services = services;
+          this._services = services;
           this._populateLayout();
         });
     } else {
@@ -55,16 +55,16 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
   },
 
   statics: {
-    gridPos: {
-      infoButton: 0,
-      label: 1,
-      name: 2
+    GRID_POS: {
+      INFO_BUTTON: 0,
+      LABEL: 1,
+      NAME: 2
     }
   },
 
   members: {
-    __studyData: null,
-    __services: null,
+    _studyData: null,
+    _services: null,
 
     _updateStudy: function(fetchButton) {
       if (fetchButton) {
@@ -74,13 +74,13 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
       this.setEnabled(false);
       const params = {
         url: {
-          "studyId": this.__studyData["uuid"]
+          "studyId": this._studyData["uuid"]
         },
-        data: this.__studyData
+        data: this._studyData
       };
       osparc.data.Resources.fetch("studies", "put", params)
         .then(updatedData => {
-          this.__studyData = osparc.data.model.Study.deepCloneStudyObject(updatedData);
+          this._studyData = osparc.data.model.Study.deepCloneStudyObject(updatedData);
           this.fireDataEvent("updateService", updatedData);
           this._populateLayout();
         })
@@ -103,7 +103,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         font: "text-14"
       }), {
         row: 0,
-        column: this.self().gridPos.label
+        column: this.self().GRID_POS.LABEL
       });
     },
 
@@ -119,20 +119,21 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         font: "title-14"
       }), {
         row: 0,
-        column: this.self().gridPos.label
+        column: this.self().GRID_POS.LABEL
       });
       this._add(new qx.ui.basic.Label(this.tr("Name")).set({
         font: "title-14"
       }), {
         row: 0,
-        column: this.self().gridPos.name
+        column: this.self().GRID_POS.NAME
       });
     },
 
     _populateRows: function() {
-      let i=1;
-      const workbench = this.__studyData["workbench"];
+      let i=0;
+      const workbench = this._studyData["workbench"];
       for (const nodeId in workbench) {
+        i++;
         const node = workbench[nodeId];
 
         const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
@@ -146,7 +147,7 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         }, this);
         this._add(infoButton, {
           row: i,
-          column: this.self().gridPos.infoButton
+          column: this.self().GRID_POS.INFO_BUTTON
         });
 
         const labelLabel = new qx.ui.basic.Label(node["label"]).set({
@@ -154,20 +155,22 @@ qx.Class.define("osparc.component.metadata.ServicesInStudy", {
         });
         this._add(labelLabel, {
           row: i,
-          column: this.self().gridPos.label
+          column: this.self().GRID_POS.LABEL
         });
 
-        const nodeMetaData = osparc.utils.Services.getFromObject(this.__services, node["key"], node["version"]);
+        const nodeMetaData = osparc.utils.Services.getFromObject(this._services, node["key"], node["version"]);
+        if (nodeMetaData === null) {
+          osparc.component.message.FlashMessenger.logAs(this.tr("Some service information could not be retrieved"), "WARNING");
+          break;
+        }
         const nameLabel = new qx.ui.basic.Label(nodeMetaData["name"]).set({
           font: "text-14",
           toolTipText: node["key"]
         });
         this._add(nameLabel, {
           row: i,
-          column: this.self().gridPos.name
+          column: this.self().GRID_POS.NAME
         });
-
-        i++;
       }
     }
   }

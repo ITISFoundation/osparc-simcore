@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.ui.form.ContentSchemaField", {
+qx.Class.define("osparc.ui.form.ContentSchemaArray", {
   extend: qx.ui.form.TextField,
 
   construct: function(contentSchema) {

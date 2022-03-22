@@ -66,9 +66,9 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       return new qx.ui.basic.Atom("", icon);
     },
 
-    gridPos: {
-      ...osparc.component.form.renderer.PropFormBase.gridPos,
-      retrieveStatus: Object.keys(osparc.component.form.renderer.PropFormBase.gridPos).length
+    GRID_POS: {
+      ...osparc.component.form.renderer.PropFormBase.GRID_POS,
+      RETRIEVE_STATUS: Object.keys(osparc.component.form.renderer.PropFormBase.GRID_POS).length
     },
 
     isFieldParametrizable: function(field) {
@@ -335,7 +335,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         if (fieldOpts) {
           this._add(fieldOpts, {
             row,
-            column: this.self().gridPos.fieldLinkUnlink
+            column: this.self().GRID_POS.FIELD_LINK_UNLINK
           });
         }
 
@@ -361,7 +361,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
 
     // overridden
     setAccessLevel: function(data) {
-      const entry = this.self().gridPos;
+      const entry = this.self().GRID_POS;
       const disableables = osparc.component.form.renderer.PropFormBase.getDisableables();
       Object.entries(data).forEach(([portId, visibility]) => {
         Object.values(entry).forEach(entryPos => {
@@ -396,7 +396,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         for (let i = this._getChildren().length; i--;) {
           let child = this._getChildren()[i];
           const layoutProps = child.getLayoutProperties();
-          if (layoutProps.column === this.self().gridPos.ctrlField) {
+          if (layoutProps.column === this.self().GRID_POS.CTRL_FIELD) {
             const ctrl = this._form.getControl(child.key);
             if (ctrl && ctrl["link"]) {
               this.__setRetrievingStatus(status, child.key, i, layoutProps.row);
@@ -424,7 +424,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         for (let i=0; i<children.length; i++) {
           let child = children[i];
           const layoutProps = child.getLayoutProperties();
-          if (layoutProps.column === this.self().gridPos.retrieveStatus) {
+          if (layoutProps.column === this.self().GRID_POS.retrieveStatus) {
             this.__setRetrievingStatus(status, portId, i, layoutProps.row);
           }
         }
@@ -455,14 +455,14 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         let child = children[i];
         const layoutProps = child.getLayoutProperties();
         if (layoutProps.row === row &&
-          layoutProps.column === this.self().gridPos.retrieveStatus) {
+          layoutProps.column === this.self().GRID_POS.RETRIEVE_STATUS) {
           this._remove(child);
         }
       }
 
       this._addAt(icon, idx, {
         row: row,
-        column: this.self().gridPos.retrieveStatus
+        column: this.self().GRID_POS.RETRIEVE_STATUS
       });
     },
 
@@ -639,13 +639,13 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
       if (data) {
         const {child, idx} = data;
         const layoutProps = child.getLayoutProperties();
-        if (layoutProps.column === this.self().gridPos.ctrlField) {
+        if (layoutProps.column === this.self().GRID_POS.CTRL_FIELD) {
           this._remove(child);
           const item = this._form.getControl(portId);
 
           this._addAt(item, idx, {
             row: layoutProps.row,
-            column: this.self().gridPos.ctrlField
+            column: this.self().GRID_POS.CTRL_FIELD
           });
 
           return true;
@@ -687,7 +687,7 @@ qx.Class.define("osparc.component.form.renderer.PropForm", {
         ctrlLink.key = portId;
         this._addAt(ctrlLink, idx, {
           row: layoutProps.row,
-          column: this.self().gridPos.ctrlField
+          column: this.self().GRID_POS.CTRL_FIELD
         });
 
         if (portId in this.__linkUnlinkStackMap) {
