@@ -138,3 +138,46 @@ def test_can_connect_no_units_with_units(port_without_unit, port_with_unit):
         to_input=ServiceInput.parse_obj(port_without_unit),
         strict=True,
     )
+
+
+@pytest.mark.parametrize(
+    "from_unit, to_unit, are_compatible",
+    [
+        ("cm", "mm", True),
+        ("m", "cm", True),
+        ("cm", "miles", True),
+        ("miles", "cm", True),
+        ("cm", "degrees", False),
+        ("cm", None, True),
+        (None, "cm", True),
+    ],
+)
+def test_units_compatible(from_unit, to_unit, are_compatible):
+    #
+    # TODO: does it make sense to have a string or bool with x-unit??
+    #
+
+    from_port = create_port_data(
+        {
+            "title": "src",
+            "description": "source port",
+            "type": "number",
+            "x-unit": from_unit,
+        }
+    )
+    to_port = create_port_data(
+        {
+            "title": "dst",
+            "description": "destination port",
+            "type": "number",
+            "x-unit": to_unit,
+        }
+    )
+
+    assert (
+        can_connect(
+            from_output=ServiceOutput.parse_obj(from_port),
+            to_input=ServiceInput.parse_obj(to_port),
+        )
+        == are_compatible
+    )

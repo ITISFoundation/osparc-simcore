@@ -3,6 +3,7 @@ from typing import Optional
 
 from aiohttp import web
 from models_library.services import BaseServiceIOModel, ServiceInput, ServiceOutput
+from pint import PintError, UnitRegistry
 from yarl import URL
 
 from . import catalog_client
@@ -58,7 +59,7 @@ async def reverse_proxy_handler(request: web.Request) -> web.Response:
 ## PORT COMPATIBILITY ---------------------------------
 
 
-def get_unit(port: BaseServiceIOModel) -> str:
+def _get_unit(port: BaseServiceIOModel) -> str:
     unit = port.unit
     if port.property_type == "ref_contentSchema":
         if port.content_schema["type"] in ("object", "array"):
@@ -67,80 +68,73 @@ def get_unit(port: BaseServiceIOModel) -> str:
     return unit
 
 
-def get_type(port: BaseServiceIOModel) -> str:
+def _get_type(port: BaseServiceIOModel) -> str:
     _type = port.property_type
     if port.property_type == "ref_contentSchema":
         _type = port.content_schema["type"]
     return _type
 
 
-def can_convert_units(from_unit, to_unit) -> bool:
-    # TODO: use pint
-    return from_unit == to_unit
+def _can_convert_units(
+    from_unit: Optional[str], to_unit: Optional[str], ureg: UnitRegistry
+) -> bool:
+    try:
+        return ureg.Quantity(from_unit).check(to_unit)
+    except (TypeError, PintError):
+        return False
 
 
 def can_connect(
-    from_output: ServiceOutput, to_input: ServiceInput, *, strict: bool = False
+    from_output: ServiceOutput,
+    to_input: ServiceInput,
+    *,
+    strict: bool = False,
+    units_registry: Optional[UnitRegistry] = None
 ) -> bool:
-    """
-    NOTE: return NotImplemented evaluates to True if not explicitly checked
-    """
-    # TODO: py 3.10 bool | types.NotImplementedType
+    if units_registry is None:
+        units_registry = UnitRegistry()
+
     ResultIfUndefined = False if strict else True
 
-    # compatible units
-    try:
-        from_unit = get_unit(from_output)
-        to_unit = get_unit(to_input)
-    except NotImplementedError:
+    # types check
+    from_type = _get_type(from_output)
+    to_type = _get_type(to_input)
+
+    if any(t in ("object", "array") for t in (from_type, to_type)):
         return ResultIfUndefined
 
-    if strict:
-        ok = can_convert_units(from_unit, to_unit)
-    else:
+    ok = from_type == to_type
+    if not ok:
         ok = (
-            from_output.unit is None
-            or to_input.unit is None
-            or can_convert_units(from_unit, to_unit)
+            # data:  -> data:*/*
+            to_type == "data:*/*"
+            and from_type.startswith("data:")
         )
 
-    if ok:
-        # compatible types
-        # FIXME: see mimetypes examples in property_type
-        #
-        #   "pattern": "^(number|integer|boolean|string|data:([^/\\s,]+/[^/\\s,]+|\\[[^/\\s,]+/[^/\\s,]+(,[^/\\s]+/[^/,\\s]+)*\\]))$",
-        #   "description": "data type expected on this input glob matching for data type is allowed",
-        #   "examples": [
-        #     "number",
-        #     "boolean",
-        #     "data:*/*",
-        #     "data:text/*",
-        #     "data:[image/jpeg,image/png]",
-        #     "data:application/json",
-        #     "data:application/json;schema=https://my-schema/not/really/schema.json",
-        #     "data:application/vnd.ms-excel",
-        #     "data:text/plain",
-        #     "data:application/hdf5",
-        #     "data:application/edu.ucdavis@ceclancy.xyz"
-        #
-        from_type = get_type(from_output)
-        to_type = get_type(to_input)
-
-        if any(t in ("object", "array") for t in (from_type, to_type)):
-            return ResultIfUndefined
-
-        ok = from_type == to_type
-        if not ok:
-            ok = (
-                # data:  -> data:*/*
-                to_type == "data:*/*"
-                and from_type.startswith("data:")
+        if not strict:
+            # NOTE: by default, this is allowed in the UI but not in a more strict plausibility check
+            # data:*/*  -> data:
+            ok |= from_output.property_type == "data:*/*" and to_type.startswith(
+                "data:"
             )
 
-            if not strict:
-                # NOTE: by default, this is allowed in the UI but not in a more strict plausibility check
-                # data:*/*  -> data:
-                ok |= from_output.property_type == "data:*/*" and to_type.startswith(
-                    "data:"
-                )
+    # units check
+    if ok:
+        try:
+            from_unit = _get_unit(from_output)
+            to_unit = _get_unit(to_input)
+        except NotImplementedError:
+            return ResultIfUndefined
+
+        if strict:
+            ok = (from_unit is None and to_unit is None) or _can_convert_units(
+                from_unit, to_unit, units_registry
+            )
+        else:
+            ok = (
+                from_unit is None
+                or to_unit is None
+                or _can_convert_units(from_unit, to_unit, units_registry)
+            )
+
     return ok
