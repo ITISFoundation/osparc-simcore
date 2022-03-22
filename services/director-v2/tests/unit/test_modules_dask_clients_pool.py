@@ -4,10 +4,11 @@
 
 
 from random import choice
-from typing import Any, Callable, Dict, List, get_args
+from typing import Any, AsyncIterator, Callable, Dict, List, get_args
 from unittest import mock
 
 import pytest
+from _dask_helpers import DaskGatewayServer
 from _pytest.monkeypatch import MonkeyPatch
 from faker import Faker
 from models_library.clusters import (
@@ -18,7 +19,9 @@ from models_library.clusters import (
     NoAuthentication,
     SimpleAuthentication,
 )
+from pydantic import SecretStr
 from pytest_mock.plugin import MockerFixture
+from settings_library.utils_cli import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.clusters import ClusterType
 from simcore_service_director_v2.core.application import init_app
 from simcore_service_director_v2.core.errors import (
@@ -202,7 +205,7 @@ def default_scheduler(
     }[request.param]()
 
 
-def test_default_cluster(
+def test_default_cluster_correctly_initialized(
     minimal_dask_config: None, default_scheduler, client: TestClient
 ):
     dask_scheduler_settings = client.app.state.settings.DASK_SCHEDULER
@@ -215,3 +218,51 @@ def test_default_cluster(
 
     assert default_cluster.id == dask_scheduler_settings.DIRECTOR_V2_DEFAULT_CLUSTER_ID
     assert isinstance(default_cluster.authentication, get_args(ClusterAuthentication))
+
+
+@pytest.fixture()
+def default_scheduler_set_as_osparc_gateway(
+    local_dask_gateway_server: DaskGatewayServer, monkeypatch: MonkeyPatch, faker: Faker
+):
+    monkeypatch.setenv(
+        "DIRECTOR_V2_DEFAULT_SCHEDULER_URL", local_dask_gateway_server.proxy_address
+    )
+    monkeypatch.setenv(
+        "DIRECTOR_V2_DEFAULT_SCHEDULER_AUTH",
+        SimpleAuthentication(
+            username=faker.user_name(),
+            password=SecretStr(local_dask_gateway_server.password),
+        ).json(encoder=create_json_encoder_wo_secrets(SimpleAuthentication)),
+    )
+
+
+@pytest.fixture()
+async def dask_clients_pool(
+    minimal_dask_config: None,
+    default_scheduler_set_as_osparc_gateway,
+    client: TestClient,
+) -> AsyncIterator[DaskClientsPool]:
+
+    clients_pool = DaskClientsPool.instance(client.app)
+    assert clients_pool
+    yield clients_pool
+    await clients_pool.delete()
+
+
+async def test_acquire_default_cluster(
+    dask_clients_pool: DaskClientsPool,
+    client: TestClient,
+):
+    assert client.app
+    dask_scheduler_settings = client.app.state.settings.DASK_SCHEDULER
+    default_cluster = DaskClientsPool.default_cluster(dask_scheduler_settings)
+    assert default_cluster
+    async with dask_clients_pool.acquire(default_cluster) as dask_client:
+
+        def just_a_quick_fct(x, y):
+            return x + y
+
+        future = dask_client.dask_subsystem.client.submit(just_a_quick_fct, 12, 23)
+        assert future
+        result = await future.result(timeout=10)
+    assert result == 35

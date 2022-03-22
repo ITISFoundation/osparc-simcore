@@ -290,7 +290,7 @@ class DaskComputationalBackendSettings(BaseCustomSettings):
         description="The scheduler used as default for all computations",
     )
     DIRECTOR_V2_DEFAULT_SCHEDULER_AUTH: ClusterAuthentication = Field(
-        default_factory=NoAuthentication,
+        NoAuthentication(),
         description="If the default scheduler is a osparc-dask-gateway, then this contains the authentication credentials",
     )
     DIRECTOR_V2_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
