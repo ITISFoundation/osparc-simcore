@@ -14,6 +14,7 @@ import pytest
 import sqlalchemy as sa
 from _helpers import PublishedProject, RunningProject
 from models_library.clusters import Cluster
+from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeID
 from pydantic.main import BaseModel
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
