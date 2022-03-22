@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 from aiohttp import web
-from models_library.services import ServiceInput, ServiceOutput
+from models_library.services import BaseServiceIOModel, ServiceInput, ServiceOutput
 from yarl import URL
 
 from . import catalog_client
@@ -55,13 +55,55 @@ async def reverse_proxy_handler(request: web.Request) -> web.Response:
     )
 
 
+## PORT COMPATIBILITY ---------------------------------
+
+
+def get_unit(port: BaseServiceIOModel) -> str:
+    unit = port.unit
+    if port.property_type == "ref_contentSchema":
+        if port.content_schema["type"] in ("object", "array"):
+            raise NotImplementedError
+        unit = port.content_schema.get("x-unit", unit)
+    return unit
+
+
+def get_type(port: BaseServiceIOModel) -> str:
+    _type = port.property_type
+    if port.property_type == "ref_contentSchema":
+        _type = port.content_schema["type"]
+    return _type
+
+
+def can_convert_units(from_unit, to_unit) -> bool:
+    # TODO: use pint
+    return from_unit == to_unit
+
+
 def can_connect(
     from_output: ServiceOutput, to_input: ServiceInput, *, strict: bool = False
 ) -> bool:
-    # FIXME: can_connect is a very very draft version
+    """
+    NOTE: return NotImplemented evaluates to True if not explicitly checked
+    """
+    # TODO: py 3.10 bool | types.NotImplementedType
+    ResultIfUndefined = False if strict else True
 
     # compatible units
-    ok = from_output.unit == to_input.unit
+    try:
+        from_unit = get_unit(from_output)
+        to_unit = get_unit(to_input)
+    except NotImplementedError:
+        return ResultIfUndefined
+
+    if strict:
+        ok = can_convert_units(from_unit, to_unit)
+    else:
+        ok = (
+            from_output.unit is None
+            or to_input.unit is None
+            or can_convert_units(from_unit, to_unit)
+        )
+
     if ok:
         # compatible types
         # FIXME: see mimetypes examples in property_type
@@ -81,19 +123,24 @@ def can_connect(
         #     "data:application/hdf5",
         #     "data:application/edu.ucdavis@ceclancy.xyz"
         #
-        ok = from_output.property_type == to_input.property_type
+        from_type = get_type(from_output)
+        to_type = get_type(to_input)
+
+        if any(t in ("object", "array") for t in (from_type, to_type)):
+            return ResultIfUndefined
+
+        ok = from_type == to_type
         if not ok:
             ok = (
                 # data:  -> data:*/*
-                to_input.property_type == "data:*/*"
-                and from_output.property_type.startswith("data:")
+                to_type == "data:*/*"
+                and from_type.startswith("data:")
             )
 
             if not strict:
                 # NOTE: by default, this is allowed in the UI but not in a more strict plausibility check
                 # data:*/*  -> data:
-                ok |= (
-                    from_output.property_type == "data:*/*"
-                    and to_input.property_type.startswith("data:")
+                ok |= from_output.property_type == "data:*/*" and to_type.startswith(
+                    "data:"
                 )
     return ok
