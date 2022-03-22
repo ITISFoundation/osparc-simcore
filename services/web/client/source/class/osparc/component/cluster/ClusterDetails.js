@@ -195,5 +195,9 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
         });
       });
     }
+  },
+
+  destruct: function() {
+    this.__timer.stop();
   }
 });
