@@ -178,10 +178,10 @@ def default_scheduler_set_as_osparc_gateway(
 ) -> Callable:
     def creator():
         monkeypatch.setenv(
-            "DIRECTOR_V2_DEFAULT_SCHEDULER_URL", local_dask_gateway_server.proxy_address
+            "DIRECTOR_V2_DEFAULT_CLUSTER_URL", local_dask_gateway_server.proxy_address
         )
         monkeypatch.setenv(
-            "DIRECTOR_V2_DEFAULT_SCHEDULER_AUTH",
+            "DIRECTOR_V2_DEFAULT_CLUSTER_AUTH",
             SimpleAuthentication(
                 username=faker.user_name(),
                 password=SecretStr(local_dask_gateway_server.password),
@@ -197,7 +197,7 @@ def default_scheduler_set_as_dask_scheduler(
 ) -> Callable:
     def creator():
         monkeypatch.setenv(
-            "DIRECTOR_V2_DEFAULT_SCHEDULER_URL",
+            "DIRECTOR_V2_DEFAULT_CLUSTER_URL",
             dask_spec_local_cluster.scheduler_address,
         )
 
@@ -229,7 +229,7 @@ def test_default_cluster_correctly_initialized(
     assert default_cluster
     assert (
         default_cluster.endpoint
-        == dask_scheduler_settings.DIRECTOR_V2_DEFAULT_SCHEDULER_URL
+        == dask_scheduler_settings.DIRECTOR_V2_DEFAULT_CLUSTER_URL
     )
 
     assert default_cluster.id == dask_scheduler_settings.DIRECTOR_V2_DEFAULT_CLUSTER_ID

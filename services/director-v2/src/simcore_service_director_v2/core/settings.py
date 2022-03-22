@@ -279,11 +279,11 @@ class DaskComputationalBackendSettings(BaseCustomSettings):
     DIRECTOR_V2_DASK_CLIENT_ENABLED: bool = Field(
         True,
     )
-    DIRECTOR_V2_DEFAULT_SCHEDULER_URL: AnyUrl = Field(
+    DIRECTOR_V2_DEFAULT_CLUSTER_URL: AnyUrl = Field(
         "tcp://dask-scheduler:8786",
         description="The scheduler used as default for all computations",
     )
-    DIRECTOR_V2_DEFAULT_SCHEDULER_AUTH: ClusterAuthentication = Field(
+    DIRECTOR_V2_DEFAULT_CLUSTER_AUTH: ClusterAuthentication = Field(
         NoAuthentication(),
         description="If the default scheduler is a osparc-dask-gateway, then this contains the authentication credentials",
     )

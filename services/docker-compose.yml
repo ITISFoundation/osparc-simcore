@@ -100,7 +100,7 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
-      - DIRECTOR_V2_DEFAULT_SCHEDULER_URL=${DIRECTOR_V2_DEFAULT_SCHEDULER_URL:-tcp://dask-scheduler:8786}
+      - DIRECTOR_V2_DEFAULT_CLUSTER_URL=${DIRECTOR_V2_DEFAULT_CLUSTER_URL:-tcp://dask-scheduler:8786}
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
       - DIRECTOR_SELF_SIGNED_SSL_FILENAME=${DIRECTOR_SELF_SIGNED_SSL_FILENAME}
