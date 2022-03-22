@@ -23,14 +23,18 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
 
     this._setLayout(new qx.ui.layout.VBox(5));
 
-    const grid = new qx.ui.layout.Grid(10, 6);
+    const clusterDetailsLayout = this.__clusterDetailsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+    this._add(clusterDetailsLayout);
+
+    const grid = new qx.ui.layout.Grid(4, 4);
     grid.setColumnFlex(1, 1);
-    const clusterGrid = this.__clusterGrid = new qx.ui.container.Composite(grid);
-    this._add(clusterGrid);
+    const workersGrid = this.__workersGrid = new qx.ui.container.Composite(grid);
+    this._add(workersGrid);
 
     console.log(clusterId, clusterDetails);
+    this.__clusterId = clusterId;
     this.__populateClusterDetails(clusterId, clusterDetails);
-    this.__populateWorkersDetails(clusterId, clusterDetails);
+    this.__populateWorkers(clusterDetails);
   },
 
   statics: {
@@ -59,10 +63,12 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
   },
 
   members: {
-    __clusterGrid: null,
+    __clusterId: null,
+    __clusterDetailsLayout: null,
+    __workersGrid: null,
 
     __populateClusterDetails: function(clusterId, clusterDetails) {
-      const clusterDetailsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+      const clusterDetailsLayout = this.__clusterDetailsLayout;
 
       const clusterIdLabel = new qx.ui.basic.Label("C-" + clusterId);
       clusterDetailsLayout.add(clusterIdLabel);
@@ -72,25 +78,68 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
 
       const clusterLinkLabel = new qx.ui.basic.Label(clusterDetails["dashboard_link"]);
       clusterDetailsLayout.add(clusterLinkLabel);
-
-      this._add(clusterDetailsLayout);
     },
 
-    __populateWorkersDetails: function(clusterId, clusterDetails) {
-      const clusterGrid = this.__clusterGrid;
-      let row = 0;
+    __populateWorkers: function(clusterDetails) {
+      this.__populateWorkersHeader();
+      this.__populateWorkersDetails(clusterDetails);
+    },
+
+    __populateWorkersHeader: function() {
+      const workersGrid = this.__workersGrid;
+      const row = 0;
+      const workerIdLabel = new qx.ui.basic.Label("Cluster ID");
+      workersGrid.add(workerIdLabel, {
+        row,
+        column: this.self().GRID_POS.ID
+      });
+
+      const workerNameLabel = new qx.ui.basic.Label("Name");
+      workersGrid.add(workerNameLabel, {
+        row,
+        column: this.self().GRID_POS.LABEL
+      });
+
+      const workerCPULabel = new qx.ui.basic.Label("CPU");
+      workersGrid.add(workerCPULabel, {
+        row,
+        column: this.self().GRID_POS.CPU
+      });
+
+      const workerRAMLabel = new qx.ui.basic.Label("RAM");
+      workersGrid.add(workerRAMLabel, {
+        row,
+        column: this.self().GRID_POS.RAM
+      });
+
+      const workerGPULabel = new qx.ui.basic.Label("GPU");
+      workersGrid.add(workerGPULabel, {
+        row,
+        column: this.self().GRID_POS.GPU
+      });
+
+      const workerMPILabel = new qx.ui.basic.Label("MPI");
+      workersGrid.add(workerMPILabel, {
+        row,
+        column: this.self().GRID_POS.MPI
+      });
+    },
+
+    __populateWorkersDetails: function(clusterDetails) {
+      const workersGrid = this.__workersGrid;
+      let row = 1;
       Object.keys(clusterDetails.scheduler.workers).forEach((workerUrl, idx) => {
         const worker = clusterDetails.scheduler.workers[workerUrl];
         row++;
 
-        const workerIdLabel = new qx.ui.basic.Label("C-"+clusterId+"_W-" + idx);
-        clusterGrid.add(workerIdLabel, {
+        const workerIdLabel = new qx.ui.basic.Label("_W-" + idx);
+        workersGrid.add(workerIdLabel, {
           row,
           column: this.self().GRID_POS.ID
         });
 
         const workerNameLabel = new qx.ui.basic.Label(worker.name);
-        clusterGrid.add(workerNameLabel, {
+        workersGrid.add(workerNameLabel, {
           row,
           column: this.self().GRID_POS.LABEL
         });
@@ -98,7 +147,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
         const workerCPULabel = new qx.ui.basic.Label().set({
           value: this.self().getMetricsAttribute(worker, "cpu") + "/" + this.self().getResourcesAttribute(worker, "CPU")
         });
-        clusterGrid.add(workerCPULabel, {
+        workersGrid.add(workerCPULabel, {
           row,
           column: this.self().GRID_POS.CPU
         });
@@ -106,7 +155,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
         const workerRAMLabel = new qx.ui.basic.Label().set({
           value: this.self().getMetricsAttribute(worker, "memory") + "/" + this.self().getResourcesAttribute(worker, "RAM")
         });
-        clusterGrid.add(workerRAMLabel, {
+        workersGrid.add(workerRAMLabel, {
           row,
           column: this.self().GRID_POS.RAM
         });
@@ -114,7 +163,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
         const workerGPULabel = new qx.ui.basic.Label().set({
           value: this.self().getMetricsAttribute(worker, "gpu") + "/" + this.self().getResourcesAttribute(worker, "GPU")
         });
-        clusterGrid.add(workerGPULabel, {
+        workersGrid.add(workerGPULabel, {
           row,
           column: this.self().GRID_POS.GPU
         });
@@ -122,7 +171,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
         const workerMPILabel = new qx.ui.basic.Label().set({
           value: this.self().getMetricsAttribute(worker, "mpi") + "/" + this.self().getResourcesAttribute(worker, "MPI")
         });
-        clusterGrid.add(workerMPILabel, {
+        workersGrid.add(workerMPILabel, {
           row,
           column: this.self().GRID_POS.MPI
         });
