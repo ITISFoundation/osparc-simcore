@@ -45,7 +45,11 @@ def setup_diagnostics(
 
     # injects healthcheck
     healthcheck: HealthCheck = app[HealthCheck.__name__]
-    healthcheck.on_healthcheck.append(assert_healthy_app)
+
+    async def _on_healthcheck_async_adapter(app: web.Application):
+        assert_healthy_app(app)
+
+    healthcheck.on_healthcheck.append(_on_healthcheck_async_adapter)
 
     # adds other diagnostic routes: healthcheck, etc
     app.router.add_routes(diagnostics_handlers.routes)

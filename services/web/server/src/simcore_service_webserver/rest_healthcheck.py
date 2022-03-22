@@ -33,8 +33,10 @@ from aiosignal import Signal
 
 from ._constants import APP_SETTINGS_KEY
 
-if TYPE_CHECKING:  # pragma: no cover
-    _HealthCheckSignal = Signal[Callable[[web.Application], Awaitable[None]]]
+_HealthCheckSlot = Callable[[web.Application], Awaitable[None]]
+
+if TYPE_CHECKING:
+    _HealthCheckSignal = Signal[_HealthCheckSlot]
 
 else:
     _HealthCheckSignal = Signal
@@ -53,6 +55,9 @@ class HealthCheck:
 
     @property
     def on_healthcheck(self) -> _HealthCheckSignal:
+        """Signal to define a health check.
+        WARNING: can append **async** slot function. SEE _HealthCheckSlot
+        """
         return self._on_healthcheck
 
     @staticmethod
@@ -79,7 +84,7 @@ class HealthCheck:
 
         assert all(  # nosec
             inspect.iscoroutinefunction(fun) for fun in self._on_healthcheck
-        ), "All appends to on_healthcheck must be coroutines"
+        ), "All Slot functions that append to on_healthcheck must be coroutines. SEE _HealthCheckSlot"
 
         try:
             heath_report: Dict[str, Any] = self.get_app_info(app)

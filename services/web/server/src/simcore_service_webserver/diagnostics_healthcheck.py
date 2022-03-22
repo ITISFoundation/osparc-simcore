@@ -76,12 +76,12 @@ def is_sensing_enabled(app: web.Application):
     return enabled
 
 
-async def assert_healthy_app(app: web.Application) -> None:
-    """Diagnostics function that determins whether
-    current application is healthy based on incidents
-    occured up to now
+def assert_healthy_app(app: web.Application) -> None:
+    """Diagnostics function that determines whether the current
+    application is healthy based on incidents probed since it was started
+    until now.
 
-    raises DiagnosticError if any incient detected
+    raises HealthCheckFailed if any incient detected
     """
     settings = get_plugin_settings(app)
 
