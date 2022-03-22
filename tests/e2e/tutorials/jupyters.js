@@ -83,7 +83,7 @@ async function runTutorial() {
       const frame = await iframeHandles2[i].contentFrame();
       iframes2.push(frame);
     }
-    const jLabIframe = iframes2.find(iframe => iframe._url.endsWith("lab?"));
+    const jLabIframe = iframes2.find(iframe => iframe._url.includes("/lab"));
     await utils.runAllCellsInJupyterLab(tutorial.getPage(), jLabIframe, "input2output.ipynb");
 
     console.log('Waiting for jupyter lab results...');

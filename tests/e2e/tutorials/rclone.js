@@ -42,7 +42,7 @@ async function runTutorial() {
       }
       console.log(iframes);
 
-      const jLabIframe = iframes.find(iframe => iframe._url.endsWith("/lab"));
+      const jLabIframe = iframes.find(iframe => iframe._url.includes("/lab"));
       await utils.runAllCellsInJupyterLab(tutorial.getPage(), jLabIframe, "test_rclone.ipynb");
     }
 
