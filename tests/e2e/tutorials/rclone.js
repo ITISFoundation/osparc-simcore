@@ -48,19 +48,26 @@ async function runTutorial() {
       }
     }
 
-    // wait for some time until all cells are executed
-    tutorial.waitFor(10000, "wait for cell executions");
-
-    // search matches, tw0 per service
+    // search matches, 2 per service
     const findWord = "finished";
-    const matches = await page.evaluate((findWord) => {
-      let matches = 0;
-      while (window.find(findWord)) {
-        matches++;
+    let matches = 0;
+    const iframeHandles = await tutorial.getIframe();
+    for (let i = 0; i < iframeHandles.length; i++) {
+      const frame = await iframeHandles[i].contentFrame();
+      if (frame._url.includes("/lab")) {
+        matches = matches + await frame.evaluate((findWord) => {
+          let matches = 0;
+          while (window.find(findWord)) {
+            matches++;
+          }
+          return matches;
+        }, findWord);
       }
-      return matches;
-    }, findWord);
-    console.log("found", matches)
+    }
+    console.log("found", matches, " 'finished'")
+    if (matches !== nServices*2) {
+      throw("'finished' word not found");
+    }
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
