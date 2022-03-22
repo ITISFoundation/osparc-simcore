@@ -48,6 +48,8 @@ async function runTutorial() {
       }
     }
 
+    await tutorial.waitFor(20000, "wait for the cells to finish"); // ToDo: @GitHK, edit the waiting time
+
     // search matches, 2 per service
     const findWord = "finished";
     let matches = 0;
