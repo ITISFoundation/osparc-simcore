@@ -11,12 +11,7 @@ from simcore_service_director_v2.api.dependencies.scheduler import (
 from simcore_service_director_v2.utils.dask_client_utils import test_gateway_endpoint
 from starlette import status
 
-from ...core.errors import (
-    ClusterAccessForbiddenError,
-    ClusterInvalidOperationError,
-    ClusterNotFoundError,
-    ConfigurationError,
-)
+from ...core.errors import ClusterInvalidOperationError, ConfigurationError
 from ...core.settings import DaskSchedulerSettings
 from ...models.schemas.clusters import (
     ClusterCreate,
@@ -43,21 +38,18 @@ async def _get_cluster_details_with_id(
     dask_clients_pool: DaskClientsPool,
 ) -> ClusterDetailsOut:
     log.debug("Getting details for cluster '%s'", cluster_id)
-    try:
-        cluster: Cluster = dask_clients_pool.default_cluster(settings)
-        if cluster_id != settings.DASK_DEFAULT_CLUSTER_ID:
-            cluster = await clusters_repo.get_cluster(user_id, cluster_id)
-        async with dask_clients_pool.acquire(cluster) as client:
-            scheduler_info = client.dask_subsystem.client.scheduler_info()
-            scheduler_status = client.dask_subsystem.client.status
-            dashboard_link = client.dask_subsystem.client.dashboard_link
-        assert dashboard_link  # nosec
-        return ClusterDetailsOut(
-            scheduler=Scheduler(status=scheduler_status, **scheduler_info),
-            dashboard_link=parse_obj_as(AnyUrl, dashboard_link),
-        )
-    except ClusterNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
+    cluster: Cluster = dask_clients_pool.default_cluster(settings)
+    if cluster_id != settings.DASK_DEFAULT_CLUSTER_ID:
+        cluster = await clusters_repo.get_cluster(user_id, cluster_id)
+    async with dask_clients_pool.acquire(cluster) as client:
+        scheduler_info = client.dask_subsystem.client.scheduler_info()
+        scheduler_status = client.dask_subsystem.client.status
+        dashboard_link = client.dask_subsystem.client.dashboard_link
+    assert dashboard_link  # nosec
+    return ClusterDetailsOut(
+        scheduler=Scheduler(status=scheduler_status, **scheduler_info),
+        dashboard_link=parse_obj_as(AnyUrl, dashboard_link),
+    )
 
 
 @router.post(
@@ -92,9 +84,7 @@ async def get_default_cluster(
     settings: DaskSchedulerSettings = Depends(get_scheduler_settings),
 ):
     assert settings.DASK_DEFAULT_CLUSTER_ID is not None  # nosec
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="dev in progress"
-    )
+    raise NotImplementedError("dev in progress")
 
 
 @router.get(
@@ -108,12 +98,7 @@ async def get_cluster(
     cluster_id: ClusterID,
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
 ):
-    try:
-        return await clusters_repo.get_cluster(user_id, cluster_id)
-    except ClusterNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
-    except ClusterAccessForbiddenError as e:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"{e}") from e
+    return await clusters_repo.get_cluster(user_id, cluster_id)
 
 
 @router.patch(
@@ -130,10 +115,6 @@ async def update_cluster(
 ):
     try:
         return await clusters_repo.update_cluster(user_id, cluster_id, updated_cluster)
-    except ClusterNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
-    except ClusterAccessForbiddenError as e:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"{e}") from e
     except ClusterInvalidOperationError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"{e}") from e
 
@@ -149,12 +130,7 @@ async def delete_cluster(
     cluster_id: ClusterID,
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
 ):
-    try:
-        await clusters_repo.delete_cluster(user_id, cluster_id)
-    except ClusterNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{e}") from e
-    except ClusterAccessForbiddenError as e:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"{e}") from e
+    await clusters_repo.delete_cluster(user_id, cluster_id)
 
 
 @router.get(
