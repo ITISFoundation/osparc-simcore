@@ -112,6 +112,55 @@ def fake_clusters(faker: Faker) -> Callable[[int], List[Cluster]]:
     return creator
 
 
+@pytest.fixture()
+def default_scheduler_set_as_osparc_gateway(
+    local_dask_gateway_server: DaskGatewayServer, monkeypatch: MonkeyPatch, faker: Faker
+) -> Callable:
+    def creator():
+        monkeypatch.setenv(
+            "DIRECTOR_V2_DEFAULT_CLUSTER_URL", local_dask_gateway_server.proxy_address
+        )
+        monkeypatch.setenv(
+            "DIRECTOR_V2_DEFAULT_CLUSTER_AUTH",
+            SimpleAuthentication(
+                username=faker.user_name(),
+                password=SecretStr(local_dask_gateway_server.password),
+            ).json(encoder=create_json_encoder_wo_secrets(SimpleAuthentication)),
+        )
+
+    return creator
+
+
+@pytest.fixture()
+def default_scheduler_set_as_dask_scheduler(
+    dask_spec_local_cluster: SpecCluster, monkeypatch: MonkeyPatch
+) -> Callable:
+    def creator():
+        monkeypatch.setenv(
+            "DIRECTOR_V2_DEFAULT_CLUSTER_URL",
+            dask_spec_local_cluster.scheduler_address,
+        )
+
+    return creator
+
+
+@pytest.fixture(
+    params=[
+        "default_scheduler_set_as_dask_scheduler",
+        "default_scheduler_set_as_osparc_gateway",
+    ]
+)
+def default_scheduler(
+    default_scheduler_set_as_dask_scheduler,
+    default_scheduler_set_as_osparc_gateway,
+    request,
+):
+    {
+        "default_scheduler_set_as_dask_scheduler": default_scheduler_set_as_dask_scheduler,
+        "default_scheduler_set_as_osparc_gateway": default_scheduler_set_as_osparc_gateway,
+    }[request.param]()
+
+
 async def test_dask_clients_pool_acquisition_creates_client_on_demand(
     minimal_dask_config: None,
     mocker: MockerFixture,
@@ -170,55 +219,6 @@ async def test_acquiring_wrong_cluster_raises_exception(
     with pytest.raises(DaskClientAcquisisitonError):
         async with clients_pool.acquire(non_existing_cluster):
             ...
-
-
-@pytest.fixture()
-def default_scheduler_set_as_osparc_gateway(
-    local_dask_gateway_server: DaskGatewayServer, monkeypatch: MonkeyPatch, faker: Faker
-) -> Callable:
-    def creator():
-        monkeypatch.setenv(
-            "DIRECTOR_V2_DEFAULT_CLUSTER_URL", local_dask_gateway_server.proxy_address
-        )
-        monkeypatch.setenv(
-            "DIRECTOR_V2_DEFAULT_CLUSTER_AUTH",
-            SimpleAuthentication(
-                username=faker.user_name(),
-                password=SecretStr(local_dask_gateway_server.password),
-            ).json(encoder=create_json_encoder_wo_secrets(SimpleAuthentication)),
-        )
-
-    return creator
-
-
-@pytest.fixture()
-def default_scheduler_set_as_dask_scheduler(
-    dask_spec_local_cluster: SpecCluster, monkeypatch: MonkeyPatch
-) -> Callable:
-    def creator():
-        monkeypatch.setenv(
-            "DIRECTOR_V2_DEFAULT_CLUSTER_URL",
-            dask_spec_local_cluster.scheduler_address,
-        )
-
-    return creator
-
-
-@pytest.fixture(
-    params=[
-        "default_scheduler_set_as_dask_scheduler",
-        "default_scheduler_set_as_osparc_gateway",
-    ]
-)
-def default_scheduler(
-    default_scheduler_set_as_dask_scheduler,
-    default_scheduler_set_as_osparc_gateway,
-    request,
-):
-    {
-        "default_scheduler_set_as_dask_scheduler": default_scheduler_set_as_dask_scheduler,
-        "default_scheduler_set_as_osparc_gateway": default_scheduler_set_as_osparc_gateway,
-    }[request.param]()
 
 
 def test_default_cluster_correctly_initialized(
