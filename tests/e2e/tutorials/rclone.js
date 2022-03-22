@@ -41,8 +41,9 @@ async function runTutorial() {
         iframes.push(frame);
       }
       console.log(iframes);
+
       const jLabIframe = iframes.find(iframe => iframe._url.endsWith("lab?"));
-      utils.runAllCellsInJupyterLab(tutorial.getPage(), jLabIframe, "input2output.ipynb");
+      utils.runAllCellsInJupyterLab(tutorial.getPage(), jLabIframe, "test_rclone.ipynb");
     }
 
     // wait for some time until all cells are executed

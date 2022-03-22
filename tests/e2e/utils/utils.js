@@ -521,12 +521,21 @@ async function runAllCellsInJupyterLab(page, jLabIframe, notebookName) {
     clickCount: 2
   });
   await this.sleep(5000);
-  // click Run Menu
+
+  // Clear All Outputs
+  // 1. open Edit menu
+  const edirMenuBtnSelector = '#jp-MainMenu > ul > li:nth-child(2)';
+  await this.waitAndClick(page, jLabIframe, edirMenuBtnSelector);
+  // 2. click Celar All Outputs button
+  const clearAllOutputsBtnSelector = 'body > div.lm-Widget.p-Widget.lm-Menu.p-Menu.lm-MenuBar-menu.p-MenuBar-menu > ul > li:nth-child(33)';
+  await this.waitAndClick(page, jLabIframe, clearAllOutputsBtnSelector);
+
+  // Run All
+  // 1. open Run menu
   const mainRunMenuBtnSelector = '#jp-MainMenu > ul > li:nth-child(4)';
   await this.waitAndClick(page, jLabIframe, mainRunMenuBtnSelector)
-
-  // click Run All Cells
-  const mainRunAllBtnSelector = '  body > div.lm-Widget.p-Widget.lm-Menu.p-Menu.lm-MenuBar-menu.p-MenuBar-menu > ul > li:nth-child(17)';
+  // 2. click Run All Cells button
+  const mainRunAllBtnSelector = 'body > div.lm-Widget.p-Widget.lm-Menu.p-Menu.lm-MenuBar-menu.p-MenuBar-menu > ul > li:nth-child(17)';
   await this.waitAndClick(page, jLabIframe, mainRunAllBtnSelector)
 
   console.log('Waiting for jupyter lab results...');
