@@ -64,7 +64,8 @@ def _get_unit(port: BaseServiceIOModel) -> str:
     if port.property_type == "ref_contentSchema":
         if port.content_schema["type"] in ("object", "array"):
             raise NotImplementedError
-        unit = port.content_schema.get("x-unit", unit)
+        # FIXME: x_units has a special format for prefix. tmp direct replace here
+        unit = port.content_schema.get("x_unit", unit).replace("-", "")
     return unit
 
 
