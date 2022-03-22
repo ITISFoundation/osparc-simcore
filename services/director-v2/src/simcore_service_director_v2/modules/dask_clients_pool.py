@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import AsyncIterator, Dict, Optional
 
 from fastapi import FastAPI
-from models_library.clusters import Cluster, ClusterID, NoAuthentication
+from models_library.clusters import Cluster, ClusterID
 from simcore_postgres_database.models.clusters import ClusterType
 
 from ..core.errors import (
@@ -39,7 +39,7 @@ class DaskClientsPool:
             name="Default cluster",
             type=ClusterType.ON_PREMISE,
             endpoint=settings.DIRECTOR_V2_DEFAULT_SCHEDULER_URL,
-            authentication=settings.default_scheduler_authentication,
+            authentication=settings.DIRECTOR_V2_DEFAULT_SCHEDULER_AUTH,
             owner=1,  # FIXME: that is usually the everyone's group... but we do not know nor care about it in director-v2...
         )  # type: ignore
 

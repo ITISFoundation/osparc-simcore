@@ -6,7 +6,6 @@ from functools import cached_property
 from pathlib import Path
 from typing import Dict, Optional, Set
 
-
 from models_library.basic_types import (
     BootModeEnum,
     BuildTargetEnum,
@@ -14,23 +13,9 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
-from models_library.clusters import (
-    ClusterAuthentication,
-    ClusterID,
-    ExternalClusterAuthentication,
-    NoAuthentication,
-    SimpleAuthentication,
-)
+from models_library.clusters import ClusterAuthentication, ClusterID, NoAuthentication
 from models_library.services import SERVICE_NETWORK_RE
-from pydantic import (
-    AnyHttpUrl,
-    AnyUrl,
-    Field,
-    PositiveFloat,
-    PositiveInt,
-    SecretStr,
-    validator,
-)
+from pydantic import AnyHttpUrl, AnyUrl, Field, PositiveFloat, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
@@ -304,46 +289,13 @@ class DaskComputationalBackendSettings(BaseCustomSettings):
         "tcp://dask-scheduler:8786",
         description="The scheduler used as default for all computations",
     )
-    DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME: Optional[str] = Field(
-        None,
-        description="If the default scheduler is a osparc-dask-gateway, then a username/password is compulsory",
+    DIRECTOR_V2_DEFAULT_SCHEDULER_AUTH: ClusterAuthentication = Field(
+        default_factory=NoAuthentication,
+        description="If the default scheduler is a osparc-dask-gateway, then this contains the authentication credentials",
     )
-    DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD: Optional[SecretStr] = Field(
-        None,
-        description="If the default scheduler is a osparc-dask-gateway, then a username/password is compulsory",
-    )
-
     DASK_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
         0, description="This defines the default cluster id when none is defined"
     )
-
-    # @validator(
-    #     "DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME",
-    #     "DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD",
-    # )
-    # @classmethod
-    # def check_gateway_credentials_valid(cls, v, values):
-
-    #     if v is not None and (
-    #         values.get("DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME") is None
-    #         or values.get("DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD")
-    #     ):
-    #         raise ValueError(
-    #             "DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME and DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD must both contain a value or none at all"
-    #         )
-    #     return v
-
-    @cached_property
-    def default_scheduler_authentication(self) -> ClusterAuthentication:
-        if (
-            self.DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME
-            and self.DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD
-        ):
-            return SimpleAuthentication(
-                username=self.DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME,
-                password=self.DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD,
-            )
-        return NoAuthentication()
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):

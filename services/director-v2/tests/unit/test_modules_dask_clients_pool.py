@@ -4,7 +4,7 @@
 
 
 from random import choice
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, get_args
 from unittest import mock
 
 import pytest
@@ -12,6 +12,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from faker import Faker
 from models_library.clusters import (
     Cluster,
+    ClusterAuthentication,
     JupyterHubTokenAuthentication,
     KerberosAuthentication,
     NoAuthentication,
@@ -171,8 +172,6 @@ async def test_acquiring_wrong_cluster_raises_exception(
 def default_scheduler_as_dask_scheduler(monkeypatch: MonkeyPatch, faker: Faker):
     def creator():
         monkeypatch.setenv("DIRECTOR_V2_DEFAULT_SCHEDULER_URL", faker.uri())
-        monkeypatch.setenv("DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME", "null")
-        monkeypatch.setenv("DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD", "null")
 
     return creator
 
@@ -181,8 +180,12 @@ def default_scheduler_as_dask_scheduler(monkeypatch: MonkeyPatch, faker: Faker):
 def default_scheduler_as_dask_gateway(monkeypatch: MonkeyPatch, faker: Faker):
     def creator():
         monkeypatch.setenv("DIRECTOR_V2_DEFAULT_SCHEDULER_URL", faker.uri())
-        monkeypatch.setenv("DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME", faker.user_name())
-        monkeypatch.setenv("DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD", faker.password())
+        monkeypatch.setenv(
+            "DIRECTOR_V2_DEFAULT_SCHEDULER_AUTH",
+            SimpleAuthentication(
+                username=faker.user_name(), password=faker.password()
+            ).json(),
+        )
 
     return creator
 
@@ -211,11 +214,4 @@ def test_default_cluster(
     )
 
     assert default_cluster.id == dask_scheduler_settings.DASK_DEFAULT_CLUSTER_ID
-    if dask_scheduler_settings.DIRECTOR_V2_DEFAULT_SCHEDULER_USERNAME:
-        assert (
-            dask_scheduler_settings.DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD is not None
-        )
-        assert isinstance(default_cluster.authentication, SimpleAuthentication)
-    else:
-        assert dask_scheduler_settings.DIRECTOR_V2_DEFAULT_SCHEDULER_PASSWORD is None
-        assert default_cluster.authentication == NoAuthentication()
+    assert isinstance(default_cluster.authentication, get_args(ClusterAuthentication))
