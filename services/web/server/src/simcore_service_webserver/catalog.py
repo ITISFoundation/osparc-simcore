@@ -6,12 +6,12 @@ from typing import List, Tuple
 
 from aiohttp import web
 from aiohttp.web_routedef import RouteDef
+from pint import UnitRegistry
 from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from servicelib.aiohttp.rest_routing import iter_path_operations
 
 from . import catalog_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY
-from .catalog_client import get_services_for_user_in_product, is_service_responsive
 from .catalog_handlers_utils import reverse_proxy_handler
 
 logger = logging.getLogger(__name__)
@@ -47,6 +47,9 @@ def setup_catalog(app: web.Application):
 
     # reverse proxy to catalog's API
     app.router.add_routes(routes)
+
+    # prepares units registry
+    app[UnitRegistry.__name__] = UnitRegistry()
 
 
 __all__: Tuple[str] = (

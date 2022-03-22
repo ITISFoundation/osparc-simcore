@@ -6,6 +6,7 @@ import orjson
 from aiohttp import web
 from aiohttp.web import Request, RouteTableDef
 from models_library.services import ServiceInput, ServiceOutput
+from pint import UnitRegistry
 from pydantic import ValidationError
 
 from . import catalog_client
@@ -45,6 +46,7 @@ class _RequestContext:
     app: web.Application
     user_id: int
     product_name: str
+    ureg: UnitRegistry
 
     @classmethod
     def create(cls, request: Request) -> "_RequestContext":
@@ -52,6 +54,7 @@ class _RequestContext:
             app=request.app,
             user_id=request[RQT_USERID_KEY],
             product_name=request[RQ_PRODUCT_KEY],
+            ureg=request.app[UnitRegistry.__name__],
         )
 
 
@@ -384,7 +387,7 @@ async def get_compatible_inputs_given_source_output(
     # check
     matches = []
     for key_id, to_input in iter_service_inputs():
-        if can_connect(from_output, to_input):
+        if can_connect(from_output, to_input, units_registry=ctx.ureg):
             matches.append(key_id)
 
     return matches
@@ -449,7 +452,7 @@ async def get_compatible_outputs_given_target_input(
     # check
     matches = []
     for key_id, from_output in iter_service_outputs():
-        if can_connect(from_output, to_input):
+        if can_connect(from_output, to_input, units_registry=ctx.ureg):
             matches.append(key_id)
 
     return matches

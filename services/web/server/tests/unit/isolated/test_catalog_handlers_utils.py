@@ -3,6 +3,7 @@ from typing import Any, Dict
 
 import pytest
 from models_library.services import ServiceInput, ServiceOutput
+from pint import UnitRegistry
 from pydantic import Field, create_model
 from simcore_service_webserver.catalog_handlers_utils import can_connect
 
@@ -36,10 +37,18 @@ def upgrade_port_data(old_port) -> Dict[str, Any]:
     return old_port
 
 
+# FIXTURES -----------------
+
+
+@pytest.fixture(scope="module")
+def ureg():
+    return UnitRegistry()
+
+
 # TESTS -----------------
 
 
-def test_can_connect_issue_442():
+def test_can_connect_for_gh_osparc_issues_442(ureg: UnitRegistry):
     # Reproduces https://github.com/ITISFoundation/osparc-issues/issues/442
     file_picker_outfile = {
         "displayOrder": 2,
@@ -59,22 +68,26 @@ def test_can_connect_issue_442():
     assert can_connect(
         from_output=ServiceOutput.parse_obj(file_picker_outfile),
         to_input=ServiceInput.parse_obj(input_sleeper_input_1),
+        units_registry=ureg,
     )
     assert not can_connect(
         from_output=ServiceOutput.parse_obj(file_picker_outfile),
         to_input=ServiceInput.parse_obj(input_sleeper_input_1),
         strict=True,
+        units_registry=ureg,
     )
 
     # data:text/plain  -> data:*/*
     assert can_connect(
         from_output=ServiceOutput.parse_obj(input_sleeper_input_1),
         to_input=ServiceInput.parse_obj(file_picker_outfile),
+        units_registry=ureg,
     )
     assert can_connect(
         from_output=ServiceOutput.parse_obj(input_sleeper_input_1),
         to_input=ServiceInput.parse_obj(file_picker_outfile),
         strict=True,
+        units_registry=ureg,
     )
 
 
@@ -116,27 +129,33 @@ ports_without_units = [
     itertools.product(ports_without_units, ports_with_units),
     ids=lambda l: l["label"],
 )
-def test_can_connect_no_units_with_units(port_without_unit, port_with_unit):
+def test_can_connect_no_units_with_units(
+    port_without_unit, port_with_unit, ureg: UnitRegistry
+):
     # w/o -> w
     assert can_connect(
         from_output=ServiceOutput.parse_obj(port_without_unit),
         to_input=ServiceInput.parse_obj(port_with_unit),
+        units_registry=ureg,
     )
     assert not can_connect(
         from_output=ServiceOutput.parse_obj(port_without_unit),
         to_input=ServiceInput.parse_obj(port_with_unit),
         strict=True,
+        units_registry=ureg,
     )
 
     # w -> w/o
     assert can_connect(
         from_output=ServiceOutput.parse_obj(port_with_unit),
         to_input=ServiceInput.parse_obj(port_without_unit),
+        units_registry=ureg,
     )
     assert not can_connect(
         from_output=ServiceOutput.parse_obj(port_with_unit),
         to_input=ServiceInput.parse_obj(port_without_unit),
         strict=True,
+        units_registry=ureg,
     )
 
 
@@ -146,13 +165,13 @@ def test_can_connect_no_units_with_units(port_without_unit, port_with_unit):
         ("cm", "mm", True),
         ("m", "cm", True),
         ("cm", "miles", True),
-        ("miles", "cm", True),
+        ("foot", "cm", True),
         ("cm", "degrees", False),
         ("cm", None, True),
         (None, "cm", True),
     ],
 )
-def test_units_compatible(from_unit, to_unit, are_compatible):
+def test_units_compatible(from_unit, to_unit, are_compatible, ureg: UnitRegistry):
     #
     # TODO: does it make sense to have a string or bool with x-unit??
     #
@@ -178,6 +197,7 @@ def test_units_compatible(from_unit, to_unit, are_compatible):
         can_connect(
             from_output=ServiceOutput.parse_obj(from_port),
             to_input=ServiceInput.parse_obj(to_port),
+            units_registry=ureg,
         )
         == are_compatible
     )

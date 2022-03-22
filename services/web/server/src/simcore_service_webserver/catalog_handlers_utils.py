@@ -88,11 +88,9 @@ def can_connect(
     from_output: ServiceOutput,
     to_input: ServiceInput,
     *,
+    units_registry: UnitRegistry,
     strict: bool = False,
-    units_registry: Optional[UnitRegistry] = None
 ) -> bool:
-    if units_registry is None:
-        units_registry = UnitRegistry()
 
     ResultIfUndefined = False if strict else True
 
