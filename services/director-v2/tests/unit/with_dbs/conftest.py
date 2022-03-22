@@ -13,9 +13,7 @@ from uuid import uuid4
 import pytest
 import sqlalchemy as sa
 from _helpers import PublishedProject, RunningProject
-from faker import Faker
 from models_library.clusters import Cluster
-from models_library.projects import ProjectAtDB
 from models_library.projects_nodes_io import NodeID
 from pydantic.main import BaseModel
 from simcore_postgres_database.models.cluster_to_groups import cluster_to_groups
@@ -23,51 +21,12 @@ from simcore_postgres_database.models.clusters import clusters
 from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipeline
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import comp_tasks
-from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.utils.computations import to_node_class
 from simcore_service_director_v2.utils.dask import generate_dask_job_id
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-
-
-@pytest.fixture
-def project(
-    postgres_db: sa.engine.Engine, faker: Faker
-) -> Iterator[Callable[..., ProjectAtDB]]:
-    created_project_ids: List[str] = []
-
-    def creator(user: Dict[str, Any], **overrides) -> ProjectAtDB:
-        project_uuid = uuid4()
-        print(f"Created new project with uuid={project_uuid}")
-        project_config = {
-            "uuid": f"{project_uuid}",
-            "name": faker.name(),
-            "type": ProjectType.STANDARD.name,
-            "description": faker.text(),
-            "prj_owner": user["id"],
-            "access_rights": {"1": {"read": True, "write": True, "delete": True}},
-            "thumbnail": "",
-            "workbench": {},
-        }
-        project_config.update(**overrides)
-        with postgres_db.connect() as con:
-            result = con.execute(
-                projects.insert()
-                .values(**project_config)
-                .returning(sa.literal_column("*"))
-            )
-
-            project = ProjectAtDB.parse_obj(result.first())
-            created_project_ids.append(f"{project.uuid}")
-            return project
-
-    yield creator
-
-    # cleanup
-    with postgres_db.connect() as con:
-        con.execute(projects.delete().where(projects.c.uuid.in_(created_project_ids)))
 
 
 @pytest.fixture
