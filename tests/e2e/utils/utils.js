@@ -524,26 +524,20 @@ async function runAllCellsInJupyterLab(page, jLabIframe, notebookName) {
 
   // Clear All Outputs
   // 1. open Edit menu
-  const edirMenuBtnSelector = '#jp-MainMenu > ul > li:nth-child(2)';
-  await this.waitAndClick(page, jLabIframe, edirMenuBtnSelector);
+  const editMenuBtnSelector = '#jp-MainMenu > ul > li:nth-child(2)';
+  await this.waitAndClick(jLabIframe, editMenuBtnSelector);
   // 2. click Celar All Outputs button
   const clearAllOutputsBtnSelector = 'body > div.lm-Widget.p-Widget.lm-Menu.p-Menu.lm-MenuBar-menu.p-MenuBar-menu > ul > li:nth-child(33)';
-  await this.waitAndClick(page, jLabIframe, clearAllOutputsBtnSelector);
+  await this.waitAndClick(jLabIframe, clearAllOutputsBtnSelector);
 
   // Run All
   // 1. open Run menu
   const mainRunMenuBtnSelector = '#jp-MainMenu > ul > li:nth-child(4)';
-  await this.waitAndClick(page, jLabIframe, mainRunMenuBtnSelector)
+  await this.waitAndClick(jLabIframe, mainRunMenuBtnSelector);
   // 2. click Run All Cells button
   const mainRunAllBtnSelector = 'body > div.lm-Widget.p-Widget.lm-Menu.p-Menu.lm-MenuBar-menu.p-MenuBar-menu > ul > li:nth-child(17)';
-  await this.waitAndClick(page, jLabIframe, mainRunAllBtnSelector)
+  await this.waitAndClick(jLabIframe, mainRunAllBtnSelector);
 
-  console.log('Waiting for jupyter lab results...');
-  const labCompletedInputSelector = 'div.lm-Widget.p-Widget.jp-MainAreaWidget.jp-NotebookPanel.jp-Document.jp-Activity > div:nth-child(2) > div:nth-child(3) > div.lm-Widget.p-Widget.lm-Panel.p-Panel.jp-Cell-inputWrapper > div.lm-Widget.p-Widget.jp-InputArea.jp-Cell-inputArea > div.lm-Widget.p-Widget.jp-InputPrompt.jp-InputArea-prompt';
-  await jLabIframe.waitForFunction('document.querySelector("' + labCompletedInputSelector + '").innerText.match(/\[[0-9]+\]/)');
-  const jLabElement = await jLabIframe.$(labCompletedInputSelector);
-  const jLabVvalue = await jLabIframe.evaluate(el => el.textContent, jLabElement);
-  console.log('Checking results for the jupyter lab cell:', jLabVvalue);
   await this.takeScreenshot(page, "pressRunJLab");
 }
 

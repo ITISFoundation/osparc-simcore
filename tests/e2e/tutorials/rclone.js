@@ -42,8 +42,8 @@ async function runTutorial() {
       }
       console.log(iframes);
 
-      const jLabIframe = iframes.find(iframe => iframe._url.endsWith("lab?"));
-      utils.runAllCellsInJupyterLab(tutorial.getPage(), jLabIframe, "test_rclone.ipynb");
+      const jLabIframe = iframes.find(iframe => iframe._url.endsWith("/lab"));
+      await utils.runAllCellsInJupyterLab(tutorial.getPage(), jLabIframe, "test_rclone.ipynb");
     }
 
     // wait for some time until all cells are executed
@@ -51,14 +51,14 @@ async function runTutorial() {
 
     // search matches, tw0 per service
     const findWord = "finished";
-    const found = await page.evaluate((findWord) => {
+    const matches = await page.evaluate((findWord) => {
       let matches = 0;
       while (window.find(findWord)) {
         matches++;
       }
       return matches;
     }, findWord);
-    console.log("found", found)
+    console.log("found", matches)
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
