@@ -91,11 +91,7 @@ class MountedVolumes:
 
     @staticmethod
     async def _get_bind_path_from_label(label: str) -> Path:
-        """searchies for"""
-        # TODO: using the docker API try and figure out where this is placed
-        # list volume by label
         volume_details = await get_volume_by_label(label=label)
-
         return Path(volume_details["Mountpoint"])
 
     async def get_inputs_docker_volume(self) -> str:
