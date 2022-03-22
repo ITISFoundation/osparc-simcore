@@ -1,7 +1,12 @@
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import itertools
 from typing import Any, Dict
 
 import pytest
+from models_library.function_service import demo_units
 from models_library.services import ServiceInput, ServiceOutput
 from pint import UnitRegistry
 from pydantic import Field, create_model
@@ -118,7 +123,7 @@ ports_without_units = [
             "title": "port-W/",
             "description": "port w/ unit",
             "type": "integer",
-            "x-unit": "cm",  # <---
+            "x_unit": "cm",  # <---
         }
     ),
 ]
@@ -173,7 +178,7 @@ def test_can_connect_no_units_with_units(
 )
 def test_units_compatible(from_unit, to_unit, are_compatible, ureg: UnitRegistry):
     #
-    # TODO: does it make sense to have a string or bool with x-unit??
+    # TODO: does it make sense to have a string or bool with x_unit??
     #
 
     from_port = create_port_data(
@@ -181,7 +186,7 @@ def test_units_compatible(from_unit, to_unit, are_compatible, ureg: UnitRegistry
             "title": "src",
             "description": "source port",
             "type": "number",
-            "x-unit": from_unit,
+            "x_unit": from_unit,
         }
     )
     to_port = create_port_data(
@@ -189,7 +194,7 @@ def test_units_compatible(from_unit, to_unit, are_compatible, ureg: UnitRegistry
             "title": "dst",
             "description": "destination port",
             "type": "number",
-            "x-unit": to_unit,
+            "x_unit": to_unit,
         }
     )
 
@@ -197,6 +202,32 @@ def test_units_compatible(from_unit, to_unit, are_compatible, ureg: UnitRegistry
         can_connect(
             from_output=ServiceOutput.parse_obj(from_port),
             to_input=ServiceInput.parse_obj(to_port),
+            units_registry=ureg,
+        )
+        == are_compatible
+    )
+
+
+@pytest.mark.parametrize(
+    "from_port,to_port",
+    itertools.product(
+        demo_units.META.outputs.values(), demo_units.META.inputs.values()
+    ),
+    ids=lambda p: p.label,
+)
+def test_can_connect_with_units(
+    from_port: ServiceOutput, to_port: ServiceInput, ureg: UnitRegistry
+):
+    # WARNING: assumes the following convention for the fixture data:
+    #   - two ports are compatible if they have the same title
+    are_compatible = (
+        from_port.content_schema["title"] == to_port.content_schema["title"]
+    )
+
+    assert (
+        can_connect(
+            from_output=from_port,
+            to_input=to_port,
             units_registry=ureg,
         )
         == are_compatible

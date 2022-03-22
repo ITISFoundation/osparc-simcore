@@ -64,8 +64,10 @@ def _get_unit(port: BaseServiceIOModel) -> str:
     if port.property_type == "ref_contentSchema":
         if port.content_schema["type"] in ("object", "array"):
             raise NotImplementedError
-        # FIXME: x_units has a special format for prefix. tmp direct replace here
-        unit = port.content_schema.get("x_unit", unit).replace("-", "")
+        unit = port.content_schema.get("x_unit", unit)
+        if unit:
+            # FIXME: x_units has a special format for prefix. tmp direct replace here
+            unit = unit.replace("-", "")
     return unit
 
 
@@ -79,6 +81,8 @@ def _get_type(port: BaseServiceIOModel) -> str:
 def _can_convert_units(
     from_unit: Optional[str], to_unit: Optional[str], ureg: UnitRegistry
 ) -> bool:
+    # TODO: optimize by caching?  ureg already caches?
+    # TODO: symmetric
     try:
         return ureg.Quantity(from_unit).check(to_unit)
     except (TypeError, PintError):
