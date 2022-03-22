@@ -15,7 +15,7 @@ from ...core.errors import ClusterInvalidOperationError, ConfigurationError
 from ...core.settings import DaskSchedulerSettings
 from ...models.schemas.clusters import (
     ClusterCreate,
-    ClusterDetailsOut,
+    ClusterDetailsGet,
     ClusterGet,
     ClusterPatch,
     ClusterPingIn,
@@ -36,7 +36,7 @@ async def _get_cluster_details_with_id(
     cluster_id: ClusterID,
     clusters_repo: ClustersRepository,
     dask_clients_pool: DaskClientsPool,
-) -> ClusterDetailsOut:
+) -> ClusterDetailsGet:
     log.debug("Getting details for cluster '%s'", cluster_id)
     cluster: Cluster = dask_clients_pool.default_cluster(settings)
     if cluster_id != settings.DASK_DEFAULT_CLUSTER_ID:
@@ -46,7 +46,7 @@ async def _get_cluster_details_with_id(
         scheduler_status = client.dask_subsystem.client.status
         dashboard_link = client.dask_subsystem.client.dashboard_link
     assert dashboard_link  # nosec
-    return ClusterDetailsOut(
+    return ClusterDetailsGet(
         scheduler=Scheduler(status=scheduler_status, **scheduler_info),
         dashboard_link=parse_obj_as(AnyUrl, dashboard_link),
     )
@@ -136,7 +136,7 @@ async def delete_cluster(
 @router.get(
     "/default/details",
     summary="Returns the cluster details",
-    response_model=ClusterDetailsOut,
+    response_model=ClusterDetailsGet,
     status_code=status.HTTP_200_OK,
 )
 async def get_default_cluster_details(
@@ -158,7 +158,7 @@ async def get_default_cluster_details(
 @router.get(
     "/{cluster_id}/details",
     summary="Returns the cluster details",
-    response_model=ClusterDetailsOut,
+    response_model=ClusterDetailsGet,
     status_code=status.HTTP_200_OK,
 )
 async def get_cluster_details(

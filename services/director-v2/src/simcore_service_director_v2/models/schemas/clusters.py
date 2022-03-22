@@ -55,7 +55,7 @@ class ClusterGet(Cluster):
         allow_population_by_field_name = True
 
 
-class ClusterDetailsOut(BaseModel):
+class ClusterDetailsGet(BaseModel):
     scheduler: Scheduler
     dashboard_link: AnyUrl
 
