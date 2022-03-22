@@ -1,6 +1,6 @@
 """ Service healthcheck
 
-From https://docs.docker.com/engine/reference/builder/#healthcheck
+This is how the docker healthcheck works:
 
     --interval=DURATION (default: 30s)
     --timeout=DURATION (default: 30s)
@@ -20,6 +20,7 @@ From https://docs.docker.com/engine/reference/builder/#healthcheck
     However, if a health check succeeds during the *start period*, the container is considered started and all consecutive
     failures will be counted towards the maximum number of retries.
 
+Taken from https://docs.docker.com/engine/reference/builder/#healthcheck
 """
 
 
@@ -33,10 +34,10 @@ from aiosignal import Signal
 from ._constants import APP_SETTINGS_KEY
 
 if TYPE_CHECKING:  # pragma: no cover
-    _HeathCheckSignal = Signal[Callable[[web.Application], Awaitable[None]]]
+    _HealthCheckSignal = Signal[Callable[[web.Application], Awaitable[None]]]
 
 else:
-    _HeathCheckSignal = Signal
+    _HealthCheckSignal = Signal
 
 
 class HealthCheckFailed(RuntimeError):
@@ -46,12 +47,12 @@ class HealthCheckFailed(RuntimeError):
     """
 
 
-class HeathCheck:
+class HealthCheck:
     def __init__(self):
-        self._on_healthcheck = Signal(owner=self)  # type: _HeathCheckSignal
+        self._on_healthcheck = Signal(owner=self)  # type: _HealthCheckSignal
 
     @property
-    def on_healthcheck(self) -> _HeathCheckSignal:
+    def on_healthcheck(self) -> _HealthCheckSignal:
         return self._on_healthcheck
 
     @staticmethod

@@ -1,4 +1,4 @@
-""" Basic diagnostic handles to the rest API for operations
+""" Basic healthckeck and configuration handles to the rest API
 
 
 """
@@ -7,9 +7,9 @@ import logging
 from aiohttp import web
 from servicelib.aiohttp.rest_utils import extract_and_validate
 
-from ._meta import __version__, api_version_prefix
+from ._meta import api_version_prefix
 from .application_settings import APP_SETTINGS_KEY
-from .rest_healthcheck import HealthCheckFailed, HeathCheck
+from .rest_healthcheck import HealthCheck, HealthCheckFailed
 
 log = logging.getLogger(__name__)
 
@@ -18,8 +18,20 @@ routes = web.RouteTableDef()
 
 @routes.get(f"/{api_version_prefix}/health", name="check_health")
 async def check_health(request: web.Request):
+    """Status probe
 
-    healthcheck: HeathCheck = request.app[HeathCheck.__name__]
+
+
+    TODO: read!!
+
+    **Liveness**
+    Many applications running for long periods of time eventually transition to broken states,
+    and cannot recover except by being restarted. Kubernetes provides liveness probes to detect and remedy such situations.
+
+
+    SEE https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+    """
+    healthcheck: HealthCheck = request.app[HealthCheck.__name__]
 
     if timeout := request.app[APP_SETTINGS_KEY].SC_HEALTHCHECK_TIMEOUT:
         # Let's cancel check if goes 10% over healtcheck timeout
@@ -36,19 +48,17 @@ async def check_health(request: web.Request):
 
 
 @routes.get(f"/{api_version_prefix}/", name="check_running")
-async def check_running(_request: web.Request):
-    #
-    # - This entry point is used as a fast way
-    #   to check that the service is still running
-    # - Do not do add any expensive computatio here
-    # - Healthcheck has been moved to diagnostics module
-    #
-    health_report = {
-        "name": __name__.split(".")[0],
-        "version": f"{__version__}",
-        "status": "SERVICE_RUNNING",
-        "api_version": f"{__version__}",
-    }
+async def check_running(request: web.Request):
+    """Live probe
+
+    - This entry point is used as a fast way
+       to check that the service is still running
+    - Do not do add any expensive computatio here
+    """
+    healthcheck: HealthCheck = request.app[HealthCheck.__name__]
+
+    health_report = healthcheck.get_app_info()
+    health_report["status"] = "SERVICE_RUNNING"
     return web.json_response(data={"data": health_report})
 
 

@@ -15,7 +15,7 @@ from .diagnostics_healthcheck import (
 )
 from .diagnostics_monitoring import setup_monitoring
 from .diagnostics_settings import DiagnosticsSettings, get_plugin_settings
-from .rest import HeathCheck
+from .rest import HealthCheck
 
 log = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ def setup_diagnostics(
     setup_monitoring(app)
 
     # injects healthcheck
-    healthcheck: HeathCheck = app[HeathCheck.__name__]
+    healthcheck: HealthCheck = app[HealthCheck.__name__]
     healthcheck.on_healthcheck.append(assert_healthy_app)
 
     # adds other diagnostic routes: healthcheck, etc

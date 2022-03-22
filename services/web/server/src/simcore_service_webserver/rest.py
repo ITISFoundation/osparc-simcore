@@ -20,7 +20,7 @@ from servicelib.aiohttp.rest_middlewares import (
 from . import rest_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY, APP_SETTINGS_KEY
 from ._meta import API_VTAG, api_version_prefix
-from .rest_healthcheck import HeathCheck
+from .rest_healthcheck import HealthCheck
 from .rest_settings import RestSettings, get_plugin_settings
 from .rest_utils import get_openapi_specs_path, load_openapi_specs
 
@@ -64,9 +64,9 @@ def setup_rest(app: web.Application):
         )
 
     # defines healthcheck mechanism
-    healthcheck = HeathCheck()
+    healthcheck = HealthCheck()
     healthcheck.on_healthcheck.append(_log_check)
-    app[HeathCheck.__name__] = healthcheck
+    app[HealthCheck.__name__] = healthcheck
 
     # basic routes
     app.add_routes(rest_handlers.routes)
