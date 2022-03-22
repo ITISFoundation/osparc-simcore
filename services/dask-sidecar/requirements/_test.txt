@@ -116,7 +116,7 @@ pyparsing==2.4.7
     #   -c requirements/_base.txt
     #   -c requirements/_packages.txt
     #   packaging
-pytest==7.0.1
+pytest==7.1.1
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp

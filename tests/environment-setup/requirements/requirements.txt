@@ -53,7 +53,7 @@ pydantic==1.9.0
     #   -r requirements/requirements.in
 pyparsing==3.0.7
     # via packaging
-pytest==7.0.0
+pytest==7.1.1
     # via
     #   -r requirements/requirements.in
     #   pytest-aiohttp
