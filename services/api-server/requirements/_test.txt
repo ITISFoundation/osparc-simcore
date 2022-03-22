@@ -180,7 +180,7 @@ pytest==6.2.5
     #   pytest-cov
     #   pytest-docker
     #   pytest-mock
-pytest-asyncio==0.18.1
+pytest-asyncio==0.18.2
     # via -r requirements/_test.in
 pytest-cov==3.0.0
     # via -r requirements/_test.in

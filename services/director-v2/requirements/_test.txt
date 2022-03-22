@@ -268,7 +268,7 @@ pytest==6.2.5
     #   pytest-xdist
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
-pytest-asyncio==0.18.1
+pytest-asyncio==0.18.2
     # via pytest-aiohttp
 pytest-cov==3.0.0
     # via -r requirements/_test.in
