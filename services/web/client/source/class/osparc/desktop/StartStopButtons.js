@@ -136,6 +136,9 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
         itemDefault.id = 0;
         this.__clustersSelectBox.add(itemDefault);
         clusters.forEach(cluster => {
+          if (!("name" in cluster)) {
+            return;
+          }
           const item = new qx.ui.form.ListItem().set({
             label: cluster["name"],
             toolTipText: cluster["type"] + "\n" + cluster["description"],
