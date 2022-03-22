@@ -41,6 +41,7 @@ pytest_plugins = [
     "pytest_simcore.simcore_storage_service",
     "pytest_simcore.tmp_path_extra",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.db_entries_mocks",
 ]
 
 logger = logging.getLogger(__name__)

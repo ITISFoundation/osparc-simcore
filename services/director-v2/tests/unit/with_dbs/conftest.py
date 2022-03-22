@@ -12,7 +12,7 @@ from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
-from _helpers import PublishedProject, RunningProject  # type: ignore
+from _helpers import PublishedProject, RunningProject
 from faker import Faker
 from models_library.clusters import Cluster
 from models_library.projects import ProjectAtDB
@@ -24,49 +24,12 @@ from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipel
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import ProjectType, projects
-from simcore_postgres_database.models.users import UserRole, UserStatus, users
 from simcore_service_director_v2.models.domains.comp_pipelines import CompPipelineAtDB
 from simcore_service_director_v2.models.domains.comp_runs import CompRunsAtDB
 from simcore_service_director_v2.models.domains.comp_tasks import CompTaskAtDB, Image
 from simcore_service_director_v2.utils.computations import to_node_class
 from simcore_service_director_v2.utils.dask import generate_dask_job_id
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-
-
-@pytest.fixture()
-def registered_user(
-    postgres_db: sa.engine.Engine, faker: Faker
-) -> Iterator[Callable[..., Dict]]:
-    created_user_ids = []
-
-    def creator(**user_kwargs) -> Dict[str, Any]:
-        with postgres_db.connect() as con:
-            # removes all users before continuing
-            user_config = {
-                "id": len(created_user_ids) + 1,
-                "name": faker.name(),
-                "email": faker.email(),
-                "password_hash": faker.password(),
-                "status": UserStatus.ACTIVE,
-                "role": UserRole.USER,
-            }
-            user_config.update(user_kwargs)
-
-            con.execute(
-                users.insert().values(user_config).returning(sa.literal_column("*"))
-            )
-            # this is needed to get the primary_gid correctly
-            result = con.execute(
-                sa.select([users]).where(users.c.id == user_config["id"])
-            )
-            user = result.first()
-            created_user_ids.append(user["id"])
-        return dict(user)
-
-    yield creator
-
-    with postgres_db.connect() as con:
-        con.execute(users.delete().where(users.c.id.in_(created_user_ids)))
 
 
 @pytest.fixture
