@@ -9,13 +9,11 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator, List, Optional
 
-import aiodocker
 import aiofiles
 import httpx
 import yaml
 from aiofiles import os as aiofiles_os
 from async_timeout import timeout
-from fastapi import HTTPException
 from settings_library.docker_registry import RegistrySettings
 from starlette import status
 from tenacity._asyncio import AsyncRetrying
@@ -106,18 +104,6 @@ async def write_to_tmp_file(file_contents: str) -> AsyncGenerator[Path, None]:
         yield file_path
     finally:
         await aiofiles_os.remove(file_path)
-
-
-@asynccontextmanager
-async def docker_client() -> AsyncGenerator[aiodocker.Docker, None]:
-    docker = aiodocker.Docker()
-    try:
-        yield docker
-    except aiodocker.exceptions.DockerError as error:
-        logger.debug("An unexpected Docker error occurred", stack_info=True)
-        raise HTTPException(error.status, detail=error.message) from error
-    finally:
-        await docker.close()
 
 
 async def async_command(

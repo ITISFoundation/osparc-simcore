@@ -1,12 +1,14 @@
 import os
 from functools import cached_property
 from pathlib import Path
-from typing import Generator, List, Optional
+from typing import AsyncGenerator, Generator, List, Optional
 
 from simcore_service_dynamic_sidecar.core.settings import (
     DynamicSidecarSettings,
     get_settings,
 )
+
+from ..core.docker_utils import get_volume_by_label
 
 DY_VOLUMES = Path("/dy-volumes")
 
@@ -87,17 +89,29 @@ class MountedVolumes:
         self.disk_outputs_path  # pylint:disable= pointless-statement
         set(self.disk_state_paths())
 
-    def get_inputs_docker_volume(self) -> str:
-        return f"{self.volume_name_inputs}:{self.inputs_path}"
+    @staticmethod
+    async def _get_bind_path_from_label(label: str) -> Path:
+        """searchies for"""
+        # TODO: using the docker API try and figure out where this is placed
+        # list volume by label
+        volume_details = await get_volume_by_label(label=label)
 
-    def get_outputs_docker_volume(self) -> str:
-        return f"{self.volume_name_outputs}:{self.outputs_path}"
+        return Path(volume_details["Mountpoint"])
 
-    def get_state_paths_docker_volumes(self) -> Generator[str, None, None]:
+    async def get_inputs_docker_volume(self) -> str:
+        bind_path: Path = await self._get_bind_path_from_label(self.volume_name_inputs)
+        return f"{bind_path}:{self.inputs_path}"
+
+    async def get_outputs_docker_volume(self) -> str:
+        bind_path: Path = await self._get_bind_path_from_label(self.volume_name_outputs)
+        return f"{bind_path}:{self.outputs_path}"
+
+    async def get_state_paths_docker_volumes(self) -> AsyncGenerator[str, None]:
         for volume_state_path, state_path in zip(
             self.volume_name_state_paths(), self.state_paths
         ):
-            yield f"{volume_state_path}:{state_path}"
+            bind_path: Path = await self._get_bind_path_from_label(volume_state_path)
+            yield f"{bind_path}:{state_path}"
 
 
 def setup_mounted_fs() -> MountedVolumes:

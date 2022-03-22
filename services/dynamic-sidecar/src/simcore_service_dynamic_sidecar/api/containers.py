@@ -32,10 +32,11 @@ from ..core.dependencies import (
     get_shared_store,
 )
 from ..core.docker_logs import start_log_fetching, stop_log_fetching
+from ..core.docker_utils import docker_client
 from ..core.rabbitmq import RabbitMQ
 from ..core.settings import DynamicSidecarSettings
 from ..core.shared_handlers import remove_the_compose_spec, write_file_and_run_command
-from ..core.utils import assemble_container_names, docker_client
+from ..core.utils import assemble_container_names
 from ..core.validation import (
     InvalidComposeSpec,
     parse_compose_spec,

@@ -20,11 +20,11 @@ from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
 from simcore_service_dynamic_sidecar.core import utils
 from simcore_service_dynamic_sidecar.core.application import assemble_application
+from simcore_service_dynamic_sidecar.core.docker_utils import docker_client
 from simcore_service_dynamic_sidecar.core.settings import DynamicSidecarSettings
 from simcore_service_dynamic_sidecar.core.shared_handlers import (
     write_file_and_run_command,
 )
-from simcore_service_dynamic_sidecar.core.utils import docker_client
 from simcore_service_dynamic_sidecar.models.domains.shared_store import SharedStore
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
