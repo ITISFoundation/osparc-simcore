@@ -60,6 +60,11 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       preferencesWindow.open();
     },
 
+    openClusters: function() {
+      const clusters = new osparc.component.cluster.Clusters();
+      osparc.ui.window.Window.popUpInWindow(clusters, this.tr("Clusters"), 500, 800);
+    },
+
     openGithubIssueInfoDialog: function() {
       const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
         qx.locale.Manager.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
@@ -124,6 +129,11 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           osparc.utils.Utils.setIdToWidget(control, "userMenuPreferencesBtn");
           this.getMenu().add(control);
           break;
+        case "clusters":
+          control = new qx.ui.menu.Button(this.tr("Clusters"));
+          control.addListener("execute", () => osparc.navigation.UserMenuButton.openClusters(), this);
+          this.getMenu().add(control);
+          break;
         case "about":
           control = new qx.ui.menu.Button(this.tr("About"));
           control.addListener("execute", () => osparc.About.getInstance().open());
@@ -142,6 +152,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     populateSimpleMenu: function() {
       this.getChildControl("preferences");
+      this.getChildControl("clusters");
       this.getMenu().addSeparator();
       this.getChildControl("about");
       this.getMenu().addSeparator();
@@ -154,6 +165,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           this.__serverStatics = statics;
           this.getChildControl("theme-switcher");
           this.getChildControl("preferences");
+          this.getChildControl("clusters");
           this.getMenu().addSeparator();
           this.__addManualsToMenu();
           this.__addFeedbacksToMenu();
