@@ -33,13 +33,9 @@ async def check_health(request: web.Request):
     """
     healthcheck: HealthCheck = request.app[HealthCheck.__name__]
 
-    if timeout := request.app[APP_SETTINGS_KEY].SC_HEALTHCHECK_TIMEOUT:
-        # Let's cancel check if goes 10% over healtcheck timeout
-        timeout *= 1.1
-        log.debug("Healthcheck %s", f"{timeout=}")
-
     try:
-        health_report = await healthcheck.run(request.app, timeout=timeout)
+        # if slots append get too delayed, just timeout
+        health_report = await healthcheck.run(request.app)
     except HealthCheckFailed as err:
         log.warning("%s", err)
         raise web.HTTPServiceUnavailable(reason="unhealthy")

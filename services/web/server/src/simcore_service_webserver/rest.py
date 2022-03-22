@@ -59,8 +59,8 @@ def setup_rest(app: web.Application):
             f"__version__.api_version_prefix {api_version_prefix} does not fit openapi.yml version {specs.info.version}"
         )
 
-    # defines healthcheck mechanism
-    app[HealthCheck.__name__] = HealthCheck()
+    app[HealthCheck.__name__] = HealthCheck(app)
+    log.debug("Setup %s", f"{app[HealthCheck.__name__]=}")
 
     # basic routes
     app.add_routes(rest_handlers.routes)

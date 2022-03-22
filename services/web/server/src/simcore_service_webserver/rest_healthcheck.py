@@ -50,8 +50,17 @@ class HealthCheckFailed(RuntimeError):
 
 
 class HealthCheck:
-    def __init__(self):
+    def __init__(self, app: web.Application):
         self._on_healthcheck = Signal(owner=self)  # type: _HealthCheckSignal
+
+        # The docker engine healthcheck: If a single run of the check takes longer than *timeout* seconds
+        # then the check is considered to have failed. Therefore there is no need to continue run
+        self._timeout: Optional[int] = app[APP_SETTINGS_KEY].SC_HEALTHCHECK_TIMEOUT
+
+    def __repr__(self):
+        return "<HealthCheck timeout={}, #on_healthcheck-slots={} {!r}>".format(
+            self._timeout, len(self._on_healthcheck), list(self)
+        )
 
     @property
     def on_healthcheck(self) -> _HealthCheckSignal:
@@ -70,15 +79,11 @@ class HealthCheck:
             "api_version": settings.API_VERSION,
         }
 
-    async def run(
-        self, app: web.Application, *, timeout: Optional[float] = None
-    ) -> Dict[str, Any]:
+    async def run(self, app: web.Application) -> Dict[str, Any]:
         """Runs all registered checks to determine the service health.
 
-        timeout in secs
         can raise HealthCheckFailed
         """
-
         # Ensures no more signals append after first run
         self._on_healthcheck.freeze()
 
@@ -91,7 +96,9 @@ class HealthCheck:
 
             # TODO: every signal could return some info on the health on each part
             # that is appended on heath_report
-            await asyncio.wait_for(self._on_healthcheck.send(app), timeout=timeout)
+            await asyncio.wait_for(
+                self._on_healthcheck.send(app), timeout=self._timeout
+            )
 
             return heath_report
 
