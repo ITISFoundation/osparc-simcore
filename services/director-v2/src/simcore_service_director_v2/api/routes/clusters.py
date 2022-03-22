@@ -191,7 +191,7 @@ async def test_cluster_connection(
             endpoint=cluster_auth.endpoint, authentication=cluster_auth.authentication
         )
 
-    except (ConfigurationError) as e:
+    except ConfigurationError as e:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"{e}"
         ) from e
