@@ -57,7 +57,7 @@ def test_setup_ok(mounted_volumes: mounted_fs.MountedVolumes) -> None:
     assert mounted_volumes
 
 
-def test_expected_paths_and_volumes(
+async def test_expected_paths_and_volumes(
     mounted_volumes: mounted_fs.MountedVolumes,
     inputs_dir: Path,
     outputs_dir: Path,
@@ -66,7 +66,7 @@ def test_expected_paths_and_volumes(
 ) -> None:
     assert (
         len(set(mounted_volumes.volume_name_state_paths()))
-        == len(set(mounted_volumes.get_state_paths_docker_volumes()))
+        == len({x async for x in mounted_volumes.get_state_paths_docker_volumes()})
         == len(set(mounted_volumes.disk_state_paths()))
     )
 
