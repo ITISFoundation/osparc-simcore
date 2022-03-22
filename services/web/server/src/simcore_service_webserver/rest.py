@@ -27,10 +27,6 @@ from .rest_utils import get_openapi_specs_path, load_openapi_specs
 log = logging.getLogger(__name__)
 
 
-async def _log_check(app: web.Application):
-    log.debug("health check %s", f"{app}")
-
-
 @app_module_setup(
     __name__,
     ModuleCategory.ADDON,
@@ -64,9 +60,7 @@ def setup_rest(app: web.Application):
         )
 
     # defines healthcheck mechanism
-    healthcheck = HealthCheck()
-    healthcheck.on_healthcheck.append(_log_check)
-    app[HealthCheck.__name__] = healthcheck
+    app[HealthCheck.__name__] = HealthCheck()
 
     # basic routes
     app.add_routes(rest_handlers.routes)
