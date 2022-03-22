@@ -512,7 +512,7 @@ async function clickLoggerTitle(page) {
 }
 
 async function runAllCellsInJupyterLab(page, jLabIframe, notebookName) {
-  console.log("Run All Cells in JupyterLab");
+  console.log("Run All Cells in JupyterLab", jLabIframe._url);
 
   // inside the iFrame, open the first notebook
   const notebookFileSelector = '[title~="'+notebookName+'"]';

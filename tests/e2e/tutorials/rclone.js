@@ -39,12 +39,11 @@ async function runTutorial() {
       for (let i = 0; i < iframeHandles.length; i++) {
         const frame = await iframeHandles[i].contentFrame();
         iframes.push(frame);
-        console.log(i, frame._url);
       }
 
       const jLabIframes = iframes.filter(iframe => iframe._url.includes("/lab"));
       if (jLabIframes.length) {
-        const jLabIframe = jLabIframes[jLabIframes.length - 1]
+        const jLabIframe = jLabIframes[jLabIframes.length - 1];
         await utils.runAllCellsInJupyterLab(tutorial.getPage(), jLabIframe, "test_rclone.ipynb");
       }
     }
