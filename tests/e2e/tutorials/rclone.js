@@ -30,6 +30,7 @@ async function runTutorial() {
     await tutorial.waitForServices(workbenchData["studyId"], nodeIds, startTimeout);
     await tutorial.waitFor(2000);
 
+    // run all cells in parallel
     for (let i=0; i<nServices; i++) {
       await tutorial.openNode(i);
 
@@ -42,12 +43,21 @@ async function runTutorial() {
       console.log(iframes);
       const jLabIframe = iframes.find(iframe => iframe._url.endsWith("lab?"));
       utils.runAllCellsInJupyterLab(tutorial.getPage(), jLabIframe, "input2output.ipynb");
-
-      console.log('Checking the number of files sitting next to the notebook');
-      const fileBrowserSelector = "#filebrowser > div.lm-Widget.p-Widget.jp-DirListing.jp-FileBrowser-listing.jp-mod-selected > ul";
-      const nFiles = await utils.getNChildren(jLabIframe, fileBrowserSelector);
-      console.log("nFiles", nFiles);
     }
+
+    // wait for some time until all cells are executed
+    tutorial.waitFor(10000, "wait for cell executions");
+
+    // search matches, tw0 per service
+    const findWord = "finished";
+    const found = await page.evaluate((findWord) => {
+      let matches = 0;
+      while (window.find(findWord)) {
+        matches++;
+      }
+      return matches;
+    }, findWord);
+    console.log("found", found)
   }
   catch(err) {
     tutorial.setTutorialFailed(true);
