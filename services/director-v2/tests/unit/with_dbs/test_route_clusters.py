@@ -30,7 +30,7 @@ from simcore_service_director_v2.models.schemas.clusters import (
     ClusterCreate,
     ClusterGet,
     ClusterPatch,
-    ClusterPingIn,
+    ClusterPing,
 )
 from starlette import status
 
@@ -616,7 +616,7 @@ async def test_ping_invalid_cluster_raises_422(
         response.raise_for_status()
 
     # calling with correct data but non existing cluster also raises
-    some_fake_cluster = ClusterPingIn(
+    some_fake_cluster = ClusterPing(
         endpoint=faker.uri(),
         authentication=parse_obj_as(
             ClusterAuthentication, cluster_simple_authentication()
@@ -634,7 +634,7 @@ async def test_ping_cluster(
     async_client: httpx.AsyncClient,
     local_dask_gateway_server: DaskGatewayServer,
 ):
-    valid_cluster = ClusterPingIn(
+    valid_cluster = ClusterPing(
         endpoint=parse_obj_as(AnyHttpUrl, local_dask_gateway_server.address),
         authentication=SimpleAuthentication(
             username="pytest_user", password=local_dask_gateway_server.password

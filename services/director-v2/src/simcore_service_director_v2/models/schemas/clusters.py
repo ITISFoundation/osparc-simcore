@@ -149,7 +149,7 @@ class ClusterPatch(BaseCluster):
         }
 
 
-class ClusterPingIn(BaseModel):
+class ClusterPing(BaseModel):
     endpoint: AnyHttpUrl
     authentication: ClusterAuthentication = Field(
         ..., description="Dask gateway authentication"

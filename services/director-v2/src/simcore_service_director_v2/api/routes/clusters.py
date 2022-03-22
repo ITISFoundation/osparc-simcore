@@ -18,7 +18,7 @@ from ...models.schemas.clusters import (
     ClusterDetailsGet,
     ClusterGet,
     ClusterPatch,
-    ClusterPingIn,
+    ClusterPing,
     Scheduler,
 )
 from ...modules.dask_clients_pool import DaskClientsPool
@@ -184,7 +184,7 @@ async def get_cluster_details(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def test_cluster_connection(
-    cluster_auth: ClusterPingIn,
+    cluster_auth: ClusterPing,
 ):
     try:
         return await test_gateway_endpoint(
