@@ -293,7 +293,7 @@ class DaskComputationalBackendSettings(BaseCustomSettings):
         default_factory=NoAuthentication,
         description="If the default scheduler is a osparc-dask-gateway, then this contains the authentication credentials",
     )
-    DASK_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
+    DIRECTOR_V2_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
         0, description="This defines the default cluster id when none is defined"
     )
 

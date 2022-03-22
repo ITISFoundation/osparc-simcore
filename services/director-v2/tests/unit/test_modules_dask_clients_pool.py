@@ -213,5 +213,5 @@ def test_default_cluster(
         == dask_scheduler_settings.DIRECTOR_V2_DEFAULT_SCHEDULER_URL
     )
 
-    assert default_cluster.id == dask_scheduler_settings.DASK_DEFAULT_CLUSTER_ID
+    assert default_cluster.id == dask_scheduler_settings.DIRECTOR_V2_DEFAULT_CLUSTER_ID
     assert isinstance(default_cluster.authentication, get_args(ClusterAuthentication))
