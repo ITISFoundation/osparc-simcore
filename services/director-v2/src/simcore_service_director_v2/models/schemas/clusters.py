@@ -7,9 +7,9 @@ from models_library.clusters import (
     BaseCluster,
     Cluster,
     ClusterAccessRights,
+    ClusterAuthentication,
     ClusterType,
     ExternalClusterAuthentication,
-    ClusterAuthentication,
 )
 from models_library.generics import DictModel
 from models_library.users import GroupID
@@ -46,7 +46,7 @@ class Scheduler(BaseModel):
     workers: WorkersDict
 
 
-class ClusterOut(Cluster):
+class ClusterGet(Cluster):
     access_rights: Dict[GroupID, ClusterAccessRights] = Field(
         alias="accessRights", default_factory=dict
     )

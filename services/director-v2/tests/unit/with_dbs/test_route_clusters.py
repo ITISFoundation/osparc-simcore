@@ -28,7 +28,7 @@ from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_service_director_v2.models.schemas.clusters import (
     ClusterCreate,
-    ClusterOut,
+    ClusterGet,
     ClusterPatch,
     ClusterPingIn,
 )
@@ -84,7 +84,7 @@ async def test_list_clusters(
     # there is no cluster at the moment, the list is empty
     response = await async_client.get(list_clusters_url)
     assert response.status_code == status.HTTP_200_OK
-    returned_clusters_list = parse_obj_as(List[ClusterOut], response.json())
+    returned_clusters_list = parse_obj_as(List[ClusterGet], response.json())
     assert returned_clusters_list == []
 
     # let's create some clusters
@@ -93,7 +93,7 @@ async def test_list_clusters(
 
     response = await async_client.get(list_clusters_url)
     assert response.status_code == status.HTTP_200_OK
-    returned_clusters_list = parse_obj_as(List[ClusterOut], response.json())
+    returned_clusters_list = parse_obj_as(List[ClusterGet], response.json())
     assert len(returned_clusters_list) == 111
 
     # now create a second user and check the clusters are not seen by it
@@ -120,7 +120,7 @@ async def test_list_clusters(
 
     response = await async_client.get(f"/v2/clusters?user_id={user_2['id']}")
     assert response.status_code == status.HTTP_200_OK
-    user_2_clusters = parse_obj_as(List[ClusterOut], response.json())
+    user_2_clusters = parse_obj_as(List[ClusterGet], response.json())
     # we should find 3 clusters
     assert len(user_2_clusters) == 3
     for name in [
@@ -160,7 +160,7 @@ async def test_get_cluster(
         f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}"
     )
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
-    returned_cluster = parse_obj_as(ClusterOut, response.json())
+    returned_cluster = parse_obj_as(ClusterGet, response.json())
     assert returned_cluster
     assert the_cluster.dict() == returned_cluster.dict()
 
@@ -254,7 +254,7 @@ async def test_get_default_cluster(
     get_cluster_url = URL("/v2/clusters/default")
     response = await async_client.get(get_cluster_url)
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
-    returned_cluster = parse_obj_as(ClusterOut, response.json())
+    returned_cluster = parse_obj_as(ClusterGet, response.json())
     assert returned_cluster
     assert returned_cluster.name == "Default cluster"
     assert 1 in returned_cluster.access_rights  # everyone group is always 1
@@ -282,7 +282,7 @@ async def test_create_cluster(
         create_cluster_url, json=cluster_data.dict(by_alias=True, exclude_unset=True)
     )
     assert response.status_code == status.HTTP_201_CREATED, f"received: {response.text}"
-    created_cluster = parse_obj_as(ClusterOut, response.json())
+    created_cluster = parse_obj_as(ClusterGet, response.json())
     assert created_cluster
 
     for k in created_cluster.dict(exclude={"id", "owner", "access_rights"}).keys():
@@ -327,7 +327,7 @@ async def test_update_own_cluster(
         f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}"
     )
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
-    original_cluster = parse_obj_as(ClusterOut, response.json())
+    original_cluster = parse_obj_as(ClusterGet, response.json())
 
     # now we modify nothing
     response = await async_client.patch(
@@ -335,7 +335,7 @@ async def test_update_own_cluster(
         json=ClusterPatch().dict(**_PATCH_EXPORT),
     )
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
-    returned_cluster = parse_obj_as(ClusterOut, response.json())
+    returned_cluster = parse_obj_as(ClusterGet, response.json())
     assert returned_cluster.dict() == original_cluster.dict()
 
     # modify some simple things
@@ -355,7 +355,7 @@ async def test_update_own_cluster(
             json=jsonable_cluster_patch,
         )
         assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
-        returned_cluster = parse_obj_as(ClusterOut, response.json())
+        returned_cluster = parse_obj_as(ClusterGet, response.json())
         expected_modified_cluster = expected_modified_cluster.copy(
             update=cluster_patch.dict(**_PATCH_EXPORT)
         )
@@ -376,7 +376,7 @@ async def test_update_own_cluster(
             json=cluster_patch.dict(**_PATCH_EXPORT),
         )
         assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
-        returned_cluster = ClusterOut.parse_obj(response.json())
+        returned_cluster = ClusterGet.parse_obj(response.json())
 
         expected_modified_cluster.access_rights[user_2["primary_gid"]] = rights
         assert returned_cluster.dict() == expected_modified_cluster.dict()
@@ -387,7 +387,7 @@ async def test_update_own_cluster(
         json=cluster_patch.dict(**_PATCH_EXPORT),
     )
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
-    returned_cluster = ClusterOut.parse_obj(response.json())
+    returned_cluster = ClusterGet.parse_obj(response.json())
     expected_modified_cluster.owner = user_2["primary_gid"]
     expected_modified_cluster.access_rights[
         user_2["primary_gid"]
@@ -457,7 +457,7 @@ async def test_update_another_cluster(
         f"/v2/clusters/{the_cluster.id}?user_id={user_1['id']}"
     )
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
-    original_cluster = parse_obj_as(ClusterOut, response.json())
+    original_cluster = parse_obj_as(ClusterGet, response.json())
 
     # let's try to modify stuff as we are user 2
     for cluster_patch in [

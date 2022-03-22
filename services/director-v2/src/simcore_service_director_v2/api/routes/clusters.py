@@ -8,9 +8,7 @@ from pydantic import AnyUrl, parse_obj_as
 from simcore_service_director_v2.api.dependencies.scheduler import (
     get_scheduler_settings,
 )
-from simcore_service_director_v2.utils.dask_client_utils import (
-    test_gateway_endpoint,
-)
+from simcore_service_director_v2.utils.dask_client_utils import test_gateway_endpoint
 from starlette import status
 
 from ...core.errors import (
@@ -23,7 +21,7 @@ from ...core.settings import DaskSchedulerSettings
 from ...models.schemas.clusters import (
     ClusterCreate,
     ClusterDetailsOut,
-    ClusterOut,
+    ClusterGet,
     ClusterPatch,
     ClusterPingIn,
     Scheduler,
@@ -65,7 +63,7 @@ async def _get_cluster_details_with_id(
 @router.post(
     "",
     summary="Create a new cluster for a user",
-    response_model=ClusterOut,
+    response_model=ClusterGet,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_cluster(
@@ -76,7 +74,7 @@ async def create_cluster(
     return await clusters_repo.create_cluster(user_id, new_cluster)
 
 
-@router.get("", summary="Lists clusters for user", response_model=List[ClusterOut])
+@router.get("", summary="Lists clusters for user", response_model=List[ClusterGet])
 async def list_clusters(
     user_id: UserID,
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
@@ -87,7 +85,7 @@ async def list_clusters(
 @router.get(
     "/default",
     summary="Returns the default cluster",
-    response_model=ClusterOut,
+    response_model=ClusterGet,
     status_code=status.HTTP_200_OK,
 )
 async def get_default_cluster(
@@ -102,7 +100,7 @@ async def get_default_cluster(
 @router.get(
     "/{cluster_id}",
     summary="Get one cluster for user",
-    response_model=ClusterOut,
+    response_model=ClusterGet,
     status_code=status.HTTP_200_OK,
 )
 async def get_cluster(
@@ -121,7 +119,7 @@ async def get_cluster(
 @router.patch(
     "/{cluster_id}",
     summary="Modify a cluster for user",
-    response_model=ClusterOut,
+    response_model=ClusterGet,
     status_code=status.HTTP_200_OK,
 )
 async def update_cluster(
