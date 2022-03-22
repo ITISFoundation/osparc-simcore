@@ -25,10 +25,11 @@ from dask_task_models_library.container_tasks.io import (
     TaskOutputDataSchema,
 )
 from fastapi import FastAPI
-from models_library.clusters import ClusterAuthentication
+from models_library.clusters import ClusterAuthentication, ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.users import UserID
 from pydantic.networks import AnyUrl
 from tenacity._asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
@@ -41,7 +42,6 @@ from ..core.errors import (
 )
 from ..core.settings import DaskSchedulerSettings
 from ..models.domains.comp_tasks import Image
-from ..models.schemas.constants import ClusterID, UserID
 from ..utils.dask import (
     check_communication_with_scheduler_is_open,
     check_if_cluster_is_able_to_run_pipeline,

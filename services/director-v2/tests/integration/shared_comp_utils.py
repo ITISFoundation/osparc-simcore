@@ -1,14 +1,14 @@
 import json
 import time
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 
 import httpx
 from models_library.projects import ProjectAtDB
 from models_library.projects_pipeline import PipelineDetails
 from models_library.projects_state import RunningState
+from models_library.users import UserID
 from pydantic.networks import AnyHttpUrl
-from pydantic.types import PositiveInt
 from pytest_simcore.helpers.constants import MINUTE
 from simcore_service_director_v2.models.schemas.comp_tasks import ComputationTaskGet
 from starlette import status
@@ -24,7 +24,7 @@ async def create_pipeline(
     client: httpx.AsyncClient,
     *,
     project: ProjectAtDB,
-    user_id: PositiveInt,
+    user_id: UserID,
     start_pipeline: bool,
     expected_response_status_code: int,
     **kwargs,
@@ -67,9 +67,9 @@ async def assert_computation_task_out_obj(
 async def assert_and_wait_for_pipeline_status(
     client: httpx.AsyncClient,
     url: AnyHttpUrl,
-    user_id: PositiveInt,
+    user_id: UserID,
     project_uuid: UUID,
-    wait_for_states: List[RunningState] = None,
+    wait_for_states: Optional[List[RunningState]] = None,
 ) -> ComputationTaskGet:
     if not wait_for_states:
         wait_for_states = [

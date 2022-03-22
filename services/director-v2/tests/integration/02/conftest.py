@@ -5,7 +5,7 @@ import aiodocker
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def network_name() -> str:
     return "pytest-simcore_interactive_services_subnet"
 
@@ -24,7 +24,7 @@ async def ensure_swarm_and_networks(network_name: str, docker_swarm: None):
             if network_data["Name"] == network_name:
                 create_and_remove_network = False
                 break
-
+        docker_network = None
         if create_and_remove_network:
             network_config = {
                 "Name": network_name,
@@ -37,6 +37,6 @@ async def ensure_swarm_and_networks(network_name: str, docker_swarm: None):
 
         yield
 
-        if create_and_remove_network:
+        if create_and_remove_network and docker_network:
             network = await docker_client.networks.get(docker_network.id)
             assert await network.delete() is True

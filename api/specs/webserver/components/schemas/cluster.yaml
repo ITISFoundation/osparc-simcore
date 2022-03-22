@@ -1,3 +1,25 @@
+ClusterPing:
+  type: object
+  properties:
+    endpoint:
+      type: string
+      minLength: 1
+      maxLength: 65536
+      # format: uri
+    authentication:
+      description: Dask gateway authentication
+      anyOf:
+        [
+          $ref: "#/SimpleAuthentication",
+          $ref: "#/KerberosAuthentication",
+          $ref: "#/JupyterHubTokenAuthentication",
+        ]
+
+  required:
+    - endpoint
+    - authentication
+  additionalProperties: false
+
 ClusterCreate:
   type: object
   properties:
@@ -152,6 +174,38 @@ Cluster:
           read: true
           write: true
           delete: true
+
+ClusterDetails:
+  type: object
+  properties:
+    scheduler:
+      type: object
+      description: contains information about the cluster scheduler
+    cluster:
+      type: object
+      description: contains information about the cluster workers
+    dashboardLink:
+      type: string
+      minLength: 1
+      maxLength: 65536
+      description: contains the link to the cluster dashboard
+      # format: uri
+
+  required:
+    - scheduler
+    - cluster
+    - dashboardLink
+
+ClusterDetailsEnveloped:
+  type: object
+  required:
+    - data
+  properties:
+    data:
+      $ref: "#/ClusterDetails"
+    error:
+      nullable: true
+      default: null
 
 ClusterEnveloped:
   type: object
