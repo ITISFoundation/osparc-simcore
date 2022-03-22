@@ -21,7 +21,7 @@ qx.Class.define("osparc.component.cluster.Clusters", {
   construct: function() {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(15));
+    this._setLayout(new qx.ui.layout.VBox(20));
 
     this.__populateClusters();
   },

@@ -21,32 +21,22 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
   construct: function(clusterId) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox(5));
+    this._setLayout(new qx.ui.layout.VBox(10));
 
     const clusterDetailsLayout = this.__clusterDetailsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
     this._add(clusterDetailsLayout);
 
-    const grid = new qx.ui.layout.Grid(4, 4);
+    const grid = new qx.ui.layout.Grid(5, 5);
     grid.setColumnFlex(1, 1);
     const workersGrid = this.__workersGrid = new qx.ui.container.Composite(grid);
     this._add(workersGrid);
 
     this.__clusterId = clusterId;
-    const params = {
-      url: {
-        "cid": clusterId
-      }
-    };
+    this.__fetchDetails();
     // Poll every 5 seconds
     const interval = 5000;
     const timer = this.__timer = new qx.event.Timer(interval);
-    timer.addListener("interval", () => {
-      osparc.data.Resources.fetch("clusters", "details", params)
-        .then(clusterDetails => {
-          this.__populateClusterDetails(clusterId, clusterDetails);
-          this.__populateWorkers(clusterDetails);
-        });
-    }, this);
+    timer.addListener("interval", () => this.__fetchDetails(), this);
     timer.start();
   },
 
@@ -81,17 +71,30 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
     __clusterDetailsLayout: null,
     __workersGrid: null,
 
-    __populateClusterDetails: function(clusterId, clusterDetails) {
+    __fetchDetails: function() {
+      const params = {
+        url: {
+          "cid": this.__clusterId
+        }
+      };
+      osparc.data.Resources.fetch("clusters", "details", params)
+        .then(clusterDetails => {
+          this.__populateClusterDetails(clusterDetails);
+          this.__populateWorkers(clusterDetails);
+        });
+    },
+
+    __populateClusterDetails: function(clusterDetails) {
       const clusterDetailsLayout = this.__clusterDetailsLayout;
       clusterDetailsLayout.removeAll();
 
-      const clusterIdLabel = new qx.ui.basic.Label("C-" + clusterId);
+      const clusterIdLabel = new qx.ui.basic.Label("C-" + this.__clusterId);
       clusterDetailsLayout.add(clusterIdLabel);
 
-      const clusterStatusLabel = new qx.ui.basic.Label(clusterDetails.scheduler.status);
+      const clusterStatusLabel = new qx.ui.basic.Label(this.tr("Status: ") + clusterDetails.scheduler.status);
       clusterDetailsLayout.add(clusterStatusLabel);
 
-      const clusterLinkLabel = new qx.ui.basic.Label(clusterDetails["dashboard_link"]);
+      const clusterLinkLabel = new qx.ui.basic.Label(this.tr("Link: ") + clusterDetails["dashboard_link"]);
       clusterDetailsLayout.add(clusterLinkLabel);
     },
 
