@@ -279,12 +279,6 @@ class DaskComputationalBackendSettings(BaseCustomSettings):
     DIRECTOR_V2_DASK_CLIENT_ENABLED: bool = Field(
         True,
     )
-    DASK_SCHEDULER_HOST: str = Field(
-        "dask-scheduler",
-        description="Address of the scheduler to register (only if started as worker )",
-        deprecated=True,
-    )
-    DASK_SCHEDULER_PORT: PortInt = Field(8786, deprecated=True)
     DIRECTOR_V2_DEFAULT_SCHEDULER_URL: AnyUrl = Field(
         "tcp://dask-scheduler:8786",
         description="The scheduler used as default for all computations",
