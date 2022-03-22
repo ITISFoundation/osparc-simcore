@@ -281,11 +281,15 @@ class DaskComputationalBackendSettings(BaseCustomSettings):
     )
     DIRECTOR_V2_DEFAULT_CLUSTER_URL: AnyUrl = Field(
         "tcp://dask-scheduler:8786",
-        description="The scheduler used as default for all computations",
+        description="This is the cluster that will be used by default"
+        " when submitting computational services (typically "
+        "tcp://dask-scheduler:8786 for the internal cluster, or "
+        "http(s)/GATEWAY_IP:8000 for a osparc-dask-gateway)",
     )
-    DIRECTOR_V2_DEFAULT_CLUSTER_AUTH: ClusterAuthentication = Field(
+    DIRECTOR_V2_DEFAULT_CLUSTER_AUTH: Optional[ClusterAuthentication] = Field(
         NoAuthentication(),
-        description="If the default scheduler is a osparc-dask-gateway, then this contains the authentication credentials",
+        description="Empty for the internal cluster, must be one "
+        "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
     )
     DIRECTOR_V2_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
         0, description="This defines the default cluster id when none is defined"
