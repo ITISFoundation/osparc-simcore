@@ -212,7 +212,7 @@ class ClustersRepository(BaseRepository):
                 # if the user is a manager he/she may ONLY add/remove users
                 if this_user_access_rights == CLUSTER_MANAGER_RIGHTS:
                     for grp, rights in updated_cluster.access_rights.items():
-                        if grp in [the_cluster.owner] or rights not in [
+                        if grp == the_cluster.owner or rights not in [
                             CLUSTER_USER_RIGHTS,
                             CLUSTER_NO_RIGHTS,
                         ]:
