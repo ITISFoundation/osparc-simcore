@@ -44,7 +44,7 @@ charset-normalizer==2.0.12
     #   requests
 codecov==2.1.12
     # via -r requirements/_test.in
-coverage==6.1.2
+coverage==6.3.2
     # via
     #   -r requirements/_test.in
     #   codecov

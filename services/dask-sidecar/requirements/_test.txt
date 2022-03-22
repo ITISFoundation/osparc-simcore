@@ -38,7 +38,7 @@ charset-normalizer==2.0.6
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
-coverage==6.3.1
+coverage==6.3.2
     # via
     #   -r requirements/_test.in
     #   coveralls

@@ -18,7 +18,7 @@ chardet==4.0.0
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==6.3.1
+coverage==6.3.2
     # via pytest-cov
 faker==12.1.0
     # via -r requirements/_test.in

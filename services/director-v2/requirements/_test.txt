@@ -95,7 +95,7 @@ codecov==2.1.12
     # via -r requirements/_test.in
 colorlog==6.6.0
     # via dask-gateway-server
-coverage==6.1.2
+coverage==6.3.2
     # via
     #   codecov
     #   coveralls

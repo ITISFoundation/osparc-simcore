@@ -29,7 +29,7 @@ charset-normalizer==2.0.11
     #   aiohttp
     #   httpx
     #   requests
-coverage==6.3.1
+coverage==6.3.2
     # via pytest-cov
 docker==5.0.3
     # via -r requirements/_test.in

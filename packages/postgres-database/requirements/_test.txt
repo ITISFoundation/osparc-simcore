@@ -40,7 +40,7 @@ charset-normalizer==2.0.11
     #   -c requirements/_migration.txt
     #   aiohttp
     #   requests
-coverage==6.3.1
+coverage==6.3.2
     # via
     #   -r requirements/_test.in
     #   coveralls
