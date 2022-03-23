@@ -10,15 +10,15 @@ bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.3.1
     # via pre-commit
-click==8.0.3
+click==8.0.4
     # via
     #   black
     #   pip-tools
 distlib==0.3.4
     # via virtualenv
-filelock==3.4.2
+filelock==3.6.0
     # via virtualenv
-identify==2.4.9
+identify==2.4.12
     # via pre-commit
 isort==5.10.1
     # via
@@ -34,7 +34,7 @@ pep517==0.12.0
     # via pip-tools
 pip-tools==6.5.1
     # via -r requirements/../../../requirements/devenv.txt
-platformdirs==2.5.0
+platformdirs==2.5.1
     # via
     #   -c requirements/_test.txt
     #   black
@@ -60,11 +60,11 @@ tomli==1.2.3
     #   -c requirements/_test.txt
     #   black
     #   pep517
-typing-extensions==4.0.1
+typing-extensions==4.1.1
     # via
     #   -c requirements/_test.txt
     #   black
-virtualenv==20.13.1
+virtualenv==20.13.4
     # via pre-commit
 wheel==0.37.1
     # via pip-tools
