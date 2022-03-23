@@ -68,7 +68,7 @@ greenlet==1.1.2
     #   sqlalchemy
 icdiff==2.0.4
     # via pytest-icdiff
-idna==2.10
+idna==3.3
     # via
     #   -c requirements/_base.txt
     #   requests

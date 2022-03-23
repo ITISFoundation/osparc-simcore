@@ -65,7 +65,7 @@ httpx==0.22.0
     # via datamodel-code-generator
 identify==2.4.12
     # via pre-commit
-idna==2.10
+idna==3.3
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt

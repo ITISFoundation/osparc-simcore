@@ -24,11 +24,8 @@ fsspec==2022.2.0
     # via dask
 heapdict==1.0.1
     # via zict
-idna==2.10
-    # via
-    #   -r requirements/../../../packages/models-library/requirements/_base.in
-    #   -r requirements/_base.in
-    #   email-validator
+idna==3.3
+    # via email-validator
 jinja2==3.0.3
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

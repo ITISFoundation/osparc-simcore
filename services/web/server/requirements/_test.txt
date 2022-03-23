@@ -26,6 +26,7 @@ async-timeout==4.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
+    #   redis
 attrs==20.3.0
     # via
     #   -c requirements/_base.txt
@@ -236,7 +237,7 @@ pyyaml==5.4.1
     #   -c requirements/_base.txt
     #   docker-compose
     #   openapi-spec-validator
-redis==4.1.4
+redis==4.2.0
     # via -r requirements/_test.in
 requests==2.27.1
     # via
@@ -284,6 +285,7 @@ typing-extensions==3.10.0.2
     #   -c requirements/_base.txt
     #   astroid
     #   pylint
+    #   redis
 urllib3==1.26.9
     # via
     #   -c requirements/../../../../requirements/constraints.txt

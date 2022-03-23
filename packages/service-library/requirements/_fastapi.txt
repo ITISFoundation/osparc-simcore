@@ -12,10 +12,8 @@ fastapi==0.75.0
     #   fastapi-contrib
 fastapi-contrib==0.2.11
     # via -r requirements/_fastapi.in
-idna==2.10
-    # via
-    #   -c requirements/././constraints.txt
-    #   anyio
+idna==3.3
+    # via anyio
 jaeger-client==4.8.0
     # via fastapi-contrib
 opentracing==2.4.0

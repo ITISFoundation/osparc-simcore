@@ -3,10 +3,8 @@
 #
 --constraint ../../../requirements/constraints.txt
 --constraint ./constraints.txt
-sqlalchemy[postgresql_psycopg2binary]
-
-
 
 
 alembic
+sqlalchemy[postgresql_psycopg2binary]
 yarl
