@@ -46,7 +46,7 @@ class _RequestContext:
     app: web.Application
     user_id: int
     product_name: str
-    ureg: UnitRegistry
+    unit_registry: UnitRegistry
 
     @classmethod
     def create(cls, request: Request) -> "_RequestContext":
@@ -54,7 +54,7 @@ class _RequestContext:
             app=request.app,
             user_id=request[RQT_USERID_KEY],
             product_name=request[RQ_PRODUCT_KEY],
-            ureg=request.app[UnitRegistry.__name__],
+            unit_registry=request.app[UnitRegistry.__name__],
         )
 
 
@@ -289,7 +289,9 @@ async def list_services(ctx: _RequestContext):
         ctx.app, ctx.user_id, ctx.product_name, only_key_versions=False
     )
     for service in services:
-        replace_service_input_outputs(service, **RESPONSE_MODEL_POLICY)
+        replace_service_input_outputs(
+            service, unit_registry=ctx.unit_registry, **RESPONSE_MODEL_POLICY
+        )
     return services
 
 
@@ -299,7 +301,9 @@ async def get_service(
     service = await catalog_client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    replace_service_input_outputs(service, **RESPONSE_MODEL_POLICY)
+    replace_service_input_outputs(
+        service, unit_registry=ctx.unit_registry, **RESPONSE_MODEL_POLICY
+    )
     return service
 
 
@@ -317,7 +321,9 @@ async def update_service(
         ctx.product_name,
         update_data,
     )
-    replace_service_input_outputs(service, **RESPONSE_MODEL_POLICY)
+    replace_service_input_outputs(
+        service, unit_registry=ctx.unit_registry, **RESPONSE_MODEL_POLICY
+    )
     return service
 
 
@@ -388,7 +394,7 @@ async def get_compatible_inputs_given_source_output(
     # check
     matches = []
     for key_id, to_input in iter_service_inputs():
-        if can_connect(from_output, to_input, units_registry=ctx.ureg):
+        if can_connect(from_output, to_input, units_registry=ctx.unit_registry):
             matches.append(key_id)
 
     return matches
@@ -457,7 +463,7 @@ async def get_compatible_outputs_given_target_input(
     # check
     matches = []
     for key_id, from_output in iter_service_outputs():
-        if can_connect(from_output, to_input, units_registry=ctx.ureg):
+        if can_connect(from_output, to_input, units_registry=ctx.unit_registry):
             matches.append(key_id)
 
     return matches
