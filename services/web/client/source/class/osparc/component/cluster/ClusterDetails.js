@@ -125,7 +125,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
             column: this.self().GRID_POS.CPU
           },
           ram: {
-            label: this.tr("Memory (GB)"),
+            label: this.tr("Memory"),
             metric: "memory",
             resource: "RAM",
             column: this.self().GRID_POS.RAM
@@ -148,11 +148,6 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
           if (available === "-") {
             gaugeData.value = "-";
           } else {
-            if (plotKey === "ram") {
-              const bToGB = 1024 * 1024 *1024;
-              used /= bToGB;
-              available /= bToGB;
-            }
             gaugeData.value = used;
             gaugeData.gauge.axis.range[1] = available;
           }

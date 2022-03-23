@@ -62,20 +62,20 @@ qx.Class.define("osparc.wrapper.Plotly", {
 
     getDefaultLayout: function() {
       const textColor = qx.theme.manager.Color.getInstance().resolve("text");
-      const bigFont = qx.theme.manager.Font.getInstance().resolve("text-12");
-      const smallFont = qx.theme.manager.Font.getInstance().resolve("text-9");
+      const titleFont = qx.theme.manager.Font.getInstance().resolve("text-12");
+      const textFont = qx.theme.manager.Font.getInstance().resolve("text-9");
       const margin = 25;
       return {
         autoscale: true,
         titlefont: {
           color: textColor,
-          size: bigFont.getSize(),
-          family: bigFont.getFamily()
+          size: titleFont.getSize(),
+          family: titleFont.getFamily()
         },
         font: {
           color: textColor,
-          size: smallFont.getSize(),
-          family: smallFont.getFamily()
+          size: textFont.getSize(),
+          family: textFont.getFamily()
         },
         margin: {
           l: margin,
@@ -101,11 +101,17 @@ qx.Class.define("osparc.wrapper.Plotly", {
             size: 14
           }
         },
+        number: {
+          font: {
+            size: 16
+          }
+        },
         type: "indicator",
         mode: "gauge+number",
         gauge: {
           axis: {
-            range: [null, 100]
+            range: [null, 100],
+            exponentformat: "SI"
           },
           bar: {
             color: "#007fd4" // Visual Studio blue
