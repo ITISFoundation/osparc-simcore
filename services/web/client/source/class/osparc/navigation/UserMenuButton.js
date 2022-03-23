@@ -61,7 +61,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
     },
 
     openClusters: function() {
-      const clusters = new osparc.component.cluster.Clusters();
+      const clusters = new osparc.component.cluster.ClustersDetails();
       osparc.ui.window.Window.popUpInWindow(clusters, qx.locale.Manager.tr("Clusters & Workers"), 650, 800);
     },
 

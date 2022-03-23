@@ -124,30 +124,7 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
     },
 
     __populateClustersSelectBox: function() {
-      this.__clustersSelectBox.removeAll();
-
-      const store = osparc.store.Store.getInstance();
-      const clusters = store.getClusters();
-      if (clusters) {
-        const itemDefault = new qx.ui.form.ListItem().set({
-          label: "default",
-          toolTipText: "default cluster"
-        });
-        itemDefault.id = 0;
-        this.__clustersSelectBox.add(itemDefault);
-        clusters.forEach(cluster => {
-          if (!("name" in cluster)) {
-            return;
-          }
-          const item = new qx.ui.form.ListItem().set({
-            label: cluster["name"],
-            toolTipText: cluster["type"] + "\n" + cluster["description"],
-            allowGrowY: false
-          });
-          item.id = cluster["id"];
-          this.__clustersSelectBox.add(item);
-        });
-      }
+      const clusters = osparc.utils.Clusters.populateClustersSelectBox(this.__clustersSelectBox);
       this.__clustersSelectBox.setVisibility(Object.keys(clusters).length ? "visible" : "excluded");
     },
 

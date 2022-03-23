@@ -35,7 +35,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     if (osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
       buttonsLayout.add(this.__getCreateClusterButton());
     }
-    buttonsLayout.add(this.__getShowClusterDetailsButton());
+    buttonsLayout.add(this.__getShowClustersDetailsButton());
     this.add(buttonsLayout);
     this.add(this.__getClustersSection());
     this.add(this.__getOrgsAndMembersSection(), {
@@ -73,14 +73,14 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       return createClusterBtn;
     },
 
-    __getShowClusterDetailsButton: function() {
+    __getShowClustersDetailsButton: function() {
       const createClusterBtn = new qx.ui.form.Button().set({
         label: this.tr("Show Resources"),
         icon: "@FontAwesome5Solid/info/14",
         allowGrowX: false
       });
       createClusterBtn.addListener("execute", function() {
-        const clusters = new osparc.component.cluster.Clusters();
+        const clusters = new osparc.component.cluster.ClustersDetails();
         osparc.ui.window.Window.popUpInWindow(clusters, qx.locale.Manager.tr("Clusters & Workers"), 650, 800);
       }, this);
       return createClusterBtn;
