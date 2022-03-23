@@ -114,7 +114,7 @@ qx.Class.define("osparc.wrapper.Plotly", {
             exponentformat: "SI"
           },
           bar: {
-            color: "#007fd4" // Visual Studio blue
+            color: qx.theme.manager.Color.getInstance().resolve("visual-blue")
           },
           bordercolor: qx.theme.manager.Color.getInstance().resolve("text")
         }

@@ -23,7 +23,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
 
     this._setLayout(new qx.ui.layout.VBox(10));
 
-    const clusterDetailsLayout = this.__clusterDetailsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
+    const clusterDetailsLayout = this.__clusterDetailsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
     this._add(clusterDetailsLayout);
 
     const grid = new qx.ui.layout.Grid(5, 8);
@@ -86,7 +86,9 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
       const clusterDetailsLayout = this.__clusterDetailsLayout;
       clusterDetailsLayout.removeAll();
 
-      const clusterIdLabel = new qx.ui.basic.Label("C-" + this.__clusterId);
+      const clusterIdLabel = new qx.ui.basic.Label("C-" + this.__clusterId).set({
+        marginRight: 33
+      });
       clusterDetailsLayout.add(clusterIdLabel);
 
       const clusterStatusLabel = new qx.ui.basic.Label(this.tr("Status:"));
@@ -98,7 +100,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
         alignX: "center",
         paddingLeft: 3,
         toolTipText: clusterStatus,
-        textColor: clusterStatus === "running" ? "#007fd4" : "danger-red"
+        textColor: clusterStatus === "running" ? "ready-green" : "failed-red"
       });
       clusterDetailsLayout.add(clusterStatusImage);
 
