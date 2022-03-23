@@ -87,7 +87,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
       clusterDetailsLayout.removeAll();
 
       const clusterIdLabel = new qx.ui.basic.Label("C-" + this.__clusterId).set({
-        marginRight: 33
+        marginRight: 35
       });
       clusterDetailsLayout.add(clusterIdLabel);
 

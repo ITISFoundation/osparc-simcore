@@ -29,9 +29,14 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     const title = this.tr("Clusters");
     this.base(arguments, title, iconSrc);
 
+    const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+      alignX: "center"
+    }));
     if (osparc.data.Permissions.getInstance().canDo("user.clusters.create")) {
-      this.add(this.__getCreateClusterSection());
+      buttonsLayout.add(this.__getCreateClusterButton());
     }
+    buttonsLayout.add(this.__getShowClusterDetailsButton());
+    this.add(buttonsLayout);
     this.add(this.__getClustersSection());
     this.add(this.__getOrgsAndMembersSection(), {
       flex: 1
@@ -48,7 +53,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
     __organizationsAndMembers: null,
     __membersArrayModel: null,
 
-    __getCreateClusterSection: function() {
+    __getCreateClusterButton: function() {
       const createClusterBtn = new qx.ui.form.Button().set({
         appearance: "strong-button",
         label: this.tr("New Cluster"),
@@ -64,6 +69,19 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
           this.__createCluster(win, clusterEditor.getChildControl("create"), clusterEditor);
         });
         clusterEditor.addListener("cancel", () => win.close());
+      }, this);
+      return createClusterBtn;
+    },
+
+    __getShowClusterDetailsButton: function() {
+      const createClusterBtn = new qx.ui.form.Button().set({
+        label: this.tr("Show Resources"),
+        icon: "@FontAwesome5Solid/info/14",
+        allowGrowX: false
+      });
+      createClusterBtn.addListener("execute", function() {
+        const clusters = new osparc.component.cluster.Clusters();
+        osparc.ui.window.Window.popUpInWindow(clusters, qx.locale.Manager.tr("Clusters & Workers"), 650, 800);
       }, this);
       return createClusterBtn;
     },
