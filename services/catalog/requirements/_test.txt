@@ -65,11 +65,11 @@ coverage==6.3.2
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-cryptography==36.0.1
+cryptography==36.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   paramiko
-distro==1.6.0
+distro==1.7.0
     # via docker-compose
 docker==5.0.3
     # via
@@ -85,7 +85,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==12.3.0
+faker==13.3.2
     # via -r requirements/_test.in
 frozenlist==1.3.0
     # via
@@ -152,9 +152,9 @@ packaging==20.9
     # via
     #   -c requirements/_base.txt
     #   pytest
-paramiko==2.9.2
+paramiko==2.10.3
     # via docker
-platformdirs==2.5.0
+platformdirs==2.5.1
     # via pylint
 pluggy==1.0.0
     # via pytest
@@ -201,7 +201,7 @@ pytest-docker==0.10.3
     # via -r requirements/_test.in
 pytest-mock==3.7.0
     # via -r requirements/_test.in
-pytest-runner==5.3.1
+pytest-runner==6.0.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
@@ -233,6 +233,7 @@ six==1.15.0
     #   bcrypt
     #   dockerpty
     #   jsonschema
+    #   paramiko
     #   python-dateutil
     #   websocket-client
 sniffio==1.2.0

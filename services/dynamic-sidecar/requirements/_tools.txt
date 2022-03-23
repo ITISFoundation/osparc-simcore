@@ -21,9 +21,9 @@ click==8.0.3
     #   pip-tools
 distlib==0.3.4
     # via virtualenv
-filelock==3.4.2
+filelock==3.6.0
     # via virtualenv
-identify==2.4.9
+identify==2.4.12
     # via pre-commit
 isort==5.10.1
     # via
@@ -34,7 +34,7 @@ lazy-object-proxy==1.7.1
     # via astroid
 mccabe==0.6.1
     # via pylint
-mypy==0.931
+mypy==0.941
     # via -r requirements/_tools.in
 mypy-extensions==0.4.3
     # via
@@ -48,7 +48,7 @@ pep517==0.12.0
     # via pip-tools
 pip-tools==6.5.1
     # via -r requirements/../../../requirements/devenv.txt
-platformdirs==2.5.0
+platformdirs==2.5.1
     # via
     #   black
     #   pylint
@@ -85,7 +85,7 @@ typing-extensions==3.10.0.2
     #   black
     #   mypy
     #   pylint
-virtualenv==20.13.1
+virtualenv==20.13.4
     # via pre-commit
 wheel==0.37.1
     # via pip-tools

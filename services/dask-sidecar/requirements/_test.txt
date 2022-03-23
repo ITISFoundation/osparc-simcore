@@ -45,7 +45,7 @@ coverage==6.3.2
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-cryptography==36.0.1
+cryptography==36.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   pyopenssl
@@ -53,7 +53,7 @@ docker==5.0.3
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
-faker==12.3.0
+faker==13.3.2
     # via -r requirements/_test.in
 frozenlist==1.2.0
     # via
@@ -91,7 +91,7 @@ packaging==20.4
     #   -c requirements/_packages.txt
     #   pytest
     #   pytest-sugar
-platformdirs==2.5.0
+platformdirs==2.5.1
     # via pylint
 pluggy==1.0.0
     # via pytest

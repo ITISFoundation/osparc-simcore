@@ -80,7 +80,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==13.3.0
+faker==13.3.2
     # via -r requirements/_test.in
 greenlet==1.1.2
     # via
@@ -143,7 +143,7 @@ packaging==21.3
     # via
     #   -c requirements/_base.txt
     #   pytest
-paramiko==2.9.2
+paramiko==2.10.3
     # via docker
 passlib==1.7.4
     # via -r requirements/_test.in
@@ -221,6 +221,7 @@ six==1.16.0
     #   bcrypt
     #   dockerpty
     #   jsonschema
+    #   paramiko
     #   python-dateutil
     #   websocket-client
 sniffio==1.2.0

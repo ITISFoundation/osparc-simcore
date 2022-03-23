@@ -44,7 +44,7 @@ docopt==0.6.2
     #   coveralls
 execnet==1.9.0
     # via pytest-xdist
-faker==12.3.0
+faker==13.3.2
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -78,7 +78,7 @@ packaging==21.3
     # via
     #   pytest
     #   pytest-sugar
-platformdirs==2.5.0
+platformdirs==2.5.1
     # via pylint
 pluggy==1.0.0
     # via pytest
@@ -115,7 +115,7 @@ pytest-instafail==0.4.2
     # via -r requirements/_test.in
 pytest-mock==3.7.0
     # via -r requirements/_test.in
-pytest-runner==5.3.1
+pytest-runner==6.0.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.4
     # via -r requirements/_test.in

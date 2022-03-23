@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-async-asgi-testclient==1.4.9
+async-asgi-testclient==1.4.10
     # via -r requirements/_test.in
 attrs==20.3.0
     # via
@@ -20,7 +20,7 @@ chardet==4.0.0
     #   requests
 coverage==6.3.2
     # via pytest-cov
-faker==12.1.0
+faker==13.3.2
     # via -r requirements/_test.in
 idna==2.10
     # via
@@ -71,11 +71,11 @@ tomli==1.2.3
     #   -c requirements/../../../requirements/constraints.txt
     #   coverage
     #   pytest
-types-aiofiles==0.8.3
+types-aiofiles==0.8.5
     # via -r requirements/_test.in
 types-pkg-resources==0.1.3
     # via -r requirements/_test.in
-types-pyyaml==6.0.4
+types-pyyaml==6.0.5
     # via -r requirements/_test.in
 urllib3==1.26.6
     # via

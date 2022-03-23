@@ -22,7 +22,7 @@ distlib==0.3.4
     # via virtualenv
 filelock==3.6.0
     # via virtualenv
-identify==2.4.11
+identify==2.4.12
     # via pre-commit
 isort==5.10.1
     # via
@@ -84,7 +84,7 @@ typing-extensions==4.1.1
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-virtualenv==20.13.2
+virtualenv==20.13.4
     # via pre-commit
 watchdog==2.1.6
     # via -r requirements/_tools.in
