@@ -100,11 +100,11 @@ async def test_expected_paths_and_volumes(
 
     # check docker_volume
     assert (
-        mounted_volumes.get_inputs_docker_volume()
+        await mounted_volumes.get_inputs_docker_volume()
         == f"{mounted_volumes.volume_name_inputs}:{mounted_volumes.inputs_path}"
     )
     assert (
-        mounted_volumes.get_outputs_docker_volume()
+        await mounted_volumes.get_outputs_docker_volume()
         == f"{mounted_volumes.volume_name_outputs}:{mounted_volumes.outputs_path}"
     )
 
