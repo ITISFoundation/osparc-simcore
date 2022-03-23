@@ -23,7 +23,7 @@ attrs==21.4.0
     #   pytest
 certifi==2021.10.8
     # via requests
-charset-normalizer==2.0.11
+charset-normalizer==2.0.12
     # via
     #   aiohttp
     #   requests

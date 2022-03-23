@@ -19,7 +19,7 @@ attrs==21.4.0
     #   jsonschema
     #   openapi-core
     #   pytest
-charset-normalizer==2.0.11
+charset-normalizer==2.0.12
     # via aiohttp
 coverage[toml]==6.3.2
     # via

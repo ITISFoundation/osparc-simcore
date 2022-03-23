@@ -57,7 +57,7 @@ certifi==2021.10.8
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   minio
     #   requests
-charset-normalizer==2.0.11
+charset-normalizer==2.0.12
     # via
     #   -r requirements/../../../packages/postgres-database/requirements/_migration.txt
     #   aiohttp

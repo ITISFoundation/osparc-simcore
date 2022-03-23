@@ -32,7 +32,7 @@ cfgv==3.3.1
     # via pre-commit
 chardet==4.0.0
     # via prance
-charset-normalizer==2.0.11
+charset-normalizer==2.0.12
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt

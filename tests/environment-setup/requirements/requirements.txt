@@ -19,7 +19,7 @@ attrs==20.3.0
     #   -c requirements/../../../packages/service-library/requirements/./constraints.txt
     #   aiohttp
     #   pytest
-charset-normalizer==2.0.11
+charset-normalizer==2.0.12
     # via aiohttp
 frozenlist==1.3.0
     # via
