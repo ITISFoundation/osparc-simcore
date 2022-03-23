@@ -48,8 +48,12 @@ qx.Class.define("osparc.wrapper.Plotly", {
       return osparc.wrapper.Plotly.getInstance().createEmptyPlot(plotId);
     },
 
-    setData: function(plotId, ids, labels, values, tooltips, title) {
-      return osparc.wrapper.Plotly.getInstance().setData(plotId, ids, labels, values, tooltips, title);
+    setLayout: function(plotId, data) {
+      return osparc.wrapper.Plotly.getInstance().setLayout(plotId, data);
+    },
+
+    setData: function(plotId, data) {
+      return osparc.wrapper.Plotly.getInstance().setData(plotId, data);
     },
 
     resize: function(plotId) {
@@ -58,10 +62,11 @@ qx.Class.define("osparc.wrapper.Plotly", {
 
     getDefaultLayout: function() {
       const textColor = qx.theme.manager.Color.getInstance().resolve("text");
-      const bigFont = qx.theme.manager.Font.getInstance().resolve("text-14");
-      const smallFont = qx.theme.manager.Font.getInstance().resolve("text-12");
-      const margin = 0;
+      const bigFont = qx.theme.manager.Font.getInstance().resolve("text-12");
+      const smallFont = qx.theme.manager.Font.getInstance().resolve("text-9");
+      const margin = 25;
       return {
+        autoscale: true,
         titlefont: {
           color: textColor,
           size: bigFont.getSize(),
@@ -77,9 +82,8 @@ qx.Class.define("osparc.wrapper.Plotly", {
           r: margin,
           t: margin,
           b: margin,
-          pad: 0
+          pad: 10
         },
-        "plot_bgcolor": "rgba(0, 0, 0, 0)",
         "paper_bgcolor": "rgba(0, 0, 0, 0)"
       };
     },

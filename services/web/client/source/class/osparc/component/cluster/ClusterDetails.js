@@ -100,7 +100,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
 
     __populateWorkers: function(clusterDetails) {
       this.__workersGrid.removeAll();
-      this.__populateWorkersHeader();
+      // this.__populateWorkersHeader();
       this.__populateWorkersDetails(clusterDetails);
     },
 
@@ -199,7 +199,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
           const plotId = plotKey + "-" + row;
           const gaugeDatas = osparc.wrapper.Plotly.getDefaultGaugeData();
           const gaugeData = gaugeDatas[0];
-          gaugeData.title.text = plotInfo.label;
+          gaugeData.title.text = plotInfo.label.toLocaleString();
           const used = this.self().getMetricsAttribute(worker, plotInfo.metric);
           const available = this.self().getResourcesAttribute(worker, plotInfo.resource);
           if (available === "-") {
@@ -208,9 +208,10 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
             gaugeData.value = used;
             gaugeData.gauge.axis.range[1] = available;
           }
-          const plot = new osparc.component.widget.PlotlyWidget(plotId, gaugeDatas).set({
-            width: 300,
-            height: 240
+          const layout = osparc.wrapper.Plotly.getDefaultLayout();
+          const plot = new osparc.component.widget.PlotlyWidget(plotId, gaugeDatas, layout).set({
+            width: 200,
+            height: 160
           });
           workersGrid.add(plot, {
             row,
