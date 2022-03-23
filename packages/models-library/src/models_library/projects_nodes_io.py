@@ -44,7 +44,7 @@ class PortLink(BaseModel):
             "examples": [
                 # minimal
                 {
-                    "node_uuid": "da5068e0-8a8d-4fb9-9516-56e5ddaef15b",
+                    "nodeUuid": "da5068e0-8a8d-4fb9-9516-56e5ddaef15b",
                     "output": "out_2",
                 }
             ],
@@ -63,7 +63,7 @@ class DownloadLink(BaseModel):
             "examples": [
                 # minimal
                 {
-                    "download_link": "https://fakeimg.pl/250x100/",
+                    "downloadLink": "https://fakeimg.pl/250x100/",
                 }
             ],
         }
