@@ -171,11 +171,3 @@ def can_connect(
         )
 
     return ok
-
-
-def check_connect_strict(
-    from_output: ServiceOutput,
-    to_input: ServiceInput,
-    units_registry: UnitRegistry,
-):
-    raise NotImplementedError("Strict ports compatibility check still not implemented")
