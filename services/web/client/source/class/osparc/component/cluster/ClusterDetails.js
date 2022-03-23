@@ -26,7 +26,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
     const clusterDetailsLayout = this.__clusterDetailsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
     this._add(clusterDetailsLayout);
 
-    const grid = new qx.ui.layout.Grid(5, 5);
+    const grid = new qx.ui.layout.Grid(5, 8);
     grid.setColumnFlex(1, 1);
     const workersGrid = this.__workersGrid = new qx.ui.container.Composite(grid);
     this._add(workersGrid);
@@ -41,13 +41,12 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
   },
 
   statics: {
+    PLOT_WIDTH: 200,
     GRID_POS: {
-      ID: 0,
-      LABEL: 1,
-      CPU: 2,
-      RAM: 3,
-      GPU: 4,
-      MPI: 5
+      CPU: 0,
+      RAM: 1,
+      GPU: 2,
+      MPI: 3
     },
 
     getResourcesAttribute: function(worker, attribute) {
@@ -100,49 +99,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
 
     __populateWorkers: function(clusterDetails) {
       this.__workersGrid.removeAll();
-      // this.__populateWorkersHeader();
       this.__populateWorkersDetails(clusterDetails);
-    },
-
-    __populateWorkersHeader: function() {
-      const workersGrid = this.__workersGrid;
-
-      const row = 0;
-      const workerIdLabel = new qx.ui.basic.Label("Cluster ID");
-      workersGrid.add(workerIdLabel, {
-        row,
-        column: this.self().GRID_POS.ID
-      });
-
-      const workerNameLabel = new qx.ui.basic.Label("Name");
-      workersGrid.add(workerNameLabel, {
-        row,
-        column: this.self().GRID_POS.LABEL
-      });
-
-      const workerCPULabel = new qx.ui.basic.Label("CPU");
-      workersGrid.add(workerCPULabel, {
-        row,
-        column: this.self().GRID_POS.CPU
-      });
-
-      const workerRAMLabel = new qx.ui.basic.Label("RAM");
-      workersGrid.add(workerRAMLabel, {
-        row,
-        column: this.self().GRID_POS.RAM
-      });
-
-      const workerGPULabel = new qx.ui.basic.Label("GPU");
-      workersGrid.add(workerGPULabel, {
-        row,
-        column: this.self().GRID_POS.GPU
-      });
-
-      const workerMPILabel = new qx.ui.basic.Label("MPI");
-      workersGrid.add(workerMPILabel, {
-        row,
-        column: this.self().GRID_POS.MPI
-      });
     },
 
     __populateWorkersDetails: function(clusterDetails) {
@@ -153,20 +110,13 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
         const worker = clusterDetails.scheduler.workers[workerUrl];
         row++;
 
-        const workerIdLabel = new qx.ui.basic.Label("W-" + idx);
-        workersGrid.add(workerIdLabel, {
-          row,
-          column: this.self().GRID_POS.ID
-        });
-
-        const workerNameLabel = new qx.ui.basic.Label(worker.name).set({
-          maxWidth: 200,
-          toolTipText: worker.name
-        });
+        const workerNameLabel = new qx.ui.basic.Label("W-" + idx + ": " + worker.name);
         workersGrid.add(workerNameLabel, {
           row,
-          column: this.self().GRID_POS.LABEL
+          column: 0,
+          colSpan: 4
         });
+        row++;
 
         const plots = {
           cpu: {
@@ -210,8 +160,8 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
           }
           const layout = osparc.wrapper.Plotly.getDefaultLayout();
           const plot = new osparc.component.widget.PlotlyWidget(plotId, gaugeDatas, layout).set({
-            width: 200,
-            height: 160
+            width: parseInt(this.self().PLOT_WIDTH),
+            height: parseInt(this.self().PLOT_WIDTH*0.8)
           });
           workersGrid.add(plot, {
             row,
