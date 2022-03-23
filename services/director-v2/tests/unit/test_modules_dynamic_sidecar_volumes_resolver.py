@@ -22,11 +22,6 @@ def compose_namespace() -> str:
 
 
 @pytest.fixture(scope="module")
-def node_uuid() -> str:
-    return f"{uuid4()}"
-
-
-@pytest.fixture(scope="module")
 def state_paths() -> List[Path]:
     return [Path(f"/tmp/asd/asd/{x}") for x in range(10)]
 
@@ -48,7 +43,6 @@ def expect() -> Callable[[str, str], Dict[str, Any]]:
 
 def test_expected_paths(
     compose_namespace: str,
-    node_uuid: str,
     state_paths: List[Path],
     expect: Callable[[str, str], Dict[str, Any]],
 ) -> None:
