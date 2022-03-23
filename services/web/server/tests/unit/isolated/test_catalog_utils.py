@@ -10,7 +10,7 @@ from models_library.function_service import demo_units
 from models_library.services import ServiceInput, ServiceOutput
 from pint import UnitRegistry
 from pydantic import Field, create_model
-from simcore_service_webserver.catalog_handlers_utils import can_connect
+from simcore_service_webserver.catalog_utils import can_connect
 
 # HELPERS ----------
 

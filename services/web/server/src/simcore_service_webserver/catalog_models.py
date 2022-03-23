@@ -12,7 +12,7 @@ from pint import UnitRegistry
 from pydantic import Extra, Field, constr
 from pydantic.main import BaseModel
 
-from .catalog_handlers_utils import UnitHtmlFormat, get_html_formatted_unit
+from .catalog_utils import UnitHtmlFormat, get_html_formatted_unit
 from .utils import snake_to_camel
 
 ServiceKey = constr(regex=KEY_RE)

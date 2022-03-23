@@ -13,7 +13,7 @@ from servicelib.aiohttp.rest_routing import iter_path_operations
 from . import catalog_handlers
 from ._constants import APP_OPENAPI_SPECS_KEY
 from .catalog_client import get_services_for_user_in_product, is_service_responsive
-from .catalog_handlers_utils import reverse_proxy_handler
+from .catalog_utils import reverse_proxy_handler
 
 logger = logging.getLogger(__name__)
 
