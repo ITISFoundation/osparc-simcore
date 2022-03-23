@@ -103,8 +103,9 @@ openapi-schema-validator==0.2.3
     # via
     #   -c requirements/_aiohttp.txt
     #   openapi-spec-validator
-openapi-spec-validator==0.4.0
+openapi-spec-validator==0.3.1
     # via
+    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
     #   -r requirements/_test.in
 packaging==21.3
@@ -180,6 +181,7 @@ six==1.16.0
     #   bcrypt
     #   dockerpty
     #   jsonschema
+    #   openapi-spec-validator
     #   paramiko
     #   python-dateutil
     #   websocket-client
