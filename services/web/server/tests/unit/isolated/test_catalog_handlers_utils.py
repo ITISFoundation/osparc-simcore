@@ -75,23 +75,11 @@ def test_can_connect_for_gh_osparc_issues_442(ureg: UnitRegistry):
         to_input=ServiceInput.parse_obj(input_sleeper_input_1),
         units_registry=ureg,
     )
-    assert not can_connect(
-        from_output=ServiceOutput.parse_obj(file_picker_outfile),
-        to_input=ServiceInput.parse_obj(input_sleeper_input_1),
-        strict=True,
-        units_registry=ureg,
-    )
 
     # data:text/plain  -> data:*/*
     assert can_connect(
         from_output=ServiceOutput.parse_obj(input_sleeper_input_1),
         to_input=ServiceInput.parse_obj(file_picker_outfile),
-        units_registry=ureg,
-    )
-    assert can_connect(
-        from_output=ServiceOutput.parse_obj(input_sleeper_input_1),
-        to_input=ServiceInput.parse_obj(file_picker_outfile),
-        strict=True,
         units_registry=ureg,
     )
 
@@ -143,23 +131,11 @@ def test_can_connect_no_units_with_units(
         to_input=ServiceInput.parse_obj(port_with_unit),
         units_registry=ureg,
     )
-    assert not can_connect(
-        from_output=ServiceOutput.parse_obj(port_without_unit),
-        to_input=ServiceInput.parse_obj(port_with_unit),
-        strict=True,
-        units_registry=ureg,
-    )
 
     # w -> w/o
     assert can_connect(
         from_output=ServiceOutput.parse_obj(port_with_unit),
         to_input=ServiceInput.parse_obj(port_without_unit),
-        units_registry=ureg,
-    )
-    assert not can_connect(
-        from_output=ServiceOutput.parse_obj(port_with_unit),
-        to_input=ServiceInput.parse_obj(port_without_unit),
-        strict=True,
         units_registry=ureg,
     )
 
@@ -220,6 +196,10 @@ def test_can_connect_with_units(
 ):
     # WARNING: assumes the following convention for the fixture data:
     #   - two ports are compatible if they have the same title
+    #
+    # NOTE: this assumption will probably break when the demo_units service
+    # is modified. At that point, please create a fixture in this test-suite
+    # and copy&paste inputs/outputs above
     are_compatible = (
         from_port.content_schema["title"] == to_port.content_schema["title"]
     )

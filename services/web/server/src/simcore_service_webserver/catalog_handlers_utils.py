@@ -59,7 +59,7 @@ async def reverse_proxy_handler(request: web.Request) -> web.Response:
 ## PORT COMPATIBILITY ---------------------------------
 
 
-def _get_unit(port: BaseServiceIOModel) -> str:
+def _get_unit_name(port: BaseServiceIOModel) -> str:
     unit = port.unit
     if port.property_type == "ref_contentSchema":
         if port.content_schema["type"] in ("object", "array"):
@@ -71,16 +71,17 @@ def _get_unit(port: BaseServiceIOModel) -> str:
     return unit
 
 
-def _get_type(port: BaseServiceIOModel) -> str:
+def _get_type_name(port: BaseServiceIOModel) -> str:
     _type = port.property_type
     if port.property_type == "ref_contentSchema":
         _type = port.content_schema["type"]
     return _type
 
 
-def _can_convert_units(
-    from_unit: Optional[str], to_unit: Optional[str], ureg: UnitRegistry
-) -> bool:
+def _can_convert_units(from_unit: str, to_unit: str, ureg: UnitRegistry) -> bool:
+    assert from_unit  # nosec
+    assert to_unit  # nosec
+
     # TODO: optimize by caching?  ureg already caches?
     # TODO: symmetric
     try:
@@ -92,52 +93,65 @@ def _can_convert_units(
 def can_connect(
     from_output: ServiceOutput,
     to_input: ServiceInput,
-    *,
     units_registry: UnitRegistry,
-    strict: bool = False,
 ) -> bool:
+    """Checks compatibility between ports.
 
-    ResultIfUndefined = False if strict else True
+    This check IS PERMISSIVE and is used for checks in the UI where one needs to give some "flexibility" since:
+    - has to be a fast evaluation
+    - there are not error messages when check fails
+    - some configurations might need several UI steps to be valid
 
+    For more strict checks use the "strict" variant
+    """
     # types check
-    from_type = _get_type(from_output)
-    to_type = _get_type(to_input)
+    from_type = _get_type_name(from_output)
+    to_type = _get_type_name(to_input)
 
-    if any(t in ("object", "array") for t in (from_type, to_type)):
-        return ResultIfUndefined
-
-    ok = from_type == to_type
-    if not ok:
-        ok = (
+    ok = (
+        from_type == to_type
+        or (
             # data:  -> data:*/*
             to_type == "data:*/*"
             and from_type.startswith("data:")
         )
-
-        if not strict:
+        or (
             # NOTE: by default, this is allowed in the UI but not in a more strict plausibility check
             # data:*/*  -> data:
-            ok |= from_output.property_type == "data:*/*" and to_type.startswith(
-                "data:"
-            )
+            from_type == "data:*/*"
+            and to_type.startswith("data:")
+        )
+    )
 
-    # units check
+    if any(t in ("object", "array") for t in (from_type, to_type)):
+        # Not Implemented but this if e.g. from_type == to_type that should be the answer
+        # TODO: from_type subset of to_type is the right way resolve this check
+        return ok
+
+    # types units
     if ok:
         try:
-            from_unit = _get_unit(from_output)
-            to_unit = _get_unit(to_input)
+            from_unit = _get_unit_name(from_output)
+            to_unit = _get_unit_name(to_input)
         except NotImplementedError:
-            return ResultIfUndefined
+            return ok
 
-        if strict:
-            ok = (from_unit is None and to_unit is None) or _can_convert_units(
-                from_unit, to_unit, units_registry
-            )
-        else:
-            ok = (
-                from_unit is None
-                or to_unit is None
-                or _can_convert_units(from_unit, to_unit, units_registry)
-            )
+        ok = ok and (
+            from_unit == to_unit
+            # unitless -> *
+            or from_unit is None
+            # * -> unitless
+            or to_unit is None
+            # from_unit -> unit
+            or _can_convert_units(from_unit, to_unit, units_registry)
+        )
 
     return ok
+
+
+def check_connect_strict(
+    from_output: ServiceOutput,
+    to_input: ServiceInput,
+    units_registry: UnitRegistry,
+):
+    raise NotImplementedError("Strict ports compatibility check still not implemented")
