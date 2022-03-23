@@ -89,11 +89,23 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
       const clusterIdLabel = new qx.ui.basic.Label("C-" + this.__clusterId);
       clusterDetailsLayout.add(clusterIdLabel);
 
-      const clusterStatusLabel = new qx.ui.basic.Label(this.tr("Status: ") + clusterDetails.scheduler.status);
+      const clusterStatusLabel = new qx.ui.basic.Label(this.tr("Status:"));
       clusterDetailsLayout.add(clusterStatusLabel);
+      const clusterStatus = clusterDetails.scheduler.status;
+      const clusterStatusImage = new qx.ui.basic.Image().set({
+        source: "@FontAwesome5Solid/lightbulb/16",
+        alignY: "middle",
+        alignX: "center",
+        paddingLeft: 3,
+        toolTipText: clusterStatus,
+        textColor: clusterStatus === "running" ? "#007fd4" : "danger-red"
+      });
+      clusterDetailsLayout.add(clusterStatusImage);
 
-      const clusterLinkLabel = new qx.ui.basic.Label(this.tr("Link: ") + clusterDetails["dashboard_link"]);
-      clusterDetailsLayout.add(clusterLinkLabel);
+      if (this.__clusterId !== 0) {
+        const clusterLinkLabel = new qx.ui.basic.Label(this.tr("Link: ") + clusterDetails["dashboard_link"]);
+        clusterDetailsLayout.add(clusterLinkLabel);
+      }
     },
 
     __populateWorkers: function(clusterDetails) {
@@ -109,7 +121,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
         const worker = clusterDetails.scheduler.workers[workerUrl];
         row++;
 
-        const workerNameLabel = new qx.ui.basic.Label("W-" + idx + ": " + worker.name);
+        const workerNameLabel = new qx.ui.basic.Label("C-" + this.__clusterId + "_W-" + idx + ": " + worker.name);
         workersGrid.add(workerNameLabel, {
           row,
           column: 0,

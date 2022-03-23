@@ -33,14 +33,12 @@ qx.Class.define("osparc.component.cluster.Clusters", {
       osparc.data.Resources.get("clusters")
         .then(clusters => {
           // Workaround: insert default cluster: 0
-          if (!(clusters.includes(0))) {
+          if (!(clusters.find(cluster => cluster.id === 0))) {
             clusters.unshift({
               id: 0
             });
           }
-          clusters.forEach(cluster => {
-            this.__populateClusterDetails(cluster.id);
-          });
+          clusters.forEach(cluster => this.__populateClusterDetails(cluster.id));
         });
     },
 

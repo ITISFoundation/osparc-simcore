@@ -25,6 +25,8 @@ qx.Class.define("osparc.component.widget.PlotlyWidget", {
 
   /**
     * @param plotId {String} Element id to set it as dom attribute
+    * @param data {Object} Plotly data
+    * @param layout {Object} Plotly layout
     */
   construct: function(plotId, data, layout) {
     this.base(arguments);
