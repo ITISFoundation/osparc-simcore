@@ -35,7 +35,7 @@ packaging==21.3
     # via
     #   pytest
     #   pytest-sugar
-platformdirs==2.5.0
+platformdirs==2.5.1
     # via pylint
 pluggy==1.0.0
     # via pytest
@@ -58,7 +58,7 @@ pytest-instafail==0.4.2
     # via -r requirements/_test.in
 pytest-mock==3.7.0
     # via -r requirements/_test.in
-pytest-runner==5.3.1
+pytest-runner==6.0.0
     # via -r requirements/_test.in
 pytest-sugar==0.9.4
     # via -r requirements/_test.in
@@ -75,12 +75,12 @@ tomli==1.2.3
     #   -c requirements/../../../requirements/constraints.txt
     #   coverage
     #   pytest
-typing-extensions==4.0.1
+typing-extensions==4.1.1
     # via
     #   -c requirements/_base.txt
     #   astroid
     #   pylint
-urllib3==1.26.8
+urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
