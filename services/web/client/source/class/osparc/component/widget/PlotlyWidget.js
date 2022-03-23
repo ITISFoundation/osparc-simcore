@@ -26,7 +26,7 @@ qx.Class.define("osparc.component.widget.PlotlyWidget", {
   /**
     * @param plotId {String} Element id to set it as dom attribute
     */
-  construct: function(plotId) {
+  construct: function(plotId, data, layout) {
     this.base(arguments);
 
     this.set({
@@ -43,17 +43,27 @@ qx.Class.define("osparc.component.widget.PlotlyWidget", {
         qx.bom.element.Style.set(plotlyPlaceholder, "height", "100%");
         this.getContentElement().getDomElement().appendChild(plotlyPlaceholder);
         const {
-          data,
-          layout
+          emptyData,
+          emptyLayout
         } = osparc.wrapper.Plotly.createEmptyPlot(plotId);
-        this.__data = data;
-        this.__layout = layout;
+        if (data) {
+          osparc.wrapper.Plotly.setData(plotId, data);
+          this.__data = data;
+        } else {
+          this.__data = emptyData;
+        }
+        if (layout) {
+          osparc.wrapper.Plotly.setLayout(plotId, layout);
+          this.__layout = layout;
+        } else {
+          this.__layout = emptyLayout;
+        }
       } else {
         console.error("plotly.js was not loaded");
       }
     }, this);
 
-    this.addListener("resize", () => osparc.wrapper.Plotly.resize(this.__plotId), this);
+    // this.addListener("resize", () => osparc.wrapper.Plotly.resize(this.__plotId), this);
   },
 
   members: {

@@ -31,13 +31,6 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
     const workersGrid = this.__workersGrid = new qx.ui.container.Composite(grid);
     this._add(workersGrid);
 
-    const plot = new osparc.component.widget.PlotlyWidget("asdf").set({
-      minHeight: 300
-    });
-    this._add(plot, {
-      flex: 1
-    });
-
     this.__clusterId = clusterId;
     this.__fetchDetails();
     // Poll every 5 seconds
@@ -155,7 +148,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
     __populateWorkersDetails: function(clusterDetails) {
       const workersGrid = this.__workersGrid;
 
-      let row = 1;
+      let row = 0;
       Object.keys(clusterDetails.scheduler.workers).forEach((workerUrl, idx) => {
         const worker = clusterDetails.scheduler.workers[workerUrl];
         row++;
@@ -202,13 +195,18 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
           }
         };
         Object.keys(plots).forEach(plotKey => {
-          const plot = plots[plotKey];
-          const workerCPULabel = new qx.ui.basic.Label().set({
-            value: this.self().getMetricsAttribute(worker, plot.metric) + "/" + this.self().getResourcesAttribute(worker, plot.resource)
+          const plotInfo = plots[plotKey];
+          const plotId = plotKey + "-" + row;
+          console.log(this.self().getMetricsAttribute(worker, plotInfo.metric) + "/" + this.self().getResourcesAttribute(worker, plotInfo.resource));
+          const gaugeData = osparc.wrapper.Plotly.getDefaultGaugeData();
+          gaugeData[0].title.text = plotInfo.label;
+          const plot = new osparc.component.widget.PlotlyWidget(plotId, gaugeData).set({
+            width: 200,
+            height: 160
           });
-          workersGrid.add(workerCPULabel, {
+          workersGrid.add(plot, {
             row,
-            column: plot.column
+            column: plotInfo.column
           });
         });
       });

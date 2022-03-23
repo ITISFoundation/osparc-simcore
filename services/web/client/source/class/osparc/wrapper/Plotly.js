@@ -18,7 +18,7 @@
 /* global Plotly */
 
 /**
- * @asset(plotly/plotly-basic-2.11.1.min.js)
+ * @asset(plotly/plotly-2.9.0.min.js)
  * @ignore(Plotly)
  */
 
@@ -41,15 +41,11 @@ qx.Class.define("osparc.wrapper.Plotly", {
 
   statics: {
     NAME: "Plotly",
-    VERSION: "2.11.1",
+    VERSION: "2.9.0",
     URL: "https://github.com/plotly/plotly.js",
 
     createEmptyPlot: function(plotId) {
       return osparc.wrapper.Plotly.getInstance().createEmptyPlot(plotId);
-    },
-
-    createGaugePlot: function(plotId, title) {
-      return osparc.wrapper.Plotly.getInstance().createGaugePlot(plotId, title);
     },
 
     setData: function(plotId, ids, labels, values, tooltips, title) {
@@ -61,7 +57,7 @@ qx.Class.define("osparc.wrapper.Plotly", {
     },
 
     getDefaultLayout: function() {
-      const margin = 25;
+      const margin = 5;
       const bigFont = qx.theme.manager.Font.getInstance().resolve("text-14");
       const smallFont = qx.theme.manager.Font.getInstance().resolve("text-12");
       return {
@@ -85,6 +81,21 @@ qx.Class.define("osparc.wrapper.Plotly", {
         "plot_bgcolor": "rgba(0, 0, 0, 0)",
         "paper_bgcolor": "rgba(0, 0, 0, 0)"
       };
+    },
+
+    getDefaultGaugeData: function() {
+      return [{
+        domain: {
+          x: [0, 1],
+          y: [0, 1]
+        },
+        value: 270,
+        title: {
+          text: "title"
+        },
+        type: "indicator",
+        mode: "gauge+number"
+      }];
     }
   },
 
@@ -97,7 +108,7 @@ qx.Class.define("osparc.wrapper.Plotly", {
         }
 
         // initialize the script loading
-        const plotlyPath = "plotly/plotly-basic-2.11.1.min.js";
+        const plotlyPath = "plotly/plotly-2.9.0.min.js";
         const dynLoader = new qx.util.DynamicScriptLoader([
           plotlyPath
         ]);
@@ -119,46 +130,21 @@ qx.Class.define("osparc.wrapper.Plotly", {
     },
 
     createEmptyPlot: function(plotId) {
-      const data = [];
-      const layout = this.self().getDefaultLayout();
-      Plotly.newPlot(plotId, data, layout);
-    },
-
-    createGaugePlot: function(plotId, title) {
-      const data = [{
-        domain: {
-          x: [0, 1],
-          y: [0, 1]
-        },
-        value: 270,
-        title: {
-          text: title
-        },
-        type: "indicator",
-        mode: "gauge+number"
-      }];
-      const layout = this.self().getDefaultLayout();
-      layout.width = 200;
-      layout.height = 180;
-      Plotly.newPlot(plotId, data, layout);
-    },
-
-    setData: function(plotId, ids, labels, values, tooltips, title) {
-      const data = [{
-        ids: ids,
-        labels: labels,
-        values: values,
-        text: tooltips,
-        textinfo: "label+percent",
-        hoverinfo: "text",
-        showlegend: false,
-        type: "pie"
-      }];
-      const layout = {
-        title
+      const emptyData = [];
+      const emptyLayout = this.self().getDefaultLayout();
+      Plotly.newPlot(plotId, emptyData, emptyLayout);
+      return {
+        emptyData,
+        emptyLayout
       };
+    },
 
-      Plotly.react(plotId, data, layout);
+    setData: function(plotId, data) {
+      Plotly.react(plotId, data);
+    },
+
+    setLayout: function(plotId, layout) {
+      Plotly.relayout(plotId, layout);
     },
 
     resize: function(plotId) {
