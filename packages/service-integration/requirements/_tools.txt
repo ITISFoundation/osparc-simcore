@@ -43,7 +43,7 @@ click==8.0.3
     #   -c requirements/_base.txt
     #   black
     #   pip-tools
-datamodel-code-generator==0.11.14
+datamodel-code-generator==0.11.20
     # via -r requirements/_tools.in
 distlib==0.3.3
     # via virtualenv
@@ -140,8 +140,6 @@ pyyaml==6.0
     #   -c requirements/_base.txt
     #   openapi-spec-validator
     #   pre-commit
-regex==2021.11.10
-    # via datamodel-code-generator
 requests==2.27.1
     # via
     #   -c requirements/_base.txt
@@ -179,6 +177,8 @@ tomli==1.2.3
     #   -c requirements/_test.txt
     #   black
     #   pep517
+typed-ast==1.5.2
+    # via datamodel-code-generator
 typing-extensions==4.0.1
     # via
     #   -c requirements/_base.txt
