@@ -197,12 +197,20 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
         Object.keys(plots).forEach(plotKey => {
           const plotInfo = plots[plotKey];
           const plotId = plotKey + "-" + row;
-          console.log(this.self().getMetricsAttribute(worker, plotInfo.metric) + "/" + this.self().getResourcesAttribute(worker, plotInfo.resource));
-          const gaugeData = osparc.wrapper.Plotly.getDefaultGaugeData();
-          gaugeData[0].title.text = plotInfo.label;
-          const plot = new osparc.component.widget.PlotlyWidget(plotId, gaugeData).set({
-            width: 200,
-            height: 160
+          const gaugeDatas = osparc.wrapper.Plotly.getDefaultGaugeData();
+          const gaugeData = gaugeDatas[0];
+          gaugeData.title.text = plotInfo.label;
+          const used = this.self().getMetricsAttribute(worker, plotInfo.metric);
+          const available = this.self().getResourcesAttribute(worker, plotInfo.resource);
+          if (available === "-") {
+            gaugeData.value = "-";
+          } else {
+            gaugeData.value = used;
+            gaugeData.gauge.axis.range[1] = available;
+          }
+          const plot = new osparc.component.widget.PlotlyWidget(plotId, gaugeDatas).set({
+            width: 300,
+            height: 240
           });
           workersGrid.add(plot, {
             row,

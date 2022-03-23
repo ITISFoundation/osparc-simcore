@@ -57,17 +57,18 @@ qx.Class.define("osparc.wrapper.Plotly", {
     },
 
     getDefaultLayout: function() {
-      const margin = 5;
+      const textColor = qx.theme.manager.Color.getInstance().resolve("text");
       const bigFont = qx.theme.manager.Font.getInstance().resolve("text-14");
       const smallFont = qx.theme.manager.Font.getInstance().resolve("text-12");
+      const margin = 0;
       return {
         titlefont: {
-          color: "#bfbfbf",
+          color: textColor,
           size: bigFont.getSize(),
           family: bigFont.getFamily()
         },
         font: {
-          color: "#bfbfbf",
+          color: textColor,
           size: smallFont.getSize(),
           family: smallFont.getFamily()
         },
@@ -89,12 +90,17 @@ qx.Class.define("osparc.wrapper.Plotly", {
           x: [0, 1],
           y: [0, 1]
         },
-        value: 270,
+        value: 0,
         title: {
           text: "title"
         },
         type: "indicator",
-        mode: "gauge+number"
+        mode: "gauge+number",
+        gauge: {
+          axis: {
+            range: [null, 100]
+          }
+        }
       }];
     }
   },
