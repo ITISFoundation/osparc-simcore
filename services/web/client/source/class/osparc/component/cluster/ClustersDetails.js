@@ -18,19 +18,19 @@
 qx.Class.define("osparc.component.cluster.ClustersDetails", {
   extend: qx.ui.core.Widget,
 
-  construct: function() {
+  construct: function(selectClusterId) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox(20));
 
-    this.__populateClustersBox();
+    this.__populateClustersBox(selectClusterId);
   },
 
   members: {
     __clustersSelectBox: null,
     __clusterDetails: null,
 
-    __populateClustersBox: function() {
+    __populateClustersBox: function(selectClusterId) {
       const clustersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
 
       const clustersLabel = new qx.ui.basic.Label(this.tr("Connected clusters"));
@@ -47,7 +47,7 @@ qx.Class.define("osparc.component.cluster.ClustersDetails", {
       clustersLayout.add(selectBox);
 
       this._add(clustersLayout);
-      this.__populateClusterDetails(0);
+      this.__populateClusterDetails(selectClusterId === undefined ? 0 : selectClusterId);
     },
 
     __populateClusterDetails: function(clusterId) {

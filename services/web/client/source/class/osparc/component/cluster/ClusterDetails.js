@@ -41,25 +41,10 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
   },
 
   statics: {
-    PLOT_WIDTH: 200,
     GRID_POS: {
       CPU: 0,
       RAM: 1,
       GPU: 2
-    },
-
-    getResourcesAttribute: function(worker, attribute) {
-      if (attribute in worker.resources) {
-        return worker.resources[attribute];
-      }
-      return "-";
-    },
-
-    getMetricsAttribute: function(worker, attribute) {
-      if (attribute in worker.metrics) {
-        return worker.metrics[attribute];
-      }
-      return "-";
     }
   },
 
@@ -117,6 +102,26 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
 
     __populateWorkersDetails: function(clusterDetails) {
       const workersGrid = this.__workersGrid;
+      const plots = {
+        cpu: {
+          metric: "cpu",
+          resource: "CPU",
+          label: this.tr("CPU"),
+          column: this.self().GRID_POS.CPU
+        },
+        ram: {
+          metric: "memory",
+          resource: "RAM",
+          label: this.tr("Memory"),
+          column: this.self().GRID_POS.RAM
+        },
+        gpu: {
+          metric: "gpu",
+          resource: "GPU",
+          label: this.tr("GPU"),
+          column: this.self().GRID_POS.GPU
+        }
+      };
 
       let row = 0;
       Object.keys(clusterDetails.scheduler.workers).forEach((workerUrl, idx) => {
@@ -130,35 +135,13 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
           colSpan: 4
         });
         row++;
-
-        const plots = {
-          cpu: {
-            label: this.tr("CPU"),
-            metric: "cpu",
-            resource: "CPU",
-            column: this.self().GRID_POS.CPU
-          },
-          ram: {
-            label: this.tr("Memory"),
-            metric: "memory",
-            resource: "RAM",
-            column: this.self().GRID_POS.RAM
-          },
-          gpu: {
-            label: this.tr("GPU"),
-            metric: "gpu",
-            resource: "GPU",
-            column: this.self().GRID_POS.GPU
-          }
-        };
         Object.keys(plots).forEach(plotKey => {
           const plotInfo = plots[plotKey];
-          const plotId = plotKey + "-" + row;
           const gaugeDatas = osparc.wrapper.Plotly.getDefaultGaugeData();
           const gaugeData = gaugeDatas[0];
           gaugeData.title.text = plotInfo.label.toLocaleString();
-          let used = this.self().getMetricsAttribute(worker, plotInfo.metric);
-          let available = this.self().getResourcesAttribute(worker, plotInfo.resource);
+          const used = osparc.utils.Clusters.getMetricsAttribute(worker, plotInfo.metric);
+          const available = osparc.utils.Clusters.getResourcesAttribute(worker, plotInfo.resource);
           if (available === "-") {
             gaugeData.value = "-";
           } else {
@@ -166,9 +149,10 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
             gaugeData.gauge.axis.range[1] = available;
           }
           const layout = osparc.wrapper.Plotly.getDefaultLayout();
+          const plotId = "ClusterDetails_" + plotKey + "-" + row;
           const plot = new osparc.component.widget.PlotlyWidget(plotId, gaugeDatas, layout).set({
-            width: parseInt(this.self().PLOT_WIDTH),
-            height: parseInt(this.self().PLOT_WIDTH*0.8)
+            width: 200,
+            height: 160
           });
           workersGrid.add(plot, {
             row,

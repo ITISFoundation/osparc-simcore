@@ -31,11 +31,6 @@ qx.Class.define("osparc.component.widget.PlotlyWidget", {
   construct: function(plotId, data, layout) {
     this.base(arguments);
 
-    this.set({
-      minWidth: 100,
-      minHeight: 100
-    });
-
     this.__plotId = plotId;
     this.addListenerOnce("appear", () => {
       if (osparc.wrapper.Plotly.getInstance().isLibReady()) {

@@ -88,15 +88,16 @@ qx.Class.define("osparc.wrapper.Plotly", {
       };
     },
 
-    getDefaultGaugeData: function() {
+    getDefaultGaugeBaseData: function() {
       return [{
+        type: "indicator",
+        mode: "gauge+number",
         domain: {
           x: [0, 1],
           y: [0, 1]
         },
         value: 0,
         title: {
-          text: "title",
           font: {
             size: 14
           }
@@ -106,8 +107,6 @@ qx.Class.define("osparc.wrapper.Plotly", {
             size: 16
           }
         },
-        type: "indicator",
-        mode: "gauge+number",
         gauge: {
           axis: {
             range: [null, 100],
@@ -119,6 +118,18 @@ qx.Class.define("osparc.wrapper.Plotly", {
           bordercolor: qx.theme.manager.Color.getInstance().resolve("text")
         }
       }];
+    },
+
+    getDefaultGaugeData: function() {
+      const defaultGaugeData = this.getDefaultGaugeBaseData();
+      defaultGaugeData[0].gauge.shape = "angular";
+      return defaultGaugeData;
+    },
+
+    getDefaultProgressData: function() {
+      const defaultGaugeData = this.getDefaultGaugeBaseData();
+      defaultGaugeData[0].gauge.shape = "bullet";
+      return defaultGaugeData;
     }
   },
 

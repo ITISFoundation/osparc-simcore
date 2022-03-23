@@ -51,6 +51,20 @@ qx.Class.define("osparc.utils.Clusters", {
         });
       }
       return clusters;
+    },
+
+    getResourcesAttribute: function(worker, attribute) {
+      if (attribute in worker.resources) {
+        return worker.resources[attribute];
+      }
+      return "-";
+    },
+
+    getMetricsAttribute: function(worker, attribute) {
+      if (attribute in worker.metrics) {
+        return worker.metrics[attribute];
+      }
+      return "-";
     }
   }
 });
