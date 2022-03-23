@@ -178,7 +178,7 @@ async def _get_cluster_details(
 
 # NOTE: ANE -> SAN on my local computer it prints out:
 # AssertionError: worker did not update the cpu metrics
-# assert 2.0 == 0
+# assert 4.0 == 0
 @pytest.mark.skip(reason="Flaky test not working on local dev machine")
 async def test_get_cluster_details(
     clusters_config: None,
