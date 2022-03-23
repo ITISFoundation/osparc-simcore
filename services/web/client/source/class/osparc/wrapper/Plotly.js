@@ -96,14 +96,21 @@ qx.Class.define("osparc.wrapper.Plotly", {
         },
         value: 0,
         title: {
-          text: "title"
+          text: "title",
+          font: {
+            size: 14
+          }
         },
         type: "indicator",
         mode: "gauge+number",
         gauge: {
           axis: {
             range: [null, 100]
-          }
+          },
+          bar: {
+            color: "#007fd4" // Visual Studio blue
+          },
+          bordercolor: qx.theme.manager.Color.getInstance().resolve("text")
         }
       }];
     }

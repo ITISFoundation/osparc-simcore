@@ -45,8 +45,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
     GRID_POS: {
       CPU: 0,
       RAM: 1,
-      GPU: 2,
-      MPI: 3
+      GPU: 2
     },
 
     getResourcesAttribute: function(worker, attribute) {
@@ -126,7 +125,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
             column: this.self().GRID_POS.CPU
           },
           ram: {
-            label: this.tr("Memory"),
+            label: this.tr("Memory (GB)"),
             metric: "memory",
             resource: "RAM",
             column: this.self().GRID_POS.RAM
@@ -136,12 +135,6 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
             metric: "gpu",
             resource: "GPU",
             column: this.self().GRID_POS.GPU
-          },
-          mpi: {
-            label: this.tr("MPI"),
-            metric: "mpi",
-            resource: "MPI",
-            column: this.self().GRID_POS.MPI
           }
         };
         Object.keys(plots).forEach(plotKey => {
@@ -150,11 +143,16 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
           const gaugeDatas = osparc.wrapper.Plotly.getDefaultGaugeData();
           const gaugeData = gaugeDatas[0];
           gaugeData.title.text = plotInfo.label.toLocaleString();
-          const used = this.self().getMetricsAttribute(worker, plotInfo.metric);
-          const available = this.self().getResourcesAttribute(worker, plotInfo.resource);
+          let used = this.self().getMetricsAttribute(worker, plotInfo.metric);
+          let available = this.self().getResourcesAttribute(worker, plotInfo.resource);
           if (available === "-") {
             gaugeData.value = "-";
           } else {
+            if (plotKey === "ram") {
+              const bToGB = 1024 * 1024 *1024;
+              used /= bToGB;
+              available /= bToGB;
+            }
             gaugeData.value = used;
             gaugeData.gauge.axis.range[1] = available;
           }
