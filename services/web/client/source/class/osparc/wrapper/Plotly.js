@@ -31,13 +31,6 @@ qx.Class.define("osparc.wrapper.Plotly", {
   extend: qx.core.Object,
   type: "singleton",
 
-  construct: function() {
-    this.base(arguments);
-
-    this.__data = [];
-    this.__layout = {};
-  },
-
   properties: {
     libReady: {
       nullable: false,
@@ -49,7 +42,19 @@ qx.Class.define("osparc.wrapper.Plotly", {
   statics: {
     NAME: "Plotly",
     VERSION: "2.11.1",
-    URL: "https://github.com/plotly/plotly.js"
+    URL: "https://github.com/plotly/plotly.js",
+
+    createEmptyPlot: function(plotId) {
+      return osparc.wrapper.Plotly.getInstance().createEmptyPlot(plotId);
+    },
+
+    setData: function(plotId, ids, labels, values, tooltips, title) {
+      return osparc.wrapper.Plotly.getInstance().setData(plotId, ids, labels, values, tooltips, title);
+    },
+
+    resize: function(plotId) {
+      return osparc.wrapper.Plotly.getInstance().resize(plotId);
+    }
   },
 
   members: {
@@ -84,8 +89,8 @@ qx.Class.define("osparc.wrapper.Plotly", {
 
     createEmptyPlot: function(plotId) {
       const margin = 25;
-      const bigFont = osparc.utils.Utils.getFont(14);
-      const smallFont = osparc.utils.Utils.getFont(12);
+      const bigFont = qx.theme.manager.Font.getInstance().resolve("text-14");
+      const smallFont = qx.theme.manager.Font.getInstance().resolve("text-12");
       const layout = {
         titlefont: {
           color: "#bfbfbf",
@@ -108,18 +113,12 @@ qx.Class.define("osparc.wrapper.Plotly", {
         "paper_bgcolor": "rgba(0, 0, 0, 0)"
       };
       const data = [];
+      console.log("newPlot", plotId, data, layout);
       Plotly.newPlot(plotId, data, layout);
       return {
         data,
         layout
       };
-    },
-
-    resize: function(plotId) {
-      let d3 = Plotly.d3;
-      var gd3 = d3.select("div[id="+plotId+"]");
-      let gd = gd3.node();
-      Plotly.Plots.resize(gd);
     },
 
     setData: function(plotId, ids, labels, values, tooltips, title) {
@@ -138,6 +137,13 @@ qx.Class.define("osparc.wrapper.Plotly", {
       };
 
       Plotly.react(plotId, data, layout);
+    },
+
+    resize: function(plotId) {
+      const d3 = Plotly.d3;
+      const gd3 = d3.select("div[id="+plotId+"]");
+      const gd = gd3.node();
+      Plotly.Plots.resize(gd);
     }
   }
 });

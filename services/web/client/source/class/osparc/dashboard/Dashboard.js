@@ -43,7 +43,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       barPosition: "top"
     });
 
-    // osparc.wrapper.Plotly.getInstance().init();
+    osparc.wrapper.Plotly.getInstance().init();
     osparc.wrapper.Svg.getInstance().init();
     osparc.wrapper.JsonDiffPatch.getInstance().init();
     osparc.wrapper.JsonTreeViewer.getInstance().init();

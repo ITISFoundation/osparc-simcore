@@ -31,6 +31,13 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
     const workersGrid = this.__workersGrid = new qx.ui.container.Composite(grid);
     this._add(workersGrid);
 
+    const plot = new osparc.component.widget.PlotlyWidget("asdf").set({
+      minHeight: 300
+    });
+    this._add(plot, {
+      flex: 1
+    });
+
     this.__clusterId = clusterId;
     this.__fetchDetails();
     // Poll every 5 seconds
