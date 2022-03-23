@@ -48,12 +48,43 @@ qx.Class.define("osparc.wrapper.Plotly", {
       return osparc.wrapper.Plotly.getInstance().createEmptyPlot(plotId);
     },
 
+    createGaugePlot: function(plotId, title) {
+      return osparc.wrapper.Plotly.getInstance().createGaugePlot(plotId, title);
+    },
+
     setData: function(plotId, ids, labels, values, tooltips, title) {
       return osparc.wrapper.Plotly.getInstance().setData(plotId, ids, labels, values, tooltips, title);
     },
 
     resize: function(plotId) {
       return osparc.wrapper.Plotly.getInstance().resize(plotId);
+    },
+
+    getDefaultLayout: function() {
+      const margin = 25;
+      const bigFont = qx.theme.manager.Font.getInstance().resolve("text-14");
+      const smallFont = qx.theme.manager.Font.getInstance().resolve("text-12");
+      return {
+        titlefont: {
+          color: "#bfbfbf",
+          size: bigFont.getSize(),
+          family: bigFont.getFamily()
+        },
+        font: {
+          color: "#bfbfbf",
+          size: smallFont.getSize(),
+          family: smallFont.getFamily()
+        },
+        margin: {
+          l: margin,
+          r: margin,
+          t: margin,
+          b: margin,
+          pad: 0
+        },
+        "plot_bgcolor": "rgba(0, 0, 0, 0)",
+        "paper_bgcolor": "rgba(0, 0, 0, 0)"
+      };
     }
   },
 
@@ -88,37 +119,28 @@ qx.Class.define("osparc.wrapper.Plotly", {
     },
 
     createEmptyPlot: function(plotId) {
-      const margin = 25;
-      const bigFont = qx.theme.manager.Font.getInstance().resolve("text-14");
-      const smallFont = qx.theme.manager.Font.getInstance().resolve("text-12");
-      const layout = {
-        titlefont: {
-          color: "#bfbfbf",
-          size: bigFont.getSize(),
-          family: bigFont.getFamily()
-        },
-        font: {
-          color: "#bfbfbf",
-          size: smallFont.getSize(),
-          family: smallFont.getFamily()
-        },
-        margin: {
-          l: margin,
-          r: margin,
-          t: margin,
-          b: margin,
-          pad: 0
-        },
-        "plot_bgcolor": "rgba(0, 0, 0, 0)",
-        "paper_bgcolor": "rgba(0, 0, 0, 0)"
-      };
       const data = [];
-      console.log("newPlot", plotId, data, layout);
+      const layout = this.self().getDefaultLayout();
       Plotly.newPlot(plotId, data, layout);
-      return {
-        data,
-        layout
-      };
+    },
+
+    createGaugePlot: function(plotId, title) {
+      const data = [{
+        domain: {
+          x: [0, 1],
+          y: [0, 1]
+        },
+        value: 270,
+        title: {
+          text: title
+        },
+        type: "indicator",
+        mode: "gauge+number"
+      }];
+      const layout = this.self().getDefaultLayout();
+      layout.width = 200;
+      layout.height = 180;
+      Plotly.newPlot(plotId, data, layout);
     },
 
     setData: function(plotId, ids, labels, values, tooltips, title) {
