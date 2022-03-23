@@ -84,6 +84,12 @@ def test_settings_with_env_devel(mock_env_devel_environment: Dict[str, str]):
         "local/dynamic-sidecar:production",
         "itisfoundation/dynamic-sidecar:merge-github-testbuild-latest",
         "itisfoundation/dynamic-sidecar:1.0.0",
+        "local/dynamic-sidecar:sadasd",
+        "itisfoundation/dynamic-sidecar:sadasd",
+        "10.10.10.10.no.ip:8080/dynamic-sidecar:10.0.1",
+        "10.10.10.10.no-ip:8080/dynamic-sidecar:sadasd",
+        "10.10.10.10:8080/dynamic-sidecar:10.0.1",
+        "10.10.10.10:8080/dynamic-sidecar:sadasd",
         "local/dynamic-sidecar:0.0.1",
         "dynamic-sidecar:production",
         "/dynamic-sidecar:latest",
@@ -103,3 +109,24 @@ def test_dynamic_sidecar_settings(
     settings = DynamicSidecarSettings(**required_kwards)
 
     assert settings.DYNAMIC_SIDECAR_IMAGE == image.lstrip("/")
+
+
+@pytest.mark.parametrize(
+    "image",
+    [
+        "10.10.10.10.no_ip:8080/dynamic-sidecar:sadasd",
+        "10.10.10.10.no.ip:8080/dynamic-sidecar:the_tag",
+    ],
+)
+def test_expected_failure_dynamic_sidecar_settings(
+    image: str, project_env_devel_environment: Dict[str, Any]
+) -> None:
+    required_kwards = dict(
+        DYNAMIC_SIDECAR_IMAGE=image,
+        SIMCORE_SERVICES_NETWORK_NAME="test",
+        TRAEFIK_SIMCORE_ZONE="",
+        SWARM_STACK_NAME="",
+        DYNAMIC_SIDECAR_PROXY_SETTINGS=DynamicSidecarProxySettings(),
+    )
+    with pytest.raises(Exception) as exc_info:
+        settings = DynamicSidecarSettings(**required_kwards)
