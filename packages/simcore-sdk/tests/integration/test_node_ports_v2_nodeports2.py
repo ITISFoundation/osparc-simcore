@@ -655,9 +655,14 @@ async def test_regression_concurrent_port_update_fails(
     with pytest.raises(AssertionError) as exc_info:
         for item_key, _, _ in outputs:
             assert (await PORTS.outputs)[item_key].value == parallel_int_item_value
-    assert (
-        exc_info.value.args[0]
-        == f"assert {int_item_value} == {parallel_int_item_value}\n  +{int_item_value}\n  -{parallel_int_item_value}"
+
+    # NOTE: ANE -> SAN: the error message changed after an upgrade, does below check still make sense to you?
+    # OLD:
+    # 'assert 42 == 142\n  +42\n  -142'
+    # NEW
+    # "assert 42 == 142\n +  where 42 = Port(display_order=2.0, label='some label', description='some description', property_type='integer', content_schema=None, file_to_key_map=None, unit=None, key='value_0', widget=None, default_value=None, value=42).value"
+    assert exc_info.value.args[0].startswith(
+        f"assert {int_item_value} == {parallel_int_item_value}\n +  where {int_item_value} = Port("
     )
 
 
