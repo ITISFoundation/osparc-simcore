@@ -9,6 +9,8 @@ from typing import Any, Iterator, List
 import pytest
 from simcore_service_dynamic_sidecar.modules import mounted_fs
 
+pytestmark = pytest.mark.asyncio
+
 # UTILS
 
 
@@ -98,19 +100,20 @@ async def test_expected_paths_and_volumes(
         f"{compose_namespace}{_replace_slashes(x)}" for x in state_paths_dirs
     }
 
+    def _get_container_mount(mount_path: str) -> str:
+        return mount_path.split(":")[1]
+
     # check docker_volume
     assert (
-        await mounted_volumes.get_inputs_docker_volume()
-        == f"{mounted_volumes.volume_name_inputs}:{mounted_volumes.inputs_path}"
+        _get_container_mount(await mounted_volumes.get_inputs_docker_volume())
+        == f"{mounted_volumes.inputs_path}"
     )
     assert (
-        await mounted_volumes.get_outputs_docker_volume()
-        == f"{mounted_volumes.volume_name_outputs}:{mounted_volumes.outputs_path}"
+        _get_container_mount(await mounted_volumes.get_outputs_docker_volume())
+        == f"{mounted_volumes.outputs_path}"
     )
 
-    assert {x async for x in mounted_volumes.get_state_paths_docker_volumes()} == {
-        f"{volume_state_path}:{state_path}"
-        for volume_state_path, state_path in zip(
-            mounted_volumes.volume_name_state_paths(), state_paths_dirs
-        )
-    }
+    assert {
+        _get_container_mount(x)
+        async for x in mounted_volumes.get_state_paths_docker_volumes()
+    } == {f"{state_path}" for state_path in state_paths_dirs}
