@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from typing import Optional
 
 from aiohttp import web
@@ -56,7 +57,7 @@ async def reverse_proxy_handler(request: web.Request) -> web.Response:
     )
 
 
-## PORT COMPATIBILITY ---------------------------------
+##  MODELS UTILS ---------------------------------
 
 
 def _get_unit_name(port: BaseServiceIOModel) -> str:
@@ -76,6 +77,29 @@ def _get_type_name(port: BaseServiceIOModel) -> str:
     if port.property_type == "ref_contentSchema":
         _type = port.content_schema["type"]
     return _type
+
+
+@dataclass
+class UnitHtmlFormat:
+    short: str
+    long: str
+
+
+def get_html_formatted_unit(
+    port: BaseServiceIOModel, ureg: UnitRegistry
+) -> Optional[UnitHtmlFormat]:
+    try:
+        unit_name = _get_unit_name(port)
+        if unit_name is None:
+            return None
+
+        q = ureg.Quantity(unit_name)
+        return UnitHtmlFormat(short=f"{q.units:~H}", long=f"{q.units:H}")
+    except PintError:
+        return None
+
+
+## PORT COMPATIBILITY ---------------------------------
 
 
 def _can_convert_units(from_unit: str, to_unit: str, ureg: UnitRegistry) -> bool:
