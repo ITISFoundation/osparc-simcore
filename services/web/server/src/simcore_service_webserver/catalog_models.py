@@ -56,10 +56,12 @@ def json_dumps(v, *, default=None) -> str:
 # TODO: reduce to a minimum returned input/output models (ask OM)
 class _BaseCommonApiExtension(BaseModel):
     unit_long: Optional[str] = Field(
-        None, description="Long name of the unit, if available"
+        None,
+        description="Long name of the unit for display (html-compatible), if available",
     )
     unit_short: Optional[str] = Field(
-        None, description="Short name for the unit, if available"
+        None,
+        description="Short name for the unit for display (html-compatible), if available",
     )
 
     class Config:
@@ -69,7 +71,7 @@ class _BaseCommonApiExtension(BaseModel):
         json_dumps = json_dumps
 
 
-class ServiceInputApiOut(ServiceInput, _BaseCommonApiExtension):
+class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
     key_id: ServiceInputKey = Field(
         ..., description="Unique name identifier for this input"
     )
@@ -87,11 +89,29 @@ class ServiceInputApiOut(ServiceInput, _BaseCommonApiExtension):
                 "keyId": "input_2",
                 "unitLong": "seconds",
                 "unitShort": "sec",
-            }
+            },
+            "examples": [
+                # uses content-schema
+                {
+                    "label": "Acceleration",
+                    "description": "acceleration with units",
+                    "type": "ref_contentSchema",
+                    "contentSchema": {
+                        "title": "Acceleration",
+                        "type": "number",
+                        "x_unit": "m/s**2",
+                    },
+                    "keyId": "input_1",
+                    "unitLong": "meter/second<sup>3</sup>",
+                    "unitShort": "m/s<sup>3</sup>",
+                }
+            ],
         }
 
     @classmethod
-    def from_catalog_service(cls, service: Dict[str, Any], input_key: ServiceInputKey):
+    def from_catalog_service_api_model(
+        cls, service: Dict[str, Any], input_key: ServiceInputKey
+    ):
         data = service["inputs"][input_key]
         try:
             ushort, ulong = get_formatted_unit(data)
@@ -100,7 +120,7 @@ class ServiceInputApiOut(ServiceInput, _BaseCommonApiExtension):
             return cls(keyId=input_key, **data)
 
 
-class ServiceOutputApiOut(ServiceOutput, _BaseCommonApiExtension):
+class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
     key_id: ServiceOutputKey = Field(
         ..., description="Unique name identifier for this input"
     )
@@ -147,9 +167,9 @@ def replace_service_input_outputs(service: Dict[str, Any], **export_options):
     # This is a fast solution until proper models are available for the web API
 
     for input_key in service["inputs"]:
-        new_input = ServiceInputApiOut.from_catalog_service(service, input_key)
+        new_input = ServiceInputGet.from_catalog_service_api_model(service, input_key)
         service["inputs"][input_key] = new_input.dict(**export_options)
 
     for output_key in service["outputs"]:
-        new_output = ServiceOutputApiOut.from_catalog_service(service, output_key)
+        new_output = ServiceOutputGet.from_catalog_service(service, output_key)
         service["outputs"][output_key] = new_output.dict(**export_options)

@@ -6,12 +6,14 @@
 import json
 from copy import deepcopy
 from pprint import pformat
+from typing import Any, Dict, Mapping, Type
 
 import pytest
+from pydantic import BaseModel
 from simcore_service_webserver.catalog_handlers import RESPONSE_MODEL_POLICY
 from simcore_service_webserver.catalog_models import (
-    ServiceInputApiOut,
-    ServiceOutputApiOut,
+    ServiceInputGet,
+    ServiceOutputGet,
     replace_service_input_outputs,
 )
 
@@ -19,11 +21,13 @@ from simcore_service_webserver.catalog_models import (
 @pytest.mark.parametrize(
     "model_cls",
     (
-        ServiceInputApiOut,
-        ServiceOutputApiOut,
+        ServiceInputGet,
+        ServiceOutputGet,
     ),
 )
-def test_webserver_catalog_api_models(model_cls, model_cls_examples):
+def test_webserver_catalog_api_models(
+    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Mapping[str, Any]]
+):
     for name, example in model_cls_examples.items():
         print(name, ":", pformat(example))
         model_instance = model_cls(**example)

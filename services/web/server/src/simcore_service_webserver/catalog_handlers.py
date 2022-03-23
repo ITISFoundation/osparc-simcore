@@ -14,10 +14,10 @@ from ._constants import RQ_PRODUCT_KEY
 from ._meta import api_version_prefix
 from .catalog_handlers_utils import can_connect
 from .catalog_models import (
-    ServiceInputApiOut,
+    ServiceInputGet,
     ServiceInputKey,
     ServiceKey,
-    ServiceOutputApiOut,
+    ServiceOutputGet,
     ServiceOutputKey,
     ServiceVersion,
     json_dumps,
@@ -323,15 +323,16 @@ async def update_service(
 
 async def list_service_inputs(
     service_key: ServiceKey, service_version: ServiceVersion, ctx: _RequestContext
-) -> List[ServiceOutputApiOut]:
+) -> ServiceOutputGet:
 
     service = await catalog_client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-
     inputs = []
     for input_key in service["inputs"].keys():
-        service_input = ServiceInputApiOut.from_catalog_service(service, input_key)
+        service_input = ServiceInputGet.from_catalog_service_api_model(
+            service, input_key
+        )
         inputs.append(service_input)
     return inputs
 
@@ -341,12 +342,12 @@ async def get_service_input(
     service_version: ServiceVersion,
     input_key: ServiceInputKey,
     ctx: _RequestContext,
-) -> ServiceInputApiOut:
+) -> ServiceInputGet:
 
     service = await catalog_client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    service_input = ServiceInputApiOut.from_catalog_service(service, input_key)
+    service_input = ServiceInputGet.from_catalog_service_api_model(service, input_key)
 
     return service_input
 
@@ -397,14 +398,14 @@ async def list_service_outputs(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     ctx: _RequestContext,
-) -> List[ServiceOutputApiOut]:
+) -> List[ServiceOutputGet]:
     service = await catalog_client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
 
     outputs = []
     for output_key in service["outputs"].keys():
-        service_output = ServiceOutputApiOut.from_catalog_service(service, output_key)
+        service_output = ServiceOutputGet.from_catalog_service(service, output_key)
         outputs.append(service_output)
     return outputs
 
@@ -414,11 +415,11 @@ async def get_service_output(
     service_version: ServiceVersion,
     output_key: ServiceOutputKey,
     ctx: _RequestContext,
-) -> ServiceOutputApiOut:
+) -> ServiceOutputGet:
     service = await catalog_client.get_service(
         ctx.app, ctx.user_id, service_key, service_version, ctx.product_name
     )
-    service_output = ServiceOutputApiOut.from_catalog_service(service, output_key)
+    service_output = ServiceOutputGet.from_catalog_service(service, output_key)
 
     return service_output
 
