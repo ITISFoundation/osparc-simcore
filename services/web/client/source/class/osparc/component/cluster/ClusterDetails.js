@@ -166,42 +166,50 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
           column: this.self().GRID_POS.ID
         });
 
-        const workerNameLabel = new qx.ui.basic.Label(worker.name);
+        const workerNameLabel = new qx.ui.basic.Label(worker.name).set({
+          maxWidth: 200,
+          toolTipText: worker.name
+        });
         workersGrid.add(workerNameLabel, {
           row,
           column: this.self().GRID_POS.LABEL
         });
 
-        const workerCPULabel = new qx.ui.basic.Label().set({
-          value: this.self().getMetricsAttribute(worker, "cpu") + "/" + this.self().getResourcesAttribute(worker, "CPU")
-        });
-        workersGrid.add(workerCPULabel, {
-          row,
-          column: this.self().GRID_POS.CPU
-        });
-
-        const workerRAMLabel = new qx.ui.basic.Label().set({
-          value: this.self().getMetricsAttribute(worker, "memory") + "/" + this.self().getResourcesAttribute(worker, "RAM")
-        });
-        workersGrid.add(workerRAMLabel, {
-          row,
-          column: this.self().GRID_POS.RAM
-        });
-
-        const workerGPULabel = new qx.ui.basic.Label().set({
-          value: this.self().getMetricsAttribute(worker, "gpu") + "/" + this.self().getResourcesAttribute(worker, "GPU")
-        });
-        workersGrid.add(workerGPULabel, {
-          row,
-          column: this.self().GRID_POS.GPU
-        });
-
-        const workerMPILabel = new qx.ui.basic.Label().set({
-          value: this.self().getMetricsAttribute(worker, "mpi") + "/" + this.self().getResourcesAttribute(worker, "MPI")
-        });
-        workersGrid.add(workerMPILabel, {
-          row,
-          column: this.self().GRID_POS.MPI
+        const plots = {
+          cpu: {
+            label: this.tr("CPU"),
+            metric: "cpu",
+            resource: "CPU",
+            column: this.self().GRID_POS.CPU
+          },
+          ram: {
+            label: this.tr("Memory"),
+            metric: "memory",
+            resource: "RAM",
+            column: this.self().GRID_POS.RAM
+          },
+          gpu: {
+            label: this.tr("GPU"),
+            metric: "gpu",
+            resource: "GPU",
+            column: this.self().GRID_POS.GPU
+          },
+          mpi: {
+            label: this.tr("MPI"),
+            metric: "mpi",
+            resource: "MPI",
+            column: this.self().GRID_POS.MPI
+          }
+        };
+        Object.keys(plots).forEach(plotKey => {
+          const plot = plots[plotKey];
+          const workerCPULabel = new qx.ui.basic.Label().set({
+            value: this.self().getMetricsAttribute(worker, plot.metric) + "/" + this.self().getResourcesAttribute(worker, plot.resource)
+          });
+          workersGrid.add(workerCPULabel, {
+            row,
+            column: plot.column
+          });
         });
       });
     }
