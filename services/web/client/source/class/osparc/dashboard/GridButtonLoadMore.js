@@ -29,29 +29,6 @@ qx.Class.define("osparc.dashboard.GridButtonLoadMore", {
   },
 
   members: {
-    checkIsOnScreen: function() {
-      const isInViewport = element => {
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          const html = document.documentElement;
-          return (
-            rect.width > 0 &&
-            rect.height > 0 &&
-            rect.top >= 0 &&
-            rect.left >= 0 &&
-            // a bit of tolerance to deal with zooming factors
-            rect.bottom*0.95 <= (window.innerHeight || html.clientHeight) &&
-            rect.right*0.95 <= (window.innerWidth || html.clientWidth)
-          );
-        }
-        return false;
-      };
-
-      const domElem = this.getContentElement().getDomElement();
-      const checkIsOnScreen = isInViewport(domElem);
-      return checkIsOnScreen;
-    },
-
     _applyFetching: function(value) {
       const title = this.getChildControl("title");
       const desc = this.getChildControl("subtitle-text");
