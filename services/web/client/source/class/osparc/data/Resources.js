@@ -445,8 +445,8 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/clusters"
           },
-          ping: {
-            method: "GET",
+          pingWCredentials: {
+            method: "POST",
             url: statics.API + "/clusters:ping"
           },
           getOne: {
@@ -460,6 +460,10 @@ qx.Class.define("osparc.data.Resources", {
           patch: {
             method: "PATCH",
             url: statics.API + "/clusters/{cid}"
+          },
+          ping: {
+            method: "POST",
+            url: statics.API + "/clusters/{cid}:ping"
           },
           details: {
             method: "GET",
