@@ -1,9 +1,7 @@
-import json
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Dict, Literal, Optional, Union
 
 from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, SecretStr, validator
 from pydantic.types import NonNegativeInt
-
 from simcore_postgres_database.models.clusters import ClusterType
 
 from .users import GroupID
