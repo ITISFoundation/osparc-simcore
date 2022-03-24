@@ -21,6 +21,8 @@ from simcore_postgres_database.models.groups import GroupType, groups, user_to_g
 from simcore_postgres_database.models.users import users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from simcore_service_director_v2.utils.db import to_clusters_db
+
 from ....core.errors import (
     ClusterAccessForbiddenError,
     ClusterInvalidOperationError,
@@ -235,9 +237,7 @@ class ClustersRepository(BaseRepository):
                 await conn.execute(
                     sa.update(clusters)
                     .where(clusters.c.id == the_cluster.id)
-                    .values(
-                        updated_cluster.to_clusters_db(only_update=True),
-                    )
+                    .values(to_clusters_db(updated_cluster, only_update=True))
                 )
             except psycopg2.DatabaseError as e:
                 raise ClusterInvalidOperationError(cluster_id=cluster_id) from e

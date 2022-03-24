@@ -1,4 +1,3 @@
-from contextlib import suppress
 from typing import Any, Dict, Type
 
 import pytest
@@ -47,26 +46,3 @@ def test_cluster_fails_when_owner_has_no_admin_rights(
         example["access_rights"][owner_gid] = CLUSTER_USER_RIGHTS
         with pytest.raises(ValidationError):
             model_cls(**example)
-
-
-@pytest.mark.parametrize(
-    "model_cls",
-    (Cluster,),
-)
-def test_export_clusters_to_db(
-    model_cls: Type[BaseModel], model_cls_examples: Dict[str, Dict[str, Any]]
-):
-    for example in model_cls_examples.values():
-        owner_gid = example["owner"]
-        # remove the owner from the access rights if any
-        with suppress(KeyError):
-            example.get("access_rights", {}).pop(owner_gid)
-        instance = model_cls(**example)
-
-        # for inserts
-        cluster_db_dict = instance.to_clusters_db(only_update=True)  # type: ignore
-        keys_not_in_db = ["id", "access_rights"]
-
-        assert list(cluster_db_dict.keys()) == [
-            x for x in example if x not in keys_not_in_db
-        ]
