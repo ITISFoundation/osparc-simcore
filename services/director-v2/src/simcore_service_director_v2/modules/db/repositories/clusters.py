@@ -236,12 +236,7 @@ class ClustersRepository(BaseRepository):
                     sa.update(clusters)
                     .where(clusters.c.id == the_cluster.id)
                     .values(
-                        updated_cluster.dict(
-                            by_alias=True,
-                            exclude_unset=True,
-                            exclude_none=True,
-                            exclude={"access_rights"},
-                        ),
+                        updated_cluster.to_clusters_db(only_update=True),
                     )
                 )
             except psycopg2.DatabaseError as e:

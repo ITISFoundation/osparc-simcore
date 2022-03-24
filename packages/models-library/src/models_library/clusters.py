@@ -1,7 +1,9 @@
+import json
 from typing import Any, Dict, Literal, Optional, Union
 
 from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, SecretStr, validator
 from pydantic.types import NonNegativeInt
+from settings_library.utils_cli import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.clusters import ClusterType
 
 from .users import GroupID
@@ -106,11 +108,14 @@ class BaseCluster(BaseModel):
         use_enum_values = True
 
     def to_clusters_db(self, only_update: bool) -> Dict[str, Any]:
-        db_model = self.dict(
-            by_alias=True,
-            exclude={"id", "access_rights"},
-            exclude_unset=only_update,
-            exclude_none=only_update,
+        db_model = json.loads(
+            self.json(
+                by_alias=True,
+                exclude={"id", "access_rights"},
+                exclude_unset=only_update,
+                exclude_none=only_update,
+                encoder=create_json_encoder_wo_secrets(BaseCluster),
+            )
         )
         return db_model
 

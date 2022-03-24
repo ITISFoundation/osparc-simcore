@@ -208,7 +208,7 @@ def cluster(
                     "delete": row[cluster_to_groups.c.delete],
                 }
 
-            return Cluster.construct(
+            return Cluster(
                 id=created_cluster.id,
                 name=created_cluster.name,
                 description=created_cluster.description,
