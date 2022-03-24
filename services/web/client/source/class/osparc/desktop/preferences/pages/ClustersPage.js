@@ -374,7 +374,6 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       const clusterKey = clusterEditor.getCid();
       const name = clusterEditor.getLabel();
       const endpoint = clusterEditor.getEndpoint();
-      const authenticationType = "simple";
       const simpleAuthenticationUsername = clusterEditor.getSimpleAuthenticationUsername();
       const simpleAuthenticationPassword = clusterEditor.getSimpleAuthenticationPassword();
       const description = clusterEditor.getDescription();
@@ -386,7 +385,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
           "name": name,
           "endpoint": endpoint,
           "authentication": {
-            "type": authenticationType,
+            "type": "simple",
             "username": simpleAuthenticationUsername,
             "password": simpleAuthenticationPassword
           },
