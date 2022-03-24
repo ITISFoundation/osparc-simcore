@@ -183,3 +183,27 @@ async def ping_cluster_handler(request: web.Request) -> web.Response:
         raise web.HTTPUnprocessableEntity(reason=f"{exc}") from exc
     except DirectorServiceError as exc:
         raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc
+
+
+@routes.post(
+    f"/{api_version_prefix}/clusters/{{cluster_id}}:ping",
+    name="ping_cluster_cluster_id_handler",
+)
+@login_required
+@permission_required("clusters.read")
+async def ping_cluster_cluster_id_handler(request: web.Request) -> web.Response:
+    path, _, _ = await extract_and_validate(request)
+    user_id: UserID = request[RQT_USERID_KEY]
+    try:
+        await director_v2_api.ping_specific_cluster(
+            request.app, user_id, path["cluster_id"]
+        )
+        return web.json_response(status=web.HTTPNoContent.status_code)
+    except ValidationError as exc:
+        raise web.HTTPUnprocessableEntity(
+            reason=f"Invalid cluster definition: {exc} "
+        ) from exc
+    except ClusterPingError as exc:
+        raise web.HTTPUnprocessableEntity(reason=f"{exc}") from exc
+    except DirectorServiceError as exc:
+        raise web.HTTPServiceUnavailable(reason=f"{exc}") from exc

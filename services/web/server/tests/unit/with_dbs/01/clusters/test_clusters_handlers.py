@@ -20,10 +20,8 @@ from hypothesis import strategies as st
 from models_library.clusters import (
     CLUSTER_ADMIN_RIGHTS,
     Cluster,
-    KerberosAuthentication,
     SimpleAuthentication,
 )
-from pydantic import AnyHttpUrl
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.clusters import ClusterType
@@ -60,6 +58,7 @@ def mocked_director_v2_api(mocker: MockerFixture):
     )
     mocked_director_v2_api.delete_cluster.return_value = None
     mocked_director_v2_api.ping_cluster.return_value = None
+    mocked_director_v2_api.ping_specific_cluster.return_value = None
 
 
 @pytest.fixture
@@ -83,6 +82,7 @@ def mocked_director_v2_with_error(
     mocked_director_v2_api.update_cluster.side_effect = error
     mocked_director_v2_api.delete_cluster.side_effect = error
     mocked_director_v2_api.ping_cluster.side_effect = error
+    mocked_director_v2_api.ping_specific_cluster.side_effect = error
 
 
 @pytest.fixture()
@@ -249,6 +249,25 @@ async def test_ping_cluster(
     assert client.app
     url = client.app.router["ping_cluster_handler"].url_for()
     rsp = await client.post(f"{url}", json=json.loads(cluster_ping.json(by_alias=True)))
+    data, error = await assert_status(rsp, expected.no_content)
+    if not error:
+        assert data is None
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_ping_specific_cluster(
+    enable_dev_features: None,
+    mocked_director_v2_api,
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    faker: Faker,
+    expected: ExpectedResponse,
+):
+    assert client.app
+    url = client.app.router["ping_cluster_cluster_id_handler"].url_for(
+        cluster_id=f"{faker.pyint(min_value=1)}"
+    )
+    rsp = await client.post(f"{url}")
     data, error = await assert_status(rsp, expected.no_content)
     if not error:
         assert data is None
@@ -434,6 +453,25 @@ async def test_ping_cluster_with_error(
     assert client.app
     url = client.app.router["ping_cluster_handler"].url_for()
     rsp = await client.post(f"{url}", json=json.loads(cluster_ping.json(by_alias=True)))
+    data, error = await assert_status(rsp, expected_http_error)
+    assert not data
+    assert error
+
+
+@pytest.mark.parametrize(*standard_role_response(), ids=str)
+async def test_ping_specific_cluster_with_error(
+    enable_dev_features: None,
+    mocked_director_v2_with_error,
+    client: TestClient,
+    logged_user: Dict[str, Any],
+    faker: Faker,
+    expected_http_error,
+):
+    assert client.app
+    url = client.app.router["ping_cluster_cluster_id_handler"].url_for(
+        cluster_id=f"{faker.pyint(min_value=1)}"
+    )
+    rsp = await client.post(f"{url}")
     data, error = await assert_status(rsp, expected_http_error)
     assert not data
     assert error
