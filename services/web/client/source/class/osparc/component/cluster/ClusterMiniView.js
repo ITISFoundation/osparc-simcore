@@ -21,7 +21,9 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
   construct: function(clusterId) {
     this.base(arguments);
 
-    this._setLayout(new qx.ui.layout.VBox());
+    this._setLayout(new qx.ui.layout.VBox().set({
+      alignY: "middle"
+    }));
 
     this.__clusterId = clusterId;
 
@@ -84,18 +86,9 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
           used: 0
         }
       };
-      Object.keys(clusterDetails.scheduler.workers).forEach(workerUrl => {
-        const worker = clusterDetails.scheduler.workers[workerUrl];
-        Object.keys(resources).forEach(resourceKey => {
-          const resource = resources[resourceKey];
-          const available = osparc.utils.Clusters.getResourcesAttribute(worker, resource.resource);
-          if (available === "-") {
-            return;
-          }
-          resource.available += available;
-          const used = osparc.utils.Clusters.getMetricsAttribute(worker, resource.metric);
-          resource.used += used;
-        });
+      Object.keys(resources).forEach(resourceKey => {
+        const resource = resources[resourceKey];
+        osparc.utils.Clusters.accumulateWorkersResources(clusterDetails.scheduler.workers, resource);
       });
 
       Object.keys(resources).forEach((resourceKey, idx) => {

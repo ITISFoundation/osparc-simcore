@@ -25,6 +25,33 @@ qx.Class.define("osparc.utils.Clusters", {
   type: "static",
 
   statics: {
+    getResourcesAttribute: function(worker, attribute) {
+      if (attribute in worker.resources) {
+        return worker.resources[attribute];
+      }
+      return "-";
+    },
+
+    getMetricsAttribute: function(worker, attribute) {
+      if (attribute in worker.metrics) {
+        return worker.metrics[attribute];
+      }
+      return "-";
+    },
+
+    accumulateWorkersResources: function(workers, resource) {
+      Object.keys(workers).forEach(workerUrl => {
+        const worker = workers[workerUrl];
+        const available = this.getResourcesAttribute(worker, resource.resource);
+        if (available === "-") {
+          return;
+        }
+        resource.available += available;
+        const used = this.getMetricsAttribute(worker, resource.metric);
+        resource.used += used;
+      });
+    },
+
     populateClustersSelectBox: function(clustersSelectBox) {
       clustersSelectBox.removeAll();
 
@@ -51,20 +78,6 @@ qx.Class.define("osparc.utils.Clusters", {
         });
       }
       return clusters;
-    },
-
-    getResourcesAttribute: function(worker, attribute) {
-      if (attribute in worker.resources) {
-        return worker.resources[attribute];
-      }
-      return "-";
-    },
-
-    getMetricsAttribute: function(worker, attribute) {
-      if (attribute in worker.metrics) {
-        return worker.metrics[attribute];
-      }
-      return "-";
     }
   }
 });
