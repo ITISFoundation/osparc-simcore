@@ -295,6 +295,12 @@ class DaskComputationalBackendSettings(BaseCustomSettings):
         0, description="This defines the default cluster id when none is defined"
     )
 
+    @validator("DIRECTOR_V2_DEFAULT_CLUSTER_AUTH", pre=True)
+    def empty_auth_is_none(v):
+        if not v:
+            return NoAuthentication()
+        return v
+
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
