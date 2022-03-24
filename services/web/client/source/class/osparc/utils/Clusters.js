@@ -101,7 +101,7 @@ qx.Class.define("osparc.utils.Clusters", {
           cid
         }
       };
-      osparc.data.Resources.fetch("clusters", "details", params);
+      osparc.data.Resources.fetch("clusterDetails", params);
     }
   },
 

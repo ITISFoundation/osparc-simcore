@@ -88,7 +88,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
             "cid": this.__clusterId
           }
         };
-        osparc.data.Resources.fetch("clusters", "details", params)
+        osparc.data.Resources.get("clusterDetails", params)
           .then(clusterDetails => this.__updateWorkersDetails(clusterDetails));
       }
     },

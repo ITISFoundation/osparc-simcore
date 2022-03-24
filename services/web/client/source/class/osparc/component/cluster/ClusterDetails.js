@@ -60,7 +60,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
           "cid": this.__clusterId
         }
       };
-      osparc.data.Resources.fetch("clusters", "details", params)
+      osparc.data.Resources.get("clusterDetails", params)
         .then(clusterDetails => {
           this.__populateClusterDetails(clusterDetails);
           this.__populateWorkers(clusterDetails);
