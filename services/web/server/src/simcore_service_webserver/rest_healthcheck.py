@@ -1,6 +1,26 @@
 """ Service healthcheck
 
-This is how the docker healthcheck works:
+
+## Types of health checks
+
+Based on the service types, we can categorize health checks based on the actions they take.
+
+- Reboot: When the target is unhealthy, the target should be restarted to recover to a working state.
+Container and VM orchestration platforms typically perform reboots.
+- Cut traffic: When the target is unhealthy, no traffic should be sent to the target. Service discovery
+services and load balancers typically cut traffic from targets in one way or another.
+
+The difference between these is that rebooting attempts to actively repair the target, while cutting
+traffic leaves room for the target to repair itself.
+
+In Kubernetes health-checks are called *probes*:
+- The health check for reboots is called a *liveness probe*: "Check if the container is alive".
+- The health check for cutting traffic is called a *readiness probe*: "Check if the container is ready to receive traffic".
+
+Taken from https://medium.com/polarsquad/how-should-i-answer-a-health-check-aa1fcf6e858e
+
+
+## docker healthchecks:
 
     --interval=DURATION (default: 30s)
     --timeout=DURATION (default: 30s)
@@ -103,4 +123,4 @@ class HealthCheck:
             return heath_report
 
         except asyncio.TimeoutError as err:
-            raise HealthCheckFailed(reason="Service is slowing down") from err
+            raise HealthCheckFailed("Service is slowing down") from err

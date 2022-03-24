@@ -16,20 +16,14 @@ log = logging.getLogger(__name__)
 routes = web.RouteTableDef()
 
 
-@routes.get(f"/{api_version_prefix}/health", name="check_health")
-async def check_health(request: web.Request):
-    """Status probe
+@routes.get(f"/{api_version_prefix}/health", name="healthcheck_liveness_probe")
+async def healthcheck_liveness_probe(request: web.Request):
+    """Liveness probe: "Check if the container is alive"
 
+    This is checked by the containers orchestrator (docker swarm). When the service
+    is unhealthy, it will restart it so it can recover a working state.
 
-
-    TODO: read!!
-
-    **Liveness**
-    Many applications running for long periods of time eventually transition to broken states,
-    and cannot recover except by being restarted. Kubernetes provides liveness probes to detect and remedy such situations.
-
-
-    SEE https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+    SEE doc in rest_healthcheck.py
     """
     healthcheck: HealthCheck = request.app[HealthCheck.__name__]
 
@@ -43,18 +37,22 @@ async def check_health(request: web.Request):
     return web.json_response(data={"data": health_report})
 
 
-@routes.get(f"/{api_version_prefix}/", name="check_running")
-async def check_running(request: web.Request):
-    """Live probe
+@routes.get(f"/{api_version_prefix}/", name="healthcheck_readiness_probe")
+async def healthcheck_readiness_probe(request: web.Request):
+    """Readiness probe: "Check if the container is ready to receive traffic"
 
-    - This entry point is used as a fast way
-       to check that the service is still running
-    - Do not do add any expensive computatio here
+    When the target service is unhealthy, no traffic should be sent to it. Service discovery
+    services and load balancers (e.g. traefik) typically cut traffic from targets
+    in one way or another.
+
+    SEE doc in rest_healthcheck.py
     """
-    healthcheck: HealthCheck = request.app[HealthCheck.__name__]
 
-    health_report = healthcheck.get_app_info()
+    healthcheck: HealthCheck = request.app[HealthCheck.__name__]
+    health_report = healthcheck.get_app_info(request.app)
+    # NOTE: do NOT run healthcheck here, just return info fast.
     health_report["status"] = "SERVICE_RUNNING"
+
     return web.json_response(data={"data": health_report})
 
 
