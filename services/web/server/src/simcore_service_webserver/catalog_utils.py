@@ -127,7 +127,7 @@ def can_connect(
 
     This check IS PERMISSIVE and is used for checks in the UI where one needs to give some "flexibility" since:
     - has to be a fast evaluation
-    - there are not error messages when check fails
+    - there are no error messages when check fails
     - some configurations might need several UI steps to be valid
 
     For more strict checks use the "strict" variant

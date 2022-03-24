@@ -126,9 +126,10 @@ class SimCoreFileLink(BaseFileLink):
     class Config:
         extra = Extra.forbid
         schema_extra = {
+            # a project file
             "example": {
                 "store": "0",
-                "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
+                "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
                 "eTag": "859fda0cb82fc4acb4686510a172d9a9-1",
                 "label": "input.txt",
             },
@@ -137,7 +138,12 @@ class SimCoreFileLink(BaseFileLink):
                 {
                     "store": "0",
                     "path": "api/0a3b2c56-dbcd-4871-b93b-d454b7883f9f/input.txt",
-                }
+                },
+                # w/ store id as int
+                {
+                    "store": 0,
+                    "path": "94453a6a-c8d4-52b3-a22d-ccbf81f8d636/d4442ca4-23fd-5b6b-ba6d-0b75f711c109/y_1D.txt",
+                },
             ],
         }
 
@@ -174,6 +180,15 @@ class DatCoreFileLink(BaseFileLink):
                 "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
                 "label": "initial_WTstates",
             },
+            "examples": [
+                # with store id as str
+                {
+                    "store": "1",
+                    "dataset": "N:dataset:ea2325d8-46d7-4fbd-a644-30f6433070b4",
+                    "path": "N:package:32df09ba-e8d6-46da-bd54-f696157de6ce",
+                    "label": "initial_WTstates",
+                },
+            ],
         }
 
 
