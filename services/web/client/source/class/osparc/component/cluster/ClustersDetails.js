@@ -53,6 +53,7 @@ qx.Class.define("osparc.component.cluster.ClustersDetails", {
     __populateClusterDetails: function(clusterId) {
       if (this._getChildren().includes(this.__clusterDetails)) {
         this._remove(this.__clusterDetails);
+        this.__clusterDetails.dispose();
       }
       const clusterDetailsView = this.__clusterDetails = new osparc.component.cluster.ClusterDetails(clusterId);
       this._add(clusterDetailsView, {
