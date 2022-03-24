@@ -33,8 +33,8 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
 
     this.__clusterId = clusterId;
     this.__fetchDetails();
-    // Poll every 5 seconds
-    const interval = 5000;
+    // Fetch every 3 seconds
+    const interval = 3000;
     const timer = this.__timer = new qx.event.Timer(interval);
     timer.addListener("interval", () => this.__fetchDetails(), this);
     timer.start();
