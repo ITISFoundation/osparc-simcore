@@ -22,7 +22,13 @@
  */
 
 qx.Class.define("osparc.utils.Clusters", {
-  type: "static",
+  extend: qx.core.Object,
+  type: "singleton",
+
+  construct: function() {
+    this.base(arguments);
+    this.__fetchDetailsTimers = [];
+  },
 
   statics: {
     popUpClustersDetails: function(clusterId) {
@@ -54,7 +60,7 @@ qx.Class.define("osparc.utils.Clusters", {
         resource.available += available;
         const used = this.getMetricsAttribute(worker, resource.metric);
         if (resource.metric === "cpu") {
-          resource.used += used/available;
+          resource.used += osparc.utils.Utils.toTwoDecimals(used*available/100);
         } else {
           resource.used += used;
         }
@@ -87,6 +93,46 @@ qx.Class.define("osparc.utils.Clusters", {
         });
       }
       return clusters;
+    },
+
+    fetchDetails: function(cid) {
+      const params = {
+        url: {
+          cid
+        }
+      };
+      osparc.data.Resources.fetch("clusters", "details", params);
+    }
+  },
+
+  members: {
+    __fetchDetailsTimers: null,
+
+    startFetchDetailsTimer: function(clusterId, interval = 3000) {
+      const fetchDetailsTimer = this.__fetchDetailsTimers.find(timer => timer.clusterId === clusterId);
+      if (fetchDetailsTimer) {
+        fetchDetailsTimer.counter++;
+        return;
+      }
+      this.self().fetchDetails(clusterId);
+      const timer = new qx.event.Timer(interval);
+      timer.clusterId = clusterId;
+      timer.counter = 1;
+      timer.addListener("interval", () => this.self().fetchDetails(clusterId), this);
+      timer.start();
+      this.__fetchDetailsTimers.push(timer);
+    },
+
+    stopFetchDetailsTimer: function(clusterId) {
+      const idx = this.__fetchDetailsTimers.findIndex(timer => timer.clusterId === clusterId);
+      if (idx > 1) {
+        const fetchDetailsTimer = this.__fetchDetailsTimers[idx];
+        fetchDetailsTimer.counter--;
+        if (fetchDetailsTimer.counter === 0) {
+          fetchDetailsTimer.stop();
+          this.__fetchDetailsTimers.splice(idx, 1);
+        }
+      }
     }
   }
 });

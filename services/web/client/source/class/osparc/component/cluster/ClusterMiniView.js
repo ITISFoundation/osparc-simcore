@@ -38,6 +38,11 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     timer.addListener("interval", () => this.__fetchDetails(), this);
     timer.start();
 
+    const store = osparc.store.Store.getInstance();
+    store.addListener("changeClusters", e => {
+      console.log("changeClusters", e.getData());
+    }, this);
+
     this.set({
       cursor: "pointer"
     });
@@ -149,7 +154,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
         }
         text += resourceInfo.resource + ": ";
         if (resourceKey === "cpu") {
-          text += Math.round(100*resourceInfo.used)/100 + " / " + resourceInfo.available;
+          text += osparc.utils.Utils.toTwoDecimals(resourceInfo.used*resourceInfo.available/100) + " / " + resourceInfo.available;
         } else if (resourceKey === "ram") {
           const b2gb = 1024*1024*1024;
           text += Math.round(100*resourceInfo.used/b2gb)/100 + "GB / " + Math.round(100*resourceInfo.available/b2gb)/100 + "GB";

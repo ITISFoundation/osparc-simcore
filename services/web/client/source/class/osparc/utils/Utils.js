@@ -30,6 +30,10 @@ qx.Class.define("osparc.utils.Utils", {
   type: "static",
 
   statics: {
+    toTwoDecimals: function(value) {
+      return Math.round(100*value)/100;
+    },
+
     computeServiceUrl: function(resp) {
       const data = {
         srvUrl: null,
