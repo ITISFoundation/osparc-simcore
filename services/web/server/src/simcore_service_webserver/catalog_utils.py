@@ -63,18 +63,22 @@ async def reverse_proxy_handler(request: web.Request) -> web.Response:
 def _get_unit_name(port: BaseServiceIOModel) -> str:
     unit = port.unit
     if port.property_type == "ref_contentSchema":
-        if port.content_schema["type"] in ("object", "array"):
-            raise NotImplementedError
+        assert port.content_schema is not None  # nosec
         unit = port.content_schema.get("x_unit", unit)
         if unit:
-            # FIXME: x_units has a special format for prefix. tmp direct replace here
+            # TODO: Review this convention under dev: x_units
+            # has a special format for prefix. tmp direct replace here
             unit = unit.replace("-", "")
+        elif port.content_schema["type"] in ("object", "array"):
+            # these objects might have unit in its fields
+            raise NotImplementedError
     return unit
 
 
 def _get_type_name(port: BaseServiceIOModel) -> str:
     _type = port.property_type
     if port.property_type == "ref_contentSchema":
+        assert port.content_schema is not None  # nosec
         _type = port.content_schema["type"]
     return _type
 
@@ -95,7 +99,7 @@ def get_html_formatted_unit(
 
         q = ureg.Quantity(unit_name)
         return UnitHtmlFormat(short=f"{q.units:~H}", long=f"{q.units:H}")
-    except PintError:
+    except (PintError, NotImplementedError):
         return None
 
 
