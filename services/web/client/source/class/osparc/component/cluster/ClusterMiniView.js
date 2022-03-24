@@ -43,8 +43,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     });
     this.addListener("tap", () => osparc.utils.Clusters.popUpClustersDetails(this.__clusterId), this);
 
-    const description = "CPU: 4/6<br>CPU: 4/6<br>CPU: 4/6<br>";
-    const hint = this.__hint = new osparc.ui.hint.Hint(this, description).set({
+    const hint = this.__hint = new osparc.ui.hint.Hint(this).set({
       active: false
     });
     const showHint = () => hint.show();
@@ -86,18 +85,21 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
         cpu: {
           metric: "cpu",
           resource: "CPU",
+          icon: "@FontAwesome5Solid/microchip/10",
           available: 0,
           used: 0
         },
         ram: {
           metric: "memory",
           resource: "RAM",
+          icon: "@MaterialIcons/memory/10",
           available: 0,
           used: 0
         },
         gpu: {
           metric: "gpu",
           resource: "GPU",
+          icon: "@FontAwesome5Solid/server/10",
           available: 0,
           used: 0
         }
@@ -115,17 +117,19 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
       miniGrid.removeAll();
       Object.keys(resources).forEach((resourceKey, idx) => {
         const resourceInfo = resources[resourceKey];
-        const label = new qx.ui.basic.Label(resourceInfo.resource).set({
-          font: "text-9"
-        });
-        miniGrid.add(label, {
+        if (resourceInfo.available === 0) {
+          return;
+        }
+        const icon = new qx.ui.basic.Image(resourceInfo.icon);
+        miniGrid.add(icon, {
           row: idx,
           column: 0
         });
         const progressBar = new qx.ui.indicator.ProgressBar(resourceInfo.used, resourceInfo.available).set({
-          height: 9,
+          height: 10,
           width: 60
         });
+        osparc.utils.Utils.hideBorder(progressBar);
         progressBar.getChildControl("progress").set({
           backgroundColor: "visual-blue"
         });
@@ -140,6 +144,9 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
       let text = "";
       Object.keys(resources).forEach(resourceKey => {
         const resourceInfo = resources[resourceKey];
+        if (resourceInfo.available === 0) {
+          return;
+        }
         text += resourceInfo.resource + ": ";
         if (resourceKey === "cpu") {
           text += Math.round(100*resourceInfo.used)/100 + " / " + resourceInfo.available;
