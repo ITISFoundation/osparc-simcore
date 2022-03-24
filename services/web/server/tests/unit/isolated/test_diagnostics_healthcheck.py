@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 def health_check_path(api_version_prefix) -> URL:
-    return f"/{api_version_prefix}/health"
+    return URL(f"/{api_version_prefix}/health")
 
 
 async def health_check_emulator(
@@ -78,6 +78,7 @@ def mock_environment(mock_env_devel_environment: Dict[str, str], monkeypatch):
     monkeypatch.setenv("DIAGNOSTICS_MAX_TASK_DELAY", f"{SLOW_HANDLER_DELAY_SECS}")
     monkeypatch.setenv("DIAGNOSTICS_MAX_AVG_LATENCY", f"{2.0}")
     monkeypatch.setenv("DIAGNOSTICS_START_SENSING_DELAY", f"{0}")  # inmidiately
+    monkeypatch.setenv("SC_HEALTHCHECK_TIMEOUT", "2m")
 
 
 @pytest.fixture

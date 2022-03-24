@@ -71,7 +71,6 @@ def client(
     monkeypatch.setenv("STORAGE_LOG_LEVEL", "DEBUG")
     monkeypatch.setenv("STORAGE_TESTING", "1")
 
-    monkeypatch.setenv("SC_HEALTHCHECK_TIMEOUT", "2m")
     monkeypatch.setenv("SC_BOOT_MODE", "local-development")
 
     settings = Settings.create_from_envs()
