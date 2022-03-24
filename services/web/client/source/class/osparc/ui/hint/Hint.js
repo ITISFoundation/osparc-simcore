@@ -37,16 +37,15 @@ qx.Class.define("osparc.ui.hint.Hint", {
       }
     }
 
-    // If it is a simple label
-    if (text) {
-      this.setLayout(new qx.ui.layout.Basic());
-      this.add(new qx.ui.basic.Label(text).set({
-        rich: true,
-        maxWidth: 200
-      }));
-    } else {
-      this.setLayout(new qx.ui.layout.Grow());
+    if (text === undefined) {
+      text = "";
     }
+    this.setLayout(new qx.ui.layout.Basic());
+    const label = this.__label = new qx.ui.basic.Label(text).set({
+      rich: true,
+      maxWidth: 200
+    });
+    this.add(label);
   },
 
   statics: {
@@ -125,6 +124,12 @@ qx.Class.define("osparc.ui.hint.Hint", {
           this.__caret.setWidth(0);
           this.__caret.setHeight(5);
           break;
+      }
+    },
+
+    setText: function(text) {
+      if (this.__label) {
+        this.__label.setValue(text);
       }
     },
 

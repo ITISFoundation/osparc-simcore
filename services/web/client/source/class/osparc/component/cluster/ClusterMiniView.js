@@ -44,7 +44,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     this.addListener("tap", () => osparc.utils.Clusters.popUpClustersDetails(this.__clusterId), this);
 
     const description = "CPU: 4/6<br>CPU: 4/6<br>CPU: 4/6<br>";
-    const hint = new osparc.ui.hint.Hint(this, description).set({
+    const hint = this.__hint = new osparc.ui.hint.Hint(this, description).set({
       active: false
     });
     const showHint = () => hint.show();
@@ -69,6 +69,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     __timer: null,
     __clusterDetailsLayout: null,
     __miniGrid: null,
+    __hint: null,
 
     __fetchDetails: function() {
       const params = {
@@ -81,12 +82,6 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     },
 
     __updateWorkersDetails: function(clusterDetails) {
-      this.__updateMiniView(clusterDetails);
-    },
-
-    __updateMiniView: function(clusterDetails) {
-      const miniGrid = this.__miniGrid;
-      miniGrid.removeAll();
       const resources = {
         cpu: {
           metric: "cpu",
@@ -111,7 +106,13 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
         const resource = resources[resourceKey];
         osparc.utils.Clusters.accumulateWorkersResources(clusterDetails.scheduler.workers, resource);
       });
+      this.__updateMiniView(resources);
+      this.__updateHint(resources);
+    },
 
+    __updateMiniView: function(resources) {
+      const miniGrid = this.__miniGrid;
+      miniGrid.removeAll();
       Object.keys(resources).forEach((resourceKey, idx) => {
         const resourceInfo = resources[resourceKey];
         const label = new qx.ui.basic.Label(resourceInfo.resource).set({
@@ -133,6 +134,24 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
           column: 1
         });
       });
+    },
+
+    __updateHint: function(resources) {
+      let text = "";
+      Object.keys(resources).forEach(resourceKey => {
+        const resourceInfo = resources[resourceKey];
+        text += resourceInfo.resource + ": ";
+        if (resourceKey === "cpu") {
+          text += Math.round(100*resourceInfo.used)/100 + " / " + resourceInfo.available;
+        } else if (resourceKey === "ram") {
+          const b2gb = 1024*1024*1024;
+          text += Math.round(100*resourceInfo.used/b2gb)/100 + "GB / " + Math.round(100*resourceInfo.available/b2gb)/100 + "GB";
+        } else {
+          text += resourceInfo.used + " / " + resourceInfo.available;
+        }
+        text += "<br>";
+      });
+      this.__hint.setText(text);
     }
   },
 

@@ -145,7 +145,7 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
           if (available === "-") {
             gaugeData.value = "-";
           } else if (plotKey === "cpu") {
-            gaugeData.value = used/available;
+            gaugeData.value = Math.round(100*used/available)/100;
             gaugeData.gauge.axis.range[1] = available;
           } else {
             gaugeData.value = used;
