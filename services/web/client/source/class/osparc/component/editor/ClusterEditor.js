@@ -26,10 +26,17 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
     const title = this.getChildControl("title");
     title.setRequired(true);
     manager.add(title);
-    this._createChildControlImpl("endpoint");
-    this._createChildControlImpl("simpleAuthenticationUsername");
-    this._createChildControlImpl("simpleAuthenticationPassword");
+    const endpoint = this.getChildControl("endpoint");
+    endpoint.setRequired(true);
+    manager.add(endpoint);
+    const username = this.getChildControl("simpleAuthenticationUsername");
+    username.setRequired(true);
+    manager.add(username);
+    const pass = this.getChildControl("simpleAuthenticationPassword");
+    pass.setRequired(true);
+    manager.add(pass);
     this._createChildControlImpl("description");
+    newCluster ? this._createChildControlImpl("test-layout") : null;
     newCluster ? this._createChildControlImpl("create") : this._createChildControlImpl("save");
   },
 
@@ -84,6 +91,8 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
   },
 
   members: {
+    __validator: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -156,6 +165,11 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
           control.bind("value", this, "description");
           this._add(control);
           break;
+        case "test-layout": {
+          control = this.__getTestLayout();
+          this._add(control);
+          break;
+        }
         case "buttonsLayout": {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(8).set({
             alignX: "right"
@@ -193,6 +207,37 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __getTestLayout: function() {
+      const testLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(8));
+      const testButton = new osparc.ui.form.FetchButton(this.tr("Test"));
+      testLayout.add(testButton);
+
+      const testResult = new qx.ui.basic.Image("@FontAwesome5Solid/lightbulb/16");
+      testLayout.add(testResult);
+
+      testButton.addListener("execute", () => {
+        if (this.__validator.validate()) {
+          testButton.setFetching(true);
+          const params = {
+            data: {
+              "endpoint": this.getEndpoint(),
+              "authentication": {
+                "type": "simple",
+                "username": this.getSimpleAuthenticationUsername(),
+                "password": this.getSimpleAuthenticationPassword()
+              }
+            }
+          };
+          osparc.data.Resources.fetch("clusters", "pingWCredentials", params)
+            .then(() => testResult.setTextColor("ready-green"))
+            .catch(() => testResult.setTextColor("failed-red"))
+            .finally(() => testButton.setFetching(false));
+        }
+      }, this);
+
+      return testLayout;
     }
   }
 });
