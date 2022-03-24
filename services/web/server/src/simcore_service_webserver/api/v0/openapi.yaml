@@ -134,71 +134,6 @@ paths:
       responses:
         '200':
           description: returns status of connected service
-  '/check/{action}':
-    post:
-      tags:
-        - maintenance
-      summary: service test endpoint
-      operationId: check_action
-      parameters:
-        - in: path
-          required: true
-          name: action
-          schema:
-            type: string
-            default: echo
-            enum:
-              - fail
-              - echo
-        - in: query
-          name: data
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - path_value
-                - query_value
-                - body_value
-              properties:
-                path_value:
-                  type: string
-                query_value:
-                  type: string
-                body_value:
-                  type: object
-                  additionalProperties:
-                    type: string
-              example:
-                path_value: foo
-                query_value: bar
-                body_value:
-                  key1: value1
-                  key2: value2
-      responses:
-        '200':
-          description: Echoes response based on action
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                properties:
-                  data:
-                    $ref: '#/paths/~1check~1%7Baction%7D/post/requestBody/content/application~1json/schema'
-                  error:
-                    nullable: true
-                    default: null
-        default:
-          description: Returns enveloped payload w/ or w/o data
-          content:
-            application/json:
-              schema:
-                $ref: '#/paths/~1check~1%7Baction%7D/post/responses/200/content/application~1json/schema'
   /config:
     get:
       summary: Front end runtime configuration
@@ -1872,6 +1807,17 @@ paths:
                                       type: string
                                 - type: array
                                   items: {}
+                        inputsUnits:
+                          type: object
+                          description: values of input unit
+                          patternProperties:
+                            '^[-_a-zA-Z0-9]+$':
+                              type: string
+                              example:
+                                - kilo-meter
+                                - milli-second
+                                - micro-gram
+                                - kelvin
                         inputAccess:
                           description: map with key - access level pairs
                           type: object
@@ -2070,6 +2016,33 @@ paths:
                     currentNodeId:
                       type: string
                       format: uuid
+                    annotations:
+                      type: object
+                      x-patternProperties:
+                        '^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?4[0-9a-fA-F]{3}-?[89abAB][0-9a-fA-F]{3}-?[0-9a-fA-F]{12}$':
+                          type: object
+                          additionalProperties: false
+                          required:
+                            - type
+                            - color
+                            - attributes
+                          properties:
+                            type:
+                              type: string
+                              description: Annotation type
+                              example:
+                                - rect
+                                - text
+                            color:
+                              type: string
+                              description: Annotation's color
+                              example:
+                                - '#FF0000'
+                                - '#0000FF'
+                            attributes:
+                              type: object
+                              description: svg attributes
+                      additionalProperties: true
                 tags:
                   type: array
                   items:
@@ -4598,6 +4571,39 @@ paths:
                 $ref: '#/paths/~1catalog~1services~1%7Bservice_key%7D~1%7Bservice_version%7D~1inputs/get/responses/422/content/application~1json/schema'
           description: Validation Error
       summary: Get Compatible Outputs Given Target Input
+  '/clusters:ping':
+    post:
+      summary: test connectivity with cluster
+      operationId: ping_cluster_handler
+      tags:
+        - cluster
+      requestBody:
+        required: true
+        description: the cluster endpoint/authentication to test
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                endpoint:
+                  type: string
+                  minLength: 1
+                  maxLength: 65536
+                authentication:
+                  description: Dask gateway authentication
+                  anyOf:
+                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/0'
+                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/1'
+                    - $ref: '#/paths/~1clusters/post/requestBody/content/application~1json/schema/properties/authentication/anyOf/2'
+              required:
+                - endpoint
+                - authentication
+              additionalProperties: false
+      responses:
+        '204':
+          description: connectivity is OK
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
   /clusters:
     get:
       summary: List my clusters
@@ -4788,7 +4794,7 @@ paths:
     get:
       tags:
         - cluster
-      summary: Gets one cluster details
+      summary: Gets one cluster
       operationId: get_cluster_handler
       responses:
         '200':
@@ -4879,6 +4885,51 @@ paths:
       responses:
         '204':
           description: cluster has been successfully deleted
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
+  '/clusters/{cluster_id}/details':
+    parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags:
+        - cluster
+      summary: Gets one cluster details
+      operationId: get_cluster_details_handler
+      responses:
+        '200':
+          description: got cluster
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      scheduler:
+                        type: object
+                        description: contains information about the cluster scheduler
+                      cluster:
+                        type: object
+                        description: contains information about the cluster workers
+                      dashboardLink:
+                        type: string
+                        minLength: 1
+                        maxLength: 65536
+                        description: contains the link to the cluster dashboard
+                    required:
+                      - scheduler
+                      - cluster
+                      - dashboardLink
+                  error:
+                    nullable: true
+                    default: null
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
   /viewers:

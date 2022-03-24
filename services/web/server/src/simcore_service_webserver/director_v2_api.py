@@ -3,6 +3,7 @@
 PLEASE avoid importing from any other module to access this plugin's functionality
 """
 
+
 from typing import Tuple
 
 from .director_v2_abc import (
@@ -25,6 +26,15 @@ from .director_v2_core import (
     start_service,
     stop_service,
     stop_services,
+    ping_cluster,
+    create_cluster,
+    list_clusters,
+    get_cluster,
+    get_cluster_details,
+    update_cluster,
+    delete_cluster,
+    ClusterAccessForbidden,
+    ClusterNotFoundError,
 )
 
 # director-v2 module internal API
@@ -46,4 +56,14 @@ __all__: Tuple[str, ...] = (
     "start_service",
     "stop_service",
     "stop_services",
+    "ping_cluster",
+    "create_cluster",
+    "list_clusters",
+    "get_cluster",
+    "get_cluster_details",
+    "update_cluster",
+    "delete_cluster",
+    "ClusterAccessForbidden",
+    "ClusterNotFoundError",
 )
+# nopycln: file

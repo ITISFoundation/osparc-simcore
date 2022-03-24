@@ -1,10 +1,5 @@
-from pydantic import PositiveInt
-from pydantic.types import NonNegativeInt
-
-UserID = PositiveInt
-ClusterID = NonNegativeInt
-
 # dynamic services
+
 DYNAMIC_SIDECAR_SERVICE_PREFIX = "dy-sidecar"
 DYNAMIC_PROXY_SERVICE_PREFIX = "dy-proxy"
 

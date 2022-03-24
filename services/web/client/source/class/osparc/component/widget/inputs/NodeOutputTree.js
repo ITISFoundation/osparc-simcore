@@ -150,17 +150,28 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
 
       for (let portKey in ports) {
         const port = ports[portKey];
-        let portData = {
+        const portData = {
           label: port.label,
           description: port.description,
           portKey: portKey,
           nodeKey: node.getKey(),
-          isDir: !(portKey.includes("modeler") || portKey.includes("sensorSettingAPI") || portKey.includes("neuronsSetting")),
+          open: false,
           type: port.type,
           unitShort: port.unitShort || null,
-          unitLong: port.unitLong || null,
-          open: false
+          unitLong: port.unitLong || null
         };
+        if (port.type === "ref_contentSchema") {
+          portData.type = port.contentSchema.type;
+          if ("x_unit" in port.contentSchema) {
+            const {
+              unitPrefix,
+              unit
+            } = osparc.utils.Units.decomposeXUnit(port.contentSchema["x_unit"]);
+            const labels = osparc.utils.Units.getLabels(unit, unitPrefix);
+            portData.unitShort = labels.unitShort;
+            portData.unitLong = labels.unitLong;
+          }
+        }
         portData.icon = osparc.data.Converters.fromTypeToIcon(port.type);
         portData.value = port.value == null ? "-" : port.value;
         data.children.push(portData);

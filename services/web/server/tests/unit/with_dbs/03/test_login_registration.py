@@ -1,9 +1,11 @@
+import asyncio
+
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient
+from aiohttp.test_utils import TestClient, TestServer
 from pytest_simcore.helpers.utils_assert import assert_error, assert_status
 from pytest_simcore.helpers.utils_login import NewInvitation, NewUser, parse_link
 from servicelib.aiohttp.rest_responses import unwrap_envelope
@@ -17,6 +19,17 @@ from simcore_service_webserver.login.settings import (
 from simcore_service_webserver.login.storage import AsyncpgStorage, get_plugin_storage
 
 EMAIL, PASSWORD = "tester@test.com", "password"
+
+
+@pytest.fixture
+def client(
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client,
+    web_server: TestServer,
+    mock_orphaned_services,
+) -> TestClient:
+    cli = event_loop.run_until_complete(aiohttp_client(web_server))
+    return cli
 
 
 @pytest.fixture

@@ -394,7 +394,7 @@ async def remove_orphaned_services(
         logger.debug(("Could not fetch running_interactive_services"))
 
     logger.info(
-        "Will collect the following: %s",
+        "Currently running services %s",
         [
             (x.get("service_uuid", ""), x.get("service_host", ""))
             for x in running_interactive_services

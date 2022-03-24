@@ -68,9 +68,6 @@ paths:
   /status/{service_name}:
     $ref: "./openapi-diagnostics.yaml#/paths/~1status~1{service_name}"
 
-  /check/{action}:
-    $ref: "./openapi-diagnostics.yaml#/paths/~1check~1{action}"
-
   /config:
     $ref: "./openapi-diagnostics.yaml#/paths/~1config"
 
@@ -290,10 +287,14 @@ paths:
     $ref: "./openapi-catalog.yaml#/paths/catalog_services_service_key_service_version_outputs_match"
 
   # CLUSTER -------------------------------------------------------------------------
+  /clusters:ping:
+    $ref: "./openapi-clusters.yaml#/paths/director_v2_clusters_ping"
   /clusters:
     $ref: "./openapi-clusters.yaml#/paths/~1clusters"
   /clusters/{cluster_id}:
     $ref: "./openapi-clusters.yaml#/paths/~1clusters~1{cluster_id}"
+  /clusters/{cluster_id}/details:
+    $ref: "./openapi-clusters.yaml#/paths/director_v2_clusters_cluster_id_details"
 
   # VIEWER -------------------------------------------------------------------------
   /viewers:

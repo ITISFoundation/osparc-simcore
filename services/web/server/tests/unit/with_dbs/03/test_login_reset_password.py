@@ -2,9 +2,11 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
+
 import pytest
 from aiohttp import web
-from aiohttp.test_utils import TestClient
+from aiohttp.test_utils import TestClient, TestServer
 from pytest_simcore.helpers.utils_assert import assert_status
 from pytest_simcore.helpers.utils_login import NewUser, parse_link, parse_test_marks
 from simcore_service_webserver.db_models import ConfirmationAction, UserStatus
@@ -14,6 +16,17 @@ from simcore_service_webserver.login.utils import get_random_string
 from yarl import URL
 
 EMAIL, PASSWORD = "tester@test.com", "password"
+
+
+@pytest.fixture
+def client(
+    event_loop: asyncio.AbstractEventLoop,
+    aiohttp_client,
+    web_server: TestServer,
+    mock_orphaned_services,
+) -> TestClient:
+    cli = event_loop.run_until_complete(aiohttp_client(web_server))
+    return cli
 
 
 @pytest.fixture
@@ -45,7 +58,7 @@ async def test_unknown_email(
     )
     payload = await rp.text()
 
-    assert rp.url_obj.path == reset_url.path
+    assert rp.url.path == reset_url.path
     await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(email=EMAIL))
 
     out, err = capsys.readouterr()
@@ -63,7 +76,7 @@ async def test_banned_user(client: TestClient, cfg: LoginOptions, capsys):
             },
         )
 
-    assert rp.url_obj.path == reset_url.path
+    assert rp.url.path == reset_url.path
     await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
 
     out, err = capsys.readouterr()
@@ -83,7 +96,7 @@ async def test_inactive_user(client: TestClient, cfg: LoginOptions, capsys):
             },
         )
 
-    assert rp.url_obj.path == reset_url.path
+    assert rp.url.path == reset_url.path
     await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
 
     out, err = capsys.readouterr()
@@ -107,7 +120,7 @@ async def test_too_often(
         )
         await db.delete_confirmation(confirmation)
 
-    assert rp.url_obj.path == reset_url.path
+    assert rp.url.path == reset_url.path
     await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
 
     out, err = capsys.readouterr()
@@ -123,7 +136,7 @@ async def test_reset_and_confirm(client: TestClient, cfg: LoginOptions, capsys):
                 "email": user["email"],
             },
         )
-        assert rp.url_obj.path == reset_url.path
+        assert rp.url.path == reset_url.path
         await assert_status(rp, web.HTTPOk, cfg.MSG_EMAIL_SENT.format(**user))
 
         out, err = capsys.readouterr()
@@ -134,7 +147,7 @@ async def test_reset_and_confirm(client: TestClient, cfg: LoginOptions, capsys):
         rp = await client.get(confirmation_url)
         assert rp.status == 200
         assert (
-            rp.url_obj.path_qs
+            rp.url.path_qs
             == URL(cfg.LOGIN_REDIRECT)
             .with_fragment("reset-password?code=%s" % code)
             .path_qs
@@ -154,14 +167,14 @@ async def test_reset_and_confirm(client: TestClient, cfg: LoginOptions, capsys):
         )
         payload = await rp.json()
         assert rp.status == 200, payload
-        assert rp.url_obj.path == reset_allowed_url.path
+        assert rp.url.path == reset_allowed_url.path
         await assert_status(rp, web.HTTPOk, cfg.MSG_PASSWORD_CHANGED)
         # TODO: multiple flash messages
 
         # Try new password
         logout_url = client.app.router["auth_logout"].url_for()
         rp = await client.post(logout_url)
-        assert rp.url_obj.path == logout_url.path
+        assert rp.url.path == logout_url.path
         await assert_status(rp, web.HTTPUnauthorized, "Unauthorized")
 
         login_url = client.app.router["auth_login"].url_for()
@@ -172,5 +185,5 @@ async def test_reset_and_confirm(client: TestClient, cfg: LoginOptions, capsys):
                 "password": new_password,
             },
         )
-        assert rp.url_obj.path == login_url.path
+        assert rp.url.path == login_url.path
         await assert_status(rp, web.HTTPOk, cfg.MSG_LOGGED_IN)

@@ -27,7 +27,6 @@ v0_router.include_router(
 
 # Latest API
 v2_router = APIRouter()
-v2_router.include_router(meta.router, tags=["demo"], prefix="/demo")
 v2_router.include_router(
     computations.router, tags=["computations"], prefix="/computations"
 )

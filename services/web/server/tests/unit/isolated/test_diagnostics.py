@@ -6,7 +6,7 @@ from typing import Dict
 from unittest.mock import Mock
 
 import pytest
-from servicelib.aiohttp.application_keys import APP_CONFIG_KEY, APP_OPENAPI_SPECS_KEY
+from servicelib.aiohttp.application_keys import APP_OPENAPI_SPECS_KEY
 from servicelib.aiohttp.application_setup import APP_SETUP_COMPLETED_KEY
 from simcore_service_webserver import diagnostics_handlers
 from simcore_service_webserver.application_settings import setup_settings
@@ -36,11 +36,6 @@ class MockApp(dict):
 @pytest.fixture
 def app_mock(openapi_specs):
     app = MockApp()
-
-    # some inits to emulate app setup
-    app[APP_CONFIG_KEY] = {
-        "diagnostics": {"diagnostics.enabled": True},
-    }
 
     # some inits to emulate simcore_service_webserver.rest setup
     app[APP_SETUP_COMPLETED_KEY] = ["simcore_service_webserver.rest"]

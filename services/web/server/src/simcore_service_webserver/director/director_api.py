@@ -9,7 +9,6 @@ import warnings
 from typing import Any, Dict, List, Optional, Tuple
 
 from aiohttp import ClientSession, web
-from models_library.settings.services_common import ServicesCommonSettings
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.utils import logged_gather
 from yarl import URL
@@ -90,11 +89,14 @@ async def stop_service(
     # stopping a service can take a lot of time
     # bumping the stop command timeout to 1 hour
     # this will allow to sava bigger datasets from the services
+
+    settings: DirectorSettings = get_plugin_settings(app)
+
     url = api_endpoint / "running_interactive_services" / service_uuid
     async with session.delete(
         url,
         ssl=False,
-        timeout=ServicesCommonSettings().webserver_director_stop_service_timeout,
+        timeout=settings.DIRECTOR_STOP_SERVICE_TIMEOUT,
         params={"save_state": "true" if save_state else "false"},
     ) as resp:
         if resp.status == 404:

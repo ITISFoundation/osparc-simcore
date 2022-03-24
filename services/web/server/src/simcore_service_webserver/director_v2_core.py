@@ -5,9 +5,9 @@ from uuid import UUID
 
 import aiohttp
 from aiohttp import ClientTimeout, web
+from models_library.clusters import ClusterID
 from models_library.projects import ProjectID
 from models_library.projects_pipeline import ComputationTask
-from models_library.settings.services_common import ServicesCommonSettings
 from models_library.users import UserID
 from pydantic.types import PositiveInt
 from servicelib.logging_utils import log_decorator
@@ -19,6 +19,13 @@ from tenacity.wait import wait_random
 from yarl import URL
 
 from .director_v2_abc import AbstractProjectRunPolicy
+from .director_v2_exceptions import (
+    ClusterAccessForbidden,
+    ClusterNotFoundError,
+    ClusterPingError,
+    DirectorServiceError,
+)
+from .director_v2_models import ClusterCreate, ClusterPatch, ClusterPing
 from .director_v2_settings import (
     DirectorV2Settings,
     get_client_session,
@@ -30,9 +37,7 @@ log = logging.getLogger(__name__)
 _APP_DIRECTOR_V2_CLIENT_KEY = f"{__name__}.DirectorV2ApiClient"
 
 SERVICE_HEALTH_CHECK_TIMEOUT = ClientTimeout(total=2, connect=1)  # type:ignore
-SERVICE_RETRIEVE_HTTP_TIMEOUT = ClientTimeout(
-    total=60 * 60, connect=None, sock_connect=5  # type:ignore
-)
+
 DEFAULT_RETRY_POLICY = dict(
     wait=wait_random(0, 1),
     stop=stop_after_attempt(2),
@@ -43,20 +48,6 @@ DEFAULT_RETRY_POLICY = dict(
 
 DataType = Dict[str, Any]
 DataBody = Union[DataType, List[DataType], None]
-
-# base/ERRORS ------------------------------------------------
-
-
-class DirectorServiceError(Exception):
-    """Basic exception for errors raised by director"""
-
-    def __init__(self, status: int, reason: str):
-        self.status = status
-        self.reason = reason
-        super().__init__(f"forwarded call failed with status {status}, reason {reason}")
-
-
-# base/HELPERS ------------------------------------------------
 
 
 class DirectorV2ApiClient:
@@ -100,9 +91,13 @@ async def _request_director_v2(
     expected_status: Type[web.HTTPSuccessful] = web.HTTPOk,
     headers: Optional[Dict[str, str]] = None,
     data: Optional[Any] = None,
+    on_error: Optional[
+        Dict[int, Tuple[Type[DirectorServiceError], Dict[str, Any]]]
+    ] = None,
     **kwargs,
 ) -> DataBody:
-
+    if not on_error:
+        on_error = {}
     try:
         async for attempt in AsyncRetrying(**DEFAULT_RETRY_POLICY):
             with attempt:
@@ -115,6 +110,7 @@ async def _request_director_v2(
                         if response.content_type == "application/json"
                         else await response.text()
                     )
+
                     # NOTE:
                     # - `sometimes director-v0` (via redirects) replies
                     #   in plain text and this is considered an error
@@ -122,28 +118,38 @@ async def _request_director_v2(
                     if response.status != expected_status.status_code or isinstance(
                         payload, str
                     ):
-                        raise DirectorServiceError(response.status, reason=f"{payload}")
+                        if response.status in on_error:
+                            exc, exc_ctx = on_error[response.status]
+                            raise exc(
+                                **exc_ctx, status=response.status, reason=f"{payload}"
+                            )
+                        raise DirectorServiceError(
+                            status=response.status, reason=f"{payload}", url=url
+                        )
                     return payload
 
     # TODO: enrich with https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
     except asyncio.TimeoutError as err:
         raise DirectorServiceError(
-            web.HTTPServiceUnavailable.status_code,
+            status=web.HTTPServiceUnavailable.status_code,
             reason=f"request to director-v2 timed-out: {err}",
+            url=url,
         ) from err
 
     except aiohttp.ClientError as err:
         raise DirectorServiceError(
-            web.HTTPServiceUnavailable.status_code,
+            status=web.HTTPServiceUnavailable.status_code,
             reason=f"request to director-v2 service unexpected error {err}",
+            url=url,
         ) from err
     log.error("Unexpected result calling %s, %s", f"{url=}", f"{method=}")
     raise DirectorServiceError(
-        web.HTTPClientError.status_code, reason="Unexpected client error"
+        status=web.HTTPClientError.status_code,
+        reason="Unexpected client error",
+        url=url,
     )
 
 
-# POLICY ------------------------------------------------
 class DefaultProjectRunPolicy(AbstractProjectRunPolicy):
     # pylint: disable=unused-argument
 
@@ -172,9 +178,6 @@ class DefaultProjectRunPolicy(AbstractProjectRunPolicy):
             ],
             [],
         )
-
-
-# calls to director-v2 API ------------------------------------------------
 
 
 async def is_healthy(app: web.Application) -> bool:
@@ -237,11 +240,11 @@ async def is_pipeline_running(
 
 @log_decorator(logger=log)
 async def get_computation_task(
-    app: web.Application, user_id: PositiveInt, project_id: UUID
+    app: web.Application, user_id: UserID, project_id: ProjectID
 ) -> Optional[ComputationTask]:
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = (settings.base_url / f"computations/{project_id}").update_query(
-        user_id=user_id
+        user_id=int(user_id)
     )
 
     # request to director-v2
@@ -277,28 +280,6 @@ async def delete_pipeline(
 
 
 @log_decorator(logger=log)
-async def request_retrieve_dyn_service(
-    app: web.Application, service_uuid: str, port_keys: List[str]
-) -> None:
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / f"dynamic_services/{service_uuid}:retrieve"
-    body = {"port_keys": port_keys}
-
-    try:
-        await _request_director_v2(
-            app, "POST", backend_url, data=body, timeout=SERVICE_RETRIEVE_HTTP_TIMEOUT
-        )
-    except DirectorServiceError as exc:
-        log.warning(
-            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s:%s]",
-            service_uuid,
-            port_keys,
-            exc.status,
-            exc.reason,
-        )
-
-
-@log_decorator(logger=log)
 async def start_service(
     app: web.Application,
     user_id: PositiveInt,
@@ -329,12 +310,10 @@ async def start_service(
     }
 
     settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / "dynamic_services"
-
     started_service = await _request_director_v2(
         app,
         "POST",
-        backend_url,
+        url=settings.base_url / "dynamic_services",
         data=data,
         headers=headers,
         expected_status=web.HTTPCreated,
@@ -368,66 +347,6 @@ async def get_services(
 
 
 @log_decorator(logger=log)
-async def stop_service(
-    app: web.Application, service_uuid: str, save_state: Optional[bool] = True
-) -> None:
-    # stopping a service can take a lot of time
-    # bumping the stop command timeout to 1 hour
-    # this will allow to sava bigger datasets from the services
-    # TODO: PC -> ANE: all settings MUST be in app[APP_SETTINGS_KEY]
-
-    timeout = ServicesCommonSettings().webserver_director_stop_service_timeout
-
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = (settings.base_url / f"dynamic_services/{service_uuid}").update_query(
-        save_state="true" if save_state else "false",
-    )
-    await _request_director_v2(
-        app, "DELETE", backend_url, expected_status=web.HTTPNoContent, timeout=timeout
-    )
-
-
-@log_decorator(logger=log)
-async def list_running_dynamic_services(
-    app: web.Application, user_id: PositiveInt, project_id: ProjectID
-) -> List[DataType]:
-    """
-    Retruns the running dynamic services from director-v0 and director-v2
-    """
-    settings: DirectorV2Settings = get_plugin_settings(app)
-    url = settings.base_url / "dynamic_services"
-    backend_url = url.with_query(user_id=str(user_id), project_id=str(project_id))
-
-    services = await _request_director_v2(
-        app, "GET", backend_url, expected_status=web.HTTPOk
-    )
-
-    assert isinstance(services, list)  # nosec
-    return services
-
-
-@log_decorator(logger=log)
-async def stop_services(
-    app: web.Application,
-    user_id: Optional[PositiveInt] = None,
-    project_id: Optional[str] = None,
-    save_state: Optional[bool] = True,
-) -> None:
-    """Stops all services in parallel"""
-    running_dynamic_services = await get_services(
-        app, user_id=user_id, project_id=project_id
-    )
-
-    services_to_stop = [
-        stop_service(
-            app=app, service_uuid=service["service_uuid"], save_state=save_state
-        )
-        for service in running_dynamic_services
-    ]
-    await logged_gather(*services_to_stop)
-
-
-@log_decorator(logger=log)
 async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = settings.base_url / f"dynamic_services/{node_uuid}"
@@ -441,45 +360,252 @@ async def get_service_state(app: web.Application, node_uuid: str) -> DataType:
 
 
 @log_decorator(logger=log)
-async def retrieve(
-    app: web.Application, node_uuid: str, port_keys: List[str]
-) -> DataBody:
-    # when triggering retrieve endpoint
+async def stop_service(
+    app: web.Application, service_uuid: str, save_state: bool = True
+) -> None:
+    # stopping a service can take a lot of time
+    # bumping the stop command timeout to 1 hour
     # this will allow to sava bigger datasets from the services
-    # TODO: PC -> ANE: all settings MUST be in app[APP_SETTINGS_KEY]
-    timeout = ServicesCommonSettings().storage_service_upload_download_timeout
-
     settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / "dynamic_services" / f"{node_uuid}:retrieve"
-    body = dict(port_keys=port_keys)
-
-    retry_result = await _request_director_v2(
+    await _request_director_v2(
         app,
-        "POST",
-        backend_url,
-        expected_status=web.HTTPOk,
-        data=body,
-        timeout=timeout,
+        "DELETE",
+        url=(settings.base_url / f"dynamic_services/{service_uuid}").update_query(
+            save_state="true" if save_state else "false",
+        ),
+        expected_status=web.HTTPNoContent,
+        timeout=settings.DIRECTOR_V2_STOP_SERVICE_TIMEOUT,
     )
 
-    assert isinstance(retry_result, dict)  # nosec
-    return retry_result
+
+@log_decorator(logger=log)
+async def stop_services(
+    app: web.Application,
+    user_id: Optional[PositiveInt] = None,
+    project_id: Optional[str] = None,
+    save_state: bool = True,
+) -> None:
+    """Stops all services of either project_id or user_id in concurrently"""
+    running_dynamic_services = await get_services(
+        app, user_id=user_id, project_id=project_id
+    )
+
+    services_to_stop = [
+        stop_service(
+            app=app, service_uuid=service["service_uuid"], save_state=save_state
+        )
+        for service in running_dynamic_services
+    ]
+    await logged_gather(*services_to_stop)
+
+
+# FIXME: ANE please unduplicate the 2 following calls
+@log_decorator(logger=log)
+async def retrieve(
+    app: web.Application, service_uuid: str, port_keys: List[str]
+) -> DataType:
+    """Pulls data from connections to the dynamic service inputs"""
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    result = await _request_director_v2(
+        app,
+        "POST",
+        url=settings.base_url / f"dynamic_services/{service_uuid}:retrieve",
+        data={"port_keys": port_keys},
+        timeout=settings.get_service_retrieve_timeout(),
+    )
+    assert isinstance(result, dict)  # nosec
+    return result
+
+
+@log_decorator(logger=log)
+async def request_retrieve_dyn_service(
+    app: web.Application, service_uuid: str, port_keys: List[str]
+) -> None:
+    # TODO: notice that this function is identical to retrieve except that it does NOT reaise
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    body = {"port_keys": port_keys}
+
+    try:
+        await _request_director_v2(
+            app,
+            "POST",
+            url=settings.base_url / f"dynamic_services/{service_uuid}:retrieve",
+            data=body,
+            timeout=settings.get_service_retrieve_timeout(),
+        )
+    except DirectorServiceError as exc:
+        log.warning(
+            "Unable to call :retrieve endpoint on service %s, keys: [%s]: error: [%s:%s]",
+            service_uuid,
+            port_keys,
+            exc.status,
+            exc.reason,
+        )
 
 
 @log_decorator(logger=log)
 async def restart(app: web.Application, node_uuid: str) -> None:
-    # when triggering retrieve endpoint
-    # this will allow to sava bigger datasets from the services
-    # TODO: PC -> ANE: all settings MUST be in app[APP_SETTINGS_KEY]
-    timeout = ServicesCommonSettings().restart_containers_timeout
-
     settings: DirectorV2Settings = get_plugin_settings(app)
-    backend_url = settings.base_url / f"dynamic_services/{node_uuid}:restart"
-
     await _request_director_v2(
         app,
         "POST",
-        backend_url,
+        url=settings.base_url / f"dynamic_services/{node_uuid}:restart",
         expected_status=web.HTTPOk,
-        timeout=timeout,
+        timeout=settings.DIRECTOR_V2_RESTART_DYNAMIC_SERVICE_TIMEOUT,
+    )
+
+
+async def create_cluster(
+    app: web.Application, user_id: UserID, new_cluster: ClusterCreate
+) -> DataType:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    cluster = await _request_director_v2(
+        app,
+        "POST",
+        url=(settings.base_url / "clusters").update_query(user_id=int(user_id)),
+        expected_status=web.HTTPCreated,
+        data=new_cluster.dict(by_alias=True, exclude_unset=True),
+    )
+
+    assert isinstance(cluster, dict)  # nosec
+    return cluster
+
+
+async def list_clusters(app: web.Application, user_id: UserID) -> List[DataType]:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    clusters = await _request_director_v2(
+        app,
+        "GET",
+        url=(settings.base_url / "clusters").update_query(user_id=int(user_id)),
+        expected_status=web.HTTPOk,
+    )
+
+    assert isinstance(clusters, list)  # nosec
+    return clusters
+
+
+async def get_cluster(
+    app: web.Application, user_id: UserID, cluster_id: ClusterID
+) -> DataType:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    cluster = await _request_director_v2(
+        app,
+        "GET",
+        url=(settings.base_url / f"clusters/{cluster_id}").update_query(
+            user_id=int(user_id)
+        ),
+        expected_status=web.HTTPOk,
+        on_error={
+            web.HTTPNotFound.status_code: (
+                ClusterNotFoundError,
+                {"cluster_id": cluster_id},
+            ),
+            web.HTTPForbidden.status_code: (
+                ClusterAccessForbidden,
+                {"cluster_id": cluster_id},
+            ),
+        },
+    )
+
+    assert isinstance(cluster, dict)  # nosec
+    return cluster
+
+
+async def get_cluster_details(
+    app: web.Application, user_id: UserID, cluster_id: ClusterID
+) -> DataType:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+
+    cluster = await _request_director_v2(
+        app,
+        "GET",
+        url=(settings.base_url / f"clusters/{cluster_id}/details").update_query(
+            user_id=int(user_id)
+        ),
+        expected_status=web.HTTPOk,
+        on_error={
+            web.HTTPNotFound.status_code: (
+                ClusterNotFoundError,
+                {"cluster_id": cluster_id},
+            ),
+            web.HTTPForbidden.status_code: (
+                ClusterAccessForbidden,
+                {"cluster_id": cluster_id},
+            ),
+        },
+    )
+
+    assert isinstance(cluster, dict)  # nosec
+    return cluster
+
+
+async def update_cluster(
+    app: web.Application,
+    user_id: UserID,
+    cluster_id: ClusterID,
+    cluster_patch: ClusterPatch,
+) -> DataType:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    cluster = await _request_director_v2(
+        app,
+        "PATCH",
+        url=(settings.base_url / f"clusters/{cluster_id}").update_query(
+            user_id=int(user_id)
+        ),
+        expected_status=web.HTTPOk,
+        data=cluster_patch.dict(by_alias=True, exclude_unset=True),
+        on_error={
+            web.HTTPNotFound.status_code: (
+                ClusterNotFoundError,
+                {"cluster_id": cluster_id},
+            ),
+            web.HTTPForbidden.status_code: (
+                ClusterAccessForbidden,
+                {"cluster_id": cluster_id},
+            ),
+        },
+    )
+
+    assert isinstance(cluster, dict)  # nosec
+    return cluster
+
+
+async def delete_cluster(
+    app: web.Application, user_id: UserID, cluster_id: ClusterID
+) -> None:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    await _request_director_v2(
+        app,
+        "DELETE",
+        url=(settings.base_url / f"clusters/{cluster_id}").update_query(
+            user_id=int(user_id)
+        ),
+        expected_status=web.HTTPNoContent,
+        on_error={
+            web.HTTPNotFound.status_code: (
+                ClusterNotFoundError,
+                {"cluster_id": cluster_id},
+            ),
+            web.HTTPForbidden.status_code: (
+                ClusterAccessForbidden,
+                {"cluster_id": cluster_id},
+            ),
+        },
+    )
+
+
+async def ping_cluster(app: web.Application, cluster_ping: ClusterPing) -> None:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    await _request_director_v2(
+        app,
+        "POST",
+        url=settings.base_url / "clusters:ping",
+        expected_status=web.HTTPNoContent,
+        data=cluster_ping.dict(by_alias=True, exclude_unset=True),
+        on_error={
+            web.HTTPUnprocessableEntity.status_code: (
+                ClusterPingError,
+                {"endpoint": f"{cluster_ping.endpoint}"},
+            )
+        },
     )

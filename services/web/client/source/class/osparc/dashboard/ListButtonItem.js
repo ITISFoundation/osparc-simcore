@@ -30,12 +30,6 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     this.addListener("changeValue", this.__itemSelected, this);
   },
 
-  events: {
-    "updateQualityStudy": "qx.event.type.Data",
-    "updateQualityTemplate": "qx.event.type.Data",
-    "updateQualityService": "qx.event.type.Data"
-  },
-
   statics: {
     MENU_BTN_WIDTH: 25
   },
@@ -107,6 +101,16 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
           });
           this._addAt(control, osparc.dashboard.ListButtonBase.POS.UI_MODE);
           break;
+        case "update-study":
+          control = new qx.ui.basic.Image().set({
+            minWidth: 20,
+            alignY: "middle",
+            source: "@MaterialIcons/update/18",
+            toolTipText: this.tr("Update available"),
+            visibility: "excluded"
+          });
+          this._addAt(control, osparc.dashboard.ListButtonBase.POS.UPDATE_STUDY);
+          break;
         case "menu-selection-stack":
           control = new qx.ui.container.Stack().set({
             minWidth: this.self().MENU_BTN_WIDTH,
@@ -158,6 +162,11 @@ qx.Class.define("osparc.dashboard.ListButtonItem", {
     _applyAccessRights: function(value, old) {
       if (value && Object.keys(value).length) {
         const sharedIcon = this.getChildControl("shared-icon");
+        sharedIcon.addListener("tap", e => {
+          e.stopPropagation();
+          this._openAccessRights();
+        }, this);
+        sharedIcon.addListener("pointerdown", e => e.stopPropagation());
 
         const store = osparc.store.Store.getInstance();
         Promise.all([

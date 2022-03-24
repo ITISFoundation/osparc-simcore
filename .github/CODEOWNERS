@@ -4,33 +4,35 @@
 
 
 # files and folders recursively
-.codeclimate.yml                          @sanderegg, @pcrespov
+.codeclimate.yml                          @sanderegg @pcrespov
+.env-*                                    @pcrespov @Surfict @mrnicegyu11
 .travis.yml                               @sanderegg
-Makefile                                  @pcrespov, @sanderegg
+Makefile                                  @pcrespov @sanderegg
 
 
 # NOTE: '/' denotes the root of the repository
-/api/                                     @sanderegg, @pcrespov
-/ci/                                      @sanderegg, @pcrespov
+/api/                                     @sanderegg @pcrespov
+/ci/                                      @sanderegg @pcrespov
 /docs/                                    @pcrespov
-/packages/models-library/                 @sanderegg, @pcrespov
-/packages/pytest-simcore/                 @pcrespov, @sanderegg
-/packages/service-integration/            @pcrespov, @sanderegg, @KZzizzle
+/packages/models-library/                 @sanderegg @pcrespov
+/packages/pytest-simcore/                 @pcrespov @sanderegg
+/packages/service-integration/            @pcrespov @sanderegg @KZzizzle
 /packages/service-library/                @pcrespov
-/packages/settings-library/               @pcrespov, @sanderegg
+/packages/settings-library/               @pcrespov @sanderegg
 /requirements/                            @pcrespov
-/scripts/demo/                            @odeimaiz, @pcrespov
+/scripts/demo/                            @odeimaiz @pcrespov
 /scripts/json-schema-to-openapi-schema    @sanderegg
-/scripts/template-projects/               @odeimaiz, @pcrespov
+/scripts/template-projects/               @odeimaiz @pcrespov
 /services/api-server/                     @pcrespov
-/services/catalog/                        @pcrespov, @sanderegg
-/services/director*/                      @sanderegg, @pcrespov
+/services/catalog/                        @pcrespov @sanderegg
+/services/director*/                      @sanderegg @pcrespov
+/services/docker-compose*.yml             @sanderegg @Surfict @mrnicegyu11
 /services/dynamic-sidecar/                @GitHK
 /services/migration/                      @pcrespov
-/services/storage/                        @mguidon, @pcrespov
 /services/static-webserver                @GitHK
-/services/web/client/                     @odeimaiz, @ignapas
-/services/web/server/                     @pcrespov, @sanderegg, @GitHK
+/services/storage/                        @mguidon @pcrespov
+/services/web/client/                     @odeimaiz
+/services/web/server/                     @pcrespov @sanderegg @GitHK
 /tests/environment-setup/                 @pcrespov
 /tests/performance/                       @pcrespov
 /tests/public-api/                        @pcrespov

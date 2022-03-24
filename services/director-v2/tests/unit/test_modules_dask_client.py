@@ -34,10 +34,11 @@ from distributed import Event, Scheduler
 from distributed.deploy.spec import SpecCluster
 from faker import Faker
 from fastapi.applications import FastAPI
-from models_library.clusters import NoAuthentication, SimpleAuthentication
+from models_library.clusters import ClusterID, NoAuthentication, SimpleAuthentication
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
+from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
@@ -49,7 +50,6 @@ from simcore_service_director_v2.core.errors import (
     MissingComputationalResourcesError,
 )
 from simcore_service_director_v2.models.domains.comp_tasks import Image
-from simcore_service_director_v2.models.schemas.constants import ClusterID, UserID
 from simcore_service_director_v2.models.schemas.services import NodeRequirements
 from simcore_service_director_v2.modules.dask_client import DaskClient, TaskHandlers
 from tenacity._asyncio import AsyncRetrying
@@ -97,6 +97,11 @@ async def _assert_wait_for_task_status(
             assert isinstance(current_task_status, RunningState)
             print(f"{current_task_status=} vs {expected_status=}")
             assert current_task_status == expected_status
+
+
+@pytest.fixture
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
 
 
 @pytest.fixture
@@ -566,6 +571,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     assert distributed.Future(job_id).done()
 
 
+@pytest.mark.flaky
 async def test_abort_computation_tasks(
     dask_client: DaskClient,
     user_id: UserID,
@@ -697,7 +703,7 @@ async def test_failed_task_returns_exceptions(
 
     await dask_client.release_task_result(job_id)
     await _assert_wait_for_task_status(
-        job_id, dask_client, expected_status=RunningState.UNKNOWN, timeout=60
+        job_id, dask_client, expected_status=RunningState.UNKNOWN, timeout=120
     )
 
 

@@ -2,10 +2,12 @@ import logging
 import os
 import socket
 from dataclasses import dataclass, field
-from typing import Awaitable, Callable, Optional, Union
+from typing import Awaitable, Callable, Final, Optional, Union
 
 import dask_gateway
 import distributed
+import httpx
+from aiohttp import ClientConnectionError, ClientResponseError
 from dask_task_models_library.container_tasks.events import (
     TaskLogEvent,
     TaskProgressEvent,
@@ -75,7 +77,7 @@ class DaskSubSystem:
 
 async def _connect_to_dask_scheduler(endpoint: AnyUrl) -> DaskSubSystem:
     try:
-        client = await distributed.Client(
+        client = await distributed.Client(  # type: ignore
             f"{endpoint}",
             asynchronous=True,
             name=f"director-v2_{socket.gethostname()}_{os.getpid()}",
@@ -117,7 +119,7 @@ async def _connect_with_gateway_and_create_cluster(
         logger.info("Cluster dashboard available: %s", cluster.dashboard_link)
         # NOTE: we scale to 1 worker as they are global
         await cluster.adapt(active=True)
-        client = await cluster.get_client()
+        client = await cluster.get_client()  # type: ignore
         assert client  # nosec
         return DaskSubSystem(
             client=client,
@@ -166,3 +168,45 @@ async def get_gateway_auth_from_params(
         ) from exc
 
     raise ConfigurationError(f"Cluster has invalid configuration: {auth_params=}")
+
+
+_PING_TIMEOUT_S: Final[int] = 5
+
+
+async def test_gateway_endpoint(
+    endpoint: AnyUrl, authentication: ClusterAuthentication
+) -> None:
+    """This method will try to connect to a gateway endpoint and raise a ConfigurationError in case of problem
+
+    :raises ConfigurationError: contians some information as to why the connection failed
+    """
+    try:
+        gateway_auth = await get_gateway_auth_from_params(authentication)
+        async with dask_gateway.Gateway(
+            address=f"{endpoint}", auth=gateway_auth, asynchronous=True
+        ) as gateway:
+            # this does not yet create any connection to the underlying gateway.
+            # since using a fct from dask gateway is going to timeout after a long time
+            # we bypass the pinging by calling in ourselves with a short timeout
+            async with httpx.AsyncClient(
+                transport=httpx.AsyncHTTPTransport(retries=2)
+            ) as client:
+                # try to get something the api shall return fast
+                response = await client.get(
+                    f"{endpoint}/api/version", timeout=_PING_TIMEOUT_S
+                )
+                response.raise_for_status()
+                # now we try to list the clusters to check the gateway responds in a sensible way
+                await gateway.list_clusters()
+
+            logger.debug("Pinging %s, succeeded", f"{endpoint=}")
+    except (
+        dask_gateway.GatewayServerError,
+        ClientConnectionError,
+        ClientResponseError,
+        httpx.HTTPError,
+    ) as exc:
+        logger.debug("Pinging %s, failed: %s", f"{endpoint=}", f"{exc=!r}")
+        raise ConfigurationError(
+            f"Could not connect to cluster in {endpoint}: error: {exc}"
+        ) from exc

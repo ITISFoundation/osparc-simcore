@@ -118,8 +118,6 @@ qx.Class.define("osparc.component.widget.NodePorts", {
       const metaData = this.getNode().getMetaData();
       if (this.getIsInputModel()) {
         this.__createUIPorts(metaData.outputs);
-      } else if (metaData.inputsDefault) {
-        this.__createUIPorts(metaData.inputsDefault);
       }
     },
 
