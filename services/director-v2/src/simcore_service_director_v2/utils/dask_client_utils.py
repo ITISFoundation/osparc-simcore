@@ -1,3 +1,4 @@
+from contextlib import suppress
 import logging
 import os
 import socket
@@ -105,34 +106,44 @@ async def _connect_with_gateway_and_create_cluster(
         gateway = dask_gateway.Gateway(
             address=f"{endpoint}", auth=gateway_auth, asynchronous=True
         )
-        # if there is already a cluster that means we can re-connect to it,
-        # and IT SHALL BE the first in the list
-        cluster_reports_list = await gateway.list_clusters()
-        logger.debug("current clusters on the gateway: %s", f"{cluster_reports_list=}")
-        cluster = None
-        if cluster_reports_list:
-            assert (
-                len(cluster_reports_list) == 1
-            ), "More than 1 cluster at this location, that is unexpected!!"  # nosec
-            cluster = await gateway.connect(
-                cluster_reports_list[0].name, shutdown_on_close=False
+
+        try:
+            # if there is already a cluster that means we can re-connect to it,
+            # and IT SHALL BE the first in the list
+            cluster_reports_list = await gateway.list_clusters()
+            logger.debug(
+                "current clusters on the gateway: %s", f"{cluster_reports_list=}"
             )
-            logger.debug("connected to %s", f"{cluster=}")
-        else:
-            cluster = await gateway.new_cluster(shutdown_on_close=False)
-            logger.debug("created %s", f"{cluster=}")
-        assert cluster  # nosec
-        logger.info("Cluster dashboard available: %s", cluster.dashboard_link)
-        # NOTE: we scale to 1 worker as they are global
-        await cluster.adapt(active=True)
-        client = await cluster.get_client()  # type: ignore
-        assert client  # nosec
-        return DaskSubSystem(
-            client=client,
-            scheduler_id=client.scheduler_info()["id"],
-            gateway=gateway,
-            gateway_cluster=cluster,
-        )
+            cluster = None
+            if cluster_reports_list:
+                assert (
+                    len(cluster_reports_list) == 1
+                ), "More than 1 cluster at this location, that is unexpected!!"  # nosec
+                cluster = await gateway.connect(
+                    cluster_reports_list[0].name, shutdown_on_close=False
+                )
+                logger.debug("connected to %s", f"{cluster=}")
+            else:
+                cluster = await gateway.new_cluster(shutdown_on_close=False)
+                logger.debug("created %s", f"{cluster=}")
+            assert cluster  # nosec
+            logger.info("Cluster dashboard available: %s", cluster.dashboard_link)
+            # NOTE: we scale to 1 worker as they are global
+            await cluster.adapt(active=True)
+            client = await cluster.get_client()  # type: ignore
+            assert client  # nosec
+            return DaskSubSystem(
+                client=client,
+                scheduler_id=client.scheduler_info()["id"],
+                gateway=gateway,
+                gateway_cluster=cluster,
+            )
+        except Exception as exc:
+            # cleanup
+            with suppress(Exception):
+                await gateway.close()  # type: ignore
+            raise exc
+
     except (TypeError) as exc:
         raise ConfigurationError(
             f"Cluster has invalid configuration: {endpoint=}, {auth_params=}"
