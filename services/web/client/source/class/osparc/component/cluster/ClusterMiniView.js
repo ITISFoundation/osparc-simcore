@@ -104,6 +104,9 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
           height: 9,
           width: 60
         });
+        progressBar.getChildControl("progress").set({
+          backgroundColor: "visual-blue"
+        });
         miniGrid.add(progressBar, {
           row: idx,
           column: 1
