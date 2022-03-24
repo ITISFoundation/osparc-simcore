@@ -57,7 +57,6 @@ qx.Class.define("osparc.dashboard.Dashboard", {
           menu.hide();
         }
       });
-    osparc.wrapper.Plotly.getInstance().init();
     this.__createMainViewLayout();
   },
 

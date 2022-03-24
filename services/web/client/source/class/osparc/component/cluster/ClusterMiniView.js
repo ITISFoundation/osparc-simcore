@@ -28,7 +28,9 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     this.__clusterId = clusterId;
 
     const grid = new qx.ui.layout.Grid(2, 2);
-    const miniGrid = this.__miniGrid = new qx.ui.container.Composite(grid);
+    const miniGrid = this.__miniGrid = new qx.ui.container.Composite(grid).set({
+      minWidth: 1
+    });
     this._add(miniGrid);
 
     this.__fetchDetails();
@@ -75,14 +77,20 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     __miniGrid: null,
     __hint: null,
 
+    setClusterId: function(clusterId) {
+      this.__clusterId = clusterId;
+    },
+
     __fetchDetails: function() {
-      const params = {
-        url: {
-          "cid": this.__clusterId
-        }
-      };
-      osparc.data.Resources.fetch("clusters", "details", params)
-        .then(clusterDetails => this.__updateWorkersDetails(clusterDetails));
+      if (osparc.utils.Utils.checkIsOnScreen(this)) {
+        const params = {
+          url: {
+            "cid": this.__clusterId
+          }
+        };
+        osparc.data.Resources.fetch("clusters", "details", params)
+          .then(clusterDetails => this.__updateWorkersDetails(clusterDetails));
+      }
     },
 
     __updateWorkersDetails: function(clusterDetails) {
