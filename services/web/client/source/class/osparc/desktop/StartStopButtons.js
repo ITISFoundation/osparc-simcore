@@ -125,12 +125,14 @@ qx.Class.define("osparc.desktop.StartStopButtons", {
       store.addListener("changeClusters", () => this.__populateClustersSelectBox(), this);
       this.__populateClustersSelectBox();
 
-      const clusterMiniView = new osparc.component.cluster.ClusterMiniView(0).set({
+      const clusterMiniView = new osparc.component.cluster.ClusterMiniView().set({
         alignY: "middle"
       });
       selectBox.addListener("changeSelection", e => {
         const selection = e.getData();
-        clusterMiniView.set(selection[0].id);
+        if (selection.length) {
+          clusterMiniView.setClusterId(selection[0].id);
+        }
       }, this);
       clustersLayout.add(clusterMiniView);
 

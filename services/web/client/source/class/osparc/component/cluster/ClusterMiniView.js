@@ -18,7 +18,7 @@
 qx.Class.define("osparc.component.cluster.ClusterMiniView", {
   extend: qx.ui.core.Widget,
 
-  construct: function(clusterId) {
+  construct: function(clusterId = 0) {
     this.base(arguments);
 
     this._setLayout(new qx.ui.layout.VBox().set({
