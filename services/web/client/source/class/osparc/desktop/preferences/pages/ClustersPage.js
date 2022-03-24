@@ -113,7 +113,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
           ctrl.bindProperty("name", "title", null, item, id);
           ctrl.bindProperty("endpoint", "endpoint", null, item, id);
           ctrl.bindProperty("description", "subtitle", null, item, id);
-          ctrl.bindProperty("access_rights", "members", null, item, id);
+          ctrl.bindProperty("accessRights", "members", null, item, id);
         },
         configureItem: item => {
           item.addListener("openEditCluster", e => {

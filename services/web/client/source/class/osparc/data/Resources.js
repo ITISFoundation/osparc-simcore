@@ -435,7 +435,7 @@ qx.Class.define("osparc.data.Resources", {
        * CLUSTERS
        */
       "clusters": {
-        useCache: true,
+        useCache: false,
         endpoints: {
           get: {
             method: "GET",
