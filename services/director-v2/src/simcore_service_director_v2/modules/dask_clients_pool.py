@@ -119,6 +119,10 @@ def setup(app: FastAPI, settings: DaskComputationalBackendSettings) -> None:
         app.state.dask_clients_pool = await DaskClientsPool.create(
             app=app, settings=settings
         )
+        logger.info(
+            "Default cluster is set to %s",
+            f"{DaskClientsPool.default_cluster(settings)!r}",
+        )
 
     async def on_shutdown() -> None:
         if app.state.dask_clients_pool:
