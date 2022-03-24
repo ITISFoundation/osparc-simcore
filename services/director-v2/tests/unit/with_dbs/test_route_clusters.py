@@ -713,3 +713,39 @@ async def test_ping_cluster(
     )
     response.raise_for_status()
     assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+async def test_ping_specific_cluster(
+    clusters_config: None,
+    registered_user: Callable[..., Dict],
+    cluster: Callable[..., Cluster],
+    async_client: httpx.AsyncClient,
+    local_dask_gateway_server: DaskGatewayServer,
+):
+    user_1 = registered_user()
+    # try to ping one that does not exist
+    response = await async_client.get(
+        f"/v2/clusters/15615165165165:ping?user_id={user_1['id']}"
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    # let's create some clusters and ping one
+    a_bunch_of_clusters = [
+        cluster(
+            user_1,
+            name=f"pytest cluster{n:04}",
+            endpoint=local_dask_gateway_server.address,
+            authentication=SimpleAuthentication(
+                username="pytest_user",
+                password=parse_obj_as(SecretStr, local_dask_gateway_server.password),
+            ),
+        )
+        for n in range(111)
+    ]
+    the_cluster = random.choice(a_bunch_of_clusters)
+
+    response = await async_client.post(
+        f"/v2/clusters/{the_cluster.id}:ping?user_id={user_1['id']}",
+    )
+    response.raise_for_status()
+    assert response.status_code == status.HTTP_204_NO_CONTENT

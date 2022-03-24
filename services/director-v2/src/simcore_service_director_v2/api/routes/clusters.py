@@ -195,3 +195,20 @@ async def test_cluster_connection(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"{e}"
         ) from e
+
+
+@router.post(
+    "/{cluster_id}:ping",
+    summary="Test cluster connection",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def test_specific_cluster_connection(
+    user_id: UserID,
+    cluster_id: ClusterID,
+    clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
+):
+    cluster = await clusters_repo.get_cluster(user_id, cluster_id)
+    return await test_gateway_endpoint(
+        endpoint=cluster.endpoint, authentication=cluster.authentication
+    )
