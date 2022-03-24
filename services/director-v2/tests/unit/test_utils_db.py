@@ -1,8 +1,8 @@
 from contextlib import suppress
-from typing import Any, Dict, Type
+from typing import Any, Dict, Type, cast
 
 import pytest
-from models_library.clusters import Cluster
+from models_library.clusters import BaseCluster, Cluster
 from pydantic import BaseModel
 
 from simcore_service_director_v2.utils.db import to_clusters_db
@@ -20,7 +20,7 @@ def test_export_clusters_to_db(
         # remove the owner from the access rights if any
         with suppress(KeyError):
             example.get("access_rights", {}).pop(owner_gid)
-        instance = model_cls(**example)
+        instance = cast(BaseCluster, model_cls(**example))
 
         # for updates
 
