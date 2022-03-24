@@ -144,6 +144,9 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
           const available = osparc.utils.Clusters.getResourcesAttribute(worker, plotInfo.resource);
           if (available === "-") {
             gaugeData.value = "-";
+          } else if (plotKey === "cpu") {
+            gaugeData.value = used/available;
+            gaugeData.gauge.axis.range[1] = available;
           } else {
             gaugeData.value = used;
             gaugeData.gauge.axis.range[1] = available;

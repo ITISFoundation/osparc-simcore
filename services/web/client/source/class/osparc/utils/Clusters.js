@@ -25,16 +25,16 @@ qx.Class.define("osparc.utils.Clusters", {
   type: "static",
 
   statics: {
-    getResourcesAttribute: function(worker, attribute) {
-      if (attribute in worker.resources) {
-        return worker.resources[attribute];
+    getResourcesAttribute: function(worker, attributeKey) {
+      if (attributeKey in worker.resources) {
+        return worker.resources[attributeKey];
       }
       return "-";
     },
 
-    getMetricsAttribute: function(worker, attribute) {
-      if (attribute in worker.metrics) {
-        return worker.metrics[attribute];
+    getMetricsAttribute: function(worker, attributeKey) {
+      if (attributeKey in worker.metrics) {
+        return worker.metrics[attributeKey];
       }
       return "-";
     },
@@ -48,7 +48,11 @@ qx.Class.define("osparc.utils.Clusters", {
         }
         resource.available += available;
         const used = this.getMetricsAttribute(worker, resource.metric);
-        resource.used += used;
+        if (resource.metric === "cpu") {
+          resource.used += used/available;
+        } else {
+          resource.used += used;
+        }
       });
     },
 
