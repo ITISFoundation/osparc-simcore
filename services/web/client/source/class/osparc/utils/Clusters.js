@@ -25,6 +25,11 @@ qx.Class.define("osparc.utils.Clusters", {
   type: "static",
 
   statics: {
+    popUpClustersDetails: function(clusterId) {
+      const clusters = new osparc.component.cluster.ClustersDetails(clusterId);
+      osparc.ui.window.Window.popUpInWindow(clusters, qx.locale.Manager.tr("Clusters & Workers"), 650, 800);
+    },
+
     getResourcesAttribute: function(worker, attributeKey) {
       if (attributeKey in worker.resources) {
         return worker.resources[attributeKey];

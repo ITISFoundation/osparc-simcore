@@ -79,10 +79,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         icon: "@FontAwesome5Solid/info/14",
         allowGrowX: false
       });
-      createClusterBtn.addListener("execute", function() {
-        const clusters = new osparc.component.cluster.ClustersDetails();
-        osparc.ui.window.Window.popUpInWindow(clusters, qx.locale.Manager.tr("Clusters & Workers"), 650, 800);
-      }, this);
+      createClusterBtn.addListener("execute", () => osparc.utils.Clusters.popUpClustersDetails(), this);
       return createClusterBtn;
     },
 

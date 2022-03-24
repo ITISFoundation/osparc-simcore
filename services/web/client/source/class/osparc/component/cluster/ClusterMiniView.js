@@ -37,6 +37,23 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     const timer = this.__timer = new qx.event.Timer(interval);
     timer.addListener("interval", () => this.__fetchDetails(), this);
     timer.start();
+
+    this.set({
+      cursor: "pointer"
+    });
+    this.addListener("tap", () => osparc.utils.Clusters.popUpClustersDetails(this.__clusterId), this);
+
+    const description = "CPU: 4/6<br>CPU: 4/6<br>CPU: 4/6<br>";
+    const hint = new osparc.ui.hint.Hint(this, description).set({
+      active: false
+    });
+    const showHint = () => hint.show();
+    const hideHint = () => hint.exclude();
+    this.addListener("mouseover", showHint);
+    [
+      "mouseout",
+      "tap"
+    ].forEach(e => this.addListener(e, hideHint));
   },
 
   statics: {
@@ -60,10 +77,14 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
         }
       };
       osparc.data.Resources.fetch("clusters", "details", params)
-        .then(clusterDetails => this.__populateWorkersDetails(clusterDetails));
+        .then(clusterDetails => this.__updateWorkersDetails(clusterDetails));
     },
 
-    __populateWorkersDetails: function(clusterDetails) {
+    __updateWorkersDetails: function(clusterDetails) {
+      this.__updateMiniView(clusterDetails);
+    },
+
+    __updateMiniView: function(clusterDetails) {
       const miniGrid = this.__miniGrid;
       miniGrid.removeAll();
       const resources = {

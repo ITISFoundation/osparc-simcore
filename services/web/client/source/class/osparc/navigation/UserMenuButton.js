@@ -60,11 +60,6 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
       preferencesWindow.open();
     },
 
-    openClusters: function() {
-      const clusters = new osparc.component.cluster.ClustersDetails();
-      osparc.ui.window.Window.popUpInWindow(clusters, qx.locale.Manager.tr("Clusters & Workers"), 650, 800);
-    },
-
     openGithubIssueInfoDialog: function() {
       const issueConfirmationWindow = new osparc.ui.window.Dialog("Information", null,
         qx.locale.Manager.tr("To create an issue in GitHub, you must have an account in GitHub and be already logged-in.")
@@ -131,7 +126,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           break;
         case "clusters":
           control = new qx.ui.menu.Button(this.tr("Clusters"));
-          control.addListener("execute", () => osparc.navigation.UserMenuButton.openClusters(), this);
+          control.addListener("execute", () => osparc.utils.Clusters.popUpClustersDetails(), this);
           this.getMenu().add(control);
           break;
         case "about":
