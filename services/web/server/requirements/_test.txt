@@ -87,7 +87,7 @@ docopt==0.6.2
     # via
     #   coveralls
     #   docker-compose
-faker==13.3.2
+faker==13.3.3
     # via -r requirements/_test.in
 flaky==3.7.0
     # via -r requirements/_test.in
@@ -276,10 +276,8 @@ toml==0.10.2
     # via
     #   pylint
     #   pytest
-tomli==1.2.3
-    # via
-    #   -c requirements/../../../../requirements/constraints.txt
-    #   coverage
+tomli==2.0.1
+    # via coverage
 typing-extensions==3.10.0.2
     # via
     #   -c requirements/_base.txt

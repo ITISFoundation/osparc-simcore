@@ -166,9 +166,8 @@ toml==0.10.2
     #   -c requirements/_test.txt
     #   datamodel-code-generator
     #   pre-commit
-tomli==1.2.3
+tomli==2.0.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black

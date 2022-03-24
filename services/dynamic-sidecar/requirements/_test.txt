@@ -20,7 +20,7 @@ chardet==4.0.0
     #   requests
 coverage==6.3.2
     # via pytest-cov
-faker==13.3.2
+faker==13.3.3
     # via -r requirements/_test.in
 idna==2.10
     # via
@@ -66,9 +66,8 @@ six==1.16.0
     # via
     #   -c requirements/_base.txt
     #   python-dateutil
-tomli==1.2.3
+tomli==2.0.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   coverage
     #   pytest
 types-aiofiles==0.8.5

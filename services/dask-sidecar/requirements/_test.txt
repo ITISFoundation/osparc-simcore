@@ -53,7 +53,7 @@ docker==5.0.3
     # via -r requirements/_test.in
 docopt==0.6.2
     # via coveralls
-faker==13.3.2
+faker==13.3.3
     # via -r requirements/_test.in
 frozenlist==1.2.0
     # via
@@ -167,9 +167,8 @@ termcolor==1.1.0
     # via pytest-sugar
 toml==0.10.2
     # via pylint
-tomli==1.2.3
+tomli==2.0.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   coverage
     #   pytest
 typing-extensions==3.10.0.2 ; python_version < "3.9"

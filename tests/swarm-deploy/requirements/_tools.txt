@@ -51,9 +51,8 @@ six==1.16.0
     #   virtualenv
 toml==0.10.2
     # via pre-commit
-tomli==1.2.3
+tomli==2.0.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_test.txt
     #   black
     #   pep517

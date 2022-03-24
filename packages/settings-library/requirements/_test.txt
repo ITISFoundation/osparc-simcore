@@ -70,9 +70,8 @@ termcolor==1.1.0
     # via pytest-sugar
 toml==0.10.2
     # via pylint
-tomli==1.2.3
+tomli==2.0.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   coverage
     #   pytest
 typing-extensions==4.1.1

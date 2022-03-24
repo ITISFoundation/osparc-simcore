@@ -57,11 +57,8 @@ pyyaml==6.0
     #   -r requirements/_base.in
 requests==2.27.1
     # via docker
-tomli==1.2.3
-    # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   pytest
+tomli==2.0.1
+    # via pytest
 typing-extensions==4.1.1
     # via pydantic
 urllib3==1.26.9

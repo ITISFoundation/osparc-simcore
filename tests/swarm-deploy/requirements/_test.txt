@@ -252,19 +252,11 @@ tenacity==8.0.1
     #   -r requirements/_test.in
 termcolor==1.1.0
     # via pytest-sugar
-tomli==1.2.3
+tomli==2.0.1
     # via
-    #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
     #   coverage
     #   pytest
-tqdm==4.63.0
+tqdm==4.63.1
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 typer==0.4.0
     # via -r requirements/../../../packages/settings-library/requirements/_base.in

@@ -44,7 +44,7 @@ docopt==0.6.2
     #   coveralls
 execnet==1.9.0
     # via pytest-xdist
-faker==13.3.2
+faker==13.3.3
     # via -r requirements/_test.in
 h11==0.12.0
     # via
@@ -151,9 +151,8 @@ termcolor==1.1.0
     # via pytest-sugar
 toml==0.10.2
     # via pylint
-tomli==1.2.3
+tomli==2.0.1
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   coverage
     #   pytest
 typing-extensions==3.10.0.2

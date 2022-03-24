@@ -78,12 +78,8 @@ pyyaml==5.4.1
     #   -r requirements/requirements.in
 termcolor==1.1.0
     # via pytest-sugar
-tomli==1.2.3
-    # via
-    #   -c requirements/../../../packages/service-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
-    #   -c requirements/../../../requirements/constraints.txt
-    #   pytest
+tomli==2.0.1
+    # via pytest
 typing-extensions==4.1.1
     # via pydantic
 yarl==1.7.2

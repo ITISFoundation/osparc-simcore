@@ -106,9 +106,8 @@ six==1.16.0
     #   openapi-spec-validator
 termcolor==1.1.0
     # via pytest-sugar
-tomli==1.2.3
+tomli==2.0.1
     # via
-    #   -c ../../requirements/constraints.txt
     #   coverage
     #   pytest
 werkzeug==2.0.3

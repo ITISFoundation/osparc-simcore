@@ -113,7 +113,7 @@ tenacity==8.0.1
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/_base.in
-tqdm==4.63.0
+tqdm==4.63.1
     # via -r requirements/_base.in
 typing-extensions==4.1.1
     # via
