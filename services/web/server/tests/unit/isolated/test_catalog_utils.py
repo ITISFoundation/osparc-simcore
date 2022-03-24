@@ -46,14 +46,14 @@ def upgrade_port_data(old_port) -> Dict[str, Any]:
 
 
 @pytest.fixture(scope="module")
-def ureg():
+def unit_registry():
     return UnitRegistry()
 
 
 # TESTS -----------------
 
 
-def test_can_connect_for_gh_osparc_issues_442(ureg: UnitRegistry):
+def test_can_connect_for_gh_osparc_issues_442(unit_registry: UnitRegistry):
     # Reproduces https://github.com/ITISFoundation/osparc-issues/issues/442
     file_picker_outfile = {
         "displayOrder": 2,
@@ -73,18 +73,18 @@ def test_can_connect_for_gh_osparc_issues_442(ureg: UnitRegistry):
     assert can_connect(
         from_output=ServiceOutput.parse_obj(file_picker_outfile),
         to_input=ServiceInput.parse_obj(input_sleeper_input_1),
-        units_registry=ureg,
+        units_registry=unit_registry,
     )
 
     # data:text/plain  -> data:*/*
     assert can_connect(
         from_output=ServiceOutput.parse_obj(input_sleeper_input_1),
         to_input=ServiceInput.parse_obj(file_picker_outfile),
-        units_registry=ureg,
+        units_registry=unit_registry,
     )
 
 
-ports_with_units = [
+PORTS_WITH_UNITS = [
     {
         "label": "port_W/O_old",
         "description": "output w/o unit old format",
@@ -99,7 +99,7 @@ ports_with_units = [
     ),
 ]
 
-ports_without_units = [
+PORTS_WITHOUT_UNITS = [
     {
         "label": "port_W/_old",
         "description": "port w/ unit old format",
@@ -119,24 +119,24 @@ ports_without_units = [
 
 @pytest.mark.parametrize(
     "port_without_unit, port_with_unit",
-    itertools.product(ports_without_units, ports_with_units),
+    itertools.product(PORTS_WITHOUT_UNITS, PORTS_WITH_UNITS),
     ids=lambda l: l["label"],
 )
 def test_can_connect_no_units_with_units(
-    port_without_unit, port_with_unit, ureg: UnitRegistry
+    port_without_unit, port_with_unit, unit_registry: UnitRegistry
 ):
     # w/o -> w
     assert can_connect(
         from_output=ServiceOutput.parse_obj(port_without_unit),
         to_input=ServiceInput.parse_obj(port_with_unit),
-        units_registry=ureg,
+        units_registry=unit_registry,
     )
 
     # w -> w/o
     assert can_connect(
         from_output=ServiceOutput.parse_obj(port_with_unit),
         to_input=ServiceInput.parse_obj(port_without_unit),
-        units_registry=ureg,
+        units_registry=unit_registry,
     )
 
 
@@ -152,7 +152,9 @@ def test_can_connect_no_units_with_units(
         (None, "cm", True),
     ],
 )
-def test_units_compatible(from_unit, to_unit, are_compatible, ureg: UnitRegistry):
+def test_units_compatible(
+    from_unit, to_unit, are_compatible, unit_registry: UnitRegistry
+):
     #
     # TODO: does it make sense to have a string or bool with x_unit??
     #
@@ -178,7 +180,7 @@ def test_units_compatible(from_unit, to_unit, are_compatible, ureg: UnitRegistry
         can_connect(
             from_output=ServiceOutput.parse_obj(from_port),
             to_input=ServiceInput.parse_obj(to_port),
-            units_registry=ureg,
+            units_registry=unit_registry,
         )
         == are_compatible
     )
@@ -192,7 +194,7 @@ def test_units_compatible(from_unit, to_unit, are_compatible, ureg: UnitRegistry
     ids=lambda p: p.label,
 )
 def test_can_connect_with_units(
-    from_port: ServiceOutput, to_port: ServiceInput, ureg: UnitRegistry
+    from_port: ServiceOutput, to_port: ServiceInput, unit_registry: UnitRegistry
 ):
     # WARNING: assumes the following convention for the fixture data:
     #   - two ports are compatible if they have the same title
@@ -208,7 +210,7 @@ def test_can_connect_with_units(
         can_connect(
             from_output=from_port,
             to_input=to_port,
-            units_registry=ureg,
+            units_registry=unit_registry,
         )
         == are_compatible
     )

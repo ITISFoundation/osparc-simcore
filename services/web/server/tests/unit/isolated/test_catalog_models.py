@@ -19,7 +19,7 @@ from simcore_service_webserver.catalog_models import (
 
 
 @pytest.fixture(scope="module")
-def ureg():
+def unit_registry():
     return UnitRegistry()
 
 
@@ -43,7 +43,7 @@ def test_webserver_catalog_api_models(
         assert model_cls(**data) == model_instance
 
 
-def test_from_catalog_to_webapi_service(ureg: UnitRegistry):
+def test_from_catalog_to_webapi_service(unit_registry: UnitRegistry):
 
     # Taken from services/catalog/src/simcore_service_catalog/models/schemas/services.py on Feb.2021
     catalog_service = {
@@ -95,7 +95,7 @@ def test_from_catalog_to_webapi_service(ureg: UnitRegistry):
 
     webapi_service = deepcopy(catalog_service)
     replace_service_input_outputs(
-        webapi_service, unit_registry=ureg, **RESPONSE_MODEL_POLICY
+        webapi_service, unit_registry=unit_registry, **RESPONSE_MODEL_POLICY
     )
 
     print(json.dumps(webapi_service, indent=2))
