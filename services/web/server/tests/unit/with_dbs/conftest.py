@@ -25,7 +25,7 @@ import simcore_postgres_database.cli as pg_cli
 import simcore_service_webserver.db_models as orm
 import simcore_service_webserver.utils
 import sqlalchemy as sa
-from _helpers import MockedStorageSubsystem  # type: ignore
+from _helpers import MockedStorageSubsystem
 from _pytest.monkeypatch import MonkeyPatch
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
@@ -56,8 +56,6 @@ def disable_swagger_doc_generation(
     by not enabling the swagger documentation, 1.8s per test is gained
     """
     monkeypatch.setenv("REST_SWAGGER_API_DOC_ENABLED", "0")
-    # TODO: after removing config, this might be used.
-    # monkeypatch.setenv("OSPARC_SIMCORE_REPO_ROOTDIR", f"{osparc_simcore_root_dir}")
 
 
 @pytest.fixture(scope="session")

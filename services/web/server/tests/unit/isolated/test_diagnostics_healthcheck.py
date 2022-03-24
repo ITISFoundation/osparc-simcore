@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
@@ -16,8 +17,8 @@ from servicelib.aiohttp.application import create_safe_application
 from simcore_service_webserver._constants import APP_SETTINGS_KEY
 from simcore_service_webserver.application_settings import setup_settings
 from simcore_service_webserver.diagnostics import setup_diagnostics
-from simcore_service_webserver.diagnostics_core import (
-    HealthError,
+from simcore_service_webserver.diagnostics_healthcheck import (
+    HealthCheckFailed,
     assert_healthy_app,
     kLATENCY_PROBE,
 )
@@ -31,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 def health_check_path(api_version_prefix) -> URL:
-    return f"/{api_version_prefix}/health"
+    return URL(f"/{api_version_prefix}/health")
 
 
 async def health_check_emulator(
@@ -77,6 +78,7 @@ def mock_environment(mock_env_devel_environment: Dict[str, str], monkeypatch):
     monkeypatch.setenv("DIAGNOSTICS_MAX_TASK_DELAY", f"{SLOW_HANDLER_DELAY_SECS}")
     monkeypatch.setenv("DIAGNOSTICS_MAX_AVG_LATENCY", f"{2.0}")
     monkeypatch.setenv("DIAGNOSTICS_START_SENSING_DELAY", f"{0}")  # inmidiately
+    monkeypatch.setenv("SC_HEALTHCHECK_TIMEOUT", "2m")
 
 
 @pytest.fixture
@@ -214,7 +216,7 @@ async def test_diagnose_on_response_delays(client):
     assert latency_observed > tmax
 
     # diagnostics
-    with pytest.raises(HealthError):
+    with pytest.raises(HealthCheckFailed):
         assert_healthy_app(client.app)
 
 
