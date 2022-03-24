@@ -222,7 +222,7 @@ async def test_acquiring_wrong_cluster_raises_exception(
 
 
 def test_default_cluster_correctly_initialized(
-    minimal_dask_config: None, default_scheduler, client: TestClient
+    minimal_dask_config: None, default_scheduler: None, client: TestClient
 ):
     dask_scheduler_settings = client.app.state.settings.DASK_SCHEDULER
     default_cluster = DaskClientsPool.default_cluster(dask_scheduler_settings)
@@ -264,5 +264,5 @@ async def test_acquire_default_cluster(
 
         future = dask_client.dask_subsystem.client.submit(just_a_quick_fct, 12, 23)
         assert future
-        result = await future.result(timeout=10)
+        result = await future.result(timeout=10)  # type: ignore
     assert result == 35
