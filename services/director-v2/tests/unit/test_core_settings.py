@@ -7,10 +7,11 @@ from typing import Any, Dict, Set
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from models_library.basic_types import LogLevel
+from pydantic import ValidationError
+from pytest import FixtureRequest
 from simcore_service_director_v2.core.settings import (
     AppSettings,
     BootModeEnum,
-    DynamicSidecarProxySettings,
     DynamicSidecarSettings,
     RCloneSettings,
     S3Provider,
@@ -77,9 +78,8 @@ def test_settings_with_env_devel(mock_env_devel_environment: Dict[str, str]):
     assert settings
 
 
-@pytest.mark.parametrize(
-    "image",
-    [
+@pytest.fixture(
+    params=[
         "local/dynamic-sidecar:development",
         "local/dynamic-sidecar:production",
         "itisfoundation/dynamic-sidecar:merge-github-testbuild-latest",
@@ -96,37 +96,40 @@ def test_settings_with_env_devel(mock_env_devel_environment: Dict[str, str]):
         "/local/dynamic-sidecar:latest",
     ],
 )
-def test_dynamic_sidecar_settings(
-    image: str, project_env_devel_environment: Dict[str, Any]
-) -> None:
-    required_kwards = dict(
-        DYNAMIC_SIDECAR_IMAGE=image,
-        SIMCORE_SERVICES_NETWORK_NAME="test",
-        TRAEFIK_SIMCORE_ZONE="",
-        SWARM_STACK_NAME="",
-        DYNAMIC_SIDECAR_PROXY_SETTINGS=DynamicSidecarProxySettings(),
+def testing_environ_expected_success(
+    request: FixtureRequest,
+    project_env_devel_environment,
+    monkeypatch: MonkeyPatch,
+) -> str:
+    container_path: str = request.param
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", container_path)
+    return container_path
+
+
+def test_dynamic_sidecar_settings(testing_environ_expected_success: str) -> None:
+    settings = DynamicSidecarSettings()
+    assert settings.DYNAMIC_SIDECAR_IMAGE == testing_environ_expected_success.lstrip(
+        "/"
     )
-    settings = DynamicSidecarSettings(**required_kwards)
-
-    assert settings.DYNAMIC_SIDECAR_IMAGE == image.lstrip("/")
 
 
-@pytest.mark.parametrize(
-    "image",
-    [
+@pytest.fixture(
+    params=[
         "10.10.10.10.no_ip:8080/dynamic-sidecar:sadasd",
         "10.10.10.10.no.ip:8080/dynamic-sidecar:the_tag",
     ],
 )
+def testing_environ_expected_failure(
+    request: FixtureRequest,
+    project_env_devel_environment,
+    monkeypatch: MonkeyPatch,
+):
+    container_path: str = request.param
+    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", container_path)
+
+
 def test_expected_failure_dynamic_sidecar_settings(
-    image: str, project_env_devel_environment: Dict[str, Any]
+    testing_environ_expected_failure,
 ) -> None:
-    required_kwards = dict(
-        DYNAMIC_SIDECAR_IMAGE=image,
-        SIMCORE_SERVICES_NETWORK_NAME="test",
-        TRAEFIK_SIMCORE_ZONE="",
-        SWARM_STACK_NAME="",
-        DYNAMIC_SIDECAR_PROXY_SETTINGS=DynamicSidecarProxySettings(),
-    )
-    with pytest.raises(Exception) as exc_info:
-        settings = DynamicSidecarSettings(**required_kwards)
+    with pytest.raises(ValidationError) as exc_info:
+        DynamicSidecarSettings()
