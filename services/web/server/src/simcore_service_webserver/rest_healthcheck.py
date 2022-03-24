@@ -58,8 +58,8 @@ class HealthCheck:
         self._timeout: Optional[int] = app[APP_SETTINGS_KEY].SC_HEALTHCHECK_TIMEOUT
 
     def __repr__(self):
-        return "<HealthCheck timeout={}, #on_healthcheck-slots={} {!r}>".format(
-            self._timeout, len(self._on_healthcheck), list(self)
+        return "<HealthCheck timeout={}, #on_healthcheck-slots={}>".format(
+            self._timeout, len(self._on_healthcheck)
         )
 
     @property
