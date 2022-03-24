@@ -302,6 +302,14 @@ async def director_v2_service_mock(
         repeat=True,
     )
 
+    aioresponses_mocker.post(
+        re.compile(
+            r"^http://[a-z\-_]*director-v2:[0-9]+/v2/clusters(/[0-9]+):ping\?(\w+(?:=\w+)?\&?){1,}$"
+        ),
+        status=web.HTTPNoContent.status_code,
+        repeat=True,
+    )
+
     return aioresponses_mocker
 
 
