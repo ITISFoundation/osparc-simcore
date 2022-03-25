@@ -36,7 +36,7 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
     pass.setRequired(true);
     manager.add(pass);
     this._createChildControlImpl("description");
-    newCluster ? this._createChildControlImpl("test-layout") : null;
+    this._createChildControlImpl("test-layout");
     newCluster ? this._createChildControlImpl("create") : this._createChildControlImpl("save");
   },
 

@@ -64,7 +64,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
         const newCluster = true;
         const clusterEditor = new osparc.component.editor.ClusterEditor(newCluster);
         const title = this.tr("Cluster Details Editor");
-        const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 250);
+        const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 260);
         clusterEditor.addListener("createCluster", () => {
           this.__createCluster(win, clusterEditor.getChildControl("create"), clusterEditor);
         });
@@ -321,7 +321,7 @@ qx.Class.define("osparc.desktop.preferences.pages.ClustersPage", {
       clusterEditor.setSimpleAuthenticationPassword(cluster.getAuthentication().getPassword());
       cluster.bind("description", clusterEditor, "description");
       const title = this.tr("Cluster Details Editor");
-      const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 200);
+      const win = osparc.ui.window.Window.popUpInWindow(clusterEditor, title, 400, 260);
       clusterEditor.addListener("updateCluster", () => {
         this.__updateCluster(win, clusterEditor.getChildControl("save"), clusterEditor);
       });
