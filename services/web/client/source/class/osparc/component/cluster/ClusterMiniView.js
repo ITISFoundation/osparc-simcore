@@ -40,11 +40,6 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
     timer.addListener("interval", () => this.__fetchDetails(), this);
     timer.start();
 
-    const store = osparc.store.Store.getInstance();
-    store.addListener("changeClusters", e => {
-      console.log("changeClusters", e.getData());
-    }, this);
-
     this.set({
       cursor: "pointer"
     });
@@ -89,11 +84,44 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
           }
         };
         osparc.data.Resources.get("clusterDetails", params)
-          .then(clusterDetails => this.__updateWorkersDetails(clusterDetails));
+          .then(clusterDetails => this.__updateWorkersDetails(clusterDetails))
+          .catch(() => this.__detailsCallFailed());
       }
     },
 
+    __showFailedBulb: function() {
+      const miniGrid = this.__miniGrid;
+      miniGrid.removeAll();
+
+      const clusterStatusImage = new qx.ui.basic.Image().set({
+        source: "@FontAwesome5Solid/lightbulb/16",
+        alignY: "middle",
+        alignX: "center",
+        paddingLeft: 3,
+        textColor: "failed-red"
+      });
+      miniGrid.add(clusterStatusImage, {
+        row: 0,
+        column: 0
+      });
+    },
+
+    __detailsCallFailed: function() {
+      this.__showFailedBulb();
+      this.__hint.setText(this.tr("Connection failed"));
+    },
+
     __updateWorkersDetails: function(clusterDetails) {
+      const miniGrid = this.__miniGrid;
+      miniGrid.removeAll();
+
+      const workers = clusterDetails.scheduler.workers;
+      if (Object.keys(workers).length === 0) {
+        this.__showFailedBulb();
+        this.__hint.setText(this.tr("No workers found in this cluster"));
+        return;
+      }
+
       const resources = {
         cpu: {
           metric: "cpu",
@@ -119,7 +147,7 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
       };
       Object.keys(resources).forEach(resourceKey => {
         const resource = resources[resourceKey];
-        osparc.utils.Clusters.accumulateWorkersResources(clusterDetails.scheduler.workers, resource);
+        osparc.utils.Clusters.accumulateWorkersResources(workers, resource);
       });
       this.__updateMiniView(resources);
       this.__updateHint(resources);
@@ -127,7 +155,6 @@ qx.Class.define("osparc.component.cluster.ClusterMiniView", {
 
     __updateMiniView: function(resources) {
       const miniGrid = this.__miniGrid;
-      miniGrid.removeAll();
       Object.keys(resources).forEach((resourceKey, idx) => {
         const resourceInfo = resources[resourceKey];
         if (resourceInfo.available === 0) {
