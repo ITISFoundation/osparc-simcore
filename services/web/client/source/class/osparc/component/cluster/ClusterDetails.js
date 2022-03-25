@@ -63,8 +63,30 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
       osparc.data.Resources.get("clusterDetails", params)
         .then(clusterDetails => {
           this.__populateClusterDetails(clusterDetails);
-          this.__populateWorkers(clusterDetails);
-        });
+          this.__populateWorkersDetails(clusterDetails);
+        })
+        .catch(() => this.__detailsCallFailed());
+    },
+
+    __detailsCallFailed: function() {
+      const clusterDetailsLayout = this.__clusterDetailsLayout;
+      clusterDetailsLayout.removeAll();
+
+      const clusterIdLabel = new qx.ui.basic.Label("C-" + this.__clusterId).set({
+        marginRight: 35
+      });
+      clusterDetailsLayout.add(clusterIdLabel);
+
+      const clusterStatusLabel = new qx.ui.basic.Label(this.tr("Status:"));
+      clusterDetailsLayout.add(clusterStatusLabel);
+      const clusterStatusImage = new qx.ui.basic.Image().set({
+        source: "@FontAwesome5Solid/lightbulb/16",
+        alignY: "middle",
+        alignX: "center",
+        paddingLeft: 3,
+        textColor: "failed-red"
+      });
+      clusterDetailsLayout.add(clusterStatusImage);
     },
 
     __populateClusterDetails: function(clusterDetails) {
@@ -89,19 +111,26 @@ qx.Class.define("osparc.component.cluster.ClusterDetails", {
       });
       clusterDetailsLayout.add(clusterStatusImage);
 
-      if (this.__clusterId !== 0) {
+      if (this.__clusterId !== 0 && "dashboard_link" in clusterDetails) {
         const clusterLinkLabel = new qx.ui.basic.Label(this.tr("Link: ") + clusterDetails["dashboard_link"]);
         clusterDetailsLayout.add(clusterLinkLabel);
       }
     },
 
-    __populateWorkers: function(clusterDetails) {
-      this.__workersGrid.removeAll();
-      this.__populateWorkersDetails(clusterDetails);
-    },
-
     __populateWorkersDetails: function(clusterDetails) {
       const workersGrid = this.__workersGrid;
+      workersGrid.removeAll();
+
+      if (Object.keys(clusterDetails.scheduler.workers).length === 0) {
+        const workerNameLabel = new qx.ui.basic.Label(this.tr("No workers found in this cluster"));
+        workersGrid.add(workerNameLabel, {
+          row: 0,
+          column: 0,
+          colSpan: 4
+        });
+        return;
+      }
+
       const plots = {
         cpu: {
           metric: "cpu",
