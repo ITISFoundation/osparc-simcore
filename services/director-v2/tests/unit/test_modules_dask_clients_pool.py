@@ -236,7 +236,8 @@ def test_default_cluster_correctly_initialized(
     )
 
     assert (
-        default_cluster.id == dask_scheduler_settings.COMPUTATIONAL_DEFAULT_CLUSTER_ID
+        default_cluster.id
+        == dask_scheduler_settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID
     )
     assert isinstance(default_cluster.authentication, get_args(ClusterAuthentication))
 

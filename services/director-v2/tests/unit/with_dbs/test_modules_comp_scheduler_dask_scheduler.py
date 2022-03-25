@@ -189,7 +189,7 @@ async def test_empty_pipeline_is_not_scheduled(
         await scheduler.run_new_pipeline(
             user_id=user["id"],
             project_id=empty_project.uuid,
-            cluster_id=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_DEFAULT_CLUSTER_ID,
+            cluster_id=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID,
         )
     # create the empty pipeline now
     _empty_pipeline = pipeline(project_id=f"{empty_project.uuid}")
@@ -198,7 +198,7 @@ async def test_empty_pipeline_is_not_scheduled(
     await scheduler.run_new_pipeline(
         user_id=user["id"],
         project_id=empty_project.uuid,
-        cluster_id=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_DEFAULT_CLUSTER_ID,
+        cluster_id=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID,
     )
     assert len(scheduler.scheduled_pipelines) == 0
     assert (
@@ -238,7 +238,7 @@ async def test_misconfigured_pipeline_is_not_scheduled(
     await scheduler.run_new_pipeline(
         user_id=user["id"],
         project_id=sleepers_project.uuid,
-        cluster_id=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_DEFAULT_CLUSTER_ID,
+        cluster_id=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID,
     )
     assert len(scheduler.scheduled_pipelines) == 1
     assert (
@@ -287,7 +287,7 @@ async def test_proper_pipeline_is_scheduled(
     await scheduler.run_new_pipeline(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
-        cluster_id=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_DEFAULT_CLUSTER_ID,
+        cluster_id=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID,
     )
     assert len(scheduler.scheduled_pipelines) == 1, "the pipeline is not scheduled!"
     assert (
@@ -335,7 +335,7 @@ async def test_proper_pipeline_is_scheduled(
             mock.call(
                 published_project.project.prj_owner,
                 project_id=published_project.project.uuid,
-                cluster_id=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_DEFAULT_CLUSTER_ID,
+                cluster_id=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID,
                 tasks={f"{p.node_id}": p.image},
                 callback=scheduler._wake_up_scheduler_now,
             )
@@ -416,7 +416,7 @@ async def test_proper_pipeline_is_scheduled(
     mocked_dask_client.send_computation_tasks.assert_called_once_with(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
-        cluster_id=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_DEFAULT_CLUSTER_ID,
+        cluster_id=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID,
         tasks={
             f"{next_published_task.node_id}": next_published_task.image,
         },
@@ -524,7 +524,7 @@ async def test_handling_of_disconnected_dask_scheduler(
     await scheduler.run_new_pipeline(
         user_id=published_project.project.prj_owner,
         project_id=published_project.project.uuid,
-        cluster_id=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_DEFAULT_CLUSTER_ID,
+        cluster_id=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID,
     )
 
     # since there is no cluster, there is no dask-scheduler,

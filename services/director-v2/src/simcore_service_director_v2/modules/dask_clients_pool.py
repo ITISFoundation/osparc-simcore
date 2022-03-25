@@ -35,7 +35,7 @@ class DaskClientsPool:
     @staticmethod
     def default_cluster(settings: ComputationalBackendSettings):
         return Cluster(
-            id=settings.COMPUTATIONAL_DEFAULT_CLUSTER_ID,
+            id=settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID,
             name="Default cluster",
             type=ClusterType.ON_PREMISE,
             endpoint=settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL,

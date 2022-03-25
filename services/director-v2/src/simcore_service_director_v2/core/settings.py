@@ -291,7 +291,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
         description="Empty for the internal cluster, must be one "
         "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
     )
-    COMPUTATIONAL_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
+    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
         0, description="This defines the default cluster id when none is defined"
     )
 

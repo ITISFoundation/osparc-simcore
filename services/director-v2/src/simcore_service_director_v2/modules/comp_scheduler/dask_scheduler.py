@@ -46,7 +46,7 @@ async def _cluster_dask_client(
     user_id: UserID, cluster_id: ClusterID, scheduler: "DaskScheduler"
 ) -> AsyncIterator[DaskClient]:
     cluster: Cluster = scheduler.dask_clients_pool.default_cluster(scheduler.settings)
-    if cluster_id != scheduler.settings.COMPUTATIONAL_DEFAULT_CLUSTER_ID:
+    if cluster_id != scheduler.settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID:
         clusters_repo: ClustersRepository = get_repository(
             scheduler.db_engine, ClustersRepository
         )  # type: ignore
