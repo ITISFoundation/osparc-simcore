@@ -13,9 +13,9 @@ from models_library.basic_types import (
     PortInt,
     VersionTag,
 )
-from models_library.clusters import ClusterID
+from models_library.clusters import ClusterAuthentication, ClusterID, NoAuthentication
 from models_library.services import SERVICE_NETWORK_RE
-from pydantic import AnyHttpUrl, Field, PositiveFloat, PositiveInt, validator
+from pydantic import AnyHttpUrl, AnyUrl, Field, PositiveFloat, PositiveInt, validator
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
@@ -272,22 +272,34 @@ class PGSettings(PostgresSettings):
     )
 
 
-class DaskSchedulerSettings(BaseCustomSettings):
+class DaskComputationalBackendSettings(BaseCustomSettings):
     DIRECTOR_V2_DASK_SCHEDULER_ENABLED: bool = Field(
         True,
     )
     DIRECTOR_V2_DASK_CLIENT_ENABLED: bool = Field(
         True,
     )
-    DASK_SCHEDULER_HOST: str = Field(
-        "dask-scheduler",
-        description="Address of the scheduler to register (only if started as worker )",
+    DIRECTOR_V2_DEFAULT_CLUSTER_URL: AnyUrl = Field(
+        "tcp://dask-scheduler:8786",
+        description="This is the cluster that will be used by default"
+        " when submitting computational services (typically "
+        "tcp://dask-scheduler:8786 for the internal cluster, or "
+        "http(s)/GATEWAY_IP:8000 for a osparc-dask-gateway)",
     )
-    DASK_SCHEDULER_PORT: PortInt = 8786
-
-    DASK_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
+    DIRECTOR_V2_DEFAULT_CLUSTER_AUTH: Optional[ClusterAuthentication] = Field(
+        NoAuthentication(),
+        description="Empty for the internal cluster, must be one "
+        "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
+    )
+    DIRECTOR_V2_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
         0, description="This defines the default cluster id when none is defined"
     )
+
+    @validator("DIRECTOR_V2_DEFAULT_CLUSTER_AUTH", pre=True)
+    def empty_auth_is_none(v):
+        if not v:
+            return NoAuthentication()
+        return v
 
 
 class AppSettings(BaseCustomSettings, MixinLoggingSettings):
@@ -352,7 +364,7 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     TRAEFIK_SIMCORE_ZONE: str = Field("internal_simcore_stack")
 
-    DASK_SCHEDULER: DaskSchedulerSettings = Field(auto_default_from_env=True)
+    DASK_SCHEDULER: DaskComputationalBackendSettings = Field(auto_default_from_env=True)
 
     DIRECTOR_V2_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 

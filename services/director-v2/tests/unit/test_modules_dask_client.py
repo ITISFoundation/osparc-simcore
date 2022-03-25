@@ -3,7 +3,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=protected-access
 # pylint:disable=too-many-arguments
-
+# pylint: disable=reimported
 import asyncio
 import functools
 import traceback
@@ -39,7 +39,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
 from models_library.users import UserID
-from pydantic import AnyUrl, ByteSize
+from pydantic import AnyUrl, ByteSize, SecretStr
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
 from simcore_service_director_v2.core.errors import (
@@ -171,7 +171,8 @@ async def create_dask_client_from_gateway(
             settings=minimal_app.state.settings.DASK_SCHEDULER,
             endpoint=parse_obj_as(AnyUrl, local_dask_gateway_server.address),
             authentication=SimpleAuthentication(
-                username="pytest_user", password=local_dask_gateway_server.password
+                username="pytest_user",
+                password=SecretStr(local_dask_gateway_server.password),
             ),
         )
         assert client
@@ -345,7 +346,7 @@ async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
     dask_client: DaskClient,
 ):
     def fct_that_raise_cancellation_error():
-        import asyncio  # pylint: disable=reimported
+        import asyncio
 
         raise asyncio.CancelledError("task was cancelled, but dask does not care...")
 

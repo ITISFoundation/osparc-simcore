@@ -40,7 +40,7 @@ from ..core.errors import (
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
 )
-from ..core.settings import DaskSchedulerSettings
+from ..core.settings import DaskComputationalBackendSettings
 from ..models.domains.comp_tasks import Image
 from ..utils.dask import (
     check_communication_with_scheduler_is_open,
@@ -99,7 +99,7 @@ UserCallbackInSepThread = Callable[[], None]
 class DaskClient:
     app: FastAPI
     dask_subsystem: DaskSubSystem
-    settings: DaskSchedulerSettings
+    settings: DaskComputationalBackendSettings
 
     _subscribed_tasks: List[asyncio.Task] = field(default_factory=list)
 
@@ -107,7 +107,7 @@ class DaskClient:
     async def create(
         cls,
         app: FastAPI,
-        settings: DaskSchedulerSettings,
+        settings: DaskComputationalBackendSettings,
         endpoint: AnyUrl,
         authentication: ClusterAuthentication,
     ) -> "DaskClient":
