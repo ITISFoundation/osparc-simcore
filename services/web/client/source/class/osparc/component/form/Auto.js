@@ -301,21 +301,20 @@ qx.Class.define("osparc.component.form.Auto", {
       } else {
         s.set.value = String(0);
       }
-      this.__formCtrl.addBindingOptions(key,
-        { // model2target
-          converter: function(data) {
-            if (qx.lang.Type.isNumber(data) && !isNaN(parseFloat(data))) {
-              return String(data);
-            }
-            return null;
+      const model2target = {
+        converter: function(data) {
+          if (qx.lang.Type.isNumber(data) && !isNaN(parseFloat(data))) {
+            return String(data);
           }
-        },
-        { // target2model
-          converter: function(data) {
-            return parseFloat(data);
-          }
+          return null;
         }
-      );
+      };
+      const target2model = {
+        converter: function(data) {
+          return parseFloat(data);
+        }
+      };
+      this.__formCtrl.addBindingOptions(key, model2target, target2model);
     },
     __setupSpinner: function(s, key) {
       if (!s.set) {
