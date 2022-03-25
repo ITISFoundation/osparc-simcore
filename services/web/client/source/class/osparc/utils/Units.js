@@ -71,31 +71,6 @@ qx.Class.define("osparc.utils.Units", {
         alias: ["radian", "rad"],
         short: "rad",
         long: "radian"
-      },
-      // ---- MORE UNITS ----
-      degree: {
-        quantity: "angle",
-        alias: ["degree", "deg"],
-        short: "deg",
-        long: "degree"
-      },
-      "degree_Celsius": {
-        quantity: "temperature",
-        alias: ["degree_Celsius", "°C"],
-        short: "°C",
-        long: "Degree Celsius"
-      },
-      "meter_per_second": {
-        quantity: "meter_per_second",
-        alias: ["meter_per_second", "m/s"],
-        short: "m/s",
-        long: "meters per second"
-      },
-      "kilometer_per_hour": {
-        quantity: "kilometer_per_hour",
-        alias: ["kilometer_per_hour", "km/h"],
-        short: "km/h",
-        long: "kilometer per hour"
       }
     },
 
@@ -127,17 +102,13 @@ qx.Class.define("osparc.utils.Units", {
       }
     },
 
+    __isUnitRegistered: function(unitKey) {
+      return Boolean(unitKey in this.BASE_UNITS);
+    },
+
     __getBaseUnit: function(unitKey) {
       return unitKey in this.BASE_UNITS ? this.BASE_UNITS[unitKey] : null;
     },
-
-    getLabels: function(unit, prefix) {
-      return {
-        unitShort: this.__getShortLabel(unit, prefix),
-        unitLong: this.__getLongLabel(unit, prefix)
-      };
-    },
-
     __getShortLabel: function(unit, prefix) {
       const baseUnit = this.__getBaseUnit(unit);
       let shortLabel = baseUnit ? baseUnit.short : unit;
@@ -156,7 +127,28 @@ qx.Class.define("osparc.utils.Units", {
       return longLabel;
     },
 
-    getNextPrefix: function(prefix) {
+    __getPrefixMultiplier: function(prefix) {
+      if ([null, undefined, ""].includes(prefix)) {
+        prefix = "no-prefix";
+      }
+      if (prefix in this.PREFIXES) {
+        return this.PREFIXES[prefix].multiplier;
+      }
+      return 1;
+    },
+
+    getLabels: function(unit, prefix) {
+      if (this.__isUnitRegistered(unit)) {
+        return {
+          unitShort: this.__getShortLabel(unit, prefix),
+          unitLong: this.__getLongLabel(unit, prefix)
+        };
+      }
+      return null;
+    },
+
+
+    getNextPrefix: function(prefix, originalPrefix) {
       if ([null, undefined, ""].includes(prefix)) {
         prefix = "no-prefix";
       }
@@ -169,16 +161,6 @@ qx.Class.define("osparc.utils.Units", {
         return this.PREFIXES[keys[0]];
       }
       return this.PREFIXES[keys[idx+1]];
-    },
-
-    __getPrefixMultiplier: function(prefix) {
-      if ([null, undefined, ""].includes(prefix)) {
-        prefix = "no-prefix";
-      }
-      if (prefix in this.PREFIXES) {
-        return this.PREFIXES[prefix].multiplier;
-      }
-      return 1;
     },
 
     getMultiplier: function(oldPrefix, newPrefix) {

@@ -240,10 +240,14 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         unitShort,
         unitLong
       } = item;
+      let unitRegistered = false;
       if (unit) {
         const labels = osparc.utils.Units.getLabels(unit, unitPrefix);
-        unitShort = labels.unitShort;
-        unitLong = labels.unitLong;
+        if (labels !== null) {
+          unitShort = labels.unitShort;
+          unitLong = labels.unitLong;
+          unitRegistered = true;
+        }
       }
       const unitLabel = new qx.ui.basic.Label().set({
         alignY: "bottom",
@@ -252,7 +256,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         toolTipText: unitLong || null,
         visibility: unitShort ? "visible" : "excluded"
       });
-      if (unit) {
+      if (unit && unitRegistered) {
         unitLabel.addListener("pointerover", () => unitLabel.setCursor("pointer"), this);
         unitLabel.addListener("pointerout", () => unitLabel.resetCursor(), this);
         unitLabel.addListener("tap", () => {
