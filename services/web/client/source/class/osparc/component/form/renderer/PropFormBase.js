@@ -250,6 +250,7 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
         }
       }
       const unitLabel = new qx.ui.basic.Label().set({
+        rich: true,
         alignY: "bottom",
         paddingBottom: 1,
         value: unitShort || null,
