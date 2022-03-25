@@ -8,12 +8,11 @@ import asyncio
 import json
 import logging
 import re
-
-# copied out from dask
 from dataclasses import dataclass
+from distutils.version import Version
 from pprint import pformat
 from random import randint
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, NamedTuple
 from unittest import mock
 from uuid import uuid4
 
@@ -28,6 +27,7 @@ from dask_task_models_library.container_tasks.events import (
     TaskStateEvent,
 )
 from dask_task_models_library.container_tasks.io import (
+    FilePortSchema,
     FileUrl,
     TaskInputData,
     TaskOutputData,
@@ -37,7 +37,7 @@ from distributed import Client
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from packaging import version
+from packaging.version import Version
 from pydantic import AnyUrl
 from pydantic.tools import parse_obj_as
 from pytest_mock.plugin import MockerFixture
@@ -126,32 +126,33 @@ def dask_subsystem_mock(mocker: MockerFixture) -> Dict[str, MockerFixture]:
 
 @dataclass
 class ServiceExampleParam:
-    docker_basic_auth: DockerBasicAuth
+    # These arguments are for 'run_computational_sidecar'
+    docker_auth: DockerBasicAuth
     service_key: str
     service_version: str
-    command: List[str]
     input_data: TaskInputData
     output_data_keys: TaskOutputDataSchema
     log_file_url: AnyUrl
+    command: List[str]
+    # These are extra arguments for the test
     expected_output_data: TaskOutputData
     expected_logs: List[str]
-    integration_version: version.Version
+    integration_version: Version
 
 
-@pytest.fixture(params=[f"{LEGACY_INTEGRATION_VERSION}", "1.0.0"])
-def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampleParam:
-    """Creates a console task in an ubuntu distro that checks for the expected files and error in case they are missing"""
-    integration_version = version.Version(request.param)
-    print("Using service integration:", integration_version)
-    # defines the inputs of the task
-    input_data = TaskInputData.parse_obj(
+@pytest.fixture
+def input_data(ftp_server: List[URL]) -> TaskInputData:
+    """defines the inputs of the task (SEE ServiceExampleParam.input_data)"""
+    return TaskInputData.parse_obj(
         {
             "input_1": 23,
             "input_23": "a string input",
             "the_input_43": 15.0,
             "the_bool_input_54": False,
             **{
-                f"some_file_input_{index+1}": FileUrl(url=f"{file}")
+                f"some_file_input_{index+1}": FileUrl(
+                    url=f"{file}", file_mapping=file.path
+                )
                 for index, file in enumerate(ftp_server)
             },
             **{
@@ -162,35 +163,10 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
             },
         }
     )
-    # check in the console that the expected files are present in the expected INPUT folder (set as ${INPUT_FOLDER} in the service)
-    file_names = [file.path for file in ftp_server]
-    list_of_commands = [
-        "echo User: $(id $(whoami))",
-        "echo Inputs:",
-        "ls -tlah -R ${INPUT_FOLDER}",
-        "echo Outputs:",
-        "ls -tlah -R ${OUTPUT_FOLDER}",
-        "echo Logs:",
-        "ls -tlah -R ${LOG_FOLDER}",
-    ]
-    list_of_commands += [
-        f"(test -f ${{INPUT_FOLDER}}/{file} || (echo ${{INPUT_FOLDER}}/{file} does not exists && exit 1))"
-        for file in file_names
-    ] + [f"echo $(cat ${{INPUT_FOLDER}}/{file})" for file in file_names]
 
-    input_json_file_name = (
-        "inputs.json"
-        if integration_version > LEGACY_INTEGRATION_VERSION
-        else "input.json"
-    )
 
-    list_of_commands += [
-        f"(test -f ${{INPUT_FOLDER}}/{input_json_file_name} || (echo ${{INPUT_FOLDER}}/{input_json_file_name} file does not exists && exit 1))",
-        f"echo $(cat ${{INPUT_FOLDER}}/{input_json_file_name})",
-        f"sleep {randint(1,4)}",
-    ]
-
-    # defines the expected outputs
+@pytest.fixture
+def fake_output_data(ftp_server: List[URL]):
     jsonable_outputs = {
         "pytest_string": "is quite an amazing feat",
         "pytest_integer": 432,
@@ -198,7 +174,15 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         "pytest_bool": False,
     }
     output_file_url = next(iter(ftp_server)).with_path("output_file")
-    expected_output_keys = TaskOutputDataSchema.parse_obj(
+
+    return jsonable_outputs, output_file_url
+
+
+@pytest.fixture
+def output_data_keys(fake_output_data) -> TaskOutputDataSchema:
+    jsonable_outputs, output_file_url = fake_output_data
+
+    return TaskOutputDataSchema.parse_obj(
         {
             **{k: {"required": True} for k in jsonable_outputs.keys()},
             **{
@@ -215,7 +199,13 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
             },
         }
     )
-    expected_output_data = TaskOutputData.parse_obj(
+
+
+@pytest.fixture
+def expected_output_data(fake_output_data) -> TaskOutputData:
+    jsonable_outputs, output_file_url = fake_output_data
+
+    return TaskOutputData.parse_obj(
         {
             **jsonable_outputs,
             **{
@@ -230,22 +220,90 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
             },
         }
     )
-    jsonized_outputs = json.dumps(jsonable_outputs).replace('"', '\\"')
-    output_json_file_name = (
-        "outputs.json"
-        if integration_version > LEGACY_INTEGRATION_VERSION
-        else "output.json"
+
+
+@pytest.fixture
+def log_file_url(ftp_server: List[URL]):
+    return parse_obj_as(
+        AnyUrl, f"{next(iter(ftp_server)).with_path(LEGACY_SERVICE_LOG_FILE_NAME)}"
     )
+
+
+class ServiceIOFileNames(NamedTuple):
+    inputs_filename: str
+    outputs_filename: str
+    log_filename: str
+
+
+def get_io_service_file_names(integration_version: Version) -> ServiceIOFileNames:
+    """names given to the input/output/log files exchanged between the services and the sidecar"""
+    if integration_version > LEGACY_INTEGRATION_VERSION:
+        return ServiceIOFileNames(
+            "inputs.json", "outputs.json", LEGACY_SERVICE_LOG_FILE_NAME
+        )
+    return ServiceIOFileNames("input.json", "output.json", LEGACY_SERVICE_LOG_FILE_NAME)
+
+
+@pytest.fixture(params=[f"{LEGACY_INTEGRATION_VERSION}", "1.0.0"])
+def ubuntu_task(
+    request: FixtureRequest,
+    ftp_server: List[URL],
+    input_data: TaskInputData,
+    output_data_keys: TaskOutputDataSchema,
+    expected_output_data: TaskOutputData,
+    log_file_url: AnyUrl,
+) -> ServiceExampleParam:
+    """Creates a console task in an ubuntu distro that checks for the expected files and error in case they are missing"""
+    integration_version = Version(request.param)
+    print("Using service integration:", integration_version)
+
+    # check in the console that the expected files are present in the expected INPUT folder (set as ${INPUT_FOLDER} in the service)
+    file_names = [file.path for file in ftp_server]
+    list_of_commands = [
+        "echo User: $(id $(whoami))",
+        "echo Inputs:",
+        "ls -tlah -R ${INPUT_FOLDER}",
+        "echo Outputs:",
+        "ls -tlah -R ${OUTPUT_FOLDER}",
+        "echo Logs:",
+        "ls -tlah -R ${LOG_FOLDER}",
+    ]
+    list_of_commands += [
+        f"(test -f ${{INPUT_FOLDER}}/{file} || (echo ${{INPUT_FOLDER}}/{file} does not exists && exit 1))"
+        for file in file_names
+    ] + [f"echo $(cat ${{INPUT_FOLDER}}/{file})" for file in file_names]
+
+    (
+        input_json_file_name,
+        output_json_file_name,
+        log_file_name,
+    ) = get_io_service_file_names(integration_version)
+
+    list_of_commands += [
+        f"(test -f ${{INPUT_FOLDER}}/{input_json_file_name} || (echo ${{INPUT_FOLDER}}/{input_json_file_name} file does not exists && exit 1))",
+        f"echo $(cat ${{INPUT_FOLDER}}/{input_json_file_name})",
+        f"sleep {randint(1,4)}",
+    ]
+
+    # defines the expected outputs
+    jsonable_outputs = {}
+    for port_key, port_schema_value in output_data_keys.items():
+        if not isinstance(port_schema_value, FilePortSchema):
+            jsonable_outputs[port_key] = expected_output_data[port_key]
+
+    jsonized_outputs = json.dumps(jsonable_outputs).replace('"', '\\"')
 
     # check for the log file if legacy version
     list_of_commands += [
         "echo $(ls -tlah ${LOG_FOLDER})",
-        f"(test {'!' if integration_version > LEGACY_INTEGRATION_VERSION else ''} -f ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME} || (echo ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME} file does {'' if integration_version > LEGACY_INTEGRATION_VERSION else 'not'} exists && exit 1))",
+        f"(test {'!' if integration_version > LEGACY_INTEGRATION_VERSION else ''}"
+        f" -f ${{LOG_FOLDER}}/{log_file_name} || "
+        f"(echo ${{LOG_FOLDER}}/{log_file_name} file does {'' if integration_version > LEGACY_INTEGRATION_VERSION else 'not'} exists"
+        " && exit 1))",
     ]
     if integration_version == LEGACY_INTEGRATION_VERSION:
         list_of_commands = [
-            f"{c} >> ${{LOG_FOLDER}}/{LEGACY_SERVICE_LOG_FILE_NAME}"
-            for c in list_of_commands
+            f"{c} >> ${{LOG_FOLDER}}/{log_file_name}" for c in list_of_commands
         ]
     # set the final command to generate the output file(s) (files and json output)
     list_of_commands += [
@@ -255,12 +313,8 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
         "echo 'some data for the output file' > ${OUTPUT_FOLDER}/subfolder/a_outputfile",
     ]
 
-    log_file_url = parse_obj_as(
-        AnyUrl, f"{next(iter(ftp_server)).with_path('log.dat')}"
-    )
-
     return ServiceExampleParam(
-        docker_basic_auth=DockerBasicAuth(
+        docker_auth=DockerBasicAuth(
             server_address="docker.io", username="pytest", password=""
         ),
         #
@@ -276,7 +330,7 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
             " && ".join(list_of_commands),
         ],
         input_data=input_data,
-        output_data_keys=expected_output_keys,
+        output_data_keys=output_data_keys,
         log_file_url=log_file_url,
         expected_output_data=expected_output_data,
         expected_logs=[
@@ -286,6 +340,42 @@ def ubuntu_task(request: FixtureRequest, ftp_server: List[URL]) -> ServiceExampl
             "This is the file contents of 'file_3'",
         ],
         integration_version=integration_version,
+    )
+
+
+@pytest.fixture
+def python_task(
+    input_data: TaskInputData,
+    output_data_keys: TaskOutputDataSchema,
+    expected_output_data: TaskOutputData,
+    log_file_url: AnyUrl,
+) -> ServiceExampleParam:
+
+    # TODO: how to get input file ??
+    kwargs = {"input_dir": "${INPUT_FOLDER}", "output_dir": "${OUTPUT_FOLDER}"}
+    for key, value in input_data.items():
+        if isinstance(value, FileUrl) and value.file_mapping:
+            value = f"${{INPUT_FOLDER}}/{value.file_mapping}"
+        kwargs[key] = value
+
+    arguments_str = ",".join(f"{k}={v!r}" for k, v in kwargs.items())
+
+    return ServiceExampleParam(
+        docker_auth=DockerBasicAuth(
+            server_address="docker.io", username="pytest", password=""
+        ),
+        service_key="python",
+        service_version="3.8.10-slim-buster",
+        command=["python", "-c", f"print(dict({arguments_str}))"],
+        input_data=input_data,
+        output_data_keys=output_data_keys,
+        log_file_url=log_file_url,
+        ##
+        expected_output_data=expected_output_data,
+        expected_logs=[
+            '{"input_1": 23, "input_23": "a string input", "the_input_43": 15.0, "the_bool_input_54": false}',
+        ],
+        integration_version="1.0.0",
     )
 
 
@@ -305,9 +395,7 @@ def ubuntu_task_unexpected_output(
 
 @pytest.fixture()
 def caplog_info_level(caplog: LogCaptureFixture) -> Iterable[LogCaptureFixture]:
-    with caplog.at_level(
-        logging.INFO,
-    ):
+    with caplog.at_level(logging.INFO):
         yield caplog
 
 
@@ -326,7 +414,7 @@ def test_run_computational_sidecar_real_fct(
         return_value=ubuntu_task.integration_version,
     )
     output_data = run_computational_sidecar(
-        ubuntu_task.docker_basic_auth,
+        ubuntu_task.docker_auth,
         ubuntu_task.service_key,
         ubuntu_task.service_version,
         ubuntu_task.input_data,
@@ -336,7 +424,7 @@ def test_run_computational_sidecar_real_fct(
     )
     mocked_get_integration_version.assert_called_once_with(
         mock.ANY,
-        ubuntu_task.docker_basic_auth,
+        ubuntu_task.docker_auth,
         ubuntu_task.service_key,
         ubuntu_task.service_version,
     )
@@ -354,6 +442,7 @@ def test_run_computational_sidecar_real_fct(
         assert (
             len(search_results) > 0
         ), f"Could not find '{log}' in worker_logs:\n {pformat(caplog_info_level.messages, width=240)}"
+
     for log in ubuntu_task.expected_logs:
         assert re.search(
             rf"\[{ubuntu_task.service_key}:{ubuntu_task.service_version} - .+\/.+ - .+\]: ({log})",
@@ -397,7 +486,7 @@ def test_run_multiple_computational_sidecar_dask(
     futures = [
         dask_client.submit(
             run_computational_sidecar,
-            ubuntu_task.docker_basic_auth,
+            ubuntu_task.docker_auth,
             ubuntu_task.service_key,
             ubuntu_task.service_version,
             ubuntu_task.input_data,
@@ -429,7 +518,7 @@ def test_run_computational_sidecar_dask(
     )
     future = dask_client.submit(
         run_computational_sidecar,
-        ubuntu_task.docker_basic_auth,
+        ubuntu_task.docker_auth,
         ubuntu_task.service_key,
         ubuntu_task.service_version,
         ubuntu_task.input_data,
@@ -478,7 +567,7 @@ def test_failing_service_raises_exception(
 ):
     with pytest.raises(ServiceRunError):
         run_computational_sidecar(
-            ubuntu_task_fail.docker_basic_auth,
+            ubuntu_task_fail.docker_auth,
             ubuntu_task_fail.service_key,
             ubuntu_task_fail.service_version,
             ubuntu_task_fail.input_data,
@@ -497,7 +586,7 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
 ):
     with pytest.raises(ServiceBadFormattedOutputError):
         run_computational_sidecar(
-            ubuntu_task_unexpected_output.docker_basic_auth,
+            ubuntu_task_unexpected_output.docker_auth,
             ubuntu_task_unexpected_output.service_key,
             ubuntu_task_unexpected_output.service_version,
             ubuntu_task_unexpected_output.input_data,

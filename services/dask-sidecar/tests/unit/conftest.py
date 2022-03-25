@@ -88,6 +88,7 @@ def dask_client(mock_service_envs: None) -> Iterable[distributed.Client]:
 
 @pytest.fixture(scope="module")
 def http_server(tmp_path_factory: TempPathFactory) -> Iterable[List[URL]]:
+    """file server that exposes some test files at http://localhost:8999"""
     faker = Faker()
     files = ["file_1", "file_2", "file_3"]
     directory_path = tmp_path_factory.mktemp("http_server")
