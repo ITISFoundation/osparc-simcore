@@ -133,13 +133,16 @@ async def create_dask_client_from_scheduler(
     async def factory() -> DaskClient:
         client = await DaskClient.create(
             app=minimal_app,
-            settings=minimal_app.state.settings.DASK_SCHEDULER,
+            settings=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
             endpoint=parse_obj_as(AnyUrl, dask_spec_local_cluster.scheduler_address),
             authentication=NoAuthentication(),
         )
         assert client
         assert client.app == minimal_app
-        assert client.settings == minimal_app.state.settings.DASK_SCHEDULER
+        assert (
+            client.settings
+            == minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
+        )
         assert not client._subscribed_tasks
 
         assert client.dask_subsystem.client
@@ -168,7 +171,7 @@ async def create_dask_client_from_gateway(
     async def factory() -> DaskClient:
         client = await DaskClient.create(
             app=minimal_app,
-            settings=minimal_app.state.settings.DASK_SCHEDULER,
+            settings=minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
             endpoint=parse_obj_as(AnyUrl, local_dask_gateway_server.address),
             authentication=SimpleAuthentication(
                 username="pytest_user",
@@ -177,7 +180,10 @@ async def create_dask_client_from_gateway(
         )
         assert client
         assert client.app == minimal_app
-        assert client.settings == minimal_app.state.settings.DASK_SCHEDULER
+        assert (
+            client.settings
+            == minimal_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
+        )
         assert not client._subscribed_tasks
 
         assert client.dask_subsystem.client

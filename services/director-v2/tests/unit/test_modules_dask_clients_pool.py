@@ -182,7 +182,7 @@ async def test_dask_clients_pool_acquisition_creates_client_on_demand(
         mocked_creation_calls.append(
             mock.call(
                 app=client.app,
-                settings=client.app.state.settings.DASK_SCHEDULER,
+                settings=client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND,
                 authentication=cluster.authentication,
                 endpoint=cluster.endpoint,
             )
@@ -224,7 +224,9 @@ async def test_acquiring_wrong_cluster_raises_exception(
 def test_default_cluster_correctly_initialized(
     minimal_dask_config: None, default_scheduler: None, client: TestClient
 ):
-    dask_scheduler_settings = client.app.state.settings.DASK_SCHEDULER
+    dask_scheduler_settings = (
+        client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
+    )
     default_cluster = DaskClientsPool.default_cluster(dask_scheduler_settings)
     assert default_cluster
     assert (
@@ -254,7 +256,9 @@ async def test_acquire_default_cluster(
     client: TestClient,
 ):
     assert client.app
-    dask_scheduler_settings = client.app.state.settings.DASK_SCHEDULER
+    dask_scheduler_settings = (
+        client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
+    )
     default_cluster = DaskClientsPool.default_cluster(dask_scheduler_settings)
     assert default_cluster
     async with dask_clients_pool.acquire(default_cluster) as dask_client:

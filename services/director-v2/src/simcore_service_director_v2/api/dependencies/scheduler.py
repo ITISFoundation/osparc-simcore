@@ -9,4 +9,4 @@ def get_scheduler(request: Request) -> BaseCompScheduler:
 
 
 def get_scheduler_settings(app: FastAPI = Depends(get_app)):
-    return app.state.settings.DASK_SCHEDULER
+    return app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND

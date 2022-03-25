@@ -272,8 +272,8 @@ class PGSettings(PostgresSettings):
     )
 
 
-class DaskComputationalBackendSettings(BaseCustomSettings):
-    DIRECTOR_V2_DASK_SCHEDULER_ENABLED: bool = Field(
+class ComputationalBackendSettings(BaseCustomSettings):
+    DaskComputationalBackend_DASK_SCHEDULER_ENABLED: bool = Field(
         True,
     )
     DIRECTOR_V2_DASK_CLIENT_ENABLED: bool = Field(
@@ -364,7 +364,9 @@ class AppSettings(BaseCustomSettings, MixinLoggingSettings):
 
     TRAEFIK_SIMCORE_ZONE: str = Field("internal_simcore_stack")
 
-    DASK_SCHEDULER: DaskComputationalBackendSettings = Field(auto_default_from_env=True)
+    DIRECTOR_V2_COMPUTATIONAL_BACKEND: ComputationalBackendSettings = Field(
+        auto_default_from_env=True
+    )
 
     DIRECTOR_V2_TRACING: Optional[TracingSettings] = Field(auto_default_from_env=True)
 

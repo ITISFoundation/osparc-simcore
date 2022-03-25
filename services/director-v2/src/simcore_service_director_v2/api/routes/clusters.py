@@ -12,7 +12,7 @@ from simcore_service_director_v2.utils.dask_client_utils import test_gateway_end
 from starlette import status
 
 from ...core.errors import ClusterInvalidOperationError, ConfigurationError
-from ...core.settings import DaskComputationalBackendSettings
+from ...core.settings import ComputationalBackendSettings
 from ...models.schemas.clusters import (
     ClusterCreate,
     ClusterDetailsGet,
@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 
 
 async def _get_cluster_details_with_id(
-    settings: DaskComputationalBackendSettings,
+    settings: ComputationalBackendSettings,
     user_id: UserID,
     cluster_id: ClusterID,
     clusters_repo: ClustersRepository,
@@ -81,7 +81,7 @@ async def list_clusters(
     status_code=status.HTTP_200_OK,
 )
 async def get_default_cluster(
-    settings: DaskComputationalBackendSettings = Depends(get_scheduler_settings),
+    settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
 ):
     assert settings.DIRECTOR_V2_DEFAULT_CLUSTER_ID is not None  # nosec
     raise NotImplementedError("dev in progress")
@@ -141,7 +141,7 @@ async def delete_cluster(
 )
 async def get_default_cluster_details(
     user_id: UserID,
-    settings: DaskComputationalBackendSettings = Depends(get_scheduler_settings),
+    settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
     dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
@@ -164,7 +164,7 @@ async def get_default_cluster_details(
 async def get_cluster_details(
     user_id: UserID,
     cluster_id: ClusterID,
-    settings: DaskComputationalBackendSettings = Depends(get_scheduler_settings),
+    settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
     dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):

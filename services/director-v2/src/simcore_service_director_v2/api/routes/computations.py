@@ -139,7 +139,7 @@ async def create_computation(
                 job.user_id,
                 job.project_id,
                 job.cluster_id
-                or request.app.state.settings.DASK_SCHEDULER.DIRECTOR_V2_DEFAULT_CLUSTER_ID,
+                or request.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.DIRECTOR_V2_DEFAULT_CLUSTER_ID,
             )
 
         # filter the tasks by the effective pipeline
