@@ -147,20 +147,26 @@ qx.Class.define("osparc.utils.Units", {
       return null;
     },
 
-
+    // One up and one down, or all the way to the SI
     getNextPrefix: function(prefix, originalPrefix) {
       if ([null, undefined, ""].includes(prefix)) {
         prefix = "no-prefix";
       }
+      if ([null, undefined, ""].includes(originalPrefix)) {
+        originalPrefix = "no-prefix";
+      }
       const keys = Object.keys(this.PREFIXES);
-      const idx = keys.indexOf(prefix);
-      if (idx === -1) {
+      const orignalIdx = keys.indexOf(originalPrefix);
+      if (orignalIdx === -1) {
         return null;
       }
-      if (idx === keys.length-1) {
-        return this.PREFIXES[keys[0]];
+      const midPrefix = Math.min(keys.length-2, Math.max(orignalIdx, 1));
+      const pKeys = Object.keys(this.PREFIXES).filter((_, idx) => Math.abs(midPrefix-idx) <=1);
+      const idx = pKeys.indexOf(prefix);
+      if (idx === pKeys.length-1) {
+        return this.PREFIXES[pKeys[0]];
       }
-      return this.PREFIXES[keys[idx+1]];
+      return this.PREFIXES[pKeys[idx+1]];
     },
 
     getMultiplier: function(oldPrefix, newPrefix) {

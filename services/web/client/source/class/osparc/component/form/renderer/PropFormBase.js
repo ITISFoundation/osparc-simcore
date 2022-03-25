@@ -260,8 +260,10 @@ qx.Class.define("osparc.component.form.renderer.PropFormBase", {
       if (unit && unitRegistered) {
         unitLabel.addListener("pointerover", () => unitLabel.setCursor("pointer"), this);
         unitLabel.addListener("pointerout", () => unitLabel.resetCursor(), this);
+        const nodeMD = this.getNode().getMetaData();
+        const originalUnit = "x_unit" in nodeMD.inputs[item.key] ? osparc.utils.Units.decomposeXUnit(nodeMD.inputs[item.key]["x_unit"]) : null;
         unitLabel.addListener("tap", () => {
-          const nextPrefix = osparc.utils.Units.getNextPrefix(item.unitPrefix);
+          const nextPrefix = osparc.utils.Units.getNextPrefix(item.unitPrefix, originalUnit.unitPrefix);
           this.__switchPrefix(item, item.unitPrefix, nextPrefix.long);
         }, this);
       }
