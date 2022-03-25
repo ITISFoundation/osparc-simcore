@@ -127,7 +127,7 @@ def minimal_configuration(  # pylint:disable=too-many-arguments
     rabbit_service: RabbitSettings,
     simcore_services_ready: None,
     storage_service: URL,
-    dask_scheduler_service: None,
+    dask_scheduler_service: str,
     dask_sidecar_service: None,
     ensure_swarm_and_networks: None,
 ) -> Iterator[None]:
@@ -279,6 +279,7 @@ def mock_env(
     network_name: str,
     dev_features_enabled: str,
     rabbit_service: RabbitSettings,
+    dask_scheduler_service: str,
 ) -> None:
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -309,6 +310,10 @@ def mock_env(
     monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
     monkeypatch.setenv("DIRECTOR_V2_DEV_FEATURES_ENABLED", dev_features_enabled)
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
+    monkeypatch.setenv(
+        "DIRECTOR_V2_DEFAULT_CLUSTER_URL",
+        dask_scheduler_service,
+    )
 
 
 @pytest.fixture
