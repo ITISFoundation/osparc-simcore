@@ -122,10 +122,12 @@ def init_app(settings: Optional[AppSettings] = None) -> FastAPI:
     ):
         dynamic_sidecar.setup(app)
 
-    if settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.DIRECTOR_V2_DASK_CLIENT_ENABLED:
+    if (
+        settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED
+    ):
         dask_clients_pool.setup(app, settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND)
 
-    if settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.DIRECTOR_V2_DASK_SCHEDULER_ENABLED:
+    if settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_ENABLED:
         rabbitmq.setup(app)
         comp_scheduler.setup(app)
 

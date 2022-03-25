@@ -35,11 +35,11 @@ class DaskClientsPool:
     @staticmethod
     def default_cluster(settings: ComputationalBackendSettings):
         return Cluster(
-            id=settings.DIRECTOR_V2_DEFAULT_CLUSTER_ID,
+            id=settings.COMPUTATIONAL_DEFAULT_CLUSTER_ID,
             name="Default cluster",
             type=ClusterType.ON_PREMISE,
-            endpoint=settings.DIRECTOR_V2_DEFAULT_CLUSTER_URL,
-            authentication=settings.DIRECTOR_V2_DEFAULT_CLUSTER_AUTH,
+            endpoint=settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL,
+            authentication=settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
             owner=1,  # FIXME: that is usually the everyone's group... but we do not know nor care about it in director-v2...
         )  # type: ignore
 

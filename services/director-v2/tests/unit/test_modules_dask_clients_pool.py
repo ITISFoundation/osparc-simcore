@@ -47,15 +47,15 @@ def minimal_dask_config(
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SIDECAR_ENABLED", "false")
     monkeypatch.setenv("DIRECTOR_V0_ENABLED", "0")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "0")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "0")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "0")
     monkeypatch.setenv("SC_BOOT_MODE", "production")
 
 
 def test_dask_clients_pool_missing_raises_configuration_error(
     minimal_dask_config: None, monkeypatch: MonkeyPatch
 ):
-    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "0")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "0")
     settings = AppSettings.create_from_envs()
     app = init_app(settings)
 
@@ -118,10 +118,11 @@ def default_scheduler_set_as_osparc_gateway(
 ) -> Callable:
     def creator():
         monkeypatch.setenv(
-            "DIRECTOR_V2_DEFAULT_CLUSTER_URL", local_dask_gateway_server.proxy_address
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
+            local_dask_gateway_server.proxy_address,
         )
         monkeypatch.setenv(
-            "DIRECTOR_V2_DEFAULT_CLUSTER_AUTH",
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH",
             SimpleAuthentication(
                 username=faker.user_name(),
                 password=SecretStr(local_dask_gateway_server.password),
@@ -137,7 +138,7 @@ def default_scheduler_set_as_dask_scheduler(
 ) -> Callable:
     def creator():
         monkeypatch.setenv(
-            "DIRECTOR_V2_DEFAULT_CLUSTER_URL",
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
             dask_spec_local_cluster.scheduler_address,
         )
 
@@ -231,10 +232,12 @@ def test_default_cluster_correctly_initialized(
     assert default_cluster
     assert (
         default_cluster.endpoint
-        == dask_scheduler_settings.DIRECTOR_V2_DEFAULT_CLUSTER_URL
+        == dask_scheduler_settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL
     )
 
-    assert default_cluster.id == dask_scheduler_settings.DIRECTOR_V2_DEFAULT_CLUSTER_ID
+    assert (
+        default_cluster.id == dask_scheduler_settings.COMPUTATIONAL_DEFAULT_CLUSTER_ID
+    )
     assert isinstance(default_cluster.authentication, get_args(ClusterAuthentication))
 
 

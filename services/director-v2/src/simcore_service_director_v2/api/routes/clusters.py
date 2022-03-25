@@ -39,7 +39,7 @@ async def _get_cluster_details_with_id(
 ) -> ClusterDetailsGet:
     log.debug("Getting details for cluster '%s'", cluster_id)
     cluster: Cluster = dask_clients_pool.default_cluster(settings)
-    if cluster_id != settings.DIRECTOR_V2_DEFAULT_CLUSTER_ID:
+    if cluster_id != settings.COMPUTATIONAL_DEFAULT_CLUSTER_ID:
         cluster = await clusters_repo.get_cluster(user_id, cluster_id)
     async with dask_clients_pool.acquire(cluster) as client:
         scheduler_info = client.dask_subsystem.client.scheduler_info()
@@ -83,7 +83,7 @@ async def list_clusters(
 async def get_default_cluster(
     settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
 ):
-    assert settings.DIRECTOR_V2_DEFAULT_CLUSTER_ID is not None  # nosec
+    assert settings.COMPUTATIONAL_DEFAULT_CLUSTER_ID is not None  # nosec
     raise NotImplementedError("dev in progress")
 
 
@@ -145,11 +145,11 @@ async def get_default_cluster_details(
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
     dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
-    assert settings.DIRECTOR_V2_DEFAULT_CLUSTER_ID is not None  # nosec
+    assert settings.COMPUTATIONAL_DEFAULT_CLUSTER_ID is not None  # nosec
     return await _get_cluster_details_with_id(
         settings=settings,
         user_id=user_id,
-        cluster_id=settings.DIRECTOR_V2_DEFAULT_CLUSTER_ID,
+        cluster_id=settings.COMPUTATIONAL_DEFAULT_CLUSTER_ID,
         clusters_repo=clusters_repo,
         dask_clients_pool=dask_clients_pool,
     )

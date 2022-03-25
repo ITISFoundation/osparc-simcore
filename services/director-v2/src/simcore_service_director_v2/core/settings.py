@@ -273,29 +273,29 @@ class PGSettings(PostgresSettings):
 
 
 class ComputationalBackendSettings(BaseCustomSettings):
-    DaskComputationalBackend_DASK_SCHEDULER_ENABLED: bool = Field(
+    COMPUTATIONAL_BACKEND_ENABLED: bool = Field(
         True,
     )
-    DIRECTOR_V2_DASK_CLIENT_ENABLED: bool = Field(
+    COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED: bool = Field(
         True,
     )
-    DIRECTOR_V2_DEFAULT_CLUSTER_URL: AnyUrl = Field(
+    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL: AnyUrl = Field(
         "tcp://dask-scheduler:8786",
         description="This is the cluster that will be used by default"
         " when submitting computational services (typically "
         "tcp://dask-scheduler:8786 for the internal cluster, or "
         "http(s)/GATEWAY_IP:8000 for a osparc-dask-gateway)",
     )
-    DIRECTOR_V2_DEFAULT_CLUSTER_AUTH: Optional[ClusterAuthentication] = Field(
+    COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: Optional[ClusterAuthentication] = Field(
         NoAuthentication(),
         description="Empty for the internal cluster, must be one "
         "of simple/kerberos/jupyterhub for the osparc-dask-gateway",
     )
-    DIRECTOR_V2_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
+    COMPUTATIONAL_DEFAULT_CLUSTER_ID: Optional[ClusterID] = Field(
         0, description="This defines the default cluster id when none is defined"
     )
 
-    @validator("DIRECTOR_V2_DEFAULT_CLUSTER_AUTH", pre=True)
+    @validator("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", pre=True)
     def empty_auth_is_none(v):
         if not v:
             return NoAuthentication()

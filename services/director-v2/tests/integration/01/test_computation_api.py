@@ -59,12 +59,12 @@ def mock_env(
     dask_scheduler_service: str,
 ) -> None:
     # used by the client fixture
-    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "1")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
     monkeypatch.setenv("DIRECTOR_V2_TRACING", "null")
     monkeypatch.setenv(
-        "DIRECTOR_V2_DEFAULT_CLUSTER_URL",
+        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL",
         dask_scheduler_service,
     )
     monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", dynamic_sidecar_docker_image)
