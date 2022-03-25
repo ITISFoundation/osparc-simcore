@@ -106,7 +106,7 @@ class BaseCluster(BaseModel):
         use_enum_values = True
 
 
-ClusterID = NonNegativeInt
+ClusterID = Union[NonNegativeInt, Literal["default"]]
 
 
 class Cluster(BaseCluster):
@@ -115,6 +115,18 @@ class Cluster(BaseCluster):
     class Config(BaseCluster.Config):
         schema_extra = {
             "examples": [
+                {
+                    "id": "default",
+                    "name": "The default cluster",
+                    "type": ClusterType.ON_PREMISE,
+                    "owner": 1456,
+                    "endpoint": "tcp://default-dask-scheduler:8786",
+                    "authentication": {
+                        "type": "simple",
+                        "username": "someuser",
+                        "password": "somepassword",
+                    },
+                },
                 {
                     "id": 432,
                     "name": "My awesome cluster",
