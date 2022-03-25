@@ -101,6 +101,13 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
+            "entropy": build_input(
+                {
+                    "title": "Entropy",
+                    "x_unit": "m**2 kg/s**2/K",
+                    "type": "number",
+                }
+            ),
             "radiation": build_input(
                 {
                     "title": "Radiation",
