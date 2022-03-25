@@ -17,11 +17,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from hypothesis import strategies as st
-from models_library.clusters import (
-    CLUSTER_ADMIN_RIGHTS,
-    Cluster,
-    SimpleAuthentication,
-)
+from models_library.clusters import CLUSTER_ADMIN_RIGHTS, Cluster, SimpleAuthentication
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.utils_assert import assert_status
 from simcore_postgres_database.models.clusters import ClusterType
@@ -458,7 +454,6 @@ async def test_ping_cluster_with_error(
     assert error
 
 
-@pytest.mark.parametrize(*standard_role_response(), ids=str)
 async def test_ping_specific_cluster_with_error(
     enable_dev_features: None,
     mocked_director_v2_with_error,
