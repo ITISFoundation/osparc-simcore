@@ -244,11 +244,18 @@ async def test_get_another_cluster(
     ), f"received {response.text}"
 
 
+@pytest.mark.parametrize("with_query", [True, False])
 async def test_get_default_cluster(
     clusters_config: None,
+    registered_user: Callable[..., Dict],
     async_client: httpx.AsyncClient,
+    with_query: bool,
 ):
+    user_1 = registered_user()
+
     get_cluster_url = URL("/v2/clusters/default")
+    if with_query:
+        get_cluster_url = URL(f"/v2/clusters/default?user_id={user_1['id']}")
     response = await async_client.get(get_cluster_url)
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
     returned_cluster = parse_obj_as(ClusterGet, response.json())
