@@ -232,7 +232,11 @@ qx.Class.define("osparc.component.editor.ClusterEditor", {
           };
           osparc.data.Resources.fetch("clusters", "pingWCredentials", params)
             .then(() => testResult.setTextColor("ready-green"))
-            .catch(() => testResult.setTextColor("failed-red"))
+            .catch(err => {
+              testResult.setTextColor("failed-red");
+              const msg = err.message || this.tr("Test failed");
+              osparc.component.message.FlashMessenger.getInstance().logAs(msg, "Error");
+            })
             .finally(() => testButton.setFetching(false));
         }
       }, this);
