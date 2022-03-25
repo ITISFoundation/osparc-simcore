@@ -100,7 +100,7 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Service.Name}}-{{.Task.Slot}}"
     environment:
-      - DASK_SCHEDULER_HOST=${DASK_SCHEDULER_HOST:-dask-scheduler}
+      - DIRECTOR_V2_DEFAULT_CLUSTER_URL=${DIRECTOR_V2_DEFAULT_CLUSTER_URL:-tcp://dask-scheduler:8786}
       - DIRECTOR_HOST=${DIRECTOR_HOST:-director}
       - DIRECTOR_PORT=${DIRECTOR_PORT:-8080}
       - DIRECTOR_SELF_SIGNED_SSL_FILENAME=${DIRECTOR_SELF_SIGNED_SSL_FILENAME}
@@ -248,7 +248,6 @@ services:
     env_file:
       - ../.env
       - ../.env-wb-garbage-collector
-
 
     deploy:
       placement:

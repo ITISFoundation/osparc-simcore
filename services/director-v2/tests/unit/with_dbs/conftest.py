@@ -159,6 +159,9 @@ def runs(postgres_db: sa.engine.Engine) -> Iterator[Callable[..., CompRunsAtDB]]
         conn.execute(comp_runs.delete().where(comp_runs.c.run_id.in_(created_run_ids)))
 
 
+from simcore_service_director_v2.utils.db import to_clusters_db
+
+
 @pytest.fixture
 def cluster(
     postgres_db: sa.engine.Engine,
@@ -176,7 +179,7 @@ def cluster(
             # insert basic cluster
             created_cluster = conn.execute(
                 sa.insert(clusters)
-                .values(new_cluster.to_clusters_db(only_update=False))
+                .values(to_clusters_db(new_cluster, only_update=False))
                 .returning(sa.literal_column("*"))
             ).one()
             created_cluster_ids.append(created_cluster.id)
@@ -208,7 +211,7 @@ def cluster(
                     "delete": row[cluster_to_groups.c.delete],
                 }
 
-            return Cluster.construct(
+            return Cluster(
                 id=created_cluster.id,
                 name=created_cluster.name,
                 description=created_cluster.description,
