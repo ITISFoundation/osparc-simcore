@@ -83,9 +83,11 @@ async def list_clusters(
 )
 async def get_default_cluster(
     settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
+    dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
     assert settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID is not None  # nosec
-    raise NotImplementedError("dev in progress")
+    cluster = dask_clients_pool.default_cluster(settings)
+    return cluster
 
 
 @router.get(

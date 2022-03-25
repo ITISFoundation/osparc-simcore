@@ -244,22 +244,16 @@ async def test_get_another_cluster(
     ), f"received {response.text}"
 
 
-@pytest.mark.xfail(reason="This needs another iteration and will be tackled next")
 async def test_get_default_cluster(
     clusters_config: None,
-    registered_user: Callable[..., Dict],
-    cluster: Callable[..., Cluster],
     async_client: httpx.AsyncClient,
 ):
-    user_1 = registered_user()
-    # NOTE: we should not need the user id for default right?
-    # NOTE: it should be accessible to everyone to run, and only a handful of elected
-    # people shall be able to administer it
     get_cluster_url = URL("/v2/clusters/default")
     response = await async_client.get(get_cluster_url)
     assert response.status_code == status.HTTP_200_OK, f"received {response.text}"
     returned_cluster = parse_obj_as(ClusterGet, response.json())
     assert returned_cluster
+    assert returned_cluster.id == "default"
     assert returned_cluster.name == "Default cluster"
     assert 1 in returned_cluster.access_rights  # everyone group is always 1
     assert returned_cluster.access_rights[1] == CLUSTER_USER_RIGHTS

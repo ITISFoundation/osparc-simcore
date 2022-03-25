@@ -5,8 +5,7 @@ from dataclasses import dataclass, field
 from typing import AsyncIterator, Dict, Optional
 
 from fastapi import FastAPI
-from models_library.clusters import Cluster, ClusterID
-from simcore_postgres_database.models.clusters import ClusterType
+from models_library.clusters import Cluster, ClusterID, DefaultCluster
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -34,13 +33,9 @@ class DaskClientsPool:
 
     @staticmethod
     def default_cluster(settings: ComputationalBackendSettings):
-        return Cluster(
-            id=settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID,
-            name="Default cluster",
-            type=ClusterType.ON_PREMISE,
+        return DefaultCluster.construct(
             endpoint=settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL,
             authentication=settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
-            owner=1,  # FIXME: that is usually the everyone's group... but we do not know nor care about it in director-v2...
         )  # type: ignore
 
     def register_handlers(self, task_handlers: TaskHandlers) -> None:

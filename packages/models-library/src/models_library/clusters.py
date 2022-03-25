@@ -1,6 +1,6 @@
 from typing import Dict, Literal, Optional, Union
 
-from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, SecretStr, validator
+from pydantic import AnyUrl, BaseModel, Extra, Field, HttpUrl, SecretStr, root_validator
 from pydantic.types import NonNegativeInt
 from simcore_postgres_database.models.clusters import ClusterType
 
@@ -106,11 +106,11 @@ class BaseCluster(BaseModel):
         use_enum_values = True
 
 
-ClusterID = Union[NonNegativeInt, Literal["default"]]
+ClusterID = NonNegativeInt
 
 
 class Cluster(BaseCluster):
-    id: ClusterID = Field(..., description="The cluster ID")
+    id: Union[ClusterID, Literal["default"]] = Field(..., description="The cluster ID")
 
     class Config(BaseCluster.Config):
         schema_extra = {
@@ -173,16 +173,29 @@ class Cluster(BaseCluster):
             ]
         }
 
-    @validator("access_rights", always=True, pre=True)
+    @root_validator(pre=True)
     @classmethod
-    def check_owner_has_access_rights(cls, v, values):
+    def check_owner_has_access_rights(cls, values):
+        if values["id"] == "default":
+            return values
         owner_gid = values["owner"]
         # check owner is in the access rights, if not add it
-        if owner_gid not in v:
-            v[owner_gid] = CLUSTER_ADMIN_RIGHTS
+        access_rights = values["access_rights"]
+        if owner_gid not in access_rights:
+            access_rights[owner_gid] = CLUSTER_ADMIN_RIGHTS
         # check owner has full access
-        if v[owner_gid] != CLUSTER_ADMIN_RIGHTS:
+        if access_rights[owner_gid] != CLUSTER_ADMIN_RIGHTS:
             raise ValueError(
-                f"the cluster owner access rights are incorrectly set: {v[owner_gid]}"
+                f"the cluster owner access rights are incorrectly set: {access_rights[owner_gid]}"
             )
-        return v
+        return values
+
+
+class DefaultCluster(Cluster):
+    """the default cluster is usable by everyone as USER"""
+
+    id: Literal["default"] = "default"
+    name: Literal["Default cluster"] = "Default cluster"
+    type: ClusterType = ClusterType.ON_PREMISE
+    owner: GroupID = 1
+    access_rights: Dict[GroupID, ClusterAccessRights] = {1: CLUSTER_USER_RIGHTS}
