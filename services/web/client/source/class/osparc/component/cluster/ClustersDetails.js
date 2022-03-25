@@ -42,15 +42,22 @@ qx.Class.define("osparc.component.cluster.ClustersDetails", {
       osparc.utils.Clusters.populateClustersSelectBox(selectBox);
       selectBox.addListener("changeSelection", e => {
         const clusterId = e.getData()[0].id;
-        this.__populateClusterDetails(clusterId);
+        this.__updateClusterDetails(clusterId);
       }, this);
       clustersLayout.add(selectBox);
 
       this._add(clustersLayout);
-      this.__populateClusterDetails(selectClusterId === undefined ? 0 : selectClusterId);
+      if (selectClusterId === undefined) {
+        selectClusterId = 0;
+      }
+      selectBox.getSelectables().forEach(selectable => {
+        if (selectable.id === selectClusterId) {
+          selectBox.setSelection([selectable]);
+        }
+      });
     },
 
-    __populateClusterDetails: function(clusterId) {
+    __updateClusterDetails: function(clusterId) {
       if (this._getChildren().includes(this.__clusterDetails)) {
         this._remove(this.__clusterDetails);
         this.__clusterDetails.dispose();
