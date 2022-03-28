@@ -222,7 +222,7 @@ async def test_legacy_and_dynamic_sidecar_run(
     services_endpoint: Dict[str, URL],
     director_v2_client: httpx.AsyncClient,
     ensure_services_stopped: None,
-    mock_project_networks_repository: None,
+    mock_projects_networks_repository: None,
     mock_dynamic_sidecar_client: None,
 ):
     """

@@ -455,7 +455,7 @@ async def restart(app: web.Application, node_uuid: str) -> None:
 
 
 @log_decorator(logger=log)
-async def project_networks_update(app: web.Application, project_id: ProjectID) -> None:
+async def projects_networks_update(app: web.Application, project_id: ProjectID) -> None:
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = (
         URL(settings.base_url)

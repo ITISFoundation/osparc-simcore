@@ -3,13 +3,13 @@ import urllib.parse
 from typing import NamedTuple, Set
 from uuid import UUID
 
-from models_library.project_networks import (
+from models_library.projects_networks import (
     PROJECT_NETWORK_PREFIX,
     ContainerAliases,
     DockerNetworkAlias,
     DockerNetworkName,
     NetworksWithAliases,
-    ProjectNetworks,
+    ProjectsNetworks,
 )
 from models_library.projects import ProjectAtDB, ProjectID, Workbench
 from models_library.projects_nodes_io import NodeIDStr
@@ -23,7 +23,7 @@ from simcore_service_director_v2.core.errors import ProjectNotFoundError
 from simcore_service_director_v2.modules.rabbitmq import RabbitMQClient
 
 from ..api.dependencies.director_v0 import DirectorV0Client
-from ..modules.db.repositories.project_networks import ProjectNetworksRepository
+from ..modules.db.repositories.projects_networks import ProjectsNetworksRepository
 from ..modules.db.repositories.projects import ProjectsRepository
 from ..modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 
@@ -179,7 +179,7 @@ async def _get_networks_with_aliases_for_default_network(
     """
     Until a proper UI is in place all container need to
     be on the same network.
-    Return an updated version of the project_networks
+    Return an updated version of the projects_networks
     """
     new_networks_with_aliases: NetworksWithAliases = NetworksWithAliases.parse_obj({})
 
@@ -223,7 +223,7 @@ async def _get_networks_with_aliases_for_default_network(
 
 
 async def update_from_workbench(
-    project_networks_repository: ProjectNetworksRepository,
+    projects_networks_repository: ProjectsNetworksRepository,
     projects_repository: ProjectsRepository,
     scheduler: DynamicSidecarsScheduler,
     director_v0_client: DirectorV0Client,
@@ -235,17 +235,17 @@ async def update_from_workbench(
     """
 
     try:
-        existing_project_networks = (
-            await project_networks_repository.get_project_networks(
+        existing_projects_networks = (
+            await projects_networks_repository.get_projects_networks(
                 project_id=project_id
             )
         )
     except ProjectNotFoundError:
-        existing_project_networks = ProjectNetworks.parse_obj(
+        existing_projects_networks = ProjectsNetworks.parse_obj(
             dict(project_uuid=project_id, networks_with_aliases={})
         )
 
-    existing_networks_with_aliases = existing_project_networks.networks_with_aliases
+    existing_networks_with_aliases = existing_projects_networks.networks_with_aliases
 
     # NOTE: when UI is in place this is no longer required
     # for now all services are placed on the same default network
@@ -259,7 +259,7 @@ async def update_from_workbench(
         rabbitmq_client=rabbitmq_client,
     )
     logger.debug("%s", f"{existing_networks_with_aliases=}")
-    await project_networks_repository.upsert_project_networks(
+    await projects_networks_repository.upsert_projects_networks(
         project_id=project_id, networks_with_aliases=new_networks_with_aliases
     )
 

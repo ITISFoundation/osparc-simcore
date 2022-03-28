@@ -25,8 +25,8 @@ from ...models.domains.dynamic_services import (
     RetrieveDataOutEnveloped,
 )
 from ...models.schemas.dynamic_services import SchedulerData
-from ...modules import project_networks
-from ...modules.db.repositories.project_networks import ProjectNetworksRepository
+from ...modules import projects_networks
+from ...modules.db.repositories.projects_networks import ProjectsNetworksRepository
 from ...modules.db.repositories.projects import ProjectsRepository
 from ...modules.dynamic_sidecar.docker_api import (
     is_dynamic_service_running,
@@ -287,10 +287,10 @@ async def service_restart_containers(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 @log_decorator(logger=logger)
-async def update_project_networks(
+async def update_projects_networks(
     project_id: ProjectID,
-    project_networks_repository: ProjectNetworksRepository = Depends(
-        get_repository(ProjectNetworksRepository)
+    projects_networks_repository: ProjectsNetworksRepository = Depends(
+        get_repository(ProjectsNetworksRepository)
     ),
     projects_repository: ProjectsRepository = Depends(
         get_repository(ProjectsRepository)
@@ -300,8 +300,8 @@ async def update_project_networks(
     rabbitmq_client: RabbitMQClient = Depends(get_rabbitmq_client),
 ) -> None:
 
-    await project_networks.update_from_workbench(
-        project_networks_repository=project_networks_repository,
+    await projects_networks.update_from_workbench(
+        projects_networks_repository=projects_networks_repository,
         projects_repository=projects_repository,
         scheduler=scheduler,
         director_v0_client=director_v0_client,

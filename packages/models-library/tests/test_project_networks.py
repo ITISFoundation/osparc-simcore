@@ -5,11 +5,11 @@ from typing import Any, Dict, Type
 from uuid import UUID
 
 import pytest
-from models_library.project_networks import (
+from models_library.projects_networks import (
     DockerNetworkAlias,
     DockerNetworkName,
     NetworksWithAliases,
-    ProjectNetworks,
+    ProjectsNetworks,
 )
 from pydantic import BaseModel, ValidationError, parse_obj_as
 
@@ -17,7 +17,7 @@ from pydantic import BaseModel, ValidationError, parse_obj_as
 @pytest.mark.parametrize(
     "model_cls",
     (
-        ProjectNetworks,
+        ProjectsNetworks,
         NetworksWithAliases,
     ),
 )
@@ -65,13 +65,13 @@ def test_networks_with_aliases_fail(invalid_example: Dict) -> None:
 
 
 @pytest.mark.parametrize("network_name", ["a", "ok", "a_", "A_", "a1", "a-"])
-def test_project_networks_validation(network_name: str) -> None:
+def test_projects_networks_validation(network_name: str) -> None:
     assert parse_obj_as(DockerNetworkName, network_name) == network_name
     assert parse_obj_as(DockerNetworkAlias, network_name) == network_name
 
 
 @pytest.mark.parametrize("network_name", ["", "1", "-", "_"])
-def test_project_networks_validation_fails(network_name: str) -> None:
+def test_projects_networks_validation_fails(network_name: str) -> None:
     with pytest.raises(ValidationError):
         parse_obj_as(DockerNetworkName, network_name)
     with pytest.raises(ValidationError):

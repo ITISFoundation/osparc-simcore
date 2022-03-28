@@ -603,7 +603,7 @@ async def test_is_dynamic_service_running(
     )
 
 
-async def test_get_project_networks_containers(
+async def test_get_projects_networks_containers(
     async_docker_client: aiodocker.docker.Docker,
     project_id_labeled_network: str,
     project_id: ProjectID,

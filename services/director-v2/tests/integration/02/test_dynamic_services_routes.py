@@ -228,7 +228,7 @@ async def test_start_status_stop(
     ensure_services_stopped: None,
     mock_project_repository: None,
     mock_dynamic_sidecar_api_calls: None,
-    mock_project_networks_repository: None,
+    mock_projects_networks_repository: None,
 ):
     # starting the service
     headers = {

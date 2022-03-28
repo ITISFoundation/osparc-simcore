@@ -8,12 +8,12 @@ from unittest.mock import AsyncMock, call
 from uuid import UUID, uuid4
 
 import pytest
-from models_library.project_networks import NetworksWithAliases
+from models_library.projects_networks import NetworksWithAliases
 from models_library.projects import ProjectID, Workbench
 from models_library.projects_nodes import Node
 from pydantic import BaseModel, PositiveInt
 from pytest_mock.plugin import MockerFixture
-from simcore_service_director_v2.modules.project_networks import (
+from simcore_service_director_v2.modules.projects_networks import (
     _get_networks_with_aliases_for_default_network,
     _send_network_configuration_to_dynamic_sidecar,
 )
@@ -213,7 +213,7 @@ def mock_docker_calls(mocker: MockerFixture) -> Iterable[Dict[str, AsyncMock]]:
         "attach": mocker.patch(f"{class_base}.attach_project_network", AsyncMock()),
         "detach": mocker.patch(f"{class_base}.detach_project_network", AsyncMock()),
         "requires_dynamic_sidecar": mocker.patch(
-            "simcore_service_director_v2.modules.project_networks._requires_dynamic_sidecar",
+            "simcore_service_director_v2.modules.projects_networks._requires_dynamic_sidecar",
             requires_dynamic_sidecar_mock,
         ),
     }

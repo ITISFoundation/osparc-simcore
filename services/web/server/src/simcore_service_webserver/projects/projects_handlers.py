@@ -163,7 +163,7 @@ async def create_projects(
                     new_project, new_project["uuid"], hidden=False
                 )
 
-        await director_v2_api.project_networks_update(
+        await director_v2_api.projects_networks_update(
             request.app, UUID(new_project["uuid"])
         )
 
@@ -441,7 +441,7 @@ async def replace_project(request: web.Request):
         new_project = await db.replace_user_project(
             new_project, user_id, f"{project_uuid}", include_templates=True
         )
-        await director_v2_api.project_networks_update(request.app, project_uuid)
+        await director_v2_api.projects_networks_update(request.app, project_uuid)
         await director_v2_api.create_or_update_pipeline(
             request.app, user_id, project_uuid
         )

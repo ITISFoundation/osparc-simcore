@@ -34,11 +34,11 @@ from _pytest.monkeypatch import MonkeyPatch
 from aiodocker.containers import DockerContainer
 from aiopg.sa import Engine
 from fastapi import FastAPI
-from models_library.project_networks import (
+from models_library.projects_networks import (
     PROJECT_NETWORK_PREFIX,
     ContainerAliases,
     NetworksWithAliases,
-    ProjectNetworks,
+    ProjectsNetworks,
 )
 from models_library.projects import Node, ProjectAtDB, ProjectID, Workbench
 from models_library.projects_nodes_io import NodeID
@@ -57,7 +57,7 @@ from shared_comp_utils import (
 )
 from simcore_postgres_database.models.comp_pipeline import comp_pipeline
 from simcore_postgres_database.models.comp_tasks import comp_tasks
-from simcore_postgres_database.models.project_networks import project_networks
+from simcore_postgres_database.models.projects_networks import projects_networks
 from simcore_sdk import node_ports_v2
 from simcore_sdk.node_data import data_manager
 
@@ -370,7 +370,7 @@ def temp_dir(tmpdir: LocalPath) -> Path:
 
 
 @pytest.fixture
-async def project_networks_db(
+async def projects_networks_db(
     initialized_app: FastAPI, current_study: ProjectAtDB
 ) -> None:
     # NOTE: director-v2 does not have access to the webserver which creates this
@@ -386,17 +386,17 @@ async def project_networks_db(
     default_network_name = f"{PROJECT_NETWORK_PREFIX}_{current_study.uuid}_test"
     networks_with_aliases[default_network_name] = container_aliases
 
-    project_networks_to_insert = ProjectNetworks(
+    projects_networks_to_insert = ProjectsNetworks(
         project_uuid=current_study.uuid, networks_with_aliases=networks_with_aliases
     )
 
     engine: Engine = initialized_app.state.engine
 
     async with engine.acquire() as conn:
-        row_data = project_networks_to_insert.dict()
-        insert_stmt = pg_insert(project_networks).values(**row_data)
+        row_data = projects_networks_to_insert.dict()
+        insert_stmt = pg_insert(projects_networks).values(**row_data)
         upsert_snapshot = insert_stmt.on_conflict_do_update(
-            constraint=project_networks.primary_key, set_=row_data
+            constraint=projects_networks.primary_key, set_=row_data
         )
         await conn.execute(upsert_snapshot)
 
@@ -852,7 +852,7 @@ async def test_nodeports_integration(
     # pylint: disable=too-many-arguments
     minimal_configuration: None,
     cleanup_services_and_networks: None,
-    project_networks_db: None,
+    projects_networks_db: None,
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,
     db_manager: DBManager,

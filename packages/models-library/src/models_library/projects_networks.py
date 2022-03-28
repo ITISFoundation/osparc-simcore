@@ -30,7 +30,7 @@ class NetworksWithAliases(DictModel[DockerNetworkName, ContainerAliases]):
         }
 
 
-class ProjectNetworks(BaseModel):
+class ProjectsNetworks(BaseModel):
     project_uuid: ProjectID = Field(..., description="project reference")
     networks_with_aliases: NetworksWithAliases = Field(
         ...,

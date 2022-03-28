@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Set, Type
 
 import httpx
 from fastapi import FastAPI
-from models_library.project_networks import ProjectNetworks
+from models_library.projects_networks import ProjectsNetworks
 from models_library.projects import ProjectAtDB
 from models_library.projects_nodes import Node
 from models_library.service_settings_labels import (
@@ -22,7 +22,7 @@ from tenacity.wait import wait_exponential, wait_fixed
 from ....core.settings import AppSettings, DynamicSidecarSettings
 from ....models.schemas.dynamic_services import DynamicSidecarStatus, SchedulerData
 from ....modules.director_v0 import DirectorV0Client
-from ...db.repositories.project_networks import ProjectNetworksRepository
+from ...db.repositories.projects_networks import ProjectsNetworksRepository
 from ...db.repositories.projects import ProjectsRepository
 from .._namepsace import get_compose_namespace
 from ..client_api import DynamicSidecarClient, get_dynamic_sidecar_client
@@ -30,7 +30,7 @@ from ..docker_api import (
     create_network,
     create_service_and_get_id,
     get_node_id_from_task_for_service,
-    get_project_networks_containers,
+    get_projects_networks_containers,
     get_swarm_network,
     is_dynamic_sidecar_missing,
     remove_dynamic_sidecar_network,
@@ -390,7 +390,7 @@ class CreateUserServices(DynamicSchedulerEvent):
         scheduler_data.dynamic_sidecar.was_compose_spec_submitted = True
 
 
-class AttachProjectNetworks(DynamicSchedulerEvent):
+class AttachProjectsNetworks(DynamicSchedulerEvent):
     """
     Triggers after CreateUserServices and when all started containers are running.
 
@@ -415,19 +415,19 @@ class AttachProjectNetworks(DynamicSchedulerEvent):
         dynamic_sidecar_client = get_dynamic_sidecar_client(app)
         dynamic_sidecar_endpoint = scheduler_data.dynamic_sidecar.endpoint
 
-        project_networks_repository: ProjectNetworksRepository = (
-            fetch_repo_outside_of_request(app, ProjectNetworksRepository)
+        projects_networks_repository: ProjectsNetworksRepository = (
+            fetch_repo_outside_of_request(app, ProjectsNetworksRepository)
         )
 
-        project_networks: ProjectNetworks = (
-            await project_networks_repository.get_project_networks(
+        projects_networks: ProjectsNetworks = (
+            await projects_networks_repository.get_projects_networks(
                 project_id=scheduler_data.project_id
             )
         )
         for (
             network_name,
             container_aliases,
-        ) in project_networks.networks_with_aliases.items():
+        ) in projects_networks.networks_with_aliases.items():
             for network_alias in container_aliases.values():
                 await dynamic_sidecar_client.attach_service_containers_to_project_network(
                     dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
@@ -571,13 +571,13 @@ class RemoveUserCreatedServices(DynamicSchedulerEvent):
         # if a project network for the current project has no more
         # containers attached to it (because the last service which
         # was using it was removed), also removed the network
-        used_project_networks = await get_project_networks_containers(
+        used_projects_networks = await get_projects_networks_containers(
             project_id=scheduler_data.project_id
         )
         await logged_gather(
             *[
                 try_to_remove_network(network_name)
-                for network_name, container_count in used_project_networks.items()
+                for network_name, container_count in used_projects_networks.items()
                 if container_count == 0
             ]
         )
@@ -596,6 +596,6 @@ REGISTERED_EVENTS: List[Type[DynamicSchedulerEvent]] = [
     GetStatus,
     PrepareServicesEnvironment,
     CreateUserServices,
-    AttachProjectNetworks,
+    AttachProjectsNetworks,
     RemoveUserCreatedServices,
 ]

@@ -92,7 +92,7 @@ async def director_v2_service_mock() -> AsyncIterable[aioresponses]:
         r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*$"
     )
     delete_computation_pattern = get_computation_pattern
-    project_networks_pattern = re.compile(
+    projects_networks_pattern = re.compile(
         r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/projects/.*/-/project-networks$"
     )
     # NOTE: GitHK I have to copy paste that fixture for some unclear reason for now.
@@ -106,7 +106,7 @@ async def director_v2_service_mock() -> AsyncIterable[aioresponses]:
             repeat=True,
         )
         mock.delete(delete_computation_pattern, status=204, repeat=True)
-        mock.patch(project_networks_pattern, status=204, repeat=True)
+        mock.patch(projects_networks_pattern, status=204, repeat=True)
         yield mock
 
 

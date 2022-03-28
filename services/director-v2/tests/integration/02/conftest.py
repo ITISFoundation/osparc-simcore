@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import aiodocker
 import pytest
-from models_library.project_networks import ProjectNetworks
+from models_library.projects_networks import ProjectsNetworks
 from pytest_mock.plugin import MockerFixture
 
 
@@ -47,13 +47,13 @@ async def ensure_swarm_and_networks(network_name: str, docker_swarm: None):
 
 
 @pytest.fixture
-def mock_project_networks_repository(mocker: MockerFixture) -> None:
+def mock_projects_networks_repository(mocker: MockerFixture) -> None:
     mocker.patch(
         (
             "simcore_service_director_v2.modules.db.repositories."
-            "project_networks.ProjectNetworksRepository.get_project_networks"
+            "projects_networks.ProjectsNetworksRepository.get_projects_networks"
         ),
-        return_value=ProjectNetworks.parse_obj(
+        return_value=ProjectsNetworks.parse_obj(
             dict(project_uuid=uuid4(), networks_with_aliases={})
         ),
     )
