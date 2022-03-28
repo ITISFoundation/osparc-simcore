@@ -46,12 +46,7 @@ async def _get_cluster_details_with_id(
         scheduler_status = client.dask_subsystem.client.status
         dashboard_link = client.dask_subsystem.client.dashboard_link
     assert dashboard_link  # nosec
-    if "workers" in scheduler_info:
-        worker = list(scheduler_info["workers"].values())
-        if worker and worker[0] and worker[0]["metrics"]["cpu"] > 0:
-            import pdb
 
-            pdb.set_trace()
     return ClusterDetailsGet(
         scheduler=Scheduler(status=scheduler_status, **scheduler_info),
         dashboard_link=parse_obj_as(AnyUrl, dashboard_link),
