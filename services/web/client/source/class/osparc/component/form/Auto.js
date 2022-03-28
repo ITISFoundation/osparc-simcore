@@ -317,7 +317,6 @@ qx.Class.define("osparc.component.form.Auto", {
         },
         converter: function(data) {
           if ("x_unit" in this.myContext.s) {
-            console.log(this.myContext);
             const tmp = data.split(" ");
             if (tmp.length > 1) {
               const prefix = osparc.utils.Units.getPrefix(this.myContext.s["x_unit"], tmp[1]);
