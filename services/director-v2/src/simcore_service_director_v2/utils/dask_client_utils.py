@@ -207,11 +207,11 @@ async def test_scheduler_endpoint(
     """
     try:
         if _is_internal_scheduler(authentication):
-            client = await distributed.Client(
+            async with distributed.Client(
                 address=endpoint, timeout=_PING_TIMEOUT_S, asynchronous=True
-            )
-            if not client.status == "running":
-                raise SchedulerError("internal scheduler is not running!")
+            ) as dask_client:
+                if not dask_client.status == "running":
+                    raise SchedulerError("internal scheduler is not running!")
 
         else:
             gateway_auth = await get_gateway_auth_from_params(authentication)
@@ -223,9 +223,9 @@ async def test_scheduler_endpoint(
                 # we bypass the pinging by calling in ourselves with a short timeout
                 async with httpx.AsyncClient(
                     transport=httpx.AsyncHTTPTransport(retries=2)
-                ) as client:
+                ) as httpx_client:
                     # try to get something the api shall return fast
-                    response = await client.get(
+                    response = await httpx_client.get(
                         f"{endpoint}/api/version", timeout=_PING_TIMEOUT_S
                     )
                     response.raise_for_status()
