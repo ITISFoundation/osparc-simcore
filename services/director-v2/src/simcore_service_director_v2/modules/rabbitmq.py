@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Dict
 
 import aio_pika
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from models_library.rabbitmq_messages import (
     InstrumentationRabbitMessage,
     LoggerRabbitMessage,
@@ -25,10 +25,6 @@ rabbitmq_retry_policy = dict(
     before_sleep=before_sleep_log(logger, logging.WARNING),
     reraise=True,
 )
-
-
-def get_rabbitmq_client(request: Request) -> "RabbitMQClient":
-    return request.app.state.rabbitmq_client
 
 
 def setup(app: FastAPI) -> None:

@@ -12,7 +12,7 @@ from models_library.project_networks import (
     ProjectNetworks,
 )
 from models_library.projects import ProjectAtDB, ProjectID, Workbench
-from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.projects_nodes_io import NodeIDStr
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
@@ -46,29 +46,6 @@ class _ToAdd(NamedTuple):
 def _network_name(project_id: ProjectID, user_defined: str) -> DockerNetworkName:
     network_name = f"{PROJECT_NETWORK_PREFIX}_{project_id}_{user_defined}"
     return parse_obj_as(DockerNetworkName, network_name)
-
-
-def _network_alias(label: str) -> DockerNetworkAlias:
-    return parse_obj_as(DockerNetworkAlias, label)
-
-
-async def _attach_network_to_dynamic_sidecar(
-    scheduler: DynamicSidecarsScheduler,
-    node_id: NodeID,
-    network_name: str,
-    network_alias: str,
-) -> None:
-    await scheduler.attach_project_network(
-        node_id=node_id, project_network=network_name, network_alias=network_alias
-    )
-
-
-async def _detach_network_from_dynamic_sidecar(
-    scheduler: DynamicSidecarsScheduler, node_id: NodeID, network_name: str
-) -> None:
-    await scheduler.detach_project_network(
-        node_id=node_id, project_network=network_name
-    )
 
 
 async def _requires_dynamic_sidecar(
@@ -153,10 +130,9 @@ async def _send_network_configuration_to_dynamic_sidecar(
 
     await logged_gather(
         *[
-            _detach_network_from_dynamic_sidecar(
-                scheduler=scheduler,
+            scheduler.detach_project_network(
                 node_id=UUID(to_remove.node_id),
-                network_name=to_remove.network_name,
+                project_network=to_remove.network_name,
             )
             for to_remove in to_remove_items
         ]
@@ -183,10 +159,9 @@ async def _send_network_configuration_to_dynamic_sidecar(
 
     await logged_gather(
         *[
-            _attach_network_to_dynamic_sidecar(
-                scheduler=scheduler,
+            scheduler.attach_project_network(
                 node_id=UUID(to_add.node_id),
-                network_name=to_add.network_name,
+                project_network=to_add.network_name,
                 network_alias=to_add.network_alias,
             )
             for to_add in to_add_items
@@ -223,7 +198,7 @@ async def _get_networks_with_aliases_for_default_network(
 
         # only add if network label is valid, otherwise it will be skipped
         try:
-            network_alias = _network_alias(node_content.label)
+            network_alias = parse_obj_as(DockerNetworkAlias, node_content.label)
         except ValidationError:
             message = LoggerRabbitMessage(
                 user_id=user_id,

@@ -12,14 +12,11 @@ from models_library.projects_nodes import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
 from models_library.users import UserID
-from simcore_service_director_v2.modules.rabbitmq import (
-    RabbitMQClient,
-    get_rabbitmq_client,
-)
 from starlette import status
 from starlette.datastructures import URL
 
 from ...api.dependencies.database import get_repository
+from ...api.dependencies.rabbitmq import get_rabbitmq_client
 from ...core.settings import DynamicServicesSettings, DynamicSidecarSettings
 from ...models.domains.dynamic_services import (
     DynamicServiceCreate,
@@ -40,6 +37,7 @@ from ...modules.dynamic_sidecar.errors import (
     LegacyServiceIsNotSupportedError,
 )
 from ...modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
+from ...modules.rabbitmq import RabbitMQClient
 from ...utils.logging_utils import log_decorator
 from ...utils.routes import NoContentResponse
 from ..dependencies.director_v0 import DirectorV0Client, get_director_v0_client
