@@ -2,7 +2,7 @@
 import json
 from pprint import pformat
 from typing import Any, Dict, Type
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 from models_library.project_networks import (
@@ -12,19 +12,6 @@ from models_library.project_networks import (
     ProjectNetworks,
 )
 from pydantic import BaseModel, ValidationError, parse_obj_as
-
-# UTILS
-
-
-# FIXTURES
-
-
-@pytest.fixture
-def uuid() -> UUID:
-    return uuid4()
-
-
-# TESTS
 
 
 @pytest.mark.parametrize(
