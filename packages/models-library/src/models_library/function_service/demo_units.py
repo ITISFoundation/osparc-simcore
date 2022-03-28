@@ -108,7 +108,7 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
-            "radiation": build_input(
+            "radiati0n": build_input(
                 {
                     "title": "Radiation",
                     "x_unit": "roentgen",
@@ -185,7 +185,7 @@ META = ServiceDockerData.parse_obj(
                     "type": "number",
                 }
             ),
-            "radiation": build_input(
+            "radiati0n": build_input(
                 {
                     "title": "Radiation",
                     "x_unit": "curie",
