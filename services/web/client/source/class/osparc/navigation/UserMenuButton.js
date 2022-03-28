@@ -124,6 +124,11 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           osparc.utils.Utils.setIdToWidget(control, "userMenuPreferencesBtn");
           this.getMenu().add(control);
           break;
+        case "clusters":
+          control = new qx.ui.menu.Button(this.tr("Clusters"));
+          control.addListener("execute", () => osparc.utils.Clusters.popUpClustersDetails(), this);
+          this.getMenu().add(control);
+          break;
         case "about":
           control = new qx.ui.menu.Button(this.tr("About"));
           control.addListener("execute", () => osparc.About.getInstance().open());
@@ -142,6 +147,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
 
     populateSimpleMenu: function() {
       this.getChildControl("preferences");
+      this.getChildControl("clusters");
       this.getMenu().addSeparator();
       this.getChildControl("about");
       this.getMenu().addSeparator();
@@ -154,6 +160,7 @@ qx.Class.define("osparc.navigation.UserMenuButton", {
           this.__serverStatics = statics;
           this.getChildControl("theme-switcher");
           this.getChildControl("preferences");
+          this.getChildControl("clusters");
           this.getMenu().addSeparator();
           this.__addManualsToMenu();
           this.__addFeedbacksToMenu();
