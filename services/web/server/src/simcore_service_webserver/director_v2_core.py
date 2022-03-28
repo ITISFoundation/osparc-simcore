@@ -21,6 +21,7 @@ from yarl import URL
 from .director_v2_abc import AbstractProjectRunPolicy
 from .director_v2_exceptions import (
     ClusterAccessForbidden,
+    ClusterDefinedPingError,
     ClusterNotFoundError,
     ClusterPingError,
     DirectorServiceError,
@@ -606,6 +607,26 @@ async def ping_cluster(app: web.Application, cluster_ping: ClusterPing) -> None:
             web.HTTPUnprocessableEntity.status_code: (
                 ClusterPingError,
                 {"endpoint": f"{cluster_ping.endpoint}"},
+            )
+        },
+    )
+
+
+async def ping_specific_cluster(
+    app: web.Application, user_id: UserID, cluster_id: ClusterID
+) -> None:
+    settings: DirectorV2Settings = get_plugin_settings(app)
+    await _request_director_v2(
+        app,
+        "POST",
+        url=(settings.base_url / f"clusters/{cluster_id}:ping").update_query(
+            user_id=int(user_id)
+        ),
+        expected_status=web.HTTPNoContent,
+        on_error={
+            web.HTTPUnprocessableEntity.status_code: (
+                ClusterDefinedPingError,
+                {"cluster_id": f"{cluster_id}"},
             )
         },
     )
