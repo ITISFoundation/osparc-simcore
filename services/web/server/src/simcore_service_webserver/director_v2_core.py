@@ -482,10 +482,6 @@ async def create_cluster(
     return cluster
 
 
-
-
-
-
 async def list_clusters(app: web.Application, user_id: UserID) -> List[DataType]:
     settings: DirectorV2Settings = get_plugin_settings(app)
     clusters = await _request_director_v2(

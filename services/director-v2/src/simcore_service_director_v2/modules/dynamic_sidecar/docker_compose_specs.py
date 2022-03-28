@@ -104,7 +104,7 @@ def _replace_env_vars_in_compose_spec(
     return stringified_service_spec
 
 
-async def assemble_spec(
+def assemble_spec(
     app: FastAPI,
     service_key: str,
     service_tag: str,

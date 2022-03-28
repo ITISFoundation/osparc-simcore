@@ -450,7 +450,7 @@ async def get_or_create_networks_ids(
                     "Name": network,
                     "Driver": "overlay",
                     "Labels": {
-                        "com.simcore.description": "study service communication network",
+                        "com.simcore.description": "project service communication network",
                         # used by the director-v2 to remove the network when the last
                         # service connected to the network was removed
                         "project_id": f"{project_id}",
