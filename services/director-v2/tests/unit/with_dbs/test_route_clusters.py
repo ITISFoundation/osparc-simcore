@@ -95,13 +95,19 @@ async def test_list_clusters(
     ), "default cluster id is not the one expected"
 
     # let's create some clusters
-    for n in range(111):
+    NUM_CLUSTERS = 111
+    for n in range(NUM_CLUSTERS):
         cluster(user_1, name=f"pytest cluster{n:04}")
 
     response = await async_client.get(list_clusters_url)
     assert response.status_code == status.HTTP_200_OK
     returned_clusters_list = parse_obj_as(List[ClusterGet], response.json())
-    assert len(returned_clusters_list) == 111 + 1
+    assert (
+        len(returned_clusters_list) == NUM_CLUSTERS + 1
+    )  # the default cluster comes on top of the NUM_CLUSTERS
+    assert (
+        returned_clusters_list[0].id == "default"
+    ), "the first cluster shall be the platform default cluster"
 
     # now create a second user and check the clusters are not seen by it BUT the default one
     user_2 = registered_user()
@@ -134,7 +140,7 @@ async def test_list_clusters(
     response = await async_client.get(f"/v2/clusters?user_id={user_2['id']}")
     assert response.status_code == status.HTTP_200_OK
     user_2_clusters = parse_obj_as(List[ClusterGet], response.json())
-    # we should find 3 clusters
+    # we should find 3 clusters + the default cluster
     assert len(user_2_clusters) == 3 + 1
     for name in [
         "cluster with user rights",
@@ -604,8 +610,8 @@ async def test_update_another_cluster(
 
 async def test_delete_cluster(
     clusters_config: None,
-    cluster: Callable[..., Cluster],
     registered_user: Callable[..., Dict],
+    cluster: Callable[..., Cluster],
     async_client: httpx.AsyncClient,
 ):
     user_1 = registered_user()

@@ -38,7 +38,7 @@ async def _get_cluster_details_with_id(
     dask_clients_pool: DaskClientsPool,
 ) -> ClusterDetailsGet:
     log.debug("Getting details for cluster '%s'", cluster_id)
-    cluster: Cluster = dask_clients_pool.default_cluster(settings)
+    cluster: Cluster = settings.default_cluster
     if cluster_id != settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID:
         cluster = await clusters_repo.get_cluster(user_id, cluster_id)
     async with dask_clients_pool.acquire(cluster) as client:
@@ -72,9 +72,8 @@ async def list_clusters(
     user_id: UserID,
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
     settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
-    dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
-    default_cluster = dask_clients_pool.default_cluster(settings)
+    default_cluster = settings.default_cluster
     return [default_cluster] + await clusters_repo.list_clusters(user_id)
 
 
@@ -86,10 +85,9 @@ async def list_clusters(
 )
 async def get_default_cluster(
     settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
-    dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
     assert settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_ID is not None  # nosec
-    cluster = dask_clients_pool.default_cluster(settings)
+    cluster = settings.default_cluster
     return cluster
 
 
@@ -211,9 +209,8 @@ async def test_cluster_connection(
 )
 async def test_default_cluster_connection(
     settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
-    dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
-    cluster = dask_clients_pool.default_cluster(settings)
+    cluster = settings.default_cluster
     return await test_scheduler_endpoint(
         endpoint=cluster.endpoint, authentication=cluster.authentication
     )

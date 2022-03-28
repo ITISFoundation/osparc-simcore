@@ -228,7 +228,7 @@ def test_default_cluster_correctly_initialized(
     dask_scheduler_settings = (
         client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
     )
-    default_cluster = DaskClientsPool.default_cluster(dask_scheduler_settings)
+    default_cluster = dask_scheduler_settings.default_cluster
     assert default_cluster
     assert (
         default_cluster.endpoint
@@ -263,7 +263,7 @@ async def test_acquire_default_cluster(
     dask_scheduler_settings = (
         client.app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
     )
-    default_cluster = DaskClientsPool.default_cluster(dask_scheduler_settings)
+    default_cluster = dask_scheduler_settings.default_cluster
     assert default_cluster
     async with dask_clients_pool.acquire(default_cluster) as dask_client:
 

@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import AsyncIterator, Dict, Optional
 
 from fastapi import FastAPI
-from models_library.clusters import Cluster, ClusterID, DefaultCluster
+from models_library.clusters import Cluster, ClusterID
 
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
@@ -30,13 +30,6 @@ class DaskClientsPool:
     def __post_init__(self):
         # NOTE: to ensure the correct loop is used
         self._client_acquisition_lock = asyncio.Lock()
-
-    @staticmethod
-    def default_cluster(settings: ComputationalBackendSettings):
-        return DefaultCluster.construct(
-            endpoint=settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL,
-            authentication=settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH,
-        )  # type: ignore
 
     def register_handlers(self, task_handlers: TaskHandlers) -> None:
         self._task_handlers = task_handlers
@@ -65,6 +58,7 @@ class DaskClientsPool:
     async def acquire(self, cluster: Cluster) -> AsyncIterator[DaskClient]:
         async def _concurently_safe_acquire_client() -> DaskClient:
             async with self._client_acquisition_lock:
+                assert isinstance(cluster.id, int)  # nosec
                 dask_client = self._cluster_to_client_map.get(cluster.id)
 
                 # we create a new client if that cluster was never used before
@@ -114,9 +108,10 @@ def setup(app: FastAPI, settings: ComputationalBackendSettings) -> None:
         app.state.dask_clients_pool = await DaskClientsPool.create(
             app=app, settings=settings
         )
+
         logger.info(
             "Default cluster is set to %s",
-            f"{DaskClientsPool.default_cluster(settings)!r}",
+            f"{settings.default_cluster!r}",
         )
 
     async def on_shutdown() -> None:
