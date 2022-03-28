@@ -8,7 +8,7 @@ from pydantic import AnyUrl, parse_obj_as
 from simcore_service_director_v2.api.dependencies.scheduler import (
     get_scheduler_settings,
 )
-from simcore_service_director_v2.utils.dask_client_utils import test_gateway_endpoint
+from simcore_service_director_v2.utils.dask_client_utils import test_scheduler_endpoint
 from starlette import status
 
 from ...core.errors import ClusterInvalidOperationError, ConfigurationError
@@ -193,7 +193,7 @@ async def test_cluster_connection(
     cluster_auth: ClusterPing,
 ):
     try:
-        return await test_gateway_endpoint(
+        return await test_scheduler_endpoint(
             endpoint=cluster_auth.endpoint, authentication=cluster_auth.authentication
         )
 
@@ -201,6 +201,22 @@ async def test_cluster_connection(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"{e}"
         ) from e
+
+
+@router.post(
+    "/default:ping",
+    summary="Test cluster connection",
+    response_model=None,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def test_default_cluster_connection(
+    settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
+    dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
+):
+    cluster = dask_clients_pool.default_cluster(settings)
+    return await test_scheduler_endpoint(
+        endpoint=cluster.endpoint, authentication=cluster.authentication
+    )
 
 
 @router.post(
@@ -215,6 +231,6 @@ async def test_specific_cluster_connection(
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
 ):
     cluster = await clusters_repo.get_cluster(user_id, cluster_id)
-    return await test_gateway_endpoint(
+    return await test_scheduler_endpoint(
         endpoint=cluster.endpoint, authentication=cluster.authentication
     )

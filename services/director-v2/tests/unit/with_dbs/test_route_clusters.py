@@ -789,3 +789,16 @@ async def test_ping_specific_cluster(
     )
     response.raise_for_status()
     assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+async def test_ping_default_cluster(
+    clusters_config: None,
+    registered_user: Callable[..., Dict],
+    async_client: httpx.AsyncClient,
+):
+    user_1 = registered_user()
+    # try to ping one that does not exist
+    response = await async_client.post(
+        f"/v2/clusters/default:ping?user_id={user_1['id']}"
+    )
+    assert response.status_code == status.HTTP_204_NO_CONTENT

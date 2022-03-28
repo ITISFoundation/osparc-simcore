@@ -28,6 +28,7 @@ from ..core.errors import (
     DaskClientRequestError,
     DaskClusterError,
     DaskGatewayServerError,
+    SchedulerError,
 )
 
 DaskGatewayAuths = Union[
@@ -159,10 +160,14 @@ async def _connect_with_gateway_and_create_cluster(
         raise DaskGatewayServerError(endpoint=endpoint, error=exc) from exc
 
 
+def _is_internal_scheduler(authentication: ClusterAuthentication) -> bool:
+    return isinstance(authentication, NoAuthentication)
+
+
 async def create_internal_client_based_on_auth(
     endpoint: AnyUrl, authentication: ClusterAuthentication
 ) -> DaskSubSystem:
-    if isinstance(authentication, NoAuthentication):
+    if _is_internal_scheduler(authentication):
         # if no auth then we go for a standard scheduler connection
         return await _connect_to_dask_scheduler(endpoint)
     # we do have some auth, so it is going through a gateway
@@ -193,7 +198,7 @@ async def get_gateway_auth_from_params(
 _PING_TIMEOUT_S: Final[int] = 5
 
 
-async def test_gateway_endpoint(
+async def test_scheduler_endpoint(
     endpoint: AnyUrl, authentication: ClusterAuthentication
 ) -> None:
     """This method will try to connect to a gateway endpoint and raise a ConfigurationError in case of problem
@@ -201,30 +206,39 @@ async def test_gateway_endpoint(
     :raises ConfigurationError: contians some information as to why the connection failed
     """
     try:
-        gateway_auth = await get_gateway_auth_from_params(authentication)
-        async with dask_gateway.Gateway(
-            address=f"{endpoint}", auth=gateway_auth, asynchronous=True
-        ) as gateway:
-            # this does not yet create any connection to the underlying gateway.
-            # since using a fct from dask gateway is going to timeout after a long time
-            # we bypass the pinging by calling in ourselves with a short timeout
-            async with httpx.AsyncClient(
-                transport=httpx.AsyncHTTPTransport(retries=2)
-            ) as client:
-                # try to get something the api shall return fast
-                response = await client.get(
-                    f"{endpoint}/api/version", timeout=_PING_TIMEOUT_S
-                )
-                response.raise_for_status()
-                # now we try to list the clusters to check the gateway responds in a sensible way
-                await gateway.list_clusters()
+        if _is_internal_scheduler(authentication):
+            client = await distributed.Client(
+                address=endpoint, timeout=_PING_TIMEOUT_S, asynchronous=True
+            )
+            if not client.status == "running":
+                raise SchedulerError("internal scheduler is not running!")
 
-            logger.debug("Pinging %s, succeeded", f"{endpoint=}")
+        else:
+            gateway_auth = await get_gateway_auth_from_params(authentication)
+            async with dask_gateway.Gateway(
+                address=f"{endpoint}", auth=gateway_auth, asynchronous=True
+            ) as gateway:
+                # this does not yet create any connection to the underlying gateway.
+                # since using a fct from dask gateway is going to timeout after a long time
+                # we bypass the pinging by calling in ourselves with a short timeout
+                async with httpx.AsyncClient(
+                    transport=httpx.AsyncHTTPTransport(retries=2)
+                ) as client:
+                    # try to get something the api shall return fast
+                    response = await client.get(
+                        f"{endpoint}/api/version", timeout=_PING_TIMEOUT_S
+                    )
+                    response.raise_for_status()
+                    # now we try to list the clusters to check the gateway responds in a sensible way
+                    await gateway.list_clusters()
+
+                logger.debug("Pinging %s, succeeded", f"{endpoint=}")
     except (
         dask_gateway.GatewayServerError,
         ClientConnectionError,
         ClientResponseError,
         httpx.HTTPError,
+        SchedulerError,
     ) as exc:
         logger.debug("Pinging %s, failed: %s", f"{endpoint=}", f"{exc=!r}")
         raise ConfigurationError(
