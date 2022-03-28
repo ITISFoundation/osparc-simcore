@@ -1,7 +1,6 @@
 import logging
 import urllib.parse
-from collections import namedtuple
-from typing import Set
+from typing import NamedTuple, Set
 from uuid import UUID
 
 from models_library.project_networks import (
@@ -13,7 +12,7 @@ from models_library.project_networks import (
     ProjectNetworks,
 )
 from models_library.projects import ProjectAtDB, ProjectID, Workbench
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.services import ServiceKeyVersion
@@ -30,8 +29,18 @@ from ..modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 
 logger = logging.getLogger(__name__)
 
-_ToRemove = namedtuple("_ToRemove", "project_id, node_id, network_name")
-_ToAdd = namedtuple("_ToAdd", "project_id, node_id, network_name, network_alias")
+
+class _ToRemove(NamedTuple):
+    project_id: ProjectID
+    node_id: NodeIDStr
+    network_name: str
+
+
+class _ToAdd(NamedTuple):
+    project_id: ProjectID
+    node_id: NodeIDStr
+    network_name: str
+    network_alias: str
 
 
 def _network_name(project_id: ProjectID, user_defined: str) -> DockerNetworkName:
