@@ -147,9 +147,10 @@ async def director_v2_client(
     monkeypatch.delenv("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", raising=False)
     monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
 
-    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "false")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_SCHEDULER_ENABLED", "false")
+
     monkeypatch.setenv("POSTGRES_HOST", f"{get_localhost_ip()}")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
     monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
 
     # patch host for dynamic-sidecar, not reachable via localhost

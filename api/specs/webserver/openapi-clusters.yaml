@@ -33,9 +33,9 @@ paths:
             application/json:
               schema:
                 $ref: "./components/schemas/cluster.yaml#/ClusterEnveloped"
-
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
+
   director_v2_clusters_ping:
     post:
       summary: test connectivity with cluster
@@ -52,9 +52,9 @@ paths:
       responses:
         "204":
           description: connectivity is OK
-
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
+
   /clusters/{cluster_id}:
     parameters:
       - name: cluster_id
@@ -105,6 +105,24 @@ paths:
       responses:
         "204":
           description: cluster has been successfully deleted
+        default:
+          $ref: "#/components/responses/DefaultErrorResponse"
+
+  director_v2_clusters_cluster_id_ping:
+    parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: test connectivity with cluster
+      operationId: ping_cluster_cluster_id_handler
+      tags:
+        - cluster
+      responses:
+        "204":
+          description: connectivity is OK
         default:
           $ref: "#/components/responses/DefaultErrorResponse"
 

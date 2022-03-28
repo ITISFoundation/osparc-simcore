@@ -31,3 +31,9 @@ class ClusterPingError(DirectorServiceError):
     """Cluster ping failed"""
 
     msg_template = "Connection to cluster in {endpoint!r} failed, received {reason!r}"
+
+
+class ClusterDefinedPingError(DirectorServiceError):
+    """Cluster ping failed"""
+
+    msg_template = "Connection to cluster {cluster_id!r} failed, received {reason!r}"
