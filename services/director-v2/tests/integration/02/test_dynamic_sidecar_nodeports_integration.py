@@ -370,7 +370,7 @@ def temp_dir(tmpdir: LocalPath) -> Path:
 
 
 @pytest.fixture
-async def ensure_project_networks_in_db(
+async def project_networks_db(
     initialized_app: FastAPI, current_study: ProjectAtDB
 ) -> None:
     # NOTE: director-v2 does not have access to the webserver which creates this
@@ -852,7 +852,7 @@ async def test_nodeports_integration(
     # pylint: disable=too-many-arguments
     minimal_configuration: None,
     cleanup_services_and_networks: None,
-    ensure_project_networks_in_db: None,
+    project_networks_db: None,
     update_project_workbench_with_comp_tasks: Callable,
     async_client: httpx.AsyncClient,
     db_manager: DBManager,

@@ -8,11 +8,7 @@ from models_library.basic_types import PortInt, VersionTag
 from pydantic import Field, PositiveInt
 from servicelib.aiohttp.application_keys import APP_CLIENT_SESSION_KEY
 from settings_library.base import BaseCustomSettings
-from settings_library.utils_service import (
-    DEFAULT_FASTAPI_PORT,
-    MixinServiceSettings,
-    URLPart,
-)
+from settings_library.utils_service import DEFAULT_FASTAPI_PORT, MixinServiceSettings
 from yarl import URL
 
 from ._constants import APP_SETTINGS_KEY
@@ -29,10 +25,6 @@ class DirectorV2Settings(BaseCustomSettings, MixinServiceSettings):
     @cached_property
     def base_url(self) -> URL:
         return URL(self._build_api_base_url(prefix="DIRECTOR_V2"))
-
-    @cached_property
-    def base_url_no_vtag(self) -> URL:
-        return URL(self._compose_url(prefix="DIRECTOR_V2", port=URLPart.REQUIRED))
 
     # DESIGN NOTE:
     # - Timeouts are typically used in clients (total/read/connection timeouts) or asyncio calls
