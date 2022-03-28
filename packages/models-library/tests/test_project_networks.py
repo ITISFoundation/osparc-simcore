@@ -46,6 +46,18 @@ def test_service_settings_model_examples(
 
 
 @pytest.mark.parametrize(
+    "valid_example",
+    [
+        {"nSetwork_name12-s": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
+        {"C": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
+        {"shr-ntwrk_5c743ad2-8fdb-11ec-bb3a-02420a000008_default": {}},
+    ],
+)
+def test_networks_with_aliases_ok(valid_example: Dict) -> None:
+    assert NetworksWithAliases.parse_obj(valid_example)
+
+
+@pytest.mark.parametrize(
     "invalid_example",
     [
         {"1_NO_START_WITH_NUMBER": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
@@ -63,18 +75,6 @@ def test_service_settings_model_examples(
 def test_networks_with_aliases_fail(invalid_example: Dict) -> None:
     with pytest.raises(ValidationError):
         assert NetworksWithAliases.parse_obj(invalid_example)
-
-
-@pytest.mark.parametrize(
-    "valid_example",
-    [
-        {"nSetwork_name12-s": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
-        {"C": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
-        {"shr-ntwrk_5c743ad2-8fdb-11ec-bb3a-02420a000008_default": {}},
-    ],
-)
-def test_networks_with_aliases_fail(valid_example: Dict) -> None:
-    assert NetworksWithAliases.parse_obj(valid_example)
 
 
 @pytest.mark.parametrize("network_name", ["a", "ok", "a_", "A_", "a1", "a-"])
