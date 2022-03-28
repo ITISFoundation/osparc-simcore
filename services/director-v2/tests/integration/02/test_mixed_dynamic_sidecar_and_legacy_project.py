@@ -5,7 +5,7 @@
 import asyncio
 import logging
 import os
-from typing import AsyncIterable, Callable, Dict
+from typing import Any, AsyncIterable, Callable, Dict, Iterable
 
 import aiodocker
 import httpx
@@ -86,8 +86,14 @@ def uuid_dynamic_sidecar_compose(faker: Faker) -> str:
 
 
 @pytest.fixture
+def user_dict(registered_user: Callable) -> Iterable[Dict[str, Any]]:
+    yield registered_user()
+
+
+@pytest.fixture
 async def dy_static_file_server_project(
     minimal_configuration: None,
+    user_dict: Dict[str, Any],
     project: Callable,
     dy_static_file_server_service: Dict,
     dy_static_file_server_dynamic_sidecar_service: Dict,
@@ -104,6 +110,7 @@ async def dy_static_file_server_project(
         }
 
     return project(
+        user=user_dict,
         workbench={
             uuid_legacy: _assemble_node_data(
                 dy_static_file_server_service,
@@ -117,7 +124,7 @@ async def dy_static_file_server_project(
                 dy_static_file_server_dynamic_sidecar_compose_spec_service,
                 "DYNAMIC_COMPOSE",
             ),
-        }
+        },
     )
 
 
@@ -211,7 +218,7 @@ def mock_dynamic_sidecar_client(mocker: MockerFixture) -> None:
 
 async def test_legacy_and_dynamic_sidecar_run(
     dy_static_file_server_project: ProjectAtDB,
-    registered_user: Callable,
+    user_dict: Dict[str, Any],
     services_endpoint: Dict[str, URL],
     director_v2_client: httpx.AsyncClient,
     ensure_services_stopped: None,
@@ -229,13 +236,13 @@ async def test_legacy_and_dynamic_sidecar_run(
     """
     # FIXME: ANE can you instead parametrize this test?
     # why do we need to run all these services at the same time? it would be simpler one by one
-    user = registered_user()
+
     await asyncio.gather(
         *(
             assert_start_service(
                 director_v2_client=director_v2_client,
                 # context
-                user_id=user["id"],
+                user_id=user_dict["id"],
                 project_id=str(dy_static_file_server_project.uuid),
                 # service
                 service_key=node.key,
