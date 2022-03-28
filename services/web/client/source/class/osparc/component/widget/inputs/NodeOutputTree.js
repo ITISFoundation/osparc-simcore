@@ -168,8 +168,10 @@ qx.Class.define("osparc.component.widget.inputs.NodeOutputTree", {
               unit
             } = osparc.utils.Units.decomposeXUnit(port.contentSchema["x_unit"]);
             const labels = osparc.utils.Units.getLabels(unit, unitPrefix);
-            portData.unitShort = labels.unitShort;
-            portData.unitLong = labels.unitLong;
+            if (labels !== null) {
+              portData.unitShort = labels.unitShort;
+              portData.unitLong = labels.unitLong;
+            }
           }
         }
         portData.icon = osparc.data.Converters.fromTypeToIcon(port.type);
