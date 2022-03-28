@@ -187,7 +187,7 @@ META = ServiceDockerData.parse_obj(
             ),
             "radiation": build_input(
                 {
-                    "title": "Radiation",
+                    "title": "Radiati0n", # it's not a typo
                     "x_unit": "curie",
                     "type": "number",
                 }
