@@ -263,6 +263,24 @@ async def test_networks(
         assert await docker_network.delete() is True
 
 
+@pytest.fixture
+async def existing_network(
+    async_docker_client: aiodocker.docker.Docker, project_id: ProjectID
+) -> AsyncIterable[str]:
+    name = "test_with_existing_network_by_project_id"
+    network_config = {
+        "Name": name,
+        "Driver": "overlay",
+        "Labels": {"project_id": f"{project_id}"},
+    }
+    network_id = await docker_api.create_network(network_config)
+
+    yield name
+
+    network = await async_docker_client.networks.get(network_id)
+    assert await network.delete() is True
+
+
 # UTILS
 
 
@@ -622,9 +640,12 @@ async def test_get_projects_networks_containers(
 
 
 async def test_get_or_create_networks_ids(
-    test_networks: List[str], project_id: ProjectID
+    test_networks: List[str], existing_network: str, project_id: ProjectID
 ):
+    # test with duplicate networks and existing networks
+    networks_to_test = test_networks + test_networks + [existing_network]
     network_ids = await docker_api.get_or_create_networks_ids(
-        networks=test_networks + test_networks, project_id=project_id
+        networks=networks_to_test,
+        project_id=project_id,
     )
-    assert set(test_networks) == set(network_ids.keys())
+    assert set(networks_to_test) == set(network_ids.keys())
