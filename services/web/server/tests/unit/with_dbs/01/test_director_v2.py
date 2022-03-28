@@ -206,3 +206,11 @@ async def test_delete_cluster(
 @given(cluster_ping=st.builds(ClusterPing))
 async def test_ping_cluster(mocked_director_v2, client, cluster_ping: ClusterPing):
     await director_v2_api.ping_cluster(client.app, cluster_ping=cluster_ping)
+
+
+async def test_ping_specific_cluster(
+    mocked_director_v2, client, user_id: UserID, cluster_id: ClusterID
+):
+    await director_v2_api.ping_specific_cluster(
+        client.app, user_id=user_id, cluster_id=cluster_id
+    )

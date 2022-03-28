@@ -6,8 +6,6 @@ import json
 import random
 from typing import Any, Callable, Dict, Iterator, List
 
-from settings_library.utils_cli import create_json_encoder_wo_secrets
-
 import httpx
 import pytest
 import sqlalchemy as sa
@@ -28,6 +26,7 @@ from models_library.clusters import (
 )
 from pydantic import AnyHttpUrl, SecretStr, parse_obj_as
 from settings_library.rabbit import RabbitSettings
+from settings_library.utils_cli import create_json_encoder_wo_secrets
 from simcore_postgres_database.models.clusters import ClusterType, clusters
 from simcore_service_director_v2.models.schemas.clusters import (
     ClusterCreate,
@@ -51,7 +50,7 @@ def clusters_config(
     dask_spec_local_cluster: SpecCluster,
 ):
     monkeypatch.setenv("DIRECTOR_V2_POSTGRES_ENABLED", "1")
-    monkeypatch.setenv("DIRECTOR_V2_DASK_CLIENT_ENABLED", "1")
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "1")
     monkeypatch.setenv("R_CLONE_S3_PROVIDER", "MINIO")
 
 
@@ -710,6 +709,42 @@ async def test_ping_cluster(
                 encoder=create_json_encoder_wo_secrets(SimpleAuthentication),
             )
         ),
+    )
+    response.raise_for_status()
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+
+
+async def test_ping_specific_cluster(
+    clusters_config: None,
+    registered_user: Callable[..., Dict],
+    cluster: Callable[..., Cluster],
+    async_client: httpx.AsyncClient,
+    local_dask_gateway_server: DaskGatewayServer,
+):
+    user_1 = registered_user()
+    # try to ping one that does not exist
+    response = await async_client.get(
+        f"/v2/clusters/15615165165165:ping?user_id={user_1['id']}"
+    )
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    # let's create some clusters and ping one
+    a_bunch_of_clusters = [
+        cluster(
+            user_1,
+            name=f"pytest cluster{n:04}",
+            endpoint=local_dask_gateway_server.address,
+            authentication=SimpleAuthentication(
+                username="pytest_user",
+                password=parse_obj_as(SecretStr, local_dask_gateway_server.password),
+            ),
+        )
+        for n in range(111)
+    ]
+    the_cluster = random.choice(a_bunch_of_clusters)
+
+    response = await async_client.post(
+        f"/v2/clusters/{the_cluster.id}:ping?user_id={user_1['id']}",
     )
     response.raise_for_status()
     assert response.status_code == status.HTTP_204_NO_CONTENT

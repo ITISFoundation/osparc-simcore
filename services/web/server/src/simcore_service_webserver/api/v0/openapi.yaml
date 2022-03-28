@@ -4887,6 +4887,23 @@ paths:
           description: cluster has been successfully deleted
         default:
           $ref: '#/components/responses/DefaultErrorResponse'
+  '/clusters/{cluster_id}:ping':
+    parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: test connectivity with cluster
+      operationId: ping_cluster_cluster_id_handler
+      tags:
+        - cluster
+      responses:
+        '204':
+          description: connectivity is OK
+        default:
+          $ref: '#/components/responses/DefaultErrorResponse'
   '/clusters/{cluster_id}/details':
     parameters:
       - name: cluster_id
