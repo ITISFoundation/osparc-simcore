@@ -22,14 +22,11 @@ qx.Class.define("osparc.ui.form.ContentSchemaHelper", {
     getDomainText: function(s) {
       let rangeText = null;
       if ("minimum" in s && "maximum" in s) {
-        rangeText = qx.locale.Manager.tr("Domain ");
-        rangeText += `[${s.minimum}, ${s.maximum}]`;
+        rangeText = `&isin; [${s.minimum}, ${s.maximum}] `;
       } else if ("minimum" in s) {
-        rangeText = qx.locale.Manager.tr("Domain ");
-        rangeText += `[${s.minimum}, &infin;]`;
+        rangeText = `&isin; [${s.minimum}, &infin;] `;
       } else if ("maximum" in s) {
-        rangeText = qx.locale.Manager.tr("Domain ");
-        rangeText += `[-&infin;, ${s.maximum}]`;
+        rangeText = `&isin; [-&infin;, ${s.maximum}] `;
       }
       if (rangeText && "x_unit" in s) {
         const {
