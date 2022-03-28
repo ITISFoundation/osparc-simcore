@@ -63,20 +63,14 @@ qx.Class.define("osparc.component.service.ServiceButtonSmall", {
         const hint = new osparc.ui.hint.Hint(this, serviceModel.getDescription()).set({
           active: false
         });
-        const showHint = () => {
-          hint.show();
-        };
-        const hideHint = () => {
-          hint.exclude();
-        };
+        const showHint = () => hint.show();
+        const hideHint = () => hint.exclude();
         this.addListener("mouseover", showHint);
         [
           "mouseout",
           "dbltap",
           "keypress"
-        ].forEach(e => {
-          this.addListener(e, hideHint);
-        });
+        ].forEach(e => this.addListener(e, hideHint));
       } else {
         serviceModel.bind("description", this.getChildControl("subtitle-text"), "value");
         this.getChildControl("subtitle-text").set({

@@ -259,7 +259,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
         this._loadingResourcesBtn &&
         this._resourcesContainer.nextRequest !== null &&
         (this._resourcesContainer.getVisibles().length < osparc.dashboard.ResourceBrowserBase.MIN_FILTERED_STUDIES ||
-        this._loadingResourcesBtn.checkIsOnScreen())
+        osparc.utils.Utils.checkIsOnScreen(this._loadingResourcesBtn))
       ) {
         this.reloadResources();
       }

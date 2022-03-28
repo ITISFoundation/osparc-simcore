@@ -43,6 +43,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
       barPosition: "top"
     });
 
+    osparc.wrapper.Plotly.getInstance().init();
     osparc.wrapper.Svg.getInstance().init();
     osparc.wrapper.JsonDiffPatch.getInstance().init();
     osparc.wrapper.JsonTreeViewer.getInstance().init();
@@ -50,7 +51,7 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     osparc.wrapper.RadialMenu.getInstance().init()
       .then(loaded => {
         if (loaded) {
-          // hack to trigger the fonts loading
+          // hack to trigger fonts loading
           const menu = osparc.wrapper.RadialMenu.getInstance().createMenu();
           menu.show();
           menu.hide();
