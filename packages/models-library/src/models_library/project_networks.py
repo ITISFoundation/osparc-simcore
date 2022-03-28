@@ -20,9 +20,12 @@ class NetworksWithAliases(DictModel[DockerNetworkName, ContainerAliases]):
     class Config:
         schema_extra = {
             "examples": [
-                {"nSetwork_name12-s": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
-                {"C": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}},
-                {"shr-ntwrk_5c743ad2-8fdb-11ec-bb3a-02420a000008_default": {}},
+                {
+                    "network_one": {
+                        "00000000-0000-0000-0000-000000000001": "an_alias_for_container_1_in_network_one",
+                        "00000000-0000-0000-0000-000000000002": "some_other_alias_for_container_2_in_network_one",
+                    }
+                },
             ]
         }
 
@@ -43,7 +46,10 @@ class ProjectNetworks(BaseModel):
             "example": {
                 "project_uuid": "ec5cdfea-f24e-4aa1-83b8-6dccfdc8cf4d",
                 "networks_with_aliases": {
-                    "nSetwork_name12-s": {"5057e2c1-d392-4d31-b5c8-19f3db780390": "ok"}
+                    "network_one": {
+                        "00000000-0000-0000-0000-000000000001": "an_alias_for_container_1_in_network_one",
+                        "00000000-0000-0000-0000-000000000002": "some_other_alias_for_container_2_in_network_one",
+                    }
                 },
             }
         }
