@@ -180,7 +180,7 @@ class Cluster(BaseCluster):
             return values
         owner_gid = values["owner"]
         # check owner is in the access rights, if not add it
-        access_rights = values.get("access_rights", values.get("accessRights"))
+        access_rights = values.get("access_rights", values.get("accessRights", {}))
         if owner_gid not in access_rights:
             access_rights[owner_gid] = CLUSTER_ADMIN_RIGHTS
         # check owner has full access
