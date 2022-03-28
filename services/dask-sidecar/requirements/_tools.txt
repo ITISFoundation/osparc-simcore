@@ -57,9 +57,7 @@ six==1.15.0
     #   -c requirements/_test.txt
     #   virtualenv
 toml==0.10.2
-    # via
-    #   -c requirements/_test.txt
-    #   pre-commit
+    # via pre-commit
 tomli==2.0.1
     # via
     #   -c requirements/_test.txt
@@ -71,9 +69,9 @@ typing-extensions==3.10.0.2 ; python_version < "3.9"
     #   -c requirements/_packages.txt
     #   -c requirements/_test.txt
     #   black
-virtualenv==20.13.4
+virtualenv==20.14.0
     # via pre-commit
-watchdog==2.1.6
+watchdog==2.1.7
     # via -r requirements/_tools.in
 wheel==0.37.1
     # via pip-tools

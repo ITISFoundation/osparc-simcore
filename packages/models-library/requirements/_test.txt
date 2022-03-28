@@ -13,7 +13,7 @@ aiosignal==1.2.0
     # via aiohttp
 alembic==1.7.7
     # via -r requirements/../../../packages/postgres-database/requirements/_base.in
-astroid==2.9.3
+astroid==2.11.2
     # via pylint
 async-timeout==4.0.2
     # via aiohttp
@@ -34,6 +34,8 @@ coverage==6.3.2
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
+dill==0.3.4
+    # via pylint
 docopt==0.6.2
     # via coveralls
 faker==13.3.3
@@ -53,7 +55,7 @@ idna==3.3
     #   yarl
 importlib-metadata==4.11.3
     # via alembic
-importlib-resources==5.4.0 ; python_version < "3.9"
+importlib-resources==5.6.0 ; python_version < "3.9"
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -68,7 +70,7 @@ mako==1.2.0
     # via alembic
 markupsafe==2.1.1
     # via mako
-mccabe==0.6.1
+mccabe==0.7.0
     # via pylint
 multidict==6.0.2
     # via
@@ -91,7 +93,7 @@ psycopg2-binary==2.9.3
     # via sqlalchemy
 py==1.11.0
     # via pytest
-pylint==2.12.2
+pylint==2.13.2
     # via -r requirements/_test.in
 pyparsing==3.0.7
     # via packaging
@@ -107,7 +109,7 @@ pytest==7.1.1
     #   pytest-sugar
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
-pytest-asyncio==0.18.2
+pytest-asyncio==0.18.3
     # via pytest-aiohttp
 pytest-cov==3.0.0
     # via -r requirements/_test.in
@@ -140,11 +142,10 @@ sqlalchemy==1.4.32
     #   alembic
 termcolor==1.1.0
     # via pytest-sugar
-toml==0.10.2
-    # via pylint
 tomli==2.0.1
     # via
     #   coverage
+    #   pylint
     #   pytest
 typing-extensions==4.1.1
     # via
@@ -156,7 +157,7 @@ urllib3==1.26.9
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-wrapt==1.13.3
+wrapt==1.14.0
     # via astroid
 yarl==1.7.2
     # via

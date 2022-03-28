@@ -10,7 +10,7 @@ aiohttp==3.8.1
     #   pytest-aiohttp
 aiosignal==1.2.0
     # via aiohttp
-astroid==2.9.3
+astroid==2.11.2
     # via pylint
 async-timeout==4.0.2
     # via aiohttp
@@ -31,6 +31,8 @@ coverage==6.3.2
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
+dill==0.3.4
+    # via pylint
 docopt==0.6.2
     # via coveralls
 faker==13.3.3
@@ -52,7 +54,7 @@ isort==5.10.1
     # via pylint
 lazy-object-proxy==1.7.1
     # via astroid
-mccabe==0.6.1
+mccabe==0.7.0
     # via pylint
 multidict==6.0.2
     # via
@@ -74,7 +76,7 @@ pprintpp==0.4.0
     # via pytest-icdiff
 py==1.11.0
     # via pytest
-pylint==2.12.2
+pylint==2.13.2
     # via -r requirements/_test.in
 pyparsing==3.0.7
     # via
@@ -92,7 +94,7 @@ pytest==7.1.1
     #   pytest-sugar
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
-pytest-asyncio==0.18.2
+pytest-asyncio==0.18.3
     # via pytest-aiohttp
 pytest-cov==3.0.0
     # via -r requirements/_test.in
@@ -119,11 +121,10 @@ six==1.16.0
     # via python-dateutil
 termcolor==1.1.0
     # via pytest-sugar
-toml==0.10.2
-    # via pylint
 tomli==2.0.1
     # via
     #   coverage
+    #   pylint
     #   pytest
 typing-extensions==4.1.1 ; python_version < "3.9"
     # via
@@ -134,7 +135,7 @@ urllib3==1.26.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   requests
-wrapt==1.13.3
+wrapt==1.14.0
     # via astroid
 yarl==1.7.2
     # via aiohttp

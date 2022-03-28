@@ -13,7 +13,7 @@ aiosignal==1.2.0
     # via
     #   -c requirements/_aiohttp.txt
     #   aiohttp
-astroid==2.9.3
+astroid==2.11.2
     # via pylint
 async-timeout==4.0.2
     # via
@@ -51,6 +51,8 @@ cryptography==36.0.2
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   paramiko
+dill==0.3.4
+    # via pylint
 distro==1.7.0
     # via docker-compose
 docker==5.0.3
@@ -92,7 +94,7 @@ lazy-object-proxy==1.4.3
     # via
     #   -c requirements/_aiohttp.txt
     #   astroid
-mccabe==0.6.1
+mccabe==0.7.0
     # via pylint
 multidict==6.0.2
     # via
@@ -103,9 +105,8 @@ openapi-schema-validator==0.2.3
     # via
     #   -c requirements/_aiohttp.txt
     #   openapi-spec-validator
-openapi-spec-validator==0.3.1
+openapi-spec-validator==0.4.0
     # via
-    #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_aiohttp.txt
     #   -r requirements/_test.in
 packaging==21.3
@@ -122,7 +123,7 @@ py==1.11.0
     # via pytest
 pycparser==2.21
     # via cffi
-pylint==2.12.2
+pylint==2.13.2
     # via -r requirements/_test.in
 pynacl==1.5.0
     # via paramiko
@@ -132,7 +133,7 @@ pyrsistent==0.18.1
     # via
     #   -c requirements/_aiohttp.txt
     #   jsonschema
-pytest==6.2.5
+pytest==7.1.1
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -144,11 +145,11 @@ pytest==6.2.5
     #   pytest-sugar
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
-pytest-asyncio==0.18.2
+pytest-asyncio==0.18.3
     # via pytest-aiohttp
 pytest-cov==3.0.0
     # via -r requirements/_test.in
-pytest-docker==0.10.3
+pytest-docker==0.11.0
     # via -r requirements/_test.in
 pytest-instafail==0.4.2
     # via -r requirements/_test.in
@@ -160,7 +161,7 @@ pytest-sugar==0.9.4
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
-python-dotenv==0.19.2
+python-dotenv==0.20.0
     # via docker-compose
 pyyaml==5.4.1
     # via
@@ -181,7 +182,6 @@ six==1.16.0
     #   bcrypt
     #   dockerpty
     #   jsonschema
-    #   openapi-spec-validator
     #   paramiko
     #   python-dateutil
     #   websocket-client
@@ -189,12 +189,11 @@ termcolor==1.1.0
     # via pytest-sugar
 texttable==1.6.4
     # via docker-compose
-toml==0.10.2
+tomli==2.0.1
     # via
+    #   coverage
     #   pylint
     #   pytest
-tomli==2.0.1
-    # via coverage
 typing-extensions==4.1.1
     # via
     #   -c requirements/_base.txt
@@ -209,7 +208,7 @@ websocket-client==0.59.0
     # via
     #   docker
     #   docker-compose
-wrapt==1.13.3
+wrapt==1.14.0
     # via astroid
 yarl==1.7.2
     # via

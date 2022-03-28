@@ -25,11 +25,17 @@ AFTER_PATTERN = re.compile(r"^\+([\w-]+)==([0-9\.post]+)")
 
 
 def dump_changes(filename: Path):
-    subprocess.run(f"git --no-pager diff > {filename}", shell=True, check=True)
+    if filename.exists():
+        filename.unlink()
+    subprocess.run(
+        f"git --no-pager diff master..$(git rev-parse --abbrev-ref HEAD) > {filename}",
+        shell=True,
+        check=True,
+    )
 
 
 def tag_upgrade(from_version: Version, to_version: Version):
-    assert from_version < to_version
+    #assert from_version < to_version, (from_version, to_version)
     if from_version.major < to_version.major:
         return "**MAJOR**"
     if from_version.minor < to_version.minor:
@@ -77,6 +83,8 @@ def main_changes_stats():
             # TODO: if major, get link to release notes
             from_versions = set(str(v) for v in before[name])
             to_versions = set(str(v) for v in after[name])
+
+            # print("before", sorted(set(before[name])), "after", sorted(set(after[name])))
 
             print(
                 "|",
@@ -161,7 +169,7 @@ def main_dep_stats(exclude: Optional[Set] = None):
             deps[name][r.target].append(version)
 
     with printing_table(
-        columns=["#", "name", "versions-base", "versions-test", "versons-tool"]
+        columns=["#", "name", "versions-base", "versions-test", "versions-tool"]
     ):
         for i, name in enumerate(sorted(deps.keys()), start=1):
 
@@ -188,5 +196,5 @@ def main_dep_stats(exclude: Optional[Set] = None):
 
 
 if __name__ == "__main__":
-    # main_changes_stats()
-    main_dep_stats(exclude={"*/director/*"})
+    main_changes_stats()
+    # main_dep_stats(exclude={"*/director/*"})

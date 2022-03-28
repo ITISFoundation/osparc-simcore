@@ -26,7 +26,7 @@ heapdict==1.0.1
     # via zict
 idna==3.3
     # via email-validator
-jinja2==3.0.3
+jinja2==3.1.1
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt

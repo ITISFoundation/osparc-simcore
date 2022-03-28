@@ -16,11 +16,11 @@ aiosignal==1.2.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-alembic==1.7.5
+alembic==1.7.7
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-astroid==2.9.3
+astroid==2.11.2
     # via pylint
 async-timeout==4.0.2
     # via
@@ -39,7 +39,7 @@ bcrypt==3.2.0
     # via paramiko
 certifi==2021.10.8
     # via requests
-cffi==1.14.5
+cffi==1.15.0
     # via
     #   -c requirements/_base.txt
     #   bcrypt
@@ -50,7 +50,7 @@ charset-normalizer==2.0.12
     #   -c requirements/_base.txt
     #   aiohttp
     #   requests
-click==8.0.3
+click==8.0.4
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -64,13 +64,15 @@ coverage==6.3.2
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-cryptography==3.4.7
+cryptography==36.0.2
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   paramiko
 deprecated==1.2.13
     # via redis
+dill==0.3.4
+    # via pylint
 distro==1.7.0
     # via docker-compose
 docker==5.0.3
@@ -100,30 +102,26 @@ greenlet==1.1.2
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
-hypothesis==6.39.4
+hypothesis==6.39.6
     # via -r requirements/_test.in
 icdiff==2.0.4
     # via pytest-icdiff
-idna==2.10
+idna==3.3
     # via
     #   -c requirements/_base.txt
     #   requests
     #   yarl
-importlib-metadata==4.10.0
+importlib-metadata==4.11.3
     # via
     #   -c requirements/_base.txt
     #   alembic
-importlib-resources==5.4.0 ; python_version < "3.9"
+importlib-resources==5.6.0 ; python_version < "3.9"
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   alembic
 iniconfig==1.1.1
     # via pytest
-isodate==0.6.1
-    # via
-    #   -c requirements/_base.txt
-    #   openapi-schema-validator
 isort==5.10.1
     # via pylint
 jsonschema==3.2.0
@@ -137,28 +135,27 @@ lazy-object-proxy==1.4.3
     # via
     #   -c requirements/_base.txt
     #   astroid
-mako==1.1.6
+mako==1.2.0
     # via
     #   -c requirements/_base.txt
     #   alembic
-markupsafe==1.1.1
+markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   mako
-mccabe==0.6.1
+mccabe==0.7.0
     # via pylint
-multidict==5.1.0
+multidict==6.0.2
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-openapi-schema-validator==0.1.6
+openapi-schema-validator==0.2.3
     # via
     #   -c requirements/_base.txt
     #   openapi-spec-validator
-openapi-spec-validator==0.3.1
+openapi-spec-validator==0.4.0
     # via
-    #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
 packaging==21.3
@@ -175,7 +172,7 @@ pluggy==1.0.0
     # via pytest
 pprintpp==0.4.0
     # via pytest-icdiff
-psycopg2-binary==2.9.1
+psycopg2-binary==2.9.3
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -183,21 +180,23 @@ ptvsd==4.3.2
     # via -r requirements/_test.in
 py==1.11.0
     # via pytest
-pycparser==2.20
+pycparser==2.21
     # via
     #   -c requirements/_base.txt
     #   cffi
-pylint==2.12.2
+pylint==2.13.2
     # via -r requirements/_test.in
 pynacl==1.5.0
     # via paramiko
 pyparsing==3.0.7
-    # via packaging
-pyrsistent==0.18.0
+    # via
+    #   -c requirements/_base.txt
+    #   packaging
+pyrsistent==0.18.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==6.2.5
+pytest==7.1.1
     # via
     #   -r requirements/_test.in
     #   pytest-aiohttp
@@ -210,11 +209,11 @@ pytest==6.2.5
     #   pytest-sugar
 pytest-aiohttp==1.0.4
     # via -r requirements/_test.in
-pytest-asyncio==0.18.2
+pytest-asyncio==0.18.3
     # via pytest-aiohttp
 pytest-cov==3.0.0
     # via -r requirements/_test.in
-pytest-docker==0.10.3
+pytest-docker==0.11.0
     # via -r requirements/_test.in
 pytest-icdiff==0.5
     # via -r requirements/_test.in
@@ -228,7 +227,7 @@ pytest-sugar==0.9.4
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
-python-dotenv==0.19.2
+python-dotenv==0.20.0
     # via
     #   -r requirements/_test.in
     #   docker-compose
@@ -251,16 +250,13 @@ six==1.16.0
     #   -c requirements/_base.txt
     #   bcrypt
     #   dockerpty
-    #   isodate
     #   jsonschema
-    #   openapi-schema-validator
-    #   openapi-spec-validator
     #   paramiko
     #   python-dateutil
     #   websocket-client
 sortedcontainers==2.4.0
     # via hypothesis
-sqlalchemy==1.4.31
+sqlalchemy==1.4.32
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -273,13 +269,12 @@ termcolor==1.1.0
     # via pytest-sugar
 texttable==1.6.4
     # via docker-compose
-toml==0.10.2
+tomli==2.0.1
     # via
+    #   coverage
     #   pylint
     #   pytest
-tomli==2.0.1
-    # via coverage
-typing-extensions==3.10.0.2
+typing-extensions==4.1.1
     # via
     #   -c requirements/_base.txt
     #   astroid
@@ -295,7 +290,7 @@ websocket-client==0.59.0
     #   docker-compose
 websockets==10.2
     # via -r requirements/_test.in
-wrapt==1.13.3
+wrapt==1.14.0
     # via
     #   astroid
     #   deprecated

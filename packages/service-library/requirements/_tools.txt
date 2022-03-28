@@ -52,9 +52,7 @@ six==1.16.0
     #   -c requirements/_test.txt
     #   virtualenv
 toml==0.10.2
-    # via
-    #   -c requirements/_test.txt
-    #   pre-commit
+    # via pre-commit
 tomli==2.0.1
     # via
     #   -c requirements/_test.txt
@@ -65,7 +63,7 @@ typing-extensions==4.1.1
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-virtualenv==20.13.4
+virtualenv==20.14.0
     # via pre-commit
 wheel==0.37.1
     # via pip-tools

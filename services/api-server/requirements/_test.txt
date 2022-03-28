@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/_test.txt --strip-extras requirements/_test.in
 #
-alembic==1.7.6
+alembic==1.7.7
     # via
     #   -c requirements/_base.txt
     #   -r requirements/../../../packages/postgres-database/requirements/_base.in
@@ -15,7 +15,7 @@ anyio==3.5.0
     #   httpcore
 asgi-lifespan==1.0.1
     # via -r requirements/_test.in
-astroid==2.9.3
+astroid==2.11.2
     # via pylint
 attrs==20.3.0
     # via
@@ -57,12 +57,14 @@ coverage==6.3.2
     #   pytest-cov
 coveralls==3.3.1
     # via -r requirements/_test.in
-cryptography==36.0.1
+cryptography==36.0.2
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   paramiko
+dill==0.3.4
+    # via pylint
 distro==1.7.0
     # via docker-compose
 docker==5.0.3
@@ -98,18 +100,18 @@ httpx==0.22.0
     # via
     #   -c requirements/_base.txt
     #   respx
-idna==2.10
+idna==3.3
     # via
     #   -c requirements/_base.txt
     #   anyio
     #   requests
     #   rfc3986
     #   yarl
-importlib-metadata==4.11.2
+importlib-metadata==4.11.3
     # via
     #   -c requirements/_base.txt
     #   alembic
-importlib-resources==5.4.0 ; python_version < "3.9"
+importlib-resources==5.6.0 ; python_version < "3.9"
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -125,15 +127,15 @@ jsonschema==3.2.0
     #   docker-compose
 lazy-object-proxy==1.7.1
     # via astroid
-mako==1.1.6
+mako==1.2.0
     # via
     #   -c requirements/_base.txt
     #   alembic
-markupsafe==2.1.0
+markupsafe==2.1.1
     # via
     #   -c requirements/_base.txt
     #   mako
-mccabe==0.6.1
+mccabe==0.7.0
     # via pylint
 multidict==6.0.2
     # via
@@ -161,7 +163,7 @@ pycparser==2.21
     # via
     #   -c requirements/_base.txt
     #   cffi
-pylint==2.12.2
+pylint==2.13.2
     # via -r requirements/_test.in
 pynacl==1.5.0
     # via paramiko
@@ -173,18 +175,18 @@ pyrsistent==0.18.1
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-pytest==6.2.5
+pytest==7.1.1
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-docker
     #   pytest-mock
-pytest-asyncio==0.18.2
+pytest-asyncio==0.18.3
     # via -r requirements/_test.in
 pytest-cov==3.0.0
     # via -r requirements/_test.in
-pytest-docker==0.10.3
+pytest-docker==0.11.0
     # via -r requirements/_test.in
 pytest-mock==3.7.0
     # via -r requirements/_test.in
@@ -192,7 +194,7 @@ pytest-runner==6.0.0
     # via -r requirements/_test.in
 python-dateutil==2.8.2
     # via faker
-python-dotenv==0.19.2
+python-dotenv==0.20.0
     # via
     #   -c requirements/_base.txt
     #   docker-compose
@@ -231,7 +233,7 @@ sniffio==1.2.0
     #   asgi-lifespan
     #   httpcore
     #   httpx
-sqlalchemy==1.4.31
+sqlalchemy==1.4.32
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -244,18 +246,17 @@ tenacity==8.0.1
     #   -r requirements/_test.in
 texttable==1.6.4
     # via docker-compose
-toml==0.10.2
+tomli==2.0.1
     # via
+    #   coverage
     #   pylint
     #   pytest
-tomli==2.0.1
-    # via coverage
 typing-extensions==4.1.1
     # via
     #   -c requirements/_base.txt
     #   astroid
     #   pylint
-urllib3==1.26.8
+urllib3==1.26.9
     # via
     #   -c requirements/../../../packages/postgres-database/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
@@ -265,7 +266,7 @@ websocket-client==0.59.0
     # via
     #   docker
     #   docker-compose
-wrapt==1.13.3
+wrapt==1.14.0
     # via astroid
 yarl==1.7.2
     # via
