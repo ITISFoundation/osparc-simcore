@@ -77,16 +77,14 @@ def test_case_factory(
             },
             detach=[],
             attach=[
-                call(
-                    scheduler=mock_scheduler,
+                call.attach_project_network(
                     node_id=UUID(_node_id(2)),
-                    network_name=_network_name(1),
+                    project_network=_network_name(1),
                     network_alias=_node_alias(2),
                 ),
-                call(
-                    scheduler=mock_scheduler,
+                call.attach_project_network(
                     node_id=UUID(_node_id(1)),
-                    network_name=_network_name(1),
+                    project_network=_network_name(1),
                     network_alias=_node_alias(1),
                 ),
             ],
@@ -105,10 +103,9 @@ def test_case_factory(
                 }
             },
             detach=[
-                call(
-                    scheduler=mock_scheduler,
+                call.detach_project_network(
                     node_id=UUID(_node_id(2)),
-                    network_name=_network_name(1),
+                    project_network=_network_name(1),
                 ),
             ],
             attach=[],
@@ -128,17 +125,15 @@ def test_case_factory(
                 }
             },
             detach=[
-                call(
-                    scheduler=mock_scheduler,
+                call.detach_project_network(
                     node_id=UUID(_node_id(2)),
-                    network_name=_network_name(1),
+                    project_network=_network_name(1),
                 ),
             ],
             attach=[
-                call(
-                    scheduler=mock_scheduler,
+                call.attach_project_network(
                     node_id=UUID(_node_id(2)),
-                    network_name=_network_name(1),
+                    project_network=_network_name(1),
                     network_alias=_node_alias(3),
                 ),
             ],
@@ -213,15 +208,10 @@ def user_id() -> PositiveInt:
 def mock_docker_calls(mocker: MockerFixture) -> Iterable[Dict[str, AsyncMock]]:
     requires_dynamic_sidecar_mock = AsyncMock()
     requires_dynamic_sidecar_mock.return_value = True
+    class_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler.task.DynamicSidecarsScheduler"
     mocked_items = {
-        "attach": mocker.patch(
-            "simcore_service_director_v2.modules.project_networks._attach_network_to_dynamic_sidecar",
-            AsyncMock(),
-        ),
-        "detach": mocker.patch(
-            "simcore_service_director_v2.modules.project_networks._detach_network_from_dynamic_sidecar",
-            AsyncMock(),
-        ),
+        "attach": mocker.patch(f"{class_base}.attach_project_network", AsyncMock()),
+        "detach": mocker.patch(f"{class_base}.detach_project_network", AsyncMock()),
         "requires_dynamic_sidecar": mocker.patch(
             "simcore_service_director_v2.modules.project_networks._requires_dynamic_sidecar",
             requires_dynamic_sidecar_mock,
@@ -249,13 +239,8 @@ async def test_send_network_configuration_to_dynamic_sidecar(
             existing_networks_with_aliases=test_case.existing_networks_with_aliases,
         )
 
-        mock_docker_calls["attach"].assert_has_awaits(
-            test_case.expected_calls.attach, any_order=True
-        )
-
-        mock_docker_calls["detach"].assert_has_awaits(
-            test_case.expected_calls.detach, any_order=True
-        )
+        mock_scheduler.assert_has_calls(test_case.expected_calls.attach, any_order=True)
+        mock_scheduler.assert_has_calls(test_case.expected_calls.detach, any_order=True)
 
 
 async def test_get_networks_with_aliases_for_default_network_is_json_serializable(
