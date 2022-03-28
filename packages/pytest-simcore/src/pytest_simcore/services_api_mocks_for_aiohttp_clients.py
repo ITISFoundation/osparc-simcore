@@ -146,7 +146,7 @@ async def director_v2_service_mock(
     )
     delete_computation_pattern = get_computation_pattern
     project_networks_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/.*/project-networks:update$"
+        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services/projects/.*/-/project-networks$"
     )
 
     aioresponses_mocker.post(
@@ -167,7 +167,7 @@ async def director_v2_service_mock(
         repeat=True,
     )
     aioresponses_mocker.delete(delete_computation_pattern, status=204, repeat=True)
-    aioresponses_mocker.post(project_networks_pattern, status=204, repeat=True)
+    aioresponses_mocker.patch(project_networks_pattern, status=204, repeat=True)
 
     return aioresponses_mocker
 

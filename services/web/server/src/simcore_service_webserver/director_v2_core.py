@@ -479,8 +479,8 @@ async def project_networks_update(app: web.Application, project_id: ProjectID) -
     settings: DirectorV2Settings = get_plugin_settings(app)
     backend_url = (
         URL(settings.base_url)
-        / f"dynamic_services/{project_id}/project-networks:update"
+        / f"dynamic_services/projects/{project_id}/-/project-networks"
     )
     await _request_director_v2(
-        app, "POST", backend_url, expected_status=web.HTTPNoContent
+        app, "PATCH", backend_url, expected_status=web.HTTPNoContent
     )

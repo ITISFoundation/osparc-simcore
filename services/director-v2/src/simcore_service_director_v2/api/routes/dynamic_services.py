@@ -282,8 +282,8 @@ async def service_restart_containers(
     return NoContentResponse()
 
 
-@router.post(
-    "/{project_id}/project-networks:update",
+@router.patch(
+    "/projects/{project_id}/-/project-networks",
     summary=(
         "After a change to the workbench the `project networks` need to be updated, "
         "this will trigger attaching and detaching of networks to ensure services "
