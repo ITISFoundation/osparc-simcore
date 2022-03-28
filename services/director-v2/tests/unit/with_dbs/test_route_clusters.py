@@ -83,11 +83,16 @@ async def test_list_clusters(
 ):
     user_1 = registered_user()
     list_clusters_url = URL(f"/v2/clusters?user_id={user_1['id']}")
-    # there is no cluster at the moment, the list is empty
+    # there is no cluster at the moment, the list shall contain the default cluster
     response = await async_client.get(list_clusters_url)
     assert response.status_code == status.HTTP_200_OK
     returned_clusters_list = parse_obj_as(List[ClusterGet], response.json())
-    assert returned_clusters_list == []
+    assert (
+        len(returned_clusters_list) == 1
+    ), f"no default cluster in {returned_clusters_list=}"
+    assert (
+        returned_clusters_list[0].id == "default"
+    ), "default cluster id is not the one expected"
 
     # let's create some clusters
     for n in range(111):
@@ -96,13 +101,19 @@ async def test_list_clusters(
     response = await async_client.get(list_clusters_url)
     assert response.status_code == status.HTTP_200_OK
     returned_clusters_list = parse_obj_as(List[ClusterGet], response.json())
-    assert len(returned_clusters_list) == 111
+    assert len(returned_clusters_list) == 111 + 1
 
-    # now create a second user and check the clusters are not seen by it
+    # now create a second user and check the clusters are not seen by it BUT the default one
     user_2 = registered_user()
     response = await async_client.get(f"/v2/clusters?user_id={user_2['id']}")
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == []
+    returned_clusters_list = parse_obj_as(List[ClusterGet], response.json())
+    assert (
+        len(returned_clusters_list) == 1
+    ), f"no default cluster in {returned_clusters_list=}"
+    assert (
+        returned_clusters_list[0].id == "default"
+    ), "default cluster id is not the one expected"
 
     # let's create a few more clusters owned by user_1 with specific rights
     for rights, name in [
@@ -124,7 +135,7 @@ async def test_list_clusters(
     assert response.status_code == status.HTTP_200_OK
     user_2_clusters = parse_obj_as(List[ClusterGet], response.json())
     # we should find 3 clusters
-    assert len(user_2_clusters) == 3
+    assert len(user_2_clusters) == 3 + 1
     for name in [
         "cluster with user rights",
         "cluster with manager rights",

@@ -71,8 +71,11 @@ async def create_cluster(
 async def list_clusters(
     user_id: UserID,
     clusters_repo: ClustersRepository = Depends(get_repository(ClustersRepository)),
+    settings: ComputationalBackendSettings = Depends(get_scheduler_settings),
+    dask_clients_pool: DaskClientsPool = Depends(get_dask_clients_pool),
 ):
-    return await clusters_repo.list_clusters(user_id)
+    default_cluster = dask_clients_pool.default_cluster(settings)
+    return [default_cluster] + await clusters_repo.list_clusters(user_id)
 
 
 @router.get(
