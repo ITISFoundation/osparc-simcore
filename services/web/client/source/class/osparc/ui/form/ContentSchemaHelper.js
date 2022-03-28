@@ -31,7 +31,7 @@ qx.Class.define("osparc.ui.form.ContentSchemaHelper", {
         rangeText = qx.locale.Manager.tr("Domain ");
         rangeText += `[-&infin;, ${s.maximum}]`;
       }
-      if ("x_unit" in s) {
+      if (rangeText && "x_unit" in s) {
         const {
           unitPrefix,
           unit
