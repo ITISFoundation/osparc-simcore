@@ -196,6 +196,7 @@ async def get_gateway_auth_from_params(
 
 
 _PING_TIMEOUT_S: Final[int] = 5
+_DASK_SCHEDULER_RUNNING_STATE: Final[str] = "running"
 
 
 async def test_scheduler_endpoint(
@@ -210,7 +211,7 @@ async def test_scheduler_endpoint(
             async with distributed.Client(
                 address=endpoint, timeout=_PING_TIMEOUT_S, asynchronous=True
             ) as dask_client:
-                if not dask_client.status == "running":
+                if not dask_client.status == _DASK_SCHEDULER_RUNNING_STATE:
                     raise SchedulerError("internal scheduler is not running!")
 
         else:
