@@ -176,28 +176,21 @@ class Cluster(BaseCluster):
     @root_validator(pre=True)
     @classmethod
     def check_owner_has_access_rights(cls, values):
-        if values["id"] == "default":
-            return values
+        is_default_cluster = bool(values["id"] == "default")
         owner_gid = values["owner"]
+
         # check owner is in the access rights, if not add it
         access_rights = values.get("access_rights", values.get("accessRights", {}))
         if owner_gid not in access_rights:
-            access_rights[owner_gid] = CLUSTER_ADMIN_RIGHTS
-        # check owner has full access
-        if access_rights[owner_gid] != CLUSTER_ADMIN_RIGHTS:
+            access_rights[owner_gid] = (
+                CLUSTER_USER_RIGHTS if is_default_cluster else CLUSTER_ADMIN_RIGHTS
+            )
+        # check owner has the expected access
+        if access_rights[owner_gid] != (
+            CLUSTER_USER_RIGHTS if is_default_cluster else CLUSTER_ADMIN_RIGHTS
+        ):
             raise ValueError(
                 f"the cluster owner access rights are incorrectly set: {access_rights[owner_gid]}"
             )
+        values["access_rights"] = access_rights
         return values
-
-
-class DefaultCluster(Cluster):
-    """the default cluster is usable by everyone as USER"""
-
-    id: Literal["default"] = "default"
-    name: Literal["Default cluster"] = "Default cluster"
-    type: ClusterType = ClusterType.ON_PREMISE
-    owner: GroupID = (
-        1  # NOTE: This group ID 1 is 99% of the time equivalent to the Everyone group
-    )
-    access_rights: Dict[GroupID, ClusterAccessRights] = {1: CLUSTER_USER_RIGHTS}
